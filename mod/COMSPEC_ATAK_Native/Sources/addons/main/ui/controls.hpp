@@ -69,6 +69,20 @@ class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; c
 // en pixels, énormes sur le petit écran ; fn_mapGameMarkers les redessine à l'échelle de l'écran de l'ATAK.
 class COMSPEC_RscMapAtak: COMSPEC_RscMap { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH"; };
 // Carte de l'app JTAC (dessin à part, fn_jtacDraw) : textes Arma des repères et des lieux gardés.
+// Fonds SATELLITE et HYBRIDE du téléphone (fn_mapStyle, fn_mapCtrl) : la texture satellite du terrain à toutes les
+// échelles (maxSatelliteAlpha 1, jamais estompée), sans les aplats de forêt, rochers, courbes de niveau ni mer.
+// HYBRIDE garde les routes et pistes par-dessus, comme la vue « Satellite + routes » d'une appli de cartes.
+// Même principe que cTab (carte SAT / TOPO = deux contrôles carte, un seul affiché).
+#define ATAK_NOCOL {0,0,0,0}
+class COMSPEC_RscMapAtakSat: COMSPEC_RscMapAtak { maxSatelliteAlpha=1; alphaFadeStartScale=100; alphaFadeEndScale=100; showCountourInterval=0;
+    colorSea[]=ATAK_NOCOL; colorForest[]=ATAK_NOCOL; colorForestBorder[]=ATAK_NOCOL; colorRocks[]=ATAK_NOCOL; colorRocksBorder[]=ATAK_NOCOL;
+    colorLevels[]=ATAK_NOCOL; colorMainCountlines[]=ATAK_NOCOL; colorCountlines[]=ATAK_NOCOL; colorMainCountlinesWater[]=ATAK_NOCOL; colorCountlinesWater[]=ATAK_NOCOL;
+    colorPowerLines[]=ATAK_NOCOL; colorRailWay[]=ATAK_NOCOL; colorTracks[]=ATAK_NOCOL; colorTracksFill[]=ATAK_NOCOL;
+    colorRoads[]=ATAK_NOCOL; colorRoadsFill[]=ATAK_NOCOL; colorMainRoads[]=ATAK_NOCOL; colorMainRoadsFill[]=ATAK_NOCOL; };
+class COMSPEC_RscMapAtakHyb: COMSPEC_RscMapAtakSat {
+    colorTracks[]={0.84,0.80,0.66,0.55}; colorTracksFill[]={0.95,0.91,0.78,0.75};
+    colorRoads[]={0.80,0.76,0.62,0.75}; colorRoadsFill[]={1,0.96,0.80,0.9};
+    colorMainRoads[]={0.85,0.62,0.25,0.85}; colorMainRoadsFill[]={1,0.82,0.42,0.95}; };
 class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { showMarkers=1; sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; };
 class COMSPEC_RscPanel: COMSPEC_RscText { colorBackground[]=ATAK_BG1; };
 class COMSPEC_RscTile: COMSPEC_RscText { colorBackground[]=ATAK_BG2; };

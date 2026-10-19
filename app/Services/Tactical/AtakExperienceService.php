@@ -340,6 +340,13 @@ final class AtakExperienceService
 
         return [
             $row('net_sim', 'Débit réseau simulé', 'Bâtiments, relief, météo, brouilleurs, relais et dégâts réduisent le débit : les envois partent avec un délai, se perdent ou attendent le retour du réseau.', $onOff('Toujours simuler', 'Couper la simulation (débit plein)')),
+            $row('net_profile', 'Profil de réalisme', 'Milsim (par défaut en jeu) : toutes les simulations à leur valeur réelle. Standard : en plus doux. Arcade : réseau parfait, BFT en direct, GPS exact, batterie infinie. Personnalisé : seuls les réglages du serveur comptent. Chaque règle ci-dessous reste modifiable avec n’importe quel profil et l’emporte sur lui.', [
+                $server,
+                ['value' => '3', 'label' => 'Milsim'],
+                ['value' => '2', 'label' => 'Standard'],
+                ['value' => '1', 'label' => 'Arcade'],
+                ['value' => '0', 'label' => 'Personnalisé (réglages du serveur)'],
+            ]),
             $row('net_realism', 'Réalisme de la simulation radio', 'Réaliste : bilan radio en dB (relief, Fresnel, forêt, bâtiments). Exigeant : forêt et bâtiments comptés en entier. Simplifié : ancien modèle.', [
                 $server,
                 ['value' => '1', 'label' => 'Réaliste'],
@@ -357,6 +364,12 @@ final class AtakExperienceService
             $row('net_gateways', 'Passerelles de véhicule et PC mobile', 'L’équipage peut faire d’un véhicule un relais ATAK ou un poste de commandement à mât.', $onOff('Toujours autoriser', 'Toujours interdire')),
             $row('net_offline_hold', 'Fonctionnement hors connexion', 'Sans signal, le téléphone garde ses données et retient ce qui arrive jusqu’au retour du réseau.', $onOff('Toujours activer', 'Toujours couper')),
             $row('net_video_relays', 'Flux vidéo selon les relais', 'Débit, définition et latence des flux vidéo suivent les relais de la mission.', $onOff('Toujours activer', 'Toujours couper')),
+            $row('net_pli', 'Positions BFT par points', 'Comme un vrai ATAK : chaque téléphone envoie sa position à intervalle régulier, telle que son GPS la voit. Les alliés avancent par bonds et passent en gris quand leurs points n’arrivent plus.', $onOff('Toujours par points', 'Positions exactes en direct')),
+            $row('net_pli_rate', 'Intervalle des positions BFT', 'Temps entre deux points de position d’un téléphone (deux fois plus souvent s’il bouge).', $nums([2 => '', 5 => '', 10 => '10 s (Milsim)', 15 => '', 30 => '', 60 => ''], 's')),
+            $row('net_gps', 'GPS réaliste', 'Précision selon le ciel visible : quelques mètres à découvert, plus en forêt, rue étroite ou vallée, beaucoup plus dans un bâtiment, aucun fix en sous-sol.', $onOff('Toujours simuler le GPS', 'GPS exact')),
+            $row('net_gps_k', 'Force des erreurs GPS', '100 % : erreurs réalistes d’un téléphone. 50 % : moitié moins.', $nums([50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
+            $row('net_gps_fix', 'Attente des satellites', 'Au démarrage du téléphone, le GPS cherche les satellites de quelques secondes à environ 40 s.', $onOff('Toujours attendre les satellites', 'Position tout de suite')),
+            $row('net_battery', 'Batterie réaliste', 'La batterie se vide selon l’usage et se recharge en véhicule ; à 0 % le téléphone s’éteint.', $onOff('Toujours simuler la batterie', 'Batterie infinie')),
         ];
     }
 

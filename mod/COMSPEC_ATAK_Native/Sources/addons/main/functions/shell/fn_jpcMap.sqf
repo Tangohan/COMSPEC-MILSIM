@@ -47,7 +47,7 @@ switch (_act) do {
     default {
         (uiNamespace getVariable ["COMSPEC_ATAK_JpcMapCtrls", []]) params [["_pic", controlNull], ["_me", controlNull], ["_icons", []], ["_last", []]];
         if (isNull _display || {isNull _pic}) exitWith {};
-        private _map = _display displayCtrl 88530;
+        private _map = [_display] call comspec_atak_native_fnc_mapCtrl;
         private _show = ctrlShown _map;
         (ctrlPosition _map) params ["_mx", "_my", "_mw", "_mh"];
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_JpcMapCam", objNull];

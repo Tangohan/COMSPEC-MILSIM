@@ -77,8 +77,9 @@ if (isNil "_mkIconCache") then { _mkIconCache = createHashMap; uiNamespace setVa
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
-// Fond PHOTO (capture de la carte) : tuiles sous tous les symboles.
-if (_bgStyle isEqualTo "PHOTO") then { [_map] call comspec_atak_native_fnc_photoMap; };
+// Fond PHOTO (capture de la carte) : tuiles sous tous les symboles ; en SATELLITE, la capture remplace la texture du
+// terrain là où elle existe.
+if (_bgStyle in ["PHOTO", "SAT"]) then { [_map] call comspec_atak_native_fnc_photoMap; };
 // Fond de carte (Réglages > Carte ou CALQUES) : voile sous tous les symboles (dessiné en premier).
 private _veil = switch (_bgStyle) do {
     case "LIGHT": { [1, 1, 1, 0.38] };
@@ -203,8 +204,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
     if ((count _planDraft) > 0) then { [_map, _planDraft, 0.55] call comspec_atak_native_fnc_planDraw; };
 };
 
-// Guerre électronique : position brouillée (GPS) et pistes BFT dégradées.
-([] call comspec_atak_native_fnc_ewEffects) params ["_ewGps", "_ewBft", "_ewOff"];
+// Guerre électronique et GPS naturel (fn_gpsFix) : position affichée avec l'erreur GPS, pistes BFT dégradées.
+([] call comspec_atak_native_fnc_ewEffects) params ["", "_ewBft", "", "", "", "_ewOff"];
 private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
 // Terminal compromis (fn_compromiseView) : flux BFT coupé, seule ma position GPS reste en direct (pistes figées dessinées à la fin).
 private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
@@ -221,7 +222,7 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
     private _size = ([16, 21] select (_x isEqualTo _selected || _self)) * _k * _is;
     if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
     if (_self) then { _color = +_selfRgb; };
-    if (_self && {_ewGps > 0}) then { _pos = [(_pos select 0) + (_ewOff select 0), (_pos select 1) + (_ewOff select 1), 0]; };
+    if (_self && {(_ewOff select 0) != 0 || {(_ewOff select 1) != 0}}) then { _pos = [(_pos select 0) + (_ewOff select 0), (_pos select 1) + (_ewOff select 1), 0]; };
     if (_ewBft && {!_self}) then { _color set [3, ((_color select 3) min 0.65) * 0.5]; };
     private _dir = _entity getOrDefault ["heading",0];
     private _custom = _entity getOrDefault ["icon",""];
@@ -237,6 +238,9 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
         ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt", "_ne"];
         _icon = _nt; _ech = _ne; _dir = 0; _size = _size * 1.3;
     };
+    // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
+    private _acc = _entity getOrDefault ["acc", 0];
+    if (!_self && {_acc >= 10}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
     _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
     if (_lblOn && {!_boxOn} && {_scale < 0.25}) then {
         private _cs = _entity getOrDefault ["callsign",""];
@@ -596,7 +600,7 @@ if (_spanX > 1 && {_spanY > 1}) then {
     if (_si < 0) then { _si = (count _steps) - 1; };
     private _step = _steps select _si;
     private _gs = 0.019 * _k * _ts;
-    private _light = _bgStyle in ["DARK", "NIGHT", "PHOTO"];
+    private _light = _bgStyle in ["DARK", "NIGHT", "PHOTO", "SAT", "HYBRID"];
     private _gc = [[0.05, 0.05, 0.05, 0.95], [0.90, 0.94, 0.91, 0.95]] select _light;
     private _none = "#(argb,8,8,3)color(0,0,0,0)";
     private _cfgGrid = configFile >> "CfgWorlds" >> worldName >> "Grid";

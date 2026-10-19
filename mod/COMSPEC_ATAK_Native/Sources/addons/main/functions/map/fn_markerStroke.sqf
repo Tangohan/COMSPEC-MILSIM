@@ -55,7 +55,7 @@ switch (_event) do {
     };
     case "MOVE": {
         if !(_mode isEqualTo "DRAW" && {_s getOrDefault ["drawing", false]}) exitWith { false };
-        private _map = ([] call comspec_atak_native_fnc_display) displayCtrl 88530;
+        private _map = ([] call comspec_atak_native_fnc_mapCtrl);
         // Un point tous les ~3 pixels : le lissage au relâchement garde la forme sans les tremblements.
         if (((_map ctrlMapWorldToScreen (_stroke select -1)) distance2D (_map ctrlMapWorldToScreen _pos)) > pixelW * 3) then { _stroke pushBack _pos; };
         true
@@ -63,7 +63,7 @@ switch (_event) do {
     case "UP": {
         if !(_mode isEqualTo "DRAW" && {_s getOrDefault ["drawing", false]}) exitWith { false };
         _s set ["drawing", false];
-        private _map = ([] call comspec_atak_native_fnc_display) displayCtrl 88530;
+        private _map = ([] call comspec_atak_native_fnc_mapCtrl);
         private _mpx = ["mpx", _map] call comspec_atak_native_fnc_planGfx;
         private _closed = profileNamespace getVariable ["COMSPEC_ATAK_DrawClosed", false];
         private _pts = [_stroke, (_mpx * 1.5) max 0.2, true, _closed && {(count _stroke) > 3}, 150] call comspec_atak_native_fnc_strokeSimplify;

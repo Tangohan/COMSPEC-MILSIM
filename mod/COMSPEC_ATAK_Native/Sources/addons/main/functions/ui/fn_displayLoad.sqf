@@ -46,7 +46,7 @@ if (_interactive) then {
         if (_key isEqualTo 0xD3 && {(ctrlType (focusedCtrl (_this select 0))) isNotEqualTo 2}) exitWith {
             private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "MAP") exitWith { false };
-            private _map = (_this select 0) displayCtrl 88530;
+            private _map = [_this select 0] call comspec_atak_native_fnc_mapCtrl;
             private _m = [_map, getMousePosition] call comspec_atak_native_fnc_markerAt;
             if (_m isEqualTo "") then { _m = _s getOrDefault ["selectedMarker", ""]; };
             if (_m isEqualTo "") exitWith { false };

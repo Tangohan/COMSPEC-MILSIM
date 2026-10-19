@@ -165,6 +165,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 // Contrôle Zeus des ATAK : effets reçus du serveur (fn_zeusClient), boucle d'une seconde, menu clic droit ZEN du Zeus.
 ["comspec_atak_native_zeusFx", { _this call comspec_atak_native_fnc_zeusClient; }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_zeusClient; }, 1] call CBA_fnc_addPerFrameHandler;
+// Positions BFT par points (fn_pli) : un point de position envoyé aux alliés à l'intervalle choisi (10 s en Milsim).
+[{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call CBA_fnc_addPerFrameHandler;
 ["register"] call comspec_atak_native_fnc_zeusMenu;
 // Attributs ZEN des relais (fenêtre Éditer d'un pylône ou relais) et menu clic droit « ATAK · Relais ».
 ["register"] call comspec_atak_native_fnc_relayZeus;

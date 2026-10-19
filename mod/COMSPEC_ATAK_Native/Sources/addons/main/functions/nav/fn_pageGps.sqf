@@ -24,9 +24,23 @@ if ((count _r) > 0) then {
 if (missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]) then { _rows pushBack ["text", "<t color='#f2ab33'>Calcul de l'itinéraire…</t>"]; };
 
 private _veh = vehicle player;
+// Position telle que le GPS la donne (brouillage, dégâts, ciel masqué, attente des satellites : fn_ewEffects, fn_gpsFix).
+([] call comspec_atak_native_fnc_ewEffects) params ["", "", "", "", "_gErr", "_gOff", "_gSt"];
+([] call comspec_atak_native_fnc_gpsFix) params ["", "", "_gSats", "_gWhy"];
+private _gTxt = switch (_gSt) do {
+    case "ACQ": { format ["<t color='#f2ab33'>%1</t>", "Recherche des satellites…" call comspec_atak_native_fnc_tr] };
+    case "NET": { format ["<t color='#f2ab33'>%1</t>", format ["Pas de fix · position réseau à %1 m près" call comspec_atak_native_fnc_tr, _gErr]] };
+    case "NOFIX": { format ["<t color='#e5483a'>%1</t>", ["Pas de fix · dernière position connue" call comspec_atak_native_fnc_tr, "Aucune position" call comspec_atak_native_fnc_tr] select (_gErr isEqualTo 0)] };
+    default { format ["%1 · <t color='%3'>±%2 m</t>", format ["%1 satellites" call comspec_atak_native_fnc_tr, _gSats], _gErr max 3, ["#5cc76b", "#f2ab33"] select (_gErr >= 15)] };
+};
+private _gPos = (getPosASL player) vectorAdd _gOff;
 _rows append [
     ["section", "Ma position", ""],
-    ["info", "Grille", format ["<t font='EtelkaMonospacePro'>%1</t>", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef]],
+    ["info", "Signal GPS", _gTxt]
+];
+if (_gWhy isNotEqualTo [] && {_gSt isNotEqualTo "OFF"}) then { _rows pushBack ["text", format ["<t size='0.85' color='#8a9a93'>%1</t>", (_gWhy apply { _x call comspec_atak_native_fnc_tr }) joinString ", "]]; };
+_rows append [
+    ["info", "Grille", format ["<t font='EtelkaMonospacePro'>%1</t>", ["—", [_gPos, 8] call comspec_atak_native_fnc_gridRef] select (_gSt isNotEqualTo "NOFIX" || {_gErr > 0})]],
     ["info", "Altitude", format ["%1 m", round ((getPosASL player) select 2)]],
     ["info", "Cap · vitesse", format ["%1° %2 · %3 km/h", round getDir _veh, [getDir _veh] call _card, round (speed _veh) max 0]]
 ];

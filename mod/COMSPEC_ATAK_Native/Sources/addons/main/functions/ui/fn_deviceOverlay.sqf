@@ -272,13 +272,13 @@ private _zLock = (["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo
 private _isMap = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP";
 if (_off || _fxOn || _zLock) then {
     _content ctrlShow false;
-    (_d displayCtrl 88530) ctrlShow false;
+    { _x ctrlShow false; } forEach ([_d, true] call comspec_atak_native_fnc_mapCtrl);
     uiNamespace setVariable ["COMSPEC_ATAK_DevCovered", true];
 } else {
     if (uiNamespace getVariable ["COMSPEC_ATAK_DevCovered", false]) then {
         uiNamespace setVariable ["COMSPEC_ATAK_DevCovered", false];
         _content ctrlShow !_isMap;
-        (_d displayCtrl 88530) ctrlShow _isMap;
+        ([_d] call comspec_atak_native_fnc_mapCtrl) ctrlShow _isMap;
     };
 };
 // Effet visible : focus rendu au bouton hors écran (le contrôle focalisé est dessiné devant tout).

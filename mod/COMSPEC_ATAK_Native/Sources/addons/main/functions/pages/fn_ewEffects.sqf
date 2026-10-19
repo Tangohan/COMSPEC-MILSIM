@@ -2,7 +2,9 @@
     Guerre électronique : effets du brouillage sur le joueur local, recalculés au plus une fois par seconde.
     Brouilleurs : missionNamespace COMSPEC_ATAK_Jammers = [[objet ou position, rayon, uid, camp, fin, filtrage ami]...]
     (les entrées de mission plus courtes [position, rayon] restent valables, sans fin ni filtrage).
-    Renvoie [erreur GPS en mètres, BFT dégradé, décalage de la position affichée [dx, dy, 0], intensité 0-1].
+    Renvoie [erreur GPS en mètres, BFT dégradé, décalage de la position affichée [dx, dy, 0], intensité 0-1,
+             erreur GPS totale, décalage total, état du GPS] : les trois derniers ajoutent le GPS naturel (fn_gpsFix :
+             ciel visible, attente des satellites) ; les premiers restent ceux du brouillage et des dégâts (alertes, app EW).
 */
 private _cache = uiNamespace getVariable ["COMSPEC_ATAK_EwFx", []];
 if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 1}) exitWith { _cache select 1 };
@@ -28,6 +30,7 @@ private _drift = uiNamespace getVariable ["COMSPEC_ATAK_EwDrift", random 360];
 _drift = _drift + (random 50) - 25;
 uiNamespace setVariable ["COMSPEC_ATAK_EwDrift", _drift];
 private _off = [(sin _drift) * _err * 0.7, (cos _drift) * _err * 0.7, 0];
-private _r = [_err, _k > 0.25, _off, _k];
+([] call comspec_atak_native_fnc_gpsFix) params ["_gErr", "_gSt", "", "", "_gOff"];
+private _r = [_err, _k > 0.25, _off, _k, _err + _gErr, _off vectorAdd _gOff, _gSt];
 uiNamespace setVariable ["COMSPEC_ATAK_EwFx", [diag_tickTime, _r]];
 _r

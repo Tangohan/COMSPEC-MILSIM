@@ -257,6 +257,11 @@ private _mus = ["COMSPEC", "ATAK · Musique"];
     _mus, "", 1] call comspec_atak_native_fnc_addSetting;
 
 private _sim = ["COMSPEC", "ATAK · Simulation"];
+// Profil de réalisme (fn_netCond) : donne la valeur des réglages de simulation laissés à leur valeur par défaut ;
+// tout réglage changé ici, au menu Échap (Réalisme et réseau) ou sur le site l'emporte, réglage par réglage.
+["comspec_atak_native_realism_profile", "LIST",
+    ["Profil de réalisme", "Milsim (par défaut) : toutes les simulations à leur valeur réelle (réseau radio, météo, saturation, pertes, positions BFT toutes les 10 s, GPS qui perd en précision à couvert, batterie). Standard : mêmes simulations en plus doux (météo et erreurs GPS à moitié, BFT toutes les 5 s, pas d'attente des satellites). Arcade : réseau parfait, BFT en direct, GPS exact, batterie infinie. Personnalisé : seuls les réglages ci-dessous comptent. Chaque réglage reste modifiable avec n'importe quel profil."],
+    _sim, [[3, 2, 1, 0], ["Milsim", "Standard", "Arcade", "Personnalisé (réglages ci-dessous)"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_damage_sim", "CHECKBOX",
     ["Dégâts du téléphone", "Le téléphone peut être abîmé par les balles, éclats, explosions, chutes, accidents et l'eau. Le résultat dépend de l'endroit où il est porté (main, gilet, poche, sac), de la zone touchée, de la munition et de la protection du gilet : rien, écran rayé ou fêlé, pixels morts, batterie, haut-parleur, GPS ou antenne abîmés, téléphone éteint ou détruit. Réparation par action ACE avec un kit de réparation ou une caisse à outils, ou en changeant d'appareil. Avec le réglage Overwatch « Réalisme ATAK » : niveau 1 = le téléphone peut seulement s'éteindre, niveau 2 = jamais détruit."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -408,6 +413,22 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_drone_range", "SLIDER", ["Portée de la liaison drone (m)", "Distance maximale entre le téléphone du pilote et son drone, divisée par trois si le relief les sépare. Au-delà, le drone rentre seul à son point de décollage. Avec le mod Mavic, sa propre portée (mavic_setting_maxConnectionDistance) s'applique si elle est plus grande."], _sim, [500, 12000, 6000, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_video_relays", "CHECKBOX",
     ["Vidéo dépendante des relais", "Si la mission a des relais ATAK, les vidéos (drone, caméra casque, caméra en direct, caméras fixes) passent par eux : qualité (de 1080p à image par image), fluidité, délai et parasites dépendent de la distance aux relais, du nombre de relais traversés et de la perte d'un relais. Sans relais dans la mission, rien ne change. Décochez pour toujours avoir une vidéo parfaite."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// BFT par points de position (fn_pli) et GPS naturel (fn_gpsFix).
+["comspec_atak_native_net_pli", "CHECKBOX",
+    ["Positions BFT par points (PLI)", "Comme un vrai ATAK : chaque téléphone envoie sa position à intervalle régulier, telle que son GPS la voit (avec son erreur). Les alliés avancent par bonds sur la carte, un allié mal couvert apparaît en retard ou en gris même si vous avez du réseau. Décoché : positions exactes en direct."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_pli_rate", "LIST",
+    ["Intervalle des positions BFT", "Temps entre deux envois de position d'un téléphone. Un joueur qui bouge vite envoie un peu plus souvent (au plus deux fois plus)."],
+    _sim, [[2, 5, 10, 15, 30, 60], ["2 s", "5 s", "10 s", "15 s", "30 s", "60 s"], 2], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_gps_sim", "CHECKBOX",
+    ["GPS réaliste", "La précision du GPS dépend du ciel visible : quelques mètres à découvert, plus en forêt dense, dans une rue étroite ou au fond d'une vallée, beaucoup plus dans un bâtiment, aucun fix en sous-sol (dernière position gardée). Décoché : GPS exact (hors brouillage et dégâts)."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_gps_k", "LIST",
+    ["Force des erreurs GPS", "100 % : erreurs réalistes. 50 % : moitié moins. Au-dessus : GPS plus capricieux."],
+    _sim, [[50, 100, 150, 200], ["50 %", "100 % (réel)", "150 %", "200 %"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_gps_fix", "CHECKBOX",
+    ["Attente des satellites", "Au démarrage du téléphone ou après un changement de batterie, le GPS met de quelques secondes à environ 40 s à trouver les satellites ; en attendant, position approximative par le réseau. Décoché : position tout de suite."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_camera_share", "LIST",
     ["Partage des caméras", "Partage obligatoire (par défaut) : une caméra fixe n'est visible que par celui qui l'a posée, et la caméra d'un téléphone que par son propriétaire, tant qu'ils ne l'ont pas partagée (app Vidéo live > PARTAGER, par NFC, Bluetooth ou relais, à un joueur ou à TOUS). Tout le camp voit tout : chaque ATAK voit toutes les caméras de son camp sans rien faire."],
