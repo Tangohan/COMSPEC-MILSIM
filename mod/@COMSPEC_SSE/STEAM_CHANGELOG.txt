@@ -2,6 +2,55 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.0.0[/h1]
+[b]20/10/2026[/b] — Mise à jour majeure. Relancer Arma complètement. [b]COMSPEC ATAK Native est désormais obligatoire[/b] (Arma 3 2.14 minimum).
+
+[h2]Tout passe par le téléphone ATAK[/h2]
+[list]
+[*] Nouvelle app [b]SSE terrain[/b] : cible visée (état, niveau d'exploitation, scellé, photos), approfondir, documents, chronologie, SEEK II, DL-7, transmission Athena, fiche FRS
+[*] Onglet SITE : avancement de la doctrine (photos en place, fouille, biométrie, numérique, scellés, transmission) et feu vert d'exfiltration
+[*] Onglets SCELLÉS et JOURNAL : pièces détenues, registre, campagne, guide
+[*] Ctrl+Maj+S ouvre l'app SSE du téléphone ; Ctrl+Maj+R rédige une fiche RENS
+[*] Retours dans les notifications du téléphone (bulle si le téléphone est fermé), plus de fenêtres d'aide
+[/list]
+
+[h2]Menus ACE réduits aux gestes physiques[/h2]
+[list]
+[*] Il reste : Fouiller, Mettre sous scellé (collecte + scellé, sachet consommé), sac de tête, remise des scellés, examen d'une trace de sang, et les actions des kits portés
+[*] Plus de menu personnel ni de sous-menus Biométrie et Exploitation numérique
+[/list]
+
+[h2]Kits réalistes[/h2]
+[list]
+[*] Kit empreintes (10 relevés), kit ADN et écouvillons (12), test de résidus de tir, SEEK II
+[*] Sac de Faraday : un téléphone saisi sur trois est effacé à distance quelques minutes après votre arrivée s'il n'est pas isolé
+[*] Cônes de preuve numérotés (marqueur carte, journal de la pièce) ; valise DOMEX qui accélère l'extraction
+[*] Qualité de collecte réelle : gants, lumière, pluie, blessure, compétence, tentatives, pièce photographiée en place et conée
+[/list]
+
+[h2]Numérique et photos[/h2]
+[list]
+[*] Chaque téléphone ou PC généré se branche au câble DL-7 : code à saisir ou à forcer, effacement ou verrouillage après les essais, téléchargement versé au dossier
+[*] Photos de preuve avec l'app Photo de l'ATAK : les pièces cadrées sont inscrites au dossier et à leur journal
+[/list]
+
+[h2]Sites et kits préfabriqués (Eden et Zeus)[/h2]
+[list]
+[*] Sept sites : planque, labo d'IED, atelier de faux papiers, cache d'armes, PC de cellule, boîte aux lettres morte, nœud hawala, avec occupants, pièges et dossier croisé
+[*] Modules : poser un site, peupler un bâtiment, semer des preuves, réseau multi-sites, poser une caisse de kit
+[*] Caisses de kit (équipe, biométrie, numérique, valise DOMEX) et 17 pièces de preuve posables, avec de vrais modèles
+[/list]
+
+[h2]Dossier fiable en multijoueur[/h2]
+[list]
+[*] Le serveur tient les fiches : deux joueurs qui travaillent sur la même personne ne s'écrasent plus, la chaîne de possession n'est plus effacée
+[*] Les niveaux d'exploitation révèlent enfin les renseignements, caches et données supprimées ; le téléphone généré est visible
+[*] Génération reproductible (graine de mission), identités distinctes pour chaque membre d'un site, organigramme, lieux réels de la carte
+[*] Identifiants uniques par opération, file Athena qui ne rejoue plus d'anciens envois, référence de dossier tenue par le serveur
+[*] Menus des objets présents sur serveur dédié et pour les joueurs arrivant en cours de partie ; modèles Eden et Zeus appliqués
+[*] Nombreux correctifs : traductions, barres de progression interrompues si l'on s'éloigne, duplication des preuves, modules Eden, droits Zeus sur la campagne
+[/list]
+
 [h1]COMSPEC SSE 0.9.0[/h1]
 [b]12/10/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
 
