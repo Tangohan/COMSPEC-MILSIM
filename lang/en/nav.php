@@ -696,4 +696,9 @@ return [
     'administration_de_la_plateforme' => 'Platform administration',
     'communautes_comptes_roles_du_site_publications_et_exploitation_reserve_a_l_administrateur_de_la_plateforme' => 'Communities, accounts, site roles, publications and operations. Reserved for the platform administrator.',
     'site_entier' => 'Whole site',
+    'parc_atak_des_membres' => 'Members\' ATAK fleet',
+    'les_atak_des_membres_chiffres_de_jeu_compromissions_messages_imposes_blocage' => 'Members\' ATAKs: play figures, compromises, forced messages, blocking',
+    'fichiers_partages' => 'Shared files',
+    'dossiers_et_fichiers_partages_avec_vous' => 'Folders and files shared with you',
+    'dossiers_et_fichiers_prives_ouverts_seulement_sur_partage' => 'Private folders and files, opened only when shared',
 ];
