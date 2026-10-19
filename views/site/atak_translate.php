@@ -19,12 +19,15 @@ $icons = [
     'gear' => '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
     'down' => '<path d="M12 3v12M7 10l5 5 5-5M4 20h16"/>',
     'list' => '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    'up' => '<path d="M12 21V9M7 14l5-5 5 5M4 4h16"/>',
 ];
+$tabActive = 'atelier';
 ?>
 <article class="atakn atakt" id="atakt"
     data-template-url="<?= htmlspecialchars(url('traduire-atak/modele.json'), ENT_QUOTES, 'UTF-8') ?>"
     data-api-url="<?= htmlspecialchars(url('api/traduire-atak/packs'), ENT_QUOTES, 'UTF-8') ?>"
     data-page-url="<?= htmlspecialchars(url('traduire-atak'), ENT_QUOTES, 'UTF-8') ?>"
+    data-workshop-url="<?= htmlspecialchars(url('traduire-atak/workshop'), ENT_QUOTES, 'UTF-8') ?>"
     data-pack-id="<?= htmlspecialchars($packId, ENT_QUOTES, 'UTF-8') ?>"
     data-version="<?= htmlspecialchars((string) ($release['atak_native'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
     data-i18n="<?= htmlspecialchars((string) json_encode($js, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>">
@@ -37,6 +40,7 @@ $icons = [
             <li><span><?= sprintf('%02d', $i) ?></span><?= $t('flow_' . $i) ?></li>
             <?php endfor; ?>
         </ol>
+        <?php require __DIR__ . '/atak_translate_tabs.php'; ?>
     </header>
 
     <section class="tw" id="tw" aria-label="<?= $t('app_label') ?>" data-state="loading">
@@ -59,6 +63,7 @@ $icons = [
             <div class="tw-actions">
                 <span class="tw-sync" id="tw-sync" role="status" aria-live="polite"></span>
                 <button type="button" class="tw-btn" id="tw-share"><?= $icon($icons['share']) ?><span><?= $t('share') ?></span></button>
+                <button type="button" class="tw-btn" id="tw-publish"><?= $icon($icons['up']) ?><span><?= $t('publish') ?></span></button>
                 <button type="button" class="tw-btn" id="tw-settings"><?= $icon($icons['gear']) ?><span><?= $t('settings') ?></span></button>
                 <button type="button" class="tw-btn tw-btn--solid" id="tw-download"><?= $icon($icons['down']) ?><span><?= $t('download') ?></span></button>
             </div>
@@ -257,6 +262,49 @@ $icons = [
                     <button type="button" class="hi-cta hi-cta-solid" data-role="close"><?= $t('close') ?></button>
                 </div>
             </div>
+        </div>
+    </dialog>
+
+    <dialog class="tw-dlg" id="tw-dlg-publish" aria-labelledby="tw-dlg-publish-h">
+        <div class="tw-form">
+            <h2 id="tw-dlg-publish-h"><?= $t('pub_title') ?></h2>
+            <div data-role="local">
+                <p><?= $t('pub_local') ?></p>
+                <div class="tw-row tw-row--end">
+                    <button type="button" class="hi-cta hi-cta-ghost" data-role="close"><?= $t('cancel') ?></button>
+                    <button type="button" class="hi-cta hi-cta-solid" data-role="to-share"><?= $t('pub_local_cta') ?></button>
+                </div>
+            </div>
+            <div data-role="editor" hidden>
+                <p><?= $t('pub_editor') ?></p>
+                <p class="tw-pubstate" data-role="state"></p>
+                <div class="tw-row tw-row--end">
+                    <button type="button" class="hi-cta hi-cta-solid" data-role="close"><?= $t('close') ?></button>
+                </div>
+            </div>
+            <form data-role="owner" hidden novalidate>
+                <p><?= $t('pub_lead') ?></p>
+                <p class="tw-pubstate" data-role="state"></p>
+                <label class="tw-field"><span><?= $t('pub_field_desc') ?></span>
+                    <textarea name="description" maxlength="600" rows="4"></textarea>
+                    <small><?= $t('pub_field_desc_help') ?></small></label>
+                <div class="tw-grid">
+                    <label class="tw-field"><span><?= $t('pub_field_steam') ?></span>
+                        <input type="text" name="workshop_id" maxlength="200" autocomplete="off" spellcheck="false" placeholder="https://steamcommunity.com/sharedfiles/filedetails/?id=…">
+                        <small><?= $t('pub_field_steam_help') ?></small></label>
+                    <label class="tw-field"><span><?= $t('pub_field_note') ?></span>
+                        <input type="text" name="note" maxlength="300" autocomplete="off">
+                        <small><?= $t('pub_field_note_help') ?></small></label>
+                </div>
+                <p class="tw-err" data-role="error" hidden></p>
+                <div class="tw-row tw-row--end">
+                    <a class="tw-link" data-role="view" href="#" target="_blank" rel="noopener" hidden><?= $t('pub_view') ?></a>
+                    <button type="button" class="tw-link tw-link--danger" data-role="unlist" hidden><?= $t('pub_unlist') ?></button>
+                    <button type="button" class="tw-link" data-role="relist" hidden><?= $t('pub_relist') ?></button>
+                    <button type="button" class="hi-cta hi-cta-ghost" data-role="save" hidden><?= $t('pub_save') ?></button>
+                    <button type="submit" class="hi-cta hi-cta-solid" data-role="publish"></button>
+                </div>
+            </form>
         </div>
     </dialog>
 

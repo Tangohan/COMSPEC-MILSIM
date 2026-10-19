@@ -333,6 +333,8 @@
         previewAll: false,
         pseudo: storageGet(PSEUDO_KEY) || '',
         catQuery: '',
+        workshop: null,      // état du pack dans le Workshop des langues (API show, premier chargement)
+        newKeys: {},         // clé -> true : phrases ajoutées par le mod depuis la dernière version publiée
     };
     var prefs = storageJson(PREFS_KEY, {});
     if (prefs.source === 'fr') { S.source = 'fr'; }
@@ -395,6 +397,7 @@
         case 'warn': if (!S.issues[e.h] || !S.issues[e.h].warnings.length || st === 'error') { return false; } break;
         case 'sugg': if (st !== 'sugg' && st !== 'mine') { return false; } break;
         case 'conflict': if (st !== 'conflict') { return false; } break;
+        case 'new': if (!S.newKeys[e.h]) { return false; } break;
         default: break;
         }
         if (!S.query) { return true; }
@@ -646,6 +649,8 @@
         if (S.pack) { filters.push(['sugg', isReviewer() ? c.mine : c.sugg]); }
         filters.push(['error', c.error], ['warn', c.warn]);
         if (c.conflict) { filters.push(['conflict', c.conflict]); }
+        var nNew = Object.keys(S.newKeys).length;
+        if (nNew) { filters.splice(1, 0, ['new', nNew]); }
         var ul = $('tw-filters');
         ul.textContent = '';
         filters.forEach(function (f) {
@@ -1088,6 +1093,112 @@
         closeDialog($('tw-dlg-settings'));
     });
 
+    // ---------- Workshop des langues : publication, avis de mise à jour du mod ----------
+
+    function setWorkshop(ws) {
+        S.workshop = ws || null;
+        S.newKeys = {};
+        var rel = S.workshop && S.workshop.release;
+        ((rel && rel.new_keys) || []).forEach(function (h) { if (S.byH[h]) { S.newKeys[h] = true; } });
+    }
+
+    function showFilter(f) { S.filter = f; S.page = 0; rebuild(); renderSide(); }
+
+    /** Avis au chargement d'un pack quand une mise à jour du mod touche sa version publiée ; false si rien à dire. */
+    function workshopBanner() {
+        var rel = S.workshop && S.workshop.release;
+        if (!rel || !rel.status || rel.status.key === 'ok') { return false; }
+        var st = rel.status;
+        var vars = { n: fmt.format(st.key === 'recheck' ? st.errors : st.new), v: rel.version, atak: rel.current_atak || S.version };
+        var acts = [];
+        if (st.key === 'outdated') { acts.push([tx('banner_show_new'), function () { showFilter(Object.keys(S.newKeys).length ? 'new' : 'todo'); }]); }
+        if (st.key === 'recheck') { acts.push([tx('banner_show_errors'), function () { showFilter('error'); }]); }
+        if (S.pack && S.pack.role === 'owner') { acts.push([tx('banner_publish'), openPublish]); }
+        showBanner(tx('banner_' + st.key, vars), st.key === 'recheck' ? 'bad' : 'warn', acts);
+        return true;
+    }
+
+    function pubState(p) {
+        var ws = S.workshop;
+        p.textContent = '';
+        p.hidden = !ws;
+        if (!ws) { return; }
+        var rel = ws.release;
+        if (!rel) { p.appendChild(el('span', '', tx('pub_none'))); return; }
+        var chip = el('span', 'atakw-status atakw-status--' + rel.status.key, tx('pub_status_' + rel.status.key, { n: fmt.format(rel.status.key === 'recheck' ? rel.status.errors : rel.status.new) }));
+        p.appendChild(chip);
+        p.appendChild(el('span', '', tx('pub_state', { v: rel.version, atak: rel.atak_version || '?', n: fmt.format(ws.downloads || 0) })));
+        if (ws.blocked) { p.appendChild(el('span', 'is-bad', tx('pub_blocked'))); } else if (!ws.listed) { p.appendChild(el('span', '', tx('pub_hidden'))); }
+    }
+
+    function openPublish() {
+        var d = $('tw-dlg-publish');
+        var owner = !!(S.pack && S.pack.role === 'owner');
+        d.querySelector('[data-role="local"]').hidden = !!S.pack;
+        d.querySelector('[data-role="editor"]').hidden = !S.pack || owner;
+        var f = d.querySelector('[data-role="owner"]');
+        f.hidden = !owner;
+        Array.prototype.forEach.call(d.querySelectorAll('[data-role="state"]'), pubState);
+        if (owner) {
+            var ws = S.workshop;
+            var rel = ws && ws.release;
+            f.description.value = ws ? ws.description : '';
+            f.workshop_id.value = ws && ws.workshop_id ? 'https://steamcommunity.com/sharedfiles/filedetails/?id=' + ws.workshop_id : '';
+            f.note.value = '';
+            f.querySelector('[data-role="publish"]').textContent = tx('pub_button', { v: rel ? rel.version + 1 : 1 });
+            f.querySelector('[data-role="publish"]').disabled = !ws;
+            var view = f.querySelector('[data-role="view"]');
+            view.hidden = !rel;
+            if (ws) { view.href = ws.url; }
+            f.querySelector('[data-role="unlist"]').hidden = !(rel && ws.listed);
+            f.querySelector('[data-role="relist"]').hidden = !(rel && !ws.listed);
+            f.querySelector('[data-role="save"]').hidden = !rel;
+            formError(f, ws ? '' : tx('api_unavailable'));
+        }
+        openDialog(d);
+    }
+
+    function saveListing(listed) {
+        var f = $('tw-dlg-publish').querySelector('[data-role="owner"]');
+        var body = { listed: listed, description: f.description.value, workshop_id: f.workshop_id.value.trim() };
+        formError(f, '');
+        call('POST', '/' + S.pack.id + '/listing', body).then(function (j) {
+            if (!j.ok) { formError(f, apiError(j)); return; }
+            var steam = /([0-9]{6,15})/.exec(body.workshop_id);
+            S.workshop.listed = listed;
+            S.workshop.description = body.description.trim();
+            S.workshop.workshop_id = body.workshop_id ? (steam ? steam[1] : '') : '';
+            setSync(tx('pub_saved'), 'ok');
+            openPublish();
+        }, function () { formError(f, tx('api_network')); });
+    }
+
+    (function () {
+        var d = $('tw-dlg-publish');
+        var f = d.querySelector('[data-role="owner"]');
+        d.querySelector('[data-role="to-share"]').addEventListener('click', function () { closeDialog(d); openShare(); });
+        f.querySelector('[data-role="save"]').addEventListener('click', function () { saveListing(S.workshop.listed); });
+        f.querySelector('[data-role="unlist"]').addEventListener('click', function () { saveListing(false); });
+        f.querySelector('[data-role="relist"]').addEventListener('click', function () { saveListing(true); });
+        f.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            var b = f.querySelector('[data-role="publish"]');
+            formError(f, '');
+            b.disabled = true;
+            call('POST', '/' + S.pack.id + '/publish', { description: f.description.value, workshop_id: f.workshop_id.value.trim(), note: f.note.value }).then(function (j) {
+                b.disabled = false;
+                if (!j.ok) {
+                    formError(f, j.error === 'too_few' ? tx('pub_too_few', { min: j.min, n: fmt.format(j.translated || 0) }) : apiError(j));
+                    return;
+                }
+                setWorkshop(j.workshop);
+                closeDialog(d);
+                renderSide();
+                showBanner(tx('pub_done', { v: j.version }), 'ok', [[tx('pub_view'), function () { window.open(j.url, '_blank', 'noopener'); }]]);
+            }, function () { b.disabled = false; formError(f, tx('api_network')); });
+        });
+    })();
+
     function openShare() {
         var d = $('tw-dlg-share');
         var local = d.querySelector('[data-role="local"]');
@@ -1381,13 +1492,14 @@
             }
             S.tr = {};
             applyChanges(j);
+            setWorkshop(j.workshop);
             var saved = myPacks().filter(function (x) { return x.id === S.pack.id; })[0] || {};
             if (S.pack.role === 'editor') { S.pack.editToken = S.pack.token; }
             else if (saved.editToken) { S.pack.editToken = saved.editToken; }
             rememberPack({ id: S.pack.id, token: S.pack.token, editToken: S.pack.editToken, role: S.pack.role, name: S.meta.name, code: S.meta.code, at: Date.now() });
             showWorkspace();
             setSync(tx('synced', { when: ago(Date.now() / 1000) }), 'ok');
-            if (!silent && !S.pseudo) { showBanner(tx('pseudo_hint'), '', [[tx('pseudo_set'), openSettings]]); }
+            if (!silent && !workshopBanner() && !S.pseudo) { showBanner(tx('pseudo_hint'), '', [[tx('pseudo_set'), openSettings]]); }
             pollTimer = setTimeout(poll, POLL_MS);
         }, function () { setSync(tx('api_network'), 'bad'); });
     }
@@ -1414,6 +1526,7 @@
         pa.checked = S.previewAll;
         pa.addEventListener('change', function () { S.previewAll = pa.checked; prefs.previewAll = pa.checked; storageSet(PREFS_KEY, JSON.stringify(prefs)); renderList(); });
         $('tw-share').addEventListener('click', openShare);
+        $('tw-publish').addEventListener('click', openPublish);
         $('tw-settings').addEventListener('click', openSettings);
         $('tw-download').addEventListener('click', function () { $('publier').scrollIntoView({ behavior: 'smooth' }); });
         $('atakt-zip').addEventListener('click', buildAll);
