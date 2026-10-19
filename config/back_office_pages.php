@@ -258,6 +258,7 @@ return [
             ['label' => 'Mode roleplay', 'href' => 'back-office/atak/roleplay'],
         ]],
         ['path' => 'back-office/atak/operateurs', 'group' => 'ATAK', 'kicker' => 'ATAK · SESSIONS', 'title' => 'Sessions & connexions', 'subtitle' => 'Qui est connecté en ce moment, et l’historique des connexions.'],
+        ['path' => 'back-office/atak/parc-atak', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Parc ATAK des membres', 'subtitle' => 'Les ATAK des membres : chiffres de jeu, compromissions, messages imposés et blocage dans la communauté.', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/fiche-operateur', 'group' => 'ATAK', 'kicker' => 'ATAK · FICHE OPÉRATEUR', 'title' => 'Fiche opérateur', 'subtitle' => 'Tout sur un opérateur : identité, appareil, certificat et liaison.'],
         ['path' => 'back-office/atak/realisme', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Parc de terminaux', 'subtitle' => 'Les appareils reliés à la plateforme et le membre qui utilise chacun.', 'css' => ['back-office-atak-devices.css'], 'quick' => [
             ['label' => 'Certificats', 'href' => 'back-office/atak/certificats'],
