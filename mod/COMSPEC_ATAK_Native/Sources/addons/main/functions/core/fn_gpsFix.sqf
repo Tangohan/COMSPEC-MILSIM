@@ -3,8 +3,9 @@
     et attente des satellites. S'ajoute à l'erreur du brouillage et des dégâts (fn_ewEffects, qui l'appelle).
       - ciel : toit au-dessus de la tête et murs autour (bâtiment), sous-sol, arbres proches (forêt), bâtiments hauts et
         relief qui masquent l'horizon (rue étroite, vallée encaissée), carrosserie d'un véhicule ;
-      - satellites visibles : 12 à découvert ; sous 4, plus de fix : la position affichée reste la dernière connue et
-        son cercle d'incertitude grandit ;
+      - satellites visibles : 12 à découvert ; sous 4, plus de fix : la dernière position connue sert 30 s (moins de 25 m
+        parcourus), puis position par le réseau (30 à 150 m selon le signal) ; sans réseau, aucune position fiable
+        (incertitude de 500 m) ;
       - attente des satellites : téléphone allumé, rallumé ou batterie changée, le GPS cherche de 3 s (éteint moins de
         2 min) à environ 40 s (premier démarrage de la mission) ; en attendant, position approximative par le réseau
         (environ 150 m, sans réseau aucune) ;
@@ -98,21 +99,36 @@ private _res = call {
         // Pas de fix : dernière position connue (cercle qui grandit) ; pas de fix récent : position par le réseau.
         private _why2 = [["Pas assez de satellites"] + _why, ["Recherche des satellites"]] select _acq;
         private _r = [];
-        if (_last isNotEqualTo [] && {!_acq || {diag_tickTime - (_last select 2) < 120}}) then {
+        // Dernière position connue : seulement juste après la perte du fix (30 s) et tant que je n'ai pas bougé de plus
+        // de 25 m. Avant, elle restait sans limite : entré dans un bâtiment après un fix dehors, le téléphone me plaçait
+        // encore là-bas après 100 m de marche (retour de TTRD, 19/10, carte : « position de tout à l'heure »).
+        // Recherche des satellites (rallumage) : 120 s, le joueur n'a en général pas bougé.
+        private _lastOk = _last isNotEqualTo [] && {
+            private _age = diag_tickTime - (_last select 2);
+            [_age < 30 && {((_last select 0) distance2D _pos) < 25}, _age < 120] select _acq
+        };
+        if (_lastOk) then {
             _last params ["_lp", "_le", "_lt"];
             _r = [round ((_le + (diag_tickTime - _lt) * 1.5) min 500), ["NOFIX", "ACQ"] select _acq, _sats, _why2, _lp vectorDiff _pos];
         } else {
-            if ((([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0) then {
-                private _nw = missionNamespace getVariable ["COMSPEC_ATAK_GpsNetOff", []];
-                if (_nw isEqualTo []) then { private _ang = random 360; _nw = [90 * sin _ang, 90 * cos _ang, 0]; missionNamespace setVariable ["COMSPEC_ATAK_GpsNetOff", _nw]; };
-                _r = [150, ["NET", "ACQ"] select _acq, _sats, _why2 + ["Position approximative par le réseau"], _nw];
+            missionNamespace setVariable ["COMSPEC_ATAK_GpsLast", nil];
+            // Position par le réseau (antennes et Wi-Fi, comme un smartphone à l'intérieur) : autour de ma vraie position,
+            // 150 m d'incertitude avec une barre de signal, 30 m avec quatre ; le décalage garde sa direction (pas de saut).
+            private _bars = ([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0];
+            if (_bars > 0) then {
+                private _rad = 150 - 40 * (((_bars min 4) max 1) - 1);
+                private _ang = missionNamespace getVariable ["COMSPEC_ATAK_GpsNetAng", -1];
+                if (_ang < 0) then { _ang = random 360; missionNamespace setVariable ["COMSPEC_ATAK_GpsNetAng", _ang]; };
+                private _d = 0.6 * _rad;
+                _r = [_rad, ["NET", "ACQ"] select _acq, _sats, _why2 + ["Position approximative par le réseau"], [_d * sin _ang, _d * cos _ang, 0]];
             } else {
-                _r = [0, "NOFIX", _sats, _why2 + ["Aucune position"], [0, 0, 0]];
+                // Ni satellites ni réseau : aucune position fiable, incertitude maximale (500 m) affichée.
+                _r = [500, "NOFIX", _sats, _why2 + ["Aucune position"], [0, 0, 0]];
             };
         };
         _r
     };
-    missionNamespace setVariable ["COMSPEC_ATAK_GpsNetOff", nil];
+    missionNamespace setVariable ["COMSPEC_ATAK_GpsNetAng", nil];
     // Erreur horizontale typique d'un téléphone : 3 à 5 m à découvert, puis selon le nombre de satellites et les reflets.
     private _base = switch (true) do { case (_sats >= 9): { 3 + random 2 }; case (_sats >= 7): { 6 + random 3 }; case (_sats >= 5): { 12 + random 6 }; default { 25 + random 10 }; };
     private _err = (_base + _multi * (0.7 + random 0.6)) * _k;
