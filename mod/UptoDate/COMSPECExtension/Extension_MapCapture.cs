@@ -204,8 +204,8 @@ public static partial class Extension
                     var ok = false;
                     try
                     {
-                        // Le moteur écrit l'image en fin d'image (PNG de 15 à 25 Mo) : jusqu'à 20 s pour la voir, stable.
-                        var until = DateTime.UtcNow.AddSeconds(20);
+                        // Le moteur écrit l'image en fin d'image (PNG de 15 à 25 Mo) : jusqu'à 30 s pour la voir, stable.
+                        var until = DateTime.UtcNow.AddSeconds(30);
                         string? src = null;
                         while (DateTime.UtcNow < until)
                         {

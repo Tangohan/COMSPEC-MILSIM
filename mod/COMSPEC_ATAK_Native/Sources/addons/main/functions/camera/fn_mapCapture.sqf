@@ -18,6 +18,10 @@
     que si son image existe vraiment : avant, le moteur cessait d'écrire une fois le dossier Screenshots plein
     (maxScreenShotFolderSizeMB) sans rien dire, et le relevé comptait 3945 cases prises pour 175 images (TTRD, 19/10).
     Cinq images de suite sans fichier, ou moins de 3 Go libres : la capture s'arrête et dit pourquoi.
+    Vues basses autour des localités : sous la hauteur choisie (200 m dans le formulaire), seules les cases proches d'une
+    capitale (900 m), d'une ville (600 m), d'un village (300 m) ou d'un aéroport (1000 m) sont prises : les toits,
+    véhicules et murets y gagnent ; ailleurs, la photo du sol d'Arma (1 à 2 m par pixel) n'a rien de plus à montrer
+    que la vue de 300 m (Altis entière à 120 m : 25 000 images, 20 h ; autour des localités : environ 1500).
     Sans la DLL : images laissées dans Screenshots, comptées prises sans vérification (comme avant).
     Vue satellite : objectif étroit (téléobjectif) monté plus haut que la hauteur demandée (6 fois, 4000 m au plus :
     plus haut, le sol perd ses détails dans le voile et les textures lointaines), pour une image presque orthogonale.
@@ -37,7 +41,8 @@
       ["start", [mode ("sat" | "3d" | "plan"), hauteurs (m, ex. [300, 800]), centre ([] : carte entière),
                  rayon (m, avec un centre), recouvrement (0 à 0.5, défaut 0.15), attente par tuile (s, défaut 2),
                  ciel dégagé à midi (défaut vrai), cacher unités et véhicules (défaut vrai),
-                 reprendre le relevé (défaut vrai), passer la mer (défaut vrai), garder les PNG d'origine (défaut faux)]]
+                 reprendre le relevé (défaut vrai), passer la mer (défaut vrai), garder les PNG d'origine (défaut faux),
+                 hauteurs prises autour des localités seulement : en dessous de (m, défaut 0 : partout)]]
       ["stop"]   arrête la capture en cours
       ["count", mêmes arguments que start] → [nombre de tuiles à prendre, pas en m] (estimation, sans rien capturer)
       ["progress"] → texte du suivi du relevé de la carte en cours (avec l'état de la capture en cours)
@@ -92,8 +97,9 @@ private _progPut = {
     _all set [_key, _rec];
     profileNamespace setVariable ["COMSPEC_ATAK_MapCapProg", (keys _all) apply { [_x, _all get _x] }];
 };
-private _p2 = { if (_this < 10) then { "0" + str _this } else { str _this } };
+// Date du relevé. Fonctions passées au fil de la capture : elles ne s'appuient sur aucune variable de ce fichier.
 private _stamp = {
+    private _p2 = { if (_this < 10) then { "0" + str _this } else { str _this } };
     systemTime params ["_yy", "_mo", "_dd", "_hh", "_mi"];
     format ["%1-%2-%3 %4:%5", _yy, _mo call _p2, _dd call _p2, _hh call _p2, _mi call _p2]
 };
@@ -121,13 +127,31 @@ private _landCount = {
     params ["_step"];
     ((([[], 0, _step] call _grid) + [_step]) call _landIn) max 1
 };
+// Cases proches d'une localité (vues basses) : HashMap colonne × 10000 + ligne de la grille -> vrai. Rayon selon le type,
+// ou la taille de la localité si elle est plus grande.
+private _townCells = {
+    params ["_x0", "_y0", "_nx", "_ny", "_step"];
+    private _cells = createHashMap;
+    private _radii = createHashMapFromArray [["NameCityCapital", 900], ["NameCity", 600], ["NameVillage", 300], ["Airport", 1000]];
+    {
+        private _p = locationPosition _x;
+        private _r = (_radii getOrDefault [type _x, 300]) max (((size _x) select 0) max ((size _x) select 1));
+        for "_iy" from (floor (((_p select 1) - _r - _y0) / _step) max 0) to (ceil (((_p select 1) + _r - _y0) / _step) min (_ny - 1)) do {
+            for "_ix" from (floor (((_p select 0) - _r - _x0) / _step) max 0) to (ceil (((_p select 0) + _r - _x0) / _step) min (_nx - 1)) do {
+                if (([_x0 + (_ix + 0.5) * _step, _y0 + (_iy + 0.5) * _step] distance2D _p) <= _r + _step / 2) then { _cells set [_ix * 10000 + _iy, true]; };
+            };
+        };
+    } forEach (nearestLocations [[worldSize / 2, worldSize / 2], keys _radii, worldSize]);
+    _cells
+};
 // DLL de rangement des tuiles (COMSPEC Link 2.0.91) : présente si MapCap.Dir répond.
 private _dllDir = {
     private _r = ["MapCap.Dir"] call comspec_atak_native_fnc_extensionCall;
     if ((_r select [0, 3]) isEqualTo "OK|") then { _r select [3] } else { "" }
 };
 private _shotDir = {
-    private _d = call _dllDir;
+    private _r = ["MapCap.Dir"] call comspec_atak_native_fnc_extensionCall;
+    private _d = if ((_r select [0, 3]) isEqualTo "OK|") then { _r select [3] } else { "" };
     if (_d isNotEqualTo "") exitWith { _d + "\" + worldName };
     format ["Documents\Arma 3\Screenshots (profil par défaut) ou Documents\Arma 3 - Other Profiles\%1\Screenshots", profileName]
 };
@@ -165,7 +189,7 @@ private _sync = {
         { if ((count _y) > (count _ids)) then { _best = _x; _ids = _y; }; } forEach _y;
         private _rec = _all getOrDefault [_k, []];
         private _land = if (_rec isNotEqualTo [] && {(_rec select 0) isEqualTo _best} && {(_rec select 2) > 0}) then { _rec select 2 } else { [_best] call _landCount };
-        _all set [_k, [_best, _ids arrayIntersect _ids, _land, [_rec select 3, call _stamp] select (_rec isEqualTo [])]];
+        _all set [_k, [_best, _ids arrayIntersect _ids, _land, if (_rec isEqualTo []) then { call _stamp } else { _rec select 3 }]];
     } forEach _found;
     profileNamespace setVariable ["COMSPEC_ATAK_MapCapProg", (keys _all) apply { [_x, _all get _x] }];
     saveProfileNamespace;
@@ -192,7 +216,7 @@ private _progText = {
 };
 // Estimation avant la capture (pas par défaut, ou celui du relevé déjà commencé).
 private _estimate = {
-    params ["_mode", "_heights", "_center", "_radius", "_overlap", "_resume", "_skipSea"];
+    params ["_mode", "_heights", "_center", "_radius", "_overlap", "_resume", "_skipSea", ["_townsBelow", 0]];
     private _total = 0; private _steps = [];
     private _all = call _progAll;
     {
@@ -201,7 +225,11 @@ private _estimate = {
         private _rec = _all getOrDefault [[_mode, _x] call _progKey, []];
         if (_rec isNotEqualTo []) then { _step = _rec select 0; };
         ([_center, _radius, _step] call _grid) params ["_x0", "_y0", "_nx", "_ny"];
-        private _n = if (_skipSea) then { [_x0, _y0, _nx, _ny, _step] call _landIn } else { _nx * _ny };
+        private _n = switch (true) do {
+            case (_x < _townsBelow): { count ([_x0, _y0, _nx, _ny, _step] call _townCells) };
+            case (_skipSea): { [_x0, _y0, _nx, _ny, _step] call _landIn };
+            default { _nx * _ny };
+        };
         if (_resume && {_rec isNotEqualTo []}) then {
             // Cases déjà prises dans la zone.
             private _gx0 = round (_x0 / _step); private _gy0 = round (_y0 / _step);
@@ -220,9 +248,9 @@ switch (_act) do {
     };
     case "count": {
         _arg params [["_mode", "sat"], ["_heights", [400]], ["_center", []], ["_radius", 1000], ["_overlap", 0.15], "", "", "",
-            ["_resume", true], ["_skipSea", true]];
+            ["_resume", true], ["_skipSea", true], "", ["_townsBelow", 0]];
         if (_center isEqualType objNull) then { _center = getPosATL _center; };
-        [_mode, _heights, _center, _radius, _overlap, _resume, _skipSea] call _estimate
+        [_mode, _heights, _center, _radius, _overlap, _resume, _skipSea, _townsBelow] call _estimate
     };
     case "progress": { call _progText };
     case "sync": { call _sync };
@@ -246,16 +274,17 @@ switch (_act) do {
             ["CHECKBOX", ["Cacher unités et véhicules", "Rien de mobile sur les images (vue locale, remis après)"], true],
             ["CHECKBOX", ["Reprendre le relevé", "Saute les cases dont l'image existe déjà (suivi ci-dessous)"], true],
             ["CHECKBOX", ["Passer la mer", "Ne photographie pas les cases entièrement en mer"], true],
+            ["CHECKBOX", ["Vues basses autour des localités seulement", "Hauteurs sous 200 m (ex. 120 m) : seulement près des villes, villages, de la capitale et des aéroports. Ailleurs, la vue de 300 m montre déjà tout ce que le sol d'Arma a de détails."], true],
             ["CHECKBOX", ["Garder les PNG d'origine", "En plus des JPEG corrigés : environ 20 Mo par image, dans un sous-dossier png"], false],
             ["CHECKBOX", ["Repartir de zéro", "Oublie le suivi de cette carte avant de commencer (les images déjà prises restent sur le disque)"], false],
             ["EDIT:MULTI", ["Suivi du relevé", format ["Part de la carte déjà photographiée, par rendu et hauteur, d'après les images présentes dans %1", call _shotDir]], call _progText]
         ], {
             params ["_values", "_pos"];
-            _values params ["_mode", "_hs", "_zone", "_radius", "_wait", "_clear", "_hide", "_resume", "_skipSea", "_keepPng", "_reset"];
+            _values params ["_mode", "_hs", "_zone", "_radius", "_wait", "_clear", "_hide", "_resume", "_skipSea", "_towns", "_keepPng", "_reset"];
             private _heights = ((_hs splitString ", ;") apply { parseNumber _x }) select { _x >= 20 && {_x <= 10000} };
             if (_heights isEqualTo []) then { _heights = [300, 800, 1200, 3500]; };
             if (_reset) then { ["reset"] call comspec_atak_native_fnc_mapCapture; };
-            ["start", [_mode, _heights, [[], _pos] select (_zone isEqualTo 0), _radius, 0.15, _wait, _clear, _hide, _resume && !_reset, _skipSea, _keepPng]] call comspec_atak_native_fnc_mapCapture;
+            ["start", [_mode, _heights, [[], _pos] select (_zone isEqualTo 0), _radius, 0.15, _wait, _clear, _hide, _resume && !_reset, _skipSea, _keepPng, [0, 200] select _towns]] call comspec_atak_native_fnc_mapCapture;
         }, {}, ASLToAGL _arg] call zen_dialog_fnc_create;
         true
     };
@@ -265,7 +294,7 @@ switch (_act) do {
             false
         };
         _arg params [["_mode", "sat"], ["_heights", [400]], ["_center", []], ["_radius", 1000], ["_overlap", 0.15], ["_wait", 2], ["_clear", true], ["_hide", true],
-            ["_resume", true], ["_skipSea", true], ["_keepPng", false]];
+            ["_resume", true], ["_skipSea", true], ["_keepPng", false], ["_townsBelow", 0]];
         _mode = toLower _mode;
         if !(_mode in ["sat", "3d", "plan"]) then { _mode = "sat"; };
         if (_center isEqualType objNull) then { _center = getPosATL _center; };
@@ -276,7 +305,7 @@ switch (_act) do {
         private _dll = call _dllDir;
         if (_dll isNotEqualTo "") then { call _sync; };
         // Rien à l'écran pendant la capture : estimation annoncée avant, interface Zeus et téléphone fermés.
-        ([_mode, _heights, _center, _radius, _overlap, _resume, _skipSea] call _estimate) params ["_total"];
+        ([_mode, _heights, _center, _radius, _overlap, _resume, _skipSea, _townsBelow] call _estimate) params ["_total"];
         if (_total isEqualTo 0) exitWith {
             ["SUCCESS", "Rien à relever : toutes les cases de cette zone sont déjà prises (ou en mer). Décocher « Reprendre le relevé » pour les refaire.", 8, 40] call comspec_atak_native_fnc_notify;
             false
@@ -293,9 +322,9 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_MapCapRunning", true];
         missionNamespace setVariable ["COMSPEC_ATAK_MapCapStop", false];
         [_mode, _heights, _center, _radius, (_overlap max 0) min 0.5, _wait max 0.3, _clear, _hide, _defaultFoot, _grid,
-            _resume, _skipSea, _isSea, _progAll, _progKey, _progPut, _landCount, _shotDir, _stamp, _dll isNotEqualTo "", _keepPng, _total] spawn {
+            _resume, _skipSea, _isSea, _progAll, _progKey, _progPut, _landCount, _shotDir, _stamp, _dll isNotEqualTo "", _keepPng, _total, _landIn, _townsBelow, _townCells] spawn {
             params ["_mode", "_heights", "_center", "_radius", "_overlap", "_wait", "_clear", "_hide", "_defaultFoot", "_grid",
-                "_resume", "_skipSea", "_isSea", "_progAll", "_progKey", "_progPut", "_landCount", "_shotDir", "_stamp", "_dll", "_keepPng", "_estimated"];
+                "_resume", "_skipSea", "_isSea", "_progAll", "_progKey", "_progPut", "_landCount", "_shotDir", "_stamp", "_dll", "_keepPng", "_estimated", "_landIn", "_townsBelow", "_townCells"];
             disableSerialization;
             private _layer = "COMSPEC_ATAK_MapCapUI" call BIS_fnc_rscLayer;
             private _status = {
@@ -454,7 +483,9 @@ switch (_act) do {
                         worldName, _mode, round _h, worldSize, _alt, _fov, _calib select 0, _calib select 1, _calib select 2, _calib select 3,
                         _step, _fw, _fh, _x0, _y0, _nx, _ny, _gn, _step * 1.2];
                 };
-                _layers pushBack [_h, _alt, _fov, _planScale, _step, _x0, _y0, _nx, _ny, round (_x0 / _step), round (_y0 / _step), _key, _done, _land, _calib, createHashMap, round _fw];
+                // Vue basse : cases autour des localités seulement ([] : toutes).
+                private _towns = [[], [_x0, _y0, _nx, _ny, _step] call _townCells] select (_h < _townsBelow);
+                _layers pushBack [_h, _alt, _fov, _planScale, _step, _x0, _y0, _nx, _ny, round (_x0 / _step), round (_y0 / _step), _key, _done, _land, _calib, createHashMap, round _fw, _towns];
             } forEach _heights;
             // 2. Parcours par zones : chaque case d'une hauteur rattachée à la case de la hauteur au-dessus qui contient son
             // centre. Lignes en aller-retour à chaque niveau : la caméra ne saute jamais d'un bord à l'autre.
@@ -475,6 +506,7 @@ switch (_act) do {
             private _shots = 0;
             private _okCount = 0;
             private _failRun = 0;
+            private _failTotal = 0;
             private _pending = 0;
             private _free = -1;
             private _lastSave = diag_tickTime;
@@ -504,6 +536,7 @@ switch (_act) do {
                 } forEach (_ok splitString ",");
                 {
                     _failRun = _failRun + 1;
+                    _failTotal = _failTotal + 1;
                     ["WARNING", "MAPCAP", format ["Image absente : case %1", _x]] call comspec_atak_native_fnc_log;
                 } forEach (_ko splitString ",");
                 _pending = parseNumber _pend;
@@ -513,11 +546,12 @@ switch (_act) do {
                 params ["_k", "_ix", "_iy"];
                 if (missionNamespace getVariable ["COMSPEC_ATAK_MapCapStop", false]) exitWith {};
                 private _L = _layers select _k;
-                _L params ["_h", "_alt", "_fov", "", "_step", "_x0", "_y0", "", "", "_gx0", "_gy0", "", "_done", "", "_calib", "", "_fw"];
+                _L params ["_h", "_alt", "_fov", "", "_step", "_x0", "_y0", "", "", "_gx0", "_gy0", "", "_done", "", "_calib", "", "_fw", "_towns"];
                 private _px = _x0 + (_ix + 0.5) * _step;
                 private _py = _y0 + (_iy + 0.5) * _step;
                 private _id = (_gx0 + _ix) * 10000 + _gy0 + _iy;
-                if (!(_resume && {_id in _done}) && {!_skipSea || {!([_px, _py, _step * 1.2] call _isSea)}}) then {
+                if (!(_resume && {_id in _done}) && {_towns isEqualTo [] || {(_ix * 10000 + _iy) in _towns}}
+                    && {!_skipSea || {!([_px, _py, _step * 1.2] call _isSea)}}) then {
                     [_L, _px, _py] call _place;
                     // Chargement des objets et du terrain détaillé avant la photo (plus long au premier passage).
                     if (!isNull _cam) then { preloadCamera (getPosATL _cam); };
@@ -535,6 +569,14 @@ switch (_act) do {
                          format ["Rangées %1 · en traitement %2 · sans image %3 · disque libre %4", _okCount, _pending, _failRun,
                             [format ["%1 Go", _free], "?"] select (_free < 0)]] select _dll]] call _status;
                     uiSleep _wait;
+                    // Image précédente écrite et rangée avant la suivante (15 s au plus) : le moteur met une à deux
+                    // secondes à écrire un PNG de 20 Mo et abandonne la photo suivante s'il n'a pas fini (une sur deux
+                    // manquait à une photo par seconde).
+                    if (_dll) then {
+                        private _tw = diag_tickTime + 15;
+                        call _poll;
+                        while { _pending > 0 && {diag_tickTime < _tw} } do { uiSleep 0.2; call _poll; };
+                    };
                     // État effacé le temps de la photo (deux images rendues sans lui).
                     _layer cutText ["", "PLAIN", 0];
                     private _fr = diag_frameNo;
@@ -587,7 +629,18 @@ switch (_act) do {
                     } forEach _ys;
                 };
             };
-            if (_layers isNotEqualTo []) then {
+            // Deux passes : la seconde reprend seulement les cases dont l'image a manqué (cases prises sautées).
+            private _missed = 0;
+            for "_pass" from 1 to 2 do {
+                if (_layers isEqualTo [] || {missionNamespace getVariable ["COMSPEC_ATAK_MapCapStop", false]}) then { break };
+                if (_pass isEqualTo 2) then {
+                    // Attente des dernières images de la première passe, puis seulement s'il en manque.
+                    private _tw = diag_tickTime + 30;
+                    call _poll;
+                    while { _pending > 0 && {diag_tickTime < _tw} } do { uiSleep 0.5; call _poll; };
+                    if (_missed isEqualTo _failTotal) then { break };
+                    _missed = _failTotal;
+                };
                 (_layers select 0) params ["", "", "", "", "", "", "", "_nx", "_ny"];
                 for "_iy" from 0 to (_ny - 1) do {
                     if (missionNamespace getVariable ["COMSPEC_ATAK_MapCapStop", false]) then { break };
