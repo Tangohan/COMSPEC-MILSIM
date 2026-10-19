@@ -7,7 +7,7 @@ comspec_sse_biiBridgeReady = false;
 [
     "comspec_sse_biiBridgeEnabled",
     "CHECKBOX",
-    ["Passerelle BII Identifi", "Importe les profils / preuves / scans BII-10 dans le modèle SSE COMSPEC et accepte le BII-10 comme matériel SEEK."],
+    ["Compatibilité BII Identifi", "Récupère les profils, preuves et scans du mod BII Identifi dans le SSE, et accepte le BII-10 comme terminal biométrique (comme le SEEK)."],
     ["COMSPEC SSE", "Compatibilité"],
     true,
     1,
@@ -18,7 +18,7 @@ comspec_sse_biiBridgeReady = false;
 [
     "comspec_sse_biiExportToBii",
     "CHECKBOX",
-    ["Exporter SSE → variables BII", "Après génération SSE, recopie identité / notes vers les variables BII_Identifi_* (modules dual-use)."],
+    ["Renvoyer les identités SSE vers BII", "Après la création d'une identité SSE, la recopie aussi (identité, notes) dans les variables BII_Identifi_*, pour les modules qui utilisent les deux mods."],
     ["COMSPEC SSE", "Compatibilité"],
     true,
     1,

@@ -4,7 +4,7 @@ private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap];
 private _messages = +(_data getOrDefault ["messages",[]]);
 private _seen = uiNamespace getVariable ["COMSPEC_ATAK_ChatSeen",createHashMap];
 private _after = uiNamespace getVariable ["COMSPEC_ATAK_ChatAfter","0"];
-private _mapId = str (missionNamespace getVariable ["comspec_atak_native_map_id",1]);
+private _mapId = str (missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]]);
 private _raw = ["GetChatMessages",[_mapId,"40",_after]] call comspec_atak_native_fnc_extensionCall;
 if ((_raw find "OK|") isNotEqualTo 0) exitWith { false };
 

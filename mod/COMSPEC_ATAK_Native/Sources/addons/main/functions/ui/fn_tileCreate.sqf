@@ -28,7 +28,14 @@ private _labelTxt = (_label) call comspec_atak_native_fnc_tr;
 private _maxW = _w * 0.94;
 private _fh = _font;
 private _two = false;
-if (_label isNotEqualTo "") then {
+// Mesure gardée par libellé, largeur, taille et police : le lanceur redessine ses 60 tuiles à chaque recherche,
+// pastille ou épinglage, et chaque mesure créait puis supprimait un contrôle.
+private _mc = uiNamespace getVariable "COMSPEC_ATAK_TileFit";
+if (isNil "_mc") then { _mc = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_TileFit", _mc]; };
+private _mk2 = str [_labelTxt, round (_maxW * 10000), round (_font * 10000), missionNamespace getVariable ["COMSPEC_ATAK_FontSet", []]];
+private _fit = _mc getOrDefault [_mk2, []];
+if ((count _fit) isEqualTo 2) then { _fit params ["_fh0", "_two0"]; _fh = _fh0; _two = _two0; };
+if (_label isNotEqualTo "" && {(count _fit) isNotEqualTo 2}) then {
     // Mesure sur un contrôle temporaire (même police que le libellé), supprimé aussitôt.
     private _m = if (isNull _group) then { _display ctrlCreate ["COMSPEC_RscTextCenter", -1] } else { _display ctrlCreate ["COMSPEC_RscTextCenter", -1, _group] };
     [_m, "COMSPEC_RscTextCenter"] call comspec_atak_native_fnc_fontApply;
@@ -46,6 +53,8 @@ if (_label isNotEqualTo "") then {
         };
     };
     ctrlDelete _m;
+    if ((count _mc) > 300) then { _mc = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_TileFit", _mc]; };
+    _mc set [_mk2, [_fh, _two]];
 };
 private _labelH = [[_font * 1.35, _fh * 2.15] select _two, 0] select (_label isEqualTo "");
 private _iconH = ((_h - _labelH) * 0.58) min (_w * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]) * 0.7);

@@ -20,7 +20,8 @@ private _fnc_isTrue = {
 private _acked = ([profileNamespace getVariable ["comspec_overwatch_cgu_ack", false]] call _fnc_isTrue)
     || ([profileNamespace getVariable ["comspec_overwatch_beta_note_ack", false]] call _fnc_isTrue);
 
-private _fr = (toLower language) isEqualTo "french";
+// Langue du mod (réglage « Langue / Language » de l'ATAK natif) ; sans l'ATAK natif, langue du jeu.
+private _fr = (missionNamespace getVariable ["COMSPEC_ATAK_Lang", ["en", "fr"] select ((toLower language) isEqualTo "french")]) isEqualTo "fr";
 private _html = if (_fr) then {
     if (_acked) then {
         format [

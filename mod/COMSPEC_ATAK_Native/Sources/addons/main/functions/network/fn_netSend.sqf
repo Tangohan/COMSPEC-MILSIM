@@ -4,6 +4,9 @@
     - un seul canal radio : les envois passent l'un après l'autre, le débit se partage (une photo retarde le message
       suivant) ; latence avec gigue (fn_linkQuality "jitter") ;
     - perte de paquets : renvoi automatique (3 essais) ; après 3 échecs l'envoi retourne en file au lieu d'arriver ;
+      pertes en rafales (modèle de Gilbert-Elliott : un lien passe par de mauvaises périodes où plusieurs envois de
+      suite se perdent, puis redevient bon) ; condition « Pertes de paquets » coupée (fn_netCond "loss") : rien ne se perd ;
+    - surcharge : chaque envoi compte dans le trafic publié du téléphone (fn_netLoad "track") ;
     - réception seule (hors de portée d'émission, fn_linkQuality "tx" faux) : comme sans signal ;
     - aucun signal : mis en file, parti dès que le réseau revient (vidé par la boucle de XEH_postInitClient) ;
       un envoi avec une clé remplace celui de même clé déjà en file (marqueur modifié plusieurs fois : seul le dernier part) ;
@@ -26,6 +29,7 @@ private _txAt = missionNamespace getVariable ["COMSPEC_ATAK_NetTxAt", []];
 _txAt pushBack diag_tickTime;
 if ((count _txAt) > 50) then { _txAt deleteAt 0; };
 missionNamespace setVariable ["COMSPEC_ATAK_NetTxAt", _txAt];
+if (_try isEqualTo 1) then { ["track", _kb] call comspec_atak_native_fnc_netLoad; };
 if !(_q get "sim") exitWith { ["IMMÉDIAT", "simulation coupée"] call _trace; _args call _code; "SENT" };
 if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])}) exitWith {
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
@@ -53,7 +57,7 @@ if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])}) exitWith {
 // plus une gigue aléatoire.
 private _air = _kb * 8 / ((_q get "kbps") max 1);
 private _wait = 0;
-if ((missionNamespace getVariable ["comspec_atak_native_net_realism", 1]) isNotEqualTo 0) then {
+if ((["realism"] call comspec_atak_native_fnc_netCond) isNotEqualTo 0) then {
     private _busy = missionNamespace getVariable ["COMSPEC_ATAK_NetBusyUntil", 0];
     _wait = (_busy - time) max 0;
     missionNamespace setVariable ["COMSPEC_ATAK_NetBusyUntil", time + _wait + _air];
@@ -65,8 +69,26 @@ if (_delay > 3) then { ["INFO", format ["%1 : envoi en cours, environ %2 s (%3 k
     params ["_code", "_args", "_label", "_kb", "_try", "_key"];
     private _q = [] call comspec_atak_native_fnc_linkQuality;
     private _t = missionNamespace getVariable ["COMSPEC_ATAK_NetLog", []];
-    private _real = (missionNamespace getVariable ["comspec_atak_native_net_realism", 1]) isNotEqualTo 0;
-    private _lost = (random 100) < (_q get "loss") && {_real || {_try < 3}};
+    private _real = (["realism"] call comspec_atak_native_fnc_netCond) isNotEqualTo 0;
+    private _lost = false;
+    if (["loss"] call comspec_atak_native_fnc_netCond) then {
+        if (_real) then {
+            // Gilbert-Elliott : état « mauvais » où un envoi sur deux se perd, rafales d'environ 3 envois ; en bon état,
+            // pertes résiduelles faibles. La perte moyenne suit celle du lien.
+            private _l = ((_q get "loss") / 100) min 0.95;
+            private _pib = (_l / 0.5) min 0.9;
+            private _bad = missionNamespace getVariable ["COMSPEC_ATAK_NetGE", false];
+            _bad = switch (true) do {
+                case (_l <= 0): { false };
+                case (_bad): { (random 1) >= 0.35 };
+                default { (random 1) < ((_pib * 0.35 / ((1 - _pib) max 0.05)) min 1) };
+            };
+            missionNamespace setVariable ["COMSPEC_ATAK_NetGE", _bad];
+            _lost = _l > 0 && {(random 1) < ([_l * 0.1, 0.5 max _l] select _bad)};
+        } else {
+            _lost = (random 100) < (_q get "loss") && {_try < 3};
+        };
+    };
     _t pushBack [[dayTime, "HH:MM:SS"] call BIS_fnc_timeToString, _label, _kb, ["LIVRÉ", "PERDU"] select _lost, ["", ["renvoi", "remis en file"] select (_try >= 3)] select _lost];
     if ((count _t) > 100) then { _t deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_ATAK_NetLog", _t];

@@ -324,6 +324,13 @@ return function (Router $router) {
     $router->post('/api/traduire-atak/packs/{id}/settings', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'settings']);
     $router->post('/api/traduire-atak/packs/{id}/rotate', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'rotate']);
     $router->post('/api/traduire-atak/packs/{id}/delete', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'delete']);
+    $router->post('/api/traduire-atak/packs/{id}/publish', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'publish']);
+    $router->post('/api/traduire-atak/packs/{id}/listing', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'listing']);
+    // Workshop des langues : catalogue public des packs publiés, fiche, téléchargement direct, retrait par l'administration.
+    $router->get('/traduire-atak/workshop', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'catalog']);
+    $router->get('/traduire-atak/workshop/{id}', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'item']);
+    $router->get('/traduire-atak/workshop/{id}/telecharger', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'download']);
+    $router->post('/traduire-atak/workshop/{id}/moderer', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'moderate']);
     $router->get('/renseignement-sse', fn () => \App\Core\Response::redirect(url('sse')));
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
@@ -496,6 +503,7 @@ return function (Router $router) {
     $router->get('/search', [PortalSearchController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/documentation', [DocumentationController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/documentation/marqueurs', [DocumentationController::class, 'markersLibrary'], [AuthMiddleware::class]);
+    $router->get('/documentation/profils', [DocumentationController::class, 'profiles'], [AuthMiddleware::class]);
     $router->get('/documentation/references', [DocumentationController::class, 'references'], [AuthMiddleware::class]);
     $router->get('/documentation/fichier/{key}', [DocumentationController::class, 'file'], [AuthMiddleware::class]);
     $router->get('/api/operations/doctrine/documents', [DoctrineApiController::class, 'list'], [AuthMiddleware::class]);
@@ -1846,6 +1854,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/controle-serveur', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/regles', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/controle-serveur/reseau-adopter', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'adoptNetwork'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/fonctions', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/relais', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRelays'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/relays-network', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2495,6 +2504,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // Serveur Arma : messages imposés et blocages décidés dans /admin/parc-atak.
     $router->post('/api/atak/admin-control/pending', [AtakApiController::class, 'adminControlPending']);
     $router->post('/api/atak/admin-control/ack', [AtakApiController::class, 'adminControlAck']);
+    // ATAK du joueur : ses propres messages et avis de l'administration (COMSPEC Link AdminControl.Poll / AdminControl.Ack).
+    $router->post('/api/atak/admin-control/mine', [AtakApiController::class, 'adminControlMine']);
+    $router->post('/api/atak/admin-control/mine/ack', [AtakApiController::class, 'adminControlMineAck']);
     $router->post('/api/atak/item-icons/missing', [AtakApiController::class, 'itemIconsMissing']);
     $router->post('/api/atak/item-icons', [AtakApiController::class, 'itemIconUpload']);
     $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);
@@ -2530,6 +2542,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->post('/api/atak/experience', [AtakApiController::class, 'experience']);
+    $router->get('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
+    $router->post('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
     $router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
     $router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);

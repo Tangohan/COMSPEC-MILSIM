@@ -784,3 +784,5 @@
   .atx-badge { font-size: 0.56rem; padding: 0.15rem 0.45rem; }
   .atx-section { padding-block: 3rem; }
 }
+.atx-lang > div p { margin: 0.3rem 0 0; color: var(--atx-muted); font-size: 0.88rem; font-weight: 500; line-height: 1.55; }
+.atx-lang > div .atx-link { margin-top: 0.6rem; }

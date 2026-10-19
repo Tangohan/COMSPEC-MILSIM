@@ -115,7 +115,7 @@ switch (_act) do {
         } forEach _out;
         // Répéteurs : sans liaison propre (satellite, fibre), un relais doit voir un relais raccordé, de proche en proche.
         // Débit du répéteur = le plus faible de la chaîne, réduit par la qualité de chaque bond.
-        private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
+        private _real = (["realism"] call comspec_atak_native_fnc_netCond);
         private _feed = _out apply { [-1, _x select 5] select ((_x select 6) && {_x select 11}) };
         private _hop = _feed apply { [-1, 0] select (_x >= 0) };
         private _queue = [];
@@ -158,7 +158,10 @@ switch (_act) do {
             _jf pushBack 1;
         } forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);
         // Saturation : au-delà de ses places, le débit du relais se partage entre les téléphones à portée.
-        private _users = allPlayers select { alive _x && {str side group _x isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} };
+        // Aucun relais en service : pas de comptage des téléphones (hasDevice sur chaque joueur, toutes les 2 s).
+        private _users = if ((_out findIf { _x select 6 }) < 0) then { [] } else {
+            allPlayers select { alive _x && {str side group _x isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} }
+        };
         {
             private _sat = 0;
             if (_x select 6) then {
@@ -193,12 +196,16 @@ switch (_act) do {
         // relais), type, portée effective, téléphones à portée, places, batterie %, fréquence MHz, santé, latence ms du
         // relais, marge dB de la voie montante, émission possible, [[cause, dB]...], MCS] ou []. Hystérésis : celui déjà accroché est gardé 20 % au-delà de sa portée. Relais préféré (fiche du
         // relais sur la carte) : choisi tant qu'il est reçu.
+        // Résultat gardé 1,5 s téléphone ouvert, 6 s fermé : qualité de liaison, Messages, Réseau et voie de données le
+        // demandent dans la même seconde, et chaque calcul lance des dizaines de lancers de rayons (relief, feuillage, bâtiments).
+        private _bc = uiNamespace getVariable ["COMSPEC_ATAK_RelayBest", []];
+        if ((count _bc) isEqualTo 2 && {diag_tickTime - (_bc select 0) < ([6, 1.5] select !isNull ([] call comspec_atak_native_fnc_display))}) exitWith { _bc select 1 };
         private _last = uiNamespace getVariable ["COMSPEC_ATAK_RelayLast", objNull];
         private _pin = uiNamespace getVariable ["COMSPEC_ATAK_RelayPin", objNull];
         private _eye = eyePos player;
         private _best = [];
         private _pinned = false;
-        private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
+        private _real = (["realism"] call comspec_atak_native_fnc_netCond);
         // Bilan radio (fn_radioLink) : la portée du relais est celle de la voie montante (le téléphone émet bien moins
         // fort que le relais) ; la voie descendante a 4 dB de plus, d'où une frange « réception seule » au-delà de la
         // portée, où l'on reçoit encore sans pouvoir émettre. Terminal de bord ou passerelle (antenne de toit) : +3 dB.
@@ -266,6 +273,7 @@ switch (_act) do {
         };
         uiNamespace setVariable ["COMSPEC_ATAK_RelayLast", _now0];
         uiNamespace setVariable ["COMSPEC_ATAK_RelayLastName", _best param [1, ""]];
+        uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", [diag_tickTime, _best]];
         _best
     };
     case "power": {
@@ -286,7 +294,7 @@ switch (_act) do {
         ((["list"] call comspec_atak_native_fnc_relayNet) select { (_x select 0) isEqualTo _o }) param [0, []]
     };
     case "only": {
-        (missionNamespace getVariable ["comspec_atak_native_relay_only", false])
+        (["relayOnly"] call comspec_atak_native_fnc_netCond)
             || {missionNamespace getVariable ["COMSPEC_ATAK_RelayOnly", false]}
             || {missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]}
     };
@@ -299,6 +307,7 @@ switch (_act) do {
         private _was = uiNamespace getVariable ["COMSPEC_ATAK_RelayPin", objNull];
         if (!isNull _o && {_o isEqualTo _was}) then { _o = objNull; };
         uiNamespace setVariable ["COMSPEC_ATAK_RelayPin", _o];
+        uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", []];
         uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", nil];
         private _msg = if (isNull _o) then { "Relais : choix automatique du meilleur relais" } else { format ["Relais préféré : %1 (gardé tant qu'il est reçu)", _o getVariable ["COMSPEC_AtakRelayName", "Relais"]] };
         if !([_msg, 3] call comspec_atak_native_fnc_toast) then { ["INFO", _msg, 3, 20] call comspec_atak_native_fnc_notify; };
@@ -331,7 +340,7 @@ switch (_act) do {
         // [antenne ASL, portée, Mbit/s, cible ASL, mode ("fast" relief seul | "full" + feuillage et bâtiments),
         //  objets ignorés, gain dB en plus] -> [qualité 0-1, Mbit/s, perte %, marge dB, [[cause, dB]...], MCS 0-7 (-1 : aucun)].
         _arg params ["_ant", "_range", "_mb", "_p", ["_mode", "fast"], ["_ign", []], ["_extra", 0]];
-        if ((missionNamespace getVariable ["comspec_atak_native_net_realism", 1]) isEqualTo 0) exitWith {
+        if ((["realism"] call comspec_atak_native_fnc_netCond) isEqualTo 0) exitWith {
             // Modèle simplifié (ancien) : portée x 0,35 derrière le relief, qualité 1 - (d / portée)².
             private _d = _ant distance _p;
             private _eff = _range;

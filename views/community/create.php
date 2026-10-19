@@ -324,6 +324,8 @@ $guideUrl = url('communities/create/guide');
                             <li><strong>Complet</strong> convient à la plupart des unités MilSim : forum, formations, recrutement, effectifs, opérations et carte.</li>
                             <li><strong>Bureau des effectifs</strong> et <strong>Carte ATAK</strong> masquent des modules pour garder une interface simple.</li>
                             <li>Le type se change plus tard : les données déjà saisies ne sont jamais supprimées, seulement masquées.</li>
+                            <li>Les membres arrivent au niveau d’accès <strong>Membre</strong> : ils utilisent les outils sans rien administrer. Vous restez <strong>Gestionnaire</strong>.</li>
+                            <li><a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Comparer les profils en détail</a></li>
                         </ul>
                     </aside>
 
@@ -337,9 +339,17 @@ $guideUrl = url('communities/create/guide');
                                 <span class="cc-choice__eyebrow">Profil</span>
                                 <span class="cc-choice__title"><?= htmlspecialchars($typeInfo['label'], ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="cc-choice__text"><?= htmlspecialchars($typeInfo['description'], ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php if (!empty($typeInfo['consequences'])): ?>
-                                <span class="cc-choice__note"><?= htmlspecialchars((string) $typeInfo['consequences'], ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php endif; ?>
+                                <?php
+                                $ccTypeModules = \App\Services\Community\TenantTypeConfig::allowedModulesByType()[$typeSlug] ?? [];
+                                $ccModuleLabels = [];
+                                foreach (\App\Services\Community\TenantTypeConfig::moduleCatalog() as $ccMod => $ccMeta) {
+                                    if (in_array($ccMod, $ccTypeModules, true)) {
+                                        $ccModuleLabels[] = $ccMeta['label'];
+                                    }
+                                }
+                                ?>
+                                <span class="cc-choice__note">Inclus : <?= htmlspecialchars(implode(' · ', $ccModuleLabels), ENT_QUOTES, 'UTF-8') ?>.</span>
+                                <span class="cc-choice__note"><?= htmlspecialchars(\App\Services\Community\TenantTypeConfig::profileGuide($typeSlug)['ideal_for'][0] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
                             <?php endforeach; ?>
                         </div>

@@ -82,11 +82,14 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
     // Même indicatif qu'une piste Athena : même personne, une seule piste, même si la position Athena est en retard
     // de plus de 30 m (en véhicule, liaison lente). Sans ça le BFT montrait « Star 4-1 » deux fois.
     if (_callsign isNotEqualTo "" && {("athena:" + toLower _callsign) in _athena}) then { _near = "athena:" + toLower _callsign; };
-    private _best = [30, -1] select (_near isNotEqualTo "");
-    {
-        private _d = (_y getOrDefault ["position",[0,0,0]]) distance2D _obj;
-        if (_d < _best) then { _best = _d; _near = _x; };
-    } forEach _athena;
+    // Indicatif déjà trouvé : inutile de parcourir toutes les pistes Athena pour chaque unité amie.
+    if (_near isEqualTo "") then {
+        private _best = 30;
+        {
+            private _d = (_y getOrDefault ["position",[0,0,0]]) distance2D _obj;
+            if (_d < _best) then { _best = _d; _near = _x; };
+        } forEach _athena;
+    };
     if (_near isNotEqualTo "") then {
         if (_callsign isEqualTo "") then { _callsign = (_athena get _near) getOrDefault ["callsign",""]; };
         _athena deleteAt _near;
@@ -121,11 +124,14 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
 
 // Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection
 // et l'inspecteur (local = true) et on n'ajoute que les marqueurs Athena absents du jeu.
-// Relu au plus toutes les 2 s, ou tout de suite si un marqueur apparaît ou disparaît : refaire une table par
+// Relu quand un marqueur change, ou tout de suite si un marqueur apparaît ou disparaît : refaire une table par
 // marqueur quatre fois par seconde coûtait de plus en plus cher à mesure que les dessins s'accumulaient.
-private _mkSig = [count allMapMarkers, count (_data getOrDefault ["remoteMarkers",createHashMap])];
+// Compteur des changements de marqueurs (EH MarkerCreated / Deleted / Updated) : rien de changé, rien à refaire
+// (marqueurs Athena reçus, qui bougent sans événement : relus toutes les 2 s ; sans eux, sécurité toutes les 10 s).
+private _mkRemote = count (_data getOrDefault ["remoteMarkers",createHashMap]);
+private _mkSig = [count allMapMarkers, _mkRemote, missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]];
 private _mkPrev = uiNamespace getVariable ["COMSPEC_ATAK_MkRefresh", [[], -1e9]];
-if ((_mkPrev select 0) isEqualTo _mkSig && {diag_tickTime - (_mkPrev select 1) < 2}) exitWith {};
+if ((_mkPrev select 0) isEqualTo _mkSig && {diag_tickTime - (_mkPrev select 1) < ([10, 2] select (_mkRemote > 0))}) exitWith {};
 uiNamespace setVariable ["COMSPEC_ATAK_MkRefresh", [_mkSig, diag_tickTime]];
 private _markers = createHashMap;
 {

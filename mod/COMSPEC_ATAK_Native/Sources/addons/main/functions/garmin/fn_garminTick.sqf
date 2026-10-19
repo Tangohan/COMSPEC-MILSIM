@@ -9,7 +9,9 @@
     écriture du profil (toutes les 5 min, Garmin.Report de COMSPEC Link 2.0.87 ; fiche du membre).
     Montre Garmin (objet COMSPEC_ATAK_GarminWatch, emplacement montre) obligatoire si le réglage serveur
     comspec_atak_native_garmin_watch est coché (par défaut) : sans elle, aucune mesure.
-    Params : [mode : "tick" | "save" (fin de mission : activité en cours close et profil écrit)]
+    Params : [mode : "tick" | "save" (fin de mission : activité en cours close et profil écrit)
+              | "push" (app Resynch : profil écrit et renvoyé au site tout de suite, activité en cours gardée ;
+                retour [heure, état] de l'envoi)]
     Mémoire : missionNamespace COMSPEC_ATAK_Gm (HashMap) : bb, real (dernière seconde réelle vue), hr, stress, goal,
               days (jour -> HashMap), acts (liste), cur (activité en cours), last (position), rest (secondes de repos)
 */
@@ -103,6 +105,7 @@ private _save = {
 };
 
 if (_mode isEqualTo "save") exitWith { [] call _finish; [] call _save; true };
+if (_mode isEqualTo "push") exitWith { [] call _save; _gm getOrDefault ["web", []] };
 
 // Montre Garmin obligatoire (réglage serveur « ATAK · Garmin ») : sans la « Montre Garmin » dans l'emplacement montre,
 // rien n'est mesuré ni envoyé au site. L'activité en cours est close et le dernier point oublié quand on l'enlève (pas de

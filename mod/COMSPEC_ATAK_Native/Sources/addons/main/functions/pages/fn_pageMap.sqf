@@ -389,8 +389,8 @@ if (_interactive) then {
                     ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""]
                 ]],
                 ["places", "Repères et lieux", [
-                    ["Coordonnées des repères", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
-                    ["Noms des repères", "C", "comspec_atak_native_map_show_marker_text", true, ""],
+                    ["Coordonnées des marqueurs", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
+                    ["Noms des marqueurs", "C", "comspec_atak_native_map_show_marker_text", true, ""],
                     ["Villes", "C", "comspec_atak_native_map_show_cities", true, ""],
                     ["Villages", "C", "comspec_atak_native_map_show_villages", true, ""],
                     ["Lieux-dits", "C", "comspec_atak_native_map_show_locals", true, ""],
@@ -559,13 +559,13 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
     private _txX = _tx0 + _tW + _in / _ratio * 0.6;
     private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _tH + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
     _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15' color='#e6efe9'>%1</t>  <t size='0.72' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='0.82' color='#8a9a93'>%4 · %5 · %6°</t>%7",
-        ([markerText _sel, "(sans titre)"] select ((markerText _sel) isEqualTo "")) regexReplace ["[<>&]", ""], _kindCol, _kindTxt,
+        ([([markerText _sel] call comspec_atak_native_fnc_markerAutoName), "(sans titre)"] select ((markerText _sel) isEqualTo "")) regexReplace ["[<>&]", ""], _kindCol, _kindTxt,
         [_mp, 8] call comspec_atak_native_fnc_gridRef, [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000), round (player getDir _mp),
         ["", format ["<br/><t size='0.85' color='#c9d3cd'>%1</t>", (_note regexReplace ["[<>&]", ""]) select [0, 90]]] select (_note isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
     _txt ctrlSetFontHeight _fs;
     // Actions : une rangée en bas de la fiche.
     private _acts = [
-        ["Y ALLER", "COMSPEC_RscButtonPrimary", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [markerText _m, "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }],
+        ["Y ALLER", "COMSPEC_RscButtonPrimary", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [([markerText _m] call comspec_atak_native_fnc_markerAutoName), "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }],
         ["CENTRER", "COMSPEC_RscButton", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["mapFollow", false]; [getMarkerPos (_s getOrDefault ["selectedMarker", ""])] call comspec_atak_native_fnc_mapCenter; }]
     ];
     if (_kind isEqualTo 1) then {

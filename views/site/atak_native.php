@@ -237,7 +237,15 @@ $icon = static fn (string $paths): string => '<svg class="atx-ico" viewBox="0 0 
             <ul class="atx-langs__list">
                 <li class="atx-lang atx-reveal"><span class="atx-lang__code">EN</span><span><?= $t('lang_en') ?></span><svg class="atx-ico atx-lang__ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></li>
                 <li class="atx-lang atx-reveal" style="--d:1"><span class="atx-lang__code">FR</span><span><?= $t('lang_fr') ?></span><svg class="atx-ico atx-lang__ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></li>
-                <li class="atx-lang atx-lang--yours atx-reveal" style="--d:2">
+                <li class="atx-lang atx-reveal" style="--d:2">
+                    <span class="atx-lang__code">+</span>
+                    <div>
+                        <strong><?= $t('lang_community') ?></strong>
+                        <p><?= $t('lang_community_b') ?></p>
+                        <a href="<?= $e(url('traduire-atak/workshop')) ?>" class="atx-link"><?= $t('cta_workshop') ?> →</a>
+                    </div>
+                </li>
+                <li class="atx-lang atx-lang--yours atx-reveal" style="--d:3">
                     <span class="atx-lang__code">+</span>
                     <div>
                         <strong><?= $t('lang_yours') ?></strong>
@@ -281,6 +289,7 @@ $icon = static fn (string $paths): string => '<svg class="atx-ico" viewBox="0 0 
                 <p class="atx-credit"><?= $t('credits_team') ?></p>
                 <p class="atx-credit"><?= $t('credits_dev') ?></p>
                 <p class="atx-credit-small"><?= $t('credits_bce') ?></p>
+                <p class="atx-credit-small"><?= $t('credits_translations') ?></p>
             </div>
         </div>
     </section>

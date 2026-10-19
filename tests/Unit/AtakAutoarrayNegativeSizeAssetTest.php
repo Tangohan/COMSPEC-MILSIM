@@ -53,9 +53,6 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         $tx = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_canTransmit.sqf'
         );
-        $sent = (string) file_get_contents(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_recordPacketSent.sqf'
-        );
         $overlay = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updateDeviceOverlay.sqf'
         );
@@ -109,7 +106,8 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_StatusBadgesUpdating', $badges);
         self::assertStringContainsString('COMSPEC_StatusBadgesUpdating", false', $badges);
         self::assertStringNotContainsString('fnc_refreshLinkState', $tx);
-        self::assertStringContainsString('count _windowSent) > 100', $sent);
+        // fn_recordPacketSent (sans appelant) a été retiré au nettoyage 2.2.0 : plus de fenêtre d'envois à borner.
+        self::assertFileDoesNotExist($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_recordPacketSent.sqf');
         self::assertStringNotContainsString('ctrlParent _fx isNotEqualTo', $overlay);
 
         self::assertStringContainsString('taille de tableau négative', strtolower($bug));

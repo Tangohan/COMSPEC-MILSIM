@@ -70,10 +70,9 @@ require base_path('views/partials/alert_banners.php');
                 <?= htmlspecialchars($unitLabel, ENT_QUOTES, 'UTF-8') ?><span class="text-emerald-600">.</span>
             </h1>
             <p class="mb-8 max-w-2xl text-sm leading-relaxed text-slate-600 md:text-base">
-                Espace dédié au registre RH, au forum public et à la carte tactique. Formations et recrutement ne font pas partie de ce profil.
-                <?php if (function_exists('can') && (can('admin.organization') || can('admin.access'))): ?>
-                <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline underline-offset-2">Vérifier ou réappliquer le profil</a>
-                <?php endif; ?>
+                <?= htmlspecialchars(\App\Services\Community\TenantTypeConfig::profileGuide('effectifs')['tagline'], ENT_QUOTES, 'UTF-8') ?>
+                Recrutement, formations et opérations ne font pas partie de ce profil.
+                <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline underline-offset-2">Comprendre les profils</a>
             </p>
             <div class="flex flex-col flex-wrap gap-3 sm:flex-row">
                 <?php if ($can_open_effectifs_workspace): ?>
@@ -99,6 +98,10 @@ require base_path('views/partials/alert_banners.php');
         </div>
     </section>
 
+    <div class="mx-auto max-w-6xl px-6 pt-8 md:px-10" id="dash-tour-getting-started">
+        <?php $tpgType = 'effectifs'; require base_path('views/partials/tenant_profile_getting_started.php'); ?>
+    </div>
+
     <?php
     $dashTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
         (string) ($dashboard_tenant_type ?? 'effectifs')
@@ -121,11 +124,19 @@ require base_path('views/partials/alert_banners.php');
 
     <section class="border-b border-slate-200 bg-white">
         <div class="mx-auto grid max-w-6xl gap-4 px-6 py-10 md:grid-cols-3 md:px-10">
+            <?php if ($can_open_effectifs_workspace): ?>
             <a href="<?= htmlspecialchars(url($ewPath), ENT_QUOTES, 'UTF-8') ?>" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 no-underline transition hover:border-emerald-300 hover:bg-emerald-50/40">
                 <p class="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">RH</p>
                 <h2 class="mt-2 text-lg font-black text-slate-900">Tableur des effectifs</h2>
                 <p class="mt-2 text-sm text-slate-600">Profils, statuts, affectations et élévations.</p>
             </a>
+            <?php else: ?>
+            <a href="<?= htmlspecialchars(url('personnel/me'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 no-underline transition hover:border-emerald-300 hover:bg-emerald-50/40">
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">Mon dossier</p>
+                <h2 class="mt-2 text-lg font-black text-slate-900">Ma fiche</h2>
+                <p class="mt-2 text-sm text-slate-600">Grade, unité, fonction, qualifications et temps de jeu.</p>
+            </a>
+            <?php endif; ?>
             <a href="<?= htmlspecialchars(url('orbat'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 no-underline transition hover:border-emerald-300 hover:bg-emerald-50/40">
                 <p class="text-[10px] font-black uppercase tracking-[0.3em] text-sky-700">Organisation</p>
                 <h2 class="mt-2 text-lg font-black text-slate-900">ORBAT</h2>
@@ -176,8 +187,13 @@ require base_path('views/partials/alert_banners.php');
             <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
             <a href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Forum</a>
             <?php endif; ?>
+            <?php if (function_exists('can') && (can('admin.organization') || can('admin.access'))): ?>
             <a href="<?= htmlspecialchars(url('back-office/community'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Paramètres</a>
+            <?php endif; ?>
+            <?php if ($can_view_atak_operators): ?>
             <a href="<?= htmlspecialchars(url('back-office/atak/operateurs'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Effectifs en liaison</a>
+            <?php endif; ?>
+            <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Guide du profil</a>
             <a href="<?= htmlspecialchars(url('personnel/me'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 no-underline hover:bg-slate-50">Ma fiche</a>
         </div>
     </section>

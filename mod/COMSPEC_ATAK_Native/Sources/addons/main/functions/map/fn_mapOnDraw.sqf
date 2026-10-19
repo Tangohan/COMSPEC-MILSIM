@@ -502,10 +502,11 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         private _id = _m getOrDefault ["id", _x];
         private _title = _m getOrDefault ["text", ""];
         if (_title isEqualTo "") then { continue };
+        _title = [_title] call comspec_atak_native_fnc_markerAutoName;
         if ((_m getOrDefault ["local", false]) && {(_id find "_USER_DEFINED") < 0}) then { continue };
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) in ["POLYLINE", "RECTANGLE", "ELLIPSE"]) then { continue };
         // Contacts ENI : déjà dans un cartouche rouge (fn_mapLabels).
-        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) isEqualTo "ENI "}}) then { continue };
+        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) in ["ENI ", "ENY "]}}) then { continue };
         private _pos = _m getOrDefault ["position", []];
         if ((count _pos) < 2) then { continue };
         private _sp = _map ctrlMapWorldToScreen _pos;

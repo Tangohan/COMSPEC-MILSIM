@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.88";
+    private const string ExtensionVersion = "2.0.89";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -399,8 +399,10 @@ public static partial class Extension
         return sb.ToString().Trim();
     }
 
+    // Pointeurs UTF-8 passés à la main : Arma lit les données du callback en UTF-8. Avec LPStr (page de code
+    // ANSI), « é » partait en octet 0xE9 et arrivait en « � » côté jeu puis dans les rapports (2.0.89).
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    private delegate int ExtensionCallback([MarshalAs(UnmanagedType.LPStr)] string name, [MarshalAs(UnmanagedType.LPStr)] string function, [MarshalAs(UnmanagedType.LPStr)] string data);
+    private delegate int ExtensionCallback(nint name, nint function, nint data);
 
     private static ExtensionCallback? _callback;
 
@@ -422,11 +424,34 @@ public static partial class Extension
             // Arma callback peut être appelé hors thread jeu ; démarrer une tâche dédiée.
             _ = Task.Run(() =>
             {
-                try { cb("comspec", function, data); }
+                nint pName = 0, pFunction = 0, pData = 0;
+                try
+                {
+                    pName = Marshal.StringToCoTaskMemUTF8("comspec");
+                    pFunction = Marshal.StringToCoTaskMemUTF8(function);
+                    pData = Marshal.StringToCoTaskMemUTF8(Utf8Clip(data, 20000));
+                    cb(pName, pFunction, pData);
+                }
                 catch { /* ne jamais faire planter le process hôte */ }
+                finally
+                {
+                    if (pName != 0) Marshal.FreeCoTaskMem(pName);
+                    if (pFunction != 0) Marshal.FreeCoTaskMem(pFunction);
+                    if (pData != 0) Marshal.FreeCoTaskMem(pData);
+                }
             });
         }
         catch { }
+    }
+
+    /// <summary>Coupe à <paramref name="maxBytes"/> octets UTF-8 sans casser un caractère (limite du tampon callback).</summary>
+    private static string Utf8Clip(string s, int maxBytes)
+    {
+        if (Encoding.UTF8.GetByteCount(s) <= maxBytes) return s;
+        var bytes = Encoding.UTF8.GetBytes(s);
+        var end = maxBytes;
+        while (end > 0 && (bytes[end] & 0xC0) == 0x80) end--; // ne pas couper au milieu d'un caractère
+        return Encoding.UTF8.GetString(bytes, 0, end);
     }
 
     private static void ApplyModVersion(string? raw)
@@ -3107,14 +3132,15 @@ public static partial class Extension
         }
 
         // Montre de l'app Garmin (Garmin.Report, 2.0.87) : état, 14 derniers jours et 40 dernières activités du joueur, toutes les 5 min.
-        if (function is "Squad.Sync" or "ScreenTime.Report" or "Garmin.Report")
+        // NetConditions.Report (2.0.89) : conditions réseau appliquées au serveur depuis le menu Échap de l'ATAK natif.
+        if (function is "Squad.Sync" or "ScreenTime.Report" or "Garmin.Report" or "NetConditions.Report")
         {
             if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
             if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
             if (!HasPortalAuth()) return "ERR|unauthorized";
             var json = NormalizeArmaJson(args[0]);
             if (json.Length > 60000) return "ERR|payload_too_large";
-            var path = function switch { "Squad.Sync" => "/api/atak/squads/sync", "Garmin.Report" => "/api/atak/garmin", _ => "/api/atak/screen-time" };
+            var path = function switch { "Squad.Sync" => "/api/atak/squads/sync", "Garmin.Report" => "/api/atak/garmin", "NetConditions.Report" => "/api/atak/net-conditions", _ => "/api/atak/screen-time" };
             EnqueueOrSend(_baseUrl + path, EnrichAtakPayload(json));
             return "OK|queued";
         }
@@ -3178,6 +3204,65 @@ public static partial class Extension
                 return "OK|" + Field("state") + "\t" + Field("server_label") + "\t" + Field("community") + "\t" + Field("message");
             }
             catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        // Messages et avis de l'administration pour ce joueur (site : /admin/parc-atak) : compromission, annulation,
+        // données ATAK réinitialisées, certificat, numéro, message imposé. L'ATAK natif les affiche en alerte.
+        // args: [json {player_uid, terminal_uid}] → OK|une ligne par message : id\tgenre\tniveau\ttitre\ttexte\tà valider (1/0)
+        if (function == "AdminControl.Poll")
+        {
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            if (!TryBuildRequestUri(_baseUrl, "/api/atak/admin-control/mine", out var acUri, out var acErr) || acUri is null)
+                return "ERR|" + acErr;
+            try
+            {
+                using var acCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                var resp = SendJsonPost(acUri.AbsoluteUri, EnrichAtakPayload(args.Length > 0 ? args[0] : "{}"), acCts.Token);
+                var body = ReadContentUtf8(resp, acCts.Token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(body);
+                if (!doc.RootElement.TryGetProperty("messages", out var list) || list.ValueKind != JsonValueKind.Array) return "OK|";
+                string Clean(JsonElement m, string k)
+                {
+                    if (!m.TryGetProperty(k, out var v)) return "";
+                    var t = v.ValueKind switch
+                    {
+                        JsonValueKind.String => v.GetString() ?? "",
+                        JsonValueKind.Number => v.GetRawText(),
+                        JsonValueKind.True => "1",
+                        JsonValueKind.False => "0",
+                        _ => "",
+                    };
+                    return t.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+                }
+                var sb = new StringBuilder();
+                foreach (var m in list.EnumerateArray().Take(20))
+                {
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(Clean(m, "id")).Append('\t').Append(Clean(m, "kind")).Append('\t').Append(Clean(m, "level")).Append('\t')
+                      .Append(Clean(m, "title")).Append('\t').Append(Clean(m, "body")).Append('\t').Append(Clean(m, "require_ack"));
+                }
+                return "OK|" + sb;
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        // L'ATAK signale ses messages affichés (delivered) ou validés par le joueur (acked).
+        // args: [ids séparés par des virgules, "delivered" | "acked", player_uid] → OK|queued
+        if (function == "AdminControl.Ack")
+        {
+            if (args.Length < 2 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            var ids = args[0].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(x => long.TryParse(x, NumberStyles.Integer, CultureInfo.InvariantCulture, out _)).Take(50).ToArray();
+            if (ids.Length == 0) return "ERR|payload_empty";
+            var state = args[1] == "acked" ? "acked" : "delivered";
+            var uid = args.Length > 2 ? new string((args[2] ?? "").Where(char.IsDigit).ToArray()) : "";
+            var json = "{\"ids\":[" + string.Join(",", ids) + "],\"state\":\"" + state + "\"" + (uid.Length > 0 ? ",\"player_uid\":\"" + uid + "\"" : "") + "}";
+            EnqueueOrSend(_baseUrl + "/api/atak/admin-control/mine/ack", EnrichAtakPayload(json));
+            return "OK|queued";
         }
 
         if (function == "SetMapId")
@@ -3246,7 +3331,8 @@ public static partial class Extension
                 _baseUrl = baseUrl;
                 var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
-                if (steam.Length >= 10) _steamUid = steam;
+                // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
+                ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
                     ? _terminalUid
                     : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
@@ -3363,7 +3449,8 @@ public static partial class Extension
                 var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
                 _baseUrl = baseUrl;
-                if (steam.Length >= 10) _steamUid = steam;
+                // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
+                ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
                     ? _terminalUid
                     : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
@@ -6620,6 +6707,13 @@ public static partial class Extension
             {
                 if (doc.RootElement.TryGetProperty(key, out var el) && el.ValueKind == JsonValueKind.String)
                     AppendLine(sb, key, el.GetString() ?? "player");
+            }
+            // Conditions réseau de la communauté (Contrôle serveur > Réseau et simulation, 2.0.89) : toutes les clés net_*,
+            // lues par l'ATAK natif (fn_netCond) sans nouvelle version de la DLL quand une condition s'ajoute.
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (prop.Name.StartsWith("net_", StringComparison.Ordinal) && prop.Name.Length <= 40 && prop.Value.ValueKind == JsonValueKind.String)
+                    AppendLine(sb, prop.Name, prop.Value.GetString() ?? "player");
             }
             if (doc.RootElement.TryGetProperty("guide", out var guide) && guide.ValueKind == JsonValueKind.String)
             {
