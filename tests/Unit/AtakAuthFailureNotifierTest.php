@@ -80,6 +80,7 @@ final class AtakAuthFailureNotifierTest extends TestCase
         self::assertFalse(AtakAuthFailureNotifier::isAuthFailure('auto', 'Timeout Link', ''));
         // Signalement fait par le joueur lui-même : l'exploitation lui répond déjà.
         self::assertFalse(AtakAuthFailureNotifier::isAuthFailure('player', 'unauthorized', ''));
+        self::assertFalse(AtakAuthFailureNotifier::isAuthFailure('auto', 'ÉCHEC · MEDEVAC — unauthorized', '["ERROR","HTTP 503: {\"ok\":false}"]'));
     }
 
     public function testDiagnosisReadsSessionDatesAsUtc(): void

@@ -229,6 +229,16 @@ class CasNineLineRepository
             $line7 = trim(($payload['lz_marking'] ?? '') . ' ' . ($payload['lz_marking_color'] ?? ''));
         }
         $status = $kind === self::KIND_MEDEVAC ? 'REQUESTED' : 'SUBMITTED';
+        // Colonnes varchar(255)/(128) : une remarque longue faisait échouer l'INSERT (« Data too long »,
+        // mode SQL strict) et le mod recevait un 503 « poste indisponible ».
+        $clip = static fn (mixed $v, int $max): ?string => $v === null ? null : mb_substr((string) $v, 0, $max);
+        [$line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8] = array_map(
+            static fn (mixed $v): ?string => $clip($v, 255),
+            [$line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8]
+        );
+        $author = (string) $clip($author, 255);
+        $missionId = $missionId === null ? null : $clip($missionId, 128);
+        $assignedAircraft = $assignedAircraft === null ? null : $clip($assignedAircraft, 128);
 
         if ($this->hasMissionKindColumn()) {
             $stmt = $this->pdo()->prepare(
