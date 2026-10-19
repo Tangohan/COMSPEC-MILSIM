@@ -38,66 +38,46 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Tablette sur le JPC désactivée, en chantier (ATAK natif 2.3.5.AB - Denver)
+## Regroupement : bandeau de la carte, arsenal ACE réparé, briefing et CAS dans le téléphone, diapositives Athena, chargement plus fluide (ATAK natif 2.3.5.AB - Denver)
 
 ### Résumé joueur
-Type : patch
-FR : La tablette sur le JPC passe en chantier
-- La tablette relevée sur le porte-plaques est désactivée pour le moment : sa touche ne fait plus rien et les actions ACE « Ouvrir l'ATAK sur le JPC » ne s'affichent plus.
-- Dans Réglages > Accès et touches, la ligne « Tablette sur le JPC » est grisée avec l'étiquette W.I.P. Elle reviendra dans une prochaine version.
-- Le téléphone porté reste la miniature dans un coin de l'écran, comme avant.
-EN : The tablet on the JPC is now work in progress
-- The tablet raised on the plate carrier is disabled for now: its key does nothing and the ACE actions "Open ATAK on the JPC" no longer show.
-- In Settings > Access and keys, the "Tablet on the JPC" row is greyed out with a W.I.P tag. It will come back in a future version.
-- The carried phone stays the thumbnail in a corner of the screen, as before.
+Type : nouveauté
+FR : Carte plus lisible, arsenal réparé, plus rien par-dessus le jeu
+- Carte : le curseur et ta position tiennent dans un bandeau compact en bas à gauche (grille, distance, azimut), avec ton cap et ton indicatif à la couleur de ton équipe de feu ; les noms des repères ne passent plus dessous.
+- Arsenal ACE : on peut de nouveau taper un nom (Tenues Athena et Mes équipements), et Mes tenues gagne la sélection multiple, la suppression en une fois et Annuler.
+- Le briefing s'ouvre dans l'app BRIEFING et une demande CAS arrive en notification du téléphone, au lieu des anciennes fenêtres plein écran ; une diapositive Athena noire s'affiche, ou le téléphone dit pourquoi.
+- Aussi : arrivée en mission plus fluide, plus de carrés noirs dans Vidéo Live sur un drone du camp, capture de la carte Zeus avec reprise, et la tablette sur le JPC passe en chantier (W.I.P).
+EN : Clearer map, arsenal fixed, nothing over the game any more
+- Map: the cursor and your position fit in one compact bar at the bottom left (grid, distance, bearing), with your heading and your callsign in your fire team colour; marker names no longer slide under it.
+- ACE arsenal: you can type a name again (Athena outfits and My loadouts), and My outfits gets multiple selection, delete in one go and Undo.
+- The briefing opens in the BRIEFING app and a CAS request arrives as a phone notification, instead of the old full-screen windows; a black Athena slide now shows, or the phone says why.
+- Also: smoother mission start, no more black squares in Live video on a friendly drone, Zeus map capture that resumes, and the tablet on the JPC becomes work in progress (W.I.P).
 
 ### Détail technique
+- #982 (déjà sur main) : `fn_pageLivecam` ne pose le panoramique et RENOMMER que pour une caméra fixe ; flèches ◀ ▶ (absentes des polices) remplacées par `<` `>` en Barlow.
+- #983 : dictionnaire anglais préparé au `XEH_preStart` et repris depuis uiNamespace ; `COMSPEC_ATAK_PfhSpread` décale chacune des 48 boucles périodiques des postInit (5 s au plus) ; icônes gardées chargées créées par lots de 8 par image.
+- #985, tablette sur le JPC en W.I.P :
 - `fn_jpcScreen.sqf` : nouvelle action `["wip"]` (vrai tant que `_allowed` est faux) ; le code de la tablette est conservé, `_allowed = true` le rouvre.
 - `XEH_postInitClient.sqf` : la touche CBA « PhoneJpc » ne fait rien en W.I.P (la touche repasse au jeu). `fn_aceMenu.sqf` : action « Ouvrir l'ATAK sur le JPC » masquée.
 - `fn_keybinds.sqf` / `fn_pageSettings.sqf` : 6e champ « en chantier » ; ligne grisée, étiquette W.I.P, boutons touche et DÉFAUT inactifs, capture refusée. Traductions EN ajoutées.
 - Version 2.3.5, main.pbo reconstruit avec HEMTT, COMSPEC Link inchangé (2.0.90).
-## Carte : bandeau d'information compact et lisible (ATAK natif 2.3.5.AB - Denver)
-
-### Résumé joueur
-Type : nouveauté
-FR : Carte : un bandeau d'information plus clair
-- Le curseur et ta position tiennent dans un seul bandeau compact en bas à gauche : la grille en grand, la distance et l'azimut à côté, le MGRS et l'altitude en petit dessous.
-- La case de droite donne ton cap en grand, ton indicatif à la couleur de ton équipe de feu (la même que l'anneau autour de ton symbole) et le nom de l'équipe.
-- Les noms des repères, des lieux et les cartouches des unités ne passent plus sous le bandeau.
-- Les points cardinaux s'affichent dans la langue du téléphone (NW, SW, W en anglais) et « CURSEUR » devient « CURSOR ».
-EN : Map: a clearer information bar
-- The cursor and your position now sit in one compact bar at the bottom left: the grid in large type, distance and bearing next to it, MGRS and altitude in small type below.
-- The right-hand box shows your heading in large type, your callsign in your fire team colour (the same as the ring around your symbol) and the team name.
-- Marker names, place names and unit tags no longer slide under the bar.
-- Compass points follow the phone language (NW, SW, W in English) and the cursor label reads "CURSOR".
-
-### Détail technique
+- #986, diapositives du briefing : site `BriefingSlideGameImage` (raison `no_gd`, `source_missing`, `unreadable`, `write_failed`, copie JPEG faite à l'envoi, avertissement dans le back-office) ; `fn_pageBriefing` : nom de fichier local = id + hash de l'URL, contrôle du format (JPEG/PAA), cause affichée dans le téléphone, ligne `BRIEFING` dans le RPT et le .log de session.
+- #987, bandeau de la carte :
 - `fn_pageMap.sqf` : panneau curseur et carte « moi » fusionnés en un bandeau à deux cases (même hauteur, liseré vert à gauche, filet séparateur), largeur calée sur le texte ; repli sur 3 lignes si la case est trop étroite ; flèche de navigation des points de passage posée au-dessus du bandeau.
 - `fn_mapOverlayUpdate.sqf` : hiérarchie valeur principale (taille 1,2, grasse) / détails (0,85, gris) ; azimut sur 3 chiffres, distance en km au-delà de 1 000 m ; points cardinaux selon `COMSPEC_ATAK_Lang` ; case « moi » : cap, indicatif à la couleur de l'équipe de feu (`fn_ftInfo`) et grille en main.
 - `fn_mapHudRects.sqf` (nouveau) : rectangles du bandeau et du cap relatifs à la carte ; `fn_mapMarkerText`, `fn_mapPlaceText` (via `COMSPEC_ATAK_LblRects`) et `fn_mapLabels` les évitent.
 - `i18n/en.txt` : « CURSEUR » -> « CURSOR ».
-- main.pbo reconstruit avec HEMTT, `verify_build.py` OK. Link inchangé (2.0.90).
-## Arsenal ACE : saisie rétablie, sélection multiple et suppression rapide des tenues (ATAK natif, version fixée au regroupement)
-
-### Résumé joueur
-Type : correctif
-FR : On peut de nouveau taper un nom dans l'arsenal ACE, et faire le ménage en deux clics
-- Dans Tenues Athena, Retour arrière efface bien le texte au lieu de masquer l'interface de l'arsenal, et Entrée enregistre la tenue.
-- Dans Mes équipements d'ACE, le champ Nom reçoit de nouveau la frappe : le panneau Tenues Athena se retire le temps de cet écran.
-- Nouveau dans Mes tenues : Sélection multiple, Tout cocher (suit la recherche et la collection) et Supprimer la sélection en une fois.
-- Une suppression se rattrape : Annuler remet les tenues supprimées dans ton arsenal.
-EN : You can type a name in the ACE arsenal again, and clean up in two clicks
-- In Athena outfits, Backspace now deletes text instead of hiding the arsenal interface, and Enter saves the outfit.
-- In ACE's My loadouts, the Name field takes your typing again: the Athena outfits panel steps aside while that screen is open.
-- New in My outfits: Multiple selection, Tick all (follows the search and the collection) and Delete selection in one go.
-- A deletion can be undone: Undo puts the deleted outfits back in your arsenal.
-
-### Détail technique
+- #988, arsenal ACE :
 - Cause (Retour arrière) : `ace_arsenal_fnc_onKeyDown` garde toutes les touches tant qu'aucune de ses barres de recherche n'a le focus ; Retour arrière y appelle `buttonHide`, Ctrl+C / Ctrl+V exportent ou importent. Nos champs (recherche, nom de la tenue) posent `ace_arsenal_leftSearchbarFocus` en SetFocus / KillFocus, comme les barres d'ACE.
 - Cause probable (champ Nom de Mes équipements) : l'écran des tenues d'ACE est un display enfant non modal ; nos contrôles restaient actifs sur l'arsenal dessous et un champ masqué du panneau pouvait garder le focus clavier. `ace_arsenal_loadoutsDisplayOpened` masque et désactive le bouton et le panneau Tenues Athena, puis donne le focus au champ Nom d'ACE (IDC 303) ; `ace_arsenal_loadoutsDisplayClosed` les rend et relit Mes tenues. À la fermeture du panneau, le focus revient au bouton ATHENA · TENUES.
 - Sélection multiple (`fn_arsenalOverlayAction` pick / markAll / deleteMarked / undoDelete, `fn_arsenalOverlayMark`) : cases dans la colonne d'état, une seule écriture de `ace_arsenal_saved_loadouts` pour toute la sélection, corbeille `COMSPEC_ArsenalTrash` (profil) pour Annuler (une tenue du même nom enregistrée depuis n'est pas écrasée). Les tenues déjà sur le site y restent.
-- Textes EN ajoutés à `i18n/en.txt` ; `comspec_overwatch_connect.pbo` et `main.pbo` repatchés (tools/pbo_patch.py). Overlay Overwatch d'Iceman (atak_athena) non touché.
 - À tester en jeu : taper, effacer et Entrée dans les deux champs du panneau ; Ctrl+C / Ctrl+V dans un champ (ne doit plus exporter) ; Mes équipements d'ACE : taper un nom, Enregistrer, puis revenir ; panneau Tenues fermé puis Mes équipements ; Sélection multiple, Tout cocher avec une collection choisie, Supprimer la sélection, Annuler ; re-clic sur une tenue cochée (la décoche).
+- #989, capture de la carte (module Zeus) : 3 hauteurs par défaut (300, 800, 2000 m), cases en mer sautées, suivi du relevé dans le profil (`COMSPEC_ATAK_MapCapProg`, enregistré toutes les 25 images), reprise sur la même grille, dossier réel du profil dans les messages, ligne `CMAPF|fichier` par image.
+- #990, addon Overwatch connect embarqué (pas `atak_athena`, gelé) : `fn_openBriefingBoard` ouvre l'app BRIEFING (ou une notification sans téléphone) au lieu de `COMSPEC_Briefing_Dialog` ; `fn_receiveCASRequest` envoie une notification qui ouvre l'app CAS au lieu de la visionneuse 9 lignes ; boucle `CBA_fnc_addDisplayHandler` retirée de `fn_registerZeusAttributeButtons` (erreur « Unknown enum value: rscdisplayattributes »).
+- Version 2.3.5, main.pbo et comspec_overwatch_connect.pbo reconstruits proprement avec HEMTT (plus de PBO patchés), `verify_build.py` OK. COMSPEC Link inchangé (2.0.90). La partie site de #986 part avec le déploiement VPS.
+- À tester en jeu (rien ne l'a été) : bandeau de la carte ; saisie et sélection multiple dans l'arsenal ; Briefing / diaporama et CAS depuis Athena ; diapositives JPG et PNG ; Vidéo Live sur un drone du camp et une caméra fixe ; capture de la carte avec reprise ; touche et ligne Tablette sur le JPC ; absence d'erreur CBA au lancement.
+
+---
 
 ## Drone : le flux DRONES DU CAMP suit la vue du terminal UAV (ATAK natif 2.3.4.AB - Denver)
 
