@@ -26,7 +26,7 @@ private _dll = switch (true) do {
 };
 private _game = productVersion;
 private _rows = [
-    ["hero", "\z\comspec_atak_native\addons\main\data\logo_soar.paa", format ["<t size='1.5' font='COMSPEC_BarlowBold'>COMSPEC ATAK</t><br/><t color='#5cc76b'>Version %1</t><br/><t size='0.9' color='#8a9a93'>Terminal tactique pour Arma 3</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]]],
+    ["hero", "\z\comspec_atak_native\addons\main\data\logo_atak.paa", format ["<t size='1.5' font='COMSPEC_BarlowBold'>COMSPEC ATAK</t><br/><t color='#5cc76b'>Version %1</t><br/><t size='0.9' color='#8a9a93'>Terminal tactique pour Arma 3</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]]],
     ["section", "Équipe", ""],
     ["info", "Équipe", "<t font='COMSPEC_BarlowBold'>SOAR</t>"],
     ["info", "Développeur", "<t font='COMSPEC_BarlowBold'>NewPI</t>"],
