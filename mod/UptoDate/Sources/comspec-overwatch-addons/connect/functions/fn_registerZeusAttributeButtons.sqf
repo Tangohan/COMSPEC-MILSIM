@@ -6,23 +6,11 @@
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ZeusAttrButtonsRegistered", false]) exitWith {};
 
-private _hook = {
-    params ["_display"];
-    if (isNull _display) exitWith {};
-    [{
-        [_this] call comspec_overwatch_connect_fnc_fillZeusGroupId;
-        [_this] call comspec_overwatch_connect_fnc_zeusAttributesInject;
-    }, _display, 0.12] call CBA_fnc_waitAndExecute;
-};
-
-{
-    [_x, "onLoad", _hook] call CBA_fnc_addDisplayHandler;
-} forEach [
-    "RscDisplayAttributesMan",
-    "RscDisplayAttributesVehicle",
-    "RscDisplayAttributesVehicleEmpty",
-    "RscDisplayAttributesGroup"
-];
+// Branchement par CfgEventHandlers.hpp (Extended_DisplayLoad_EventHandlers : RscDisplayAttributesMan, Vehicle,
+// VehicleEmpty, Group -> fn_zeusAttributesInject, qui appelle aussi fn_fillZeusGroupId).
+// Plus de CBA_fnc_addDisplayHandler ici : il pose un gestionnaire sur l'écran de mission ([type, code]), pas sur une
+// classe de fenêtre ; appelé avec un nom de fenêtre, il levait « Unknown enum value: rscdisplayattributes… » à
+// chaque lancement de mission (fnc_addDisplayHandler.sqf ligne 36).
 
 missionNamespace setVariable ["COMSPEC_ZeusAttrButtonsRegistered", true];
 ["INFO", "Zeus", "Boutons SSE / ATAK / OVERWATCH du panneau Éditer enregistrés"] call comspec_overwatch_connect_fnc_log;
