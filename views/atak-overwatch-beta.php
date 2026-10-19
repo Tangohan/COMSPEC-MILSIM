@@ -98,6 +98,7 @@ $icon = static function (string $path): string {
       <button type="button" data-view="mission" title="Bilan, comptes rendus SALUTE, santé, logistique et CASEVAC">Mission</button>
       <button type="button" class="ow-nav-secondary" data-view="air" title="Aéronefs, manifestes et demandes d’appui aérien (JTAC)">Air</button>
       <button type="button" class="ow-nav-secondary" data-view="network" title="Relais posés et terminaux ATAK">Réseau</button>
+      <button type="button" class="ow-nav-secondary" data-view="teams" title="Équipes de feu et destinations assignées aux unités">Équipes</button>
       <button type="button" data-view="layers" title="Fonds de carte, relief et couches affichées">Calques</button>
       <button type="button" data-view="intel" title="Observations, évaluations et dossiers de renseignement">Renseignement</button>
       <button type="button" data-view="cams" title="Vues caméra partagées depuis les téléphones ATAK, actualisées toutes les quelques secondes">Live cam</button>
@@ -111,6 +112,7 @@ $icon = static function (string $path): string {
       <div class="ow-more-menu" id="ow-more-menu" hidden>
         <button type="button" class="ow-more-secondary" data-view="air">Air</button>
         <button type="button" class="ow-more-secondary" data-view="network">Réseau</button>
+        <button type="button" class="ow-more-secondary" data-view="teams">Équipes</button>
         <button type="button" class="ow-more-secondary" data-view="radio">Radio</button>
         <button type="button" class="ow-more-secondary" data-view="iff">Identification</button>
         <button type="button" class="ow-more-secondary" data-view="pings">Pings</button>
@@ -824,11 +826,15 @@ $icon = static function (string $path): string {
           <option value="session">Session en cours</option>
           <option value="mission">Mission enregistrée</option>
         </select></span>
+        <span class="ow-select" id="ow-replay-session-wrap" hidden><select id="ow-replay-session" aria-label="Session jouée">
+          <option value="">Toutes les sessions</option>
+        </select></span>
         <span class="ow-green" id="ow-replay-live">Direct</span>
         <input type="range" id="ow-replay-scrub" min="0" max="100" value="100" aria-label="Rejouer les trajectoires">
         <span id="ow-replay-now">Maintenant</span>
         <button type="button" class="ow-replay-play" data-ow-debrief>Exporter le bilan</button>
       </div>
+      <div class="ow-replay-events" id="ow-replay-events" hidden></div>
       <div class="ow-north" id="ow-north" aria-hidden="true">N</div>
       <div class="ow-live-measure" id="ow-live-measure" hidden></div>
       <div class="ow-data-hud" id="ow-data-hud">Groupes — · Ami 0 · Hostile 0</div>
@@ -1209,6 +1215,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-super-ping.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-pings.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tools.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-teams.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-teams.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-terrain.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.js"></script>
 <script src="<?= $h($base) ?>/assets/vendor/deck.gl/deck.min.js"></script>

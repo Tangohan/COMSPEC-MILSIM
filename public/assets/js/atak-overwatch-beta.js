@@ -475,7 +475,16 @@
       cmd('helmet-snap-hd', 'Photo casque HD', linked && !!c.loggedIn, linked ? 'Cliché haute définition' : offline) +
       '</div><div class="ow-btn-row">' +
       cmd('rename', 'Renommer…', !!c.canRenameUnit, c.canRenameUnit ? 'Changer l’indicatif du contact' : 'Connexion requise pour renommer') +
+      (c.canLinkPersonnel ? cmd('link-fiche', 'Lier une fiche…', true, 'Rattacher ce contact à une fiche personnel de la communauté') : '') +
       '</div>';
+    var asg = window.OverwatchTeams && window.OverwatchTeams.assignmentFor ? window.OverwatchTeams.assignmentFor(unit) : null;
+    var canAssign = !!c.loggedIn && !c.phoneSession;
+    html += '<div class="ow-btn-row">' +
+      cmd('assign', asg ? 'Changer de destination' : 'Assigner une destination', canAssign, canAssign ? 'Cliquez ensuite la destination sur la carte' : 'Connexion requise') +
+      (asg && asg.id ? cmd('detach', 'Détacher', canAssign, 'Retirer la destination de ' + callsign(unit)) : '') +
+      '</div>' +
+      (asg ? '<p class="ow-help">Destination : ' + escapeHtml(String(asg.destination_label || 'en cours')) + '</p>' : '') +
+      '<div id="ow-unit-link-picker" hidden></div>';
     if (canDeleteThisUnit(unit)) {
       html += '<div class="ow-btn-row">' +
         cmd('disconnect', 'Couper la liaison', linked, linked ? 'Marquer ce contact hors liaison (carte et effectifs)' : 'Ce contact est déjà hors liaison', true) +
@@ -528,6 +537,19 @@
       job = unitRequest(unit, '/disconnect', 'POST');
       done = 'Liaison de ' + cs + ' coupée.';
     }
+    if (action === 'assign') {
+      if (window.OverwatchTeams) window.OverwatchTeams.beginPick(unit);
+      return;
+    }
+    if (action === 'detach') {
+      var asg = window.OverwatchTeams ? window.OverwatchTeams.assignmentFor(unit) : null;
+      if (asg && asg.id) window.OverwatchTeams.detach(asg.id).then(function () { refreshAll(); });
+      return;
+    }
+    if (action === 'link-fiche') {
+      openPersonnelPicker(unit);
+      return;
+    }
     if (action === 'delete') {
       if (!window.confirm('Supprimer ' + cs + ' de la carte et des effectifs ?')) return;
       job = unitRequest(unit, '', 'DELETE');
@@ -539,6 +561,56 @@
       if (action === 'delete') document.getElementById('ow-drawer').hidden = true;
       refreshAll();
     }).catch(function (err) { toast(err && err.message ? err.message : 'La commande a échoué.'); });
+  }
+
+  /* Fiche personnel : liste filtrable sous les commandes du contact, puis PATCH link_user_id. */
+  var personnelItems = [];
+  function personnelListHtml(q) {
+    var needle = String(q || '').toLowerCase().trim();
+    var rows = personnelItems.filter(function (it) {
+      if (!needle) return true;
+      return ((it.label || '') + ' ' + (it.callsign || '') + ' ' + (it.characterName || '')).toLowerCase().indexOf(needle) >= 0;
+    }).slice(0, 40);
+    if (!rows.length) return '<p class="ow-help">Aucune fiche ne correspond.</p>';
+    return rows.map(function (it) {
+      var sub = [it.characterName, it.callsign].filter(Boolean).join(' · ');
+      return '<button type="button" class="ow-event ow-link-item" data-ow-link-user="' + escapeHtml(String(it.id)) + '">' +
+        '<span>' + escapeHtml(it.label || ('Fiche ' + it.id)) + (sub ? '<small class="ow-net-meta">' + escapeHtml(sub) + '</small>' : '') + '</span></button>';
+    }).join('');
+  }
+  function openPersonnelPicker(unit) {
+    var host = document.getElementById('ow-unit-link-picker');
+    if (!host) return;
+    host.hidden = false;
+    host.innerHTML = '<p class="ow-help">Chargement des fiches…</p>';
+    api('/api/atak/personnel').then(function (data) {
+      if (data && data.canLink === false) {
+        host.innerHTML = '<p class="ow-help">' + escapeHtml(data.message || 'Vous n’avez pas l’autorisation de lier une fiche.') + '</p>';
+        return;
+      }
+      personnelItems = Array.isArray(data && data.items) ? data.items : [];
+      host.innerHTML = '<label class="ow-search"><span>⌕</span><input id="ow-link-q" placeholder="Rechercher une fiche…"></label>' +
+        '<label class="ow-check"><input type="checkbox" id="ow-link-apply-cs" checked> Reprendre l’indicatif de la fiche</label>' +
+        '<div id="ow-link-list">' + personnelListHtml('') + '</div>';
+      var input = document.getElementById('ow-link-q');
+      if (input) {
+        input.addEventListener('input', function () {
+          var list = document.getElementById('ow-link-list');
+          if (list) list.innerHTML = personnelListHtml(input.value);
+        });
+        input.focus();
+      }
+    }).catch(function () { host.innerHTML = '<p class="ow-help">Impossible de charger les fiches personnel.</p>'; });
+  }
+  function linkPersonnel(unit, userId) {
+    var apply = document.getElementById('ow-link-apply-cs');
+    unitRequest(unit, '', 'PATCH', { link_user_id: Number(userId), apply_profile_callsign: apply ? !!apply.checked : true })
+      .then(function (row) {
+        var linked = row && row.linked_personnel;
+        toast('Fiche liée' + (linked && linked.label ? ' : ' + linked.label : '') + '.');
+        refreshAll();
+      })
+      .catch(function (err) { toast(err && err.message ? err.message : 'Impossible de lier la fiche.'); });
   }
 
   function discBlock(title, inner, warn) {
@@ -2763,6 +2835,7 @@
     Object.keys(markers).forEach(function (id) {
       if (!alive[id]) { map.removeLayer(markers[id]); delete markers[id]; }
     });
+    renderSelectionHalo();
     renderSquadLinks();
     renderHud();
     renderRangeRings();
@@ -2775,6 +2848,25 @@
       if (loc) map.panTo(loc);
     }
     if (window.OverwatchOps && window.OverwatchOps.afterRenderMap) window.OverwatchOps.afterRenderMap();
+  }
+
+  /* Halo sous le contact sélectionné : sa position reste repérable même si son icône est couverte par un autre repère. */
+  var selectionHalo = null;
+  function renderSelectionHalo() {
+    var cur = selected ? (units.find(function (u) { return unitId(u) === unitId(selected); }) || selected) : null;
+    var loc = cur && layerVisible(cur) ? point(cur) : null;
+    if (!loc) {
+      if (selectionHalo) { map.removeLayer(selectionHalo); selectionHalo = null; }
+      return;
+    }
+    if (!selectionHalo) {
+      selectionHalo = L.circleMarker(loc, {
+        radius: 18, color: '#ffffff', weight: 2, opacity: 0.9, fillColor: '#00d69a', fillOpacity: 0.12,
+        dashArray: '4 4', interactive: false, className: 'ow-selection-halo'
+      }).addTo(map);
+    } else {
+      selectionHalo.setLatLng(loc);
+    }
   }
 
   function clearSquadLinks() {
@@ -2868,6 +2960,44 @@
     if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.35));
   }
 
+  /* Image opérateur des membres du groupe (portrait de la fiche), initiales à défaut. */
+  function squadFacesHtml(rows, color) {
+    var list = rows.slice().sort(function (a, b) {
+      var pa = profileOf(a), pb = profileOf(b);
+      return (pb && pb.avatarUrl ? 1 : 0) - (pa && pa.avatarUrl ? 1 : 0);
+    }).slice(0, 3);
+    return '<span class="ow-squad-faces" style="--ow-squad:' + escapeHtml(color) + '">' + list.map(function (unit) {
+      var profile = profileOf(unit);
+      return '<span class="ow-squad-face" title="' + escapeHtml(callsign(unit)) + '">' +
+        (profile && profile.avatarUrl
+          ? '<img src="' + escapeHtml(profile.avatarUrl) + '" alt="" width="28" height="28" loading="lazy">'
+          : escapeHtml(initials(callsign(unit)))) + '</span>';
+    }).join('') + (rows.length > 3 ? '<span class="ow-squad-face is-more">+' + (rows.length - 3) + '</span>' : '') + '</span>';
+  }
+
+  /* Pourquoi un contact en liaison n'a pas de repère sur la carte : calque coupé, masqué à la main, sans position. */
+  function mapHiddenReason(unit) {
+    if (!point(unit)) return 'Aucune position reçue';
+    if (hiddenLayers.units) return 'Calque Unités coupé';
+    if (isUnitHidden(unit)) return 'Masqué depuis l’ORBAT';
+    if (isAir(unit) && hiddenLayers.air) return 'Calque Aérien coupé';
+    if (isVehicle(unit) && hiddenLayers.vehicles) return 'Calque Véhicules coupé';
+    return '';
+  }
+  function showUnitOnMap(unit) {
+    var layers = [];
+    if (hiddenLayers.units) layers.push('units');
+    if (isAir(unit) && hiddenLayers.air) layers.push('air');
+    if (isVehicle(unit) && hiddenLayers.vehicles) layers.push('vehicles');
+    layers.forEach(function (name) {
+      var box = document.querySelector('[data-ow-layer="' + name + '"]');
+      if (box && !box.checked) { box.checked = true; box.dispatchEvent(new Event('change')); }
+    });
+    if (isUnitHidden(unit)) setUnitsHidden([unit], false);
+    renderMap();
+    renderList();
+  }
+
   function renderSquadList() {
     var host = document.getElementById('ow-squad-list');
     if (!host) return;
@@ -2889,8 +3019,8 @@
       var label = key === 'none' ? 'Sans groupe' : group(rows[0]);
       var taskBtn = key === 'none' ? '' : '<button type="button" class="ow-tag" data-squad-task="' + escapeHtml(key) + '">Tâche</button>';
       return '<div class="ow-squad-row">' +
-        '<button type="button" class="ow-contact" data-squad-key="' + escapeHtml(key) + '"><span class="cicon" style="border-color:' +
-        escapeHtml(key === 'none' ? '#2b3531' : squadColor(rows[0])) + '"></span><span><div class="cname">' +
+        '<button type="button" class="ow-contact" data-squad-key="' + escapeHtml(key) + '">' +
+        squadFacesHtml(rows, key === 'none' ? '#2b3531' : squadColor(rows[0])) + '<span><div class="cname">' +
         escapeHtml(label) + '</div><div class="cmeta">' + rows.length + ' opérateur' + (rows.length > 1 ? 's' : '') +
         (span ? ' · ' + formatMeters(span) : '') + '</div></span><em class="online">' + locates.length + ' POS</em></button>' +
         taskBtn + '</div>';
@@ -3009,6 +3139,11 @@
         '" title="Centrer la carte sur la dernière position connue" aria-label="Dernière position connue">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>'
       : '';
+    var hiddenWhy = disc ? '' : mapHiddenReason(unit);
+    if (hiddenWhy) {
+      chan += '<button type="button" class="ow-bft-chan is-hidden-map" data-bft-show="' + escapeHtml(unitId(unit)) +
+        '" title="' + escapeHtml(hiddenWhy + ' : cliquez pour l’afficher') + '">MASQUÉ</button>';
+    }
     var grp = group(unit);
     var avatarInner = (profile && profile.avatarUrl)
       ? '<img class="ow-bft-avatar-img" src="' + escapeHtml(profile.avatarUrl) + '" alt="" width="32" height="32" loading="lazy">'
@@ -5453,6 +5588,7 @@
     ll = asMapLatLng(ll);
     if (!ll) return false;
     if (window.OverwatchTacmap && typeof window.OverwatchTacmap.consumeMapClick === 'function' && window.OverwatchTacmap.consumeMapClick(ll)) return true;
+    if (window.OverwatchTeams && typeof window.OverwatchTeams.consumeMapClick === 'function' && window.OverwatchTeams.consumeMapClick(ll)) return true;
     var fake = { latlng: ll, originalEvent: originalEvent || null };
     if (activeTool && activeTool !== 'cursor' && activeTool !== 'freehand' && activeTool !== 'goto' && activeTool !== 'range') {
       onMapClick(fake);
@@ -6650,7 +6786,45 @@
     return 'il y a ' + Math.floor(sec / 3600) + ' h';
   }
 
+  /* Caméras déclarées par le jeu (casque, drone, véhicule) : en ligne ou non, même sans image récente. */
+  var declaredFeeds = [];
+  function loadDeclaredFeeds() {
+    return api('/api/atak/video-feeds?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
+      declaredFeeds = Array.isArray(payload && payload.feeds) ? payload.feeds : [];
+    }).catch(function () { declaredFeeds = []; });
+  }
+  function unitByCallsign(cs) {
+    var key = String(cs || '').trim().toUpperCase();
+    if (!key) return null;
+    var hit = null;
+    units.some(function (u) {
+      if (callsign(u).toUpperCase() === key) { hit = u; return true; }
+      return false;
+    });
+    return hit;
+  }
+  function declaredFeedsHtml() {
+    if (!declaredFeeds.length) return '';
+    var rows = declaredFeeds.map(function (f) {
+      var online = !!f.online;
+      var kind = String(f.kind || 'helmet').toLowerCase();
+      var unit = unitByCallsign(f.callsign);
+      var canSnap = online && kind !== 'drone' && kind !== 'uav' && unit && unitDbId(unit) && !isDisconnected(unit) && !!unitCaps().loggedIn;
+      var label = clean(f.label || f.kind_label, 'Caméra');
+      var meta = [f.kind_label || '', f.callsign || '', online ? 'En ligne' : 'Hors ligne'].filter(Boolean).join(' · ');
+      return '<div class="ow-event ow-feed-row">' +
+        '<span>' + escapeHtml(label) + '<small class="ow-net-meta">' + escapeHtml(meta) + '</small></span>' +
+        (canSnap ? '<button type="button" class="ow-tag" data-cam-request="' + escapeHtml(String(f.callsign)) + '">Demander une photo</button>' : '') +
+        '</div>';
+    }).join('');
+    return '<p class="ow-kicker">Caméras déclarées en jeu</p>' + rows;
+  }
+
   function loadCamFeeds() {
+    loadDeclaredFeeds().then(function () {
+      var host = document.getElementById('ow-cams-declared');
+      if (host) host.innerHTML = declaredFeedsHtml();
+    });
     return api('/api/recon/images?limit=200&feeds=only').then(function (payload) {
       var seen = {};
       var out = [];
@@ -6705,6 +6879,7 @@
 
   function camsHtml() {
     return '<p class="ow-help">Dernière image de chaque flux reçu ces 10 dernières minutes. Actualisé toutes les 5 secondes tant que ce panneau est ouvert. Cliquez une image pour l’agrandir.</p>' +
+      '<div id="ow-cams-declared">' + declaredFeedsHtml() + '</div>' +
       '<div id="ow-cams">' + camsBodyHtml() + '</div>';
   }
 
@@ -7058,7 +7233,86 @@
     var seen = formatSeen(t.last_seen_at) || (unit ? formatSeen(unit.updated_at) : '');
     if (seen) html += networkKv('Dernière activité', seen);
 
-    return html ? '<div class="ow-kv ow-net-kv">' + html + '</div>' : '';
+    return (html ? '<div class="ow-kv ow-net-kv">' + html + '</div>' : '') + networkTerminalActionsHtml(t, compromiseRaw);
+  }
+
+  function canManageCertificates() {
+    var c = unitCaps();
+    if (c.phoneSession) return false;
+    if (typeof c.canManageCertificates === 'boolean') return c.canManageCertificates;
+    return !!c.loggedIn;
+  }
+
+  function networkTerminalActionsHtml(t, compromiseRaw) {
+    if (!canManageCertificates()) return '';
+    var id = Number(t.id || 0);
+    var uid = String(t.terminal_uid || '').trim();
+    var call = clean(t.operator_callsign || t.callsign || t.terminal_label, 'Terminal');
+    var hasCert = !!String(t.certificate_ref || '').trim();
+    var btns = '';
+    if (id > 0) {
+      btns += '<button type="button" class="ow-secondary" data-ow-term="cert" data-term-id="' + id + '" data-term-call="' + escapeHtml(call) +
+        '" data-term-has="' + (hasCert ? '1' : '0') + '">' + (hasCert ? 'Renouveler le certificat' : 'Émettre un certificat') + '</button>';
+    }
+    if (uid) {
+      var flagged = compromiseRaw === 'captured' || compromiseRaw === 'compromised';
+      btns += flagged
+        ? '<button type="button" class="ow-secondary" data-ow-term="clear" data-term-uid="' + escapeHtml(uid) + '" data-term-call="' + escapeHtml(call) + '">Lever la compromission</button>'
+        : '<button type="button" class="ow-secondary is-danger" data-ow-term="captured" data-term-uid="' + escapeHtml(uid) + '" data-term-call="' + escapeHtml(call) + '">Déclarer saisi</button>';
+    }
+    return btns ? '<div class="ow-btn-row ow-term-actions">' + btns + '</div>' : '';
+  }
+
+  function runTerminalAction(btn) {
+    var kind = btn.getAttribute('data-ow-term');
+    var call = btn.getAttribute('data-term-call') || 'ce terminal';
+    var path = '';
+    var body = { map_id: mapId };
+    var done = '';
+    if (kind === 'cert') {
+      var has = btn.getAttribute('data-term-has') === '1';
+      if (!window.confirm(has ? 'Renouveler le certificat de ' + call + ' ? L’ancien ne sera plus accepté.' : 'Émettre un certificat pour ' + call + ' ?')) return;
+      path = '/api/atak/terminals/' + encodeURIComponent(btn.getAttribute('data-term-id')) + '/certificate/regenerate';
+      done = 'Certificat mis à jour pour ' + call + '.';
+    } else if (kind === 'captured') {
+      var reason = window.prompt('Déclarer ' + call + ' saisi par l’ennemi ? Ses certificats seront révoqués. Motif (facultatif) :', '');
+      if (reason === null) return;
+      path = '/api/atak/terminals/compromise';
+      body.terminal_uid = btn.getAttribute('data-term-uid');
+      body.state = 'captured';
+      body.reason = reason.trim();
+      done = call + ' déclaré saisi.';
+    } else if (kind === 'clear') {
+      if (!window.confirm('Lever la compromission de ' + call + ' ?')) return;
+      path = '/api/atak/terminals/clear-compromise';
+      body.terminal_uid = btn.getAttribute('data-term-uid');
+      done = 'Compromission levée pour ' + call + '.';
+    }
+    if (!path) return;
+    btn.disabled = true;
+    var headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    var csrf = csrfToken();
+    if (csrf) headers['X-CSRF-TOKEN'] = csrf;
+    fetch(apiBase + path, {
+      method: 'POST',
+      credentials: 'include',
+      headers: headers,
+      body: JSON.stringify(Object.assign({ _csrf_token: csrf }, body))
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (payload) {
+        if (!response.ok || !payload || payload.ok === false) {
+          throw new Error((payload && (payload.message || payload.error)) || 'La demande a échoué.');
+        }
+        toast((payload && payload.message) || done);
+        return loadTerminals().then(function () {
+          var host = document.getElementById('ow-network-terminals');
+          if (host) host.innerHTML = networkTerminalsListHtml();
+        });
+      });
+    }).catch(function (err) {
+      toast(err && err.message ? err.message : 'La demande a échoué.');
+      btn.disabled = false;
+    });
   }
 
   function networkTerminalRowHtml(t) {
@@ -7551,6 +7805,12 @@
       });
       return;
     }
+    if (name === 'teams') {
+      restoreOpsPanels();
+      if (window.OverwatchTeams && typeof window.OverwatchTeams.open === 'function') window.OverwatchTeams.open();
+      map.invalidateSize();
+      return;
+    }
     if (name === 'network') {
       Promise.all([loadTerminals(), loadNetworkRelays()]).then(function () {
         restoreOpsPanels();
@@ -7637,6 +7897,7 @@
     ['Ouvrir la mission', 'Mission', function () { openView('mission'); }],
     ['Ouvrir Air', 'Air', function () { openView('air'); }],
     ['Ouvrir le réseau', 'Réseau', function () { openView('network'); }],
+    ['Ouvrir les équipes de feu', 'Équipes', function () { openView('teams'); }],
     ['Préparer un SITREP', 'Mission', function () { setTool('cursor'); toast('Clic droit sur la carte → compte rendu géolocalisé.'); }],
     ['Préparer un SALUTE', 'Mission', function () { openView('mission'); toast('Clic droit sur la carte pour préremplir la grille, puis remplissez le compte rendu.'); }],
     ['Tracer une route', 'Carte', function () { setTool('route'); toast('Cliquez les points, double-clic pour terminer.'); }],
@@ -8054,6 +8315,11 @@
     if (!row) return;
     var unit = units.find(function (item) { return unitId(item) === row.dataset.unitId; });
     if (!unit) return;
+    if (event.target.closest('[data-bft-show]')) {
+      var why = mapHiddenReason(unit);
+      if (why && why !== 'Aucune position reçue') { showUnitOnMap(unit); toast(callsign(unit) + ' : de nouveau affiché sur la carte.'); }
+      else if (why) toast(callsign(unit) + ' : ' + why.toLowerCase() + ', impossible de le placer.');
+    }
     selectUnit(unit);
     var location = point(unit);
     if (location) map.panTo(location);
@@ -8200,6 +8466,15 @@
     }
     var unitCmdBtn = event.target.closest('[data-unit-cmd]');
     if (unitCmdBtn && selected && !unitCmdBtn.disabled) runUnitCommand(unitCmdBtn.getAttribute('data-unit-cmd'), selected);
+    var linkUserBtn = event.target.closest('[data-ow-link-user]');
+    if (linkUserBtn && selected) linkPersonnel(selected, linkUserBtn.getAttribute('data-ow-link-user'));
+    var camReq = event.target.closest('[data-cam-request]');
+    if (camReq) {
+      var camUnit = unitByCallsign(camReq.getAttribute('data-cam-request'));
+      if (camUnit) runUnitCommand('helmet-snap', camUnit);
+    }
+    var termBtn = event.target.closest('[data-ow-term]');
+    if (termBtn && !termBtn.disabled) runTerminalAction(termBtn);
     if (event.target.matches('[data-fit-squad]') && selected) fitSquad(selected);
     if (event.target.matches('[data-squad-task-from-unit]') && selected) {
       var unitKey = squadKey(selected);
@@ -8712,6 +8987,7 @@
     commands: commands,
     getUnits: function () { return units; },
     isUnitHidden: isUnitHidden,
+    isDisconnected: isDisconnected,
     setUnitsHidden: setUnitsHidden,
     openSquadTaskForm: openSquadTaskForm,
     getShapes: function () { return shapes; },
