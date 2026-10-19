@@ -290,7 +290,9 @@ final class AtakModReportDiscordTicketService
             . ' · Link ' . (trim((string) ($report['extension_version'] ?? '')) ?: '—');
         $kind = str_starts_with(strtolower((string) ($report['source'] ?? '')), 'player') ? 'Signalement joueur' : 'Détection automatique';
         $gravity = AtakModReportGravity::normalize(isset($report['gravity']) ? (string) $report['gravity'] : null);
-        $detail = AtakStartupCheckService::clean((string) ($report['detail_text'] ?? ''), 900);
+        $rawDetail = trim((string) ($report['detail_text'] ?? ''));
+        // Détail mis en clair (guillemets SQF, JSON, accents) avant nettoyage Discord.
+        $detail = AtakStartupCheckService::clean($rawDetail !== '' ? \App\Support\AtakModReportDetail::summary($rawDetail) : '', 900);
 
         $description = '## ' . self::STATUS_ICONS[$status] . ' ' . AtakModReportRepository::statusLabel($status) . ' · ' . self::STATUS_EN[$status]
             . "\n" . '**' . AtakStartupCheckService::clean((string) ($report['message'] ?? ''), 400) . '**'
