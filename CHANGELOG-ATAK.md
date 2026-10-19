@@ -46,17 +46,21 @@ FR : Carte : un bandeau d'information plus clair
 - Le curseur et ta position tiennent dans un seul bandeau compact en bas à gauche : la grille en grand, la distance et l'azimut à côté, le MGRS et l'altitude en petit dessous.
 - La case de droite donne ton cap en grand, ton indicatif à la couleur de ton équipe de feu (la même que l'anneau autour de ton symbole) et le nom de l'équipe.
 - Les noms des repères, des lieux et les cartouches des unités ne passent plus sous le bandeau.
+- Le cercle vert autour de l'unité sélectionnée garde la même taille quel que soit le zoom, et ton cap suit en direct quand tu tournes.
 - Les points cardinaux s'affichent dans la langue du téléphone (NW, SW, W en anglais) et « CURSEUR » devient « CURSOR ».
 EN : Map: a clearer information bar
 - The cursor and your position now sit in one compact bar at the bottom left: the grid in large type, distance and bearing next to it, MGRS and altitude in small type below.
 - The right-hand box shows your heading in large type, your callsign in your fire team colour (the same as the ring around your symbol) and the team name.
 - Marker names, place names and unit tags no longer slide under the bar.
+- The green ring around the selected unit keeps the same size at any zoom, and your heading follows live as you turn.
 - Compass points follow the phone language (NW, SW, W in English) and the cursor label reads "CURSOR".
 
 ### Détail technique
 - `fn_pageMap.sqf` : panneau curseur et carte « moi » fusionnés en un bandeau à deux cases (même hauteur, liseré vert à gauche, filet séparateur), largeur calée sur le texte ; repli sur 3 lignes si la case est trop étroite ; flèche de navigation des points de passage posée au-dessus du bandeau.
 - `fn_mapOverlayUpdate.sqf` : hiérarchie valeur principale (taille 1,2, grasse) / détails (0,85, gris) ; azimut sur 3 chiffres, distance en km au-delà de 1 000 m ; points cardinaux selon `COMSPEC_ATAK_Lang` ; case « moi » : cap, indicatif à la couleur de l'équipe de feu (`fn_ftInfo`) et grille en main.
 - `fn_mapHudRects.sqf` (nouveau) : rectangles du bandeau et du cap relatifs à la carte ; `fn_mapMarkerText`, `fn_mapPlaceText` (via `COMSPEC_ATAK_LblRects`) et `fn_mapLabels` les évitent.
+- `fn_mapOnDraw.sqf` : anneau de sélection en icône à taille fixe (2,1 × le symbole) au lieu d'une ellipse de 18 × échelle m.
+- `fn_mapOverlayUpdate.sqf` : case « moi » mise à jour par la boussole à chaque degré (`_meUpdate`) ; cap sous la boussole sur 3 chiffres.
 - `i18n/en.txt` : « CURSEUR » -> « CURSOR ».
 - main.pbo reconstruit avec HEMTT, `verify_build.py` OK. Link inchangé (2.0.90).
 

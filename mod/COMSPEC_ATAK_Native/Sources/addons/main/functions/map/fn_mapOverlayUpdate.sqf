@@ -17,6 +17,27 @@ private _cardinal = {
 // Azimut sur trois chiffres (« 085° ») et distance en m puis en km.
 private _az3 = { params ["_a"]; private _t = str ((round _a) mod 360); while {(count _t) < 3} do { _t = "0" + _t; }; _t };
 private _distTxt = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 2]] select (_d >= 1000) };
+// Case 2 du bandeau : mon cap en grand ; en dessous mon indicatif à la couleur de mon équipe de feu (celle de
+// l'anneau autour de mon symbole) avec son nom, et ma grille en main (porté : déjà dans la case 1 ; mini : sans).
+// Appelée aussi par la boussole à chaque degré : le cap du bandeau suit en direct au lieu d'une fois par seconde.
+private _meUpdate = {
+    params ["_h"];
+    private _me = _ov getOrDefault ["me", controlNull];
+    if (isNull _me) exitWith {};
+    private _ft = [player] call comspec_atak_native_fnc_ftInfo;
+    private _inFt = (_ft get "id") isNotEqualTo "";
+    private _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", [player] call comspec_atak_native_fnc_unitCallsign, ["#5cc76b", _ft get "hex"] select _inFt];
+    if (_inFt) then { _l2 = _l2 + format [" <t size='0.85' color='%2'>%1</t>", toUpper (_ft get "name"), _ft get "hex"]; };
+    if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
+        _l2 = _l2 + format [" <t color='#7f8c86'>·</t> %1", [player] call comspec_atak_native_fnc_gridRef];
+    };
+    private _meTxt = format ["<t font='EtelkaMonospacePro'><t font='EtelkaMonospaceProBold' size='1.2'>%1°</t> <t size='0.85' color='#b7c1bc'>%2</t><br/><t size='0.85' color='#b7c1bc'>%3</t></t>",
+        [_h] call _az3, [_h] call _cardinal, _l2];
+    if ((_me getVariable ["txt", ""]) isNotEqualTo _meTxt) then {
+        _me setVariable ["txt", _meTxt];
+        _me ctrlSetStructuredText parseText ((_meTxt) call comspec_atak_native_fnc_tr);
+    };
+};
 if (_compassOnly) exitWith {
     private _h = getDirVisual (vehicle player);
     if ((abs (_h - (_ov getOrDefault ["compassH", -1]))) < 0.2) exitWith { false };
@@ -29,7 +50,8 @@ if (_compassOnly) exitWith {
     if ((round _h) isNotEqualTo (_ov getOrDefault ["compassDeg", -1])) then {
         _ov set ["compassDeg", round _h];
         private _hd = _ov getOrDefault ["heading", controlNull];
-        if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", (round _h) mod 360, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
+        if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", [_h] call _az3, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
+        [_h] call _meUpdate;
         if (!isNull (_ov getOrDefault ["compassTape", controlNull])) then { [true, false, true] call comspec_atak_native_fnc_mapOverlayUpdate; };
     };
     true
@@ -154,26 +176,9 @@ if (!isNull _tape) then {
 };
 if (_tapeOnly) exitWith { true };
 private _hd = _ov getOrDefault ["heading", controlNull];
-if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", round _h, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
+if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", [_h] call _az3, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
 
-private _me = _ov getOrDefault ["me", controlNull];
-if (!isNull _me) then {
-    // Case 2 du bandeau : mon cap en grand ; en dessous mon indicatif à la couleur de mon équipe de feu (celle de
-    // l'anneau autour de mon symbole) avec son nom, et ma grille en main (porté : déjà dans la case 1 ; mini : sans).
-    private _ft = [player] call comspec_atak_native_fnc_ftInfo;
-    private _inFt = (_ft get "id") isNotEqualTo "";
-    private _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", [player] call comspec_atak_native_fnc_unitCallsign, ["#5cc76b", _ft get "hex"] select _inFt];
-    if (_inFt) then { _l2 = _l2 + format [" <t size='0.85' color='%2'>%1</t>", toUpper (_ft get "name"), _ft get "hex"]; };
-    if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
-        _l2 = _l2 + format [" <t color='#7f8c86'>·</t> %1", [player] call comspec_atak_native_fnc_gridRef];
-    };
-    private _meTxt = format ["<t font='EtelkaMonospacePro'><t font='EtelkaMonospaceProBold' size='1.2'>%1°</t> <t size='0.85' color='#b7c1bc'>%2</t><br/><t size='0.85' color='#b7c1bc'>%3</t></t>",
-        [_h] call _az3, [_h] call _cardinal, _l2];
-    if ((_me getVariable ["txt", ""]) isNotEqualTo _meTxt) then {
-        _me setVariable ["txt", _meTxt];
-        _me ctrlSetStructuredText parseText ((_meTxt) call comspec_atak_native_fnc_tr);
-    };
-};
+[_h] call _meUpdate;
 
 private _bar = _ov getOrDefault ["databar", controlNull];
 if (!isNull _bar) then {
