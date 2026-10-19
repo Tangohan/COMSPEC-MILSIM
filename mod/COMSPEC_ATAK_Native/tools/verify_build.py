@@ -34,7 +34,8 @@ EXPECTED = {
     "comspec_overwatch_main.pbo": (OW / "main", r"z\comspec_overwatch\addons\main"),
     "comspec_overwatch_connect.pbo": (OW / "connect", r"z\comspec_overwatch\addons\connect"),
 }
-SKIP_NAMES = {"$pboprefix$", "$pboprefix$.txt", "thumbs.db", ".ds_store", ".gitkeep", "texheaders.bin"}
+# bis_addoninfo.hpp : ajouté par AddonBuilder à chaque PBO, absent des sources par nature.
+SKIP_NAMES = {"$pboprefix$", "$pboprefix$.txt", "thumbs.db", ".ds_store", ".gitkeep", "texheaders.bin", "bis_addoninfo.hpp"}
 
 
 def read_pbo(path: pathlib.Path) -> tuple[dict[str, str], list[str]]:
