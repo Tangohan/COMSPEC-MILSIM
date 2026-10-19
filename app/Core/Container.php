@@ -1044,6 +1044,7 @@ class Container
                 self::get(\App\Services\Personnel\Pass\PassService::class),
                 self::get(\App\Services\Personnel\Pass\PassConditionEngine::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Repositories\UserRepository::class),
             ),
             \App\Repositories\AtakMarkerDetectionRuleRepository::class => new \App\Repositories\AtakMarkerDetectionRuleRepository(),
             \App\Controllers\Admin\Organization\AtakMarkerDetectionAdminController::class => new \App\Controllers\Admin\Organization\AtakMarkerDetectionAdminController(
