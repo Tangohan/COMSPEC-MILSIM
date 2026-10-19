@@ -956,6 +956,7 @@
     if (!section) return;
     var stage = section.querySelector('[data-hi-units]');
     var kpis = section.querySelector('.hi-kpis');
+    var field = section.querySelector('.hi-field');
     var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     var finePointer = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
     var locale = document.documentElement.lang === 'en' ? 'en-US' : 'fr-FR';
@@ -992,6 +993,13 @@
         if (stage) {
             stage.classList.add('is-armed');
             onceVisible(stage, function () { stage.classList.add('is-in'); });
+        }
+        if (field) {
+            field.classList.add('is-armed');
+            onceVisible(field, function () {
+                field.classList.add('is-in');
+                field.querySelectorAll('[data-hi-count]').forEach(countUp);
+            });
         }
         if (kpis) {
             kpis.classList.add('is-armed');
