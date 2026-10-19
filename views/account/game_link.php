@@ -71,6 +71,7 @@ require base_path('views/partials/account/shell_open.php');
                        value="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>" placeholder="XXXX-XXXX"
                        style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.6rem;letter-spacing:.2em;text-transform:uppercase;max-width:16rem">
                 <p class="account-hub__hint">Le jeu sera rattaché au compte et à la communauté avec lesquels vous êtes connecté ici.</p>
+                <p class="account-hub__hint">Votre compte Steam est relié en même temps, même si votre profil Steam est privé.</p>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-top:.25rem">
                 <button type="submit" class="account-hub__btn account-hub__btn--ink">Autoriser ce jeu</button>

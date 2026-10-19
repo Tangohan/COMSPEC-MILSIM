@@ -419,7 +419,7 @@ class AccountController
                 if ($rawSteam !== '' && $resolvedSteam === null) {
                     Session::flash(
                         'error',
-                        'Impossible de reconnaître cet identifiant Steam. Indiquez le numéro affiché en jeu (souvent 17 chiffres), un identifiant Steam classique (STEAM_0:… ou [U:1:…]), ou une adresse de profil public'
+                        'Impossible de reconnaître cet identifiant Steam. Indiquez le numéro affiché en jeu (souvent 17 chiffres), un identifiant Steam classique (STEAM_0:… ou [U:1:…]), ou l’adresse de votre profil Steam'
                         . ($this->steamWebApiService->isConfigured() ? ' (y compris un lien avec votre pseudo).' : '.')
                     );
 
