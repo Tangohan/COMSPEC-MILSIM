@@ -64,5 +64,12 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 copy /Y "%OWTMP%\main.pbo" "%OUT%\addons\comspec_overwatch_main.pbo" >nul
 copy /Y "%OWTMP%\connect.pbo" "%OUT%\addons\comspec_overwatch_connect.pbo" >nul
+:: Controle final (tools\verify_build.py) : tout PBO hors des cinq attendus est deplace dans %TEMP%\comspec_atak_retires,
+:: puis taille, SHA-256 et prefixe de chaque PBO ; echec si doublon, PBO manquant ou fichier absent des sources (build perime).
+set "PY="
+py -3 -c "import sys" >nul 2>nul && set "PY=py -3"
+if not defined PY python -c "import sys; sys.exit(sys.version_info[0] < 3)" >nul 2>nul && set "PY=python"
+if not defined PY echo [ATTENTION] Python 3 introuvable : controle des PBO saute.
+if defined PY %PY% "%ROOT%tools\verify_build.py" "%OUT%\addons" --retire "%TEMP%\comspec_atak_retires" || (echo [ERREUR] PBO non conformes : ne pas publier. & exit /b 1)
 echo [OK] Mod autonome: %OUT%
 endlocal

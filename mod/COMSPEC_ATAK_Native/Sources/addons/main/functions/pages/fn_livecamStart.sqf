@@ -17,8 +17,8 @@ if ((attachedTo _cam) isNotEqualTo _unit) then {
     _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]];
 };
 "comspec_livecam" setPiPEffect [_mode];
-// Boucle d'une caméra fixe (fn_camView) encore en place : remplacée par celle du porteur.
-if ((missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""]) isEqualTo "fixed" && {!isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }}) then {
+// Boucle d'une caméra fixe (fn_camView) ou d'un drone (fn_livecamUav) encore en place : remplacée par celle du porteur.
+if ((missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""]) in ["fixed", "uav"] && {!isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }}) then {
     [missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh"] call CBA_fnc_removePerFrameHandler;
     missionNamespace setVariable ["COMSPEC_ATAK_LivecamPfh", nil];
 };

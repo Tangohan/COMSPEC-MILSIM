@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Regroupement : flux nacelle des drones du camp dans Vidéo Live, drone retiré de la flotte rendu au terminal UAV, contrôle des PBO au build (ATAK natif 2.3.3.AB - Denver)
+
+### Résumé joueur
+Type : nouveauté
+FR : Vidéo Live montre la caméra des drones du camp
+- Choisis un drone allié en vol dans DRONES DU CAMP de l'app Vidéo Live pour voir ce que filme sa nacelle, de jour, en vision nocturne ou en thermique, même s'il est piloté au terminal UAV par un équipier.
+- Un drone libéré depuis l'onglet FLOTTE de l'app Drone suit de nouveau les ordres « aller ici » du terminal UAV.
+- Cette version reprend aussi la 2.3.2 : terminal UAV de nouveau accessible avec l'ATAK en miniature, et Manette de pilotage dans l'onglet VOL de l'app Drone.
+EN : Live video now shows friendly drones' cameras
+- Pick a friendly drone in flight in FRIENDLY DRONES in the Live video app to watch what its camera pod sees, by day, night vision or thermal, even when a teammate flies it with a UAV terminal.
+- A drone released from the FLEET tab of the Drone app follows the UAV terminal's "move here" orders again.
+- This version also carries 2.3.2: the UAV terminal is reachable again with the ATAK minimized, and a flight Controller in the FLIGHT tab of the Drone app.
+
+### Détail technique
+- #969 : nouveau `fn_livecamUav.sqf` (caméra sur le point mémoire `uavCameraGunnerPos`, direction depuis `uavCameraGunnerDir`), rubrique DRONES DU CAMP dans `fn_pageLivecam.sqf`, station d'un drone dans `fn_feedLink.sqf` (terminal UAV, sinon téléphone appairé, sinon ATAK allié le plus proche à moins de 2 km), boucle drone dans `fn_livecamStart.sqf`. `fn_droneFleet.sqf` « libérer » envoie `fn_droneCmd` "release" au propriétaire local du drone (rendu à son groupe par `doFollow`, comme au désappairage).
+- #963 : `build_mod.bat` lance `tools/verify_build.py` en fin de build (PBO inattendus déplacés dans %TEMP%\comspec_atak_retires, taille, SHA-256, préfixe, doublons, fichiers absents des sources) et s'arrête en erreur si un PBO n'est pas conforme.
+- Version 2.3.3, main.pbo reconstruit avec HEMTT, COMSPEC Link inchangé (2.0.90).
+- À tester en jeu : Vidéo Live > DRONES DU CAMP sur un AR-2 ou Greyhawk piloté au terminal par un équipier (nacelle, NV, thermique, « drone perdu », « Personne ne reçoit ce drone ») ; drone libéré depuis FLOTTE puis « aller ici » au terminal.
+
+---
+
 ## Drone : terminal UAV vanilla réparé, manette de pilotage dans l'app Drone (ATAK natif 2.3.2.AB - Denver)
 
 ### Résumé joueur

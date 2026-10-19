@@ -8,6 +8,8 @@
     Le flux suit le réseau (fn_feedLink) : liaison montante de la source et descendante du téléphone, relais compris.
     HD, SD, BAS ou MINIMAL fixent la définition de l'image ; les pertes la font décrocher par moments ; sans liaison,
     pas d'image et la raison est affichée. Qualité réévaluée toutes les 3 s (page redessinée si le palier change).
+    Drones du camp (fn_livecamUav) : la nacelle d'un drone allié en vol, piloté au terminal UAV ou par un téléphone,
+    comme le flux de BCE ; l'image passe par la station de son opérateur.
     Partage (fn_camShare) : par défaut, une caméra n'est listée que si elle est à moi ou partagée avec moi. Le bouton
     PARTAGER sous la liste ouvre, à la place de l'image, le choix de la méthode (NFC, Bluetooth, relais, chacune avec
     ses conditions) puis du destinataire (un ATAK ou TOUS). « Ma caméra » (mon téléphone) est en tête de liste.
@@ -28,15 +30,19 @@ private _shareOn = ["required"] call comspec_atak_native_fnc_camShare;
 private _feeds = allPlayers select { _x isNotEqualTo player && {alive _x} && {side group _x isEqualTo side group player} && {[_x] call comspec_atak_native_fnc_hasDevice} && {["can", _x] call comspec_atak_native_fnc_camShare} };
 if (_shareOn && {[player] call comspec_atak_native_fnc_hasDevice}) then { _feeds = [player] + _feeds; };
 private _cams = ["list"] call comspec_atak_native_fnc_camAction;
+// Drones du camp en vol (nacelle comme dans BCE, fn_livecamUav) : regardés sans les piloter ni les appairer.
+private _uavs = allUnitsUAV select { alive _x && {!isNull driver _x || {!isNull gunner _x}} && {(side group _x) isEqualTo (side group player)} };
+_uavs = [_uavs, [], { player distance _x }, "ASCEND"] call BIS_fnc_sortBy;
 _cams = [_cams, [], { player distance _x }, "ASCEND"] call BIS_fnc_sortBy;
 private _target = _s getOrDefault ["livecamTarget", ""];
 private _unit = objectFromNetId _target;
-if (isNull _unit || {!(_unit in _feeds) && {!(_unit in _cams)}}) then {
+if (isNull _unit || {!(_unit in _feeds) && {!(_unit in _cams)} && {!(_unit in _uavs)}}) then {
     _unit = (_feeds - [player]) param [0, _cams param [0, _feeds param [0, objNull]]];
     _target = if (isNull _unit) then { "" } else { netId _unit };
     _s set ["livecamTarget", _target];
 };
 private _fixed = _unit in _cams;
+private _isUav = _unit in _uavs;
 
 // Liste (à gauche en horizontal, en haut en vertical) et image.
 private _listRect = if (_land) then { [_pad, _pad, _gw * 0.3, _bh - 2 * _pad] } else { [_pad, _pad, _gw - 2 * _pad, (_bh * 0.28) min (_rowH * 5)] };
@@ -72,6 +78,18 @@ _list lbSetColor [_hdr, [0.36, 0.78, 0.42, 1]];
     if (_x isEqualTo _unit) then { _list lbSetCurSel _i; };
 } forEach _cams;
 if ((count _cams) isEqualTo 0) then { private _i = _list lbAdd ((["Aucune caméra posée (ACE : Téléphone ATAK > Caméras)", "Aucune caméra posée ou partagée avec vous (ACE : Téléphone ATAK > Caméras)"] select _shareOn) call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
+// Drones du camp : nom, distance, opérateur.
+private _hu = _list lbAdd (("DRONES DU CAMP") call comspec_atak_native_fnc_tr);
+_list lbSetColor [_hu, [0.36, 0.78, 0.42, 1]];
+{
+    private _op = (UAVControl _x) param [0, objNull];
+    private _i = _list lbAdd ((format ["%1 · %2 m · %3", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x),
+        [[_op, true] call comspec_atak_native_fnc_unitCallsign, "autonome"] select (!(_op isEqualType objNull) || {isNull _op})]) call comspec_atak_native_fnc_tr);
+    _list lbSetData [_i, netId _x];
+    _list lbSetPicture [_i, [_x, [], "ICON"] call comspec_atak_native_fnc_droneOsd];
+    if (_x isEqualTo _unit) then { _list lbSetCurSel _i; };
+} forEach _uavs;
+if ((count _uavs) isEqualTo 0) then { private _i = _list lbAdd (("Aucun drone du camp en vol") call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
 _list ctrlAddEventHandler ["LBSelChanged", {
     params ["_c", "_i"];
     private _id = _c lbData _i;
@@ -236,7 +254,11 @@ if ((_link get "res") isEqualTo 0) exitWith {
 };
 private _mode = _s getOrDefault ["livecamMode", 0];
 private _pan = _s getOrDefault ["livecamPan", 0];
-if (_fixed) then { [_unit, _mode, _pan] call comspec_atak_native_fnc_camView; } else { [_unit, _mode] call comspec_atak_native_fnc_livecamStart; };
+switch (true) do {
+    case _fixed: { [_unit, _mode, _pan] call comspec_atak_native_fnc_camView; };
+    case _isUav: { [_unit, _mode] call comspec_atak_native_fnc_livecamUav; };
+    default { [_unit, _mode] call comspec_atak_native_fnc_livecamStart; };
+};
 // Définition de l'image selon le débit (512 px en HD jusqu'à 64 px au minimum : image nettement pixelisée).
 private _res = _link get "res";
 private _pic = ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], format ["#(argb,%1,%1,1)r2t(comspec_livecam,1.0)", _res]] call comspec_atak_native_fnc_pageCtrl;
@@ -277,7 +299,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
     };
 }, 0.5, [_link get "drop", _link get "tier", diag_tickTime + 3]] call CBA_fnc_addPerFrameHandler];
 private _osd = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _pad / 2, _vw - _pad, _rowH * 2.3]] call comspec_atak_native_fnc_pageCtrl;
-if (!_fixed) then {
+if (_isUav) then {
+    _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
+        [_unit, [], "NAME"] call comspec_atak_native_fnc_droneOsd, [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit)]) call comspec_atak_native_fnc_tr);
+};
+if (!_fixed && {!_isUav}) then {
     _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4°</t>",
         [_unit, true] call comspec_atak_native_fnc_unitCallsign, [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit), round getDir _unit]) call comspec_atak_native_fnc_tr);
 } else {
