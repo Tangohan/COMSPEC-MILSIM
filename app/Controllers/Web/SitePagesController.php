@@ -244,8 +244,20 @@ final class SitePagesController
             'meta_description' => __('site.atakn_meta_description'),
             'marketingActive' => 'atak-natif',
             'og_image' => asset_url('assets/atak-native/atak-natif-poster.jpg'),
-            'marketingStyles' => [asset_url('assets/css/atak-native.css')],
+            'marketingStyles' => [asset_url('assets/css/atak-showcase.css')],
+            'marketingScripts' => [asset_url('assets/js/atak-showcase.js')],
             'jsonLdExtra' => [
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'SoftwareApplication',
+                    'name' => 'COMSPEC ATAK',
+                    'applicationCategory' => 'GameApplication',
+                    'operatingSystem' => 'Windows (Arma 3)',
+                    'description' => __('site.atakn_meta_description'),
+                    'image' => asset_url('assets/atak-native/v2/phone-s7.webp'),
+                    'url' => $pageUrl,
+                    'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'EUR'],
+                ],
                 [
                     '@context' => 'https://schema.org',
                     '@type' => 'VideoObject',

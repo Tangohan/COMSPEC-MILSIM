@@ -57,6 +57,26 @@ final class AtakReleaseInfo
     public static function playerSummary(string $version, ?string $root = null): array
     {
         $out = ['fr' => '', 'en' => ''];
+        foreach (self::playerNotes($version, $root) as $k => $notes) {
+            $lines = $notes['title'] === '' ? [] : [rtrim($notes['title'], ' .') . '.'];
+            $text = trim(str_replace(['|', '`', '**'], ['', '', ''], implode(' ', [...$lines, ...$notes['bullets']])));
+            if (mb_strlen($text) > self::SUMMARY_MAX) {
+                $text = rtrim(mb_substr($text, 0, self::SUMMARY_MAX - 1)) . '…';
+            }
+            $out[$k] = $text;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Même « Résumé joueur », gardé en titre + puces (page publique /atak-natif, bloc « Nouveautés »).
+     *
+     * @return array{fr: array{title: string, bullets: list<string>}, en: array{title: string, bullets: list<string>}}
+     */
+    public static function playerNotes(string $version, ?string $root = null): array
+    {
+        $out = ['fr' => ['title' => '', 'bullets' => []], 'en' => ['title' => '', 'bullets' => []]];
         if (preg_match('/^[0-9]+(?:\.[0-9]+){1,3}$/', $version) !== 1) {
             return $out;
         }
@@ -75,25 +95,25 @@ final class AtakReleaseInfo
             return $out;
         }
         $lang = '';
-        $parts = ['fr' => [], 'en' => []];
         foreach (explode("\n", $b[1]) as $line) {
             $line = trim($line);
             if (preg_match('/^(FR|EN)\s*:\s*(.+)$/u', $line, $l) === 1) {
                 $lang = $l[1] === 'FR' ? 'fr' : 'en';
-                $parts[$lang][] = rtrim($l[2], ' .') . '.';
+                $out[$lang]['title'] = $l[2];
             } elseif ($lang !== '' && str_starts_with($line, '- ')) {
-                $parts[$lang][] = trim(substr($line, 2));
+                $out[$lang]['bullets'][] = trim(substr($line, 2));
             }
-        }
-        foreach ($parts as $k => $lines) {
-            $text = trim(str_replace(['|', '`', '**'], ['', '', ''], implode(' ', $lines)));
-            if (mb_strlen($text) > self::SUMMARY_MAX) {
-                $text = rtrim(mb_substr($text, 0, self::SUMMARY_MAX - 1)) . '…';
-            }
-            $out[$k] = $text;
         }
 
         return $out;
+    }
+
+    /** Nom affiché de la version publiée (VERSION_NAME, ex. « 2.1.0.AB - Denver »), null s'il manque. */
+    public static function versionName(?string $root = null): ?string
+    {
+        $hpp = self::read(rtrim($root ?? base_path(), '/') . '/' . self::SCRIPT_COMPONENT);
+
+        return self::match('/^#define\s+VERSION_NAME\s+"([^"\n]{1,60})"/m', $hpp);
     }
 
     private static function read(string $path, int $max = 65536): string
