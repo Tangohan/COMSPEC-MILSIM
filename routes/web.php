@@ -1340,6 +1340,10 @@ return function (Router $router) {
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails', [OrganizationIntegrationsController::class, 'saveMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails/essai', [OrganizationIntegrationsController::class, 'testMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/discord', [OrganizationIntegrationsController::class, 'savePlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/discord/essai', [OrganizationIntegrationsController::class, 'testPlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/emails', [OrganizationIntegrationsController::class, 'savePlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/emails/essai', [OrganizationIntegrationsController::class, 'testPlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais', [OrganizationIntegrationsController::class, 'storeSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais/communaute', [OrganizationIntegrationsController::class, 'saveSseCommunity'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais/{relayId}/supprimer', [OrganizationIntegrationsController::class, 'deleteSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -15,10 +15,16 @@ use App\Support\SecretCipher;
  * Sans réglage (ou réglage coupé), rien ne change : l'envoi de la plateforme s'applique s'il existe, sinon rien ne part.
  * Le mot de passe est chiffré en base (SecretCipher) et n'est jamais réaffiché.
  * Seuls les ports SMTP usuels et les serveurs publics sont acceptés (pas d'adresse du réseau local du serveur).
+ *
+ * PLATFORM (0) : même compte pour l'envoi commun de la plateforme (e-mails sans communauté, communautés sans compte),
+ * réglé par l'administrateur dans Intégrations > Plateforme et rangé dans platform_settings. Une fois actif, il remplace
+ * les réglages MAIL_* du .env (email_config()), qui ne servent plus que de secours.
  */
 final class TenantMailSender
 {
     public const SETTINGS_KEY = 'mail_sender';
+    public const PLATFORM = 0;
+    public const PLATFORM_SETTING_KEY = 'mail.platform_sender';
 
     /** Fournisseurs proposés : hôte, port, chiffrement et identifiant par défaut. */
     public const PROVIDERS = [
@@ -36,10 +42,14 @@ final class TenantMailSender
 
     /**
      * @param (\Closure(string): list<string>)|null $resolveHost adresses IP d'un hôte (tests)
+     * @param (\Closure(): string)|null $platformRead réglage JSON de l'envoi commun (tests)
+     * @param (\Closure(string): void)|null $platformWrite enregistrement JSON de l'envoi commun (tests)
      */
     public function __construct(
         private ?TenantRepository $tenants = null,
-        ?\Closure $resolveHost = null
+        ?\Closure $resolveHost = null,
+        private ?\Closure $platformRead = null,
+        private ?\Closure $platformWrite = null
     ) {
         $this->resolveHost = $resolveHost ?? static function (string $host): array {
             if (filter_var($host, FILTER_VALIDATE_IP)) {
@@ -127,6 +137,23 @@ final class TenantMailSender
             return ['ok' => false, 'message' => 'L’adresse d’expéditeur n’est pas une adresse e-mail valide.'];
         }
 
+        if ($tenantId === self::PLATFORM) {
+            try {
+                $this->platformWriter()((string) json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            } catch (\Throwable) {
+                return ['ok' => false, 'message' => 'Le compte d’envoi de la plateforme n’a pas pu être enregistré (table platform_settings absente ?).'];
+            }
+
+            return [
+                'ok' => true,
+                'message' => $enabled
+                    ? 'Le compte d’envoi de la plateforme est enregistré : il remplace les réglages MAIL_* du .env. Envoyez un e-mail d’essai pour vérifier.'
+                    : 'Réglage enregistré. Le compte d’envoi de la plateforme est coupé : les réglages MAIL_* du .env s’appliquent s’ils existent.',
+            ];
+        }
+        if ($tenantId < 2) {
+            return ['ok' => false, 'message' => 'Aucune communauté sélectionnée.'];
+        }
         $this->repo()->mergeSettings($tenantId, [self::SETTINGS_KEY => $row]);
 
         return [
@@ -144,7 +171,7 @@ final class TenantMailSender
      */
     public function transportConfig(int $tenantId): ?array
     {
-        if ($tenantId < 2) {
+        if ($tenantId < 2 && $tenantId !== self::PLATFORM) {
             return null;
         }
         $row = $this->raw($tenantId);
@@ -155,14 +182,15 @@ final class TenantMailSender
         $password = (string) ($row['password'] ?? '');
         $plain = $password !== '' ? SecretCipher::decrypt($password) : '';
         if ($plain === null) {
-            error_log('[mail] communauté ' . $tenantId . ' : mot de passe SMTP illisible (APP_KEY changée ?)');
+            error_log('[mail] ' . ($tenantId === self::PLATFORM ? 'plateforme' : 'communauté ' . $tenantId) . ' : mot de passe SMTP illisible (APP_KEY changée ?)');
 
             return null;
         }
 
         return [
             'default_mailer' => 'smtp',
-            'transport_label' => 'community:' . $state['provider'],
+            // « platform:… » compte dans le quota de la plateforme, « community:… » non.
+            'transport_label' => ($tenantId === self::PLATFORM ? 'platform:' : 'community:') . $state['provider'],
             'from_address' => $state['from_address'],
             'from_name' => $state['from_name'],
             'reply_to' => $state['reply_to'] !== '' ? $state['reply_to'] : null,
@@ -190,7 +218,9 @@ final class TenantMailSender
         }
         $state = $this->state($tenantId);
         if (!$state['enabled']) {
-            return ['ok' => false, 'message' => 'Activez d’abord le compte d’envoi de la communauté, puis enregistrez.'];
+            return ['ok' => false, 'message' => $tenantId === self::PLATFORM
+                ? 'Activez d’abord le compte d’envoi de la plateforme, puis enregistrez.'
+                : 'Activez d’abord le compte d’envoi de la communauté, puis enregistrez.'];
         }
         $config = $this->transportConfig($tenantId);
         if ($config === null) {
@@ -255,12 +285,53 @@ final class TenantMailSender
     /** @return array<string, mixed> */
     private function raw(int $tenantId): array
     {
+        if ($tenantId === self::PLATFORM) {
+            try {
+                $decoded = json_decode(($this->platformReader())(), true);
+            } catch (\Throwable) {
+                return [];
+            }
+
+            return is_array($decoded) ? $decoded : [];
+        }
         if ($tenantId < 2) {
             return [];
         }
         $settings = $this->repo()->getSettings($tenantId);
 
         return is_array($settings[self::SETTINGS_KEY] ?? null) ? $settings[self::SETTINGS_KEY] : [];
+    }
+
+    /** @return \Closure(): string */
+    private function platformReader(): \Closure
+    {
+        return $this->platformRead ??= static fn (): string => (new \App\Repositories\PlatformSettingsRepository())->get(self::PLATFORM_SETTING_KEY, '');
+    }
+
+    /** @return \Closure(string): void */
+    private function platformWriter(): \Closure
+    {
+        return $this->platformWrite ??= static function (string $json): void {
+            $repo = new \App\Repositories\PlatformSettingsRepository();
+            if (!$repo->tableExists()) {
+                throw new \RuntimeException('platform_settings');
+            }
+            $repo->setMany([self::PLATFORM_SETTING_KEY => $json]);
+        };
+    }
+
+    /**
+     * Envoi commun de la plateforme réglé en base, au format email_config(), ou null (les MAIL_* du .env s'appliquent).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function platformOverride(): ?array
+    {
+        try {
+            return (new self())->transportConfig(self::PLATFORM);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function repo(): TenantRepository
