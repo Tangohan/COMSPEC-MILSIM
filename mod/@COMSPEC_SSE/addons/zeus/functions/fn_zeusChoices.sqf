@@ -4,6 +4,7 @@
     _kind : "profile" | "siteProfile" | "complexity" | "pack" | "entityType"
             | "evidence" | "level" | "device" | "security" | "domexProfile"
             | "packetType" | "quality" | "stage"
+            | "siteType" | "occupants" | "siteSide" | "siteComplexity" | "kit"
 */
 params [["_kind", "", [""]]];
 
@@ -78,6 +79,33 @@ switch (toLower _kind) do {
         [
             ["non_identifie", "decouvert", "acces_en_cours", "acces_etabli", "exploite"],
             ["Non identifié", "Découvert", "Accès en cours", "Accès établi", "Exploité"]
+        ]
+    };
+    case "sitetype": {
+        [
+            ["SAFEHOUSE", "IED_LAB", "FORGERY", "WEAPONS_CACHE", "CELL_HQ", "DEAD_DROP", "HAWALA"],
+            ["Planque", "Labo d'IED", "Atelier de faux papiers", "Cache d'armes", "PC de cellule", "Boîte aux lettres morte", "Nœud hawala / changeur"]
+        ]
+    };
+    case "occupants": {
+        [
+            [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8],
+            ["Selon le site", "Aucun", "1", "2", "3", "4", "5", "6", "7", "8"]
+        ]
+    };
+    case "siteside": {
+        [["GUER", "EAST", "CIV"], ["Insurgés (indépendants)", "Insurgés (OPFOR)", "Civils"]]
+    };
+    case "sitecomplexity": {
+        [
+            ["", "LIGHT", "STANDARD", "DETAILED", "HIGH_VALUE"],
+            ["Selon le site", "Légère — quelques indices", "Standard", "Détaillée", "Haute valeur — dossier riche"]
+        ]
+    };
+    case "kit": {
+        [
+            ["TEAM", "BIO", "DIGITAL", "DOMEX"],
+            ["Kit SSE d'équipe", "Kit biométrie", "Kit exploitation numérique", "Valise DOMEX de terrain"]
         ]
     };
     default { [[], []] };

@@ -1,6 +1,9 @@
 /*
     Ajoute le kit SSE de base à l'inventaire du joueur (si place).
     [] call comspec_sse_fnc_equipSseKit
+    Ancien kit « qui apparaît » : remplacé par les caisses de kit réelles (COMSPEC_SSE_Box_Team,
+    _Biometrics, _Digital, COMSPEC_SSE_DomexCase ; module « Poser une caisse de kit »). Gardé pour les
+    scripts de mission qui l'appellent encore.
 */
 private _items = [
     "COMSPEC_SSE_EvidenceBag",
