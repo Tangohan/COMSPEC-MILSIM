@@ -27,6 +27,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_ProfSet", {
     params ["_var", "_val"];
     profileNamespace setVariable [_var, _val];
     saveProfileNamespace;
+    // Modèle : la liste déroulante CBA (comspec_atak_native_phone_model) suit le choix fait dans le téléphone.
+    if (_var isEqualTo "COMSPEC_ATAK_PhoneModel") then { ["comspec_atak_native_phone_model", _val, false, "client"] call CBA_settings_fnc_set; };
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 private _profSegment = {
