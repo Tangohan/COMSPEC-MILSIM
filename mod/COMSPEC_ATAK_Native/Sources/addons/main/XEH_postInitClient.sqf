@@ -99,7 +99,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
 // Téléphone rangé, ou porté en véhicule : le gestionnaire renvoie false, le jeu (et ACE) se comporte normalement. Réinstallé à chaque ouverture (fn_open).
 missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     params [["_activate", false]];
-    private _mode = missionNamespace getVariable ["comspec_atak_native_action_menu", 2];
+    private _mode = missionNamespace getVariable ["comspec_atak_native_action_menu", 1];
     if (_mode isEqualTo 0 || {isNull ([] call comspec_atak_native_fnc_display)}) exitWith { false };
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     private _inHand = _st getOrDefault ["interactive", false];
@@ -107,6 +107,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     // En véhicule (conducteur, passager, tireur) : le menu d'actions reste libre (démarrer le moteur, monter, descendre…)
     // sauf téléphone en main (réglage « Menu d'actions libre en véhicule », activé par défaut).
     if (!isNull objectParent player && {missionNamespace getVariable ["comspec_atak_native_action_menu_vehicle", true]}) exitWith { _inHand };
+    // Appareil photo : la molette zoome, le menu reste fermé.
+    if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) exitWith { true };
     // Écran sur le JPC : le joueur garde son arme et son menu d'actions.
     _inHand || {_mode isEqualTo 2 && {!(_st getOrDefault ["texture", false])}}
 }];
@@ -490,26 +492,63 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
 
 // Détecteur de drones : balayage automatique en fond (réglage de l'app).
 [{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { ["auto"] call comspec_atak_native_fnc_droneDetectScan; }; }, 5] call CBA_fnc_addPerFrameHandler;
-// Drones pilotés au téléphone : terminal UAV interdit sauf au pilote en mode manuel (COMSPEC_DroneLock).
+// Drones pilotés au téléphone : une seule main sur le drone (COMSPEC_DroneLock, fn_droneAction).
+//   "" : le téléphone pilote ; les autres joueurs ne peuvent pas connecter de terminal UAV. Le pilote (COMSPEC_DroneOwner)
+//        le peut toujours : connecter son terminal (UAV Terminal vanilla, tablette OTAN...) passe le drone en pilotage
+//        manuel ; un ordre du téléphone donné ensuite reprend la main et déconnecte son terminal.
+//   uid : seul ce joueur peut s'y connecter (pilotage manuel) ; absent : drone libre.
+// Pilote parti de la partie : le verrou ne tient plus (avant : drone bloqué pour tous jusqu'à la fin de la mission) ; le
+// premier joueur qui y connecte un terminal libère le drone (fn_droneCmd "release").
 // Appliqué toutes les 0,5 s pour primer sur les mods qui réactivent la connexion (Mavic).
 [{
     private _blocked = missionNamespace getVariable ["COMSPEC_ATAK_UavBlocked", []];
     private _uid = getPlayerUID player;
+    private _conn = getConnectedUAV player;
+    private _prev = missionNamespace getVariable ["COMSPEC_ATAK_UavPrev", objNull];
+    missionNamespace setVariable ["COMSPEC_ATAK_UavPrev", _conn];
+    private _online = allPlayers apply { getPlayerUID _x };
     {
         private _lock = _x getVariable "COMSPEC_DroneLock";
+        private _owner = _x getVariable ["COMSPEC_DroneOwner", ""];
+        private _stale = _owner isNotEqualTo "" && {!(_owner in _online)};
         if (!isNil "_lock" && {_lock isNotEqualTo _uid}) then {
-            player disableUAVConnectability [_x, true];
-            if ((getConnectedUAV player) isEqualTo _x) then {
-                player connectTerminalToUAV objNull;
-                ["WARNING", "Drone piloté depuis un téléphone : terminal déconnecté", 4, 40] call comspec_atak_native_fnc_notify;
+            switch (true) do {
+                case _stale: {
+                    if (_conn isEqualTo _x) then {
+                        _x setVariable ["COMSPEC_DroneOwner", "", true];
+                        _x setVariable ["COMSPEC_DroneLock", nil, true];
+                        ["comspec_atak_native_droneCmd", [_x, "release", []], _x] call CBA_fnc_targetEvent;
+                    };
+                };
+                case (_owner isEqualTo _uid): {
+                    if (_conn isNotEqualTo _x) exitWith {};
+                    if (_prev isNotEqualTo _x) exitWith {
+                        _x setVariable ["COMSPEC_DroneLock", _uid, true];
+                        ["comspec_atak_native_droneCmd", [_x, "manual", []], _x] call CBA_fnc_targetEvent;
+                        ["INFO", "Terminal UAV connecté : pilotage manuel. Un ordre du téléphone reprend la main.", 5, 40] call comspec_atak_native_fnc_notify;
+                    };
+                    player connectTerminalToUAV objNull;
+                    ["WARNING", "Ordre du téléphone : terminal UAV déconnecté", 4, 40] call comspec_atak_native_fnc_notify;
+                };
+                default {
+                    player disableUAVConnectability [_x, true];
+                    if (_conn isEqualTo _x) then {
+                        player connectTerminalToUAV objNull;
+                        ["WARNING", "Drone piloté depuis un téléphone : terminal déconnecté", 4, 40] call comspec_atak_native_fnc_notify;
+                    };
+                    _blocked pushBackUnique _x;
+                };
             };
-            _blocked pushBackUnique _x;
         };
     } forEach allUnitsUAV;
-    // Verrou levé ou rendu à ce joueur : connexion rétablie une fois.
+    // Verrou levé, rendu à ce joueur, pilote parti ou c'est le mien : connexion rétablie une fois.
     {
         private _lock = _x getVariable "COMSPEC_DroneLock";
-        if (isNull _x || {isNil "_lock"} || {_lock isEqualTo _uid}) then { if (!isNull _x) then { player enableUAVConnectability [_x, true]; }; _blocked set [_forEachIndex, objNull]; };
+        private _owner = if (isNull _x) then { "" } else { _x getVariable ["COMSPEC_DroneOwner", ""] };
+        if (isNull _x || {isNil "_lock"} || {_lock isEqualTo _uid} || {_owner isEqualTo _uid} || {_owner isNotEqualTo "" && {!(_owner in _online)}}) then {
+            if (!isNull _x) then { player enableUAVConnectability [_x, true]; };
+            _blocked set [_forEachIndex, objNull];
+        };
     } forEach _blocked;
     missionNamespace setVariable ["COMSPEC_ATAK_UavBlocked", _blocked - [objNull]];
 }, 0.5] call CBA_fnc_addPerFrameHandler;

@@ -31,7 +31,7 @@ if (_kind in ["ICON", "ICONID"]) exitWith {
     };
     [_id, format ["\z\comspec_atak_native\addons\main\data\drone_%1.paa", _id]] select (_kind isEqualTo "ICON")
 };
-private _modes = createHashMapFromArray [["HOVER", "Stationnaire"], ["FOLLOW", "Suivi"], ["HOME", "Retour au pilote"], ["LAND", "Atterrissage"], ["RTH", "Retour automatique"], ["STRIKE", "FRAPPE EN COURS"], ["HUNT", "Recherche"], ["MANUAL", "Pilotage manuel (terminal UAV)"], ["GOTO", "Vers le point"], ["LOITER", "Orbite"], ["OBSERVE", "Observation"], ["ESCORT", "Escorte"], ["ROUTE", "Route"], ["STANDBY", "Veille"]];
+private _modes = createHashMapFromArray [["HOVER", "Stationnaire"], ["FOLLOW", "Suivi"], ["HOME", "Retour au pilote"], ["LAND", "Atterrissage"], ["RTH", "Retour automatique"], ["STRIKE", "FRAPPE EN COURS"], ["HUNT", "Recherche"], ["MANUAL", "Pilotage manuel (terminal UAV)"], ["STICK", "Manette du téléphone"], ["GOTO", "Vers le point"], ["LOITER", "Orbite"], ["OBSERVE", "Observation"], ["ESCORT", "Escorte"], ["ROUTE", "Route"], ["STANDBY", "Veille"]];
 private _m = _d getVariable ["COMSPEC_DroneMode", "HOVER"];
 private _f = _d getVariable ["COMSPEC_DroneFollow", objNull];
 private _h = round ((getPosATL _d) select 2);

@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Drone : terminal UAV vanilla réparé, manette de pilotage dans l'app Drone (ATAK natif 2.3.2.AB - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Le terminal UAV marche de nouveau, et l'app Drone a une manette
+- Avec l'ATAK en miniature, la molette d'Arma reste libre : l'action « UAV Terminal » est de nouveau accessible.
+- Le pilote peut toujours connecter son terminal UAV à un drone appairé au téléphone, et un pilote parti ne bloque plus personne.
+- Après le pilotage manuel ou un désappairage, le drone suit de nouveau les ordres « aller ici » du terminal.
+- Nouvelle Manette dans l'onglet VOL de l'app Drone : avancer, reculer, de côté, pivoter, monter et descendre, avec des boutons ou les touches ZQSD, A/E, Espace et C, aussi en plein écran.
+EN : The UAV terminal works again, and the Drone app has a controller
+- With the ATAK minimized, Arma's scroll wheel stays free: the "UAV Terminal" action is reachable again.
+- The pilot can always connect their UAV terminal to a drone paired with the phone, and a pilot who left no longer blocks anyone.
+- After manual flight or unpairing, the drone follows the terminal's "move here" orders again.
+- New Controller in the FLIGHT tab of the Drone app: forward, back, sideways, turn, climb and descend, with buttons or the WASD, Q/E, Space and C keys, also in full screen.
+
+### Détail technique
+- PR #967 : `XEH_postInitClient.sqf` (ActionBlock, boucle de verrou réécrite), `XEH_preInit.sqf` (« Menu d'actions » par défaut à « En main seulement »), `fn_droneCmd.sqf` (`manual`/`release` sans `doStop`, rendu par `doFollow`, nouveau cas `stick`), `fn_droneAction.sqf` (`stick`, `stickSet`, `stickStep`, `stickStop`, `stickKey`), `fn_pageDrone.sqf` (section Manette + KeyUp), `fn_droneOsd.sqf`, traductions EN, gabarit de traduction.
+- Version 2.3.2, main.pbo reconstruit, COMSPEC Link inchangé (2.0.90).
+- À tester en jeu : UAV Terminal par la molette avec l'ATAK en miniature, clic droit « aller ici » ; connexion du terminal par le pilote d'un drone appairé ; Manette (décollage, touches tenues, boutons, STOP, plein écran) ; un autre joueur bloqué tant que le pilote est là, libre ensuite.
+
+---
+
 ## Crédits : logo ATAK à la place du logo SOAR (ATAK natif 2.3.1.AB - Denver)
 
 ### Résumé joueur

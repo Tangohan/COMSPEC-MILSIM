@@ -521,6 +521,9 @@ if (_view isNotEqualTo "") then {
             params ["", "_key", "_shift"];
             // Saisie dans un champ du téléphone : rien pour la caméra, et la touche ne part pas au jeu (fn_keyBlock).
             if (_this call comspec_atak_native_fnc_keyBlock) exitWith { true };
+            // Manette prise : touches de vol au drone sur la page Drone (les flèches restent à la caméra).
+            if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE"
+                && {["stickKey", [_key, true]] call comspec_atak_native_fnc_droneAction}) exitWith { true };
             if !(uiNamespace getVariable ["COMSPEC_ATAK_DroneHover", false]) exitWith { false };
             if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith { false };
             if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "DRONE") exitWith { false };
@@ -539,6 +542,7 @@ if (_view isNotEqualTo "") then {
             ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
             true
         }]];
+        _disp displayAddEventHandler ["KeyUp", { ["stickKey", [_this select 1, false]] call comspec_atak_native_fnc_droneAction }];
     };
     // Barre de commandes sous l'image : groupes titrés (grand format), bouton actif en vert, marquage en rouge.
     private _y = _top + _areaH + _pad * 0.3;
@@ -998,6 +1002,7 @@ switch (_tab) do {
             _rows pushBack ["buttons", [["REPRENDRE", ["resume"] call _act, true]]];
         };
         if (_m isEqualTo "MANUAL") then { _rows pushBack ["text", "<t color='#f2ab33'>Pilotage manuel : vous seul pouvez connecter un terminal UAV à ce drone. Le moindre ordre du téléphone reprend la main et déconnecte le terminal.</t>"]; };
+        if (_m isNotEqualTo "MANUAL") then { _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Votre terminal UAV (ou une tablette) reste utilisable : le connecter à ce drone passe en pilotage manuel.</t>"]; };
         _rows append [
             ["segment", "", [
                 ["STATIONNAIRE", ["mode", "hover"] call _act, _m isEqualTo "HOVER" && {!_ground}],
@@ -1007,11 +1012,29 @@ switch (_tab) do {
             ]],
             ["segment", "Altitude", (([[15, 30, 60, 100, 150], [2, 3, 5, 8]] select _cqb) apply { [format ["%1 m", _x], ["alt", _x] call _act, _alt isEqualTo _x] })],
             ["segment", "Vitesse", (([[20, 40, 60, 90], [5, 10, 15]] select _cqb) apply { [format ["%1 km/h", _x], ["speed", _x] call _act, _spd isEqualTo _x] })],
-            ["switch", "Profil CQB", _cqb, ["cqb"] call _act, "Vol bas en intérieur : 2 à 8 m, 5 à 15 km/h, suivi à 5 m, arrêt devant un obstacle"],
+            ["switch", "Profil CQB", _cqb, ["cqb"] call _act, "Vol bas en intérieur : 2 à 8 m, 5 à 15 km/h, suivi à 5 m, arrêt devant un obstacle"]
+        ];
+        // Manette : pilotage direct depuis le téléphone, sans terminal UAV (retour de TTRD, 19/10 : « on doit vraiment
+        // pouvoir le piloter totalement »). Boutons = crans d'un régulateur, touches tenues = manche (fn_droneAction "stickKey").
+        _rows pushBack ["section", "Manette", "Pilotage direct du drone depuis le téléphone, comme au terminal UAV"];
+        if (_m isEqualTo "STICK") then {
+            (_d getVariable ["COMSPEC_DroneStick", [0, 0, 0, 0]]) params [["_sf", 0], ["_sr", 0], ["_su", 0], ["_sy", 0]];
+            _rows pushBack ["text", format ["<t size='0.85' color='#5cc76b'>Manette prise · avant %1 %% · côté %2 %% · montée %3 %% · pivot %4 %% · vitesse max %5 km/h</t>",
+                round (100 * _sf), round (100 * _sr), round (100 * _su), round (100 * _sy), _spd]];
+            _rows append [
+                ["buttons", [["PIVOTER À GAUCHE", ["stickStep", [3, -0.5]] call _act, false], ["AVANCER", ["stickStep", [0, 0.25]] call _act, _sf > 0], ["PIVOTER À DROITE", ["stickStep", [3, 0.5]] call _act, false]]],
+                ["buttons", [["À GAUCHE", ["stickStep", [1, -0.25]] call _act, _sr < 0], ["STOP", ["stickStop"] call _act, "red"], ["À DROITE", ["stickStep", [1, 0.25]] call _act, _sr > 0]]],
+                ["buttons", [["MONTER", ["stickStep", [2, 0.5]] call _act, _su > 0], ["RECULER", ["stickStep", [0, -0.25]] call _act, _sf < 0], ["DESCENDRE", ["stickStep", [2, -0.5]] call _act, _su < 0]]],
+                ["text", "<t size='0.8' color='#8a9a93'>Clavier (téléphone en main, page Drone, ou en PLEIN ÉCRAN) : ZQSD (AZERTY) ou WASD (QWERTY) pour avancer, reculer et aller de côté, A / E (AZERTY) ou Q / E (QWERTY) pour pivoter, Espace pour monter, C pour descendre, tant que la touche est tenue. Les boutons ajoutent un cran, STOP remet tout à zéro. Altitude tenue seule, arrêt devant un obstacle. Tout autre ordre rend la main au pilote automatique.</t>"]
+            ];
+        } else {
+            _rows pushBack ["buttons", [["PRENDRE LA MANETTE", ["stick"] call _act, true, true, "Pilotage direct : avancer, reculer, de côté, pivoter, monter, descendre"]]];
+        };
+        _rows append [
             ["section", "Dépannage", "Le drone ne bouge pas, ou vous voulez le piloter vous-même"],
             ["buttons", [["FORCER L'EXÉCUTION", ["force"] call _act, false], ["PILOTAGE MANUEL", ["manual"] call _act, _m isEqualTo "MANUAL"]]],
             ["text", format ["<t size='0.8' color='#8a9a93'>FORCER : renvoie « %1 », recrée l'IA de vol si besoin, efface ses points de passage, réapplique altitude et vitesse (fait seul une fois si l'ordre n'avance pas pendant 10 s). MANUEL : terminal UAV.</t>",
-                ((createHashMapFromArray [["takeoff", "décoller"], ["hover", "stationnaire"], ["follow", "suivre"], ["home", "retour au pilote"], ["land", "atterrir"], ["hunt", "recherche"], ["goto", "aller au point"], ["loiter", "orbite"], ["observe", "observer"], ["escort", "escorte"], ["route", "route"], ["rth", "retour au point de décollage"], ["strike", "frappe"], ["manual", "pilotage manuel"], ["standby", "veille"]]) getOrDefault [(missionNamespace getVariable ["COMSPEC_ATAK_DroneOrder", []]) param [0, "hover"], "stationnaire"])]],
+                ((createHashMapFromArray [["takeoff", "décoller"], ["hover", "stationnaire"], ["follow", "suivre"], ["home", "retour au pilote"], ["land", "atterrir"], ["hunt", "recherche"], ["goto", "aller au point"], ["loiter", "orbite"], ["observe", "observer"], ["escort", "escorte"], ["route", "route"], ["rth", "retour au point de décollage"], ["strike", "frappe"], ["manual", "pilotage manuel"], ["standby", "veille"], ["stick", "manette"]]) getOrDefault [(missionNamespace getVariable ["COMSPEC_ATAK_DroneOrder", []]) param [0, "hover"], "stationnaire"])]],
             ["section", "Suivre un joueur", ["Le drone se place 15 m derrière lui. FILMER : la caméra reste braquée sur lui", "Profil CQB : 5 m derrière lui, à hauteur d'homme. FILMER : la caméra reste braquée sur lui"] select _cqb]
         ];
         // Caméra braquée sur un joueur (clé UNIT:<netId>, boucle de la nacelle de fn_droneAction), le drone garde son

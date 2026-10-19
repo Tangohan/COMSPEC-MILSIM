@@ -8,7 +8,10 @@
       "follow"  [cible, altitude, km/h]     suit une unité (le pilote ou un autre joueur), 15 m derrière ;
       "home"    [pilote, altitude, km/h]    revient au pilote puis se pose à côté ;
       "land"    []                          se pose sur place ;
-      "manual"  []                          rend la main au terminal UAV du pilote : le drone reste en stationnaire ;
+      "manual"  []                          rend la main au terminal UAV du pilote : le drone obéit aux points de passage
+                                            du terminal (plus de doStop) ;
+      "release" []                          drone désappairé : même remise aux ordres de son groupe, mode effacé ;
+      "stick"   []                          manette du téléphone : pilotage direct par COMSPEC_DroneStick (voir plus bas) ;
       "rth"     [position ASL]              liaison perdue : retour au point de décollage et atterrissage ;
       "alt"     [altitude] / "speed" [km/h] réglages en vol ;
       "cqb"     [actif, altitude, km/h]     profil CQB (2 à 8 m, 5 à 15 km/h) : vol bas piloté par une boucle à nous
@@ -145,9 +148,9 @@ if (_cmd isEqualTo "force") then {
     _args = _fa;
 };
 // Veille quittée par un ordre de vol : consommation normale.
-if (_cmd in ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual"]) then { _d setVariable ["COMSPEC_DroneStandby", nil, true]; };
+if (_cmd in ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual", "release", "stick"]) then { _d setVariable ["COMSPEC_DroneStandby", nil, true]; };
 // Ordre de vol donné au sol : décollage d'abord (le retour au pilote d'un drone déjà posé ne le fait pas redécoller).
-if (_cmd in ["takeoff", "hover", "follow", "escort", "goto", "loiter", "observe", "strike", "hunt", "route"]) then { call _start; };
+if (_cmd in ["takeoff", "hover", "follow", "escort", "goto", "loiter", "observe", "strike", "hunt", "route", "stick"]) then { call _start; };
 // Profil CQB : l'IA de vol ne sait pas passer une porte, notre boucle prend la main ; les ordres « hauts » en sortent.
 private _cqb = _d getVariable ["COMSPEC_DroneCqb", false];
 if (_cqb && {_cmd in ["loiter", "observe", "hunt", "strike"]}) then {
@@ -275,7 +278,55 @@ switch (_cmd) do {
             };
         };
     };
-    case "manual": { ["MANUAL"] call _setMode; doStop _d; _d flyInHeight [_alt, true]; };
+    // Main rendue au terminal UAV (manuel) ou drone libéré (désappairage) : plus de doStop ni de boucle à nous. Un doStop
+    // laissé en place faisait ignorer au drone les points de passage du terminal (clic droit « aller ici » sans effet,
+    // retour d'un joueur, 19/10) ; doFollow le rend aux ordres de son groupe, ceux que pose le terminal.
+    case "manual";
+    case "release": {
+        ["MANUAL"] call _setMode;
+        if (_cmd isEqualTo "release") then { _d setVariable ["COMSPEC_DroneMode", nil, true]; _d setVariable ["COMSPEC_DroneStick", nil, true]; };
+        { _x enableAI "MOVE"; _x enableAI "PATH"; _x doFollow (leader group _x); } forEach (crew _d);
+        _d land "NONE";
+        _d flyInHeight [_alt, true];
+    };
+    // Manette du téléphone : pilotage direct, comme au terminal. COMSPEC_DroneStick [avant, droite, montée, lacet] de -1
+    // à 1, posé par le téléphone (fn_droneAction "stickSet") ; vitesse au plus celle choisie, lacet 60 °/s, montée 3 m/s.
+    // Sans montée demandée, l'altitude est tenue ; jamais sous 1 m du sol, arrêt devant un obstacle (comme le CQB).
+    case "stick": {
+        ["STICK"] call _setMode;
+        _d setVariable ["COMSPEC_DroneStick", [0, 0, 0, 0], true];
+        if (!isNull driver _d) then { (driver _d) disableAI "MOVE"; };
+        doStop _d;
+        private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
+        [_d, _loop] spawn {
+            params ["_d", "_loop"];
+            // Posé : il monte d'abord à 3 m, puis tient son altitude.
+            private _holdZ = ((getPosASL _d) select 2) max ((getTerrainHeightASL (getPosASL _d)) + 3);
+            private _t0 = time;
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+                private _dt = ((time - _t0) max 0.01) min 0.2;
+                _t0 = time;
+                (_d getVariable ["COMSPEC_DroneStick", [0, 0, 0, 0]]) params [["_f", 0], ["_r", 0], ["_u", 0], ["_y", 0]];
+                private _pos = getPosASL _d;
+                private _agl = (getPosATL _d) select 2;
+                // Au sol avec montée demandée : moteurs d'abord.
+                if (_u > 0 && {!isEngineOn _d}) then { _d engineOn true; };
+                private _dir = (getDir _d) + _y * 60 * _dt;
+                private _spd = (_d getVariable ["COMSPEC_DroneSpd", 40]) / 3.6;
+                private _vh = ([sin _dir, cos _dir, 0] vectorMultiply (_f * _spd)) vectorAdd ([cos _dir, -sin _dir, 0] vectorMultiply (_r * _spd));
+                private _m = vectorMagnitude _vh;
+                if (_m > 0.1 && {(count (lineIntersectsSurfaces [_pos, _pos vectorAdd ((vectorNormalized _vh) vectorMultiply (2 + 0.5 * _m)), _d, objNull, true, 1])) > 0}) then { _vh = [0, 0, 0]; };
+                private _vz = if (_u isNotEqualTo 0) then { _holdZ = _pos select 2; _u * 3 } else { ((_holdZ - (_pos select 2)) * 1.5) max -2 min 2 };
+                if (_agl < 1 && {_vz < 0}) then { _vz = 0; _holdZ = _pos select 2; };
+                if (_vz > 0 && {(count (lineIntersectsSurfaces [_pos, _pos vectorAdd [0, 0, 0.8], _d, objNull, true, 1])) > 0}) then { _vz = 0; _holdZ = _pos select 2; };
+                if (isEngineOn _d && {_agl > 0.3 || {_vz > 0}}) then {
+                    _d setVectorDirAndUp [[sin _dir, cos _dir, 0], [0, 0, 1]];
+                    _d setVelocity [_vh select 0, _vh select 1, _vz];
+                };
+                sleep 0.02;
+            };
+        };
+    };
     case "rth": {
         _args params [["_home", getPosASL _d]];
         ["RTH"] call _setMode;
