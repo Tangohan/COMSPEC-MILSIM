@@ -107,6 +107,8 @@ switch (_act) do {
         _arg setVariable ["COMSPEC_DroneOwner", "", true];
         _arg setVariable ["COMSPEC_DroneLock", nil, true];
         _arg setVariable ["COMSPEC_DroneRole", nil, true];
+        // Rendu propre au terminal UAV, comme au désappairage (fn_droneCmd "release").
+        if (alive _arg) then { ["comspec_atak_native_droneCmd", [_arg, "release", []], _arg] call CBA_fnc_targetEvent; };
         missionNamespace setVariable ["COMSPEC_ATAK_DroneFleet", _bg - [_arg]];
         [format ["Flotte : %1 libéré", [_arg] call _name]] call _log;
         call _render;

@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Drone : terminal UAV vanilla réparé, manette au téléphone (ATAK natif 2.3.2.AB - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Le terminal UAV marche de nouveau, et le drone se pilote entièrement au téléphone
+- Avec le téléphone en miniature, le menu à la molette reste libre : l'action « UAV Terminal » et la tablette sont de nouveau utilisables.
+- Le pilote d'un drone appairé peut toujours y connecter son terminal : le drone passe en pilotage manuel, et un ordre donné au téléphone reprend la main. Un drone dont le pilote a quitté la partie n'est plus bloqué.
+- Les points de passage du terminal (clic droit « aller ici ») fonctionnent de nouveau après un pilotage manuel ou un désappairage.
+- Nouvelle Manette dans l'onglet VOL de l'app Drone : avancer, reculer, aller de côté, pivoter, monter et descendre, avec des boutons ou en tenant ZQSD (ou WASD), A et E, Espace et C, aussi en plein écran.
+EN : The UAV terminal works again, and the drone can be flown fully from the phone
+- With the phone in miniature, the scroll-wheel menu stays free: the "UAV Terminal" action and the tablet can be used again.
+- The pilot of a paired drone can always connect their own terminal: the drone switches to manual control, and any order given from the phone takes control back. A drone whose pilot left the game is no longer locked.
+- Terminal waypoints (right-click "go here") work again after manual control or unpairing.
+- New Joystick in the FLIGHT tab of the Drone app: forward, back, sideways, turn, climb and descend, with buttons or by holding WASD (or ZQSD), Q and E, Space and C, also in full screen.
+
+### Détail technique
+- Réglage « Bloquer le menu d'actions (molette) » : défaut 1 (« En main seulement ») ; l'appareil photo bloque toujours la molette.
+- Verrou drone (XEH_postInitClient) : le propriétaire n'est jamais bloqué, connexion de son terminal = passage en manuel, pilote absent de allPlayers = verrou ignoré et drone libéré au premier terminal connecté.
+- fn_droneCmd : "manual" / "release" remettent l'équipage aux ordres du groupe (doFollow, plus de doStop) ; désappairage et sortie de flotte envoient "release" ; nouveau mode "stick" (COMSPEC_DroneStick, vitesse ≤ réglage, lacet 60 °/s, montée 3 m/s, altitude tenue, arrêt obstacle, plancher 1 m).
+- fn_droneAction : stick, stickSet, stickStep, stickStop, stickKey ; touches en vue directe ; watchdog désactivé en STICK.
+
 ## Crédits : logo ATAK à la place du logo SOAR (ATAK natif 2.3.1.AB - Denver)
 
 ### Résumé joueur
