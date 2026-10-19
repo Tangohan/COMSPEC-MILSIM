@@ -58,6 +58,8 @@ switch (_kind) do {
             _cfg set ["crackTime", [60 + (["crack", 60] call _roll), 150 + (["crack", 90] call _roll)] select _six];
         };
         _cfg set ["port", "usb"];
+        // Un téléphone sur trois est sous contrôle à distance du réseau : sac de Faraday indispensable.
+        if ((["rwipe", 3] call _roll) isEqualTo 0) then { [_e] call comspec_sse_fnc_remoteWipe; };
     };
     case "portable";
     case "ordinateur": {

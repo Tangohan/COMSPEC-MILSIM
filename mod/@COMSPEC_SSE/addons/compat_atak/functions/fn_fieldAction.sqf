@@ -21,6 +21,8 @@ private _say = { params ["_type", "_msg"]; [_type, _msg call comspec_sse_fnc_tr,
 private _away = { params ["_code", ["_args", []]]; [] call comspec_atak_native_fnc_close; [_code, _args, 0.1] call CBA_fnc_waitAndExecute; };
 
 if (_act isEqualTo "tab") exitWith { _st set ["tab", _arg]; call _render; true };
+if (_act isEqualTo "guide") exitWith { [{ ["COMSPEC_SSE", "Start"] call BIS_fnc_openFieldManual; }] call _away; true };
+if (_act isEqualTo "techlog") exitWith { [{ [] call comspec_sse_fnc_showLog; }] call _away; true };
 if (_act isEqualTo "chart") exitWith { [{ [false] call comspec_sse_fnc_chartOpen; }] call _away; true };
 if (_act isEqualTo "registry") exitWith { [{ ["evidence"] call comspec_sse_fnc_uiOpenScreen; }] call _away; true };
 if (_act isEqualTo "triage") exitWith {
@@ -55,12 +57,20 @@ switch (_act) do {
         [[[_t, player distance _t]], 1] call comspec_sse_fnc_evidencePhoto;
         call _render;
     };
+    case "radio": { [_t, player] call comspec_sse_fnc_doExploitRadio; };
     case "docs": { [{ _this call comspec_sse_fnc_doReadDocuments; }, [_t, player]] call _away; };
     case "seek": { [{ _this call comspec_sse_fnc_openSeek; }, [_t]] call _away; };
     case "dl7": {
         if !(["can", _t] call comspec_atak_native_fnc_dataAction) exitWith { ["WARNING", "DL-7 : approchez-vous du support (câble trop court) ou débranchez le câble en cours"] call _say; };
-        ["connect", _t] call comspec_atak_native_fnc_dataAction;
-        [{ ["DATALINK"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        // Valise DOMEX posée à côté : lecteur rapide (le serveur raccourcit le téléchargement avant le branchement).
+        if ((nearestObjects [_t, ["COMSPEC_SSE_DomexCase"], 10]) isNotEqualTo []) then {
+            [_t] call comspec_sse_fnc_domexBoost;
+            ["INFO", "Valise DOMEX à proximité : extraction accélérée"] call _say;
+        };
+        [{
+            ["connect", _this] call comspec_atak_native_fnc_dataAction;
+            [{ ["DATALINK"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        }, _t, 0.4] call CBA_fnc_waitAndExecute;
     };
     case "transmit": {
         [_t, true, false] call comspec_sse_fnc_transmitEntity;

@@ -45,6 +45,12 @@ class CfgFunctions {
             class getJournal {};
             class openJournal {};
             class progressAction {};
+            class kitUse {};
+            class kitActions {};
+            class gsrTest {};
+            class faradayBag {};
+            class placeMarker {};
+            class placeMarkerServer {};
         };
     };
 };

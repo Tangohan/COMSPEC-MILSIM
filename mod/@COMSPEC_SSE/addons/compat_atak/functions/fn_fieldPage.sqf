@@ -91,6 +91,10 @@ switch (_tab) do {
                 format ["%1 · %2", _x getOrDefault ["clock", "?"], [(_x getOrDefault ["type", "?"]) call _tr] call _esc],
                 [_x getOrDefault ["summary", _x getOrDefault ["id", ""]]] call _esc];
         } forEach _last;
+        _rows pushBack ["buttons", [
+            ["Guide SSE" call _tr, ["guide"] call _act],
+            ["Journal technique" call _tr, ["techlog"] call _act]
+        ]];
         if (!isNil "comspec_sse_fnc_campaignInfo") then {
             _rows pushBack ["section", "Campagne" call _tr, ""];
             _rows pushBack ["text", ([] call comspec_sse_fnc_campaignInfo) call _tr];
@@ -129,6 +133,9 @@ switch (_tab) do {
         ];
         if (_isMan) then {
             _btns pushBack ["SEEK II", ["seek"] call _act];
+        };
+        if (_type isEqualTo "RADIO") then {
+            _btns pushBack ["Exploiter la radio" call _tr, ["radio"] call _act];
         };
         if (!isNil { _t getVariable "COMSPEC_ATAK_Data" }) then {
             _btns pushBack ["Brancher le DL-7" call _tr, ["dl7"] call _act, true];

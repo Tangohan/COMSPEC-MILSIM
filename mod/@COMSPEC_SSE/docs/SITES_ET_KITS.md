@@ -101,3 +101,26 @@ L'ancien « Équiper le kit SSE » (`comspec_sse_fnc_equipSseKit`) est conservé
 
 `spawnComposition` renvoie un HashMap avec les clés `id`, `grid`, `objects`, `persons`, `evidence`, `mines` et `readyIn`. Le chef (`chief`) et l'état `ready` sont remplis quand les fiches sont générées.
 Sur le serveur, `comspec_sse_siteRegistry` garde les sites posés.
+
+## Usage des kits sur le terrain
+
+Le SSE n'a plus de menu ACE personnel. Le travail passe par l'app **SSE terrain** du téléphone ATAK, sauf les gestes physiques au contact :
+
+| Geste (interaction ACE sur la cible) | Kit porté | Consommation |
+|---|---|---|
+| Fouiller (personne, objet) | aucun | - |
+| Mettre sous scellé (collecte + scellé) | Sachet de preuve | 1 sachet |
+| Relever les empreintes (personne) | Kit empreintes (sans SEEK II) | 10 relevés par kit |
+| Relever des empreintes latentes (objet, arme au sol, trace de sang) | Kit empreintes | 10 relevés par kit |
+| Prélèvement ADN (personne, trace de sang) | Kit ADN ou kit d'écouvillons | 12 par kit |
+| Test de résidus de tir | Kit d'écouvillons | 12 par kit |
+| Enrôlement biométrique | SEEK II | - |
+| Mettre en sac de Faraday (support numérique) | Sac de Faraday | 1 sac |
+| Poser un cône de preuve (numéroté, marqueur carte) | Jeu de cônes | 12 cônes par jeu |
+| Examiner une trace de sang (action personnelle près de la trace) | aucun | - |
+
+- **Numérique** : brancher le câble DL-7 du téléphone (app SSE terrain, bouton « Brancher le DL-7 »). Une **valise DOMEX** posée à moins de 10 m divise par deux le téléchargement et le forçage.
+- **Effacement à distance** : un téléphone saisi sur trois est effacé 5 à 8 minutes après l'arrivée des joueurs, sauf s'il est dans un sac de Faraday ou déjà extrait.
+- **Photos de preuve** : app Photo de l'ATAK (les pièces cadrées sont inscrites au dossier) ou bouton « Photo de preuve » de l'app SSE terrain.
+- **Qualité de collecte** : gants, lumière, pluie, blessure, compétence, nombre de tentatives, et doctrine (pièce photographiée en place, cône posé avant le déplacement).
+- **Test de résidus de tir** : positif si la personne a tiré dans les 20 dernières minutes, faible jusqu'à 45 minutes ou sous forte pluie, négatif au-delà.

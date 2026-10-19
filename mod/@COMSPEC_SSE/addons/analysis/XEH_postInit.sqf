@@ -54,28 +54,7 @@ if (!hasInterface) exitWith {};
 [{ !isNil "ace_interact_menu_fnc_createAction" && {!isNull player} }, {
     private _p = [false, false, false, false, true];
     private _none = { [] };
-    private _self = [
-        (["COMSPEC_SSE_Chart", "Tableau des liens", "\A3\ui_f\data\map\markers\nato\o_hq.paa", { [false] call comspec_sse_fnc_chartOpen }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction),
-        (["COMSPEC_SSE_Register", "Registre des scellés", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { ["evidence"] call comspec_sse_fnc_uiOpenScreen }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction),
-        (["COMSPEC_SSE_MySeals", "Pièces que je détiens", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", {
-            private _ids = ["held", [player]] call comspec_sse_fnc_custody;
-            private _all = missionNamespace getVariable ["comspec_sse_custody", createHashMap];
-            private _lines = [format ["Pièces détenues : %1", count _ids]];
-            _lines append (_ids apply { private _p = _all getOrDefault [_x, createHashMap]; format ["%1 · %2 · %3", _x, _p getOrDefault ["state", "?"], _p getOrDefault ["desc", ""]] });
-            [_lines joinString "\n", "INFO", "SSE · Registre"] call comspec_sse_fnc_notify;
-        }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction)
-    ];
-    missionNamespace setVariable ["comspec_sse_anaSelfActions", _self];
-    private _install = {
-        params ["_unit"];
-        if (_unit getVariable ["comspec_sse_anaSelf", false]) exitWith {};
-        _unit setVariable ["comspec_sse_anaSelf", true];
-        { [_unit, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _x] call ace_interact_menu_fnc_addActionToObject; } forEach (missionNamespace getVariable ["comspec_sse_anaSelfActions", []]);
-    };
-    [player] call _install;
-    missionNamespace setVariable ["comspec_sse_anaSelfInstall", _install];
-    player addEventHandler ["Respawn", { params ["_unit"]; [_unit] call (missionNamespace getVariable "comspec_sse_anaSelfInstall"); }];
-
+    // Tableau des liens, registre et pièces détenues : app « SSE terrain » du téléphone ATAK (onglets SITE et SCELLÉS).
     // Remise des pièces à un équipier : inscrite au journal de chacune.
     private _give = [
         "COMSPEC_SSE_GiveSeals", "Remettre mes pièces scellées", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
