@@ -3,8 +3,10 @@
     Campagnes : relais serveur, fin de mission, notes, menus ACE et Zeus.
 */
 if (isServer) then {
-    ["comspec_sse_campOp", { params ["_op", "_args", ["_req", objNull]]; [_op, _args, _req] call comspec_sse_fnc_campaignOp; }] call CBA_fnc_addEventHandler;
-    ["comspec_sse_campAthena", { params ["_mode", "_args", ["_req", objNull]]; [_mode, _args, _req] call comspec_sse_fnc_campaignAthena; }] call CBA_fnc_addEventHandler;
+    // Demandes des clients : sans demandeur, refusées (un appel sans demandeur vaut appel du serveur, donc autorisé).
+    // Le contrôle Zeus / administrateur se fait dans campaignOp et campaignAthena.
+    ["comspec_sse_campOp", { params ["_op", "_args", ["_req", objNull]]; if (isNull _req) exitWith {}; [_op, _args, _req] call comspec_sse_fnc_campaignOp; }] call CBA_fnc_addEventHandler;
+    ["comspec_sse_campAthena", { params ["_mode", "_args", ["_req", objNull]]; if (isNull _req) exitWith {}; [_mode, _args, _req] call comspec_sse_fnc_campaignAthena; }] call CBA_fnc_addEventHandler;
     // L'index des sauvegardes est connu de tous dès le départ (formulaires Zeus).
     ["publish", []] call comspec_sse_fnc_campaignOp;
     {
@@ -21,25 +23,25 @@ if (!hasInterface) exitWith {};
 ["comspec_sse_campNote", {
     params [["_msg", "", [""]]];
     if (_msg isEqualTo "") exitWith {};
-    // Jamais dans le chat du jeu : une note à l'écran.
-    hint ((parseText format ["<t color='#7fd08a'>SSE · Campagne</t><br/>%1", _msg]) call comspec_sse_fnc_tr);
+    // Jamais dans le chat du jeu : notification du téléphone (bulle si fermé), traduite avant la mise en forme.
+    [_msg, "INFO", "SSE · Campagne"] call comspec_sse_fnc_notify;
 }] call CBA_fnc_addEventHandler;
 
 ["comspec_sse_campExport", {
     params [["_text", "", [""]]];
     copyToClipboard _text;
-    if (isNil "zen_dialog_fnc_create") exitWith { hint (("Campagne copiée dans le presse-papiers.") call comspec_sse_fnc_tr); };
+    if (isNil "zen_dialog_fnc_create") exitWith { ["Campagne copiée dans le presse-papiers.", "SUCCESS", "SSE · Campagne"] call comspec_sse_fnc_notify; };
     [
         "Campagne exportée",
         [["EDIT:MULTI", ["Texte (déjà copié)", "Ctrl+A puis Ctrl+C si le presse-papiers est bloqué par le serveur."], [_text, {}, 8]]],
         {}
-    ] call zen_dialog_fnc_create;
+    ] call comspec_sse_fnc_zenDialog;
 }] call CBA_fnc_addEventHandler;
 
 // Liste des campagnes d'Athena reçue du serveur : choix de celle à récupérer.
 ["comspec_sse_campAthenaList", {
     params [["_rows", [], [[]]]];
-    if (isNil "zen_dialog_fnc_create") exitWith { hint (("Zeus Enhanced requis pour ce formulaire.") call comspec_sse_fnc_tr); };
+    if (isNil "zen_dialog_fnc_create") exitWith { ["Zeus Enhanced requis pour ce formulaire.", "warn"] call comspec_sse_fnc_zeusNotify; };
     private _types = createHashMapFromArray [["permanente", "permanente"], ["recurrente", "récurrente"], ["temporaire", "temporaire"]];
     [
         "Campagne : récupérer depuis Athena",
@@ -50,17 +52,17 @@ if (!hasInterface) exitWith {};
             ["CHECKBOX", ["Charger tout de suite", "Remplace la campagne en cours de la partie."], false]
         ],
         { params ["_v"]; ["pull", [_v select 0, _v select 1, _v select 2]] call comspec_sse_fnc_campaignAthena; }
-    ] call zen_dialog_fnc_create;
+    ] call comspec_sse_fnc_zenDialog;
 }] call CBA_fnc_addEventHandler;
 
 [{ !isNil "ace_interact_menu_fnc_createAction" && {!isNull player} }, {
     private _act = ["COMSPEC_SSE_Campaign", "Campagne en cours", "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa",
-        { hint ((parseText ([] call comspec_sse_fnc_campaignInfo)) call comspec_sse_fnc_tr) }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call comspec_sse_fnc_aceAction;
+        { hint parseText (([] call comspec_sse_fnc_campaignInfo) call comspec_sse_fnc_tr) }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call comspec_sse_fnc_aceAction;
     [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _act] call ace_interact_menu_fnc_addActionToObject;
     player addEventHandler ["Respawn", {
         params ["_unit"];
         private _act = ["COMSPEC_SSE_Campaign", "Campagne en cours", "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa",
-            { hint ((parseText ([] call comspec_sse_fnc_campaignInfo)) call comspec_sse_fnc_tr) }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call comspec_sse_fnc_aceAction;
+            { hint parseText (([] call comspec_sse_fnc_campaignInfo) call comspec_sse_fnc_tr) }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call comspec_sse_fnc_aceAction;
         [_unit, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _act] call ace_interact_menu_fnc_addActionToObject;
     }];
 }, [], 60] call CBA_fnc_waitUntilAndExecute;

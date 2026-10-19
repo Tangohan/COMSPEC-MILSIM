@@ -93,8 +93,9 @@ if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
         "COMSPEC_SSE_HeadBagOn", "Mettre un sac sur la tête", "\a3\ui_f\data\igui\cfg\simpleTasks\types\danger_ca.paa",
         {
             params ["_t", "_p"];
-            [4, [_t, _p], { (_this select 0) params ["_t", "_p"]; ["on", _t, _p] call comspec_sse_fnc_headBag; }, {}, "Sac de tête…",
-                { (_this select 0) params ["_t", "_p"]; ["canOn", _t, _p] call comspec_sse_fnc_headBag }] call ace_common_fnc_progressBar;
+            // Barre commune (distance, véhicule, annulation) avec la condition propre au sac.
+            [4, "Sac de tête…", { params ["_t", "_p"]; ["on", _t, _p] call comspec_sse_fnc_headBag; }, [_t, _p], _t,
+                { params ["_t", "_p"]; ["canOn", _t, _p] call comspec_sse_fnc_headBag }] call comspec_sse_fnc_progressAction;
             _p playActionNow "Medic";
         },
         { ["canOn", _this select 0, _this select 1] call comspec_sse_fnc_headBag },
@@ -104,8 +105,8 @@ if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
         "COMSPEC_SSE_HeadBagOff", "Retirer le sac de tête", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
         {
             params ["_t", "_p"];
-            [2, [_t, _p], { (_this select 0) params ["_t", "_p"]; ["off", _t, _p] call comspec_sse_fnc_headBag; }, {}, "Retrait du sac…",
-                { (_this select 0) params ["_t", "_p"]; ["canOff", _t, _p] call comspec_sse_fnc_headBag }] call ace_common_fnc_progressBar;
+            [2, "Retrait du sac…", { params ["_t", "_p"]; ["off", _t, _p] call comspec_sse_fnc_headBag; }, [_t, _p], _t,
+                { params ["_t", "_p"]; ["canOff", _t, _p] call comspec_sse_fnc_headBag }] call comspec_sse_fnc_progressAction;
             _p playActionNow "Medic";
         },
         { ["canOff", _this select 0, _this select 1] call comspec_sse_fnc_headBag },

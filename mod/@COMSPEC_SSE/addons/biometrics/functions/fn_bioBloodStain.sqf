@@ -32,13 +32,13 @@ if (_mode isEqualTo "near") exitWith {
     } forEach (missionNamespace getVariable ["COMSPEC_SSE_BloodTraces", []]);
     _best
 };
-// Retour à l'opérateur : notification dans le téléphone ATAK natif (dépendance obligatoire),
-// jamais sur l'écran du jeu.
+// Retour à l'opérateur : notification du téléphone ATAK natif. Téléphone fermé (le joueur regarde le sol), le toast
+// de l'ATAK ne s'affiche pas : comspec_sse_fnc_notify met alors le même texte dans une bulle d'aide discrète.
+// Texte en français : chaque ligne est traduite par notify (une ligne déjà traduite reste telle quelle).
 if (_mode isEqualTo "say") exitWith {
     _args params [["_txt", ""], ["_type", "INFO"]];
     if (!hasInterface || {_txt isEqualTo ""}) exitWith {};
-    private _t = _txt call comspec_sse_fnc_tr;
-    [_type, (_t splitString endl) joinString " · ", 8, 30] call comspec_atak_native_fnc_notify;
+    [_txt, _type, "SSE · Tache de sang"] call comspec_sse_fnc_notify;
 };
 
 switch (_mode) do {
@@ -183,7 +183,7 @@ switch (_mode) do {
                             ["LATENT", "biometrics", "latent", _lines select 1, _res getOrDefault ["score", 0], "LOCAL"] call comspec_sse_fnc_addJournalEntry;
                         };
                     }] call comspec_sse_fnc_bioRequest;
-                }, [_t, _toucher, _prints]] call comspec_sse_fnc_progressAction;
+                }, [_t, _toucher, _prints], _pos] call comspec_sse_fnc_progressAction;
                 player playActionNow "Medic";
             };
             case "dna": {
@@ -197,7 +197,7 @@ switch (_mode) do {
                     ["dna", createHashMapFromArray [["unit", _src], ["key", _key], ["dna", _q], ["dnaRef", _id]], {
                         ["say", ["Écouvillon de sang expédié au laboratoire : résultat à venir.", "SUCCESS"]] call comspec_sse_fnc_bioBloodStain;
                     }] call comspec_sse_fnc_bioRequest;
-                }, [_id, _key, _src, _q]] call comspec_sse_fnc_progressAction;
+                }, [_id, _key, _src, _q], _pos] call comspec_sse_fnc_progressAction;
                 player playActionNow "Medic";
             };
         };

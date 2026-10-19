@@ -13,6 +13,12 @@
 params [["_mode", "", [""]], ["_args", [], [[]]], ["_req", objNull, [objNull]]];
 if (!isServer) exitWith { ["comspec_sse_campAthena", [_mode, _args, player]] call CBA_fnc_serverEvent; false };
 if (!canSuspend) exitWith { [_mode, _args, _req] spawn comspec_sse_fnc_campaignAthena; true };
+// Demande d'un client : Zeus ou administrateur seulement (envoi et récupération touchent les sauvegardes du serveur).
+if (!isNull _req && {!([_req] call comspec_sse_fnc_isAuthority)}) exitWith {
+    diag_log text format ["[COMSPEC SSE] Campagne Athena : « %1 » refusé à %2 (ni Zeus ni administrateur).", _mode, name _req];
+    ["comspec_sse_campNote", ["action réservée au Zeus ou à l'administrateur."], _req] call CBA_fnc_targetEvent;
+    false
+};
 
 private _note = {
     params ["_msg"];

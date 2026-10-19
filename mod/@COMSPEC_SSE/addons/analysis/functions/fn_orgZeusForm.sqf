@@ -46,7 +46,7 @@ switch (_mode) do {
                 [format ["%1 personne(s) dans %2.", count _people, _org]] call comspec_sse_fnc_zeusNotify;
             },
             {}, _people
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "generate": {
         if (_people isEqualTo []) exitWith { ["Sélectionnez des personnes (un groupe entier fonctionne).", "warn"] call comspec_sse_fnc_zeusNotify; };
@@ -67,7 +67,7 @@ switch (_mode) do {
                 [format ["Réseau généré sur %1 personne(s). Tableau des liens (vue Zeus) pour le voir.", count _people]] call comspec_sse_fnc_zeusNotify;
             },
             {}, _people
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "link": {
         if (_things isEqualTo []) exitWith { ["Sélectionnez des objets (documents, caches, véhicules...).", "warn"] call comspec_sse_fnc_zeusNotify; };
@@ -82,7 +82,7 @@ switch (_mode) do {
                 [format ["%1 objet(s) rattaché(s) à %2.", count _things, _org]] call comspec_sse_fnc_zeusNotify;
             },
             {}, _things
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "reveal": {
         if (_people isEqualTo []) exitWith { ["Sélectionnez des personnes.", "warn"] call comspec_sse_fnc_zeusNotify; };
@@ -99,7 +99,7 @@ switch (_mode) do {
                 [format ["%1 appartenance(s) révélée(s).", count _people]] call comspec_sse_fnc_zeusNotify;
             },
             {}, _people
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "remove": {
         { ["unmember", [_x]] call comspec_sse_fnc_orgOp; } forEach _people;

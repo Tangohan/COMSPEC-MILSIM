@@ -110,6 +110,7 @@ class CfgFunctions {
             class moduleDomexSetStage {};
             class moduleDomexMapPoint {};
             class moduleContext {};
+            class moduleArgs {};
             class zeusNotify {};
             class zeusChoices {};
             class zeusComboData {};
@@ -1414,6 +1415,10 @@ class CfgRemoteExec {
         class comspec_sse_fnc_giveSeek { allowedTargets = 0; };
         // Compte rendu du serveur au Zeus qui a posé un module « sites et kits ».
         class comspec_sse_fnc_siteNotify { allowedTargets = 1; jip = 0; };
+    };
+    // Commande appelée à distance par le pack : objets posés rendus éditables par les Zeus (serveur).
+    class Commands {
+        class addCuratorEditableObjects { allowedTargets = 2; };
     };
 };
 

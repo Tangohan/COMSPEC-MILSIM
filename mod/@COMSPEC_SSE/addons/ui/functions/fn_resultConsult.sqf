@@ -4,7 +4,7 @@
 */
 private _fog = missionNamespace getVariable ["comspec_sse_lastResult", createHashMap];
 if (!(_fog isEqualType createHashMap)) exitWith {
-    hint (("Aucune pièce à consulter.") call comspec_sse_fnc_tr);
+    ["Aucune pièce à consulter.", "WARNING"] call comspec_sse_fnc_notify;
     false
 };
 

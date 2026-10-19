@@ -40,7 +40,7 @@ if (!hasInterface) exitWith {};
             ("Manuel SSE") call comspec_sse_fnc_tr,
             [["COMBO", ("Chapitre") call comspec_sse_fnc_tr, [_ids, _lbls, 0]]],
             { params ["_v"]; [_v select 0] call comspec_sse_fnc_openGuide; }
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call comspec_sse_fnc_zenModule;
     ["COMSPEC SSE · Outils", "Tutoriel : poser un exercice ici", {
         params ["_pos"];

@@ -4,7 +4,7 @@ params [
 ];
 
 if !([_player, "dna"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint (("Kit ADN SSE (ou SEEK II / kit médical ACE compatible) requis.") call comspec_sse_fnc_tr);
+    ["Kit ADN SSE (ou SEEK II / kit médical ACE compatible) requis.", "WARNING"] call comspec_sse_fnc_notify;
     false
 };
 
@@ -24,17 +24,17 @@ if !([_player, "dna"] call comspec_sse_fnc_hasEquipment) exitWith {
                 ["dna", createHashMapFromArray [
                     ["unit", _target], ["key", [_target] call comspec_sse_fnc_bioPersonKey],
                     ["dna", _bio getOrDefault ["dnaQuality", 0]], ["dnaRef", _bio getOrDefault ["dnaRef", ""]]
-                ], { hint (("Échantillon ADN expédié au laboratoire : résultat à venir.") call comspec_sse_fnc_tr); }] call comspec_sse_fnc_bioRequest;
+                ], { ["Échantillon ADN expédié au laboratoire : résultat à venir.", "INFO"] call comspec_sse_fnc_notify; }] call comspec_sse_fnc_bioRequest;
             };
             if (!isNull (findDisplay 93100)) then { [] call comspec_sse_fnc_seekOnLoad; };
         };
-        private _quality = [55, true, 1, 1] call comspec_sse_fnc_calcQuality;
+        private _quality = [55, true, 1, 1, 1, player, _target, "bio"] call comspec_sse_fnc_calcQuality;
         private _bio = [_target, "biometrics"] call comspec_sse_fnc_getSection;
         if (isNil "_bio" || {!(_bio isEqualType createHashMap)}) then { _bio = createHashMap; };
         _bio set ["dnaId", format ["DNA-%1", [[_target] call comspec_sse_fnc_getSeed, "dna", 8] call comspec_sse_fnc_idToken]];
         _bio set ["dnaQuality", _quality];
         [_target, "biometrics", _bio, true] call comspec_sse_fnc_setSection;
-        hint ((format ["Prélèvement ADN — qualité %1%%", _quality]) call comspec_sse_fnc_tr);
+        [format ["Prélèvement ADN — qualité %1%%", _quality], "INFO"] call comspec_sse_fnc_notify;
         if (!isNull (findDisplay 93100)) then { [] call comspec_sse_fnc_seekOnLoad; };
     },
     [_target]

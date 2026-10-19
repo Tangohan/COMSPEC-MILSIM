@@ -7,7 +7,7 @@ params [
 ];
 
 if !([_player, "camera"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint (("Appareil photo SSE, S7 Android (cTab) ou caméra / tablette compatible requis.") call comspec_sse_fnc_tr);
+    ["Appareil photo SSE, S7 Android (cTab) ou caméra / tablette compatible requis.", "WARNING"] call comspec_sse_fnc_notify;
 };
 
 private _time = missionNamespace getVariable ["comspec_sse_timePhoto", 3];
@@ -21,7 +21,7 @@ private _hasKit = [_player, "camera"] call comspec_sse_fnc_hasEquipment;
         [_target] call comspec_sse_fnc_ensureGenerated;
         private _damage = damage _target;
         private _condition = (1 - (_damage min 0.9));
-        private _quality = [55, _hasKit, 1, _condition, 1] call comspec_sse_fnc_calcQuality;
+        private _quality = [55, _hasKit, 1, _condition, 1, _player, _target, "photo"] call comspec_sse_fnc_calcQuality;
         private _fog = [_target, "inspect", _quality] call comspec_sse_fnc_revealFog;
 
         private _pos = getPosATL _target;
@@ -62,7 +62,7 @@ private _hasKit = [_player, "camera"] call comspec_sse_fnc_hasEquipment;
         [_target, "photos", _photos, true] call comspec_sse_fnc_setSection;
         if (!isNil "comspec_sse_fnc_custody") then { ["event", [_target, "PHOTOGRAPHIE", _player, format ["cap %1°, qualité %2", _heading, [_quality] call comspec_sse_fnc_qualityLabel]]] call comspec_sse_fnc_custody; };
 
-        hint ((format ["Photo prise — qualité %1%% (%2)", _quality, [_quality] call comspec_sse_fnc_qualityLabel]) call comspec_sse_fnc_tr);
+        [format ["Photo prise — qualité %1%% (%2)", _quality, [_quality] call comspec_sse_fnc_qualityLabel], "INFO"] call comspec_sse_fnc_notify;
         [
             _uid,
             "photo",

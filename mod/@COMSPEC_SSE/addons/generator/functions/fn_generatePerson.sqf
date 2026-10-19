@@ -92,8 +92,9 @@ for "_i" from 0 to (((count _smsPool) min _nSms) - 1) do {
     _sms pushBack (createHashMapFromArray [["from", _from], ["text", _txt], ["noise", false], ["theme", _theme]]);
 };
 
-private _noiseP = missionNamespace getVariable ["comspec_sse_noiseProbability", 0.25];
-private _falseP = missionNamespace getVariable ["comspec_sse_falseLeadProbability", 0.05];
+// Bruit et fausses pistes : ceux du modèle ou du module (cluster), sinon les réglages de mission.
+private _noiseP = _cluster getOrDefault ["noiseProbability", missionNamespace getVariable ["comspec_sse_noiseProbability", 0.25]];
+private _falseP = _cluster getOrDefault ["falseLeadProbability", missionNamespace getVariable ["comspec_sse_falseLeadProbability", 0.05]];
 if ((([_seed, "noise"] call comspec_sse_fnc_hash) mod 100) / 100 < _noiseP) then {
     private _nTxt = [_seed, "nsms", _pools get "noiseSms"] call comspec_sse_fnc_pickFromSeed;
     _sms pushBack (createHashMapFromArray [["from", "MAMA"], ["text", _nTxt], ["noise", true]]);

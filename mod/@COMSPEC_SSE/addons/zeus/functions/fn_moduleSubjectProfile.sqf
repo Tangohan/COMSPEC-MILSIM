@@ -8,40 +8,17 @@
     parfois un libellé d'événement en tête côté Eden. Le module ne doit pas mourir
     sur une forme d'appel : c'est ce qui produisait des « Type Chaîne, Objet attendu ».
 */
-private _logic = objNull;
-private _units = [];
-private _activated = true;
-
-if (_this isEqualType objNull) then {
-    _logic = _this;
-} else {
-    if (!(_this isEqualType [])) exitWith { false };
-    private _a0 = _this param [0, objNull];
-    if (_a0 isEqualType objNull) then {
-        _logic = _a0;
-        _units = _this param [1, []];
-        _activated = _this param [2, true];
-    } else {
-        if (_a0 isEqualType "" && { (_this param [1, objNull]) isEqualType objNull }) then {
-            _logic = _this param [1, objNull];
-            _units = _this param [2, []];
-            _activated = _this param [3, true];
-        };
-    };
-};
-
-if (isNull _logic) exitWith { false };
-if (is3DEN) exitWith { true };
-if (!(_units isEqualType [])) then { _units = []; };
-if (!(_activated isEqualType true)) then { _activated = true; };
+// Toutes les formes d'appel de BI, dont ["init", [logic, activé, posé par Zeus]] des modules Eden (is3DEN = 1).
+private _args = _this call comspec_sse_fnc_moduleArgs;
+if (_args isEqualTo []) exitWith { true };
+_args params ["_logic", "_units", "_activated"];
 if (!_activated) exitWith { false };
+if (is3DEN) exitWith { true };
 
 // Un seul écrivain : les variables sont diffusées, il ne faut pas que chaque
 // client réapplique le profil de son côté.
-if (!isServer && { isMultiplayer }) exitWith {
-    deleteVehicle _logic;
-    true
-};
+// Client : le serveur applique et supprime la logique (un deleteVehicle ici l'effaçait avant lui).
+if (!isServer && { isMultiplayer }) exitWith { true };
 
 private _targets = [_logic, _units, 15] call comspec_sse_fnc_moduleTargets;
 if (_targets isEqualTo []) exitWith {

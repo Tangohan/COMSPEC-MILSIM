@@ -38,8 +38,6 @@ private _theme = _model getOrDefault ["theme", "RANDOM"];
 // Probabilités du modèle
 private _noise = _model getOrDefault ["noiseProbability", -1];
 private _falseP = _model getOrDefault ["falseLeadProbability", -1];
-if (_noise >= 0) then { missionNamespace setVariable ["comspec_sse_noiseProbability", _noise]; };
-if (_falseP >= 0) then { missionNamespace setVariable ["comspec_sse_falseLeadProbability", _falseP]; };
 
 // Construire cluster pré-rempli depuis le modèle
 private _seed = [_entity, format ["mdl_%1", _model getOrDefault ["id", ""]]] call comspec_sse_fnc_entitySeed;
@@ -58,6 +56,9 @@ private _cluster = createHashMapFromArray [
     ["modelId", _model getOrDefault ["id", ""]],
     ["modelName", _model getOrDefault ["name", ""]]
 ];
+// Probabilités du modèle portées par le cluster (lues par generatePerson) : jamais le réglage de mission.
+if (_noise >= 0) then { _cluster set ["noiseProbability", _noise]; };
+if (_falseP >= 0) then { _cluster set ["falseLeadProbability", _falseP]; };
 
 // Pools custom
 private _aliasPool = _model getOrDefault ["aliasPool", []];

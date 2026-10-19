@@ -34,6 +34,7 @@ class CfgFunctions {
             class identifySubject {};
             class openSeek {};
             class openSeekKeybind {};
+            class openIntelNoteKeybind {};
             class seekOnLoad {};
             class seekCapture {};
             class seekIdentify {};

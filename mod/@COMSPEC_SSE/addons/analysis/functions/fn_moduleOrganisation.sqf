@@ -33,9 +33,14 @@ if (!isServer || {isNull _logic}) exitWith { false };
     _people = _people arrayIntersect _people;
     private _objects = _synced select { !(_x isKindOf "CAManBase") && {!(_x isKindOf "Logic")} };
 
+    // Nom de code tiré dans la liste réglée (comspec_sse_ana_codenames), quelle que soit sa longueur : l'index fixe
+    // random 20 sortait du tableau avec moins de 20 noms.
     if (_name isEqualTo "") then {
-        _name = format ["%1 %2", ["kindLabel", _kind] call comspec_sse_fnc_orgTables, (([] call comspec_sse_fnc_orgTables) get "codes") select (floor (random 20))];
+        _name = format ["%1 %2", ["kindLabel", _kind] call comspec_sse_fnc_orgTables, selectRandom (([] call comspec_sse_fnc_orgTables) get "codes")];
     };
+    // Diffusion regroupée : une seule publication à la fin, pas trois publicVariable par membre.
+    private _wasBatch = missionNamespace getVariable ["comspec_sse_orgBatch", false];
+    missionNamespace setVariable ["comspec_sse_orgBatch", true];
     private _id = ["ensure", [_name, _kind, _parent, _threat, _desc]] call comspec_sse_fnc_orgOp;
     if (_mode isEqualTo "auto" && {_people isNotEqualTo []}) then {
         [_people, _name, _kind, _seed, _known, _threat] call comspec_sse_fnc_orgGenerate;
@@ -48,5 +53,7 @@ if (!isServer || {isNull _logic}) exitWith { false };
         if (_known >= 2) then { ["revealOrg", [_id, 1, "connue des services"]] call comspec_sse_fnc_orgOp; };
     };
     { _x setVariable ["COMSPEC_SSE_OrgLinked", _name, true]; } forEach _objects;
+    missionNamespace setVariable ["comspec_sse_orgBatch", _wasBatch];
+    if (!_wasBatch) then { ["publish", []] call comspec_sse_fnc_orgOp; };
 }, [_logic], 2] call CBA_fnc_waitAndExecute;
 true
