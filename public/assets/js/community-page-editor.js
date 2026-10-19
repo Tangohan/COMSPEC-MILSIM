@@ -46,8 +46,28 @@
     tone: ['Couleur', { info: 'Info', success: 'Succès', warning: 'Attention', danger: 'Urgent', neutral: 'Neutre', accent: 'Accent' }],
     icon: ['Icône', { info: 'Info', alert: 'Alerte', check: 'Validé', star: 'Étoile', calendar: 'Agenda', radio: 'Radio', shield: 'Bouclier', none: 'Aucune' }],
     size: ['Taille', { standard: 'Normale', large: 'Grande' }],
-    image_side: ['Position de l’image', { right: 'À droite', left: 'À gauche' }]
+    image_side: ['Position de l’image', { right: 'À droite', left: 'À gauche' }],
+    orbat_density: ['Densité', { standard: 'Normale', compact: 'Serrée', airy: 'Aérée' }],
+    orbat_depth: ['Niveaux affichés', { all: 'Tous', 1: '1', 2: '2', 3: '3' }],
+    orbat_colors: ['Couleurs', { unit: 'Par unité', branch: 'Par branche', accent: 'Couleur de la page', mono: 'Sobre' }]
   };
+  /* ORBAT public : styles proposés (aperçu en direct, tout est en CSS) et éléments affichables. */
+  var ORBAT_STYLES = [
+    ['tree', 'Arbre hiérarchique', 'Unités et sous-unités en cascade.', '<rect x="10" y="8" width="62" height="16" rx="3" fill="#24332e"/><rect x="10" y="8" width="62" height="3" fill="#12d18e"/><path d="M18 28v36M18 38h10M18 58h10" stroke="#3c524a" stroke-width="2" fill="none"/><rect x="30" y="31" width="56" height="14" rx="3" fill="#1c2724"/><rect x="30" y="51" width="56" height="14" rx="3" fill="#1c2724"/><rect x="94" y="31" width="56" height="14" rx="3" fill="#1c2724"/>'],
+    ['orgchart', 'Organigramme', 'Commandement en haut, sous-unités en dessous.', '<rect x="56" y="6" width="48" height="16" rx="3" fill="#24332e"/><rect x="56" y="6" width="48" height="3" fill="#12d18e"/><path d="M80 22v8M28 30h104M28 30v8M80 30v8M132 30v8" stroke="#3c524a" stroke-width="2" fill="none"/><rect x="8" y="38" width="40" height="14" rx="3" fill="#1c2724"/><rect x="60" y="38" width="40" height="14" rx="3" fill="#1c2724"/><rect x="112" y="38" width="40" height="14" rx="3" fill="#1c2724"/><path d="M28 52v6M18 58h20M18 58v4M38 58v4" stroke="#3c524a" stroke-width="2" fill="none"/><rect x="10" y="62" width="16" height="10" rx="2" fill="#1c2724"/><rect x="30" y="62" width="16" height="10" rx="2" fill="#1c2724"/>'],
+    ['cards', 'Cartes par unité', 'Grandes cartes illustrées, une par unité.', '<rect x="8" y="10" width="44" height="58" rx="5" fill="#1c2724"/><rect x="8" y="10" width="44" height="18" rx="5" fill="#12d18e"/><rect x="58" y="10" width="44" height="58" rx="5" fill="#1c2724"/><rect x="58" y="10" width="44" height="18" rx="5" fill="#1e6fbf"/><rect x="108" y="10" width="44" height="58" rx="5" fill="#1c2724"/><rect x="108" y="10" width="44" height="18" rx="5" fill="#c98a12"/><rect x="14" y="22" width="14" height="14" rx="3" fill="#0c1116" stroke="#fff" stroke-width="1.5"/><rect x="64" y="22" width="14" height="14" rx="3" fill="#0c1116" stroke="#fff" stroke-width="1.5"/><rect x="114" y="22" width="14" height="14" rx="3" fill="#0c1116" stroke="#fff" stroke-width="1.5"/><rect x="14" y="42" width="30" height="5" rx="2" fill="#fff"/><rect x="64" y="42" width="30" height="5" rx="2" fill="#fff"/><rect x="114" y="42" width="30" height="5" rx="2" fill="#fff"/>'],
+    ['grid', 'Grille d’insignes', 'Tuiles compactes centrées sur l’insigne.', '<g fill="#1c2724"><rect x="8" y="8" width="32" height="30" rx="4"/><rect x="45" y="8" width="32" height="30" rx="4"/><rect x="83" y="8" width="32" height="30" rx="4"/><rect x="120" y="8" width="32" height="30" rx="4"/><rect x="8" y="42" width="32" height="30" rx="4"/><rect x="45" y="42" width="32" height="30" rx="4"/><rect x="83" y="42" width="32" height="30" rx="4"/><rect x="120" y="42" width="32" height="30" rx="4"/></g><g><circle cx="24" cy="21" r="7" fill="#12d18e"/><circle cx="61" cy="21" r="7" fill="#1e6fbf"/><circle cx="99" cy="21" r="7" fill="#12d18e"/><circle cx="136" cy="21" r="7" fill="#c98a12"/><circle cx="24" cy="55" r="7" fill="#1e6fbf"/><circle cx="61" cy="55" r="7" fill="#12d18e"/><circle cx="99" cy="55" r="7" fill="#c98a12"/><circle cx="136" cy="55" r="7" fill="#12d18e"/></g>'],
+    ['branches', 'Liste par branche', 'Une colonne par branche, sous-unités en liste.', '<rect x="8" y="8" width="68" height="64" rx="5" fill="#1c2724"/><rect x="84" y="8" width="68" height="64" rx="5" fill="#1c2724"/><rect x="8" y="8" width="68" height="18" rx="5" fill="#24332e"/><rect x="8" y="8" width="3" height="18" fill="#12d18e"/><rect x="84" y="8" width="68" height="18" rx="5" fill="#24332e"/><rect x="84" y="8" width="3" height="18" fill="#1e6fbf"/><g fill="#3c524a"><rect x="14" y="32" width="48" height="4" rx="2"/><rect x="14" y="44" width="40" height="4" rx="2"/><rect x="20" y="56" width="36" height="4" rx="2"/><rect x="90" y="32" width="48" height="4" rx="2"/><rect x="90" y="44" width="44" height="4" rx="2"/></g>'],
+    ['strength', 'Vue par effectifs', 'Tableau des unités avec chef et remplissage.', '<g fill="#1c2724"><rect x="8" y="8" width="144" height="14" rx="2"/><rect x="8" y="25" width="144" height="14" rx="2"/><rect x="8" y="42" width="144" height="14" rx="2"/><rect x="8" y="59" width="144" height="14" rx="2"/></g><g fill="#3c524a"><rect x="14" y="13" width="34" height="4" rx="2"/><rect x="22" y="30" width="30" height="4" rx="2"/><rect x="22" y="47" width="30" height="4" rx="2"/><rect x="30" y="64" width="26" height="4" rx="2"/></g><g fill="#24332e"><rect x="96" y="13" width="48" height="4" rx="2"/><rect x="96" y="30" width="48" height="4" rx="2"/><rect x="96" y="47" width="48" height="4" rx="2"/><rect x="96" y="64" width="48" height="4" rx="2"/></g><g fill="#12d18e"><rect x="96" y="13" width="40" height="4" rx="2"/><rect x="96" y="30" width="22" height="4" rx="2"/><rect x="96" y="47" width="46" height="4" rx="2"/><rect x="96" y="64" width="14" height="4" rx="2" fill="#c98a12"/></g>']
+  ];
+  var ORBAT_SHOW = [
+    ['orbat_insignia', 'Insignes'],
+    ['orbat_portraits', 'Portraits des chefs'],
+    ['orbat_grades', 'Grades'],
+    ['orbat_strength', 'Effectifs'],
+    ['orbat_slots', 'Places ouvertes'],
+    ['orbat_desc', 'Descriptions']
+  ];
   var ICONS = {
     up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
     down: '<path d="M12 5v14M6 13l6 6 6-6"/>',
@@ -639,6 +659,52 @@
     f.appendChild(url);
     return f;
   }
+  function orbatPanel(b, el, keys) {
+    b.style = b.style || {};
+    var setStyle = function (k, v) {
+      b.style[k] = v;
+      if (el) { el.setAttribute('data-pb-' + k.replace(/_/g, '-'), v); }
+      markDirty();
+    };
+    var current = function (k) { return b.style[k] || (cfg.styleOptions[k] || [])[0]; };
+    var gs = group('Style de l’ORBAT');
+    var grid = document.createElement('div');
+    grid.className = 'pbe-library pbe-orbat-styles';
+    grid.setAttribute('role', 'radiogroup');
+    grid.setAttribute('aria-label', 'Style de l’ORBAT');
+    ORBAT_STYLES.forEach(function (o) {
+      var c = document.createElement('button');
+      c.type = 'button';
+      c.className = 'pbe-card';
+      c.setAttribute('role', 'radio');
+      c.setAttribute('aria-checked', String(current('orbat_style') === o[0]));
+      c.innerHTML = '<div class="pbe-card__art"><svg viewBox="0 0 160 78" preserveAspectRatio="xMidYMid meet">' + o[3] + '</svg></div><strong></strong><span></span>';
+      c.querySelector('strong').textContent = o[1];
+      c.querySelector('span').textContent = o[2];
+      c.addEventListener('click', function () {
+        $$('.pbe-card', grid).forEach(function (x) { x.setAttribute('aria-checked', 'false'); });
+        c.setAttribute('aria-checked', 'true');
+        setStyle('orbat_style', o[0]);
+      });
+      grid.appendChild(c);
+    });
+    gs.appendChild(grid);
+    var gr = group('Réglages');
+    ['orbat_density', 'orbat_depth', 'orbat_colors'].forEach(function (k) {
+      if (keys.indexOf(k) < 0) { return; }
+      var lab = LABELS[k];
+      gr.appendChild(seg(lab[0], cfg.styleOptions[k], current(k), function (v) { setStyle(k, v); }, lab[1]));
+    });
+    var ga = group('Afficher');
+    ORBAT_SHOW.forEach(function (o) {
+      if (keys.indexOf(o[0]) < 0) { return; }
+      ga.appendChild(toggle(o[1], current(o[0]) !== 'off', function (on) { setStyle(o[0], on ? 'on' : 'off'); }));
+    });
+    var note = document.createElement('p');
+    note.className = 'pbe-field';
+    note.innerHTML = '<small>Seules les unités cochées « visibles sur la page publique » apparaissent. Les libellés suivent la langue de l’ORBAT.</small>';
+    ga.appendChild(note);
+  }
   function openBlockPanel(id, focusImage) {
     var b = findBlock(id);
     if (!b) { return; }
@@ -647,7 +713,11 @@
     var custom = b.type !== 'section';
     openPanel(custom ? 'Bloc' : 'Section', custom ? cfg.types[b.type].label : cfg.sections[b.key]);
     var el = blockEl(id);
-    var keys = custom ? (cfg.styleKeys[b.type] || []) : (b.key === 'hero' ? cfg.styleKeys['section:hero'] : cfg.styleKeys.section);
+    var keys = custom ? (cfg.styleKeys[b.type] || []) : (cfg.styleKeys['section:' + b.key] || cfg.styleKeys.section);
+    if (!custom && b.key === 'organisation') {
+      orbatPanel(b, el, keys);
+      keys = keys.filter(function (k) { return k.indexOf('orbat_') !== 0; });
+    }
     if (keys.length) {
       var gs = group('Style');
       keys.forEach(function (k) {

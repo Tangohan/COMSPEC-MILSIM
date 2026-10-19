@@ -48,7 +48,10 @@ if (!empty($brandBanner)) {
     $pbeMedia[] = ['url' => $brandBanner, 'title' => 'Bannière de la communauté'];
 }
 $pbeDraft = is_array($communityConfig['public_page_builder_draft'] ?? null) ? $communityConfig['public_page_builder_draft'] : [];
-$pbeStyleKeys = ['section' => PublicPageBuilder::styleKeysFor('section'), 'section:hero' => PublicPageBuilder::styleKeysFor('section', 'hero')];
+$pbeStyleKeys = ['section' => PublicPageBuilder::styleKeysFor('section')];
+foreach (['hero', 'organisation'] as $pbeT) {
+    $pbeStyleKeys['section:' . $pbeT] = PublicPageBuilder::styleKeysFor('section', $pbeT);
+}
 foreach (array_keys(PublicPageBuilder::BLOCK_TYPES) as $pbeT) {
     $pbeStyleKeys[$pbeT] = PublicPageBuilder::styleKeysFor($pbeT);
 }
