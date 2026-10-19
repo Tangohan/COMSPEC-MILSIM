@@ -496,6 +496,7 @@ return function (Router $router) {
     $router->get('/search', [PortalSearchController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/documentation', [DocumentationController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/documentation/marqueurs', [DocumentationController::class, 'markersLibrary'], [AuthMiddleware::class]);
+    $router->get('/documentation/profils', [DocumentationController::class, 'profiles'], [AuthMiddleware::class]);
     $router->get('/documentation/references', [DocumentationController::class, 'references'], [AuthMiddleware::class]);
     $router->get('/documentation/fichier/{key}', [DocumentationController::class, 'file'], [AuthMiddleware::class]);
     $router->get('/api/operations/doctrine/documents', [DoctrineApiController::class, 'list'], [AuthMiddleware::class]);

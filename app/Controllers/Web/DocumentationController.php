@@ -61,6 +61,37 @@ final class DocumentationController
         ]);
     }
 
+    /**
+     * Profils de communauté (Complet, Bureau des effectifs, Carte ATAK) : comparatif des modules,
+     * niveaux d’accès et tutoriel « Bien démarrer » du profil de la communauté courante.
+     */
+    public function profiles(Request $request, array $params = []): Response
+    {
+        if (!Session::get('user_id')) {
+            Session::flash('error', 'Connectez-vous pour continuer.');
+
+            return Response::redirect(url('login'));
+        }
+        $tenantType = null;
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId > 0) {
+            try {
+                $tenant = (new \App\Repositories\TenantRepository())->findById($tenantId);
+                if (is_array($tenant)) {
+                    $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full'));
+                }
+            } catch (\Throwable) {
+                $tenantType = null;
+            }
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'documentation.profiles',
+            'title' => 'Profils de communauté et accès',
+            'docsTenantType' => $tenantType,
+        ]);
+    }
+
     public function references(Request $request, array $params = []): Response
     {
         if (!Session::get('user_id')) {
