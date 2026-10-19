@@ -341,6 +341,12 @@ return function (Router $router) {
     $router->post('/c/{slug}/medias/{id}/like', [CommunityController::class, 'toggleMediaLike']);
     $router->get('/reels', [CommunityController::class, 'reelsRedirect']);
     $router->post('/c/{slug}/contact', [CommunityController::class, 'contactPublic']);
+    // Édition en place de la vitrine (gestionnaires de la communauté) : brouillon, publication, images.
+    $router->post('/c/{slug}/page-editor/draft', [\App\Controllers\Web\CommunityPageEditorController::class, 'saveDraft'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/publish', [\App\Controllers\Web\CommunityPageEditorController::class, 'publish'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/discard', [\App\Controllers\Web\CommunityPageEditorController::class, 'discard'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/block', [\App\Controllers\Web\CommunityPageEditorController::class, 'renderBlock'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/image', [\App\Controllers\Web\CommunityPageEditorController::class, 'uploadImage'], [AuthMiddleware::class]);
     $router->get('/c/{slug}/forum', [CommunityController::class, 'enterForum'], $mwForum);
     $router->get('/c/{slug}/enlistment/enter', [CommunityController::class, 'enterEnlistment'], [AuthMiddleware::class, EnlistmentModuleSanctionMiddleware::class]);
     $router->get('/c/{slug}/setup', [CommunityController::class, 'setupForm'], [AuthMiddleware::class]);
