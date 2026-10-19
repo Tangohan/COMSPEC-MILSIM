@@ -67,6 +67,22 @@ switch (_mode) do {
             _near = [_near, [], { _x distance _src }, "ASCEND"] call BIS_fnc_sortBy;
             _host = _near param [0, objNull];
         };
+        // Drone du camp : l'image part de la station qui le tient (terminal UAV de l'opérateur, sinon téléphone appairé),
+        // sinon de l'ATAK du camp le plus proche à moins de 2 km du drone (récepteur vidéo au sol).
+        if (unitIsUAV _src) then {
+            private _op = (UAVControl _src) param [0, objNull];
+            if (!(_op isEqualType objNull) || {!alive _op}) then { _op = objNull; };
+            if (isNull _op) then {
+                private _ow = _src getVariable ["COMSPEC_DroneOwner", ""];
+                private _i = allPlayers findIf { _ow isNotEqualTo "" && {getPlayerUID _x isEqualTo _ow} && {alive _x} };
+                if (_i >= 0) then { _op = allPlayers select _i; };
+            };
+            if (isNull _op) then {
+                private _near = allPlayers select { alive _x && {(_x distance _src) < 2000} && {(side group _x) isEqualTo (side group _src)} && {[_x] call comspec_atak_native_fnc_hasDevice} };
+                _op = ([_near, [], { _x distance _src }, "ASCEND"] call BIS_fnc_sortBy) param [0, objNull];
+            };
+            _host = _op;
+        };
         private _up = switch (true) do {
             case (isNull _host): { [0, 100, ""] };
             case (_host isEqualTo player): { _down };
@@ -80,7 +96,7 @@ switch (_mode) do {
         private _loss = round (100 * (1 - (1 - (_ul min 100) / 100) * (1 - (_dl min 100) / 100)));
         private _why = switch (true) do {
             case (_dk <= 0): { "Pas de réseau sur votre téléphone." };
-            case (isNull _host): { "Aucun ATAK du camp à portée de la caméra." };
+            case (isNull _host): { ["Aucun ATAK du camp à portée de la caméra.", "Personne ne reçoit ce drone : aucun opérateur ni ATAK du camp à moins de 2 km de lui."] select (unitIsUAV _src) };
             case (_uk <= 0): { "La source n'a plus de réseau (hors de portée des relais, bâtiment ou brouillage)." };
             default { "" };
         };
