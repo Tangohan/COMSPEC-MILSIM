@@ -151,6 +151,27 @@ class CommunityController
                 break;
             }
         }
+        // Édition en place : gestionnaire de CETTE communauté (ou admin plateforme). En édition ou en aperçu,
+        // la page montre le brouillon (textes et mise en page) au lieu de la version publiée.
+        $pageEditorCanEdit = $this->authService->check()
+            && \App\Core\Container::get(\App\Services\Community\CommunityPageEditorAccess::class)->canEdit($tid);
+        $pageEditorEditing = $pageEditorCanEdit && (string) $request->query('edition', '') === '1';
+        $pageHasDraft = \App\Services\Community\PublicPageBuilder::hasDraft($communityConfig);
+        $pagePreviewDraft = $pageEditorCanEdit && ($pageEditorEditing || ($pageHasDraft && (string) $request->query('apercu', '') === 'brouillon'));
+        if ($pagePreviewDraft) {
+            $communityConfig = \App\Services\Community\PublicPageBuilder::applyDraftFields($communityConfig);
+        }
+        $pageLayout = \App\Services\Community\PublicPageBuilder::resolve($communityConfig, $pagePreviewDraft);
+        $pageDraftRaw = is_array($communityConfig['public_page_builder_draft'] ?? null) ? $communityConfig['public_page_builder_draft'] : [];
+        $pageEditor = [
+            'canEdit' => $pageEditorCanEdit,
+            'editing' => $pageEditorEditing,
+            'previewDraft' => $pagePreviewDraft,
+            'hasDraft' => $pageHasDraft,
+            'draftUpdatedAt' => (string) ($pageDraftRaw['updated_at'] ?? ''),
+            'publishedAt' => (string) ($communityConfig['public_page_builder']['published_at'] ?? ''),
+        ];
+
         $forumMembersOnly = !empty($communityConfig['forum_members_only']);
         $showForumCta = (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
             && (!$forumMembersOnly || ($this->authService->check() && $hasMembershipInTenant));
@@ -208,16 +229,19 @@ class CommunityController
 
         $fromRegistry = trim((string) $request->query('ref', '')) === 'registry';
         $showcaseBackUrl = $this->resolveShowcaseBackUrl($request, (string) ($tenant['slug'] ?? ''));
-        $this->analyticsEventService->record(
-            $tid,
-            $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
-            AnalyticsEventCategory::TENANT_PUBLIC,
-            AnalyticsEventName::TENANT_PUBLIC_VIEW,
-            AnalyticsSubjectType::TENANT,
-            $tid,
-            null,
-            $fromRegistry ? ['from_registry' => true] : null
-        );
+        // Les passages d’un gestionnaire en édition ou en aperçu ne comptent pas comme visites.
+        if (!$pagePreviewDraft) {
+            $this->analyticsEventService->record(
+                $tid,
+                $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
+                AnalyticsEventCategory::TENANT_PUBLIC,
+                AnalyticsEventName::TENANT_PUBLIC_VIEW,
+                AnalyticsSubjectType::TENANT,
+                $tid,
+                null,
+                $fromRegistry ? ['from_registry' => true] : null
+            );
+        }
 
         $publicMediaItems = [];
         $publicMediaCollections = [];
@@ -321,9 +345,11 @@ class CommunityController
             'mediaLikesEnabled' => $this->communityMediaRepository->likesTableExists(),
             'mediaViewerCanLike' => $mediaViewerUserId !== null && $mediaViewerUserId > 0,
             'tenantBranding' => $tenantBranding,
+            'pageLayout' => $pageLayout,
+            'pageEditor' => $pageEditor,
             'meta_description' => $seoDesc,
             'seo_canonical' => $pageUrl,
-            'seo_robots' => Seo::communityIndexable($communityConfig) ? null : 'noindex,follow',
+            'seo_robots' => $pagePreviewDraft ? 'noindex,nofollow' : (Seo::communityIndexable($communityConfig) ? null : 'noindex,follow'),
             'og_image' => $ogImage,
             'og_image_alt' => $tenantName . ' — Athena',
             'seo_json_ld' => $seoJsonLd,
