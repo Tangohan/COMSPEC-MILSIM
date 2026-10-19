@@ -36,6 +36,7 @@ final class EmailService
      * @param array<string, mixed> $payloadSummary
      * @param bool $forceImmediate Si true, ignore MAIL_QUEUE (alertes incident, etc.)
      * @param bool $fromQueue Envoi tiré de la file async_jobs : ne pas la réalimenter via MAIL_QUEUE.
+     * @param list<array{name: string, content: string, mime?: string}> $attachments pièces jointes (ex. .txt du récapitulatif)
      *
      * Le quota quotidien (MailBudget) s'applique au moment de l'envoi : un e-mail regroupé dans le récapitulatif,
      * reporté au lendemain ou coupé par l'administration renvoie true (rien n'est perdu côté appelant).
@@ -51,7 +52,8 @@ final class EmailService
         ?array $payloadSummary = null,
         ?int $campaignId = null,
         bool $forceImmediate = false,
-        bool $fromQueue = false
+        bool $fromQueue = false,
+        array $attachments = []
     ): bool {
         $this->lastSendError = null;
         if (!$fromQueue && !$forceImmediate && filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
@@ -68,6 +70,7 @@ final class EmailService
                         'replyTo' => $replyTo,
                         'payloadSummary' => $payloadSummary,
                         'campaignId' => $campaignId,
+                        'attachments' => self::queueAttachments($attachments),
                     ], JSON_UNESCAPED_UNICODE));
 
                     return true;
@@ -94,7 +97,7 @@ final class EmailService
         } else {
             $transport = $this->transportResolver;
             if ($mailerType !== 'file'
-                && $this->holdForBudget($eventCode, $to, $subject, $htmlBody, $textBody, $tenantId, $reply, $payloadSummary, $campaignId, $mailerType)) {
+                && $this->holdForBudget($eventCode, $to, $subject, $htmlBody, $textBody, $tenantId, $reply, $payloadSummary, $campaignId, $mailerType, $attachments)) {
                 return true;
             }
         }
@@ -103,7 +106,8 @@ final class EmailService
             $subject,
             $htmlBody,
             $textBody,
-            $reply
+            $reply,
+            $attachments
         );
 
         $status = $result['ok'] ? 'sent' : 'failed';
@@ -132,6 +136,50 @@ final class EmailService
         }
 
         return $result['ok'];
+    }
+
+    /**
+     * Pièces jointes stockées dans la file (JSON) : contenu en base64.
+     *
+     * @param list<array{name: string, content: string, mime?: string}> $attachments
+     * @return list<array{name: string, content_b64: string, mime: string}>
+     */
+    public static function queueAttachments(array $attachments): array
+    {
+        $out = [];
+        foreach ($attachments as $file) {
+            if (!isset($file['name'], $file['content'])) {
+                continue;
+            }
+            $out[] = [
+                'name' => (string) $file['name'],
+                'content_b64' => base64_encode((string) $file['content']),
+                'mime' => (string) ($file['mime'] ?? 'application/octet-stream'),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param mixed $stored pièces jointes lues dans la file
+     * @return list<array{name: string, content: string, mime: string}>
+     */
+    public static function attachmentsFromQueue(mixed $stored): array
+    {
+        $out = [];
+        foreach (is_array($stored) ? $stored : [] as $file) {
+            if (!is_array($file) || !isset($file['name'], $file['content_b64'])) {
+                continue;
+            }
+            $content = base64_decode((string) $file['content_b64'], true);
+            if ($content === false) {
+                continue;
+            }
+            $out[] = ['name' => (string) $file['name'], 'content' => $content, 'mime' => (string) ($file['mime'] ?? 'application/octet-stream')];
+        }
+
+        return $out;
     }
 
     private function communityTransport(?int $tenantId): ?EmailTransportResolver
@@ -163,7 +211,8 @@ final class EmailService
         ?string $replyTo,
         ?array $payloadSummary,
         ?int $campaignId,
-        string $mailerType
+        string $mailerType,
+        array $attachments = []
     ): bool {
         $gate = $this->budgetGate ??= new MailBudgetGate($this->deliveryRepository);
         $check = $gate->check($eventCode, $to);
@@ -201,6 +250,7 @@ final class EmailService
                 'replyTo' => $replyTo,
                 'payloadSummary' => $payloadSummary,
                 'campaignId' => $campaignId,
+                'attachments' => self::queueAttachments($attachments),
             ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), $tenantId, MailBudget::nextWindow());
             $this->deliveryRepository->insert($tenantId, $eventCode, $to, $subject, $mailerType, 'deferred', null, null, $summary, $campaignId);
 

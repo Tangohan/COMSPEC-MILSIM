@@ -23,6 +23,7 @@ final class EmailTransportResolver
     }
 
     /**
+     * @param list<array{name: string, content: string, mime?: string}> $attachments pièces jointes en mémoire
      * @return array{ok: bool, transport: string, error?: string, provider_id?: string}
      */
     public function sendMessage(
@@ -30,7 +31,8 @@ final class EmailTransportResolver
         string $subject,
         string $htmlBody,
         string $textBody,
-        ?string $replyTo = null
+        ?string $replyTo = null,
+        array $attachments = []
     ): array {
         $fromEmail = (string) ($this->config['from_address'] ?? 'noreply@localhost');
         $fromName = (string) ($this->config['from_name'] ?? '');
@@ -65,6 +67,18 @@ final class EmailTransportResolver
             $mail->AltBody = $textBody !== '' ? $textBody : strip_tags($htmlBody);
             if ($effectiveReply !== null && $effectiveReply !== '') {
                 $mail->addReplyTo($effectiveReply);
+            }
+            foreach ($attachments as $file) {
+                $name = trim((string) ($file['name'] ?? ''));
+                if ($name === '' || !isset($file['content'])) {
+                    continue;
+                }
+                $mail->addStringAttachment(
+                    (string) $file['content'],
+                    $name,
+                    PHPMailer::ENCODING_BASE64,
+                    (string) ($file['mime'] ?? 'application/octet-stream')
+                );
             }
         } catch (\Throwable $e) {
             return ['ok' => false, 'transport' => 'phpmailer', 'error' => $e->getMessage()];

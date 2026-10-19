@@ -63,18 +63,22 @@ final class OperatorGameProfileRepository
         $personnelId = $this->positiveInt($reference['personnel_id'] ?? null);
         $values = [
             $userId, $personnelId,
-            $identity['player_uid'] ?? $identity['arma_player_uid'] ?? $steamId,
-            $identity['player_name'] ?? $identity['arma_player_name'] ?? null,
-            $identity['callsign'] ?? null,
-            $identity['display_name'] ?? null,
-            $identity['sex'] ?? $identity['sex_detected'] ?? null,
-            $medical['blood_type'] ?? null,
-            $identity['face_class'] ?? null, $identity['face_texture'] ?? null, $identity['role'] ?? null,
-            $identity['group_name'] ?? null, $identity['faction'] ?? null, $identity['side'] ?? null,
+            self::text($identity['player_uid'] ?? $identity['arma_player_uid'] ?? $steamId, 64),
+            self::text($identity['player_name'] ?? $identity['arma_player_name'] ?? null, 190),
+            self::text($identity['callsign'] ?? null, 100),
+            self::text($identity['display_name'] ?? null, 190),
+            self::text($identity['sex'] ?? $identity['sex_detected'] ?? null, 20),
+            self::bloodType($medical['blood_type'] ?? null),
+            self::text($identity['face_class'] ?? null, 190), self::text($identity['face_texture'] ?? null, 500),
+            self::text($identity['role'] ?? null, 190),
+            self::text($identity['group_name'] ?? null, 190), self::text($identity['faction'] ?? null, 100),
+            self::text($identity['side'] ?? null, 30),
             $json($payload['loadout'] ?? $equipment['loadout'] ?? []), $json($equipment), $json($medical), $json($versions),
-            $versions['overwatch'] ?? null, $versions['atak'] ?? null, $versions['arma'] ?? null,
-            $payload['server_name'] ?? null, $payload['mission_name'] ?? null, $payload['mission_id'] ?? null,
-            $payload['world_name'] ?? null, $json($payload), $hash, $tenantId, $steamId,
+            self::text($versions['overwatch'] ?? null, 50), self::text($versions['atak'] ?? null, 50),
+            self::text($versions['arma'] ?? null, 50),
+            self::text($payload['server_name'] ?? null, 190), self::text($payload['mission_name'] ?? null, 190),
+            self::text($payload['mission_id'] ?? null, 190),
+            self::text($payload['world_name'] ?? null, 190), $json($payload), $hash, $tenantId, $steamId,
         ];
         $sql = 'INSERT INTO operator_game_profiles
             (user_id,personnel_id,arma_player_uid,arma_player_name,callsign,display_name,sex_detected,blood_type_detected,
@@ -98,7 +102,7 @@ final class OperatorGameProfileRepository
     {
         $json = static fn (mixed $v): string => json_encode($v, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: '{}';
         $st = $this->pdo()->prepare('INSERT INTO operator_game_snapshots (tenant_id,operator_game_profile_id,reason,server_name,mission_name,identity_json,equipment_json,medical_json,versions_json,raw_payload_json,observed_at) VALUES (?,?,?,?,?,?,?,?,?,?,NOW())');
-        $st->execute([$tenantId,$profileId,$reason,$payload['server_name']??null,$payload['mission_name']??null,$json($payload['identity']??[]),$json($payload['equipment']??[]),$json($payload['medical']??[]),$json($payload['versions']??[]),$json($payload)]);
+        $st->execute([$tenantId,$profileId,self::text($reason,40),self::text($payload['server_name']??null,190),self::text($payload['mission_name']??null,190),$json($payload['identity']??[]),$json($payload['equipment']??[]),$json($payload['medical']??[]),$json($payload['versions']??[]),$json($payload)]);
         return (int) $this->pdo()->lastInsertId();
     }
 
@@ -169,6 +173,41 @@ final class OperatorGameProfileRepository
         }
 
         return null;
+    }
+
+    /**
+     * Valeur envoyée par le mod ramenée à la taille de sa colonne : un texte trop long (dogtag personnalisé,
+     * nom de mission à rallonge) ne doit jamais faire échouer la fiche opérateur en SQLSTATE 22001.
+     */
+    public static function text(mixed $value, int $max): ?string
+    {
+        if (is_bool($value)) {
+            $value = $value ? '1' : '0';
+        }
+        if (!is_string($value) && !is_int($value) && !is_float($value)) {
+            return null;
+        }
+        $s = trim((string) $value);
+        if ($s === '') {
+            return null;
+        }
+        if (!mb_check_encoding($s, 'UTF-8')) {
+            $s = mb_convert_encoding($s, 'UTF-8', 'UTF-8');
+        }
+
+        return mb_strlen($s, 'UTF-8') > $max ? mb_substr($s, 0, $max, 'UTF-8') : $s;
+    }
+
+    /** Groupe sanguin du mod (« O POS », « A Positive », index ACE…) ramené à O+…AB- ; sinon texte coupé à la colonne. */
+    public static function bloodType(mixed $value): ?string
+    {
+        $raw = self::text($value, 190);
+        if ($raw === null) {
+            return null;
+        }
+        $normalized = \App\Support\RoleplayDeadlinePolicy::normalizeBloodType($raw);
+
+        return $normalized !== '' ? $normalized : self::text($raw, 12);
     }
 
     private function positiveInt(mixed $value): ?int
