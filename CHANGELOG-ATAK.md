@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Regroupement : drone retiré de la flotte rendu au terminal UAV, contrôle des PBO au build (ATAK natif 2.3.3.AB - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Un drone retiré de la flotte obéit de nouveau au terminal UAV
+- Un drone libéré depuis l'onglet FLOTTE de l'app Drone suit de nouveau les ordres « aller ici » du terminal UAV.
+- Cette version reprend aussi la 2.3.2 : terminal UAV de nouveau accessible avec l'ATAK en miniature, et Manette de pilotage dans l'onglet VOL de l'app Drone.
+EN : A drone removed from the fleet obeys the UAV terminal again
+- A drone released from the FLEET tab of the Drone app follows the UAV terminal's "move here" orders again.
+- This version also carries 2.3.2: the UAV terminal is reachable again with the ATAK minimized, and a flight Controller in the FLIGHT tab of the Drone app.
+
+### Détail technique
+- #969 : `fn_droneFleet.sqf` « libérer » envoie `fn_droneCmd` "release" au propriétaire local du drone (rendu à son groupe par `doFollow`, comme au désappairage).
+- #963 : `build_mod.bat` lance `tools/verify_build.py` en fin de build (PBO inattendus déplacés dans %TEMP%\comspec_atak_retires, taille, SHA-256, préfixe, doublons, fichiers absents des sources) et s'arrête en erreur si un PBO n'est pas conforme.
+- Version 2.3.3, main.pbo reconstruit avec HEMTT, COMSPEC Link inchangé (2.0.90).
+- À tester en jeu : drone libéré depuis FLOTTE puis clic droit « aller ici » au terminal UAV.
+
+---
+
 ## Drone : terminal UAV vanilla réparé, manette de pilotage dans l'app Drone (ATAK natif 2.3.2.AB - Denver)
 
 ### Résumé joueur
