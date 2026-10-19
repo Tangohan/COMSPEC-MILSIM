@@ -10,7 +10,7 @@ use App\Support\SilentSchemaMigration;
 /**
  * Téléphone en jeu d'un opérateur (roleplay ATAK) : un numéro, un IMEI et une adresse MAC
  * attribués à la première connexion du jeu puis conservés. Le format du numéro suit le tenant :
- * modèle US (grade_system_code US_*) ou modèle FR (par défaut).
+ * pays du référentiel de grades (US_*, RU_*, ES_*…) ou modèle FR (par défaut) ; choix par opérateur au back-office.
  */
 final class GamePhoneIdentityRepository
 {
@@ -29,6 +29,8 @@ final class GamePhoneIdentityRepository
         'UK' => 'Royaume-Uni · mobile 07',
         'DE' => 'Allemagne · mobile 015 / 016 / 017',
         'BE' => 'Belgique · mobile 04',
+        'RU' => 'Russie · mobile +7 9XX XXX-XX-XX',
+        'ES' => 'Espagne · mobile 6XX XXX XXX',
     ];
 
     /** États matériels remontés par le téléphone (fn_deviceHealth) et libellés français. */
@@ -40,7 +42,7 @@ final class GamePhoneIdentityRepository
         'ABSENT' => 'Pas d’appareil sur l’opérateur',
     ];
 
-    /** FR ou US selon le référentiel de grades du tenant. */
+    /** Format du pays du référentiel de grades du tenant (préfixe du code : US_, RU_, ES_…), FR par défaut. */
     public function formatForTenant(int $tenantId): string
     {
         try {
@@ -50,7 +52,9 @@ final class GamePhoneIdentityRepository
         }
         $code = strtoupper(trim((string) ($settings['grade_system_code'] ?? '')));
 
-        return str_starts_with($code, 'US') ? 'US' : 'FR';
+        $country = substr($code, 0, 2);
+
+        return $country !== '' && isset(self::FORMATS[$country]) ? $country : 'FR';
     }
 
     /**
@@ -327,6 +331,7 @@ final class GamePhoneIdentityRepository
     /**
      * FR : 06 / 07 xx xx xx xx. US : (NXX) NXX-XXXX, sans les codes de service (N11) ni l'indicatif 555.
      * UK : 07xxx xxxxxx (hors 076, réservé aux bipeurs). DE : 015x / 016x / 017x + 7 chiffres. BE : 046 à 049 xx xx xx.
+     * RU : +7 9xx xxx-xx-xx (mobiles, indicatif 9xx). ES : 6xx xxx xxx ou 71x à 74x xxx xxx (mobiles, 9 chiffres).
      */
     public static function newNumber(string $format): string
     {
@@ -339,6 +344,14 @@ final class GamePhoneIdentityRepository
             $prefixes = ['151', '152', '157', '159', '160', '162', '163', '170', '171', '172', '173', '174', '175', '176', '177', '178', '179'];
 
             return sprintf('0%s %07d', $prefixes[random_int(0, count($prefixes) - 1)], random_int(0, 9999999));
+        }
+        if ($format === 'RU') {
+            return sprintf('+7 9%02d %03d-%02d-%02d', random_int(0, 99), random_int(0, 999), random_int(0, 99), random_int(0, 99));
+        }
+        if ($format === 'ES') {
+            $prefix = random_int(0, 4) === 0 ? '7' . random_int(1, 4) . random_int(0, 9) : '6' . sprintf('%02d', random_int(0, 99));
+
+            return sprintf('%s %03d %03d', $prefix, random_int(0, 999), random_int(0, 999));
         }
         if ($format === 'BE') {
             return sprintf('04%d%d %02d %02d %02d', random_int(6, 9), random_int(0, 9), random_int(0, 99), random_int(0, 99), random_int(0, 99));
