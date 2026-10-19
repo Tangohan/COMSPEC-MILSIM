@@ -94,3 +94,32 @@ ils sont supprimés automatiquement au changement de page.
 - Un serveur peut retirer n'importe quelle app, module compris, avec le réglage CBA
   « Apps désactivées » (noms de classe séparés par des virgules).
 - Publiez votre module sous votre propre licence. COMSPEC ATAK est non commercial (APL-SA).
+
+## 5. Brouilleurs : brouiller l'ATAK depuis une mission ou un autre mod
+
+Un brouilleur déclaré ici agit comme ceux de l'app Guerre électronique et du module Zeus « ATAK · Brouilleur de zone » :
+débit, GPS, suivi des forces amies, drones, vidéo et relais dans son rayon (plein effet au centre, plus faible vers le
+bord), et la goniométrie de l'app GE peut le relever.
+
+```sqf
+// Serveur (l'init d'un objet dans Eden tourne aussi sur le serveur). Ailleurs, la demande part au serveur.
+// [source (objet ou position), rayon m, force 1-100, durée s (0 = sans fin), camp épargné ("" , "WEST", "EAST", "GUER", "CIV"), id facultatif]
+if (isServer) then { ["add", [this, 800, 80]] call comspec_atak_native_fnc_jammer; };
+private _id = ["add", [getMarkerPos "zone_ge", 1500, 60, 600, "EAST"]] call comspec_atak_native_fnc_jammer;
+["remove", _id] call comspec_atak_native_fnc_jammer;   // ou ["remove", objet]
+```
+
+- Un objet brouilleur s'arrête quand il est détruit. Pour l'éteindre sans le retirer :
+  `objet setVariable ["COMSPEC_ATAK_JamActive", false, true]` (la variable `a3f_jammer_active` des scripts
+  « TFAR Radio Jammer » est aussi respectée).
+- Sans script, l'admin peut désigner des objets ou véhicules d'autres mods dans le réglage CBA
+  « Objets brouilleurs d'autres mods » : `Classe:rayon:force`, séparés par des virgules (classes parentes acceptées).
+- Déjà pris en compte sans rien faire : brouilleurs du mod Crows Electronic Warfare, et scripts de brouillage radio TFAR
+  qui baissent `tf_sendingDistanceMultiplicator` du joueur (réglage « Brouillage des scripts TFAR »).
+
+**English.** Any mission or mod can jam the ATAK with `["add", [object or position, radius m, strength 1-100,
+duration s (0 = endless), spared side, optional id]] call comspec_atak_native_fnc_jammer` (runs on the server; returns
+the id) and `["remove", id or object]`. A jammer object stops when destroyed; set `COMSPEC_ATAK_JamActive` (or
+`a3f_jammer_active`) to `false` on it to switch it off. Admins can also list jammer classes from other mods in the CBA
+setting "Jammer objects from other mods" (`Class:radius:strength`). Crows Electronic Warfare jammers and TFAR jamming
+scripts (via `tf_sendingDistanceMultiplicator`) are already picked up.

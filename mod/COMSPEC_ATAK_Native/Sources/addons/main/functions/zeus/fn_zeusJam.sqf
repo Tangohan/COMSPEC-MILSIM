@@ -3,7 +3,10 @@
       - brouillage Zeus ciblé sur le joueur (fn_zeusFx "jam", 1-100) ;
       - brouilleurs du mod Crows Electronic Warfare (missionNamespace crowsEW_jamming_jamMap, HashMap netId ->
         [brouilleur, rayon de décroissance, rayon efficace, actif, capacités]) : plein effet dans le rayon efficace,
-        décroissance linéaire jusqu'au rayon de décroissance. Lecture prudente : format déduit du mod, non garanti.
+        décroissance linéaire jusqu'au rayon de décroissance. Lecture prudente : format déduit du mod, non garanti ;
+      - scripts de brouillage TFAR (« TFAR Radio Jammer » et semblables) : ils réduisent la portée d'émission radio du
+        joueur (variable tf_sendingDistanceMultiplicator sous 1) ; le téléphone subit le même brouillage (1 - multiplicateur).
+        Réglage comspec_atak_native_jam_tfar.
     Recalculé au plus une fois par seconde (uiNamespace COMSPEC_ATAK_ZeusJamC).
 */
 private _c = uiNamespace getVariable ["COMSPEC_ATAK_ZeusJamC", []];
@@ -29,6 +32,10 @@ if (_crowsOn && {!isNil "_map"} && {_map isEqualType createHashMap}) then {
         private _s = if (_d <= _inner || {_outer <= _inner}) then { 1 } else { 1 - (_d - _inner) / (_outer - _inner) };
         _k = _k max _s;
     } forEach _map;
+};
+if (missionNamespace getVariable ["comspec_atak_native_jam_tfar", true]) then {
+    private _tx = player getVariable ["tf_sendingDistanceMultiplicator", 1];
+    if (_tx isEqualType 0 && {_tx < 1}) then { _k = _k max (((1 - _tx) max 0) min 1); };
 };
 uiNamespace setVariable ["COMSPEC_ATAK_ZeusJamC", [diag_tickTime, _k]];
 _k
