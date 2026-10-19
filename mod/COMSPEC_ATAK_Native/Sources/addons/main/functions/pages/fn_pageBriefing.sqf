@@ -160,15 +160,37 @@ if (_pref isEqualTo "GOOGLE" && {_bridge} && {_gUrl isNotEqualTo ""} && {_src is
     uiNamespace setVariable ["COMSPEC_ATAK_BriefAutoTried", _gUrl];
     [{ ["load", [_this, false]] call comspec_atak_native_fnc_briefingCfg; }, _gUrl] call CBA_fnc_execNextFrame;
 };
+// Raison montrée dans la zone d'image quand la diapositive Athena ne peut pas s'afficher (vide : image affichée).
+private _slideWhy = "";
 if (_src isEqualTo "ATHENA" && {_total > 0}) then {
-    // Image en cache local (téléchargée une fois par diapositive).
+    // Image en cache local (téléchargée une fois par diapositive) : [chemin, raison].
     private _cache = uiNamespace getVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
     if !(_path in _cache) then {
         private _slide = (missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx;
-        _cache set [_path, [_slide] call comspec_overwatch_connect_fnc_downloadBriefingSlide];
+        private _url = _slide param [3, ""];
+        // Fichier local propre à l'adresse de l'image : Arma garde en mémoire la texture d'un chemin déjà lu, une image
+        // renvoyée sur Athena (nouvelle adresse) ou une première lecture ratée restaient sinon affichées jusqu'au redémarrage.
+        private _raw = ["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_url, format ["%1_%2", _slide param [0, 0], hashValue _url]]]] call comspec_overwatch_connect_fnc_extResult;
+        private _dl = _raw splitString "|";
+        private _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
+        private _lp = toLower _p;
+        private _ext = _lp select [((count _lp) - 4) max 0];
+        private _why = switch (true) do {
+            case (_url isEqualTo ""): { "Athena n'a envoyé aucune image pour cette diapositive." };
+            case (_p isEqualTo ""): { format ["Téléchargement de l'image impossible (%1).", _dl param [1, "réponse vide de COMSPEC Link"]] };
+            // Arma n'affiche que JPEG et PAA : un PNG laissait la zone noire (copie JPEG du site absente).
+            case !(_ext in [".jpg", "jpeg", ".paa"]): { format ["Image reçue au format %1, illisible par Arma (JPEG attendu).<br/>Le site Athena n'a pas pu en faire une copie JPEG : renvoyez la diapositive en JPG.", _ext] };
+            default { "" };
+        };
+        // Taille lue par Arma : 0 x 0 = fichier illisible par le jeu (chemin refusé ou image abîmée), à joindre à un signalement.
+        private _tex = if (_why isEqualTo "") then { getTextureInfo _p } else { [] };
+        ["INFO", "BRIEFING", format ["Diapositive %1 : adresse %2, fichier %3, texture %4, %5", _slide param [0, 0], _url, _p, _tex, ["image affichée", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
+        _cache set [_path, [[_p, ""] select (_why isNotEqualTo ""), _why]];
         uiNamespace setVariable ["COMSPEC_ATAK_SlideCache", _cache];
     };
-    _path = _cache get _path;
+    (_cache get _path) params [["_p", ""], ["_why", ""]];
+    _path = _p;
+    _slideWhy = _why;
 };
 
 private _btnH = _rowH;
@@ -211,6 +233,7 @@ if (_total < 1 || {_path isEqualTo ""}) then {
         case (_total < 1 && {_bridge}): { "Aucune diapositive pour l'instant.<br/>Le présentateur partage un Google Slides depuis le tableau de briefing, ou publiez des diapositives sur Athena puis touchez ACTUALISER.<br/>Votre propre lien Google Slides : touchez l'engrenage en haut à droite." };
         case (_total < 1): { "Aucun briefing reçu.<br/>Les diapositives Athena demandent COMSPEC Link." };
         case (_src isEqualTo "GOOGLE"): { "Chargement de la diapositive…" };
+        case (_slideWhy isNotEqualTo ""): { _slideWhy + "<br/>Touchez ACTUALISER pour réessayer." };
         default { "Image indisponible (réseau ou cache).<br/>Touchez ACTUALISER pour réessayer." };
     };
     private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.38, _vw - 2 * _pad, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;

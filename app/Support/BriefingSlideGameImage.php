@@ -20,9 +20,16 @@ final class BriefingSlideGameImage
 
     public const HEIGHT = 1024;
 
+    /**
+     * Raison du dernier repli sur l'image d'origine (vide : copie jeu servie) : no_gd, source_missing,
+     * unreadable, write_failed. Le téléphone affiche alors une zone noire : le back-office le signale à l'envoi.
+     */
+    public static string $lastError = '';
+
     /** Chemin relatif (sous public/) à servir au jeu pour cette diapositive. */
     public static function path(string $imagePath): string
     {
+        self::$lastError = '';
         $rel = ltrim(trim($imagePath), '/');
         if ($rel === '' || str_contains($rel, '..') || !str_starts_with($rel, 'uploads/')) {
             return $imagePath;
@@ -47,13 +54,19 @@ final class BriefingSlideGameImage
             }
         }
         if ($src === null) {
+            self::$lastError = 'source_missing';
+            error_log('[atak/briefing-slides] fichier de la diapositive introuvable : ' . $rel);
+
             return $imagePath;
         }
         foreach ($bases as $base) {
             if (self::write($src, $base . '/' . $gameRel)) {
+                self::$lastError = '';
+
                 return $gameRel;
             }
         }
+        error_log('[atak/briefing-slides] copie JPEG pour le jeu impossible (' . self::$lastError . ') : ' . $rel);
 
         return $imagePath;
     }
@@ -62,17 +75,22 @@ final class BriefingSlideGameImage
     public static function write(string $src, string $dest): bool
     {
         if (!function_exists('imagecreatefromstring')) {
+            self::$lastError = 'no_gd';
+
             return false;
         }
         $bin = @file_get_contents($src);
         $im = $bin !== false ? @imagecreatefromstring($bin) : false;
         if ($im === false) {
+            self::$lastError = 'unreadable';
+
             return false;
         }
         $w = imagesx($im);
         $h = imagesy($im);
         if ($w < 1 || $h < 1) {
             imagedestroy($im);
+            self::$lastError = 'unreadable';
 
             return false;
         }
@@ -89,6 +107,9 @@ final class BriefingSlideGameImage
         }
         $ok = is_dir($dir) && is_writable($dir) && @imagejpeg($out, $dest, 88);
         imagedestroy($out);
+        if (!$ok) {
+            self::$lastError = 'write_failed';
+        }
 
         return $ok;
     }
