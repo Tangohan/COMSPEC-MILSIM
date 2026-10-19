@@ -38,8 +38,21 @@ class CfgFunctions {
             class dl7Apply {};
             class dl7ApplyEden {};
             class dl7ZeusForm {};
+            class dl7Auto {};
+            class dl7Downloaded {};
+            class fieldTarget {};
+            class fieldSite {};
+            class fieldPage {};
+            class fieldAction {};
+            class photoWatch {};
+            class evidencePhoto {};
         };
     };
+};
+
+// App « SSE terrain » du téléphone ATAK : le travail SSE passe par le terminal plutôt que par les menus ACE.
+class COMSPEC_ATAK_Apps {
+    class SseField { name="SSE terrain"; page="SSEFIELD"; function="comspec_sse_fnc_fieldPage"; section="Renseignement"; order=119; dock=0; new=1; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
 };
 
 class Extended_PostInit_EventHandlers {
