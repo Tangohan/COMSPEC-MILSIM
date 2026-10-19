@@ -206,10 +206,13 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
 // Guerre électronique : position brouillée (GPS) et pistes BFT dégradées.
 ([] call comspec_atak_native_fnc_ewEffects) params ["_ewGps", "_ewBft", "_ewOff"];
 private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
+// Terminal compromis (fn_compromiseView) : flux BFT coupé, seule ma position GPS reste en direct (pistes figées dessinées à la fin).
+private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
     if ((count _pos) < 2) then { continue };
+    if (_compSkip && {!(_entity getOrDefault ["self", false])}) then { continue };
     ([_entity] call comspec_atak_native_fnc_symbology) params ["_icon","_color"];
     private _freshness = _entity getOrDefault ["freshness","LIVE"];
     if (_freshness isEqualTo "STALE") then { _color set [3,0.65]; };
@@ -620,3 +623,6 @@ if (_spanX > 1 && {_spanY > 1}) then {
         };
     };
 };
+
+// Terminal compromis : couches grisées, bandeau, console d'erreurs et pistes figées, au-dessus de tout (fn_compromiseView).
+if (_compSkip) then { ["draw", _map] call comspec_atak_native_fnc_compromiseView; };

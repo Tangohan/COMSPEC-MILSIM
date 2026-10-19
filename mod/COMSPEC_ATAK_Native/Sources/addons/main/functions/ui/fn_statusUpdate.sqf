@@ -73,7 +73,19 @@ private _linkOk = if ([] call comspec_atak_native_fnc_bridge) then {
 } else {
     _net isEqualTo "CONNECTED"
 };
-(_d displayCtrl 88549) ctrlShow _linkOk;
+// Terminal compromis (fn_compromiseView) : logo rouge clignotant, même relié (certificats révoqués, liaison refusée).
+["refresh"] call comspec_atak_native_fnc_compromiseView;
+private _comp = ["get"] call comspec_atak_native_fnc_compromiseView;
+private _logo = _d displayCtrl 88549;
+if ((count _comp) > 0) then {
+    _logo ctrlShow true;
+    _logo ctrlSetTextColor [0.92, 0.22, 0.18, [0.35, 1] select (((floor diag_tickTime) mod 2) isEqualTo 0)];
+    _logo ctrlSetTooltip ((format ["COMSPEC Link : terminal %1, liaison de données coupée (%2)", ["compromis", "capturé"] select ((_comp getOrDefault ["state", ""]) isEqualTo "captured"), ["origine manuelle", "origine automatique"] select ((_comp getOrDefault ["origin", ""]) isEqualTo "auto")]) call comspec_atak_native_fnc_tr);
+} else {
+    _logo ctrlShow _linkOk;
+    _logo ctrlSetTextColor [0.36, 0.78, 0.42, 1];
+    _logo ctrlSetTooltip (("COMSPEC Link connecté") call comspec_atak_native_fnc_tr);
+};
 
 private _page = _state getOrDefault ["activePage", "LAUNCHER"];
 // App Athena ouverte : se redessine quand la session, la liaison ou le message changent

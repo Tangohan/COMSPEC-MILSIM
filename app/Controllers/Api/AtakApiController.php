@@ -7247,7 +7247,16 @@ class AtakApiController
         }
         [$tenantId, $userId, $steam] = $ctx;
         $messages = [];
-        foreach ((new \App\Repositories\AtakAdminControlRepository())->pendingForPlayer($tenantId, $userId, $steam) as $m) {
+        $fleet = new \App\Repositories\AtakAdminControlRepository();
+        $events = [];
+        foreach ($fleet->pendingForPlayer($tenantId, $userId, $steam) as $m) {
+            // Compromission : origine, état et certificats révoqués pour le mode « terminal compromis » de l'ATAK.
+            $meta = '';
+            $uid = trim((string) ($m['terminal_uid'] ?? ''));
+            if (in_array((string) ($m['kind'] ?? ''), ['compromise', 'compromise_cleared'], true)) {
+                $events[$uid] ??= $uid !== '' ? $fleet->compromiseEventsFor($tenantId, $uid, 10) : [];
+                $meta = \App\Support\AtakCompromiseNoticeMeta::build($m, $events[$uid]);
+            }
             $messages[] = [
                 'id' => (int) $m['id'],
                 'kind' => (string) ($m['kind'] ?? 'message'),
@@ -7256,6 +7265,7 @@ class AtakApiController
                 'body' => (string) $m['body'],
                 'require_ack' => (int) $m['require_ack'] === 1,
                 'created_at' => (string) $m['created_at'],
+                'meta' => $meta,
             ];
         }
 

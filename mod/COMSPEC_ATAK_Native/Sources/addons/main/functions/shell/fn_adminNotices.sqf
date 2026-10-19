@@ -10,7 +10,10 @@
       "ack" id       COMPRIS : retire la carte et prévient Athena
       "list"         avis non validés, plus récents d'abord
       "style" ligne  [titre, texte, couleur RGBA, type de notification] d'un avis
-    Ligne : [id, genre, niveau, titre, texte, à valider, heure]
+    Ligne : [id, genre, niveau, titre, texte, à valider, heure, méta]
+    Méta (COMSPEC Link 2.0.90+, 7e colonne) : « source=admin;state=captured;revoked=2;ref=… » pour une compromission
+    (fn_compromiseView) ; vide avec un Link plus ancien (origine manuelle, état lu dans le titre).
+    Compromission : le téléphone passe en mode « terminal compromis » (fn_compromiseView) jusqu'à la levée.
 */
 params [["_act", ""], ["_arg", []]];
 private _list = missionNamespace getVariable ["COMSPEC_ATAK_AdminNotices", []];
@@ -44,9 +47,9 @@ switch (_act) do {
             private _seen = missionNamespace getVariable ["COMSPEC_ATAK_AdminNoticesSeen", []];
             private _new = [];
             {
-                (_x splitString toString [9]) params [["_id", ""], ["_kind", "message"], ["_level", "info"], ["_title", ""], ["_body", ""], ["_ack", "1"]];
+                (_x splitString toString [9]) params [["_id", ""], ["_kind", "message"], ["_level", "info"], ["_title", ""], ["_body", ""], ["_ack", "1"], ["_meta", ""]];
                 if (_id isNotEqualTo "" && {!(_id in _seen)}) then {
-                    private _row = [_id, _kind, _level, _title, _body, _ack isEqualTo "1", [dayTime, "HH:MM"] call BIS_fnc_timeToString];
+                    private _row = [_id, _kind, _level, _title, _body, _ack isEqualTo "1", [dayTime, "HH:MM"] call BIS_fnc_timeToString, _meta];
                     _seen pushBack _id;
                     _new pushBack _id;
                     if (_ack isEqualTo "1") then { _list pushBack _row; };
@@ -64,7 +67,10 @@ switch (_act) do {
     case "style": {
         _arg params ["", ["_kind", "message"], ["_level", "info"], ["_title", ""], ["_body", ""]];
         switch (_kind) do {
-            case "compromise": { [_title, "L'administration ATHENA a déclaré votre ATAK compromis : ses certificats peuvent être révoqués.", [0.62, 0.07, 0.06, 0.94], "ERROR"] };
+            case "compromise": {
+                private _cap = (_title find "aptur") >= 0;
+                [_title, ["Liaison de données coupée : certificats révoqués, terminal exclu du réseau Athena.", "Terminal mis en quarantaine par Athena : liaison de données coupée."] select _cap, [0.62, 0.07, 0.06, 0.94], "ERROR"]
+            };
             case "compromise_cleared": { [_title, "Votre ATAK est de nouveau sous contrôle.", [0.10, 0.45, 0.24, 0.94], "SUCCESS"] };
             case "reset": { [_title, "Vos données ATAK ont été réinitialisées puis régénérées : l'ATAK se réenregistre auprès d'Athena.", [0.70, 0.40, 0.04, 0.94], "WARNING"] };
             case "certificate": { [_title, "Le certificat de votre ATAK a changé.", [0.70, 0.40, 0.04, 0.94], "WARNING"] };
@@ -77,11 +83,24 @@ switch (_act) do {
     };
     case "show": {
         if (!hasInterface) exitWith {};
-        _arg params ["", ["_kind", "message"], "", ["_title", ""], ["_body", ""]];
+        _arg params [["_id", ""], ["_kind", "message"], "", ["_title", ""], ["_body", ""], "", "", ["_meta", ""]];
         (["style", _arg] call comspec_atak_native_fnc_adminNotices) params ["_t", "_msg", "_rgba", "_type"];
+        // Compromission déclarée (manuelle) : mode « terminal compromis » ; levée ou certificat neuf : retour à la normale.
+        private _m = ["meta", _meta] call comspec_atak_native_fnc_compromiseView;
+        private _from = switch (_m getOrDefault ["source", "admin"]) do { case "gestion": { "Gestion de la communauté" }; case "web": { "Poste de commandement" }; default { "Administration ATHENA" }; };
+        switch (_kind) do {
+            case "compromise": {
+                ["set", createHashMapFromArray [["origin", "manual"], ["source", _m getOrDefault ["source", "admin"]],
+                    ["state", _m getOrDefault ["state", ["compromised", "captured"] select ((_title find "aptur") >= 0)]],
+                    ["reason", _body], ["by", _m getOrDefault ["by", _from]], ["revoked", _m getOrDefault ["revoked", "0"]],
+                    ["ref", _m getOrDefault ["ref", "N" + _id]], ["terminal", _m getOrDefault ["terminal", ""]], ["match", "terminal"]]] call comspec_atak_native_fnc_compromiseView;
+            };
+            case "compromise_cleared": { ["clear"] call comspec_atak_native_fnc_compromiseView; };
+            case "certificate": { if ((_title find "évoqu") < 0) then { ["clear"] call comspec_atak_native_fnc_compromiseView; }; };
+        };
         // Détail donné par Athena (motif, référence, numéro) sous le texte de l'avis.
         private _detail = [_msg, format ["%1 · %2", _msg, _body]] select (_kind isNotEqualTo "message" && {_body isNotEqualTo ""});
-        [toUpper _t, _detail, "Administration ATHENA", _rgba, 14] call comspec_atak_native_fnc_fullAlert;
+        [toUpper _t, _detail, _from, _rgba, 14] call comspec_atak_native_fnc_fullAlert;
         [_type, format ["%1 : %2", _t, _detail], 12, 95, "ALERTS"] call comspec_atak_native_fnc_notify;
         call _render;
     };
