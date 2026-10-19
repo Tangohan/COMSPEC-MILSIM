@@ -140,6 +140,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
       $communityCssLinks = [
           [$communityReelsPage, 'community-reels.css'],
           [$communityRegistryPage, 'community-registry.css'],
+          [$communityRegistryPage || ($communityShowcasePage && !$communityReelsPage), 'images-badge.css'],
       ];
       foreach ($communityCssLinks as [$communityCssOn, $communityCssFile]) {
           if (!$communityCssOn) {

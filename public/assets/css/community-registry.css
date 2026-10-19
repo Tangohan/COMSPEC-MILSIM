@@ -951,6 +951,72 @@
   .cr-trend__list { grid-template-columns: 1fr; }
 }
 
+/* —— Hero : badge « images » + chiffres en mono (inspiration motion.dev) —— */
+.cr-hero__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  margin-top: 2.25rem;
+}
+.cr-hero__aside .ib { margin-top: 30px; }
+.cr-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  margin: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.cr-hero__stats > div {
+  padding: 10px 18px 0 0;
+  margin-right: 18px;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+}
+.cr-hero__stats > div:last-child { border-right: 0; margin-right: 0; }
+.cr-hero__stats dt,
+.cr-hero__stats dd {
+  margin: 0;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  text-transform: uppercase;
+}
+.cr-hero__stats dt {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--cr-emerald);
+}
+.cr-hero__stats dd {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fff;
+}
+@media (min-width: 900px) {
+  .cr-hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 3rem;
+  }
+  .cr-hero__inner > * { grid-column: 1; }
+  .cr-hero__inner > .cr-hero__aside {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    align-self: center;
+    align-items: center;
+    margin-top: 0;
+  }
+}
+
+/* Compteurs des puces de filtre */
+.cr-chip__n {
+  margin-left: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  font-weight: 700;
+  opacity: 0.6;
+}
+.cr-chip.is-active .cr-chip__n { opacity: 0.85; }
+
 /* —— Cartes mises en valeur : bannière, couleur de marque, chiffres —— */
 .cr-card {
   --cr-acc: var(--cr-emerald);
