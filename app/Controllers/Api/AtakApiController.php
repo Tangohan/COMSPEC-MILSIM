@@ -2625,6 +2625,24 @@ class AtakApiController
             static fn (\App\Services\Monitoring\AtakModReportDiscordTicketService $t) => $t->onReport($reportId)
         );
 
+        // Copie dans le salon Discord de la communauté du joueur (« Signalements du mod »), après la réponse au jeu.
+        if ($result['created'] && $steam !== null) {
+            try {
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                \App\Services\Integrations\CommunityModReportRelay::defer((int) ($accounts[$steam]['tenant_id'] ?? 0), [
+                    'gravity' => $result['gravity'],
+                    'source' => $source,
+                    'channel' => $channel,
+                    'message' => $message,
+                    'callsign' => $callsign,
+                    'player_name' => $playerName,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
+
         // Signalement joueur (Échap > Signaler un problème) ou erreur automatique critique : e-mail à
         // l'exploitation, jamais bloquant. Les autres détections automatiques restent sur la page.
         if ($result['created']) {

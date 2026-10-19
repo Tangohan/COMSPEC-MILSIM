@@ -14,9 +14,10 @@ use App\Services\Security\FileRateLimiter;
  * (un fil par ticket), puis chaque étape (statut, réponse au joueur, nouvelle occurrence, suppression) est postée
  * dans ce fil et le premier message du ticket est réécrit avec le statut courant.
  *
- * Salon (facultatif, réservé à l'équipe de développement de la plateforme, pas aux communautés) :
- * webhook DISCORD_MOD_REPORTS_WEBHOOK dans le .env du VPS (salon forum de préférence ; un salon texte
- * marche aussi, sans fil). Sans lui, rien n'est envoyé. Rapports de même empreinte : un seul ticket (30 jours).
+ * Salon (facultatif, réservé à l'équipe de développement de la plateforme) : réglé par l'administrateur
+ * dans Intégrations > Plateforme (salon forum de préférence ; un salon texte marche aussi, sans fil).
+ * Sans lui, rien n'est envoyé. Chaque communauté reçoit en plus les rapports de ses propres joueurs
+ * si elle choisit un salon pour « Signalements du mod » (DiscordWebhookCatalog::KEY_ATAK_MOD_REPORTS). Rapports de même empreinte : un seul ticket (30 jours).
  * Les rapports de faible gravité n'ouvrent pas de ticket. Aucun Steam, e-mail ni adresse IP n'est posté.
  */
 final class AtakModReportDiscordTicketService
@@ -87,9 +88,10 @@ final class AtakModReportDiscordTicketService
         }
     }
 
+    /** Salon réglé dans Intégrations > Plateforme (ancien .env DISCORD_MOD_REPORTS_WEBHOOK en secours). */
     public static function configuredWebhook(): string
     {
-        return trim((string) (($_ENV[self::ENV_WEBHOOK] ?? null) ?: (getenv(self::ENV_WEBHOOK) ?: '')));
+        return \App\Services\Platform\PlatformIntegrationSettings::webhook(\App\Services\Platform\PlatformIntegrationSettings::MOD_REPORTS);
     }
 
     public function enabled(): bool

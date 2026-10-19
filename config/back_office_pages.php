@@ -57,7 +57,7 @@ return [
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Configuration', 'subtitle' => 'Tous les réglages de votre communauté au même endroit : identité, structure, accès, recrutement, contenu et modération.', 'css' => ['back-office-configuration.css']],
-        ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Reliez Discord et les autres services : choix des salons, envoi des photos et des transmissions, clés d’accès.'],
+        ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Reliez votre communauté à Discord, à votre propre adresse d’envoi d’e-mails et à vos outils : tout se règle ici, sans clé à demander à l’administrateur du serveur.', 'css' => ['back-office-integrations.css']],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail', 'subtitle' => 'Les liens épinglés sur le tableau de bord des membres.'],
         ['path' => 'back-office/equipement-joueurs', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ÉQUIPEMENT', 'title' => 'Équipement des joueurs', 'subtitle' => 'Ce que les joueurs portent réellement en jeu, remonté par le mod : armes, gilets, casques, optiques, radios et mods chargés.', 'css' => ['back-office-game-equipment.css'], 'quick' => [
             ['label' => 'Kits par rôle', 'href' => 'back-office/kits-roles'],

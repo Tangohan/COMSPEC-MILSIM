@@ -537,6 +537,9 @@ if (!function_exists('app_environment_label_fr')) {
 
 if (!function_exists('email_config')) {
     /**
+     * Envoi commun de la plateforme. Le compte réglé par l'administrateur dans Intégrations > Plateforme
+     * (platform_settings) l'emporte ; les réglages MAIL_* du .env ne servent plus que de secours.
+     *
      * @return array<string, mixed>
      */
     function email_config(): array
@@ -545,6 +548,10 @@ if (!function_exists('email_config')) {
         if ($cfg === null) {
             $path = base_path('config/email.php');
             $cfg = is_file($path) ? require $path : [];
+            $platform = \App\Services\Email\TenantMailSender::platformOverride();
+            if ($platform !== null) {
+                $cfg = array_replace($cfg, $platform);
+            }
         }
 
         return $cfg;
@@ -560,7 +567,7 @@ if (!function_exists('email_file_mailer_notice')) {
         $m = strtolower((string) (email_config()['default_mailer'] ?? ''));
 
         return $m === 'file'
-            ? 'Le courrier est en mode « fichier » : les messages sont enregistrés dans storage/mail-outbox/ sur le serveur, ils ne partent pas sur Internet. Pour un envoi réel, chaque communauté peut saisir son compte d’envoi dans Intégrations > E-mails de la communauté, ou configurez SMTP (MAIL_MAILER=smtp et MAIL_HOST, etc.) dans .env.'
+            ? 'Le courrier est en mode « fichier » : les messages sont enregistrés dans storage/mail-outbox/ sur le serveur, ils ne partent pas sur Internet. Pour un envoi réel, chaque communauté peut saisir son compte d’envoi dans Intégrations > E-mails, et l’administrateur de la plateforme règle l’envoi commun dans Intégrations > Plateforme (plus besoin du .env).'
             : '';
     }
 }
