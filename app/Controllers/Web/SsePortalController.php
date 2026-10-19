@@ -152,8 +152,9 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/operations'));
         }
 
-        // Commandement / membre habilité : entrée directe sans code.
-        if ($this->access->canEnterWithoutCode()) {
+        // Commandement / membre habilité : entrée directe sans code — sauf s'il vient de
+        // quitter le bureau : il voit alors le sas et choisit de rentrer (ou d'utiliser un code).
+        if ($this->access->canEnterWithoutCode() && !$this->access->hasLeft()) {
             $tenantId = (int) Session::get('tenant_id');
             if ($this->access->canEnterAsStaff()) {
                 $this->access->establishStaffClearance($tenantId);
@@ -240,13 +241,24 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse'));
         }
+        $this->access->clearLeft();
+        // Session déjà ouverte et engagement signé : on ne remet rien à zéro.
+        if ($this->access->hasActiveClearance() && !$this->access->isGuest() && $this->access->hasAcceptedConfidentiality()) {
+            return Response::redirect(url($this->access->canEnterAsStaff() && $this->canGrant() ? 'atak/sse/acces' : 'atak/sse/operations'));
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($this->access->canEnterAsStaff()) {
             $this->access->establishStaffClearance($tenantId);
+            if ($this->access->hasAcceptedConfidentiality()) {
+                return Response::redirect(url($this->canGrant() ? 'atak/sse/acces' : 'atak/sse/operations'));
+            }
             Session::set('sse_post_ack_redirect', 'acces');
             Session::flash('success', 'Session commandement ouverte — validez l’engagement de confidentialité.');
         } else {
             $this->access->establishMemberClearance($tenantId);
+            if ($this->access->hasAcceptedConfidentiality()) {
+                return Response::redirect(url('atak/sse/operations'));
+            }
             Session::flash('success', 'Session ouverte — validez l’engagement de confidentialité.');
         }
 
@@ -278,6 +290,9 @@ final class SsePortalController
             : trim((string) $request->input('guest_name', 'Invité'));
 
         $result = $this->access->redeem($code, $userId > 0 ? $userId : null, $hasPerm, $label);
+        if ($result['ok']) {
+            $this->access->clearLeft();
+        }
         if (!$result['ok']) {
             Session::flash('error', $result['message']);
 
@@ -291,9 +306,9 @@ final class SsePortalController
 
     public function logout(Request $request, array $params = []): Response
     {
-        $this->access->clearSession();
+        $this->access->leave();
         Session::forget('sse_post_ack_redirect');
-        Session::flash('success', 'Session de renseignement fermée.');
+        Session::flash('success', 'Session de renseignement fermée. Vous pouvez rentrer à tout moment depuis ce sas.');
 
         return Response::redirect(url('atak/sse'));
     }
@@ -486,10 +501,60 @@ final class SsePortalController
 
         $payloadRows = SseIntelEventRepository::flattenPayloadRows($payload);
         $clientLabel = (string) ($event['client_label'] ?? SseIntelEventRepository::clientSoftwareLabel($payload));
+        // Images transmises (URL ou fichier du portail) : affichées comme images, pas comme texte.
+        $payloadImages = [];
         $sections = [];
         foreach ($payloadRows as $row) {
+            $val = trim((string) ($row['value'] ?? ''));
+            if (\App\Support\SseTransmissionView::isImageValue($val)) {
+                $payloadImages[] = ['src' => $val, 'label' => (string) ($row['label'] ?? 'Image')];
+                continue;
+            }
             $sec = (string) ($row['section'] ?? 'Compléments');
             $sections[$sec][] = $row;
+        }
+
+        // Identité liée : photo, relevés biométriques (empreintes, iris, ADN) — comme sur sa fiche.
+        $linkedPerson = null;
+        if ($personId > 0) {
+            try {
+                $person = $this->persons->findById($personId, $this->tenantId());
+                if ($person !== null) {
+                    $person = $this->clearance->redactPeopleForScreens([$person], $this->tenantId(), null)[0] ?? $person;
+                    $terrain = [];
+                    try {
+                        $terrain = $this->terrain->personTerrainDossier($this->tenantId(), $person);
+                    } catch (\Throwable) {
+                        $terrain = [];
+                    }
+                    $samples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
+                    $photos = [];
+                    foreach ((array) ($person['photos'] ?? []) as $ph) {
+                        $u = is_array($ph) ? trim((string) ($ph['url'] ?? '')) : '';
+                        if ($u !== '') {
+                            $photos[] = ['src' => $u, 'label' => (string) ($ph['caption'] ?? $ph['kind_label'] ?? 'Photographie')];
+                        }
+                    }
+                    $primary = is_array($person['primary_photo'] ?? null) ? trim((string) ($person['primary_photo']['url'] ?? '')) : '';
+                    $linkedPerson = [
+                        'id' => $personId,
+                        'href' => url('atak/sse/identites/' . $personId),
+                        'ref' => 'IDN-' . str_pad((string) $personId, 5, '0', STR_PAD_LEFT),
+                        'name' => (string) ($person['display_name'] ?? ''),
+                        'alias' => (string) ($person['alias'] ?? ''),
+                        'photo' => $primary,
+                        'photos' => $photos,
+                        'prints' => SseTerrainService::biometricModalityLabel($samples, 'empreintes'),
+                        'iris' => SseTerrainService::biometricModalityLabel($samples, 'iris'),
+                        'dna' => SseTerrainService::biometricModalityLabel($samples, 'adn'),
+                        'quality' => ($terrain['acquisition_quality_avg'] ?? null) !== null ? (int) $terrain['acquisition_quality_avg'] : null,
+                        'terminal' => SseTerrainService::personTerminalLabel($person),
+                        'samples' => $samples,
+                    ];
+                }
+            } catch (\Throwable) {
+                $linkedPerson = null;
+            }
         }
 
         return $this->portalView('atak.sse.transmission_show', [
@@ -500,6 +565,8 @@ final class SsePortalController
             'relatedLabel' => $relatedLabel,
             'payloadRows' => $payloadRows,
             'payloadSections' => $sections,
+            'payloadImages' => $payloadImages,
+            'linkedPerson' => $linkedPerson,
             'clientLabel' => $clientLabel,
             'canManage' => $this->canManage(),
             'activeNav' => 'transmissions',
@@ -4916,31 +4983,15 @@ final class SsePortalController
 
     // ─────────────────────────────────────────── Lecture du dossier à l'écran
 
+    /**
+     * Ancienne « lecture complète » : la vue n'existe plus. On renvoie à la fiche du dossier,
+     * qui affiche tout ce que la lecture montrait, plutôt qu'une page d'erreur.
+     */
     public function caseReader(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
-        if (!$this->canExport()) {
-            Session::flash('error', 'Lecture du dossier complet non autorisée.');
 
-            return Response::redirect(url('atak/sse/dossiers/' . $id));
-        }
-        $case = $this->requireCase($id);
-        if ($case === null) {
-            return Response::redirect(url('atak/sse/dossiers'));
-        }
-        if ($locked = $this->redirectIfCaseLocked($case)) {
-            return $locked;
-        }
-
-        return $this->portalView('atak.sse.case_reader', [
-            'title' => 'Lecture — ' . (string) ($case['reference_code'] ?? ''),
-            'case' => $case,
-            'levelLabel' => SseRedactionService::levelLabel($this->clearance->maxLevel()),
-            'streamUrl' => url('atak/sse/dossiers/' . $id . '/pdf/flux'),
-            'downloadUrl' => url('atak/sse/dossiers/' . $id . '/pdf'),
-            'canManage' => $this->canManage(),
-            'activeNav' => 'dossiers',
-        ]);
+        return Response::redirect(url($id > 0 ? 'atak/sse/dossiers/' . $id : 'atak/sse/dossiers'));
     }
 
     /** Même document que l'export, servi pour lecture à l'écran plutôt qu'en téléchargement. */

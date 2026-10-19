@@ -6,7 +6,7 @@ class CfgPatches {
         units[] = {};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_main", "cba_main", "cba_xeh", "cba_settings"};
+        requiredAddons[] = {"comspec_sse_main", "cba_main", "cba_xeh", "cba_settings", "comspec_atak_native_main"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };

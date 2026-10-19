@@ -12,7 +12,8 @@ class CfgPatches {
             "cba_xeh",
             "cba_settings",
             "ace_common",
-            "ace_interact_menu"
+            "ace_interact_menu",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         authors[] = {"COMSPEC"};

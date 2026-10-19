@@ -10,7 +10,7 @@ class CfgPatches {
         units[] = {"COMSPEC_SSE_Module_Campaign", "COMSPEC_SSE_Module_CampaignSave"};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_main", "comspec_sse_core", "comspec_sse_biometrics", "comspec_sse_analysis", "comspec_sse_zeus", "A3_Modules_F", "cba_xeh"};
+        requiredAddons[] = {"comspec_sse_main", "comspec_sse_core", "comspec_sse_biometrics", "comspec_sse_analysis", "comspec_sse_zeus", "A3_Modules_F", "cba_xeh", "comspec_atak_native_main"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };

@@ -23,7 +23,8 @@ Version actuelle : **V0.9.0**
 
 ## Prérequis
 
-- Arma 3 + CBA_A3 + ACE3
+- Arma 3 (2.14 ou plus) + CBA_A3 + ACE3
+- COMSPEC ATAK Native (obligatoire, Workshop 3684656708) : tous les addons SSE le déclarent dans `requiredAddons` (`comspec_atak_native_main`)
 - Optionnel : COMSPEC Overwatch
 
 ## Installation

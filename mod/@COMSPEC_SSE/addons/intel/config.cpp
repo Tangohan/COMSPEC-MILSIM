@@ -11,7 +11,8 @@ class CfgPatches {
             "comspec_sse_generator",
             "cba_main",
             "cba_events",
-            "cba_settings"
+            "cba_settings",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;

@@ -14,6 +14,10 @@ use App\Services\Rbac\RbacService;
 final class SseAccessCodeService
 {
     public const SESSION_UNTIL = 'sse_clearance_until';
+    /** Engagement signé par un compte habilité pendant la connexion (renouvellement sans re-signature). */
+    public const SESSION_STAFF_ACK = 'sse_staff_ack';
+    /** Sortie volontaire du bureau : pas de réouverture automatique. */
+    public const SESSION_LEFT = 'sse_left';
     public const SESSION_GUEST = 'sse_guest';
     public const SESSION_TENANT = 'sse_tenant_id';
     public const SESSION_SCOPE = 'sse_case_scope';
@@ -211,6 +215,44 @@ final class SseAccessCodeService
         // Le personnel n'est pas plafonné par un code : son habilitation vient de
         // ses permissions, calculées à la lecture.
         Session::set(SseClearanceService::SESSION_LEVEL, null);
+        // Renouvellement d'une session sans code (expiration après 4 h, retour au bureau) :
+        // l'engagement déjà signé pendant cette connexion, pour la même communauté et la
+        // même version du texte, reste valable — on ne le redemande pas à chaque fois.
+        if ((string) Session::get(self::SESSION_STAFF_ACK, '') === $this->staffAckKey($tenantId)) {
+            Session::set(self::SESSION_ACK_VERSION, self::CONFIDENTIALITY_VERSION);
+            Session::set(self::SESSION_ACK_AT, time());
+            Session::set(self::SESSION_ACK_TENANT, $tenantId);
+            Session::set(self::SESSION_ACK_CODE_ID, 0);
+        }
+    }
+
+    /** Empreinte de l'engagement d'un compte habilité : utilisateur, communauté, version du texte. */
+    private function staffAckKey(int $tenantId): string
+    {
+        $userId = (int) Session::get('user_id', 0);
+
+        return $userId > 0 && $tenantId > 0 ? $userId . ':' . $tenantId . ':' . self::CONFIDENTIALITY_VERSION : '';
+    }
+
+    /**
+     * « Quitter » le bureau : la session SSE est fermée et, pour un compte habilité,
+     * elle ne se rouvre plus d'elle-même tant qu'il n'a pas demandé à rentrer.
+     */
+    public function leave(): void
+    {
+        $this->clearSession();
+        Session::set(self::SESSION_LEFT, true);
+    }
+
+    public function hasLeft(): bool
+    {
+        return (bool) Session::get(self::SESSION_LEFT, false);
+    }
+
+    /** Entrée explicite (bouton du sas, code, lien commandement) : la sortie volontaire est levée. */
+    public function clearLeft(): void
+    {
+        Session::forget(self::SESSION_LEFT);
     }
 
     /**
@@ -250,6 +292,9 @@ final class SseAccessCodeService
         Session::set(self::SESSION_ACK_AT, time());
         Session::set(self::SESSION_ACK_TENANT, $tenantId);
         Session::set(self::SESSION_ACK_CODE_ID, $codeId);
+        if ($codeId === 0 && !$this->isGuest()) {
+            Session::set(self::SESSION_STAFF_ACK, $this->staffAckKey($tenantId));
+        }
         if ($tenantId > 0) {
             $this->repo->logEvent(
                 $tenantId,
