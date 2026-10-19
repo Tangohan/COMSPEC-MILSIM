@@ -35,7 +35,9 @@ private _visLand = (createHashMapFromArray [
     ["keys", [0.1655, 0.3237, 0.8105, 0.6772]], ["sonim", [0.1089, 0.2456, 0.8613, 0.7031]],
     ["plate", [0.0728, 0.2974, 0.9272, 0.8013]],
     ["flip", [0.0972, 0.2671, 0.9028, 0.7104]],
-    ["ribbed", [0.1191, 0.2974, 0.8809, 0.6987]]
+    ["ribbed", [0.1191, 0.2974, 0.8809, 0.6987]],
+    // Téléphones nationaux (rendus tools/render_phones.py, corps de la coque nervurée) : russe (EMR) et espagnol (pixelado).
+    ["ru", [0.1191, 0.2954, 0.8809, 0.6987]], ["es", [0.1191, 0.2954, 0.8809, 0.6987]]
 ]) getOrDefault [_model, []];
 if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
 // Vertical : texture tournée d'un quart de tour horaire.

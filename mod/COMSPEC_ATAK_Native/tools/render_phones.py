@@ -10,7 +10,7 @@ render/phone_keys_jpc_*.png).
 Prérequis : pip install bpy (Blender comme module Python, 5.x) ; réutilise les aides de render_3d.py.
 
     python3 render_phones.py [sortie]      # par défaut tools/render/
-    RENDER_ONLY=rugged|iphone|tablet|keys|plate|flip|ribbed|all   RENDER_SAMPLES=64
+    RENDER_ONLY=rugged|iphone|tablet|keys|plate|flip|ribbed|ru|es|all   RENDER_SAMPLES=64
 
 Sorties : phone_<appareil>_front.png / phone_<appareil>_back.png.
 Contrat de la face : alpha 0 exactement sur x 455..1546, y 716..1333 (inclus, y vers le bas), alpha 255 sur un anneau
@@ -39,7 +39,8 @@ SIZE = 2048
 HOLE = (455, 716, 1546, 1333)  # rectangle transparent de l'écran (inclus)
 RING = 6  # marge opaque minimale autour du trou
 BOUNDS = {"rugged": (200, 560, 1900, 1560), "iphone": (200, 560, 1900, 1500), "tablet": (150, 480, 1950, 1580), "keys": (150, 480, 1900, 1520),
-          "plate": (130, 480, 1920, 1700), "flip": (150, 480, 1900, 1520), "ribbed": (200, 560, 1850, 1480)}
+          "plate": (130, 480, 1920, 1700), "flip": (150, 480, 1900, 1520), "ribbed": (200, 560, 1850, 1480),
+          "ru": (200, 560, 1850, 1480), "es": (200, 560, 1850, 1480)}
 TAC_GREEN = (0.33, 0.34, 0.29)  # polymère vert ranger mat de la coque tactique
 TAC_BLACK = (0.055, 0.056, 0.055)  # polymère noir (clip, liseré, patin dorsal)
 KEY_SAND = (0.47, 0.44, 0.39)  # polymère gris sable de la tablette à touches
@@ -861,7 +862,173 @@ def ribbed(back):
     return {"power": 3300, "size": 14, "fill": 560}
 
 
-DEVICES = {"rugged": rugged, "iphone": iphone, "tablet": tablet, "keys": keys, "plate": plate, "flip": flip, "ribbed": ribbed}
+# --- Téléphones nationaux : durci russe (camouflage EMR « Цифра ») et durci espagnol (« pixelado boscoso ») ---
+# Même corps que la coque nervurée (245..1803 x 610..1430) : le JPC réutilise jpc_ribbed.p3d avec leur atlas.
+EMR = [(0.0, (128, 136, 98)), (0.50, (96, 110, 72), 3.0), (0.58, (70, 84, 56), 2.2), (0.66, (96, 80, 58), 1.6),
+       (0.80, (40, 42, 36), 1.0)]
+PIXELADO = [(0.0, (168, 152, 112)), (0.42, (108, 118, 74), 4.5), (0.55, (118, 92, 62), 3.5), (0.72, (66, 74, 48), 2.5),
+            (0.84, (42, 40, 34), 1.4)]
+
+
+def pixel_camo_png(path, layers, seed, w=1560, h=822, cell=7):
+    """Camouflage numérique : couches de taches pixellisées (bruit lissé seuillé sur une grille de cellules carrées),
+    toile au rapport du corps pour que les pixels restent carrés une fois plaqués (coordonnées générées)."""
+    import numpy as np
+    from PIL import Image, ImageFilter
+    rng = np.random.default_rng(seed)
+    gw, gh = w // cell + 1, h // cell + 1
+    out = np.zeros((gh, gw, 3), np.float32)
+    out[:] = layers[0][1]
+    for q, col, blur in layers[1:]:
+        noise = Image.fromarray((rng.random((gh, gw)) * 255).astype("uint8"))
+        f = np.asarray(noise.filter(ImageFilter.GaussianBlur(blur))).astype(np.float32)
+        out[f > np.quantile(f, q + (1 - q) * 0.45)] = col
+    img = Image.fromarray(out.astype("uint8")).resize((gw * cell, gh * cell), Image.NEAREST).crop((0, 0, w, h))
+    a = np.asarray(img).astype(np.float32)
+    a += rng.normal(0, 4, a.shape[:2])[..., None]  # grain de l'impression sur le polymère
+    Image.fromarray(np.clip(a, 0, 255).astype("uint8")).save(path)
+
+
+def flag_png(path, stripes, w=420, h=260):
+    """Écusson brodé à bandes horizontales (proportions des bandes données), bord surjeté sombre, grain de fil."""
+    import numpy as np
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", (w, h), (46, 48, 40))
+    d = ImageDraw.Draw(im)
+    b, total, y = 16, sum(k for k, _ in stripes), 16
+    for k, col in stripes:
+        y1 = y + (h - 2 * b) * k / total
+        d.rectangle((b, y, w - b, y1), fill=col)
+        y = y1
+    a = np.asarray(im).astype(np.float32)
+    rows = (np.arange(h) % 4 < 2)[:, None, None] * 6.0  # rangs de broderie
+    a = a - rows + np.random.default_rng(3).normal(0, 5, a.shape[:2])[..., None]
+    Image.fromarray(np.clip(a, 0, 255).astype("uint8")).save(path)
+
+
+def bezel(V, u0, v0, u1, v1, r, h):
+    """Verre noir affleurant la lèvre de la coque (h) : le liseré noir reste visible autour de l'écran, caméra
+    frontale et écouteur côté haut (gauche)."""
+    V.box(u0, v0, u1, v1, r, -0.06, h, mat_glass("bezel", (0.006, 0.007, 0.008), 0.03), bevel=0.008)
+    V.cyl(425, 1025, 8, h, h + 0.004, r3.mat_simple("fcam2", (0.0, 0.0, 0.0), 0.1, coat=1.0))
+    V.dome(425, 1025, 4.5, h + 0.004, 0.02, r3.mat_simple("flens2", (0.06, 0.08, 0.16), 0.05, coat=1.0))
+    V.box(419, 1060, 431, 1140, 4, h, h + 0.003, r3.mat_simple("spk2", (0.03, 0.03, 0.03), 0.6), bevel=0)
+
+
+def ru(back):
+    """Durci russe (type smartphone durci grand public répandu dans les unités russes) : coque en camouflage EMR
+    « Цифра », coins caoutchouc noirs vissés, touche SOS orange, gros module photo rond avec objectif thermique, patin
+    texturé, écusson tricolore et marquages cyrilliques."""
+    D = 0.55
+    F, V = View(False, D), View(back, D)
+    camo = os.path.join(OUT, "_camo.png")
+    pixel_camo_png(camo, EMR, 11)
+    cam = r3.mat_image("emr", camo, 0.78)
+    rubber = mat_polymer("rubber", (0.040, 0.042, 0.040), rough=0.78, grain=1.3, edge=0.3)
+    steel = r3.mat_simple("steel", (0.42, 0.42, 0.40), 0.35, 1.0)
+    dark = r3.mat_simple("dark", (0.015, 0.015, 0.015), 0.5)
+    ink = r3.mat_paint("ink", (0.62, 0.62, 0.58), rough=0.7)
+    F.box(245, 610, 1803, 1430, 90, -2 * D - 0.04, 0.10, cam, bevel=0.05, name="body")
+    # Coins pare-chocs (traversants), vis à six lobes de face et de dos.
+    corners = [(u0, v0, u1, v1) for u0, u1 in ((245, 445), (1603, 1803)) for v0, v1 in ((610, 790), (1250, 1430))]
+    for u0, v0, u1, v1 in corners:
+        F.box(u0, v0, u1, v1, 70, -2 * D - 0.12, 0.22, rubber, bevel=0.05, name="bumper")
+    # Touches de la tranche haute : SOS orange et volume noir, gardes moulées.
+    F.box(1180, 606, 1300, 626, 6, -D - 0.16, -D + 0.16, r3.mat_paint("sos", (0.72, 0.26, 0.05), rough=0.6), bevel=0.03, name="key")
+    F.box(1350, 606, 1500, 626, 6, -D - 0.16, -D + 0.16, rubber, bevel=0.03, name="key")
+    if not back:
+        V.ring((245, 610, 1803, 1430), (360, 672, 1688, 1368), 90, 40, -0.05, 0.16, cam, bevel=0.04)
+        phone_front(V, 360, 672, 1688, 1368, 40)
+        bezel(V, 360, 672, 1688, 1368, 40, 0.17)
+        for u0, v0, u1, v1 in corners:
+            V.torx((u0 + u1) / 2 + (-28 if u0 < 1000 else 28), (v0 + v1) / 2 + (-22 if v0 < 1000 else 22), 15, 0.22, steel, dark)
+        # Bas du téléphone à droite : plaquette caoutchouc gravée « ЗАЩИЩЁННЫЙ » (durci).
+        V.box(1708, 860, 1782, 1180, 22, 0.10, 0.19, rubber, bevel=0.02, name="tag")
+        V.text("ЗАЩИЩЁННЫЙ", 1745, 1020, 0.19, 30, ink, rot=math.pi / 2, extrude=0.003)
+    else:
+        V.box(430, 700, 1190, 1340, 40, 0.04, 0.20, mat_stipple("pad", (0.05, 0.052, 0.05)), bevel=0.05, name="pad")
+        for u0, v0, u1, v1 in corners:
+            V.torx((u0 + u1) / 2, (v0 + v1) / 2, 15, 0.22, steel, dark)
+        # Module photo rond (haut du téléphone à droite de dos) : principal, thermique (germanium, bague dorée),
+        # grand-angle, macro et flash.
+        V.cyl(1440, 1020, 215, 0.04, 0.24, rubber, verts=128, bevel=0.03)
+        V.cyl(1440, 1020, 192, 0.22, 0.27, mat_glass("camglass", (0.010, 0.010, 0.012), 0.06), verts=128, bevel=0.01)
+        coat = r3.mat_simple("coat", (0.10, 0.12, 0.30), 0.04, coat=1.0)
+        gun = r3.mat_simple("gun", (0.20, 0.20, 0.21), 0.3, 1.0)
+        gold = r3.mat_simple("gold", (0.75, 0.55, 0.22), 0.3, 1.0)
+        V.lens(1440, 900, 62, 0.27, gun, dark, coat, ring_h=0.07)
+        V.lens(1440, 1140, 58, 0.27, gold, dark, r3.mat_simple("germ", (0.14, 0.10, 0.16), 0.08, 1.0, coat=1.0), ring_h=0.07)
+        V.lens(1320, 1020, 40, 0.27, gun, dark, coat, ring_h=0.05)
+        V.lens(1560, 1020, 34, 0.27, gun, dark, coat, ring_h=0.05)
+        V.cyl(1545, 1135, 16, 0.27, 0.29, r3.mat_simple("flash", (0.93, 0.89, 0.72), 0.3, coat=0.8), verts=32)
+        # Écusson tricolore (blanc, bleu, rouge) sur velcro, marquages du patin.
+        flag = os.path.join(OUT, "_flag.png")
+        flag_png(flag, [(1, (226, 226, 220)), (1, (30, 66, 150)), (1, (190, 36, 40))])
+        V.box(482, 748, 742, 912, 14, 0.18, 0.235, mat_stipple("loop", (0.10, 0.11, 0.09), scale=150.0, strength=0.6), bevel=0.006, name="velcro")
+        V.box(492, 758, 732, 902, 12, 0.22, 0.25, r3.mat_image("flag", flag, 0.85), bevel=0.006, name="flag")
+        V.text("ЗАЩИЩЁННЫЙ ТЕРМИНАЛ", 810, 1245, 0.20, 30, ink, extrude=0.003)
+        V.text("Т-1   IP69K   MIL-STD-810H", 810, 1295, 0.20, 20, ink, font=FONT_R, extrude=0.003)
+        # Passant de dragonne (bas du téléphone, à gauche de dos).
+        V.box(262, 960, 300, 1080, 12, 0.0, 0.14, dark, bevel=0.01, name="lanyard")
+    return {"power": 3300, "size": 14, "fill": 560}
+
+
+def es(back):
+    """Durci espagnol (type smartphone durci professionnel à batterie amovible) : coque en camouflage « pixelado
+    boscoso » de l'armée de terre espagnole, embouts caoutchouc rainurés, touche programmable orange, barre photo
+    double objectif, trappe de batterie nervurée, écusson rouge et jaune, broches de charge."""
+    D = 0.46
+    F, V = View(False, D), View(back, D)
+    camo = os.path.join(OUT, "_camo.png")
+    pixel_camo_png(camo, PIXELADO, 23, cell=9)
+    cam = r3.mat_image("pixelado", camo, 0.78)
+    rubber = mat_polymer("rubber", (0.045, 0.045, 0.042), rough=0.78, grain=1.3, edge=0.3)
+    black = mat_polymer("black", (0.06, 0.062, 0.058), rough=0.62, grain=1.0, edge=0.45)
+    dark = r3.mat_simple("dark", (0.015, 0.015, 0.015), 0.5)
+    ink = r3.mat_paint("ink", (0.60, 0.60, 0.56), rough=0.7)
+    F.box(245, 610, 1803, 1430, 80, -2 * D - 0.04, 0.10, cam, bevel=0.05, name="body", seg=14)
+    # Embouts caoutchouc (bords courts), rainures de préhension.
+    for u0, u1 in ((245, 345), (1703, 1803)):
+        F.box(u0, 610, u1, 1430, 80, -2 * D - 0.10, 0.18, rubber, bevel=0.05, name="cap", seg=14)
+    # Touche programmable orange (tranche haute) et volume.
+    F.box(880, 606, 1060, 626, 8, -D - 0.15, -D + 0.15, r3.mat_paint("xkey", (0.78, 0.36, 0.06), rough=0.55), bevel=0.03, name="key")
+    F.box(1240, 606, 1420, 626, 8, -D - 0.15, -D + 0.15, rubber, bevel=0.03, name="key")
+    if not back:
+        V.ring((245, 610, 1803, 1430), (345, 662, 1703, 1378), 80, 46, -0.05, 0.14, cam, bevel=0.04)
+        phone_front(V, 345, 662, 1703, 1378, 46)
+        bezel(V, 375, 672, 1673, 1368, 40, 0.15)
+        for u in (268, 294, 320, 1728, 1754, 1780):
+            V.box(u - 5, 760, u + 5, 1280, 5, 0.12, 0.185, dark, bevel=0.004, name="groove")
+    else:
+        # Trappe de batterie noire nervurée, loquet.
+        V.box(420, 680, 1300, 1360, 40, 0.04, 0.16, black, bevel=0.04, name="door")
+        for v in range(740, 1220, 64):
+            V.box(470, v, 1250, v + 26, 12, 0.14, 0.20, black, bevel=0.012, name="rib")
+        V.box(760, 1260, 960, 1320, 18, 0.14, 0.22, rubber, bevel=0.02, name="latch")
+        V.text("TERMINAL TÁCTICO", 1100, 1290, 0.16, 22, ink, font=FONT_R, extrude=0.003)
+        # Barre photo (haut du téléphone à droite de dos) : deux objectifs et flash.
+        V.box(1360, 690, 1680, 960, 50, 0.04, 0.22, black, bevel=0.03, name="cam_bar")
+        V.box(1380, 710, 1660, 940, 40, 0.20, 0.25, mat_glass("camglass", (0.010, 0.010, 0.012), 0.06), bevel=0.01)
+        coat = r3.mat_simple("coat", (0.10, 0.12, 0.30), 0.04, coat=1.0)
+        gun = r3.mat_simple("gun", (0.26, 0.26, 0.27), 0.3, 1.0)
+        V.lens(1450, 790, 52, 0.25, gun, dark, coat, ring_h=0.06)
+        V.lens(1580, 790, 52, 0.25, gun, dark, coat, ring_h=0.06)
+        V.cyl(1515, 890, 16, 0.25, 0.27, r3.mat_simple("flash", (0.93, 0.89, 0.72), 0.3, coat=0.8), verts=32)
+        # Écusson rouge, jaune, rouge (1 : 2 : 1) sur velcro, sous la barre photo.
+        flag = os.path.join(OUT, "_flag.png")
+        flag_png(flag, [(1, (178, 22, 32)), (2, (240, 188, 24)), (1, (178, 22, 32))])
+        V.box(1384, 1030, 1656, 1206, 14, 0.04, 0.10, mat_stipple("loop", (0.30, 0.27, 0.19), scale=150.0, strength=0.6), bevel=0.006, name="velcro")
+        V.box(1394, 1040, 1646, 1196, 12, 0.08, 0.12, r3.mat_image("flag", flag, 0.85), bevel=0.006, name="flag")
+        V.text("ESPAÑA", 1520, 1260, 0.10, 22, r3.mat_paint("ink2", (0.20, 0.18, 0.14), rough=0.7), extrude=0.003)
+        # Broches de charge dorées (bas du téléphone, à gauche de dos).
+        gold = r3.mat_simple("gold", (0.80, 0.62, 0.26), 0.25, 1.0)
+        for v in (990, 1050):
+            V.cyl(372, v, 10, 0.0, 0.03, gold, verts=24)
+    return {"power": 3300, "size": 14, "fill": 560}
+
+
+DEVICES = {"rugged": rugged, "iphone": iphone, "tablet": tablet, "keys": keys, "plate": plate, "flip": flip, "ribbed": ribbed,
+           "ru": ru, "es": es}
 
 
 # --- Post-traitement et contrôle ---
@@ -914,7 +1081,7 @@ def render(name, back):
     bpy.ops.render.render(write_still=True)
     if not back:
         punch(path)
-    for t in ("_vt10_label.png", "_camo.png"):
+    for t in ("_vt10_label.png", "_camo.png", "_flag.png"):
         tmp = os.path.join(OUT, t)
         if os.path.exists(tmp):
             os.remove(tmp)

@@ -112,11 +112,11 @@ private _fold = {
     ["fold", _t, _sub, [_k, _def] call _foldOpen, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_SetFold');", _k, _def]]
 };
 // Modèles du téléphone : seuls ceux dont l'objet exigé est porté sont proposés (Options des addons > ATAK · Objets par interface).
-private _models = [["DURCI S7", "s7"], ["V2 ENHANCED", "iphone"], ["XIAOMI X3D", "rugged"], ["SONIM XP8", "sonim"], ["SUPPORT JPC", "plate"], ["ÉTUI MULTICAM", "flip"], ["COQUE NERVURÉE", "ribbed"], ["TABLETTE", "keys"]];
+private _models = [["DURCI S7", "s7"], ["V2 ENHANCED", "iphone"], ["XIAOMI X3D", "rugged"], ["SONIM XP8", "sonim"], ["SUPPORT JPC", "plate"], ["ÉTUI MULTICAM", "flip"], ["COQUE NERVURÉE", "ribbed"], ["RUSSE EMR", "ru"], ["ESPAGNOL PIXELADO", "es"], ["TABLETTE", "keys"]];
 private _modelOk = missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }];
 private _okModels = _models select { (_x select 1) isEqualTo "s7" || {[_x select 1, player] call _modelOk} };
 private _noModels = (_models - _okModels) apply { _x select 0 };
-private _modelHelp = "La couleur de coque ne change que le S7. TABLETTE : tablette durcie.";
+private _modelHelp = "La couleur de coque ne change que le S7. RUSSE EMR et ESPAGNOL PIXELADO : téléphones durcis aux camouflages russe et espagnol. TABLETTE : tablette durcie.";
 if ((count _noModels) > 0) then { _modelHelp = _modelHelp + format [" Objet requis manquant pour : %1.", _noModels joinString ", "]; };
 private _modelRows = [["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", _okModels select [0, 4], ["", _modelHelp] select (4 >= count _okModels)] call _profSegment];
 for "_i" from 4 to ((count _okModels) - 1) step 4 do {

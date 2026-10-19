@@ -177,8 +177,8 @@ private _uiCat = ["COMSPEC", "ATAK · Objets par interface"];
 // téléphone conservé. Le S7 reste le défaut et reprend si l'objet exigé pour le modèle n'est pas porté.
 ["comspec_atak_native_phone_model", "LIST",
     ["Modèle du téléphone", "Châssis du téléphone ATAK, aussi dans Réglages > Personnaliser du téléphone. Un modèle dont l'objet exigé (ci-dessous) n'est pas porté reste en Durci S7."],
-    _uiCat, [["", "s7", "iphone", "rugged", "sonim", "plate", "flip", "ribbed", "keys"],
-        ["Choisi dans le téléphone", "Durci S7", "V2 Enhanced", "Xiaomi X3D", "Sonim XP8", "Support JPC", "Étui Multicam", "Coque nervurée", "Tablette"], 0], 0,
+    _uiCat, [["", "s7", "iphone", "rugged", "sonim", "plate", "flip", "ribbed", "ru", "es", "keys"],
+        ["Choisi dans le téléphone", "Durci S7", "V2 Enhanced", "Xiaomi X3D", "Sonim XP8", "Support JPC", "Étui Multicam", "Coque nervurée", "Russe EMR", "Espagnol pixelado", "Tablette"], 0], 0,
     {
         params ["_v"];
         if (_v isEqualTo "" || {_v isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"])}) exitWith {};
@@ -200,6 +200,7 @@ private _uiCat = ["COMSPEC", "ATAK · Objets par interface"];
 } forEach [
     ["s7", "Durci S7", ""], ["iphone", "V2 Enhanced", ""], ["rugged", "Xiaomi X3D", ""], ["sonim", "Sonim XP8", ""],
     ["plate", "Support JPC", ""], ["flip", "Étui Multicam", ""], ["ribbed", "Coque nervurée", ""],
+    ["ru", "Russe EMR", ""], ["es", "Espagnol pixelado", ""],
     ["keys", "Tablette", "tablet,tablette,ctab"]
 ];
 // [modèle, unité] -> l'unité porte-t-elle l'objet exigé pour ce modèle ? (cache 2 s : fn_layoutGet l'appelle souvent).

@@ -76,7 +76,7 @@ switch (_act) do {
         // autre modèle (mesuré sur tools/render/phone_<modèle>_front.png), pour que l'antenne parte du boîtier.
         ((createHashMapFromArray [
             ["rugged", [50, 124]], ["iphone", [20, 35]], ["sonim", [-50, -18]], ["tablet", [20, 33]], ["keys", [20, 33]],
-            ["plate", [0, -21]], ["flip", [-30, -71]], ["ribbed", [0, -21]]
+            ["plate", [0, -21]], ["flip", [-30, -71]], ["ribbed", [0, -21]], ["ru", [0, -21]], ["es", [0, -21]]
         ]) getOrDefault [_l getOrDefault ["model", "s7"], [0, 0]]) params ["_ox", "_oy"];
         (if (_land) then { [238 + _ox, -832 + _oy, 384, 1536] } else { [1344 - _oy, 238 + _ox, 1536, 384] }) params ["_fx", "_fy", "_fw", "_fh"];
         (_l get "phone") params ["_px", "_py", "_pw", "_ph"];

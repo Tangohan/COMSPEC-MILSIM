@@ -324,6 +324,8 @@ CASE_SRC = {
     "plate": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_plate_front.png"),
     "flip": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_flip_front.png"),
     "ribbed": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_ribbed_front.png"),
+    "ru": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_ru_front.png"),
+    "es": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_es_front.png"),
 }
 
 

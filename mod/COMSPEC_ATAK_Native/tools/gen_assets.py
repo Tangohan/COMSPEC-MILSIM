@@ -1372,7 +1372,7 @@ def nvgfilter_item(size=256):
 
 
 # --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
-PHONE_MODELS = ["rugged", "iphone", "sonim", "tablet", "keys", "plate", "flip", "ribbed"]
+PHONE_MODELS = ["rugged", "iphone", "sonim", "tablet", "keys", "plate", "flip", "ribbed", "ru", "es"]
 
 
 def _hole(model):
@@ -1747,10 +1747,13 @@ JPC_PHONES = {
     "plate": (145, 605, 1903, 1645),
     "flip": (195, 543, 1853, 1459),
     "ribbed": (240, 605, 1808, 1435),
+    # Téléphones nationaux : corps de la coque nervurée, le JPC réutilise jpc_ribbed.p3d (config.cpp).
+    "ru": (240, 605, 1808, 1435),
+    "es": (240, 605, 1808, 1435),
 }
 
 
-def jpc_phone_atlas(tmp):
+def jpc_phone_atlas(tmp, only=None):
     """Atlas jpc_<modèle>_ca : face en haut, dos vu de derrière en bas, transparence = silhouette.
     S7 : coque coyote et variantes de teinte (od, black), dos de phone_back."""
     def pack(front, rear, crop):
@@ -1762,6 +1765,8 @@ def jpc_phone_atlas(tmp):
         return atlas
 
     for m, crop in JPC_PHONES.items():
+        if only and m not in only:
+            continue
         x0, y0, x1, y1 = crop
         if m == "s7":
             if not os.path.exists(PHONE_SRC):
@@ -1951,6 +1956,11 @@ def main():
             return
         if len(sys.argv) > 2 and sys.argv[2] == "cases":
             model_assets(tmp, only=["plate", "flip", "ribbed"])
+            return
+        # « national » : téléphones russe (EMR) et espagnol (pixelado) : coques 2D, dos et atlas du JPC.
+        if len(sys.argv) > 2 and sys.argv[2] == "national":
+            model_assets(tmp, only=["ru", "es"])
+            jpc_phone_atlas(tmp, only=["ru", "es"])
             return
         if len(sys.argv) > 2 and sys.argv[2] == "camera":
             convert(camera_item(), "item_camera", tmp)

@@ -348,6 +348,13 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\main\data\jpc_ribbed.p3d";
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_ribbed_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
+    // Téléphones nationaux : même corps que la coque nervurée, donc même modèle 3D, atlas propre (camouflage, dos).
+    class COMSPEC_ATAK_JpcPhone_ru: COMSPEC_ATAK_JpcPhone_ribbed {
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_ru_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
+    class COMSPEC_ATAK_JpcPhone_es: COMSPEC_ATAK_JpcPhone_ribbed {
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_es_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_9E4D5298F6";

@@ -37,7 +37,7 @@ Identités livrées :
 ## Gilet, modèles, accessoires et véhicules
 
 - Téléphone sur le gilet : modèle `data/vest_phone.p3d` (classe `COMSPEC_ATAK_VestPhone`, sélections `camo` et `patch`), exporté par `tools/model_vest_phone.py` (Blender + extension « Arma 3 Object Builder », GPL-3, non livrée) ; textures `vest_phone*_co.paa` par `gen_assets.vest_phone_atlas`. Orientation à régler en jeu si besoin : `COMSPEC_ATAK_VestDirUp = [[dir], [up]]`.
-- Modèles de téléphone (`COMSPEC_ATAK_PhoneModel` : `s7`, `rugged`, `iphone`) et tablette de bord (`tablet`) : rendus par `tools/render_phones.py`, même ouverture d'écran que le S7.
+- Modèles de téléphone (`COMSPEC_ATAK_PhoneModel` : `s7`, `rugged`, `iphone`) et tablette de bord (`tablet`) : rendus par `tools/render_phones.py`, même ouverture d'écran que le S7. Téléphones nationaux `ru` (durci russe, camouflage EMR) et `es` (durci espagnol, pixelado boscoso) : `RENDER_ONLY=ru|es python3 tools/render_phones.py`, puis `gen_assets.py <hemtt> national` et `gen_dirt.py <hemtt> case ru es` ; sur le JPC ils reprennent `jpc_ribbed.p3d` (même corps) avec leur atlas.
 - Accessoires : `COMSPEC_ATAK_PowerBank` (`fn_powerBank`), `COMSPEC_ATAK_NvgFilter` et lueur des écrans (`fn_screenGlow`, réglage serveur « Lueur des écrans la nuit »). Effacement d'urgence et téléphone extractible en cas de capture : `fn_phoneSecurity`.
 - Véhicules : `fn_vehicleTerminal` (tablette de bord, réglage serveur « Tablette des véhicules », objet `COMSPEC_ATAK_VehicleKit`), `fn_vehicleGateway` (passerelle, PC mobile ; portées par mission `COMSPEC_ATAK_GwRange = [4000, 10000]`).
 

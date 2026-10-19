@@ -25,7 +25,7 @@ private _y = safeZoneY + safeZoneH / 2 - _h * 0.57;
 // dans un cadre bien plus haut que large, était recentrée autrement que le dos et flottait au-dessus de la coque.
 private _img = _d ctrlCreate ["COMSPEC_RscPhone", -1];
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
-private _s7 = !(_model in ["rugged", "iphone", "sonim", "keys", "plate", "flip", "ribbed"]);
+private _s7 = !(_model in ["rugged", "iphone", "sonim", "keys", "plate", "flip", "ribbed", "ru", "es"]);
 _img ctrlSetText (((["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa", format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", _suffix]] select _s7)) call comspec_atak_native_fnc_tr);
 _img ctrlSetTextColor [1, 1, 1, 1];
 _img ctrlSetPosition [_x, _y, _w, _h];
@@ -75,7 +75,7 @@ _cap ctrlSetPosition [safeZoneX, safeZoneY + safeZoneH * 0.86, safeZoneW, safeZo
 _cap ctrlCommit 0;
 _cap ctrlSetStructuredText parseText ((format [
     "<t align='center' size='1.1' color='#e8eadf'>Dos du téléphone ATAK</t><br/><t align='center' size='0.85' color='#9aa59f'>%1 · IMEI %2 · Antenne : %3<br/>Batterie externe : %4<br/>Clic ou touche pour fermer</t>",
-    [createHashMapFromArray [["rugged", "XIAOMI X3D"], ["iphone", "V2 Enhanced"], ["sonim", "SONIM XP8 + goTenna Pro"], ["keys", "Tablette durcie"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
+    [createHashMapFromArray [["rugged", "XIAOMI X3D"], ["iphone", "V2 Enhanced"], ["sonim", "SONIM XP8 + goTenna Pro"], ["keys", "Tablette durcie"], ["ru", "Durci russe (EMR)"], ["es", "Durci espagnol (pixelado)"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
     _ident param [1, "?"], [_ant param [2, ""], "aucune (port SMA bouché)"] select (_ant isEqualTo []),
     ["aucune", (["label"] call comspec_atak_native_fnc_powerBank) select [17]] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])
 ]) call comspec_atak_native_fnc_tr);
