@@ -98,10 +98,6 @@ require base_path('views/partials/alert_banners.php');
         </div>
     </section>
 
-    <div class="mx-auto max-w-6xl px-6 pt-8 md:px-10" id="dash-tour-getting-started">
-        <?php $tpgType = 'effectifs'; require base_path('views/partials/tenant_profile_getting_started.php'); ?>
-    </div>
-
     <?php
     $dashTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
         (string) ($dashboard_tenant_type ?? 'effectifs')
