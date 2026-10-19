@@ -58,11 +58,15 @@ Gratuit, non commercial, en [b]français et en anglais[/b].
 Plus d'images dans la galerie en haut de la page.
 
 [h1]04 · NOUVEAUTÉS[/h1]
-[b]Version 2.x[/b]
+[b]Version 1.0[/b]
 [list]
-[*][b]COMSPEC ATAK Native[/b] devient obligatoire : SSE et ATAK forment un seul ensemble.
-[*]Kits et sites préfabriqués pour Eden et Zeus.
-[*]Les actions numériques passent par le terminal ATAK.
+[*][b]COMSPEC ATAK Native obligatoire[/b] : SSE et ATAK forment un seul ensemble. Nouvelle app [b]SSE terrain[/b] sur le téléphone : cible visée, avancement du site avec feu vert d'exfiltration, scellés détenus, journal.
+[*][b]Presque plus de menus ACE[/b] : on fouille et on met sous scellé au contact, tout le reste passe par le téléphone et les kits portés.
+[*][b]Kits réalistes à consommables[/b] : empreintes, ADN, test de résidus de tir, SEEK II, sac de Faraday (contre l'effacement à distance des téléphones), cônes de preuve numérotés, valise DOMEX.
+[*][b]Numérique au câble DL-7[/b] : chaque téléphone ou PC généré se branche, se force et se télécharge ; les résultats vont au dossier.
+[*][b]Photos de preuve[/b] avec l'app Photo de l'ATAK : les pièces cadrées sont inscrites au dossier.
+[*][b]Sept sites préfabriqués[/b] (planque, labo d'IED, faux papiers, cache d'armes, PC de cellule, boîte aux lettres morte, hawala), réseau multi-sites, caisses de kits et 17 pièces de preuve posables, pour Eden et Zeus.
+[*][b]Dossier fiable en multijoueur[/b] : le serveur tient les fiches, génération reproductible, identités distinctes, lieux réels de la carte.
 [/list]
 Historique complet dans l'onglet [b]Notes de mise à jour[/b].
 
@@ -162,11 +166,15 @@ Free, non-commercial, in [b]English and French[/b].
 More pictures in the gallery at the top of the page.
 
 [h1]04 · WHAT'S NEW[/h1]
-[b]Version 2.x[/b]
+[b]Version 1.0[/b]
 [list]
-[*][b]COMSPEC ATAK Native[/b] is now required: SSE and ATAK work as one.
-[*]Ready-made kits and sites for Eden and Zeus.
-[*]Digital actions go through the ATAK terminal.
+[*][b]COMSPEC ATAK Native required[/b]: SSE and ATAK work as one. New [b]SSE field[/b] app on the phone: current target, site progress with an exfil green light, evidence held, log.
+[*][b]Almost no ACE menus left[/b]: search and seal by hand, everything else goes through the phone and the kits you carry.
+[*][b]Realistic kits with consumables[/b]: fingerprints, DNA, gunshot residue test, SEEK II, Faraday bag (stops remote wipes of phones), numbered evidence markers, DOMEX case.
+[*][b]Digital through the DL-7 cable[/b]: every generated phone or PC can be plugged in, cracked and downloaded; results go to the case file.
+[*][b]Evidence photos[/b] with the ATAK Photo app: framed items are added to the case file.
+[*][b]Seven ready-made sites[/b] (safehouse, IED lab, forgery workshop, weapons cache, cell HQ, dead drop, hawala), multi-site networks, kit crates and 17 placeable evidence items, for Eden and Zeus.
+[*][b]Reliable case files in multiplayer[/b]: the server owns the records, reproducible generation, distinct identities, real map locations.
 [/list]
 Full history in the [b]Change Notes[/b] tab.
 
