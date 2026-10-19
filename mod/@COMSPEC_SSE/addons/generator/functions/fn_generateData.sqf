@@ -85,6 +85,9 @@ private _pools = [_region, _seed] call comspec_sse_fnc_getNarrativePools;
 
 switch (_type) do {
     case "PERSON": {
+        // Bruit fixé par le module Zeus pour cette cible (zeusGenerateTargets).
+        private _nz = _entity getVariable ["comspec_sse_noiseOverride", -1];
+        if (_nz isEqualType 0 && {_nz >= 0}) then { _cluster set ["noiseProbability", _nz]; };
         private _person = [_seed, _profile, _complexity, _cluster] call comspec_sse_fnc_generatePerson;
         _cluster = _person getOrDefault ["cluster", _cluster];
         _sections set ["identity", _person get "identity"];

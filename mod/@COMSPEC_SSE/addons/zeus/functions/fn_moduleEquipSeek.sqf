@@ -9,37 +9,14 @@
     portée volontairement courte (25 m par défaut, attribut Rayon), pour ne pas distribuer le terminal à toute
     une compagnie d'un clic — et notamment pas aux PNJ qu'on est en train de fouiller.
 */
-private _logic = objNull;
-private _units = [];
-private _activated = true;
-
-if (_this isEqualType objNull) then {
-    _logic = _this;
-} else {
-    if (!(_this isEqualType [])) exitWith { false };
-    private _a0 = _this param [0, objNull];
-    if (_a0 isEqualType objNull) then {
-        _logic = _a0;
-        _units = _this param [1, []];
-        _activated = _this param [2, true];
-    } else {
-        if (_a0 isEqualType "" && { (_this param [1, objNull]) isEqualType objNull }) then {
-            _logic = _this param [1, objNull];
-            _units = _this param [2, []];
-            _activated = _this param [3, true];
-        };
-    };
-};
-
-if (isNull _logic) exitWith { false };
-if (!(_units isEqualType [])) then { _units = []; };
-if (!(_activated isEqualType true)) then { _activated = true; };
+// Toutes les formes d'appel de BI, dont ["init", [logic, activé, posé par Zeus]] des modules Eden (is3DEN = 1).
+private _args = _this call comspec_sse_fnc_moduleArgs;
+if (_args isEqualTo []) exitWith { true };
+_args params ["_logic", "_units", "_activated"];
 if (!_activated) exitWith { false };
 
-if (!isServer && { isMultiplayer }) exitWith {
-    deleteVehicle _logic;
-    true
-};
+// Client : le serveur applique et supprime la logique (un deleteVehicle ici l'effaçait avant lui).
+if (!isServer && { isMultiplayer }) exitWith { true };
 
 private _radius = _logic getVariable ["Radius", 25];
 if (_radius isEqualType "") then { _radius = parseNumber _radius; };

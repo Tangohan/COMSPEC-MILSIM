@@ -81,7 +81,8 @@ switch (true) do {
     default {
         private _pEnr = missionNamespace getVariable [format ["comspec_sse_bio_enrolled_%1", _sideTag], 35];
         private _pWatch = missionNamespace getVariable [format ["comspec_sse_bio_watch_%1", _sideTag], 3];
-        private _isHvt = !isNull _unit && {(toUpper (_unit getVariable ["comspec_sse_profile", ""])) isEqualTo "HVT"};
+        // « Chef / HVT » : HVT dans Eden, COMMANDER dans Zeus (même libellé, resolveProfile ramène HVT à COMMANDER).
+        private _isHvt = !isNull _unit && {(toUpper (_unit getVariable ["comspec_sse_profile", ""])) in ["HVT", "COMMANDER"]};
         if (_isHvt || {(["watch"] call _r) * 100 < _pWatch}) then {
             _enrolled = true;
             private _t = ["tier"] call _r;

@@ -78,14 +78,10 @@ class Extended_PostInit_EventHandlers {
 
 // ---------------------------------------------------------------- module Eden
 class CfgVehicles {
-    class Logic;
-    class Module_F: Logic {
-        class AttributesBase {
-            class Edit;
-            class Combo;
-        };
-        class ModuleDescription {};
-    };
+    // Déclaration seule : rouvrir Module_F: Logic (AttributesBase, ModuleDescription) casse Eden / Zeus / ACE
+    // (« Updating base class ») et faisait hériter le bloc de description du module au lieu du contrôle.
+    // Attributs « à plat », comme les modules de comspec_sse_zeus.
+    class Module_F;
     class COMSPEC_SSE_Module_Organisation: Module_F {
         author = "COMSPEC";
         scope = 2;
@@ -101,15 +97,19 @@ class CfgVehicles {
         icon = "\A3\ui_f\data\map\markers\nato\o_hq.paa";
         portrait = "\A3\ui_f\data\map\markers\nato\o_hq.paa";
 
-        class Attributes: AttributesBase {
-            class Name: Edit {
+        class Attributes {
+            class Name {
+                control = "Edit";
+                expression = "_this setVariable ['Name', _value];";
                 property = "COMSPEC_SSE_OrgModule_Name";
                 displayName = "$STR_COMSPEC_SSE_CFG_7FF20370C8";
                 tooltip = "$STR_COMSPEC_SSE_CFG_D2964B732C";
                 typeName = "STRING";
                 defaultValue = "''";
             };
-            class Kind: Combo {
+            class Kind {
+                control = "Combo";
+                expression = "_this setVariable ['Kind', _value];";
                 property = "COMSPEC_SSE_OrgModule_Kind";
                 displayName = "$STR_COMSPEC_SSE_CFG_BDDC7ADB12";
                 tooltip = "$STR_COMSPEC_SSE_CFG_DB6463085C";
@@ -127,14 +127,18 @@ class CfgVehicles {
                     class Soutien { name = "$STR_COMSPEC_SSE_CFG_C713B7703C"; value = "soutien"; };
                 };
             };
-            class Parent: Edit {
+            class Parent {
+                control = "Edit";
+                expression = "_this setVariable ['Parent', _value];";
                 property = "COMSPEC_SSE_OrgModule_Parent";
                 displayName = "$STR_COMSPEC_SSE_CFG_F203020200";
                 tooltip = "$STR_COMSPEC_SSE_CFG_E0024277D7";
                 typeName = "STRING";
                 defaultValue = "''";
             };
-            class Threat: Combo {
+            class Threat {
+                control = "Combo";
+                expression = "_this setVariable ['Threat', _value];";
                 property = "COMSPEC_SSE_OrgModule_Threat";
                 displayName = "$STR_COMSPEC_SSE_CFG_E39BBE2519";
                 tooltip = "$STR_COMSPEC_SSE_CFG_A0343D674B";
@@ -147,7 +151,8 @@ class CfgVehicles {
                     class Critique { name = "$STR_COMSPEC_SSE_CFG_6256DE98F1"; value = "critique"; };
                 };
             };
-            class Description: Edit {
+            class Description {
+                expression = "_this setVariable ['Description', _value];";
                 control = "EditMulti3";
                 property = "COMSPEC_SSE_OrgModule_Description";
                 displayName = "$STR_COMSPEC_SSE_CFG_55F8EBC805";
@@ -155,7 +160,9 @@ class CfgVehicles {
                 typeName = "STRING";
                 defaultValue = "''";
             };
-            class Distribution: Combo {
+            class Distribution {
+                control = "Combo";
+                expression = "_this setVariable ['Distribution', _value];";
                 property = "COMSPEC_SSE_OrgModule_Distribution";
                 displayName = "$STR_COMSPEC_SSE_CFG_E40C27961A";
                 tooltip = "$STR_COMSPEC_SSE_CFG_6344F70286";
@@ -166,14 +173,18 @@ class CfgVehicles {
                     class Auto { name = "$STR_COMSPEC_SSE_CFG_1A5FE6557C"; value = "auto"; };
                 };
             };
-            class Seed: Edit {
+            class Seed {
+                control = "Edit";
+                expression = "_this setVariable ['Seed', _value];";
                 property = "COMSPEC_SSE_OrgModule_Seed";
                 displayName = "$STR_COMSPEC_SSE_CFG_24FFB3949F";
                 tooltip = "$STR_COMSPEC_SSE_CFG_8CEE6A1955";
                 typeName = "NUMBER";
                 defaultValue = "0";
             };
-            class Known: Combo {
+            class Known {
+                control = "Combo";
+                expression = "_this setVariable ['Known', _value];";
                 property = "COMSPEC_SSE_OrgModule_Known";
                 displayName = "$STR_COMSPEC_SSE_CFG_01CE550E6F";
                 tooltip = "$STR_COMSPEC_SSE_CFG_698FD3A976";
@@ -185,10 +196,9 @@ class CfgVehicles {
                     class Org { name = "$STR_COMSPEC_SSE_CFG_2E8D40A6EE"; value = 2; };
                 };
             };
-            class ModuleDescription: ModuleDescription {};
         };
 
-        class ModuleDescription: ModuleDescription {
+        class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_8CBD195789";
             sync[] = {"AnyBrain", "AnyStaticObject"};
         };

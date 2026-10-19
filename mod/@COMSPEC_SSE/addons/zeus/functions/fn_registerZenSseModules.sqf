@@ -1,5 +1,5 @@
 /*
-    Modules SSE de Zeus Enhanced (ZEN) : dossier, identité et biométrie d'un sujet,
+    Modules SSE de Zeus Enhanced (ZEN) : identité et biométrie d'un sujet,
     dotation SEEK, présentation des documents. Repris du mod Overwatch : tout le SSE
     passe par ce pack. Les modules CfgVehicles équivalents servent à Eden.
 */
@@ -9,31 +9,8 @@ if (missionNamespace getVariable ["COMSPEC_ZenSseModulesRegistered", false]) exi
 
 private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 
-// --- Dossier SSE actif ---------------------------------------------------
-[
-    "COMSPEC SSE · Mission",
-    "Dossier SSE actif",
-    {
-        private _current = [] call comspec_sse_fnc_getCaseReference;
-        [
-            "Dossier SSE actif",
-            [
-                ["EDIT", ["Référence", "Dossier ouvert côté portail, par exemple SSE-2026-0007. Laisser vide efface le dossier actif."], _current]
-            ],
-            {
-                params ["_values"];
-                _values params ["_ref"];
-                private _clean = toUpper (trim _ref);
-                // Diffusé à tous (et aux joueurs qui rejoignent) : le dossier est un contexte d'élément.
-                [_clean] remoteExecCall ["comspec_sse_fnc_setCaseReference", 2];
-                [["Dossier SSE actif effacé.", format ["Dossier SSE actif : %1", _clean]] select (_clean isNotEqualTo "")] call comspec_sse_fnc_zeusNotify;
-            },
-            {},
-            []
-        ] call zen_dialog_fnc_create;
-    },
-    _icon
-] call comspec_sse_fnc_zenModule;
+// Dossier SSE actif : pas d'entrée ZEN, le module Zeus « Référence de dossier SSE » (CfgVehicles) fait la même chose
+// (trois points d'entrée pour la même action auparavant).
 
 // --- Profil d'identité ---------------------------------------------------
 [
@@ -84,7 +61,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             },
             {},
             [_obj]
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     },
     _icon
 ] call comspec_sse_fnc_zenModule;
@@ -141,7 +118,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             },
             {},
             [_obj]
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     },
     "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa"
 ] call comspec_sse_fnc_zenModule;
@@ -179,7 +156,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             },
             {},
             [_pos]
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     },
     "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"
 ] call comspec_sse_fnc_zenModule;
@@ -256,7 +233,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             },
             {},
             []
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     },
     "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"
 ] call comspec_sse_fnc_zenModule;

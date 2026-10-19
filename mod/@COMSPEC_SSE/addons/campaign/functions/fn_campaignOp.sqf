@@ -27,6 +27,13 @@
 params [["_op", "", [""]], ["_args", [], [[]]], ["_req", objNull, [objNull]]];
 _op = toLower _op;
 if (!isServer) exitWith { ["comspec_sse_campOp", [_op, _args, player]] call CBA_fnc_serverEvent; false };
+// Demande venue d'un client (événement comspec_sse_campOp) : Zeus ou administrateur seulement, sauf la diffusion
+// de l'état. Les appels du serveur lui-même (modules Eden, fin de mission, hôte) n'ont pas de demandeur.
+if (!isNull _req && {_op isNotEqualTo "publish"} && {!([_req] call comspec_sse_fnc_isAuthority)}) exitWith {
+    diag_log text format ["[COMSPEC SSE] Campagne : « %1 » refusé à %2 (ni Zeus ni administrateur).", _op, name _req];
+    ["comspec_sse_campNote", ["action réservée au Zeus ou à l'administrateur."], _req] call CBA_fnc_targetEvent;
+    false
+};
 
 private _note = {
     params ["_msg", ["_all", false]];
@@ -63,10 +70,15 @@ private _wipe = {
         comspec_sse_orgMembers = createHashMap;
         { _x setVariable ["COMSPEC_SSE_Org", nil, true]; } forEach (allUnits + allDeadMen);
     };
+    // Numéro de pièce effacé seulement sur les objets saisis (registre) : un setVariable public sur chaque objet
+    // de la mission (allMissionObjects) envoyait des milliers de messages à chaque remise à zéro.
+    {
+        private _o = objectFromNetId (_y getOrDefault ["netId", ""]);
+        if (!isNull _o && {(_o getVariable ["COMSPEC_SSE_PieceId", ""]) isNotEqualTo ""}) then { _o setVariable ["COMSPEC_SSE_PieceId", nil, true]; };
+    } forEach (missionNamespace getVariable ["comspec_sse_custody", createHashMap]);
     comspec_sse_anaSeen = createHashMap;
     comspec_sse_custody = createHashMap;
     comspec_sse_custodyN = 0;
-    { _x setVariable ["COMSPEC_SSE_PieceId", nil, true]; } forEach (allMissionObjects "All");
     missionNamespace setVariable ["comspec_sse_bioRuntime", createHashMap];
     missionNamespace setVariable ["comspec_sse_bioLatents", []];
     { publicVariable _x; } forEach ["comspec_sse_orgs", "comspec_sse_orgMembers", "comspec_sse_anaSeen", "comspec_sse_custody"];
