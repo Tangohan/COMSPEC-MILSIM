@@ -40,6 +40,8 @@ private _typeRow = { params ["_k"]; _types select ((_types findIf { (_x select 0
 private _autoName = {
     params ["_k"];
     private _pre = ([_k] call _typeRow) select 4;
+    // Arrivée : FIN en français, END sinon (les autres codes sont les mêmes).
+    if (_pre isEqualTo "FIN" && {(missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isNotEqualTo "fr"}) then { _pre = "END"; };
     // Départ et arrivée : un seul en général, sans numéro ; les autres numérotés par type.
     private _n = { (_x param [2, "WP"]) isEqualTo _k } count _pts;
     if (_k in ["SP", "END"] && {_n isEqualTo 0}) exitWith { _pre };

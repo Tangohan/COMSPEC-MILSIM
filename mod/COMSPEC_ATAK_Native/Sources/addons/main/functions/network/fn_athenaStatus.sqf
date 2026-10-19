@@ -11,6 +11,7 @@
       color   couleur RGBA de l'état    fix     bouton proposé : "reconnect" | "code" | "channel" | "service" | "choose" | ""
       steps   [[libellé, niveau, valeur, aide]...], niveau "ok" | "now" | "warn" | "ko" | "todo" | "off"
       sig     [état de session, liaison, canal] comparé par fn_statusUpdate
+      code    code d'erreur brut de la session ("" sans erreur), en majuscules
     Textes en français, traduits à l'affichage (fn_tr).
 */
 private _bridge = [] call comspec_atak_native_fnc_bridge;
@@ -149,6 +150,8 @@ switch (true) do {
     };
 };
 _out set ["logged", _logged];
+// Code d'erreur brut de la session (fn_athenaLink « watch » : session perdue en cours de partie).
+_out set ["code", _code];
 // Signature relue par fn_statusUpdate (même forme) : la page se redessine quand elle change.
 _out set ["sig", [_sigState, _link, _ready]];
 

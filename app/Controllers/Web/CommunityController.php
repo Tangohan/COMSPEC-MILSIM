@@ -75,6 +75,24 @@ class CommunityController
         } catch (\Throwable) {
             // annuaire affiché sans épingles ni tendance
         }
+        // Bannière, couleur de marque et chiffres publics des cartes : chaque source est facultative.
+        $branding = [];
+        try {
+            $branding = \App\Core\Container::get(\App\Repositories\TenantBrandingRepository::class)->listCardBrandingByTenant();
+        } catch (\Throwable) {
+        }
+        $stats = [];
+        try {
+            foreach (\App\Core\Container::get(\App\Services\Ecosystem\CommunityStatsService::class)->all() as $s) {
+                $stats[(string) $s['slug']] = $s;
+            }
+        } catch (\Throwable) {
+        }
+        $tenants = \App\Support\CommunityCardDecorator::decorate($tenants, $branding, $stats, static function (string $slug): ?string {
+            $rel = 'assets/img/communities/' . $slug . '-cover.jpg';
+
+            return is_file(base_path('public/' . $rel)) ? (string) url($rel) : null;
+        });
 
         $registryDesc = 'Annuaire public des communautés et unités MILSIM sur Athena. Parcourez les fiches, filtrez par jeu ou langue, et rejoignez une organisation.';
         $registryUrl = rtrim((string) url('communities'), '/');

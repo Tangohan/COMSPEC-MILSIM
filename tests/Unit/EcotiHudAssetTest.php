@@ -90,7 +90,7 @@ final class EcotiHudAssetTest extends TestCase
         );
 
         self::assertStringContainsString('comspec_overwatch_ecoti_hud', $pre);
-        self::assertStringContainsString('Affichage situation (JVN)', $pre);
+        self::assertStringContainsString('Infos tactiques dans les JVN', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_theme', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_show_unit_outline', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_tube_fx', $pre);
@@ -99,7 +99,7 @@ final class EcotiHudAssetTest extends TestCase
         self::assertStringContainsString('comspec_overwatch_ecoti_compass_only', $pre);
         self::assertStringContainsString('Boussole uniquement', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_fusion', $pre);
-        self::assertStringContainsString('Découpage d’étage (silhouette)', $pre);
+        self::assertStringContainsString("Vue par étage d'un bâtiment", $pre);
         self::assertStringContainsString('class ecotiInit', $cfg);
         self::assertStringContainsString('class ecotiDrawBadge', $cfg);
         self::assertStringContainsString('class ecotiThemeColors', $cfg);

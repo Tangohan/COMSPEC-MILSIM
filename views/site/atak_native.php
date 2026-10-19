@@ -110,6 +110,7 @@ $shots = ['launch', 'map', 'gps', 'marker', 'tools', 'settings'];
             <p class="atakn-credit-team"><?= $t('credits_team') ?></p>
             <p><?= $t('credits_dev') ?></p>
             <p class="atakn-credit-small"><?= $t('credits_bce') ?></p>
+            <p class="atakn-credit-small"><?= $t('credits_translations') ?></p>
         </section>
     </div>
 

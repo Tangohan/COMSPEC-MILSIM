@@ -43,7 +43,7 @@ switch (_act) do {
             if (_gw >= 0) then { _gwLabel = format ["Chef de groupe (%1)", (_nodes select _gw) select 2]; };
         };
         // Liens : portée de la paire = la plus petite des deux ; qualité = marge du bilan radio sur 20 dB.
-        private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
+        private _real = (["realism"] call comspec_atak_native_fnc_netCond);
         private _links = [];
         private _adj = _nodes apply { [] };
         private _n = count _nodes;

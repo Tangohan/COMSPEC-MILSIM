@@ -135,6 +135,17 @@ $kpis = [
 ];
 /* Un compteur à zéro n’apporte rien au visiteur : on n’affiche que les chiffres réels non nuls. */
 $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['v'] > 0));
+/* Chiffres de terrain cumulés depuis le mod (totaux plateforme, jamais par joueur). */
+$fieldMetrics = is_array($fieldMetrics ?? null) ? $fieldMetrics : [];
+$fieldStats = [
+    ['key' => 'phones', 'v' => max(0, (int) ($fieldMetrics['phones'] ?? 0)), 'unit' => '', 'l' => __('home.field_phones'), 'd' => __('home.field_phones_d'),
+        'icon' => '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 18.5h3"/><path d="M9.5 6h5"/>'],
+    ['key' => 'hours', 'v' => max(0, (int) ($fieldMetrics['play_hours'] ?? 0)), 'unit' => __('home.field_hours_unit'), 'l' => __('home.field_hours'), 'd' => __('home.field_hours_d'),
+        'icon' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'],
+    ['key' => 'km', 'v' => max(0, (int) ($fieldMetrics['distance_km'] ?? 0)), 'unit' => __('home.field_km_unit'), 'l' => __('home.field_km'), 'd' => __('home.field_km_d'),
+        'icon' => '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16"/>'],
+];
+$fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool => $f['v'] > 0));
 ?>
 <!DOCTYPE html>
 <html lang="<?= $e(html_lang()) ?>" class="scroll-smooth">
@@ -499,6 +510,29 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
                 </div>
                 <?php else: ?>
                 <p class="hi-body mt-4 max-w-xl text-white/70"><?= $e(__('home.communities_empty_body')) ?></p>
+                <?php endif; ?>
+
+                <?php if ($fieldShown !== []): ?>
+                <div class="hi-field" aria-labelledby="field-heading">
+                    <div class="hi-field__head">
+                        <p class="hi-kicker text-emerald-400"><?= $e(__('home.field_kicker')) ?></p>
+                        <h3 id="field-heading" class="hi-field__title"><?= $e(__('home.field_title')) ?></h3>
+                    </div>
+                    <dl class="hi-field__grid">
+                        <?php foreach ($fieldShown as $fi => $f): ?>
+                        <div class="hi-fstat hi-fstat--<?= $e($f['key']) ?>" style="--i:<?= (int) $fi ?>">
+                            <dt>
+                                <svg class="hi-fstat__icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?= $f['icon'] ?></svg>
+                                <span class="hi-fstat__label"><?= $e($f['l']) ?></span>
+                            </dt>
+                            <dd>
+                                <span class="hi-fstat__value"><span data-hi-count="<?= (int) $f['v'] ?>"><?= $e($formatInt($f['v'])) ?></span><?php if ($f['unit'] !== ''): ?><span class="hi-fstat__unit"><?= $e($f['unit']) ?></span><?php endif; ?></span>
+                                <span class="hi-fstat__desc"><?= $e($f['d']) ?></span>
+                            </dd>
+                        </div>
+                        <?php endforeach; ?>
+                    </dl>
+                </div>
                 <?php endif; ?>
 
                 <?php if ($kpisShown !== []): ?>

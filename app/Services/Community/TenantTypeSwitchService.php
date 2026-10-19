@@ -10,7 +10,6 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Rbac\CommunityAccessCollapseService;
 use App\Services\Rbac\CommunityAccessProfiles;
-use App\Support\SqlText;
 use PDO;
 
 /**
@@ -24,7 +23,7 @@ final class TenantTypeSwitchService
     ) {}
 
     /**
-     * @return array{from: string, to: string, changed: bool, reapplied: bool}
+     * @return array{from: string, to: string, changed: bool, reapplied: bool, access_granted?: int, access_revoked?: int}
      */
     public function switchType(int $tenantId, string $newType, bool $forceReapply = false): array
     {
@@ -49,7 +48,7 @@ final class TenantTypeSwitchService
                 // Réaffirmer la valeur en base (réparation après migration / backfill « full »).
                 $this->tenantRepository->updateTenantType($tenantId, $newType);
             }
-            $this->ensureTypePermissionsAndRoles($pdo, $tenantId, $newType);
+            $access = $this->ensureTypePermissionsAndRoles($pdo, $tenantId, $newType);
 
             if ($newType === TenantTypeConfig::TYPE_FULL) {
                 $this->ensureFullSeeds($pdo, $tenantId);
@@ -84,49 +83,17 @@ final class TenantTypeSwitchService
             'to' => $newType,
             'changed' => !$typeUnchanged,
             'reapplied' => true,
+            'access_granted' => $access['granted'],
+            'access_revoked' => $access['revoked'],
         ];
     }
 
-    private function ensureTypePermissionsAndRoles(PDO $pdo, int $tenantId, string $tenantType): void
+    /**
+     * @return array{granted: int, revoked: int}
+     */
+    private function ensureTypePermissionsAndRoles(PDO $pdo, int $tenantId, string $tenantType): array
     {
-        $permissions = TenantTypeConfig::basePermissionsByType()[$tenantType] ?? [];
-
-        $permIds = [];
-        $slugEq = SqlText::equals($pdo, 'slug');
-        foreach ($permissions as $p) {
-            $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
-            $stmt->execute([$tenantId, $p['slug']]);
-            $existing = $stmt->fetchColumn();
-            if ($existing) {
-                $permIds[$p['slug']] = (int) $existing;
-                continue;
-            }
-            $ins = $pdo->prepare(
-                'INSERT INTO permissions (tenant_id, name, slug, module, scope, rbac_scope, created_at) VALUES (?, ?, ?, ?, \'community\', \'tenant\', NOW())'
-            );
-            $ins->execute([$tenantId, $p['name'], $p['slug'], $p['module']]);
-            $permIds[$p['slug']] = (int) $pdo->lastInsertId();
-        }
-
-        TenantSeedHelper::ensureAccessProfilesForTenant($pdo, $tenantId);
-
-        foreach (CommunityAccessProfiles::slugs() as $govSlug) {
-            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . $slugEq . ' LIMIT 1');
-            $stmt->execute([$tenantId, $govSlug]);
-            $govRoleId = (int) ($stmt->fetchColumn() ?: 0);
-            if ($govRoleId < 1) {
-                continue;
-            }
-            foreach ($permIds as $pid) {
-                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-                $link->execute([$govRoleId, $pid]);
-            }
-        }
-
-        if ($tenantType === TenantTypeConfig::TYPE_FULL) {
-            TenantSeedHelper::ensureSystemAdminPermissions($pdo, $tenantId);
-            TenantSeedHelper::ensureTenantPermissionCatalog($pdo, $tenantId);
-        }
+        return TenantSeedHelper::alignAccessProfilesForType($pdo, $tenantId, $tenantType);
     }
 
     private function ensureFullSeeds(PDO $pdo, int $tenantId): void

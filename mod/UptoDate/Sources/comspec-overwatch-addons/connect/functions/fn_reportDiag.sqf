@@ -98,12 +98,9 @@ if (count _detailApi > 1800) then {
 private _fpServer = "";
 if (_isPlayer) then {
     _fpServer = format ["player_%1", round diag_tickTime];
-} else {
-    {
-        _fpServer = _fpServer + str _x;
-    } forEach (toArray _fp);
-    if (count _fpServer > 40) then { _fpServer = _fpServer select [0, 40]; };
 };
+// Rapport auto : empreinte laissée vide, Athena la calcule sur le message complet. Les codes caractères tronqués
+// à 40 chiffres ne couvraient que « error|tx|échec » : tous les échecs Tx d'un joueur se fondaient en un rapport.
 
 // Envoi HTTP via extAwait : non bloquant depuis le spawn de fn_log (direct si appelé hors spawn, ex. bouton).
 private _raw = [

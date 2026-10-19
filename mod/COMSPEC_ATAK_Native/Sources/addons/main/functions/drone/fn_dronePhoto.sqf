@@ -93,8 +93,8 @@ private _prevTex = {
     if ((count _pos) < 3 || {(count _dir) < 3} || {!isPiPEnabled}) exitWith { "" };
     private _key = str [_pos, _dir];
     private _pc = missionNamespace getVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
-    if (!isNull _pc && {(_pc getVariable ["key", ""]) isEqualTo _key}) exitWith { _pc getVariable ["tex", ""] };
-    if (!isNull _pc) then { _pc cameraEffect ["Terminate", "Back", _pc getVariable ["r2t", ""]]; camDestroy _pc; };
+    if (!isNull _pc && {(([_pc, "key", ""] call comspec_atak_native_fnc_camVar)) isEqualTo _key}) exitWith { ([_pc, "tex", ""] call comspec_atak_native_fnc_camVar) };
+    if (!isNull _pc) then { _pc cameraEffect ["Terminate", "Back", ([_pc, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _pc; };
     private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePrevN", 0]) + 1) mod 4;
     missionNamespace setVariable ["COMSPEC_ATAK_DronePrevN", _n];
     private _name = format ["comspec_droneprev%1", _n];
@@ -106,16 +106,16 @@ private _prevTex = {
     _pc camCommit 0;
     _name setPiPEffect [_vis];
     private _tex = format ["#(argb,1024,1024,1)r2t(%1,1.7778)", _name];
-    _pc setVariable ["key", _key];
-    _pc setVariable ["r2t", _name];
-    _pc setVariable ["tex", _tex];
+    [_pc, "key", _key, true] call comspec_atak_native_fnc_camVar;
+    [_pc, "r2t", _name, true] call comspec_atak_native_fnc_camVar;
+    [_pc, "tex", _tex, true] call comspec_atak_native_fnc_camVar;
     missionNamespace setVariable ["COMSPEC_ATAK_DronePrevCam", _pc];
     if ((missionNamespace getVariable ["COMSPEC_ATAK_DronePrevPfh", -1]) < 0) then {
         missionNamespace setVariable ["COMSPEC_ATAK_DronePrevPfh", [{
             private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             if ((_st getOrDefault ["dronePhEdit", -1]) >= 0 && {(_st getOrDefault ["activePage", ""]) isEqualTo "DRONE"} && {!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}) exitWith {};
             private _c = missionNamespace getVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
-            if (!isNull _c) then { _c cameraEffect ["Terminate", "Back", _c getVariable ["r2t", ""]]; camDestroy _c; };
+            if (!isNull _c) then { _c cameraEffect ["Terminate", "Back", ([_c, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _c; };
             missionNamespace setVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
             [missionNamespace getVariable ["COMSPEC_ATAK_DronePrevPfh", -1]] call CBA_fnc_removePerFrameHandler;
             missionNamespace setVariable ["COMSPEC_ATAK_DronePrevPfh", -1];
@@ -200,7 +200,7 @@ switch (_act) do {
             // Caméra plein écran : posée et orientée chaque image comme la nacelle (boucle de fn_droneAction).
             private _zoom = (missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) max 1;
             private _shot = "camera" camCreate (getPosATL _cam);
-            _shot attachTo [_d, _cam getVariable ["off", [0, 0.3, -0.3]]];
+            _shot attachTo [_d, ([_cam, "off", [0, 0.3, -0.3]] call comspec_atak_native_fnc_camVar)];
             _shot setVectorDirAndUp [_d vectorWorldToModelVisual (vectorDirVisual _cam), _d vectorWorldToModelVisual (vectorUpVisual _cam)];
             missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", _shot];
             _shot cameraEffect ["Internal", "Back"];

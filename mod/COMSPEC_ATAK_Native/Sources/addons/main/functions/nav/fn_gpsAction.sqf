@@ -29,7 +29,7 @@ switch (_act) do {
         [{ ["ROUTE"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     };
     case "wp": { ["gps"] call comspec_atak_native_fnc_wpAction; };
-    case "marker": { [getMarkerPos _arg, markerText _arg] call _go; };
+    case "marker": { [getMarkerPos _arg, ([markerText _arg] call comspec_atak_native_fnc_markerAutoName)] call _go; };
     case "map": {
         (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["mapFollow", true];
         ["MAP"] call comspec_atak_native_fnc_navigate;

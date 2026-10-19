@@ -100,6 +100,7 @@ if (_wpMode) then {
 // 3. Étapes (dessinées après les traits : jamais recouvertes).
 {
     _x params ["_p", "_n"];
+    _n = [_n] call comspec_atak_native_fnc_markerAutoName; // FIN <-> END selon la langue
     private _c = [_x] call _colOf;
     private _passed = _nav && {_forEachIndex < _idx};
     if (_passed) then { _c set [3, 0.45]; };

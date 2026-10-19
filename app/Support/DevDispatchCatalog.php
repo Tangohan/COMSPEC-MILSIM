@@ -293,6 +293,20 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(934, '2026-10-19', 'Annuaire des communautés : des cartes qui mettent les unités en valeur', 'Les cartes de l’annuaire public montrent enfin la vie de chaque unité. La bannière et la couleur de la communauté habillent la carte, et quatre chiffres apparaissent sous l’en-tête : membres, actifs sur 30 jours, unités de l’ORBAT et opérations par mois. Les opérations à venir, la note des avis et l’ancienneté sur Athena s’affichent quand elles existent. Une communauté épinglée passe en vitrine pleine largeur. Rechargez le portail (Ctrl+F5).', [
+                'Chiffres sur chaque carte : membres, actifs 30 jours, unités ORBAT, opérations par mois',
+                'Bannière et couleur de marque de la communauté sur sa carte',
+                'Opérations à venir, note des avis et ancienneté sur Athena',
+                'Communauté épinglée en vitrine pleine largeur',
+            ], [
+                'Code d’accès sur une seule ligne avec bouton Copier, au lieu de deux blocs',
+                'Présentations limitées à quatre lignes : les cartes d’une même rangée restent alignées',
+                'Pastilles limitées à quatre, les suivantes regroupées en « +N »',
+            ], [
+                'Une présentation qui répétait seulement le nom du jeu s’affichait comme texte de la carte',
+            ], ['platform'], [
+                'Ouvrez Communautés & unités depuis l’accueil : chaque carte affiche ses chiffres sous la bannière, et la communauté épinglée occupe toute la largeur.',
+            ], 'Portail Athena'),
             $pr(924, '2026-10-19', 'Accueil : aperçu de la plateforme avec une unité fictive', 'La page d’accueil publique montre enfin Athena en action. Une nouvelle section « Voyez-le tourner » présente six écrans d’une unité imaginaire, TF ORION : son ORBAT avec les effectifs par unité, un tableau des opérateurs (qualifications, présence, statut), le centre de commandement, une formation en cours, le briefing d’une manœuvre avec carte et slots, et l’extranet JNET alimenté par l’ATAK en jeu. Toutes les données sont inventées et signalées comme telles. Rechargez le portail (Ctrl+F5).', [
                 'Section « Voyez-le tourner » sur l’accueil : six écrans de démonstration à onglets',
                 'ORBAT, personnel, commandement, formation, manœuvre et JNET d’une unité fictive',

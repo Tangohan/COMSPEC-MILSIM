@@ -151,7 +151,7 @@ if (_ctx get "zeus") then {
             ["CHECK", "Indestructible", _cur select 10],
             ["CHECK", "Relais obligatoires", _cur select 11],
             ["COMBO", "Fréquence", _freqs, _cur select 12],
-            ["CHECK", "Réseau exclusivement par relais", _cur select 13]
+            ["CHECK", "Réseau uniquement par les relais", _cur select 13]
         ],
         _apply, _args,
         "Lâchez le module sur un objet ou un véhicule pour l'équiper, sinon l'objet du type est créé. Répéteur : doit voir un relais raccordé. Relais obligatoires : sans relais, presque plus de réseau. Réseau exclusivement par relais : sans relais, aucun réseau. Lâché sur un relais existant : modifie ce relais."

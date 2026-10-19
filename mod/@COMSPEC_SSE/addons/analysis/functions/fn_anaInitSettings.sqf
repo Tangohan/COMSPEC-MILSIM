@@ -9,11 +9,11 @@ private _add = {
     params ["_var", "_type", "_label", "_value"];
     [_var, _type, _label, _cat, _value, 1, {}, false] call comspec_sse_fnc_addSetting;
 };
-["comspec_sse_ana_extraRoles", "EDITBOX", ["Rôles en plus", "Rôles propres à votre univers, séparés par des virgules : identifiant:Libellé:rang (0 = sommet, 5 = périphérie). Exemple : imam:Imam:1, passeur:Passeur:4, cuisinier:Cuisinier:5"], ""] call _add;
-["comspec_sse_ana_extraKinds", "EDITBOX", ["Natures d'organisation en plus", "Séparées par des virgules : identifiant:Libellé. Exemple : tribu:Tribu, cartel:Cartel, ong:ONG de façade"], ""] call _add;
-["comspec_sse_ana_codenames", "EDITBOX", ["Noms de code des cellules", "Liste séparée par des virgules ; vide = liste intégrée (Faucon, Scorpion, Cèdre...)."], ""] call _add;
-["comspec_sse_ana_contactsPerExploit", "SLIDER", ["Contacts révélés par exploitation", "Nombre de membres de la même cellule soupçonnés quand on exploite une personne (téléphone, carnet)."], [0, 6, 2, 0]] call _add;
-["comspec_sse_ana_bioConfirms", "CHECKBOX", ["L'identification biométrique confirme l'appartenance", "Désactivé : une identification ne fait que soupçonner ; la confirmation vient du Zeus ou de l'exploitation."], true] call _add;
-["comspec_sse_ana_piecePrefix", "EDITBOX", ["Préfixe des pièces", "Numéro de pièce : <préfixe>-<dossier>-0001."], "P"] call _add;
-["comspec_sse_ana_sealPrefix", "EDITBOX", ["Préfixe des scellés", "Numéro de scellé : <préfixe>-000000."], "SC"] call _add;
+["comspec_sse_ana_extraRoles", "EDITBOX", ["Rôles en plus", "Rôles propres à votre scénario, séparés par des virgules, au format code:Nom:rang (0 = chef, 5 = simple contact). Exemple : imam:Imam:1, passeur:Passeur:4, cuisinier:Cuisinier:5"], ""] call _add;
+["comspec_sse_ana_extraKinds", "EDITBOX", ["Types d'organisation en plus", "Séparés par des virgules, au format code:Nom. Exemple : tribu:Tribu, cartel:Cartel, ong:ONG de façade"], ""] call _add;
+["comspec_sse_ana_codenames", "EDITBOX", ["Noms de code des cellules", "Noms séparés par des virgules. Vide : liste fournie (Faucon, Scorpion, Cèdre...)."], ""] call _add;
+["comspec_sse_ana_contactsPerExploit", "SLIDER", ["Contacts révélés par exploitation", "Combien de membres de sa cellule deviennent suspects quand on exploite une personne (son téléphone, son carnet)."], [0, 6, 2, 0]] call _add;
+["comspec_sse_ana_bioConfirms", "CHECKBOX", ["La biométrie prouve l'appartenance", "Coché : une identification biométrique confirme qu'une personne fait partie d'une organisation. Décoché : elle la rend seulement suspecte ; la confirmation vient de Zeus ou de l'exploitation."], true] call _add;
+["comspec_sse_ana_piecePrefix", "EDITBOX", ["Préfixe des pièces", "Les pièces à conviction sont numérotées PRÉFIXE-DOSSIER-0001."], "P"] call _add;
+["comspec_sse_ana_sealPrefix", "EDITBOX", ["Préfixe des scellés", "Les scellés sont numérotés PRÉFIXE-000000."], "SC"] call _add;
 true

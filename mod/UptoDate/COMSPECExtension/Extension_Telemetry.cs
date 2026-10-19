@@ -568,7 +568,8 @@ public static partial class Extension
             }
             if (!response.IsSuccessStatusCode)
             {
-                NotePostError(code, url);
+                // Réponse jointe : la raison d'Athena (ex. invalid_steam_uid) reste dans le journal au lieu de « 400|…|0 ».
+                NotePostError(code, url, response);
                 if (ShouldRetryStatusCode(code))
                     RequeueTelemetryItems(items);
                 else
