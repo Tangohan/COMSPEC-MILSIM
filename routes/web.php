@@ -16,7 +16,6 @@ use App\Controllers\Web\ArsenalWardrobeController;
 use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
-use App\Controllers\Web\AtakOverwatchBetaController;
 use App\Controllers\Web\OverwatchModDocController;
 use App\Controllers\Web\AtakMapGatewayController;
 use App\Controllers\Web\AtakSupportController;

@@ -504,3 +504,14 @@ kbd {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.ow-marker .ow-cs .ow-cs-grid{display:block;margin-top:1px;font-size:.82em;font-weight:500;opacity:.78}
+.ow-session-notices{display:grid;gap:8px;margin:0 0 12px}
+.ow-session-notices:empty{display:none}
+.ow-session-notice{display:grid;gap:4px;padding:8px 10px;border:1px solid var(--athena-line,#2a3a36);border-left:3px solid var(--athena-green,#00d69a);border-radius:6px;background:rgba(255,255,255,.03);font-size:12px;line-height:1.45}
+.ow-session-notice.is-warn{border-left-color:#e7b14d}
+.ow-session-notice.is-quiet{border-left-color:var(--athena-line,#2a3a36)}
+.ow-session-notice[hidden]{display:none}
+.ow-session-notice strong{font-size:12px}
+.ow-session-notice span{color:var(--athena-muted,#9aa5a2)}
+.ow-session-notice ul{margin:0;padding-left:16px}
+.ow-session-notice a{color:var(--athena-green,#00d69a);font-weight:600}

@@ -1152,6 +1152,12 @@
     loadAlerts();
     loadRings();
     window.setInterval(loadAlerts, POLL_ALERTS_MS);
+    // Flux temps réel (atak-realtime.js) : une alerte poussée par le serveur rafraîchit tout de suite la liste.
+    var pushedTimer = null;
+    window.addEventListener('atak:tactical-alerts-updated', function () {
+      if (pushedTimer) return;
+      pushedTimer = window.setTimeout(function () { pushedTimer = null; loadAlerts(); }, 400);
+    });
     window.setInterval(loadRings, POLL_RINGS_MS);
     window.addEventListener('atak:units-updated', function () { drawRings(); });
     window.setInterval(function () { if (phoneRings().length || Object.keys(ringLayers).length) drawRings(); }, 5000);

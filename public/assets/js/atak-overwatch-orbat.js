@@ -207,6 +207,15 @@
   }
 
   function loadRoster() {
+    // Session téléphone (sans compte membre) : l'organigramme de la communauté n'est pas ouvert.
+    if (window.ATAK_CAPS && window.ATAK_CAPS.phoneSession) {
+      state.loading = false;
+      state.loadError = 'L’ORBAT est réservé aux comptes membres : connectez-vous au portail pour le consulter.';
+      state.roster = null;
+      rebuildEntities();
+      renderTree();
+      return Promise.resolve();
+    }
     state.loading = true;
     state.loadError = '';
     renderTree();
@@ -483,19 +492,64 @@
     if (action === 'fiche') {
       window.location.href = String(window.ATAK_API_BASE || '').replace(/\/$/, '') + '/orbat?unit=' + (ent.unitId || '');
     }
-    if (action === 'sitrep' && beta && typeof beta.toast === 'function') {
-      beta.toast('Point de situation demandé à ' + ent.name + ' (canal Transmissions).');
-      if (typeof beta.openView === 'function') beta.openView('comms');
+    if (action === 'sitrep') requestSitrep(ent);
+    if (action === 'order') openOrderFor(ent);
+    if (action === 'hide') toggleHidden(ent);
+  }
+
+  // Opérateurs BFT reçus pour une unité ORBAT (membres en liaison, actifs ou non).
+  function observedUnits(ent, liveOnly) {
+    return (ent.observed || []).filter(function (o) { return o.bft && (!liveOnly || o.live); }).map(function (o) { return o.bft; });
+  }
+
+  // Demande de point de situation : un ordre SITREP par opérateur en liaison de l'unité, reçu sur son ATAK.
+  function requestSitrep(ent) {
+    var beta = ow();
+    if (!beta || typeof beta.api !== 'function') return;
+    var targets = observedUnits(ent, true);
+    if (!targets.length) {
+      beta.toast('Aucun opérateur de ' + ent.name + ' n’est en liaison : point de situation non envoyé.');
+      return;
     }
-    if (action === 'order' && beta && typeof beta.toast === 'function') {
-      beta.toast('Création d’ordre pour ' + ent.name);
-      if (typeof beta.openView === 'function') beta.openView('mission');
-    }
-    if (action === 'hide') {
-      ent.visible = !ent.visible;
-      if (typeof beta.toast === 'function') {
-        beta.toast(ent.visible ? 'Unité visible sur la carte' : 'Unité masquée (filtre local)');
-      }
+    var sent = 0;
+    Promise.all(targets.map(function (unit) {
+      var cs = beta.callsign(unit);
+      return beta.api('/api/atak/orders', {
+        method: 'POST',
+        body: {
+          mapId: beta.mapId,
+          issuer: beta.authorName,
+          order_type: 'SITREP',
+          type_label: 'Point de situation demandé',
+          target_type: 'solo',
+          target_ref: cs,
+          target_label: cs,
+          payload: 'Envoyez un point de situation (SITREP) pour ' + ent.name + '.',
+          priority: 'IMPORTANT'
+        }
+      }).then(function () { sent += 1; }).catch(function () {});
+    })).then(function () {
+      if (sent) beta.toast('Point de situation demandé à ' + sent + ' opérateur(s) de ' + ent.name + '.');
+      else beta.toast('La demande de point de situation n’a pas pu être envoyée.');
+    });
+  }
+
+  // Créer un ordre : ouvre la tâche de groupe sur le groupe en jeu de l'unité.
+  function openOrderFor(ent) {
+    var beta = ow();
+    if (!beta || typeof beta.openSquadTaskForm !== 'function') return;
+    var targets = observedUnits(ent, true);
+    var key = targets.length && typeof beta.squadKey === 'function' ? beta.squadKey(targets[0]) : '';
+    beta.openSquadTaskForm(key || '');
+    if (!key) beta.toast('Aucun groupe en liaison pour ' + ent.name + ' : choisissez le groupe destinataire.');
+  }
+
+  function toggleHidden(ent) {
+    var beta = ow();
+    ent.visible = !ent.visible;
+    if (beta && typeof beta.setUnitsHidden === 'function') beta.setUnitsHidden(observedUnits(ent, false), !ent.visible);
+    if (beta && typeof beta.toast === 'function') {
+      beta.toast(ent.visible ? ent.name + ' : de nouveau visible sur la carte.' : ent.name + ' : masquée sur votre carte uniquement.');
     }
   }
 

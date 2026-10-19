@@ -73,18 +73,24 @@
   function esc(v) { var api = ow(); return api ? api.escapeHtml(v) : String(v == null ? '' : v); }
   function toast(t) { var api = ow(); if (api) api.toast(t); }
   
-  // Charger config réalisme depuis API (utilisée pour fallbacks)
+  // Config réalisme de la communauté (portée par défaut des relais), chargée via l'API du poste.
   function loadRealismConfig() {
-    if (typeof window.AtakRealismConfig !== 'undefined') {
-      window.AtakRealismConfig.load().then(function (config) {
-        realismConfig = config;
-        console.log('[OverwatchOps] Realism config loaded');
-      }).catch(function (err) {
-        console.warn('[OverwatchOps] Failed to load realism config:', err);
-      });
-    }
+    var api = ow();
+    if (!api || typeof api.api !== 'function') return;
+    api.api('/api/atak/realism/config').then(function (payload) {
+      if (payload && payload.ok && payload.config) {
+        realismConfig = payload.config;
+        renderRelays();
+      }
+    }).catch(function () {});
   }
-  
+
+  function realismRelayRange() {
+    var relays = realismConfig && realismConfig.radio_relays;
+    var range = Number(relays && relays.relay_range_m);
+    return range >= 50 && range <= 8000 ? range : 2000;
+  }
+
   function missionId() {
     return 'mission_' + Number(window.ATAK_TENANT_ID || 0) + '_map_' + Number((ow() && ow().mapId) || window.ATAK_DEFAULT_MAP_ID || 1);
   }
@@ -1627,11 +1633,7 @@
       }
       relayLayers.push(m);
       // Utiliser config réalisme pour fallback range
-      var defaultRange = 2000;
-      if (realismConfig && typeof window.AtakRealismConfig !== 'undefined') {
-        defaultRange = window.AtakRealismConfig.get(realismConfig, 'radio_relays', 'relay_range_m', 2000);
-      }
-      var range = Number(row.range_m || defaultRange);
+      var range = Number(row.range_m || realismRelayRange());
       relayLayers.push(L.polygon(circleByRadius(ll, range, 48), {
         color: alive ? '#e7b14d' : '#e05b63',
         weight: 1,
