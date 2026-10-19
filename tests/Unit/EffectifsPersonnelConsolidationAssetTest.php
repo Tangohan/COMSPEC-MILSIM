@@ -24,9 +24,12 @@ final class EffectifsPersonnelConsolidationAssetTest extends TestCase
     {
         $roster = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/roster.php');
         $member = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/member.php');
+        $shell = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/shell.php');
 
-        self::assertStringContainsString("effectifs_workspace_url('nouveau')", $roster);
-        self::assertStringContainsString("/position-service')", $member);
+        // "Ajouter un membre" now lives in the Effectifs shell header that wraps the roster.
+        self::assertStringContainsString("effectifs_workspace_url('nouveau')", $shell);
+        self::assertStringContainsString('Ajouter un membre', $shell);
+        self::assertStringContainsString("effectifs_workspace_url('membres/' . \$id . '/position-service')", $member);
         self::assertStringNotContainsString("url('back-office/users/", $roster);
     }
 
@@ -38,10 +41,13 @@ final class EffectifsPersonnelConsolidationAssetTest extends TestCase
 
         self::assertStringContainsString("Response::redirect(\$target . (\$query !== '' ? '?' . http_build_query(['q' => \$query]) : ''))", $controller);
         self::assertStringContainsString('eff-catalog eff-catalog--roster', $roster);
+        // The roster is now a spreadsheet: matricule, radio and distinctions are meta lines of the member cell.
+        self::assertStringContainsString('aria-label="Tableur des effectifs"', $roster);
         self::assertStringContainsString('Personnage ·', $roster);
-        self::assertStringContainsString('<b>Matricule</b>', $roster);
-        self::assertStringContainsString('<b>Radio</b>', $roster);
-        self::assertStringContainsString('<b>Distinctions</b>', $roster);
+        self::assertStringContainsString("'Mle ' . \$matricule", $roster);
+        self::assertStringContainsString("'Radio ' . \$radioAssigned", $roster);
+        self::assertStringContainsString("' distinction'", $roster);
         self::assertStringContainsString('.eff-catalog--roster', $styles);
+        self::assertStringContainsString('.eff-sheets', $styles);
     }
 }

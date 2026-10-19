@@ -794,11 +794,15 @@ class UnitRepository
             return [];
         }
         $ids = [];
+        $tenantId = max(0, $tenantId);
+        // Même périmètre que memberUnionSql : unité du tenant + appartenance active (multi-communautés).
+        $memberPredicate = $this->activeTenantMemberPredicate('u', $tenantId);
         $sql = 'SELECT DISTINCT uu.unit_id FROM user_units uu
-            INNER JOIN users u ON u.id = uu.user_id AND u.tenant_id = ?
-            WHERE uu.user_id = ? AND u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())';
+            INNER JOIN units member_unit ON member_unit.id = uu.unit_id AND member_unit.tenant_id = ' . $tenantId . '
+            INNER JOIN users u ON u.id = uu.user_id
+            WHERE uu.user_id = ? AND ' . $memberPredicate . ' AND u.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())';
         $stmt = $this->pdo()->prepare($sql);
-        $stmt->execute([$tenantId, $userId]);
+        $stmt->execute([$userId]);
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $uid = (int) ($row['unit_id'] ?? 0);
             if ($uid > 0) {
@@ -807,10 +811,11 @@ class UnitRepository
         }
         if ($this->tableExists('personnel_assignments')) {
             $sql = 'SELECT DISTINCT pa.unit_id FROM personnel_assignments pa
-                INNER JOIN users u ON u.id = pa.user_id AND u.tenant_id = ?
-                WHERE pa.user_id = ? AND pa.status = \'active\' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())';
+                INNER JOIN units member_unit ON member_unit.id = pa.unit_id AND member_unit.tenant_id = ' . $tenantId . '
+                INNER JOIN users u ON u.id = pa.user_id
+                WHERE pa.user_id = ? AND ' . $memberPredicate . ' AND pa.status = \'active\' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())';
             $stmt = $this->pdo()->prepare($sql);
-            $stmt->execute([$tenantId, $userId]);
+            $stmt->execute([$userId]);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $uid = (int) ($row['unit_id'] ?? 0);
                 if ($uid > 0) {
@@ -820,10 +825,11 @@ class UnitRepository
         }
         if ($this->columnExists('personnel_profiles', 'primary_unit_id')) {
             $sql = 'SELECT pp.primary_unit_id AS unit_id FROM personnel_profiles pp
-                INNER JOIN users u ON u.id = pp.user_id AND u.tenant_id = ?
-                WHERE pp.user_id = ? AND pp.primary_unit_id IS NOT NULL AND u.status = \'active\'';
+                INNER JOIN units member_unit ON member_unit.id = pp.primary_unit_id AND member_unit.tenant_id = ' . $tenantId . '
+                INNER JOIN users u ON u.id = pp.user_id
+                WHERE pp.user_id = ? AND ' . $memberPredicate . ' AND pp.primary_unit_id IS NOT NULL AND u.status = \'active\'';
             $stmt = $this->pdo()->prepare($sql);
-            $stmt->execute([$tenantId, $userId]);
+            $stmt->execute([$userId]);
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $uid = (int) ($row['unit_id'] ?? 0);
                 if ($uid > 0) {

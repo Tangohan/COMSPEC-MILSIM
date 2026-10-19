@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakTaskButtonsFontAssetTest extends TestCase
 {
@@ -45,6 +46,6 @@ final class AtakTaskButtonsFontAssetTest extends TestCase
         self::assertStringNotContainsString("size='0.58'", $hpp);
         self::assertStringContainsString("COMSPEC_ATHENA_H(0.36)", $hpp);
         self::assertStringContainsString("COMSPEC_ATHENA_H(0.34)", $hpp);
-        self::assertStringContainsString('1.0.80', $cfg);
+        ModVersion::assertAtLeast('1.0.80', ModVersion::fromConfigCpp($cfg));
     }
 }

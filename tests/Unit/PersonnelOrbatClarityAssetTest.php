@@ -12,7 +12,10 @@ final class PersonnelOrbatClarityAssetTest extends TestCase
     public function testEditFileAndGuideDistinguishAssignmentFromJob(): void
     {
         $root = dirname(__DIR__, 2);
-        $edit = (string) file_get_contents($root . '/views/personnel/edit.php');
+        $editPage = (string) file_get_contents($root . '/views/personnel/edit.php');
+        // L’onglet « Unité & rôle » a été extrait dans un partial inclus par la page d’édition.
+        self::assertStringContainsString("views/partials/personnel/edit_orbat_section.php", $editPage);
+        $edit = $editPage . (string) file_get_contents($root . '/views/partials/personnel/edit_orbat_section.php');
         $file = (string) file_get_contents($root . '/views/personnel/file.php');
         $tutorials = (string) file_get_contents($root . '/views/personnel/tutorials.php');
         $member = (string) file_get_contents($root . '/views/admin/effectifs_workspace/member.php');
@@ -43,10 +46,14 @@ final class PersonnelOrbatClarityAssetTest extends TestCase
         self::assertStringContainsString('À quoi ça sert', $tutorials);
 
         self::assertStringContainsString('L’affectation indique dans quelle équipe', $member);
-        self::assertStringContainsString('L’emploi décrit la fonction tenue', $member);
+        // La fiche Effectifs parle désormais de « fonction » (et non plus d’« emploi ») pour le poste tenu.
+        self::assertStringContainsString('La fonction décrit le poste tenu', $member);
+        self::assertStringContainsString('Ce n’est ni l’équipe ni un droit d’accès', $member);
 
-        self::assertStringContainsString('Dans quelle équipe se trouve la personne', (string) ($catalog['unit_assignments']['help'] ?? ''));
-        self::assertStringContainsString('distincte de l’équipe', (string) ($catalog['job_roles']['help'] ?? ''));
+        // Aides de la demande de correction réécrites : l’affectation parle d’équipes, l’emploi de ce que l’on fait.
+        self::assertStringContainsString('Jusqu’à quatre équipes', (string) ($catalog['unit_assignments']['help'] ?? ''));
+        self::assertStringContainsString('La place dans l’équipe', (string) ($catalog['unit_assignments']['help'] ?? ''));
+        self::assertStringContainsString('L’emploi décrit ce que la personne fait, pas un droit d’accès', (string) ($catalog['job_roles']['help'] ?? ''));
         self::assertStringNotContainsString('référentiel', strtolower((string) ($catalog['job_roles']['help'] ?? '')));
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakZeusGroupIdCallsignAssetTest extends TestCase
 {
@@ -38,7 +39,7 @@ final class AtakZeusGroupIdCallsignAssetTest extends TestCase
 
         self::assertStringContainsString('class applyGroupIdFromCallsign', $cfg);
         self::assertStringContainsString('class fillZeusGroupId', $cfg);
-        self::assertStringContainsString('1.5.28', $cfg);
+        ModVersion::assertAtLeast('1.5.28', ModVersion::fromConfigCpp($cfg));
 
         self::assertStringContainsString('setGroupIdGlobal', $apply);
         self::assertStringContainsString('profileName', $apply);
@@ -52,7 +53,8 @@ final class AtakZeusGroupIdCallsignAssetTest extends TestCase
         self::assertStringContainsString('setGroupIdGlobal', $fill);
         self::assertStringContainsString('forcePlaytimeReport', $fill);
         self::assertStringContainsString('updatePosition', $fill);
-        self::assertStringContainsString('ctrlSetText _cs', $fill);
+        // The callsign is now written through the translation helper (comspec_overwatch_connect_fnc_tr).
+        self::assertMatchesRegularExpression('/_target ctrlSetText \\(+_cs\\)/', $fill);
         self::assertStringContainsString('fillZeusGroupId', $inject);
         self::assertStringContainsString('fillZeusGroupId', $register);
         self::assertStringContainsString('fillZeusGroupId', $xeh);

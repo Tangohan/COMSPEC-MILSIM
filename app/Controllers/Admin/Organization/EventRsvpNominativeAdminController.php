@@ -25,7 +25,7 @@ final class EventRsvpNominativeAdminController
         $this->events ??= new CommunityEventRepository();
         $this->nominative ??= new EventRsvpNominativeRepository();
         $this->service ??= new EventRsvpNominativeService($this->nominative);
-        $this->featureGate ??= new FeatureGateService();
+        $this->featureGate ??= \App\Core\Container::get(FeatureGateService::class);
     }
 
     public function index(Request $request, array $params = []): Response

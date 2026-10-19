@@ -74,8 +74,18 @@ final class AtakPhoneSettingsIdentityAssetTest extends TestCase
         self::assertStringNotContainsString('class ComboRole', $page);
         self::assertStringContainsString('idc = 9850', $page);
         self::assertStringContainsString('Affichage sur la carte', $page);
-        self::assertStringContainsString('athena_bftUnitLabel', $hud);
-        self::assertStringContainsString('inGameGroupLabel', $hud);
+        // Le HUD ne compose plus l'identité lui-même : athena_fillIdentityOverlay remplit les cartouches
+        // IceMan (indicatif via bftUnitLabel), et le libellé de groupe sert à l'état carte.
+        $ident = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_fillIdentityOverlay.sqf'
+        );
+        $mapState = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/ui/fn_collectMapState.sqf'
+        );
+        self::assertStringContainsString('athena_fillIdentityOverlay', $hud);
+        self::assertStringContainsString('athena_bftUnitLabel', $ident);
+        self::assertStringContainsString('[true] call comspec_overwatch_connect_fnc_getCallsign', $ident);
+        self::assertStringContainsString('inGameGroupLabel', $mapState);
         self::assertStringNotContainsString('name _man', $hud);
         $grp = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_inGameGroupLabel.sqf'

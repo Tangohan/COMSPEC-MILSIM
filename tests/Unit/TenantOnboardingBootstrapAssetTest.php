@@ -42,7 +42,10 @@ final class TenantOnboardingBootstrapAssetTest extends TestCase
         self::assertStringContainsString('wizard_org_founding_choice', $wizard);
         self::assertStringContainsString('Dès la création', $wizard);
         self::assertStringContainsString('Le parcours d’arrivée des nouveaux membres est prêt', $wizard);
-        $body = strtolower($wizard);
+        // Le jargon est interdit dans ce que lit le fondateur (HTML / script), pas dans les appels PHP
+        // côté serveur (ex. RealUnitAffiliationCatalog::frontendPayload()).
+        $body = strtolower((string) preg_replace('/<\?(?:php|=).*?(?:\?>|\z)/s', '', $wizard));
+        self::assertStringContainsString('wizard_founder_commands_root', $body);
         self::assertStringNotContainsString('endpoint', $body);
         self::assertStringNotContainsString('payload', $body);
         self::assertStringNotContainsString('marksatisfied', $body);

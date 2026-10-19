@@ -46,7 +46,9 @@ final class AtakPlaytimeAndSettingsSelectAssetTest extends TestCase
         self::assertStringContainsString('forcePlaytimeReport', $forceSync);
         self::assertStringContainsString('temps de mission', $forceSync);
         self::assertStringContainsString('ReportPlaytime', $forcePt);
-        self::assertStringContainsString('Remonter le temps', $page);
+        // Bouton renommé « Remonter le temps » -> « Envoyer le temps de mission ».
+        self::assertStringContainsString('Envoyer le temps de mission', $page);
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_forcePlaytimeReport', $page);
         self::assertStringContainsString('comspec_overwatch_playtime_enabled', $pre);
         self::assertStringContainsString('ReportPlaytime', $ext);
         self::assertStringContainsString('ctx != "zeus" && ctx != "editor"', $ext);

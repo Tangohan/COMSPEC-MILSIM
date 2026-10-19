@@ -1246,6 +1246,7 @@ class PersonnelController
         );
         $returnTo = trim((string) ($request->input('return_to') ?? ''));
         if ($returnTo === 'edit') {
+            $isSelf = $actorId === (int) $target['id'];
             return Response::redirect($this->personnelEditUrl($target, $isSelf));
         }
 

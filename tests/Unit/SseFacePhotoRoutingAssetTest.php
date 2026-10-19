@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class SseFacePhotoRoutingAssetTest extends TestCase
 {
@@ -18,7 +19,7 @@ final class SseFacePhotoRoutingAssetTest extends TestCase
         self::assertStringContainsString('if (IsSseNoteCaptureName(fullPath)) return;', $cs);
         self::assertStringContainsString('/api/sse/persons/', $cs);
         self::assertStringContainsString('ProcessSseFacePhotoUploadAsync', $cs);
-        self::assertStringContainsString('1.18.12', $cs);
+        ModVersion::assertAtLeast('1.18.12', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9][0-9.]*)"/', $cs));
     }
 
     public function testPortalIgnoresFaceOnReconAndAcceptsMagicPngOnFiche(): void

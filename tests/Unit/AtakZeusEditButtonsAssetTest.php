@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakZeusEditButtonsAssetTest extends TestCase
 {
@@ -21,11 +22,12 @@ final class AtakZeusEditButtonsAssetTest extends TestCase
         self::assertStringContainsString('[_e, 0.32]', $inject);
         self::assertStringContainsString('Chef de section seulement', $ally);
         self::assertStringContainsString('Toute la section', $ally);
-        self::assertStringContainsString('false, true, false] call comspec_overwatch_connect_fnc_captureReconImage', $photo);
+        // JPEG BCE : reuse the file as is (skip Arma shot, no POV alignment, one deferred retry).
+        self::assertStringContainsString('true, false, true] call comspec_overwatch_connect_fnc_captureReconImage', $photo);
         self::assertStringContainsString('comspec_sse_face', $photo);
         $ath = (string) file_get_contents($root . '/atak_athena/config.cpp');
-        self::assertStringContainsString('1.0.80', $ath);
-        self::assertStringContainsString('1.5.16', $cfg);
+        ModVersion::assertAtLeast('1.0.80', ModVersion::fromConfigCpp($ath));
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('"BCE_cTab_ATAK"', $ath);
         self::assertDoesNotMatchRegularExpression('/"BCE_cTab"/', $ath);
         self::assertStringContainsString('isKindOf "CAManBase"', $inject);

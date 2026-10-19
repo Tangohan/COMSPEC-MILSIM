@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class OverwatchGearUplinkAssetTest extends TestCase
 {
@@ -24,11 +25,14 @@ final class OverwatchGearUplinkAssetTest extends TestCase
         $cfgA = (string) file_get_contents($base . '/atak_athena/config.cpp');
         $bug = (string) file_get_contents($root . '/docs/bugs/2026-09-18-atak-crash-prise-equipement.md');
 
-        self::assertStringContainsString('ace_arsenal_display', $quiet);
+        // La détection de l’arsenal a été factorisée dans fnc_arsenalOpen (ACE + arsenal BIS).
+        $arsenalOpen = (string) file_get_contents($base . '/connect/functions/fn_arsenalOpen.sqf');
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_arsenalOpen', $quiet);
+        self::assertStringContainsString('ace_arsenal_display', $arsenalOpen);
         self::assertStringContainsString('< 8', $quiet);
 
         self::assertStringContainsString('COMSPEC_TerminalAcquiredAt', $loops);
-        self::assertStringContainsString('T�l�phone pris', $loops);
+        self::assertStringContainsString('Téléphone pris', $loops);
         self::assertStringContainsString('uplinkQuiet', $loops);
         self::assertStringContainsString(', 8, 4, "orders"]', $loops);
         self::assertStringContainsString(', 8, 8, "webmk"]', $loops);
@@ -46,8 +50,12 @@ final class OverwatchGearUplinkAssetTest extends TestCase
         self::assertStringContainsString('], 3] call CBA_fnc_waitAndExecute', $receive);
 
         self::assertStringContainsString('COMSPEC_WebMarkersBootstrapped', $markers);
-        self::assertStringContainsString('_created >= 10', $markers);
-        self::assertStringContainsString('premi�re lecture', $markers);
+        // Le plafond de création n’est plus réservé à la première lecture (10) : chaque lecture crée
+        // au plus N nouveaux marqueurs (25 aujourd’hui), les existants restant mis à jour.
+        self::assertSame(1, preg_match('/!\(_name in _mkIndex\) && \{_created >= (\d+)\}\) then \{ continue \}/', $markers, $cap));
+        self::assertGreaterThanOrEqual(10, (int) $cap[1]);
+        self::assertLessThanOrEqual(25, (int) $cap[1]);
+        self::assertStringContainsString('première lecture', $markers);
 
         self::assertStringContainsString('COMSPEC_MapShapesBootstrapped', $shapes);
         self::assertStringContainsString('_shaped < 6', $shapes);
@@ -60,15 +68,15 @@ final class OverwatchGearUplinkAssetTest extends TestCase
         self::assertStringContainsString('uplinkQuiet', $sync);
 
         self::assertStringContainsString('class uplinkQuiet {}', $cfgC);
-        self::assertStringContainsString('1.6.9', $cfgC);
-        self::assertStringContainsString('1.0.165', $cfgA);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
         self::assertStringContainsString('_fnc_markSeen', $orders);
         self::assertStringContainsString('_newOnes select 0', $orders);
         self::assertStringContainsString('isEqualTo "web") then { continue }', $orders);
-        self::assertStringContainsString('photo de la derni�re lecture', $orders);
+        self::assertStringContainsString('photo de la dernière lecture', $orders);
 
-        self::assertStringContainsString('�quipement', mb_strtolower($bug));
-        self::assertStringContainsString('corrig�', mb_strtolower($bug));
+        self::assertStringContainsString('équipement', mb_strtolower($bug));
+        self::assertStringContainsString('corrigé', mb_strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);
         self::assertStringNotContainsString('callExtension', $bug);
         self::assertStringNotContainsString('JSON', $bug);

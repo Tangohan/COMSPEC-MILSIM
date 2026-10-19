@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 /**
  * Zeus « Profil d'identité SSE » : Nom + Prénom doivent entrer dans l'identité
@@ -21,9 +22,9 @@ final class SseZeusAuthoredNameAssetTest extends TestCase
         self::assertStringContainsString('["name", _full]', $sqf);
         self::assertStringContainsString('["first_name", _first]', $sqf);
         self::assertStringContainsString('["last_name", _last]', $sqf);
-        self::assertStringContainsString('1.6.4', (string) file_get_contents(
+        ModVersion::assertAtLeast('1.6.4', ModVersion::fromConfigCpp((string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
-        ));
+        )));
     }
 
     public function testAuthoredBridgeWritesBackIntoIdentitySection(): void

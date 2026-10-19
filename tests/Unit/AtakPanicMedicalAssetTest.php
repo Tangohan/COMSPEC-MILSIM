@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakPanicMedicalAssetTest extends TestCase
 {
@@ -35,7 +36,7 @@ final class AtakPanicMedicalAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_IcemanMedicalPanic', $post);
         self::assertStringContainsString('attente d’une connexion', $post);
         self::assertStringContainsString('class pushIcemanMedicalAlert {};', $cfg);
-        self::assertStringContainsString('1.5.16', $cfg);
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('local _sender', $bridge);
         self::assertStringContainsString('_isDistress', $bridge);
         self::assertStringContainsString('cTab_player', $bridge);

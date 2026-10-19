@@ -24,7 +24,7 @@ final class DashboardIdentityStripPlacementAssetTest extends TestCase
 
         $headerPos = strpos($cc, 'header_dashboard.php');
         $stripPos = strpos($cc, 'dashboard_idstrip.php');
-        $heroPos = strpos($cc, 'class="dash-hero"');
+        $heroPos = strpos($cc, 'class="dash-hero dash-reveal"');
         $hubPos = strpos($cc, 'dash-hub-stack');
 
         self::assertNotFalse($headerPos, 'Le layout dashboard doit inclure la navbar.');
