@@ -1044,6 +1044,226 @@ html[data-bo-theme="dark"] .bo-atak-mod__check-hint a {
   color: #57f9cb;
 }
 
+/* ——— back-office-atak-operator.css ——— */
+html[data-bo-theme="dark"] .aop {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-none, html[data-bo-theme="dark"] .aop-muted {
+  color: var(--ath-subtle, #a0b1a9);
+}
+html[data-bo-theme="dark"] .aop-bar__back {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-bar__back:hover {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-switch__label {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-switch__select {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-step {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .aop-step__btn {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-step__btn:hover {
+  background: var(--ath-row-hover, #151a17);
+}
+html[data-bo-theme="dark"] .aop-step__pos {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-hero {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .aop-hero__avatar {
+  background: var(--ath-line-soft, #171c19);
+  border: 1px solid var(--ath-line, #2b3530);
+}
+html[data-bo-theme="dark"] .aop-hero__initials {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-hero__dot {
+  border: 3px solid var(--ath-surface, #252d29);
+}
+html[data-bo-theme="dark"] .aop-kicker {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-hero__meta {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-hero__meta a {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-hero__meta a:hover {
+  text-decoration-color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-pill {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-line-soft, #171c19);
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-pill--ok {
+  color: var(--ath-accent, #5ef2bd);
+}
+html[data-bo-theme="dark"] .aop-pill--warn {
+  border-color: var(--ath-warn-bd, #3e392e);
+  background: var(--ath-warn-bg, #2e271a);
+  color: var(--ath-warn, #f1bf60);
+}
+html[data-bo-theme="dark"] .aop-pill--danger {
+  background: var(--ath-danger-bg, #2c1919);
+  color: var(--ath-danger, #e07b7b);
+}
+html[data-bo-theme="dark"] .aop-pill--info {
+  background: var(--ath-info-bg, #1a222c);
+  color: var(--ath-info, #69a9e7);
+}
+html[data-bo-theme="dark"] .aop-pill--plain {
+  background: var(--ath-surface, #111513);
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-check {
+  border: 1px solid var(--ath-warn-bd, #3e392e);
+  background: color-mix(in srgb, var(--ath-warn-bg, #2e271a) 55%, var(--ath-surface, #111513));
+}
+html[data-bo-theme="dark"] .aop-check.is-ok {
+  background: color-mix(in srgb, var(--ath-accent, #0b8a5c) 7%, var(--ath-surface, #111513));
+}
+html[data-bo-theme="dark"] .aop-check__k {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-check.is-ok .aop-check__v {
+  color: var(--ath-accent, #5ef2bd);
+}
+html[data-bo-theme="dark"] .aop-check__lead {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-issue--danger strong {
+  color: var(--ath-danger, #e07b7b);
+}
+html[data-bo-theme="dark"] .aop-issue span {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-issue a {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-tiles {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .aop-tile {
+  border-right: 1px solid var(--ath-line, #2b3530);
+}
+html[data-bo-theme="dark"] .aop-tile__k {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-tile--danger .aop-tile__v {
+  color: var(--ath-danger, #e07b7b);
+}
+html[data-bo-theme="dark"] .aop-tile__s {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-jump {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .aop-jump a {
+  border-right: 1px solid var(--ath-line, #2b3530);
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-jump a:hover {
+  background: var(--ath-row-hover, #151a17);
+}
+html[data-bo-theme="dark"] .aop-jump a span {
+  background: var(--ath-line-soft, #171c19);
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-section__head p {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-section__more {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-card {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .aop-card--empty p {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-dl__row {
+  border-top: 1px solid var(--ath-line-soft, #28312d);
+}
+html[data-bo-theme="dark"] .aop-dl__row dt {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-copy {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-copy:hover {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .aop-copy.is-done {
+  color: var(--ath-accent, #5ef2bd);
+}
+html[data-bo-theme="dark"] .aop-meter {
+  background: var(--ath-line, #1c2320);
+}
+html[data-bo-theme="dark"] .aop-meter__lead {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-weeks__lbl {
+  color: var(--ath-subtle, #a0b1a9);
+}
+html[data-bo-theme="dark"] .aop-bars__track {
+  background: var(--ath-line-soft, #171c19);
+}
+html[data-bo-theme="dark"] .aop-log {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .aop-log__item {
+  border-top: 1px solid var(--ath-line-soft, #28312d);
+}
+html[data-bo-theme="dark"] .aop-log__item:hover {
+  background: var(--ath-row-hover, #151a17);
+}
+html[data-bo-theme="dark"] .aop-log__time {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-log__chan {
+  color: var(--ath-subtle, #a0b1a9);
+}
+html[data-bo-theme="dark"] .aop-empty {
+  border: 1px dashed var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .aop-empty p {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .aop-empty .aop-empty__title {
+  color: var(--ath-ink, #e0e6e3);
+}
+@media (max-width: 1100px) {
+html[data-bo-theme="dark"] .aop-tile:nth-child(-n + 2) {
+  border-bottom: 1px solid var(--ath-line, #2b3530);
+}
+}
+@media (max-width: 760px) {
+html[data-bo-theme="dark"] .aop-dl--inline .aop-dl__row:nth-child(2) {
+  border-top: 1px solid var(--ath-line-soft, #28312d);
+}
+}
+
 /* ——— back-office-atak-roleplay.css ——— */
 html[data-bo-theme="dark"] .bo-rp {
   --rp-map-bg: #161b18;
@@ -2031,6 +2251,45 @@ html[data-bo-theme="dark"] .eff-card__edit > summary {
   color: var(--ath-ink, #e0e6e3);
 }
 html[data-bo-theme="dark"] .eff-card__edit > summary::before {
+  color: var(--ath-accent, #5ef2bd);
+}
+html[data-bo-theme="dark"] .eff-lang {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+}
+html[data-bo-theme="dark"] .eff-lang__text strong {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .eff-lang__text span {
+  color: var(--ath-muted, #b6c4bd);
+}
+html[data-bo-theme="dark"] .eff-lang__source {
+  background: var(--ath-warn-bg, #2c271a);
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .eff-lang-pick legend {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .eff-dialog .eff-lang-pick__item {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .eff-dialog .eff-lang-pick__item:has(input:checked) {
+  background: var(--ath-row-hover, #171c1a);
+}
+html[data-bo-theme="dark"] .eff-dialog__hint {
+  color: var(--ath-muted, #b6c4bd);
+}
+html[data-bo-theme="dark"] .eff-lang-summary {
+  color: var(--ath-muted, #b6c4bd);
+}
+html[data-bo-theme="dark"] .eff-lang-summary a {
+  border: 1px solid var(--ath-line, #2b3530);
+  background: var(--ath-surface, #111513);
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .eff-lang-summary a.is-active {
   color: var(--ath-accent, #5ef2bd);
 }
 

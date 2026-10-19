@@ -1209,3 +1209,131 @@ button.eff-fix-link {
   text-transform: none;
   letter-spacing: 0;
 }
+
+/* ——— Langue du joueur (fiche membre + tableur) ——— */
+.eff-lang {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0.6rem;
+  background: var(--ath-surface, #fff);
+}
+
+.eff-lang__flag {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.eff-lang__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.eff-lang__text strong {
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.95rem;
+}
+
+.eff-lang__text span {
+  color: var(--ath-muted, #5b6770);
+  font-size: 0.8125rem;
+}
+
+.eff-lang__source {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--ath-warn-bd, #f1d18a);
+  border-radius: 999px;
+  background: var(--ath-warn-bg, #fff8e6);
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.eff-lang-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  border: 0;
+}
+
+.eff-lang-pick legend {
+  width: 100%;
+  margin-bottom: 0.4rem;
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.eff-dialog .eff-lang-pick__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 999px;
+  background: var(--ath-surface, #fff);
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.eff-dialog .eff-lang-pick__item:has(input:checked) {
+  border-color: var(--ath-accent, #0b8a5c);
+  background: var(--ath-row-hover, #eef6f2);
+}
+
+.eff-dialog .eff-lang-pick__item input {
+  display: inline-block;
+  width: auto;
+  margin: 0;
+  accent-color: var(--ath-accent, #0b8a5c);
+}
+
+.eff-dialog__hint {
+  margin: 0 0 0.5rem;
+  color: var(--ath-muted, #5b6770);
+  font-size: 0.75rem;
+}
+
+.eff-sheets__badge--lang {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.eff-lang-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  color: var(--ath-muted, #5b6770);
+  font-size: 0.8125rem;
+}
+
+.eff-lang-summary a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 999px;
+  background: var(--ath-surface, #fff);
+  color: var(--ath-ink, #0c1116);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.eff-lang-summary a.is-active {
+  border-color: var(--ath-accent, #0b8a5c);
+  color: var(--ath-accent, #0b8a5c);
+}

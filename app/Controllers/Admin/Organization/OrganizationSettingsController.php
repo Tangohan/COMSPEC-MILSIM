@@ -21,6 +21,7 @@ use App\Services\Community\TenantTypeSwitchService;
 use App\Services\ConfigurationUpdate\ConfigurationUpdateService;
 use App\Services\Integrations\DiscordWebhookService;
 use App\Services\Personnel\PersonnelLifecycleSettings;
+use App\Support\CommunityLanguages;
 use App\Support\LoginAccueilImageStorage;
 use App\Support\OrganizationRoleLabels;
 
@@ -661,10 +662,22 @@ final class OrganizationSettingsController
             $request->input('personnel_active_service_days', 0)
         );
 
-        $locale = strtolower(trim((string) $request->input('default_locale', 'fr')));
-        $community['default_locale'] = in_array($locale, ['fr', 'en', 'fr-fr', 'en-us'], true)
-            ? ($locale === 'fr-fr' ? 'fr' : ($locale === 'en-us' ? 'en' : $locale))
-            : 'fr';
+        $community['default_locale'] = CommunityLanguages::normalize($request->input('default_locale', 'fr'))
+            ?? CommunityLanguages::DEFAULT;
+        // Le formulaire envoie toujours ce marqueur : sans lui (ancien formulaire), on garde les réglages.
+        if ((string) $request->input('languages_form', '') === '1') {
+            $community['community_languages'] = array_values(array_unique(array_merge(
+                [$community['default_locale']],
+                CommunityLanguages::normalizeList($request->input('community_languages', []))
+            )));
+            $community['orbat_language'] = CommunityLanguages::normalize($request->input('orbat_language', '')) ?? '';
+            $unitCountry = \App\Support\Profile\PublicFlagCountryCatalog::normalize((string) $request->input('unit_country', ''));
+            if ($unitCountry !== null) {
+                $community['unit_country'] = $unitCountry;
+            } else {
+                unset($community['unit_country']);
+            }
+        }
 
         $orbat = strtolower(trim((string) $request->input('orbat_visibility', 'members')));
         $community['orbat_visibility'] = in_array($orbat, ['public', 'members', 'command'], true) ? $orbat : 'members';

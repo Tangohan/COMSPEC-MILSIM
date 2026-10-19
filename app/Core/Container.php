@@ -2501,6 +2501,7 @@ class Container
             ),
             \App\Repositories\PlatformReviewRepository::class => new \App\Repositories\PlatformReviewRepository(),
             \App\Repositories\NameFilterRepository::class => new \App\Repositories\NameFilterRepository(),
+            \App\Repositories\MemberLanguageRepository::class => new \App\Repositories\MemberLanguageRepository(),
             \App\Services\Moderation\NameModerationService::class => new \App\Services\Moderation\NameModerationService(
                 self::get(\App\Repositories\NameFilterRepository::class),
             ),

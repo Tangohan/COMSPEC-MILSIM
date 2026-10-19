@@ -137,4 +137,66 @@ final class CommunityPageBuilderTest extends TestCase
         self::assertStringContainsString("if (\$pbCanEdit) { require base_path('views/community/partials/page_editor.php'); }", $view);
         self::assertStringContainsString('data-cl-nav', $view);
     }
+
+    public function testOrganisationSectionOffersOrbatStylesAndSettings(): void
+    {
+        $keys = PublicPageBuilder::styleKeysFor('section', 'organisation');
+        foreach (['orbat_style', 'orbat_density', 'orbat_depth', 'orbat_colors', 'orbat_portraits', 'orbat_grades', 'orbat_strength'] as $k) {
+            self::assertContains($k, $keys);
+        }
+        self::assertNotContains('orbat_style', PublicPageBuilder::styleKeysFor('section', 'agenda'));
+        self::assertSame(['tree', 'orgchart', 'cards', 'grid', 'branches', 'strength'], PublicPageBuilder::styleOptions()['orbat_style']);
+
+        $layout = PublicPageBuilder::normalize(['blocks' => [
+            ['id' => 's_organisation', 'type' => 'section', 'key' => 'organisation', 'style' => ['orbat_style' => 'orgchart', 'orbat_depth' => '2', 'orbat_portraits' => 'off', 'orbat_density' => 'evil']],
+            ['id' => 's_agenda', 'type' => 'section', 'key' => 'agenda', 'style' => ['orbat_style' => 'cards']],
+        ]]);
+        $org = $agenda = null;
+        foreach ($layout['blocks'] as $b) {
+            if (($b['key'] ?? '') === 'organisation') { $org = $b; }
+            if (($b['key'] ?? '') === 'agenda') { $agenda = $b; }
+        }
+        self::assertSame('orgchart', $org['style']['orbat_style']);
+        self::assertSame('2', $org['style']['orbat_depth']);
+        self::assertSame('off', $org['style']['orbat_portraits']);
+        self::assertSame('standard', $org['style']['orbat_density']);
+        self::assertSame('on', $org['style']['orbat_grades']);
+        self::assertArrayNotHasKey('orbat_style', $agenda['style']);
+
+        // Ancienne mise en page sans réglage : arbre hiérarchique, comme avant.
+        $old = PublicPageBuilder::normalize([]);
+        foreach ($old['blocks'] as $b) {
+            if (($b['key'] ?? '') === 'organisation') {
+                self::assertSame('tree', $b['style']['orbat_style']);
+            }
+        }
+    }
+
+    public function testPublicOrbatLanguageAndInsignia(): void
+    {
+        self::assertSame('fr', \App\Support\PublicOrbat::language([]));
+        self::assertSame('en', \App\Support\PublicOrbat::language(['orbat_language' => 'en']));
+        self::assertSame('es', \App\Support\PublicOrbat::language(['orbat_language' => '', 'default_locale' => 'es']));
+        self::assertSame('fr', \App\Support\PublicOrbat::language(['orbat_language' => 'xx']));
+        self::assertSame('Strength', \App\Support\PublicOrbat::labels('en')['strength']);
+        self::assertSame('HQ', \App\Support\PublicOrbat::insignia('HQ', 'État-major'));
+        self::assertSame('TF1', \App\Support\PublicOrbat::insignia('TF-1', 'Task Force'));
+        self::assertSame('TFR', \App\Support\PublicOrbat::insignia('', 'Task Force Raven'));
+        self::assertSame([], \App\Support\PublicOrbat::commanders(0, [1, 2]));
+    }
+
+    public function testOrbatStylesAreWiredInViewCssAndEditor(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $view = (string) file_get_contents($root . '/views/community/show_showcase.php');
+        self::assertStringContainsString("'community-orbat-styles'", $view);
+        self::assertStringContainsString('class="orb-badge"', $view);
+        $css = (string) file_get_contents($root . '/public/assets/css/community-orbat-styles.css');
+        foreach (['tree', 'orgchart', 'cards', 'grid', 'branches', 'strength'] as $style) {
+            self::assertStringContainsString('[data-pb-orbat-style="' . $style . '"]', $css);
+        }
+        $js = (string) file_get_contents($root . '/public/assets/js/community-page-editor.js');
+        self::assertStringContainsString('function orbatPanel(', $js);
+        self::assertStringContainsString("cfg.styleKeys['section:' + b.key]", $js);
+    }
 }
