@@ -293,6 +293,12 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(973, '2026-10-19', 'Grades : changer le système de la communauté en un clic', 'Le référentiel des grades indique désormais quel système la communauté utilise (français ou américain) et permet de passer à l’autre directement depuis l’onglet, sans repasser par l’assistant de création. Les grades déjà attribués aux membres sont conservés ; les listes proposent ensuite les grades du nouveau système. Rechargez le portail (Ctrl+F5).', [
+                'Bandeau « Votre communauté utilise les grades … » sous les onglets du référentiel',
+                'Bouton « Utiliser les grades américains / français pour la communauté », avec confirmation',
+            ], [], [], ['personnel'], [
+                'Back-office → Référentiels → Grades, onglet Grades américains : cliquez « Utiliser les grades américains pour la communauté ». Le badge « Système de la communauté » passe sur cet onglet.',
+            ], 'Portail Athena'),
             $pr(934, '2026-10-19', 'Annuaire des communautés : des cartes qui mettent les unités en valeur', 'Les cartes de l’annuaire public montrent enfin la vie de chaque unité. La bannière et la couleur de la communauté habillent la carte, et quatre chiffres apparaissent sous l’en-tête : membres, actifs sur 30 jours, unités de l’ORBAT et opérations par mois. Les opérations à venir, la note des avis et l’ancienneté sur Athena s’affichent quand elles existent. Une communauté épinglée passe en vitrine pleine largeur. Rechargez le portail (Ctrl+F5).', [
                 'Chiffres sur chaque carte : membres, actifs 30 jours, unités ORBAT, opérations par mois',
                 'Bannière et couleur de marque de la communauté sur sa carte',
