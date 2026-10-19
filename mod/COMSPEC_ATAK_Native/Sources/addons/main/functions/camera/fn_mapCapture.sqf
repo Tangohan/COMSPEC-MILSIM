@@ -6,7 +6,11 @@
     Plusieurs hauteurs à la suite (une couche par hauteur, plus la hauteur est basse plus l'image est détaillée) :
     tools/map_stitch.py --pyramid en fait un seul fond à niveaux de détail (la hauteur la plus basse sert là où elle
     existe, la plus haute ailleurs), pour le site (calque « Photo COMSPEC ») et le fond PHOTO du téléphone.
-    Trois hauteurs par défaut (300, 800 et 2000 m) : trois niveaux de zoom dans le fond assemblé.
+    Trois hauteurs par défaut (300, 800 et 2000 m) : trois niveaux de zoom dans le fond assemblé. Le formulaire Zeus
+    propose aussi des vues plus proches (150 m, plutôt autour d'une ville) et plus lointaines (4000 m, caméra plafonnée
+    à 9000 m, objectif un peu plus ouvert, redressée sur le relief comme les autres).
+    Côté PC : build_photo_pack.bat regroupe les captures de tous les dossiers Screenshots, assemble le fond et
+    fabrique le pack secondaire @COMSPEC_ATAK_Photo (tools/map_stitch.py).
     Chaque tuile part dans le dossier Screenshots du profil Arma (Documents\Arma 3\Screenshots pour le profil par
     défaut, Documents\Arma 3 - Other Profiles\<profil>\Screenshots pour un autre profil) sous un nom qui la décrit :
       cmap_<carte>_<mode>_h<hauteur>_s<pas en m>_w<largeur couverte en m>_o<origine x>-<origine y>_x<colonne>_y<ligne>.png
@@ -155,7 +159,9 @@ switch (_act) do {
         if (isNil "zen_dialog_fnc_create") exitWith { false };
         ["Capture de la carte", [
             ["COMBO", "Rendu", [["sat", "3d", "plan"], ["Satellite (vue de dessus)", "3D oblique (45°)", "Plan topographique"], 0]],
-            ["EDIT", ["Hauteurs (m, séparées par des virgules)", "Une couche par hauteur, soit un niveau de zoom du fond : basse = détaillée (300 m), moyenne (800 m), haute = vue d'ensemble (2000 m)"], "300, 800, 2000"],
+            ["COMBO", ["Niveaux de zoom", "Une hauteur par niveau de zoom du fond PHOTO : plus bas = vue plus proche et détaillée, plus haut = vue d'ensemble. Les vues proches (150 m) se prennent plutôt autour d'une ville."],
+                [[0, 1, 2, 3, 4], ["Standard : 300, 800, 2000 m", "Plus proche : 150, 300, 800, 2000 m", "Plus loin : 300, 800, 2000, 4000 m", "Complet : 150, 300, 800, 2000, 4000 m", "Personnalisé (hauteurs ci-dessous)"], 0]],
+            ["EDIT", ["Hauteurs (m, séparées par des virgules)", "Avec « Personnalisé » : une couche par hauteur, soit un niveau de zoom du fond : basse = détaillée (300 m), moyenne (800 m), haute = vue d'ensemble (2000 m)"], "300, 800, 2000"],
             ["COMBO", "Zone", [[0, 1], ["Autour de la position du module", "Carte entière"], 0]],
             ["SLIDER", "Rayon de la zone (m)", [200, 10000, 1500, 0]],
             ["SLIDER", "Attente par tuile (s)", [0.5, 6, 2, 1]],
@@ -167,8 +173,9 @@ switch (_act) do {
             ["EDIT:MULTI", ["Suivi du relevé", "Part de la carte déjà photographiée, par rendu et hauteur (profil du joueur)"], call _progText]
         ], {
             params ["_values", "_pos"];
-            _values params ["_mode", "_hs", "_zone", "_radius", "_wait", "_clear", "_hide", "_resume", "_skipSea", "_reset"];
-            private _heights = ((_hs splitString ", ;") apply { parseNumber _x }) select { _x >= 20 };
+            _values params ["_mode", "_preset", "_hs", "_zone", "_radius", "_wait", "_clear", "_hide", "_resume", "_skipSea", "_reset"];
+            private _heights = [[300, 800, 2000], [150, 300, 800, 2000], [300, 800, 2000, 4000], [150, 300, 800, 2000, 4000]] param [_preset, []];
+            if (_heights isEqualTo []) then { _heights = ((_hs splitString ", ;") apply { parseNumber _x }) select { _x >= 20 }; };
             if (_heights isEqualTo []) then { _heights = [300, 800, 2000]; };
             if (_reset) then { ["reset"] call comspec_atak_native_fnc_mapCapture; };
             ["start", [_mode, _heights, [[], _pos] select (_zone isEqualTo 0), _radius, 0.15, _wait, _clear, _hide, _resume && !_reset, _skipSea]] call comspec_atak_native_fnc_mapCapture;
@@ -410,7 +417,7 @@ switch (_act) do {
                 forceWeatherChange;
             };
             missionNamespace setVariable ["COMSPEC_ATAK_MapCapRunning", false];
-            ["SUCCESS", format ["Capture de la carte terminée : %1 image(s) en %2 min dans %3 (cmap_*). Assemblage : tools/map_stitch.py", _shots, round ((diag_tickTime - _t0) / 60), call _shotDir], 12, 40] call comspec_atak_native_fnc_notify;
+            ["SUCCESS", format ["Capture de la carte terminée : %1 image(s) en %2 min dans %3 (cmap_*). Sur le PC : build_photo_pack.bat (pack @COMSPEC_ATAK_Photo)", _shots, round ((diag_tickTime - _t0) / 60), call _shotDir], 12, 40] call comspec_atak_native_fnc_notify;
             ["INFO", format ["Relevé de %1 (%2), part de la carte prise : %3", worldName, _mode, _summary joinString ", "], 12, 40] call comspec_atak_native_fnc_notify;
         };
         true
