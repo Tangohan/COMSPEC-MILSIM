@@ -306,20 +306,26 @@ if (_isUav) then {
 if (!_fixed && {!_isUav}) then {
     _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4°</t>",
         [_unit, true] call comspec_atak_native_fnc_unitCallsign, [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit), round getDir _unit]) call comspec_atak_native_fnc_tr);
-} else {
+};
+// Caméra fixe seulement : panoramique local (la caméra posée ne bouge pas) et renommage. Un drone du camp n'a ni l'un ni
+// l'autre (sa nacelle suit le terminal de l'opérateur) : avant, il passait ici aussi et montrait ces boutons sans effet
+// (retour de TTRD, 19/10 : « carré noir à gauche et à droite »).
+if (_fixed) then {
     _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
         _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"], [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit)]) call comspec_atak_native_fnc_tr);
-    // Panoramique local (la caméra posée ne bouge pas) et renommage.
     private _bs = _btnH * 1.2;
     {
         _x params ["_txt", "_dx", "_step"];
         private _b = ["COMSPEC_RscButton", [_dx, _vy + (_vh - _bs) / 2, _bs, _bs], _txt] call comspec_atak_native_fnc_pageCtrl;
+        _b ctrlSetFont "COMSPEC_BarlowBold";
+        _b ctrlSetFontHeight (_fs * 1.4);
         _b ctrlSetBackgroundColor [0, 0, 0, 0.45];
+        _b ctrlSetTooltip ((["Tourner la vue de 30° à gauche", "Tourner la vue de 30° à droite"] select (_step > 0)) call comspec_atak_native_fnc_tr);
         _b ctrlAddEventHandler ["ButtonClick", compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap];
             _s set ['livecamPan', (((_s getOrDefault ['livecamPan', 0]) + %1 + 540) mod 360) - 180];
             private _c = missionNamespace getVariable ['COMSPEC_ATAK_LivecamCam', objNull];
             if (!isNull _c) then { private _p = _s get 'livecamPan'; _c setVectorDirAndUp [[sin _p, cos _p, 0], [0, 0, 1]]; };", _step]];
-    } forEach [["◀", _vx + _pad / 2, -30], ["▶", _vx + _vw - _bs - _pad / 2, 30]];
+    } forEach [["<", _vx + _pad / 2, -30], [">", _vx + _vw - _bs - _pad / 2, 30]];
     private _ren = _s getOrDefault ["livecamRename", false];
     if (_ren) then {
         private _ew = _vw * 0.55;

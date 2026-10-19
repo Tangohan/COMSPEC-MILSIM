@@ -12460,6 +12460,8 @@
 ["tourne autour du point", "", "circles the point"],
 ["Tourne la caméra à la verticale, vers le sol sous le drone", "", "Turns the camera straight down, to the ground under the drone"],
 ["TOURNER AUTOUR", "", "ORBIT"],
+["Tourner la vue de 30° à droite", "", "Turn the view 30° right"],
+["Tourner la vue de 30° à gauche", "", "Turn the view 30° left"],
 ["Tournez à droite", "", "Turn right"],
 ["Tournez à gauche", "", "Turn left"],
 ["Tous", "", "All"],
