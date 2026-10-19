@@ -9,7 +9,10 @@
 /** @var string|null $flashInfo */
 /** @var bool $stripeReady */
 /** @var bool $schemaReady */
+/** @var string|null $paypalUrl lien de don PayPal (null : non proposé) */
 $cancelled = isset($_GET['annule']);
+$paypalUrl = is_string($paypalUrl ?? null) && $paypalUrl !== '' ? $paypalUrl : null;
+$cardReady = !empty($schemaReady) && !empty($stripeReady);
 ?>
 <div class="min-h-[calc(80vh-2rem)] bg-gradient-to-b from-slate-100 via-slate-50 to-emerald-50/40">
     <div class="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:py-14">
@@ -60,12 +63,33 @@ $cancelled = isset($_GET['annule']);
                     </div>
                 </div>
 
-                <?php if (empty($schemaReady) || empty($stripeReady)): ?>
+                <?php if ($paypalUrl !== null): ?>
+                <section class="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-5 sm:p-6" aria-labelledby="paypal-donate-title">
+                    <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-sky-700">Don par PayPal</p>
+                            <h2 id="paypal-donate-title" class="mt-1 text-lg font-black text-slate-900">Faire un don en quelques secondes</h2>
+                            <p class="mt-1 text-sm leading-relaxed text-slate-600">Montant libre, carte bancaire ou compte PayPal, sans créer de compte Athena. Sur téléphone, scannez le QR code.</p>
+                            <a href="<?= htmlspecialchars($paypalUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"
+                               class="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0070ba] px-6 py-3.5 text-xs font-black uppercase tracking-[0.2em] text-white shadow-lg shadow-sky-900/20 transition hover:bg-[#005ea6]">
+                                Donner avec PayPal <span aria-hidden="true">↗</span>
+                            </a>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-500">Le don est traité par PayPal : Athena ne reçoit ni vos coordonnées bancaires ni le montant. Le badge « Donateur ATAK » n’est ajouté automatiquement que pour un don par carte ci-dessous ; après un don PayPal, écrivez à l’équipe pour l’obtenir.</p>
+                        </div>
+                        <img src="<?= htmlspecialchars(url('soutenir-atak/paypal-qr.png'), ENT_QUOTES, 'UTF-8') ?>" width="168" height="168" alt="QR code du lien de don PayPal" class="mx-auto h-40 w-40 shrink-0 rounded-xl border border-slate-200 bg-white p-1.5 sm:mx-0" loading="lazy">
+                    </div>
+                </section>
+                <?php endif; ?>
+
+                <?php if (!$cardReady && $paypalUrl === null): ?>
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
                     Le paiement n’est pas disponible pour le moment. Réessayez plus tard ou contactez l’équipe Athena.
                 </div>
+                <?php elseif (!$cardReady): ?>
+                <?php /* Seul PayPal est proposé : rien d’autre à afficher. */ ?>
                 <?php elseif (empty($isLoggedIn)): ?>
                 <div class="rounded-2xl border border-slate-200 bg-white p-6 text-center">
+                    <?php if ($paypalUrl !== null): ?><p class="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Ou par carte, avec le badge donateur</p><?php endif; ?>
                     <p class="text-sm text-slate-700">Connectez-vous pour choisir un montant et recevoir le badge donateur.</p>
                     <a href="<?= htmlspecialchars(url('soutenir-atak/connexion'), ENT_QUOTES, 'UTF-8') ?>"
                        class="mt-5 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3.5 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-emerald-800">
@@ -77,7 +101,7 @@ $cancelled = isset($_GET['annule']);
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 
                     <fieldset>
-                        <legend class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Choisir un montant</legend>
+                        <legend class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500"><?= $paypalUrl !== null ? 'Ou par carte (badge donateur inclus) : choisir un montant' : 'Choisir un montant' ?></legend>
                         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                             <?php foreach ($presets as $i => $eur): ?>
                             <label class="relative cursor-pointer">

@@ -138,6 +138,7 @@ use App\Controllers\Admin\System\SystemAuditController;
 use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
 use App\Controllers\Admin\System\SystemMaintenanceController;
 use App\Controllers\Admin\System\SystemStorageController;
+use App\Controllers\Admin\System\SystemDonationsController;
 use App\Controllers\Admin\System\SystemIndicatorBlocklistController;
 use App\Controllers\Admin\System\SystemMemberSanctionsController;
 use App\Controllers\Admin\System\SystemUsersController;
@@ -389,6 +390,7 @@ return function (Router $router) {
     $router->get('/soutenir-atak/connexion', [AtakSupportController::class, 'loginGate']);
     $router->post('/soutenir-atak/checkout', [AtakSupportController::class, 'checkout'], [AuthMiddleware::class]);
     $router->get('/soutenir-atak/merci', [AtakSupportController::class, 'thanks']);
+    $router->get('/soutenir-atak/paypal-qr.png', [AtakSupportController::class, 'paypalQr']);
     $router->get('/platform/invite-unit', [ReferralInviteController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/invitations/accept', [InvitationAcceptController::class, 'show']);
     $router->post('/invitations/accept', [InvitationAcceptController::class, 'accept']);
@@ -1134,8 +1136,17 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/toggle', [SystemMaintenanceController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    $router->get('/admin/system/dons', [SystemDonationsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/dons', [SystemDonationsController::class, 'save'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/storage', [SystemStorageController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Explorateur de données (administration du site) : lire, chercher, modifier, supprimer, vider.
+    $router->get('/admin/system/storage/donnees', [SystemStorageController::class, 'tables'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/storage/donnees/{table}', [SystemStorageController::class, 'table'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/storage/donnees/{table}/ligne', [SystemStorageController::class, 'row'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/ligne', [SystemStorageController::class, 'updateRow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/ligne/supprimer', [SystemStorageController::class, 'deleteRow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/vider', [SystemStorageController::class, 'emptyTable'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/administrateurs-site', [SystemUsersController::class, 'platformAdmins'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

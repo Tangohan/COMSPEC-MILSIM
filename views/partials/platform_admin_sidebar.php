@@ -52,6 +52,7 @@ $icons = [
     'rocket' => 'M12 2c3 2 5 5.5 5 9.5L12 16l-5-4.5C7 7.5 9 4 12 2M9 17l-2 4 5-2 5 2-2-4',
     'flag' => 'M5 21V4M5 4h11l-2 4 2 4H5',
     'flask' => 'M9 3h6M10 3v6L4 19a1.5 1.5 0 0 0 1.3 2h13.4a1.5 1.5 0 0 0 1.3-2L14 9V3M7 15h10',
+    'heart' => 'M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.7 3.9 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.3 0 5.6 3.2 4.4 6.6-1.7 4.8-9.2 9.4-9.2 9.4z',
     'disk' => 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3v12c0 1.7-3.6 3-8 3s-8-1.3-8-3zM4 6c0 1.7 3.6 3 8 3s8-1.3 8-3M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
     'wrench' => 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z',
     'audit' => 'M9 3h6M4 6h16v15H4zM8 11h8M8 15h5',
@@ -102,6 +103,7 @@ $platformNav = [
         ['path' => 'admin/system/brief', 'label' => 'Brief membres', 'icon' => 'book', 'access' => 'system', 'desc' => 'Message de bienvenue des membres'],
         ['path' => 'admin/system/cooperation/catalog', 'label' => 'Types de coopération', 'icon' => 'coop', 'access' => 'system', 'desc' => 'Catalogue des coopérations entre unités'],
         ['path' => 'admin/system/cooperation/announcements', 'label' => 'Annonces de coopération', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Messages diffusés aux communautés'],
+        ['path' => 'admin/system/dons', 'label' => 'Dons', 'icon' => 'heart', 'access' => 'system', 'desc' => 'Lien de don PayPal et QR code de la page Soutenir'],
         ['path' => 'admin/musique', 'label' => 'Musique', 'icon' => 'music', 'access' => 'system', 'desc' => 'Bibliothèque du site et de l’app Musique de l’ATAK, playlist globale'],
     ]],
     ['key' => 'configuration', 'label' => 'Configuration', 'items' => [
