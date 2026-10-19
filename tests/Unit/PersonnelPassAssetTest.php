@@ -41,7 +41,12 @@ final class PersonnelPassAssetTest extends TestCase
         self::assertStringContainsString('PASS RH', $nav);
         self::assertStringContainsString('PASS JTAC', $index);
         self::assertStringContainsString('Avis hiérarchique', $form);
-        self::assertStringContainsString('Formation suivie', $form);
+        // Les libellés de type viennent désormais du catalogue du moteur, rendu dans le formulaire.
+        self::assertStringContainsString('foreach ($catalog as $opt)', $form);
+        self::assertStringContainsString('data-pass-field="training"', $form);
+        $catalogLabels = array_column(\App\Services\Personnel\Pass\PassConditionEngine::catalog(), 'label');
+        self::assertContains('Formation suivie', $catalogLabels);
+        self::assertContains('Avis hiérarchique', $catalogLabels);
         self::assertStringContainsString('required_pass_id', $gradeForm);
         self::assertStringContainsString('required_pass_id', $offerForm);
     }

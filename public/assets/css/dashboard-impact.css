@@ -3953,3 +3953,290 @@ a.dash-action-tile {
     display: none;
   }
 }
+
+/* ===== Signatures (documents à signer) ===== */
+.dash-zone--signatures {
+  --dash-zone-accent: #b45309;
+  background: #fffaf2;
+}
+.dash-sign__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.dash-sign__stats {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dash-sign__stat {
+  min-width: 5.25rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #ece4d6;
+  border-radius: 0.75rem;
+  background: #fff;
+  text-align: center;
+}
+.dash-sign__stat strong {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #161616;
+}
+.dash-sign__stat span {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b6b6b;
+}
+.dash-sign__stat.is-alert { border-color: #fcd34d; background: #fffbeb; }
+.dash-sign__stat.is-alert strong { color: #b45309; }
+.dash-sign__stat.is-danger { border-color: #fecaca; background: #fef2f2; }
+.dash-sign__stat.is-danger strong { color: #b91c1c; }
+
+.dash-sign__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dash-sign__item {
+  --dash-sign-tone: #a3a3a3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem 1.25rem;
+  padding: 0.95rem 1.1rem;
+  border: 1px solid #e7e2d9;
+  border-left: 4px solid var(--dash-sign-tone);
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dash-sign__item:hover { box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.25); }
+.dash-sign__item--red, .dash-sign-modal__item--red { --dash-sign-tone: #dc2626; }
+.dash-sign__item--rose, .dash-sign-modal__item--rose { --dash-sign-tone: #e11d48; }
+.dash-sign__item--violet, .dash-sign-modal__item--violet { --dash-sign-tone: #7c3aed; }
+.dash-sign__item--amber, .dash-sign-modal__item--amber { --dash-sign-tone: #d97706; }
+.dash-sign__item--emerald, .dash-sign-modal__item--emerald { --dash-sign-tone: #059669; }
+.dash-sign__main { flex: 1 1 18rem; min-width: 0; }
+.dash-sign__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.3rem;
+}
+.dash-sign__ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #262626;
+}
+.dash-sign__version, .dash-sign__flag {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+.dash-sign__version { background: #f1f1f1; color: #404040; }
+.dash-sign__flag { background: #fff1f2; color: #be123c; text-transform: uppercase; letter-spacing: 0.06em; }
+.dash-sign__title {
+  display: block;
+  font-size: 0.975rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #161616;
+  text-decoration: none;
+}
+.dash-sign__title:hover { text-decoration: underline; }
+.dash-sign__hint { margin: 0.25rem 0 0; font-size: 0.8125rem; color: #6b6b6b; }
+.dash-sign__side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 0.75rem;
+}
+.dash-sign__chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--dash-sign-tone, #737373);
+}
+.dash-sign__chip--red { background: #dc2626; }
+.dash-sign__chip--rose { background: #e11d48; }
+.dash-sign__chip--violet { background: #7c3aed; }
+.dash-sign__chip--amber { background: #d97706; }
+.dash-sign__chip--emerald { background: #059669; }
+.dash-sign__chip--slate, .dash-sign__chip--neutral { background: #737373; }
+.dash-sign__deadline { font-size: 0.75rem; font-weight: 700; color: #92400e; }
+.dash-sign__actions { display: flex; gap: 0.45rem; }
+.dash-sign__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 0.6rem;
+  border: 1px solid transparent;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+.dash-sign__btn--ghost { border-color: #d6d3d1; background: #fff; color: #262626; }
+.dash-sign__btn--ghost:hover { border-color: #a8a29e; background: #fafaf9; }
+.dash-sign__btn--primary { background: #161616; color: #fff; }
+.dash-sign__btn--primary:hover { background: #333; }
+.dash-sign__btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.dash-sign__btn:focus-visible { outline: 2px solid #b45309; outline-offset: 2px; }
+.dash-sign__links { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0; }
+.dash-sign__links a {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #92400e;
+  text-decoration: none;
+}
+.dash-sign__links a:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+  .dash-sign__stats { width: 100%; }
+  .dash-sign__stat { flex: 1; min-width: 0; }
+  .dash-sign__side { justify-content: flex-start; width: 100%; }
+}
+
+/* Modale de signature */
+html.dash-sign-lock { overflow: hidden; }
+.dash-sign-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.dash-sign-modal[hidden] { display: none; }
+.dash-sign-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, 0);
+  transition: background 0.18s ease;
+}
+.dash-sign-modal.is-open .dash-sign-modal__backdrop { background: rgba(2, 6, 23, 0.7); backdrop-filter: blur(4px); }
+.dash-sign-modal__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 38rem);
+  max-height: min(92vh, 46rem);
+  border-radius: 1.1rem;
+  background: #fff;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.dash-sign-modal.is-open .dash-sign-modal__panel { opacity: 1; transform: none; }
+.dash-sign-modal__panel:focus { outline: none; }
+.dash-sign-modal__head {
+  position: relative;
+  padding: 1.35rem 3.25rem 1.1rem 1.4rem;
+  border-bottom: 1px solid #ece4d6;
+  background: linear-gradient(180deg, #fffaf2 0%, #fff 100%);
+}
+.dash-sign-modal__kicker {
+  margin: 0 0 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b45309;
+}
+.dash-sign-modal__title { margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; color: #161616; }
+.dash-sign-modal__lead { margin: 0.35rem 0 0; font-size: 0.875rem; line-height: 1.5; color: #57534e; }
+.dash-sign-modal__x {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #57534e;
+  cursor: pointer;
+}
+.dash-sign-modal__x:hover { background: #f5f5f4; }
+.dash-sign-modal__list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.4rem;
+  overflow-y: auto;
+  list-style: none;
+}
+.dash-sign-modal__item {
+  padding: 0.9rem 1rem;
+  border: 1px solid #e7e2d9;
+  border-left: 4px solid var(--dash-sign-tone, #a3a3a3);
+  border-radius: 0.8rem;
+  background: #fff;
+  transition: box-shadow 0.3s ease;
+}
+.dash-sign-modal__item.is-focus { box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.35); }
+.dash-sign-modal__item-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.dash-sign-modal__item-head .dash-sign__meta { margin: 0; }
+.dash-sign-modal__doc { margin: 0.35rem 0 0; font-size: 0.95rem; font-weight: 700; color: #161616; }
+.dash-sign-modal__form { margin-top: 0.7rem; display: grid; gap: 0.6rem; }
+.dash-sign-modal__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.6rem;
+  background: #fafaf9;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #292524;
+  cursor: pointer;
+}
+.dash-sign-modal__check input { margin-top: 0.15rem; width: 1rem; height: 1rem; accent-color: #b45309; flex: none; }
+.dash-sign-modal__form .dash-sign__actions { justify-content: flex-end; }
+.dash-sign-modal__status { margin: 0; font-size: 0.8125rem; color: #57534e; }
+.dash-sign-modal__status.is-err { color: #b91c1c; font-weight: 600; }
+.dash-sign-modal__done { margin: 0.6rem 0 0; font-size: 0.8125rem; font-weight: 700; color: #047857; }
+.dash-sign-modal__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.4rem;
+  border-top: 1px solid #ece4d6;
+  background: #fafaf9;
+}
+.dash-sign-modal__progress { margin: 0; font-size: 0.8125rem; font-weight: 700; color: #57534e; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-sign-modal__panel, .dash-sign-modal__backdrop, .dash-sign__item { transition: none; }
+}

@@ -13,7 +13,7 @@ private _fr = uiNamespace getVariable ["COMSPEC_ATAK_MenuFr", createHashMap];
 private _tr = {
     if !(_this isEqualType "") exitWith { _this };
     private _base = _fr getOrDefault [_this, _this];
-    if (_lang isEqualTo "fr") exitWith { _base };
+    // Français aussi : les textes écrits en anglais dans le code passent par fr.txt.
     private _r = _base call comspec_atak_native_fnc_tr;
     if (_r isNotEqualTo _base) then { _fr set [_r, _base]; };
     _r
@@ -30,3 +30,8 @@ private _tr = {
         };
     };
 } forEach cba_settings_allSettings;
+// Index du menu (recherche, catégories, sous-catégories) gardés par CBA depuis sa dernière ouverture : avec les anciens
+// noms de section, des réglages restaient sous un titre de l'ancienne langue. CBA les reconstruit à la prochaine ouverture.
+cba_settings_searchIndex = nil;
+cba_settings_categorySettings = nil;
+cba_settings_subCategories = nil;

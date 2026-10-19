@@ -183,6 +183,18 @@ final class AtakRealismApiController
             'notes' => $request->input('notes'),
         ];
         $body['user_id'] = $this->resolveUserId($tenantId, $body);
+        // ATAK bloqué par l'administration du site : il ne peut pas se réenregistrer.
+        if ($this->isGameClient()) {
+            $blocked = \App\Support\AtakAdminBlockGate::deny(
+                $tenantId,
+                ((int) ($body['user_id'] ?? 0)) ?: null,
+                null,
+                trim((string) ($body['terminal_uid'] ?? '')) ?: null
+            );
+            if ($blocked !== null) {
+                return $blocked;
+            }
+        }
         $body = $this->tagWebSessionIfNeeded($tenantId, $pairingToken, $body);
         $body['last_client_ip'] = AtakRealismRepository::extractClientIp($request->ip());
         $host = $this->requestHost();
@@ -340,14 +352,33 @@ final class AtakRealismApiController
 
         // Compromission validée (sur le terrain ou par le Zeus) : la clé du terminal n'est plus sûre,
         // ses certificats encore valides sont révoqués (motif RFC 5280 keyCompromise).
-        $revoked = 0;
+        $revokedIds = [];
         if ($state === 'compromised' && (int) ($terminal['id'] ?? 0) > 0) {
             try {
-                $revoked = $this->realismRepository->revokeCertificatesForTerminal($tenantId, (int) $terminal['id'], 'keyCompromise');
+                $revokedIds = $this->realismRepository->revokeCertificateIdsForTerminal($tenantId, (int) $terminal['id'], 'keyCompromise');
             } catch (\Throwable) {
-                $revoked = 0;
+                $revokedIds = [];
             }
         }
+        $revoked = count($revokedIds);
+        $fleet = new \App\Repositories\AtakAdminControlRepository();
+        if (!$this->isGameClient()) {
+            // Décidé au poste de commandement : le joueur en est averti sur son ATAK (en jeu, le camp l'est déjà par le mod).
+            $fleet->notifyPlayer(
+                $terminal,
+                $state === 'none' ? 'compromise_cleared' : 'compromise',
+                $state === 'none' ? 'Compromission levée' : ($state === 'compromised' ? 'ATAK compromis' : 'ATAK capturé'),
+                $reason !== '' ? $reason : ($state === 'none' ? 'Levée par le poste de commandement' : 'Déclarée par le poste de commandement')
+            );
+        }
+        // Historique de l'ATAK (/admin/parc-atak/fiche), d'où l'administration du site peut l'annuler.
+        $fleet->recordCompromise(
+            $terminal,
+            $state,
+            $reason !== '' ? $reason : null,
+            $this->isGameClient() ? 'game' : 'web',
+            $revokedIds
+        );
 
         try {
             $activity = new \App\Services\Tactical\AtakActivityLogService();
@@ -401,6 +432,13 @@ final class AtakRealismApiController
         $cert = $result['certificate'];
         $replaced = !empty($result['replaced']);
         $ref = trim((string) ($cert['certificate_ref'] ?? ''));
+        // Le joueur voit sur son ATAK que son certificat a été régénéré.
+        (new \App\Repositories\AtakAdminControlRepository())->notifyPlayer(
+            $this->realismRepository->findTerminalById($tenantId, $terminalId) ?? [],
+            'certificate',
+            $replaced ? 'Certificat régénéré' : 'Certificat émis',
+            $ref !== '' ? 'Référence : ' . $ref : ''
+        );
         $message = $replaced
             ? 'Certificat renouvelé. L’opérateur en liaison le recevra d’ici quelques instants.'
             : 'Certificat émis. L’opérateur en liaison le recevra d’ici quelques instants.';

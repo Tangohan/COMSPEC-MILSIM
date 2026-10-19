@@ -12,7 +12,7 @@ switch (_how) do {
         _n set ["offReason", ["Écran remplacé", "Nouvel appareil"] select (_how isEqualTo "swap")];
         _n deleteAt "brokenReason";
         // Composants remis à neuf (écran neuf : propre ; nouvel appareil : tout, y compris le sang sur la coque et l'historique).
-        { _n deleteAt _x; } forEach ["scratch", "pixels", "battery", "audio", "gps", "antenna", "dust", "blood", "prints", "drops", "wet"];
+        { _n deleteAt _x; } forEach ["scratch", "pixels", "battery", "audio", "gps", "antenna", "dust", "blood", "stains", "prints", "drops", "wet"];
         if (_how isEqualTo "swap") then { { _n deleteAt _x; } forEach ["frameBlood", "log", "dirtSeed"]; };
         // Nouvel appareil : nouvel IMEI et nouvelle adresse MAC (le numéro suit la carte SIM).
         if (_how isEqualTo "swap") then { player setVariable ["COMSPEC_ATAK_PhoneGen", (player getVariable ["COMSPEC_ATAK_PhoneGen", 0]) + 1, true]; };

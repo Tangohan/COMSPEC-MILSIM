@@ -45,7 +45,8 @@ final class AtakArmaWriteGuard
 
         $steamRaw = $this->extractSteamRaw($request, $body);
         $steam = $steamRaw !== '' ? SteamId::normalize($steamRaw) : null;
-        if ($steamRaw !== '' && $steam === null) {
+        // _SP_PLAYER_ (solo / hôte local) : pas d'identifiant, on poursuit comme sans Steam au lieu d'un 400 répété.
+        if ($steamRaw !== '' && $steam === null && !SteamId::isPlaceholder($steamRaw)) {
             $this->log($tenantId, false, 'Données jeu refusées — identifiant Steam invalide', [
                 'reason' => 'invalid_steam_uid',
             ]);
@@ -109,6 +110,7 @@ final class AtakArmaWriteGuard
             $steam = $bound;
         }
 
+        $user = null;
         if ($steam !== null) {
             $user = $this->users->findBySteamIdForTenant($tenantId, $steam);
             if ($user === null) {
@@ -152,6 +154,17 @@ final class AtakArmaWriteGuard
                 'error' => 'steam_required',
                 'message' => 'Identifiant Steam requis. Mettez à jour le mod Overwatch, puis reconnectez-vous.',
             ], 403);
+        }
+
+        // Blocage décidé par l'administration du site (/admin/parc-atak) : par compte, Steam ou ATAK.
+        $blockedUserId = $user !== null ? (int) ($user['id'] ?? 0) : (int) (ComspecApiKeyAuth::matchedUserId() ?? 0);
+        $adminBlock = AtakAdminBlockGate::deny($tenantId, $blockedUserId ?: null, $steam);
+        if ($adminBlock instanceof Response) {
+            $this->log($tenantId, false, 'Accès jeu refusé — ATAK bloqué par l’administration', [
+                'reason' => 'atak_blocked',
+            ]);
+
+            return $adminBlock;
         }
 
         $modBlock = $this->assertModNotBlocked($tenantId, $steam);
@@ -328,6 +341,14 @@ final class AtakArmaWriteGuard
      */
     public function assertModNotBlocked(int $tenantId, ?string $steamUid, ?string $clientIp = null): ?Response
     {
+        $adminBlock = AtakAdminBlockGate::deny($tenantId, null, $steamUid);
+        if ($adminBlock instanceof Response) {
+            $this->log($tenantId, false, 'Accès jeu refusé — ATAK bloqué par l’administration', [
+                'reason' => 'atak_blocked',
+            ]);
+
+            return $adminBlock;
+        }
         $blocklist = $this->blocklist;
         if ($blocklist === null) {
             try {

@@ -476,6 +476,24 @@ if ((count _sel) isEqualTo 0) then {
         [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 2]] select (_dist >= 1000), round (player getDir _pos), [player getDir _pos] call _card,
         _speed, round (_e getOrDefault ["heading", 0]), round (_pos select 2), _health, _eta, _close, _offTxt, _ftTxt]) call comspec_atak_native_fnc_tr);
 };
+// Vibreur : composition du message (alerte à l'écran de son téléphone, avec mon texte) à la place de la fiche.
+private _buzzOn = (count _sel) > 0 && {(_s getOrDefault ["bftBuzz", ""]) isEqualTo (_sel select 1)};
+if (_buzzOn) then {
+    private _who = [[(_sel select 1), (_sel select 2)] call _labelOf] call _esc;
+    _det ctrlSetStructuredText parseText ((format ["<t size='1.1' font='COMSPEC_BarlowBold'>VIBREUR · %1</t><br/><t size='0.8' color='#8a9a93'>Son téléphone vibre et affiche une alerte avec votre message, même rangé. Message rapide, ou texte libre puis ENVOYER.</t>", _who]) call comspec_atak_native_fnc_tr);
+    private _presets = ["RALLIEMENT", "CONTACT", "STOP", "BESOIN D'AIDE", "APPELEZ-MOI", "RAS"];
+    private _pw = (_dw - _pad * 4) / 3;
+    private _py = _dy + _font * 2.6;
+    {
+        private _b = ["COMSPEC_RscButton", [_dx + (_forEachIndex mod 3) * (_pw + _pad * 2), _py + (floor (_forEachIndex / 3)) * (_font * 1.5), _pw, _font * 1.35], _x] call comspec_atak_native_fnc_pageCtrl;
+        _b ctrlSetFontHeight _fs;
+        _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['buzzSend', %1] call comspec_atak_native_fnc_bftAction; }] call CBA_fnc_execNextFrame;", str _x]];
+    } forEach _presets;
+    private _ed = ["COMSPEC_RscEdit", [_dx, _py + _font * 3.2, _dw, _font * 1.4], uiNamespace getVariable ["COMSPEC_ATAK_BuzzDraft", ""]] call comspec_atak_native_fnc_pageCtrl;
+    _ed ctrlSetFontHeight _fs;
+    _ed ctrlSetTooltip (("Texte libre (80 caractères)") call comspec_atak_native_fnc_tr);
+    uiNamespace setVariable ["COMSPEC_ATAK_BuzzEdit", _ed];
+};
 private _bw3 = (_dw - _pad * 4) / 5;
 {
     _x params ["_t", "_act", "_on"];
@@ -483,13 +501,16 @@ private _bw3 = (_dw - _pad * 4) / 5;
     _b ctrlSetFontHeight _fs;
     _b ctrlEnable _on;
     _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call CBA_fnc_execNextFrame;", _act]];
-} forEach [
+} forEach ([[
     ["CARTE", "center", (count _sel) > 0],
     ["Y ALLER", "route", (count _sel) > 0],
     ["SMS", "sms", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)}],
     [["VIBRER", "HORS LIGNE"] select ((count _sel) > 0 && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isEqualTo "OFFLINE"}), "buzz",
-        _meOn && {(count _sel) > 0} && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isNotEqualTo "OFFLINE"}],
+        _meOn && {(count _sel) > 0} && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {(_sel select 3) isNotEqualTo player} && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isNotEqualTo "OFFLINE"}],
     // Caméra poitrine de l'équipier, en petite fenêtre sur la carte (Live cam).
     ["VOIR CAMÉRA", "cam", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {alive (_sel select 3)} && {(_sel select 3) isNotEqualTo player} && {[_sel select 3] call comspec_atak_native_fnc_hasDevice}]
-];
+], [
+    ["ANNULER", "buzzCancel", true],
+    ["ENVOYER", "buzzSend", _meOn]
+]] select _buzzOn);
 true

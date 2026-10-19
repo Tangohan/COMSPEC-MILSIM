@@ -6,6 +6,7 @@ namespace Tests\Unit;
 
 use App\Support\ArmaMarkerLabel;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakVanillaMapMarkerWebAssetTest extends TestCase
 {
@@ -25,8 +26,8 @@ final class AtakVanillaMapMarkerWebAssetTest extends TestCase
 
         self::assertStringContainsString('class syncUserMapMarkers {}', $cfgC);
         self::assertStringContainsString('class resolveMarkerEhName {}', $cfgC);
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
-        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
 
         self::assertStringContainsString('_user_defined', $syncUser);
         self::assertStringContainsString('syncMapMarker', $syncUser);

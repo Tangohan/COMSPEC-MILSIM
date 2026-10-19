@@ -38,7 +38,7 @@ switch (_act) do {
             private _on = _v isNotEqualTo "-";
             if (_v isEqualTo _o) then { continue; };
             switch (_k) do {
-                case "off": { if (_on) then { hintSilent ((parseText "<t size='1.1' color='#e5483a'>Terminal désactivé à distance</t><br/>Le commandement a coupé votre ATAK.") call comspec_atak_native_fnc_tr); } else { ["SUCCESS", "Terminal réactivé par le commandement", 5, 60] call comspec_atak_native_fnc_notify; }; };
+                case "off": { if (_on) then { ["ERROR", "Terminal désactivé à distance : le commandement a coupé votre ATAK", 8, 90] call comspec_atak_native_fnc_notify; } else { ["SUCCESS", "Terminal réactivé par le commandement", 5, 60] call comspec_atak_native_fnc_notify; }; };
                 case "lock": { if (!_on) then { ["SUCCESS", "Terminal déverrouillé", 4, 50] call comspec_atak_native_fnc_notify; }; };
                 case "mute": { ["WARNING", ["Haut-parleurs rétablis", "Haut-parleurs coupés à distance"] select _on, 4, 40] call comspec_atak_native_fnc_notify; };
                 case "jam": { ["WARNING", [format ["Brouillage : %1 %%", _v], "Fin du brouillage"] select !_on, 4, 40] call comspec_atak_native_fnc_notify; };
@@ -90,6 +90,17 @@ switch (_act) do {
                 call _redraw;
             };
             case "reboot": { ["reboot"] call comspec_atak_native_fnc_deviceRepair; };
+            case "blood": { ["zeus", [_a param [0, 50]]] call comspec_atak_native_fnc_screenDirt; call _redraw; };
+            case "clean": {
+                // Nettoyage forcé, même si le joueur a coupé la saleté de son côté (fn_screenDirt ne l'aurait pas fait).
+                private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
+                { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood", "blood"];
+                _n set ["stains", []];
+                missionNamespace setVariable ["COMSPEC_ATAK_Device", _n];
+                missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0];
+                ["SUCCESS", "Écran nettoyé par le commandement", 3, 30] call comspec_atak_native_fnc_notify;
+                call _redraw;
+            };
             case "battery": {
                 private _lv = (_a param [0, 100]) max 0 min 100;
                 missionNamespace setVariable ["COMSPEC_ATAK_Battery", _lv];

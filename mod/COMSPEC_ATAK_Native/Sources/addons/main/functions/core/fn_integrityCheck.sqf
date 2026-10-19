@@ -18,9 +18,12 @@
 */
 params [["_mode", "start"], ["_simulate", ""]];
 
-// -1, 0, 1 : "1.9.0" < "1.10.0".
+// -1, 0, 1 : "1.9.0" < "1.10.0". Seuls MAJEUR.MINEUR.CORRECTIF comptent : une empreinte de build après un espace
+// (« 1.94.0 - 2026.10.14 a1b2c3d ») est ignorée (docs/VERSIONING.md).
 private _cmp = {
     params ["_a", "_b"];
+    _a = (_a splitString " ") param [0, ""];
+    _b = (_b splitString " ") param [0, ""];
     private _va = (_a splitString ".") apply { parseNumber _x };
     private _vb = (_b splitString ".") apply { parseNumber _x };
     private _r = 0;
@@ -47,7 +50,7 @@ private _raise = {
     uiNamespace setVariable ["COMSPEC_ATAK_IntegritySeen", _seen];
     [_level, _text, 12, 60] call comspec_atak_native_fnc_notify;
     // Téléphone fermé ou cassé par le PBO périmé lui-même : la ligne reste visible dans le chat.
-    if (_level isEqualTo "ERROR") then { systemChat format ["[COMSPEC ATAK] %1", _text call comspec_atak_native_fnc_tr]; };
+    if (_level isEqualTo "ERROR") then { systemChat format ["[COMSPEC ATAK] %1", _text call comspec_atak_native_fnc_tr]; }; // i18n:brut (déjà traduit)
 };
 // Version de la DLL chargée, "" si elle ne répond pas. « OK|COMSPECExtension 2.0.78 ».
 // Version de la DLL chargée, "" si elle ne répond pas (fn_extVersion, relue à chaque contrôle).
@@ -127,7 +130,7 @@ switch (toLower _mode) do {
             private _r = "COMSPECATAKNativeExtension" callExtension ["Ping", []];
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             if (!(_r isEqualType "") || {(_r select [0, 3]) isNotEqualTo "OK|"}) then {
-                ["dll", "WARNING", "La DLL native de COMSPEC ATAK ne répond pas : pas de connexion Athena. Vérifiez COMSPECATAKNativeExtension_x64.dll dans @COMSPEC_ATAK_Native."] call _raise;
+                ["dll", "WARNING", "La DLL native de COMSPEC ATAK ne répond pas : pas de connexion Athena. BattlEye actif ? Désactivez-le dans le lanceur Arma 3 et relancez le jeu ; sinon vérifiez COMSPECATAKNativeExtension_x64.dll dans @COMSPEC_ATAK_Native."] call _raise;
             };
         };
         ["INFO", "INTEGRITY", format ["Contrôle de l'installation : code %1, config %2, %3 anomalie(s)", _code, _cfg, count (missionNamespace getVariable ["COMSPEC_ATAK_Integrity", []])]] call comspec_atak_native_fnc_log;

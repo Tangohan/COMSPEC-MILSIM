@@ -6,6 +6,7 @@ namespace App\Services\Personnel;
 
 use App\Core\Database;
 use App\Repositories\QualificationReferentielRepository;
+use App\Support\SqlText;
 use PDO;
 use Throwable;
 
@@ -133,7 +134,7 @@ final class QualificationPermissionGrantService
     private function resolvePermissionId(PDO $pdo, string $code): ?int
     {
         try {
-            $st = $pdo->prepare('SELECT id FROM permissions WHERE slug = ? LIMIT 1');
+            $st = $pdo->prepare('SELECT id FROM permissions WHERE ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
             $st->execute([$code]);
         } catch (Throwable) {
             $st = $pdo->prepare('SELECT id FROM permissions WHERE code = ? LIMIT 1');

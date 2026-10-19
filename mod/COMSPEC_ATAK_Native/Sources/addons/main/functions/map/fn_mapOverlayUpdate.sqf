@@ -1,5 +1,11 @@
-/* Met à jour les superpositions de la carte : boussole, panneau curseur, carte « moi », barre de données, outils actifs. */
-params [["_cursorOnly", false]];
+/*
+    Met à jour les superpositions de la carte : boussole, panneau curseur, carte « moi », barre de données, outils actifs.
+    Params : [curseur seulement, boussole seulement]
+    Boussole seulement : appelée à chaque image par fn_mapOnDraw (mini, porté et plein écran) ; l'aiguille suit le cap
+    sans attendre la seconde suivante (retour de jeu : « en mode mini, ça rame, ce n'est pas dynamique »). Coût minime :
+    deux ctrlSetAngle, et le texte du cap ou du bandeau seulement quand le degré affiché change.
+*/
+params [["_cursorOnly", false], ["_compassOnly", false]];
 disableSerialization;
 private _ov = uiNamespace getVariable ["COMSPEC_ATAK_MapOverlay", createHashMap];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -7,6 +13,24 @@ private _cardinal = {
     params ["_a"];
     ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_a / 45)) mod 8)
 };
+if (_compassOnly) exitWith {
+    private _h = getDirVisual (vehicle player);
+    if ((abs (_h - (_ov getOrDefault ["compassH", -1]))) < 0.2) exitWith { false };
+    _ov set ["compassH", _h];
+    private _needle = _ov getOrDefault ["needle", controlNull];
+    if (!isNull _needle) then { _needle ctrlSetAngle [_h, 0.5, 0.5]; };
+    private _card = _ov getOrDefault ["compassCard", controlNull];
+    if (!isNull _card) then { _card ctrlSetAngle [-_h, 0.5, 0.5]; };
+    // Cap en texte et bandeau : redessinés au changement de degré seulement (passage complet, sans le curseur).
+    if ((round _h) isNotEqualTo (_ov getOrDefault ["compassDeg", -1])) then {
+        _ov set ["compassDeg", round _h];
+        private _hd = _ov getOrDefault ["heading", controlNull];
+        if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", (round _h) mod 360, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
+        if (!isNull (_ov getOrDefault ["compassTape", controlNull])) then { [true, false, true] call comspec_atak_native_fnc_mapOverlayUpdate; };
+    };
+    true
+};
+params ["", "", ["_tapeOnly", false]];
 
 private _cur = _ov getOrDefault ["cursor", controlNull];
 if (!isNull _cur) then {
@@ -68,9 +92,9 @@ if (!isNull _cur) then {
         _cur ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
     };
 };
-if (_cursorOnly) exitWith { true };
+if (_cursorOnly && {!_tapeOnly}) exitWith { true };
 
-private _h = getDir (vehicle player);
+private _h = getDirVisual (vehicle player);
 // Flèche de cap vers l'étape active (points de passage).
 private _wa = _ov getOrDefault ["wpArrow", controlNull];
 if (!isNull _wa) then {
@@ -112,6 +136,7 @@ if (!isNull _tape) then {
         "<t align='center' font='EtelkaMonospaceProBold' size='0.85'>%1  %2  %3 <t color='#5cc76b' size='1.05'>│%4°│</t> %5  %6  %7</t>",
         _left select 0, _left select 1, _left select 2, round _h, _right select 0, _right select 1, _right select 2]) call comspec_atak_native_fnc_tr);
 };
+if (_tapeOnly) exitWith { true };
 private _hd = _ov getOrDefault ["heading", controlNull];
 if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", round _h, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
 

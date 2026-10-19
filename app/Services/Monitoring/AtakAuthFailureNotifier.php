@@ -78,6 +78,11 @@ final class AtakAuthFailureNotifier
             return false;
         }
         $blob = mb_strtolower($message . ' ' . $detail);
+        // Panne serveur ou communauté introuvable mêlée au rapport : ce n'est pas un jeton périmé,
+        // l'e-mail « reconnectez-vous » serait faux.
+        if (preg_match('/\bhttp\s*5\d\d\b|tenant_context_required|migration_required|momentanément indisponible/u', $blob) === 1) {
+            return false;
+        }
         foreach (self::AUTH_NEEDLES as $needle) {
             if (str_contains($blob, $needle)) {
                 return true;

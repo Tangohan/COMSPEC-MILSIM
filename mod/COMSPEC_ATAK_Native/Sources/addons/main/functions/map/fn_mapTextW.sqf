@@ -23,7 +23,7 @@ if (isNull _c) then {
 if (!isNull _c) then {
     _c ctrlSetFont _font;
     _c ctrlSetFontHeight _size;
-    _c ctrlSetText _txt;
+    _c ctrlSetText _txt; // i18n:brut (mesure de largeur)
     _w = ctrlTextWidth _c;
 };
 if (_w <= 0) then { _w = (count _txt) * _size * 0.5 * pixelW / pixelH; };

@@ -46,7 +46,7 @@ final class EffectifsRolesUiAssetTest extends TestCase
 
         self::assertStringContainsString('organigramme', $view);
         self::assertStringContainsString('ORBAT', $view);
-        self::assertStringContainsString('Ce ne sont pas des droits d’accès', $view);
+        self::assertStringContainsString('Ce n’est pas un droit d’accès', $view);
         self::assertStringContainsString('Nouvel emploi', $view);
         self::assertStringContainsString('Qui tient quel emploi', $view);
         self::assertStringContainsString('effectifs_workspace_url(\'fonctions/nouveau\')', $view);

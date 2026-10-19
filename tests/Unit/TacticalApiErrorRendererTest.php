@@ -14,9 +14,43 @@ use RuntimeException;
 
 final class TacticalApiErrorRendererTest extends TestCase
 {
+    /** @var array{set: bool, locale: mixed, translator: mixed} */
+    private array $savedLocale = ['set' => false, 'locale' => null, 'translator' => null];
+
+    /**
+     * Le site est anglais par défaut et d'autres tests posent $GLOBALS['__app_locale'] :
+     * on fige le français pour les assertions « réessayez », puis on restaure l'état.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->savedLocale = [
+            'set' => array_key_exists('__app_locale', $GLOBALS),
+            'locale' => $GLOBALS['__app_locale'] ?? null,
+            'translator' => $GLOBALS['__app_translator'] ?? null,
+        ];
+        $this->useLocale('fr');
+    }
+
+    private function useLocale(string $locale): void
+    {
+        $GLOBALS['__app_locale'] = $locale;
+        unset($GLOBALS['__app_translator']);
+    }
+
     protected function tearDown(): void
     {
         ComspecApiKeyAuth::resetForTests();
+        if ($this->savedLocale['set']) {
+            $GLOBALS['__app_locale'] = $this->savedLocale['locale'];
+        } else {
+            unset($GLOBALS['__app_locale']);
+        }
+        if ($this->savedLocale['translator'] !== null) {
+            $GLOBALS['__app_translator'] = $this->savedLocale['translator'];
+        } else {
+            unset($GLOBALS['__app_translator']);
+        }
         unset(
             $_SERVER['REQUEST_METHOD'],
             $_SERVER['REQUEST_URI'],
@@ -44,6 +78,16 @@ final class TacticalApiErrorRendererTest extends TestCase
         self::assertStringNotContainsString('127.0.0.1', $body);
         self::assertStringNotContainsString('PDO', $body);
         self::assertStringContainsString('réessayez', mb_strtolower($payload['message']));
+    }
+
+    public function testPayloadFollowsEnglishLocale(): void
+    {
+        $this->useLocale('en');
+        $e = new RuntimeException('Database connection failed: SQLSTATE[HY000] [2002] Operation not permitted — app/Core/Database.php:116');
+        $payload = TacticalApiErrorRenderer::payload($e);
+
+        self::assertStringNotContainsString('SQLSTATE', (string) $payload['message']);
+        self::assertStringContainsString('try again', mb_strtolower((string) $payload['message']));
     }
 
     public function testPublicApiAtakPathIsTacticalEvenWithPublicPrefix(): void

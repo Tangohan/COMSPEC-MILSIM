@@ -1,12 +1,14 @@
 /*
     Assemble le payload fiche opérateur jeu (HashMap prêt à sérialiser).
-    Params: [_unit, _event, _reason]
+    Params: [_unit, _event, _reason, _light]
+      _light : true = seulement de quoi calculer l'empreinte (contrôle périodique), sans catalogue ni liste de mods.
     Retour: HashMap
 */
 params [
     ["_unit", objNull, [objNull]],
     ["_event", "sync", [""]],
-    ["_reason", "profile_sync", [""]]
+    ["_reason", "profile_sync", [""]],
+    ["_light", false, [true]]
 ];
 
 if (isNull _unit) then { _unit = player; };
@@ -65,5 +67,25 @@ _payload set ["mission_name", _missionTitle];
 _payload set ["mission_id", _environment getOrDefault ["mission_id", _missionFolder]];
 _payload set ["world_name", _environment getOrDefault ["world_name", ""]];
 _payload set ["fingerprint", _fp];
+if (_light) exitWith { _payload };
+private _full = (toLower _event) isEqualTo "register";
+// Objets portés avec leur mod (top des armes, gilets… et kits par rôle d'Athena) : à l'enregistrement, puis
+// seulement quand la liste change. Le site garde le nom et le mod déjà connus de chaque objet (sans catalogue, il
+// relève les objets portés depuis l'équipement), inutile de renvoyer ce catalogue à chaque fiche.
+private _catalog = [_equipment getOrDefault ["loadout", []]] call comspec_overwatch_connect_fnc_collectItemCatalog;
+private _catalogCls = _catalog apply { if (_x isEqualType createHashMap) then { _x getOrDefault ["class", ""] } else { str _x } };
+_catalogCls sort true;
+private _catalogKey = str _catalogCls;
+if (_full || {(missionNamespace getVariable ["COMSPEC_OpCatalogSentKey", ""]) isNotEqualTo _catalogKey}) then {
+    _payload set ["item_catalog", _catalog];
+    _payload set ["item_catalog_key", _catalogKey];
+};
+// Mods chargés : à l'enregistrement, puis seulement quand la liste change (elle ne bouge pas en cours de partie).
+private _mods = [] call comspec_overwatch_connect_fnc_collectLoadedMods;
+private _modsKey = str (_mods apply { _x get "dir" });
+if (_full || {(missionNamespace getVariable ["COMSPEC_OpModsSentKey", ""]) isNotEqualTo _modsKey}) then {
+    _payload set ["mods", _mods];
+    _payload set ["mods_key", _modsKey];
+};
 
 _payload

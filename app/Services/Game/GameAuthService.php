@@ -472,6 +472,21 @@ final class GameAuthService
             }
         }
         $steamId = $this->resolveSteamId($body, $account, $chosen);
+        // ATAK bloqué par l'administration du site (/admin/parc-atak) : ni connexion ni reprise de session.
+        $block = \App\Support\AtakAdminBlockGate::find(
+            $tenantId,
+            (int) $chosen['user_id'],
+            $this->hasSteamId($steamId) ? (string) $steamId : null,
+            $deviceId
+        );
+        if ($block !== null) {
+            if ($rotateSessionId !== null && $rotateSessionId > 0) {
+                $this->accounts->revokeSession($rotateSessionId);
+            }
+            $deny = \App\Support\AtakAdminBlockGate::payload($block);
+
+            return $this->fail('ATAK_BLOCKED', 403, ['message' => $deny['message'], 'blocked_until' => $deny['blocked_until']]);
+        }
         $access = bin2hex(random_bytes(32));
         $refresh = bin2hex(random_bytes(32));
         $pairingPlain = null;

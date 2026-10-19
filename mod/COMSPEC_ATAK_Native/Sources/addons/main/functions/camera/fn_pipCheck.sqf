@@ -8,16 +8,15 @@
                                 Relève aussi une distance de vue PiP trop courte (un autre mod ou la mission a pu la
                                 baisser : la caméra ne dessine alors rien) ;
       ["watch", [source, caméra, nom r2t, texture, image]]   journal de l'ouverture du flux (étapes 1 à 5), puis
-                                l'image est rebranchée sur la texture une image, deux images et 0,6 s plus tard (une
-                                texture posée avant le premier rendu de la caméra peut rester noire) et l'état est
-                                relevé à 2 s (caméra, image, texture) ;
+                                l'état est relevé à 2 s (caméra, image, texture) ;
+      ["state", [source, caméra, porteur]]   ligne d'état RPT d'un flux à l'écran (drone, toutes les 15 s) ;
       ["rebind", [image, texture]]   pose de nouveau la texture sur l'image (si elle est toujours là).
       ["test"]                TEST VIDÉO (apps Drone et Photo) : une grille de 9 images, lettres A à I, pendant 30 s, dans une
                                 fenêtre ouverte par-dessus le téléphone. A reprend le premier test (qui s'affiche chez TTRD,
                                 13/10 21:20), chaque autre lettre ajoute une seule différence avec les vues Photo et Drone
                                 (noires) : texture 1024, image 16/9, caméra déplacée comme l'app Photo, déplacée par
-                                position seule, accrochée comme le drone, posée 30 m plus haut, thermique, flux réel du
-                                drone. Les lettres noires désignent la cause ; le journal note où chaque caméra se trouve.
+                                position seule, accrochée comme le drone, posée 30 m plus haut, caméra de test accrochée au
+                                drone (J), flux réel du drone (I). Les lettres noires désignent la cause ; le journal note où chaque caméra se trouve.
     source : "DRONE" ou "PHOTO" (préfixe des lignes du journal).
 */
 params [["_act", "check"], ["_arg", ""]];
@@ -38,7 +37,11 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_PipTestPose", [_eye, _flat]];
         // Variantes : [lettre, ce qui change par rapport à A, texture, rapport, mode]. Chaque différence entre le premier
         // TEST VIDÉO (qui s'affiche) et les vues de l'app Photo et de l'app Drone (noires) a sa lettre.
+        // Le flux réel du drone (I) passe en premier : au test du 14/10, les huit caméras de script A à H s'affichaient
+        // toutes et seule I restait vide. Créée avant les autres, elle dit si c'est la caméra du drone elle-même ou le
+        // nombre de rendus simultanés (I était la 9e cible r2t ouverte).
         private _variants = [
+            ["I", "flux réel du drone", 0, 1.7778, "drone"],
             ["A", "référence (premier test)", 512, 1, "static"],
             ["B", "texture 1024", 1024, 1, "static"],
             ["C", "image 16/9", 512, 1.7778, "static"],
@@ -46,8 +49,7 @@ switch (_act) do {
             ["E", "suit la vue (position seule)", 512, 1, "pos"],
             ["F", "accrochée comme le drone", 512, 1, "attach"],
             ["G", "30 m au-dessus, vers le sol", 512, 1, "high"],
-            ["H", "thermique", 512, 1, "thermal"],
-            ["I", "flux réel du drone", 0, 1.7778, "drone"]
+            ["J", "caméra de test accrochée au drone", 512, 1, "dronetest"]
         ];
         private _top = _parent createDisplay "RscDisplayEmpty";
         if (isNull _top) exitWith { ["WARNING", "TEST VIDÉO : fenêtre de test impossible à ouvrir"] call _say; };
@@ -78,7 +80,21 @@ switch (_act) do {
                 private _cu = [0, 0, 1];
                 if (_mode isEqualTo "high") then { _pos = _eye vectorAdd [0, 0, 30]; _cd = [0, 0, -1]; _cu = _flat; };
                 _cam = "camera" camCreate [0, 0, 0];
-                // Comme le drone : rendu lancé d'abord, puis accrochée et orientée.
+                private _dt = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+                if (_mode isEqualTo "dronetest" && {isNull _dt || {!alive _dt}}) then { _mode = "static"; _note = "aucun drone appairé : vue fixe"; };
+                // J : caméra de script toute simple accrochée au drone, sous lui, vers l'avant et le bas. Si J s'affiche et
+                // I reste noire, c'est notre caméra du flux ; si J reste noire aussi, c'est le drone lui-même.
+                if (_mode isEqualTo "dronetest") then {
+                    (boundingBoxReal _dt) params ["_b0", "_b1"];
+                    private _jo = [0, (_b1 select 1) + 0.3, (_b0 select 2) - 0.3];
+                    _pos = _dt modelToWorldVisualWorld _jo;
+                    _cam setPosASL _pos;
+                    _cam cameraEffect ["Internal", "Back", _name];
+                    _cam camSetFov 0.75;
+                    _cam camCommit 0;
+                    _cam attachTo [_dt, _jo];
+                    _cam setVectorDirAndUp [[0, 0.8, -0.6], [0, 0.6, 0.8]];
+                } else {
                 if (_mode isEqualTo "attach") then {
                     _cam setPosASL _pos;
                     _cam cameraEffect ["Internal", "Back", _name];
@@ -92,6 +108,7 @@ switch (_act) do {
                     _cam cameraEffect ["Internal", "Back", _name];
                     _cam camSetFov 0.75;
                     _cam camCommit 0;
+                };
                 };
                 _name setPiPEffect [[0, 2] select (_mode isEqualTo "thermal")];
                 _cam setVariable ["pipTest", [_k, _mode, _pos]];
@@ -202,6 +219,30 @@ switch (_act) do {
         };
         ""
     };
+    // État d'un flux à l'écran (boucle de la nacelle du drone, toutes les 15 s) : une ligne RPT
+    // « [CAMERA] DRONE état » avec ce qui peut rendre l'image noire. Params : [source, caméra, objet porteur].
+    case "state": {
+        _arg params [["_src", "?"], ["_cam", objNull], ["_host", objNull]];
+        if (isNull _cam) exitWith { ["WARNING", format ["%1 état : caméra absente", _src]] call _say; false };
+        private _asl = getPosASLVisual _cam;
+        private _gnd = getTerrainHeightASL _asl;
+        private _name = _cam getVariable ["r2t", ""];
+        private _vd = vectorDirVisual _cam;
+        private _bad = [];
+        if !(isPiPEnabled) then { _bad pushBack "PiP coupée"; };
+        if ((_asl select 2) < _gnd - 0.2) then { _bad pushBack "caméra sous le sol"; };
+        if (!isNull _host && {(_cam distance _host) > 5}) then { _bad pushBack "caméra loin du drone"; };
+        if !(_cam getVariable ["rendering", true]) then { _bad pushBack "rendu coupé"; };
+        if ((vectorMagnitude _vd) < 0.5 || {!finite (_vd select 0)}) then { _bad pushBack "orientation invalide"; };
+        [["INFO", "WARNING"] select (_bad isNotEqualTo []), format ["%1 état : cible %2 (créée il y a %3 s), rendu %4, caméra à %5 m du sol et %6 m du drone, accrochée à %7, regarde %8, champ x%9, vision %10, PiP %11 à %12 m, %13 i/s%14",
+            _src, _name, round (diag_tickTime - (_cam getVariable ["born", diag_tickTime])), ["COUPÉ", "actif"] select (_cam getVariable ["rendering", true]),
+            round (((_asl select 2) - _gnd) * 10) / 10, [round ((_cam distance _host) * 10) / 10, "-"] select (isNull _host),
+            [typeOf (attachedTo _cam), "rien"] select (isNull (attachedTo _cam)), _vd apply { (round (_x * 100)) / 100 },
+            missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1], ["JOUR", "NUIT", "THERMIQUE"] select ((missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]) max 0 min 2),
+            ["DÉSACTIVÉE", "active"] select isPiPEnabled, round getPiPViewDistance, round diag_fps,
+            ["", " ; PROBLÈME : " + (_bad joinString ", ")] select (_bad isNotEqualTo [])]] call _say;
+        true
+    };
     case "rebind": {
         _arg params [["_ctrl", controlNull], ["_tex", ""]];
         if (isNull _ctrl || {_tex isEqualTo ""}) exitWith { false };
@@ -221,12 +262,8 @@ switch (_act) do {
         ["INFO", format ["%1 : étape 5 image : %2 ; texte de l'image %3", _src, ["ABSENTE", "posée"] select (!isNull _ctrl),
             [str (ctrlText _ctrl), "-"] select (isNull _ctrl)]] call _say;
         ["INFO", format ["%1 : options vidéo %2", _src, getVideoOptions]] call _say;
-        // Rebranchements : la cible de rendu n'existe qu'après le premier rendu de la caméra (fin d'image).
-        if (!isNull _ctrl && {_tex isNotEqualTo ""}) then {
-            [{ ["rebind", _this] call comspec_atak_native_fnc_pipCheck; }, [_ctrl, _tex]] call CBA_fnc_execNextFrame;
-            [{ [{ ["rebind", _this] call comspec_atak_native_fnc_pipCheck; }, _this] call CBA_fnc_execNextFrame; }, [_ctrl, _tex]] call CBA_fnc_execNextFrame;
-            [{ ["rebind", _this] call comspec_atak_native_fnc_pipCheck; }, [_ctrl, _tex], 0.6] call CBA_fnc_waitAndExecute;
-        };
+        // Plus de rebranchement de la texture après coup (2.1.1) : seules les vues qui la reposaient (Drone, Photo)
+        // restaient noires ; Vidéo Live et le TEST VIDÉO, qui la posent une fois, s'affichent.
         // Relevé à 2 s : ce qui a changé entre-temps (caméra détruite, image retirée ou repointée, PiP coupée).
         [{
             params ["_src", "_cam", "_name", "_tex", "_ctrl"];

@@ -33,7 +33,15 @@ final class ArsenalWardrobeChunkAssetTest extends TestCase
         self::assertStringContainsString('OK|NEXT', $ext);
         self::assertStringContainsString('CHUNKED', $ext);
         // Plus de hard-fail sur le détail (chunking à la place).
-        self::assertDoesNotMatchRegularExpression('/GetWardrobe[\s\S]{0,800}ERR\|too_large/', $ext);
+        // On cible le handler GetWardrobe lui-même (un commentaire de cache cite « évite ERR|too_large »).
+        $start = strpos($ext, 'if (function == "GetWardrobe" && ');
+        $end = strpos($ext, 'if (function == "GetWardrobeChunk" && ');
+        self::assertNotFalse($start);
+        self::assertNotFalse($end);
+        self::assertGreaterThan($start, $end);
+        $getWardrobe = substr($ext, $start, $end - $start);
+        self::assertStringNotContainsString('ERR|too_large', $getWardrobe);
+        self::assertStringContainsString('OK|CHUNKED', $getWardrobe);
 
         self::assertStringContainsString('CHUNKED', $cloud);
         self::assertStringContainsString('GetWardrobeChunk', $cloud);
@@ -45,8 +53,10 @@ final class ArsenalWardrobeChunkAssetTest extends TestCase
 
         self::assertStringContainsString('JVN', $icons);
         self::assertStringContainsString('Contenu gilet', $icons);
-        self::assertStringContainsString('_fnc_initCollapsed', $refresh);
+        // Les groupes repliables (_fnc_initCollapsed) ont laissé place au cache de liste (90 s) avant redessin.
+        self::assertStringContainsString('COMSPEC_ArsenalWardrobeLines', $refresh);
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_arsenalOverlayFill', $refresh);
         self::assertStringContainsString('arsenalListWardrobes', $refresh);
-        self::assertMatchesRegularExpression('/1\\.5\\.\\d+/', $cfg);
+        \Tests\Support\ModVersion::assertAtLeast('1.5.0', \Tests\Support\ModVersion::fromConfigCpp($cfg));
     }
 }

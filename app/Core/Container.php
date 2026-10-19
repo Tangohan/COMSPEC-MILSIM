@@ -488,6 +488,23 @@ class Container
                 self::get(\App\Repositories\ArsenalWardrobeRepository::class),
                 self::get(\App\Services\Dashboard\DashboardWardrobeShowcaseService::class)
             ),
+            \App\Repositories\GameEquipmentRepository::class => new \App\Repositories\GameEquipmentRepository(),
+            \App\Repositories\GameRoleKitRepository::class => new \App\Repositories\GameRoleKitRepository(),
+            \App\Services\GameEquipment\RoleKitService::class => new \App\Services\GameEquipment\RoleKitService(
+                self::get(\App\Repositories\GameRoleKitRepository::class),
+                self::get(\App\Repositories\GameEquipmentRepository::class),
+                self::get(\App\Repositories\ArsenalWardrobeRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class)
+            ),
+            \App\Services\GameEquipment\PlayerKitService::class => new \App\Services\GameEquipment\PlayerKitService(
+                self::get(\App\Repositories\GameEquipmentRepository::class),
+                self::get(\App\Repositories\ArsenalWardrobeRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\GameEquipmentAdminController::class => new \App\Controllers\Admin\Organization\GameEquipmentAdminController(
+                self::get(\App\Repositories\GameEquipmentRepository::class),
+                self::get(\App\Repositories\GameRoleKitRepository::class),
+                self::get(\App\Services\GameEquipment\RoleKitService::class)
+            ),
             \App\Controllers\Admin\Organization\ModerationOrganizationController::class => new \App\Controllers\Admin\Organization\ModerationOrganizationController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\ModerationRepository::class),
@@ -498,6 +515,10 @@ class Container
                 self::get(AuthService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class)
+            ),
+            \App\Controllers\Admin\System\SystemRegistryController::class => new \App\Controllers\Admin\System\SystemRegistryController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
             ),
             \App\Controllers\Admin\System\SystemIndicatorBlocklistController::class => new \App\Controllers\Admin\System\SystemIndicatorBlocklistController(
                 self::get(AuthService::class),
@@ -585,6 +606,22 @@ class Container
             ),
             \App\Services\Cron\Jobs\PhotoCompressCronJob::class => new \App\Services\Cron\Jobs\PhotoCompressCronJob(),
             \App\Services\Cron\Jobs\PlanEndWarningCronJob::class => new \App\Services\Cron\Jobs\PlanEndWarningCronJob(),
+            \App\Services\Email\MailBudgetGate::class => new \App\Services\Email\MailBudgetGate(
+                self::get(\App\Repositories\EmailDeliveryRepository::class)
+            ),
+            \App\Services\Cron\Jobs\MailQueueCronJob::class => new \App\Services\Cron\Jobs\MailQueueCronJob(
+                new \App\Services\Email\MailQueueProcessor(
+                    self::get(\App\Repositories\AsyncJobRepository::class),
+                    self::get(\App\Services\EmailService::class)
+                )
+            ),
+            \App\Services\Cron\Jobs\OpsMailDigestCronJob::class => new \App\Services\Cron\Jobs\OpsMailDigestCronJob(
+                new \App\Services\Email\OpsMailDigestService(
+                    new \App\Repositories\EmailDigestRepository(),
+                    self::get(\App\Services\EmailService::class),
+                    self::get(\App\Services\Email\MailBudgetGate::class)
+                )
+            ),
             \App\Repositories\AtakReportRoutingRepository::class => new \App\Repositories\AtakReportRoutingRepository(),
             \App\Services\Tactical\AtakBridgeModulesService::class => new \App\Services\Tactical\AtakBridgeModulesService(),
             \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class => new \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob(
@@ -638,6 +675,8 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PhotoCompressCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlanEndWarningCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
@@ -1965,6 +2004,13 @@ class Container
                 self::get(\App\Services\Training\TenantPedagogyChainGuard::class),
             ),
             \App\Services\Training\PedagogyPathwayService::class => new \App\Services\Training\PedagogyPathwayService(),
+            \App\Services\Training\TrainingPedagogyDesignationService::class => new \App\Services\Training\TrainingPedagogyDesignationService(
+                self::get(\App\Repositories\PedagogyRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+            ),
             \App\Services\Training\TenantPedagogyStructureService::class => new \App\Services\Training\TenantPedagogyStructureService(
                 self::get(\App\Repositories\UnitRepository::class),
             ),
@@ -1978,6 +2024,7 @@ class Container
                 self::get(\App\Services\Training\PedagogyPathwayService::class),
                 self::get(\App\Services\Training\TenantPedagogyStructureService::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Services\Training\TrainingPedagogyDesignationService::class),
             ),
             \App\Controllers\Web\TrainingController::class => new \App\Controllers\Web\TrainingController(
                 self::get(\App\Repositories\TrainingRepository::class),
@@ -2134,6 +2181,11 @@ class Container
                 self::get(AuthService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
+            ),
+            \App\Repositories\AtakAdminControlRepository::class => new \App\Repositories\AtakAdminControlRepository(),
+            \App\Controllers\Admin\AdminAtakFleetController::class => new \App\Controllers\Admin\AdminAtakFleetController(
+                self::get(\App\Repositories\AtakAdminControlRepository::class),
+                self::get(AuthService::class),
             ),
             \App\Controllers\Admin\AdminAtakModReportsController::class => new \App\Controllers\Admin\AdminAtakModReportsController(
                 self::get(\App\Repositories\AtakModReportRepository::class),
@@ -2449,6 +2501,7 @@ class Container
             ),
             \App\Repositories\PlatformReviewRepository::class => new \App\Repositories\PlatformReviewRepository(),
             \App\Repositories\NameFilterRepository::class => new \App\Repositories\NameFilterRepository(),
+            \App\Repositories\MemberLanguageRepository::class => new \App\Repositories\MemberLanguageRepository(),
             \App\Services\Moderation\NameModerationService::class => new \App\Services\Moderation\NameModerationService(
                 self::get(\App\Repositories\NameFilterRepository::class),
             ),

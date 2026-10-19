@@ -101,7 +101,8 @@ final class PlanAccessWindowTest extends TestCase
         $en = PlanAccessWindow::copy('en', 'Bet Leader', 'Pro', 'trial', '2026-10-20T10:00:00+00:00', true, 0);
 
         self::assertStringContainsString('20/10/2026', $fr['lead']);
-        self::assertStringContainsString('liaison avec le jeu', $fr['lost']);
+        self::assertStringContainsString('vidéo drone', $fr['lost']);
+        self::assertStringContainsString('positions, comptes rendus et briefing', $fr['lost']);
         self::assertStringContainsString('7 jours', $fr['grace']);
         self::assertStringContainsString('October 20, 2026', $en['lead']);
         self::assertSame('', $en['grace']);

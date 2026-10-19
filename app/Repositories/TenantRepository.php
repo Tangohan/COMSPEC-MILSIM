@@ -48,6 +48,19 @@ class TenantRepository
         return $row ?: null;
     }
 
+    /**
+     * Communautés portant exactement ce nom (le jeu ne connaît que le nom affiché de la communauté liée).
+     *
+     * @return list<int>
+     */
+    public function findIdsByName(string $name, int $limit = 2): array
+    {
+        $stmt = $this->pdo()->prepare('SELECT id FROM tenants WHERE name = ? ORDER BY id LIMIT ' . max(1, min(10, $limit)));
+        $stmt->execute([$name]);
+
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
     public function findBySlug(string $slug): ?array
     {
         $slugEq = SqlText::equals($this->pdo(), 'slug');
@@ -105,6 +118,10 @@ class TenantRepository
             $row['registry_simple_reg'] = ($community['registration_mode'] ?? 'milsim') === 'simple';
             $row['registry_featured'] = !empty($meta['featured']);
             $row['registry_recruitment_open'] = !empty($meta['recruitment_open']);
+            // Pays de l'unité réelle rattachée (filtre « Pays » de l'annuaire).
+            $affiliation = is_array($community['unit_affiliation'] ?? null) ? $community['unit_affiliation'] : [];
+            $row['registry_country'] = !empty($affiliation['is_real']) ? strtoupper(trim((string) ($affiliation['country'] ?? ''))) : '';
+            $row['registry_country_label'] = $row['registry_country'] !== '' ? trim((string) ($affiliation['country_label'] ?? $row['registry_country'])) : '';
             $welcome = trim((string) ($community['welcome_text'] ?? ''));
             $excerpt = $meta['tagline'];
             if ($excerpt === '' && $welcome !== '') {

@@ -15,8 +15,13 @@ Sources/addons/main/i18n/en.txt : un tableau [["français", "anglais"], ...] lu 
   python3 tools/i18n.py community F  crée ou met à jour le fichier F d'un mod de traduction communautaire (autre langue,
                                      localisation/README.md) : lignes ["français", "traduction", "anglais"], traductions
                                      gardées, phrases nouvelles ajoutées vides, phrases disparues retirées ; écrit aussi
-                                     localisation/template/xx.txt quand F est omis
+                                     localisation/template/xx.txt (et categories.json, tools/i18n_categories.py)
+                                     quand F est omis
+  python3 tools/i18n.py fr           assemble i18n/fr.txt (réglage Français) : textes écrits en anglais dans le code
+                                     (tools/i18n_fr_source.tsv, anglais<TAB>français) + anglais -> français des stringtables
+                                     (ATAK natif, SSE, Overwatch connect : noms d'objets et textes lus par getText)
   python3 tools/i18n.py stringtable  noms d'objets et modules Eden/Zeus (config.cpp, modules.hpp) -> stringtable.xml
+                                     (--sse : tout le SSE ; --connect : config.cpp et modules/ d'Overwatch connect)
                                      ($STR_..., langue du jeu ; anglais pris dans en.txt)
 
 Un texte avec %1, %2... est un modèle : « il y a %1 s » -> « %1 s ago » traduit aussi « il y a 12 s ».
@@ -64,6 +69,9 @@ HELPERS = [("ace_interact_menu_fnc_createAction", "aceAction"), ("zen_context_me
 if EXTRA:
     HELPERS.append(("CBA_fnc_addSetting", "addSetting"))
 LOGLINE = re.compile(r"diag_log|fnc_(log\w*|appendLinkLog|appendModuleLog|callExtLogged)\b")
+# ATAK natif : journaux (diag_log, fnc_log, journal de liaison) jamais traduits (TTRD : les logs restent en français) ;
+# fnc_log seul, pas fnc_logisticsAction.
+LOGLINE_MAIN = re.compile(r"diag_log|fnc_(log|appendLinkLog|appendModuleLog|callExtLogged|perfLog)\b")
 
 
 def display_files():
@@ -302,6 +310,8 @@ def collect():
             if rel.startswith("debug" + os.sep):
                 continue
             src = "\n".join(l for l in src.split("\n") if not LOGLINE.search(l))
+        else:
+            src = "\n".join(l for l in src.split("\n") if not LOGLINE_MAIN.search(l))
         for lit in strings(src):
             for seg in segments(lit):
                 found.setdefault(seg, rel)
@@ -330,6 +340,11 @@ if SSE:
                        and not b.startswith(os.path.join(ADDON, "debug")))
     CFG_PREFIX = "STR_COMSPEC_SSE_CFG_"
     STRINGTABLE = os.path.join(ADDON, "main", "stringtable.xml")
+if CONNECT:
+    # connect : modules Eden/Zeus et objets (config.cpp, modules/, relais Zeus) ; écrans exclus (traduits au chargement).
+    CFG_FILES = ["config.cpp"] + sorted(
+        os.path.join("modules", f) for f in os.listdir(os.path.join(ADDON, "modules")) if f.endswith(".hpp"))
+    CFG_PREFIX = "STR_COMSPEC_OW_CFG_"
 CFG_ATTR = re.compile(r'\b(displayName|description|tooltip|name|displayNameShort|descriptionShort)(\s*=\s*)"((?:[^"]|"")*)"')
 
 
@@ -343,9 +358,13 @@ def stringtable():
     import html as _h
     en = dict(load_dict())
     keys = {}
+    kept = {}
     if os.path.exists(STRINGTABLE):
-        for m in re.finditer(r'<Key ID="([^"]+)">\s*<Original>(.*?)</Original>', open(STRINGTABLE, encoding="utf-8").read(), re.S):
+        for m in re.finditer(r'<Key ID="([^"]+)">\s*<Original>(.*?)</Original>\s*(?:<English>(.*?)</English>)?', open(STRINGTABLE, encoding="utf-8").read(), re.S):
             keys[m.group(1)] = _h.unescape(m.group(2))
+            # Anglais écrit à la main dans la stringtable (absent de en.txt) : gardé.
+            if m.group(3) and m.group(3) != m.group(2):
+                kept.setdefault(_h.unescape(m.group(2)), _h.unescape(m.group(3)))
     missing = []
     for f in CFG_FILES:
         path = os.path.join(ADDON, f)
@@ -356,7 +375,8 @@ def stringtable():
             if not WORD.search(fr) or looks_like_code(fr) or fr.startswith("$STR_"):
                 return m.group(0)
             # name= : seulement les choix des modules Eden (Values) ; ailleurs c'est une donnée lue par le code.
-            if m.group(1) == "name" and not re.match(r"(modules|attributes)\w*\.hpp$", os.path.basename(f)):
+            if m.group(1) == "name" and not re.match(r"(modules|attributes)\w*\.hpp$", os.path.basename(f)) and not (
+                    CONNECT and f.startswith("modules" + os.sep)):
                 return m.group(0)
             k = cfg_key(fr)
             keys[k] = fr
@@ -366,18 +386,48 @@ def stringtable():
             open(path, "w", encoding="utf-8", newline="").write(new)
     rows = []
     for k, fr in sorted(keys.items()):
-        e = en.get(fr)
+        e = kept.get(fr) or en.get(fr)
         if not e:
             missing.append(fr)
             e = fr
         esc = lambda t: _h.escape(t, quote=False)
         rows.append(f'        <Key ID="{k}">\n            <Original>{esc(fr)}</Original>\n            <English>{esc(e)}</English>\n            <French>{esc(fr)}</French>\n        </Key>')
     xml = ('<?xml version="1.0" encoding="utf-8"?>\n<!-- Généré par tools/i18n.py stringtable : traductions dans i18n/en.txt. -->\n'
-           '<Project name="' + ("COMSPEC_SSE" if SSE else "COMSPEC_ATAK_Native") + '">\n    <Package name="main">\n' + "\n".join(rows) + '\n    </Package>\n</Project>\n')
+           '<Project name="' + ("COMSPEC_SSE" if SSE else ("COMSPEC_Overwatch_connect" if CONNECT else "COMSPEC_ATAK_Native")) + '">\n    <Package name="main">\n' + "\n".join(rows) + '\n    </Package>\n</Project>\n')
     open(STRINGTABLE, "w", encoding="utf-8", newline="\n").write(xml)
     print(f"{len(keys)} textes de config, {len(missing)} sans anglais")
     for fr in missing:
         print("  " + fr)
+
+
+def build_fr():
+    """i18n/fr.txt : [["texte anglais", "français"], ...], chargé par fn_langApply quand la langue est le français."""
+    import html as _h
+    mod = os.path.dirname(ROOT)
+    pairs = {}
+    tables = [os.path.join(ROOT, "Sources", "addons", "main", "stringtable.xml"),
+              os.path.join(mod, "@COMSPEC_SSE", "addons", "main", "stringtable.xml"),
+              os.path.join(mod, "UptoDate", "Sources", "comspec-overwatch-addons", "connect", "stringtable.xml")]
+    for t in tables:
+        if not os.path.exists(t):
+            continue
+        for m in re.finditer(r"<English>(.*?)</English>\s*<French>(.*?)</French>", open(t, encoding="utf-8").read(), re.S):
+            en, fr = _h.unescape(m.group(1)), _h.unescape(m.group(2))
+            if en and fr and en != fr:
+                pairs.setdefault(en, fr)
+    src = os.path.join(ROOT, "tools", "i18n_fr_source.tsv")
+    for line in open(src, encoding="utf-8"):
+        line = line.rstrip("\n")
+        if line.startswith("#") or "\t" not in line:
+            continue
+        en, fr = line.split("\t", 1)
+        if en != fr:
+            pairs[en] = fr
+    out = os.path.join(ROOT, "Sources", "addons", "main", "i18n", "fr.txt")
+    esc = lambda t: t.replace('"', '""')
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
+        f.write("[\n" + ",\n".join(f'["{esc(e)}", "{esc(r)}"]' for e, r in sorted(pairs.items())) + "\n]\n")
+    print(f"{len(pairs)} entrées dans {os.path.relpath(out, ROOT)}")
 
 
 def main():
@@ -416,6 +466,8 @@ def main():
             for s, src in sorted(missing, key=lambda p: (p[1], p[0])):
                 f.write(f"{s}\t{src}\n")
         print(f"{len(found)} textes, {len(missing)} sans traduction -> {os.path.relpath(MISSING, ROOT)}")
+    elif cmd == "fr":
+        build_fr()
     elif cmd == "community":
         pairs = load_dict()
         path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "localisation", "template", "xx.txt")
@@ -423,6 +475,10 @@ def main():
             os.remove(path)
         total, done = save_community(path, pairs)
         print(f"{path} : {done}/{total} phrases traduites ({total - done} restent en anglais)")
+        if len(sys.argv) <= 2:
+            # Catégories des phrases pour l'atelier /traduire-atak du site (template/categories.json).
+            import subprocess
+            subprocess.run([sys.executable, os.path.join(ROOT, "tools", "i18n_categories.py")], check=False)
     elif cmd == "merge":
         pairs = load_dict()
         with open(sys.argv[2], encoding="utf-8") as f:

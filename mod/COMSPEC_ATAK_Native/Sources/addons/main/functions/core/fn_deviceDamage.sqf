@@ -15,6 +15,8 @@
 params [["_amount", 0], ["_why", "Choc"], ["_off", 0], ["_parts", createHashMap], ["_where", ""]];
 if !(missionNamespace getVariable ["comspec_atak_native_damage_sim", true]) exitWith { false };
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false };
+// Réglage addon « Téléphone rangé : peut être détruit » décoché : rangé (ni en main ni en miniature), il ne s'abîme pas.
+if (!(missionNamespace getVariable ["comspec_atak_native_stowed_damage", true]) && {isNull ([] call comspec_atak_native_fnc_display)}) exitWith { false };
 if !(_parts isEqualType createHashMap) then { _parts = createHashMap; };
 private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
 private _before = _n getOrDefault ["damage", 0];

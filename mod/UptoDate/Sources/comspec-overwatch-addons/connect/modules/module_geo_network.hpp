@@ -10,7 +10,7 @@
         scope = 2;
         scopeCurator = 0;
         category = "COMSPEC_Outils";
-        displayName = "Relever routes et villes";
+        displayName = "$STR_COMSPEC_OW_CFG_DEEF9340A8";
         function = "comspec_overwatch_connect_fnc_moduleGeoNetwork";
         functionPriority = 1;
         isGlobal = 1;
@@ -28,8 +28,8 @@
         {
             class RunAtStart
             {
-                displayName = "Au début de la mission";
-                tooltip = "Envoyer routes et villes à Athena au lancement (par le Zeus ou le chef de mission), ou seulement depuis Zeus.";
+                displayName = "$STR_COMSPEC_OW_CFG_0A8F3CF162";
+                tooltip = "$STR_COMSPEC_OW_CFG_CF11B05A6E";
                 property = "COMSPEC_GeoNetwork_RunAtStart";
                 control = "Combo";
                 expression = "_this setVariable ['RunAtStart',_value,true];";
@@ -38,14 +38,14 @@
 
                 class Values
                 {
-                    class Start { name = "Envoyer au début de la mission"; value = "start"; default = 1; };
-                    class Manual { name = "Uniquement depuis Zeus"; value = "manual"; };
+                    class Start { name = "$STR_COMSPEC_OW_CFG_DEDDC0711F"; value = "start"; default = 1; };
+                    class Manual { name = "$STR_COMSPEC_OW_CFG_3B201F65E4"; value = "manual"; };
                 };
             };
             class Resend
             {
-                displayName = "Renvoyer";
-                tooltip = "Renvoyer même si routes et villes de cette carte ont déjà été transmises.";
+                displayName = "$STR_COMSPEC_OW_CFG_1E73219ED6";
+                tooltip = "$STR_COMSPEC_OW_CFG_BE3E044D54";
                 property = "COMSPEC_GeoNetwork_Resend";
                 control = "Checkbox";
                 expression = "_this setVariable ['Resend',_value,true];";
@@ -56,7 +56,7 @@
 
         class ModuleDescription
         {
-            description = "Envoie à Athena les routes (autoroutes, routes, pistes) et les localités (villes, bourgs, villages, lieux-dits) de la carte, sans le relevé complet des bâtiments et du relief. Athena doit être liée ; le relevé attend la liaison jusqu'à 3 minutes. Une seule fois par carte, sauf « Renvoyer ».";
+            description = "$STR_COMSPEC_OW_CFG_70DEE56AF4";
             position = 0;
             direction = 0;
             optional = 1;

@@ -3,7 +3,7 @@
 /*
     Tutoriels du SSE :
       - manuel de terrain (Field Manual, catégorie COMSPEC SSE), lisible dans Eden, en jeu et au Zeus ;
-      - menu « COMSPEC SSE » dans la barre de menus d'Eden ;
+      - menu « COMSPEC SSE » dans la barre de menus d'Eden, avec le tableau de bord SSE de la mission ouverte ;
       - Zeus : manuel et exercice complet posé en un clic ;
       - ACE : « Guide SSE (manuel) ».
 */
@@ -26,6 +26,10 @@ class CfgFunctions {
             file = "z\comspec_sse\addons\guide\functions";
             class guideExercise {};
             class openGuide {};
+            class openDashboard {};
+            class dashCollect {};
+            class dashSite {};
+            class dashRender {};
         };
     };
 };
@@ -225,23 +229,24 @@ class Display3DEN {
                 items[] += {"COMSPEC_SSE_Menu"};
                 class COMSPEC_SSE_Menu {
                     text = "COMSPEC SSE";
-                    items[] = {"COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuDocuments", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
+                    items[] = {"COMSPEC_SSE_MenuDashboard", "COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuDocuments", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
                 };
-                class COMSPEC_SSE_MenuEden { text = "$STR_COMSPEC_SSE_CFG_D2BC59B49C"; action = "['COMSPEC_SSE', 'Eden'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuStart { text = "$STR_COMSPEC_SSE_CFG_20FDBBF21A"; action = "['COMSPEC_SSE', 'Start'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuLinks { text = "$STR_COMSPEC_SSE_CFG_DB6388D385"; action = "['COMSPEC_SSE', 'Links'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuCampaigns { text = "$STR_COMSPEC_SSE_CFG_EF527E85F0"; action = "['COMSPEC_SSE', 'Campaigns'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuZeus { text = "$STR_COMSPEC_SSE_CFG_0F926D953A"; action = "['COMSPEC_SSE', 'Zeus'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuDatasets { text = "$STR_COMSPEC_SSE_CFG_A917899E61"; action = "['COMSPEC_SSE', 'Datasets'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuCaseRef { text = "$STR_COMSPEC_SSE_CFG_EA0F6EC944"; action = "['COMSPEC_SSE', 'CaseRef'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuModMission { text = "$STR_COMSPEC_SSE_CFG_D5FAA07334"; action = "['COMSPEC_SSE', 'ModMission'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuModPeople { text = "$STR_COMSPEC_SSE_CFG_F6800D38C9"; action = "['COMSPEC_SSE', 'ModPeople'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuModDigital { text = "$STR_COMSPEC_SSE_CFG_C3B4425DDB"; action = "['COMSPEC_SSE', 'ModDigital'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuModTools { text = "$STR_COMSPEC_SSE_CFG_F7CD61CB3B"; action = "['COMSPEC_SSE', 'ModTools'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuDocuments { text = "$STR_COMSPEC_SSE_CFG_DF90578A65"; action = "['COMSPEC_SSE', 'Documents'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuItems { text = "$STR_COMSPEC_SSE_CFG_0266B57201"; action = "['COMSPEC_SSE', 'Items'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuModels { text = "$STR_COMSPEC_SSE_CFG_144B2D2353"; action = "['COMSPEC_SSE', 'Models'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuCustom { text = "$STR_COMSPEC_SSE_CFG_385FD78DF8"; action = "['COMSPEC_SSE', 'Custom'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuDashboard { text = "$STR_COMSPEC_SSE_CFG_519542D0B0"; action = "[] call comspec_sse_fnc_openDashboard"; };
+                class COMSPEC_SSE_MenuEden { text = "$STR_COMSPEC_SSE_CFG_D2BC59B49C"; action = "['Eden'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuStart { text = "$STR_COMSPEC_SSE_CFG_20FDBBF21A"; action = "['Start'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuLinks { text = "$STR_COMSPEC_SSE_CFG_DB6388D385"; action = "['Links'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuCampaigns { text = "$STR_COMSPEC_SSE_CFG_EF527E85F0"; action = "['Campaigns'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuZeus { text = "$STR_COMSPEC_SSE_CFG_0F926D953A"; action = "['Zeus'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuDatasets { text = "$STR_COMSPEC_SSE_CFG_A917899E61"; action = "['Datasets'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuCaseRef { text = "$STR_COMSPEC_SSE_CFG_EA0F6EC944"; action = "['CaseRef'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuModMission { text = "$STR_COMSPEC_SSE_CFG_D5FAA07334"; action = "['ModMission'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuModPeople { text = "$STR_COMSPEC_SSE_CFG_F6800D38C9"; action = "['ModPeople'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuModDigital { text = "$STR_COMSPEC_SSE_CFG_C3B4425DDB"; action = "['ModDigital'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuModTools { text = "$STR_COMSPEC_SSE_CFG_F7CD61CB3B"; action = "['ModTools'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuDocuments { text = "$STR_COMSPEC_SSE_CFG_DF90578A65"; action = "['Documents'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuItems { text = "$STR_COMSPEC_SSE_CFG_0266B57201"; action = "['Items'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuModels { text = "$STR_COMSPEC_SSE_CFG_144B2D2353"; action = "['Models'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuCustom { text = "$STR_COMSPEC_SSE_CFG_385FD78DF8"; action = "['Custom'] call comspec_sse_fnc_openGuide"; };
             };
         };
     };

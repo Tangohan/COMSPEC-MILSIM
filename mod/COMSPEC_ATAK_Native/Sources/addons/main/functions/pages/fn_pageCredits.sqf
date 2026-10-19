@@ -1,5 +1,5 @@
 /*
-    App Crédits : équipe SOAR, développement NewPI, versions des composants chargés, remerciements et licence.
+    App Crédits : équipe SOAR, développement NewPI, versions des composants chargés, remerciements, traductions communautaires et licence.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -26,7 +26,7 @@ private _dll = switch (true) do {
 };
 private _game = productVersion;
 private _rows = [
-    ["hero", "\z\comspec_atak_native\addons\main\data\logo_soar.paa", format ["<t size='1.5' font='COMSPEC_BarlowBold'>COMSPEC ATAK</t><br/><t color='#5cc76b'>Version %1</t><br/><t size='0.9' color='#8a9a93'>Terminal tactique pour Arma 3</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]],
+    ["hero", "\z\comspec_atak_native\addons\main\data\logo_soar.paa", format ["<t size='1.5' font='COMSPEC_BarlowBold'>COMSPEC ATAK</t><br/><t color='#5cc76b'>Version %1</t><br/><t size='0.9' color='#8a9a93'>Terminal tactique pour Arma 3</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]]],
     ["section", "Équipe", ""],
     ["info", "Équipe", "<t font='COMSPEC_BarlowBold'>SOAR</t>"],
     ["info", "Développeur", "<t font='COMSPEC_BarlowBold'>NewPI</t>"],
@@ -41,6 +41,8 @@ private _rows = [
     ["info", "Arma 3", format ["%1.%2", (_game select 2) / 100, _game select 3]],
     ["section", "Remerciements", ""],
     ["text", "<t size='0.9'>Better CAS Environment (BCE) par Aaren : registre d'applications, messages directs, groupe et tâches, réécrits pour ce terminal (licence APL-SA).<br/>Simple Map Tools (POLPOX) : comportement des outils carte, réécrit sans reprise de code.<br/>Symboles de carte d'Arma 3 (Bohemia Interactive).</t>"],
+    ["section", "Traductions communautaires", ""],
+    ["text", "<t size='0.9'>Chinois simplifié : RickLeo et MOYA (traduction et création complète du pack).</t>"],
     ["section", "Licence", ""],
     ["text", "<t size='0.9' color='#8a9a93'>Distribué sous Arma Public License Share Alike (APL-SA) : gratuit, non commercial, crédit aux auteurs, même licence pour toute adaptation.</t>"]
 ];

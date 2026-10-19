@@ -470,13 +470,32 @@
       var ul = document.createElement('ul');
       items.forEach(function (it) {
         var li = document.createElement('li');
+        if (it.icon) {
+          var img = document.createElement('img');
+          img.className = 'eq-hub__item-ico';
+          img.src = it.icon;
+          img.alt = '';
+          img.loading = 'lazy';
+          img.width = 32;
+          img.height = 32;
+          li.appendChild(img);
+        }
         var span = document.createElement('span');
         span.textContent = it.name || '';
+        span.setAttribute('translate', 'no');
+        if (it.class) span.title = it.class;
         li.appendChild(span);
         if ((it.qty || 1) > 1) {
           var em = document.createElement('em');
           em.textContent = '× ' + it.qty;
           li.appendChild(em);
+        }
+        // Objet vu en jeu : nombre de joueurs qui l’ont porté ces 90 derniers jours.
+        if ((it.players || 0) > 0) {
+          var seen = document.createElement('small');
+          seen.className = 'eq-hub__item-seen';
+          seen.textContent = it.players > 1 ? it.players + ' joueurs en jeu' : '1 joueur en jeu';
+          li.appendChild(seen);
         }
         ul.appendChild(li);
       });

@@ -67,6 +67,7 @@
     } else {
       bits.push('Plan de briefing ' + esc(SIDES[plan.side] || plan.side) + (plan.name ? ' « ' + esc(plan.name) + ' »' : ''));
     }
+    if (item.desc) bits.push(esc(item.desc));
     if (item.author) bits.push('Posé par ' + esc(item.author));
     return bits.join('<br>');
   }

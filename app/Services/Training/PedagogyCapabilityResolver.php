@@ -60,7 +60,16 @@ final class PedagogyCapabilityResolver
             default => [],
         };
 
-        if ($defs !== [] && !$this->pedagogyRepository->userHasOneOfDefinitions($tenantId, $userId, $defs)) {
+        $designationKinds = match ($capability) {
+            'publish', 'create', 'update' => ['design_trainer', 'trainer_certifier'],
+            'instruct' => ['delivery_instructor', 'design_trainer', 'instructor_certifier', 'trainer_certifier'],
+            'validate', 'certify', 'suspend' => ['instructor_certifier', 'trainer_certifier'],
+            default => [],
+        };
+
+        if ($defs !== []
+            && !$this->pedagogyRepository->userHasOneOfDefinitions($tenantId, $userId, $defs)
+            && !$this->pedagogyRepository->userHasDesignation($tenantId, $userId, $designationKinds)) {
             return [
                 'allowed' => false,
                 'reason_code' => 'pedagogy_role_required',

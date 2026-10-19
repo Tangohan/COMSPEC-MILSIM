@@ -16,9 +16,19 @@ $suggestedSurvivorId = (int) ($mergePreview['suggested_survivor_id'] ?? 0);
 $identityFills = is_array($mergePreview['identity_fills'] ?? null) ? $mergePreview['identity_fills'] : [];
 $identityTableFills = is_array($mergePreview['identity_table_fills'] ?? null) ? $mergePreview['identity_table_fills'] : [];
 $steamCollisions = is_array($mergePreview['steam_collisions'] ?? null) ? $mergePreview['steam_collisions'] : [];
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $csrf = $h(\App\Core\Csrf::token());
 $selectedSurvivorId = (int) ($_GET['survivor_id'] ?? $suggestedSurvivorId);
-$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$ban = is_array($personBan ?? null) ? $personBan : null;
+$knownIps = is_array($personKnownIps ?? null) ? $personKnownIps : [];
+$isPlatformAdmin = !empty($personIsPlatformAdmin);
+$flashOk = \App\Core\Session::getFlash('success');
+$flashErr = \App\Core\Session::getFlash('error');
+$fmtDate = static function (string $v): string {
+    $ts = strtotime($v);
+
+    return $ts ? date('d/m/Y H:i', $ts) : '—';
+};
 $empty = static function (?string $v) use ($h): string {
     $t = trim((string) $v);
     return $t !== '' ? $h($t) : '<span class="text-slate-400">—</span>';
@@ -57,7 +67,10 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                     <?php if ($hasLiveOrg): ?>
                         <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-900">Appartenance active</span>
                     <?php else: ?>
-                        <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Orphelin (plus d’orga active)</span>
+                        <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Sans communauté</span>
+                    <?php endif; ?>
+                    <?php if ($ban !== null): ?>
+                        <span class="inline-flex rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-900">Banni du site</span>
                     <?php endif; ?>
                     <p class="text-xs text-slate-500"><?= count($memberships) ?> communauté(s) — le dossier métier reste propre à chacune</p>
                     <?php if (!empty($personIsPlatformAdmin)): ?>
@@ -101,10 +114,104 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
 
         <?php if (!$hasLiveOrg): ?>
             <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                Cette personne n’a plus d’appartenance active à une communauté réelle
-                (compte orphelin). Elle reste visible dans l’annuaire et la recherche plateforme.
+                Cette personne n’est membre d’aucune communauté pour le moment. Son compte reste valable :
+                elle peut se connecter, rejoindre une communauté, et elle reste visible dans l’annuaire
+                (filtre « Sans communauté »).
             </div>
         <?php endif; ?>
+
+        <?php if (is_string($flashOk) && trim($flashOk) !== ''): ?>
+            <p class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><?= $h($flashOk) ?></p>
+        <?php endif; ?>
+        <?php if (is_string($flashErr) && trim($flashErr) !== ''): ?>
+            <p class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900"><?= $h($flashErr) ?></p>
+        <?php endif; ?>
+
+        <section id="bannissement" class="rounded-xl border <?= $ban !== null ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white' ?> p-5 shadow-sm space-y-3">
+            <h2 class="text-base font-bold text-slate-900">Bannissement du site</h2>
+            <?php if ($ban !== null): ?>
+                <p class="text-sm text-rose-900">
+                    Bannie le <?= $h($fmtDate((string) ($ban['created_at'] ?? ''))) ?>.
+                    Motif : <strong><?= $h((string) ($ban['reason'] ?? '')) ?></strong>
+                </p>
+                <p class="text-sm text-slate-600">
+                    Ses fiches sont inactives, son adresse e-mail est refusée à la connexion et à l’inscription.
+                    Lever le bannissement remet chaque fiche dans l’état d’avant et retire les blocages créés à ce moment.
+                </p>
+                <form method="post" action="<?= $h(url('admin/users/lever-bannissement')) ?>"
+                      onsubmit="return confirm('Lever le bannissement de cette personne ?');">
+                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="email" value="<?= $h($email) ?>">
+                    <input type="hidden" name="return_person" value="<?= $h($email) ?>">
+                    <button type="submit" class="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900">Lever le bannissement</button>
+                </form>
+            <?php elseif ($isPlatformAdmin): ?>
+                <p class="text-sm text-slate-600">Un administrateur du site ne peut pas être banni : retirez-lui d’abord ce rôle.</p>
+            <?php else: ?>
+                <p class="text-sm text-slate-600">
+                    Bannir ferme ses sessions, rend toutes ses fiches inactives et refuse son adresse e-mail sur tout le site.
+                    Rien n’est effacé : le bannissement peut être levé plus tard.
+                </p>
+                <form method="post" action="<?= $h(url('admin/users/bannir')) ?>" class="space-y-3"
+                      onsubmit="return confirm('Bannir cette personne de tout le site ?');">
+                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="email" value="<?= $h($email) ?>">
+                    <input type="hidden" name="return_person" value="<?= $h($email) ?>">
+                    <label class="block text-sm font-semibold text-slate-800">Motif (gardé dans le journal)
+                        <input type="text" name="reason" required maxlength="500" class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </label>
+                    <?php if ($steamId !== ''): ?>
+                        <label class="flex items-center gap-2 text-sm text-slate-800">
+                            <input type="checkbox" name="block_steam" value="1" checked>
+                            Bloquer aussi son Steam ID dans le mod (<span class="font-mono text-xs"><?= $h($steamId) ?></span>)
+                        </label>
+                    <?php endif; ?>
+                    <?php foreach ($knownIps as $row): ?>
+                        <?php if (!empty($row['blocked'])) { continue; } ?>
+                        <label class="flex items-center gap-2 text-sm text-slate-800">
+                            <input type="checkbox" name="block_ips[]" value="<?= $h((string) $row['ip']) ?>">
+                            Bloquer l’adresse réseau <span class="font-mono text-xs"><?= $h((string) $row['ip']) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                    <button type="submit" class="rounded-lg bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800">Bannir du site</button>
+                </form>
+            <?php endif; ?>
+        </section>
+
+        <section id="reseau" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+            <h2 class="text-base font-bold text-slate-900">Adresses réseau (IP) utilisées</h2>
+            <p class="text-sm text-slate-600">
+                Connexions réussies des 6 derniers mois. Bloquer une adresse refuse la connexion et l’inscription depuis
+                cette adresse pour tout le monde : attention aux connexions partagées (box familiale, université, VPN).
+                Pour débloquer : <a href="<?= $h(url('admin/system/blocklist')) ?>" class="font-semibold text-emerald-800 hover:underline">liste des adresses et e-mails bloqués</a>.
+            </p>
+            <?php if ($knownIps === []): ?>
+                <p class="text-sm text-slate-500">Aucune connexion enregistrée pour cette adresse e-mail.</p>
+            <?php else: ?>
+                <ul class="divide-y divide-slate-100">
+                    <?php foreach ($knownIps as $row): ?>
+                        <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                            <div>
+                                <span class="font-mono text-sm font-semibold text-slate-900"><?= $h((string) $row['ip']) ?></span>
+                                <span class="text-xs text-slate-500">· <?= (int) $row['logins'] ?> connexion(s), dernière le <?= $h($fmtDate((string) $row['last_seen'])) ?></span>
+                            </div>
+                            <?php if (!empty($row['blocked'])): ?>
+                                <span class="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-900">Bloquée</span>
+                            <?php else: ?>
+                                <form method="post" action="<?= $h(url('admin/users/bloquer-ip')) ?>" class="flex flex-wrap items-center gap-2"
+                                      onsubmit="return confirm('Bloquer cette adresse réseau sur tout le site ?');">
+                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                    <input type="hidden" name="email" value="<?= $h($email) ?>">
+                                    <input type="hidden" name="ip" value="<?= $h((string) $row['ip']) ?>">
+                                    <input type="text" name="reason" maxlength="200" placeholder="Motif (facultatif)" class="rounded-lg border border-slate-300 px-2 py-1 text-xs">
+                                    <button type="submit" class="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">Bloquer cette IP</button>
+                                </form>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </section>
 
         <?php if ($mergeable): ?>
             <section id="fusion-comptes" class="rounded-xl border border-amber-300 bg-amber-50/70 shadow-sm overflow-hidden">
@@ -218,7 +325,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                 <article class="rounded-xl border <?= $isDeleted ? 'border-rose-200 bg-rose-50/40' : ($isDefault ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white') ?> shadow-sm overflow-hidden">
                     <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
                         <div>
-                            <h2 class="text-base font-bold text-slate-900">Dossier — <?= $h($tenantName !== '' ? $tenantName : 'Communauté') ?></h2>
+                            <h2 class="text-base font-bold text-slate-900"><?= $isDefault ? 'Compte sans communauté' : 'Dossier — ' . $h($tenantName !== '' ? $tenantName : 'Communauté') ?></h2>
                             <p class="text-xs text-slate-500">Vous éditez le dossier de cette communauté uniquement. Grade, matricule et fiche RH des autres communautés ne sont pas concernés.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
@@ -228,7 +335,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800"><?= $h($statusLabel($st)) ?></span>
                             <?php endif; ?>
                             <?php if ($isDefault): ?>
-                                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">Tenant système</span>
+                                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">Sans communauté</span>
                             <?php endif; ?>
                         </div>
                     </div>

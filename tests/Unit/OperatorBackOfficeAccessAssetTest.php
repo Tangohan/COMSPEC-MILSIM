@@ -18,7 +18,11 @@ final class OperatorBackOfficeAccessAssetTest extends TestCase
         $matrixSvc = (string) file_get_contents($root . '/app/Services/Rbac/RolePermissionMatrixService.php');
 
         self::assertStringContainsString("['label' => 'Mon back-office', 'path' => 'back-office', 'auth_only' => true]", $navigation);
-        self::assertStringContainsString("if (\$path === 'back-office')", $helpers);
+        // La racine (et désormais les pages « ma-situation ») reste ouverte à tout membre authentifié.
+        self::assertMatchesRegularExpression(
+            "/if \\(\\\$path === 'back-office'(?: \\|\\| str_starts_with\\(\\\$path, 'back-office\\/ma-situation'\\))?\\) \\{\\s*return null;/",
+            $helpers
+        );
         self::assertStringContainsString('$canOpenBackOffice', $header);
         self::assertStringContainsString("'path' => 'back-office/users', 'any_permissions'", $navigation);
         self::assertStringContainsString("'label' => 'Mes données'", $aside);

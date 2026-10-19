@@ -7,7 +7,8 @@
     « portée · débit · places » en dessous ; vert : relais utilisé par mon téléphone (trait pointillé vers moi, portée
     tracée), bleu : disponible, orange : saturé ou batterie faible, gris : hors service avec la raison, rouge barré :
     détruit ; répéteurs reliés en pointillé au relais qui les raccorde ; portées des autres relais en léger quand on zoome,
-    textes masqués en vue très large.
+    textes masqués en vue très large. L'étiquette donne aussi la fréquence, la perte et la santé si elle n'est pas nominale ;
+    troisième anneau : relais préféré. Clic gauche sur une pastille : fiche du relais (fn_mapCtxMenu).
     Toujours affichées (même calque masqué) : les triangulations récentes (fn_relayNet "locate"), cercles de distance
     estimée depuis chaque source et zone d'incertitude autour de la position trouvée, pâlissant sur 10 min.
     Params : [contrôle carte]
@@ -73,7 +74,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
     // Ligne sous l'étiquette : même point décalé d'une hauteur de texte à l'écran.
     private _below = { params ["_p", "_k"]; _map ctrlMapScreenToWorld ((_map ctrlMapWorldToScreen _p) vectorAdd [0, 0.024 * _ts * _k]) };
     {
-        _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up"];
+        _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up", "_fq", "", "_loss", "", "_hl", "", "_co"];
         private _p = getPosASLVisual _o;
         private _use = _ok && {_o isEqualTo _mine};
         private _sat = _sl > 0 && {_u > _sl};
@@ -81,7 +82,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             case (_st isEqualTo "détruit"): { [0.92, 0.30, 0.25, 1] };
             case (!_ok): { [0.62, 0.66, 0.64, 1] };
             case (_use): { [0.36, 0.85, 0.42, 1] };
-            case (_sat || {_bt >= 0 && {_bt < 20}}): { [1, 0.65, 0.2, 1] };
+            case (_sat || {_bt >= 0 && {_bt < 20}} || {_hl isEqualTo "critique"}): { [1, 0.65, 0.2, 1] };
             default { [0.28, 0.70, 1, 1] };
         };
         // Portée : celle du relais utilisé toujours, les autres en léger quand on zoome.
@@ -113,6 +114,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         _map drawEllipse [_p, _r * 1.6, _r * 1.6, 0, [0.04, 0.06, 0.05, 0.82], _fill];
         _map drawEllipse [_p, _r * 1.6, _r * 1.6, 0, _col, ""];
         if (_use) then { _map drawEllipse [_p, _r * 2.1, _r * 2.1, 0, _col, ""]; };
+        // Relais préféré (fiche du relais) : troisième anneau.
+        if (_o isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_RelayPin", objNull])) then { _map drawEllipse [_p, _r * 2.6, _r * 2.6, 0, [_col select 0, _col select 1, _col select 2, 0.6], ""]; };
         private _icon = switch (_kind) do {
             case "cp": { "\A3\ui_f\data\map\markers\nato\b_hq.paa" };
             case "gw": { "\A3\ui_f\data\map\markers\nato\b_motor_inf.paa" };
@@ -131,8 +134,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             private _e = format ["%1 km · %2 Mbit/s", (_rng / 1000) toFixed 1, _mb toFixed 1];
             if (_sl > 0) then { _e = _e + format [" · %1/%2", _u, _sl]; };
             if (_bt >= 0) then { _e = _e + format [" · batt. %1 %%", round _bt]; };
-            private _f = _o getVariable ["COMSPEC_AtakRelayFreq", 0];
-            if (_f isEqualType 0 && {_f > 0}) then { _e = _e + format [" · %1 MHz", _f]; };
+            _e = _e + format [" · %1 MHz · perte %2 %%", _fq, _loss];
+            if (_co > 0) then { _e = _e + " · " + ("canal partagé" call comspec_atak_native_fnc_tr); };
+            if (_hl in ["dégradé", "critique"]) then { _e = _e + " · " + (_hl call comspec_atak_native_fnc_tr); };
             _e
         } else { _st };
         _map drawIcon [_none, [_col select 0, _col select 1, _col select 2, 0.95], [_lp, 1] call _below, 0, 0, 0, _sub, 2, 0.022 * _ts, _font, "right"];

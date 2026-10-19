@@ -320,7 +320,25 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                     <input id="searchInput" type="text" placeholder="Recherche unité, rôle, officier..." class="w-full sm:w-80 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium outline-none focus:border-slate-400">
                     <button id="expandAllBtn" type="button" class="rounded-2xl bg-slate-900 text-white px-5 py-3 text-[11px] font-black tracking-[0.16em] uppercase">Déployer tout</button>
                     <button id="collapseAllBtn" type="button" class="rounded-2xl bg-white border border-slate-200 text-slate-900 px-5 py-3 text-[11px] font-black tracking-[0.16em] uppercase">Réduire tout</button>
-                    <a href="<?= htmlspecialchars(url('orbat/export'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-2xl bg-emerald-800 text-white px-5 py-3 text-[11px] font-black tracking-[0.16em] uppercase text-center hover:bg-emerald-900" title="Feuille ORBAT imprimable / PDF">Exporter PDF</a>
+                    <label class="sr-only" for="orbatSheetLang">Langue de la feuille ORBAT</label>
+                    <select id="orbatSheetLang" class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-[11px] font-black tracking-[0.12em] uppercase text-slate-700" title="Langue de la feuille ORBAT imprimable">
+                        <option value="">Langue de l’unité</option>
+                        <?php foreach (\App\Support\CommunityLanguages::codes() as $orbatLangCode): ?>
+                            <option value="<?= htmlspecialchars($orbatLangCode, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(\App\Support\CommunityLanguages::flag($orbatLangCode) . ' ' . \App\Support\CommunityLanguages::nativeLabel($orbatLangCode), ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <a id="orbatExportLink" href="<?= htmlspecialchars(url('orbat/export'), ENT_QUOTES, 'UTF-8') ?>" data-base-href="<?= htmlspecialchars(url('orbat/export'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-2xl bg-emerald-800 text-white px-5 py-3 text-[11px] font-black tracking-[0.16em] uppercase text-center hover:bg-emerald-900" title="Feuille ORBAT imprimable / PDF">Exporter PDF</a>
+                    <script>
+                    (function () {
+                        var sel = document.getElementById('orbatSheetLang');
+                        var link = document.getElementById('orbatExportLink');
+                        if (!sel || !link) { return; }
+                        sel.addEventListener('change', function () {
+                            var base = link.getAttribute('data-base-href') || link.href;
+                            link.href = sel.value ? base + (base.indexOf('?') >= 0 ? '&' : '?') + 'lang=' + encodeURIComponent(sel.value) : base;
+                        });
+                    })();
+                    </script>
                 </div>
             </div>
             <div class="orbat-status-filter border-t border-slate-100 pt-3" id="orbat-admin-status-filter" aria-label="Filtrer par statut administratif">

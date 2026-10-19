@@ -12,6 +12,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\TenantUsageCounterRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
+use App\Services\Billing\SubscriptionPlanFeaturesCatalog;
 use App\Support\PlanAccessWindow;
 use App\Support\PlanGift;
 
@@ -90,6 +91,26 @@ final class FeatureGateService
         }
 
         return $this->applyDeploymentChannelGate($tenantId, $feature);
+    }
+
+    /**
+     * Fonctionnalité de la formule appliquée ; si la formule n'a pas encore la clé (ajoutée après sa création,
+     * migration pas relancée), la valeur par défaut du catalogue pour ce palier s'applique.
+     */
+    public function allowsWithCatalogDefault(int $tenantId, string $feature): bool
+    {
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!$tenant || $this->isPastDueWithoutGift($tenant)) {
+            return false;
+        }
+        $planSlug = $this->effectivePlanSlug($tenant);
+        $plan = $this->planRepository->findBySlug($planSlug);
+        $features = $plan ? json_decode((string) ($plan['features_json'] ?? '{}'), true) : [];
+        if (is_array($features) && array_key_exists($feature, $features)) {
+            return !empty($features[$feature]);
+        }
+
+        return !empty(SubscriptionPlanFeaturesCatalog::defaultsForSlug($planSlug)[$feature] ?? false);
     }
 
     private function applyDeploymentChannelGate(int $tenantId, string $feature): bool

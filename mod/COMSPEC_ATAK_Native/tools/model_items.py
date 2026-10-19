@@ -15,6 +15,8 @@ générique d'Arma (mag_univ.p3d) :
   item3d_whip        antenne fouet longue : ressort de pied, fouet conique, embout
   item3d_patch       antenne patch 9 dBi : radôme khaki, joint caoutchouc, queue de cochon et SMA
   item3d_datacable   câble DL-7 : boîtier adaptateur, câble spiralé, fiche 7 broches, fiche USB-C
+  item3d_garminwatch montre GPS Garmin : boîtier rond 47 mm noir, lunette graduée, 5 poussoirs acier (START cerclé de
+                     rouge), écran MIP (heure, Body Battery, fréquence cardiaque), bracelet 22 mm ouvert à plat (boucle, passants)
   item3d_dock        socle CS-10 plié : valise étanche (couvercle nervuré, 4 grenouillères, poignées, roues, valve)
   camera_ip          la caméra posée (COMSPEC_ATAK_CameraObj) : origine au centre du boîtier, base 9,2 cm dessous
 
@@ -448,6 +450,65 @@ def datacable(M):
     M.slab(end + d * 0.0045, (0.009, 0.0084, 0.0026), 0.0012, 0.0, "steel", rot)
 
 
+def _band(M, path, w, th, mat):
+    """Bracelet : section rectangulaire (largeur w selon X, épaisseur th) le long d'un chemin [(y, z)] dans le plan YZ."""
+    pts = [Vector((0.0, y, z)) for y, z in path]
+    rings = []
+    for i, p in enumerate(pts):
+        t = (pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]).normalized()
+        n = Vector((0.0, -t.z, t.y))
+        if n.z < 0:
+            n = -n
+        rings.append([p + Vector((-w / 2, 0, 0)) - n * th / 2, p + Vector((w / 2, 0, 0)) - n * th / 2,
+                      p + Vector((w / 2, 0, 0)) + n * th / 2, p + Vector((-w / 2, 0, 0)) + n * th / 2])
+    M.loft(rings, mat, smooth=False)
+
+
+def garminwatch(M):
+    """Montre GPS Garmin (boîtier 47 mm, bracelet 22 mm) couchée cadran vers le ciel, bracelet ouvert à plat selon Y."""
+    R0, H = 0.0235, 0.0135
+    # Boîtier : fond acier, carrure polymère noir, lunette anodisée à dessus plat (graduations peintes sur le cadran).
+    M.lathe((0, 0, 0), (0, 0, 1), [(0.0, 0.0), (0.019, 0.0), (0.021, 0.0012), (0.021, 0.0022)], 32, "steel")
+    M.lathe((0, 0, 0), (0, 0, 1), [(0.0, 0.0018), (0.0215, 0.0018), (R0, 0.0035), (R0, 0.0095), (0.0228, 0.0105), (0.0, 0.0105)], 40, "black")
+    M.lathe((0, 0, 0), (0, 0, 1), [(0.0, 0.0102), (0.0232, 0.0102), (0.0236, 0.0112), (0.0232, H - 0.0004), (0.0226, H), (0.0, H)], 48, "anodized")
+    # Cadran (verre et écran MIP, lunette graduée) : disque à UV dans l'étiquette « garmin ».
+    n, rf = 40, 0.0224
+    vs = [(rf * math.cos(2 * math.pi * k / n), rf * math.sin(2 * math.pi * k / n), H + 0.0003) for k in range(n)]
+    uvs = [tx.label_uv("garmin", 0.5 + 0.5 * math.cos(2 * math.pi * k / n), 0.5 + 0.5 * math.sin(2 * math.pi * k / n)) for k in range(n)]
+    M.add(vs, [tuple(range(n))], "label", 0, [uvs])
+    # Cornes (4) et barrettes.
+    for sy in (-1, 1):
+        for sx in (-1, 1):
+            M.slab((sx * 0.0098, sy * 0.0235, 0.0062), (0.0036, 0.011, 0.0062), 0.0012, 0.0006, "black")
+        M.cyl((-0.0085, sy * 0.0262, 0.0062), (0.0085, sy * 0.0262, 0.0062), 0.0009, 10, "steel")
+    # Poussoirs : 3 à gauche (LIGHT, UP, DOWN), 2 à droite (START cerclé de rouge, BACK). Stries de prise.
+    for a, start in ((150, False), (180, False), (210, False), (30, True), (-30, False)):
+        d = Vector((math.cos(math.radians(a)), math.sin(math.radians(a)), 0))
+        c0 = d * (R0 - 0.0006) + Vector((0, 0, 0.0065))
+        M.lathe(c0, d, [(0.0024, 0.0), (0.0024, 0.0026), (0.0021, 0.0034), (0.0, 0.0035)], 16, "steel")
+        if start:
+            M.lathe(c0 + d * 0.0006, d, [(0.0027, 0.0), (0.0027, 0.0008)], 16, "red")
+    # Bracelet : côté +Y long (trous, passants), côté -Y court (boucle acier, ardillon).
+    w, th = 0.022, 0.0026
+    up = [(0.0262, 0.0062), (0.031, 0.0058), (0.036, 0.0042), (0.041, 0.0024), (0.047, 0.0014), (0.055, 0.0013), (0.098, 0.0013)]
+    _band(M, up, w, th, "rubber")
+    for k in range(5):
+        y = 0.068 + k * 0.0065
+        M.cyl((0, y, 0.0026), (0, y, 0.0028), 0.0011, 10, "cable")
+    M.slab((0, 0.061, 0.0013), (w + 0.003, 0.006, th + 0.0022), 0.001, 0.0005, "rubber")
+    M.slab((0, 0.1, 0.0013), (w, 0.016, th), 0.0075, 0.0006, "rubber", seg=6)
+    lo = [(-0.0262, 0.0062), (-0.031, 0.0058), (-0.036, 0.0042), (-0.041, 0.0024), (-0.047, 0.0014), (-0.055, 0.0013), (-0.072, 0.0013)]
+    _band(M, lo, w, th, "rubber")
+    M.slab((0, -0.062, 0.0013), (w + 0.003, 0.006, th + 0.0022), 0.001, 0.0005, "rubber")
+    # Boucle : cadre acier (4 barres), ardillon couché.
+    bx, by0, by1, bz = 0.0135, -0.069, -0.083, 0.0018
+    M.cyl((-bx, by0, bz), (bx, by0, bz), 0.0011, 10, "steel")
+    M.cyl((-bx, by1, bz), (bx, by1, bz), 0.0013, 10, "steel")
+    for sx in (-1, 1):
+        M.cyl((sx * bx, by0, bz), (sx * bx, by1, bz), 0.0012, 10, "steel")
+    M.cyl((0, by0, bz + 0.0004), (0, by1 - 0.001, bz + 0.0004), 0.0007, 8, "steel")
+
+
 def dock(M):
     """Valise du socle CS-10 (62 x 42 x 24 cm) : coque olive, couvercle nervuré, grenouillères, poignées, roues."""
     L, W = 0.62, 0.42
@@ -504,6 +565,7 @@ ITEMS = {
     "item3d_patch": (patch, 0.3, "item_antenna_patch"),
     "item3d_datacable": (datacable, 0.2, "item_datacable"),
     "item3d_dock": (dock, 9.0, "item_dock"),
+    "item3d_garminwatch": (garminwatch, 0.07, "item_garminwatch"),
     "camera_ip": (camera_obj, 0.45, None),
 }
 

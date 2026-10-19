@@ -42,7 +42,7 @@ private _window = {
     _title ctrlSetPosition [_x0, _y0 - 5 * _u, _w, 5 * _u];
     _title ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
     _title ctrlSetTextColor [1, 1, 1, 1];
-    _title ctrlSetText ("  " + _titleTxt);
+    _title ctrlSetText ((("  " + _titleTxt)) call comspec_atak_native_fnc_tr);
     _title ctrlCommit 0;
     [_d, _x0, _y0, _w, _h, _u]
 };
@@ -79,7 +79,9 @@ switch (_mode) do {
                 {
                     if !(_x in _seen) then { deleteVehicle _y; _previews deleteAt _x; };
                 } forEach +_previews;
-                uiSleep 0.4;
+                // Aucun relais « tour » posé : la mission n'est relue que toutes les 1,5 s (all3DENEntities parcourt tout
+                // l'éditeur) ; avec une tour, 0,4 s pour que l'aperçu suive le module déplacé.
+                uiSleep ([1.5, 0.4] select (_seen isNotEqualTo []));
             };
             { deleteVehicle _y; } forEach _previews;
         }];
@@ -97,8 +99,8 @@ switch (_mode) do {
         private _txt = _d ctrlCreate ["ctrlStructuredText", -1, _grp];
         private _tw = _w - 7 * _u;
         _txt ctrlSetPosition [0, 0, _tw, _h];
-        _txt ctrlSetStructuredText parseText format [localize "STR_COMSPEC_ATAK_CFG_BF0FFB1714",
-            "<br/><br/>", "<br/>• ", "<t color='#7ED38A' font='RobotoCondensedBold' size='1.1'>", "</t>"];
+        _txt ctrlSetStructuredText parseText ((format [localize "STR_COMSPEC_ATAK_CFG_BF0FFB1714",
+            "<br/><br/>", "<br/>• ", "<t color='#7ED38A' font='RobotoCondensedBold' size='1.1'>", "</t>"]) call comspec_atak_native_fnc_tr);
         _txt ctrlCommit 0;
         _txt ctrlSetPosition [0, 0, _tw, (ctrlTextHeight _txt) + 2 * _u];
         _txt ctrlCommit 0;

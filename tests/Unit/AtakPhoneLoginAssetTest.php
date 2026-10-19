@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakPhoneLoginAssetTest extends TestCase
 {
@@ -59,7 +60,7 @@ final class AtakPhoneLoginAssetTest extends TestCase
         self::assertStringContainsString('Identifiant Steam', $pre);
 
         $cfg = (string) file_get_contents($root . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/config.cpp');
-        self::assertStringContainsString('1.8.22', $cfg);
+        ModVersion::assertAtLeast('1.8.22', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('file://*/Arma 3 - COMSPEC/Maps/*', $cfg);
         self::assertStringContainsString('https://jetelain.github.io/*', $cfg);
         self::assertStringContainsString('https://cdn.jsdelivr.net/*', $cfg);
@@ -80,7 +81,7 @@ final class AtakPhoneLoginAssetTest extends TestCase
         self::assertStringContainsString('if (row.url && isCachePaintUrl(row.url))', $tiles);
 
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('1.18.12', $ext);
+        ModVersion::assertAtLeast('1.18.12', ModVersion::match('/ExtensionVersion = "([0-9.]+)"/', $ext));
         self::assertStringContainsString('MapPack.Keep', $ext);
         $roster = strpos($ext, 'HandleSyncRoster');
         self::assertNotFalse($roster);

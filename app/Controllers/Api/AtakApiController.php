@@ -25,6 +25,7 @@ use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
 use App\Repositories\ReconNoteRepository;
 use App\Support\ReconNoteCatalog;
+use App\Services\Monitoring\ReconNoteDiscordService;
 use App\Repositories\MapShapeRepository;
 use App\Repositories\LaserCodeRepository;
 use App\Repositories\TenantRepository;
@@ -66,6 +67,7 @@ use App\Repositories\AtakDeviceLogRepository;
 use App\Repositories\AtakRealismRepository;
 use App\Services\Tactical\MissionDisplaySettingsService;
 use App\Repositories\OperatorGameProfileRepository;
+use App\Services\GameEquipment\GameItemUsageRecorder;
 use App\Services\OperatorGame\OperatorGameObservationNormalizer;
 use App\Services\OperatorGame\OperatorGameReconciliationService;
 
@@ -223,6 +225,8 @@ class AtakApiController
     private ?AtakRealismRepository $realismRegistry = null;
     private ?OperatorGameProfileRepository $operatorGameProfiles = null;
 
+    private ?GameItemUsageRecorder $gameItemUsage = null;
+
     /** Register/sync is deliberately separate from the high-frequency position channel. */
     public function operatorRegister(Request $request, array $params = []): Response
     {
@@ -257,6 +261,8 @@ class AtakApiController
             $reference = [];
         }
         $profile = $repo->upsertProfile($tenantId, $reference, $steamId, $payload);
+        // Équipement porté et mods chargés (classements back-office, kits par rôle). Ne lève jamais.
+        ($this->gameItemUsage ??= new GameItemUsageRecorder())->record($tenantId, $steamId, $payload);
         if (!$linked) {
             if ($profile['first_seen']) {
                 $repo->event($tenantId, $profile['id'], $steamId, 'STEAM_ACCOUNT_NOT_FOUND', [
@@ -1187,7 +1193,11 @@ class AtakApiController
         }
 
         if (!AtakPlanAccess::allows($id)) {
-            return AtakPlanAccess::deniedJson();
+            // Liaison de base (formule Gratuit) : positions, comptes rendus et briefing passent quand même.
+            $basic = AtakPlanAccess::allowsBasic($id);
+            if (!$basic || !AtakPlanAccess::isBasicPath($request->path())) {
+                return AtakPlanAccess::deniedJson($basic);
+            }
         }
 
         return $id;
@@ -2615,6 +2625,24 @@ class AtakApiController
             static fn (\App\Services\Monitoring\AtakModReportDiscordTicketService $t) => $t->onReport($reportId)
         );
 
+        // Copie dans le salon Discord de la communauté du joueur (« Signalements du mod »), après la réponse au jeu.
+        if ($result['created'] && $steam !== null) {
+            try {
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                \App\Services\Integrations\CommunityModReportRelay::defer((int) ($accounts[$steam]['tenant_id'] ?? 0), [
+                    'gravity' => $result['gravity'],
+                    'source' => $source,
+                    'channel' => $channel,
+                    'message' => $message,
+                    'callsign' => $callsign,
+                    'player_name' => $playerName,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
+
         // Signalement joueur (Échap > Signaler un problème) ou erreur automatique critique : e-mail à
         // l'exploitation, jamais bloquant. Les autres détections automatiques restent sur la page.
         if ($result['created']) {
@@ -3298,6 +3326,14 @@ class AtakApiController
         }
         try {
             $row = $this->casRepo->createMedevac($tenantId, $mapId, $author, $body);
+        } catch (\PDOException $e) {
+            // Erreur base (communauté supprimée, donnée refusée) : réponse explicite plutôt que 503 générique.
+            error_log('medevacStore: ' . $e->getMessage());
+
+            return Response::json([
+                'error' => 'medevac_store_failed',
+                'message' => 'La demande MEDEVAC n’a pas pu être enregistrée sur Athena. Réessayez ; si cela continue, prévenez l’administration.',
+            ], 500);
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'migration_required') {
                 return Response::json([
@@ -6678,11 +6714,17 @@ class AtakApiController
                 $existing = $realism->findTerminalByUid($tenantId, $terminalUidPos);
                 $prev = strtolower((string) ($existing['compromise_state'] ?? 'none'));
                 if ($existing !== null && $prev !== $compromisePos) {
-                    $realism->setTerminalCompromise(
+                    $updated = $realism->setTerminalCompromise(
                         $tenantId,
                         $terminalUidPos,
                         $compromisePos,
                         $compromisePos === 'none' ? null : 'Remonté depuis le terrain'
+                    );
+                    (new \App\Repositories\AtakAdminControlRepository())->recordCompromise(
+                        $updated ?? $existing,
+                        $compromisePos,
+                        $compromisePos === 'none' ? null : 'Remonté depuis le terrain',
+                        'position'
                     );
                     if ($compromisePos !== 'none') {
                         $this->activityLog->record(
@@ -6989,6 +7031,53 @@ class AtakApiController
     }
 
     /**
+     * Téléphone ATAK natif (COMSPEC Link « Garmin.Report », 2.0.87) : la montre de l'app Garmin du joueur, envoyée en
+     * entier toutes les 5 min. Corps : {player_uid, call_sign, status: {bb, hr, stress, rest_hr, goal},
+     * days: [{day, steps, foot_m, …}], acts: [{day, at, type, place, world, m, sec}]}.
+     */
+    public function garmin(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $requireSteam = ComspecApiKeyAuth::matchedUserId() === null;
+        $actor = $this->guardArmaWrite($request, $tenantId, $requireSteam);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakGarminRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $user = null;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($sessionUserId !== null) {
+            $user = $this->userRepository->findById($sessionUserId, $tenantId);
+        }
+        $uid = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        if ($user === null && $uid !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $uid);
+        }
+        if ($user === null) {
+            return Response::json(['ok' => true, 'matched' => false]);
+        }
+        $report = \App\Repositories\AtakGarminRepository::normalizeReport($body);
+
+        return Response::json([
+            'ok' => $repo->saveReport($tenantId, (int) $user['id'], $report),
+            'matched' => true,
+            'days' => count($report['days']),
+            'activities' => count($report['activities']),
+        ]);
+    }
+
+    /**
      * Serveur Arma (COMSPEC Link « ScreenTime.Batch ») : temps de jeu et temps par rôle de tous les joueurs,
      * comptés par le serveur, donc même quand le téléphone d'un joueur n'a plus de batterie ni de réseau.
      * Corps : {mission_key, players: [{player_uid, call_sign, items: [{kind: play|role, key, label, seconds}]}]}.
@@ -7028,6 +7117,282 @@ class AtakApiController
         }
 
         return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched, 'recorded' => $recorded]);
+    }
+
+    /**
+     * Serveur Arma (COMSPEC Link « Distance.Batch », app Distances de l'ATAK natif) : distances parcourues et heures de
+     * pilote de tous les joueurs, comptées par le serveur et envoyées toutes les 10 min.
+     * Corps : {mission_key, players: [{player_uid, call_sign, steps, foot_m, foot_s, land_m, land_s, sea_m, sea_s, air_m,
+     * air_s, halo_m, halo_s, halo_jumps, pilot: [{class, label, kind: heli|plane, seconds, meters}]}]}.
+     */
+    public function distanceBatch(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakDistanceRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+        $matched = 0;
+        $unmatched = 0;
+        foreach (\App\Repositories\AtakDistanceRepository::normalizeBatch($body['players'] ?? []) as $p) {
+            $uid = SteamId::normalize($p['player_uid']);
+            $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
+            if ($user === null) {
+                $unmatched++;
+                continue;
+            }
+            if ($repo->addSession($tenantId, (int) $user['id'], $missionKey, $p['stats'], $p['pilot'])) {
+                $matched++;
+            }
+        }
+
+        return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched]);
+    }
+
+    /**
+     * Serveur Arma : ce que l'administration du site impose aux joueurs connectés (/admin/parc-atak).
+     * Corps : {players: [steam…]} (vide = toute la communauté). Réponse : {ok, messages: [{id, steam_uid, title, body,
+     * level, require_ack, created_at}], blocked: [{steam_uid, message, until}]}. Le serveur affiche les messages au joueur
+     * puis appelle /api/atak/admin-control/ack ; un joueur bloqué voit son ATAK verrouillé.
+     */
+    public function adminControlPending(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $steams = [];
+        foreach (is_array($body['players'] ?? null) ? array_slice($body['players'], 0, 300) : [] as $p) {
+            $s = SteamId::normalize(is_array($p) ? (string) ($p['player_uid'] ?? $p['steam_uid'] ?? '') : (string) $p);
+            if ($s !== null) {
+                $steams[$s] = $s;
+            }
+        }
+        $repo = new \App\Repositories\AtakAdminControlRepository();
+        $messages = [];
+        foreach ($repo->pendingForTenant($tenantId, array_values($steams)) as $m) {
+            $messages[] = [
+                'id' => (int) $m['id'],
+                'steam_uid' => (string) ($m['steam_uid'] ?? ''),
+                'kind' => (string) ($m['kind'] ?? 'message'),
+                'title' => (string) $m['title'],
+                'body' => (string) $m['body'],
+                'level' => (string) $m['level'],
+                'require_ack' => (int) $m['require_ack'] === 1,
+                'created_at' => (string) $m['created_at'],
+            ];
+        }
+        $blocked = [];
+        foreach ($steams as $s) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $s);
+            $block = $repo->activeBlockFor($tenantId, $user !== null ? (int) $user['id'] : null, $s);
+            if ($block !== null) {
+                $blocked[] = [
+                    'steam_uid' => $s,
+                    'message' => \App\Support\AtakAdminBlockGate::playerMessage($block),
+                    'until' => (string) ($block['expires_at'] ?? ''),
+                ];
+            }
+        }
+
+        return Response::json(['ok' => true, 'messages' => $messages, 'blocked' => $blocked]);
+    }
+
+    /** Serveur Arma : messages imposés affichés ({ids, state: "delivered"}) ou validés par le joueur ({ids, state: "acked"}). */
+    public function adminControlAck(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $body = $this->jsonBody($request);
+        $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 200) : [];
+        $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
+        $n = (new \App\Repositories\AtakAdminControlRepository())->markMessages($r, array_map('intval', $ids), $state);
+
+        return Response::json(['ok' => true, 'updated' => $n]);
+    }
+
+    /**
+     * ATAK du joueur (COMSPEC Link « AdminControl.Poll ») : ses messages et avis de l'administration pas encore validés
+     * (compromission, annulation, données réinitialisées, certificat, numéro, message imposé). Corps : {player_uid?}.
+     * Réponse : {ok, messages: [{id, kind, level, title, body, require_ack, created_at}]}.
+     */
+    public function adminControlMine(Request $request, array $params = []): Response
+    {
+        $ctx = $this->adminControlPlayer($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $steam] = $ctx;
+        $messages = [];
+        foreach ((new \App\Repositories\AtakAdminControlRepository())->pendingForPlayer($tenantId, $userId, $steam) as $m) {
+            $messages[] = [
+                'id' => (int) $m['id'],
+                'kind' => (string) ($m['kind'] ?? 'message'),
+                'level' => (string) $m['level'],
+                'title' => (string) $m['title'],
+                'body' => (string) $m['body'],
+                'require_ack' => (int) $m['require_ack'] === 1,
+                'created_at' => (string) $m['created_at'],
+            ];
+        }
+
+        return Response::json(['ok' => true, 'messages' => $messages]);
+    }
+
+    /** ATAK du joueur (« AdminControl.Ack ») : {ids, state: "delivered" | "acked"}, sur ses propres messages seulement. */
+    public function adminControlMineAck(Request $request, array $params = []): Response
+    {
+        $ctx = $this->adminControlPlayer($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $steam] = $ctx;
+        $body = $this->jsonBody($request);
+        $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 50) : [];
+        $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
+        $n = (new \App\Repositories\AtakAdminControlRepository())->markMessagesForPlayer($tenantId, $userId, $steam, array_map('intval', $ids), $state);
+
+        return Response::json(['ok' => true, 'updated' => $n]);
+    }
+
+    /**
+     * Joueur qui appelle : compte de la session de jeu, sinon Steam du corps.
+     *
+     * @return array{0: int, 1: ?int, 2: ?string}|Response
+     */
+    private function adminControlPlayer(Request $request): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        $actor = $this->guardArmaWrite($request, $tenantId, $sessionUserId === null);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $steam = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        $userId = $sessionUserId;
+        if ($userId === null && $steam !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $userId = $user !== null ? (int) $user['id'] : null;
+        }
+        if ($userId === null && $steam === null) {
+            return Response::json(['ok' => true, 'messages' => []]);
+        }
+
+        return [$tenantId, $userId, $steam];
+    }
+
+    /**
+     * COMSPEC Link (« Item.Icons », 2.0.88) : parmi les classes portées par le joueur, celles dont la communauté n'a
+     * pas encore l'icône. Corps : {classes: [classe…]} (200 au plus). Réponse : {ok, missing: [classe…]} (25 au plus).
+     */
+    public function itemIconsMissing(Request $request, array $params = []): Response
+    {
+        $ctx = $this->itemIconsContext($request, 64 * 1024);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $repo] = $ctx;
+        $classes = $this->jsonBody($request)['classes'] ?? [];
+
+        return Response::json(['ok' => true, 'missing' => $repo->missing($tenantId, is_array($classes) ? array_values($classes) : [])]);
+    }
+
+    /**
+     * COMSPEC Link (« Item.Icons ») : icône d'une classe, une seule fois. Corps : {class, picture, paa (base64 du .paa
+     * lu dans le PBO, réduit par la DLL au mipmap utile, 1 Mo au plus)} ou {class, picture, status: not_found} quand le fichier est introuvable chez le
+     * joueur. Le .paa est décodé ici (pas de fichier client stocké tel quel) puis rangé en PNG par empreinte.
+     */
+    public function itemIconUpload(Request $request, array $params = []): Response
+    {
+        $ctx = $this->itemIconsContext($request, HttpJsonBody::MAX_BYTES);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $repo] = $ctx;
+        $body = $this->jsonBody($request);
+        $class = \App\Repositories\GameItemIconRepository::validClass($body['class'] ?? null);
+        if ($class === null) {
+            return Response::json(['ok' => false, 'error' => 'invalid_class'], 400);
+        }
+        $picture = is_string($body['picture'] ?? null) ? $body['picture'] : '';
+        $paaB64 = is_string($body['paa'] ?? null) ? $body['paa'] : '';
+        try {
+            if ($paaB64 === '') {
+                $status = ($body['status'] ?? '') === 'not_found' ? 'not_found' : 'invalid';
+                $repo->mark($tenantId, $class, $status, null, null, null, $picture);
+
+                return Response::json(['ok' => true, 'status' => $status]);
+            }
+            $paa = base64_decode($paaB64, true);
+            if ($paa === false || $paa === '') {
+                return Response::json(['ok' => false, 'error' => 'invalid_base64'], 400);
+            }
+            $res = $repo->storePaa($tenantId, $class, $paa, $picture);
+        } catch (\Throwable $e) {
+            error_log('[item-icons] ' . $class . ' ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'store_failed'], 500);
+        }
+
+        return Response::json(['ok' => true] + $res);
+    }
+
+    /**
+     * @return array{0: int, 1: \App\Repositories\GameItemIconRepository}|Response
+     */
+    private function itemIconsContext(Request $request, int $maxBytes): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBytes || strlen(HttpJsonBody::rawJson()) > $maxBytes) {
+            return Response::json(['ok' => false, 'error' => 'payload_too_large'], 413);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\GameItemIconRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+
+        return [$r, $repo];
     }
 
     /**
@@ -7630,6 +7995,37 @@ class AtakApiController
         $payload = $svc->payloadForGame($tenantId);
 
         return Response::json($payload);
+    }
+
+    /**
+     * Conditions réseau appliquées en jeu depuis le menu Échap de l'ATAK natif (COMSPEC Link « NetConditions.Report »).
+     * Gardées pour la page Contrôle serveur (bloc « Appliquées en jeu ») ; les règles de la communauté ne changent pas.
+     * GET : dernières conditions reçues.
+     */
+    public function netConditions(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $svc = new \App\Services\Tactical\AtakExperienceService();
+        $method = strtoupper((string) ($request->method() ?? 'GET'));
+        if ($method === 'POST') {
+            if (!$this->authArma()) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $steam = is_array($actor) && is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
+            $live = $svc->recordLiveNetwork($tenantId, $this->jsonBody($request), $steam);
+
+            return Response::json(['ok' => true, 'net_live' => $live]);
+        }
+
+        return Response::json(['net_live' => $svc->get($tenantId)['settings']['net_live'] ?? []]);
     }
 
     /**
@@ -11855,6 +12251,9 @@ class AtakApiController
         $text = trim((string) ($body['text'] ?? ''));
         $tag = ReconNoteCatalog::normalizeTag((string) ($body['tag'] ?? ''));
         if ($text === '' && $tag === '') {
+            // Corps illisible (guillemets doublés d'une ancienne DLL) ou note vide : tracé, sinon la reco disparaît sans bruit.
+            error_log('[atak/recon-notes] note refusée (vide ou illisible), tenant ' . $tenantId . ', ' . strlen(HttpJsonBody::rawJson()) . ' octets reçus');
+
             return Response::json([
                 'error' => 'empty',
                 'message' => 'Indiquez une observation ou un type.',
@@ -11903,6 +12302,25 @@ class AtakApiController
         if ($row !== []) {
             // Relais JNET : la reco remonte de l'unité de l'opérateur vers son échelon supérieur.
             $this->jnetBridge()->relayReconNote($tenantId, $this->jnetGameUserId($tenantId, $actor, $authorUid), $row);
+            if ($existing === null) {
+                // Journal Activité (admin) et salon Discord des recos, une fois par note (pas aux renvois).
+                $author = trim((string) ($row['author'] ?? ''));
+                $tagLabel = ReconNoteCatalog::tagLabel((string) ($row['tag'] ?? ''));
+                $this->activityLog->record(
+                    $tenantId,
+                    max(1, $mapId),
+                    AtakActivityLogService::TYPE_INTEL,
+                    'Reco ' . $tagLabel . ($text !== '' ? ' — ' . $text : '') . ' (' . ReconNoteDiscordService::grid($row) . ')',
+                    $author !== '' ? $author : null,
+                    $this->buildActivityMeta($tenantId, max(1, $mapId), $body, is_array($actor) ? $actor : null, null, [
+                        'kind' => 'recon_note',
+                        'tag' => (string) ($row['tag'] ?? ''),
+                        'confidence' => (string) ($row['confidence'] ?? ''),
+                        'source_id' => $sourceId,
+                    ])
+                );
+                ReconNoteDiscordService::defer($tenantId, $row);
+            }
         }
 
         return Response::json(['ok' => true, 'note' => $row]);
@@ -12289,6 +12707,16 @@ class AtakApiController
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
             ] + $photoMeta;
+            // Visages floutés par le mode photo du téléphone (cadres envoyés par le jeu), avant tout le reste :
+            // l'original gardé par la correction de couleur ne doit pas montrer les visages.
+            $faceBlur = \App\Support\PhotoFaceBlur::fromExtra((string) ($_POST['photo_extra'] ?? ''));
+            if ($faceBlur !== null) {
+                try {
+                    \App\Support\PhotoFaceBlur::applyFile($path, $faceBlur);
+                } catch (\Throwable $blurErr) {
+                    error_log('[atak/recon-images] face blur ' . $blurErr->getMessage());
+                }
+            }
             // Captures d'Arma délavées : niveaux et tons moyens corrigés avant l'incrustation (original gardé à côté).
             if (!\App\Support\PhotoAutoLevel::skipsProfile($data['fx_profile'] ?? null, $deviceNorm)) {
                 try {

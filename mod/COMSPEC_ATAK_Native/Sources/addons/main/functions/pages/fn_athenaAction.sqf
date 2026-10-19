@@ -1,6 +1,6 @@
 /*
     Connexion Athena depuis le terminal : mêmes commandes que le panneau Athena d'Overwatch
-    (Steam, e-mail + mot de passe, code e-mail, code d'appairage du portail, Entrer, Déconnexion).
+    (Steam, e-mail + mot de passe, code e-mail, code d'appairage du portail, Entrer, Reconnecter, Déconnexion).
     Avec COMSPEC Link, on passe par sa DLL et ses fonctions pour garder une seule session.
     Params : [action]
 */
@@ -52,6 +52,25 @@ switch (_action) do {
         ["Ouverture du canal poste…"] call _hint;
         ["ConnectC2", []] call _ext;
         if (_bridge) then { [] call comspec_overwatch_connect_fnc_pollAuth; [] call comspec_overwatch_connect_fnc_reopenTransmitChannel; };
+    };
+    case "reconnect": {
+        // Relance complète de la liaison (même chemin que « Reconnecter Athena » du dépannage Échap).
+        ["Reconnexion à Athena…"] call _hint;
+        if (_bridge) then {
+            missionNamespace setVariable ["COMSPEC_LinkState", "connecting", false];
+            missionNamespace setVariable ["COMSPEC_LinkDetail", "Reconnexion manuelle…", false];
+            [] spawn {
+                [] call comspec_overwatch_connect_fnc_connect;
+                private _ok = (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isEqualTo "linked";
+                uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", [["Reconnexion impossible : voir les étapes de la liaison.", "Liaison Athena rétablie."] select _ok, !_ok, diag_tickTime]];
+                [] call comspec_overwatch_connect_fnc_pollAuth;
+                [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
+                [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            };
+        } else {
+            ["AuthSteam", [_url, _steam, _pack]] call _ext;
+            ["ConnectC2", []] call _ext;
+        };
     };
     case "logout": {
         if (_bridge) then { [] call comspec_overwatch_connect_fnc_logout; } else { ["Logout", []] call _ext; };

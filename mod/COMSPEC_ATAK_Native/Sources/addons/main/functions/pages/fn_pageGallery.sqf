@@ -151,6 +151,9 @@ if (_tab isEqualTo "LIB") exitWith {
         if (_kind isEqualTo "DRONE") then { _s set ["dronePhEdit", -1]; };
         _kind = "";
     };
+    // Galerie seule ou incrustée dans l'app Photos : le sous-écran appartient à la page affichée.
+    private _st1 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    _st1 set ["backSub", [_st1 getOrDefault ["activePage", ""], ["LIB"] call _go]];
     private _back = ["bar", [["", [["RETOUR À LA GALERIE", ["LIB"] call _go, "", "Revenir à la liste des photos (la fiche est enregistrée)"]]]]];
     switch (true) do {
         case (_di >= 0): {
@@ -243,7 +246,7 @@ if (_tab isEqualTo "SENT") exitWith {
         if ((toUpper _kind) isEqualTo "PHOTO") then {
             _lines pushBack format ["<t color='#8a9a93'>%1</t>  %2<br/><t size='0.85'>%3</t>", [_time] call _esc, [_title] call _esc, [_text] call _esc];
         };
-    } forEach (missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []]);
+    } forEach (["var", ["COMSPEC_Athena_AlertInbox", []]] call comspec_atak_native_fnc_offline);
     reverse _lines;
     private _watch = _droneList select { ((_x select 1) param [8, ""]) in ["SENDING", "FAILED"] };
     private _rows = _head + [

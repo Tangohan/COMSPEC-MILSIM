@@ -1,6 +1,8 @@
 /*
     Applications déclarées dans configFile >> "COMSPEC_ATAK_Apps", triées par "order".
-    Retourne un tableau de HashMaps : id, name, page, section, icon, dock, module (app d'un autre addon).
+    Retourne un tableau de HashMaps : id, name, page, section, icon, dock, module (app d'un autre addon),
+    wip (app en chantier : affichée grisée, ne s'ouvre pas), new (app récente : pastille NOUVEAU au lanceur tant
+    que le joueur ne l'a pas ouverte).
 */
 private _cached = uiNamespace getVariable ["COMSPEC_ATAK_AppsCache", []];
 if ((count _cached) > 0) exitWith { _cached };
@@ -19,7 +21,9 @@ private _apps = _sorted apply {
         ["section", getText (_cfg >> "section")],
         ["icon", getText (_cfg >> "icon")],
         ["dock", (getNumber (_cfg >> "dock")) > 0],
-        ["module", (getText (_cfg >> "function")) isNotEqualTo ""]
+        ["module", (getText (_cfg >> "function")) isNotEqualTo ""],
+        ["wip", (getNumber (_cfg >> "wip")) > 0],
+        ["new", (getNumber (_cfg >> "new")) > 0]
     ]
 };
 uiNamespace setVariable ["COMSPEC_ATAK_AppsCache", _apps];

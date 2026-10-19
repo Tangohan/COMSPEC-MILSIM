@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.85";
+    private const string ExtensionVersion = "2.0.89";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -399,8 +399,10 @@ public static partial class Extension
         return sb.ToString().Trim();
     }
 
+    // Pointeurs UTF-8 passés à la main : Arma lit les données du callback en UTF-8. Avec LPStr (page de code
+    // ANSI), « é » partait en octet 0xE9 et arrivait en « � » côté jeu puis dans les rapports (2.0.89).
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    private delegate int ExtensionCallback([MarshalAs(UnmanagedType.LPStr)] string name, [MarshalAs(UnmanagedType.LPStr)] string function, [MarshalAs(UnmanagedType.LPStr)] string data);
+    private delegate int ExtensionCallback(nint name, nint function, nint data);
 
     private static ExtensionCallback? _callback;
 
@@ -422,11 +424,34 @@ public static partial class Extension
             // Arma callback peut être appelé hors thread jeu ; démarrer une tâche dédiée.
             _ = Task.Run(() =>
             {
-                try { cb("comspec", function, data); }
+                nint pName = 0, pFunction = 0, pData = 0;
+                try
+                {
+                    pName = Marshal.StringToCoTaskMemUTF8("comspec");
+                    pFunction = Marshal.StringToCoTaskMemUTF8(function);
+                    pData = Marshal.StringToCoTaskMemUTF8(Utf8Clip(data, 20000));
+                    cb(pName, pFunction, pData);
+                }
                 catch { /* ne jamais faire planter le process hôte */ }
+                finally
+                {
+                    if (pName != 0) Marshal.FreeCoTaskMem(pName);
+                    if (pFunction != 0) Marshal.FreeCoTaskMem(pFunction);
+                    if (pData != 0) Marshal.FreeCoTaskMem(pData);
+                }
             });
         }
         catch { }
+    }
+
+    /// <summary>Coupe à <paramref name="maxBytes"/> octets UTF-8 sans casser un caractère (limite du tampon callback).</summary>
+    private static string Utf8Clip(string s, int maxBytes)
+    {
+        if (Encoding.UTF8.GetByteCount(s) <= maxBytes) return s;
+        var bytes = Encoding.UTF8.GetBytes(s);
+        var end = maxBytes;
+        while (end > 0 && (bytes[end] & 0xC0) == 0x80) end--; // ne pas couper au milieu d'un caractère
+        return Encoding.UTF8.GetString(bytes, 0, end);
     }
 
     private static void ApplyModVersion(string? raw)
@@ -1549,6 +1574,7 @@ public static partial class Extension
             var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var sentCode = (int)response.StatusCode;
             JournalHttp(started, sentCode);
+            NoteTrafficUntracked(req, response);
             // Issue notée après la remise en file éventuelle (finally) pour distinguer nouvel essai et échec.
             try
             {
@@ -2279,15 +2305,20 @@ public static partial class Extension
     private static HttpResponseMessage SendTimed(HttpRequestMessage req, CancellationToken token)
     {
         var started = DateTime.UtcNow.Ticks;
+        // gzip + empreinte de la dernière réponse (304 = inchangée, copie gardée resservie) ; volume compté par canal.
+        PrepareTrackedRequest(req);
+        var outBytes = EstimateRequestBytes(req);
         try
         {
             var resp = HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
             JournalHttp(started, (int)resp.StatusCode);
+            FinishTrackedResponse(req, resp, outBytes, token);
             return resp;
         }
         catch
         {
             JournalHttp(started, -1);
+            NoteTraffic(TrafficChannelKey(req.RequestUri), outBytes, 0, -1);
             throw;
         }
     }
@@ -2366,11 +2397,11 @@ public static partial class Extension
         return "OK|" + payload;
     }
 
-    private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token)
+    private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token, bool gzip = false)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            Content = JsonContent(jsonBody)
+            Content = gzip ? GzipJsonContent(jsonBody) : JsonContent(jsonBody)
         };
         AttachApiKeyHeader(req);
         var started = DateTime.UtcNow.Ticks;
@@ -2989,6 +3020,9 @@ public static partial class Extension
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
         if (function == "SendQueue.Status")
             return JournalStatusForSqf();
+        // Volume échangé avec Athena par canal (app Réseau du téléphone, bandeau de dépannage) : en mémoire, sans réseau.
+        if (function == "SyncStats")
+            return SyncStatsForSqf();
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
@@ -3052,6 +3086,11 @@ public static partial class Extension
         {
             return ClipCommand(function, args);
         }
+        // Transfert de photos et de musiques entre téléphones par l'app Bluetooth (BtTransfer.cs).
+        if (function != null && function.StartsWith("Bt", StringComparison.Ordinal))
+        {
+            return BtCommand(function, args);
+        }
 #endif
 
         if (function == "MemStats")
@@ -3074,14 +3113,34 @@ public static partial class Extension
             return "OK|queued";
         }
 
-        if (function is "Squad.Sync" or "ScreenTime.Report")
+        // Serveur Arma : distances parcourues (pas, à pied, véhicule, vol, saut) et heures de pilote par appareil
+        // de tous les joueurs (app Distances de l'ATAK natif), toutes les 10 min. « probe » : la DLL sait-elle envoyer ?
+        // Icônes des objets portés (Item.Icons, 2.0.88) : .paa lu dans le PBO puis envoyé une fois par classe.
+        // args: [json {items: [[classe, picture]…]}] ou ["status"] → OK|queued
+        if (function == "Item.Icons") return HandleItemIcons(args);
+
+        if (function == "Distance.Batch")
+        {
+            if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            if (args[0] == "probe") return "OK|ready";
+            var batch = NormalizeArmaJson(args[0]);
+            if (batch.Length > 60000) return "ERR|payload_too_large";
+            EnqueueOrSend(_baseUrl + "/api/atak/distance/batch", EnrichAtakPayload(batch));
+            return "OK|queued";
+        }
+
+        // Montre de l'app Garmin (Garmin.Report, 2.0.87) : état, 14 derniers jours et 40 dernières activités du joueur, toutes les 5 min.
+        // NetConditions.Report (2.0.89) : conditions réseau appliquées au serveur depuis le menu Échap de l'ATAK natif.
+        if (function is "Squad.Sync" or "ScreenTime.Report" or "Garmin.Report" or "NetConditions.Report")
         {
             if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
             if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
             if (!HasPortalAuth()) return "ERR|unauthorized";
             var json = NormalizeArmaJson(args[0]);
             if (json.Length > 60000) return "ERR|payload_too_large";
-            var path = function == "Squad.Sync" ? "/api/atak/squads/sync" : "/api/atak/screen-time";
+            var path = function switch { "Squad.Sync" => "/api/atak/squads/sync", "Garmin.Report" => "/api/atak/garmin", "NetConditions.Report" => "/api/atak/net-conditions", _ => "/api/atak/screen-time" };
             EnqueueOrSend(_baseUrl + path, EnrichAtakPayload(json));
             return "OK|queued";
         }
@@ -3147,6 +3206,65 @@ public static partial class Extension
             catch (Exception ex) { return FormatCaughtError(ex); }
         }
 
+        // Messages et avis de l'administration pour ce joueur (site : /admin/parc-atak) : compromission, annulation,
+        // données ATAK réinitialisées, certificat, numéro, message imposé. L'ATAK natif les affiche en alerte.
+        // args: [json {player_uid, terminal_uid}] → OK|une ligne par message : id\tgenre\tniveau\ttitre\ttexte\tà valider (1/0)
+        if (function == "AdminControl.Poll")
+        {
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            if (!TryBuildRequestUri(_baseUrl, "/api/atak/admin-control/mine", out var acUri, out var acErr) || acUri is null)
+                return "ERR|" + acErr;
+            try
+            {
+                using var acCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                var resp = SendJsonPost(acUri.AbsoluteUri, EnrichAtakPayload(args.Length > 0 ? args[0] : "{}"), acCts.Token);
+                var body = ReadContentUtf8(resp, acCts.Token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(body);
+                if (!doc.RootElement.TryGetProperty("messages", out var list) || list.ValueKind != JsonValueKind.Array) return "OK|";
+                string Clean(JsonElement m, string k)
+                {
+                    if (!m.TryGetProperty(k, out var v)) return "";
+                    var t = v.ValueKind switch
+                    {
+                        JsonValueKind.String => v.GetString() ?? "",
+                        JsonValueKind.Number => v.GetRawText(),
+                        JsonValueKind.True => "1",
+                        JsonValueKind.False => "0",
+                        _ => "",
+                    };
+                    return t.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+                }
+                var sb = new StringBuilder();
+                foreach (var m in list.EnumerateArray().Take(20))
+                {
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(Clean(m, "id")).Append('\t').Append(Clean(m, "kind")).Append('\t').Append(Clean(m, "level")).Append('\t')
+                      .Append(Clean(m, "title")).Append('\t').Append(Clean(m, "body")).Append('\t').Append(Clean(m, "require_ack"));
+                }
+                return "OK|" + sb;
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        // L'ATAK signale ses messages affichés (delivered) ou validés par le joueur (acked).
+        // args: [ids séparés par des virgules, "delivered" | "acked", player_uid] → OK|queued
+        if (function == "AdminControl.Ack")
+        {
+            if (args.Length < 2 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            var ids = args[0].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(x => long.TryParse(x, NumberStyles.Integer, CultureInfo.InvariantCulture, out _)).Take(50).ToArray();
+            if (ids.Length == 0) return "ERR|payload_empty";
+            var state = args[1] == "acked" ? "acked" : "delivered";
+            var uid = args.Length > 2 ? new string((args[2] ?? "").Where(char.IsDigit).ToArray()) : "";
+            var json = "{\"ids\":[" + string.Join(",", ids) + "],\"state\":\"" + state + "\"" + (uid.Length > 0 ? ",\"player_uid\":\"" + uid + "\"" : "") + "}";
+            EnqueueOrSend(_baseUrl + "/api/atak/admin-control/mine/ack", EnrichAtakPayload(json));
+            return "OK|queued";
+        }
+
         if (function == "SetMapId")
         {
             ApplyMapId(args.Length > 0 ? args[0] : "");
@@ -3173,6 +3291,15 @@ public static partial class Extension
             return ApplyEmitTelemetry(args);
         }
 
+        // Empreinte d'une tenue ACE (panneau Tenues Athena) : sha256 du texte tel que SyncWardrobe l'envoie, comparé au
+        // payload_sha256 du site pour savoir quelles tenues locales n'y sont pas encore (sans rien renvoyer). 2.0.88.
+        // ["HashText", [texte]] -> « OK|<sha256 hex minuscule> ».
+        if (function == "HashText")
+        {
+            var text = args.Length > 0 ? (args[0] ?? "") : "";
+            return "OK|" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
+        }
+
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
@@ -3187,7 +3314,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText";
         }
 
         if (function == "GetCapabilities")
@@ -3204,7 +3331,8 @@ public static partial class Extension
                 _baseUrl = baseUrl;
                 var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
-                if (steam.Length >= 10) _steamUid = steam;
+                // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
+                ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
                     ? _terminalUid
                     : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
@@ -3321,7 +3449,8 @@ public static partial class Extension
                 var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
                 _baseUrl = baseUrl;
-                if (steam.Length >= 10) _steamUid = steam;
+                // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
+                ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
                     ? _terminalUid
                     : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
@@ -4201,6 +4330,9 @@ public static partial class Extension
             {
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return "ERR|payload_vide";
+                // Guillemets doublés par callExtension : sans normalisation, PHP lisait un corps vide et
+                // répondait 400 « Indiquez une observation » (aucune reco n'arrivait au poste). 2.0.87.
+                json = EnrichAtakPayload(json);
                 var response = SendJsonPost(_baseUrl + "/api/recon/notes", json, token);
                 var body = ReadContentUtf8(response, token);
                 var safeBody = (body ?? "").Replace("\n", " ").Replace("\r", "").Replace("|", "/");
@@ -4322,7 +4454,7 @@ public static partial class Extension
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
-            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner
+            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
             // Args optionnels : [startLine] — page par lignes complètes (évite troncature).
             // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
             if (function == "ListWardrobes")
@@ -6576,6 +6708,13 @@ public static partial class Extension
                 if (doc.RootElement.TryGetProperty(key, out var el) && el.ValueKind == JsonValueKind.String)
                     AppendLine(sb, key, el.GetString() ?? "player");
             }
+            // Conditions réseau de la communauté (Contrôle serveur > Réseau et simulation, 2.0.89) : toutes les clés net_*,
+            // lues par l'ATAK natif (fn_netCond) sans nouvelle version de la DLL quand une condition s'ajoute.
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (prop.Name.StartsWith("net_", StringComparison.Ordinal) && prop.Name.Length <= 40 && prop.Value.ValueKind == JsonValueKind.String)
+                    AppendLine(sb, prop.Name, prop.Value.GetString() ?? "player");
+            }
             if (doc.RootElement.TryGetProperty("guide", out var guide) && guide.ValueKind == JsonValueKind.String)
             {
                 var g = guide.GetString() ?? "";
@@ -6838,11 +6977,13 @@ public static partial class Extension
                 var bytes = el.TryGetProperty("payload_bytes", out var b) ? b.ToString() : "0";
                 var upd = el.TryGetProperty("updated_at", out var u) && u.ValueKind == JsonValueKind.String ? Clean(u.GetString() ?? "") : "";
                 var owner = el.TryGetProperty("owner_label", out var o) && o.ValueKind == JsonValueKind.String ? Clean(o.GetString() ?? "") : "";
+                var mine = el.TryGetProperty("mine", out var m) && (m.ValueKind == JsonValueKind.True || (m.ValueKind == JsonValueKind.Number && m.GetInt32() != 0)) ? "1" : "0";
+                var sha = el.TryGetProperty("payload_sha256", out var h) && h.ValueKind == JsonValueKind.String ? Clean(h.GetString() ?? "") : "";
                 if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name)) continue;
                 if (sb.Length > 0) sb.Append('\n');
                 sb.Append(id).Append('\t').Append(name).Append('\t').Append(slug).Append('\t')
                     .Append(coll).Append('\t').Append(fav).Append('\t').Append(bytes).Append('\t').Append(upd)
-                    .Append('\t').Append(owner);
+                    .Append('\t').Append(owner).Append('\t').Append(mine).Append('\t').Append(sha);
             }
             return sb.ToString();
         }
@@ -8558,7 +8699,7 @@ public static partial class Extension
             {
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return;
-                EnqueueOrSend(_baseUrl + "/api/recon/notes", json);
+                EnqueueOrSend(_baseUrl + "/api/recon/notes", EnrichAtakPayload(json));
                 return;
             }
 
@@ -11712,7 +11853,8 @@ public static partial class Extension
             if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var err) || uri is null)
                 return FormatAtakExtArray("ERROR", err);
             var payload = EnrichOperatorProfilePayload(json);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token);
+            // Fiche (équipement, catalogue, mods) : 10 à 25 Ko en clair, compressée en gzip (Athena la décompresse).
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token, gzip: true);
             var body = ReadContentUtf8(resp, cts.Token);
             if (resp.IsSuccessStatusCode)
                 return FormatOperatorProfileResponse(body);

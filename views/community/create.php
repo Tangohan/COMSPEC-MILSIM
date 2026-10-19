@@ -136,8 +136,10 @@ $guideUrl = url('communities/create/guide');
                                 <select id="cc-locale" name="wizard_default_locale" class="cc-select">
                                     <option value="fr" selected>Français</option>
                                     <option value="en">English</option>
+                                    <option value="ru">Русский</option>
+                                    <option value="es">Español</option>
                                 </select>
-                                <p class="cc-hint">Langue des e-mails et des textes par défaut. Chaque membre peut choisir la sienne.</p>
+                                <p class="cc-hint">Langue de travail de l’unité (ORBAT, annuaire). Le site s’affiche en français ou en anglais, au choix de chaque membre.</p>
                             </div>
                             <div>
                                 <label class="cc-label" for="cc-tz">Fuseau horaire</label>

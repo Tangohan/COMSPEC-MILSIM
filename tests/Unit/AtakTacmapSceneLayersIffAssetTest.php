@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakTacmapSceneLayersIffAssetTest extends TestCase
 {
@@ -25,8 +26,8 @@ final class AtakTacmapSceneLayersIffAssetTest extends TestCase
         $iffTick = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_iffProximityTick.sqf');
         $iffAlert = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_iffProximityAlert.sqf');
 
-        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
         self::assertStringContainsString('class athena_iffProximityTick {}', $cfgA);
         self::assertStringContainsString('class athena_iffProximityAlert {}', $cfgA);
 

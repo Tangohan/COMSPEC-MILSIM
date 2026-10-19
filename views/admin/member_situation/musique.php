@@ -90,6 +90,7 @@ $titles = [
         <label class="ath-field"><span class="ath-field__label">Titre</span><input class="ath-field__input" name="title" maxlength="160" placeholder="Repris du nom du fichier si vide" data-music-title></label>
         <label class="ath-field"><span class="ath-field__label">Artiste</span><input class="ath-field__input" name="artist" maxlength="120"></label>
         <label class="ath-field"><span class="ath-field__label">Genre</span><input class="ath-field__input" name="genre" maxlength="60" placeholder="Rock, ambiance, radio…"></label>
+        <label class="ath-field"><span class="ath-field__label">Pseudo affiché</span><input class="ath-field__input" name="uploader_alias" maxlength="80" placeholder="Votre indicatif si vide"></label>
         <label class="ath-field"><span class="ath-field__label">Bibliothèque</span>
           <select class="ath-field__select" name="scope">
             <option value="org"<?= $view !== 'community' ? ' selected' : '' ?>>Mon organisation (ses membres seulement)</option>
@@ -291,6 +292,7 @@ $titles = [
                           <label class="ath-field"><span class="ath-field__label">Titre</span><input class="ath-field__input" name="title" maxlength="160" value="<?= $h($t['title']) ?>"></label>
                           <label class="ath-field"><span class="ath-field__label">Artiste</span><input class="ath-field__input" name="artist" maxlength="120" value="<?= $h($t['artist'] ?? '') ?>"></label>
                           <label class="ath-field"><span class="ath-field__label">Genre</span><input class="ath-field__input" name="genre" maxlength="60" value="<?= $h($t['genre'] ?? '') ?>"></label>
+                          <label class="ath-field"><span class="ath-field__label">Pseudo affiché</span><input class="ath-field__input" name="uploader_alias" maxlength="80" value="<?= $h($t['uploader_alias'] ?? '') ?>" placeholder="Votre indicatif si vide"></label>
                           <label class="ath-field"><span class="ath-field__label">Bibliothèque</span>
                             <select class="ath-field__select" name="scope">
                               <option value="org"<?= $t['scope'] === 'org' ? ' selected' : '' ?>>Mon organisation</option>

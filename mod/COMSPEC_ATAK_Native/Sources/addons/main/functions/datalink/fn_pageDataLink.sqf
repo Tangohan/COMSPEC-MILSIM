@@ -173,6 +173,7 @@ if (_view isEqualType 0 && {_view >= 0} && {(count _e) >= 5}) exitWith {
         };
     };
     _rows pushBack ["text", format ["<t size='0.8' color='%1'>Récupéré à %2, carroyage %3</t>", _grey, _clock, _grid]];
+    (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["DATALINK", { ["view", -1] call comspec_atak_native_fnc_dataAction; }]];
     _rows pushBack ["buttons", [
         ["RETOUR", { ["view", -1] call comspec_atak_native_fnc_dataAction; }, false],
         ["PARTAGER", compile format ["['share', %1] call comspec_atak_native_fnc_dataAction;", _view], true],

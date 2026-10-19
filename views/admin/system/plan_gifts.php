@@ -133,7 +133,7 @@ $err = \App\Core\Session::getFlash('error');
                 <h2 class="pa-card__title" style="margin:0 0 0.35rem;">Fins de formule</h2>
                 <p class="pa-card__help" style="margin-bottom:1rem;">
                     Communautés dont l’essai fondateur ou la formule offerte se termine bientôt, celles en période de grâce,
-                    et celles dont la liaison avec le jeu est refusée faute de carte dans leur formule.
+                    et celles qui n’ont que la liaison jeu de base.
                 </p>
 
                 <h3 class="pa-label" style="margin:1.25rem 0 0.5rem;">Se terminent dans les <?= max(14, (int) ($endCfg['warning_days'] ?? 7)) ?> prochains jours (<?= count($endWatch['ending']) ?>)</h3>
@@ -159,9 +159,9 @@ $err = \App\Core\Session::getFlash('error');
                                         </td>
                                         <td>
                                             <?php if (!empty($r['loses_atak'])): ?>
-                                                <span class="pa-pill pa-pill--rose">Perd la liaison jeu</span>
+                                                <span class="pa-pill pa-pill--rose">Perd la carte complète</span>
                                             <?php else: ?>
-                                                <span class="pa-pill pa-pill--slate">Garde la liaison jeu</span>
+                                                <span class="pa-pill pa-pill--slate">Garde la carte complète</span>
                                             <?php endif; ?>
                                         </td>
                                         <td><?= !empty($r['warned']) ? '<span class="pa-pill pa-pill--mint">E-mail envoyé</span>' : '<span class="pa-sub">Pas encore</span>' ?></td>
@@ -195,8 +195,8 @@ $err = \App\Core\Session::getFlash('error');
                     </div>
                 <?php endif; ?>
 
-                <h3 class="pa-label" style="margin:1.5rem 0 0.5rem;">Liaison avec le jeu refusée (<?= count($endWatch['gated']) ?>)</h3>
-                <p class="pa-hint" style="margin-bottom:0.5rem;">Leur formule n’a pas la carte et les liaisons : photos, positions et comptes rendus envoyés depuis le jeu reçoivent un refus « fonction indisponible ».</p>
+                <h3 class="pa-label" style="margin:1.5rem 0 0.5rem;">Carte complète refusée (<?= count($endWatch['gated']) ?>)</h3>
+                <p class="pa-hint" style="margin-bottom:0.5rem;">Leur formule n’a pas la carte complète : photos, vidéo drone et autres outils du jeu reçoivent un refus « fonction indisponible ». La liaison de base (positions, comptes rendus, briefing) passe si la formule l’inclut.</p>
                 <?php if ($endWatch['gated'] === []): ?>
                     <p class="pa-card__help">Aucune communauté bloquée.</p>
                 <?php else: ?>
@@ -248,7 +248,7 @@ $err = \App\Core\Session::getFlash('error');
                                 <input type="checkbox" name="grace_enabled" value="1" <?= !empty($endCfg['grace_enabled']) ? 'checked' : '' ?>>
                                 <span>
                                     <strong>Période de grâce après la fin</strong>
-                                    <em>Les modules de la formule terminée (dont la liaison avec le jeu) restent ouverts quelques jours. Désactivée par défaut : coupure le jour de la fin.</em>
+                                    <em>Les modules de la formule terminée (dont la carte complète et les photos du jeu) restent ouverts quelques jours. Désactivée par défaut : coupure le jour de la fin.</em>
                                 </span>
                             </label>
                             <div class="pa-field">

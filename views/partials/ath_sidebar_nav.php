@@ -32,6 +32,7 @@ $athIcoPaths = [
     'mail' => 'M3 6h18v12H3zM3 7l9 6 9-6',
     'roleplay' => 'M12 3c3 0 5 2 5 5 0 2-1 3.5-2.5 4.5L12 21l-2.5-8.5C8 11.5 7 10 7 8c0-3 2-5 5-5z',
     'coop' => 'M8 12h8M10 8l-4 4 4 4M14 8l4 4-4 4M5 5h14v14H5z',
+    'pulse' => 'M3 12h4l3-8 4 16 3-8h4',
 ];
 
 $athIco = static function (string $key) use ($athIcoPaths, $h): string {
@@ -133,6 +134,14 @@ $recruitChildren = [
     ['label' => 'Statistiques', 'href' => url('back-office/ressources/recrutement/analyses'), 'active' => $navAt('back-office/ressources/recrutement/analyses')],
 ];
 
+// Métriques joueurs : ce que le jeu remonte (temps d'écran, distances, heures de vol, montre Garmin).
+$metricsChildren = [
+    ['label' => 'Vue d’ensemble', 'href' => url('back-office/metriques-joueurs'), 'active' => $navAt('back-office/metriques-joueurs')],
+    ['label' => 'Temps d’écran et rôles', 'href' => url('back-office/atak/temps-ecran'), 'active' => $navAt('back-office/atak/temps-ecran')],
+    ['label' => 'Heures de jeu (tableur)', 'href' => url('back-office/atak/heures'), 'active' => $navAt('back-office/atak/heures')],
+    ['label' => 'Escouades en jeu', 'href' => url('back-office/atak/escouades'), 'active' => $navAt('back-office/atak/escouades')],
+];
+
 $rhChildren = [
     ['label' => 'Alertes RH', 'href' => effectifs_workspace_url('alertes'), 'active' => $navAt($effPath . '/alertes')],
     ['label' => 'Demandes d’accès élevé', 'href' => effectifs_workspace_url('elevations'), 'active' => $navAt($effPath . '/elevations')],
@@ -188,6 +197,8 @@ $communityChildren = array_values(array_filter([
         : null,
     ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'active' => $navAt('back-office/dashboard-pins')],
     ['label' => 'Tenues mises en avant', 'href' => url('back-office/dashboard-tenues'), 'active' => $navAt('back-office/dashboard-tenues')],
+    ['label' => 'Équipement des joueurs', 'href' => url('back-office/equipement-joueurs'), 'active' => $navAt('back-office/equipement-joueurs')],
+    ['label' => 'Kits par rôle', 'href' => url('back-office/kits-roles'), 'active' => $navAt('back-office/kits-roles')],
     ['label' => 'Catégories du forum', 'href' => url('back-office/categories'), 'active' => $navAt('back-office/categories')],
 ], static fn (?array $row): bool => is_array($row)));
 
@@ -202,6 +213,7 @@ $messagesChildren = [
 
 $doctrineChildren = [
     ['label' => 'Doctrine et SOP', 'href' => url('back-office/doctrine'), 'active' => $navAt('back-office/doctrine')],
+    ['label' => 'Fichiers partagés', 'href' => url('back-office/partage'), 'active' => $navAt('back-office/partage')],
     ['label' => 'Types de documents', 'href' => url('back-office/documents/types'), 'active' => $navAt('back-office/documents/types')],
     ['label' => 'Nomenclature', 'href' => url('back-office/documents/nomenclature'), 'active' => $navAt('back-office/documents/nomenclature')],
     ['label' => 'Conformité', 'href' => url('back-office/documents/compliance'), 'active' => $navAt('back-office/documents/compliance')],
@@ -222,6 +234,7 @@ $cooperationChildren = [
 
 $atakDeviceChildren = [
     ['label' => 'Parc de terminaux', 'href' => url('back-office/atak/realisme'), 'active' => $navAtakDevicesActive],
+    ['label' => 'Parc ATAK des membres', 'href' => url('back-office/atak/parc-atak'), 'active' => $navAt('back-office/atak/parc-atak')],
     ['label' => 'Sessions et connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive],
     ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],
@@ -426,6 +439,13 @@ if ($isOperatorBoNav) {
                     'icon' => 'users',
                     'active' => $anyActive($membersChildren),
                     'children' => $membersChildren,
+                ],
+                [
+                    'label' => 'Métriques joueurs',
+                    'href' => url('back-office/metriques-joueurs'),
+                    'icon' => 'pulse',
+                    'active' => $anyActive($metricsChildren),
+                    'children' => $metricsChildren,
                 ],
                 [
                     'label' => 'Recrutement',

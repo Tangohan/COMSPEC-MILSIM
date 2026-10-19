@@ -371,7 +371,7 @@ final class TrainingCompetencyRepository
     /** @return list<array<string,mixed>> */
     public function listTenantUsers(int $tenantId): array
     {
-        $st = $this->pdo->prepare("SELECT id, display_name, email FROM users WHERE tenant_id = ? AND status <> 'deleted' ORDER BY display_name ASC");
+        $st = $this->pdo->prepare("SELECT id, display_name, callsign, email FROM users WHERE tenant_id = ? AND status <> 'deleted' ORDER BY display_name ASC");
         $st->execute([$tenantId]);
 
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];

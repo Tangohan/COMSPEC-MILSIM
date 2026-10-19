@@ -26,7 +26,8 @@ final class AtakFirstLinkController
 
         /** @var FeatureGateService $gate */
         $gate = Container::get(FeatureGateService::class);
-        if (!$gate->allows($tenantId, 'atak')) {
+        // Liaison de base (formule Gratuit) : relier le jeu reste possible sans la carte complète.
+        if (!$gate->allows($tenantId, 'atak') && !\App\Support\AtakPlanAccess::allowsBasic($tenantId)) {
             return Response::view('layout.main', [
                 'title' => 'ATAK / Overwatch',
                 'content' => 'platform.upgrade',

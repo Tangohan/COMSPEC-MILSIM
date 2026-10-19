@@ -14,8 +14,21 @@ if exist "%OUT%\addons\comspec_atak_native_items.pbo" del /q "%OUT%\addons\comsp
 dotnet publish "%ROOT%COMSPECATAKNativeExtension\COMSPECATAKNativeExtension.csproj" -c Release -r win-x64 --self-contained true
 if errorlevel 1 exit /b 1
 copy /Y "%ROOT%COMSPECATAKNativeExtension\bin\publish\COMSPECATAKNativeExtension_x64.dll" "%OUT%\COMSPECATAKNativeExtension_x64.dll" >nul
+:: Empreinte du build (docs\VERSIONING.md) : date UTC et commit dans build_info.hpp le temps d'empaqueter main.pbo.
+:: Le jeu affiche alors "1.94.0 - 2026.10.14 a1b2c3d" (Reglages, Debug, journal). Le fichier est remis a vide ensuite.
+set "BCOMMIT=local"
+for /f %%i in ('git -C "%ROOT%." rev-parse --short HEAD 2^>nul') do set "BCOMMIT=%%i"
+set "BDATE="
+for /f %%i in ('powershell -NoProfile -Command "Get-Date ([DateTime]::UtcNow) -Format yyyy.MM.dd"') do set "BDATE=%%i"
+if not defined BDATE set "BDATE=local"
+set "STAMPFILE=%ADDON%\build_info.hpp"
+copy /Y "%STAMPFILE%" "%TEMP%\comspec_build_info.hpp" >nul
+> "%STAMPFILE%" echo #define BUILD_STAMP "%BDATE% %BCOMMIT%"
+echo [INFO] Build ATAK natif : %BDATE% %BCOMMIT%
 "%BUILDER%" "%ADDON%" "%OUT%\addons" -packonly -prefix=z\comspec_atak_native\addons\main
-if errorlevel 1 exit /b 1
+set "BERR=%errorlevel%"
+copy /Y "%TEMP%\comspec_build_info.hpp" "%STAMPFILE%" >nul
+if not "%BERR%"=="0" exit /b 1
 :: Pylones relais 3D (modeles MLOD volumineux) : PBO a part.
 "%BUILDER%" "%ROOT%Sources\addons\towers" "%OUT%\addons" -packonly -prefix=z\comspec_atak_native\addons\towers
 if errorlevel 1 exit /b 1

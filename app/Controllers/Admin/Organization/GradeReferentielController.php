@@ -39,7 +39,8 @@ class GradeReferentielController
         }
         $settings = $this->tenantRepository->getSettings($tenantId);
         $systemCode = strtoupper(trim((string) ($settings['grade_system_code'] ?? ''))) ?: 'FR_CLASSIC';
-        $tab = $this->normalizeTab((string) $request->query('tab', 'fr'));
+        // Onglet par défaut : le système de grades choisi par la communauté.
+        $tab = $this->normalizeTab((string) $request->query('tab', str_starts_with($systemCode, 'US') ? 'us' : 'fr'));
         $categoryFilter = (int) $request->query('categorie', 0);
         $categoryFilter = $categoryFilter > 0 ? $categoryFilter : null;
         $systems = $this->gradeSystemRepository->listActive();
@@ -66,6 +67,7 @@ class GradeReferentielController
             'tenantSystemCode' => $systemCode,
             'gradeCategoryFilterId' => $categoryFilter,
             'gradeDisplayService' => $this->gradeDisplayService,
+            'backOfficePageCss' => ['back-office-referentiel-grades.css'],
         ]);
     }
 
@@ -79,7 +81,7 @@ class GradeReferentielController
         $returnTab = $this->normalizeGradeTab((string) $request->query('tab', 'fr'));
         return Response::view('layout.main', [
             'content' => 'admin.organization.referentiels.grades.form',
-            'title' => 'Nouveau grade',
+            'title' => 'Nouveau grade d’avancement',
             'grade' => null,
             'systems' => $systems,
             'categories' => $categories,
@@ -158,7 +160,7 @@ class GradeReferentielController
         }
         return Response::view('layout.main', [
             'content' => 'admin.organization.referentiels.grades.form',
-            'title' => 'Modifier le grade',
+            'title' => 'Renommer le grade',
             'grade' => $grade,
             'systems' => $systems,
             'categories' => $categories,
@@ -216,17 +218,39 @@ class GradeReferentielController
         $id = (int) ($params['id'] ?? 0);
         $grade = $id ? $this->gradeRepository->findById($id) : null;
         if ($id < 1 || $grade === null) {
-            Session::flash('error', 'Impossible de supprimer le grade.');
+            Session::flash('error', 'Impossible de masquer le grade.');
             return Response::redirect($this->indexUrl($this->tabForGrade($grade)));
         }
         $this->overrides->upsert($tenantId, $id, ['is_enabled' => false]);
-        Session::flash('success', 'Grade masqué pour cette communauté. Le catalogue partagé est inchangé.');
+        Session::flash('success', 'Grade masqué : il n’est plus proposé dans les fiches membres. Vous pouvez le réafficher en bas de la liste.');
+        return Response::redirect($this->indexUrl($this->tabForGrade($grade)));
+    }
+
+    /** Réaffiche un grade du catalogue masqué pour la communauté. */
+    public function reactivate(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+            return Response::redirect(url('back-office/referentiels/grades'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $grade = $id ? $this->gradeRepository->findById($id) : null;
+        if ($grade === null) {
+            Session::flash('error', 'Grade introuvable.');
+            return Response::redirect(url('back-office/referentiels/grades'));
+        }
+        $this->overrides->upsert($tenantId, $id, ['is_enabled' => true]);
+        Session::flash('success', 'Grade réaffiché : il est de nouveau proposé dans les fiches membres.');
         return Response::redirect($this->indexUrl($this->tabForGrade($grade)));
     }
 
     private function normalizeTab(string $tab): string
     {
-        return in_array($tab, ['fr', 'us', 'otan', 'categories'], true) ? $tab : 'fr';
+        return in_array($tab, ['fr', 'us'], true) ? $tab : 'fr';
     }
 
     private function normalizeGradeTab(string $tab): string

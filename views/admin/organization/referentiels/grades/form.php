@@ -9,11 +9,11 @@ $tenantOwned = !empty($tenantOwned);
 $catalogLocked = $isEdit;
 ?>
 <div class="bo-legacy bo-legacy--2xl">
-    <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Modifier le grade' : 'Nouveau grade' ?></h1>
+    <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Renommer le grade' : 'Nouveau grade d’avancement' ?></h1>
     <?php if ($tenantOwned): ?>
     <p class="mb-4 text-sm text-slate-600"><?= $isEdit
         ? 'Les libellés et la visibilité s’appliquent à cette communauté. Le catalogue partagé (codes FR/US) est réutilisé, pas recopié.'
-        : 'Ce grade sera propre à la communauté. Le catalogue FR/US des autres communautés n’est pas modifié.' ?></p>
+        : 'Ce grade sera propre à la communauté et servira aux règles d’avancement. Il ne s’ajoute pas à la liste « Grade affiché » des fiches membres : pour changer le nom d’un grade existant, utilisez « Renommer » dans le référentiel.' ?></p>
     <?php endif; ?>
     <?php if ($flashError): ?>
     <p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p>

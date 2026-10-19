@@ -110,6 +110,7 @@ $shots = ['launch', 'map', 'gps', 'marker', 'tools', 'settings'];
             <p class="atakn-credit-team"><?= $t('credits_team') ?></p>
             <p><?= $t('credits_dev') ?></p>
             <p class="atakn-credit-small"><?= $t('credits_bce') ?></p>
+            <p class="atakn-credit-small"><?= $t('credits_translations') ?></p>
         </section>
     </div>
 
@@ -119,6 +120,7 @@ $shots = ['launch', 'map', 'gps', 'marker', 'tools', 'settings'];
         <div class="site-page__cta">
             <a href="<?= $downloadHref ?>" class="hi-cta hi-cta-solid"><?= $t('cta_download') ?></a>
             <a href="<?= $supportHref ?>" class="hi-cta hi-cta-ghost"><?= $t('cta_support') ?></a>
+            <a href="<?= htmlspecialchars(url('traduire-atak'), ENT_QUOTES, 'UTF-8') ?>" class="hi-cta hi-cta-ghost"><?= $t('cta_translate') ?></a>
         </div>
     </section>
 </article>

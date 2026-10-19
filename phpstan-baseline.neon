@@ -13,12 +13,6 @@ parameters:
 			path: app/Controllers/Admin/AdminDocumentsController.php
 
 		-
-			message: '#^Class App\\Services\\Platform\\FeatureGateService constructor invoked with 0 parameters, 7\-8 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Controllers/Admin/Organization/EventRsvpNominativeAdminController.php
-
-		-
 			message: '#^Undefined variable\: \$ageDays$#'
 			identifier: variable.undefined
 			count: 2
@@ -29,66 +23,6 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: app/Repositories/AtakAdvancedIntelligenceRepository.php
-
-		-
-			message: '#^Function ensure_moderation_granular_sanctions_schema not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/BlockedIndicatorRepository.php
-
-		-
-			message: '#^Function ensure_platform_unit_commander_schema not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/BlockedIndicatorRepository.php
-
-		-
-			message: '#^Function ensure_moderation_granular_sanctions_schema not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/ModerationRepository.php
-
-		-
-			message: '#^Function ensure_platform_unit_commander_schema not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/ModerationRepository.php
-
-		-
-			message: '#^Function ensure_discord_recruitment_schema not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/RecruitmentDiscordQuestionRepository.php
-
-		-
-			message: '#^Function ensure_platform_unit_commander_schema not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Repositories/ReferralRepository.php
-
-		-
-			message: '#^Function run_training_atak_course_for_tenant not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Services/Community/TenantSeedHelper.php
-
-		-
-			message: '#^Function run_training_bureau_recrutement_course_for_tenant not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Services/Community/TenantSeedHelper.php
-
-		-
-			message: '#^Function run_training_onboarding_course_for_tenant not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Services/Community/TenantSeedHelper.php
-
-		-
-			message: '#^Function run_training_roles_org_course_for_tenant not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Services/Community/TenantSeedHelper.php
 
 		-
 			message: '#^Unknown parameter \$data in call to Endroid\\QrCode\\Builder\\Builder constructor\.$#'

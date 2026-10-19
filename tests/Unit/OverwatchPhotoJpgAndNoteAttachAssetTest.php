@@ -18,14 +18,19 @@ final class OverwatchPhotoJpgAndNoteAttachAssetTest extends TestCase
         $note = (string) file_get_contents(dirname(__DIR__, 2) . '/docs/bugs/2026-09-01-photo-jpg-srcdir-missing.md');
 
         self::assertStringContainsString('.jpg', $bridge);
+        // Choix inversé depuis docs/bugs/2026-09-13-quick-picture-discord-coupe.md : un JPEG BCE part
+        // tel quel (skipArmaShot=true, report JPEG unique) pour ne pas couper le relais Discord ; le
+        // chemin « mort » est désormais réparé côté DLL (RepairBrokenWorkshopScreenshotPath) au lieu
+        // d’un PNG Arma de remplacement.
         self::assertStringContainsString(
-            '[_path, _caption, _device, _feedId, false, true, false] call comspec_overwatch_connect_fnc_captureReconImage',
+            '[_filePath, _caption, _device, _feedId, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage',
             $bridge
         );
         self::assertStringNotContainsString(
-            '[_path, _caption, _device, _feedId, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage',
+            'false, true, false] call comspec_overwatch_connect_fnc_captureReconImage',
             $bridge
         );
+        self::assertStringContainsString('RepairBrokenWorkshopScreenshotPath', $cs);
         self::assertStringContainsString('_fnc_isJpegPath', $capture);
         self::assertStringContainsString('wallClockSeconds', $capture);
         self::assertStringNotContainsString('private _capturedAt = str (floor time);', $capture);

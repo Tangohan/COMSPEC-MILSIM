@@ -116,10 +116,15 @@ class InterteamMissionWebController
         }
 
         $tenantId = (int) Session::get('tenant_id');
+        // Pré-remplissage depuis le hub des communautés (bourse aux coopérations, fiche d’une communauté).
+        $prefillPartner = (int) $request->query('partenaire', 0);
+        $prefillTitle = mb_substr(trim((string) $request->query('intitule', '')), 0, 255);
 
         return Response::view('layout.main', [
             'content' => 'back_office.cooperation.missions.create',
             'title' => 'Nouvelle coopération',
+            'cooperationPrefillPartnerId' => $prefillPartner !== $tenantId ? $prefillPartner : 0,
+            'cooperationPrefillTitle' => $prefillTitle,
             'cooperationTypologyChoices' => $this->cooperationCatalogService->typologyChoicesForTenant($tenantId),
             'cooperationPriorityChoices' => CooperationDictionary::priorityChoices(),
             'cooperationTenantChoices' => CooperationTransitionRules::invitablePicker($this->tenantRepository->listBasicExcluding($tenantId), [], $tenantId),

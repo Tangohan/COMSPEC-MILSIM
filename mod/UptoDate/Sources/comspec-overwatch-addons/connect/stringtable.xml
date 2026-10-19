@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Généré par tools/i18n.py stringtable : traductions dans i18n/en.txt. -->
+<Project name="COMSPEC_Overwatch_connect">
+    <Package name="main">
+        <Key ID="STR_COMSPEC_OW_CFG_00AE881D17">
+            <Original>COMSPEC Outils</Original>
+            <English>COMSPEC Tools</English>
+            <French>COMSPEC Outils</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_05A841DCCE">
+            <Original>Nombre de téléphones qui peuvent s’appuyer en même temps sur ce mât.</Original>
+            <English>Number of phones that can rely on this mast at the same time.</English>
+            <French>Nombre de téléphones qui peuvent s’appuyer en même temps sur ce mât.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_05CF37BCCA">
+            <Original>IA alliée visible sur l’ATAK</Original>
+            <English>Friendly AI visible on ATAK</English>
+            <French>IA alliée visible sur l’ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_072BDDCC33">
+            <Original>Force de l’effet réseau (0-100)</Original>
+            <English>Strength of the network effect (0-100)</English>
+            <French>Force de l’effet réseau (0-100)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_098CAA08C6">
+            <Original>Débit de base</Original>
+            <English>Base throughput</English>
+            <French>Débit de base</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_0A36A96663">
+            <Original>Indicatif réseau du mât (ex. RLY-NORD-01). Visible dans Relais AT et au poste.</Original>
+            <English>Network callsign of the mast (e.g. RLY-NORD-01). Visible in AT Relays and at the command post.</English>
+            <French>Indicatif réseau du mât (ex. RLY-NORD-01). Visible dans Relais AT et au poste.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_0A8F3CF162">
+            <Original>Au début de la mission</Original>
+            <English>At mission start</English>
+            <French>Au début de la mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_0CD3597453">
+            <Original>Places</Original>
+            <English>Slots</English>
+            <French>Places</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_104A74EE1A">
+            <Original>Lancer au début de la mission (Zeus / chef de mission)</Original>
+            <English>Start at mission start (Zeus / mission leader)</English>
+            <French>Lancer au début de la mission (Zeus / chef de mission)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_111BDDFEE4">
+            <Original>Puissance d’émission simulée. Passe à zéro si le mât est détruit.</Original>
+            <English>Simulated transmit power. Drops to zero if the mast is destroyed.</English>
+            <French>Puissance d’émission simulée. Passe à zéro si le mât est détruit.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_14746B633E">
+            <Original>Identifiant de signature</Original>
+            <English>Signature ID</English>
+            <French>Identifiant de signature</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_1531E3D94F">
+            <Original>Fiabilité annoncée. Elle baisse hors portée ou sous les tirs, et tombe à zéro si le mât est détruit.</Original>
+            <English>Advertised reliability. It drops out of range or under fire, and falls to zero if the mast is destroyed.</English>
+            <French>Fiabilité annoncée. Elle baisse hors portée ou sous les tirs, et tombe à zéro si le mât est détruit.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_16E0AC21A7">
+            <Original>Intensité de l'interférence (0-100)</Original>
+            <English>Interference intensity (0-100)</English>
+            <French>Intensité de l'interférence (0-100)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_18D6665128">
+            <Original>Portée scan (m)</Original>
+            <English>Scan range (m)</English>
+            <French>Portée scan (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_1B834F3DE2">
+            <Original>Ouvre le tableau de bord des relais radio avec statut en temps réel, détection d'erreurs, et actions de gestion.</Original>
+            <English>Opens the radio relay dashboard with real-time status, error detection and management actions.</English>
+            <French>Ouvre le tableau de bord des relais radio avec statut en temps réel, détection d'erreurs, et actions de gestion.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_1B837A0BAC">
+            <Original>Lancer le relevé au début de partie, ou seulement à la demande.</Original>
+            <English>Run the survey at game start, or only on demand.</English>
+            <French>Lancer le relevé au début de partie, ou seulement à la demande.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_1CD1CF102B">
+            <Original>wifi | ble | tracker | camera | phone | unknown</Original>
+            <English>wifi | ble | tracker | camera | phone | unknown</English>
+            <French>wifi | ble | tracker | camera | phone | unknown</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_1E73219ED6">
+            <Original>Renvoyer</Original>
+            <English>Send again</English>
+            <French>Renvoyer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_20F24368E8">
+            <Original>Libellé du certificat de liaison (ex. Relais Nord — valable jusqu’à décembre 2027).</Original>
+            <English>Label of the link certificate (e.g. North Relay, valid until December 2027).</English>
+            <French>Libellé du certificat de liaison (ex. Relais Nord — valable jusqu’à décembre 2027).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_22E71CD3F3">
+            <Original>Remonter automatiquement les relais détectés</Original>
+            <English>Automatically upload detected relays</English>
+            <French>Remonter automatiquement les relais détectés</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_23009D76F3">
+            <Original>Relever la carte du théâtre</Original>
+            <English>Survey the theater map</English>
+            <French>Relever la carte du théâtre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_269ED66ECF">
+            <Original>Brouilleur ATAK actif</Original>
+            <English>ATAK jammer active</English>
+            <French>Brouilleur ATAK actif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_28412253F4">
+            <Original>Niveau d’interférence radio (pertes de paquets).</Original>
+            <English>Radio interference level (packet loss).</English>
+            <French>Niveau d’interférence radio (pertes de paquets).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_2DDF4339A8">
+            <Original>Émetteur RF Fieldwatch. Posez le module, choisissez bande (Wi‑Fi / BLE / tracker / caméra) et portée. En jeu, l’app Fieldwatch du téléphone scanne les émetteurs à proximité et remonte les hits au poste ATAK.</Original>
+            <English>Fieldwatch RF emitter. Place the module, choose the band (Wi‑Fi / BLE / tracker / camera) and range. In game, the phone's Fieldwatch app scans nearby emitters and reports hits to the ATAK command post.</English>
+            <French>Émetteur RF Fieldwatch. Posez le module, choisissez bande (Wi‑Fi / BLE / tracker / caméra) et portée. En jeu, l’app Fieldwatch du téléphone scanne les émetteurs à proximité et remonte les hits au poste ATAK.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_2E4E7FDB3A">
+            <Original>Libellé du certificat de liaison</Original>
+            <English>Link certificate label</English>
+            <French>Libellé du certificat de liaison</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_2F32BE1DC7">
+            <Original>Signature</Original>
+            <English>Signature</English>
+            <French>Signature</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_30F065336E">
+            <Original>Vide = générée à la pose.</Original>
+            <English>Empty = generated on placement.</English>
+            <French>Vide = générée à la pose.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_3138BE1C28">
+            <Original>Identité</Original>
+            <English>Identity</English>
+            <French>Identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_31546BB561">
+            <Original>Fiabilité de base</Original>
+            <English>Base reliability</English>
+            <French>Fiabilité de base</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_34B8F6BE8D">
+            <Original>Passerelle</Original>
+            <English>Gateway</English>
+            <French>Passerelle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_3B201F65E4">
+            <Original>Uniquement depuis Zeus</Original>
+            <English>Only from Zeus</English>
+            <French>Uniquement depuis Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_3D21C9B243">
+            <Original>Resynchronise immédiatement un relais spécifique vers le serveur ATHENA. Placez le module sur le relais.</Original>
+            <English>Immediately resyncs a specific relay to the ATHENA server. Place the module on the relay.</English>
+            <French>Resynchronise immédiatement un relais spécifique vers le serveur ATHENA. Placez le module sur le relais.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_3EA68EFD33">
+            <Original>Scanne tous les relais radio dans un rayon et les remonte vers le serveur ATHENA. Affiche un rapport style relevé terrain avec feedback visuel.</Original>
+            <English>Scans every radio relay within a radius and uploads them to the ATHENA server. Shows a field-survey style report with visual feedback.</English>
+            <French>Scanne tous les relais radio dans un rayon et les remonte vers le serveur ATHENA. Affiche un rapport style relevé terrain avec feedback visuel.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_3EB5598FA5">
+            <Original>Nom affiché sur la carte</Original>
+            <English>Name shown on the map</English>
+            <French>Nom affiché sur la carte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_404D3A6840">
+            <Original>Téléphones simultanés</Original>
+            <English>Simultaneous phones</English>
+            <French>Téléphones simultanés</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_413A2AB1F9">
+            <Original>Tutoriel Eden — Relais ATAK (mât). 1) Placez le module à l’endroit du mât (colline, toit, LZ). 2) Renseignez le nom, l’identité, la portée, le débit, la fiabilité, la puissance, les places, l’adresse réseau, la passerelle et le certificat — tout est visible dans l’application Relais AT du téléphone et sur la carte du poste. 3) Laissez l’adresse et la passerelle vides si vous voulez qu’elles soient générées. 4) Le mât est un objet détruisible : un tir, une charge ou un Zeus « tuer » le met hors service (débit et puissance à zéro, pastille rouge au poste). 5) Si la règle « Exiger un relais » est activée au poste, un téléphone hors de portée d’un mât intact ne transmet plus. 6) Testez : Relais AT doit afficher le mât le plus proche, sa grille, ses places occupées, et passer à « détruit » dès que le mât tombe.</Original>
+            <English>Eden tutorial: ATAK relay (mast). 1) Place the module where the mast stands (hill, roof, LZ). 2) Fill in the name, identity, range, throughput, reliability, power, slots, network address, gateway and certificate: everything shows in the phone's AT Relays app and on the command post map. 3) Leave the address and gateway empty to have them generated. 4) The mast can be destroyed: a shot, a charge or a Zeus "kill" takes it out of service (throughput and power to zero, red dot at the command post). 5) If the "Require a relay" rule is on at the command post, a phone out of range of an intact mast no longer transmits. 6) Test: AT Relays should show the nearest mast, its grid, its occupied slots, and switch to "destroyed" as soon as the mast falls.</English>
+            <French>Tutoriel Eden — Relais ATAK (mât). 1) Placez le module à l’endroit du mât (colline, toit, LZ). 2) Renseignez le nom, l’identité, la portée, le débit, la fiabilité, la puissance, les places, l’adresse réseau, la passerelle et le certificat — tout est visible dans l’application Relais AT du téléphone et sur la carte du poste. 3) Laissez l’adresse et la passerelle vides si vous voulez qu’elles soient générées. 4) Le mât est un objet détruisible : un tir, une charge ou un Zeus « tuer » le met hors service (débit et puissance à zéro, pastille rouge au poste). 5) Si la règle « Exiger un relais » est activée au poste, un téléphone hors de portée d’un mât intact ne transmet plus. 6) Testez : Relais AT doit afficher le mât le plus proche, sa grille, ses places occupées, et passer à « détruit » dès que le mât tombe.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_422DDCE9D2">
+            <Original>Distance max à laquelle Fieldwatch peut entendre cet émetteur.</Original>
+            <English>Maximum distance at which Fieldwatch can hear this emitter.</English>
+            <French>Distance max à laquelle Fieldwatch peut entendre cet émetteur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_42AAE408F8">
+            <Original>Puissance du brouilleur (0-100)</Original>
+            <English>Jammer power (0-100)</English>
+            <French>Puissance du brouilleur (0-100)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_446BA25EED">
+            <Original>Places (téléphones)</Original>
+            <English>Slots (phones)</English>
+            <French>Places (téléphones)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_44F2573C13">
+            <Original>Zone où la liaison ATAK est totalement coupée. Posez sur la carte, un objet ou un joueur.</Original>
+            <English>Area where the ATAK link is cut completely. Place it on the map, an object or a player.</English>
+            <French>Zone où la liaison ATAK est totalement coupée. Posez sur la carte, un objet ou un joueur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_5A2FEC5375">
+            <Original>Tableau de bord relais</Original>
+            <English>Relay dashboard</English>
+            <French>Tableau de bord relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_6138AD0D2D">
+            <Original>Puissance (W)</Original>
+            <English>Power (W)</English>
+            <French>Puissance (W)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_615FAB1610">
+            <Original>Passerelle simulée (vide = générée)</Original>
+            <English>Simulated gateway (empty = generated)</English>
+            <French>Passerelle simulée (vide = générée)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_64CDA735DA">
+            <Original>Rayon de scan (m)</Original>
+            <English>Scan radius (m)</English>
+            <French>Rayon de scan (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_6525C816AC">
+            <Original>Balise GPS (suivi ATAK)</Original>
+            <English>GPS beacon (ATAK tracking)</English>
+            <French>Balise GPS (suivi ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_65886348E8">
+            <Original>Puissance d’émission simulée à la source (typ. -30 à 20).</Original>
+            <English>Simulated transmit power at the source (typ. -30 to 20).</English>
+            <French>Puissance d’émission simulée à la source (typ. -30 à 20).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_67AAB8C24E">
+            <Original>Intensité (%)</Original>
+            <English>Intensity (%)</English>
+            <French>Intensité (%)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_67FB65AD0A">
+            <Original>Puissance d’émission simulée</Original>
+            <English>Simulated transmit power</English>
+            <French>Puissance d’émission simulée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_6BF9BDB0FE">
+            <Original>Rayon de liaison du relais</Original>
+            <English>Relay link radius</English>
+            <French>Rayon de liaison du relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_6F10F1F3F0">
+            <Original>Débit de base (Mbit/s)</Original>
+            <English>Base throughput (Mbit/s)</English>
+            <French>Débit de base (Mbit/s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_6F2AA889FD">
+            <Original>Fiabilité de base (%)</Original>
+            <English>Base reliability (%)</English>
+            <French>Fiabilité de base (%)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_6FA6AB6924">
+            <Original>Afficher les IA ennemies sur la carte</Original>
+            <English>Show enemy AI on the map</English>
+            <French>Afficher les IA ennemies sur la carte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_70DEE56AF4">
+            <Original>Envoie à Athena les routes (autoroutes, routes, pistes) et les localités (villes, bourgs, villages, lieux-dits) de la carte, sans le relevé complet des bâtiments et du relief. Athena doit être liée ; le relevé attend la liaison jusqu'à 3 minutes. Une seule fois par carte, sauf « Renvoyer ».</Original>
+            <English>Sends Athena the map's roads (highways, roads, tracks) and localities (cities, towns, villages, named places), without the full survey of buildings and terrain. Athena must be linked; the survey waits up to 3 minutes for the link. Once per map, unless "Send again".</English>
+            <French>Envoie à Athena les routes (autoroutes, routes, pistes) et les localités (villes, bourgs, villages, lieux-dits) de la carte, sans le relevé complet des bâtiments et du relief. Athena doit être liée ; le relevé attend la liaison jusqu'à 3 minutes. Une seule fois par carte, sauf « Renvoyer ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_72D54FC9E9">
+            <Original>COMSPEC Roleplay</Original>
+            <English>COMSPEC Roleplay</English>
+            <French>COMSPEC Roleplay</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_73B225B539">
+            <Original>Nom court affiché sur la carte et dans les effectifs (ex. RAVEN). Laisser vide : le nom du groupe, sinon le nom de l’IA.</Original>
+            <English>Short name shown on the map and in the roster (e.g. RAVEN). Leave empty: the group name, otherwise the AI's name.</English>
+            <French>Nom court affiché sur la carte et dans les effectifs (ex. RAVEN). Laisser vide : le nom du groupe, sinon le nom de l’IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_73D04CF29E">
+            <Original>Nom affiché dans Fieldwatch</Original>
+            <English>Name shown in Fieldwatch</English>
+            <French>Nom affiché dans Fieldwatch</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_7857339678">
+            <Original>Par défaut, les contacts ennemis (losanges rouges) n’apparaissent pas sur le poste. Choisissez de les afficher dès le début, ou de les laisser masqués : Zeus pourra les afficher en cours de mission.</Original>
+            <English>By default, enemy contacts (red diamonds) do not appear at the command post. Choose to show them from the start, or keep them hidden: Zeus can show them during the mission.</English>
+            <French>Par défaut, les contacts ennemis (losanges rouges) n’apparaissent pas sur le poste. Choisissez de les afficher dès le début, ou de les laisser masqués : Zeus pourra les afficher en cours de mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_7859D4AA38">
+            <Original>Identifiant de signature (ex. wifi_ipcam, ble_tile).</Original>
+            <English>Signature ID (e.g. wifi_ipcam, ble_tile).</English>
+            <French>Identifiant de signature (ex. wifi_ipcam, ble_tile).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_7C61435C4F">
+            <Original>Certificat</Original>
+            <English>Certificate</English>
+            <French>Certificat</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_7CE39D8F2A">
+            <Original>Choisir si le relevé complet part tout seul au lancement, ou seulement depuis Zeus et cette fenêtre.</Original>
+            <English>Choose whether the full survey starts on its own at launch, or only from Zeus and this window.</English>
+            <French>Choisir si le relevé complet part tout seul au lancement, ou seulement depuis Zeus et cette fenêtre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_809A929057">
+            <Original>Zone de couverture dégradée. Posez sur la carte, un objet ou un joueur.</Original>
+            <English>Degraded coverage area. Place it on the map, an object or a player.</English>
+            <French>Zone de couverture dégradée. Posez sur la carte, un objet ou un joueur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_80F9B4B19B">
+            <Original>Masqués par défaut, ou visibles dès le début. Zeus peut changer ce choix en cours de mission.</Original>
+            <English>Hidden by default, or visible from the start. Zeus can change this choice during the mission.</English>
+            <French>Masqués par défaut, ou visibles dès le début. Zeus peut changer ce choix en cours de mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_8179936E65">
+            <Original>Afficher dès le début de mission</Original>
+            <English>Show from mission start</English>
+            <French>Afficher dès le début de mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_82E83A2817">
+            <Original>Passerelle simulée vers le poste (ex. 10.12.0.1). Vide = générée à la pose.</Original>
+            <English>Simulated gateway to the command post (e.g. 10.12.0.1). Empty = generated when placed.</English>
+            <French>Passerelle simulée vers le poste (ex. 10.12.0.1). Vide = générée à la pose.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_8493539798">
+            <Original>Zone sans couverture ATAK</Original>
+            <English>No ATAK coverage zone</English>
+            <French>Zone sans couverture ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_88F89B739E">
+            <Original>Laisser vide : le modèle du véhicule est utilisé. Utile pour distinguer deux véhicules du même type (ex. Convoi 1).</Original>
+            <English>Leave empty: the vehicle model is used. Useful to tell two vehicles of the same type apart (e.g. Convoy 1).</English>
+            <French>Laisser vide : le modèle du véhicule est utilisé. Utile pour distinguer deux véhicules du même type (ex. Convoi 1).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_89210072F1">
+            <Original>Débit (Mbit/s)</Original>
+            <English>Throughput (Mbit/s)</English>
+            <French>Débit (Mbit/s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_8F8B7A32A7">
+            <Original>Rayon dans lequel un téléphone peut s’appuyer sur ce relais. Hors de cette portée, le relais n’est plus utilisable.</Original>
+            <English>Radius within which a phone can rely on this relay. Beyond this range, the relay can no longer be used.</English>
+            <French>Rayon dans lequel un téléphone peut s’appuyer sur ce relais. Hors de cette portée, le relais n’est plus utilisable.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_91EE3FBA4C">
+            <Original>Le véhicule apparaît sur la carte de commandement même sans joueur à bord (convoi IA, véhicule volé, balise posée par le chef de mission).</Original>
+            <English>The vehicle appears on the command map even with no player on board (AI convoy, stolen vehicle, beacon placed by the mission leader).</English>
+            <French>Le véhicule apparaît sur la carte de commandement même sans joueur à bord (convoi IA, véhicule volé, balise posée par le chef de mission).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_973FF69E5D">
+            <Original>Nom / SSID</Original>
+            <English>Name / SSID</English>
+            <French>Nom / SSID</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_987506BC9B">
+            <Original>Fiabilité (%)</Original>
+            <English>Reliability (%)</English>
+            <French>Fiabilité (%)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_9BE0C2885D">
+            <Original>Resync relais</Original>
+            <English>Resync relay</English>
+            <French>Resync relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_9E50BCCB02">
+            <Original>Puissance à la source</Original>
+            <English>Power at the source</English>
+            <French>Puissance à la source</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_A267933A82">
+            <Original>Brouilleur radio actif. Posez sur la carte, un véhicule, un objet ou un joueur.</Original>
+            <English>Active radio jammer. Place it on the map, a vehicle, an object or a player.</English>
+            <French>Brouilleur radio actif. Posez sur la carte, un véhicule, un objet ou un joueur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_A308257713">
+            <Original>Coupure de liaison (0-100)</Original>
+            <English>Link cut (0-100)</English>
+            <French>Coupure de liaison (0-100)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_ACB975B116">
+            <Original>Nom du relais</Original>
+            <English>Relay name</English>
+            <French>Nom du relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_ACC856CB86">
+            <Original>Adresse simulée du mât (ex. 10.12.40.1). Laissez vide pour en générer une à la pose.</Original>
+            <English>Simulated address of the mast (e.g. 10.12.40.1). Leave empty to generate one when placed.</English>
+            <French>Adresse simulée du mât (ex. 10.12.40.1). Laissez vide pour en générer une à la pose.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_AD3C593256">
+            <Original>Nom affiché sur le téléphone (Relais AT) et au poste.</Original>
+            <English>Name shown on the phone (AT Relays) and at the command post.</English>
+            <French>Nom affiché sur le téléphone (Relais AT) et au poste.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_ADCE459A30">
+            <Original>Zone roleplay ATAK</Original>
+            <English>ATAK roleplay area</English>
+            <French>Zone roleplay ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_AE461ABCB5">
+            <Original>COMSPEC ATAK</Original>
+            <English>COMSPEC ATAK</English>
+            <French>COMSPEC ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_B1E2532872">
+            <Original>Les contacts ennemis n’apparaissent pas sur le poste tant que ce n’est pas demandé. Posez ce module pour les afficher dès le début, ou laissez Zeus le faire en cours de mission.</Original>
+            <English>Enemy contacts do not appear at the command post until requested. Place this module to show them from the start, or let Zeus do it during the mission.</English>
+            <French>Les contacts ennemis n’apparaissent pas sur le poste tant que ce n’est pas demandé. Posez ce module pour les afficher dès le début, ou laissez Zeus le faire en cours de mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_B357F1231D">
+            <Original>MAC simulée</Original>
+            <English>Simulated MAC</English>
+            <French>MAC simulée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_B82F20C673">
+            <Original>Nom affiché dans Fieldwatch (ex. IPCam-Lobby, Tile-AirTag).</Original>
+            <English>Name shown in Fieldwatch (e.g. IPCam-Lobby, Tile-AirTag).</English>
+            <French>Nom affiché dans Fieldwatch (ex. IPCam-Lobby, Tile-AirTag).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_B84B3FD620">
+            <Original>La position de cette personne apparaît sur la carte de commandement, comme si elle portait un téléphone. Par défaut, aucun détail (nom, grille, cap…) n’est publié : le Zeus choisit ensuite ce qui apparaît, en jeu.</Original>
+            <English>This person's position appears on the command map, as if they carried a phone. By default, no detail (name, grid, heading…) is published: Zeus then chooses what appears, in game.</English>
+            <French>La position de cette personne apparaît sur la carte de commandement, comme si elle portait un téléphone. Par défaut, aucun détail (nom, grille, cap…) n’est publié : le Zeus choisit ensuite ce qui apparaît, en jeu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_B8F5D009D7">
+            <Original>Débit annoncé. Il baisse avec la distance, les dégâts, et tombe à zéro si le mât est détruit.</Original>
+            <English>Advertised throughput. It drops with distance and damage, and falls to zero if the mast is destroyed.</English>
+            <French>Débit annoncé. Il baisse avec la distance, les dégâts, et tombe à zéro si le mât est détruit.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_B994CF0483">
+            <Original>wifi | ble | tracker | camera | phone</Original>
+            <English>wifi | ble | tracker | camera | phone</English>
+            <French>wifi | ble | tracker | camera | phone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_BAA720E660">
+            <Original>Distance max de détection</Original>
+            <English>Maximum detection distance</English>
+            <French>Distance max de détection</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_BC8407E188">
+            <Original>Bande</Original>
+            <English>Band</English>
+            <French>Bande</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_BDD02A65C7">
+            <Original>Puissance (%)</Original>
+            <English>Power (%)</English>
+            <French>Puissance (%)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_BE3E044D54">
+            <Original>Renvoyer même si routes et villes de cette carte ont déjà été transmises.</Original>
+            <English>Send again even if this map's roads and towns have already been sent.</English>
+            <French>Renvoyer même si routes et villes de cette carte ont déjà été transmises.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_BE3FB7D912">
+            <Original>Adresse simulée (vide = générée)</Original>
+            <English>Simulated address (empty = generated)</English>
+            <French>Adresse simulée (vide = générée)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_C032C6FDD9">
+            <Original>COMSPEC — Balise GPS</Original>
+            <English>COMSPEC — GPS beacon</English>
+            <French>COMSPEC — Balise GPS</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_C24C84F979">
+            <Original>Émetteur RF Fieldwatch</Original>
+            <English>Fieldwatch RF emitter</English>
+            <French>Émetteur RF Fieldwatch</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_C2A0D7DA8A">
+            <Original>Contacts ennemis sur l’ATAK</Original>
+            <English>Enemy contacts on ATAK</English>
+            <French>Contacts ennemis sur l’ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_C49FBE77F5">
+            <Original>COMSPEC — Suivi ATAK</Original>
+            <English>COMSPEC — ATAK tracking</English>
+            <French>COMSPEC — Suivi ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_C5157629DF">
+            <Original>Dégradation de la couverture (latence / pertes).</Original>
+            <English>Coverage degradation (latency / loss).</English>
+            <French>Dégradation de la couverture (latence / pertes).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_C6E6AC49A8">
+            <Original>Laisser vide : le nom de la personne est utilisé. Renseignez un indicatif si plusieurs contacts ont le même nom.</Original>
+            <English>Leave empty: the person's name is used. Enter a callsign if several contacts share the same name.</English>
+            <French>Laisser vide : le nom de la personne est utilisé. Renseignez un indicatif si plusieurs contacts ont le même nom.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_C9D13447C8">
+            <Original>Masqués (défaut)</Original>
+            <English>Hidden (default)</English>
+            <French>Masqués (défaut)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_CA532F1DA1">
+            <Original>Indicatif réseau du mât</Original>
+            <English>Network callsign of the mast</English>
+            <French>Indicatif réseau du mât</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_CB02AF8FD8">
+            <Original>Adresse MAC simulée</Original>
+            <English>Simulated MAC address</English>
+            <French>Adresse MAC simulée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_CBA64DC262">
+            <Original>Intensité de la dégradation (0-100)</Original>
+            <English>Degradation intensity (0-100)</English>
+            <French>Intensité de la dégradation (0-100)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_CCCD375186">
+            <Original>Téléphone visible sur l’ATAK</Original>
+            <English>Phone visible on ATAK</English>
+            <French>Téléphone visible sur l’ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_CF11B05A6E">
+            <Original>Envoyer routes et villes à Athena au lancement (par le Zeus ou le chef de mission), ou seulement depuis Zeus.</Original>
+            <English>Send roads and towns to Athena at launch (by Zeus or the mission leader), or only from Zeus.</English>
+            <French>Envoyer routes et villes à Athena au lancement (par le Zeus ou le chef de mission), ou seulement depuis Zeus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_D04248E677">
+            <Original>Scanner réseau relais</Original>
+            <English>Relay network scanner</English>
+            <French>Scanner réseau relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_D10F1C329B">
+            <Original>Nom affiché sur Relais AT et au poste</Original>
+            <English>Name shown in AT Relays and at the command post</English>
+            <French>Nom affiché sur Relais AT et au poste</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_D416786C6F">
+            <Original>Puissance du brouilleur (coupures intermittentes).</Original>
+            <English>Jammer power (intermittent drops).</English>
+            <French>Puissance du brouilleur (coupures intermittentes).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_D5C520E67E">
+            <Original>Terminal d’enrôlement biométrique de terrain. Permet d’ouvrir une fiche de renseignement interpersonnel (SSE) sur une personne contrôlée.</Original>
+            <English>Field biometric enrolment terminal. Opens an interpersonal intelligence record (SSE) on a screened person.</English>
+            <French>Terminal d’enrôlement biométrique de terrain. Permet d’ouvrir une fiche de renseignement interpersonnel (SSE) sur une personne contrôlée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_D87EDC6B9C">
+            <Original>Cette IA apparaît sur la carte de commandement comme une unité de terrain (pas comme un téléphone). Utile pour une section d’accompagnement, un QRF ou un élément ami. Sans effet sur un joueur : il est déjà suivi s’il a une tablette.</Original>
+            <English>This AI appears on the command map as a field unit (not as a phone). Useful for an escort section, a QRF or a friendly element. No effect on a player: they are already tracked if they carry a tablet.</English>
+            <French>Cette IA apparaît sur la carte de commandement comme une unité de terrain (pas comme un téléphone). Utile pour une section d’accompagnement, un QRF ou un élément ami. Sans effet sur un joueur : il est déjà suivi s’il a une tablette.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_DEDDC0711F">
+            <Original>Envoyer au début de la mission</Original>
+            <English>Send at mission start</English>
+            <French>Envoyer au début de la mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_DEEF9340A8">
+            <Original>Relever routes et villes</Original>
+            <English>Survey roads and towns</English>
+            <French>Relever routes et villes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_DEFCAEDD09">
+            <Original>Terminal biométrique SEEK</Original>
+            <English>SEEK biometric terminal</English>
+            <French>Terminal biométrique SEEK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_E1829FA177">
+            <Original>Indicatif</Original>
+            <English>Callsign</English>
+            <French>Indicatif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_E55236682D">
+            <Original>Force de l’effet réseau sur la liaison ATAK (0 à 100).</Original>
+            <English>Strength of the network effect on the ATAK link (0 to 100).</English>
+            <French>Force de l’effet réseau sur la liaison ATAK (0 à 100).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_E5BA13EC2E">
+            <Original>Puissance (dBm)</Original>
+            <English>Power (dBm)</English>
+            <French>Puissance (dBm)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_E9A09FA5A3">
+            <Original>Coupure totale de liaison (recommandé 100).</Original>
+            <English>Total link cut (100 recommended).</English>
+            <French>Coupure totale de liaison (recommandé 100).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_EA0A853A02">
+            <Original>Upload automatique</Original>
+            <English>Automatic upload</English>
+            <French>Upload automatique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_EA54D6AD87">
+            <Original>Parcourt tout le théâtre : bâtiments, forêts et relief. Une fenêtre indique la durée, le nombre d’éléments collectés et le secteur en cours. Athena doit être liée. Le parcours est découpé pour ne pas figer Zeus.</Original>
+            <English>Covers the whole theatre: buildings, forests and terrain. A window shows the duration, the number of items collected and the current sector. Athena must be linked. The run is split up so Zeus does not freeze.</English>
+            <French>Parcourt tout le théâtre : bâtiments, forêts et relief. Une fenêtre indique la durée, le nombre d’éléments collectés et le secteur en cours. Athena doit être liée. Le parcours est découpé pour ne pas figer Zeus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_EB163E4266">
+            <Original>Zone d'interférence ATAK</Original>
+            <English>ATAK interference zone</English>
+            <French>Zone d'interférence ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_F0E580EDB4">
+            <Original>Zone de couverture dégradée</Original>
+            <English>Degraded coverage zone</English>
+            <French>Zone de couverture dégradée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_F342A5E02A">
+            <Original>Zone avec forte interférence radio. Posez sur la carte, un objet ou un joueur.</Original>
+            <English>Area with strong radio interference. Place it on the map, an object or a player.</English>
+            <French>Zone avec forte interférence radio. Posez sur la carte, un objet ou un joueur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_F3980FD50D">
+            <Original>Adresse réseau</Original>
+            <English>Network address</English>
+            <French>Adresse réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_F3B177121B">
+            <Original>Uniquement depuis Zeus ou la fenêtre de relevé</Original>
+            <English>Only from Zeus or the survey window</English>
+            <French>Uniquement depuis Zeus ou la fenêtre de relevé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_F5B75017DE">
+            <Original>Distance maximum pour détecter les relais</Original>
+            <English>Maximum distance to detect relays</English>
+            <French>Distance maximum pour détecter les relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_F651847795">
+            <Original>Vide = générée</Original>
+            <English>Empty = generated</English>
+            <French>Vide = générée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_F8B88550A1">
+            <Original>Relais ATAK (mât)</Original>
+            <English>ATAK relay (mast)</English>
+            <French>Relais ATAK (mât)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_FBB1E75950">
+            <Original>Portée (m)</Original>
+            <English>Range (m)</English>
+            <French>Portée (m)</French>
+        </Key>
+    </Package>
+</Project>

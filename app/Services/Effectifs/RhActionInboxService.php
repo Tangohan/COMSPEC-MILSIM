@@ -8,6 +8,7 @@ use App\Repositories\ElevationRequestRepository;
 use App\Repositories\PersonnelCorrectionRequestRepository;
 use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PersonnelQualificationRepository;
+use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Services\Personnel\PersonnelProfileGapScanService;
 
 /**
@@ -80,6 +81,10 @@ final class RhActionInboxService
                     'detail' => $this->truncate((string) ($row['note'] ?? 'Le membre propose une mise à jour de son dossier.')),
                     'cta_label' => 'Traiter',
                     'href' => url('back-office/personnel/corrections'),
+                    // Décision directe depuis « À traiter » (fenêtre Confirmer / Refuser).
+                    'decide_url' => url('back-office/personnel/corrections/' . (int) ($row['id'] ?? 0) . '/decide'),
+                    'requested_by' => trim((string) ($row['requester_display_name'] ?? '')),
+                    'changes' => $this->correctionChanges($row),
                 ];
             }
         } catch (\Throwable) {
@@ -204,6 +209,7 @@ final class RhActionInboxService
                     'href' => $uid > 0
                         ? effectifs_workspace_url('membres/' . $uid)
                         : effectifs_workspace_url(),
+                    'issues' => $uid > 0 ? $this->issueLinks($uid, $issueKeys) : [],
                 ];
             }
         } catch (\Throwable) {
@@ -299,6 +305,67 @@ final class RhActionInboxService
             'buckets' => $buckets,
             'actions' => array_slice($actions, 0, 40),
         ];
+    }
+
+    /**
+     * Champs proposés par une demande de correction, prêts à afficher.
+     *
+     * @param array<string, mixed> $row
+     * @return list<array{label: string, value: string}>
+     */
+    private function correctionChanges(array $row): array
+    {
+        $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
+        $labels = PersonnelCorrectionRequestService::fieldLabels(true);
+        $out = [];
+        foreach ($proposed as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(', ', array_map('strval', array_filter($value, 'is_scalar')));
+            }
+            // Les identifiants (grade, unité…) se lisent sur l'écran complet des corrections.
+            $value = str_ends_with((string) $key, '_id') ? 'nouvelle valeur' : (string) $value;
+            $out[] = [
+                'label' => $labels[(string) $key] ?? (string) $key,
+                'value' => $this->truncate($value, 80),
+            ];
+            if (count($out) >= 6) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Raccourcis vers la partie de la fiche qui corrige chaque manque.
+     *
+     * @param list<mixed> $issueKeys
+     * @return list<array{key: string, label: string, href: string}>
+     */
+    private function issueLinks(int $userId, array $issueKeys): array
+    {
+        $anchors = [
+            'function' => 'eff-dlg-jobs',
+            'rank' => 'grade',
+            'role' => 'acces',
+            'operator_image' => 'eff-dlg-portrait',
+            'absence' => 'absences',
+        ];
+        $base = effectifs_workspace_url('membres/' . $userId);
+        $out = [];
+        foreach ($issueKeys as $key) {
+            $key = (string) $key;
+            if (!isset(PersonnelProfileGapScanService::ISSUE_LABELS[$key])) {
+                continue;
+            }
+            $out[] = [
+                'key' => $key,
+                'label' => PersonnelProfileGapScanService::ISSUE_LABELS[$key],
+                'href' => $base . '#' . ($anchors[$key] ?? 'dossier'),
+            ];
+        }
+
+        return $out;
     }
 
     private function memberLabel(string $displayName, string $callsign, int $userId): string

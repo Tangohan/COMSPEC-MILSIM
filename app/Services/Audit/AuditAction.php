@@ -75,6 +75,21 @@ final class AuditAction
      */
     public const USER_PURGED = 'user.purged';
 
+    /** Bannissement d’une personne sur tout le site (fiches inactives + liste de restriction). */
+    public const USER_BANNED = 'user.banned';
+
+    /** Levée d’un bannissement site : fiches remises dans leur état d’avant. */
+    public const USER_UNBANNED = 'user.unbanned';
+
+    /** Retrait d’une personne d’une communauté (réversible, fiche conservée). */
+    public const USER_MEMBERSHIP_REMOVED = 'user.membership_removed';
+
+    /** Réintégration d’une personne dans une communauté qu’elle avait quittée. */
+    public const USER_MEMBERSHIP_RESTORED = 'user.membership_restored';
+
+    /** Suppression définitive d’une communauté et de ses données (administration du site). */
+    public const TENANT_DELETED = 'platform.tenant_deleted';
+
     public const MEMBER_INTEGRATION_CREATED = 'member_integration.created';
     public const MEMBER_INTEGRATION_STEP_FORCED = 'member_integration.step_forced';
     public const MEMBER_INTEGRATION_APPOINTMENT = 'member_integration.appointment';

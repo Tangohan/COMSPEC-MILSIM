@@ -72,50 +72,132 @@ $maxRole = $roles !== [] ? max(array_column($roles, 'seconds')) : 1;
                 </div>
             </section>
 
-            <section class="aksq__session">
+            <?php
+            $roleOptions = [];
+            $appOptions = [];
+            foreach ($rows as $u) {
+                foreach ($u['roles'] as $r) {
+                    $roleOptions[(string) $r['label']] = true;
+                }
+                foreach ($u['apps'] as $a) {
+                    $appOptions[(string) $a['label']] = true;
+                }
+            }
+            ksort($roleOptions, SORT_NATURAL | SORT_FLAG_CASE);
+            ksort($appOptions, SORT_NATURAL | SORT_FLAG_CASE);
+            ?>
+            <section class="aksq__session" data-aksq-screen>
                 <h2 class="aksq__session-title">Par membre</h2>
+                <div class="aksq__filters" role="search">
+                    <label class="aksq__filter aksq__filter--grow">
+                        <span>Rechercher</span>
+                        <input type="search" data-aksq-q placeholder="Indicatif ou nom" autocomplete="off">
+                    </label>
+                    <label class="aksq__filter">
+                        <span>Rôle tenu</span>
+                        <select data-aksq-role>
+                            <option value="">Tous</option>
+                            <?php foreach (array_keys($roleOptions) as $opt): ?>
+                                <option value="<?= $h($opt) ?>"><?= $h($opt) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="aksq__filter">
+                        <span>App utilisée</span>
+                        <select data-aksq-app>
+                            <option value="">Toutes</option>
+                            <?php foreach (array_keys($appOptions) as $opt): ?>
+                                <option value="<?= $h($opt) ?>"><?= $h($opt) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="aksq__switch">
+                        <input type="checkbox" data-aksq-durations>
+                        <span>Durée des apps</span>
+                    </label>
+                    <button type="button" class="aksq__link" data-aksq-expand-all>Tout déplier</button>
+                    <span class="aksq__muted" data-aksq-count aria-live="polite"><?= count($rows) ?> membre(s)</span>
+                </div>
                 <div class="aksq__table-wrap">
-                    <table class="aksq__table">
+                    <table class="aksq__table aksq__table--fold">
                         <thead>
                             <tr>
                                 <th scope="col">Membre</th>
                                 <th scope="col">Temps de jeu</th>
                                 <th scope="col">Écran</th>
-                                <th scope="col">En main / porté</th>
                                 <th scope="col">Apps les plus utilisées</th>
-                                <th scope="col">Temps par rôle</th>
+                                <th scope="col">Rôle principal</th>
                                 <th scope="col">Dernier jour</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <?php foreach ($rows as $u): ?>
-                                <tr>
+                        <?php foreach ($rows as $i => $u): ?>
+                            <?php
+                            $name = $u['callsign'] !== '' ? $u['callsign'] : ($u['display_name'] !== '' ? $u['display_name'] : 'Membre #' . $u['user_id']);
+                            $detailId = 'aksq-member-' . (int) $u['user_id'];
+                            $roleLabels = array_map(static fn (array $r): string => (string) $r['label'], $u['roles']);
+                            $appLabels = array_map(static fn (array $a): string => (string) $a['label'], $u['apps']);
+                            ?>
+                            <tbody class="aksq__member"
+                                data-aksq-name="<?= $h(mb_strtolower($u['callsign'] . ' ' . $u['display_name'])) ?>"
+                                data-aksq-roles="<?= $h(json_encode($roleLabels, JSON_UNESCAPED_UNICODE)) ?>"
+                                data-aksq-apps="<?= $h(json_encode($appLabels, JSON_UNESCAPED_UNICODE)) ?>">
+                                <tr class="aksq__member-row">
                                     <th scope="row">
-                                        <strong><?= $h($u['callsign'] !== '' ? $u['callsign'] : ($u['display_name'] !== '' ? $u['display_name'] : 'Membre #' . $u['user_id'])) ?></strong>
-                                        <?php if ($u['callsign'] !== '' && $u['display_name'] !== ''): ?><span class="aksq__muted"><?= $h($u['display_name']) ?></span><?php endif; ?>
+                                        <button type="button" class="aksq__fold" aria-expanded="false" aria-controls="<?= $h($detailId) ?>">
+                                            <span class="aksq__fold-chevron" aria-hidden="true"></span>
+                                            <span>
+                                                <strong><?= $h($name) ?></strong>
+                                                <?php if ($u['callsign'] !== '' && $u['display_name'] !== ''): ?><span class="aksq__muted"><?= $h($u['display_name']) ?></span><?php endif; ?>
+                                            </span>
+                                        </button>
                                     </th>
                                     <td><?= $h($dur((int) ($u['play'] ?? 0))) ?></td>
                                     <td><?= $h($dur((int) $u['screen'])) ?></td>
-                                    <td class="aksq__muted"><?= $h($dur((int) $u['hand'])) ?> / <?= $h($dur((int) $u['carry'])) ?></td>
                                     <td>
-                                        <?php foreach (array_slice($u['apps'], 0, 4) as $a): ?>
-                                            <span class="aksq__chip"><?= $h($a['label']) ?> <em><?= $h($dur($a['seconds'])) ?></em></span>
+                                        <?php foreach (array_slice($u['apps'], 0, 3) as $a): ?>
+                                            <span class="aksq__chip"><?= $h($a['label']) ?> <em class="aksq__app-dur"><?= $h($dur($a['seconds'])) ?></em></span>
                                         <?php endforeach; ?>
+                                        <?php if (count($u['apps']) > 3): ?><span class="aksq__muted">+<?= count($u['apps']) - 3 ?></span><?php endif; ?>
                                         <?php if ($u['apps'] === []): ?><span class="aksq__muted">—</span><?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php foreach (array_slice($u['roles'], 0, 5) as $r): ?>
-                                            <span class="aksq__chip aksq__chip--role"><?= $h($r['label']) ?> <em><?= $h($dur($r['seconds'])) ?></em></span>
-                                        <?php endforeach; ?>
-                                        <?php if ($u['roles'] === []): ?><span class="aksq__muted">—</span><?php endif; ?>
+                                        <?php if ($u['roles'] !== []): ?>
+                                            <span class="aksq__chip aksq__chip--role"><?= $h($u['roles'][0]['label']) ?> <em><?= $h($dur($u['roles'][0]['seconds'])) ?></em></span>
+                                        <?php else: ?><span class="aksq__muted">—</span><?php endif; ?>
                                     </td>
                                     <td class="aksq__muted"><?= $h($u['last_day'] !== '' ? date('d/m/Y', (int) strtotime($u['last_day'])) : '') ?></td>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
+                                <tr class="aksq__member-detail" id="<?= $h($detailId) ?>" hidden>
+                                    <td colspan="6" class="aksq__detail-cell">
+                                        <div class="aksq__detail">
+                                            <div>
+                                                <p class="aksq__detail-title">Téléphone</p>
+                                                <p>Écran allumé <?= $h($dur((int) $u['screen'])) ?> : en main <?= $h($dur((int) $u['hand'])) ?>, porté en miniature <?= $h($dur((int) $u['carry'])) ?>.</p>
+                                            </div>
+                                            <div>
+                                                <p class="aksq__detail-title">Apps utilisées (<?= count($u['apps']) ?>)</p>
+                                                <?php foreach ($u['apps'] as $a): ?>
+                                                    <span class="aksq__chip"><?= $h($a['label']) ?> <em class="aksq__app-dur"><?= $h($dur($a['seconds'])) ?></em></span>
+                                                <?php endforeach; ?>
+                                                <?php if ($u['apps'] === []): ?><span class="aksq__muted">Aucune app relevée.</span><?php endif; ?>
+                                            </div>
+                                            <div>
+                                                <p class="aksq__detail-title">Temps par rôle</p>
+                                                <?php foreach ($u['roles'] as $r): ?>
+                                                    <span class="aksq__chip aksq__chip--role"><?= $h($r['label']) ?> <em><?= $h($dur($r['seconds'])) ?></em></span>
+                                                <?php endforeach; ?>
+                                                <?php if ($u['roles'] === []): ?><span class="aksq__muted">Aucun rôle relevé.</span><?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        <?php endforeach; ?>
                     </table>
                 </div>
+                <p class="aksq__empty-filter aksq__muted" data-aksq-none hidden>Aucun membre ne correspond à ces filtres.</p>
             </section>
         <?php endif; ?>
     </div>
 </div>
+<script defer src="<?= $h(asset_url('assets/js/back-office-atak-screen-time.js')) ?>"></script>

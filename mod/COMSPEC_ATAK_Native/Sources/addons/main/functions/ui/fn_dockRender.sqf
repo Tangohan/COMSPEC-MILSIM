@@ -4,13 +4,16 @@ private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
 { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_DockControls", []]);
 
+// Écran de verrouillage affiché : ni dock ni rail par-dessus (il revient au déverrouillage, fn_lockScreen "unlock").
+if (uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []]; true };
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 // Carte en mode PETIT : dock et rail retirés (fn_layoutGet).
 if (((_l get "dockRect") select 3) <= 0 && {((_l get "rail") select 2) <= 0}) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []]; true };
 private _active = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"];
 // Dock choisi par le joueur (Réglages > Personnalisation), sinon celui des apps déclarées « dock ».
 private _mine = profileNamespace getVariable ["COMSPEC_ATAK_DockApps", []];
-private _all = [] call comspec_atak_native_fnc_appList;
+// Apps en chantier (wip=1) : jamais au dock, même choisies avant.
+private _all = ([] call comspec_atak_native_fnc_appList) select { !(_x getOrDefault ["wip", false]) };
 private _apps = if ((count _mine) > 0) then { (_mine apply { private _id = _x; (_all select { (_x get "id") isEqualTo _id }) param [0, createHashMap] }) select { (count _x) > 0 && {[_x] call comspec_atak_native_fnc_appVisible} } } else { _all select { (_x get "dock") && {[_x] call comspec_atak_native_fnc_appVisible} } };
 private _n = (count _apps) max 1;
 private _made = [];

@@ -10,7 +10,7 @@ private _tasks = createHashMap;
         if !(_id isEqualType "") then { _id = str _id; };
         _tasks set [_id, _x];
     };
-} forEach (missionNamespace getVariable ["COMSPEC_Orders", []]);
+} forEach (["var", ["COMSPEC_Orders", []]] call comspec_atak_native_fnc_offline);
 ["legacyTasks", _tasks] call comspec_atak_native_fnc_storeSet;
 
 // COMSPEC_Athena_AlertInbox : [type, titre, texte, grille, heure, émetteur, canal]
@@ -31,10 +31,10 @@ private _inbox = [];
         ["time", [str _time, _time] select (_time isEqualType "")],
         ["author", _author], ["channel", _channel], ["source", "inbox"]
     ];
-} forEach (missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []]);
+} forEach (["var", ["COMSPEC_Athena_AlertInbox", []]] call comspec_atak_native_fnc_offline);
 ["inbox", _inbox] call comspec_atak_native_fnc_storeSet;
 
 // COMSPEC_IntelStore est un tableau de HashMaps (publicVariable d'Overwatch).
-private _intel = missionNamespace getVariable ["COMSPEC_IntelStore", []];
+private _intel = ["var", ["COMSPEC_IntelStore", []]] call comspec_atak_native_fnc_offline;
 if (_intel isEqualType [] || {_intel isEqualType createHashMap}) then { ["intel", _intel] call comspec_atak_native_fnc_storeSet; };
 true

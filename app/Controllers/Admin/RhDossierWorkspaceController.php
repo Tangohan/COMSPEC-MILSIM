@@ -578,6 +578,7 @@ final class RhDossierWorkspaceController
             'effectifsNav' => 'rh_inbox',
             'rhActionInbox' => $inbox,
             'rhInboxActionCount' => (int) ($inbox['total'] ?? 0),
+            'csrfToken' => Csrf::token(),
         ]);
     }
 
@@ -822,7 +823,7 @@ final class RhDossierWorkspaceController
             'effectifsContent' => $content,
             'isBackOfficeShell' => true,
             'boSkipPageHead' => true,
-            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css'],
             'showPortalFooter' => false,
             'rosterCounts' => [
                 'total' => $this->userRepository->countListForTenant($tenantId, null, null, null, true),

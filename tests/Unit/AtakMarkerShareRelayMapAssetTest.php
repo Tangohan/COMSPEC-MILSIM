@@ -6,6 +6,7 @@ namespace Tests\Unit;
 
 use App\Support\ArmaMarkerLabel;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakMarkerShareRelayMapAssetTest extends TestCase
 {
@@ -26,8 +27,8 @@ final class AtakMarkerShareRelayMapAssetTest extends TestCase
         $noteShare = (string) file_get_contents($root . '/docs/bugs/2026-09-20-reperes-poste-carte-arma.md');
         $noteRelay = (string) file_get_contents($root . '/docs/bugs/2026-09-20-relais-mat-carte.md');
 
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
-        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
         self::assertStringContainsString('class userMapMarkerMeta {}', $cfgC);
         self::assertStringContainsString('class updateNearestRelayMap {}', $cfgC);
 
@@ -35,32 +36,32 @@ final class AtakMarkerShareRelayMapAssetTest extends TestCase
         self::assertStringContainsString('Canal global', $meta);
         self::assertStringContainsString('placed_by', $sync);
         self::assertStringContainsString('%19', $sync);
-        self::assertStringContainsString('RepÃ¨re Â· %1', $sync);
+        self::assertStringContainsString('Repère · %1', $sync);
         self::assertStringContainsString('clientOwner', $user);
 
         self::assertStringContainsString('createMarker [_name', $poll);
-        self::assertStringContainsString('RepÃ¨re poste', $poll);
+        self::assertStringContainsString('Repère poste', $poll);
         self::assertStringContainsString('deleteMarker _n', $poll);
         self::assertStringNotContainsString('createMarkerLocal', $poll);
 
         self::assertStringContainsString('comspec_relay_nearest', $relay);
-        self::assertStringContainsString('Vous quittez la portÃ©e du relais', $relay);
+        self::assertStringContainsString('Vous quittez la portée du relais', $relay);
         self::assertStringContainsString('comspec_relay_', $xeh);
         self::assertStringContainsString('COMSPEC_RelayMapPfh', $xeh);
         self::assertStringContainsString('updateNearestRelayMap', $athenaRelay);
 
         self::assertStringContainsString('function markerTooltipOf', $js);
-        self::assertStringContainsString('PosÃ© par ', $js);
+        self::assertStringContainsString('Posé par ', $js);
         self::assertStringContainsString('markerTooltipOf', $ow);
 
-        self::assertSame('RepÃ¨re Â· Alpha', ArmaMarkerLabel::displayLabel('_USER_DEFINED #0/1/0', [
+        self::assertSame('Repère · Alpha', ArmaMarkerLabel::displayLabel('_USER_DEFINED #0/1/0', [
             'type' => 'mil_dot',
             'placed_by' => 'Alpha',
         ]));
         self::assertSame('Alpha', ArmaMarkerLabel::actorFromMarker(['placed_by' => 'Alpha']));
 
-        self::assertStringContainsString('vrai repÃ¨re', strtolower($noteShare));
-        self::assertStringContainsString('mÃ¢t', strtolower($noteRelay));
+        self::assertStringContainsString('vrai repère', strtolower($noteShare));
+        self::assertStringContainsString('mât', strtolower($noteRelay));
         self::assertStringNotContainsString('endpoint', $noteShare);
         self::assertStringNotContainsString('endpoint', $noteRelay);
     }

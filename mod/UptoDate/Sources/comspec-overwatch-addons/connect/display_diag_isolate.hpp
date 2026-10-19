@@ -25,7 +25,7 @@ class COMSPEC_DiagIsolate_Dialog {
             x = DGX(0.24);
             y = DGY(0.15);
             w = DGW(0.52);
-            h = DGH(0.68);
+            h = DGH(0.735);
             colorBackground[] = {0.025, 0.030, 0.027, 0.98};
         };
         class Header: RscText {
@@ -212,6 +212,15 @@ class COMSPEC_DiagIsolate_Dialog {
             w = DGW(0.121);
             h = DGH(0.045);
             action = "['bug'] call comspec_overwatch_connect_fnc_diagAction;";
+        };
+        class BtnStartup: COMSPEC_RscButtonAtak {
+            idc = 69;
+            text = "Renvoyer le check de démarrage";
+            x = DGX(0.252);
+            y = DGY(0.822);
+            w = DGW(0.246);
+            h = DGH(0.045);
+            action = "['startup'] call comspec_overwatch_connect_fnc_diagAction;";
         };
         class BtnClose: COMSPEC_RscButtonAtak {
             idc = 68;

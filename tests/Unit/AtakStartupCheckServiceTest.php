@@ -28,6 +28,7 @@ final class AtakStartupCheckServiceTest extends TestCase
             'callsign' => 'Alpha 1-1',
             'player_key' => 'k' . bin2hex(random_bytes(6)),
             'session' => $session,
+            'scope' => 'once',
             'world' => 'Altis',
             'mission' => 'Op Test',
             'mp' => '1',
@@ -39,13 +40,13 @@ final class AtakStartupCheckServiceTest extends TestCase
     }
 
     /** @param list<array<string, mixed>> $sent */
-    private function service(array &$sent, ?string $webhook = self::WEBHOOK): AtakStartupCheckService
+    private function service(array &$sent, ?string $webhook = self::WEBHOOK, ?\Closure $community = null): AtakStartupCheckService
     {
         return new AtakStartupCheckService($webhook, new FileRateLimiter(), sender: function (string $url, array $embed) use (&$sent): array {
-            $sent[] = $embed;
+            $sent[] = $embed + ['_url' => $url];
 
             return ['ok' => true];
-        });
+        }, communityChannel: $community ?? static fn (string $name): ?array => null);
     }
 
     public function testPostsOneEmbedPerPlayerSession(): void
@@ -64,6 +65,61 @@ final class AtakStartupCheckServiceTest extends TestCase
         self::assertStringContainsString('⚠️ **DLL COMSPEC Link / Link DLL**', $embed['description']);
         self::assertStringNotContainsString('ignoré', $embed['description']);
         self::assertSame('ATAK 1.75.0 · Link 2.0.81 · Arma 2.18', $embed['fields'][1]['value']);
+    }
+
+    public function testOneEmbedPerSessionUntilReset(): void
+    {
+        $sent = [];
+        $svc = $this->service($sent);
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+
+        // Même session : relance du jeu, nouvelle mission, reconnexion.
+        self::assertSame('posted', $svc->handle($body + ['trigger' => 'link_failed'])['status']);
+        self::assertSame('duplicate', $svc->handle(['trigger' => 'link', 'mission' => 'Autre'] + $body)['status']);
+        // Reset dans Dépannage liaison : nouvelle session, nouveau message.
+        $body['session'] = 's' . bin2hex(random_bytes(6));
+        self::assertSame('posted', $svc->handle($body)['status']);
+        self::assertCount(2, $sent);
+    }
+
+    public function testLegacyModPostsOncePerPlayerWhateverTheSession(): void
+    {
+        $sent = [];
+        $svc = $this->service($sent);
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+        unset($body['scope']);
+
+        self::assertSame('posted', $svc->handle($body)['status']);
+        // Ancien mod : session refaite à chaque mission.
+        $body['session'] = 's' . bin2hex(random_bytes(6));
+        self::assertSame('duplicate', $svc->handle($body)['status']);
+        self::assertCount(1, $sent);
+    }
+
+    public function testLinkReportShowsAssignedPhoneAndTerminal(): void
+    {
+        $sent = [];
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+        $body['trigger'] = 'link';
+        $body['step_link'] = 'ok|lié · 1er RPIMa';
+        $body['step_phone'] = 'ok|n° 06 12 34 56 78 · IMEI 35-123456-123456-7 · attribué par Athena (FR)';
+        $body['step_terminal'] = 'ok|Samsung Galaxy S7 · modèle S7';
+        $this->service($sent)->handle($body);
+
+        $embed = $sent[0];
+        self::assertStringContainsString('Liaison en jeu · Tango (Alpha 1-1)', $embed['title']);
+        self::assertStringContainsString('✅ **Numéro et IMEI / Number and IMEI** · n° 06 12 34 56 78 · IMEI 35-123456-123456-7', $embed['description']);
+        self::assertStringContainsString('✅ **Terminal** · Samsung Galaxy S7', $embed['description']);
+        self::assertSame('Liaison en jeu · In-game link', $embed['footer']['text']);
+    }
+
+    public function testUnknownTriggerFallsBackToStartupCheck(): void
+    {
+        $body = $this->body('x');
+        $body['trigger'] = 'nope';
+        self::assertSame('start', AtakStartupCheckService::normalize($body)['trigger'] ?? null);
+        $body['trigger'] = 'link_failed';
+        self::assertSame('link_failed', AtakStartupCheckService::normalize($body)['trigger'] ?? null);
     }
 
     public function testGameTextIsScrubbedForDiscord(): void
@@ -85,6 +141,45 @@ final class AtakStartupCheckServiceTest extends TestCase
         $result = $this->service($sent, '')->handle($this->body('s1'));
 
         self::assertTrue($result['ok']);
+        self::assertSame('no_channel', $result['status']);
+        self::assertSame([], $sent);
+    }
+
+    public function testLinkedPlayerGoesToHisCommunityChannel(): void
+    {
+        $sent = [];
+        $asked = [];
+        $community = static function (string $name) use (&$asked): ?array {
+            $asked[] = $name;
+
+            return $name === '1er RPIMa' ? ['tenant' => 7, 'url' => 'https://discord.com/api/webhooks/7/commu'] : null;
+        };
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+        $body['trigger'] = 'link';
+        $body['step_link'] = 'ok|lié · 1er RPIMa';
+
+        self::assertSame('posted', $this->service($sent, '', $community)->handle($body)['status']);
+        self::assertSame(['1er RPIMa'], $asked);
+        self::assertCount(1, $sent);
+        self::assertSame('https://discord.com/api/webhooks/7/commu', $sent[0]['_url']);
+
+        // Avec le salon facultatif de la plateforme : une copie de plus.
+        $sent = [];
+        $body['session'] = 's' . bin2hex(random_bytes(6));
+        $this->service($sent, self::WEBHOOK, $community)->handle($body);
+        self::assertSame(['https://discord.com/api/webhooks/7/commu', self::WEBHOOK], array_column($sent, '_url'));
+    }
+
+    public function testUnlinkedPlayerHasNoCommunity(): void
+    {
+        self::assertSame('', AtakStartupCheckService::communityName(['step_link' => 'fail|non lié : jeton expiré']));
+        self::assertSame('1er RPIMa', AtakStartupCheckService::communityName(['step_link' => 'ok|lié · 1er RPIMa']));
+        self::assertSame('Task Force', AtakStartupCheckService::communityName(['community' => 'Task Force', 'step_link' => 'ok|lié · Autre']));
+
+        $sent = [];
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+        $body['step_link'] = 'fail|non lié';
+        $result = $this->service($sent, '', static fn (string $name): ?array => ['tenant' => 7, 'url' => 'https://discord.com/api/webhooks/7/commu'])->handle($body);
         self::assertSame('no_channel', $result['status']);
         self::assertSame([], $sent);
     }

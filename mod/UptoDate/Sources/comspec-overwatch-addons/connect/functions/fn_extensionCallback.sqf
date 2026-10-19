@@ -243,7 +243,8 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_GoogleBriefingPath", _path];
         missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
 
-        if (isNull (findDisplay 9970)) then {
+        // ATAK natif : diapositive lue par l'app BRIEFING du téléphone, pas d'ancien tableau de briefing.
+        if (isNull (findDisplay 9970) && {!isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")}) then {
             createDialog "COMSPEC_Briefing_Dialog";
         };
 
@@ -305,7 +306,10 @@ switch (_function) do {
             case "cancelled": { "Chargement annulé." };
             default { if (_message isEqualTo "") then { "Échec du chargement Google Slides." } else { _message } };
         };
-        ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
+        // Présentation non partagée / introuvable : réglage de la communauté (vérifié sur le site), pas une erreur du mod
+        // → WARN, donc pas de rapport automatique à chaque joueur et à chaque session.
+        private _level = ["ERROR", "WARN"] select (_code in ["private", "not_found"]);
+        ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", _level] call comspec_overwatch_connect_fnc_logFnError;
         ["COMSPEC_Warning", [_human]] call comspec_overwatch_connect_fnc_showNotification;
     };
     case "SseNoteAttachment": {

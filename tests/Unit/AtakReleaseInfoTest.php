@@ -21,6 +21,17 @@ final class AtakReleaseInfoTest extends TestCase
         self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', (string) $info['link']);
     }
 
+    public function testDisplayedNameStartsWithTheComparableVersion(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $hpp = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp');
+
+        // VERSION_NAME (« 2.0.1.AB - Denver ») n'est qu'affiché ; VERSION_STR reste MAJEUR.MINEUR.CORRECTIF pour
+        // les comparaisons (versionStr, contrôle d'intégrité, /api/atak/version).
+        self::assertSame(1, preg_match('/^#define VERSION_NAME "([^"]+)"$/m', $hpp, $m));
+        self::assertStringStartsWith(AtakReleaseInfo::latest($root)['atak_native'] . '.', $m[1]);
+    }
+
     public function testMainPboExpectsTheLinkDllOfTheSameCommit(): void
     {
         $info = AtakReleaseInfo::latest(dirname(__DIR__, 2));
@@ -37,6 +48,17 @@ final class AtakReleaseInfoTest extends TestCase
         self::assertSame(1, preg_match('/private const string ExtensionVersion = "([0-9.]+)";/', $cs, $m));
 
         self::assertSame(AtakReleaseInfo::latest($root)['link'], $m[1]);
+    }
+
+    public function testBuildStampIsNeverCommitted(): void
+    {
+        $root = dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main';
+        $hpp = (string) file_get_contents($root . '/build_info.hpp');
+
+        // L'empreinte (date, commit) est posée au build puis retirée (docs/VERSIONING.md) : committée, elle ferait
+        // entrer en conflit chaque PR native et afficherait une date fausse dans les builds suivants.
+        self::assertSame(1, preg_match('/^#define BUILD_STAMP ""$/m', $hpp));
+        self::assertStringContainsString('#include "build_info.hpp"', (string) file_get_contents($root . '/script_component.hpp'));
     }
 
     public function testMissingFilesGiveNullsInsteadOfErrors(): void

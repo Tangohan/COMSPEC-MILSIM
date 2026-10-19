@@ -22,7 +22,10 @@ final class MaintenanceBypassTest extends TestCase
         $service = new MaintenanceService(new PDO('sqlite::memory:'));
         $rule = ['allow_admin_bypass' => 1];
 
-        Gate::getInstance()->setPermissions(['admin.system']);
+        // `admin.system` is a reserved slug: it no longer comes from a role but from the
+        // platform-admin bit (see App\Authorization\SystemReservedPermissions).
+        Gate::getInstance()->setPermissions([]);
+        Gate::getInstance()->setPlatformAdmin(true);
 
         self::assertFalse($service->shouldBypass($rule, null, '203.0.113.10'));
         self::assertFalse($service->shouldBypass($rule, [], '203.0.113.10'));

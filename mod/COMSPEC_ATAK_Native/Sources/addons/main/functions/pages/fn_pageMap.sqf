@@ -279,7 +279,7 @@ if (_interactive) then {
         _sb ctrlSetTooltip (((["Afficher le panneau SITUATION (unités, contacts, sélection)", "Replier le panneau SITUATION"] select _open)) call comspec_atak_native_fnc_tr);
         _sb ctrlAddEventHandler ["ButtonClick", { [] call comspec_atak_native_fnc_inspToggle; }];
         _ov set ["insp_toggle", _sb];
-        // Calques : boutons à bascule en bas du panneau SITUATION ouvert (deux colonnes).
+        // Calques : bascule d'un calque (lignes du volet ci-dessous), avec ce qu'il montre une fois allumé.
         if (_open) then {
             uiNamespace setVariable ["COMSPEC_ATAK_LayerToggle", {
                 params ["_ns", "_var", "_def"];
@@ -338,105 +338,127 @@ if (_interactive) then {
                 };
                 [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
             }];
-            // [libellé, espace (P profil, M mission, C réglage CBA du joueur), variable, défaut, clé communauté (verrou Athena) ou ""]
-            private _layers = [
-                ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""],
-                ["Cartouches", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
-                ["Noms des repères", "C", "comspec_atak_native_map_show_marker_text", true, ""],
-                ["Villes", "C", "comspec_atak_native_map_show_cities", true, ""],
-                ["Villages", "C", "comspec_atak_native_map_show_villages", true, ""],
-                ["Lieux-dits", "C", "comspec_atak_native_map_show_locals", true, ""],
-                ["Sites", "C", "comspec_atak_native_map_show_sites", true, ""],
-                ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true, ""],
-                ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true, ""],
-                ["Guerre élec.", "P", "COMSPEC_ATAK_LayerEw", true, ""],
-                ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true, ""],
-                ["Relief", "M", "COMSPEC_ATAK_ViewshedShow", true, ""],
-                ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false, ""],
-                ["Relais", "P", "COMSPEC_ATAK_RelaysLayer", true, ""],
-                ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, ""]
-            ];
-            // Liste en deux colonnes : case à cocher À GAUCHE du libellé complet (aligné à gauche).
-            // Actif : case verte pleine, texte blanc, fond vert sombre. Inactif mais disponible : case vide bordée,
-            // texte clair (jamais grisé). Imposé par la communauté : texte atténué + « imposé », pas de clic.
-            private _gap = _pad / 3;
-            private _lw = ((_l get "inspW") - _pad * 2.5) / 2;
-            private _lh = _fs * 1.6;
-            private _lfs = _fs * 0.86;
-            private _rowsN = ceil ((count _layers) / 2);
-            private _ly0 = _by + _bh - _pad - _rowsN * (_lh + _gap);
-            // Rangée « Fond de carte » au-dessus de la liste.
-            private _fy = _ly0 - _lh - _gap * 2;
-            private _hy = _fy - _fs * 1.35;
-            private _lt = ["COMSPEC_RscStructuredText", [_sx, _hy, _sw, _fs * 1.25]] call _mk;
-            _lt ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold' size='0.85' color='#5cc76b'>CALQUES</t>") call comspec_atak_native_fnc_tr);
-            uiNamespace setVariable ["COMSPEC_ATAK_InspTextBottom", _hy - _fs * 0.2];
-            private _sep = ["COMSPEC_RscText", [_sx, _hy - _fs * 0.1, _sw, pixelH]] call _mk;
-            _sep ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.35];
+            // Sections repliées (profil) : clé ajoutée ou retirée au clic sur l'en-tête, page redessinée.
+            uiNamespace setVariable ["COMSPEC_ATAK_MapPanelFold", {
+                params ["_k"];
+                private _f = profileNamespace getVariable ["COMSPEC_ATAK_MapPanelFolds", []];
+                if !(_f isEqualType []) then { _f = []; };
+                if (_k in _f) then { _f = _f - [_k]; } else { _f pushBack _k; };
+                profileNamespace setVariable ["COMSPEC_ATAK_MapPanelFolds", _f];
+                saveProfileNamespace;
+                ["MAP"] call comspec_atak_native_fnc_pageRender;
+            }];
+            private _folds = profileNamespace getVariable ["COMSPEC_ATAK_MapPanelFolds", []];
+            if !(_folds isEqualType []) then { _folds = []; };
+            private _foldCode = { format ["[%1] call (uiNamespace getVariable 'COMSPEC_ATAK_MapPanelFold');", str _this] };
+            // Volet défilant sous le bandeau, en sections repliables (fn_formRender) : situation, fond de carte, calques
+            // par thème avec leur compteur. Une ligne par calque sur toute la largeur, libellé entier (il passe à la ligne
+            // au besoin) et interrupteur OUI / NON à droite : les deux colonnes coupaient les libellés (« Noms des rep »).
+            private _rows = [];
+            private _sel = _s getOrDefault ["selectedEntity", createHashMap];
+            private _units = values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]);
+            private _fr = { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" } count _units;
+            private _ho = { (_x getOrDefault ["affiliation", ""]) isEqualTo "hostile" } count _units;
+            private _sitOpen = !("sit" in _folds);
+            // Résumés d'en-tête courts (le volet est étroit) : alliés en bleu · contacts (en rouge s'il y en a), ou l'indicatif.
+            _rows pushBack ["fold", ["Situation", "Unité sélectionnée"] select ((count _sel) > 0),
+                [format ["<t color='#47b3ff'>%1</t> · <t color='%3'>%2</t>", _fr, _ho, ["#c9d4ce", "#e5483a"] select (_ho > 0)], _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0),
+                _sitOpen, "sit" call _foldCode, 0.55];
+            // Texte du résumé ou de la fiche : rafraîchi chaque seconde par fn_inspectorUpdate dans ce même contrôle.
+            uiNamespace setVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
+            uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0)];
+            if (_sitOpen) then { _rows pushBack ["text", [true] call comspec_atak_native_fnc_inspectorUpdate, [0.06, 0.075, 0.068, 0.96], "COMSPEC_ATAK_InspTextCtrl"]; };
+            // Fond de carte : boutons sur deux rangées au-delà de trois (TOPO CLAIR / SOMBRE NUIT, PHOTO en plus).
             private _style = [] call comspec_atak_native_fnc_mapStyle;
-            private _flw = _sw * 0.2;
-            private _fl = ["COMSPEC_RscText", [_sx, _fy, _flw, _lh], "Fond"] call _mk;
-            _fl ctrlSetFontHeight ((_lfs) max COMSPEC_ATAK_FontMin);
-            _fl ctrlSetTextColor [0.80, 0.86, 0.82, 1];
             private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]];
-            private _cw = (_sw - _flw - _gap * ((count _styles) - 1)) / (count _styles);
-            {
-                _x params ["_t", "_k"];
-                private _on = _k isEqualTo _style;
-                private _b = ["COMSPEC_RscButton", [_sx + _flw + _forEachIndex * (_cw + _gap), _fy, _cw, _lh], _t] call _mk;
-                _b ctrlSetFontHeight ((_lfs * 0.92) max COMSPEC_ATAK_FontMin);
-                _b ctrlSetBackgroundColor ([[0.11, 0.135, 0.12, 1], [0.36, 0.78, 0.42, 1]] select _on);
-                _b ctrlSetTextColor ([[0.92, 0.96, 0.93, 1], [0.03, 0.05, 0.04, 1]] select _on);
-                _b ctrlSetTooltip (("Fond de carte (aussi dans Réglages > Carte)") call comspec_atak_native_fnc_tr);
-                _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1] call comspec_atak_native_fnc_mapStyle; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str _k]];
-            } forEach _styles;
-            private _boxH = _lh * 0.5;
-            private _boxW = _boxH / _ratio;
-            {
-                _x params ["_lbl", "_ns", "_var", "_def", "_tenant"];
-                private _on = ([profileNamespace, missionNamespace] select (_ns in ["M", "C"])) getVariable [_var, _def];
-                private _locked = false;
-                if (_tenant isNotEqualTo "") then { ([_var, _def, _tenant] call comspec_atak_native_fnc_pref) params ["_v", "_lk"]; _on = _v; _locked = _lk; };
-                private _bx0 = _sx + (_forEachIndex mod 2) * (_lw + _pad / 2);
-                private _by0 = _ly0 + (floor (_forEachIndex / 2)) * (_lh + _gap);
-                // Dernier calque seul sur sa rangée : toute la largeur (libellé long lisible en entier).
-                private _lwR = [_lw, _lw * 2 + _pad / 2] select (_forEachIndex isEqualTo ((count _layers) - 1) && {(_forEachIndex mod 2) isEqualTo 0});
-                private _row = ["COMSPEC_RscText", [_bx0, _by0, _lwR, _lh]] call _mk;
-                _row ctrlSetBackgroundColor ([[0.065, 0.08, 0.072, 0.96], [0.08, 0.20, 0.11, 0.96]] select _on);
-                // Case (pas de glyphe ✓ : absent des polices Roboto d'Arma) : bordure claire, intérieur vert plein si actif, sombre sinon.
-                private _cx = _bx0 + _boxW * 0.45;
-                private _cy = _by0 + (_lh - _boxH) / 2;
-                private _frame = ["COMSPEC_RscText", [_cx, _cy, _boxW, _boxH]] call _mk;
-                _frame ctrlSetBackgroundColor ([[0.70, 0.76, 0.72, 1], [0.36, 0.78, 0.42, 1]] select _on);
-                private _inner = ["COMSPEC_RscText", [_cx + pixelW * 2, _cy + pixelH * 2, _boxW - pixelW * 4, _boxH - pixelH * 4]] call _mk;
-                _inner ctrlSetBackgroundColor ([[0.04, 0.05, 0.045, 1], [0.36, 0.78, 0.42, 1]] select _on);
-                private _tx0 = _cx + _boxW * 1.45;
-                private _t = ["COMSPEC_RscText", [_tx0, _by0, _bx0 + _lwR - _tx0, _lh], _lbl + (["", " · imposé"] select _locked)] call _mk;
-                _t ctrlSetFontHeight ((_lfs) max COMSPEC_ATAK_FontMin);
-                _t ctrlSetTextColor ([[[0.86, 0.91, 0.88, 1], [1, 1, 1, 1]] select _on, [0.50, 0.54, 0.52, 0.85]] select _locked);
-                if (_locked) then {
-                    _row ctrlSetBackgroundColor [0.035, 0.04, 0.037, 0.8];
-                    _row ctrlSetTooltip (("Réglé par votre communauté sur Athena (Contrôle serveur)") call comspec_atak_native_fnc_tr);
-                } else {
-                    private _b = ["COMSPEC_RscButtonOverlay", [_bx0, _by0, _lwR, _lh]] call _mk;
-                    _b ctrlSetTooltip ((format ["%1 : %2 (cliquer pour %3)", _lbl, ["masqué", "affiché"] select _on, ["afficher", "masquer"] select _on]) call comspec_atak_native_fnc_tr);
-                    _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def]];
+            if ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo []) then { _styles pushBack ["PHOTO", "PHOTO"]; };
+            private _bgOpen = !("bg" in _folds);
+            _rows pushBack ["fold", "Fond de carte", (_styles select ((_styles findIf { (_x select 1) isEqualTo _style }) max 0)) select 0, _bgOpen, "bg" call _foldCode, 0.7];
+            if (_bgOpen) then {
+                private _opts = _styles apply {
+                    _x params ["_t", "_k"];
+                    [_t, format ["[%1] call comspec_atak_native_fnc_mapStyle; ['MAP'] call comspec_atak_native_fnc_pageRender;", str _k], _k isEqualTo _style, "Fond de carte (aussi dans Réglages > Carte)"]
                 };
-            } forEach _layers;
+                private _per = [count _opts, ceil ((count _opts) / 2)] select ((count _opts) > 3);
+                for "_i" from 0 to ((count _opts) - 1) step _per do { _rows pushBack ["segment", "", _opts select [_i, _per]]; };
+            };
+            // Calques par thème : [clé, titre, [[libellé, espace (P profil, M mission, C réglage CBA du joueur), variable,
+            // défaut, clé communauté (verrou Athena) ou ""]...]]
+            private _groups = [
+                ["forces", "Forces", [
+                    ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""]
+                ]],
+                ["places", "Repères et lieux", [
+                    ["Coordonnées des marqueurs", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
+                    ["Noms des marqueurs", "C", "comspec_atak_native_map_show_marker_text", true, ""],
+                    ["Villes", "C", "comspec_atak_native_map_show_cities", true, ""],
+                    ["Villages", "C", "comspec_atak_native_map_show_villages", true, ""],
+                    ["Lieux-dits", "C", "comspec_atak_native_map_show_locals", true, ""],
+                    ["Sites", "C", "comspec_atak_native_map_show_sites", true, ""]
+                ]],
+                ["intel", "Renseignement", [
+                    ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true, ""],
+                    ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true, ""],
+                    ["Guerre électronique", "P", "COMSPEC_ATAK_LayerEw", true, ""]
+                ]],
+                ["net", "Réseau et logistique", [
+                    ["Relais", "P", "COMSPEC_ATAK_RelaysLayer", true, ""],
+                    ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false, ""],
+                    ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true, ""]
+                ]],
+                ["relief", "Relief", [
+                    ["Champ de vision", "M", "COMSPEC_ATAK_ViewshedShow", true, ""],
+                    ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, ""]
+                ]]
+            ];
+            _rows pushBack ["title", "Calques"];
+            {
+                _x params ["_key", "_title", "_items"];
+                // État de chaque calque : valeur du joueur, ou celle imposée par la communauté (Contrôle serveur).
+                private _st = _items apply {
+                    _x params ["", "_ns", "_var", "_def", "_tenant"];
+                    private _on = ([profileNamespace, missionNamespace] select (_ns in ["M", "C"])) getVariable [_var, _def];
+                    private _locked = false;
+                    if (_tenant isNotEqualTo "") then { ([_var, _def, _tenant] call comspec_atak_native_fnc_pref) params ["_v", "_lk"]; _on = _v; _locked = _lk; };
+                    [_on, _locked]
+                };
+                private _gOpen = !(_key in _folds);
+                _rows pushBack ["fold", _title, format ["%1/%2", { _x select 0 } count _st, count _items], _gOpen, _key call _foldCode, 0.7];
+                if (_gOpen) then {
+                    {
+                        _x params ["_lbl", "_ns", "_var", "_def"];
+                        (_st select _forEachIndex) params ["_on", "_locked"];
+                        _rows pushBack ["switch", _lbl, _on, format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def], "", _locked];
+                    } forEach _items;
+                };
+            } forEach _groups;
+            private _fy = _sy + _sh + _pad / 3;
+            private _grp = [_rows, [_sx, _fy, _sw, (_by + _bh - _pad / 2) - _fy], false, [0, 0, 0, 0]] call comspec_atak_native_fnc_formRender;
+            // Défilement gardé d'un rendu à l'autre (calque basculé, section repliée) : fn_pageRender relève les groupes nommés.
+            private _sg = uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []];
+            _sg pushBack ["mapPanel", _grp];
+            uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", _sg];
+            private _v = (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["scrollGroups", createHashMap]) getOrDefault ["mapPanel", []]) param [0, -1];
+            if (_v > 0) then {
+                _grp ctrlSetScrollValues [_v, -1];
+                [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
+            };
         };
     };
 
     // Consigne de l'outil actif
     private _mode = _s getOrDefault ["mapMode", "SELECT"];
     private _hintText = switch (_mode) do {
-        case "MARKER": { "MARQUEUR : clic pour poser" };
+        // MARQUEUR : la palette dit elle-même comment poser (clic gauche, ou clic droit puis VALIDER) et se ferme par ✕.
+        case "MARKER": { "" };
         case "MEASURE": { "MESURE : clic A puis B" };
         case "HOUSES": { "BÂTIMENTS : clic pour numéroter autour" };
         case "HEIGHT": { "HAUTEUR : clic pour relever l'altitude" };
         case "FLAT": { "TERRAIN PLAT : clic pour chercher, clic sur une LZ = marqueur" };
         case "LOS": { "LIGNE DE VUE : clic sur la cible" };
         case "ROUTE": { "GPS : clic sur la destination" };
-        case "WP": { "POINTS DE PASSAGE : clic pour ajouter une étape" };
+        // POINTS DE PASSAGE : la fiche d'étape dit elle-même comment poser et se ferme par ✕ (fn_wpCard).
+        case "WP": { "" };
         case "LINE": { "TRAIT : clic A puis clic B" };
         case "DRAW": { "DESSIN : maintenir le clic gauche (lissé au relâchement)" };
         case "DRONE": { switch (_s getOrDefault ["droneMapSub", "GOTO"]) do {
@@ -462,6 +484,11 @@ if (_interactive) then {
         private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
         ["mapBar", [_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio)]] call comspec_atak_native_fnc_droneAction;
     };
+    // Fiche des points de passage : nom, type, partage, VALIDER ; ou l'étape cliquée (renommer, déplacer, supprimer).
+    if (_mode isEqualTo "WP" && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
+        private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
+        [[_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio), _mh * 0.7]] call comspec_atak_native_fnc_wpCard;
+    };
     // Palette masquée pendant l'édition d'un marqueur : un seul panneau à la fois.
     if (_mode isEqualTo "MARKER" && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
         // Palette complète : camp, type (icônes), couleur, taille, autres marqueurs.
@@ -477,35 +504,89 @@ if (_searchOpen) then {
 if (_interactive && {(count (_search getOrDefault ["hit", createHashMap])) > 0} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
     private _cw = ((_mw * 0.5) max (_font * 11 / _ratio)) min (_mw - 2 * _pad);
     private _chh = _fs * 4.9;
-    private _selUp = [0, _fs * 4.6 + _pad] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
+    // Fiche du marqueur sélectionné (plus bas) : la fiche du résultat passe au-dessus.
+    private _selUp = [0, _fs * 6.2 + _pad * 4] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
     ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_mapSearch;
 } else {
     uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", controlNull];
 };
-// Marqueur sélectionné : titre, description et actions (en main).
+// Marqueur sélectionné (clic gauche sur une étiquette) : fiche au-dessus du panneau curseur. Liseré et pastille de la
+// couleur du marqueur, titre, nature (alerte, joueur, mission), grille · distance · azimut, note, puis une rangée
+// d'actions qui ne chevauche jamais le texte : Y ALLER, CENTRER, MODIFIER (marqueur de joueur), SUPPRIMER / EFFACER.
 private _sel = _s getOrDefault ["selectedMarker", ""];
 if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo ""} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
-    private _note = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap]) getOrDefault [_sel, ["", ""]];
-    private _pw = (_mw * 0.5) max (_font * 10 / _ratio) min (_mw - 2 * _pad);
+    private _note = ((missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap]) getOrDefault [_sel, ["", ""]]) select 0;
+    private _kind = [_sel] call comspec_atak_native_fnc_markerDeletable;
+    private _pw = ((_mw * 0.46) max (_font * 12 / _ratio)) min (_mw - 2 * _pad);
     private _px = _bx + (_mw - _pw) / 2;
-    private _ph = _fs * 4.6;
-    private _py = _by + _mh - _ph - _pad;
-    private _info = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ph]] call _mk;
-    _info ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#8a9a93' size='0.85'>%2</t><br/><t size='0.85'>%3</t>",
-        [markerText _sel, "(sans titre)"] select ((markerText _sel) isEqualTo ""), [getMarkerPos _sel] call comspec_atak_native_fnc_gridRef,
-        [_note select 0, "Double clic : modifier · Suppr : effacer"] select ((_note select 0) isEqualTo "")]) call comspec_atak_native_fnc_tr);
-    private _own = (_sel find "_USER_DEFINED") isEqualTo 0;
-    private _go = ["COMSPEC_RscButtonPrimary", [_px + _pw - _pad - _fs * 5 / _ratio * 0.6, _py + _pad / 2, _fs * 5 / _ratio * 0.6, _fs * 1.4], "Y ALLER"] call _mk;
-    _go ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
-    _go ctrlAddEventHandler ["ButtonClick", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [markerText _m, "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }];
-    if (_own) then {
-        private _bw2 = (_pw - _pad * 3) / 2;
-        private _b1 = ["COMSPEC_RscButton", [_px + _pad, _py + _ph - _fs * 1.6 - _pad / 2, _bw2, _fs * 1.5], "MODIFIER"] call _mk;
-        _b1 ctrlSetFontHeight _fs;
-        _b1 ctrlAddEventHandler ["ButtonClick", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerEditOpen; }];
-        private _b2 = ["COMSPEC_RscButton", [_px + _pad * 2 + _bw2, _py + _ph - _fs * 1.6 - _pad / 2, _bw2, _fs * 1.5], "SUPPRIMER"] call _mk;
-        _b2 ctrlSetFontHeight _fs;
-        _b2 ctrlAddEventHandler ["ButtonClick", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerDelete; }];
+    private _lineH = _fs * 1.05;
+    private _btnH = _fs * 1.5;
+    private _in = _pad * 0.8;
+    private _ph = _in + _fs * 1.3 + _lineH + ([0, _lineH] select (_note isNotEqualTo "")) + _in * 0.6 + _btnH + _in;
+    private _py = _by + _mh - _panH - _pad * 2 - _ph;
+    // Couleur du marqueur (CfgMarkerColors), claire par défaut (marqueur sans couleur ou noir sur fond sombre).
+    private _rgba = (getArray (configFile >> "CfgMarkerColors" >> (markerColor _sel) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
+    if ((count _rgba) isNotEqualTo 4 || {((_rgba select 0) + (_rgba select 1) + (_rgba select 2)) < 0.3}) then { _rgba = [0.86, 0.91, 0.88, 1]; };
+    _rgba = [_rgba select 0, _rgba select 1, _rgba select 2, 1];
+    { private _o = ["COMSPEC_RscText", [_px + pixelW * _x, _py + pixelH * _x, _pw, _ph]] call _mk; _o ctrlSetBackgroundColor [0, 0, 0, 0.22]; } forEach [2, 4];
+    private _brd = ["COMSPEC_RscText", [_px - pixelW, _py - pixelH, _pw + pixelW * 2, _ph + pixelH * 2]] call _mk;
+    _brd ctrlSetBackgroundColor [0.30, 0.36, 0.32, 0.9];
+    private _cbg = ["COMSPEC_RscText", [_px, _py, _pw, _ph]] call _mk;
+    _cbg ctrlSetBackgroundColor [0.035, 0.042, 0.038, 0.97];
+    private _edge = ["COMSPEC_RscText", [_px, _py, pixelW * 4, _ph]] call _mk;
+    _edge ctrlSetBackgroundColor _rgba;
+    // Pastille : l'icône du marqueur dans sa couleur.
+    private _tH = _fs * 1.3 + _lineH;
+    private _tW = _tH / _ratio;
+    private _tx0 = _px + pixelW * 4 + _in / _ratio * 0.6;
+    private _chip = ["COMSPEC_RscText", [_tx0, _py + _in, _tW, _tH]] call _mk;
+    _chip ctrlSetBackgroundColor [_rgba select 0, _rgba select 1, _rgba select 2, 0.16];
+    private _ic = ["COMSPEC_RscIcon", [_tx0 + _tW * 0.15, _py + _in + _tH * 0.15, _tW * 0.7, _tH * 0.7], getText (configFile >> "CfgMarkers" >> (markerType _sel) >> "icon")] call _mk;
+    _ic ctrlSetTextColor _rgba;
+    // Fermer (en haut à droite).
+    private _cw = _fs * 1.2;
+    private _cx = _px + _pw - _cw / _ratio - _in / _ratio * 0.6;
+    private _cl = ["COMSPEC_RscIcon", [_cx, _py + _in, _cw / _ratio, _cw], "\z\comspec_atak_native\addons\main\data\ui_close.paa"] call _mk;
+    _cl ctrlSetTextColor [0.55, 0.62, 0.58, 1];
+    private _clb = ["COMSPEC_RscButtonOverlay", [_cx, _py + _in, _cw / _ratio, _cw]] call _mk;
+    _clb ctrlSetTooltip (("Fermer la fiche") call comspec_atak_native_fnc_tr);
+    _clb ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["selectedMarker", ""]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+    // Titre, nature, position ; note s'il y en a une.
+    private _mp = getMarkerPos _sel;
+    private _dd = player distance2D _mp;
+    private _kindTxt = ["MISSION", "JOUEUR", "ALERTE"] select _kind;
+    private _kindCol = ["#8a9a93", "#5cc76b", "#f2a33a"] select _kind;
+    private _txX = _tx0 + _tW + _in / _ratio * 0.6;
+    private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _tH + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
+    _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15' color='#e6efe9'>%1</t>  <t size='0.72' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='0.82' color='#8a9a93'>%4 · %5 · %6°</t>%7",
+        ([([markerText _sel] call comspec_atak_native_fnc_markerAutoName), "(sans titre)"] select ((markerText _sel) isEqualTo "")) regexReplace ["[<>&]", ""], _kindCol, _kindTxt,
+        [_mp, 8] call comspec_atak_native_fnc_gridRef, [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000), round (player getDir _mp),
+        ["", format ["<br/><t size='0.85' color='#c9d3cd'>%1</t>", (_note regexReplace ["[<>&]", ""]) select [0, 90]]] select (_note isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+    _txt ctrlSetFontHeight _fs;
+    // Actions : une rangée en bas de la fiche.
+    private _acts = [
+        ["Y ALLER", "COMSPEC_RscButtonPrimary", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [([markerText _m] call comspec_atak_native_fnc_markerAutoName), "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }],
+        ["CENTRER", "COMSPEC_RscButton", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["mapFollow", false]; [getMarkerPos (_s getOrDefault ["selectedMarker", ""])] call comspec_atak_native_fnc_mapCenter; }]
+    ];
+    if (_kind isEqualTo 1) then {
+        _acts pushBack ["MODIFIER", "COMSPEC_RscButton", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerEditOpen; }];
+    };
+    if (_kind > 0) then {
+        _acts pushBack [["", "SUPPRIMER", "EFFACER"] select _kind, "COMSPEC_RscButton", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerDelete; }];
+    };
+    private _ay = _py + _ph - _in - _btnH;
+    private _ax0 = _px + pixelW * 4 + _in / _ratio * 0.6;
+    private _aw = ((_px + _pw - _in / _ratio * 0.6) - _ax0 - _pad * 0.5 * ((count _acts) - 1)) / (count _acts);
+    {
+        _x params ["_lbl", "_cls", "_code"];
+        private _b = [_cls, [_ax0 + _forEachIndex * (_aw + _pad * 0.5), _ay, _aw, _btnH], _lbl] call _mk;
+        _b ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
+        _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+        if (_lbl in ["SUPPRIMER", "EFFACER"]) then { _b ctrlSetTextColor [0.95, 0.42, 0.36, 1]; };
+        _b ctrlAddEventHandler ["ButtonClick", _code];
+    } forEach _acts;
+    if (_kind > 0) then {
+        _txt ctrlSetTooltip ((["", "Double clic : modifier · Suppr : effacer", "Suppr : effacer cette alerte de la carte"] select _kind) call comspec_atak_native_fnc_tr);
     };
 };
 
@@ -607,6 +688,7 @@ if (_dv isNotEqualTo "OFF") then {
                 ["PETITE FENÊTRE", ["view", "INSET"] call _act, "", "Réduit la vue du drone dans un coin de la carte", 1.2],
                 ["RETOUR À LA CARTE", ["view", "OFF"] call _act, "", "Ferme la vue du drone et revient à la carte", 1.4]
             ];
+            _s set ["backSub", ["MAP", ["view", "OFF"] call _act]];
             // Largeur de chaque bouton d'après son texte affiché (traduit) : chaque libellé tient en entier. Si la
             // rangée déborde, la police baisse pour tous ; s'il reste de la place, elle est partagée entre les boutons.
             private _gap = _pad * 0.8;
@@ -684,6 +766,11 @@ if (_camId isNotEqualTo "") then {
     if (isNull _cu || {!alive _cu} || {!([_cu] call comspec_atak_native_fnc_hasDevice)}) exitWith {
         _s set ["mapCam", ""];
         ["WARNING", "Caméra de l'équipier : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
+    };
+    // Caméra de téléphone non partagée avec moi (fn_camShare) : pas de flux.
+    if !(["can", _cu] call comspec_atak_native_fnc_camShare) exitWith {
+        _s set ["mapCam", ""];
+        ["WARNING", "Caméra non partagée : demandez à l'équipier de vous la partager (app Vidéo live > PARTAGER)", 4, 30] call comspec_atak_native_fnc_notify;
     };
     private _mini = _l get "mini";
     private _cmode = _s getOrDefault ["livecamMode", 0];

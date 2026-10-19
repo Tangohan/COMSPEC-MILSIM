@@ -41,7 +41,7 @@ private _rows = [
     ["info", "Attente avant renvoi", format ["%1 s", missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0]]],
     ["section", "Synchronisation", ""],
     ["info", "Dernière synchro", if (_bridge) then { ["en attente", "assurée par Overwatch"] select _ready } else { [_data getOrDefault ["lastNetworkUpdate", -1]] call _ago }],
-    ["info", "Dernier Resynch", ["COMSPEC_ATAK_ResynchAt", "jamais"] call _str],
+    ["info", "Dernière resynchronisation", ["COMSPEC_ATAK_ResynchAt", "jamais"] call _str],
     ["info", "Unités sur la carte", str _units],
     ["info", "Ordres reçus", str _orders],
     ["section", "Terminal", ""],
@@ -49,7 +49,7 @@ private _rows = [
     // Mémoire vive simulée (fn_ramUsage) : total, puis la part de chaque poste.
     ["info", "Mémoire vive", ([] call comspec_atak_native_fnc_ramUsage) call { format ["<t color='%1'>%2 / %3 Mo (%4 %5)</t>", switch (true) do { case ((_this get "pct") >= 90): { "#e5483a" }; case ((_this get "pct") >= 75): { "#f2ab33" }; default { "#5cc76b" }; }, _this get "used", _this get "total", _this get "pct", "%"] }],
     ["text", format ["<t size='0.8' color='#8a9a93'>%1</t>", ((missionNamespace getVariable ["COMSPEC_ATAK_Ram", createHashMap]) getOrDefault ["parts", []]) apply { format ["%1 : %2 Mo", _x select 0, _x select 1] } joinString " · "]],
-    ["info", "Version du mod", ["COMSPEC_ATAK_NativeVersion", "?"] call _str],
+    ["info", "Version du mod", ["COMSPEC_ATAK_NativeBuild", "?"] call _str],
     ["info", "Extension", ["DLL native", "DLL COMSPEC Link embarquée"] select _bridge],
     ["buttons", [
         ["RESYNCH", { ["RESYNCH"] call comspec_atak_native_fnc_navigate; }, true],

@@ -1,11 +1,17 @@
 /*
     Mode photo : viseur plein écran, on se déplace comme à pied (arme rangée, téléphone tenu devant soi).
+    Sans zoom, vue du joueur gérée par le jeu (pas et souris) ; zoom (caméra scriptée) seulement à l'arrêt : se mettre
+    à marcher (ZQSD / flèches) le ramène à x1, sans retour automatique. Avec la caméra scriptée active même à x1, le
+    joueur restait planté (retour de TTRD, 18/10 : « on peut plus se déplacer »), et un zoom qui sautait à chaque
+    pas était pénible.
     Clic gauche : photo envoyée sur ATAK web (plusieurs possibles). R : selfie (téléphone à bout de bras, tourné vers soi,
     cadrage à la souris dans la limite du bras). Molette ou + / - : zoom numérique x1 à x8, visée à la souris pendant
     le zoom (caméra scriptée). F : flash AUTO / OUI / NON (AUTO : nuit ou intérieur très sombre).
+    B : type de flou automatique des visages (gaussien, mouvement, pixel, carré noir, aucun ; fn_photoFaces), affiché
+    dans la barre des raccourcis. Objectif arrière : bras baissé par défaut (CBA « Photo : téléphone levé en main »).
     Espace : quitter et reprendre le téléphone. H (ou F1) : afficher / replier la barre des raccourcis, repliée
     d'elle-même quelques secondes après l'ouverture.
-    Params : ["ENTER" | "SHOOT" | "SELFIE" | "ZOOM" | "FLASH" | "HELP" | "MOUSE" | "FRAME" | "HUD" | "EXIT", légende, argument]
+    Params : ["ENTER" | "SHOOT" | "SELFIE" | "ZOOM" | "FLASH" | "BLUR" | "HELP" | "MOUSE" | "FRAME" | "HUD" | "EXIT", légende, argument]
 */
 params [["_mode", "ENTER"], ["_caption", ""], ["_arg", 0]];
 if (!hasInterface) exitWith { false };
@@ -49,6 +55,8 @@ switch (toUpper _mode) do {
                     [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {(currentWeapon player) isNotEqualTo ""}) then { player action ["SwitchWeapon", player, player, 299]; }; }, [], 0.1] call CBA_fnc_waitAndExecute;
                     true
                 };
+                // B : type de flou des visages.
+                if (_key isEqualTo 0x30) exitWith { ["BLUR"] call comspec_atak_native_fnc_photoMode; true };
                 // T : marque la cible sous le réticule (cadre jaune « VISÉ »).
                 if (_key isEqualTo 0x14) exitWith { ["mark", "PHONE"] call comspec_atak_native_fnc_lockAction; true };
                 if (_key in [0x0D, 0x4E]) exitWith { ["ZOOM", "", 1] call comspec_atak_native_fnc_photoMode; true };
@@ -92,8 +100,13 @@ switch (toUpper _mode) do {
             _st set ["nextPose", diag_tickTime + 1.2];
             // Animation réglable (CBA « ATAK · Photo ») : action/geste, animation CfgMoves ou fonction.
             private _self = _st getOrDefault ["selfie", false];
-            private _anim = trim (missionNamespace getVariable [["comspec_atak_native_photo_anim", "comspec_atak_native_selfie_anim"] select _self, "gesturePoint"]);
-            if (_self && {_anim isEqualTo ""}) then { _anim = trim (missionNamespace getVariable ["comspec_atak_native_photo_anim", "gesturePoint"]); };
+            private _anim = trim (missionNamespace getVariable [["comspec_atak_native_photo_anim", "comspec_atak_native_selfie_anim"] select _self, "comspec_atak_native_fnc_gestureSelfie"]);
+            if (_self && {_anim isEqualTo ""}) then { _anim = trim (missionNamespace getVariable ["comspec_atak_native_photo_anim", "comspec_atak_native_fnc_gestureSelfie"]); };
+            // Ancienne valeur par défaut (main tendue sans téléphone) : remplacée par le téléphone tenu en main.
+            if ((toLower _anim) isEqualTo "gesturepoint") then { _anim = "comspec_atak_native_fnc_gestureSelfie"; };
+            // Objectif arrière : bras baissé par défaut, sinon la main levée passe devant la vue (capture de TTRD, 18/10).
+            // Réglage CBA personnel « Photo : téléphone levé en main » pour la remettre.
+            if (!_self && {!(missionNamespace getVariable ["comspec_atak_native_photo_arm", false])}) then { _anim = ""; };
             // Passage selfie <-> photo : la fonction de l'animation précédente remet sa pose à zéro.
             private _prev = _st getOrDefault ["lastAnim", ""];
             if (_prev isNotEqualTo _anim && {(toLower _prev) find "_fnc_" >= 0}) then {
@@ -119,14 +132,25 @@ switch (toUpper _mode) do {
                         };
                     };
                 };
-                _st set ["lastAnim", _anim];
             };
+            _st set ["lastAnim", _anim];
         };
         private _selfie = _st getOrDefault ["selfie", false];
         private _zoom = _st getOrDefault ["zoom", 1];
+        // Marche (objectif arrière) : une touche de déplacement ramène le zoom à x1 d'un coup (la vue revient au jeu,
+        // qui seul fait marcher le joueur) ; le zoom ne revient pas de lui-même à l'arrêt.
+        if (!_selfie && {_zoom > 1.01 || {abs ((_st getOrDefault ["fov", 0.75]) - 0.75) > 0.01}} && {
+            ((["MoveForward", "MoveBack", "TurnLeft", "TurnRight", "MoveLeft", "MoveRight", "MoveFastForward", "MoveSlowForward", "EvasiveLeft", "EvasiveRight"] findIf { (inputAction _x) > 0 }) >= 0)
+        }) then {
+            _zoom = 1;
+            _st set ["zoom", 1];
+            _st set ["fov", 0.75];
+            ["HUD"] call comspec_atak_native_fnc_photoMode;
+        };
         private _eye = eyePos player;
         private _tPos = _eye;
         private _tDir = [0, 1, 0];
+        private _rear = [];
         if (_selfie) then {
             // Corps figé pendant le selfie : la souris déplace le bras, pas le joueur.
             private _h = _st getOrDefault ["heading", getDir player];
@@ -141,8 +165,9 @@ switch (toUpper _mode) do {
             private _lens = [player, "lens"] call comspec_atak_native_fnc_gestureSelfie;
             if (_lens isNotEqualTo []) then {
                 _lens params ["_lp", "_ld"];
-                private _ya = ((_ld select 0) atan2 (_ld select 1)) + (_st getOrDefault ["yaw", 0]);
-                private _pa = (((asin (((_ld select 2) max -1) min 1)) + (_st getOrDefault ["pitch", 10]) - 10) max -80) min 80;
+                // Souris : léger recadrage autour du visage (25° au plus), le visage reste dans l'image.
+                private _ya = ((_ld select 0) atan2 (_ld select 1)) + (((_st getOrDefault ["yaw", 0]) max -25) min 25);
+                private _pa = (((asin (((_ld select 2) max -1) min 1)) + ((((_st getOrDefault ["pitch", 10]) - 10) max -20) min 20)) max -80) min 80;
                 _tPos = _lp;
                 _tDir = [(sin _ya) * (cos _pa), (cos _ya) * (cos _pa), sin _pa];
             };
@@ -161,6 +186,9 @@ switch (toUpper _mode) do {
                 _tDir = [(sin _ay) * (cos _ap), (cos _ay) * (cos _ap), sin _ap];
             };
             _tPos = _eye vectorAdd (_tDir vectorMultiply 0.25);
+            // Téléphone en main (fn_gestureSelfie, mode photo) : l'objectif arrière est au dos du téléphone.
+            _rear = [player, "rear"] call comspec_atak_native_fnc_gestureSelfie;
+            if (_rear isNotEqualTo []) then { _tPos = _rear select 0; };
         };
         // Transition douce (passage selfie / objectif arrière).
         private _k = 1;
@@ -173,8 +201,12 @@ switch (toUpper _mode) do {
             if (_k >= 1) then { _st set ["tr0", -1]; };
         };
         private _cam = _st getOrDefault ["cam", objNull];
-        // Vue naturelle sans zoom ni selfie : pas de caméra scriptée.
-        if (!_selfie && {_zoom < 1.01} && {_k >= 1} && {abs ((_st getOrDefault ["fov", 0.75]) - 0.75) < 0.01}) exitWith {
+        // Vue naturelle sans zoom ni selfie : pas de caméra scriptée, le joueur marche et tourne librement.
+        private _natural = !_selfie && {_zoom < 1.01} && {_k >= 1} && {abs ((_st getOrDefault ["fov", 0.75]) - 0.75) < 0.01};
+        // Téléphone en main masqué pour soi seul en vue naturelle (il cacherait la vue ; les autres le voient en main).
+        private _ph = missionNamespace getVariable ["COMSPEC_ATAK_SelfiePhone", objNull];
+        if (!isNull _ph && {(isObjectHidden _ph) isNotEqualTo _natural}) then { _ph hideObject _natural; };
+        if (_natural) exitWith {
             if (!isNull _cam) then { _cam cameraEffect ["terminate", "back"]; camDestroy _cam; _st set ["cam", objNull]; };
         };
         if (isNull _cam) then {
@@ -233,6 +265,16 @@ switch (toUpper _mode) do {
         ["HUD"] call comspec_atak_native_fnc_photoMode;
         true
     };
+    case "BLUR": {
+        if (!_active) exitWith { false };
+        // Type de flou des visages pour la partie (le réglage CBA reste le point de départ).
+        private _types = ["gauss", "motion", "pixel", "black", "off"];
+        private _cur = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
+        uiNamespace setVariable ["COMSPEC_ATAK_BlurType", _types select ((((_types find _cur) max 0) + 1) mod 5)];
+        playSound "ClickSoft";
+        ["HUD"] call comspec_atak_native_fnc_photoMode;
+        true
+    };
     case "HELP": {
         if (!_active) exitWith { false };
         private _open = !(_st getOrDefault ["helpOpen", true]);
@@ -251,9 +293,12 @@ switch (toUpper _mode) do {
         private _z = _st getOrDefault ["zoom", 1];
         private _fl = _st getOrDefault ["flash", "AUTO"];
         private _zs = { params ["_v"]; [_v toFixed 1, str _v] select ((_v mod 1) isEqualTo 0) };
-        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
+        private _bt = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
+        private _bl = (createHashMapFromArray [["gauss", "GAUSSIEN"], ["motion", "MOUVEMENT"], ["pixel", "PIXEL"], ["black", "CARRÉ NOIR"]]) getOrDefault [_bt, "COUPÉ"];
+        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t>   <t color='#6d7a74'>|</t>   VISAGES <t color='%5'>%6</t></t>",
             ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z] call _zs, ["#e8eadf", "#f2ab33"] select (_fl isEqualTo "ON"),
-            createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl]) call comspec_atak_native_fnc_tr);
+            createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl,
+            ["#5cc76b", "#8a9a93"] select (_bl isEqualTo "COUPÉ"), _bl]) call comspec_atak_native_fnc_tr);
         // Échelle de zoom à droite : palier en cours en vert.
         (_cam displayCtrl 6) ctrlSetStructuredText parseText ((((_zoomSteps apply {
             private _on = abs (_x - _z) < 0.01;
@@ -272,11 +317,13 @@ switch (toUpper _mode) do {
         // Action principale (photo) en vert, touches de sortie plus discrètes. Repliée : photo, aide et quitter seuls.
         private _fls = (createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]]) get _fl;
         private _flash = format ["%1 %2", ("flash") call comspec_atak_native_fnc_tr, (_fls) call comspec_atak_native_fnc_tr];
+        // B : type de flou des visages, nommé dans la barre (la touche n'y figurait pas en objectif arrière).
+        private _blur = format ["%1 %2", ("flou") call comspec_atak_native_fnc_tr, (_bl) call comspec_atak_native_fnc_tr];
         private _open = _st getOrDefault ["helpOpen", true];
         private _keys = switch (true) do {
             case (!_open): { [["CLIC", "photo", 1], "|", ["H", "aide", 2], ["ESPACE", "quitter", 2]] };
-            case (_selfie): { [["CLIC", "photo", 1], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "cadrer", 0], "|", ["F", _flash, 0], ["R", "objectif arrière", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
-            default { [["CLIC", "photo", 1], ["T", "marquer", 0], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "viser", 0], "|", ["F", _flash, 0], ["R", "selfie", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
+            case (_selfie): { [["CLIC", "photo", 1], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "cadrer", 0], "|", ["F", _flash, 0], ["B", _blur, 0], ["R", "objectif arrière", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
+            default { [["CLIC", "photo", 1], ["T", "marquer", 0], "|", ["MOLETTE", "zoom", 0], ["B", _blur, 0], "|", ["F", _flash, 0], ["R", "selfie", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
         };
         private _kh = safeZoneH * 0.03;
         private _pad = safeZoneW * 0.005;
@@ -411,8 +458,8 @@ switch (toUpper _mode) do {
              ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
              ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
             _viewDir];
-        [_fire, [_px, _py, _pz], _meta] spawn {
-            params ["_fire", "_phone", "_meta"];
+        [_fire, [_px, _py, _pz], _meta, _st getOrDefault ["selfie", false]] spawn {
+            params ["_fire", "_phone", "_meta", "_selfie"];
             disableSerialization;
             private _ctx = uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []];
             private _caption = _ctx param [3, ""];
@@ -437,10 +484,21 @@ switch (toUpper _mode) do {
                 _light setLightDayLight (sunOrMoon >= 0.5);
             };
             uiSleep 0.12;
+            // Visages à flouer, repérés sur l'image qui part (Athena floute à la réception).
+            private _faces = [_selfie] call comspec_atak_native_fnc_photoFaces;
+            (_meta select 9) append _faces;
             // Débit simulé : sans réseau, la photo reste sur le poste (app Galerie pour la retransmettre).
             private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
             private _ok = if (_noNet) then {
-                screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
+                private _shot = format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
+                screenshot _shot;
+                // Visages gardés avec le nom du fichier : l'envoi depuis la Galerie les floute aussi (40 photos au plus).
+                if (_faces isNotEqualTo []) then {
+                    private _kept = profileNamespace getVariable ["COMSPEC_ATAK_PhotoFaces", []];
+                    if !(_kept isEqualType []) then { _kept = []; };
+                    _kept pushBack [toLower _shot, _faces];
+                    profileNamespace setVariable ["COMSPEC_ATAK_PhotoFaces", _kept select [((count _kept) - 40) max 0]];
+                };
                 ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", 5, 40] call comspec_atak_native_fnc_notify;
                 false
             } else { ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage };
@@ -480,6 +538,8 @@ switch (toUpper _mode) do {
         removeMissionEventHandler ["Draw3D", uiNamespace getVariable ["COMSPEC_ATAK_PhotoDraw", -1]];
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoDraw", -1];
         [uiNamespace getVariable ["COMSPEC_ATAK_PhotoPFH", -1]] call CBA_fnc_removePerFrameHandler;
+        private _ph = missionNamespace getVariable ["COMSPEC_ATAK_SelfiePhone", objNull];
+        if (!isNull _ph) then { _ph hideObject false; };
         // Bras baissé : le geste n'est plus relancé et se termine de lui-même ; une animation CfgMoves est rendue,
         // une fonction reçoit [joueur, "exit"] pour remettre sa pose à zéro.
         private _last = _st getOrDefault ["lastAnim", ""];

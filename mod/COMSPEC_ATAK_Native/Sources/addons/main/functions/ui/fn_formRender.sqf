@@ -2,7 +2,7 @@
     Formulaire défilant (pages Athena, Réseau, Réglages, éditeur de marqueur).
     Params : [lignes, rectangle, dans la zone de contenu (true) ou absolu sur le display (false), couleur du fond]
     Lignes :
-      ["title", texte]                       ["text", texte structuré]
+      ["title", texte]                       ["text", texte structuré, couleur du fond, variable uiNamespace du contrôle]
       ["edit", clé, libellé, valeur]          ["memo", clé, libellé, valeur, nb lignes]
       ["combo", clé, libellé, [[texte, donnée, image, couleur]...], donnée choisie, [libellé du bouton, code]]
           bouton (facultatif) à droite de la liste, sur la même ligne : code appelé avec [donnée choisie]
@@ -43,7 +43,14 @@
       ["notif", icône, couleur, titre, à droite, texte, code ouvrir, code fermer, aide]   carte de notification : liseré
           et pastille d'icône à la couleur de gravité, titre en gras, heure / compteur à droite, texte en dessous ;
           clic sur la carte = code ouvrir ({} : rien), croix à droite = code fermer ({} : pas de croix)
+      ["cells", [[icône, couleur, titre, à droite, texte]...], colonnes (2)]   cartes d'état en grille (app Resynch) :
+          liseré et pastille d'icône à la couleur de l'état, titre en gras, état à droite, texte en dessous ; les cartes
+          d'une même rangée prennent la hauteur de la plus haute
       ["empty", icône, titre, sous-titre]   état vide centré : grande icône pâle, titre et explication
+      ["status", image, couleur RGBA, titre, texte, action]   carte d'état (app Athena) : liseré et titre à la couleur de
+          l'état, image carrée à gauche, explication dessous, action à faire en ambre (facultative) ; hauteur au contenu
+      ["check", niveau, libellé, valeur, aide]   étape d'une chaîne (liaison) : pastille d'icône (niveau "ok" | "now" |
+          "warn" | "ko" | "todo" | "off"), libellé à gauche, valeur à droite, aide en petit dessous ; hauteur au contenu
     L'aide (facultative) s'affiche en infobulle. Hauteur occupée par le contenu : uiNamespace COMSPEC_ATAK_FormH ;
     fond du formulaire : (contrôle renvoyé) getVariable "bg".
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
@@ -84,6 +91,12 @@ private _mk = {
     _c ctrlCommit 0;
     _c
 };
+// Libellé de bouton plus large que le bouton (anglais, police TRÈS GRAND) : la police rétrécit au lieu de couper le texte.
+private _fit = {
+    params ["_b", "_bw", "_fh"];
+    private _tw = ctrlTextWidth _b;
+    if (_tw > _bw * 0.9) then { _b ctrlSetFontHeight ((_fh * _bw * 0.9 / _tw) max COMSPEC_ATAK_FontMin); };
+};
 private _lineIdx = 0; // lignes "line" : fond alterné
 {
     private _row = _x;
@@ -95,7 +108,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _rowH;
         };
         case "text": {
-            _row params ["", "_txt", ["_tbg", []]];
+            _row params ["", "_txt", ["_tbg", []], ["_keep", ""]];
             private _card = (count _tbg) isEqualTo 4;
             private _ix = [0, _pad / 2] select _card;
             private _cb = controlNull;
@@ -106,6 +119,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _t ctrlSetPosition [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _h];
             _t ctrlCommit 0;
             if (_card) then { _cb ctrlSetPosition [_pad, _y, _w, _h + _ix]; _cb ctrlCommit 0; _h = _h + _ix; };
+            // Texte rafraîchi ensuite sans redessiner la page (panneau SITUATION de la carte) : contrôle gardé sous ce nom.
+            if (_keep isNotEqualTo "") then { uiNamespace setVariable [_keep, _t]; };
             _y = _y + _h + ([_pad / 2, pixelH * 2] select _card);
         };
         case "strip": {
@@ -269,7 +284,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _bar = ["COMSPEC_RscText", [_pad, _y + _fs * 0.15, _pad * 0.35, _fs * 1.1]] call _mk;
             _bar ctrlSetBackgroundColor _acc;
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y, _w - _pad, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%3'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _accHex]) call comspec_atak_native_fnc_tr);
+            // Titre en blanc (une couleur d'accent sombre, bleu ou rouge, se perdait sur le fond) : la barre porte l'accent.
+            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#b4c1bb'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max (_fs * 1.3);
             _t ctrlSetPosition [_pad * 1.6, _y, _w - _pad, _h];
             _t ctrlCommit 0;
@@ -303,32 +319,45 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _h + _pad / 3;
         };
         case "fold": {
-            // Section repliable : grande cible de clic, titre à gauche, résumé et chevron à droite.
-            _row params ["", "_title", ["_sub", ""], ["_open", false], ["_code", {}]];
+            // Section repliable (sous-menu) : grande cible de clic, titre à gauche, résumé et chevron à droite.
+            // Retour de jeu : « certains sous-menus sont trop peu visibles ». Carte plus claire et bordée, titre toujours
+            // en blanc, barre d'accent plus large, résumé en gris clair ; ouverte, le contenu est encadré d'un filet.
+            // Part du titre réglable (volet étroit de la carte : titre large, compteur court) ; un titre ou un résumé
+            // qui passe à la ligne agrandit la carte au lieu d'être coupé.
+            _row params ["", "_title", ["_sub", ""], ["_open", false], ["_code", {}], ["_tw", 0.5]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
-            private _h = _rowH * 1.2;
-            _y = _y + _pad / 4;
-            private _card = ["COMSPEC_RscText", [_pad, _y, _w, _h]] call _mk;
-            _card ctrlSetBackgroundColor ([[0.075, 0.09, 0.083, 1], [0.10, 0.125, 0.112, 1]] select _open);
-            private _bar = ["COMSPEC_RscText", [_pad, _y, pixelW * 4, _h]] call _mk;
-            _bar ctrlSetBackgroundColor ([[0.30, 0.34, 0.32, 1], _acc] select _open);
+            private _h = _rowH * 1.25;
+            _y = _y + _pad / 3;
             private _cs = _h * 0.5;
             private _cw = _cs / _ratio;
-            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.8, _y, _w * 0.5, _h]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", toUpper _title, ["#eef4f0", _accHex] select _open]) call comspec_atak_native_fnc_tr);
-            _t ctrlSetPosition [_pad * 1.8, _y + (((_h - (ctrlTextHeight _t)) / 2) max 0), _w * 0.5, ctrlTextHeight _t];
-            _t ctrlCommit 0;
-            private _sw = _w * 0.45 - _cw - _pad;
+            private _tW = _w * _tw;
+            // Fond d'abord (l'ordre de création fait l'empilement), à la hauteur finale une fois les textes mesurés.
+            private _card = ["COMSPEC_RscText", [_pad, _y, _w, _h]] call _mk;
+            _card ctrlSetBackgroundColor ([[0.12, 0.145, 0.132, 1], [0.15, 0.185, 0.165, 1]] select _open);
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.9, _y, _tW, _h]] call _mk;
+            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>", toUpper _title]) call comspec_atak_native_fnc_tr);
+            private _sw = _w * (0.95 - _tw) - _cw - _pad;
             private _st = ["COMSPEC_RscStructuredText", [_pad + _w - _cw - _pad * 1.5 - _sw, _y, _sw, _h]] call _mk;
-            _st ctrlSetStructuredText parseText ((format ["<t align='right' size='0.8' color='#a9b8b1'>%1</t>", _sub]) call comspec_atak_native_fnc_tr);
+            _st ctrlSetStructuredText parseText ((format ["<t align='right' size='0.85' color='#c9d4ce'>%1</t>", _sub]) call comspec_atak_native_fnc_tr);
+            _h = _h max ((ctrlTextHeight _t) + _pad / 2) max ((ctrlTextHeight _st) + _pad / 2);
+            _t ctrlSetPosition [_pad * 1.9, _y + (((_h - (ctrlTextHeight _t)) / 2) max 0), _tW, ctrlTextHeight _t];
+            _t ctrlCommit 0;
             _st ctrlSetPosition [_pad + _w - _cw - _pad * 1.5 - _sw, _y + (((_h - (ctrlTextHeight _st)) / 2) max 0), _sw, ctrlTextHeight _st];
             _st ctrlCommit 0;
+            _card ctrlSetPositionH _h;
+            _card ctrlCommit 0;
+            {
+                private _ln = ["COMSPEC_RscText", [_pad, _y + _x, _w, pixelH]] call _mk;
+                _ln ctrlSetBackgroundColor [1, 1, 1, [0.10, 0.16] select _open];
+            } forEach [0, _h - pixelH];
+            private _bar = ["COMSPEC_RscText", [_pad, _y, pixelW * 6, _h]] call _mk;
+            _bar ctrlSetBackgroundColor ([[0.55, 0.62, 0.58, 1], _acc] select _open);
             private _ch = ["COMSPEC_RscPicture", [_pad + _w - _cw - _pad * 0.75, _y + (_h - _cs) / 2, _cw, _cs], format ["\z\comspec_atak_native\addons\main\data\%1.paa", ["ui_chevron_down", "ui_chevron_up"] select _open]] call _mk;
-            _ch ctrlSetTextColor ([[0.78, 0.84, 0.8, 1], _acc] select _open);
+            _ch ctrlSetTextColor ([[0.92, 0.95, 0.93, 1], _acc] select _open);
             private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;
             _b ctrlSetTooltip ((["Déplier", "Replier"] select _open) call comspec_atak_native_fnc_tr);
             [_b, _code] call _click;
-            _y = _y + _h + _pad / ([4, 2] select _open);
+            _y = _y + _h + _pad / ([3, 2] select _open);
         };
         case "slider": {
             _row params ["", "_label", "_val", "_code", ["_help", ""], ["_active", false], ["_icon", ""], ["_iconCode", {}], ["_iconTip", ""]];
@@ -384,7 +413,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _row params ["", "_label", "_opts", ["_help", ""]];
             if (_label isNotEqualTo "") then {
                 private _lb = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.3]] call _mk;
-                _lb ctrlSetStructuredText parseText ((format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='#8a9a93'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+                _lb ctrlSetStructuredText parseText ((format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='#b4c1bb'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
                 private _lh = (ctrlTextHeight _lb) max (_fs * 1.3);
                 if (_lh > _fs * 1.3) then { _lb ctrlSetPosition [_pad, _y, _w, _lh]; _lb ctrlCommit 0; };
                 _y = _y + _lh + _fs * 0.05;
@@ -396,6 +425,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _sw, _y, _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.9);
+                [_b, _sw - _pad / 6, _fs * 0.9] call _fit;
                 // Option non choisie mais disponible : fond clair-sombre et texte blanc (ne doit pas sembler désactivée).
                 if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
                 [_b, _code] call _click;
@@ -405,7 +435,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         case "info": {
             _row params ["", "_label", "_value"];
             private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.5, _fs * 1.3]] call _mk;
-            _a ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#8a9a93'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
+            _a ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#b4c1bb'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
             private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.4, _y, _w * 0.6, _fs * 1.3]] call _mk;
             _b ctrlSetStructuredText parseText ((format ["<t size='0.85' align='right'>%1</t>", _value]) call comspec_atak_native_fnc_tr);
             private _ih2 = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.3);
@@ -559,7 +589,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _tx = _pad * 2.2 + _iw;
             private _tw = (_w - _iw - _cbw - _pad * 2.6) max (_w * 0.3);
             private _t = ["COMSPEC_RscStructuredText", [_tx, _y + _pad / 3, _tw, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#eef4f0'>%1</t><t size='0.75' align='right' color='#8a9a93'>%2</t>%3",
+            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#eef4f0'>%1</t><t size='0.75' align='right' color='#b4c1bb'>%2</t>%3",
                 [_title] call _e, _meta, ["", format ["<br/><t size='0.85' color='#c6d2cc'>%1</t>", [_body] call _e]] select (_body isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
             private _h = ((ctrlTextHeight _t) + _pad * 0.8) max (_ih + _pad * 0.8);
             _t ctrlSetPosition [_tx, _y + _pad * 0.4, _tw, _h - _pad * 0.8];
@@ -587,6 +617,45 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             };
             _y = _y + _h + _pad / 3;
         };
+        case "cells": {
+            _row params ["", ["_cells", []], ["_cols", 2]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            private _e = { params ["_v"]; (_v regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"] };
+            private _gap = _pad / 2;
+            private _cw = (_w - _gap * (_cols - 1)) / (_cols max 1);
+            private _ih = _font * 1.6;
+            private _iw = _ih * _ratio;
+            for "_r" from 0 to ((count _cells) - 1) step _cols do {
+                private _made = [];
+                private _rh = _ih + _pad * 0.8;
+                {
+                    _x params ["_icon", "_rgb", "_title", ["_meta", ""], ["_body", ""]];
+                    private _cx = _pad + _forEachIndex * (_cw + _gap);
+                    private _card = ["COMSPEC_RscText", [_cx, _y, _cw, _rowH]] call _mk;
+                    _card ctrlSetBackgroundColor [0.07, 0.088, 0.08, 1];
+                    private _strip = ["COMSPEC_RscText", [_cx, _y, pixelW * 4, _rowH]] call _mk;
+                    _strip ctrlSetBackgroundColor _rgb;
+                    private _tile = ["COMSPEC_RscText", [_cx + _pad * 0.6, _y + _pad * 0.4, _iw, _ih]] call _mk;
+                    _tile ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.22];
+                    private _p = ["COMSPEC_RscPicture", [_cx + _pad * 0.6 + _iw * 0.17, _y + _pad * 0.4 + _ih * 0.17, _iw * 0.66, _ih * 0.66], _icon] call _mk;
+                    _p ctrlSetTextColor [0.95, 0.98, 0.96, 1];
+                    private _tx = _cx + _pad * 1.2 + _iw;
+                    private _tw = _cw - _iw - _pad * 1.6;
+                    private _t = ["COMSPEC_RscStructuredText", [_tx, _y + _pad * 0.3, _tw, _rowH]] call _mk;
+                    _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#eef4f0'>%1</t><t size='0.75' align='right'>%2</t>%3",
+                        [_title] call _e, _meta, ["", format ["<br/><t size='0.82' color='#c6d2cc'>%1</t>", [_body] call _e]] select (_body isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+                    private _th = ctrlTextHeight _t;
+                    _rh = _rh max (_th + _pad * 0.6);
+                    _made pushBack [_card, _strip, _t, _th];
+                } forEach (_cells select [_r, _cols]);
+                {
+                    _x params ["_card", "_strip", "_t", "_th"];
+                    { _x ctrlSetPositionH _rh; _x ctrlCommit 0; } forEach [_card, _strip];
+                    _t ctrlSetPositionH _th; _t ctrlCommit 0;
+                } forEach _made;
+                _y = _y + _rh + _gap;
+            };
+        };
         case "empty": {
             _row params ["", "_icon", "_title", ["_sub", ""]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
@@ -597,11 +666,80 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _is + _pad;
             private _t = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _rowH]] call _mk;
             _t ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#dfe8e3'>%1</t>%2", _title,
-                ["", format ["<br/><t align='center' size='0.85' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+                ["", format ["<br/><t align='center' size='0.85' color='#b4c1bb'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max _rowH;
             _t ctrlSetPosition [_pad, _y, _w, _h];
             _t ctrlCommit 0;
             _y = _y + _h + _pad * 2;
+        };
+        case "status": {
+            // Carte d'état : la situation en toutes lettres, sans code ni jargon (app Athena).
+            _row params ["", "_pic", ["_col", [0.36, 0.78, 0.42, 1]], ["_title", ""], ["_txt", ""], ["_act", ""]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            private _ih = _font * 2.6;
+            private _iw = _ih * _ratio;
+            private _ip = _pad * 0.9;
+            private _card = ["COMSPEC_RscText", [_pad, _y, _w, _ih + _ip * 2]] call _mk;
+            _card ctrlSetBackgroundColor [0.085, 0.105, 0.095, 1];
+            private _bar = ["COMSPEC_RscText", [_pad, _y, pixelW * 6, _ih + _ip * 2]] call _mk;
+            _bar ctrlSetBackgroundColor _col;
+            // Photo Athena téléchargée : logo dessous, comme la ligne "hero", si le fichier ne se charge pas.
+            if (_pic isNotEqualTo "" && {(_pic select [0, 1]) isNotEqualTo "\"}) then {
+                ["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], "\z\comspec_atak_native\addons\main\data\logo_atak.paa"] call _mk;
+            };
+            if (_pic isNotEqualTo "") then { (["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], _pic] call _mk) ctrlSetTextColor [1, 1, 1, 1]; };
+            private _hex = (_col select [0, 3]) apply { private _v = round ((_x max 0 min 1) * 255); (["0123456789abcdef" select [floor (_v / 16), 1], "0123456789abcdef" select [_v mod 16, 1]]) joinString "" };
+            private _tx = _pad + _ip * 2 + _iw;
+            private _tw = _w - _iw - _ip * 3;
+            private _t = ["COMSPEC_RscStructuredText", [_tx, _y + _ip, _tw, _ih]] call _mk;
+            _t ctrlSetStructuredText parseText ((format ["<t size='1.12' font='COMSPEC_BarlowBold' color='#%1'>%2</t>%3%4", _hex joinString "", _title,
+                ["", format ["<br/><t size='0.88' color='#d6e0db'>%1</t>", _txt]] select (_txt isNotEqualTo ""),
+                ["", format ["<br/><t size='0.88' color='#e8b84a'>%1</t>", _act]] select (_act isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            private _th = ctrlTextHeight _t;
+            private _h = (_th max _ih) + _ip * 2;
+            _t ctrlSetPosition [_tx, _y + _ip + (((_ih - _th) / 2) max 0), _tw, _th];
+            _t ctrlCommit 0;
+            { _x ctrlSetPositionH _h; _x ctrlCommit 0; } forEach [_card, _bar];
+            _y = _y + _h + _pad / 2;
+        };
+        case "check": {
+            // Étape de la liaison : pastille (fait, en cours, à revoir, bloquant, pas encore, sans objet), libellé, valeur.
+            _row params ["", ["_lvl", "todo"], ["_label", ""], ["_value", ""], ["_help", ""]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            ([
+                ["ok", "ui_check", [0.36, 0.78, 0.42, 1], "#8fe39b"],
+                ["now", "ui_repeat", [0.95, 0.67, 0.2, 1], "#f2c66b"],
+                ["warn", "ui_dot", [0.95, 0.67, 0.2, 1], "#f2c66b"],
+                ["ko", "ui_close", [0.9, 0.28, 0.23, 1], "#ff8a7a"],
+                ["off", "ui_minus", [0.45, 0.52, 0.49, 1], "#a9b8b1"]
+            ] select { (_x select 0) isEqualTo _lvl }) params [["_def", ["todo", "ui_dot", [0.45, 0.52, 0.49, 1], "#c9d4ce"]]];
+            _def params ["", "_icon", "_icol", "_vhex"];
+            private _is = _fs * 1.15;
+            private _isw = _is * _ratio;
+            private _lx = _pad * 1.6 + _isw;
+            private _lw = _w * 0.42;
+            private _vx = _lx + _lw;
+            private _vw = _pad + _w - _vx - _pad * 0.5;
+            private _a = ["COMSPEC_RscStructuredText", [_lx, _y, _lw, _fs * 1.3]] call _mk;
+            _a ctrlSetStructuredText parseText ((format ["<t size='0.9' color='#eef4f0'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
+            private _b = ["COMSPEC_RscStructuredText", [_vx, _y, _vw, _fs * 1.3]] call _mk;
+            _b ctrlSetStructuredText parseText ((format ["<t size='0.9' align='right' color='%1'>%2</t>", _vhex, _value]) call comspec_atak_native_fnc_tr);
+            private _rh = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.3);
+            { _x ctrlSetPositionH _rh; _x ctrlCommit 0; } forEach [_a, _b];
+            private _p = ["COMSPEC_RscPicture", [_pad * 0.9, _y + (((_fs * 1.3) - _is) / 2), _isw, _is], format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]] call _mk;
+            _p ctrlSetTextColor _icol;
+            _y = _y + _rh;
+            if (_help isNotEqualTo "") then {
+                private _hc = ["COMSPEC_RscStructuredText", [_lx, _y, _w - _lx + _pad * 0.5, _fs]] call _mk;
+                _hc ctrlSetStructuredText parseText ((format ["<t size='0.78' color='#b4c1bb'>%1</t>", _help]) call comspec_atak_native_fnc_tr);
+                private _hh = ctrlTextHeight _hc;
+                _hc ctrlSetPositionH _hh; _hc ctrlCommit 0;
+                _y = _y + _hh;
+            };
+            // Filet entre les étapes.
+            private _ln = ["COMSPEC_RscText", [_lx, _y + pixelH * 2, _w - _lx + _pad * 0.5, pixelH]] call _mk;
+            _ln ctrlSetBackgroundColor [1, 1, 1, 0.07];
+            _y = _y + pixelH * 6;
         };
         case "gap": { _y = _y + _pad; };
         case "person": {
@@ -711,6 +849,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _forEachIndex * (_bw + _pad / 2), _y, _bw, _rowH], _label] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight _fs;
+                [_b, _bw, _fs] call _fit;
                 _b ctrlEnable _enabled;
                 [_b, _code] call _click;
             } forEach _btns;
@@ -747,7 +886,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                     private _span = _bwid * (count _btns);
                     if (_titled && {_glabel isNotEqualTo ""}) then {
                         private _t = ["COMSPEC_RscStructuredText", [_x0, _y, _span, _lh]] call _mk;
-                        _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='COMSPEC_BarlowBold' color='#8a9a93'>%1</t>", toUpper _glabel]) call comspec_atak_native_fnc_tr);
+                        _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='COMSPEC_BarlowBold' color='#b4c1bb'>%1</t>", toUpper _glabel]) call comspec_atak_native_fnc_tr);
                         _t ctrlEnable false;
                         private _ln = ["COMSPEC_RscText", [_x0, _y + _lh - pixelH * 3, _span - _pad / 3, pixelH * 2]] call _mk;
                         _ln ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.45];

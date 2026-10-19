@@ -5,6 +5,15 @@ $mineWardrobes = $mineWardrobes ?? [];
 $collections = $collections ?? [];
 $equipmentClasses = $equipmentClasses ?? [];
 $dotationItems = $dotationItems ?? [];
+$roleKits = is_array($roleKits ?? null) ? $roleKits : [];
+$myGameKit = is_array($myGameKit ?? null) ? $myGameKit : null;
+$myGameKitWardrobeId = 0;
+foreach ($mineWardrobes as $mw) {
+    if ((string) ($mw['slug'] ?? '') === \App\Services\GameEquipment\PlayerKitService::MEMBER_SLUG) {
+        $myGameKitWardrobeId = (int) ($mw['id'] ?? 0);
+        break;
+    }
+}
 $canManageCatalog = !empty($canManageCatalog);
 $canManageDotation = !empty($canManageDotation);
 $equipmentKindLabels = is_array($equipmentKindLabels ?? null) ? $equipmentKindLabels : \App\Support\ArsenalLoadoutItems::kindLabels();
@@ -131,6 +140,67 @@ $mineCatalog = array_map(static function (array $w): array {
         <?php if ($migrationMissing): ?>
         <p class="eq-hub__empty">Cette page n’est pas encore prête sur cette instance. Demandez à l’administration d’appliquer la mise à jour, puis rechargez.</p>
         <?php else: ?>
+
+        <?php if ($roleKits !== []): ?>
+        <section class="eq-rolekits" aria-labelledby="eq-rolekits-heading">
+            <div class="eq-hub__section-head">
+                <h2 id="eq-rolekits-heading">Kits proposés pour mon rôle</h2>
+            </div>
+            <ul class="eq-rolekits__list">
+                <?php foreach ($roleKits as $rk): ?>
+                <?php $rkUrl = !empty($rk['wardrobe_id']) ? url('equipment/tenues/' . (int) $rk['wardrobe_id']) : ''; ?>
+                <li>
+                    <<?= $rkUrl !== '' ? 'a href="' . $h($rkUrl) . '"' : 'div' ?> class="eq-rolekits__card">
+                        <span class="eq-rolekits__role" translate="no"><?= $h((string) ($rk['role_name'] ?? '') !== '' ? (string) $rk['role_name'] : 'Tous les rôles') ?></span>
+                        <span class="eq-rolekits__name" translate="no"><?= $h((string) ($rk['name'] ?? '')) ?></span>
+                        <?php if (trim((string) ($rk['description'] ?? '')) !== ''): ?>
+                        <span class="eq-rolekits__mods"><?= $h(mb_strimwidth((string) $rk['description'], 0, 140, '…')) ?></span>
+                        <?php endif; ?>
+                        <span class="eq-rolekits__mods">Mods requis : <?= ($rk['required_mods'] ?? []) === [] ? 'aucun' : '<span translate="no">' . $h(implode(', ', (array) $rk['required_mods'])) . '</span>' ?></span>
+                    </<?= $rkUrl !== '' ? 'a' : 'div' ?>>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($myGameKit !== null): ?>
+        <?php $mkWhen = strtotime((string) ($myGameKit['last_seen_at'] ?? '')) ?: null; ?>
+        <section class="eq-mykit" aria-labelledby="eq-mykit-heading">
+            <div class="eq-hub__section-head">
+                <h2 id="eq-mykit-heading">Mon kit en jeu</h2>
+            </div>
+            <div class="eq-mykit__card">
+                <div class="eq-mykit__top">
+                    <p class="eq-mykit__lead">
+                        Dernier équipement que vous avez porté en jeu<?= $mkWhen !== null ? ', le ' . $h(date('d/m/Y à H:i', $mkWhen)) : '' ?><?= (string) ($myGameKit['role'] ?? '') !== '' ? ' (<span translate="no">' . $h((string) $myGameKit['role']) . '</span>)' : '' ?>.
+                        Remonté automatiquement par le mod, rien à saisir.
+                    </p>
+                    <div class="eq-mykit__actions">
+                        <form method="post" action="<?= $h(url('equipment/mon-kit/tenue')) ?>">
+                            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                            <button type="submit" class="eq-hub__btn"><?= $myGameKitWardrobeId > 0 ? 'Mettre à jour ma tenue' : 'Enregistrer dans mes tenues' ?></button>
+                        </form>
+                        <?php if ($myGameKitWardrobeId > 0): ?>
+                        <a class="eq-hub__btn eq-hub__btn--ghost" href="<?= $h(url('equipment') . '?tenue=' . $myGameKitWardrobeId) ?>">Voir la tenue</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="eq-mykit__sections">
+                    <?php foreach ($myGameKit['sections'] as $sec): ?>
+                    <div class="eq-mykit__sec">
+                        <h3><?= $h((string) $sec['title']) ?></h3>
+                        <ul>
+                            <?php foreach ($sec['items'] as $it): ?>
+                            <li><span translate="no"><?= $h((string) $it['name']) ?></span><?php if ((int) $it['qty'] > 1): ?> <em>×<?= (int) $it['qty'] ?></em><?php endif; ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <section class="eq-hub__collections" aria-labelledby="eq-collections-heading">
             <div class="eq-hub__section-head">

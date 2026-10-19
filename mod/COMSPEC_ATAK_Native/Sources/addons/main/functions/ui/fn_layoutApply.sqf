@@ -115,7 +115,8 @@ _hKey ctrlSetPosition [_hX + _pad * 2 + _hIcH / _ratio, _hY + _hh * 0.14, _hKw, 
 { (_d displayCtrl _x) ctrlShow _interactive; } forEach [88517, 88519, 88521, 88522, 88526];
 (_d displayCtrl 88522) ctrlShow (_interactive && {_l get "mini"});
 (_d displayCtrl 88521) ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\ui_%1.paa", ["collapse", "expand"] select (_l get "mini")]) call comspec_atak_native_fnc_tr);
-(_d displayCtrl 88517) ctrlEnable ((count (_s getOrDefault ["history", []])) > 1);
+// Retour actif dans toute app (sans historique, il ramène à l'accueil) et sur un sous-écran (fn_back).
+(_d displayCtrl 88517) ctrlEnable ((count (_s getOrDefault ["history", []])) > 1 || {(_s getOrDefault ["activePage", "LAUNCHER"]) isNotEqualTo "LAUNCHER"});
 
 // Touches physiques de la coque (fractions mesurées sur tools/src/android_s7_ca.png, paysage ;
 // en portrait la texture est tournée d'un quart de tour horaire : (x, y) devient (1 - y, x)).
@@ -160,7 +161,8 @@ _wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in _walls});
 (_d displayCtrl 88530) ctrlShow _isMap;
 (_d displayCtrl 88531) ctrlShow !_isMap;
 (_d displayCtrl 88540) ctrlShow (_isMap && {_inspW > 0});
-(_d displayCtrl 88541) ctrlShow (_isMap && {_inspW > 0});
+// Texte SITUATION : il vit désormais dans le volet défilant de la carte (fn_pageMap, fn_inspectorUpdate).
+(_d displayCtrl 88541) ctrlShow false;
 
 [] call comspec_atak_native_fnc_dockRender;
 // Câble DL-7 branché (app Extraction) : suit la coque.

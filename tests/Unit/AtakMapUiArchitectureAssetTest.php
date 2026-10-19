@@ -59,8 +59,13 @@ final class AtakMapUiArchitectureAssetTest extends TestCase
         self::assertStringContainsString('COMPLETE', (string) file_get_contents($ui . '/fn_mapOrderAck.sqf'));
         self::assertStringContainsString('case "DONE"', $orders);
         self::assertStringContainsString('_world', $cas);
-        self::assertStringContainsString('mapUIUpdate', $hud);
-        self::assertStringContainsString('mapUIDestroy', $hud);
+        // Le HUD n'appelle plus mapUIUpdate/mapUIDestroy (toujours enregistrées) : il retire l'overlay
+        // une fois puis pilote directement le panneau de couches et applyMapLayers.
+        self::assertStringContainsString('class mapUIUpdate {}', $cfg);
+        self::assertStringContainsString('class mapUIDestroy {}', $cfg);
+        self::assertStringContainsString('COMSPEC_MAP_OverlayRetired', $hud);
+        self::assertStringContainsString('fnc_createLayerPanel', $hud);
+        self::assertStringContainsString('fnc_applyMapLayers', $hud);
         self::assertStringNotContainsString('createToolRail', $hud);
         $updUi = (string) file_get_contents($ui . '/fn_mapUIUpdate.sqf');
         self::assertStringContainsString('mapUIDestroy', $updUi);
@@ -69,8 +74,10 @@ final class AtakMapUiArchitectureAssetTest extends TestCase
         self::assertStringNotContainsString('createTopBar', $updUi);
         self::assertStringContainsString('88550', $updUi);
         self::assertStringContainsString('ctrlShow false', $updUi);
-        self::assertStringContainsString('_idH', $hud);
-        self::assertStringNotContainsString('displayCtrl 46600', $layout);
+        self::assertStringContainsString('_visH', $hud);
+        // 46600 (bouton menu IceMan) est seulement recalé par Anim_CustomOffset, jamais détruit ni recréé.
+        self::assertStringNotContainsString('ctrlDelete', $layout);
+        self::assertStringNotContainsString('ctrlCreate', $layout);
         self::assertStringNotContainsString('forEach [46600', $hud);
         $page = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/ui/athena_page.hpp'

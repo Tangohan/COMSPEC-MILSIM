@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 /**
  * Terminal SEEK — page Contexte : champs pleine largeur, plus grands, contrastés
@@ -45,7 +46,7 @@ final class SseSeekContexteLayoutAssetTest extends TestCase
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sseTerminalPage.sqf'
         );
 
-        self::assertStringContainsString('1.5.16', $cfg);
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString("size='0.64' align='center' color='#f2fff8'", $page);
     }
 }

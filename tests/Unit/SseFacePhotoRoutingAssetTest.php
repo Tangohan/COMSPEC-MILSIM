@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class SseFacePhotoRoutingAssetTest extends TestCase
 {
@@ -18,7 +19,7 @@ final class SseFacePhotoRoutingAssetTest extends TestCase
         self::assertStringContainsString('if (IsSseNoteCaptureName(fullPath)) return;', $cs);
         self::assertStringContainsString('/api/sse/persons/', $cs);
         self::assertStringContainsString('ProcessSseFacePhotoUploadAsync', $cs);
-        self::assertStringContainsString('1.18.12', $cs);
+        ModVersion::assertAtLeast('1.18.12', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9][0-9.]*)"/', $cs));
     }
 
     public function testPortalIgnoresFaceOnReconAndAcceptsMagicPngOnFiche(): void
@@ -33,6 +34,14 @@ final class SseFacePhotoRoutingAssetTest extends TestCase
         self::assertStringContainsString('TerrainUploadedImage::move', $sse);
         self::assertStringContainsString('comspec_sse_face', $helper);
         self::assertStringContainsString("\\x89PNG", $helper);
+    }
+
+    public function testFichePhotoAcceptsLargeNativeCaptures(): void
+    {
+        $sse = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/SseApiController.php');
+        self::assertStringNotContainsString('$maxBytes = 12 * 1024 * 1024;', $sse);
+        self::assertStringContainsString('TerrainUploadedImage::MAX_FILE_BYTES', $sse);
+        self::assertGreaterThanOrEqual(64 * 1024 * 1024, \App\Support\TerrainUploadedImage::MAX_FILE_BYTES);
     }
 
     public function testGameDoesNotForwardSeekFaceToReconNotify(): void

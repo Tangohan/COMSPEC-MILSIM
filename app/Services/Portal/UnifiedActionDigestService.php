@@ -169,7 +169,7 @@ final class UnifiedActionDigestService
             'items' => [
                 ['label' => 'Centre opérationnel', 'href' => url('hub'), 'hint' => 'Vue d’ensemble des modules.'],
                 ['label' => 'Recherche portail', 'href' => url('search'), 'hint' => 'Recherche unifiée sur les contenus autorisés.'],
-                ['label' => 'Mon activité', 'href' => url('activite'), 'hint' => 'Historique récent des échanges.'],
+                ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'hint' => 'Messages, forum, courrier et annonces.'],
             ],
         ];
 

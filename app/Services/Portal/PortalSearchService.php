@@ -253,7 +253,8 @@ final class PortalSearchService
     public function filterCommands(string $raw): array
     {
         $all = [
-            ['title' => 'Centre de commandement', 'subtitle' => 'Hub et raccourcis', 'href' => url('hub'), 'keywords' => 'hub centre commandement'],
+            ['title' => 'Hub des communautés', 'subtitle' => 'Comparer, recommander, bourse aux coopérations', 'href' => url('hub'), 'keywords' => 'hub centre commandement communautés comparer classement statistiques recommander avis bourse coopération inter-team'],
+            ['title' => 'Bourse aux coopérations', 'subtitle' => 'Besoins ouverts entre communautés', 'href' => url('hub/bourse'), 'keywords' => 'bourse coopération inter-team renfort opfor partenaire besoin'],
             ['title' => 'Manœuvres', 'subtitle' => 'Présences et pointage', 'href' => url('manoeuvres'), 'keywords' => 'manoeuvres manœuvre manoeuvres pointage présence calendrier'],
             ['title' => 'Boîte de réception', 'subtitle' => 'Messages et actions', 'href' => url('boite-reception'), 'keywords' => 'boîte reception inbox messages'],
             ['title' => 'Centre d’actions', 'subtitle' => 'Éléments à traiter', 'href' => url('centre-actions'), 'keywords' => 'actions centre'],

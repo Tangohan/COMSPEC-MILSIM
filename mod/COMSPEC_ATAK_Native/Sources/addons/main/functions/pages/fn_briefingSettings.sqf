@@ -52,6 +52,7 @@ if (_athenaUrl isNotEqualTo "" && {_athenaUrl isNotEqualTo _draft}) then {
         ["buttons", [["REPRENDRE LE LIEN D'ATHENA", { ["athena"] call comspec_atak_native_fnc_briefingCfg; }]]]
     ];
 };
+(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["BRIEFING", { ["close"] call comspec_atak_native_fnc_briefingCfg; }]];
 _rows append [
     ["gap"],
     ["switch", "Actualisation automatique", _auto, { ["auto"] call comspec_atak_native_fnc_briefingCfg; }, "Relit les diapositives Athena toutes les 60 s tant que l'app Briefing est ouverte"],
