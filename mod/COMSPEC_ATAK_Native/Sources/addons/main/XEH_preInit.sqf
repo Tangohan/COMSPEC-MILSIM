@@ -188,7 +188,8 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
         profileNamespace setVariable ["COMSPEC_ATAK_PhoneModel", _v];
         saveProfileNamespace;
         if (!isNull player && {_v isNotEqualTo "s7"} && {!([_v, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then {
-            systemChat ("ATAK : il vous manque l'item demandé pour ce modèle, le Durci S7 reste affiché." call comspec_atak_native_fnc_tr);
+            // Dans le téléphone seulement, rien sur l'écran du jeu.
+            ["WARNING", "ATAK : il vous manque l'item demandé pour ce modèle, le Durci S7 reste affiché.", 6, 40] call comspec_atak_native_fnc_notify;
         };
         [{
             private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];

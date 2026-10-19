@@ -245,14 +245,14 @@ Type : nouveauté
 FR : Le modèle du téléphone se choisit aussi dans les options des addons
 - Nouvelle liste « Modèle du téléphone » dans Options des addons > COMSPEC > ATAK · Objets par interface.
 - Le même choix reste dans le téléphone : Réglages > Personnaliser.
-- Le Durci S7 reste le modèle par défaut ; un modèle dont l'objet exigé n'est pas porté reste en S7.
+- Le Durci S7 reste le modèle par défaut ; un modèle dont l'objet exigé n'est pas porté reste en S7, et le téléphone te le signale.
 EN : The phone model can now be picked in the addon options
 - New "Phone model" list in Addon Options > COMSPEC > ATAK · Items per interface.
 - The same choice is still in the phone: Settings > Customize.
 - The Rugged S7 stays the default; a model whose required item is not carried stays on the S7.
 
 ##### Détail technique
-- `XEH_preInit.sqf` : réglage CBA LIST client `comspec_atak_native_phone_model` (défaut « Set in the phone ») qui écrit le profil `COMSPEC_ATAK_PhoneModel` ; objet exigé absent -> S7 gardé et message. `fn_pageSettings.sqf` (`COMSPEC_ATAK_ProfSet`) remet la liste CBA à jour quand le modèle change dans le téléphone. Aide des « Required item » : ils autorisent un modèle sans le choisir. 4 phrases dans `i18n/en.txt`.
+- `XEH_preInit.sqf` : réglage CBA LIST client `comspec_atak_native_phone_model` (défaut « Set in the phone ») qui écrit le profil `COMSPEC_ATAK_PhoneModel` ; objet exigé absent -> S7 gardé et notification dans le téléphone (pas de message dans le chat). `fn_pageSettings.sqf` (`COMSPEC_ATAK_ProfSet`) remet la liste CBA à jour quand le modèle change dans le téléphone. Aide des « Required item » : ils autorisent un modèle sans le choisir. 4 phrases dans `i18n/en.txt`.
 - À tester en jeu : choisir V2 Enhanced dans les options (châssis changé), objet exigé non porté (S7 + message), changement dans le téléphone (liste CBA suit), relance du jeu (choix gardé).
 
 
