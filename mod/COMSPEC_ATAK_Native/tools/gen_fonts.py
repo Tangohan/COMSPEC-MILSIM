@@ -113,23 +113,33 @@ CLASSES = [("COMSPEC_BarlowC", "barlow", "BarlowCondensed-Medium", False), ("COM
 ROBOTO_R = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 34, 35, 37, 46]
 ROBOTO = [("COMSPEC_Barlow", "Roboto-Condensed", ROBOTO_R), ("COMSPEC_BarlowBold", "Roboto-Condensed-Bold", ROBOTO_R[1:]),
           ("COMSPEC_BarlowLight", "Roboto-Condensed", ROBOTO_R)]
+# Repli chinois (langue 简体中文, traduction communautaire de RickLeo et MOYA) : Noto Sans CJK Light du jeu, apparié à
+# chaque taille de Roboto par sa position dans la liste (liste du gras décalée d'un cran, comme ROBOTO ci-dessus).
+NOTO_R = list(range(6, 30)) + [30, 31, 34, 46]
+
+
+def cjk(roboto_size, bold):
+    # La plus grande taille (46, titres) reste appariée à Noto 46, en gras aussi.
+    n = 46 if roboto_size == 46 else NOTO_R[(ROBOTO_R[1:] if bold else ROBOTO_R).index(roboto_size)]
+    return f"A3\\Uifonts_f\\Data\\Fonts\\NotoSansCJK-Light\\NotoSansCJK-Light{n}"
 
 
 def write_hpp():
     out = ["// Généré par tools/gen_fonts.py (ne pas modifier à la main) : polices embarquées du téléphone (OFL, voir fonts/*/OFL.txt).",
-           "// Chaque taille est appariée à Roboto Condensed du jeu, qui dessine les caractères absents de la police.",
+           "// Chaque taille est appariée à Roboto Condensed du jeu, qui dessine les caractères absents de la police, puis à",
+           "// Noto Sans CJK du jeu pour le chinois (rien n'est redistribué ; sans effet en français ou en anglais).",
            "class CfgFontFamilies {",
            "    // Police par défaut du téléphone : fichiers Roboto Condensed du jeu (mêmes chemins que BCE). Les familles",
            "    // embarquées plus bas ne servent que si le joueur les choisit (Réglages > Police)."]
     for cls, d, sizes in ROBOTO:
-        rows = [f'"A3\\Uifonts_f\\Data\\Fonts\\{d}\\{d}{n}"' for n in sizes]
+        rows = [f'{{"A3\\Uifonts_f\\Data\\Fonts\\{d}\\{d}{n}", "{cjk(n, "Bold" in d)}"}}' for n in sizes]
         out.append(f"    class {cls} {{\n        fonts[] = {{\n            " + ",\n            ".join(rows) + "\n        };\n    };")
     for cls, d, name, bold in CLASSES:
         rows = []
         for s in SIZES:
             fb = (f"A3\\Uifonts_f\\Data\\Fonts\\Roboto-Condensed-Bold\\Roboto-Condensed-Bold{max(s, 9)}" if bold
                   else f"A3\\Uifonts_f\\Data\\Fonts\\Roboto-Condensed\\Roboto-Condensed{s}")
-            rows.append(f'{{"\\z\\comspec_atak_native\\addons\\main\\fonts\\{d}\\{name}{s}", "{fb}"}}')
+            rows.append(f'{{"\\z\\comspec_atak_native\\addons\\main\\fonts\\{d}\\{name}{s}", "{fb}", "{cjk(max(s, 9) if bold else s, bold)}"}}')
         out.append(f"    class {cls} {{\n        fonts[] = {{\n            " + ",\n            ".join(rows)
                    + "\n        };\n        spaceWidth = 0.5;\n        spacing = 0.065;\n    };")
     out.append("};")

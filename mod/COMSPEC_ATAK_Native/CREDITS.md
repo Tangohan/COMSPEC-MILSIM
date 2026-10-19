@@ -28,7 +28,7 @@ Les symboles de carte et certaines icônes restent celles d'Arma 3, référencé
 
 Packs de langue publiés séparément (mods de traduction, `localisation/README.md`), crédités ici et dans l'app Crédits :
 
-- Chinois simplifié (`zh_cn`, mod `comspec_atak_zh`) : RickLeo et MOYA, traduction et création complète du pack.
+- Chinois simplifié (`zh_cn`, mod `comspec_atak_zh`) : RickLeo et MOYA, traduction et création complète du pack. Leur traduction (version 1.1) est intégrée au mod depuis la 2.2.1 (`i18n/zh_cn.txt`, polices de secours Noto Sans CJK du jeu) ; le pack reste compatible.
 
 ## Polices embarquées (SIL Open Font License 1.1)
 
