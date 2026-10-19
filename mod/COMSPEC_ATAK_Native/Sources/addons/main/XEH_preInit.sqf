@@ -21,6 +21,16 @@ diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Lin
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
+// Boucles périodiques des postInit (client et serveur, une cinquantaine) : chacune démarre avec un décalage tiré au
+// hasard (5 s au plus) au lieu de toutes à la même image. Avant, les boucles de 1, 2, 5 et 10 s tombaient ensemble à
+// chaque multiple de 10 s (à-coup régulier) et toutes partaient dans les premières secondes de l'arrivée en jeu.
+// Mêmes paramètres que CBA_fnc_addPerFrameHandler ; ne renvoie pas d'identifiant (aucun appelant ne le garde).
+COMSPEC_ATAK_PfhSpread = {
+    params ["_code", ["_delay", 0], ["_args", []]];
+    if (_delay <= 0) exitWith { [_code, _delay, _args] call CBA_fnc_addPerFrameHandler; nil };
+    [{ _this call CBA_fnc_addPerFrameHandler; }, [_code, _delay, _args], random (_delay min 5)] call CBA_fnc_waitAndExecute;
+    nil
+};
 
 // Langue du mod (par joueur) : téléphone, menus CBA COMSPEC (ATAK, Overwatch, SSE) et SSE. Sans sous-catégorie : CBA
 // range ces réglages en tête de la liste COMSPEC, au-dessus des sections « ATAK · … ». Titre bilingue, jamais traduit.
