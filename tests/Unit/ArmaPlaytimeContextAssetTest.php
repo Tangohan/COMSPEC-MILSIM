@@ -65,7 +65,8 @@ final class ArmaPlaytimeContextAssetTest extends TestCase
             self::assertStringContainsString('"server"', $sqf);
             self::assertStringContainsString('_flushCtx', $sqf);
         }
-        self::assertStringContainsString('"context"', $ext);
+        // Clé JSON écrite dans une chaîne C# interpolée : les guillemets y sont échappés.
+        self::assertStringContainsString('\\"context\\":', $ext);
         self::assertStringContainsString('ctx != "zeus" && ctx != "editor"', $ext);
         self::assertStringContainsString('server_seconds', $mig);
         self::assertStringContainsString('zeus_seconds', $mig);

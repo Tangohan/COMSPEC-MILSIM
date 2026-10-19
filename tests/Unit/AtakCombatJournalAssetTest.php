@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakCombatJournalAssetTest extends TestCase
 {
@@ -23,7 +24,7 @@ final class AtakCombatJournalAssetTest extends TestCase
         self::assertStringContainsString('_combatUrgent', $flush);
         self::assertStringContainsString('class initCombatJournal {};', $cfg);
         self::assertStringContainsString('class noteCombatEvent {};', $cfg);
-        self::assertStringContainsString('1.5.16', $cfg);
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp($cfg));
     }
 
     public function testAnalysisJournalShowsCombatLinesAndMapHint(): void

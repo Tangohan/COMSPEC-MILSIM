@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakC2OrderIssueAssetTest extends TestCase
 {
@@ -20,7 +21,7 @@ final class AtakC2OrderIssueAssetTest extends TestCase
         $api = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
         $repo = (string) file_get_contents($root . '/app/Repositories/AtakDataRepository.php');
 
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfg);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('class orderIssuerLabel', $cfg);
 
         self::assertStringContainsString('toFixed 0', $issue);

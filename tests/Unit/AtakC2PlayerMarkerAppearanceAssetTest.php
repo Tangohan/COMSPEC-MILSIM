@@ -70,7 +70,9 @@ final class AtakC2PlayerMarkerAppearanceAssetTest extends TestCase
         self::assertMatchesRegularExpression('/\.tac-marker__callsign\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*3;[^}]*display:\s*block;/s', $css);
         self::assertStringContainsString('iconSize: 20', $map);
         self::assertStringContainsString('clampNum(src.labelSize, 9, 16', $map);
-        self::assertStringContainsString('une position joueur deja recue', $map);
+        // Une position joueur déjà reçue reste affichée (dernière position connue récente, 15 min) au lieu de disparaître.
+        self::assertStringContainsString('window.ATAKUnits.isRecentlySeen(u)', $map);
+        self::assertStringContainsString("if (live === 'offline' && !trackedAi && !recentLastKnown) return;", $map);
 
         self::assertStringContainsString('Libellés des unités', $view);
         self::assertStringContainsString('id="atak-settings-look-icon-size"', $view);
