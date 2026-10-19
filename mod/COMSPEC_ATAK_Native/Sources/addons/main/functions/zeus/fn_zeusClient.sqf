@@ -38,7 +38,7 @@ switch (_act) do {
             private _on = _v isNotEqualTo "-";
             if (_v isEqualTo _o) then { continue; };
             switch (_k) do {
-                case "off": { if (_on) then { hintSilent ((parseText "<t size='1.1' color='#e5483a'>Terminal désactivé à distance</t><br/>Le commandement a coupé votre ATAK.") call comspec_atak_native_fnc_tr); } else { ["SUCCESS", "Terminal réactivé par le commandement", 5, 60] call comspec_atak_native_fnc_notify; }; };
+                case "off": { if (_on) then { ["ERROR", "Terminal désactivé à distance : le commandement a coupé votre ATAK", 8, 90] call comspec_atak_native_fnc_notify; } else { ["SUCCESS", "Terminal réactivé par le commandement", 5, 60] call comspec_atak_native_fnc_notify; }; };
                 case "lock": { if (!_on) then { ["SUCCESS", "Terminal déverrouillé", 4, 50] call comspec_atak_native_fnc_notify; }; };
                 case "mute": { ["WARNING", ["Haut-parleurs rétablis", "Haut-parleurs coupés à distance"] select _on, 4, 40] call comspec_atak_native_fnc_notify; };
                 case "jam": { ["WARNING", [format ["Brouillage : %1 %%", _v], "Fin du brouillage"] select !_on, 4, 40] call comspec_atak_native_fnc_notify; };
