@@ -516,6 +516,10 @@ class Container
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class)
             ),
+            \App\Controllers\Admin\System\SystemRegistryController::class => new \App\Controllers\Admin\System\SystemRegistryController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+            ),
             \App\Controllers\Admin\System\SystemIndicatorBlocklistController::class => new \App\Controllers\Admin\System\SystemIndicatorBlocklistController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
@@ -2497,6 +2501,7 @@ class Container
             ),
             \App\Repositories\PlatformReviewRepository::class => new \App\Repositories\PlatformReviewRepository(),
             \App\Repositories\NameFilterRepository::class => new \App\Repositories\NameFilterRepository(),
+            \App\Repositories\MemberLanguageRepository::class => new \App\Repositories\MemberLanguageRepository(),
             \App\Services\Moderation\NameModerationService::class => new \App\Services\Moderation\NameModerationService(
                 self::get(\App\Repositories\NameFilterRepository::class),
             ),

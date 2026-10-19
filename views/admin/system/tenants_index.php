@@ -33,6 +33,7 @@ $err = \App\Core\Session::getFlash('error');
             <div class="pa-hero__actions">
                 <a class="pa-btn pa-btn--solid" href="<?= $h(url('communities/create')) ?>">Créer une communauté</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('communities')) ?>">Annuaire public</a>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/annuaire')) ?>">Épingler dans l’annuaire</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/subscription-plans')) ?>">Formules d’accès</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/deployment')) ?>">Publications</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/tenant-recovery')) ?>">Récupération orpheline</a>

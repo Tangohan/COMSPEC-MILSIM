@@ -72,12 +72,27 @@ final class PublicPageBuilder
         'size' => ['standard', 'large'],
         // Texte et image
         'image_side' => ['right', 'left'],
+        // Organisation des unités (ORBAT public)
+        'orbat_style' => ['tree', 'orgchart', 'cards', 'grid', 'branches', 'strength'],
+        'orbat_density' => ['standard', 'compact', 'airy'],
+        'orbat_depth' => ['all', '1', '2', '3'],
+        'orbat_colors' => ['unit', 'branch', 'accent', 'mono'],
+        'orbat_insignia' => ['on', 'off'],
+        'orbat_portraits' => ['on', 'off'],
+        'orbat_grades' => ['on', 'off'],
+        'orbat_strength' => ['on', 'off'],
+        'orbat_slots' => ['on', 'off'],
+        'orbat_desc' => ['on', 'off'],
     ];
 
     /** Réglages permis par type (« section » = sections natives). */
     private const STYLE_KEYS = [
         'section' => ['spacing'],
         'section:hero' => ['height', 'align', 'overlay'],
+        'section:organisation' => [
+            'spacing', 'orbat_style', 'orbat_density', 'orbat_depth', 'orbat_colors',
+            'orbat_insignia', 'orbat_portraits', 'orbat_grades', 'orbat_strength', 'orbat_slots', 'orbat_desc',
+        ],
         'hero' => ['height', 'align', 'overlay', 'width'],
         'tiles' => ['theme', 'spacing', 'width', 'align', 'columns', 'ratio', 'variant'],
         'infobox' => ['spacing', 'width', 'tone', 'icon', 'size'],
@@ -282,9 +297,7 @@ final class PublicPageBuilder
                     break;
                 }
             }
-            array_splice($out['blocks'], $insertAt, 0, [[
-                'id' => 's_' . $key, 'type' => 'section', 'key' => $key, 'hidden' => false, 'style' => [], 'props' => [],
-            ]]);
+            array_splice($out['blocks'], $insertAt, 0, [self::normalizeBlock(['id' => 's_' . $key, 'type' => 'section', 'key' => $key])]);
         }
 
         return $out;
@@ -322,7 +335,7 @@ final class PublicPageBuilder
                     $props[$pk] = $v;
                 }
             }
-            $styleKeys = $key === 'hero' ? self::STYLE_KEYS['section:hero'] : self::STYLE_KEYS['section'];
+            $styleKeys = self::styleKeysFor('section', $key);
 
             return [
                 'id' => 's_' . $key,
@@ -482,7 +495,7 @@ final class PublicPageBuilder
     public static function styleKeysFor(string $type, ?string $sectionKey = null): array
     {
         if ($type === 'section') {
-            return $sectionKey === 'hero' ? self::STYLE_KEYS['section:hero'] : self::STYLE_KEYS['section'];
+            return self::STYLE_KEYS['section:' . $sectionKey] ?? self::STYLE_KEYS['section'];
         }
 
         return self::STYLE_KEYS[$type] ?? [];

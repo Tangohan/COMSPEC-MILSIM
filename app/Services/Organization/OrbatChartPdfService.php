@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Organization;
 
 use App\Core\Response;
+use App\Support\OrbatSheetLabels;
 use App\Support\TrainingCertificatePdfEngine;
 
 /**
@@ -76,7 +77,9 @@ final class OrbatChartPdfService
 
         $unitLabel = trim((string) ($meta['unit_label'] ?? ''));
         if ($unitLabel === '') {
-            $unitLabel = $rootLabel !== '' && $rootLabel !== 'Command' ? $rootLabel : 'Organisation';
+            $unitLabel = $rootLabel !== '' && $rootLabel !== 'Command'
+                ? $rootLabel
+                : OrbatSheetLabels::get('organisation_default', (string) ($meta['lang'] ?? ''));
         }
 
         $breadth = $this->maxBreadth($groups);
@@ -122,6 +125,9 @@ final class OrbatChartPdfService
                 'paper_css' => $paper['css'],
                 'paper_width_mm' => $paper['width_mm'],
                 'paper_height_mm' => $paper['height_mm'],
+                'lang' => OrbatSheetLabels::language($meta['lang'] ?? null),
+                'country' => trim((string) ($meta['country'] ?? '')),
+                'country_label' => trim((string) ($meta['country_label'] ?? '')),
                 'tree_breadth' => $breadth,
                 'tree_depth' => $depth,
             ],
@@ -217,7 +223,11 @@ final class OrbatChartPdfService
         $flat = is_array($document['flat_units'] ?? null) ? $document['flat_units'] : [];
         $totals = is_array($document['totals'] ?? null) ? $document['totals'] : [];
         $e = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $lang = OrbatSheetLabels::language($meta['lang'] ?? null);
+        $t = static fn (string $key): string => htmlspecialchars(OrbatSheetLabels::get($key, $lang), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $paper = $e($meta['paper'] ?? 'A1');
+        $countryLabel = \App\Support\CommunityLanguages::countryLabelIn((string) ($meta['country'] ?? ''), $lang)
+            ?: trim((string) ($meta['country_label'] ?? ''));
 
         $groupCells = '';
         $nGroups = max(1, count($groups));
@@ -231,7 +241,7 @@ final class OrbatChartPdfService
                     continue;
                 }
                 $row .= '<td width="' . $colW . '%" valign="top" style="border:1px solid #21282e;padding:5px;">'
-                    . $this->renderUnitTcpdf($g, $e, 0)
+                    . $this->renderUnitTcpdf($g, $e, 0, $lang)
                     . '</td>';
             }
             $groupCells .= '<tr>' . $row . '</tr>';
@@ -242,11 +252,11 @@ final class OrbatChartPdfService
             if (!is_array($u)) {
                 continue;
             }
-            $t = (int) ($u['theoretical'] ?? 0);
+            $theo = (int) ($u['theoretical'] ?? 0);
             $p = (int) ($u['present'] ?? 0);
-            $pct = $t > 0 ? (int) round(($p / $t) * 100) : 0;
+            $pct = $theo > 0 ? (int) round(($p / $theo) * 100) : 0;
             $indent = str_repeat('· ', max(0, (int) ($u['depth'] ?? 0)));
-            $strengthRows .= '<tr><td>' . $indent . $e($u['title'] ?? '') . '</td><td align="center">' . $t
+            $strengthRows .= '<tr><td>' . $indent . $e($u['title'] ?? '') . '</td><td align="center">' . $theo
                 . '</td><td align="center">' . $p . '</td><td align="center">' . $pct . ' %</td></tr>';
         }
 
@@ -256,39 +266,40 @@ final class OrbatChartPdfService
         return '<div style="font-family:dejavusans,freesans,helvetica,sans-serif;color:#101820;font-size:9px;">'
             . '<table width="100%" cellpadding="3" cellspacing="0"><tr>'
             . '<td width="34%"><div style="font-size:13px;font-weight:bold;">ATHENA MILSIM</div>'
-            . '<div style="font-size:11px;font-weight:bold;">ORGANIZATION CHART (ORBAT)</div>'
-            . '<div style="font-size:8px;font-weight:bold;">TABLEAU D’ORGANISATION ET D’ÉQUIPEMENT</div></td>'
+            . '<div style="font-size:11px;font-weight:bold;">' . $t('chart') . '</div>'
+            . '<div style="font-size:8px;font-weight:bold;">' . $t('toe') . '</div></td>'
             . '<td width="32%" align="center" style="background-color:#141c24;color:#ffffff;font-size:10px;font-weight:bold;">'
             . $classif . '</td>'
             . '<td width="34%" align="right" style="font-size:9px;font-weight:bold;">'
-            . $e($meta['doc_code'] ?? 'FM ATHENA RH-01') . '<br/>ANNEXE B<br/>FIGURE B-1 · ' . $paper . ' paysage</td>'
+            . $e($meta['doc_code'] ?? 'FM ATHENA RH-01') . '<br/>' . $t('annex') . '<br/>' . $t('figure') . ' · ' . $paper . ' ' . $t('landscape') . '</td>'
             . '</tr></table>'
             . '<br/>'
             . '<table width="100%" cellpadding="3" cellspacing="0"><tr>'
             . '<td width="32%" valign="top">'
-            . '<b>UNITÉ :</b> ' . $e($meta['unit_label'] ?? '') . '<br/>'
-            . '<b>THÉÂTRE :</b> ' . $e($meta['theater'] ?? '—') . '<br/>'
-            . '<b>DATE D’EFFET :</b> ' . $e($meta['effect_date'] ?? '') . '<br/>'
-            . '<b>RÉFÉRENCE :</b> ' . $e($meta['reference'] ?? '') . '<br/>'
-            . '<b>VERSION :</b> ' . $e($meta['version'] ?? '1.0') . '<br/>'
-            . '<b>UNITÉS :</b> ' . $unitCount
+            . '<b>' . $t('unit') . ' :</b> ' . $e($meta['unit_label'] ?? '') . '<br/>'
+            . ($countryLabel !== '' ? '<b>' . $t('country') . ' :</b> ' . $e($countryLabel) . '<br/>' : '')
+            . '<b>' . $t('theater') . ' :</b> ' . $e($meta['theater'] ?? '—') . '<br/>'
+            . '<b>' . $t('effect_date') . ' :</b> ' . $e($meta['effect_date'] ?? '') . '<br/>'
+            . '<b>' . $t('reference') . ' :</b> ' . $e($meta['reference'] ?? '') . '<br/>'
+            . '<b>' . $t('version') . ' :</b> ' . $e($meta['version'] ?? '1.0') . '<br/>'
+            . '<b>' . $t('units') . ' :</b> ' . $unitCount
             . '</td>'
             . '<td width="36%" align="center" valign="top">'
             . '<div style="font-size:11px;font-weight:bold;">' . $e($root['code'] ?? 'TF') . '</div>'
             . '<div style="display:inline-block;background:' . $e($this->symbolColor((string) ($root['type'] ?? 'combat')))
             . ';border:2px solid #111;padding:5px 14px;font-weight:bold;font-size:10px;margin:3px 0;">'
-            . $e(strtoupper((string) ($root['type'] ?? 'TF'))) . '</div>'
+            . $e(OrbatSheetLabels::typeLabel((string) ($root['type'] ?? 'combat'), $lang)) . '</div>'
             . '<div style="font-size:12px;font-weight:bold;">' . $e($root['name'] ?? '') . '</div>'
-            . '<div style="font-size:9px;">(± ' . (int) ($totals['theoretical'] ?? 0) . ' pers.)</div>'
+            . '<div style="font-size:9px;">(± ' . (int) ($totals['theoretical'] ?? 0) . ' ' . $t('pers') . ')</div>'
             . '<div style="font-size:8px;">' . $e($root['leader'] ?? '—') . '</div>'
             . '</td>'
             . '<td width="32%" valign="top">'
             . '<table cellpadding="3" cellspacing="0" border="1" width="100%">'
-            . '<tr style="background-color:#1e2932;color:#fff;"><th colspan="2" align="left">COMPOSITION GÉNÉRALE</th></tr>'
-            . '<tr><td>Effectif total (théorique)</td><td align="right"><b>' . (int) ($totals['theoretical'] ?? 0) . '</b></td></tr>'
-            . '<tr><td>Effectif présent (T/O)</td><td align="right"><b>' . (int) ($totals['present'] ?? 0) . '</b></td></tr>'
-            . '<tr><td>Taux de disponibilité</td><td align="right"><b>' . (int) ($totals['rate'] ?? 0) . ' %</b></td></tr>'
-            . '<tr><td>Unités affichées</td><td align="right"><b>' . $unitCount . '</b></td></tr>'
+            . '<tr style="background-color:#1e2932;color:#fff;"><th colspan="2" align="left">' . $t('composition') . '</th></tr>'
+            . '<tr><td>' . $t('strength_total') . '</td><td align="right"><b>' . (int) ($totals['theoretical'] ?? 0) . '</b></td></tr>'
+            . '<tr><td>' . $t('strength_present') . '</td><td align="right"><b>' . (int) ($totals['present'] ?? 0) . '</b></td></tr>'
+            . '<tr><td>' . $t('availability_rate') . '</td><td align="right"><b>' . (int) ($totals['rate'] ?? 0) . ' %</b></td></tr>'
+            . '<tr><td>' . $t('units_shown') . '</td><td align="right"><b>' . $unitCount . '</b></td></tr>'
             . '</table></td></tr></table>'
             . '<br/>'
             . '<table width="100%" cellpadding="0" cellspacing="4">' . $groupCells . '</table>'
@@ -297,9 +308,9 @@ final class OrbatChartPdfService
             . '<td width="55%" valign="top">'
             . '<table cellpadding="2" cellspacing="0" border="1" width="100%">'
             . '<tr style="background-color:#1e2932;color:#fff;">'
-            . '<th align="left">ÉLÉMENT (toutes unités)</th><th>THÉORIQUE</th><th>PRÉSENT</th><th>DISP.</th></tr>'
+            . '<th align="left">' . $t('element_all') . '</th><th>' . $t('authorized') . '</th><th>' . $t('present') . '</th><th>' . $t('availability_short') . '</th></tr>'
             . $strengthRows
-            . '<tr style="background-color:#f3f4f5;font-weight:bold;"><td>TOTAL</td>'
+            . '<tr style="background-color:#f3f4f5;font-weight:bold;"><td>' . $t('total') . '</td>'
             . '<td align="center">' . (int) ($totals['theoretical'] ?? 0) . '</td>'
             . '<td align="center">' . (int) ($totals['present'] ?? 0) . '</td>'
             . '<td align="center">' . (int) ($totals['rate'] ?? 0) . ' %</td></tr>'
@@ -307,14 +318,14 @@ final class OrbatChartPdfService
             . '<td width="45%" valign="top">'
             . (!empty($meta['include_mission'])
                 ? '<table cellpadding="3" cellspacing="0" border="1" width="100%">'
-                . '<tr style="background-color:#1e2932;color:#fff;"><th align="left">MISSION</th></tr>'
-                . '<tr><td style="font-size:8px;">' . $e(($root['mission'] ?? '') !== '' ? (string) $root['mission'] : 'Conduire les opérations conformément aux directives du commandement.') . '</td></tr></table>'
+                . '<tr style="background-color:#1e2932;color:#fff;"><th align="left">' . $t('mission') . '</th></tr>'
+                . '<tr><td style="font-size:8px;">' . (($root['mission'] ?? '') !== '' ? $e((string) $root['mission']) : $t('mission_default')) . '</td></tr></table>'
                 : '')
             . '</td></tr></table>'
             . '<br/><table width="100%" cellpadding="3"><tr>'
             . '<td width="33%">' . $e($meta['doc_code'] ?? 'FM ATHENA RH-01') . '</td>'
             . '<td width="34%" align="center" style="font-size:8px;font-weight:bold;">' . $classif . '</td>'
-            . '<td width="33%" align="right">ANNEXE B-1 · ' . $paper . ' · saut de page auto</td>'
+            . '<td width="33%" align="right">' . $t('annex_short') . ' · ' . $paper . ' · ' . $t('page_break') . '</td>'
             . '</tr></table>'
             . '</div>';
     }
@@ -323,7 +334,7 @@ final class OrbatChartPdfService
      * @param array<string, mixed> $node
      * @param callable(mixed): string $e
      */
-    private function renderUnitTcpdf(array $node, callable $e, int $depth): string
+    private function renderUnitTcpdf(array $node, callable $e, int $depth, string $lang = 'fr'): string
     {
         $type = (string) ($node['type'] ?? 'combat');
         $fs = max(7, 10 - $depth);
@@ -332,11 +343,11 @@ final class OrbatChartPdfService
             . '<div style="text-align:center;background:' . $e($this->symbolColor($type))
             . ';border:1.5px solid #111;padding:3px;margin:3px auto;font-size:' . $fs
             . 'px;font-weight:bold;max-width:120px;">'
-            . $e(strtoupper((string) ($node['type_label'] ?? $type))) . '</div>'
+            . $e(OrbatSheetLabels::typeLabel($type, $lang)) . '</div>'
             . '<div style="text-align:center;font-size:' . ($fs + 1) . 'px;font-weight:bold;">'
             . $e($node['title'] ?? '') . '</div>'
             . '<div style="text-align:center;font-size:' . $fs . 'px;">'
-            . (int) ($node['present'] ?? 0) . ' / ' . (int) ($node['theoretical'] ?? 0) . ' pers.</div>'
+            . (int) ($node['present'] ?? 0) . ' / ' . (int) ($node['theoretical'] ?? 0) . ' ' . $e(OrbatSheetLabels::get('pers', $lang)) . '</div>'
             . '<div style="text-align:center;font-size:' . max(7, $fs - 1) . 'px;">'
             . $e($node['rank'] ?? '') . '</div>';
 
@@ -353,7 +364,7 @@ final class OrbatChartPdfService
             foreach ($chunk as $child) {
                 /** @var array<string, mixed> $child */
                 $html .= '<td width="' . $colW . '%" valign="top" style="border:0.5px solid #94a3b8;padding:3px;">'
-                    . $this->renderUnitTcpdf($child, $e, $depth + 1)
+                    . $this->renderUnitTcpdf($child, $e, $depth + 1, $lang)
                     . '</td>';
             }
             $html .= '</tr>';

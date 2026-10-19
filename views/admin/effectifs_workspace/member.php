@@ -44,6 +44,13 @@ $gradeGroups = is_array($elevationCatalog['grade_groups'] ?? null)
     : \App\Support\GradeSelectOptions::groups($grades);
 $jobRolePickerGroups = is_array($jobRolePickerGroups ?? null) ? $jobRolePickerGroups : [];
 $civilStatusOptions = is_array($civilStatusOptions ?? null) ? $civilStatusOptions : [];
+$memberLanguage = is_array($memberLanguage ?? null) ? $memberLanguage : ['primary' => 'fr', 'others' => [], 'source' => 'community'];
+$langPrimary = (string) ($memberLanguage['primary'] ?? 'fr');
+$langOthers = is_array($memberLanguage['others'] ?? null) ? $memberLanguage['others'] : [];
+$langSource = (string) ($memberLanguage['source'] ?? 'community');
+$communityLanguageCodes = is_array($communityLanguageCodes ?? null) && $communityLanguageCodes !== [] ? $communityLanguageCodes : [$langPrimary];
+// Une langue déjà enregistrée reste proposée même si la communauté ne la liste plus.
+$langChoices = array_values(array_unique(array_merge($communityLanguageCodes, [$langPrimary], $langOthers)));
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $elevationCooldownLabel = static function (int $seconds): string {
@@ -376,6 +383,25 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
                 </div>
             <?php endforeach; ?>
         </dl>
+    </article>
+    <article class="eff-card eff-lang-card" id="langues">
+        <div class="eff-card__head">
+            <h2 class="eff-card__title">Langue du joueur</h2>
+            <?php if ($canEditProfiles): ?>
+                <button type="button" class="eff-btn eff-btn--ghost eff-btn--sm" data-dialog-open="eff-dlg-langues">Modifier</button>
+            <?php endif; ?>
+        </div>
+        <p class="eff-card__lead">La langue dans laquelle la personne joue et communique en opération (radio, briefings). Elle sert à composer les équipes.</p>
+        <div class="eff-lang">
+            <span class="eff-lang__flag" aria-hidden="true"><?= $h(\App\Support\CommunityLanguages::flag($langPrimary)) ?></span>
+            <div class="eff-lang__text">
+                <strong><?= $h(\App\Support\CommunityLanguages::fullLabel($langPrimary)) ?></strong>
+                <span><?= $h($langOthers !== [] ? 'Comprend aussi : ' . implode(', ', array_map([\App\Support\CommunityLanguages::class, 'label'], $langOthers)) : 'Aucune autre langue indiquée') ?></span>
+            </div>
+            <?php if ($langSource !== 'member'): ?>
+                <span class="eff-lang__source"><?= $h($langSource === 'interface' ? 'Déduite de la langue de son interface' : 'Langue de la communauté, à confirmer') ?></span>
+            <?php endif; ?>
+        </div>
     </article>
         </div>
     </section>
@@ -862,6 +888,43 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
             <label class="eff-dialog__wide">Langues parlées<input type="text" name="languages" maxlength="255" value="<?= $h($profile['languages'] ?? '') ?>" placeholder="Ex. Français, anglais, arabe"></label>
             <label class="eff-dialog__wide">Devise<input type="text" name="motto" maxlength="255" value="<?= $h($profile['motto'] ?? '') ?>"></label>
         </div>
+        <footer class="eff-dialog__foot">
+            <button type="button" class="eff-btn eff-btn--ghost" data-dialog-close>Annuler</button>
+            <button type="submit" class="eff-btn eff-btn--primary">Enregistrer</button>
+        </footer>
+    </form>
+</dialog>
+<?php endif; ?>
+
+<?php if ($canEditProfiles): ?>
+<dialog class="eff-dialog" id="eff-dlg-langues" aria-labelledby="eff-dlg-langues-title">
+    <form method="post" action="<?= $h(effectifs_workspace_url('membres/' . $id . '/langues')) ?>" class="eff-dialog__body">
+        <header class="eff-dialog__head">
+            <h2 id="eff-dlg-langues-title">Langue de <?= $h($name) ?></h2>
+            <button type="button" class="eff-dialog__close" data-dialog-close aria-label="Fermer">×</button>
+        </header>
+        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+        <fieldset class="eff-lang-pick">
+            <legend>Langue principale en jeu</legend>
+            <?php foreach ($langChoices as $langCode): ?>
+                <label class="eff-lang-pick__item">
+                    <input type="radio" name="primary_lang" value="<?= $h($langCode) ?>" <?= $langCode === $langPrimary ? 'checked' : '' ?>>
+                    <span aria-hidden="true"><?= $h(\App\Support\CommunityLanguages::flag($langCode)) ?></span>
+                    <span><?= $h(\App\Support\CommunityLanguages::fullLabel($langCode)) ?></span>
+                </label>
+            <?php endforeach; ?>
+        </fieldset>
+        <fieldset class="eff-lang-pick">
+            <legend>Autres langues comprises</legend>
+            <?php foreach ($langChoices as $langCode): ?>
+                <label class="eff-lang-pick__item">
+                    <input type="checkbox" name="other_langs[]" value="<?= $h($langCode) ?>" <?= in_array($langCode, $langOthers, true) ? 'checked' : '' ?>>
+                    <span aria-hidden="true"><?= $h(\App\Support\CommunityLanguages::flag($langCode)) ?></span>
+                    <span><?= $h(\App\Support\CommunityLanguages::fullLabel($langCode)) ?></span>
+                </label>
+            <?php endforeach; ?>
+        </fieldset>
+        <p class="eff-dialog__hint">Les langues proposées sont celles de la communauté (Paramètres &gt; Identité &gt; Pays et langues). Le joueur peut aussi la régler depuis son dossier.</p>
         <footer class="eff-dialog__foot">
             <button type="button" class="eff-btn eff-btn--ghost" data-dialog-close>Annuler</button>
             <button type="submit" class="eff-btn eff-btn--primary">Enregistrer</button>

@@ -1009,6 +1009,9 @@ return function (Router $router) {
     $router->post('/admin/roles/{id}/update', [SystemRoleController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/settings', [SystemSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/brief', [\App\Controllers\Admin\System\SystemBriefSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/annuaire', [\App\Controllers\Admin\System\SystemRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/epingler', [\App\Controllers\Admin\System\SystemRegistryController::class, 'pin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/blocklist', [SystemIndicatorBlocklistController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/add', [SystemIndicatorBlocklistController::class, 'add'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/revoke', [SystemIndicatorBlocklistController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1682,6 +1685,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/roles', [EffectifsWorkspaceController::class, 'updateMemberRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/fonctions', [EffectifsWorkspaceController::class, 'updateMemberJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/etat-civil', [EffectifsWorkspaceController::class, 'updateMemberCivilStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/langues', [EffectifsWorkspaceController::class, 'updateMemberLanguages'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/grade', [EffectifsWorkspaceController::class, 'updateMemberGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/affectation', [EffectifsWorkspaceController::class, 'quickAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/elevation', [EffectifsWorkspaceController::class, 'requestElevation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

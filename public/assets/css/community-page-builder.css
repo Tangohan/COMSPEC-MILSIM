@@ -943,3 +943,7 @@ a.pb-tile:hover .pb-tile__img { transform: scale(1.04); }
   body.pbe-panel-open { margin-right: 400px; transition: margin .24s ease; }
   body.pbe-panel-open .pbe-dock { left: calc(50% - 200px); }
 }
+
+/* Choix du style d’ORBAT (panneau de la section Organisation) */
+.pbe-orbat-styles .pbe-card[aria-checked="true"] { border-color: var(--cl-accent); box-shadow: 0 0 0 1px var(--cl-accent) inset; }
+.pbe-orbat-styles .pbe-card[aria-checked="true"] strong::after { content: " ✓"; color: var(--cl-accent); }

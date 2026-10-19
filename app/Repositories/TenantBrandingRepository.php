@@ -31,6 +31,30 @@ class TenantBrandingRepository
     }
 
     /**
+     * Bannière, logo et couleurs de toutes les communautés en une requête (cartes de l’accueil public).
+     *
+     * @return array<int, array{banner_url: string, logo_url: string, primary_color: string, accent_color: string}>
+     */
+    public function listCardBrandingByTenant(): array
+    {
+        $stmt = $this->pdo->query('SELECT tenant_id, banner_url, logo_url, primary_color, accent_color FROM tenant_branding');
+        if ($stmt === false) {
+            return [];
+        }
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['tenant_id']] = [
+                'banner_url' => trim((string) ($row['banner_url'] ?? '')),
+                'logo_url' => trim((string) ($row['logo_url'] ?? '')),
+                'primary_color' => trim((string) ($row['primary_color'] ?? '')),
+                'accent_color' => trim((string) ($row['accent_color'] ?? '')),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Crée ou met à jour la ligne de marque (logo/bannière/favicon/couleurs) d’un tenant.
      * Seules les clés fournies dans $fields sont modifiées (les autres colonnes sont préservées).
      *

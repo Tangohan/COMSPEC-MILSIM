@@ -42,20 +42,55 @@ class HomeController
         try {
             /** @var \App\Repositories\TenantRepository $tenantRepo */
             $tenantRepo = \App\Core\Container::get(\App\Repositories\TenantRepository::class);
-            foreach ($tenantRepo->listForRegistry() as $row) {
-                $slug = trim((string) ($row['slug'] ?? ''));
-                if ($slug === '') {
-                    continue;
-                }
-                $featuredUnits[] = [
-                    'name' => community_display_name($row),
-                    'slug' => $slug,
-                    'logo_url' => trim((string) ($row['logo_url'] ?? '')),
-                    'href' => url('c/' . rawurlencode($slug)),
-                ];
+            $registry = $tenantRepo->listForRegistry();
+        } catch (\Throwable) {
+            $registry = [];
+        }
+        // Habillage et chiffres des cartes : facultatifs, la carte reste lisible sans eux.
+        $branding = [];
+        try {
+            /** @var \App\Repositories\TenantBrandingRepository $brandingRepo */
+            $brandingRepo = \App\Core\Container::get(\App\Repositories\TenantBrandingRepository::class);
+            $branding = $brandingRepo->listCardBrandingByTenant();
+        } catch (\Throwable) {
+        }
+        $stats = [];
+        try {
+            /** @var \App\Services\Ecosystem\CommunityStatsService $statsService */
+            $statsService = \App\Core\Container::get(\App\Services\Ecosystem\CommunityStatsService::class);
+            foreach ($statsService->all() as $s) {
+                $stats[(string) $s['slug']] = $s;
             }
         } catch (\Throwable) {
-            $featuredUnits = [];
+        }
+        foreach ($registry as $row) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            if ($slug === '') {
+                continue;
+            }
+            $brand = $branding[(int) ($row['id'] ?? 0)] ?? [];
+            $logo = trim((string) ($brand['logo_url'] ?? ''));
+            if ($logo === '') {
+                $logo = trim((string) ($row['logo_url'] ?? ''));
+            }
+            $s = $stats[$slug] ?? [];
+            $featuredUnits[] = [
+                'name' => community_display_name($row),
+                'slug' => $slug,
+                'logo_url' => $logo,
+                'banner_url' => self::cardBanner($slug, (string) ($brand['banner_url'] ?? '')),
+                'accent' => self::cardColor((string) ($brand['accent_color'] ?? '')) ?? self::cardColor((string) ($brand['primary_color'] ?? '')),
+                'href' => url('c/' . rawurlencode($slug)),
+                'tagline' => trim((string) ($row['registry_tagline'] ?? '')),
+                'game' => trim((string) ($row['game_label'] ?? '')),
+                'locale_label' => trim((string) ($row['registry_locale_label'] ?? '')),
+                'affiliation' => trim((string) ($row['registry_unit_affiliation_label'] ?? '')),
+                'featured' => !empty($row['registry_featured']),
+                'recruitment_open' => !empty($row['registry_recruitment_open']) && empty($row['registry_locked']),
+                'members' => (int) ($s['members'] ?? 0),
+                'units' => (int) ($s['units'] ?? 0),
+                'ops_per_month' => (float) ($s['ops_per_month'] ?? 0),
+            ];
         }
 
         return Response::view('home.index', [
@@ -64,6 +99,26 @@ class HomeController
             'platformKpiDays' => $days,
             'featuredUnits' => $featuredUnits,
         ]);
+    }
+
+    /** Bannière de carte : celle de la marque, sinon la couverture déposée dans assets/img/communities. */
+    private static function cardBanner(string $slug, string $banner): string
+    {
+        $banner = trim($banner);
+        if ($banner !== '' && (preg_match('#^https?://#i', $banner) === 1 || str_starts_with($banner, '/'))) {
+            return $banner;
+        }
+        $rel = 'assets/img/communities/' . $slug . '-cover.jpg';
+
+        return is_file(base_path('public/' . $rel)) ? (string) url($rel) : '';
+    }
+
+    /** Couleur de marque utilisable en CSS (#rgb ou #rrggbb), sinon null. */
+    private static function cardColor(string $color): ?string
+    {
+        $color = trim($color);
+
+        return preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i', $color) === 1 ? strtolower($color) : null;
     }
 
     /** Page d’information sur les offres (fondateurs, essai Pro, Stripe). */
