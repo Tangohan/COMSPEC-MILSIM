@@ -171,6 +171,12 @@ _shown = switch (_sort) do {
 _grp setVariable ["COMSPEC_ArsenalShown", _shown];
 
 private _dot = "\a3\ui_f\data\map\markers\military\dot_ca.paa";
+// Sélection multiple (Mes tenues) : une case à cocher remplace la pastille d'état ; les tenues cochées qui
+// n'existent plus dans l'arsenal sont oubliées.
+private _pick = !_isCloud && {_grp getVariable ["COMSPEC_ArsenalPickMode", false]};
+private _localNames = _local apply { toLower (_x select 0) };
+private _marked = (_grp getVariable ["COMSPEC_ArsenalMarked", []]) select { _x in _localNames };
+_grp setVariable ["COMSPEC_ArsenalMarked", _marked];
 private _list = _grp getVariable ["COMSPEC_ArsenalList", controlNull];
 if (!isNull _list) then {
     _grp setVariable ["COMSPEC_ArsenalUiLock", true];
@@ -181,11 +187,13 @@ if (!isNull _list) then {
         private _star = if (_isCloud && {_x select 6}) then { "★ " } else { "" };
         private _r = _list lnbAddRow ["", _star + (_x select _nameIdx), _x select _collIdx, (_label) call comspec_overwatch_connect_fnc_tr];
         _list lnbSetValue [[_r, 0], _forEachIndex];
-        if (_label isNotEqualTo "") then {
+        if (_pick) then {
+            [_list, _r, (toLower (_x select 0)) in _marked] call comspec_overwatch_connect_fnc_arsenalOverlayMark;
+        } else { if (_label isNotEqualTo "") then {
             _list lnbSetPicture [[_r, 0], _dot];
             _list lnbSetPictureColor [[_r, 0], _rgba];
             _list lnbSetPictureColorSelected [[_r, 0], _rgba];
-        };
+        }; };
         _list lnbSetColor [[_r, 2], [0.56, 0.65, 0.59, 1]];
         _list lnbSetColor [[_r, 3], _rgba];
     } forEach _shown;
@@ -234,7 +242,9 @@ if (!isNull _bulk) then {
 };
 _grp setVariable ["COMSPEC_ArsenalSelected", -1];
 [_display, [], ""] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
+[_grp] call (_grp getVariable ["COMSPEC_ArsenalPickRefresh", {}]);
 [_grp, [
-    "Cliquez une tenue pour l'aperçu, double-clic pour l'enfiler. La pastille de couleur dit si elle est déjà sur le site.",
+    ["Cliquez une tenue pour l'aperçu, double-clic pour l'enfiler. La pastille de couleur dit si elle est déjà sur le site.",
+     "Sélection multiple : un clic coche ou décoche une tenue. Tout cocher suit la recherche et la collection choisies."] select _pick,
     "Cliquez une tenue pour l'aperçu, double-clic pour l'enfiler ; Importer la garde dans votre arsenal ACE."
 ] select _isCloud] call (_grp getVariable ["COMSPEC_ArsenalSetHint", {}]);

@@ -19,13 +19,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
 ["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.
-[{ ["sweep"] call comspec_atak_native_fnc_vestMount; ["sweep"] call comspec_atak_native_fnc_jpcScreen; }, 30] call CBA_fnc_addPerFrameHandler;
+[{ ["sweep"] call comspec_atak_native_fnc_vestMount; ["sweep"] call comspec_atak_native_fnc_jpcScreen; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).
-[{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call CBA_fnc_addPerFrameHandler;
+[{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Pylônes relais 3D posés dans Eden dont l'init étendue n'aurait pas tourné : enregistrés comme relais (fn_relayTower).
 [{ ["sweep"] call comspec_atak_native_fnc_relayTower; }, [], 2] call CBA_fnc_waitAndExecute;
 // Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
-[{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call CBA_fnc_addPerFrameHandler;
+[{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call COMSPEC_ATAK_PfhSpread;
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)
 COMSPEC_ATAK_SrvRoutes = createHashMap;   // netId du groupe -> [points, auteur]
 private _keep = {
@@ -85,7 +85,7 @@ COMSPEC_ATAK_FtCheck = {
     _fixed
 };
 ["comspec_atak_native_ftCheck", { _this call COMSPEC_ATAK_FtCheck; }] call CBA_fnc_addEventHandler;
-[{ [] call COMSPEC_ATAK_FtCheck; }, 10] call CBA_fnc_addPerFrameHandler;
+[{ [] call COMSPEC_ATAK_FtCheck; }, 10] call COMSPEC_ATAK_PfhSpread;
 ["comspec_atak_native_syncReq", {
     params ["_unit"];
     if (isNull _unit) exitWith {};
@@ -94,7 +94,7 @@ COMSPEC_ATAK_FtCheck = {
 }] call CBA_fnc_addEventHandler;
 // Temps de jeu et temps par rôle comptés ici pour chaque joueur, quel que soit l'état de son téléphone (fn_playTimeServer).
 // Sonde au démarrage : si la DLL du serveur sait envoyer, les clients ne remontent plus eux-mêmes que l'écran et les apps.
-[{ ["tick"] call comspec_atak_native_fnc_playTimeServer; }, 10] call CBA_fnc_addPerFrameHandler;
+[{ ["tick"] call comspec_atak_native_fnc_playTimeServer; }, 10] call COMSPEC_ATAK_PfhSpread;
 [{
     private _r = "COMSPECExtension" callExtension ["ScreenTime.Batch", ["probe"]];
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
@@ -102,7 +102,7 @@ COMSPEC_ATAK_FtCheck = {
     ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
 }, [], 15] call CBA_fnc_waitAndExecute;
 // Distances parcourues et heures de pilote de chaque joueur (app Distances), envoyées à Athena toutes les 10 min (fn_distanceServer).
-[{ ["tick"] call comspec_atak_native_fnc_distanceServer; }, 3] call CBA_fnc_addPerFrameHandler;
+[{ ["tick"] call comspec_atak_native_fnc_distanceServer; }, 3] call COMSPEC_ATAK_PfhSpread;
 // Ménage différé demandé par un client (caisses larguées...) : fait ici pour survivre à son départ.
 ["comspec_atak_native_deleteLater", {
     params [["_objs", []], ["_delay", 1800]];

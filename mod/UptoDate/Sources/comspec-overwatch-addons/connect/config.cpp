@@ -151,6 +151,7 @@ class CfgFunctions {
             class arsenalOverlayRefresh {};
             class arsenalOverlayPreview {};
             class arsenalOverlayFill {};
+            class arsenalOverlayMark {};
             class arsenalOverlayAction {};
             class arsenalCollectionName {};
             class arsenalDeleteLocal {};
@@ -300,6 +301,7 @@ class CfgFunctions {
             class getFireTeams {};
             class downloadBriefingSlide {};
             class openBriefingBoard {};
+            class openNativePage {};
             class briefingBoardShow {};
             class briefingBoardStep {};
             class refreshBriefingSlides {};

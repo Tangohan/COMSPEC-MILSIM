@@ -3,6 +3,8 @@
     Les rapports, l’appui et la réparation sont installés à part (initACE / initATAKMenu).
 */
 if (!hasInterface) exitWith {};
+// ATAK natif : connexion Athena et téléphone passent par le téléphone (app ATHENA, touches CBA), pas par ce menu ACE.
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {};
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {};
 if (isNil "ace_interact_menu_fnc_createAction") exitWith {};
 if (isNil "comspec_overwatch_connect_fnc_aceAddSelfAction") exitWith {};

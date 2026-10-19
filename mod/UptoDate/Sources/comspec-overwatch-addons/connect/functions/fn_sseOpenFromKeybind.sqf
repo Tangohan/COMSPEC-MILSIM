@@ -12,6 +12,9 @@ if (!isNil "comspec_sse_fnc_openSeekKeybind") exitWith {
     [] call comspec_sse_fnc_openSeekKeybind
 };
 
+// ATAK natif : la fiche de renseignement est l'app FRS du téléphone, pas l'ancien rédacteur plein écran.
+if (["FRS", "Équipez un téléphone ATAK pour rédiger une fiche de renseignement."] call comspec_overwatch_connect_fnc_openNativePage) exitWith { true };
+
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openNote") exitWith {
     [""] call comspec_overwatch_atak_athena_fnc_athena_openNote
 };

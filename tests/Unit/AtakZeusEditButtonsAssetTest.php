@@ -39,6 +39,8 @@ final class AtakZeusEditButtonsAssetTest extends TestCase
         self::assertStringNotContainsString('"RscDisplayAttributes"', $register);
         self::assertStringNotContainsString('allDisplays', $register);
         self::assertStringNotContainsString('findDisplay 315', $register);
+        // CBA_fnc_addDisplayHandler targets the mission display ([type, code]): with a display class it threw "Unknown enum value".
+        self::assertStringNotContainsString('] call CBA_fnc_addDisplayHandler', $register);
         self::assertStringContainsString('update editable', $inject);
     }
 }

@@ -4,6 +4,8 @@
 */
 
 if (!hasInterface) exitWith {};
+// ATAK natif : le tableau des relais est l'app WAVERELAY du téléphone, plus l'ancien écran plein écran.
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {};
 
 // Ajouter l'action aux ordinateurs/tablettes en mission
 ["Land_Laptop_unfolded_F", 0, ["ACE_MainActions"], [

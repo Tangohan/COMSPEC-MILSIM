@@ -259,8 +259,10 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
             if (_x isEqualTo _selected) then { (_lblCands select ((count _lblCands) - 1)) set [0, 0]; };
         };
     };
+    // Unité sélectionnée : anneau vert à taille fixe à l'écran, plus large que celui de l'équipe de feu (avant : cercle de
+    // 22 m qui grossissait au zoom jusqu'à couvrir la moitié de la carte).
     if (_x isEqualTo _selected) then {
-        _map drawEllipse [_pos,18 * _is,18 * _is,0,[0.36,0.78,0.42,0.9],""];
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [0.36, 0.78, 0.42, 0.9], _pos, _size * 2.1, _size * 2.1, 0, "", 0];
     };
     // Équipe de feu (mon groupe) : anneau à la couleur de l'équipe.
     private _o = _entity getOrDefault ["object", objNull];

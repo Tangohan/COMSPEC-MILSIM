@@ -25646,5 +25646,10 @@
 ["COMSPEC ATAK · Network and simulation", "COMSPEC ATAK · 网络与仿真"],
 ["Specialties", "专长"],
 ["Tourner la vue de 30° à gauche", "视角向左转 30°"],
-["Tourner la vue de 30° à droite", "视角向右转 30°"]
+["Tourner la vue de 30° à droite", "视角向右转 30°"],
+["Athena n'a envoyé aucune image pour cette diapositive.", "Athena 未发送此幻灯片的图像。"],
+["Téléchargement de l'image impossible (%1).", "图像下载失败（%1）。"],
+["Image reçue au format %1, illisible par Arma (JPEG attendu).", "收到的图像格式为 %1，Arma 无法显示（需要 JPEG）。"],
+["Le site Athena n'a pas pu en faire une copie JPEG : renvoyez la diapositive en JPG.", "Athena 网站无法生成 JPEG 副本：请以 JPG 格式重新上传幻灯片。"],
+["réponse vide de COMSPEC Link", "COMSPEC Link 返回为空"]
 ]

@@ -15,7 +15,8 @@
               cartouches ENI actifs (fn_mapLabels)]
 */
 params ["_map", "_ts", "_kt", "_scale", ["_skip", []], ["_boxOn", false]];
-private _rects = [];
+// Bandeau d'information de la carte compté comme déjà occupé : aucun nom ne passe dessous.
+private _rects = [_map] call comspec_atak_native_fnc_mapHudRects;
 uiNamespace setVariable ["COMSPEC_ATAK_LblRects", _rects];
 if !(missionNamespace getVariable ["comspec_atak_native_map_show_marker_text", true]) exitWith {};
 private _style = toUpper (missionNamespace getVariable ["comspec_atak_native_map_marker_style", "plate"]);
@@ -90,16 +91,18 @@ private _fill = "#(rgb,8,8,3)color(1,1,1,1)";
 private _none = "#(argb,8,8,3)color(0,0,0,0)";
 private _fB = COMSPEC_ATAK_FontSet select 1;
 private _fR = COMSPEC_ATAK_FontSet select 0;
-// Taille relevée (0,021 -> 0,024) : sur la petite carte du téléphone porté, les noms étaient trop petits à côté des symboles.
-private _fs = 0.024 * _ts * _kt;
-private _fs2 = _fs * 0.9;
-private _h = _fs * 1.3;
+// Taille relevée (0,021 -> 0,024) pour la petite carte du téléphone porté, puis ramenée à 0,020 en main : les plaques
+// (« Z ENT MÉDICALE ») écrasaient le bandeau d'information et les symboles. Le téléphone porté garde 0,024.
+private _worn = !((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false]);
+private _fs = ([0.020, 0.024] select _worn) * _ts * _kt;
+private _fs2 = _fs * 0.88;
+private _h = _fs * 1.22;
 private _px = pixelW;
 // Symboles des marqueurs à l'échelle de l'écran (fn_mapGameMarkers) : même facteur pour décoller le nom.
 private _mkS = uiNamespace getVariable ["COMSPEC_ATAK_MkScale", 1];
 private _gap = 4 * _px;
 private _bar = 3 * _px;
-private _pad = 5 * _px;
+private _pad = 4 * _px;
 private _padC = 6 * _px;
 private _fsC = 0.022 * safeZoneH * (_ts / 1.25) * _kt;
 private _rad = _h / 2;
@@ -226,7 +229,7 @@ private _n = 0;
         };
         default {
             // PLATE : plaque sombre, liseré de couleur à gauche, capitales grasses ; LOCK bordé de rouge.
-            [_x0, _y0, _x1, _y1, [0.035, 0.042, 0.038, 0.93]] call _rect;
+            [_x0, _y0, _x1, _y1, [0.035, 0.042, 0.038, 0.82]] call _rect;
             [_x0, _y0, _x0 + _bar, _y1, [_c, _red] select _isLock] call _rect;
             if (_isLock) then { [_x0, _y0, _x1, _y1, [0.91, 0.28, 0.23, 0.75], ""] call _rect; };
             if (_id isEqualTo _sel) then { [_x0, _y0, _x1, _y1, [0.36, 0.78, 0.42, 1], ""] call _rect; };
