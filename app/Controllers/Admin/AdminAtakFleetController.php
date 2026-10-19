@@ -13,7 +13,8 @@ use App\Services\Auth\AuthService;
 
 /**
  * Parc ATAK des joueurs, toutes communautés (/admin/parc-atak) : liste, fiche par ATAK,
- * blocage (appliqué par l'API), retrait, déconnexion forcée et messages imposés en jeu.
+ * blocage (appliqué par l'API), retrait, déconnexion forcée, messages imposés en jeu, compromissions
+ * (historique, déclaration, annulation), certificats et notes internes.
  */
 final class AdminAtakFleetController
 {
@@ -64,6 +65,9 @@ final class AdminAtakFleetController
             }
             if ($t['pending_messages'] > 0) {
                 $tags[] = 'messages';
+            }
+            if (!in_array((string) ($t['compromise_state'] ?? 'none'), ['', 'none'], true)) {
+                $tags[] = 'compromis';
             }
             foreach ($tags as $tag) {
                 $counts[$tag]++;
@@ -135,7 +139,198 @@ final class AdminAtakFleetController
             'blocks' => $this->fleet->blocksFor($userId ?: null, $steam ?: null, $uid),
             'messages' => $this->fleet->messagesFor($userId ?: null, $steam ?: null, $uid),
             'actions' => $this->fleet->recentActions(30, $userId ?: null, $uid),
+            'compromises' => $this->compromiseHistory($terminal),
         ]);
+    }
+
+    /**
+     * Historique des compromissions de l'ATAK : table dédiée, complétée par les entrées plus anciennes du journal
+     * d'activité (antérieures à l'historique, non annulables une par une).
+     *
+     * @param array<string, mixed> $terminal
+     * @return list<array<string, mixed>>
+     */
+    private function compromiseHistory(array $terminal): array
+    {
+        $tenantId = (int) $terminal['tenant_id'];
+        $uid = (string) $terminal['terminal_uid'];
+        $events = [];
+        $oldest = null;
+        foreach ($this->fleet->compromiseEventsFor($tenantId, $uid) as $e) {
+            $e['ts'] = \App\Support\UtcDateTime::timestamp($e['created_at'] ?? null) ?? 0;
+            $oldest = $oldest === null ? $e['ts'] : min($oldest, $e['ts']);
+            $events[] = $e;
+        }
+        try {
+            $legacy = (new \App\Services\Tactical\AtakActivityLogService())->listCompromiseForTerminal($tenantId, $uid);
+        } catch (\Throwable) {
+            $legacy = [];
+        }
+        foreach ($legacy as $l) {
+            if ($oldest !== null && $l['ts'] >= $oldest - 5) {
+                continue;
+            }
+            $events[] = [
+                'id' => 0,
+                'state' => isset(Fleet::COMPROMISE_STATES[$l['state']]) ? $l['state'] : 'captured',
+                'reason' => $l['label'],
+                'source' => $l['source'],
+                'actor_label' => $l['actor'],
+                'ts' => $l['ts'],
+                'legacy' => true,
+            ];
+        }
+
+        return self::sortCompromises($events);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $events
+     * @return list<array<string, mixed>>
+     */
+    public static function sortCompromises(array $events): array
+    {
+        usort($events, static fn (array $a, array $b): int => [(int) $b['ts'], (int) $b['id']] <=> [(int) $a['ts'], (int) $a['id']]);
+
+        return $events;
+    }
+
+    /** Déclare l'ATAK capturé ou compromis (« compromis » révoque ses certificats valides). */
+    public function compromise(Request $request, array $params = []): Response
+    {
+        if (($guard = $this->guard($request)) !== null) {
+            return $guard;
+        }
+        $terminal = $this->fleet->findTerminal((int) $request->input('terminal_id', 0));
+        if ($terminal === null) {
+            return $this->back($request, 'error', 'ATAK introuvable.');
+        }
+        $state = $request->input('etat') === 'compromised' ? 'compromised' : 'captured';
+        $reason = mb_substr(trim((string) $request->input('motif', '')), 0, 255);
+        [$actorId, $actorLabel] = $this->actor();
+        $done = $this->fleet->markCompromised($terminal, $state, $reason, $state === 'compromised', $actorId, $actorLabel);
+        $this->fleet->log($terminal, 'compromise', implode(' · ', array_filter([
+            Fleet::COMPROMISE_STATES[$state],
+            $reason !== '' ? 'Motif : ' . $reason : '',
+            $done['revoked'] > 0 ? $done['revoked'] . ' certificat(s) révoqué(s)' : '',
+        ])), $actorId, $actorLabel);
+        $this->journal($terminal, $state === 'compromised'
+            ? 'Appareil compromis — déclaré par l’administration du site'
+            : 'Appareil capturé — déclaré par l’administration du site', $state);
+
+        return $this->back($request, 'success', ($state === 'compromised' ? 'ATAK déclaré compromis' : 'ATAK déclaré capturé')
+            . ($done['revoked'] > 0 ? ' : ' . $done['revoked'] . ' certificat(s) révoqué(s).' : '.')
+            . ' Vous pouvez l’annuler depuis l’historique des compromissions.');
+    }
+
+    /** Annule une compromission (l'ATAK repasse sous contrôle, certificats rétablis au choix). */
+    public function undoCompromise(Request $request, array $params = []): Response
+    {
+        if (($guard = $this->guard($request)) !== null) {
+            return $guard;
+        }
+        $terminal = $this->fleet->findTerminal((int) $request->input('terminal_id', 0));
+        if ($terminal === null) {
+            return $this->back($request, 'error', 'ATAK introuvable.');
+        }
+        $event = null;
+        $eventId = (int) $request->input('evenement_id', 0);
+        if ($eventId > 0) {
+            $event = $this->fleet->findCompromiseEvent($eventId);
+            if ($event === null || (string) $event['terminal_uid'] !== (string) $terminal['terminal_uid']
+                || (int) $event['tenant_id'] !== (int) $terminal['tenant_id'] || !empty($event['undone_at']) || (string) $event['state'] === 'none') {
+                return $this->back($request, 'error', 'Compromission introuvable ou déjà annulée.');
+            }
+        } elseif (in_array((string) ($terminal['compromise_state'] ?? 'none'), ['', 'none'], true)) {
+            return $this->back($request, 'error', 'Cet ATAK n’est pas compromis.');
+        }
+        $note = mb_substr(trim((string) $request->input('note', '')), 0, 255);
+        [$actorId, $actorLabel] = $this->actor();
+        $done = $this->fleet->undoCompromise($terminal, $event, $request->input('certificats') !== '0', $note, $actorId, $actorLabel);
+        $this->fleet->log($terminal, 'compromise_undo', implode(' · ', array_filter([
+            $event !== null ? (Fleet::COMPROMISE_STATES[(string) $event['state']] ?? '') . ' du ' . $this->date($event['created_at'] ?? null) : 'Compromission en cours',
+            $done['restored'] > 0 ? $done['restored'] . ' certificat(s) rétabli(s)' : '',
+            $note,
+        ])), $actorId, $actorLabel);
+        if ($done['cleared']) {
+            $this->journal($terminal, 'Contrôle appareil rétabli par l’administration du site', 'none');
+        }
+
+        return $this->back($request, 'success', implode(' ', array_filter([
+            'Compromission annulée.',
+            $done['cleared'] ? 'L’ATAK est de nouveau sous contrôle.' : '',
+            $done['restored'] > 0 ? $done['restored'] . ' certificat(s) rétabli(s).' : '',
+        ])));
+    }
+
+    /** Révoque ou rétablit un certificat de l'ATAK. */
+    public function certificate(Request $request, array $params = []): Response
+    {
+        if (($guard = $this->guard($request)) !== null) {
+            return $guard;
+        }
+        $terminal = $this->fleet->findTerminal((int) $request->input('terminal_id', 0));
+        if ($terminal === null) {
+            return $this->back($request, 'error', 'ATAK introuvable.');
+        }
+        $certId = (int) $request->input('certificat_id', 0);
+        $cert = null;
+        foreach ($this->fleet->certificatesFor((int) $terminal['id']) as $c) {
+            $cert = (int) $c['id'] === $certId ? $c : $cert;
+        }
+        if ($cert === null) {
+            return $this->back($request, 'error', 'Certificat introuvable.');
+        }
+        $revoke = $request->input('operation') !== 'retablir';
+        [$actorId, $actorLabel] = $this->actor();
+        if (!$this->fleet->setCertificateRevoked($terminal, $certId, $revoke)) {
+            return $this->back($request, 'error', $revoke ? 'Certificat déjà révoqué.' : 'Certificat non rétabli (déjà valide ou expiré).');
+        }
+        $this->fleet->log($terminal, $revoke ? 'cert_revoke' : 'cert_restore', (string) $cert['certificate_ref'], $actorId, $actorLabel);
+
+        return $this->back($request, 'success', $revoke
+            ? 'Certificat révoqué : l’ATAK n’est plus reconnu sur le réseau avec ce certificat.'
+            : 'Certificat rétabli.');
+    }
+
+    /** Note interne au journal de l'ATAK (visible de l'administration seulement). */
+    public function note(Request $request, array $params = []): Response
+    {
+        if (($guard = $this->guard($request)) !== null) {
+            return $guard;
+        }
+        $terminal = $this->fleet->findTerminal((int) $request->input('terminal_id', 0));
+        $text = mb_substr(trim((string) $request->input('note', '')), 0, 1000);
+        if ($terminal === null || $text === '') {
+            return $this->back($request, 'error', 'Note vide.');
+        }
+        [$actorId, $actorLabel] = $this->actor();
+        $this->fleet->log($terminal, 'note', $text, $actorId, $actorLabel);
+
+        return $this->back($request, 'success', 'Note ajoutée au journal.');
+    }
+
+    /** Ligne dans le journal d'activité ATAK de la communauté (le poste de commandement voit le changement). */
+    private function journal(array $terminal, string $label, string $state): void
+    {
+        try {
+            (new \App\Services\Tactical\AtakActivityLogService())->record(
+                (int) $terminal['tenant_id'],
+                \App\Services\Tactical\AtakActivityLogService::AUTH_MAP_ID,
+                \App\Services\Tactical\AtakActivityLogService::TYPE_INTEL,
+                $label,
+                Fleet::playerLabel($terminal),
+                ['terminal_uid' => (string) $terminal['terminal_uid'], 'compromise_state' => $state, 'source' => 'admin']
+            );
+        } catch (\Throwable) {
+        }
+    }
+
+    private function date(mixed $raw): string
+    {
+        $ts = \App\Support\UtcDateTime::timestamp($raw);
+
+        return $ts !== null ? date('d/m/Y H:i', $ts) : '—';
     }
 
     /** Bloque un ou plusieurs ATAK (et leur joueur) : l'API refuse la connexion et les envois du jeu. */

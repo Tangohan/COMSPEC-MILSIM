@@ -8,6 +8,7 @@
 /** @var list<array<string, mixed>> $blocks */
 /** @var list<array<string, mixed>> $messages */
 /** @var list<array<string, mixed>> $actions */
+/** @var list<array<string, mixed>> $compromises */
 
 use App\Repositories\AtakAdminControlRepository as Fleet;
 use App\Support\AtakAdminBlockGate;
@@ -22,6 +23,7 @@ $certificates = is_array($certificates ?? null) ? $certificates : [];
 $blocks = is_array($blocks ?? null) ? $blocks : [];
 $messages = is_array($messages ?? null) ? $messages : [];
 $actions = is_array($actions ?? null) ? $actions : [];
+$compromises = is_array($compromises ?? null) ? $compromises : [];
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $v = static fn (mixed $x): string => trim((string) $x) !== '' ? trim((string) $x) : '—';
@@ -57,6 +59,12 @@ $messageState = static function (array $msg): array {
 };
 
 $levelTone = ['info' => 'blue', 'warning' => 'amber', 'critical' => 'rose'];
+$compromiseState = (string) ($t['compromise_state'] ?? 'none');
+$isCompromised = !in_array($compromiseState, ['', 'none'], true);
+$compromiseTone = ['captured' => 'amber', 'compromised' => 'rose', 'none' => 'mint'];
+$certTone = ['active' => 'mint', 'issued' => 'mint', 'revoked' => 'rose', 'expired' => 'slate'];
+$certLabel = ['active' => 'Valide', 'issued' => 'Valide', 'revoked' => 'Révoqué', 'expired' => 'Expiré'];
+$fmtTs = static fn (int $ts): string => $ts > 0 ? date('d/m/Y H:i', $ts) : '—';
 $maxRole = max(1, ...array_map(static fn (array $r): int => $r['seconds'], $roles ?: [['seconds' => 1]]));
 $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot']) : '';
 ?>
@@ -78,6 +86,9 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                         <?= $h(trim((string) ($t['display_name'] ?? '')) !== '' ? (string) $t['display_name'] . ' · ' : '') ?>ATAK <span class="paf-mono"><?= $h((string) $t['terminal_uid']) ?></span>
                     </p>
                     <div class="pa-hero__actions">
+                        <?php if ($isCompromised): ?>
+                            <span class="pa-pill pa-pill--<?= $h($compromiseTone[$compromiseState] ?? 'amber') ?>"><?= $h(Fleet::COMPROMISE_STATES[$compromiseState] ?? 'Compromis') ?></span>
+                        <?php endif; ?>
                         <?php if ($activeBlock !== null): ?>
                             <span class="pa-pill pa-pill--rose">Bloqué<?= (int) ($activeBlock['tenant_id'] ?? 0) === 0 ? ' dans toutes les communautés' : '' ?></span>
                         <?php endif; ?>
@@ -166,14 +177,39 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                         <div><dt>Steam</dt><dd class="paf-mono"><?= $h($v($t['steam_id'] ?? '')) ?></dd></div>
                         <div><dt>Version ATAK · Link</dt><dd><?= $h($v($t['mod_version'] ?? '')) ?> · <?= $h($v($t['extension_version'] ?? '')) ?></dd></div>
                         <div><dt>Adresse réseau</dt><dd class="paf-mono"><?= $h($v($t['last_client_ip'] ?? '')) ?></dd></div>
-                        <div><dt>Statut de la fiche</dt><dd><?= $h($v($t['status'] ?? '')) ?><?= !in_array((string) ($t['compromise_state'] ?? 'none'), ['', 'none'], true) ? ' · compromis' : '' ?></dd></div>
+                        <div><dt>Statut de la fiche</dt><dd><?= $h($v($t['status'] ?? '')) ?><?= $isCompromised ? ' · ' . $h(mb_strtolower(Fleet::COMPROMISE_STATES[$compromiseState] ?? 'compromis')) : '' ?></dd></div>
                         <div><dt>Compte du site</dt><dd><?= $h($v($t['email'] ?? '')) ?><?= trim((string) ($t['user_status'] ?? '')) !== '' ? ' · ' . $h((string) $t['user_status']) : '' ?></dd></div>
                     </dl>
                     <?php if ($certificates !== []): ?>
                     <h3 class="paf-sub">Certificats</h3>
-                    <ul class="paf-list">
+                    <ul class="paf-certs">
                         <?php foreach ($certificates as $c): ?>
-                        <li><span class="paf-mono"><?= $h((string) $c['certificate_ref']) ?></span> · <?= $h((string) $c['status']) ?> · émis le <?= $h($fmtDate($c['issued_at'] ?? null)) ?></li>
+                        <?php
+                            $cs = (string) $c['status'];
+                            $expired = !empty($c['expires_at']) && UtcDateTime::isPast($c['expires_at']);
+                        ?>
+                        <li class="paf-cert">
+                            <div class="paf-cert__main">
+                                <span class="paf-mono"><?= $h((string) $c['certificate_ref']) ?></span>
+                                <span class="pa-pill pa-pill--<?= $h($certTone[$cs] ?? 'slate') ?>"><?= $h($certLabel[$cs] ?? $cs) ?></span>
+                            </div>
+                            <p class="paf-muted"><span>Émis le</span> <?= $h($fmtDate($c['issued_at'] ?? null)) ?><?php if (!empty($c['expires_at'])): ?> · <span>expire le</span> <?= $h($fmtDate($c['expires_at'])) ?><?php endif; ?><?php if ($cs === 'revoked'): ?> · <span>révoqué le</span> <?= $h($fmtDate($c['revoked_at'] ?? null)) ?><?php if ((string) ($c['revoked_reason'] ?? '') === 'keyCompromise'): ?> <span>(compromission)</span><?php endif; ?><?php endif; ?></p>
+                            <?php if (in_array($cs, ['active', 'issued'], true)): ?>
+                            <form method="post" action="<?= $h(url('admin/parc-atak/certificat')) ?>">
+                                <?= $hidden ?>
+                                <input type="hidden" name="certificat_id" value="<?= (int) $c['id'] ?>">
+                                <input type="hidden" name="operation" value="revoquer">
+                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line" onclick="return confirm('Révoquer ce certificat ?');">Révoquer</button>
+                            </form>
+                            <?php elseif ($cs === 'revoked' && !$expired): ?>
+                            <form method="post" action="<?= $h(url('admin/parc-atak/certificat')) ?>">
+                                <?= $hidden ?>
+                                <input type="hidden" name="certificat_id" value="<?= (int) $c['id'] ?>">
+                                <input type="hidden" name="operation" value="retablir">
+                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line">Rétablir</button>
+                            </form>
+                            <?php endif; ?>
+                        </li>
                         <?php endforeach; ?>
                     </ul>
                     <?php endif; ?>
@@ -181,6 +217,63 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
             </div>
 
             <div class="paf-col">
+                <?php ob_start(); ?>
+                <section class="pa-card paf-compromise" id="compromissions">
+                    <p class="pa-card__kicker">Sécurité</p>
+                    <h2 class="pa-card__title">Compromissions</h2>
+                    <?php if ($isCompromised): ?>
+                    <div class="paf-alert paf-alert--<?= $h($compromiseTone[$compromiseState] ?? 'amber') ?>">
+                        <p><strong><?= $h(Fleet::COMPROMISE_STATES[$compromiseState] ?? 'Compromis') ?> depuis le <?= $h($fmtDate($t['compromised_at'] ?? null)) ?></strong></p>
+                        <?php if (trim((string) ($t['compromise_reason'] ?? '')) !== ''): ?><p><?= $h((string) $t['compromise_reason']) ?></p><?php endif; ?>
+                        <form method="post" action="<?= $h(url('admin/parc-atak/compromission/annuler')) ?>" class="paf-undo">
+                            <?= $hidden ?>
+                            <label class="paf-field"><span class="paf-label">Note (facultatif)</span><input type="text" name="note" maxlength="255" placeholder="Faux positif, téléphone récupéré…"></label>
+                            <label class="paf-check"><input type="hidden" name="certificats" value="0"><input type="checkbox" name="certificats" value="1" checked> <span>Rétablir les certificats révoqués par la compromission</span></label>
+                            <button type="submit" class="pa-btn pa-btn--sm pa-btn--mint" onclick="return confirm('Annuler la compromission de cet ATAK ?');">Annuler la compromission</button>
+                        </form>
+                    </div>
+                    <?php else: ?>
+                    <p class="paf-ok"><span class="pa-pill pa-pill--mint">Sous contrôle</span> <span class="paf-muted">Aucune compromission en cours.</span></p>
+                    <?php endif; ?>
+
+                    <?php if ($compromises === []): ?>
+                    <p class="paf-hint">Aucune compromission enregistrée pour cet ATAK.</p>
+                    <?php else: ?>
+                    <ol class="paf-timeline">
+                        <?php foreach ($compromises as $e): ?>
+                        <?php
+                            $es = (string) $e['state'];
+                            $undone = !empty($e['undone_at']);
+                            $certCount = count(array_filter(explode(',', (string) ($e['certificate_ids'] ?? ''))));
+                        ?>
+                        <li class="paf-timeline__item paf-timeline__item--<?= $h($undone ? 'undone' : ($compromiseTone[$es] ?? 'amber')) ?>">
+                            <div class="paf-timeline__head">
+                                <span class="paf-timeline__when"><?= $h($fmtTs((int) $e['ts'])) ?></span>
+                                <span class="pa-pill pa-pill--<?= $h($undone ? 'slate' : ($compromiseTone[$es] ?? 'amber')) ?>"><?= $h(Fleet::COMPROMISE_STATES[$es] ?? $es) ?></span>
+                                <?php if ($undone): ?><span class="pa-pill pa-pill--slate">Annulée</span><?php endif; ?>
+                            </div>
+                            <?php if (trim((string) ($e['reason'] ?? '')) !== ''): ?><p class="paf-timeline__what"><?= $h((string) $e['reason']) ?></p><?php endif; ?>
+                            <p class="paf-muted">
+                                <?= $h(Fleet::COMPROMISE_SOURCES[(string) ($e['source'] ?? '')] ?? 'En jeu') ?><?php if (trim((string) ($e['actor_label'] ?? '')) !== ''): ?> · <?= $h((string) $e['actor_label']) ?><?php endif; ?><?php if ($certCount > 0): ?> · <?= $certCount ?> certificat(s) révoqué(s)<?php endif; ?><?php if (!empty($e['legacy'])): ?> · d’après le journal d’activité<?php endif; ?>
+                            </p>
+                            <?php if ($undone): ?>
+                            <p class="paf-muted"><span>Annulée le</span> <?= $h($fmtDate($e['undone_at'])) ?> <span>par</span> <?= $h($v($e['undone_by_label'] ?? '')) ?><?= trim((string) ($e['undo_note'] ?? '')) !== '' ? ' · ' . $h((string) $e['undo_note']) : '' ?></p>
+                            <?php elseif ($es !== 'none' && (int) $e['id'] > 0): ?>
+                            <form method="post" action="<?= $h(url('admin/parc-atak/compromission/annuler')) ?>">
+                                <?= $hidden ?>
+                                <input type="hidden" name="evenement_id" value="<?= (int) $e['id'] ?>">
+                                <input type="hidden" name="certificats" value="1">
+                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line" onclick="return confirm('Annuler cette compromission et rétablir ses certificats ?');">Annuler cette compromission</button>
+                            </form>
+                            <?php endif; ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ol>
+                    <?php endif; ?>
+                </section>
+                <?php $compromiseCard = (string) ob_get_clean(); ?>
+                <?php if ($isCompromised) { echo $compromiseCard; } ?>
+
                 <section class="pa-card paf-actions-card">
                     <p class="pa-card__kicker">Actions</p>
                     <h2 class="pa-card__title">Administrer cet ATAK</h2>
@@ -238,6 +331,30 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                         </form>
                     </details>
 
+                    <?php if (!$isCompromised): ?>
+                    <details class="paf-act" data-act="compromise">
+                        <summary>Déclarer une compromission</summary>
+                        <form method="post" action="<?= $h(url('admin/parc-atak/compromission')) ?>" class="paf-act__body">
+                            <?= $hidden ?>
+                            <p class="paf-hint">Comme une compromission validée sur le terrain : « Compromis » révoque aussi ses certificats valides. Vous pourrez l’annuler depuis l’historique.</p>
+                            <label class="paf-field"><span class="paf-label">État</span>
+                                <select name="etat"><option value="captured">Capturé (téléphone aux mains de l’ennemi)</option><option value="compromised">Compromis (certificats révoqués)</option></select>
+                            </label>
+                            <label class="paf-field"><span class="paf-label">Motif</span><input type="text" name="motif" maxlength="255"></label>
+                            <button type="submit" class="pa-btn pa-btn--sm paf-btn--danger" onclick="return confirm('Déclarer cet ATAK compromis ?');">Déclarer</button>
+                        </form>
+                    </details>
+                    <?php endif; ?>
+
+                    <details class="paf-act" data-act="note">
+                        <summary>Ajouter une note interne</summary>
+                        <form method="post" action="<?= $h(url('admin/parc-atak/note')) ?>" class="paf-act__body">
+                            <?= $hidden ?>
+                            <label class="paf-field"><span class="paf-label">Note (visible de l’administration seulement)</span><textarea name="note" rows="3" maxlength="1000" required></textarea></label>
+                            <button type="submit" class="pa-btn pa-btn--sm pa-btn--line">Ajouter au journal</button>
+                        </form>
+                    </details>
+
                     <details class="paf-act">
                         <summary>Déconnecter ou retirer</summary>
                         <div class="paf-act__body">
@@ -255,6 +372,8 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                         </div>
                     </details>
                 </section>
+
+                <?php if (!$isCompromised) { echo $compromiseCard; } ?>
 
                 <section class="pa-card">
                     <p class="pa-card__kicker">Messages imposés</p>
@@ -277,7 +396,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                             <form method="post" action="<?= $h(url('admin/parc-atak/message/annuler')) ?>">
                                 <?= $hidden ?>
                                 <input type="hidden" name="message_id" value="<?= (int) $msg['id'] ?>">
-                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line">Annuler</button>
+                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line">Annuler cette compromission</button>
                             </form>
                             <?php endif; ?>
                         </li>

@@ -6688,11 +6688,17 @@ class AtakApiController
                 $existing = $realism->findTerminalByUid($tenantId, $terminalUidPos);
                 $prev = strtolower((string) ($existing['compromise_state'] ?? 'none'));
                 if ($existing !== null && $prev !== $compromisePos) {
-                    $realism->setTerminalCompromise(
+                    $updated = $realism->setTerminalCompromise(
                         $tenantId,
                         $terminalUidPos,
                         $compromisePos,
                         $compromisePos === 'none' ? null : 'Remonté depuis le terrain'
+                    );
+                    (new \App\Repositories\AtakAdminControlRepository())->recordCompromise(
+                        $updated ?? $existing,
+                        $compromisePos,
+                        $compromisePos === 'none' ? null : 'Remonté depuis le terrain',
+                        'position'
                     );
                     if ($compromisePos !== 'none') {
                         $this->activityLog->record(
