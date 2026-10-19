@@ -516,6 +516,10 @@ class Container
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class)
             ),
+            \App\Controllers\Admin\System\SystemRegistryController::class => new \App\Controllers\Admin\System\SystemRegistryController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+            ),
             \App\Controllers\Admin\System\SystemIndicatorBlocklistController::class => new \App\Controllers\Admin\System\SystemIndicatorBlocklistController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),

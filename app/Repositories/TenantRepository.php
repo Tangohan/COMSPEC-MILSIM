@@ -118,6 +118,10 @@ class TenantRepository
             $row['registry_simple_reg'] = ($community['registration_mode'] ?? 'milsim') === 'simple';
             $row['registry_featured'] = !empty($meta['featured']);
             $row['registry_recruitment_open'] = !empty($meta['recruitment_open']);
+            // Pays de l'unité réelle rattachée (filtre « Pays » de l'annuaire).
+            $affiliation = is_array($community['unit_affiliation'] ?? null) ? $community['unit_affiliation'] : [];
+            $row['registry_country'] = !empty($affiliation['is_real']) ? strtoupper(trim((string) ($affiliation['country'] ?? ''))) : '';
+            $row['registry_country_label'] = $row['registry_country'] !== '' ? trim((string) ($affiliation['country_label'] ?? $row['registry_country'])) : '';
             $welcome = trim((string) ($community['welcome_text'] ?? ''));
             $excerpt = $meta['tagline'];
             if ($excerpt === '' && $welcome !== '') {
