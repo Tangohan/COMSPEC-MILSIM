@@ -14,6 +14,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_dockServer;
 // Contrôle Zeus des ATAK : effets par joueur, brouilleurs de zone, report à la réapparition (fn_zeusServer).
 ["init"] call comspec_atak_native_fnc_zeusServer;
+// API brouilleurs pour les missions et les autres mods, objets brouilleurs d'autres mods (fn_jammer).
+["init"] call comspec_atak_native_fnc_jammer;
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
 ["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.

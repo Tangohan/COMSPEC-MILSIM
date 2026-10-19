@@ -34,6 +34,13 @@ private _athena = +_units;
 private _last = uiNamespace getVariable ["COMSPEC_ATAK_BftLast", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_BftLast", _last];
 private _meOn = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0;
+// Positions par points (fn_pli) : un allié joueur est affiché à son dernier point reçu (sa position GPS, avec son
+// erreur), une IA alliée à une position relevée au même rythme ; l'âge du point donne en direct / ancien / perdu.
+private _pli = ["pli"] call comspec_atak_native_fnc_netCond;
+private _rate = (["pliRate"] call comspec_atak_native_fnc_netCond) max 1;
+private _tNow = ["now"] call comspec_atak_native_fnc_pli;
+private _liveAge = [5, _rate * 1.6 + 2] select _pli;
+private _staleAge = [20, _rate * 4 + 10] select _pli;
 
 // Personne n'apparaît sans téléphone ATAK : un allié (joueur ou IA) n'est visible que s'il en porte un
 // (résultat gardé 10 s par unité). Les ennemis n'apparaissent (réglage « ennemis ») que repérés par mon camp.
@@ -96,22 +103,34 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
         _units deleteAt _near;
     };
     if (_callsign isEqualTo "") then { _callsign = [_obj] call comspec_atak_native_fnc_unitCallsign; };
-    private _pos = getPosASL _obj; private _hd = getDir _obj; private _upd = diag_tickTime; private _fr = "LIVE";
+    private _pos = getPosASL _obj; private _hd = getDir _obj; private _upd = diag_tickTime; private _fr = "LIVE"; private _acc = 0;
     if (_obj isNotEqualTo player && {_affiliation isEqualTo "friend"}) then {
         private _on = !isPlayer _obj || {_obj getVariable ["COMSPEC_ATAK_Beacon", true]};
-        if (_meOn && _on) then { _last set [_id, [_pos, _hd, _upd]]; } else {
-            if !(_id in _last) then { _last set [_id, [_pos, _hd, _upd]]; };
-            (_last get _id) params ["_lp", "_lh", "_lt"];
-            _pos = _lp; _hd = _lh; _upd = _lt;
-            private _age = diag_tickTime - _lt;
-            _fr = if (!_on) then { "OFFLINE" } else { switch (true) do { case (_age < 5): { "LIVE" }; case (_age < 20): { "STALE" }; default { "LOST" }; } };
+        if (_pli) then {
+            if (isPlayer _obj) then {
+                // Pas encore de point reçu (arrivée en cours de partie) : position en direct en attendant.
+                private _p = _obj getVariable ["COMSPEC_ATAK_Pli", []];
+                if (_p isEqualType [] && {(count _p) >= 3}) then {
+                    _pos = _p select 0; _hd = _p select 1; _upd = diag_tickTime - ((_tNow - (_p select 2)) max 0); _acc = _p param [3, 0];
+                };
+            } else {
+                private _prev = _last getOrDefault [_id, []];
+                if ((count _prev) >= 3 && {diag_tickTime - (_prev select 2) < _rate}) then { _pos = _prev select 0; _hd = _prev select 1; _upd = _prev select 2; };
+            };
         };
+        if (_meOn && _on) then { _last set [_id, [_pos, _hd, _upd, _acc]]; } else {
+            if !(_id in _last) then { _last set [_id, [_pos, _hd, _upd, _acc]]; };
+            (_last get _id) params ["_lp", "_lh", "_lt", ["_la", 0]];
+            _pos = _lp; _hd = _lh; _upd = _lt; _acc = _la;
+        };
+        private _age = diag_tickTime - _upd;
+        _fr = if (!_on) then { "OFFLINE" } else { switch (true) do { case (_age < _liveAge): { "LIVE" }; case (_age < _staleAge): { "STALE" }; default { "LOST" }; } };
     };
     _units set [_id,createHashMapFromArray [
         ["id",_id],["object",_obj],["self",_obj isEqualTo player],
         ["callsign",_callsign],
         ["position",_pos],["heading",_hd],
-        ["affiliation",_affiliation],["type",_type],["freshness",_fr],["updated",_upd],
+        ["affiliation",_affiliation],["type",_type],["freshness",_fr],["updated",_upd],["acc",_acc],
         ["icon",_obj getVariable ["COMSPEC_ATAK_Icon",""]],["orbat",_obj getVariable ["COMSPEC_ATAK_Orbat",""]]
     ]];
 } forEach (allUnits select { alive _x && {side group _x isEqualTo side group player} });

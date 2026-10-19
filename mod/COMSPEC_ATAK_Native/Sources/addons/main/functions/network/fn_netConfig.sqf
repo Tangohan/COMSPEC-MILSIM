@@ -1,6 +1,9 @@
 /*
-    Configurateur « Conditions réseau » du menu Échap : régler la simulation radio de tout le serveur en cours de partie
-    (débit simulé, réalisme, météo, surcharge, pertes de paquets, latence, relais), voir les conditions du moment.
+    Configurateur « Réalisme et réseau » du menu Échap : régler la simulation de tout le serveur en cours de partie
+    (profil de réalisme, débit simulé, réalisme radio, météo, surcharge, pertes de paquets, latence, relais, positions
+    BFT par points, GPS, batterie), voir les conditions du moment.
+    Profil : le choisir remet chaque liste à la valeur du profil ; Appliquer n'envoie que le profil et les réglages qui
+    s'en écartent, pour qu'un changement de profil plus tard les reprenne tous.
       - tout le monde l'ouvre (bouton « Conditions réseau » du menu Échap) et voit les valeurs en vigueur et leur source ;
       - un administrateur du serveur (#login), l'hôte ou un Zeus applique au serveur : COMSPEC_ATAK_NetCond diffusée
         à tous les joueurs (et aux arrivants), notification à chacun, puis envoi au site (COMSPEC Link
@@ -8,7 +11,7 @@
       - une condition imposée par la communauté sur le site (Contrôle serveur > Réseau et simulation) est verrouillée.
     Ordre des sources : fn_netCond.
     Params : ["button", écran du menu Échap] | ["open", écran parent] | ["apply", [[clé, valeur]...]] (client) |
-             ["server", [[clé, valeur]...], nom] (serveur) | ["canEdit"] -> booléen | ["presets"]
+             ["server", [[clé, valeur]...], nom] (serveur) | ["canEdit"] -> booléen | ["presets"] | ["expect", profil] -> HashMap clé -> valeur
 */
 params [["_mode", "open"], ["_a", displayNull], ["_b", ""]];
 disableSerialization;
@@ -16,6 +19,18 @@ private _T = { _this call comspec_atak_native_fnc_tr };
 switch (_mode) do {
     case "canEdit": {
         !isMultiplayer || {isServer} || {serverCommandAvailable "#kick"} || {!isNull (getAssignedCuratorLogic player)}
+    };
+    case "expect": {
+        // Valeur de chaque condition avec ce profil, sans conditions appliquées en jeu (profil, sinon réglage CBA).
+        private _pm = ["profileOf", _a] call comspec_atak_native_fnc_netCond;
+        private _out = createHashMap;
+        {
+            _x params ["_key", "_cba", "", "", "_def"];
+            private _v = missionNamespace getVariable [_cba, _def];
+            if (_key in _pm && {_v isEqualTo _def}) then { _v = _pm get _key; };
+            _out set [_key, _v];
+        } forEach (["defs"] call comspec_atak_native_fnc_netCond);
+        _out
     };
     case "presets": {
         [
@@ -37,8 +52,8 @@ switch (_mode) do {
         private _w = 0.125 * safeZoneW;
         // Sous la barre COMSPEC d'Overwatch (en haut à droite), alignée sur son bord droit.
         _bt ctrlSetPosition [safeZoneX + safeZoneW * 0.988 - _w, safeZoneY + 0.068 * safeZoneH, _w, 0.034 * safeZoneH];
-        _bt ctrlSetText ("Conditions réseau" call _T);
-        _bt ctrlSetTooltip ("Simulation radio du serveur : météo, surcharge, pertes de paquets, latence, relais" call _T);
+        _bt ctrlSetText ("Réalisme et réseau" call _T);
+        _bt ctrlSetTooltip ("Profil de réalisme et simulation du serveur : réseau radio, météo, surcharge, pertes, positions BFT, GPS, batterie" call _T);
         _bt ctrlSetBackgroundColor [0.10, 0.30, 0.16, 0.95];
         _bt ctrlAddEventHandler ["ButtonClick", { ["open", ctrlParent (_this select 0)] call comspec_atak_native_fnc_netConfig; }];
         _bt ctrlCommit 0;
@@ -108,7 +123,7 @@ switch (_mode) do {
         (["ctrlStatic", [_x0, _y0, _w, _h]] call _mk) ctrlSetBackgroundColor [0.12, 0.13, 0.12, 0.98];
         private _title = ["ctrlStatic", [_x0, _y0 - 5 * _u, _w, 5 * _u]] call _mk;
         _title ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
-        _title ctrlSetText (("  COMSPEC ATAK · Conditions réseau du serveur") call _T);
+        _title ctrlSetText (("  COMSPEC ATAK · Réalisme et réseau du serveur") call _T);
 
         // Colonne de gauche : une ligne par condition (libellé, source, liste de valeurs).
         private _lw = _w * 0.56;
@@ -126,9 +141,11 @@ switch (_mode) do {
             ["weatherK", "Intensité de la météo"], ["congestion", "Saturation du réseau"], ["bgLoad", "Réseau déjà occupé"],
             ["loss", "Envois perdus"], ["lossFloor", "Pertes minimum"], ["latencyAdd", "Délai ajouté"],
             ["relayOnly", "Réseau uniquement par les relais"], ["gateways", "Véhicules relais et PC mobile"],
-            ["offlineHold", "Mode hors connexion"], ["videoRelays", "Vidéo dépendante des relais"]
+            ["offlineHold", "Mode hors connexion"], ["videoRelays", "Vidéo dépendante des relais"],
+            ["profile", "Profil de réalisme"], ["pli", "Positions BFT par points (PLI)"], ["pliRate", "Intervalle des positions BFT"],
+            ["gps", "GPS réaliste"], ["gpsK", "Force des erreurs GPS"], ["gpsFix", "Attente des satellites"], ["battery", "Batterie réaliste"]
         ];
-        private _srcTxt = createHashMapFromArray [["site", ["Imposé par le site", "#E0B050"]], ["server", ["Appliqué en jeu", "#7ED38A"]], ["cba", ["Réglage serveur", "#9AA59C"]]];
+        private _srcTxt = createHashMapFromArray [["site", ["Imposé par le site", "#E0B050"]], ["server", ["Appliqué en jeu", "#7ED38A"]], ["profile", ["Valeur du profil", "#7FB6E6"]], ["cba", ["Réglage serveur", "#9AA59C"]]];
         private _rowH = 6.4 * _u;
         private _cw = _lw * 0.42;
         private _combos = [];
@@ -148,6 +165,19 @@ switch (_mode) do {
             _cb ctrlEnable (_edit && {_src isNotEqualTo "site"});
             if (_src isEqualTo "site") then { _cb ctrlSetTooltip ("Imposé par la communauté sur le site (Contrôle serveur). À changer depuis le site." call _T); };
             _combos pushBack [_key, _cb, _kind];
+            // Profil choisi : chaque liste modifiable reprend la valeur du profil (ou son réglage CBA hors profil).
+            if (_key isEqualTo "profile") then {
+                _cb ctrlAddEventHandler ["LBSelChanged", {
+                    params ["_c", "_i"];
+                    private _set = ["expect", parseNumber (_c lbData _i)] call comspec_atak_native_fnc_netConfig;
+                    {
+                        _x params ["_key", "_cb"];
+                        if (_key isEqualTo "profile" || {!ctrlEnabled _cb}) then { continue };
+                        private _v = _set get _key;
+                        for "_j" from 0 to (lbSize _cb) - 1 do { if ((_cb lbData _j) isEqualTo str _v) exitWith { _cb lbSetCurSel _j; }; };
+                    } forEach (uiNamespace getVariable ["COMSPEC_ATAK_NetCfgCombos", []]);
+                }];
+            };
         } forEach _defs;
         uiNamespace setVariable ["COMSPEC_ATAK_NetCfgCombos", _combos];
 
@@ -185,13 +215,20 @@ switch (_mode) do {
         _ap ctrlEnable _edit;
         _ap ctrlAddEventHandler ["ButtonClick", {
             private _pairs = [];
+            private _combos = uiNamespace getVariable ["COMSPEC_ATAK_NetCfgCombos", []];
+            // Profil choisi (celui en vigueur si sa liste est verrouillée par le site), puis les écarts au profil seulement.
+            private _pi = _combos findIf { (_x select 0) isEqualTo "profile" };
+            private _prof = ["profile"] call comspec_atak_native_fnc_netCond;
+            if (_pi >= 0) then { private _pc = (_combos select _pi) select 1; _prof = parseNumber (_pc lbData (lbCurSel _pc)); };
+            private _expect = ["expect", _prof] call comspec_atak_native_fnc_netConfig;
             {
                 _x params ["_key", "_cb", "_kind"];
                 if (!ctrlEnabled _cb) then { continue };
                 private _s = _cb lbData (lbCurSel _cb);
                 private _v = if (_kind isEqualTo "bool") then { _s isEqualTo "true" } else { parseNumber _s };
+                if (_key isNotEqualTo "profile" && {_v isEqualTo (_expect get _key)}) then { continue };
                 _pairs pushBack [_key, _v];
-            } forEach (uiNamespace getVariable ["COMSPEC_ATAK_NetCfgCombos", []]);
+            } forEach _combos;
             ["apply", _pairs] call comspec_atak_native_fnc_netConfig;
             (ctrlParent (_this select 0)) closeDisplay 1;
         }];

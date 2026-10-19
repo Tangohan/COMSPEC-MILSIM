@@ -1,5 +1,5 @@
 /*
-    Batterie simulée du téléphone (profil COMSPEC_ATAK_BatterySim et réglage serveur comspec_atak_native_battery_sim).
+    Batterie simulée du téléphone (profil COMSPEC_ATAK_BatterySim et condition « battery » de fn_netCond : réglage serveur comspec_atak_native_battery_sim, profil de réalisme, menu Échap, site).
     Consommation par minute selon l'usage : veille, écran porté ou en main, mode nuit (écran sombre),
     appareil photo, live cam, app ouverte (carte et GPS, flux vidéo, traitement de données), musique, guidage GPS, envois de données de la dernière minute, recherche de réseau
     quand le signal est faible, brouilleur actif. Réglages serveur : autonomie écran en main comspec_atak_native_battery_hours
@@ -14,7 +14,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_Battery" }) then {
     missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100];
 };
 private _level = missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100];
-if !((profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]) && {missionNamespace getVariable ["comspec_atak_native_battery_sim", true]}) exitWith { 100 };
+if !((profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]) && {["battery"] call comspec_atak_native_fnc_netCond}) exitWith { 100 };
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { _level };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _now = diag_tickTime;

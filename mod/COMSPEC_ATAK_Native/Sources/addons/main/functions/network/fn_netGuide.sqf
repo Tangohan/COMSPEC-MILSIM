@@ -57,7 +57,10 @@ private _sections = [
         "Orage : les éclairs font monter le bruit radio jusqu'à 6 dB et les paquets se perdent par rafales. Vent fort (au-delà de 30 km/h) : mâts et arbres bougent, le signal fluctue de quelques dB.",
         "Surcharge : les téléphones à portée d'un même relais se partagent son canal. Plus il est occupé (vos envois, ceux des autres, le trafic de fond fixé par le serveur), plus le débit baisse, la latence monte et des paquets se perdent par collisions. Au-delà de 100 %, la capacité se partage.",
         "Pertes de paquets : elles arrivent par rafales, comme sur une vraie liaison radio : de mauvaises périodes où plusieurs envois de suite se perdent, puis le lien redevient bon. Les envois perdus repartent automatiquement.",
-        "Conditions réseau (menu Échap) : chacun y voit les conditions du moment ; un administrateur du serveur ou un Zeus les règle pour tous (météo, surcharge, pertes, latence, relais) et elles sont envoyées au site. Une règle de la communauté sur le site (Contrôle serveur > Réseau et simulation) s'impose au serveur."
+        "Réalisme et réseau (menu Échap) : chacun y voit les conditions du moment ; un administrateur du serveur ou un Zeus les règle pour tous (profil, météo, surcharge, pertes, latence, relais, BFT, GPS, batterie) et elles sont envoyées au site. Une règle de la communauté sur le site (Contrôle serveur > Réseau et simulation) s'impose au serveur.",
+        "Profil de réalisme : Milsim (par défaut) met toutes les simulations à leur valeur réelle, Standard les adoucit, Arcade les coupe, Personnalisé laisse les réglages du serveur. Chaque réglage reste modifiable avec n'importe quel profil : le réglage changé l'emporte.",
+        "Positions BFT par points : chaque téléphone envoie sa position toutes les quelques secondes (10 s en Milsim, plus souvent s'il bouge), telle que son GPS la voit. Un allié avance par bonds, passe en gris quand ses points n'arrivent plus, et un cercle montre sa précision quand son GPS est imprécis.",
+        "GPS : quelques mètres à découvert, plus en forêt dense, dans une rue étroite ou au fond d'une vallée, beaucoup plus dans un bâtiment ; en sous-sol, plus de fix (dernière position gardée, cercle gris). Au démarrage du téléphone, le GPS cherche les satellites de quelques secondes à environ 40 s. L'app GPS montre le nombre de satellites et la précision."
     ]],
     ["Relais, répéteurs et maillage", "chain", [
         "Raccordé : le relais porte le réseau seul (satellite, fibre). Répéteur : il doit voir un relais raccordé, ou un répéteur qui l'est, de proche en proche. Chaque bond est un vrai lien radio et le débit d'un répéteur est le plus faible de la chaîne.",
@@ -69,7 +72,7 @@ private _sections = [
     ["Brouillage et guerre électronique", "jam", [
         "Un brouilleur noie le signal : son effet dépend du rapport entre sa puissance reçue et celle du relais. Il gagne 20 dB chaque fois que la distance au brouilleur est divisée par dix.",
         "Près d'un relais (grande marge), le signal passe encore à travers le brouillage ; au bord de la couverture, il tombe dès l'entrée dans la zone brouillée.",
-        "Sources : brouilleurs de la mission, brouillage Zeus ciblé ou de zone, brouilleurs du mod Crows Electronic Warfare. Un relais dans une zone brouillée perd aussi son débit.",
+        "Sources : brouilleurs de la mission ou d'autres mods (réglage « Objets brouilleurs d'autres mods »), brouillage Zeus ciblé ou de zone, brouilleurs du mod Crows Electronic Warfare, scripts de brouillage radio TFAR. Un relais dans une zone brouillée perd aussi son débit.",
         "Les relais qui entendent un appareil permettent de le localiser par triangulation (carte, clic droit)."
     ]],
     ["Envois, latence et file d'attente", "queue", [
@@ -89,7 +92,7 @@ private _sections = [
         "Module ATAK · Relais (Modules > COMSPEC — ATAK · Réseau) : type (radio portable 1,5 km, mât tactique 3 km, tour fixe 6 km, terminal satellite 1 km), portée (cercle du module), débit, hauteur d'antenne, places, camp, canal, raccordé ou répéteur, batterie et autonomie.",
         "Pylônes relais 3D (Objets > Structures > Relais ATAK) : relais prêts à poser. Menu COMSPEC ATAK > TBR : tableau de tous les relais de la mission, répéteurs isolés signalés.",
         "Conseils : placez les relais en hauteur et en vue directe des zones de jeu ; une tour sur une crête couvre plus qu'un mât dans un vallon ; une forêt dense se couvre par un relais haut au-dessus de la canopée, pas par un relais bas à l'orée.",
-        "Réglages serveur (CBA, COMSPEC) : Débit réseau simulé, Réalisme de la simulation radio (Réaliste, Exigeant, Simplifié), Météo sur le réseau et son intensité, Surcharge du réseau, Trafic de fond, Pertes de paquets, Perte minimale, Latence ajoutée, Réseau exclusivement par relais, Passerelles de véhicule et PC mobile, Fonctionnement hors connexion, Flux vidéo selon les relais. Case du module : Relais obligatoires. En partie, le menu Échap > Conditions réseau les change pour tout le serveur.",
+        "Réglages serveur (CBA, COMSPEC) : Débit réseau simulé, Réalisme de la simulation radio (Réaliste, Exigeant, Simplifié), Météo sur le réseau et son intensité, Surcharge du réseau, Trafic de fond, Pertes de paquets, Perte minimale, Latence ajoutée, Réseau exclusivement par relais, Passerelles de véhicule et PC mobile, Fonctionnement hors connexion, Flux vidéo selon les relais, Profil de réalisme, Positions BFT par points et leur intervalle, GPS réaliste, Force des erreurs GPS, Attente des satellites, Batterie réaliste. Case du module : Relais obligatoires. En partie, le menu Échap > Réalisme et réseau les change pour tout le serveur.",
         "Variables de mission : COMSPEC_ATAK_Jammers = [[position, rayon], ...] pose des brouilleurs ; COMSPEC_ATAK_MeshRange règle la portée du maillage entre téléphones (3 000 m)."
     ]],
     ["En jeu : voir le réseau", "", [

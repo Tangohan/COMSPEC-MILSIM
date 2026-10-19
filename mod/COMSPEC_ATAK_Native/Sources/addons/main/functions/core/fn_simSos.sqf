@@ -18,7 +18,7 @@ switch (_act) do {
     case "publish": {
         if (!hasInterface || {isNull player}) exitWith { false };
         private _on = (missionNamespace getVariable ["comspec_atak_native_sim_sos", true])
-            && {missionNamespace getVariable ["comspec_atak_native_battery_sim", true]}
+            && {["battery"] call comspec_atak_native_fnc_netCond}
             && {profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]}
             && {alive player}
             && {[player, true] call comspec_atak_native_fnc_hasDevice}

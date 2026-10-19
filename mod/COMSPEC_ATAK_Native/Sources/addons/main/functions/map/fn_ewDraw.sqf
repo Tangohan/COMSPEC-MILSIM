@@ -3,7 +3,8 @@
     - relèvements de goniométrie : trait depuis le point de relevé, cône d'erreur, bande de distance estimée en surbrillance ;
       ils pâlissent puis disparaissent au bout de 15 min ;
     - brouilleurs de mon camp : cercle violet du rayon brouillé ;
-    - mon erreur GPS sous brouillage : cercle d'incertitude autour de la position affichée.
+    - mon erreur GPS (brouillage, dégâts, ciel masqué, pas de fix) : cercle d'incertitude autour de la position affichée,
+      gris sans fix (dernière position connue ou position par le réseau).
 */
 params ["_map"];
 if (isNull _map) exitWith {};
@@ -47,8 +48,11 @@ private _side = str side group player;
         _map drawIcon [_none, [0.85, 0.25, 0.95, 1], [_pos select 0, _pos select 1, 0], 0, 0, 0, "BROUILLEUR", 2, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "center"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
-([] call comspec_atak_native_fnc_ewEffects) params ["_gpsErr", "", "_off"];
+([] call comspec_atak_native_fnc_ewEffects) params ["", "", "", "", "_gpsErr", "_off", "_gpsSt"];
 if (_gpsErr > 0) then {
     private _p = (getPosATL player) vectorAdd _off;
-    _map drawEllipse [[_p select 0, _p select 1, 0], _gpsErr, _gpsErr, 0, [0.95, 0.67, 0.20, 0.8], ""];
+    // Erreur de quelques mètres : pas de cercle (plus petit que l'icône).
+    if (_gpsErr >= 8 || {_gpsSt isNotEqualTo "FIX"}) then {
+        _map drawEllipse [[_p select 0, _p select 1, 0], _gpsErr, _gpsErr, 0, [[0.95, 0.67, 0.20, 0.8], [0.62, 0.66, 0.64, 0.8]] select (_gpsSt isNotEqualTo "FIX"), ""];
+    };
 };

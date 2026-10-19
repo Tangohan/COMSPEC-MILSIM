@@ -373,9 +373,9 @@ if (_interactive) then {
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
             uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0)];
             if (_sitOpen) then { _rows pushBack ["text", [true] call comspec_atak_native_fnc_inspectorUpdate, [0.06, 0.075, 0.068, 0.96], "COMSPEC_ATAK_InspTextCtrl"]; };
-            // Fond de carte : boutons sur deux rangées au-delà de trois (TOPO CLAIR / SOMBRE NUIT, PHOTO en plus).
+            // Fond de carte : boutons sur deux rangées au-delà de trois (TOPO CLAIR SOMBRE / NUIT SATELLITE HYBRIDE, PHOTO en plus).
             private _style = [] call comspec_atak_native_fnc_mapStyle;
-            private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]];
+            private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"], ["SATELLITE", "SAT"], ["HYBRIDE", "HYBRID"]];
             if ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo []) then { _styles pushBack ["PHOTO", "PHOTO"]; };
             private _bgOpen = !("bg" in _folds);
             _rows pushBack ["fold", "Fond de carte", (_styles select ((_styles findIf { (_x select 1) isEqualTo _style }) max 0)) select 0, _bgOpen, "bg" call _foldCode];
@@ -598,7 +598,7 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
 // Éditeur de marqueur. La carte est figée pendant l'édition : sinon elle garde la molette (zoom)
 // et le formulaire ne défile pas.
 private _editing = _interactive && {(count (_s getOrDefault ["markerEdit", createHashMap])) > 0};
-((([] call comspec_atak_native_fnc_display)) displayCtrl 88530) ctrlEnable !_editing;
+([] call comspec_atak_native_fnc_mapCtrl) ctrlEnable !_editing;
 if (_editing) then {
     private _ew = [_mw * 0.42, _mw] select (_l get "mini");
     [[_bx + _mw - _ew, _by, _ew, _bh]] call comspec_atak_native_fnc_markerEditor;

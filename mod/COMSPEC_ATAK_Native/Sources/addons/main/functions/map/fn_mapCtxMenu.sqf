@@ -184,7 +184,7 @@ switch (_mode) do {
         if ((diag_tickTime - (_c getOrDefault ["at", 0])) > 60 || {(_s getOrDefault ["activePage", ""]) isNotEqualTo "MAP"}) exitWith { _s set ["mapCtx", createHashMap]; [] call _unbindEsc; };
         private _d = [] call comspec_atak_native_fnc_display;
         if (isNull _d) exitWith {};
-        private _map = _d displayCtrl 88530;
+        private _map = [_d] call comspec_atak_native_fnc_mapCtrl;
         if (isNull _map) exitWith {};
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         (_l get "body") params ["_bx", "_by", "_bw", "_bh"];

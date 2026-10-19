@@ -38,20 +38,31 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Radio maillée MPU5 et voix ACRE2 dans l'app Wave Relay (ATAK natif 2.3.0, provisoire : version fixée au regroupement)
+## Regroupement : profils de réalisme Milsim, positions BFT par points, GPS naturel, carte satellite, radio MPU5 et voix ACRE2, brouilleurs d'autres mods (ATAK natif 2.3.0.AB - Denver, COMSPEC Link 2.0.90)
 
 ### Résumé joueur
 Type : nouveauté
-FR : Radio MPU5 et voix ACRE2 dans l'app Wave Relay
-- Une radio maillée MPU5 dans ton inventaire relie ton ATAK plus loin, et elle relaie le réseau à tes équipiers proches quand elle reçoit un relais.
-- Le nouvel onglet VOIX de l'app Wave Relay montre qui émet sur tes fréquences, le canal, la fréquence et le PTT de chacune de tes radios ACRE2.
-- Il liste aussi les équipiers connectés, avec leurs fréquences et ceux qui sont sur la tienne.
-EN : MPU5 radio and ACRE2 voice in the Wave Relay app
-- An MPU5 mesh radio in your inventory links your ATAK further, and relays the network to nearby teammates when it receives a relay.
-- The new VOICE tab of the Wave Relay app shows who is transmitting on your frequencies, and the channel, frequency and PTT of each of your ACRE2 radios.
-- It also lists connected teammates, with their frequencies and who is on yours.
+FR : Réalisme Milsim par défaut, carte satellite, MPU5 et voix ACRE2, brouilleurs d'autres mods
+- Le menu Échap « Réalisme et réseau » propose les profils Milsim (par défaut), Standard et Arcade ; chaque réglage reste modifiable. En Milsim, tes amis sur la carte sont à la position de leur dernier envoi (toutes les 10 s environ), et ton GPS perd en précision dans les bâtiments, en forêt ou entre les immeubles, et met quelques secondes à trouver les satellites.
+- Nouveaux fonds de carte Satellite et Hybride dans Réglages et dans l'app Carte, avec la capture photo HD de la carte par-dessus quand elle existe.
+- Une radio maillée MPU5 dans ton inventaire relie ton ATAK plus loin, et l'onglet VOIX de l'app Wave Relay montre qui émet sur tes fréquences ACRE2, ton PTT et les équipiers connectés.
+- Les brouilleurs radio TFAR et ceux d'autres mods de guerre électronique brouillent aussi ton ATAK, et une mesure du Vector 21 ou une nouvelle touche pose le point visé sur la carte.
+EN : Milsim realism by default, satellite map, MPU5 and ACRE2 voice, jammers from other mods
+- The ESC menu "Realism and network" offers the Milsim (default), Standard and Arcade profiles; every setting stays adjustable. In Milsim, friends on the map sit where they last reported (about every 10 s), and your GPS loses accuracy inside buildings, in forests or between tall buildings, and takes a few seconds to find the satellites.
+- New Satellite and Hybrid map backgrounds in Settings and in the Map app, with the HD photo capture of the map on top where one exists.
+- An MPU5 mesh radio in your inventory links your ATAK further, and the VOICE tab of the Wave Relay app shows who is transmitting on your ACRE2 frequencies, your PTT and connected teammates.
+- TFAR radio jammers and those of other electronic warfare mods now also jam your ATAK, and a Vector 21 measurement or a new key drops the aimed point on the map.
 
 ### Détail technique
+Profils de réalisme, BFT par points, GPS naturel, fonds satellite (PR #959) :
+- `fn_netCond` : condition « profile » (CBA `comspec_atak_native_realism_profile`, règle site `net_profile` ; 3 Milsim par défaut, 2 Standard, 1 Arcade, 0 Personnalisé). La valeur du profil ne s'applique que si le réglage CBA est resté à sa valeur par défaut ; les valeurs du menu Échap puis les règles du site l'emportent clé par clé. Nouvelles clés pli, pliRate, gps, gpsK, gpsFix, battery (site `net_pli`, `net_pli_rate`, `net_gps`, `net_gps_k`, `net_gps_fix`, `net_battery`), relayées par Link 2.0.89+ sans changement de DLL.
+- `fn_pli` : variable publique `COMSPEC_ATAK_Pli` [position avec l'erreur GPS, cap, serverTime, précision], envoyée à l'intervalle (±15 %, moitié en mouvement) ; pas de point balise coupée, en réception seule, perdu selon les pertes de la liaison. `fn_localDataRefresh` affiche le dernier point et son âge, cercle de précision.
+- `fn_gpsFix` (état dans missionNamespace) : ciel visible (toit, murs, sous-sol, horizon masqué par immeubles et relief, arbres, véhicule), satellites, attente du fix 3 à 40 s, position par le réseau (150 m), dérive lente. `fn_ewEffects` indices 4-6 = erreur, décalage et état totaux (0-3 restent ceux du brouillage pour les alertes).
+- Fonds SAT et HYBRID : cartes 88532/88533 (`COMSPEC_RscMapAtakSat` / `Hyb`, `maxSatelliteAlpha=1`), toujours prises par `fn_mapCtrl` (un test interdit `displayCtrl 88530` ailleurs). Menu Échap renommé « Réalisme et réseau », n'envoie que le profil et les écarts.
+- À tester en jeu : profils et réglages, points BFT entre deux joueurs, GPS dans un bâtiment / en forêt / au démarrage, fonds Satellite et Hybride avec et sans capture PHOTO.
+
+Radio maillée MPU5 et voix ACRE2 (PR #960) :
+
 - Objet `COMSPEC_ATAK_MPU5` (CfgWeapons, modèle et icône de la radio vanilla, pas de 3D propre). Détection `fn_mpu5` "has" : cet objet, toute classe contenant « MPU5 », ou le réglage CBA `comspec_atak_native_mpu5_items`.
 - Réglages `comspec_atak_native_mpu5_range` (6 000 m), `_mpu5_gain` (8 dB), `_mpu5_mbps` (20 Mbit/s), `_mpu5_items`.
 - Maillage (`fn_waveRelayAction` "scan") : portée du nœud MPU5 relevée. Liaison (`fn_relayNet` "best") : gain MPU5 ajouté au bilan radio. Relais d'équipe : `fn_relayNet` "list" ajoute les MPU5 des équipiers (type `mpu5`) avec le débit montant qu'elles publient (`COMSPEC_ATAK_Mpu5` [Mbit/s, bonds], au plus 3 bonds), brouillage compris ; exclues des passerelles du maillage.
@@ -60,7 +71,16 @@ EN : MPU5 radio and ACRE2 voice in the Wave Relay app
 - Onglet TALKGROUPS renommé VOIX avec ACRE2 (inchangé sans ACRE2) ; MON NŒUD montre la MPU5. 38 traductions anglaises, 2 clés de stringtable.
 - À tester en jeu : objet MPU5 dans l'inventaire (toast, portée sur RÉSEAU, gain sur la liaison), relais d'équipe avec un relais de mission en « réseau exclusivement par relais », onglet VOIX avec PRC-152 / PRC-148 / PRC-343 (fréquences, PTT 1-3, émission locale et distante). Aucun DLL ni migration ; main.pbo à reconstruire au regroupement.
 
+Brouilleurs d'autres mods, API brouilleur, télémètre vers la carte (PR #957) :
+- `fn_jammer` (network) : API publique `["add", [source, rayon, force 1-100, durée, camp épargné, id]]` / `["remove", id ou objet]` / `["list"]`, appelable de partout (événement CBA serveur `comspec_atak_native_jammer` hors serveur). Entrées dans `COMSPEC_ATAK_Jammers` (ids `api:`, `obj:`, `cls:`), liste serveur `COMSPEC_ATAK_ExtJammersSrv`, tick 5 s : objets détruits retirés, objets éteints par `COMSPEC_ATAK_JamActive` ou `a3f_jammer_active` à false sortis de la liste publique, entrées effacées par une écriture concurrente d'un client remises.
+- Réglage CBA `comspec_atak_native_jam_classes` (« Objets brouilleurs d'autres mods », `Classe:rayon:force`, `entities` avec héritage).
+- `fn_zeusJam` : scripts de brouillage TFAR lus par `tf_sendingDistanceMultiplicator` du joueur (brouillage = 1 - multiplicateur), réglage `comspec_atak_native_jam_tfar` (coché par défaut). Vérifié sur le script « TFAR Radio Jammer » (Matzenino).
+- `fn_lasePoint` (tactical) : événement CBA local ACE `ace_vector_rangefinderData` (envoyé par ACE après une mesure azimut + distance) et touche CBA « Envoyer le point visé à l'ATAK » (sans touche par défaut : `laserTarget`, sinon `lineIntersectsSurfaces` 5 km en vue optique) -> `fn_markerDrop`. Réglage `comspec_atak_native_lase_link`.
+- Guide réseau (section brouillage) et MODULES.md (section 5, FR + EN) mis à jour ; 12 traductions anglaises.
+- À tester en jeu : script TFAR Radio Jammer avec TFAR, un objet listé dans le réglage (goniométrie GE, carte, débit), mesure Vector 21 avec ACE, touche dans des jumelles et au désignateur laser. Aucun DLL ni migration ; main.pbo à reconstruire au regroupement.
 ---
+
+Aucune DLL ni migration : COMSPEC Link reste en 2.0.90.
 
 ## Regroupement : Samsung S23 durci, drone refait et plus léger, ATAK compromis visible, touches dans le téléphone (ATAK natif 2.2.1.AB - Denver, COMSPEC Link 2.0.90)
 
