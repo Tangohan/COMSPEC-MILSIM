@@ -8,7 +8,12 @@
       filtres    recherche, état de synchro, tri ; collections en pastilles (défilent avec ‹ ›)
       corps      liste (pastille d'état, nom, collection, état) et fiche de la tenue (état expliqué, pièces en
                  icônes légendées, contenu, actions Enfiler / Envoyer ou Importer / Supprimer)
+      sélection  Mes tenues : sélection multiple (cases à cocher), tout cocher (filtre appliqué), supprimer la
+                 sélection en une fois, annuler la dernière suppression
       pied       action groupée (envoyer les tenues pas encore sur le site / importer), enregistrer la tenue portée
+    Champs de saisie : ACE les prend pour sa barre de recherche (ace_arsenal_leftSearchbarFocus) tant qu'ils ont le
+    focus, sinon ses raccourcis partaient pendant la frappe (Retour arrière masquait l'interface au lieu d'effacer,
+    Ctrl+C / Ctrl+V exportaient ou importaient). Entrée enregistre la tenue (champ du nom) ou relance la recherche.
     Le panneau se place entre les deux colonnes de l'arsenal pour ne rien masquer.
     Actions : comspec_overwatch_connect_fnc_arsenalOverlayAction. Contenu : arsenalOverlayRefresh / arsenalOverlayFill.
 */
@@ -130,6 +135,13 @@ _search ctrlSetFont _fR;
 _search ctrlSetFontHeight _fsS;
 _search ctrlSetTooltip (("Rechercher une tenue (nom, collection, auteur, état)") call comspec_overwatch_connect_fnc_tr);
 _search ctrlAddEventHandler ["KeyUp", { ["filter"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+// Focus dans un de nos champs : ACE garde ses raccourcis pour lui (voir l'en-tête).
+private _typing = {
+    params ["_e"];
+    _e ctrlAddEventHandler ["SetFocus", { ace_arsenal_leftSearchbarFocus = true; }];
+    _e ctrlAddEventHandler ["KillFocus", { ace_arsenal_leftSearchbarFocus = false; }];
+};
+[_search] call _typing;
 _grp setVariable ["COMSPEC_ArsenalSearch", _search];
 private _ph = [[_pad + 0.006, _fy, _searchW - 0.012, _rowH], "Rechercher une tenue, une collection, un auteur…", _fR, _fsS, [0.45, 0.53, 0.48, 1]] call _txt;
 _ph ctrlEnable false;
@@ -181,13 +193,52 @@ private _colHead = [];
 } forEach ["TENUE", "COLLECTION", "ÉTAT"];
 _grp setVariable ["COMSPEC_ArsenalColHead", _colHead];
 (["RscText", [_pad, _bodyY + _lhH + 0.002, _listW, _pxH]] call _mk) ctrlSetBackgroundColor [0.14, 0.19, 0.16, 1];
-private _list = ["COMSPEC_RscArsenalOutfitList", [_pad, _bodyY + _lhH + 0.004, _listW, _bodyH - _lhH - 0.006], 884404] call _mk;
+// Barre de sélection (Mes tenues) sous la liste.
+private _tbH = _rowH * 0.9;
+private _list = ["COMSPEC_RscArsenalOutfitList", [_pad, _bodyY + _lhH + 0.004, _listW, _bodyH - _lhH - 0.006 - _tbH - _gap], 884404] call _mk;
 _list ctrlSetFont _fR;
 _list ctrlSetFontHeight _fs;
 _list lnbSetColumnsPos _colPos;
 _list ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["select", _i] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 _list ctrlAddEventHandler ["LBDblClick", { params ["_c", "_i"]; ["apply", _i] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 _grp setVariable ["COMSPEC_ArsenalList", _list];
+private _tby = _bodyY + _bodyH - _tbH;
+private _tbx = _pad;
+private _pickBtns = [];
+{
+    _x params ["_share", "_act", "_cls", "_tip"];
+    private _bw = (_listW - 3 * 0.004) * _share;
+    _pickBtns pushBack ([[_tbx, _tby, _bw, _tbH], "", _act, _cls, _tip, _fB] call _btn);
+    _tbx = _tbx + _bw + 0.004;
+} forEach [
+    [0.28, "pick", "COMSPEC_RscButtonAtak", "Cocher plusieurs tenues pour les supprimer en une fois"],
+    [0.22, "markAll", "COMSPEC_RscButtonAtak", "Coche toutes les tenues affichées (recherche, état et collection appliqués)"],
+    [0.32, "deleteMarked", "COMSPEC_RscButtonAtakDanger", "Supprime de votre arsenal, sur cet ordinateur, les tenues cochées. Celles déjà sur le site y restent."],
+    [0.18, "undoDelete", "COMSPEC_RscButtonAtak", "Remet dans votre arsenal les tenues de la dernière suppression"]
+];
+_grp setVariable ["COMSPEC_ArsenalPickBtns", _pickBtns];
+_grp setVariable ["COMSPEC_ArsenalPickMode", false];
+_grp setVariable ["COMSPEC_ArsenalMarked", []];
+// Textes et états de la barre de sélection (cochées, mode, annulation possible).
+_grp setVariable ["COMSPEC_ArsenalPickRefresh", {
+    params ["_g"];
+    (_g getVariable ["COMSPEC_ArsenalPickBtns", []]) params [["_bPick", controlNull], ["_bAll", controlNull], ["_bDel", controlNull], ["_bUndo", controlNull]];
+    private _local = (_g getVariable ["COMSPEC_ArsenalTab", "local"]) isEqualTo "local";
+    private _mode = _local && {_g getVariable ["COMSPEC_ArsenalPickMode", false]};
+    private _marked = _g getVariable ["COMSPEC_ArsenalMarked", []];
+    private _shown = (_g getVariable ["COMSPEC_ArsenalShown", []]) apply { toLower (_x select 0) };
+    private _allOn = _shown isNotEqualTo [] && {(_shown findIf { !(_x in _marked) }) < 0};
+    private _trash = profileNamespace getVariable ["COMSPEC_ArsenalTrash", []];
+    { _x ctrlShow _local; } forEach [_bPick, _bAll, _bDel, _bUndo];
+    if (!_local) exitWith {};
+    _bPick ctrlSetText ((["SÉLECTION MULTIPLE", "TERMINER"] select _mode) call comspec_overwatch_connect_fnc_tr);
+    _bAll ctrlSetText ((["TOUT COCHER", "TOUT DÉCOCHER"] select _allOn) call comspec_overwatch_connect_fnc_tr);
+    _bAll ctrlEnable (_mode && {_shown isNotEqualTo []});
+    _bDel ctrlSetText (format [("SUPPRIMER LA SÉLECTION (%1)") call comspec_overwatch_connect_fnc_tr, count _marked]);
+    _bDel ctrlEnable (_mode && {_marked isNotEqualTo []});
+    _bUndo ctrlSetText (format [("ANNULER (%1)") call comspec_overwatch_connect_fnc_tr, count _trash]);
+    _bUndo ctrlEnable (_trash isNotEqualTo []);
+}];
 
 private _dx = _pad + _listW + _gap;
 private _dw = _w - _dx - _pad;
@@ -254,6 +305,13 @@ _nameEdit ctrlSetFontHeight _fsS;
 _nameEdit ctrlSetText (profileNamespace getVariable ["COMSPEC_ArsenalLastSaveName", ""]); // i18n:brut
 _nameEdit ctrlSetTooltip (("Nom de la tenue à enregistrer (ex. SOAR - Breacher). Le préfixe avant « - » sert de collection.") call comspec_overwatch_connect_fnc_tr);
 _grp setVariable ["COMSPEC_ArsenalSaveName", _nameEdit];
+[_nameEdit] call _typing;
+// Entrée : enregistre la tenue portée sous ce nom (même effet que le bouton).
+_nameEdit ctrlAddEventHandler ["KeyDown", {
+    params ["", "_key"];
+    if (_key in [28, 156]) then { [{ ["saveCurrent"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }] call CBA_fnc_execNextFrame; };
+    false
+}];
 private _nph = [[_sx + 0.006, _fty, _editW - 0.012, _rowH], "Nom de la tenue portée (ex. SOAR - Breacher)…", _fR, _fsS, [0.45, 0.53, 0.48, 1]] call _txt;
 _nph ctrlEnable false;
 _nph ctrlShow ((ctrlText _nameEdit) isEqualTo "");

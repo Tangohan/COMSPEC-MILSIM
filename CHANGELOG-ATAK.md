@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Arsenal ACE : saisie rétablie, sélection multiple et suppression rapide des tenues (ATAK natif, version fixée au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : On peut de nouveau taper un nom dans l'arsenal ACE, et faire le ménage en deux clics
+- Dans Tenues Athena, Retour arrière efface bien le texte au lieu de masquer l'interface de l'arsenal, et Entrée enregistre la tenue.
+- Dans Mes équipements d'ACE, le champ Nom reçoit de nouveau la frappe : le panneau Tenues Athena se retire le temps de cet écran.
+- Nouveau dans Mes tenues : Sélection multiple, Tout cocher (suit la recherche et la collection) et Supprimer la sélection en une fois.
+- Une suppression se rattrape : Annuler remet les tenues supprimées dans ton arsenal.
+EN : You can type a name in the ACE arsenal again, and clean up in two clicks
+- In Athena outfits, Backspace now deletes text instead of hiding the arsenal interface, and Enter saves the outfit.
+- In ACE's My loadouts, the Name field takes your typing again: the Athena outfits panel steps aside while that screen is open.
+- New in My outfits: Multiple selection, Tick all (follows the search and the collection) and Delete selection in one go.
+- A deletion can be undone: Undo puts the deleted outfits back in your arsenal.
+
+### Détail technique
+- Cause (Retour arrière) : `ace_arsenal_fnc_onKeyDown` garde toutes les touches tant qu'aucune de ses barres de recherche n'a le focus ; Retour arrière y appelle `buttonHide`, Ctrl+C / Ctrl+V exportent ou importent. Nos champs (recherche, nom de la tenue) posent `ace_arsenal_leftSearchbarFocus` en SetFocus / KillFocus, comme les barres d'ACE.
+- Cause probable (champ Nom de Mes équipements) : l'écran des tenues d'ACE est un display enfant non modal ; nos contrôles restaient actifs sur l'arsenal dessous et un champ masqué du panneau pouvait garder le focus clavier. `ace_arsenal_loadoutsDisplayOpened` masque et désactive le bouton et le panneau Tenues Athena, puis donne le focus au champ Nom d'ACE (IDC 303) ; `ace_arsenal_loadoutsDisplayClosed` les rend et relit Mes tenues. À la fermeture du panneau, le focus revient au bouton ATHENA · TENUES.
+- Sélection multiple (`fn_arsenalOverlayAction` pick / markAll / deleteMarked / undoDelete, `fn_arsenalOverlayMark`) : cases dans la colonne d'état, une seule écriture de `ace_arsenal_saved_loadouts` pour toute la sélection, corbeille `COMSPEC_ArsenalTrash` (profil) pour Annuler (une tenue du même nom enregistrée depuis n'est pas écrasée). Les tenues déjà sur le site y restent.
+- Textes EN ajoutés à `i18n/en.txt` ; `comspec_overwatch_connect.pbo` et `main.pbo` repatchés (tools/pbo_patch.py). Overlay Overwatch d'Iceman (atak_athena) non touché.
+- À tester en jeu : taper, effacer et Entrée dans les deux champs du panneau ; Ctrl+C / Ctrl+V dans un champ (ne doit plus exporter) ; Mes équipements d'ACE : taper un nom, Enregistrer, puis revenir ; panneau Tenues fermé puis Mes équipements ; Sélection multiple, Tout cocher avec une collection choisie, Supprimer la sélection, Annuler ; re-clic sur une tenue cochée (la décoche).
+
 ## Drone : le flux DRONES DU CAMP suit la vue du terminal UAV (ATAK natif 2.3.4.AB - Denver)
 
 ### Résumé joueur
