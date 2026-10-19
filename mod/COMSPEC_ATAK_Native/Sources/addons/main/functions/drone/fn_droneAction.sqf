@@ -352,6 +352,14 @@ private _camOpen = {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamT0", time];
     };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", false];
+    // Distance de vue PiP plafonnée tant que la caméra du drone existe (réglage de mission COMSPEC_ATAK_DronePipVD,
+    // 1500 m par défaut) : la caméra rendue dans le téléphone fait charger par le jeu le terrain, les objets et leurs
+    // textures autour du drone, en plus de ceux autour du joueur. fn_pipCheck la remontait jusqu'à 3000 m et elle y
+    // restait ; à 1500 m, quatre fois moins de surface chargée (retour de TTRD, 19/10 : « ça fait vite RAM », celle
+    // du PC). Les capteurs voient à 700 m au plus. Valeur du joueur rendue à la fermeture de la caméra (_camClose).
+    private _pipCap = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePipVD", 1500]) max 500);
+    if (isNil { missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep" }) then { missionNamespace setVariable ["COMSPEC_ATAK_DronePipKeep", getPiPViewDistance]; };
+    if (getPiPViewDistance > _pipCap) then { setPiPViewDistance _pipCap; };
     call _camMake;
     // Nacelle : chaque image, la caméra vise la cible choisie ou le point observé, sinon regarde devant et en bas.
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", [{ private _perfT = diag_tickTime; call {
@@ -526,6 +534,9 @@ private _camClose = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", -1];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", []];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", false];
+    // Distance de vue PiP du joueur rendue (plafonnée pendant le flux, voir _camOpen).
+    private _keep = missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep";
+    if (!isNil "_keep") then { setPiPViewDistance _keep; missionNamespace setVariable ["COMSPEC_ATAK_DronePipKeep", nil]; };
 };
 // Caméra prête à afficher (rouverte si elle avait été libérée) : recréée si son rendu a été coupé ou si la qualité a
 // changé, rendu lancé avant que la page pose l'image. Renvoie la texture r2t du RscPicture ("" sans drone).
