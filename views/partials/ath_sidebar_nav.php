@@ -440,8 +440,7 @@ if ($isOperatorBoNav) {
             'label' => 'PERSONNEL',
             'items' => array_values(array_filter([
                 [
-                    // Profil « Carte ATAK » : pas d’effectifs, mais la liste des membres reste la porte d’entrée.
-                    'label' => ($tenantType ?? '') === \App\Services\Community\TenantTypeConfig::TYPE_ATAK ? 'Membres' : 'Effectifs',
+                    'label' => 'Effectifs',
                     'href' => effectifs_workspace_url(),
                     'icon' => 'users',
                     'active' => $anyActive($membersChildren),
