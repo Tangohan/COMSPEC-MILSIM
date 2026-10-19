@@ -152,8 +152,9 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/operations'));
         }
 
-        // Commandement / membre habilité : entrée directe sans code.
-        if ($this->access->canEnterWithoutCode()) {
+        // Commandement / membre habilité : entrée directe sans code — sauf s'il vient de
+        // quitter le bureau : il voit alors le sas et choisit de rentrer (ou d'utiliser un code).
+        if ($this->access->canEnterWithoutCode() && !$this->access->hasLeft()) {
             $tenantId = (int) Session::get('tenant_id');
             if ($this->access->canEnterAsStaff()) {
                 $this->access->establishStaffClearance($tenantId);
@@ -240,13 +241,24 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse'));
         }
+        $this->access->clearLeft();
+        // Session déjà ouverte et engagement signé : on ne remet rien à zéro.
+        if ($this->access->hasActiveClearance() && !$this->access->isGuest() && $this->access->hasAcceptedConfidentiality()) {
+            return Response::redirect(url($this->access->canEnterAsStaff() && $this->canGrant() ? 'atak/sse/acces' : 'atak/sse/operations'));
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($this->access->canEnterAsStaff()) {
             $this->access->establishStaffClearance($tenantId);
+            if ($this->access->hasAcceptedConfidentiality()) {
+                return Response::redirect(url($this->canGrant() ? 'atak/sse/acces' : 'atak/sse/operations'));
+            }
             Session::set('sse_post_ack_redirect', 'acces');
             Session::flash('success', 'Session commandement ouverte — validez l’engagement de confidentialité.');
         } else {
             $this->access->establishMemberClearance($tenantId);
+            if ($this->access->hasAcceptedConfidentiality()) {
+                return Response::redirect(url('atak/sse/operations'));
+            }
             Session::flash('success', 'Session ouverte — validez l’engagement de confidentialité.');
         }
 
@@ -278,6 +290,9 @@ final class SsePortalController
             : trim((string) $request->input('guest_name', 'Invité'));
 
         $result = $this->access->redeem($code, $userId > 0 ? $userId : null, $hasPerm, $label);
+        if ($result['ok']) {
+            $this->access->clearLeft();
+        }
         if (!$result['ok']) {
             Session::flash('error', $result['message']);
 
@@ -291,9 +306,9 @@ final class SsePortalController
 
     public function logout(Request $request, array $params = []): Response
     {
-        $this->access->clearSession();
+        $this->access->leave();
         Session::forget('sse_post_ack_redirect');
-        Session::flash('success', 'Session de renseignement fermée.');
+        Session::flash('success', 'Session de renseignement fermée. Vous pouvez rentrer à tout moment depuis ce sas.');
 
         return Response::redirect(url('atak/sse'));
     }
@@ -4916,31 +4931,15 @@ final class SsePortalController
 
     // ─────────────────────────────────────────── Lecture du dossier à l'écran
 
+    /**
+     * Ancienne « lecture complète » : la vue n'existe plus. On renvoie à la fiche du dossier,
+     * qui affiche tout ce que la lecture montrait, plutôt qu'une page d'erreur.
+     */
     public function caseReader(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
-        if (!$this->canExport()) {
-            Session::flash('error', 'Lecture du dossier complet non autorisée.');
 
-            return Response::redirect(url('atak/sse/dossiers/' . $id));
-        }
-        $case = $this->requireCase($id);
-        if ($case === null) {
-            return Response::redirect(url('atak/sse/dossiers'));
-        }
-        if ($locked = $this->redirectIfCaseLocked($case)) {
-            return $locked;
-        }
-
-        return $this->portalView('atak.sse.case_reader', [
-            'title' => 'Lecture — ' . (string) ($case['reference_code'] ?? ''),
-            'case' => $case,
-            'levelLabel' => SseRedactionService::levelLabel($this->clearance->maxLevel()),
-            'streamUrl' => url('atak/sse/dossiers/' . $id . '/pdf/flux'),
-            'downloadUrl' => url('atak/sse/dossiers/' . $id . '/pdf'),
-            'canManage' => $this->canManage(),
-            'activeNav' => 'dossiers',
-        ]);
+        return Response::redirect(url($id > 0 ? 'atak/sse/dossiers/' . $id : 'atak/sse/dossiers'));
     }
 
     /** Même document que l'export, servi pour lecture à l'écran plutôt qu'en téléchargement. */

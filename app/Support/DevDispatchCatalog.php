@@ -293,6 +293,27 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(994, '2026-10-19', 'Bureau SSE : navigation rangée, accès corrigé, animations de déchiffrement', 'Le bureau de renseignement gagne une navigation claire : une trentaine d’entrées numérotées dans le désordre deviennent huit sections repliables qui suivent le cycle du renseignement (pilotage, collecte, dossiers, référentiel, analyse, production, préparation), sans doublon. Ctrl+K ouvre une palette pour aller à n’importe quelle page ou lancer une action. Le bandeau rouge affiche désormais votre vraie habilitation. « Quitter » ferme vraiment la session, et l’engagement de confidentialité n’est plus redemandé toutes les quatre heures. Les titres se déchiffrent à l’ouverture, un rideau couvre le passage d’une page à l’autre, et les photos d’un dossier se parcourent dans une galerie 3D. Rechargez le portail (Ctrl+F5).', [
+                'Palette Ctrl+K : toutes les pages du bureau et les actions (fiche, dossier, investigation, objet)',
+                'Galerie 3D des pièces d’un dossier et des pièces jointes d’une fiche (clavier, molette, glisser)',
+                'Menu « Nouveau » : investigation, dossier, dossier d’intérêt, objet, document',
+                'Tiroir de navigation sur téléphone',
+                'Heure Zulu et temps de session restant mis à jour en direct',
+            ], [
+                'Navigation en 8 sections repliables, mémorisées, avec la page courante toujours en évidence',
+                'Bandeau d’habilitation à la couleur du niveau réel de la session',
+                'Titres « déchiffrés » et rideau de transition entre les pages (désactivés si vous réduisez les animations)',
+                'Le sas explique enfin qu’un compte non habilité a besoin d’un code invité',
+            ], [
+                '« Quitter » rouvrait aussitôt la session d’un compte habilité',
+                'L’engagement de confidentialité était redemandé à chaque renouvellement de session',
+                'Le lien « commandement » effaçait l’engagement d’une session déjà ouverte',
+                'La lecture complète d’un dossier menait à une page d’erreur',
+                'Les registres Organisations, Véhicules, Matériels et Pièces n’étaient jamais mis en évidence dans le menu',
+                'Fausses pastilles « Athena / Arma / 3 src » retirées de la barre du haut',
+            ], ['atak'], [
+                'Ouvrez le bureau SSE : le menu est rangé en sections, Ctrl+K ouvre la palette. Dans un dossier avec des photos, « Parcourir en galerie » ouvre la galerie 3D. Cliquez « Quitter » : vous restez sur le sas jusqu’à « Entrer sans code ».',
+            ], 'Portail Athena'),
             $pr(973, '2026-10-19', 'Grades : changer le système de la communauté en un clic', 'Le référentiel des grades indique désormais quel système la communauté utilise (français ou américain) et permet de passer à l’autre directement depuis l’onglet, sans repasser par l’assistant de création. Les grades déjà attribués aux membres sont conservés ; les listes proposent ensuite les grades du nouveau système. Rechargez le portail (Ctrl+F5).', [
                 'Bandeau « Votre communauté utilise les grades … » sous les onglets du référentiel',
                 'Bouton « Utiliser les grades américains / français pour la communauté », avec confirmation',

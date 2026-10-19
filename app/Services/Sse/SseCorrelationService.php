@@ -145,7 +145,7 @@ final class SseCorrelationService
                 'ref' => $ref,
                 'label' => trim((string) ($person['display_name'] ?? '')) ?: 'identité non établie',
                 'detail' => (string) ($person['status_label'] ?? ''),
-                'url' => url('atak/sse/personnes'),
+                'url' => url('atak/sse/identites'),
             ];
         }
 

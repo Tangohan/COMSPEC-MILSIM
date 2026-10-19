@@ -39,7 +39,8 @@ final class SseDocumentChromeAssetTest extends TestCase
         $root = $this->root();
         $view = (string) file_get_contents($root . '/views/atak/sse/document_presentation.php');
         $paper = (string) file_get_contents($root . '/views/atak/sse/partials/document_paper.php');
-        $layout = (string) file_get_contents($root . '/views/atak/sse/_layout.php');
+        // La navigation du bureau est définie une seule fois (barre latérale + palette).
+        $layout = (string) file_get_contents($root . '/app/Support/SsePortalNav.php');
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $css = (string) file_get_contents($root . '/public/assets/css/sse_portal.css');
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/SsePortalController.php');
