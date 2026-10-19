@@ -14033,5 +14033,21 @@
 ["❌ Échec de resynchronisation de %1", "❌ Failed to resync %1"],
 ["📍 TÉLÉPORTER", "📍 TELEPORT"],
 ["📡 Tableau de bord relais ATAK", "📡 ATAK relay dashboard"],
-["🔄 RESYNC TOUS", "🔄 RESYNC ALL"]
+["🔄 RESYNC TOUS", "🔄 RESYNC ALL"],
+["Capture de la carte : préparation…", "Map capture: preparing…"],
+["Capture de la carte : mesure du cadrage à %1 m…", "Map capture: measuring framing at %1 m…"],
+["Capture de la carte : préparation du parcours…", "Map capture: planning the route…"],
+["Capture de la carte : rangement des dernières images (%1)…", "Map capture: storing the last images (%1)…"],
+["CAPTURE DE LA CARTE", "MAP CAPTURE"],
+["%1 %2 m · image %3 / %4 (%5%6) · reste %7", "%1 %2 m · image %3 / %4 (%5%6) · %7 left"],
+["Images non vérifiées (sans COMSPEC Link) : %1", "Unverified images (no COMSPEC Link): %1"],
+["Rangées %1 · en traitement %2 · sans image %3 · disque libre %4", "Stored %1 · processing %2 · missing %3 · free disk %4"],
+["Échap : arrêter (la capture reprend où elle s'est arrêtée)", "Esc: stop (the capture resumes where it stopped)"],
+["Cinq images de suite n'ont pas été écrites par le jeu : dossier Screenshots plein (maxScreenShotFolderSizeMB) ou disque plein.", "Five images in a row were not written by the game: Screenshots folder full (maxScreenShotFolderSizeMB) or disk full."],
+["Disque presque plein (%1 Go libres) : capture arrêtée.", "Disk almost full (%1 GB free): capture stopped."],
+["COMSPEC Link absente : images non vérifiées ni compressées, laissées dans Screenshots (20 Mo chacune, dossier limité par maxScreenShotFolderSizeMB).", "COMSPEC Link missing: images not checked or compressed, left in Screenshots (20 MB each, folder limited by maxScreenShotFolderSizeMB)."],
+["Capture de la carte (%1) : environ %2 images (%3 Go, %4), début dans 5 s. Échap pour arrêter, la capture reprend où elle s'est arrêtée.", "Map capture (%1): about %2 images (%3 GB, %4), starting in 5 s. Esc to stop, the capture resumes where it stopped."],
+["%1 m : %2 cases, trop pour une capture. Choisir une zone (rayon) pour cette hauteur.", "%1 m: %2 tiles, too many for one capture. Pick an area (radius) for this height."],
+["Garder les PNG d'origine", "Keep the original PNGs"],
+["En cours : ", "In progress: "]
 ]

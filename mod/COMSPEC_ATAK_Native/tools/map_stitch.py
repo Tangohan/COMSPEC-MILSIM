@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-Assemble les tuiles de la capture de carte du mod (fn_mapCapture : cmap_*.png dans Documents\\Arma 3\\Screenshots).
+Assemble les tuiles de la capture de carte du mod (fn_mapCapture : cmap_*.jpg corrigées et compressées par la DLL dans
+Documents\\COMSPEC_MapCapture\\<carte>, ou cmap_*.png laissées dans Documents\\Arma 3\\Screenshots sans la DLL ;
+sous-dossiers compris, le JPEG passe devant le PNG d'origine gardé à côté).
 
 1. Mosaïque par couche (carte, rendu, hauteur), comme avant :
   <sortie>/<carte>_<rendu>_h<hauteur>.jpg     mosaïque nord en haut (réduite à --max px de côté)
@@ -23,8 +25,8 @@ le relief (orthophoto) : le cadrage mesuré en jeu et les altitudes notées sous
   --addon <dossier>   fabrique @COMSPEC_ATAK_Photo/addons/comspec_atak_photo_<carte>.pbo, le fond PHOTO du téléphone
                       (mod optionnel à charger avec @COMSPEC_ATAK_Native ; PAA par HEMTT 1.15 ou plus, sinon JPG)
 
-  python3 tools/map_stitch.py "C:/Users/moi/Documents/Arma 3/Screenshots" sortie --tiles
-  python3 tools/map_stitch.py "C:/Users/moi/Documents/Arma 3/Screenshots" sortie --pyramid --addon mods
+  python3 tools/map_stitch.py "C:/Users/moi/Documents/COMSPEC_MapCapture/Altis" sortie --tiles
+  python3 tools/map_stitch.py "C:/Users/moi/Documents/COMSPEC_MapCapture/Altis" sortie --pyramid --addon mods
 
 Dépendances : Pillow, numpy (python -m pip install pillow numpy).
 """
@@ -59,12 +61,17 @@ def layers(folder):
     reprise) sont réunies : leur grille est calée sur des multiples du pas, les cases sont renumérotées depuis
     l'origine la plus au sud-ouest ; une case prise deux fois garde l'image la plus récente."""
     found = {}
-    for f in os.listdir(folder):
+    files = {}
+    for root, _, names in os.walk(folder):
+        for f in names:
+            if NAME.match(f):
+                stem = os.path.splitext(f)[0].lower()
+                if stem not in files or f.lower().endswith(".jpg"):
+                    files[stem] = os.path.join(root, f)
+    for p in files.values():
+        f = os.path.basename(p)
         m = NAME.match(f)
-        if not m:
-            continue
         g = m.groupdict()
-        p = os.path.join(folder, f)
         key = (g["world"], g["mode"].lower(), int(g["h"]))
         found.setdefault(key, []).append((os.path.getmtime(p), int(g["step"]), int(g["w"]), int(g["ox"]), int(g["oy"]),
                                           int(g["ix"]), int(g["iy"]), p))
@@ -186,7 +193,8 @@ def read_manifest(paths):
                             "step": v[7], "fw": v[8], "fh": v[9], "gn": int(v[14]), "span": v[15],
                         }
                     elif p[0] == "CMAPS" and len(p) >= 6:
-                        shots[p[1].lower()] = {"x": float(p[2]), "y": float(p[3]), "cz": float(p[4]),
+                        # Clé sans extension : la DLL range l'image en .jpg, le journal la nomme .png.
+                        shots[os.path.splitext(p[1].lower())[0]] = {"x": float(p[2]), "y": float(p[3]), "cz": float(p[4]),
                                                "hs": [float(x) for x in p[5].split(",") if x != ""]}
                 except (ValueError, IndexError):
                     continue
@@ -246,7 +254,7 @@ class Layer:
             cx = self.x0 + (ix + 0.5) * self.step
             cy = self.y0 + (iy + 0.5) * self.step
             s = Shot(path, cx, cy, fw)
-            m = shots.get(os.path.basename(path).lower())
+            m = shots.get(os.path.splitext(os.path.basename(path).lower())[0])
             if head and m and len(m["hs"]) == head["gn"] ** 2:
                 s.calib = (head["ax"], head["ay"], head["u0"], head["v0"])
                 s.cz = m["cz"]
@@ -586,7 +594,7 @@ class COMSPEC_ATAK_PhotoMaps {
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("captures", help="dossier des captures (Screenshots d'Arma)")
+    ap.add_argument("captures", help="dossier des captures (Documents/COMSPEC_MapCapture/<carte>, ou Screenshots d'Arma)")
     ap.add_argument("sortie", help="dossier de sortie")
     ap.add_argument("--max", type=int, default=16384, help="côté maximal de la mosaïque en pixels (16384)")
     ap.add_argument("--tiles", action="store_true", help="tuiles web z/x/y en plus")
