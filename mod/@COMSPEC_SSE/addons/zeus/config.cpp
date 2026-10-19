@@ -73,7 +73,7 @@ class CfgFactionClasses {
         side = 7;
     };
     class COMSPEC_SSE_Sites: NO_CATEGORY {
-        displayName = "SSE · Sites et kits";
+        displayName = "$STR_COMSPEC_SSE_CFG_D191D931CF";
         priority = 2;
         side = 7;
     };

@@ -134,7 +134,7 @@ class CfgWeapons {
         picture = "\z\comspec_sse\addons\evidence\data\icons\gloves_ca.paa";
         model = "\A3\Structures_F\Items\Tools\DustMask_F.p3d";
         displayName = "$STR_COMSPEC_SSE_CFG_46E7D52BE6";
-        descriptionShort = "Gants nitrile à usage unique. Portés pendant la fouille, ils évitent de déposer vos empreintes et votre ADN sur les pièces.";
+        descriptionShort = "$STR_COMSPEC_SSE_CFG_29BA873C30";
         class ItemInfo: CBA_MiscItem_ItemInfo { mass = 0.5; };
     };
 
@@ -152,7 +152,7 @@ class CfgWeapons {
         picture = "\z\comspec_sse\addons\evidence\data\icons\fingerprintkit_ca.paa";
         model = "\A3\Structures_F_Heli\Items\Luggage\PlasticCase_01_small_F.p3d";
         displayName = "$STR_COMSPEC_SSE_CFG_71D3057E17";
-        descriptionShort = "Poudre magnétique, pinceau, rubans de relevé et cartes décadactylaires. Consommables : un nombre limité de relevés par kit.";
+        descriptionShort = "$STR_COMSPEC_SSE_CFG_CDABB7E48D";
         class ItemInfo: CBA_MiscItem_ItemInfo { mass = 4; };
     };
 
@@ -169,8 +169,8 @@ class CfgWeapons {
         scope = 2;
         picture = "\z\comspec_sse\addons\evidence\data\icons\swabkit_ca.paa";
         model = "\A3\Structures_F_EPA\Items\Medical\WaterPurificationTablets_F.p3d";
-        displayName = "Écouvillons ADN / résidus de tir";
-        descriptionShort = "Écouvillons stériles sous tube, étiquettes et sachet de transport. Un écouvillon par prélèvement : ADN de contact ou résidus de tir sur les mains.";
+        displayName = "$STR_COMSPEC_SSE_CFG_88B181E6CE";
+        descriptionShort = "$STR_COMSPEC_SSE_CFG_124659002B";
         class ItemInfo: CBA_MiscItem_ItemInfo { mass = 1; };
     };
 
@@ -287,8 +287,8 @@ class CfgWeapons {
         scope = 2;
         picture = "\z\comspec_sse\addons\evidence\data\icons\faradaybag_ca.paa";
         model = "\A3\Structures_F_Heli\Items\Airport\RotorCoversBag_01_F.p3d";
-        displayName = "Sac de Faraday";
-        descriptionShort = "Pochette blindée à fermeture roulée. Un téléphone ou une tablette saisi dedans ne reçoit plus rien : pas d'effacement à distance, pas de localisation.";
+        displayName = "$STR_COMSPEC_SSE_CFG_43AE29872B";
+        descriptionShort = "$STR_COMSPEC_SSE_CFG_ABEBEF7E33";
         class ItemInfo: CBA_MiscItem_ItemInfo { mass = 1; };
     };
 
@@ -296,8 +296,8 @@ class CfgWeapons {
         scope = 2;
         picture = "\z\comspec_sse\addons\evidence\data\icons\evidencemarkers_ca.paa";
         model = "\A3\Structures_F_Heli\Items\Luggage\PlasticCase_01_small_F.p3d";
-        displayName = "Cônes de preuve numérotés";
-        descriptionShort = "Jeu de cônes jaunes numérotés 1 à 20. On cône chaque pièce et on la photographie avant de la collecter.";
+        displayName = "$STR_COMSPEC_SSE_CFG_430B0F3E9F";
+        descriptionShort = "$STR_COMSPEC_SSE_CFG_516BD343FE";
         class ItemInfo: CBA_MiscItem_ItemInfo { mass = 3; };
     };
 };
@@ -318,28 +318,28 @@ class CfgGlasses {
 
 class CfgEditorCategories {
     class COMSPEC_SSE_EdEvidence {
-        displayName = "COMSPEC SSE - Preuves";
+        displayName = "$STR_COMSPEC_SSE_CFG_33141040EE";
     };
     class COMSPEC_SSE_EdKits {
-        displayName = "COMSPEC SSE - Kits";
+        displayName = "$STR_COMSPEC_SSE_CFG_2528475D3C";
     };
 };
 
 class CfgEditorSubcategories {
     class COMSPEC_SSE_EdDigital {
-        displayName = "Numérique";
+        displayName = "$STR_COMSPEC_SSE_CFG_BFFAB189C7";
     };
     class COMSPEC_SSE_EdPaper {
-        displayName = "Documents";
+        displayName = "$STR_COMSPEC_SSE_CFG_687C82861C";
     };
     class COMSPEC_SSE_EdValuables {
-        displayName = "Valeurs et bagages";
+        displayName = "$STR_COMSPEC_SSE_CFG_98A09F2C4C";
     };
     class COMSPEC_SSE_EdTools {
-        displayName = "Outils de terrain";
+        displayName = "$STR_COMSPEC_SSE_CFG_96DB5DE772";
     };
     class COMSPEC_SSE_EdBoxes {
-        displayName = "Caisses de kit";
+        displayName = "$STR_COMSPEC_SSE_CFG_8DEF2E7D60";
     };
 };
 
@@ -370,7 +370,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Téléphone portable (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_7B15FC7613";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
         comspec_sse_type = "PHONE";
@@ -379,7 +379,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Smartphone (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_C2FA969DBB";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
         comspec_sse_type = "PHONE";
@@ -388,7 +388,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Téléphone satellite (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_95EA9F3A0A";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
         comspec_sse_type = "PHONE";
@@ -397,7 +397,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Radio portable (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_932C8B7F30";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
         comspec_sse_type = "RADIO";
@@ -406,7 +406,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Ordinateur portable (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_F362018DB4";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
         comspec_sse_type = "COMPUTER";
@@ -415,7 +415,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Tablette (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_D5EB867897";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
         comspec_sse_type = "COMPUTER";
@@ -424,7 +424,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Unité centrale (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_B926BFDE9F";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
         comspec_sse_type = "COMPUTER";
@@ -433,7 +433,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Disque dur externe (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_8BD1B86B56";
         model = "\A3\Structures_F_Heli\Items\Electronics\GamingSet_01_powersupply_F.p3d";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
@@ -443,7 +443,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Clé USB (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_C0EC90BC1C";
         model = "\A3\Props_F_Oldman\Items\USB_Dongle_01_F.p3d";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
@@ -453,7 +453,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Carte mémoire (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_DBE91E171E";
         model = "\A3\Props_F_Oldman\Items\Documents\CreditCard_01_F.p3d";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdDigital";
@@ -463,7 +463,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Carnet manuscrit (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_A71DAD0BE0";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdPaper";
         comspec_sse_type = "DOCUMENT";
@@ -472,7 +472,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Liasse de documents (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_5AD25706D4";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdPaper";
         comspec_sse_type = "DOCUMENT";
@@ -481,7 +481,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Registre de comptes (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_4F964CA2C8";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdPaper";
         comspec_sse_type = "DOCUMENT";
@@ -490,7 +490,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Photos et fiches (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_BBB9F5D542";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdPaper";
         comspec_sse_type = "DOCUMENT";
@@ -499,7 +499,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Carte annotée (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_594C5CA807";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdPaper";
         comspec_sse_type = "DOCUMENT";
@@ -508,7 +508,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Liasse de billets (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_D1D38AAC02";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdValuables";
         comspec_sse_type = "OBJECT";
@@ -517,7 +517,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Valise (preuve)";
+        displayName = "$STR_COMSPEC_SSE_CFG_76E2EB1D5E";
         editorCategory = "COMSPEC_SSE_EdEvidence";
         editorSubcategory = "COMSPEC_SSE_EdValuables";
         comspec_sse_type = "CONTAINER";
@@ -528,7 +528,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Sachet à scellés";
+        displayName = "$STR_COMSPEC_SSE_CFG_7BD28D4768";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -540,7 +540,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Gants d'examen";
+        displayName = "$STR_COMSPEC_SSE_CFG_6C543AF206";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -552,7 +552,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Appareil photo de preuve";
+        displayName = "$STR_COMSPEC_SSE_CFG_D5245BAA89";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -564,7 +564,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Kit empreintes";
+        displayName = "$STR_COMSPEC_SSE_CFG_FDF8067B09";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -576,7 +576,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Kit ADN";
+        displayName = "$STR_COMSPEC_SSE_CFG_B70FF1E6D2";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -588,7 +588,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Écouvillons ADN / résidus de tir";
+        displayName = "$STR_COMSPEC_SSE_CFG_88B181E6CE";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -600,7 +600,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "SEEK II";
+        displayName = "$STR_COMSPEC_SSE_CFG_24A895354C";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -612,7 +612,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Sac à documents";
+        displayName = "$STR_COMSPEC_SSE_CFG_0BC4F565FF";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -624,7 +624,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Terminal de terrain";
+        displayName = "$STR_COMSPEC_SSE_CFG_3657A10269";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -636,7 +636,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Sac de tête";
+        displayName = "$STR_COMSPEC_SSE_CFG_3D7AF5EC00";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -648,7 +648,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Sac de Faraday";
+        displayName = "$STR_COMSPEC_SSE_CFG_43AE29872B";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -660,7 +660,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Cônes de preuve numérotés";
+        displayName = "$STR_COMSPEC_SSE_CFG_430B0F3E9F";
         vehicleClass = "Items";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdTools";
@@ -674,7 +674,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Caisse kit SSE d'équipe";
+        displayName = "$STR_COMSPEC_SSE_CFG_567B8D6D17";
         editorCategory = "COMSPEC_SSE_EdKits";
         editorSubcategory = "COMSPEC_SSE_EdBoxes";
         maximumLoad = 2000;
@@ -696,7 +696,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Caisse kit biométrie";
+        displayName = "$STR_COMSPEC_SSE_CFG_569DF69C16";
         model = "\A3\Structures_F_Heli\Items\Luggage\MetalCase_01_large_F.p3d";
         hiddenSelections[] = {};
         hiddenSelectionsTextures[] = {};
@@ -720,7 +720,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Caisse kit exploitation numérique";
+        displayName = "$STR_COMSPEC_SSE_CFG_AB3382193F";
         model = "\A3\Structures_F_Heli\Items\Luggage\PlasticCase_01_large_F.p3d";
         hiddenSelections[] = {};
         hiddenSelectionsTextures[] = {};
@@ -745,7 +745,7 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 2;
-        displayName = "Valise DOMEX de terrain";
+        displayName = "$STR_COMSPEC_SSE_CFG_4E5AC91468";
         model = "\A3\Structures_F_Heli\Items\Luggage\PlasticCase_01_medium_F.p3d";
         hiddenSelections[] = {};
         hiddenSelectionsTextures[] = {};

@@ -9,7 +9,7 @@
     class COMSPEC_SSE_Module_PlaceSite: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Poser un site SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_21CF681B20";
         category = "COMSPEC_SSE_Sites";
         function = "comspec_sse_fnc_modulePlaceSite";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa";
@@ -17,26 +17,26 @@
 
         class Attributes {
             class SiteType {
-                displayName = "Type de site";
-                tooltip = "Mobilier, pièces de preuve et thème narratif propres à chaque site.";
+                displayName = "$STR_COMSPEC_SSE_CFG_477589B159";
+                tooltip = "$STR_COMSPEC_SSE_CFG_96BDE4A5DE";
                 property = "COMSPEC_SSE_Module_PlaceSite_SiteType";
                 control = "Combo";
                 expression = "_this setVariable ['SiteType',_value,true];";
                 defaultValue = "'SAFEHOUSE'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Planque"; value = "SAFEHOUSE"; default = 1; };
-                    class V1 { name = "Labo d'IED"; value = "IED_LAB"; };
-                    class V2 { name = "Atelier de faux papiers"; value = "FORGERY"; };
-                    class V3 { name = "Cache d'armes"; value = "WEAPONS_CACHE"; };
-                    class V4 { name = "PC de cellule"; value = "CELL_HQ"; };
-                    class V5 { name = "Boîte aux lettres morte"; value = "DEAD_DROP"; };
-                    class V6 { name = "Nœud hawala / changeur"; value = "HAWALA"; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_84775AE87C"; value = "SAFEHOUSE"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_SSE_CFG_8960D4CA42"; value = "IED_LAB"; };
+                    class V2 { name = "$STR_COMSPEC_SSE_CFG_5703B331E0"; value = "FORGERY"; };
+                    class V3 { name = "$STR_COMSPEC_SSE_CFG_0C6C97D939"; value = "WEAPONS_CACHE"; };
+                    class V4 { name = "$STR_COMSPEC_SSE_CFG_4007A61ED8"; value = "CELL_HQ"; };
+                    class V5 { name = "$STR_COMSPEC_SSE_CFG_E7C960B706"; value = "DEAD_DROP"; };
+                    class V6 { name = "$STR_COMSPEC_SSE_CFG_236C3EC690"; value = "HAWALA"; };
                 };
             };
             class Occupants {
-                displayName = "Occupants";
-                tooltip = "Nombre de personnes présentes (-1 : selon le site). La première devient le chef de la cellule.";
+                displayName = "$STR_COMSPEC_SSE_CFG_DB18959EF2";
+                tooltip = "$STR_COMSPEC_SSE_CFG_5D8296B420";
                 property = "COMSPEC_SSE_Module_PlaceSite_Occupants";
                 control = "Edit";
                 expression = "_this setVariable ['Occupants',_value,true];";
@@ -44,22 +44,22 @@
                 typeName = "NUMBER";
             };
             class Side {
-                displayName = "Camp des occupants";
-                tooltip = "Camp des occupants créés.";
+                displayName = "$STR_COMSPEC_SSE_CFG_63DB4D7079";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7B21FB2E3F";
                 property = "COMSPEC_SSE_Module_PlaceSite_Side";
                 control = "Combo";
                 expression = "_this setVariable ['Side',_value,true];";
                 defaultValue = "'GUER'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Insurgés (indépendants)"; value = "GUER"; default = 1; };
-                    class V1 { name = "Insurgés (OPFOR)"; value = "EAST"; };
-                    class V2 { name = "Civils"; value = "CIV"; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_3C7903BF6D"; value = "GUER"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_SSE_CFG_FA79BDC9FF"; value = "EAST"; };
+                    class V2 { name = "$STR_COMSPEC_SSE_CFG_7AA3BFB0ED"; value = "CIV"; };
                 };
             };
             class Armed {
-                displayName = "Occupants armés";
-                tooltip = "Décoché : occupants sans arme (jamais armés pour des civils).";
+                displayName = "$STR_COMSPEC_SSE_CFG_9B52E497DD";
+                tooltip = "$STR_COMSPEC_SSE_CFG_580E55558E";
                 property = "COMSPEC_SSE_Module_PlaceSite_Armed";
                 control = "Checkbox";
                 expression = "_this setVariable ['Armed',_value,true];";
@@ -67,15 +67,15 @@
                 typeName = "BOOL";
             };
             class Complexity {
-                displayName = "Richesse";
-                tooltip = "Quantité d'indices des fiches.";
+                displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
+                tooltip = "$STR_COMSPEC_SSE_CFG_637DD26429";
                 property = "COMSPEC_SSE_Module_PlaceSite_Complexity";
                 control = "Combo";
                 expression = "_this setVariable ['Complexity',_value,true];";
                 defaultValue = "''";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Selon le site"; value = ""; default = 1; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_4C8BDFF9D2"; value = ""; default = 1; };
                     class V1 { name = "$STR_COMSPEC_SSE_CFG_142CF342A2"; value = "LIGHT"; };
                     class V2 { name = "$STR_COMSPEC_SSE_CFG_2DFA66079D"; value = "STANDARD"; };
                     class V3 { name = "$STR_COMSPEC_SSE_CFG_094D4A1824"; value = "DETAILED"; };
@@ -83,8 +83,8 @@
                 };
             };
             class Traps {
-                displayName = "Pièges";
-                tooltip = "Mine à fil à l'entrée, engin piégé dans un labo d'IED.";
+                displayName = "$STR_COMSPEC_SSE_CFG_8D69643C5D";
+                tooltip = "$STR_COMSPEC_SSE_CFG_987B452302";
                 property = "COMSPEC_SSE_Module_PlaceSite_Traps";
                 control = "Checkbox";
                 expression = "_this setVariable ['Traps',_value,true];";
@@ -92,8 +92,8 @@
                 typeName = "BOOL";
             };
             class UseBuilding {
-                displayName = "Dans un bâtiment proche";
-                tooltip = "Cherche un bâtiment habitable à moins de 40 m ; sinon le site est posé au sol.";
+                displayName = "$STR_COMSPEC_SSE_CFG_2FADDEA9A3";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7E693DDE9A";
                 property = "COMSPEC_SSE_Module_PlaceSite_UseBuilding";
                 control = "Checkbox";
                 expression = "_this setVariable ['UseBuilding',_value,true];";
@@ -103,7 +103,7 @@
         };
 
         class ModuleDescription {
-            description = "Pose un site préfabriqué exploitable : mobilier, pièces de preuve, occupants et pièges optionnels, dossier qui cite d'autres lieux réels de la carte.";
+            description = "$STR_COMSPEC_SSE_CFG_C20D94C6EA";
             position = 1;
             direction = 1;
         };
@@ -112,7 +112,7 @@
     class COMSPEC_SSE_Module_PopulateBuilding: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Peupler un bâtiment";
+        displayName = "$STR_COMSPEC_SSE_CFG_744489D776";
         category = "COMSPEC_SSE_Sites";
         function = "comspec_sse_fnc_modulePopulateBuilding";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\house_ca.paa";
@@ -120,25 +120,25 @@
 
         class Attributes {
             class SiteType {
-                displayName = "Type de site";
-                tooltip = "Ce que le bâtiment abrite.";
+                displayName = "$STR_COMSPEC_SSE_CFG_477589B159";
+                tooltip = "$STR_COMSPEC_SSE_CFG_3FF39FF030";
                 property = "COMSPEC_SSE_Module_PopulateBuilding_SiteType";
                 control = "Combo";
                 expression = "_this setVariable ['SiteType',_value,true];";
                 defaultValue = "'SAFEHOUSE'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Planque"; value = "SAFEHOUSE"; default = 1; };
-                    class V1 { name = "Labo d'IED"; value = "IED_LAB"; };
-                    class V2 { name = "Atelier de faux papiers"; value = "FORGERY"; };
-                    class V3 { name = "Cache d'armes"; value = "WEAPONS_CACHE"; };
-                    class V4 { name = "PC de cellule"; value = "CELL_HQ"; };
-                    class V5 { name = "Nœud hawala / changeur"; value = "HAWALA"; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_84775AE87C"; value = "SAFEHOUSE"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_SSE_CFG_8960D4CA42"; value = "IED_LAB"; };
+                    class V2 { name = "$STR_COMSPEC_SSE_CFG_5703B331E0"; value = "FORGERY"; };
+                    class V3 { name = "$STR_COMSPEC_SSE_CFG_0C6C97D939"; value = "WEAPONS_CACHE"; };
+                    class V4 { name = "$STR_COMSPEC_SSE_CFG_4007A61ED8"; value = "CELL_HQ"; };
+                    class V5 { name = "$STR_COMSPEC_SSE_CFG_236C3EC690"; value = "HAWALA"; };
                 };
             };
             class Occupants {
-                displayName = "Occupants";
-                tooltip = "Nombre de personnes présentes (-1 : selon le site). La première devient le chef de la cellule.";
+                displayName = "$STR_COMSPEC_SSE_CFG_DB18959EF2";
+                tooltip = "$STR_COMSPEC_SSE_CFG_5D8296B420";
                 property = "COMSPEC_SSE_Module_PopulateBuilding_Occupants";
                 control = "Edit";
                 expression = "_this setVariable ['Occupants',_value,true];";
@@ -146,22 +146,22 @@
                 typeName = "NUMBER";
             };
             class Side {
-                displayName = "Camp des occupants";
-                tooltip = "Camp des occupants créés.";
+                displayName = "$STR_COMSPEC_SSE_CFG_63DB4D7079";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7B21FB2E3F";
                 property = "COMSPEC_SSE_Module_PopulateBuilding_Side";
                 control = "Combo";
                 expression = "_this setVariable ['Side',_value,true];";
                 defaultValue = "'GUER'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Insurgés (indépendants)"; value = "GUER"; default = 1; };
-                    class V1 { name = "Insurgés (OPFOR)"; value = "EAST"; };
-                    class V2 { name = "Civils"; value = "CIV"; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_3C7903BF6D"; value = "GUER"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_SSE_CFG_FA79BDC9FF"; value = "EAST"; };
+                    class V2 { name = "$STR_COMSPEC_SSE_CFG_7AA3BFB0ED"; value = "CIV"; };
                 };
             };
             class Armed {
-                displayName = "Occupants armés";
-                tooltip = "Décoché : occupants sans arme (jamais armés pour des civils).";
+                displayName = "$STR_COMSPEC_SSE_CFG_9B52E497DD";
+                tooltip = "$STR_COMSPEC_SSE_CFG_580E55558E";
                 property = "COMSPEC_SSE_Module_PopulateBuilding_Armed";
                 control = "Checkbox";
                 expression = "_this setVariable ['Armed',_value,true];";
@@ -169,15 +169,15 @@
                 typeName = "BOOL";
             };
             class Complexity {
-                displayName = "Richesse";
-                tooltip = "Quantité d'indices des fiches.";
+                displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
+                tooltip = "$STR_COMSPEC_SSE_CFG_637DD26429";
                 property = "COMSPEC_SSE_Module_PopulateBuilding_Complexity";
                 control = "Combo";
                 expression = "_this setVariable ['Complexity',_value,true];";
                 defaultValue = "''";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Selon le site"; value = ""; default = 1; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_4C8BDFF9D2"; value = ""; default = 1; };
                     class V1 { name = "$STR_COMSPEC_SSE_CFG_142CF342A2"; value = "LIGHT"; };
                     class V2 { name = "$STR_COMSPEC_SSE_CFG_2DFA66079D"; value = "STANDARD"; };
                     class V3 { name = "$STR_COMSPEC_SSE_CFG_094D4A1824"; value = "DETAILED"; };
@@ -185,8 +185,8 @@
                 };
             };
             class Traps {
-                displayName = "Pièges";
-                tooltip = "Mine à fil sur la sortie du bâtiment, engin piégé dans un labo d'IED.";
+                displayName = "$STR_COMSPEC_SSE_CFG_8D69643C5D";
+                tooltip = "$STR_COMSPEC_SSE_CFG_F69385CF90";
                 property = "COMSPEC_SSE_Module_PopulateBuilding_Traps";
                 control = "Checkbox";
                 expression = "_this setVariable ['Traps',_value,true];";
@@ -196,7 +196,7 @@
         };
 
         class ModuleDescription {
-            description = "Posé sur un bâtiment habitable (15 m au plus), le transforme en site SSE : mobilier réparti dans les pièces, preuves, occupants, pièges.";
+            description = "$STR_COMSPEC_SSE_CFG_770D7BB59C";
             position = 1;
         };
     };
@@ -204,7 +204,7 @@
     class COMSPEC_SSE_Module_SeedEvidence: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Semer des preuves";
+        displayName = "$STR_COMSPEC_SSE_CFG_3AF582D7C9";
         category = "COMSPEC_SSE_Sites";
         function = "comspec_sse_fnc_moduleSeedEvidence";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
@@ -212,8 +212,8 @@
 
         class Attributes {
             class Radius {
-                displayName = "Rayon (m)";
-                tooltip = "Les pièces vont d'abord dans les bâtiments du rayon.";
+                displayName = "$STR_COMSPEC_SSE_CFG_40BB5C6E81";
+                tooltip = "$STR_COMSPEC_SSE_CFG_4CEA110634";
                 property = "COMSPEC_SSE_Module_SeedEvidence_Radius";
                 control = "Edit";
                 expression = "_this setVariable ['Radius',_value,true];";
@@ -221,8 +221,8 @@
                 typeName = "NUMBER";
             };
             class Count {
-                displayName = "Nombre de pièces";
-                tooltip = "De 1 à 20.";
+                displayName = "$STR_COMSPEC_SSE_CFG_857F05E3FA";
+                tooltip = "$STR_COMSPEC_SSE_CFG_CFCAF85D8C";
                 property = "COMSPEC_SSE_Module_SeedEvidence_Count";
                 control = "Edit";
                 expression = "_this setVariable ['Count',_value,true];";
@@ -231,7 +231,7 @@
             };
             class Profile {
                 displayName = "$STR_COMSPEC_SSE_CFG_669FE25A32";
-                tooltip = "Profil narratif du contenu.";
+                tooltip = "$STR_COMSPEC_SSE_CFG_1EB4119497";
                 property = "COMSPEC_SSE_Module_SeedEvidence_Profile";
                 control = "Combo";
                 expression = "_this setVariable ['Profile',_value,true];";
@@ -252,7 +252,7 @@
             };
             class Complexity {
                 displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
-                tooltip = "Quantité d'indices.";
+                tooltip = "$STR_COMSPEC_SSE_CFG_1ED5C5DECE";
                 property = "COMSPEC_SSE_Module_SeedEvidence_Complexity";
                 control = "Combo";
                 expression = "_this setVariable ['Complexity',_value,true];";
@@ -268,7 +268,7 @@
         };
 
         class ModuleDescription {
-            description = "Pose des pièces de preuve (téléphones, clés USB, documents, carnets…) dans les bâtiments du rayon, reliées aux personnes présentes.";
+            description = "$STR_COMSPEC_SSE_CFG_93C1E25EC9";
             position = 1;
         };
     };
@@ -276,7 +276,7 @@
     class COMSPEC_SSE_Module_SiteNetwork: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Réseau multi-sites";
+        displayName = "$STR_COMSPEC_SSE_CFG_769D705C52";
         category = "COMSPEC_SSE_Sites";
         function = "comspec_sse_fnc_moduleSiteNetwork";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
@@ -284,8 +284,8 @@
 
         class Attributes {
             class Count {
-                displayName = "Nombre de sites";
-                tooltip = "De 3 à 6 ; le dernier est toujours le PC de la cellule.";
+                displayName = "$STR_COMSPEC_SSE_CFG_DE5B822DEC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_46DDBDA375";
                 property = "COMSPEC_SSE_Module_SiteNetwork_Count";
                 control = "Edit";
                 expression = "_this setVariable ['Count',_value,true];";
@@ -293,8 +293,8 @@
                 typeName = "NUMBER";
             };
             class RadiusKm {
-                displayName = "Rayon (km)";
-                tooltip = "Les sites sont posés près de villes et villages réels dans ce rayon.";
+                displayName = "$STR_COMSPEC_SSE_CFG_6ED8A6301D";
+                tooltip = "$STR_COMSPEC_SSE_CFG_41547EA607";
                 property = "COMSPEC_SSE_Module_SiteNetwork_RadiusKm";
                 control = "Edit";
                 expression = "_this setVariable ['RadiusKm',_value,true];";
@@ -302,8 +302,8 @@
                 typeName = "NUMBER";
             };
             class Occupants {
-                displayName = "Occupants par site";
-                tooltip = "-1 : selon le site (planque et PC occupés, cache et boîte aux lettres vides).";
+                displayName = "$STR_COMSPEC_SSE_CFG_4C379DB100";
+                tooltip = "$STR_COMSPEC_SSE_CFG_014C543192";
                 property = "COMSPEC_SSE_Module_SiteNetwork_Occupants";
                 control = "Edit";
                 expression = "_this setVariable ['Occupants',_value,true];";
@@ -311,22 +311,22 @@
                 typeName = "NUMBER";
             };
             class Side {
-                displayName = "Camp des occupants";
-                tooltip = "Camp des occupants créés.";
+                displayName = "$STR_COMSPEC_SSE_CFG_63DB4D7079";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7B21FB2E3F";
                 property = "COMSPEC_SSE_Module_SiteNetwork_Side";
                 control = "Combo";
                 expression = "_this setVariable ['Side',_value,true];";
                 defaultValue = "'GUER'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Insurgés (indépendants)"; value = "GUER"; default = 1; };
-                    class V1 { name = "Insurgés (OPFOR)"; value = "EAST"; };
-                    class V2 { name = "Civils"; value = "CIV"; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_3C7903BF6D"; value = "GUER"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_SSE_CFG_FA79BDC9FF"; value = "EAST"; };
+                    class V2 { name = "$STR_COMSPEC_SSE_CFG_7AA3BFB0ED"; value = "CIV"; };
                 };
             };
             class Armed {
-                displayName = "Occupants armés";
-                tooltip = "Décoché : occupants sans arme (jamais armés pour des civils).";
+                displayName = "$STR_COMSPEC_SSE_CFG_9B52E497DD";
+                tooltip = "$STR_COMSPEC_SSE_CFG_580E55558E";
                 property = "COMSPEC_SSE_Module_SiteNetwork_Armed";
                 control = "Checkbox";
                 expression = "_this setVariable ['Armed',_value,true];";
@@ -334,15 +334,15 @@
                 typeName = "BOOL";
             };
             class Complexity {
-                displayName = "Richesse";
-                tooltip = "Quantité d'indices des fiches.";
+                displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
+                tooltip = "$STR_COMSPEC_SSE_CFG_637DD26429";
                 property = "COMSPEC_SSE_Module_SiteNetwork_Complexity";
                 control = "Combo";
                 expression = "_this setVariable ['Complexity',_value,true];";
                 defaultValue = "''";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Selon le site"; value = ""; default = 1; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_4C8BDFF9D2"; value = ""; default = 1; };
                     class V1 { name = "$STR_COMSPEC_SSE_CFG_142CF342A2"; value = "LIGHT"; };
                     class V2 { name = "$STR_COMSPEC_SSE_CFG_2DFA66079D"; value = "STANDARD"; };
                     class V3 { name = "$STR_COMSPEC_SSE_CFG_094D4A1824"; value = "DETAILED"; };
@@ -350,8 +350,8 @@
                 };
             };
             class Traps {
-                displayName = "Pièges";
-                tooltip = "Pièges de chaque site.";
+                displayName = "$STR_COMSPEC_SSE_CFG_8D69643C5D";
+                tooltip = "$STR_COMSPEC_SSE_CFG_E4B1C64B59";
                 property = "COMSPEC_SSE_Module_SiteNetwork_Traps";
                 control = "Checkbox";
                 expression = "_this setVariable ['Traps',_value,true];";
@@ -361,7 +361,7 @@
         };
 
         class ModuleDescription {
-            description = "Pose 3 à 6 sites reliés près de lieux réels : chaque site cite le suivant, le PC de la cellule cite tous les autres, les chefs sont reliés.";
+            description = "$STR_COMSPEC_SSE_CFG_28AE03E00A";
             position = 1;
         };
     };
@@ -369,7 +369,7 @@
     class COMSPEC_SSE_Module_PlaceKit: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Poser une caisse de kit";
+        displayName = "$STR_COMSPEC_SSE_CFG_46397059AC";
         category = "COMSPEC_SSE_Sites";
         function = "comspec_sse_fnc_modulePlaceKit";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\box_ca.paa";
@@ -377,24 +377,24 @@
 
         class Attributes {
             class Kit {
-                displayName = "Kit";
-                tooltip = "Contenu de la caisse.";
+                displayName = "$STR_COMSPEC_SSE_CFG_91BF6F557E";
+                tooltip = "$STR_COMSPEC_SSE_CFG_E07D1F89CF";
                 property = "COMSPEC_SSE_Module_PlaceKit_Kit";
                 control = "Combo";
                 expression = "_this setVariable ['Kit',_value,true];";
                 defaultValue = "'TEAM'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Kit SSE d'équipe"; value = "TEAM"; default = 1; };
-                    class V1 { name = "Kit biométrie"; value = "BIO"; };
-                    class V2 { name = "Kit exploitation numérique"; value = "DIGITAL"; };
-                    class V3 { name = "Valise DOMEX de terrain"; value = "DOMEX"; };
+                    class V0 { name = "$STR_COMSPEC_SSE_CFG_DBAE9D4694"; value = "TEAM"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_SSE_CFG_39C7BC08FA"; value = "BIO"; };
+                    class V2 { name = "$STR_COMSPEC_SSE_CFG_845BE63EE0"; value = "DIGITAL"; };
+                    class V3 { name = "$STR_COMSPEC_SSE_CFG_4E5AC91468"; value = "DOMEX"; };
                 };
             };
         };
 
         class ModuleDescription {
-            description = "Pose une caisse de kit SSE à ouvrir (équipe, biométrie, exploitation numérique, valise DOMEX). Les caisses existent aussi comme objets dans Eden et Zeus.";
+            description = "$STR_COMSPEC_SSE_CFG_AD24147564";
             position = 1;
             direction = 1;
         };
