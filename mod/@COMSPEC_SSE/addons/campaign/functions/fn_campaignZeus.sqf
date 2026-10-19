@@ -30,7 +30,7 @@ switch (_mode) do {
                 if ((trim _id) isEqualTo "") exitWith { ["Choisissez une campagne ou saisissez un identifiant.", "warn"] call comspec_sse_fnc_zeusNotify; };
                 ["load", [_id, _name, _type, _copy, round _auto]] call comspec_sse_fnc_campaignOp;
             }
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "save": { ["save", ["sauvegarde Zeus"]] call comspec_sse_fnc_campaignOp; };
     case "reset": {
@@ -38,7 +38,7 @@ switch (_mode) do {
             "Remettre à zéro ?",
             [["CHECKBOX", ["Confirmer", "Récurrente : tout redevient inconnu des joueurs. Temporaire : le bac à sable est vidé."], false]],
             { params ["_v"]; if (_v select 0) then { ["reset", []] call comspec_sse_fnc_campaignOp; }; }
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "end": { ["end", []] call comspec_sse_fnc_campaignOp; };
     case "delete": {
@@ -50,7 +50,7 @@ switch (_mode) do {
                 ["CHECKBOX", "Confirmer la suppression définitive", false]
             ],
             { params ["_v"]; if (_v select 1) then { ["delete", [_v select 0]] call comspec_sse_fnc_campaignOp; }; }
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "export": {
         if (_index isEqualTo []) exitWith { ["Aucune campagne sauvegardée.", "warn"] call comspec_sse_fnc_zeusNotify; };
@@ -58,7 +58,7 @@ switch (_mode) do {
             "Exporter (presse-papiers)",
             [["COMBO", ["Campagne", "Le texte copié s'importe sur un autre serveur ou dans une autre communauté."], [_ids select [1], _lbls select [1], ((_ids find (_cur getOrDefault ["id", ""])) - 1) max 0]]],
             { params ["_v"]; ["export", [_v select 0]] call comspec_sse_fnc_campaignOp; }
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "import": {
         [
@@ -68,7 +68,7 @@ switch (_mode) do {
                 ["EDIT", ["Nouvel identifiant (vide = le sien)", "Pour ne pas écraser une campagne du même nom."], ""]
             ],
             { params ["_v"]; ["import", [_v select 0, _v select 1]] call comspec_sse_fnc_campaignOp; }
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "athenaPush": {
         if (_index isEqualTo []) exitWith { ["Aucune campagne sauvegardée.", "warn"] call comspec_sse_fnc_zeusNotify; };
@@ -76,11 +76,12 @@ switch (_mode) do {
             "Envoyer à Athena",
             [["COMBO", ["Campagne", "La sauvegarde du serveur part dans Athena (Bureau SSE › Campagnes). Sauvegardez d'abord pour envoyer l'état actuel."], [_ids select [1], _lbls select [1], ((_ids find (_cur getOrDefault ["id", ""])) - 1) max 0]]],
             { params ["_v"]; ["push", [_v select 0]] call comspec_sse_fnc_campaignAthena; }
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     };
     case "athenaPull": { ["list", []] call comspec_sse_fnc_campaignAthena; };
     default {
-        hint ((parseText ([] call comspec_sse_fnc_campaignInfo)) call comspec_sse_fnc_tr);
+        // Traduit avant parseText (fn_tr ne traduit qu'une chaîne).
+        hint parseText (([] call comspec_sse_fnc_campaignInfo) call comspec_sse_fnc_tr);
     };
 };
 true

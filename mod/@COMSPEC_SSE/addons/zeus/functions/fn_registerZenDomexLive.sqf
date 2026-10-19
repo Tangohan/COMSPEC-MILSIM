@@ -94,7 +94,7 @@ private _openAddIntel = {
         _onConfirm,
         {},
         [_entity]
-    ] call zen_dialog_fnc_create;
+    ] call comspec_sse_fnc_zenDialog;
 };
 
 private _openStage = {
@@ -148,7 +148,7 @@ private _openStage = {
         },
         {},
         [_entity]
-    ] call zen_dialog_fnc_create;
+    ] call comspec_sse_fnc_zenDialog;
 };
 
 private _openMapPoint = {
@@ -208,7 +208,7 @@ private _openMapPoint = {
         },
         {},
         [_pos, _entity]
-    ] call zen_dialog_fnc_create;
+    ] call comspec_sse_fnc_zenDialog;
 };
 
 uiNamespace setVariable ["COMSPEC_SSE_DomexOpenAddIntel", _openAddIntel];

@@ -3,7 +3,7 @@
 */
 private _rec = [] call comspec_sse_fnc_uiGetRecord;
 if (isNull _rec) exitWith {
-    hint (("Aucun sujet à transmettre.") call comspec_sse_fnc_tr);
+    ["Aucun sujet à transmettre.", "WARNING"] call comspec_sse_fnc_notify;
     false
 };
 

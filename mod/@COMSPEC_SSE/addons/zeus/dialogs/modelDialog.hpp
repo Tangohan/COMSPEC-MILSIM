@@ -5,6 +5,7 @@ class COMSPEC_SSE_ModelDialog {
     idd = 93030;
     movingEnable = 0;
     enableSimulation = 1;
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; [_this select 0, 'COMSPEC_SSE_ModelDialog'] call comspec_sse_fnc_trTooltips";
 
     class controlsBackground {
         class Dim: COMSPEC_SSE_RscDim { SSE_FULLSCREEN; };

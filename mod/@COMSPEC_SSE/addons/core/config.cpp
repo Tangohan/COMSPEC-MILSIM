@@ -24,6 +24,10 @@ class CfgFunctions {
             class aceAction {};
             class zenAction {};
             class zenModule {};
+            class zenDialog {};
+            class notify {};
+            class trTooltips {};
+            class isAuthority {};
             class addSetting {};
             class getLog {};
             class showLog {};
