@@ -192,6 +192,7 @@ $orbatChildren = [
 $communityChildren = array_values(array_filter([
     ['label' => 'Paramètres', 'href' => url('back-office/community'), 'active' => $navCommunityActive || $navInscriptionActive],
     ['label' => 'Page d’accueil publique', 'href' => url('back-office/community/presentation'), 'active' => $navPublicPageActive],
+    ['label' => 'Annoncer sur Discord', 'href' => url('back-office/community/discord'), 'active' => $navAt('back-office/community/discord')],
     $canMediaBo
         ? ['label' => 'Médias', 'href' => url('back-office/media'), 'active' => $navMediasActive]
         : null,

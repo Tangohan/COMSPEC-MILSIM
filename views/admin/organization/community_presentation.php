@@ -339,6 +339,7 @@ $cpNum = 0;
                         'les visiteurs non membres ne voient pas le bouton du forum.',
                         'tout visiteur peut ouvrir et lire le forum depuis votre page publique.'
                     ); ?>
+                    <p class="bcs-notice bcs-notice--info">Faites aussi connaître votre communauté sur le Discord Athena : <a class="bcs-link" href="<?= $h(url('back-office/community/discord')) ?>">Annoncer sur Discord</a>.</p>
                 </div>
             </section>
 

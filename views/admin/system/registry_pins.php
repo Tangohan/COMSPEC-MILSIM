@@ -98,6 +98,7 @@ $pinForm = static function (int $tenantId, ?array $pin) use ($h, $base): string 
             <div class="pa-hero__actions">
                 <a class="pa-btn pa-btn--solid" href="<?= $h(url('communities')) ?>" target="_blank" rel="noopener">Voir l’annuaire public</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/tenants')) ?>">Annuaire des communautés</a>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/annuaire/discord')) ?>">Vitrine Discord</a>
             </div>
         </header>
 

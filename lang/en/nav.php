@@ -50,6 +50,8 @@ return [
     'annuaire' => 'Directory',
     'annuaire_des_communautes' => 'Community directory',
     'annuaire_public_epinglage' => 'Public directory: pinning',
+    'vitrine_discord_des_communautes' => 'Community Discord showcase',
+    'valider_les_annonces_des_communautes_sur_le_discord_athena' => 'Review community announcements on the Athena Discord',
     'annuaire_des_comptes_activation_et_desactivation' => 'Account directory, activation and deactivation',
     'annuaire_des_profils' => 'Profile directory',
     'annuaire_et_structure' => 'Directory and structure',
