@@ -67,7 +67,7 @@ switch (_tab) do {
     case "custody": {
         private _held = ["held", [player]] call comspec_sse_fnc_custody;
         private _all = missionNamespace getVariable ["comspec_sse_custody", createHashMap];
-        _rows pushBack ["section", "Pièces que je détiens" call _tr, format ["%1 pièce(s)" call _tr, count _held]];
+        _rows pushBack ["section", "Pièces que je détiens" call _tr, format ["%1 pièce(s) détenue(s)" call _tr, count _held]];
         if (_held isEqualTo []) then {
             _rows pushBack ["text", format ["<t color='#8b98a7'>%1</t>", "Aucune pièce sous votre responsabilité." call _tr]];
         };
