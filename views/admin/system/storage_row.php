@@ -19,7 +19,7 @@ $longTypes = ['text', 'mediumtext', 'longtext', 'tinytext', 'json', 'blob', 'med
 $storageTab = 'data';
 ?>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-5">
-    <header>
+    <header class="pa-head">
         <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-800 mb-1">
             <a href="<?= $h(url('admin/system/storage/donnees')) ?>" class="hover:underline">Explorateur de données</a> ·
             <a href="<?= $h($backUrl) ?>" class="font-mono hover:underline"><?= $h($table) ?></a>
