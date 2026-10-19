@@ -83,6 +83,12 @@ if (!isNull _operator) then {
         };
     };
 
+    // Doctrine de collecte : pièce photographiée en place puis marquée d'un cône avant d'être déplacée.
+    if (_kind isEqualTo "collect" && {!isNull _target}) then {
+        if (_target getVariable ["comspec_sse_photoInSitu", false]) then { _q = _q + 8; } else { _q = _q - 6; };
+        if ((_target getVariable ["comspec_sse_markerNo", 0]) > 0) then { _q = _q + 4; };
+    };
+
     // Aléa de geste.
     _q = _q + (random 8) - 4;
 };

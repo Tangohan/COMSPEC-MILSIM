@@ -46,6 +46,8 @@ class CfgFunctions {
             class fieldAction {};
             class photoWatch {};
             class evidencePhoto {};
+            class remoteWipe {};
+            class domexBoost {};
         };
     };
 };
@@ -64,6 +66,9 @@ class Extended_PostInit_EventHandlers {
 class CfgRemoteExec {
     class Functions {
         class comspec_sse_fnc_dl7Apply { allowedTargets = 2; };
+        class comspec_sse_fnc_domexBoost { allowedTargets = 2; };
+        class comspec_sse_fnc_notify { allowedTargets = 1; };
+        class comspec_atak_native_fnc_notify { allowedTargets = 1; };
     };
 };
 

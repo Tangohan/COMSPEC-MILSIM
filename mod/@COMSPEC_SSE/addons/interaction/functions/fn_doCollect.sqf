@@ -1,9 +1,12 @@
 /*
-    [_target, _player] call comspec_sse_fnc_doCollect
+    [_target, _player, _seal] call comspec_sse_fnc_doCollect
+    _seal = true : « Mettre sous scellé » (action ACE unique) : collecte puis scellé dans la foulée,
+                   un sachet consommé (comspec_sse_fnc_bagEvidence).
 */
 params [
     ["_target", objNull, [objNull]],
-    ["_player", player, [objNull]]
+    ["_player", player, [objNull]],
+    ["_seal", false, [false]]
 ];
 
 if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
@@ -12,14 +15,19 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
 // Une seule collecte par entité (état COLLECTED posé par le serveur) : la collecte se répétait à l'infini, chaque
 // fois avec une ligne de plus dans la chaîne de possession, le journal et le registre.
 if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
+    // Déjà collectée mais pas encore scellée : le scellé seul reste à faire.
+    if (_seal) exitWith { [_target, _player] call comspec_sse_fnc_bagEvidence; };
     ["Pièce déjà collectée : voir le registre des scellés.", "WARNING"] call comspec_sse_fnc_notify;
+};
+if (_seal && {!("COMSPEC_SSE_EvidenceBag" in (items _player))}) exitWith {
+    ["Sachet de preuve SSE requis pour mettre la pièce sous scellé.", "WARNING"] call comspec_sse_fnc_notify;
 };
 
 [
     8,
     "Collecte SSE...",
     {
-        params ["_target", "_player"];
+        params ["_target", "_player", ["_seal", false]];
         if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
             ["Pièce déjà collectée par un équipier.", "WARNING"] call comspec_sse_fnc_notify;
         };
@@ -48,6 +56,7 @@ if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
 
         ["collect", _target, [_quality, _entry]] call comspec_sse_fnc_requestServerOp;
         if (!isNil "comspec_sse_fnc_custody") then { ["open", [_target, _player, format ["collecte, qualité %1 %%", _quality]]] call comspec_sse_fnc_custody; };
+        if (_seal) then { [_target, _player] call comspec_sse_fnc_bagEvidence; };
 
         [format [
             "Preuve collectée\n%1\nPar : %2\nHeure : %3\nGrid : %4\nQualité : %5%%",
@@ -67,5 +76,5 @@ if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
             "QUEUED"
         ] call comspec_sse_fnc_addJournalEntry;
     },
-    [_target, _player]
+    [_target, _player, _seal]
 ] call comspec_sse_fnc_progressAction;

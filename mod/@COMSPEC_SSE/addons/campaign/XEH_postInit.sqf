@@ -55,17 +55,7 @@ if (!hasInterface) exitWith {};
     ] call comspec_sse_fnc_zenDialog;
 }] call CBA_fnc_addEventHandler;
 
-[{ !isNil "ace_interact_menu_fnc_createAction" && {!isNull player} }, {
-    private _act = ["COMSPEC_SSE_Campaign", "Campagne en cours", "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa",
-        { hint parseText (([] call comspec_sse_fnc_campaignInfo) call comspec_sse_fnc_tr) }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call comspec_sse_fnc_aceAction;
-    [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _act] call ace_interact_menu_fnc_addActionToObject;
-    player addEventHandler ["Respawn", {
-        params ["_unit"];
-        private _act = ["COMSPEC_SSE_Campaign", "Campagne en cours", "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa",
-            { hint parseText (([] call comspec_sse_fnc_campaignInfo) call comspec_sse_fnc_tr) }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call comspec_sse_fnc_aceAction;
-        [_unit, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _act] call ace_interact_menu_fnc_addActionToObject;
-    }];
-}, [], 60] call CBA_fnc_waitUntilAndExecute;
+// Fiche de campagne : onglet JOURNAL de l'app « SSE terrain » du téléphone (plus d'action ACE personnelle).
 
 [{ !isNil "zen_custom_modules_fnc_register" }, {
     {
