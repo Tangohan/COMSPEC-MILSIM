@@ -57,6 +57,7 @@ final class AtakSupportController
             'flashInfo' => is_string($flashInfo) ? $flashInfo : null,
             'stripeReady' => (getenv('STRIPE_SECRET_KEY') ?: '') !== '',
             'schemaReady' => $this->donations->schemaReady(),
+            'paypalUrl' => \App\Support\PayPalDonation::publicUrl(),
         ]);
     }
 
@@ -217,5 +218,30 @@ final class AtakSupportController
         }
 
         return $value;
+    }
+
+    /**
+     * QR code du lien de don PayPal (généré par Athena, mis en cache une heure).
+     * ?apercu=1 : aperçu pour l’administration, même si les dons PayPal sont masqués au public.
+     */
+    public function paypalQr(Request $request, array $params = []): Response
+    {
+        $url = \App\Support\PayPalDonation::publicUrl();
+        if ($url === null && $request->query('apercu') === '1' && \App\Core\Gate::getInstance()->isPlatformAdmin()) {
+            $url = \App\Support\PayPalDonation::configuredUrl();
+        }
+        if ($url === null) {
+            return (new Response())->setStatusCode(404)->setBody('');
+        }
+        $qr = (new \App\Services\Qr\QrPngGenerator())->png($url, 420, 16);
+        if ($qr === null) {
+            return (new Response())->setStatusCode(503)->setBody('');
+        }
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', $qr['mime'])
+            ->header('Cache-Control', 'public, max-age=3600')
+            ->setBody($qr['body']);
     }
 }
