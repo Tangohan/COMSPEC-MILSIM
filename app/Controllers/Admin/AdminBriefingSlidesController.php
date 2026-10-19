@@ -14,6 +14,7 @@ use App\Repositories\TacticalBriefingSlideRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Atak\GoogleSlidesAccessCheck;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Support\BriefingSlideGameImage;
 use App\Controllers\Api\AtakApiController;
 
 /**
@@ -425,7 +426,22 @@ final class AdminBriefingSlidesController
             return ['path' => null, 'error' => 'Impossible de traiter cette image. Essayez avec un autre fichier.'];
         }
 
+        // Copie JPEG 2048 x 1024 lue par le téléphone en jeu, faite dès l'envoi : sans elle la diapositive reste noire.
+        if (BriefingSlideGameImage::path($destRel) === $destRel) {
+            Session::flash('warning', self::gameCopyWarning(BriefingSlideGameImage::$lastError));
+        }
+
         return ['path' => $destRel, 'error' => null];
+    }
+
+    private static function gameCopyWarning(string $reason): string
+    {
+        return match ($reason) {
+            'no_gd' => 'Image enregistrée, mais elle restera noire dans le téléphone en jeu : l’extension PHP GD manque sur le serveur (copie JPEG pour Arma impossible).',
+            'unreadable' => 'Image enregistrée, mais elle restera noire dans le téléphone en jeu : le serveur ne sait pas la convertir en JPEG. Renvoyez-la en JPG.',
+            'write_failed' => 'Image enregistrée, mais elle restera noire dans le téléphone en jeu : le dossier uploads/briefing-slides n’est pas inscriptible pour la copie JPEG destinée à Arma.',
+            default => 'Image enregistrée, mais la copie JPEG destinée au téléphone en jeu n’a pas pu être créée.',
+        };
     }
 
     private function writeImage(string $tmpPath, string $destPath, int $maxWidth): bool
