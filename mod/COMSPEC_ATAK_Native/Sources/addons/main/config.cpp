@@ -140,7 +140,7 @@ class COMSPEC_ATAK_Apps {
     class Tracking    { name="Marquer tracking"; page="TRACKING"; function="comspec_atak_native_fnc_pageTracking"; section="Renseignement"; order=117; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dronedetect.paa"; };
     class DataLink    { name="Extraction"; page="DATALINK"; function="comspec_atak_native_fnc_pageDataLink"; section="Renseignement"; order=119; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_datalink.paa"; };
     class Sse         { name="SSE"; page="SSE"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
-    class Osint       { name="OSINT"; page="OSINT"; section="Renseignement"; order=120; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
+    class Osint       { name="OSINT"; page="OSINT"; section="Renseignement"; order=120; dock=0; wip=1; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
     class LinkAlly    { name="Liaison allié"; page="LINKALLY"; function="comspec_atak_native_fnc_pageLinkAlly"; section="Spécialités"; order=82; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_linkally.paa"; };
     class Wanted      { name="Recherchés"; page="WANTED"; section="Renseignement"; order=122; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_wanted.paa"; };
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; };
