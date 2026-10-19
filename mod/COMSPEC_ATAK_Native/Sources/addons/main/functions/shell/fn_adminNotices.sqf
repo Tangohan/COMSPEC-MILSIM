@@ -2,7 +2,7 @@
     Avis de l'administration ATHENA sur l'ATAK du joueur (site : /admin/parc-atak, poste de commandement, back-office) :
     compromission déclarée ou levée, données ATAK réinitialisées, certificat révoqué, rétabli ou régénéré, nouveau numéro,
     message imposé. Récupérés par COMSPEC Link (« AdminControl.Poll », toutes les 30 s une fois relié à Athena).
-    Chaque nouvel avis : alerte plein écran de la couleur du genre, notification, et carte en tête de l'app Alertes
+    Chaque nouvel avis : alerte de la couleur du genre dans l'écran du téléphone (jamais sur l'écran de jeu), notification, et carte en tête de l'app Alertes
     jusqu'à ce que le joueur appuie sur COMPRIS (validé sur Athena par « AdminControl.Ack »).
     Params : [action, argument]
       "check"        client : demande les avis à Athena (toutes les 30 s au plus)

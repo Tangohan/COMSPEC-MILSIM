@@ -316,17 +316,18 @@ EN : Link messages keep their accents
 ##### Résumé joueur de la PR
 Type : nouveauté
 FR : Les avis de l'administration arrivent dans le téléphone
-- Quand l'administration ou le poste de commandement déclare ou lève une compromission, réinitialise ton ATAK, change son certificat ou ton numéro, le téléphone affiche une alerte plein écran et une notification.
+- Quand l'administration ou le poste de commandement déclare ou lève une compromission, réinitialise ton ATAK, change son certificat ou ton numéro, le téléphone affiche une alerte sur son écran et une notification, sans rien par-dessus le jeu.
 - Une carte reste en haut de l'app Alertes jusqu'à ce que tu appuies sur COMPRIS ; les messages envoyés depuis le parc ATAK du site arrivent de la même façon.
 EN : Admin notices now reach the phone
-- When the administration or the command post declares or lifts a compromise, resets your ATAK, changes its certificate or your number, the phone shows a full-screen alert and a notification.
+- When the administration or the command post declares or lifts a compromise, resets your ATAK, changes its certificate or your number, the phone shows an alert on its screen and a notification, with nothing over the game view.
 - A card stays at the top of the Alerts app until you press GOT IT; messages sent from the website's ATAK fleet page arrive the same way.
 
 ##### Détail technique
 - Site : `atak_admin_messages.kind` (migration paresseuse, `run-migrations`). `AtakAdminControlRepository::notifyPlayer` appelé par les actions du parc ATAK, la compromission/levée du poste, la régénération de certificat et de numéro. Endpoints joueur `POST /api/atak/admin-control/mine` et `/mine/ack` (session de jeu ou Steam ; seulement ses propres messages).
 - COMSPEC Link : `AdminControl.Poll` (une ligne par message, séparée par tabulations) et `AdminControl.Ack` (en file).
-- ATAK natif : `fn_adminNotices` interroge toutes les 30 s une fois lié à Athena et téléphone porté ; nouvelle section en tête de `fn_pageAlerts` (rouge compromission, vert levée, ambre réinitialisation/certificat) ; 22 phrases dans `i18n/en.txt`.
-- À tester en jeu : compromission déclarée sur sa fiche dans /admin/parc-atak (alerte, carte Alertes, COMPRIS), puis levée (alerte verte) ; ATAK retiré puis relié (alerte « données réinitialisées »).
+- ATAK natif : `fn_adminNotices` interroge toutes les 30 s une fois lié à Athena et téléphone porté ; nouvelle section en tête de `fn_pageAlerts` (rouge compromission, vert levée, ambre réinitialisation/certificat) ; 25 phrases dans `i18n/en.txt`.
+- Plus rien sur l'écran du jeu (règle de TTRD : tout reste dans le téléphone) : `fn_fullAlert` devient un bandeau dans l'écran du téléphone, compte à rebours de brèche (`fn_breachTop`) déplacé dans le téléphone, indice `hintSilent` du code Athena et 3 messages d'écran retirés (`fn_athenaLink`, `fn_p2pReceive`, `fn_zeusClient`).
+- À tester en jeu : aucune alerte ni message hors du téléphone ; compromission déclarée sur sa fiche dans /admin/parc-atak (alerte, carte Alertes, COMPRIS), puis levée (alerte verte) ; ATAK retiré puis relié (alerte « données réinitialisées »).
 
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
