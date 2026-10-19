@@ -140,7 +140,7 @@ private _bearer = switch (true) do {
         if (_fq > 0) then { _extra pushBack format ["%1 MHz", _fq]; };
         _extra pushBack format ["perte %1 %%", _ls];
         if (_hl in ["dégradé", "critique"]) then { _extra pushBack _hl; };
-        [createHashMapFromArray [["relay", "Relais radio"], ["gw", "Passerelle véhicule"], ["cp", "Poste de commandement"]] getOrDefault [_k, "Relais radio"], [_n] call _esc,
+        [createHashMapFromArray [["relay", "Relais radio"], ["gw", "Passerelle véhicule"], ["cp", "Poste de commandement"], ["mpu5", "MPU5 d'un équipier"]] getOrDefault [_k, "Relais radio"], [_n] call _esc,
             format ["%1 / %2 · %3 Mbit/s%4", [_d] call _dist, [_eff] call _dist, _mb toFixed 1, ["", " · " + (_extra joinString " · ")] select (_extra isNotEqualTo [])],
             ["ok", "warn"] select (_sl > 0 && {_u > _sl} || {_bt >= 0 && {_bt < 20}} || {_hl in ["dégradé", "critique"]}), [1 - (_d / (_eff max 1)) ^ 2] call _qBars,
             ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp")]
@@ -319,7 +319,7 @@ private _items = [];
     private _hc = createHashMapFromArray [["nominal", "#5cd96b"], ["dégradé", "#f2ab33"], ["critique", "#e5483a"], ["hors service", "#8a9a93"]];
     private _health = format ["%1 MHz%2 · perte %3 %% · %4 ms · <t color='%5'>%6</t> · structure %7 %%%8", _fq, ["", " auto"] select _auto,
         _loss, _lat, _hc getOrDefault [_hl, "#8a9a93"], _hl, _hp, ["", format [" · <t color='#f2ab33'>%1 sur le canal</t>", _co]] select (_co > 0)];
-    _items pushBack [_d, createHashMapFromArray [["relay", "Relais radio"], ["gw", "Passerelle véhicule"], ["cp", "Poste de commandement"]] getOrDefault [_k, "Relais radio"], _n, _r, _eff, _rate, _o isEqualTo _activeObj, _why,
+    _items pushBack [_d, createHashMapFromArray [["relay", "Relais radio"], ["gw", "Passerelle véhicule"], ["cp", "Poste de commandement"], ["mpu5", "MPU5 d'un équipier"]] getOrDefault [_k, "Relais radio"], _n, _r, _eff, _rate, _o isEqualTo _activeObj, _why,
         ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp"), _health];
 } forEach (["list"] call comspec_atak_native_fnc_relayNet);
 _items sort true;

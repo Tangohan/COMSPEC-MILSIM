@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Radio maillée MPU5 et voix ACRE2 dans l'app Wave Relay (ATAK natif 2.3.0, provisoire : version fixée au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Radio MPU5 et voix ACRE2 dans l'app Wave Relay
+- Une radio maillée MPU5 dans ton inventaire relie ton ATAK plus loin, et elle relaie le réseau à tes équipiers proches quand elle reçoit un relais.
+- Le nouvel onglet VOIX de l'app Wave Relay montre qui émet sur tes fréquences, le canal, la fréquence et le PTT de chacune de tes radios ACRE2.
+- Il liste aussi les équipiers connectés, avec leurs fréquences et ceux qui sont sur la tienne.
+EN : MPU5 radio and ACRE2 voice in the Wave Relay app
+- An MPU5 mesh radio in your inventory links your ATAK further, and relays the network to nearby teammates when it receives a relay.
+- The new VOICE tab of the Wave Relay app shows who is transmitting on your frequencies, and the channel, frequency and PTT of each of your ACRE2 radios.
+- It also lists connected teammates, with their frequencies and who is on yours.
+
+### Détail technique
+- Objet `COMSPEC_ATAK_MPU5` (CfgWeapons, modèle et icône de la radio vanilla, pas de 3D propre). Détection `fn_mpu5` "has" : cet objet, toute classe contenant « MPU5 », ou le réglage CBA `comspec_atak_native_mpu5_items`.
+- Réglages `comspec_atak_native_mpu5_range` (6 000 m), `_mpu5_gain` (8 dB), `_mpu5_mbps` (20 Mbit/s), `_mpu5_items`.
+- Maillage (`fn_waveRelayAction` "scan") : portée du nœud MPU5 relevée. Liaison (`fn_relayNet` "best") : gain MPU5 ajouté au bilan radio. Relais d'équipe : `fn_relayNet` "list" ajoute les MPU5 des équipiers (type `mpu5`) avec le débit montant qu'elles publient (`COMSPEC_ATAK_Mpu5` [Mbit/s, bonds], au plus 3 bonds), brouillage compris ; exclues des passerelles du maillage.
+- Voix ACRE2 : événements CBA `acre_startedSpeaking` / `acre_stoppedSpeaking` (joueur) et `acre_remoteStartedSpeaking` / `acre_remoteStoppedSpeaking` (autres, type 1 = radio) ; fréquence lue dans `acre_sys_data_fnc_dataEvent` "getCurrentChannelData", sinon préréglage (`acre_api_fnc_getPresetChannelField`) ; PTT par `acre_api_fnc_getMultiPushToTalkAssignment`. Chaque téléphone publie `COMSPEC_ATAK_VoiceNet` [[id radio, MHz, canal]...] au changement.
+- Limites : ACRE2 n'a pas de radio maillée, la voix reste sur les radios ACRE2 ; « qui émet » = émissions sur les fréquences réglées sur mes radios, portée radio non vérifiée ; joueurs sans ATAK absents de la liste.
+- Onglet TALKGROUPS renommé VOIX avec ACRE2 (inchangé sans ACRE2) ; MON NŒUD montre la MPU5. 38 traductions anglaises, 2 clés de stringtable.
+- À tester en jeu : objet MPU5 dans l'inventaire (toast, portée sur RÉSEAU, gain sur la liaison), relais d'équipe avec un relais de mission en « réseau exclusivement par relais », onglet VOIX avec PRC-152 / PRC-148 / PRC-343 (fréquences, PTT 1-3, émission locale et distante). Aucun DLL ni migration ; main.pbo à reconstruire au regroupement.
+
+---
+
 ## Regroupement : Samsung S23 durci, drone refait et plus léger, ATAK compromis visible, touches dans le téléphone (ATAK natif 2.2.1.AB - Denver, COMSPEC Link 2.0.90)
 
 ### Résumé joueur

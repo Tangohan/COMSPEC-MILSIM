@@ -32,6 +32,11 @@
             <English>COMSPEC — ATAK · Network</English>
             <French>COMSPEC — ATAK · Réseau</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_09B95E249C">
+            <Original>Radio maillée MPU5</Original>
+            <English>MPU5 mesh radio</English>
+            <French>Radio maillée MPU5</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_0AB5F74BB5">
             <Original>Téléphone ATAK (JPC)</Original>
             <English>ATAK phone (JPC)</English>
@@ -566,6 +571,11 @@
             <Original>Allumé</Original>
             <English>On</English>
             <French>Allumé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A55435B201">
+            <Original>Radio MANET Wave Relay. Dans l'inventaire : le téléphone ATAK passe par elle (portée et débit relevés, relais pour l'équipe). La voix reste sur vos radios ACRE2, visibles dans l'app Wave Relay &gt; VOIX.</Original>
+            <English>Wave Relay MANET radio. In your inventory, the ATAK phone goes through it (more range and throughput, relay for the team). Voice stays on your ACRE2 radios, shown in the Wave Relay app &gt; VOICE.</English>
+            <French>Radio MANET Wave Relay. Dans l'inventaire : le téléphone ATAK passe par elle (portée et débit relevés, relais pour l'équipe). La voix reste sur vos radios ACRE2, visibles dans l'app Wave Relay &gt; VOIX.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_A692CFB580">
             <Original>Téléphone COMSPEC ATAK (Samsung S7)</Original>
