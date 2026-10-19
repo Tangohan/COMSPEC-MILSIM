@@ -38,20 +38,20 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : bandeau de la carte, arsenal ACE réparé, briefing et CAS dans le téléphone, diapositives Athena, chargement plus fluide (ATAK natif 2.3.5.AB - Denver)
+## Regroupement : bandeau de la carte, arsenal ACE réparé, briefing et CAS dans le téléphone, ancien menu ACE retiré, diapositives Athena, Connexion Athena dans Eden (SSE), chargement plus fluide (ATAK natif 2.3.5.AB - Denver)
 
 ### Résumé joueur
 Type : nouveauté
 FR : Carte plus lisible, arsenal réparé, plus rien par-dessus le jeu
 - Carte : le curseur et ta position tiennent dans un bandeau compact en bas à gauche (grille, distance, azimut), avec ton cap en direct et ton indicatif à la couleur de ton équipe de feu ; les noms des repères ne passent plus dessous, et le cercle de l'unité sélectionnée garde la même taille au zoom.
 - Arsenal ACE : on peut de nouveau taper un nom (Tenues Athena et Mes équipements), et Mes tenues gagne la sélection multiple, la suppression en une fois et Annuler.
-- Le briefing s'ouvre dans l'app BRIEFING et une demande CAS arrive en notification du téléphone, au lieu des anciennes fenêtres plein écran ; une diapositive Athena noire s'affiche, ou le téléphone dit pourquoi.
-- Aussi : arrivée en mission plus fluide, plus de carrés noirs dans Vidéo Live sur un drone du camp, capture de la carte Zeus avec reprise, et la tablette sur le JPC passe en chantier (W.I.P).
+- Plus rien par-dessus le jeu : le briefing s'ouvre dans l'app BRIEFING, une demande CAS arrive en notification du téléphone et l'ancien menu ACE « COMSPEC Athena » à fenêtres plein écran est retiré ; une diapositive Athena noire s'affiche, ou le téléphone dit pourquoi.
+- Aussi : Connexion Athena et temps passé dans Eden comptés avec COMSPEC SSE, arrivée en mission plus fluide, plus de carrés noirs dans Vidéo Live, capture de la carte Zeus avec reprise, et la tablette sur le JPC passe en chantier (W.I.P).
 EN : Clearer map, arsenal fixed, nothing over the game any more
 - Map: the cursor and your position fit in one compact bar at the bottom left (grid, distance, bearing), with your live heading and your callsign in your fire team colour; marker names no longer slide under it, and the selected unit's ring keeps the same size at any zoom.
 - ACE arsenal: you can type a name again (Athena outfits and My loadouts), and My outfits gets multiple selection, delete in one go and Undo.
-- The briefing opens in the BRIEFING app and a CAS request arrives as a phone notification, instead of the old full-screen windows; a black Athena slide now shows, or the phone says why.
-- Also: smoother mission start, no more black squares in Live video on a friendly drone, Zeus map capture that resumes, and the tablet on the JPC becomes work in progress (W.I.P).
+- Nothing over the game any more: the briefing opens in the BRIEFING app, a CAS request arrives as a phone notification and the old "COMSPEC Athena" ACE menu with full-screen windows is removed; a black Athena slide now shows, or the phone says why.
+- Also: Athena sign-in and Eden time counted with COMSPEC SSE, smoother mission start, no more black squares in Live video, Zeus map capture that resumes, and the tablet on the JPC becomes work in progress (W.I.P).
 
 ### Détail technique
 - #982 (déjà sur main) : `fn_pageLivecam` ne pose le panoramique et RENOMMER que pour une caméra fixe ; flèches ◀ ▶ (absentes des polices) remplacées par `<` `>` en Barlow.
@@ -76,9 +76,10 @@ EN : Clearer map, arsenal fixed, nothing over the game any more
 - Sélection multiple (`fn_arsenalOverlayAction` pick / markAll / deleteMarked / undoDelete, `fn_arsenalOverlayMark`) : cases dans la colonne d'état, une seule écriture de `ace_arsenal_saved_loadouts` pour toute la sélection, corbeille `COMSPEC_ArsenalTrash` (profil) pour Annuler (une tenue du même nom enregistrée depuis n'est pas écrasée). Les tenues déjà sur le site y restent.
 - À tester en jeu : taper, effacer et Entrée dans les deux champs du panneau ; Ctrl+C / Ctrl+V dans un champ (ne doit plus exporter) ; Mes équipements d'ACE : taper un nom, Enregistrer, puis revenir ; panneau Tenues fermé puis Mes équipements ; Sélection multiple, Tout cocher avec une collection choisie, Supprimer la sélection, Annuler ; re-clic sur une tenue cochée (la décoche).
 - #989, capture de la carte (module Zeus) : 3 hauteurs par défaut (300, 800, 2000 m), cases en mer sautées, suivi du relevé dans le profil (`COMSPEC_ATAK_MapCapProg`, enregistré toutes les 25 images), reprise sur la même grille, dossier réel du profil dans les messages, ligne `CMAPF|fichier` par image.
-- #990, addon Overwatch connect embarqué (pas `atak_athena`, gelé) : `fn_openBriefingBoard` ouvre l'app BRIEFING (ou une notification sans téléphone) au lieu de `COMSPEC_Briefing_Dialog` ; `fn_receiveCASRequest` envoie une notification qui ouvre l'app CAS au lieu de la visionneuse 9 lignes ; boucle `CBA_fnc_addDisplayHandler` retirée de `fn_registerZeusAttributeButtons` (erreur « Unknown enum value: rscdisplayattributes »).
-- Version 2.3.5, main.pbo et comspec_overwatch_connect.pbo reconstruits proprement avec HEMTT (plus de PBO patchés), `verify_build.py` OK. COMSPEC Link inchangé (2.0.90). La partie site de #986 part avec le déploiement VPS.
-- À tester en jeu (rien ne l'a été) : bandeau de la carte ; saisie et sélection multiple dans l'arsenal ; Briefing / diaporama et CAS depuis Athena ; diapositives JPG et PNG ; Vidéo Live sur un drone du camp et une caméra fixe ; capture de la carte avec reprise ; touche et ligne Tablette sur le JPC ; absence d'erreur CBA au lancement.
+- #990, addon Overwatch connect embarqué (pas `atak_athena`, gelé) : `fn_openBriefingBoard` ouvre l'app BRIEFING (ou une notification sans téléphone) au lieu de `COMSPEC_Briefing_Dialog` ; `fn_receiveCASRequest` envoie une notification qui ouvre l'app CAS au lieu de la visionneuse 9 lignes ; boucle `CBA_fnc_addDisplayHandler` retirée de `fn_registerZeusAttributeButtons` (erreur « Unknown enum value: rscdisplayattributes »). Ancien menu ACE « COMSPEC Athena » retiré sous le natif (`fn_initACE`, `fn_initACEAthena`, `fn_initATAKMenu`, `fn_addRelayDashboardActions`) : ne restent que les actions sans fenêtre ; nouveau `fn_openNativePage` (Ctrl+Maj+S ouvre l'app FRS, MEDEVAC ouvre MEDICAL, « Service Athéna » ouvre les Réglages du téléphone).
+- #992, COMSPEC SSE : `fn_dashCollect` (`[getText, getNumber] select isNumber` évaluait `getNumber "RANDOM"`) remplacé par un if/else ; nouveau `comspec_sse_fnc_athenaEden` (reprise de session `RestoreSession`, sinon code court `PairStart` / `PairStatus`, aucune clé dans le SQF), entrée « Connexion Athena » du menu COMSPEC SSE et bouton du tableau de bord ; temps Eden actif (pause après 5 min sans saisie, aperçu non compté) envoyé par `ReportPlaytime` contexte `editor` toutes les 5 min, à l'aperçu et à la fermeture. `comspec_sse_guide.pbo` et `comspec_sse_main.pbo` repackés ; DLL et site inchangés.
+- Version 2.3.5, main.pbo reconstruit avec HEMTT et comspec_overwatch_connect.pbo repacké depuis ses sources (plus de PBO patchés), `verify_build.py` OK. COMSPEC Link inchangé (2.0.90). La partie site de #986 part avec le déploiement VPS ; le mod COMSPEC SSE (#992) est à republier sur son propre item Steam.
+- À tester en jeu (rien ne l'a été) : bandeau de la carte ; saisie et sélection multiple dans l'arsenal ; Briefing / diaporama et CAS depuis Athena ; diapositives JPG et PNG ; Vidéo Live sur un drone du camp et une caméra fixe ; capture de la carte avec reprise ; touche et ligne Tablette sur le JPC ; absence d'erreur CBA au lancement ; menu ACE COMSPEC Athena (plus de fenêtre plein écran, Ctrl+Maj+S, MEDEVAC, Service Athéna) ; SSE dans Eden (tableau de bord sans erreur RANDOM, Connexion Athena, ligne Eden de la fiche personnel).
 
 ---
 
