@@ -306,7 +306,10 @@ switch (_function) do {
             case "cancelled": { "Chargement annulé." };
             default { if (_message isEqualTo "") then { "Échec du chargement Google Slides." } else { _message } };
         };
-        ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
+        // Présentation non partagée / introuvable : réglage de la communauté (vérifié sur le site), pas une erreur du mod
+        // → WARN, donc pas de rapport automatique à chaque joueur et à chaque session.
+        private _level = ["ERROR", "WARN"] select (_code in ["private", "not_found"]);
+        ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", _level] call comspec_overwatch_connect_fnc_logFnError;
         ["COMSPEC_Warning", [_human]] call comspec_overwatch_connect_fnc_showNotification;
     };
     case "SseNoteAttachment": {

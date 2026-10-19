@@ -399,8 +399,10 @@ public static partial class Extension
         return sb.ToString().Trim();
     }
 
+    // Pointeurs UTF-8 passés à la main : Arma lit les données du callback en UTF-8. Avec LPStr (page de code
+    // ANSI), « é » partait en octet 0xE9 et arrivait en « � » côté jeu puis dans les rapports (2.0.89).
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    private delegate int ExtensionCallback([MarshalAs(UnmanagedType.LPStr)] string name, [MarshalAs(UnmanagedType.LPStr)] string function, [MarshalAs(UnmanagedType.LPStr)] string data);
+    private delegate int ExtensionCallback(nint name, nint function, nint data);
 
     private static ExtensionCallback? _callback;
 
@@ -422,11 +424,34 @@ public static partial class Extension
             // Arma callback peut être appelé hors thread jeu ; démarrer une tâche dédiée.
             _ = Task.Run(() =>
             {
-                try { cb("comspec", function, data); }
+                nint pName = 0, pFunction = 0, pData = 0;
+                try
+                {
+                    pName = Marshal.StringToCoTaskMemUTF8("comspec");
+                    pFunction = Marshal.StringToCoTaskMemUTF8(function);
+                    pData = Marshal.StringToCoTaskMemUTF8(Utf8Clip(data, 20000));
+                    cb(pName, pFunction, pData);
+                }
                 catch { /* ne jamais faire planter le process hôte */ }
+                finally
+                {
+                    if (pName != 0) Marshal.FreeCoTaskMem(pName);
+                    if (pFunction != 0) Marshal.FreeCoTaskMem(pFunction);
+                    if (pData != 0) Marshal.FreeCoTaskMem(pData);
+                }
             });
         }
         catch { }
+    }
+
+    /// <summary>Coupe à <paramref name="maxBytes"/> octets UTF-8 sans casser un caractère (limite du tampon callback).</summary>
+    private static string Utf8Clip(string s, int maxBytes)
+    {
+        if (Encoding.UTF8.GetByteCount(s) <= maxBytes) return s;
+        var bytes = Encoding.UTF8.GetBytes(s);
+        var end = maxBytes;
+        while (end > 0 && (bytes[end] & 0xC0) == 0x80) end--; // ne pas couper au milieu d'un caractère
+        return Encoding.UTF8.GetString(bytes, 0, end);
     }
 
     private static void ApplyModVersion(string? raw)
@@ -3247,7 +3272,8 @@ public static partial class Extension
                 _baseUrl = baseUrl;
                 var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
-                if (steam.Length >= 10) _steamUid = steam;
+                // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
+                ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
                     ? _terminalUid
                     : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
@@ -3364,7 +3390,8 @@ public static partial class Extension
                 var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
                 _baseUrl = baseUrl;
-                if (steam.Length >= 10) _steamUid = steam;
+                // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
+                ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
                     ? _terminalUid
                     : (_gameDeviceId.Length > 0 ? _gameDeviceId : ("ATAK-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant()));
