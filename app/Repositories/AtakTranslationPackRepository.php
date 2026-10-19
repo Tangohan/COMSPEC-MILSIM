@@ -57,6 +57,30 @@ final class AtakTranslationPackRepository
         return $ok;
     }
 
+    private static ?bool $workshopReady = null;
+
+    /** Tables du Workshop des langues présentes (migrations/20261019000010_atak_translation_workshop.sql) ? */
+    public function workshopReady(): bool
+    {
+        if (self::$workshopReady === true) {
+            return true;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+            );
+            $st->execute(['atak_translation_releases']);
+            $ok = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $ok = false;
+        }
+        if ($ok) {
+            self::$workshopReady = true;
+        }
+
+        return $ok;
+    }
+
     // ---------- Valeurs reçues ----------
 
     public static function validCode(mixed $code): ?string
@@ -100,6 +124,37 @@ final class AtakTranslationPackRepository
         }
 
         return str_replace("\0", '', $s);
+    }
+
+    /**
+     * Identifiant d'un objet Steam Workshop : chiffres seuls, ou tiré d'une adresse
+     * steamcommunity.com/sharedfiles/filedetails/?id=…, steam://url/CommunityFilePage/…. '' : effacé ; null : invalide.
+     */
+    public static function workshopId(mixed $s): ?string
+    {
+        $s = is_string($s) ? trim($s) : '';
+        if ($s === '') {
+            return '';
+        }
+        if (preg_match('/^[0-9]{6,15}$/', $s) === 1) {
+            return $s;
+        }
+        if (preg_match('~^(?:https?://(?:www\.)?steamcommunity\.com/(?:sharedfiles|workshop)/filedetails/?\?(?:[^#]*&)?id=([0-9]{6,15})|steam://url/CommunityFilePage/([0-9]{6,15}))(?:[&#/].*)?$~i', $s, $m) === 1) {
+            return $m[1] !== '' ? $m[1] : $m[2];
+        }
+
+        return null;
+    }
+
+    /** Description du pack dans le Workshop : texte libre sur plusieurs lignes, contrôles retirés, 600 caractères. */
+    public static function cleanDescription(mixed $s): string
+    {
+        $s = is_string($s) && mb_check_encoding($s, 'UTF-8') ? $s : '';
+        $s = str_replace(["\r\n", "\r"], "\n", $s);
+        $s = (string) preg_replace('/[\x00-\x09\x0B-\x1F\x7F]+/u', ' ', $s);
+        $s = (string) preg_replace("/\n{3,}/", "\n\n", $s);
+
+        return trim(mb_substr($s, 0, 600));
     }
 
     public static function newToken(): string
@@ -190,6 +245,11 @@ final class AtakTranslationPackRepository
             'review_mode' => (string) $pack['review_mode'],
             'created_at' => (string) $pack['created_at'],
             'rev' => (int) $pack['rev'],
+            'listed' => (bool) ($pack['listed'] ?? false),
+            'blocked' => (bool) ($pack['blocked'] ?? false),
+            'description' => (string) ($pack['description'] ?? ''),
+            'workshop_id' => (string) ($pack['workshop_id'] ?? ''),
+            'downloads' => (int) ($pack['downloads'] ?? 0),
         ];
     }
 
@@ -437,5 +497,194 @@ final class AtakTranslationPackRepository
             }
             throw $e;
         }
+    }
+
+    // ---------- Workshop des langues ----------
+
+    /** @return array<string, string> phrases actuelles du pack (clé => texte), sans les vides */
+    public function strings(int $packId): array
+    {
+        $st = $this->pdo()->prepare("SELECT key_hash, text FROM atak_translation_strings WHERE pack_id = ? AND text <> ''");
+        $st->execute([$packId]);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $out[(string) $r['key_hash']] = (string) $r['text'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Fige une nouvelle version du pack (v1, v2…) et le met dans le catalogue.
+     *
+     * @param array<string, string> $map phrases publiées (clé => texte)
+     * @param array{atak_version: string, template_fp: string, template_total: int, translated: int, note: string, audit_fp: string, audit_json: string} $info
+     * @param array{description: string, workshop_id: string} $listing
+     */
+    public function publish(int $packId, array $map, array $info, array $listing): int
+    {
+        $payload = gzcompress((string) json_encode($map, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 6);
+        $pdo = $this->pdo();
+        $pdo->beginTransaction();
+        try {
+            $st = $pdo->prepare('SELECT COALESCE(MAX(version), 0) + 1 FROM atak_translation_releases WHERE pack_id = ? FOR UPDATE');
+            $st->execute([$packId]);
+            $version = (int) $st->fetchColumn();
+            $pdo->prepare(
+                'INSERT INTO atak_translation_releases (pack_id, version, atak_version, template_fp, template_total, translated, note, payload, audit_fp, audit_json)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            )->execute([
+                $packId, $version, $info['atak_version'], $info['template_fp'], $info['template_total'], $info['translated'],
+                $info['note'], $payload, $info['audit_fp'], $info['audit_json'],
+            ]);
+            $pdo->prepare('UPDATE atak_translation_packs SET listed = 1, description = ?, workshop_id = ?, published_at = NOW(), updated_at = NOW() WHERE id = ?')
+                ->execute([$listing['description'], $listing['workshop_id'], $packId]);
+            $pdo->commit();
+
+            return $version;
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /** Fiche du catalogue sans nouvelle version : retrait / remise en ligne, description, objet Steam. */
+    public function updateListing(int $packId, bool $listed, string $description, string $workshopId): void
+    {
+        $this->pdo()->prepare('UPDATE atak_translation_packs SET listed = ?, description = ?, workshop_id = ?, updated_at = NOW() WHERE id = ?')
+            ->execute([$listed ? 1 : 0, $description, $workshopId, $packId]);
+    }
+
+    /** Retrait par l'administration du site (contenu inapproprié) : le pack disparaît du catalogue. */
+    public function setBlocked(int $packId, bool $blocked): void
+    {
+        $this->pdo()->prepare('UPDATE atak_translation_packs SET blocked = ? WHERE id = ?')->execute([$blocked ? 1 : 0, $packId]);
+    }
+
+    public function countDownload(int $packId): void
+    {
+        $this->pdo()->prepare('UPDATE atak_translation_packs SET downloads = downloads + 1 WHERE id = ?')->execute([$packId]);
+    }
+
+    private const RELEASE_COLS = 'r.id AS release_id, r.version, r.atak_version, r.template_fp, r.template_total, r.translated, r.note, r.audit_fp, r.audit_json, r.created_at AS released_at';
+
+    /**
+     * Packs du catalogue, chacun avec sa dernière version.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catalog(): array
+    {
+        $st = $this->pdo()->query(
+            'SELECT p.id, p.public_id, p.lang_code, p.lang_name, p.game_language, p.author_label, p.description, p.workshop_id, p.downloads, p.published_at, ' . self::RELEASE_COLS . '
+             FROM atak_translation_packs p
+             JOIN atak_translation_releases r ON r.pack_id = p.id
+              AND r.version = (SELECT MAX(r2.version) FROM atak_translation_releases r2 WHERE r2.pack_id = p.id)
+             WHERE p.listed = 1 AND p.blocked = 0
+             ORDER BY p.published_at DESC LIMIT 300'
+        );
+
+        return $st === false ? [] : array_values($st->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Fiche publique d'un pack (dernière version) ; null s'il n'a jamais été publié, ou retiré (sauf $evenHidden).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function listedPack(string $publicId, bool $evenHidden = false): ?array
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT p.id, p.public_id, p.lang_code, p.lang_name, p.game_language, p.author_label, p.description, p.workshop_id, p.downloads, p.published_at, p.listed, p.blocked, ' . self::RELEASE_COLS . '
+             FROM atak_translation_packs p
+             JOIN atak_translation_releases r ON r.pack_id = p.id
+              AND r.version = (SELECT MAX(r2.version) FROM atak_translation_releases r2 WHERE r2.pack_id = p.id)
+             WHERE p.public_id = ? LIMIT 1'
+        );
+        $st->execute([$publicId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return null;
+        }
+        if (!$evenHidden && ((int) $row['listed'] !== 1 || (int) $row['blocked'] === 1)) {
+            return null;
+        }
+
+        return $row;
+    }
+
+    /** @return array<string, mixed>|null dernière version publiée d'un pack */
+    public function latestRelease(int $packId): ?array
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT r.id AS release_id, r.version, r.atak_version, r.template_fp, r.template_total, r.translated, r.note, r.audit_fp, r.audit_json, r.created_at AS released_at
+             FROM atak_translation_releases r WHERE r.pack_id = ? ORDER BY r.version DESC LIMIT 1'
+        );
+        $st->execute([$packId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return list<array<string, mixed>> versions publiées, la plus récente d'abord (journal des versions) */
+    public function releases(int $packId, int $limit = 20): array
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT version, atak_version, template_total, translated, note, created_at FROM atak_translation_releases WHERE pack_id = ? ORDER BY version DESC LIMIT ' . max(1, $limit)
+        );
+        $st->execute([$packId]);
+
+        return array_values($st->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /** @return array<string, string> phrases d'une version publiée (clé => texte) */
+    public function releasePayload(int $releaseId): array
+    {
+        $st = $this->pdo()->prepare('SELECT payload FROM atak_translation_releases WHERE id = ?');
+        $st->execute([$releaseId]);
+        $raw = $st->fetchColumn();
+        $json = is_string($raw) ? @gzuncompress($raw) : false;
+        $data = is_string($json) ? json_decode($json, true) : null;
+        $out = [];
+        foreach (is_array($data) ? $data : [] as $h => $t) {
+            if (is_string($t)) {
+                $out[(string) $h] = $t;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Garde les clés du modèle du mod sous son empreinte (une fois par version du modèle).
+     *
+     * @param list<string> $keys
+     */
+    public function saveTemplateKeys(string $fp, string $atakVersion, array $keys): void
+    {
+        $this->pdo()->prepare('INSERT IGNORE INTO atak_translation_template_keys (fp, atak_version, total, keys_gz) VALUES (?, ?, ?, ?)')
+            ->execute([$fp, $atakVersion, count($keys), gzcompress(implode('', $keys), 6)]);
+    }
+
+    /** @return list<string>|null clés du modèle de cette empreinte, null si elle n'a pas été gardée */
+    public function templateKeys(string $fp): ?array
+    {
+        $st = $this->pdo()->prepare('SELECT keys_gz FROM atak_translation_template_keys WHERE fp = ?');
+        $st->execute([$fp]);
+        $raw = $st->fetchColumn();
+        $flat = is_string($raw) ? @gzuncompress($raw) : false;
+        if (!is_string($flat)) {
+            return null;
+        }
+
+        return $flat === '' ? [] : str_split($flat, 16);
+    }
+
+    /** Résultat du contrôle d'une version contre le modèle actuel du mod (gardé jusqu'à la prochaine mise à jour). */
+    public function saveAudit(int $releaseId, string $fp, string $json): void
+    {
+        $this->pdo()->prepare('UPDATE atak_translation_releases SET audit_fp = ?, audit_json = ? WHERE id = ?')->execute([$fp, $json, $releaseId]);
     }
 }

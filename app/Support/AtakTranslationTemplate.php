@@ -137,6 +137,39 @@ final class AtakTranslationTemplate
         return substr(md5((string) md5_file($path) . (is_file($cat) ? (string) md5_file($cat) : '')), 0, 16);
     }
 
+    /** Configuration du mod qui déclare les langues livrées avec l'ATAK (CfgComspecLanguages). */
+    public const MAIN_CONFIG = 'mod/COMSPEC_ATAK_Native/Sources/addons/main/config.cpp';
+
+    /**
+     * Langues livrées avec le mod lui-même : le français (langue du code) et les classes de CfgComspecLanguages du
+     * main.pbo. Quand une mise à jour du mod en ajoute une, les packs communautaires de ce code passent « officielle ».
+     *
+     * @return array<string, string> code => nom
+     */
+    public static function officialLanguages(?string $root = null): array
+    {
+        $path = rtrim($root ?? base_path(), '/') . '/' . self::MAIN_CONFIG;
+        $raw = is_file($path) ? (string) file_get_contents($path) : '';
+
+        return ['fr' => 'Français'] + self::parseLanguages($raw);
+    }
+
+    /** @return array<string, string> */
+    public static function parseLanguages(string $config): array
+    {
+        $out = [];
+        if (preg_match('/class\s+CfgComspecLanguages\s*\{(.*?)\n\};/s', $config, $m) !== 1) {
+            return $out;
+        }
+        if (preg_match_all('/class\s+([a-z]{2})\s*\{[^}]*?name\s*=\s*"([^"]*)"/', $m[1], $all, PREG_SET_ORDER) > 0) {
+            foreach ($all as $row) {
+                $out[$row[1]] = $row[2];
+            }
+        }
+
+        return $out;
+    }
+
     private static function path(?string $root): string
     {
         return rtrim($root ?? base_path(), '/') . '/' . self::TEMPLATE;
