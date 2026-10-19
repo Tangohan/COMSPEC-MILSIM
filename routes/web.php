@@ -706,6 +706,20 @@ return function (Router $router) {
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
     $router->get('/documents/mes-documents', [\App\Controllers\Web\DocumentInboxController::class, 'index'], $mwDocuments);
+    // Fichiers partagés de la communauté : rien n'est visible sans partage (contrôle dans le contrôleur, élément par élément).
+    $router->get('/partage', [\App\Controllers\Web\FileShareController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/partage/fichiers/{id}', [\App\Controllers\Web\FileShareController::class, 'download'], [AuthMiddleware::class]);
+    $router->post('/partage/fichiers/{id}/renommer', [\App\Controllers\Web\FileShareController::class, 'renameFile'], [AuthMiddleware::class]);
+    $router->post('/partage/fichiers/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'deleteFile'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers', [\App\Controllers\Web\FileShareController::class, 'createFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/modifier', [\App\Controllers\Web\FileShareController::class, 'updateFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'deleteFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/fichiers', [\App\Controllers\Web\FileShareController::class, 'upload'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/reprendre', [\App\Controllers\Web\FileShareController::class, 'takeOver'], [AuthMiddleware::class]);
+    $router->post('/partage/acces', [\App\Controllers\Web\FileShareController::class, 'share'], [AuthMiddleware::class]);
+    $router->post('/partage/acces/{id}/retirer', [\App\Controllers\Web\FileShareController::class, 'unshare'], [AuthMiddleware::class]);
+    $router->post('/partage/corbeille/{type}/{id}/restaurer', [\App\Controllers\Web\FileShareController::class, 'restore'], [AuthMiddleware::class]);
+    $router->post('/partage/corbeille/{type}/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'purge'], [AuthMiddleware::class]);
     $router->get('/documents/doctrine/{id}', [DoctrineDocumentsController::class, 'show'], $mwDocuments);
     $router->post('/documents/doctrine/{id}/acknowledge', [DoctrineDocumentsController::class, 'acknowledge'], $mwDocuments);
     $router->post('/documents/{id}/unlock', [DocumentsController::class, 'unlock'], $mwDocuments);
@@ -1854,6 +1868,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/escouades', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/temps-ecran', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'screenTime'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/metriques-joueurs', [\App\Controllers\Admin\AdminPlayerMetricsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/partage', [\App\Controllers\Web\FileShareController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/heures', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'hours'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/files-envoi', [\App\Controllers\Admin\AdminAtakSendQueueController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     // Remontées : comptes rendus et fiches de renseignement suivis comme des pull requests (contrôle d'accès dans le contrôleur).
