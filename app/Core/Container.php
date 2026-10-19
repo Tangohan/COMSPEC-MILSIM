@@ -520,6 +520,13 @@ class Container
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
             ),
+            \App\Controllers\Admin\System\SystemDiscordShowcaseController::class => new \App\Controllers\Admin\System\SystemDiscordShowcaseController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+            ),
+            \App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class => new \App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController(
+                self::get(AuthService::class),
+            ),
             \App\Controllers\Admin\System\SystemIndicatorBlocklistController::class => new \App\Controllers\Admin\System\SystemIndicatorBlocklistController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),

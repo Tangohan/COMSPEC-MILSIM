@@ -209,4 +209,13 @@ final class DiscordShowcaseServiceTest extends TestCase
         self::assertStringContainsString('type="password" name="webhook"', $view);
         self::assertStringNotContainsString('value="<?= $h($hook', $view);
     }
+
+    public function testControllersAreRegisteredInTheContainer(): void
+    {
+        // Le routeur passe par Container::get : un contrôleur absent du conteneur donne une erreur 500.
+        $container = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Core/Container.php');
+        foreach (['SystemDiscordShowcaseController', 'OrganizationDiscordShowcaseController'] as $class) {
+            self::assertStringContainsString($class . '::class => new ', $container, $class);
+        }
+    }
 }
