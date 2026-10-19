@@ -762,6 +762,8 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 // puis toutes les 10 min).
 [{ ["check"] call comspec_atak_native_fnc_serverPresence; }, 60] call CBA_fnc_addPerFrameHandler;
 [{ ["check"] call comspec_atak_native_fnc_serverPresence; }, [], 20] call CBA_fnc_waitAndExecute;
+// Avis de l'administration ATHENA (compromission, annulation, données réinitialisées, certificat, message imposé).
+[{ ["check"] call comspec_atak_native_fnc_adminNotices; }, 30] call CBA_fnc_addPerFrameHandler;
 
 // Tinder : un joueur m'a liké (match si c'est réciproque).
 ["comspec_atak_native_rencard", {
