@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
 {
@@ -90,7 +91,7 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringNotContainsString('["CAManBase", 1, _path, _actionId]', $ace);
         self::assertStringNotContainsString('["CAManBase", 1, _mainPath, _x]', $ace);
 
-        self::assertStringContainsString('1.0.165', $cfg);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfg));
         $onOrder = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_onOrderReceived.sqf'
         );
@@ -100,7 +101,7 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_OrderIceManAt', $onOrder);
         self::assertStringContainsString('_isolate', $onOrder);
         self::assertStringContainsString('_added >= 1', $sync);
-        self::assertStringContainsString('2.0.52', $ext);
+        ModVersion::assertAtLeast('2.0.52', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9.]+)"/', $ext));
 
         self::assertStringContainsString('COMSPEC_StatusUpdating', $status);
         self::assertStringNotContainsString('fnc_refreshLinkState', $status);
@@ -111,7 +112,7 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringContainsString('count _windowSent) > 100', $sent);
         self::assertStringNotContainsString('ctrlParent _fx isNotEqualTo', $overlay);
 
-        self::assertStringContainsString('taille de tableau n�gative', strtolower($bug));
+        self::assertStringContainsString('taille de tableau négative', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);
         self::assertStringNotContainsString('callExtension', $bug);
     }

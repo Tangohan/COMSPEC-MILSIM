@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Repositories\TenantRepository;
 use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Community\TenantTypeConfig;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -874,7 +875,7 @@ final class ConfigurationUpdateProbes
                 'SELECT 1
                  FROM role_permissions rp
                  INNER JOIN permissions p ON p.id = rp.permission_id
-                 WHERE p.tenant_id = ? AND p.slug = ?
+                 WHERE p.tenant_id = ? AND ' . SqlText::equals($this->pdo, 'p.slug') . '
                  LIMIT 1'
             );
             $st->execute([$tenantId, 'atak.command.alert']);

@@ -147,7 +147,7 @@ window.OverwatchGlLayers = (function () {
     var longEdge = Math.max(w, d);
     var area = w * d;
     if (shortEdge < 1.15 && h >= 3.2 && h >= longEdge * 1.15) return 'pole';
-    if (shortEdge < 1.0 && h > shortEdge * 3.5) return 'pole';
+    if (shortEdge < 1.0 && h > shortEdge * 3.5 && h >= longEdge) return 'pole';
     if (shortEdge < 1.55 && longEdge / Math.max(0.01, shortEdge) >= 4) return 'ribbon';
     if (area < 9 && h > 2.8 && shortEdge < 2.2) return 'panel';
     return 'building';

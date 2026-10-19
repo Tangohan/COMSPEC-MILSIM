@@ -6,6 +6,7 @@ namespace Tests\Unit;
 
 use App\Services\Tactical\AtakExperienceService;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class OverwatchServerControlAssetTest extends TestCase
 {
@@ -43,15 +44,21 @@ final class OverwatchServerControlAssetTest extends TestCase
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         $cfg = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp');
 
-        self::assertStringContainsString('Contr�le de mission', $view);
-        self::assertStringContainsString('Exiger un relais pour la liaison de donn�es', $view);
+        self::assertStringContainsString('Contrôle de mission', $view);
+        // Le réglage « relais obligatoire » a été déplacé vers Simulation réseau et capteurs (roleplay) :
+        // la page renvoie vers lui et la vue roleplay porte la case link_via_relays.
+        self::assertStringContainsString('Exiger un relais pour la liaison', $view);
+        self::assertStringContainsString("url('back-office/atak/roleplay')", $view);
+        $roleplay = (string) file_get_contents($root . '/views/admin/atak/roleplay_enhanced.php');
+        self::assertStringContainsString('name="link_via_relays"', $roleplay);
+        self::assertStringContainsString('Liaison par relais', $roleplay);
         self::assertStringContainsString('Fonctions actives', $view);
         self::assertStringNotContainsString('endpoint', strtolower($view));
         self::assertStringNotContainsString('json', strtolower($view));
 
         self::assertStringContainsString('/back-office/atak/controle-serveur', $routes);
         self::assertStringContainsString('storeRules', $routes);
-        self::assertStringContainsString('Contr�le de mission', $nav);
+        self::assertStringContainsString('Contrôle de mission', $nav);
         self::assertStringContainsString('listForTenant', $ctrl);
         self::assertStringContainsString('OVERWATCH_SERVER_CONTROL_V1', $catalog);
         self::assertStringContainsString('OVERWATCH_SERVER_CONTROL_V1', $seed);
@@ -61,7 +68,10 @@ final class OverwatchServerControlAssetTest extends TestCase
         self::assertStringContainsString('comspec_sse_require_item', $apply);
         self::assertStringContainsString('athena_feed', $ext);
         self::assertStringContainsString('atak_realism', $ext);
-        self::assertStringContainsString('1.6.4', $cfg);
-        self::assertStringContainsString('2.0.52', $ext);
+        ModVersion::assertAtLeast('1.6.4', ModVersion::fromConfigCpp($cfg));
+        ModVersion::assertAtLeast(
+            '2.0.52',
+            ModVersion::match('/private const string ExtensionVersion = "([0-9][0-9.]*)"/', $ext)
+        );
     }
 }

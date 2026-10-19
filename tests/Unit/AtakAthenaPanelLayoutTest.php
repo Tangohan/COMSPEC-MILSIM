@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakAthenaPanelLayoutTest extends TestCase
 {
@@ -36,11 +37,13 @@ final class AtakAthenaPanelLayoutTest extends TestCase
         self::assertStringContainsString('idc = 9807', $hpp);
         self::assertStringContainsString('Déconnecter', $hpp);
         self::assertStringContainsString('Rouvrir canal', $hpp);
-        self::assertStringContainsString('Remonter le temps', $hpp);
+        // Bouton 9807 renommé « Envoyer le temps de mission » (ex-« Remonter le temps »).
+        self::assertStringContainsString('text = "Envoyer le temps de mission"', $hpp);
         self::assertStringContainsString('idc = 9770', $hpp);
         self::assertStringContainsString('idc = 9773', $hpp);
 
-        self::assertStringContainsString('Liaison OK', $lay);
+        // Libellé « Liaison OK » remplacé par l'état explicite du bouton de liaison (9734).
+        self::assertStringContainsString('Connecté — canal ouvert', $lay);
         self::assertStringContainsString('Connexion Athena', $lay);
         self::assertStringContainsString('9805', $lay);
         self::assertStringContainsString('9806', $lay);
@@ -59,7 +62,7 @@ final class AtakAthenaPanelLayoutTest extends TestCase
         self::assertStringNotContainsString('packet_loss', $upd);
 
         self::assertStringContainsString('logout', $auth);
-        self::assertStringContainsString('1.0.88', $cfg);
+        ModVersion::assertAtLeast('1.0.88', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('athena_homeAction', $cfg);
         self::assertStringContainsString('athena_selectHome', $cfg);
     }

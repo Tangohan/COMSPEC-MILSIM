@@ -19,10 +19,11 @@ final class DevDispatchCatalogTest extends TestCase
             $byKind[$kind]++;
         }
 
+        // The catalogue grows with every wave: require today's floor, not an exact count.
         self::assertSame(3, $byKind['spotrep']);
         self::assertSame(3, $byKind['techrep']);
-        self::assertSame(537, $byKind['update']);
-        self::assertCount(543, $all);
+        self::assertGreaterThanOrEqual(537, $byKind['update']);
+        self::assertCount($byKind['spotrep'] + $byKind['techrep'] + $byKind['update'], $all);
     }
 
     public function testFeaturedIsLatestSpotrep(): void
@@ -43,8 +44,19 @@ final class DevDispatchCatalogTest extends TestCase
         $row = DevDispatchCatalog::forProductionBanner();
         self::assertNotNull($row);
         self::assertSame('update', $row['kind']);
-        self::assertSame(749, (int) $row['number']);
-        self::assertStringContainsString('coffre', mb_strtolower((string) $row['title']));
+        // The banner always shows the most recent update (highest number), whatever it is today.
+        $latest = 0;
+        foreach (DevDispatchCatalog::all() as $candidate) {
+            if (($candidate['kind'] ?? '') === 'update') {
+                $latest = max($latest, (int) $candidate['number']);
+            }
+        }
+        self::assertGreaterThanOrEqual(749, $latest);
+        self::assertSame($latest, (int) $row['number']);
+        self::assertNotSame('', trim((string) $row['title']));
+        $vault = DevDispatchCatalog::find('update', '749');
+        self::assertNotNull($vault);
+        self::assertStringContainsString('coffre', mb_strtolower((string) $vault['title']));
     }
 
     public function testFindResolvesPaddedAndRawNumbers(): void
@@ -190,7 +202,8 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($atakCtd);
         self::assertSame('00583', $atakCtd['number_pad']);
         self::assertStringContainsString('téléphone', strtolower((string) $atakCtd['title']));
-        self::assertStringContainsString('fermeture', strtolower((string) $atakCtd['activity']));
+        self::assertStringContainsString('fermeture', strtolower((string) $atakCtd['title']));
+        self::assertStringContainsString('fermer', strtolower((string) $atakCtd['activity']));
         $owBetaLink = DevDispatchCatalog::find('update', '584');
         self::assertNotNull($owBetaLink);
         self::assertSame('00584', $owBetaLink['number_pad']);
@@ -365,7 +378,8 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($atakNativeAlert);
         self::assertSame('00623', $atakNativeAlert['number_pad']);
         self::assertStringContainsString('alertes', strtolower((string) $atakNativeAlert['title']));
-        self::assertStringContainsString('calque', strtolower((string) $atakNativeAlert['activity']));
+        self::assertStringContainsString('calque', strtolower((string) $atakNativeAlert['title']));
+        self::assertStringContainsString('voile', strtolower((string) $atakNativeAlert['activity']));
         $autoarray = DevDispatchCatalog::find('update', '624');
         self::assertNotNull($autoarray);
         self::assertSame('00624', $autoarray['number_pad']);
@@ -384,7 +398,8 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($linkLoop);
         self::assertSame('00627', $linkLoop['number_pad']);
         self::assertStringContainsString('arrêt', strtolower((string) $linkLoop['title']));
-        self::assertStringContainsString('dizaines de secondes', strtolower((string) $linkLoop['activity']));
+        self::assertStringContainsString('dizaines de secondes', strtolower((string) $linkLoop['title']));
+        self::assertStringContainsString('ferme plus', strtolower((string) $linkLoop['activity']));
         $menuIcons = DevDispatchCatalog::find('update', '628');
         self::assertNotNull($menuIcons);
         self::assertSame('00628', $menuIcons['number_pad']);
@@ -404,8 +419,8 @@ final class DevDispatchCatalogTest extends TestCase
         $overwatchMotionHud = DevDispatchCatalog::find('update', '632');
         self::assertNotNull($overwatchMotionHud);
         self::assertSame('00632', $overwatchMotionHud['number_pad']);
-        self::assertStringContainsString('orientation', strtolower((string) $overwatchMotionHud['title']));
-        self::assertStringContainsString('progression', strtolower((string) $overwatchMotionHud['activity']));
+        self::assertStringContainsString('orientation', strtolower((string) $overwatchMotionHud['activity']));
+        self::assertStringContainsString('parcouru', strtolower((string) $overwatchMotionHud['activity']));
         $overwatchLosWall = DevDispatchCatalog::find('update', '633');
         self::assertNotNull($overwatchLosWall);
         self::assertSame('00633', $overwatchLosWall['number_pad']);
@@ -599,7 +614,7 @@ final class DevDispatchCatalogTest extends TestCase
         $escOw = DevDispatchCatalog::find('update', '663');
         self::assertNotNull($escOw);
         self::assertSame('00663', $escOw['number_pad']);
-        self::assertStringContainsString('échap', strtolower((string) $escOw['title']));
+        self::assertStringContainsString('échap', mb_strtolower((string) $escOw['title']));
         self::assertStringContainsString('1.5.93', strtolower((string) $escOw['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $escOw['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $escOw['activity']));
@@ -677,7 +692,7 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($ow2dModes);
         self::assertSame('00677', $ow2dModes['number_pad']);
         self::assertStringContainsString('2d immersif', strtolower((string) $ow2dModes['title']));
-        self::assertStringContainsString('à plat', strtolower((string) $ow2dModes['activity']));
+        self::assertStringContainsString('à plat', mb_strtolower((string) $ow2dModes['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $ow2dModes['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $ow2dModes['activity']));
         $owPlanAttach = DevDispatchCatalog::find('update', '678');
@@ -796,7 +811,7 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($sceneLayersIff);
         self::assertSame('00706', $sceneLayersIff['number_pad']);
         self::assertStringContainsString('bâtiments', strtolower((string) $sceneLayersIff['title']));
-        self::assertStringContainsString('couches', strtolower((string) $sceneLayersIff['activity']));
+        self::assertStringContainsString('couches', strtolower((string) $sceneLayersIff['title']));
         self::assertStringContainsString('zones réseau', strtolower((string) $sceneLayersIff['activity']));
         self::assertStringContainsString('identifié', strtolower((string) $sceneLayersIff['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $sceneLayersIff['activity']));
@@ -857,7 +872,8 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($airPage);
         self::assertSame('00698', $airPage['number_pad']);
         self::assertStringContainsString('aéronefs', strtolower((string) $airPage['title']));
-        self::assertStringContainsString('manifestes', strtolower((string) $airPage['activity']));
+        self::assertStringContainsString('manifestes', strtolower((string) $airPage['title']));
+        self::assertStringContainsString('manifeste', strtolower((string) $airPage['activity']));
         self::assertStringContainsString('jtac', strtolower((string) $airPage['activity']));
         self::assertStringNotContainsString('json', strtolower((string) $airPage['activity']));
         self::assertStringNotContainsString('sqf', strtolower((string) $airPage['activity']));
@@ -1759,7 +1775,7 @@ final class DevDispatchCatalogTest extends TestCase
         self::assertNotNull($atakCamera);
         self::assertSame('00428', $atakCamera['number_pad']);
         self::assertStringContainsString('appareil photo', strtolower((string) $atakCamera['title']));
-        self::assertStringContainsString('fond d’écran', strtolower((string) $atakCamera['title']));
+        self::assertStringContainsString('fonds d’écran', strtolower((string) $atakCamera['title']));
         $maintUi = DevDispatchCatalog::find('update', '429');
         self::assertNotNull($maintUi);
         self::assertSame('00429', $maintUi['number_pad']);

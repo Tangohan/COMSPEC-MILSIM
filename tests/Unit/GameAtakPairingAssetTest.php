@@ -34,7 +34,9 @@ final class GameAtakPairingAssetTest extends TestCase
         self::assertStringContainsString('function issueForUser', $auth);
         self::assertStringContainsString('RedeemGameLink', $recovery);
         self::assertStringContainsString('RedeemGameLink', $redeem);
-        self::assertStringContainsString('COMSPEC_fnc_webMapRaise', $mapShow);
+        // webMapShow now raises the live map itself (same liveMapShow call webMapRaise makes).
+        self::assertStringContainsString('window.COMSPEC_ATAK_liveMapShow(', $mapShow);
+        self::assertStringContainsString('COMSPEC_fnc_webExecJS', $mapShow);
         self::assertFileExists($root . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/functions/fn_webMapRaise.sqf');
         self::assertStringContainsString('pairingWebCodeInput', $phone);
         self::assertStringContainsString('atak-game-link-confirm', $view);

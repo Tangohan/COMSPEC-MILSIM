@@ -47,7 +47,9 @@ final class AtakFullscreenAlertAssetTest extends TestCase
         self::assertStringContainsString('submitFullscreenAlert', $overwatch);
         self::assertStringContainsString("order_type: 'NOTIFY_FULL'", $overwatch);
         self::assertStringContainsString('id="ow-fs-alert-host"', $view);
-        self::assertStringContainsString('position mini', $view);
+        // Le texte d'aide de l'alerte est désormais rendu par la carte JS, plus dans la vue.
+        self::assertStringContainsString('ouvert ou en position mini', $overwatch);
+        self::assertStringContainsString('data-ow-fs-alert', $overwatch);
         self::assertStringContainsString('canIssueFullscreenAlert', (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php'));
         self::assertStringContainsString('atak.command.alert', (string) file_get_contents($root . '/app/Authorization/TenantPermissionCatalog.php'));
     }

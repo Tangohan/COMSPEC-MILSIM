@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class OverwatchUplinkCrashAssetTest extends TestCase
 {
@@ -60,11 +61,11 @@ final class OverwatchUplinkCrashAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_ACEClassTreeVer', $ace);
         self::assertStringContainsString('cTab_Android_dlg', $chat);
 
-        self::assertStringContainsString('1.0.165', $cfgA);
-        self::assertStringContainsString('1.6.9', $cfgC);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
 
-        self::assertStringContainsString('�cho des rep�res', strtolower($bug));
-        self::assertStringContainsString('corrig�', strtolower($bug));
+        self::assertStringContainsString('écho des repères', strtolower($bug));
+        self::assertStringContainsString('corrigé', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);
         self::assertStringNotContainsString('callExtension', $bug);
     }

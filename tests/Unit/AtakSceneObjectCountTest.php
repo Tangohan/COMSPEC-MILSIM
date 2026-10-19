@@ -49,14 +49,19 @@ final class AtakSceneObjectCountTest extends TestCase
         $this->insert($pdo, 7, 1, 'buildings', 3);
         $this->insert($pdo, 7, 1, 'forests', 2);
         $this->insert($pdo, 8, 1, 'building', 2, '2026-08-26 19:55:00', 'building-7-1-');
+        // Obstacles (murs, pylônes…) comptés à part depuis l'ajout du relevé d'obstacles.
+        $this->insert($pdo, 7, 1, 'wall', 5);
+        $this->insert($pdo, 8, 1, 'pylon', 2);
+        $this->insert($pdo, 7, 1, 'wall', 1, '2026-08-26 19:55:00', 'wall-7-1-');
 
         $repo = new AtakSceneObjectRepository($pdo);
         $shared = $repo->countByKind(8, 1);
 
         self::assertSame(15, $shared['building']);
         self::assertSame(28, $shared['forest']);
+        self::assertSame(7, $shared['obstacle']);
         self::assertSame($shared, $repo->countByKind(7, 1));
-        self::assertSame(['building' => 9, 'forest' => 0], $repo->countByKind(7, 2));
+        self::assertSame(['building' => 9, 'forest' => 0, 'obstacle' => 0], $repo->countByKind(7, 2));
     }
 
     public function testCountByKindReturnsZerosWhenTableIsMissing(): void
@@ -67,7 +72,7 @@ final class AtakSceneObjectCountTest extends TestCase
         $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         $repo = new AtakSceneObjectRepository($pdo);
 
-        self::assertSame(['building' => 0, 'forest' => 0], $repo->countByKind(7, 1));
+        self::assertSame(['building' => 0, 'forest' => 0, 'obstacle' => 0], $repo->countByKind(7, 1));
     }
 
     public function testLastUpdatedAtUsesLatestStampOnTheTheater(): void

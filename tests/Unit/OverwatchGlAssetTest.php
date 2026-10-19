@@ -154,7 +154,10 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('getSceneBuildings', $beta);
         self::assertStringContainsString('hitSceneAt(ll, force)', $beta);
         self::assertStringContainsString('data-scene-act="anchor"', $beta);
-        self::assertStringContainsString('data-tool="viewshed"', $beta);
+        // Le bouton data-tool="viewshed" vit dans la vue (vérifié plus haut) ; le JS gère l’outil
+        // et l’expose aussi dans la palette de commandes.
+        self::assertStringContainsString("activeTool === 'viewshed'", $beta);
+        self::assertStringContainsString("setTool('viewshed')", $beta);
         self::assertStringContainsString('measure3d', $beta);
         $tactics = (string) file_get_contents($root . '/public/assets/js/overwatch-gl/OverwatchGlTactics.js');
         self::assertStringContainsString('/api/atak/terrain/viewshed', $tactics);

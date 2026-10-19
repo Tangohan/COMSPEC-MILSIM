@@ -14,6 +14,9 @@ parameters:
     # passage à cette sous-classe.
     scanDirectories:
         - tcpdf
+        # Migrations et helpers de schéma chargés à la demande (require_once dans
+        # les dépôts) : sans ce balayage, leurs fonctions passent pour inexistantes.
+        - bootstrap
     # phpqrcode définit QRcode trois fois ; seule celle chargée par qrlib.php
     # porte png() et text(). Balayer le dossier entier retiendrait la variante
     # du liant TCPDF, qui ne les a pas.

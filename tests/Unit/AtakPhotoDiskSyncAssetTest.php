@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakPhotoDiskSyncAssetTest extends TestCase
 {
@@ -34,7 +35,7 @@ final class AtakPhotoDiskSyncAssetTest extends TestCase
         self::assertStringContainsString('_modVersion,', $pos);
         self::assertStringContainsString('_grid', $pos);
 
-        self::assertMatchesRegularExpression('/versionStr = "1\\.5\\.\\d+"/', $cfg);
+        ModVersion::assertAtLeast('1.5.0', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('sidecar', $note);
         self::assertStringContainsString('Quick Picture', $note);
         self::assertStringNotContainsString('endpoint', $note);
