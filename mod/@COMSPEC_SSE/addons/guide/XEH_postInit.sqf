@@ -7,6 +7,16 @@ if (isServer) then {
 };
 if (!hasInterface) exitWith {};
 
+// Steam du joueur gardé dans le profil : la connexion Athena et le temps passé dans Eden (comspec_sse_fnc_athenaEden)
+// s'en servent dans l'éditeur, où il n'y a pas de joueur.
+[{ !isNull player }, {
+    private _uid = getPlayerUID player;
+    if (_uid regexMatch "^[0-9]{17}$" && {(profileNamespace getVariable ["comspec_sse_steam_uid", ""]) isNotEqualTo _uid}) then {
+        profileNamespace setVariable ["comspec_sse_steam_uid", _uid];
+        saveProfileNamespace;
+    };
+}, [], 120] call CBA_fnc_waitUntilAndExecute;
+
 [{ !isNil "ace_interact_menu_fnc_createAction" && {!isNull player} }, {
     private _mk = {
         ["COMSPEC_SSE_Guide", "Guide SSE (manuel)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa",

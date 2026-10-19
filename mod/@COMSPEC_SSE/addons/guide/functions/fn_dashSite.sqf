@@ -59,8 +59,8 @@ private _why = {
     private _code = _r select [4];
     switch (true) do {
         case (_r isEqualTo ""): { "la DLL COMSPEC Link ne répond pas (mod COMSPEC Link absent, ou bloqué par BattlEye)." };
-        case (_code isEqualTo "not_connected"): { "pas de liaison avec Athena : reliez le compte (aperçu de la mission, connexion Athena), puis actualisez." };
-        case (_code in ["unauthorized", "no_tenant"]): { "compte non relié à une communauté dans Athena (session Athena ou clé d'accès de la communauté)." };
+        case (_code isEqualTo "not_connected"): { "pas de liaison avec Athena : bouton « Connexion Athena » (ou menu COMSPEC SSE), puis actualisez." };
+        case (_code in ["unauthorized", "no_tenant"]): { "compte non relié à une communauté dans Athena : bouton « Connexion Athena » (ou menu COMSPEC SSE), puis actualisez." };
         case (_code isEqualTo "not_found"): { "campagne absente d'Athena (archivée ou jamais envoyée)." };
         case (_code isEqualTo "timeout"): { "le site n'a pas répondu à temps." };
         default { format ["réponse du site : %1", _code] };

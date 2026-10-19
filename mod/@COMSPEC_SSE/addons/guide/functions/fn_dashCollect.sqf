@@ -33,7 +33,10 @@ private _choicesOf = {
     params ["_cfg"];
     private _m = createHashMap;
     {
-        _m set [[getText (_x >> "value"), getNumber (_x >> "value")] select (isNumber (_x >> "value")), getText (_x >> "name")];
+        // Pas de [getText, getNumber] select … : les deux seraient évalués, et getNumber sur une valeur texte
+        // ("RANDOM", "INSURGENT"…) l'exécute comme une expression → erreur « Invalid number in expression ».
+        private _val = if (isNumber (_x >> "value")) then { getNumber (_x >> "value") } else { getText (_x >> "value") };
+        _m set [_val, getText (_x >> "name")];
     } forEach ("true" configClasses (_cfg >> "Values"));
     _m
 };
