@@ -38,6 +38,21 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Crédits : logo ATAK à la place du logo SOAR (ATAK natif 2.3.1.AB - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Le logo COMSPEC ATAK en tête de l'app Crédits
+- L'app Crédits du téléphone affiche maintenant le logo COMSPEC ATAK au lieu du logo SOAR.
+EN : The COMSPEC ATAK logo at the top of the Credits app
+- The phone's Credits app now shows the COMSPEC ATAK logo instead of the SOAR logo.
+
+### Détail technique
+- `fn_pageCredits.sqf` : l'image du bandeau passe de `data\logo_soar.paa` à `data\logo_atak.paa` (déjà dans le mod). Le fond d'écran « SOAR » des Réglages ne change pas.
+- Version 2.3.1, main.pbo reconstruit.
+
+---
+
 ## Regroupement : profils de réalisme Milsim, positions BFT par points, GPS naturel, carte satellite, radio MPU5 et voix ACRE2, brouilleurs d'autres mods (ATAK natif 2.3.0.AB - Denver, COMSPEC Link 2.0.90)
 
 ### Résumé joueur
