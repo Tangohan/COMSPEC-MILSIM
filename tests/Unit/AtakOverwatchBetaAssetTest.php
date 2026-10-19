@@ -19,10 +19,14 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertIsString($view);
         self::assertIsString($dashboardAside);
         self::assertIsString($sidebar);
+        // Overwatch en production : /atak le sert, les anciennes adresses beta redirigent, plus de badge BETA.
         self::assertStringContainsString("'/-ATAK-OVERWATCH-Beta'", $routes);
         self::assertStringContainsString("'/atak-overwatch-beta'", $routes);
-        self::assertStringContainsString("url('-ATAK-OVERWATCH-Beta')", $dashboardAside);
-        self::assertStringContainsString("'Overwatch Beta'", $sidebar);
+        self::assertStringContainsString("['label' => 'Overwatch', 'href' => url('atak')", $dashboardAside);
+        self::assertStringNotContainsString('Overwatch Beta', $dashboardAside);
+        self::assertStringContainsString("['label' => 'Overwatch', 'href' => url('atak')", $sidebar);
+        self::assertStringNotContainsString("'badge' => 'BETA'", $sidebar);
+        self::assertStringNotContainsString('Overwatch Beta', $view);
         self::assertStringNotContainsString("require base_path('views/atak.php')", $view);
         self::assertStringContainsString('class="ow-shell"', $view);
         self::assertStringContainsString('id="ow-map"', $view);
@@ -42,8 +46,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertIsString($realtimeJs);
         self::assertIsString($p2Js);
         self::assertIsString($recipe);
-        self::assertStringContainsString("\$params['_overwatch_beta'] = true", $atakController);
-        self::assertStringContainsString("'atakOverwatchBeta' => !empty(\$params['_overwatch_beta'])", $atakController);
+        self::assertStringContainsString("Response::view('atak-overwatch-beta', [", $atakController);
+        self::assertStringContainsString("Response::redirect(url('atak')", $atakController);
+        self::assertStringNotContainsString("? 'atak-overwatch-beta' : 'atak'", $atakController);
         self::assertStringContainsString('window.ATAK_OVERWATCH_BETA = true', $view);
         self::assertStringContainsString('atak-overwatch-beta.css', $view);
         self::assertStringContainsString("'/api/units?mapId='", $overwatchJs);

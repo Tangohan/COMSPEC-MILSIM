@@ -57,7 +57,7 @@ $icon = static function (string $path): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#050505">
-  <title>Athena — Overwatch Beta</title>
+  <title>Athena — Overwatch</title>
   <link rel="icon" href="<?= $h($base) ?>/assets/icons/athena-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,7 +91,7 @@ $icon = static function (string $path): string {
 <body>
 <div class="ow-shell">
   <header class="ow-topbar">
-    <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch Beta</small></span></a>
+    <a class="ow-brand" href="<?= $h(url('atak')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch</small></span></a>
     <nav class="ow-nav" aria-label="Espaces de travail">
       <button type="button" class="is-active" data-view="overwatch" title="La carte et la situation en direct">Overwatch</button>
       <button type="button" data-view="orbat" title="L’organigramme prévu, comparé aux positions réellement reçues">ORBAT</button>
@@ -873,7 +873,7 @@ $icon = static function (string $path): string {
     <span id="ow-map-name"><?= $h(ucfirst($slug)) ?></span>
     <span id="ow-weather-chip">Météo —</span>
     <span id="ow-cache-label" title="Fonds de carte enregistrés dans ce navigateur">Fonds</span>
-    <span class="ow-footer-end">Overwatch Beta</span>
+    <span class="ow-footer-end">Overwatch</span>
   </footer>
 </div>
 
