@@ -40,7 +40,8 @@ final class PersonnelPassAssetTest extends TestCase
         self::assertStringContainsString('PersonnelPassAdminController', $container);
         self::assertStringContainsString('PASS RH', $nav);
         self::assertStringContainsString('PASS JTAC', $index);
-        self::assertStringContainsString('Avis hiérarchique', $form);
+        // Le champ « avis hiérarchique » est rendu dans chaque condition (libellé du type : catalogue du moteur).
+        self::assertStringContainsString('data-pass-field="avis"', $form);
         // Les libellés de type viennent désormais du catalogue du moteur, rendu dans le formulaire.
         self::assertStringContainsString('foreach ($catalog as $opt)', $form);
         self::assertStringContainsString('data-pass-field="training"', $form);

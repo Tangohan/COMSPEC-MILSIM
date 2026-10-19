@@ -22,6 +22,7 @@ final class PersonnelPassAdminController
         private PassService $passService,
         private PassConditionEngine $engine,
         private TrainingCourseRepository $courses,
+        private ?\App\Repositories\UserRepository $users = null,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -138,6 +139,66 @@ final class PersonnelPassAdminController
         return Response::redirect(url('back-office/organisation/passes'));
     }
 
+    /**
+     * Essai d’un PASS enregistré sur un membre (JSON) : ?q= cherche des membres, ?user_id= évalue le PASS pour lui.
+     */
+    public function test(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée.'], 401);
+        }
+        $pass = $this->passes->schemaReady() ? $this->passes->find($tenantId, $id) : null;
+        if ($pass === null) {
+            return Response::json(['ok' => false, 'error' => 'PASS introuvable.'], 404);
+        }
+        $userId = (int) $request->query('user_id', 0);
+        if ($userId < 1) {
+            $q = mb_substr(trim((string) $request->query('q', '')), 0, 60);
+            if (mb_strlen($q) < 2 || $this->users === null) {
+                return Response::json(['ok' => true, 'members' => []]);
+            }
+            $members = [];
+            foreach ($this->users->listForTenant($tenantId, $q, null, null, 8) as $u) {
+                $members[] = ['id' => (int) ($u['id'] ?? 0), 'label' => self::memberLabel($u)];
+            }
+
+            return Response::json(['ok' => true, 'members' => $members]);
+        }
+        if ($this->users !== null && $this->users->findByIdsForTenant($tenantId, [$userId]) === []) {
+            return Response::json(['ok' => false, 'error' => 'Ce membre n’appartient pas à la communauté.'], 404);
+        }
+        if (empty($pass['is_active'])) {
+            return Response::json(['ok' => false, 'error' => 'Ce PASS est inactif : activez-le et enregistrez pour le tester.']);
+        }
+        $result = $this->passService->evaluatePassForUser($tenantId, $id, $userId);
+        $items = [];
+        foreach ($result['items'] as $item) {
+            $items[] = [
+                'passed' => !empty($item['passed']),
+                'label' => (string) ($item['label'] ?? ''),
+                'current' => (string) ($item['current'] ?? ''),
+                'target' => (string) ($item['target'] ?? ''),
+                'reason' => (string) ($item['reason'] ?? ''),
+            ];
+        }
+
+        return Response::json(['ok' => true, 'eligible' => (bool) $result['eligible'], 'logic' => (string) $result['logic'], 'items' => $items]);
+    }
+
+    /** @param array<string, mixed> $u */
+    private static function memberLabel(array $u): string
+    {
+        $callsign = trim((string) ($u['callsign'] ?? ''));
+        $name = trim((string) ($u['display_name'] ?? ''));
+        if ($callsign !== '' && $name !== '' && mb_strtolower($callsign) !== mb_strtolower($name)) {
+            return $callsign . ' — ' . $name;
+        }
+
+        return $callsign !== '' ? $callsign : ($name !== '' ? $name : 'Membre #' . (int) ($u['id'] ?? 0));
+    }
+
     /** @param array<string, mixed>|null $pass */
     private function form(?array $pass): Response
     {
@@ -149,6 +210,10 @@ final class PersonnelPassAdminController
         $previews = [];
         foreach ($conditions as $c) {
             $previews[] = PassConditionEngine::previewSentence($c);
+        }
+        $fieldMap = [];
+        foreach (PassConditionEngine::catalog() as $row) {
+            $fieldMap[$row['type']] = PassConditionEngine::fieldsFor($row['type']);
         }
 
         return Response::view('layout.main', [
@@ -165,6 +230,9 @@ final class PersonnelPassAdminController
             'passGrades' => $this->gradeChoices($tenantId),
             'passHourCategories' => \App\Services\Personnel\RoleplayGameSessionSettings::forTenant($tenantId)['hour_categories'] ?? [],
             'passSchemaReady' => $this->passes->schemaReady(),
+            'passFieldMap' => $fieldMap,
+            'passFamilies' => PassConditionEngine::families(),
+            'backOfficePageCss' => ['back-office-pass-form.css'],
         ]);
     }
 

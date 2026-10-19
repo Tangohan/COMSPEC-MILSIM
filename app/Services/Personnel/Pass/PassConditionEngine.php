@@ -42,6 +42,40 @@ final class PassConditionEngine
     }
 
     /**
+     * Champs de saisie utiles pour chaque type de condition (formulaire PASS) ; les autres restent masqués.
+     * Clés : training, qualification, validity, grade, hour_category, avis, bilan, window, threshold.
+     *
+     * @return list<string>
+     */
+    public static function fieldsFor(string $type): array
+    {
+        return match ($type) {
+            self::TYPE_LMS => ['training'],
+            self::TYPE_QUALIFICATION => ['qualification', 'validity'],
+            self::TYPE_RAW_HOURS, self::TYPE_VALIDATED_HOURS => ['threshold'],
+            self::TYPE_CATEGORY_HOURS => ['hour_category', 'threshold'],
+            self::TYPE_MIN_GRADE => ['grade'],
+            self::TYPE_HIERARCHICAL_AVIS => ['avis'],
+            self::TYPE_BILAN_RATING => ['bilan', 'threshold', 'window'],
+            default => [],
+        };
+    }
+
+    /**
+     * Familles de conditions (palette du formulaire) : chaque type appartient à une famille.
+     *
+     * @return array<string, array{label: string, types: list<string>}>
+     */
+    public static function families(): array
+    {
+        return [
+            'skills' => ['label' => 'Compétences', 'types' => [self::TYPE_LMS, self::TYPE_QUALIFICATION]],
+            'time' => ['label' => 'Temps de jeu', 'types' => [self::TYPE_VALIDATED_HOURS, self::TYPE_RAW_HOURS, self::TYPE_CATEGORY_HOURS]],
+            'command' => ['label' => 'Hiérarchie', 'types' => [self::TYPE_MIN_GRADE, self::TYPE_HIERARCHICAL_AVIS, self::TYPE_BILAN_RATING]],
+        ];
+    }
+
+    /**
      * @return list<array{value: string, label: string}>
      */
     public static function avisKinds(): array

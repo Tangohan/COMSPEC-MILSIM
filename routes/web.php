@@ -1252,6 +1252,7 @@ return function (Router $router) {
     $router->get('/back-office/organisation/passes/create', [PersonnelPassAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/passes/store', [PersonnelPassAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes/{id}/edit', [PersonnelPassAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/passes/{id}/test', [PersonnelPassAdminController::class, 'test'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/passes/{id}/update', [PersonnelPassAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/passes/{id}/delete', [PersonnelPassAdminController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

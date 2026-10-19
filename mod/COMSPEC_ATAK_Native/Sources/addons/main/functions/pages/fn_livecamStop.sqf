@@ -9,4 +9,5 @@ uiNamespace setVariable ["COMSPEC_ATAK_LivecamOsd", controlNull];
 private _fp = missionNamespace getVariable "COMSPEC_ATAK_FeedPfh";
 if (!isNil "_fp") then { [_fp] call CBA_fnc_removePerFrameHandler; missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", nil]; };
 missionNamespace setVariable ["COMSPEC_ATAK_LivecamKind", nil];
+missionNamespace setVariable ["COMSPEC_ATAK_LivecamUav", objNull];
 true
