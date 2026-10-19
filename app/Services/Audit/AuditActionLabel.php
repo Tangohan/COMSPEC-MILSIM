@@ -74,6 +74,9 @@ final class AuditActionLabel
         // Plateforme — réglages et déploiement
         'platform.settings_updated' => 'Réglage plateforme (brief) mis à jour',
         'platform.storage_purged' => 'Historique volumineux vidé (administration du site)',
+        'platform.data_table_emptied' => 'Table vidée depuis l’explorateur de données (administration du site)',
+        'platform.data_row_updated' => 'Ligne modifiée depuis l’explorateur de données (administration du site)',
+        'platform.data_row_deleted' => 'Ligne supprimée depuis l’explorateur de données (administration du site)',
         'platform.subscription_plan_updated' => 'Formule d’accès (palier) modifiée',
         'deployment.module_created' => 'Déploiement — fonctionnalité créée',
         'deployment.module_updated' => 'Déploiement — fonctionnalité modifiée',

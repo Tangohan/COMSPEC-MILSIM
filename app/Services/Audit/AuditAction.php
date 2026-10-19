@@ -87,6 +87,9 @@ final class AuditAction
 
     /** Vidage d’un lot d’historiques volumineux (administration du site). */
     public const PLATFORM_STORAGE_PURGED = 'platform.storage_purged';
+    public const PLATFORM_DATA_TABLE_EMPTIED = 'platform.data_table_emptied';
+    public const PLATFORM_DATA_ROW_UPDATED = 'platform.data_row_updated';
+    public const PLATFORM_DATA_ROW_DELETED = 'platform.data_row_deleted';
 
     public const SUBSCRIPTION_PLAN_UPDATED = 'platform.subscription_plan_updated';
 

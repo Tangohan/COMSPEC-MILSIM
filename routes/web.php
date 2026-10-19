@@ -1073,6 +1073,13 @@ return function (Router $router) {
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/system/storage', [SystemStorageController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Explorateur de données (administration du site) : lire, chercher, modifier, supprimer, vider.
+    $router->get('/admin/system/storage/donnees', [SystemStorageController::class, 'tables'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/storage/donnees/{table}', [SystemStorageController::class, 'table'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/storage/donnees/{table}/ligne', [SystemStorageController::class, 'row'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/ligne', [SystemStorageController::class, 'updateRow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/ligne/supprimer', [SystemStorageController::class, 'deleteRow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/vider', [SystemStorageController::class, 'emptyTable'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/administrateurs-site', [SystemUsersController::class, 'platformAdmins'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
