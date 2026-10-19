@@ -50,6 +50,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 ["COMSPEC ATAK", "PhoneJpc", ["Tablette sur le JPC (ouvrir / rabattre)", "Relève la tablette durcie du porte-plaques et affiche l'ATAK sur son écran 3D : on baisse les yeux pour lire, vue libre, déplacement et arme disponibles. Choisit aussi le style « porté » JPC."], { ["toggle"] call comspec_atak_native_fnc_jpcScreen; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneHold", ["Prendre en main / interagir (touche alternative)", "Même effet que la touche principale : miniature -> grand, grand -> miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
 // Zoom de la carte sans prendre le téléphone en main (aussi en marchant ou en conduisant).
+["COMSPEC ATAK", "PhoneLase", ["Envoyer le point visé à l'ATAK", "Dans une optique ou des jumelles, ou avec un désignateur laser allumé : le point visé devient un marqueur sur la carte de l'ATAK (palette du mode MARQUEUR). Avec ACE, une mesure du Vector 21 (azimut + distance) l'envoie aussi toute seule."], { ["aim"] call comspec_atak_native_fnc_lasePoint; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneZoomIn", ["Zoomer (carte du téléphone)", "Zoom avant sur la carte, aussi téléphone porté en marchant ou en conduisant."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xC9, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneZoomOut", ["Dézoomer (carte du téléphone)", "Zoom arrière sur la carte, aussi téléphone porté."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [1 / 0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xD1, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneOrient", ["Permuter l'orientation (vertical / horizontal)", "Téléphone en miniature : vertical ou horizontal."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [] call comspec_atak_native_fnc_orientationToggle; true }, "", [0x16, [false, true, true]]] call CBA_fnc_addKeybind;
@@ -63,6 +64,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
     uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_close; };
 }];
+// Mesure ACE Vector 21 transmise (azimut + distance) : marqueur sur la carte de l'ATAK (fn_lasePoint).
+["ace_vector_rangefinderData", { params [["_d", 0], ["_az", 0], ["_inc", 0]]; ["vector", [_d, _az, _inc]] call comspec_atak_native_fnc_lasePoint; }] call CBA_fnc_addEventHandler;
 ["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
 addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
 // Cartouches ENI de la carte (fn_mapLabels) : heure de pose et auteur de chaque marqueur, notés à sa création

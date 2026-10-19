@@ -280,6 +280,15 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_zeus_crows", "CHECKBOX",
     ["Brouilleurs du mod Crows Electronic Warfare", "Si le mod Crows Electronic Warfare est chargé, ses brouilleurs (posés par Zeus) brouillent aussi l'ATAK : réseau, GPS et BFT, à plein effet dans leur rayon d'action."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_jam_tfar", "CHECKBOX",
+    ["Brouillage des scripts TFAR", "Les scripts de brouillage radio TFAR (« TFAR Radio Jammer » et semblables) réduisent la portée d'émission radio du joueur. Coché : le téléphone ATAK est brouillé d'autant (débit, GPS et BFT)."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_jam_classes", "EDITBOX",
+    ["Objets brouilleurs d'autres mods", "Objets ou véhicules qui brouillent l'ATAK tant qu'ils sont intacts, par exemple les brouilleurs d'un mod de guerre électronique. Format : Classe:rayon:force, séparés par des virgules (rayon en mètres, 1000 par défaut ; force 1-100, 80 par défaut). Classes parentes acceptées. Exemple : Land_DataTerminal_01_F:500:90. Vide : aucun."],
+    _sim, "", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_lase_link", "CHECKBOX",
+    ["Télémètre vers l'ATAK", "Le point mesuré au télémètre devient un marqueur sur la carte de l'ATAK : mesure ACE Vector 21 (azimut + distance), ou touche « Envoyer le point visé à l'ATAK » dans une optique, des jumelles ou avec un désignateur laser."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 // Contrôle Zeus des ATAK : le menu clic droit ZEN d'Overwatch (« ATAK — Infos / dégâts / brouillage », état du téléphone
 // d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.
 missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];

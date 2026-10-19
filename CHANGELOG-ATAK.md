@@ -59,6 +59,26 @@ EN : MPU5 radio and ACRE2 voice in the Wave Relay app
 - Limites : ACRE2 n'a pas de radio maillée, la voix reste sur les radios ACRE2 ; « qui émet » = émissions sur les fréquences réglées sur mes radios, portée radio non vérifiée ; joueurs sans ATAK absents de la liste.
 - Onglet TALKGROUPS renommé VOIX avec ACRE2 (inchangé sans ACRE2) ; MON NŒUD montre la MPU5. 38 traductions anglaises, 2 clés de stringtable.
 - À tester en jeu : objet MPU5 dans l'inventaire (toast, portée sur RÉSEAU, gain sur la liaison), relais d'équipe avec un relais de mission en « réseau exclusivement par relais », onglet VOIX avec PRC-152 / PRC-148 / PRC-343 (fréquences, PTT 1-3, émission locale et distante). Aucun DLL ni migration ; main.pbo à reconstruire au regroupement.
+## Brouilleurs d'autres mods, API brouilleur, télémètre vers la carte (ATAK natif 2.3.0, provisoire : version fixée au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Guerre électronique ouverte aux autres mods, et le télémètre pose un marqueur sur l'ATAK
+- Les scripts de brouillage radio TFAR brouillent maintenant aussi ton ATAK : débit, GPS et suivi des amis baissent comme ta radio.
+- Les admins peuvent déclarer les brouilleurs d'autres mods de guerre électronique (objets ou véhicules) : ils brouillent l'ATAK tant qu'ils sont intacts, et l'app GE peut les relever.
+- Une mesure du Vector 21 (ACE) devient un marqueur sur la carte de l'ATAK, et une nouvelle touche envoie le point visé dans une optique, des jumelles ou au désignateur laser.
+EN : Electronic warfare opens up to other mods, and the rangefinder drops a marker on the ATAK
+- TFAR radio jamming scripts now also jam your ATAK: throughput, GPS and friendly tracking drop just like your radio.
+- Admins can declare the jammers of other electronic warfare mods (objects or vehicles): they jam the ATAK while intact, and the EW app can take bearings on them.
+- A Vector 21 measurement (ACE) becomes a marker on the ATAK map, and a new key sends the point aimed at in a scope, binoculars or with a laser designator.
+
+### Détail technique
+- `fn_jammer` (network) : API publique `["add", [source, rayon, force 1-100, durée, camp épargné, id]]` / `["remove", id ou objet]` / `["list"]`, appelable de partout (événement CBA serveur `comspec_atak_native_jammer` hors serveur). Entrées dans `COMSPEC_ATAK_Jammers` (ids `api:`, `obj:`, `cls:`), liste serveur `COMSPEC_ATAK_ExtJammersSrv`, tick 5 s : objets détruits retirés, objets éteints par `COMSPEC_ATAK_JamActive` ou `a3f_jammer_active` à false sortis de la liste publique, entrées effacées par une écriture concurrente d'un client remises.
+- Réglage CBA `comspec_atak_native_jam_classes` (« Objets brouilleurs d'autres mods », `Classe:rayon:force`, `entities` avec héritage).
+- `fn_zeusJam` : scripts de brouillage TFAR lus par `tf_sendingDistanceMultiplicator` du joueur (brouillage = 1 - multiplicateur), réglage `comspec_atak_native_jam_tfar` (coché par défaut). Vérifié sur le script « TFAR Radio Jammer » (Matzenino).
+- `fn_lasePoint` (tactical) : événement CBA local ACE `ace_vector_rangefinderData` (envoyé par ACE après une mesure azimut + distance) et touche CBA « Envoyer le point visé à l'ATAK » (sans touche par défaut : `laserTarget`, sinon `lineIntersectsSurfaces` 5 km en vue optique) -> `fn_markerDrop`. Réglage `comspec_atak_native_lase_link`.
+- Guide réseau (section brouillage) et MODULES.md (section 5, FR + EN) mis à jour ; 12 traductions anglaises.
+- À tester en jeu : script TFAR Radio Jammer avec TFAR, un objet listé dans le réglage (goniométrie GE, carte, débit), mesure Vector 21 avec ACE, touche dans des jumelles et au désignateur laser. Aucun DLL ni migration ; main.pbo à reconstruire au regroupement.
 
 ---
 

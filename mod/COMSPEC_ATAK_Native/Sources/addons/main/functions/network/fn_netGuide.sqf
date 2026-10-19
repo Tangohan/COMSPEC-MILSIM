@@ -72,7 +72,7 @@ private _sections = [
     ["Brouillage et guerre électronique", "jam", [
         "Un brouilleur noie le signal : son effet dépend du rapport entre sa puissance reçue et celle du relais. Il gagne 20 dB chaque fois que la distance au brouilleur est divisée par dix.",
         "Près d'un relais (grande marge), le signal passe encore à travers le brouillage ; au bord de la couverture, il tombe dès l'entrée dans la zone brouillée.",
-        "Sources : brouilleurs de la mission, brouillage Zeus ciblé ou de zone, brouilleurs du mod Crows Electronic Warfare. Un relais dans une zone brouillée perd aussi son débit.",
+        "Sources : brouilleurs de la mission ou d'autres mods (réglage « Objets brouilleurs d'autres mods »), brouillage Zeus ciblé ou de zone, brouilleurs du mod Crows Electronic Warfare, scripts de brouillage radio TFAR. Un relais dans une zone brouillée perd aussi son débit.",
         "Les relais qui entendent un appareil permettent de le localiser par triangulation (carte, clic droit)."
     ]],
     ["Envois, latence et file d'attente", "queue", [
