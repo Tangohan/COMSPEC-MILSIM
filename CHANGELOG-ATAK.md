@@ -38,31 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Radio maillée MPU5 et voix ACRE2 dans l'app Wave Relay (ATAK natif 2.3.0, provisoire : version fixée au regroupement)
-
-### Résumé joueur
-Type : nouveauté
-FR : Radio MPU5 et voix ACRE2 dans l'app Wave Relay
-- Une radio maillée MPU5 dans ton inventaire relie ton ATAK plus loin, et elle relaie le réseau à tes équipiers proches quand elle reçoit un relais.
-- Le nouvel onglet VOIX de l'app Wave Relay montre qui émet sur tes fréquences, le canal, la fréquence et le PTT de chacune de tes radios ACRE2.
-- Il liste aussi les équipiers connectés, avec leurs fréquences et ceux qui sont sur la tienne.
-EN : MPU5 radio and ACRE2 voice in the Wave Relay app
-- An MPU5 mesh radio in your inventory links your ATAK further, and relays the network to nearby teammates when it receives a relay.
-- The new VOICE tab of the Wave Relay app shows who is transmitting on your frequencies, and the channel, frequency and PTT of each of your ACRE2 radios.
-- It also lists connected teammates, with their frequencies and who is on yours.
-
-### Détail technique
-- Objet `COMSPEC_ATAK_MPU5` (CfgWeapons, modèle et icône de la radio vanilla, pas de 3D propre). Détection `fn_mpu5` "has" : cet objet, toute classe contenant « MPU5 », ou le réglage CBA `comspec_atak_native_mpu5_items`.
-- Réglages `comspec_atak_native_mpu5_range` (6 000 m), `_mpu5_gain` (8 dB), `_mpu5_mbps` (20 Mbit/s), `_mpu5_items`.
-- Maillage (`fn_waveRelayAction` "scan") : portée du nœud MPU5 relevée. Liaison (`fn_relayNet` "best") : gain MPU5 ajouté au bilan radio. Relais d'équipe : `fn_relayNet` "list" ajoute les MPU5 des équipiers (type `mpu5`) avec le débit montant qu'elles publient (`COMSPEC_ATAK_Mpu5` [Mbit/s, bonds], au plus 3 bonds), brouillage compris ; exclues des passerelles du maillage.
-- Voix ACRE2 : événements CBA `acre_startedSpeaking` / `acre_stoppedSpeaking` (joueur) et `acre_remoteStartedSpeaking` / `acre_remoteStoppedSpeaking` (autres, type 1 = radio) ; fréquence lue dans `acre_sys_data_fnc_dataEvent` "getCurrentChannelData", sinon préréglage (`acre_api_fnc_getPresetChannelField`) ; PTT par `acre_api_fnc_getMultiPushToTalkAssignment`. Chaque téléphone publie `COMSPEC_ATAK_VoiceNet` [[id radio, MHz, canal]...] au changement.
-- Limites : ACRE2 n'a pas de radio maillée, la voix reste sur les radios ACRE2 ; « qui émet » = émissions sur les fréquences réglées sur mes radios, portée radio non vérifiée ; joueurs sans ATAK absents de la liste.
-- Onglet TALKGROUPS renommé VOIX avec ACRE2 (inchangé sans ACRE2) ; MON NŒUD montre la MPU5. 38 traductions anglaises, 2 clés de stringtable.
-- À tester en jeu : objet MPU5 dans l'inventaire (toast, portée sur RÉSEAU, gain sur la liaison), relais d'équipe avec un relais de mission en « réseau exclusivement par relais », onglet VOIX avec PRC-152 / PRC-148 / PRC-343 (fréquences, PTT 1-3, émission locale et distante). Aucun DLL ni migration ; main.pbo à reconstruire au regroupement.
-
----
-
-## Regroupement : Samsung S23 durci, drone refait et plus léger, ATAK compromis visible, touches dans le téléphone (ATAK natif 2.2.1.AB - Denver, COMSPEC Link 2.0.90)
+## Regroupement : Samsung S23 durci, drone refait et plus léger, ATAK compromis visible, radio MPU5, touches dans le téléphone (ATAK natif 2.2.1.AB - Denver, COMSPEC Link 2.0.90)
 
 ### Résumé joueur
 Type : nouveauté
@@ -70,15 +46,15 @@ FR : COMSPEC ATAK 2.2.1 « Denver » : le Samsung S23 durci, un drone refait et 
 - Nouveau téléphone : le Samsung S23 en coque durcie tan, à choisir dans Réglages > Personnaliser > Modèle. Les coques Support JPC, Étui Multicam et Coque nervurée sont retirées : ton téléphone repasse tout seul en Durci S7.
 - Drone : la croix et PLEIN ÉCRAN marchent enfin sur l'image, les onglets passent à gauche en grand format, la vue drone devient une vignette sur la carte en petit format, et VOL > FILMER suit un allié ou toi-même. Il pèse aussi moins sur la mémoire du PC (qualité HAUTE en 1024 px).
 - Un téléphone déclaré capturé ou compromis le montre : logo COMSPEC Link rouge, carte LIAISON DE DONNÉES COUPÉE avec le motif et l'origine, alliés figés à leur dernière position connue.
-- Réglages > Accès et touches refait, avec toutes les touches de l'ATAK modifiables dans le téléphone ; volet SITUATION de la carte lisible avec une vue CONFIGURATION ; arme rangée et visages floutés avec l'app Photo ; Tache de sang sous COMSPEC SSE sans texte cassé ; « Mesurer ma tension » sur soi retiré ; app OSINT en W.I.P.
+- Nouvelle radio maillée MPU5 dans l'inventaire (portée et relais vers tes équipiers) et onglet VOIX ACRE2 dans l'app Wave Relay ; Réglages > Accès et touches refait, avec toutes les touches de l'ATAK modifiables dans le téléphone ; volet SITUATION de la carte lisible avec une vue CONFIGURATION ; arme rangée et visages floutés avec l'app Photo ; Tache de sang sous COMSPEC SSE sans texte cassé ; « Mesurer ma tension » sur soi retiré ; app OSINT en W.I.P.
 EN : COMSPEC ATAK 2.2.1 "Denver": the rugged Samsung S23, a reworked and lighter drone, a compromised phone that shows it
 - New phone: the Samsung S23 in a tan rugged case, picked in Settings > Customize > Model. The JPC mount, Multicam pouch and Ribbed case are removed: your phone switches back to the Rugged S7 on its own.
 - Drone: the cross and FULL SCREEN finally work on the picture, tabs move to the left on the large layout, the drone view becomes a thumbnail on the map on the small layout, and FLIGHT > FILM follows a teammate or yourself. It is also lighter on PC memory (HIGH quality at 1024 px).
 - A phone declared captured or compromised now shows it: red COMSPEC Link logo, DATA LINK SEVERED map with the reason and origin, friendly units frozen at their last known position.
-- Settings > Access and keys redesigned, with every ATAK key changeable right in the phone; readable SITUATION panel on the map with a CONFIGURATION view; weapon lowered and faces blurred with the Photo app; Blood stain under COMSPEC SSE without broken text; self "Measure my blood pressure" removed; OSINT app now W.I.P.
+- New MPU5 mesh radio in your inventory (range and relay to your teammates) and ACRE2 VOICE tab in the Wave Relay app; Settings > Access and keys redesigned, with every ATAK key changeable right in the phone; readable SITUATION panel on the map with a CONFIGURATION view; weapon lowered and faces blurred with the Photo app; Blood stain under COMSPEC SSE without broken text; self "Measure my blood pressure" removed; OSINT app now W.I.P.
 
 ### Détail technique
-Regroupe #937, #941, #942, #945, #948, #949, #950, #951 et #952. `VERSION_STR` « 2.2.1 » (seul comparé), nom affiché « 2.2.1.AB - Denver ». COMSPEC Link 2.0.90 (#952 : 7e colonne méta dans `AdminControl.Poll`) : DLL à recompiler (build_mod.bat). main.pbo reconstruit avec HEMTT une fois toutes les PR fusionnées ; `comspec_sse_biometrics.pbo` repatché par #948. Aucune migration.
+Regroupe #937, #941, #942, #945, #948, #949, #950, #951 et #952, plus #960 (radio MPU5, fusionnée directement sur main après le regroupement : main.pbo reconstruit ensuite). `VERSION_STR` « 2.2.1 » (seul comparé), nom affiché « 2.2.1.AB - Denver ». COMSPEC Link 2.0.90 (#952 : 7e colonne méta dans `AdminControl.Poll`) : DLL à recompiler (build_mod.bat). main.pbo reconstruit avec HEMTT une fois toutes les PR fusionnées ; `comspec_sse_biometrics.pbo` repatché par #948. Aucune migration.
 
 #### Samsung S23 durci, trois coques retirées (#937)
 
@@ -97,6 +73,28 @@ EN : New phone: the rugged Samsung S23
 - Modèle `s23` : coque photo découpée dans la planche de TTRD (`tools/cut_s23.py` → `tools/src/frame_s23.png`, `frame_s23_back.png`), passée par `tools/frame_photos.py` (vraie photo du dos via `BACKS`, plus de panneau dessiné pour ce modèle) ; PAA `phone_{landscape,portrait}_s23{,_night}`, `phone_back_s23`, `dirt_case_s23_{land,port}`, `jpc_s23_ca` (`gen_assets.py <hemtt> s23`, `gen_dirt.py <hemtt> case s23`).
 - Écran et boîte visible dans `fn_layoutGet` (paysage : écran 0.2221 0.3449 0.7553 0.6553, visible 0.1392 0.2983 0.8330 0.7036) ; port SMA décalé de -17 px (`fn_antenna`) ; dos (`fn_backView`), Établi (`fn_pageAccessories`), selfie et JPC (`COMSPEC_ATAK_JpcPhone_s23` = `jpc_s7.p3d` + atlas S23, silhouettes presque identiques).
 - Retirés : `plate`, `flip`, `ribbed` (rendus Blender de `render_phones.py`, jugés laids) dans les listes du téléphone et CBA, les réglages « Objet exigé », `config.cpp`, `model.cfg`, et 33 fichiers (PAA, P3D, rendus). Profil resté sur l'un d'eux : `fn_layoutGet` le repasse en `s7`.
+
+#### Radio maillée MPU5 et voix ACRE2 dans l'app Wave Relay (#960)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Radio MPU5 et voix ACRE2 dans l'app Wave Relay
+- Une radio maillée MPU5 dans ton inventaire relie ton ATAK plus loin, et elle relaie le réseau à tes équipiers proches quand elle reçoit un relais.
+- Le nouvel onglet VOIX de l'app Wave Relay montre qui émet sur tes fréquences, le canal, la fréquence et le PTT de chacune de tes radios ACRE2.
+- Il liste aussi les équipiers connectés, avec leurs fréquences et ceux qui sont sur la tienne.
+EN : MPU5 radio and ACRE2 voice in the Wave Relay app
+- An MPU5 mesh radio in your inventory links your ATAK further, and relays the network to nearby teammates when it receives a relay.
+- The new VOICE tab of the Wave Relay app shows who is transmitting on your frequencies, and the channel, frequency and PTT of each of your ACRE2 radios.
+- It also lists connected teammates, with their frequencies and who is on yours.
+
+##### Détail technique
+- Objet `COMSPEC_ATAK_MPU5` (CfgWeapons, modèle et icône de la radio vanilla, pas de 3D propre). Détection `fn_mpu5` "has" : cet objet, toute classe contenant « MPU5 », ou le réglage CBA `comspec_atak_native_mpu5_items`.
+- Réglages `comspec_atak_native_mpu5_range` (6 000 m), `_mpu5_gain` (8 dB), `_mpu5_mbps` (20 Mbit/s), `_mpu5_items`.
+- Maillage (`fn_waveRelayAction` "scan") : portée du nœud MPU5 relevée. Liaison (`fn_relayNet` "best") : gain MPU5 ajouté au bilan radio. Relais d'équipe : `fn_relayNet` "list" ajoute les MPU5 des équipiers (type `mpu5`) avec le débit montant qu'elles publient (`COMSPEC_ATAK_Mpu5` [Mbit/s, bonds], au plus 3 bonds), brouillage compris ; exclues des passerelles du maillage.
+- Voix ACRE2 : événements CBA `acre_startedSpeaking` / `acre_stoppedSpeaking` (joueur) et `acre_remoteStartedSpeaking` / `acre_remoteStoppedSpeaking` (autres, type 1 = radio) ; fréquence lue dans `acre_sys_data_fnc_dataEvent` "getCurrentChannelData", sinon préréglage (`acre_api_fnc_getPresetChannelField`) ; PTT par `acre_api_fnc_getMultiPushToTalkAssignment`. Chaque téléphone publie `COMSPEC_ATAK_VoiceNet` [[id radio, MHz, canal]...] au changement.
+- Limites : ACRE2 n'a pas de radio maillée, la voix reste sur les radios ACRE2 ; « qui émet » = émissions sur les fréquences réglées sur mes radios, portée radio non vérifiée ; joueurs sans ATAK absents de la liste.
+- Onglet TALKGROUPS renommé VOIX avec ACRE2 (inchangé sans ACRE2) ; MON NŒUD montre la MPU5. 38 traductions anglaises, 2 clés de stringtable.
+- À tester en jeu : objet MPU5 dans l'inventaire (toast, portée sur RÉSEAU, gain sur la liaison), relais d'équipe avec un relais de mission en « réseau exclusivement par relais », onglet VOIX avec PRC-152 / PRC-148 / PRC-343 (fréquences, PTT 1-3, émission locale et distante). Aucun DLL ni migration ; main.pbo reconstruit dans la 2.2.1.
 
 #### App OSINT en W.I.P (#941)
 - `wip=1` sur `class Osint` dans `COMSPEC_ATAK_Apps` (config.cpp) : tuile grisée avec bandeau W.I.P, retirée du dock, message dans le téléphone à l'ouverture ; le code de l'app est gardé.
