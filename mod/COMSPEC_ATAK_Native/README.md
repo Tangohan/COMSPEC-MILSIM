@@ -77,6 +77,9 @@ Rendus « 3D oblique » et « Plan » : mosaïque par hauteur (sans `--no-mosaic
 ## Build
 
 - Windows avec Arma 3 Tools et le SDK .NET 8 : `build_mod.bat` (DLL + PBO).
+  En fin de build, `tools/verify_build.py` (si Python 3 est installé) retire de `addons` tout PBO hors des cinq attendus
+  (vers `%TEMP%\comspec_atak_retires`), affiche taille, SHA-256 et préfixe de chaque PBO, et échoue sur un doublon,
+  un PBO manquant ou un fichier absent des sources (build périmé). Seul : `python tools/verify_build.py @COMSPEC_ATAK_Native/addons`.
 - Sans Arma 3 Tools (Linux ou Windows) : `hemtt build` depuis `Sources/`, puis copier
   `Sources/.hemttout/build/addons/comspec_atak_native_main.pbo` vers `@COMSPEC_ATAK_Native/addons/main.pbo`.
   Les pylônes relais 3D sont dans un PBO à part : `comspec_atak_native_towers.pbo` vers `@COMSPEC_ATAK_Native/addons/towers.pbo`
