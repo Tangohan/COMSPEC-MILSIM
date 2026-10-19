@@ -7,39 +7,39 @@
 if (isNil "CBA_fnc_addSetting") exitWith { false };
 
 private _cat = ["COMSPEC SSE", "Biométrie"];
-private _catPop = ["COMSPEC SSE", "Biométrie — population"];
+private _catPop = ["COMSPEC SSE", "Biométrie : population"];
 
 private _add = {
     params ["_var", "_type", "_label", "_cat", "_value"];
     [_var, _type, _label, _cat, _value, 1, {}, false] call comspec_sse_fnc_addSetting;
 };
 
-["comspec_sse_bio_enabled", "CHECKBOX", ["Moteur biométrique", "Identités biologiques générées, base de données, qualité de capture selon le terrain et vraie recherche 1:N. Désactivé : ancien comportement (verdict tiré de la graine)."], _cat, true] call _add;
-["comspec_sse_bio_campaignSeed", "EDITBOX", ["Graine de campagne", "Vide = nom de la mission. Gardez la même graine d'une mission à l'autre et fixez l'identifiant biométrique des personnages récurrents : ils garderont les mêmes empreintes."], _cat, ""] call _add;
-["comspec_sse_bio_matchThreshold", "SLIDER", ["Seuil de correspondance", "Score fusionné au-delà duquel le terminal annonce MATCH (et au moins deux doigts ou un iris concordants)."], _cat, [30, 95, 60, 0]] call _add;
-["comspec_sse_bio_possibleThreshold", "SLIDER", ["Seuil de correspondance possible", "En dessous : NO MATCH."], _cat, [5, 60, 25, 0]] call _add;
-["comspec_sse_bio_impostorRate", "SLIDER", ["Fausses alertes (%)", "Probabilité de base qu'un individu ressemblant ressorte en « possible ». Elle augmente quand les relevés sont mauvais ou limités au visage. 0 = jamais."], _cat, [0, 30, 4, 0]] call _add;
-["comspec_sse_bio_strictness", "SLIDER", ["Rigueur des conditions de capture", "Multiplie les pénalités (nuit, pluie, mort, blessures, sujet non maîtrisé). 0 = conditions ignorées."], _cat, [0, 2, 1, 1]] call _add;
-["comspec_sse_bio_injuryBlock", "SLIDER", ["Blessure bloquant le relevé", "Dégâts ACE d'une partie du corps (bras, tête) à partir desquels les doigts de cette main, le visage ou l'iris ne peuvent plus être relevés. Plus bas = plus strict."], _cat, [0.3, 3, 1.2, 1]] call _add;
-["comspec_sse_bio_localTiers", "SLIDER", ["Base locale du terminal : tiers embarqués", "Hors liaison, le terminal ne connaît que la watchlist jusqu'à ce tier (1 = DETAIN seulement, 4 = toute la watchlist) et les rencontres de la mission."], _cat, [1, 4, 2, 0]] call _add;
-["comspec_sse_bio_delayLocal", "SLIDER", ["Durée d'une recherche locale (s)", ""], _cat, [1, 30, 5, 0]] call _add;
-["comspec_sse_bio_delayAbis", "SLIDER", ["Durée d'une recherche ABIS en liaison (s)", ""], _cat, [1, 60, 12, 0]] call _add;
-["comspec_sse_bio_dnaDelay", "SLIDER", ["Délai du résultat ADN (s)", "L'ADN part au laboratoire : le résultat revient à l'opérateur après ce délai. 0 = immédiat."], _cat, [0, 3600, 900, 0]] call _add;
-["comspec_sse_bio_latents", "CHECKBOX", ["Empreintes latentes", "Armes au sol près d'un corps et objets liés à un sujet portent ses empreintes, relevables et recherchables."], _cat, true] call _add;
-["comspec_sse_bio_athena", "CHECKBOX", ["Avis de recherche Athena", "En liaison, les avis de recherche de la communauté entrent dans la base (correspondance faciale et nominative)."], _cat, true] call _add;
-["comspec_sse_bio_faceStudio", "CHECKBOX", ["Photo du visage en studio", "Le SEEK cadre un double du sujet, droit et éclairé, sur fond de ciel : fini les clichés dans le sol, dans un mur ou de nuit noire. La qualité reste celle du vrai sujet (masque, blessures, décès)."], _cat, true] call _add;
-["comspec_sse_headBagGoggles", "EDITBOX", ["Modèle du sac de tête", "Classe de lunettes (CfgGlasses) portée par le prisonnier. Vide = cagoule COMSPEC provisoire. Ex. : G_Blindfold_01_black_F (bandeau du DLC Laws of War) ou le sac d'un autre mod."], _cat, ""] call _add;
-["comspec_sse_bio_campaignMemory", "CHECKBOX", ["Mémoriser les rencontres entre missions", "Le serveur conserve les rencontres des personnages dont l'identifiant biométrique est fixé (profil serveur)."], _cat, false] call _add;
+["comspec_sse_bio_enabled", "CHECKBOX", ["Biométrie réaliste", "Chaque personnage a ses propres empreintes, iris et ADN, enregistrés dans une base ; la qualité du relevé dépend des conditions et la recherche compare vraiment le relevé à toute la base. Décoché : ancien système, résultat tiré au hasard."], _cat, true] call _add;
+["comspec_sse_bio_campaignSeed", "EDITBOX", ["Code de campagne", "Vide : nom de la mission. Gardez le même code d'une mission à l'autre et donnez un identifiant biométrique fixe aux personnages récurrents : ils garderont les mêmes empreintes."], _cat, ""] call _add;
+["comspec_sse_bio_matchThreshold", "SLIDER", ["Score pour une correspondance (MATCH)", "Score à partir duquel le terminal annonce MATCH (il faut aussi au moins deux doigts ou un iris identiques)."], _cat, [30, 95, 60, 0]] call _add;
+["comspec_sse_bio_possibleThreshold", "SLIDER", ["Score pour une correspondance possible", "En dessous de ce score, le terminal annonce NO MATCH."], _cat, [5, 60, 25, 0]] call _add;
+["comspec_sse_bio_impostorRate", "SLIDER", ["Fausses alertes (%)", "Risque qu'une personne qui se ressemble sorte en « correspondance possible ». Il augmente si les relevés sont mauvais ou faits seulement sur le visage. 0 = jamais."], _cat, [0, 30, 4, 0]] call _add;
+["comspec_sse_bio_strictness", "SLIDER", ["Effet des conditions sur les relevés", "Plus c'est haut, plus la nuit, la pluie, la mort, les blessures ou un sujet qui se débat dégradent les relevés. 0 = aucun effet."], _cat, [0, 2, 1, 1]] call _add;
+["comspec_sse_bio_injuryBlock", "SLIDER", ["Blessure qui empêche le relevé", "Niveau de blessure ACE (bras, tête) à partir duquel on ne peut plus relever les empreintes de cette main, le visage ou l'iris. Plus c'est bas, plus c'est strict."], _cat, [0.3, 3, 1.2, 1]] call _add;
+["comspec_sse_bio_localTiers", "SLIDER", ["Base hors ligne du terminal", "Sans liaison, le terminal ne connaît que les personnes recherchées jusqu'à ce niveau (1 = seulement « à arrêter », 4 = toute la liste) et celles déjà croisées pendant la mission."], _cat, [1, 4, 2, 0]] call _add;
+["comspec_sse_bio_delayLocal", "SLIDER", ["Durée d'une recherche hors ligne (s)", ""], _cat, [1, 30, 5, 0]] call _add;
+["comspec_sse_bio_delayAbis", "SLIDER", ["Durée d'une recherche en ligne (s)", ""], _cat, [1, 60, 12, 0]] call _add;
+["comspec_sse_bio_dnaDelay", "SLIDER", ["Délai du résultat ADN (s)", "L'ADN est envoyé au labo : le résultat arrive après ce délai. 0 = tout de suite."], _cat, [0, 3600, 900, 0]] call _add;
+["comspec_sse_bio_latents", "CHECKBOX", ["Empreintes laissées sur les objets", "Les armes au sol près d'un corps et les objets d'une personne portent ses empreintes : on peut les relever et les rechercher."], _cat, true] call _add;
+["comspec_sse_bio_athena", "CHECKBOX", ["Avis de recherche Athena", "Avec la liaison, les avis de recherche de votre communauté sur Athena sont ajoutés à la base (reconnaissance par visage et par nom)."], _cat, true] call _add;
+["comspec_sse_bio_faceStudio", "CHECKBOX", ["Photo du visage en studio", "Le SEEK prend la photo du visage comme en studio, sujet droit et bien éclairé : plus de photo ratée dans le sol, dans un mur ou en pleine nuit. La qualité dépend quand même du vrai sujet (masque, blessures, mort)."], _cat, true] call _add;
+["comspec_sse_headBagGoggles", "EDITBOX", ["Modèle de la cagoule de prisonnier", "Item de visage (classe CfgGlasses) mis sur la tête du prisonnier. Vide : cagoule COMSPEC. Ex. : G_Blindfold_01_black_F (bandeau du DLC Laws of War) ou le sac d'un autre mod."], _cat, ""] call _add;
+["comspec_sse_bio_campaignMemory", "CHECKBOX", ["Garder les rencontres d'une mission à l'autre", "Le serveur se souvient des personnages déjà croisés, s'ils ont un identifiant biométrique fixe."], _cat, false] call _add;
 
-["comspec_sse_bio_enrolled_civ", "SLIDER", ["Civils déjà enrôlés (%)", "Part des civils présents dans une base (carte d'identité biométrique, recensement, employés locaux)."], _catPop, [0, 100, 35, 0]] call _add;
-["comspec_sse_bio_enrolled_east", "SLIDER", ["OPFOR déjà enrôlés (%)", ""], _catPop, [0, 100, 55, 0]] call _add;
-["comspec_sse_bio_enrolled_indep", "SLIDER", ["Indépendants déjà enrôlés (%)", ""], _catPop, [0, 100, 40, 0]] call _add;
-["comspec_sse_bio_enrolled_west", "SLIDER", ["BLUFOR déjà enrôlés (%)", ""], _catPop, [0, 100, 10, 0]] call _add;
-["comspec_sse_bio_watch_civ", "SLIDER", ["Civils en watchlist (%)", "Part de la population totale du camp (inclus dans les enrôlés)."], _catPop, [0, 100, 3, 0]] call _add;
-["comspec_sse_bio_watch_east", "SLIDER", ["OPFOR en watchlist (%)", ""], _catPop, [0, 100, 25, 0]] call _add;
-["comspec_sse_bio_watch_indep", "SLIDER", ["Indépendants en watchlist (%)", ""], _catPop, [0, 100, 10, 0]] call _add;
-["comspec_sse_bio_watch_west", "SLIDER", ["BLUFOR en watchlist (%)", ""], _catPop, [0, 100, 0, 0]] call _add;
-["comspec_sse_bio_falseId_civ", "SLIDER", ["Civils sous faux papiers (%)", "L'identité déclarée diffère de l'identité réelle ; seule une correspondance biométrique le révèle."], _catPop, [0, 100, 2, 0]] call _add;
+["comspec_sse_bio_enrolled_civ", "SLIDER", ["Civils déjà fichés (%)", "Part des civils déjà fichés (carte d'identité biométrique, recensement, employés locaux)."], _catPop, [0, 100, 35, 0]] call _add;
+["comspec_sse_bio_enrolled_east", "SLIDER", ["OPFOR déjà fichés (%)", ""], _catPop, [0, 100, 55, 0]] call _add;
+["comspec_sse_bio_enrolled_indep", "SLIDER", ["Indépendants déjà fichés (%)", ""], _catPop, [0, 100, 40, 0]] call _add;
+["comspec_sse_bio_enrolled_west", "SLIDER", ["BLUFOR déjà fichés (%)", ""], _catPop, [0, 100, 10, 0]] call _add;
+["comspec_sse_bio_watch_civ", "SLIDER", ["Civils recherchés (%)", "Part du camp sur la liste des personnes recherchées (compris dans les fichés)."], _catPop, [0, 100, 3, 0]] call _add;
+["comspec_sse_bio_watch_east", "SLIDER", ["OPFOR recherchés (%)", ""], _catPop, [0, 100, 25, 0]] call _add;
+["comspec_sse_bio_watch_indep", "SLIDER", ["Indépendants recherchés (%)", ""], _catPop, [0, 100, 10, 0]] call _add;
+["comspec_sse_bio_watch_west", "SLIDER", ["BLUFOR recherchés (%)", ""], _catPop, [0, 100, 0, 0]] call _add;
+["comspec_sse_bio_falseId_civ", "SLIDER", ["Civils sous faux papiers (%)", "Leur nom déclaré n'est pas leur vrai nom ; seule la biométrie permet de le découvrir."], _catPop, [0, 100, 2, 0]] call _add;
 ["comspec_sse_bio_falseId_other", "SLIDER", ["Combattants sous faux papiers (%)", ""], _catPop, [0, 100, 12, 0]] call _add;
 
 true

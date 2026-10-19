@@ -168,7 +168,7 @@ private _dropMarker = {
     private _m = [_e get "pos"] call comspec_atak_native_fnc_markerDrop;
     { if ((_old select _forEachIndex) isEqualTo "§") then { _s deleteAt _x; } else { _s set [_x, _old select _forEachIndex]; }; } forEach _keys;
     if (_m isNotEqualTo "") then {
-        _m setMarkerText format ["LOCK %1 · %2 (%3)", [_e get "num", 3] call CBA_fnc_formatNumber, _e get "name", ["téléphone", "drone"] select ((_e get "src") isEqualTo "DRONE")];
+        _m setMarkerText format ["LOCK %1 · %2 (%3)", [_e get "num", 3] call CBA_fnc_formatNumber, _e get "name", (["téléphone", "drone"] select ((_e get "src") isEqualTo "DRONE")) call comspec_atak_native_fnc_tr];
     };
     _m
 };
@@ -364,7 +364,7 @@ switch (_act) do {
             if ((_e get "state") isNotEqualTo "DOWN" && {isNull _o || {!alive _o}}) then {
                 _e set ["state", "DOWN"];
                 _e set ["lostAt", time];
-                if (_m isNotEqualTo "" && {(markerShape _m) isNotEqualTo ""}) then { _m setMarkerTextLocal format ["LOCK %1 · %2 neutralisé", _num, _e get "name"]; _m setMarkerAlpha 0.6; };
+                if (_m isNotEqualTo "" && {(markerShape _m) isNotEqualTo ""}) then { _m setMarkerTextLocal format ["LOCK %1 · %2 %3", _num, _e get "name", "neutralisé" call comspec_atak_native_fnc_tr]; _m setMarkerAlpha 0.6; };
                 ["log", format ["LOCK %1 : %2 neutralisé", _num, _e get "name"], "#5cc76b"] call comspec_atak_native_fnc_droneAction;
                 continue;
             };
@@ -391,7 +391,7 @@ switch (_act) do {
                     _e set ["state", "TRACK"];
                     _e set ["ghost", false];
                     if (_m isEqualTo "" || {(markerShape _m) isEqualTo ""}) then { _e set ["pos", _p]; _m = [_e] call _dropMarker; _e set ["marker", _m]; };
-                    if (_m isNotEqualTo "") then { _m setMarkerAlphaLocal 1; _m setMarkerText format ["LOCK %1 · %2 (%3)", _num, _e get "name", ["téléphone", "drone"] select ((_e get "src") isEqualTo "DRONE")]; };
+                    if (_m isNotEqualTo "") then { _m setMarkerAlphaLocal 1; _m setMarkerText format ["LOCK %1 · %2 (%3)", _num, _e get "name", (["téléphone", "drone"] select ((_e get "src") isEqualTo "DRONE")) call comspec_atak_native_fnc_tr]; };
                     // Bandeau « raccroché » seulement si la perte avait été annoncée (sinon le journal suffit).
                     if (_e getOrDefault ["toasted", false]) then { ["INFO", format ["LOCK %1 raccroché", _num]] call _say; };
                     _e set ["toasted", false];
@@ -424,7 +424,7 @@ switch (_act) do {
                 if (_mode isEqualTo 3) then { _e set ["ghost", true]; };
                 if (_m isNotEqualTo "" && {(markerShape _m) isNotEqualTo ""}) then {
                     _m setMarkerAlphaLocal 0.55;
-                    _m setMarkerText format ["LOCK %1 · %2 perdu %3", _num, _e get "name", [dayTime, "HH:MM"] call BIS_fnc_timeToString];
+                    _m setMarkerText format ["LOCK %1 · %2 %3 %4", _num, _e get "name", "perdu" call comspec_atak_native_fnc_tr, [dayTime, "HH:MM"] call BIS_fnc_timeToString];
                 };
             };
             if ((_e get "state") isEqualTo "LOST" && {_mode isEqualTo 1} && {(time - (_e get "lostAt")) > _keep}) then { _drop pushBack [_key, "marqueur effacé (perdue depuis trop longtemps)"]; };

@@ -11,7 +11,18 @@
 
     Les photos ne sont pas rejouées : elles restent celles déjà transmises.
     Cooldown ~15 s pour éviter le spam.
+    Fiche opérateur : renvoyée en entier, avec le catalogue des objets portés et la liste des mods (que la synchro
+    normale n'envoie plus qu'au changement) ; icônes des objets reproposées, COMSPEC Link n'envoie que celles qui
+    manquent au site.
+
+    Compte rendu :
+      COMSPEC_LastResynchSummary : lignes de texte (ancien affichage) ;
+      COMSPEC_LastResynchItems   : [[clé, état, titre, détail]...] lu par l'app Synchro du téléphone natif, état
+                                   "ok" (renvoyé) | "same" (rien à renvoyer) | "wait" (en file) | "warn" (pas parti)
+                                   | "off" (indisponible ici).
 */
+private _items = [];
+private _add = { _items pushBack _this; };
 if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
     ["Overwatch est désactivé.", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
@@ -47,6 +58,7 @@ if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
     missionNamespace setVariable ["COMSPEC_LastResynchSummary", [
         format ["<t size='0.78' color='#ffb0a0'>%1</t>", _msg]
     ], false];
+    missionNamespace setVariable ["COMSPEC_LastResynchItems", [["link", "warn", "Liaison Athena", "Coupée : rien n'a pu partir. Reliez le compte (app Athena) ou attendez le retour du réseau."]], false];
     [_msg, "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
@@ -56,9 +68,32 @@ private _parts = [];
 
 // --- FICHE OPÉRATEUR (identité / visage / équipement / versions) ---
 if (!isNil "comspec_overwatch_connect_fnc_syncOperatorProfile") then {
-    ["sync", "manual", true] call comspec_overwatch_connect_fnc_syncOperatorProfile;
+    // Catalogue des objets, mods et icônes : redemandés une fois (la synchro normale ne les envoie qu'au changement).
+    missionNamespace setVariable ["COMSPEC_OpCatalogSentKey", "", false];
+    missionNamespace setVariable ["COMSPEC_OpModsSentKey", "", false];
+    missionNamespace setVariable ["COMSPEC_ItemIconsSent", createHashMap];
+    private _r = ["sync", "manual", true] call comspec_overwatch_connect_fnc_syncOperatorProfile;
     _parts pushBack "fiche opérateur";
     _lines pushBack "<t color='#9dffc4'>Fiche opérateur observée renvoyée (identité, visage, équipement, versions).</t>";
+    private _kb = (round ((missionNamespace getVariable ["COMSPEC_OperatorLastBytes", 0]) / 100)) / 10;
+    switch (true) do {
+        case (!(_r isEqualType createHashMap)): {
+            ["profile", "warn", "Fiche opérateur", "Pas partie : liaison pas prête ou envoi déjà en cours. Relancez dans un instant."] call _add;
+        };
+        case (_r getOrDefault ["pending", false]): {
+            ["profile", "wait", "Fiche opérateur", "Reçue, en attente de validation du compte sur Athena."] call _add;
+        };
+        case (_r getOrDefault ["ok", false]): {
+            private _gap = _r getOrDefault ["discrepancies", 0];
+            ["profile", "ok", "Fiche opérateur", format ["Identité, visage, groupe sanguin, tenue et kit porté, versions, catalogue des objets et mods (%1 Ko).%2", _kb,
+                ["", format [" Athena signale %1 écart(s) avec le profil du site.", _gap]] select (_gap > 0)]] call _add;
+            private _icons = missionNamespace getVariable ["COMSPEC_ItemIconsSent", createHashMap];
+            ["icons", ["same", "ok"] select ((count _icons) > 0), "Icônes des objets", format ["%1 objet(s) proposés : seules les icônes qui manquent au site partent.", count _icons]] call _add;
+        };
+        default {
+            ["profile", "warn", "Fiche opérateur", format ["Refusée par Athena (%1).", _r getOrDefault ["status", "?"]]] call _add;
+        };
+    };
 };
 
 // --- LOCALISATION ---
@@ -67,6 +102,7 @@ private _posOk = (_result isEqualTo "ok");
 if (_posOk) then {
     _parts pushBack "localisation";
     _lines pushBack "<t color='#9dffc4'>Localisation renvoyée (position, groupe, radio).</t>";
+    ["position", "ok", "Position", format ["%1, groupe, radio et santé.", mapGridPosition player]] call _add;
 } else {
     private _why = switch (_result) do {
         case "origin": { "position non valide — déplacez-vous un peu" };
@@ -74,6 +110,7 @@ if (_posOk) then {
         default { "transmission de position impossible" };
     };
     _lines pushBack format ["<t color='#ffe08a'>Localisation : %1.</t>", _why];
+    ["position", "warn", "Position", (toUpper (_why select [0, 1])) + (_why select [1]) + "."] call _add;
 };
 
 // --- TEMPS DE MISSION ---
@@ -85,8 +122,10 @@ if (!isNil "comspec_overwatch_connect_fnc_forcePlaytimeReport") then {
 if (_ptOk) then {
     _parts pushBack "temps de mission";
     _lines pushBack "<t color='#9dffc4'>Temps de mission remonté vers le portail.</t>";
+    ["playtime", "ok", "Temps de mission", "Remonté sur la fiche du membre."] call _add;
 } else {
     _lines pushBack "<t color='#ffe08a'>Temps de mission : remontée non effectuée (liaison ou délai).</t>";
+    ["playtime", "warn", "Temps de mission", "Pas remonté (liaison ou délai) : il repart au prochain rapport."] call _add;
 };
 
 // --- DATA (carte / capteurs) ---
@@ -124,6 +163,10 @@ if (!isNil "comspec_overwatch_connect_fnc_queueMapMarker") then {
 
 _parts pushBack "données carte";
 _lines pushBack format ["<t color='#9dffc4'>Données carte renvoyées — %1 marqueur(s).</t>", _mkCount];
+["map", ["same", "ok"] select (_mkCount > 0), "Marqueurs posés", [
+    "Aucun marqueur posé depuis ce terminal.",
+    format ["%1 marqueur(s) renvoyé(s), avec les réglages de la faction.", _mkCount]
+] select (_mkCount > 0)] call _add;
 
 // --- FRS (file hors ligne, pas le brouillon ouvert) ---
 private _frsSent = 0;
@@ -134,8 +177,10 @@ if (!isNil "comspec_overwatch_connect_fnc_outboxFlush") then {
 if (_frsSent > 0) then {
     _parts pushBack "fiches";
     _lines pushBack format ["<t color='#9dffc4'>Fiches en attente transmises : %1.</t>", _frsSent];
+    ["reports", "ok", "Comptes rendus en attente", format ["%1 fiche(s) transmise(s).", _frsSent]] call _add;
 } else {
     _lines pushBack "<t color='#B9C0E0'>Aucune fiche de renseignement en attente à renvoyer.</t>";
+    ["reports", "same", "Comptes rendus en attente", "Aucun : tout est déjà parti."] call _add;
 };
 
 // --- SEEK ---
@@ -143,6 +188,7 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_sendSeekData") then {
     [true] call comspec_overwatch_atak_athena_fnc_athena_sendSeekData;
     _parts pushBack "SEEK";
     _lines pushBack "<t color='#9dffc4'>Fiches personnes / SEEK renvoyées.</t>";
+    ["sse", "ok", "Fiches SEEK", "Personnes contrôlées renvoyées."] call _add;
 };
 
 // --- GROUP (effectif courant) ---
@@ -162,6 +208,7 @@ if (!isNil "comspec_overwatch_connect_fnc_sendIntel") then {
 };
 _parts pushBack "groupe";
 _lines pushBack format ["<t color='#9dffc4'>Groupe renvoyé — %1 personne(s).</t>", count _names];
+["group", "ok", "Effectif du groupe", format ["%1 : %2 personne(s) en vie.", [_gid, "Groupe"] select (_gid isEqualTo ""), count _names]] call _add;
 
 // --- GROUP messages + MESSAGE (rejeu limité, ce terminal uniquement) ---
 private _msgCount = 0;
@@ -216,14 +263,17 @@ if (_groupMsgCount + _msgCount > 0) then {
         _groupMsgCount,
         _msgCount
     ];
+    ["chat", "ok", "Derniers messages", format ["%1 de groupe, %2 radio (envoyés depuis ce terminal).", _groupMsgCount, _msgCount]] call _add;
 } else {
     _lines pushBack "<t color='#B9C0E0'>Aucun message récent à renvoyer depuis ce terminal.</t>";
+    ["chat", "same", "Derniers messages", "Aucun message récent envoyé depuis ce terminal."] call _add;
 };
 
 _lines pushBack "";
 _lines pushBack "<t size='0.66' color='#8A90A8'>Les photos ne sont pas renvoyées : elles restent celles déjà transmises.</t>";
 
 missionNamespace setVariable ["COMSPEC_LastResynchSummary", _lines, false];
+missionNamespace setVariable ["COMSPEC_LastResynchItems", _items, false];
 
 private _announce = if (_parts isEqualTo []) then {
     "Resynch : rien n’a pu partir — vérifiez la liaison."

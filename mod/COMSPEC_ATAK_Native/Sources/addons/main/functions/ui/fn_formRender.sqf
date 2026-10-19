@@ -43,6 +43,9 @@
       ["notif", icône, couleur, titre, à droite, texte, code ouvrir, code fermer, aide]   carte de notification : liseré
           et pastille d'icône à la couleur de gravité, titre en gras, heure / compteur à droite, texte en dessous ;
           clic sur la carte = code ouvrir ({} : rien), croix à droite = code fermer ({} : pas de croix)
+      ["cells", [[icône, couleur, titre, à droite, texte]...], colonnes (2)]   cartes d'état en grille (app Resynch) :
+          liseré et pastille d'icône à la couleur de l'état, titre en gras, état à droite, texte en dessous ; les cartes
+          d'une même rangée prennent la hauteur de la plus haute
       ["empty", icône, titre, sous-titre]   état vide centré : grande icône pâle, titre et explication
       ["status", image, couleur RGBA, titre, texte, action]   carte d'état (app Athena) : liseré et titre à la couleur de
           l'état, image carrée à gauche, explication dessous, action à faire en ambre (facultative) ; hauteur au contenu
@@ -613,6 +616,45 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 [_cb, _close] call _click;
             };
             _y = _y + _h + _pad / 3;
+        };
+        case "cells": {
+            _row params ["", ["_cells", []], ["_cols", 2]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            private _e = { params ["_v"]; (_v regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"] };
+            private _gap = _pad / 2;
+            private _cw = (_w - _gap * (_cols - 1)) / (_cols max 1);
+            private _ih = _font * 1.6;
+            private _iw = _ih * _ratio;
+            for "_r" from 0 to ((count _cells) - 1) step _cols do {
+                private _made = [];
+                private _rh = _ih + _pad * 0.8;
+                {
+                    _x params ["_icon", "_rgb", "_title", ["_meta", ""], ["_body", ""]];
+                    private _cx = _pad + _forEachIndex * (_cw + _gap);
+                    private _card = ["COMSPEC_RscText", [_cx, _y, _cw, _rowH]] call _mk;
+                    _card ctrlSetBackgroundColor [0.07, 0.088, 0.08, 1];
+                    private _strip = ["COMSPEC_RscText", [_cx, _y, pixelW * 4, _rowH]] call _mk;
+                    _strip ctrlSetBackgroundColor _rgb;
+                    private _tile = ["COMSPEC_RscText", [_cx + _pad * 0.6, _y + _pad * 0.4, _iw, _ih]] call _mk;
+                    _tile ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.22];
+                    private _p = ["COMSPEC_RscPicture", [_cx + _pad * 0.6 + _iw * 0.17, _y + _pad * 0.4 + _ih * 0.17, _iw * 0.66, _ih * 0.66], _icon] call _mk;
+                    _p ctrlSetTextColor [0.95, 0.98, 0.96, 1];
+                    private _tx = _cx + _pad * 1.2 + _iw;
+                    private _tw = _cw - _iw - _pad * 1.6;
+                    private _t = ["COMSPEC_RscStructuredText", [_tx, _y + _pad * 0.3, _tw, _rowH]] call _mk;
+                    _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#eef4f0'>%1</t><t size='0.75' align='right'>%2</t>%3",
+                        [_title] call _e, _meta, ["", format ["<br/><t size='0.82' color='#c6d2cc'>%1</t>", [_body] call _e]] select (_body isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+                    private _th = ctrlTextHeight _t;
+                    _rh = _rh max (_th + _pad * 0.6);
+                    _made pushBack [_card, _strip, _t, _th];
+                } forEach (_cells select [_r, _cols]);
+                {
+                    _x params ["_card", "_strip", "_t", "_th"];
+                    { _x ctrlSetPositionH _rh; _x ctrlCommit 0; } forEach [_card, _strip];
+                    _t ctrlSetPositionH _th; _t ctrlCommit 0;
+                } forEach _made;
+                _y = _y + _rh + _gap;
+            };
         };
         case "empty": {
             _row params ["", "_icon", "_title", ["_sub", ""]];

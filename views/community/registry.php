@@ -436,6 +436,14 @@ if ($registryCount === 0) {
           $createdTs = strtotime((string) ($t['created_at'] ?? '')) ?: 0;
           $simpleReg = !empty($t['registry_simple_reg']);
           $excerpt = trim((string) ($t['registry_excerpt'] ?? ''));
+          $tagline = trim((string) ($t['registry_tagline'] ?? ''));
+          if ($excerpt === '' && $tagline !== '') {
+              $excerpt = $tagline;
+          }
+          // Une présentation qui ne fait que répéter le jeu n’apporte rien sur la carte.
+          if ($excerpt !== '' && mb_strtolower($excerpt) === mb_strtolower(trim((string) ($t['game_label'] ?? '')))) {
+              $excerpt = '';
+          }
           $styleBadgeLabels = is_array($t['registry_style_badge_labels'] ?? null) ? $t['registry_style_badge_labels'] : [];
           $styleBadgeSlugs = is_array($t['registry_style_badge_slugs'] ?? null) ? $t['registry_style_badge_slugs'] : [];
           $registryTagLabels = is_array($t['registry_tag_labels'] ?? null) ? $t['registry_tag_labels'] : [];
@@ -462,10 +470,37 @@ if ($registryCount === 0) {
               $localeLabel,
           ]))));
           $typeAttr = implode(' ', array_map('strval', $styleBadgeSlugs));
+          // Habillage et chiffres (CommunityCardDecorator) : la carte reste lisible sans eux.
+          $cardBanner = trim((string) ($t['card_banner'] ?? ''));
+          if ($cardBanner === '' && $coverUrl !== null) {
+              $cardBanner = $coverUrl;
+          }
+          $cardAccent = \App\Support\CommunityCardDecorator::color((string) ($t['card_accent'] ?? '')) ?? '';
+          $cardLogo = trim((string) ($t['card_logo'] ?? ''));
+          if ($cardLogo === '' && $logoUrl !== '' && filter_var($logoUrl, FILTER_VALIDATE_URL)) {
+              $cardLogo = $logoUrl;
+          }
+          $cardMembers = (int) ($t['card_members'] ?? 0);
+          $cardActivity = isset($t['card_activity']) && $t['card_activity'] !== null ? (int) $t['card_activity'] : null;
+          $cardUnits = (int) ($t['card_units'] ?? 0);
+          $cardOps = (float) ($t['card_ops'] ?? 0);
+          $cardUpcoming = (int) ($t['card_upcoming'] ?? 0);
+          $cardRating = isset($t['card_rating']) && $t['card_rating'] !== null ? (float) $t['card_rating'] : null;
+          $cardRatingCount = (int) ($t['card_rating_count'] ?? 0);
+          $cardAge = \App\Support\CommunityCardDecorator::age(isset($t['card_age_days']) ? (int) $t['card_age_days'] : null);
+          $hasStats = $cardMembers > 0 || $cardUnits > 0 || $cardOps > 0;
+          $allTags = [];
+          foreach ($styleBadgeLabels as $bl) { if (is_string($bl) && $bl !== '') { $allTags[] = ['info', $bl]; } }
+          if ($countryLabel !== '') { $allTags[] = ['muted', $countryLabel]; }
+          if ($localeLabel !== '') { $allTags[] = ['muted', $localeLabel]; }
+          foreach ($registryTagLabels as $tl) { if (is_string($tl) && $tl !== '') { $allTags[] = ['muted', $tl]; } }
+          $tagsShown = array_slice($allTags, 0, 4);
+          $tagsMore = count($allTags) - count($tagsShown);
+          $cardStyle = ($cardAccent !== '' ? '--cr-acc: ' . $cardAccent . ';' : '');
           $delayClass = 'cr-rise cr-rise-d' . min(3, 1 + ($i % 3));
           ?>
         <li
-          class="cr-card <?= $delayClass ?><?= $featured ? ' cr-card--featured' : '' ?><?= $pinned ? ' cr-card--pinned' : '' ?>"
+          class="cr-card <?= $delayClass ?><?= $featured ? ' cr-card--featured' : '' ?><?= $pinned ? ' cr-card--pinned cr-card--spot' : '' ?><?= $cardAccent !== '' ? ' has-accent' : '' ?>"<?= $cardStyle !== '' ? ' style="' . htmlspecialchars($cardStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
           data-cr-card
           data-cr-index="<?= (int) $i ?>"
           data-cr-name="<?= htmlspecialchars(mb_strtolower($name), ENT_QUOTES, 'UTF-8') ?>"
@@ -485,8 +520,8 @@ if ($registryCount === 0) {
           data-cr-lang="<?= htmlspecialchars($localeKey, ENT_QUOTES, 'UTF-8') ?>"
         >
           <div class="cr-card__cover">
-            <?php if ($coverUrl !== null): ?>
-            <img src="<?= htmlspecialchars($coverUrl) ?>" alt="" loading="lazy">
+            <?php if ($cardBanner !== ''): ?>
+            <img src="<?= htmlspecialchars($cardBanner) ?>" alt="" loading="lazy" decoding="async">
             <?php else: ?>
             <div class="cr-card__cover-fallback" style="<?= htmlspecialchars($gradientStyle) ?>" role="img" aria-hidden="true"></div>
             <?php endif; ?>
@@ -525,9 +560,9 @@ if ($registryCount === 0) {
                 <p class="cr-card__unit"><?= htmlspecialchars($unitAffiliationLabel) ?></p>
                 <?php endif; ?>
               </div>
-              <?php if ($logoUrl !== '' && filter_var($logoUrl, FILTER_VALIDATE_URL)): ?>
+              <?php if ($cardLogo !== ''): ?>
               <div class="cr-card__logo">
-                <img src="<?= htmlspecialchars($logoUrl) ?>" alt="">
+                <img src="<?= htmlspecialchars($cardLogo) ?>" alt="">
               </div>
               <?php else: ?>
               <div class="cr-card__logo cr-card__logo-fallback" aria-hidden="true"><?= htmlspecialchars($nameInitials($name)) ?></div>
@@ -535,72 +570,65 @@ if ($registryCount === 0) {
             </div>
           </div>
 
+          <?php if ($hasStats): ?>
+          <dl class="cr-stats" aria-label="Chiffres de la communauté">
+            <div class="cr-stat"><dt>Membres</dt><dd data-cr-count-to="<?= $cardMembers ?>"><?= htmlspecialchars(\App\Support\CommunityCardDecorator::compact($cardMembers)) ?></dd></div>
+            <div class="cr-stat"><dt>Actifs 30 j</dt><dd><?= $cardActivity !== null ? $cardActivity . '<small> %</small>' : '—' ?></dd></div>
+            <div class="cr-stat"><dt>Unités ORBAT</dt><dd data-cr-count-to="<?= $cardUnits ?>"><?= $cardUnits ?></dd></div>
+            <div class="cr-stat"><dt>Ops / mois</dt><dd><?= htmlspecialchars(\App\Support\CommunityCardDecorator::compact($cardOps)) ?></dd></div>
+          </dl>
+          <?php endif; ?>
+
           <div class="cr-card__body">
             <div class="cr-tags">
               <span class="cr-pill <?= $simpleReg ? 'cr-pill--muted' : 'cr-pill--ok' ?>">
                 <?= $simpleReg ? 'Inscription simple' : 'Parcours MilSim' ?>
               </span>
-              <?php if ($countryLabel !== ''): ?>
-              <span class="cr-pill cr-pill--muted"><?= htmlspecialchars($countryLabel) ?></span>
+              <?php if ($locked): ?>
+              <span class="cr-pill cr-pill--warn">Sur invitation</span>
               <?php endif; ?>
-              <?php if ($localeLabel !== ''): ?>
-              <span class="cr-pill cr-pill--muted"><?= htmlspecialchars($localeLabel) ?></span>
+              <?php foreach ($tagsShown as [$tagTone, $tagLabel]): ?>
+              <span class="cr-pill cr-pill--<?= $tagTone === 'info' ? 'info' : 'muted' ?>"><?= htmlspecialchars((string) $tagLabel) ?></span>
+              <?php endforeach; ?>
+              <?php if ($tagsMore > 0): ?>
+              <span class="cr-pill cr-pill--muted" title="<?= htmlspecialchars(implode(' · ', array_map(static fn ($x) => (string) $x[1], array_slice($allTags, 4))), ENT_QUOTES, 'UTF-8') ?>">+<?= (int) $tagsMore ?></span>
               <?php endif; ?>
-              <?php foreach ($styleBadgeLabels as $bl): ?>
-                <?php if (is_string($bl) && $bl !== ''): ?>
-                <span class="cr-pill cr-pill--info"><?= htmlspecialchars($bl) ?></span>
-                <?php endif; ?>
-              <?php endforeach; ?>
-              <?php foreach ($registryTagLabels as $tl): ?>
-                <?php if (is_string($tl) && $tl !== ''): ?>
-                <span class="cr-pill cr-pill--muted"><?= htmlspecialchars($tl) ?></span>
-                <?php endif; ?>
-              <?php endforeach; ?>
             </div>
 
             <?php if ($excerpt !== ''): ?>
             <p class="cr-excerpt"><?= nl2br(htmlspecialchars($excerpt)) ?></p>
             <?php else: ?>
-            <p class="cr-excerpt">
-              Cette communauté n’a pas encore rédigé de présentation courte. Ouvrez la fiche publique pour en savoir plus sur le recrutement et la vie de l’unité.
+            <p class="cr-excerpt cr-excerpt--empty">
+              Pas encore de présentation : ouvrez la fiche publique pour découvrir le recrutement et la vie de l’unité.
             </p>
             <?php endif; ?>
 
-            <div class="cr-meta">
-              <div class="cr-meta__cell">
-                <p class="cr-meta__label">Accès</p>
-                <p class="cr-meta__value"><?= $locked ? 'Sur invitation' : 'Public + code' ?></p>
-              </div>
-              <div class="cr-meta__cell">
-                <p class="cr-meta__label">Recrutement</p>
-                <p class="cr-meta__value"><?= $locked ? 'Fermé' : 'Ouvert' ?></p>
-              </div>
-              <div class="cr-meta__cell">
-                <?php if ($loggedIn && $code !== ''): ?>
-                <p class="cr-meta__label">Code d’accès</p>
-                <p class="cr-meta__value"><?= htmlspecialchars($code) ?></p>
-                <?php else: ?>
-                <p class="cr-meta__label">Lien</p>
-                <p class="cr-meta__value">Fiche publique</p>
-                <?php endif; ?>
-              </div>
-            </div>
+            <?php if ($cardUpcoming > 0 || $cardRatingCount > 0 || $cardAge !== ''): ?>
+            <ul class="cr-facts">
+              <?php if ($cardUpcoming > 0): ?>
+              <li class="cr-fact cr-fact--live"><span class="cr-pulse" aria-hidden="true"></span><?= $cardUpcoming === 1 ? '1 opération à venir' : $cardUpcoming . ' opérations à venir' ?></li>
+              <?php endif; ?>
+              <?php if ($cardRatingCount > 0 && $cardRating !== null): ?>
+              <li class="cr-fact"><span class="cr-stars" style="--v: <?= htmlspecialchars((string) round($cardRating / 5 * 100), ENT_QUOTES, 'UTF-8') ?>%" aria-hidden="true">★★★★★</span><?= htmlspecialchars(str_replace('.', ',', (string) $cardRating)) ?> · <?= $cardRatingCount ?> avis</li>
+              <?php endif; ?>
+              <?php if ($cardAge !== ''): ?>
+              <li class="cr-fact">Sur Athena depuis <?= htmlspecialchars($cardAge) ?></li>
+              <?php endif; ?>
+            </ul>
+            <?php endif; ?>
 
             <?php if ($loggedIn && $code !== ''): ?>
-            <div class="cr-code-box">
-              <p class="cr-code-box__label">Code communauté</p>
-              <div class="cr-code-box__row">
-                <code class="cr-code-box__code cr-mono"><?= htmlspecialchars($code) ?></code>
-                <button
-                  type="button"
-                  class="cr-btn cr-btn--line cr-btn--sm"
-                  data-registry-copy="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>"
-                  aria-label="Copier le code communauté"
-                >
-                  <span data-registry-copy-label>Copier</span>
-                </button>
-                <p class="cr-code-box__hint">Utilisez ce code sur la page « Rejoindre » pour être orienté vers cette communauté.</p>
-              </div>
+            <div class="cr-code">
+              <span class="cr-code__label">Code</span>
+              <code class="cr-code__value cr-mono" title="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($code) ?></code>
+              <button
+                type="button"
+                class="cr-code__copy"
+                data-registry-copy="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>"
+                aria-label="Copier le code communauté"
+              >
+                <span data-registry-copy-label>Copier</span>
+              </button>
             </div>
             <?php endif; ?>
 
@@ -801,5 +829,29 @@ if ($registryCount === 0) {
 
   sortCards();
   apply();
+
+  // Chiffres des cartes : comptage animé à l’apparition (désactivé si mouvement réduit).
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var counters = Array.prototype.slice.call(root.querySelectorAll('[data-cr-count-to]'));
+  if (!reduce && counters.length && 'IntersectionObserver' in window) {
+    var run = function (el) {
+      var to = parseInt(el.getAttribute('data-cr-count-to'), 10) || 0;
+      if (to <= 0 || to >= 1000) return;
+      var t0 = null;
+      var step = function (ts) {
+        if (t0 === null) t0 = ts;
+        var p = Math.min(1, (ts - t0) / 900);
+        el.textContent = String(Math.round(to * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) window.requestAnimationFrame(step);
+      };
+      window.requestAnimationFrame(step);
+    };
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { run(en.target); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.4 });
+    counters.forEach(function (el) { io.observe(el); });
+  }
 })();
 </script>

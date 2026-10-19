@@ -3,10 +3,26 @@
     langues des mods de traduction chargés (fn_langList), puis Auto). Hors français, charge une fois le dictionnaire de la langue
     (tableau [["français", "traduction"], ...] ; anglais : i18n/en.txt, tenu par tools/i18n.py) par-dessus l'anglais :
     une phrase que le mod de traduction n'a pas (encore) traduite s'affiche en anglais. Prépare aussi les modèles à
-    %1, %2… pour fn_tr. Params : [redessiner la page ouverte (changement en cours de partie), langue imposée].
+    %1, %2… pour fn_tr. Français : charge i18n/fr.txt ([["texte écrit en anglais dans le code", "français"], ...]), pour
+    les quelques écrans et messages dont le texte source est en anglais (Overwatch connect surtout).
+    Params : [redessiner la page ouverte (changement en cours de partie), langue imposée].
 */
 params [["_redraw", false], ["_force", ""]];
-private _set = missionNamespace getVariable ["comspec_atak_native_language", "en"];
+private _set = missionNamespace getVariable ["comspec_atak_native_language", ""];
+// Au preInit, CBA n'a pas encore posé la valeur du réglage : on la lit dans les réglages client enregistrés par CBA
+// (profil : ["#CBA_HASH#", clés, valeurs, défaut], valeur [valeur, priorité]), sinon l'anglais (valeur par défaut).
+if (_set isEqualTo "") then {
+    private _h = profileNamespace getVariable ["cba_settings_hash", []];
+    if (_h isEqualType [] && {count _h >= 3} && {(_h select 1) isEqualType []}) then {
+        private _i = (_h select 1) find "comspec_atak_native_language";
+        if (_i >= 0) then {
+            private _v = (_h select 2) param [_i, ""];
+            if (_v isEqualType []) then { _v = _v param [0, ""]; };
+            if (_v isEqualType "") then { _set = _v; };
+        };
+    };
+};
+if (_set isEqualTo "") then { _set = "en"; };
 // _force : langue imposée (fn_trMenu charge le dictionnaire pour les menus CBA des autres addons).
 if (_force isNotEqualTo "") then { _set = _force; };
 private _lang = [_set] call comspec_atak_native_fnc_langResolve;
@@ -14,18 +30,21 @@ missionNamespace setVariable ["COMSPEC_ATAK_I18nCache", createHashMap];
 private _loaded = missionNamespace getVariable ["COMSPEC_ATAK_I18nLoaded", ""];
 // Dictionnaire déjà préparé pendant cette session de jeu (mission précédente) : gardé dans uiNamespace, il
 // n'est pas relu (740 Ko, 10 000 paires, plusieurs centaines de ms à chaque arrivée en mission hors français).
-if (_lang isNotEqualTo "fr" && {_loaded isNotEqualTo _lang} && {!isNil {uiNamespace getVariable ("COMSPEC_ATAK_I18nUi_" + _lang)}}) then {
+if (_loaded isNotEqualTo _lang && {!isNil {uiNamespace getVariable ("COMSPEC_ATAK_I18nUi_" + _lang)}}) then {
     (uiNamespace getVariable ("COMSPEC_ATAK_I18nUi_" + _lang)) params ["_exactUi", "_tplsUi"];
     missionNamespace setVariable ["COMSPEC_ATAK_I18nExact", _exactUi];
     missionNamespace setVariable ["COMSPEC_ATAK_I18nTpl", _tplsUi];
     missionNamespace setVariable ["COMSPEC_ATAK_I18nLoaded", _lang];
     _loaded = _lang;
 };
-if (_lang isNotEqualTo "fr" && {_loaded isNotEqualTo _lang}) then {
+if (_loaded isNotEqualTo _lang) then {
     private _perfT0 = diag_tickTime;
     private _langs = [] call comspec_atak_native_fnc_langList;
-    // Anglais d'abord, puis la langue choisie : ses traductions remplacent l'anglais phrase par phrase.
-    private _chain = _langs select { ((_x select 0) isEqualTo "en") || {(_x select 0) isEqualTo _lang} };
+    // Anglais d'abord, puis la langue choisie : ses traductions remplacent l'anglais phrase par phrase. Français :
+    // seulement les textes écrits en anglais dans le code (fr.txt).
+    private _chain = if (_lang isEqualTo "fr") then { [["fr", "Français", "\z\comspec_atak_native\addons\main\i18n\fr.txt", []]] } else {
+        _langs select { ((_x select 0) isEqualTo "en") || {(_x select 0) isEqualTo _lang} }
+    };
     private _merged = createHashMap;
     {
         private _raw = loadFile (_x select 2);
@@ -104,8 +123,12 @@ if (_lang isNotEqualTo "fr" && {_loaded isNotEqualTo _lang}) then {
     diag_log format ["[COMSPEC ATAK NATIVE][PERF] Dictionnaire %1 préparé : %2 entrées, %3 ms", _lang, count _pairs, round ((diag_tickTime - _perfT0) * 1000)];
 };
 missionNamespace setVariable ["COMSPEC_ATAK_Lang", _lang];
+// Nombre de traductions chargées : 0 = fn_tr rend le texte tel quel, sans coût.
+missionNamespace setVariable ["COMSPEC_ATAK_I18nN", count (missionNamespace getVariable ["COMSPEC_ATAK_I18nExact", createHashMap])];
 // Changement en cours de partie : les menus CBA COMSPEC suivent (fn_menuRelang ne fait rien si la langue est la même).
 if (_redraw) then { [] call comspec_atak_native_fnc_menuRelang; };
+// Noms des touches COMSPEC (Contrôles > Configurer les addons) dans la nouvelle langue.
+if (_redraw) then { [] call comspec_atak_native_fnc_keyRelang; };
 if (_redraw && {hasInterface}) then {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     private _page = _s getOrDefault ["activePage", ""];

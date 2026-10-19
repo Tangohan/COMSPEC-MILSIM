@@ -38,6 +38,12 @@ class HomeController
             // La home publique doit rester disponible même si les tables analytics ne sont pas prêtes.
         }
 
+        $fieldMetrics = ['phones' => 0, 'play_hours' => 0, 'distance_km' => 0];
+        try {
+            $fieldMetrics = (new \App\Services\Ecosystem\PlatformFieldMetricsService())->totals();
+        } catch (\Throwable) {
+        }
+
         $featuredUnits = [];
         try {
             /** @var \App\Repositories\TenantRepository $tenantRepo */
@@ -97,6 +103,7 @@ class HomeController
             'title' => 'Athena Comspec — Portail MILSIM',
             'platformKpis' => $platformKpis,
             'platformKpiDays' => $days,
+            'fieldMetrics' => $fieldMetrics,
             'featuredUnits' => $featuredUnits,
         ]);
     }

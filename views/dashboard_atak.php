@@ -77,10 +77,11 @@ require base_path('views/partials/alert_banners.php');
             </p>
             <p class="atak-dash__scope">
                 <span class="atak-dash__scope-kicker">Périmètre actif</span>
-                <span>Carte tactique, forum public et administration — formations, effectifs et recrutement restent hors périmètre.</span>
+                <span>Carte ATAK, équipes de feu, arsenal et forum — effectifs, recrutement et formations restent hors périmètre.</span>
+                <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>">Comprendre les profils</a>
                 <?php if ($canAdjustTenantType): ?>
                 <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>">
-                    Vérifier ou réappliquer le profil
+                    Changer de profil
                 </a>
                 <?php endif; ?>
             </p>
@@ -108,6 +109,10 @@ require base_path('views/partials/alert_banners.php');
         </div>
     </section>
 
+    <div class="atak-dash__guide" id="dash-tour-getting-started">
+        <?php $tpgType = 'atak'; require base_path('views/partials/tenant_profile_getting_started.php'); ?>
+    </div>
+
     <section class="atak-dash__modules" id="dash-tour-modules" aria-label="Accès rapides">
         <div class="atak-dash__modules-inner">
             <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module">
@@ -115,6 +120,7 @@ require base_path('views/partials/alert_banners.php');
                 <h2 class="atak-dash__module-title">Carte tactique</h2>
                 <p class="atak-dash__module-copy">Vue opérationnelle en temps réel pour la cellule terrain.</p>
             </a>
+            <?php if ($can_view_atak_operators): ?>
             <a href="<?= htmlspecialchars(url('back-office/atak/operateurs'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module atak-dash__module--sky">
                 <p class="atak-dash__module-kicker">Liaison</p>
                 <h2 class="atak-dash__module-title">Effectifs en liaison</h2>
@@ -126,16 +132,31 @@ require base_path('views/partials/alert_banners.php');
                     <?php endif; ?>
                 </p>
             </a>
+            <?php else: ?>
+            <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module atak-dash__module--sky">
+                <p class="atak-dash__module-kicker">Liaison</p>
+                <h2 class="atak-dash__module-title">Relier mon téléphone</h2>
+                <p class="atak-dash__module-copy">Identifiant Steam et première liaison avec le jeu.</p>
+            </a>
+            <?php endif; ?>
             <a href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module atak-dash__module--amber">
                 <p class="atak-dash__module-kicker">Équipement</p>
                 <h2 class="atak-dash__module-title">Mes tenues</h2>
                 <p class="atak-dash__module-copy">Collections et tenues partagées de la communauté (arsenal Athena).</p>
             </a>
+            <?php if ($canAdjustTenantType): ?>
             <a href="<?= htmlspecialchars(url('back-office/community'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module">
                 <p class="atak-dash__module-kicker">Administration</p>
                 <h2 class="atak-dash__module-title">Paramètres</h2>
                 <p class="atak-dash__module-copy">Identité, invitations<?= $can_manage_invitations && $pending_invitations_count > 0 ? ' (' . $pending_invitations_count . ' en attente)' : '' ?> et profil de la communauté.</p>
             </a>
+            <?php else: ?>
+            <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module">
+                <p class="atak-dash__module-kicker">Aide</p>
+                <h2 class="atak-dash__module-title">Guide du profil</h2>
+                <p class="atak-dash__module-copy">Ce que contient la communauté et ce que votre niveau d’accès permet.</p>
+            </a>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -153,8 +174,11 @@ require base_path('views/partials/alert_banners.php');
             <a href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Mes tenues</a>
             <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Première liaison</a>
             <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">TACMAP</a>
+            <?php if ($canAdjustTenantType): ?>
             <a href="<?= htmlspecialchars(url('back-office/atak/fire-teams'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Équipes de feu</a>
+            <a href="<?= htmlspecialchars(url('back-office/atak/heures'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Heures de jeu</a>
             <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Réglages carte</a>
+            <?php endif; ?>
         </div>
     </section>
 </main>

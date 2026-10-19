@@ -948,6 +948,59 @@ $imagesNeedAddress = $slugHint === '';
         ?>
     </div>
 
+    <div data-settings-panel="profil"<?= $hubTab === 'profil' ? '' : ' hidden' ?>>
+    <form method="post" action="<?= $h($tenantTypeFormAction) ?>" class="ath-card ath-rise bo-setting-group" id="profil">
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="settings_tab" value="profil">
+        <span id="org-profil"></span>
+        <p class="bo-setting-group__kicker">Profil</p>
+        <h2 class="bo-setting-group__title">Type de communauté</h2>
+        <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
+            Le profil détermine les outils qui existent pour toute la communauté. Profil actuel :
+            <strong><?= $h($currentTypeLabel) ?></strong>.
+            <a href="<?= $h(url('documentation/profils')) ?>" style="font-weight:700;">Guide des profils et des accès</a>
+        </p>
+        <div style="margin-top:13px;">
+            <?php $tpcCurrentType = $currentTenantType; require base_path('views/partials/tenant_profile_compare.php'); ?>
+        </div>
+        <ul class="bo-setting-row__help" style="margin:13px 0 0;padding-left:1.1rem;max-width:720px;display:grid;gap:4px;">
+            <li>Les menus, le tableau de bord et les adresses des modules hors profil sont masqués pour tous ; <strong>aucune donnée n’est supprimée</strong>.</li>
+            <li>Chaque niveau d’accès retrouve ses droits de base : Membre (usage courant), RH (fiches, invitations), Gestionnaire (tout).</li>
+            <li>L’administration, les invitations et la modération sont retirées du niveau Membre ; le niveau RH garde ses outils mais plus l’administration complète.</li>
+            <li>Réappliquer le profil actuel répare des droits incohérents sans rien changer d’autre.</li>
+        </ul>
+        <fieldset class="bo-setting-group__rows" style="border:none;padding:0;margin-top:13px;">
+            <legend class="sr-only">Profil de la communauté</legend>
+            <?php foreach ($tenantTypeOptions as $typeKey => $typeMeta): ?>
+                <?php
+                $isCurrent = $typeKey === $currentTenantType;
+                $inputId = 'tenant_type_' . preg_replace('/[^a-z0-9_-]/i', '', (string) $typeKey);
+                ?>
+                <label for="<?= $h($inputId) ?>" class="bo-setting-row" style="align-items:flex-start;cursor:pointer;<?= $isCurrent ? 'background:var(--ath-row-hover);margin:0 -8px;padding-left:8px;padding-right:8px;' : '' ?>">
+                    <input id="<?= $h($inputId) ?>" type="radio" name="tenant_type" value="<?= $h((string) $typeKey) ?>" style="margin-top:3px;min-height:auto;" <?= $isCurrent ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label"><?= $h((string) ($typeMeta['label'] ?? $typeKey)) ?><?= $isCurrent ? ' · profil actuel' : '' ?></span>
+                        <span class="bo-setting-row__help"><?= $h((string) ($typeMeta['description'] ?? '')) ?></span>
+                        <?php if (!$isCurrent && !empty($typeMeta['consequences'])): ?>
+                            <span class="bo-setting-row__help" style="display:block;margin-top:4px;">Si vous choisissez ce profil : <?= $h((string) $typeMeta['consequences']) ?></span>
+                        <?php endif; ?>
+                    </span>
+                </label>
+            <?php endforeach; ?>
+        </fieldset>
+        <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;margin-top:8px;">
+            <input type="checkbox" name="confirm_type_change" value="1" required style="margin-top:3px;min-height:auto;">
+            <span class="bo-setting-row__copy">
+                <span class="bo-setting-row__label">Confirmation</span>
+                <span class="bo-setting-row__help">Je confirme l’application (ou la réapplication) de ce profil pour toute la communauté.</span>
+            </span>
+        </label>
+        <div class="bo-settings-save">
+            <button type="submit" class="ath-btn">Appliquer le profil</button>
+        </div>
+    </form>
+    </div>
+
     <div class="bo-settings-hub-save" data-settings-save>
         <div class="bcs-savebar__copy">
             <p class="bcs-savebar__title" data-bcs-save-title>Enregistrer les modifications</p>

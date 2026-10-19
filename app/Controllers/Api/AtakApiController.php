@@ -7192,6 +7192,7 @@ class AtakApiController
             $messages[] = [
                 'id' => (int) $m['id'],
                 'steam_uid' => (string) ($m['steam_uid'] ?? ''),
+                'kind' => (string) ($m['kind'] ?? 'message'),
                 'title' => (string) $m['title'],
                 'body' => (string) $m['body'],
                 'level' => (string) $m['level'],
@@ -7231,6 +7232,84 @@ class AtakApiController
         $n = (new \App\Repositories\AtakAdminControlRepository())->markMessages($r, array_map('intval', $ids), $state);
 
         return Response::json(['ok' => true, 'updated' => $n]);
+    }
+
+    /**
+     * ATAK du joueur (COMSPEC Link « AdminControl.Poll ») : ses messages et avis de l'administration pas encore validés
+     * (compromission, annulation, données réinitialisées, certificat, numéro, message imposé). Corps : {player_uid?}.
+     * Réponse : {ok, messages: [{id, kind, level, title, body, require_ack, created_at}]}.
+     */
+    public function adminControlMine(Request $request, array $params = []): Response
+    {
+        $ctx = $this->adminControlPlayer($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $steam] = $ctx;
+        $messages = [];
+        foreach ((new \App\Repositories\AtakAdminControlRepository())->pendingForPlayer($tenantId, $userId, $steam) as $m) {
+            $messages[] = [
+                'id' => (int) $m['id'],
+                'kind' => (string) ($m['kind'] ?? 'message'),
+                'level' => (string) $m['level'],
+                'title' => (string) $m['title'],
+                'body' => (string) $m['body'],
+                'require_ack' => (int) $m['require_ack'] === 1,
+                'created_at' => (string) $m['created_at'],
+            ];
+        }
+
+        return Response::json(['ok' => true, 'messages' => $messages]);
+    }
+
+    /** ATAK du joueur (« AdminControl.Ack ») : {ids, state: "delivered" | "acked"}, sur ses propres messages seulement. */
+    public function adminControlMineAck(Request $request, array $params = []): Response
+    {
+        $ctx = $this->adminControlPlayer($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $steam] = $ctx;
+        $body = $this->jsonBody($request);
+        $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 50) : [];
+        $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
+        $n = (new \App\Repositories\AtakAdminControlRepository())->markMessagesForPlayer($tenantId, $userId, $steam, array_map('intval', $ids), $state);
+
+        return Response::json(['ok' => true, 'updated' => $n]);
+    }
+
+    /**
+     * Joueur qui appelle : compte de la session de jeu, sinon Steam du corps.
+     *
+     * @return array{0: int, 1: ?int, 2: ?string}|Response
+     */
+    private function adminControlPlayer(Request $request): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        $actor = $this->guardArmaWrite($request, $tenantId, $sessionUserId === null);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $steam = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        $userId = $sessionUserId;
+        if ($userId === null && $steam !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $userId = $user !== null ? (int) $user['id'] : null;
+        }
+        if ($userId === null && $steam === null) {
+            return Response::json(['ok' => true, 'messages' => []]);
+        }
+
+        return [$tenantId, $userId, $steam];
     }
 
     /**
@@ -7916,6 +7995,37 @@ class AtakApiController
         $payload = $svc->payloadForGame($tenantId);
 
         return Response::json($payload);
+    }
+
+    /**
+     * Conditions réseau appliquées en jeu depuis le menu Échap de l'ATAK natif (COMSPEC Link « NetConditions.Report »).
+     * Gardées pour la page Contrôle serveur (bloc « Appliquées en jeu ») ; les règles de la communauté ne changent pas.
+     * GET : dernières conditions reçues.
+     */
+    public function netConditions(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $svc = new \App\Services\Tactical\AtakExperienceService();
+        $method = strtoupper((string) ($request->method() ?? 'GET'));
+        if ($method === 'POST') {
+            if (!$this->authArma()) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $steam = is_array($actor) && is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
+            $live = $svc->recordLiveNetwork($tenantId, $this->jsonBody($request), $steam);
+
+            return Response::json(['ok' => true, 'net_live' => $live]);
+        }
+
+        return Response::json(['net_live' => $svc->get($tenantId)['settings']['net_live'] ?? []]);
     }
 
     /**

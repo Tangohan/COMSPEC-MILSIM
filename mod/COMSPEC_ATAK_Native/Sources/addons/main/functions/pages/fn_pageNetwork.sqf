@@ -146,7 +146,7 @@ private _bearer = switch (true) do {
             ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp")]
     };
     case (_only): {
-        ["Aucun relais", "Réseau exclusivement par relais", "aucun relais reçu : aucun réseau", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
+        ["Aucun relais", "Réseau uniquement par les relais", "aucun relais reçu : aucun réseau", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
     };
     case (_hops > 1): {
         ["Maillage Wave Relay", format ["%1 sauts via équipiers", _hops - 1], format ["jusqu'à %1", [_mesh getOrDefault ["gwLabel", ""]] call _esc], "warn", 2, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
@@ -372,7 +372,7 @@ if (_bridge) then {
     }] call _para;
     // Fonctions d'Overwatch absentes d'une version plus ancienne : la page continue sans elles.
     if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive") then {
-        ["Simulation de liaison dégradée", ["<t color='#8a9a93'>désactivée</t>", "<t color='#f2ab33'>active : pertes et délais simulés</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
+        ["Liaison instable simulée", ["<t color='#8a9a93'>désactivée</t>", "<t color='#f2ab33'>active : pertes et délais simulés</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
     };
     if (_best isNotEqualTo []) then {
         ["Relais utilisé", format ["%1 · %2 · %3 Mbit/s", [_best select 1] call _esc, [_best select 2] call _dist, (_best select 3) toFixed 1]] call _info;
@@ -412,7 +412,7 @@ private _offQueue = count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue"
 ["Dernière synchro", [_offSync, "—"] select (_offSync isEqualTo "")] call _info;
 ["Envois en file", [str _offQueue, format ["<t color='#f2ab33'>%1</t>", _offQueue]] select (_offQueue > 0)] call _info;
 ["Reçus en attente au relais", [str _offHeld, format ["<t color='#f2ab33'>%1</t>", _offHeld]] select (_offHeld > 0)] call _info;
-if !(missionNamespace getVariable ["comspec_atak_native_offline_hold", true]) then { ["<t color='#8a9a93'>Rétention coupée par le serveur : comptes rendus et alertes arrivent même sans signal.</t>"] call _para; };
+if !(["offlineHold"] call comspec_atak_native_fnc_netCond) then { ["<t color='#8a9a93'>Rétention coupée par le serveur : comptes rendus et alertes arrivent même sans signal.</t>"] call _para; };
 
 // --- Synchronisation avec Athena (fn_syncStats : volume par canal compté par COMSPEC Link 2.0.88) ---
 // Ce qui part et revient, canal par canal : la fiche opérateur ne repart que si elle change, et Athena ne renvoie plus

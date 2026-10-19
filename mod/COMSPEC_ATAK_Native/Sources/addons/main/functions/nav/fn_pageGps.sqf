@@ -48,7 +48,7 @@ if ((count _pts) > 0) then {
 };
 {
     _x params ["_d", "_m"];
-    _rows pushBack ["buttons", [[format ["%1 · %2 %3", markerText _m, [_d] call _fmt, [player getDir (getMarkerPos _m)] call _card], compile format ["['marker', %1] call comspec_atak_native_fnc_gpsAction;", str _m]]]];
+    _rows pushBack ["buttons", [[format ["%1 · %2 %3", ([markerText _m] call comspec_atak_native_fnc_markerAutoName), [_d] call _fmt, [player getDir (getMarkerPos _m)] call _card], compile format ["['marker', %1] call comspec_atak_native_fnc_gpsAction;", str _m]]]];
 } forEach _marks;
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

@@ -8,7 +8,10 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\AtakTranslationPackRepository;
 use App\Services\Security\FileRateLimiter;
+use App\Support\AtakReleaseInfo;
+use App\Support\AtakTranslationCheck;
 use App\Support\AtakTranslationTemplate;
+use App\Support\AtakTranslationWorkshop;
 
 /**
  * API des packs de langue partagés de l'atelier public /traduire-atak (voir AtakTranslationPackRepository).
@@ -65,11 +68,144 @@ final class AtakTranslationPackApiController
         $since = max(0, (int) $request->query('since', 0));
         $pack = $opened['pack'];
 
-        return Response::json([
+        $out = [
             'ok' => true,
             'role' => $opened['role'],
             'pack' => AtakTranslationPackRepository::publicMeta($pack),
-        ] + $this->repo()->changes((int) $pack['id'], $since));
+        ] + $this->repo()->changes((int) $pack['id'], $since);
+        // Premier chargement : état du pack dans le Workshop des langues (dernière version, contrôle face au mod
+        // actuel). C'est l'avis au propriétaire quand une mise à jour du mod ajoute ou change des phrases.
+        if ($since === 0) {
+            $out['workshop'] = $this->workshopState($pack);
+        }
+
+        return Response::json($out);
+    }
+
+    /**
+     * POST /api/traduire-atak/packs/{id}/publish (propriétaire) : {description, workshop_id, note}. Fige une
+     * nouvelle version des phrases du pack et le met dans le Workshop des langues.
+     */
+    public function publish(Request $request, array $params = []): Response
+    {
+        if (($r = $this->guard($request, 'publish', 20, 3600)) !== null) {
+            return $r;
+        }
+        $opened = $this->openPack($request, $params, true);
+        if ($opened instanceof Response) {
+            return $opened;
+        }
+        if (!$this->repo()->workshopReady()) {
+            return self::error('unavailable', 503);
+        }
+        $body = self::body();
+        $workshopId = AtakTranslationPackRepository::workshopId($body['workshop_id'] ?? '');
+        if ($workshopId === null) {
+            return self::error('invalid_workshop_id', 422);
+        }
+        $pack = $opened['pack'];
+        $packId = (int) $pack['id'];
+        $ws = new AtakTranslationWorkshop($this->repo());
+        $map = $this->repo()->strings($packId);
+        $audit = AtakTranslationCheck::audit($ws->entries(), $map);
+        $audit['new'] = 0;
+        if ($audit['translated'] < AtakTranslationWorkshop::MIN_TRANSLATED) {
+            return Response::json(['ok' => false, 'error' => 'too_few', 'min' => AtakTranslationWorkshop::MIN_TRANSLATED, 'translated' => $audit['translated']], 422);
+        }
+        $atakVersion = (string) (AtakReleaseInfo::latest()['atak_native'] ?? '');
+        $ws->snapshotTemplate($atakVersion);
+        $version = $this->repo()->publish($packId, $map, [
+            'atak_version' => $atakVersion,
+            'template_fp' => AtakTranslationTemplate::fingerprint(),
+            'template_total' => $audit['total'],
+            'translated' => $audit['translated'],
+            'note' => AtakTranslationPackRepository::cleanLabel($body['note'] ?? '', 300),
+            'audit_fp' => $ws->auditFp(),
+            'audit_json' => (string) json_encode($audit, JSON_UNESCAPED_UNICODE),
+        ], [
+            'description' => AtakTranslationPackRepository::cleanDescription($body['description'] ?? ''),
+            'workshop_id' => $workshopId,
+        ]);
+
+        $fresh = $this->repo()->open((string) $pack['public_id'], trim((string) $request->header('X-Pack-Token')));
+
+        return Response::json([
+            'ok' => true,
+            'version' => $version,
+            'url' => url('traduire-atak/workshop/' . $pack['public_id']),
+            'workshop' => $this->workshopState($fresh !== null ? $fresh['pack'] : $pack),
+        ]);
+    }
+
+    /** POST /api/traduire-atak/packs/{id}/listing (propriétaire) : {listed, description, workshop_id}, sans nouvelle version. */
+    public function listing(Request $request, array $params = []): Response
+    {
+        if (($r = $this->guard($request, 'write', 900, 600)) !== null) {
+            return $r;
+        }
+        $opened = $this->openPack($request, $params, true);
+        if ($opened instanceof Response) {
+            return $opened;
+        }
+        if (!$this->repo()->workshopReady()) {
+            return self::error('unavailable', 503);
+        }
+        $body = self::body();
+        $pack = $opened['pack'];
+        $workshopId = AtakTranslationPackRepository::workshopId($body['workshop_id'] ?? ($pack['workshop_id'] ?? ''));
+        if ($workshopId === null) {
+            return self::error('invalid_workshop_id', 422);
+        }
+        if ($this->repo()->latestRelease((int) $pack['id']) === null) {
+            return self::error('not_published', 409);
+        }
+        $this->repo()->updateListing(
+            (int) $pack['id'],
+            (bool) ($body['listed'] ?? true),
+            AtakTranslationPackRepository::cleanDescription($body['description'] ?? ($pack['description'] ?? '')),
+            $workshopId,
+        );
+
+        return Response::json(['ok' => true]);
+    }
+
+    /**
+     * @param array<string, mixed> $pack
+     * @return array<string, mixed>|null null : Workshop pas encore installé (migration)
+     */
+    private function workshopState(array $pack): ?array
+    {
+        if (!$this->repo()->workshopReady()) {
+            return null;
+        }
+        $release = $this->repo()->latestRelease((int) $pack['id']);
+        $out = [
+            'listed' => (bool) ($pack['listed'] ?? false),
+            'blocked' => (bool) ($pack['blocked'] ?? false),
+            'description' => (string) ($pack['description'] ?? ''),
+            'workshop_id' => (string) ($pack['workshop_id'] ?? ''),
+            'downloads' => (int) ($pack['downloads'] ?? 0),
+            'url' => url('traduire-atak/workshop/' . $pack['public_id']),
+            'min' => AtakTranslationWorkshop::MIN_TRANSLATED,
+            'release' => null,
+        ];
+        if ($release !== null) {
+            $ws = new AtakTranslationWorkshop($this->repo());
+            $audit = $ws->audit($release);
+            $status = AtakTranslationWorkshop::status($release + ['lang_code' => $pack['lang_code']], $audit, AtakTranslationTemplate::officialLanguages(), AtakTranslationTemplate::fingerprint());
+            unset($audit['samples']);
+            $out['release'] = [
+                'new_keys' => $status['new'] > 0 ? ($ws->newKeys($release) ?? []) : [],
+                'version' => (int) $release['version'],
+                'atak_version' => (string) $release['atak_version'],
+                'at' => (string) $release['released_at'],
+                'audit' => $audit,
+                'status' => $status,
+                'current_atak' => (string) (AtakReleaseInfo::latest()['atak_native'] ?? ''),
+            ];
+        }
+
+        return $out;
     }
 
     /** POST /api/traduire-atak/packs/{id}/strings : {h, text, base_rev, author} ; propose si le pack est en revue. */

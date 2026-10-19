@@ -21,6 +21,8 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_Telemetry.cs" Link="Extension_Telemetry.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_Realism.cs" Link="Extension_Realism.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SendJournal.cs" Link="Extension_SendJournal.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SyncStats.cs" Link="Extension_SyncStats.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_ItemIcons.cs" Link="Extension_ItemIcons.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\GameAuth.cs" Link="GameAuth.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\GoogleSlidesDeck.cs" Link="GoogleSlidesDeck.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\BetaNoticeWindow.cs" Link="BetaNoticeWindow.cs" />

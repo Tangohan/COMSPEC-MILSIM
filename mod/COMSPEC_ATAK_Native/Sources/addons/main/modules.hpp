@@ -194,7 +194,7 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
             };
             class Accent {
                 displayName = "$STR_COMSPEC_ATAK_CFG_E28A71B1EF";
-                tooltip = "#rrggbb, vide = couleur du thème.";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_838F8C2B63";
                 property = "COMSPEC_ATAK_Module_DataNode_Accent";
                 control = "Edit";
                 expression = "_this setVariable ['Accent',_value,true];";
@@ -203,7 +203,7 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
             };
             class Wallpaper {
                 displayName = "$STR_COMSPEC_ATAK_CFG_7FFED89DE0";
-                tooltip = "Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_AB5C9325A0";
                 property = "COMSPEC_ATAK_Module_DataNode_Wallpaper";
                 control = "Edit";
                 expression = "_this setVariable ['Wallpaper',_value,true];";
@@ -212,7 +212,7 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
             };
             class Code {
                 displayName = "$STR_COMSPEC_ATAK_CFG_109E16CA46";
-                tooltip = "Exécuté sur le serveur à la fin d'un téléchargement. params [""_object"", ""_player"", ""_files""]. Aussi : événement CBA comspec_atak_native_dataDownloaded.";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_297613D47A";
                 property = "COMSPEC_ATAK_Module_DataNode_Code";
                 control = "EditCodeMulti5";
                 expression = "_this setVariable ['Code',_value,true];";

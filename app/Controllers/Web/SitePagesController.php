@@ -277,8 +277,8 @@ final class SitePagesController
             'title' => __('site.atakt_meta_title'),
             'meta_description' => __('site.atakt_meta_description'),
             'marketingActive' => 'traduire-atak',
-            'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=2'],
-            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=2'],
+            'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=3'],
+            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=3'],
         ]);
     }
 

@@ -807,20 +807,10 @@
             <English>TBR · Relay table</English>
             <French>TBR · Tableau des relais</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_BTN">
-            <Original>COMSPEC ATAK · Guide réseau</Original>
-            <English>COMSPEC ATAK · Network guide</English>
-            <French>COMSPEC ATAK · Guide réseau</French>
-        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_MENU">
             <Original>Guide : réseau et simulation</Original>
             <English>Guide: network and simulation</English>
             <French>Guide : réseau et simulation</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_TIP">
-            <Original>Comment fonctionne le réseau ATAK et ce que le mod simule : signal, relief, forêt, relais, brouillage, débit, file d'envoi, réglages de mission.</Original>
-            <English>How the ATAK network works and what the mod simulates: signal, terrain, forest, relays, jamming, throughput, send queue, mission settings.</English>
-            <French>Comment fonctionne le réseau ATAK et ce que le mod simule : signal, relief, forêt, relais, brouillage, débit, file d'envoi, réglages de mission.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TBR_HELP">
             <Original>Aide : poser un relais</Original>
@@ -976,6 +966,21 @@
             <Original>Montre GPS connectée : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK. À porter dans l'emplacement montre.</Original>
             <English>Connected GPS watch: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone. Wear it in the watch slot.</English>
             <French>Montre GPS connectée : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK. À porter dans l'emplacement montre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_838F8C2B63">
+            <Original>#rrggbb, vide = couleur du thème.</Original>
+            <English>#rrggbb, empty = theme colour.</English>
+            <French>#rrggbb, vide = couleur du thème.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AB5C9325A0">
+            <Original>Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.</Original>
+            <English>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</English>
+            <French>Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_297613D47A">
+            <Original>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</Original>
+            <English>Run on the server when a download finishes. params ["_object", "_player", "_files"]. Also: CBA event comspec_atak_native_dataDownloaded.</English>
+            <French>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</French>
         </Key>
     </Package>
 </Project>

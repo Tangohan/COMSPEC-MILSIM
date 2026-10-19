@@ -28,6 +28,7 @@ final class AtakStartupCheckServiceTest extends TestCase
             'callsign' => 'Alpha 1-1',
             'player_key' => 'k' . bin2hex(random_bytes(6)),
             'session' => $session,
+            'scope' => 'once',
             'world' => 'Altis',
             'mission' => 'Op Test',
             'mp' => '1',
@@ -64,6 +65,35 @@ final class AtakStartupCheckServiceTest extends TestCase
         self::assertStringContainsString('⚠️ **DLL COMSPEC Link / Link DLL**', $embed['description']);
         self::assertStringNotContainsString('ignoré', $embed['description']);
         self::assertSame('ATAK 1.75.0 · Link 2.0.81 · Arma 2.18', $embed['fields'][1]['value']);
+    }
+
+    public function testOneEmbedPerSessionUntilReset(): void
+    {
+        $sent = [];
+        $svc = $this->service($sent);
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+
+        // Même session : relance du jeu, nouvelle mission, reconnexion.
+        self::assertSame('posted', $svc->handle($body + ['trigger' => 'link_failed'])['status']);
+        self::assertSame('duplicate', $svc->handle(['trigger' => 'link', 'mission' => 'Autre'] + $body)['status']);
+        // Reset dans Dépannage liaison : nouvelle session, nouveau message.
+        $body['session'] = 's' . bin2hex(random_bytes(6));
+        self::assertSame('posted', $svc->handle($body)['status']);
+        self::assertCount(2, $sent);
+    }
+
+    public function testLegacyModPostsOncePerPlayerWhateverTheSession(): void
+    {
+        $sent = [];
+        $svc = $this->service($sent);
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+        unset($body['scope']);
+
+        self::assertSame('posted', $svc->handle($body)['status']);
+        // Ancien mod : session refaite à chaque mission.
+        $body['session'] = 's' . bin2hex(random_bytes(6));
+        self::assertSame('duplicate', $svc->handle($body)['status']);
+        self::assertCount(1, $sent);
     }
 
     public function testLinkReportShowsAssignedPhoneAndTerminal(): void

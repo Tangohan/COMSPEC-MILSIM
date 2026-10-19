@@ -7,7 +7,7 @@ comspec_sse_aceDogtagBridgeReady = false;
 [
     "comspec_sse_aceDogtagBridgeEnabled",
     "CHECKBOX",
-    ["Plaque ACE → identité SSE", "Quand on vérifie la plaque d’identification ACE (KO / mort), le nom et le code affichés viennent du profil SSE, et l’action alimente le dossier SSE."],
+    ["Plaques ACE avec l'identité SSE", "Quand on lit la plaque d’identité ACE d'un blessé ou d'un mort, le nom affiché est celui de son profil SSE, et la lecture s'ajoute au dossier SSE."],
     ["COMSPEC SSE", "Compatibilité"],
     true,
     1,

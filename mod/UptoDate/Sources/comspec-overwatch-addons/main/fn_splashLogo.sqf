@@ -4,6 +4,8 @@
 */
 params [["_display", displayNull, [displayNull]]];
 if (isNull _display) exitWith {};
+// Avec l'ATAK natif, son propre ecran de demarrage (fn_introSplash) remplace ce logo : pas de doublon.
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {};
 
 // Evite double injection si le display reload / mod charge 2 fois
 if (_display getVariable ["COMSPEC_SplashLogoDone", false]) exitWith {};

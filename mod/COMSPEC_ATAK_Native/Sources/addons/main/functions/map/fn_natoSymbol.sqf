@@ -15,7 +15,8 @@ private _id = _e getOrDefault ["id", ""];
 private _key = format ["%1|%2", _id, _e getOrDefault ["affiliation", ""]];
 private _hit = _cache getOrDefault [_key, []];
 if ((count _hit) > 0 && {diag_tickTime < (_hit select 0)}) exitWith { [_hit select 1, _hit select 2] };
-if ((count _cache) > 400) then { _cache deleteAt ((keys _cache) select 0); };
+// Plus de 400 unités : cache vidé d'un coup (avant, chaque absence copiait les 400 clés à chaque image).
+if ((count _cache) > 400) then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_NatoCache", _cache]; };
 
 private _pre = switch (_e getOrDefault ["affiliation", ""]) do { case "friend": { "b_" }; case "hostile": { "o_" }; default { "n_" }; };
 private _mod = "inf";
