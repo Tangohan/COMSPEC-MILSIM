@@ -52,7 +52,8 @@ final class TenantPublicListingCollationTest extends TestCase
         self::assertStringContainsString('listForRegistry()', $home);
         self::assertStringNotContainsString('count($featuredUnits) >= 10', $home);
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/home/index.php');
-        self::assertStringContainsString('who-item__initials', $view);
+        // Sans logo, la carte d’unité affiche les initiales.
+        self::assertStringContainsString('hi-ucard__initials', $view);
     }
 
     public function testCountActiveMembersRunsOnSqlite(): void
