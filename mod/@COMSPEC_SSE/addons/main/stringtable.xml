@@ -2137,6 +2137,11 @@
             <English>High value - rich file</English>
             <French>Haute valeur — dossier riche</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_79E31EE88D">
+            <Original>Connexion Athena</Original>
+            <English>Athena connection</English>
+            <French>Connexion Athena</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_7A072D2DDB">
             <Original>Téléphones / ordinateurs sur le site.</Original>
             <English>Phones / computers on the site.</English>

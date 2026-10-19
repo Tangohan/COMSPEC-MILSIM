@@ -23,6 +23,9 @@ if (isNull _parent) exitWith {};
 
 private _d = _parent createDisplay "RscDisplayEmpty";
 if (isNull _d) exitWith {};
+// Connexion Athena réussie (comspec_sse_fnc_athenaEden) : le tableau de bord ouvert relit le site.
+uiNamespace setVariable ["comspec_sse_dashDisplay", _d];
+["track"] call comspec_sse_fnc_athenaEden;
 private _w = safeZoneW * 0.86;
 private _h = safeZoneH * 0.82;
 private _u = safeZoneH * 0.006;
@@ -68,10 +71,10 @@ private _tabCtrls = [];
 _d setVariable ["comspec_sse_dashTabs", _tabCtrls];
 _d setVariable ["comspec_sse_dashArea", [_x0 + 2 * _u, _y0 + 8 * _u, _w - 4 * _u, _h - 16 * _u, _u]];
 
-// Barre du bas : état du site, actualisations, fermeture.
-private _status = ["ctrlStructuredText", [_x0 + 2 * _u, _y0 + _h - 6.5 * _u, _w * 0.5, 5 * _u]] call _mk;
+// Barre du bas : état du site, connexion Athena, actualisations, fermeture.
+private _status = ["ctrlStructuredText", [_x0 + 2 * _u, _y0 + _h - 6.5 * _u, _w * 0.42, 5 * _u]] call _mk;
 _d setVariable ["comspec_sse_dashStatus", _status];
-private _bw = _w * 0.15;
+private _bw = _w * 0.13;
 private _bClose = ["ctrlButton", [_x0 + _w - _bw - 2 * _u, _y0 + _h - 6.5 * _u, _bw, 5 * _u]] call _mk;
 _bClose ctrlSetText (("Fermer") call comspec_sse_fnc_tr);
 _bClose ctrlAddEventHandler ["ButtonClick", { (ctrlParent (_this select 0)) closeDisplay 2; }];
@@ -91,6 +94,11 @@ _bScan ctrlAddEventHandler ["ButtonClick", {
     _d setVariable ["comspec_sse_dashModel", [] call comspec_sse_fnc_dashCollect];
     [_d] call comspec_sse_fnc_dashRender;
 }];
+
+private _bLink = ["ctrlButton", [_x0 + _w - 4 * _bw - 5 * _u, _y0 + _h - 6.5 * _u, _bw, 5 * _u]] call _mk;
+_bLink ctrlSetText (("Connexion Athena") call comspec_sse_fnc_tr);
+_bLink ctrlSetTooltip (("Relie le jeu à votre compte Athena (code à saisir sur la page /lier) : campagnes et avis de recherche de votre communauté, temps passé dans Eden.") call comspec_sse_fnc_tr);
+_bLink ctrlAddEventHandler ["ButtonClick", { ["open", [ctrlParent (_this select 0)]] call comspec_sse_fnc_athenaEden; }];
 
 _status ctrlSetStructuredText parseText (("<t color='#8a96a3'>Analyse de la carte…</t>") call comspec_sse_fnc_tr);
 uiSleep 0.02;
