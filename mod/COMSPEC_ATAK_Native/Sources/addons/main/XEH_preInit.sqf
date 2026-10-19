@@ -589,8 +589,8 @@ if (isServer) then {
 
 // Interface (réglage propre à chaque joueur).
 ["comspec_atak_native_action_menu", "LIST",
-    ["Bloquer le menu d'actions (molette)", "Empêche le menu d'actions d'Arma (la liste à la molette) de s'ouvrir quand le téléphone est à l'écran, pour que la molette serve au téléphone. « En main seulement » : uniquement quand vous tenez le téléphone. Téléphone rangé : rien ne change."],
-    ["COMSPEC", "ATAK · Interface"], [[0, 1, 2], ["Jamais", "En main seulement", "En main et porté"], 2], 0] call comspec_atak_native_fnc_addSetting;
+    ["Bloquer le menu d'actions (molette)", "Empêche le menu d'actions d'Arma (la liste à la molette) de s'ouvrir quand le téléphone est à l'écran, pour que la molette serve au téléphone. « En main seulement » (par défaut) : uniquement quand vous tenez le téléphone ; en miniature, les actions à la molette (terminal UAV, portes...) restent libres. Téléphone rangé : rien ne change."],
+    ["COMSPEC", "ATAK · Interface"], [[0, 1, 2], ["Jamais", "En main seulement", "En main et porté"], 1], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_action_menu_vehicle", "CHECKBOX",
     ["Menu d'actions autorisé en véhicule", "Dans un véhicule, la molette et le menu d'actions d'Arma restent utilisables quand le téléphone est porté (en petit à l'écran) : démarrer le moteur, changer de place, descendre... Téléphone en main, la molette reste au téléphone."],
     ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;

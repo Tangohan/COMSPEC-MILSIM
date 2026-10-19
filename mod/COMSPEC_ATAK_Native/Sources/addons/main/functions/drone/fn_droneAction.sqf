@@ -32,6 +32,8 @@
       ["quick", "hunt" | "me" | "rth" | "land"]   touches rapides des options CBA (RECHERCHE, ME SUIVRE, RTB, ATTERRIR) ;
       ["cqb"]                     bascule le profil CQB (vol bas 2 à 8 m, 5 à 15 km/h, boucle de vol à nous) ;
       ["manual"]                  pilotage manuel au terminal UAV ; tout autre ordre du téléphone reprend la main.
+      ["stick"] / ["stickSet", [axe, -1..1]] / ["stickStep", [axe, pas]] / ["stickStop"]   manette : pilotage direct
+                                  (axes 0 avant, 1 droite, 2 montée, 3 lacet ; fn_droneCmd "stick").
     Verrou (variable publique COMSPEC_DroneLock du drone, appliqué par XEH_postInitClient sur chaque client) :
       "" = le téléphone pilote, personne ne peut se connecter au drone avec un terminal UAV ;
       uid = seul ce joueur peut s'y connecter (pilotage manuel) ; absent = drone libre.
@@ -130,8 +132,8 @@ if (_act isEqualTo "link") exitWith {
 };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Ordres de vol suivis (FORCER L'EXÉCUTION, surveillance) et mode que le drone doit afficher une fois l'ordre reçu.
-private _flight = ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual", "standby"];
-private _expect = createHashMapFromArray [["takeoff", "HOVER"], ["hover", "HOVER"], ["follow", "FOLLOW"], ["home", "HOME"], ["land", "LAND"], ["hunt", "HUNT"], ["goto", "GOTO"], ["loiter", "LOITER"], ["observe", "OBSERVE"], ["escort", "ESCORT"], ["route", "ROUTE"], ["rth", "RTH"], ["strike", "STRIKE"], ["manual", "MANUAL"], ["standby", "STANDBY"]];
+private _flight = ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual", "standby", "stick"];
+private _expect = createHashMapFromArray [["takeoff", "HOVER"], ["hover", "HOVER"], ["follow", "FOLLOW"], ["home", "HOME"], ["land", "LAND"], ["hunt", "HUNT"], ["goto", "GOTO"], ["loiter", "LOITER"], ["observe", "OBSERVE"], ["escort", "ESCORT"], ["route", "ROUTE"], ["rth", "RTH"], ["strike", "STRIKE"], ["manual", "MANUAL"], ["standby", "STANDBY"], ["stick", "STICK"]];
 // Unité désignée par uid de joueur, ou par netId (équipier IA).
 private _unitOf = {
     params [["_id", ""]];
@@ -223,7 +225,7 @@ private _log = {
     // Lignes écrites depuis le début (le journal plafonné à 100 lignes ne change plus de taille ; voir "tick").
     missionNamespace setVariable ["COMSPEC_ATAK_DroneLogN", (missionNamespace getVariable ["COMSPEC_ATAK_DroneLogN", 0]) + 1];
 };
-private _modeName = { params ["_m"]; (createHashMapFromArray [["ROUTE", "route"], ["STANDBY", "veille"], ["HOVER", "stationnaire"], ["FOLLOW", "suivi"], ["HOME", "retour au pilote"], ["LAND", "atterrissage"], ["RTH", "retour automatique au point de décollage"], ["STRIKE", "frappe"], ["HUNT", "recherche"], ["MANUAL", "pilotage manuel"], ["GOTO", "vers le point"], ["LOITER", "orbite"], ["OBSERVE", "observation"], ["ESCORT", "escorte"]]) getOrDefault [_m, toLower _m] };
+private _modeName = { params ["_m"]; (createHashMapFromArray [["ROUTE", "route"], ["STANDBY", "veille"], ["HOVER", "stationnaire"], ["FOLLOW", "suivi"], ["HOME", "retour au pilote"], ["LAND", "atterrissage"], ["RTH", "retour automatique au point de décollage"], ["STRIKE", "frappe"], ["HUNT", "recherche"], ["MANUAL", "pilotage manuel"], ["STICK", "manette"], ["GOTO", "vers le point"], ["LOITER", "orbite"], ["OBSERVE", "observation"], ["ESCORT", "escorte"]]) getOrDefault [_m, toLower _m] };
 // Grille saisie (6, 8 ou 10 chiffres) → centre de la case, position ASL ; [] si invalide.
 private _gridPos = {
     params ["_txt"];
@@ -767,6 +769,8 @@ switch (_act) do {
         if (!isNull _d) then {
             if (alive _d) then { ["Désappairage du drone"] call _log; };
             _d setVariable ["COMSPEC_DroneOwner", "", true]; _d setVariable ["COMSPEC_DroneLock", nil, true];
+            // Rendu propre au terminal UAV : plus de doStop ni de boucle du téléphone (fn_droneCmd "release").
+            if (alive _d) then { ["comspec_atak_native_droneCmd", [_d, "release", []], _d] call CBA_fnc_targetEvent; };
         };
         call _camClose;
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
@@ -847,6 +851,44 @@ switch (_act) do {
         ["manual"] call _send;
         ["INFO", "Pilotage manuel : connectez votre terminal UAV. Un ordre du téléphone reprend la main."] call _say;
         call _render;
+    };
+    // Manette (onglet VOL, clavier sur l'image ou en vue directe) : pilotage direct du drone depuis le téléphone.
+    // ["stick"] prend la manette ; ["stickSet", [axe, valeur]] pose un axe (0 avant, 1 droite, 2 montée, 3 lacet ; touche
+    // tenue) ; ["stickStep", [axe, pas]] ajoute un cran (boutons : régulateur, l'axe reste jusqu'à STOP) ; ["stickStop"].
+    case "stick": {
+        if (isNull _d || {!(call _needLink)}) exitWith {};
+        ["stick"] call _send;
+        ["Manette : pilotage direct depuis le téléphone"] call _log;
+        call _render;
+    };
+    // Touche de la manette ([touche DIK, enfoncée]) : true si la touche est prise. Positions physiques : ZQSD sur AZERTY,
+    // WASD sur QWERTY ; pivot A / E (AZERTY) ou Q / E (QWERTY) ; Espace monte, C descend. Touche relâchée : axe à zéro.
+    case "stickKey": {
+        _arg params [["_key", -1], ["_down", true]];
+        if (isNull _d || {(_d getVariable ["COMSPEC_DroneMode", ""]) isNotEqualTo "STICK"}) exitWith { false };
+        private _map = createHashMapFromArray [[0x11, [0, 1]], [0x1F, [0, -1]], [0x1E, [1, -1]], [0x20, [1, 1]], [0x10, [3, -1]], [0x12, [3, 1]], [0x39, [2, 1]], [0x2E, [2, -1]]];
+        private _a = _map getOrDefault [_key, []];
+        if (_a isEqualTo []) exitWith { false };
+        ["stickSet", [_a select 0, [0, _a select 1] select _down]] call comspec_atak_native_fnc_droneAction;
+        true
+    };
+    case "stickSet";
+    case "stickStep";
+    case "stickStop": {
+        if (isNull _d || {!alive _d}) exitWith {};
+        if ((_d getVariable ["COMSPEC_DroneMode", ""]) isNotEqualTo "STICK") exitWith {
+            if (_act isEqualTo "stickStop") exitWith {};
+            ["stick"] call comspec_atak_native_fnc_droneAction;
+        };
+        if !((["link"] call comspec_atak_native_fnc_droneAction) select 2) exitWith {};
+        private _v = +(_d getVariable ["COMSPEC_DroneStick", [0, 0, 0, 0]]);
+        if (_act isEqualTo "stickStop") then { _v = [0, 0, 0, 0]; } else {
+            _arg params [["_i", 0], ["_val", 0]];
+            if (_i < 0 || {_i > 3}) exitWith {};
+            _v set [_i, ([_val, (_v select _i) + _val] select (_act isEqualTo "stickStep")) max -1 min 1];
+        };
+        if (_v isNotEqualTo (_d getVariable ["COMSPEC_DroneStick", [0, 0, 0, 0]])) then { _d setVariable ["COMSPEC_DroneStick", _v, true]; };
+        if (_act isNotEqualTo "stickSet") then { call _render; };
     };
     case "player": { _s set ["droneFollowUid", _arg]; call _render; };
     case "alt": { _s set ["droneAlt", _arg]; if (!isNull _d && {call _needLink}) then { ["alt", [_arg]] call _send; }; call _render; };
@@ -1302,11 +1344,14 @@ switch (_act) do {
         // « Échap : retour au téléphone » est dans l'infobulle des boutons et dans les notifications du téléphone.
         ["INFO", "Vue directe : Échap pour revenir au téléphone"] call _say;
         private _eh = (findDisplay 46) displayAddEventHandler ["KeyDown", {
+            // Manette : en vue directe, les touches de vol pilotent le drone (pilotage en immersion, le joueur ne bouge pas).
+            if (["stickKey", [_this select 1, true]] call comspec_atak_native_fnc_droneAction) exitWith { true };
             if ((_this select 1) isNotEqualTo 0x01) exitWith { false };
             [{ ["directEnd", true] call comspec_atak_native_fnc_droneAction; }] call CBA_fnc_execNextFrame;
             true
         }];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectEh", _eh];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectUpEh", (findDisplay 46) displayAddEventHandler ["KeyUp", { ["stickKey", [_this select 1, false]] call comspec_atak_native_fnc_droneAction }]];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectPfh", [{
             private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
             private _why = switch (true) do {
@@ -1331,6 +1376,10 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectPfh", -1];
         (findDisplay 46) displayRemoveEventHandler ["KeyDown", missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectEh", -1]];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectEh", -1];
+        (findDisplay 46) displayRemoveEventHandler ["KeyUp", missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectUpEh", -1]];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectUpEh", -1];
+        // Touches tenues à la sortie : le drone s'arrête au lieu de filer.
+        ["stickStop"] call comspec_atak_native_fnc_droneAction;
         ("COMSPEC_ATAK_DroneDirect" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
         if (isNull _v) exitWith {};
         camUseNVG false;
@@ -1708,7 +1757,7 @@ switch (_act) do {
         // Réglage serveur « Repérage automatique par drone » (désactivé par défaut) : sinon le pilote repère lui-même.
         if ((_l select 2) && {((getPosATL _d) select 2) > 3} && {_m isNotEqualTo "STANDBY"} && {missionNamespace getVariable ["comspec_atak_native_drone_autospot", false]}) then { call _scan; };
         // Ordre qui n'avance pas : reprise automatique, une fois (pas en pilotage manuel ni en veille).
-        if ((_l select 2) && {!(_m in ["MANUAL", "STANDBY"])}) then { call _watch; };
+        if ((_l select 2) && {!(_m in ["MANUAL", "STANDBY", "STICK"])}) then { call _watch; };
         // Ordre du clic droit en attente : accusé ou silence du drone, à chaque seconde (liaison ou non, veille comprise).
         call _watchMap;
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_DroneOsd", controlNull];
