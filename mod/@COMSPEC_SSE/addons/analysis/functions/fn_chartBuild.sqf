@@ -162,7 +162,14 @@ if (!isNil "comspec_sse_linkGraph") then {
     } forEach comspec_sse_linkGraph;
 };
 
-// Objets rattachés à une organisation (attribut Eden, module, Zeus).
+// Objets rattachés à une organisation (attribut Eden, module, Zeus). La liste des objets rattachés est gardée en
+// cache (60 s, vidé à l'ouverture du tableau) : allMissionObjects à chaque reconstruction (filtre, anaChanged)
+// coûtait cher sur une grosse mission.
+private _linkedCache = missionNamespace getVariable ["comspec_sse_orgLinkedCache", []];
+if (_linkedCache isEqualTo [] || {time > ((_linkedCache select 0) + 60)}) then {
+    _linkedCache = [time, (allMissionObjects "All") select { (_x getVariable ["COMSPEC_SSE_OrgLinked", ""]) isNotEqualTo "" }];
+    missionNamespace setVariable ["comspec_sse_orgLinkedCache", _linkedCache];
+};
 {
     private _org = _x getVariable ["COMSPEC_SSE_OrgLinked", ""];
     if (_org isEqualType "" && {(trim _org) isNotEqualTo ""} && {!(_x isKindOf "CAManBase")}) then {
@@ -172,7 +179,7 @@ if (!isNil "comspec_sse_linkGraph") then {
             if (_id isNotEqualTo "") then { [_id, _oid, "appartient à", 2] call _edge; };
         };
     };
-} forEach (allMissionObjects "All");
+} forEach ((_linkedCache select 1) select { !isNull _x });
 
 // 4. Téléphones, documents et lieux d'une personne ou d'un objet exploités.
 {

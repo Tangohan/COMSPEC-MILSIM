@@ -124,7 +124,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_AC66EEB9F9";
                         property = "COMSPEC_SSE_Dl7_Files";
                         control = "EditMulti5";
-                        expression = "_this setVariable ['COMSPEC_SSE_Dl7_Files', _value];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Dl7_Files', _value]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         DL7_COND;
@@ -173,7 +173,9 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_B72C6C2193";
                         property = "COMSPEC_SSE_Dl7_Password";
                         control = "Edit";
-                        expression = "_this setVariable ['COMSPEC_SSE_Dl7_Password', _value];";
+                        // Serveur seulement : l'expression Eden s'exécute sur chaque poste, le mot de passe y était en
+                        // clair (l'ATAK ne diffuse que son empreinte). Indice et fichiers : même règle.
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Dl7_Password', _value]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         DL7_COND;
@@ -183,7 +185,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_98E82155A6";
                         property = "COMSPEC_SSE_Dl7_Hint";
                         control = "Edit";
-                        expression = "_this setVariable ['COMSPEC_SSE_Dl7_Hint', _value];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Dl7_Hint', _value]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         DL7_COND;

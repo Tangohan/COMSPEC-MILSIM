@@ -13,5 +13,7 @@ if (!("filter" in _st)) then { _st set ["filter", "all"]; };
 if (!("confirmed" in _st)) then { _st set ["confirmed", false]; };
 _st set ["sel", ""];
 uiNamespace setVariable ["comspec_sse_chartState", _st];
+// Liste des objets rattachés relue à l'ouverture (cache de chartBuild).
+missionNamespace setVariable ["comspec_sse_orgLinkedCache", []];
 createDialog "COMSPEC_SSE_ChartDialog";
 true

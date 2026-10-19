@@ -13,12 +13,28 @@ if (isServer) then {
     [{ [] call comspec_sse_fnc_orgApplyEden; }, [], 1.5] call CBA_fnc_waitAndExecute;
 };
 
+// Sachets scellés remis à un équipier (custody « transfer », serveur) : inventaire modifié là où l'unité est locale.
+["comspec_sse_custodyBags", {
+    params [["_unit", objNull], ["_n", 0]];
+    if (isNull _unit || {!local _unit}) exitWith {};
+    for "_i" from 1 to (abs _n) do {
+        if (_n < 0) then { _unit removeItem "COMSPEC_SSE_EvidenceBag"; } else {
+            if (_unit canAdd "COMSPEC_SSE_EvidenceBag") then { _unit addItem "COMSPEC_SSE_EvidenceBag"; } else {
+                // Inventaire plein : le sachet est posé aux pieds du destinataire plutôt que perdu.
+                private _h = createVehicle ["GroundWeaponHolder", getPosATL _unit, [], 0, "CAN_COLLIDE"];
+                _h addItemCargoGlobal ["COMSPEC_SSE_EvidenceBag", 1];
+            };
+        };
+    };
+}] call CBA_fnc_addEventHandler;
+
 if (!hasInterface) exitWith {};
 
 ["comspec_sse_anaNote", {
     params [["_msg", "", [""]]];
     if (_msg isEqualTo "") exitWith {};
-    hint ((parseText format ["<t color='#7fd08a' size='1.1'>SSE · Analyse</t><br/><br/>%1", _msg]) call comspec_sse_fnc_tr);
+    // Notification du téléphone (bulle si fermé), traduite avant la mise en forme.
+    [_msg, "INFO", "SSE · Analyse"] call comspec_sse_fnc_notify;
 }] call CBA_fnc_addEventHandler;
 
 // Tableau des liens et registre ouverts : suivent l'état diffusé par le serveur
@@ -44,8 +60,9 @@ if (!hasInterface) exitWith {};
         (["COMSPEC_SSE_MySeals", "Pièces que je détiens", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", {
             private _ids = ["held", [player]] call comspec_sse_fnc_custody;
             private _all = missionNamespace getVariable ["comspec_sse_custody", createHashMap];
-            hint ((parseText format ["<t color='#7fd08a'>Pièces détenues : %1</t><br/>%2", count _ids,
-                (_ids apply { private _p = _all get _x; format ["%1 · %2 · %3", _x, _p getOrDefault ["state", "?"], _p getOrDefault ["desc", ""]] }) joinString "<br/>"]) call comspec_sse_fnc_tr);
+            private _lines = [format ["Pièces détenues : %1", count _ids]];
+            _lines append (_ids apply { private _p = _all getOrDefault [_x, createHashMap]; format ["%1 · %2 · %3", _x, _p getOrDefault ["state", "?"], _p getOrDefault ["desc", ""]] });
+            [_lines joinString "\n", "INFO", "SSE · Registre"] call comspec_sse_fnc_notify;
         }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction)
     ];
     missionNamespace setVariable ["comspec_sse_anaSelfActions", _self];
