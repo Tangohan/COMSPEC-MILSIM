@@ -46,6 +46,28 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
         <?php endforeach; ?>
     </nav>
 
+    <?php
+    $systemLabels = ['fr' => 'grades français', 'us' => 'grades américains'];
+    $otherSystem = $communitySystem === 'fr' ? 'us' : 'fr';
+    $targetSystem = $tab !== $communitySystem ? $tab : $otherSystem;
+    ?>
+    <div class="grd-ref__system<?= $tab !== $communitySystem ? ' is-other' : '' ?>">
+        <p>
+            <?php if ($tab === $communitySystem): ?>
+                <strong>Votre communauté utilise les <?= $h($systemLabels[$communitySystem]) ?>.</strong>
+                Ce sont eux que proposent les fiches membres, l’ORBAT et l’avancement.
+            <?php else: ?>
+                <strong>Vous consultez les <?= $h($systemLabels[$tab]) ?>.</strong>
+                Votre communauté utilise actuellement les <?= $h($systemLabels[$communitySystem]) ?>.
+            <?php endif; ?>
+        </p>
+        <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>" onsubmit="return confirm('Passer la communauté aux <?= $h($systemLabels[$targetSystem]) ?> ? Les grades déjà attribués aux membres sont conservés ; les listes proposeront ensuite les <?= $h($systemLabels[$targetSystem]) ?>.');">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="grade_system_code" value="<?= $targetSystem === 'us' ? 'US_CLASSIC' : 'FR_CLASSIC' ?>">
+            <button type="submit" class="grd-ref__switch">Utiliser les <?= $h($systemLabels[$targetSystem]) ?> pour la communauté</button>
+        </form>
+    </div>
+
     <section class="grd-ref__panel">
         <div class="grd-ref__panel-head">
             <h2><?= count($visible) ?> grades <?= $h($systemName) ?> affichés</h2>
