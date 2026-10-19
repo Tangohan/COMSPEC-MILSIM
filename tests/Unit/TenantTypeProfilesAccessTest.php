@@ -73,6 +73,32 @@ final class TenantTypeProfilesAccessTest extends TestCase
         self::assertFalse(TenantTypeConfig::uriAllowed('effectifs', 'formation'));
     }
 
+    /** Gestion allégée « Carte ATAK » : membres, accès, matériel, relais et Overwatch, sans le bureau RH. */
+    public function testAtakProfileKeepsLightBackOffice(): void
+    {
+        foreach ([
+            'back-office/ressources/effectifs',
+            'back-office/ressources/effectifs/membres/12',
+            'back-office/ressources/effectifs/nouveau',
+            'back-office/ressources/effectifs/roles',
+            'back-office/ressources/effectifs/droits',
+            'back-office/users',
+            'back-office/access-management',
+            'back-office/equipement-joueurs',
+            'back-office/kits-roles',
+            'back-office/atak/parc-atak',
+            'back-office/atak/realisme',
+            'back-office/atak/relays-network',
+            'back-office/atak/controle-serveur',
+            'overwatch',
+        ] as $uri) {
+            self::assertTrue(TenantTypeConfig::uriAllowed('atak', $uri), $uri);
+        }
+        foreach (['back-office/ressources/effectifs/fonctions', 'back-office/ressources/effectifs/alertes', 'back-office/ressources/effectifs/vivier'] as $uri) {
+            self::assertFalse(TenantTypeConfig::uriAllowed('atak', $uri), $uri);
+        }
+    }
+
     public function testMembersNeverReceiveAdministrationFromTheProfile(): void
     {
         foreach (['atak', 'effectifs'] as $type) {

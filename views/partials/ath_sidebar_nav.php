@@ -33,6 +33,7 @@ $athIcoPaths = [
     'roleplay' => 'M12 3c3 0 5 2 5 5 0 2-1 3.5-2.5 4.5L12 21l-2.5-8.5C8 11.5 7 10 7 8c0-3 2-5 5-5z',
     'coop' => 'M8 12h8M10 8l-4 4 4 4M14 8l4 4-4 4M5 5h14v14H5z',
     'pulse' => 'M3 12h4l3-8 4 16 3-8h4',
+    'box' => 'M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10',
 ];
 
 $athIco = static function (string $key) use ($athIcoPaths, $h): string {
@@ -197,9 +198,6 @@ $communityChildren = array_values(array_filter([
         ? ['label' => 'Médias', 'href' => url('back-office/media'), 'active' => $navMediasActive]
         : null,
     ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'active' => $navAt('back-office/dashboard-pins')],
-    ['label' => 'Tenues mises en avant', 'href' => url('back-office/dashboard-tenues'), 'active' => $navAt('back-office/dashboard-tenues')],
-    ['label' => 'Équipement des joueurs', 'href' => url('back-office/equipement-joueurs'), 'active' => $navAt('back-office/equipement-joueurs')],
-    ['label' => 'Kits par rôle', 'href' => url('back-office/kits-roles'), 'active' => $navAt('back-office/kits-roles')],
     ['label' => 'Catégories du forum', 'href' => url('back-office/categories'), 'active' => $navAt('back-office/categories')],
 ], static fn (?array $row): bool => is_array($row)));
 
@@ -240,6 +238,14 @@ $atakDeviceChildren = [
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive],
     ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],
     ['label' => 'Détection des marqueurs', 'href' => url('back-office/atak/detection-marqueurs'), 'active' => $navAt('back-office/atak/detection-marqueurs')],
+];
+
+// Matériel : ce que les joueurs portent en jeu et ce que la communauté leur prépare (tous profils, y compris « Carte ATAK »).
+$materielChildren = [
+    ['label' => 'Équipement des joueurs', 'href' => url('back-office/equipement-joueurs'), 'active' => $navAt('back-office/equipement-joueurs')],
+    ['label' => 'Kits par rôle', 'href' => url('back-office/kits-roles'), 'active' => $navAt('back-office/kits-roles')],
+    ['label' => 'Arsenal et tenues', 'href' => url('equipment'), 'active' => $navAt('equipment')],
+    ['label' => 'Tenues mises en avant', 'href' => url('back-office/dashboard-tenues'), 'active' => $navAt('back-office/dashboard-tenues')],
 ];
 
 $atakResChildren = [
@@ -534,6 +540,7 @@ if ($isOperatorBoNav) {
             'key' => 'atak',
             'label' => 'ATAK',
             'items' => [
+                ['label' => 'Overwatch', 'href' => url('atak'), 'icon' => 'radio', 'active' => false],
                 ['label' => 'Poste de situation', 'href' => url('back-office/atak'), 'icon' => 'ops', 'active' => $navAtakHubActive],
                 ['label' => 'Contrôle de mission', 'href' => url('back-office/atak/controle-serveur'), 'icon' => 'gear', 'active' => $navAtakControlActive],
                 ['label' => 'Réseau de relais', 'href' => url('back-office/atak/relays-network'), 'icon' => 'radio', 'active' => $navAtakRelaysActive],
@@ -544,6 +551,13 @@ if ($isOperatorBoNav) {
                     'icon' => 'phone',
                     'active' => $anyActive($atakDeviceChildren),
                     'children' => $atakDeviceChildren,
+                ],
+                [
+                    'label' => 'Matériel',
+                    'href' => url('back-office/equipement-joueurs'),
+                    'icon' => 'box',
+                    'active' => $anyActive($materielChildren),
+                    'children' => $materielChildren,
                 ],
                 [
                     'label' => 'Configuration et mods',

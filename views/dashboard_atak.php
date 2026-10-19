@@ -77,7 +77,7 @@ require base_path('views/partials/alert_banners.php');
             </p>
             <p class="atak-dash__scope">
                 <span class="atak-dash__scope-kicker">Périmètre actif</span>
-                <span>Carte ATAK, équipes de feu, arsenal et forum — effectifs, recrutement et formations restent hors périmètre.</span>
+                <span>Carte ATAK, Overwatch, équipes de feu, matériel, relais et forum, avec une gestion allégée des membres. Effectifs, recrutement et formations restent hors périmètre.</span>
                 <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>">Comprendre les profils</a>
                 <?php if ($canAdjustTenantType): ?>
                 <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>">
@@ -142,7 +142,7 @@ require base_path('views/partials/alert_banners.php');
             </a>
             <?php if ($canAdjustTenantType): ?>
             <a href="<?= htmlspecialchars(url('back-office/community'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module">
-                <p class="atak-dash__module-kicker">Administration</p>
+                <p class="atak-dash__module-kicker">Gestion</p>
                 <h2 class="atak-dash__module-title">Paramètres</h2>
                 <p class="atak-dash__module-copy">Identité, invitations<?= $can_manage_invitations && $pending_invitations_count > 0 ? ' (' . $pending_invitations_count . ' en attente)' : '' ?> et profil de la communauté.</p>
             </a>
@@ -173,7 +173,12 @@ require base_path('views/partials/alert_banners.php');
             <?php if ($canAdjustTenantType): ?>
             <a href="<?= htmlspecialchars(url('back-office/atak/fire-teams'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Équipes de feu</a>
             <a href="<?= htmlspecialchars(url('back-office/atak/heures'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Heures de jeu</a>
-            <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Réglages carte</a>
+            <a href="<?= htmlspecialchars(url('back-office/ressources/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Réglages carte</a>
+            <a href="<?= htmlspecialchars(url('back-office/atak/parc-atak'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Parc ATAK</a>
+            <a href="<?= htmlspecialchars(url('back-office/equipement-joueurs'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Équipement des joueurs</a>
+            <a href="<?= htmlspecialchars(url('back-office/kits-roles'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Kits par rôle</a>
+            <a href="<?= htmlspecialchars(url('back-office/atak/relays-network'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Réseau de relais</a>
+            <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Gestion</a>
             <?php endif; ?>
         </div>
     </section>

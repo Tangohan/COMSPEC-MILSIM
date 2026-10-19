@@ -35,7 +35,7 @@ final class TenantTypeConfig
             self::TYPE_ATAK => [
                 'label' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Carte ATAK') : 'Carte ATAK',
                 'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'La carte ATAK, les équipes de feu et le forum. Le plus simple pour jouer ensemble.') : 'La carte ATAK, les équipes de feu et le forum. Le plus simple pour jouer ensemble.',
-                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'La carte tactique, le forum public et l’administration restent accessibles. Effectifs, formations et recrutement seront masqués.') : 'La carte tactique, le forum public et l’administration restent accessibles. Effectifs, formations et recrutement seront masqués.',
+                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'La carte tactique, Overwatch, le matériel, les relais, le forum public et la gestion des membres restent accessibles. Effectifs, formations et recrutement seront masqués.') : 'La carte tactique, Overwatch, le matériel, les relais, le forum public et la gestion des membres restent accessibles. Effectifs, formations et recrutement seront masqués.',
             ],
         ];
     }
@@ -284,6 +284,12 @@ final class TenantTypeConfig
             return null;
         }
 
+        // Liste des membres, fiche, création de compte et niveaux d’accès : socle de gestion de tous les profils
+        // (le profil « Carte ATAK » n’a pas les effectifs mais doit gérer ses joueurs). Racine seule, pas les sous-pages RH.
+        if ($uri === 'back-office/ressources/effectifs' || $uri === 'back-office/ressources/effectifs/export') {
+            return 'admin';
+        }
+
         $prefixMap = [
             // ATAK (pages + API tactiques alignées sur detect_current_module)
             'atak' => 'atak',
@@ -352,6 +358,12 @@ final class TenantTypeConfig
             'api/orbat' => 'personnel',
             'api/dossier-operateur' => 'personnel',
             'back-office/ressources/effectifs' => 'personnel',
+            'back-office/ressources/effectifs/membres' => 'admin',
+            'back-office/ressources/effectifs/nouveau' => 'admin',
+            'back-office/ressources/effectifs/roles' => 'admin',
+            'back-office/ressources/effectifs/droits' => 'admin',
+            'back-office/ressources/effectifs/doublons' => 'admin',
+            'back-office/ressources/effectifs/departs' => 'admin',
             'back-office/organisation-effectifs' => 'personnel',
             'back-office/organisation/structure' => 'personnel',
             'back-office/organisation/anciennete' => 'personnel',
@@ -519,7 +531,7 @@ final class TenantTypeConfig
                 'levels' => [
                     'member' => 'Ouvre la carte, relie son téléphone en jeu, lit et écrit sur le forum, gère ses tenues.',
                     'hr' => 'Comme un membre, et invite de nouveaux joueurs.',
-                    'manager' => 'Tout : réglages de la carte et du mod, serveurs de jeu, équipes de feu, temps de jeu, membres et niveaux d’accès.',
+                    'manager' => 'Tout : réglages de la carte et du mod, serveurs de jeu, parc ATAK, matériel et kits, réseau de relais, équipes de feu, temps de jeu, membres et niveaux d’accès.',
                 ],
                 'steps' => [
                     ['title' => 'Inviter les joueurs', 'text' => 'Envoyez un lien d’invitation : chaque joueur crée son compte et rejoint la communauté.', 'path' => 'back-office/invitations', 'audience' => 'hr'],
@@ -527,6 +539,7 @@ final class TenantTypeConfig
                     ['title' => 'Régler la carte', 'text' => 'Cartes disponibles, fonctions activées sur les téléphones, mode roleplay.', 'path' => 'back-office/ressources/atak-config', 'audience' => 'manager'],
                     ['title' => 'Relier son téléphone en jeu', 'text' => 'Chaque joueur renseigne son identifiant Steam et suit la première liaison.', 'path' => 'atak/premiere-liaison', 'audience' => 'member'],
                     ['title' => 'Constituer les équipes de feu', 'text' => 'Une couleur, un chef, des membres : les équipes apparaissent sur la carte.', 'path' => 'back-office/atak/fire-teams', 'audience' => 'manager'],
+                    ['title' => 'Suivre le matériel et les relais', 'text' => 'Parc ATAK des membres, équipement remonté du jeu, kits par rôle et réseau de relais, depuis la gestion.', 'path' => 'back-office/atak/parc-atak', 'audience' => 'manager'],
                     ['title' => 'Jouer et suivre', 'text' => 'Ouvrez la carte pendant la session, puis consultez les heures de jeu par joueur et par rôle.', 'path' => 'atak', 'audience' => 'member'],
                 ],
             ],

@@ -250,6 +250,7 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
         <span class="ath-upgrade-banner__cta">Voir</span>
     </a>
     <?php endif; ?>
+    <?php require base_path('views/partials/bo_atak_light_kit.php'); ?>
     <?php require base_path('views/partials/ath_dashboard_dash.php'); ?>
 </div>
 <?php else: ?>

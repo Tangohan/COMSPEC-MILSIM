@@ -16,6 +16,11 @@ $kicker = isset($boPageKicker) ? trim((string) $boPageKicker) : '';
 $headTitle = isset($boPageTitle) ? trim((string) $boPageTitle) : (isset($title) ? trim((string) $title) : '');
 $subtitle = isset($boPageSubtitle) ? trim((string) $boPageSubtitle) : '';
 $quick = isset($boPageQuick) && is_array($boPageQuick) ? $boPageQuick : [];
+// Raccourcis hors profil ou sans droit retirés (ex. « Candidatures » pour une communauté « Carte ATAK »).
+if (function_exists('portal_nav_href_permission_allowed')) {
+    $quick = array_values(array_filter($quick, static fn ($q): bool => !is_array($q)
+        || portal_nav_href_permission_allowed((string) ($q['href'] ?? ''))));
+}
 
 if ($headTitle === '' && $kicker === '' && $subtitle === '' && $quick === []) {
     return;
