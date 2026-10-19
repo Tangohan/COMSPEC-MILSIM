@@ -9,6 +9,24 @@ use PHPUnit\Framework\TestCase;
 
 final class TenantTypeProfilesAccessTest extends TestCase
 {
+    private mixed $previousLocale = null;
+
+    protected function setUp(): void
+    {
+        // Les libellés de profil passent par i18n_phrase : un test précédent peut laisser la langue en anglais.
+        $this->previousLocale = $GLOBALS['__app_locale'] ?? null;
+        $GLOBALS['__app_locale'] = 'fr';
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->previousLocale === null) {
+            unset($GLOBALS['__app_locale']);
+        } else {
+            $GLOBALS['__app_locale'] = $this->previousLocale;
+        }
+    }
+
     /**
      * Pages et API qui échappaient au filtre de profil (ouvertes à une communauté « Carte ATAK »).
      *
