@@ -15,7 +15,8 @@
               cartouches ENI actifs (fn_mapLabels)]
 */
 params ["_map", "_ts", "_kt", "_scale", ["_skip", []], ["_boxOn", false]];
-private _rects = [];
+// Bandeau d'information de la carte compté comme déjà occupé : aucun nom ne passe dessous.
+private _rects = [_map] call comspec_atak_native_fnc_mapHudRects;
 uiNamespace setVariable ["COMSPEC_ATAK_LblRects", _rects];
 if !(missionNamespace getVariable ["comspec_atak_native_map_show_marker_text", true]) exitWith {};
 private _style = toUpper (missionNamespace getVariable ["comspec_atak_native_map_marker_style", "plate"]);

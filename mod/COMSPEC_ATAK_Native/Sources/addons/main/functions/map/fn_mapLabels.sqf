@@ -102,8 +102,9 @@ private _vis = [];
 } forEach (_eni select 1);
 _vis sort true;
 
-private _max = [20, 28] select (_style isEqualTo "CALLSIGN");
-private _placed = [];
+// Bandeau d'information de la carte compté comme déjà occupé (cartouche jamais dessous).
+private _placed = [_map] call comspec_atak_native_fnc_mapHudRects;
+private _max = ([20, 28] select (_style isEqualTo "CALLSIGN")) + (count _placed);
 private _fill = "#(rgb,8,8,3)color(1,1,1,1)";
 private _none = "#(argb,8,8,3)color(0,0,0,0)";
 private _sel = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedEntity", createHashMap]) getOrDefault ["id", ""];
