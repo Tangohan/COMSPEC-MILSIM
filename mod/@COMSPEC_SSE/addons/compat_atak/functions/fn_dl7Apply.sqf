@@ -7,7 +7,7 @@
       crackTime, duration, port, alarm, oneShot (voir comspec_atak_native_fnc_dataSetup)
 */
 params [["_obj", objNull, [objNull]], ["_cfg", [], [[], createHashMap]]];
-if (isNull _obj || {isNil "comspec_atak_native_fnc_dataSetup"}) exitWith { false };
+if (isNull _obj) exitWith { false };
 if (!isServer) exitWith { [_obj, _cfg] remoteExecCall ["comspec_sse_fnc_dl7Apply", 2]; true };
 if (_cfg isEqualType []) then { _cfg = createHashMapFromArray (_cfg select { _x isEqualType [] && {(count _x) == 2} }); };
 

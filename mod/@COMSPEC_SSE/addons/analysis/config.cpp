@@ -27,7 +27,8 @@ class CfgPatches {
             "comspec_sse_biometrics",
             "A3_Ui_F",
             "A3_Modules_F",
-            "cba_xeh"
+            "cba_xeh",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;

@@ -3,7 +3,7 @@
 /*
     Passerelle SSE ↔ ATAK natif : le câble DL-7 se configure dans le SSE.
 
-    Chargée seulement si l'ATAK natif est présent (skipWhenMissingDependencies) :
+    Toujours chargée (l'ATAK natif est une dépendance obligatoire du SSE) :
       - les modules d'extraction de l'ATAK passent dans « COMSPEC SSE · 4. Numérique » ;
       - catégorie Eden « COMSPEC SSE — Extraction DL-7 » sur n'importe quel objet ;
       - le contenu numérique généré par le SSE (fichiers, courriels, messages,
@@ -24,7 +24,6 @@ class CfgPatches {
             "comspec_sse_eden",
             "comspec_atak_native_main"
         };
-        skipWhenMissingDependencies = 1;
         author = "COMSPEC";
         VERSION_CONFIG;
     };
