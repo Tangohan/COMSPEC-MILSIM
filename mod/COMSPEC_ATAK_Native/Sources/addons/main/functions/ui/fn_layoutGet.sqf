@@ -129,8 +129,9 @@ private _dock = !_land;
 private _slim = _mini && {!_texture} && {(_s getOrDefault ["activePage", ""]) isEqualTo "MAP"};
 private _dockH = [0, _font * 2.9] select (_dock && {!_slim});
 private _railW = [_font * 2.9 / _ratio, 0] select (_dock || _slim);
-// Panneau SITUATION repliable (réglage profil).
-private _inspW = [0, _sw * 0.24] select (!_mini && {missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]});
+// Panneau SITUATION repliable (réglage profil). Retour de jeu : à 24 % de l'écran, titres et valeurs se coupaient
+// (« SITUAT ION ») ; un tiers de l'écran, et presque tout l'écran en vue CONFIGURATION (tous les calques expliqués).
+private _inspW = [0, _sw * ([0.34, 0.74] select (missionNamespace getVariable ["COMSPEC_ATAK_InspFull", false]))] select (!_mini && {missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]});
 private _pad = _sw * 0.012;
 private _bodyY = _sy + _statusH + _appH;
 private _bodyH = _sh - _statusH - _appH - _dockH;
