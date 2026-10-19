@@ -100,7 +100,7 @@ private _wait = 2;
         private _c = _x getOrDefault ["chief", objNull];
         if (isNull _c) then { _x getOrDefault ["hub", objNull] } else { _c }
     };
-    private _hq = _heads select -1;
+    private _hq = _heads param [(count _heads) - 1, objNull];
     {
         private _h = _x;
         private _n = _heads select ((_forEachIndex + 1) mod (count _heads));
