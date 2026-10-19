@@ -29,6 +29,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\MemberDepartureRepository;
+use App\Repositories\MemberLanguageRepository;
 use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
@@ -42,6 +43,7 @@ use App\Authorization\SystemReservedPermissions;
 use App\Services\Admin\RolePermissionService;
 use App\Services\Rbac\CommunityAccessProfiles;
 use App\Repositories\TenantAdminSettingsRepository;
+use App\Support\CommunityLanguages;
 use App\Support\EffectifsLmsAccess;
 use App\Support\GradeSelectOptions;
 use App\Support\OrganizationRoleLabels;
@@ -191,7 +193,9 @@ class EffectifsWorkspaceController
             $onlyWithoutRole
         );
 
-        $needsFullLoad = $sort !== 'nom';
+        $languageCommunity = $this->communitySettingsFor($tenantId);
+        $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
+        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '';
         if ($needsFullLoad) {
             $fetchLimit = min(2000, max($total, 1));
             $baseUsers = $this->userRepository->listForTenant(
@@ -206,6 +210,20 @@ class EffectifsWorkspaceController
                 $onlyWithoutRole
             );
             $allRows = $this->enrichRosterRows($tenantId, $baseUsers);
+            if ($languageFilter !== '') {
+                // Filtre « langue » : principale ou comprise, calculé après chargement (pas de colonne SQL dédiée).
+                $resolvedAll = $this->memberLanguages()->resolvedForUsers(
+                    $tenantId,
+                    array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $allRows),
+                    $languageCommunity
+                );
+                $allRows = array_values(array_filter($allRows, static function (array $r) use ($resolvedAll, $languageFilter): bool {
+                    $lang = $resolvedAll[(int) ($r['id'] ?? 0)] ?? null;
+
+                    return is_array($lang) && ($lang['primary'] === $languageFilter || in_array($languageFilter, $lang['others'], true));
+                }));
+                $total = count($allRows);
+            }
             $allRows = $this->sortRosterRows($allRows, $sort);
             $offset = ($page - 1) * $perPage;
             $rows = array_slice($allRows, $offset, $perPage);
@@ -225,6 +243,11 @@ class EffectifsWorkspaceController
         }
 
         $counts = $this->rosterCounts($tenantId);
+        $rowLanguages = $this->memberLanguages()->resolvedForUsers(
+            $tenantId,
+            array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows),
+            $languageCommunity
+        );
         $unitMeta = $this->unitRepository->hierarchyMetaByUnitId($tenantId);
         $unitsRaw = $this->unitRepository->allForTenant($tenantId);
         $units = [];
@@ -270,7 +293,10 @@ class EffectifsWorkspaceController
                 'sans_affectation' => $onlyNoUnit,
                 'sans_role' => $onlyNoRole,
                 'tri' => $sort,
+                'langue' => $languageFilter,
             ],
+            'rosterLanguages' => $rowLanguages,
+            'rosterLanguageCodes' => CommunityLanguages::communityLanguages($languageCommunity),
             'rosterSortOptions' => [
                 'nom' => 'Nom',
                 'commandement' => 'Ordre de commandement',
@@ -399,6 +425,11 @@ class EffectifsWorkspaceController
         );
         $rows = $this->enrichRosterRows($tenantId, $baseUsers);
         $rows = $this->sortRosterRows($rows, 'nom');
+        $csvLanguages = $this->memberLanguages()->resolvedForUsers(
+            $tenantId,
+            array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows),
+            $this->communitySettingsFor($tenantId)
+        );
 
         $statusLabels = [
             'active' => 'Actif',
@@ -411,7 +442,7 @@ class EffectifsWorkspaceController
         fputcsv($fh, [
             'Nom affiché', 'Indicatif', 'E-mail', 'Grade', 'Fonction', 'Affectation', 'Statut',
             'Ancienneté', 'Disponibilité (%)', 'Présence (%)', 'Complétion du dossier (%)',
-            'platform_number', 'tenant_member_number',
+            'platform_number', 'tenant_member_number', 'Langue de jeu', 'Autres langues',
         ], $sep);
         foreach ($rows as $r) {
             $rStatus = (string) ($r['status'] ?? '');
@@ -429,6 +460,11 @@ class EffectifsWorkspaceController
                 (string) ($r['completion_score'] ?? ''),
                 (string) ($r['athena_identifier'] ?? ''),
                 (string) ($r['tenant_member_number'] ?? ''),
+                CommunityLanguages::label((string) ($csvLanguages[(int) ($r['id'] ?? 0)]['primary'] ?? '')),
+                implode(', ', array_map(
+                    [CommunityLanguages::class, 'label'],
+                    $csvLanguages[(int) ($r['id'] ?? 0)]['others'] ?? []
+                )),
             ], $sep);
         }
         rewind($fh);
@@ -594,8 +630,14 @@ class EffectifsWorkspaceController
             }
         }
 
+        $languageCommunity = $this->communitySettingsFor($tenantId);
+        $memberLanguage = $this->memberLanguages()->resolvedForUsers($tenantId, [$id], $languageCommunity)[$id]
+            ?? CommunityLanguages::resolveMember(null, null, $languageCommunity);
+
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
+            'memberLanguage' => $memberLanguage,
+            'communityLanguageCodes' => CommunityLanguages::communityLanguages($languageCommunity),
             'effectifsNav' => 'roster',
             'member' => $row,
             'memberAssignments' => $assignments,
@@ -1415,6 +1457,59 @@ class EffectifsWorkspaceController
         }
 
         return $out;
+    }
+
+    /** Langue de jeu du joueur (langue principale + autres langues comprises) dans la communauté. */
+    public function updateMemberLanguages(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $redirect = effectifs_workspace_url('membres/' . $id) . '#langues';
+        if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les dossiers.');
+
+            return Response::redirect($redirect);
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($redirect);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $user = $id > 0 ? $this->userRepository->findById($id, $tenantId) : null;
+        if ($user === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $others = $request->input('other_langs', []);
+        $this->memberLanguages()->save(
+            $tenantId,
+            $id,
+            CommunityLanguages::normalize($request->input('primary_lang', '')),
+            CommunityLanguages::normalizeList(is_array($others) ? $others : []),
+            (int) Session::get('user_id') ?: null
+        );
+        $this->adminAuditService->logUserUpdated($tenantId, (int) Session::get('user_id'), $id, 'langues', 'primary_lang, other_langs');
+        Session::flash('success', 'Langue du joueur mise à jour.');
+
+        return Response::redirect($redirect);
+    }
+
+    private function memberLanguages(): MemberLanguageRepository
+    {
+        return \App\Core\Container::get(MemberLanguageRepository::class);
+    }
+
+    /** @return array<string, mixed> */
+    private function communitySettingsFor(int $tenantId): array
+    {
+        $settings = $this->tenantRepository->getSettings($tenantId);
+
+        return is_array($settings['community'] ?? null) ? $settings['community'] : [];
     }
 
     public function updateMemberCivilStatus(Request $request, array $params = []): Response
@@ -2617,12 +2712,13 @@ class EffectifsWorkspaceController
             return strcasecmp((string) ($a['assignment_path'] ?? ''), (string) ($b['assignment_path'] ?? ''));
         });
 
-        $gradeSystem = strtoupper(trim((string) ($this->tenantRepository->getSettings($tenantId)['grade_system_code'] ?? '')));
+        // Pays de l’unité d’abord (France ou États-Unis), sinon le système de grades de la communauté.
+        $preferredGradeCountry = CommunityLanguages::preferredGradeCountry($this->tenantRepository->getSettings($tenantId));
 
         return [
             'grades' => $grades,
             // Grades triés et regroupés (pays, catégorie, du plus élevé au plus bas) pour les listes déroulantes.
-            'grade_groups' => GradeSelectOptions::groups($grades, str_starts_with($gradeSystem, 'US') ? 'US' : 'FR'),
+            'grade_groups' => GradeSelectOptions::groups($grades, $preferredGradeCountry),
             'roles' => $roles,
             'job_roles' => $jobRoles,
             'units' => $units,

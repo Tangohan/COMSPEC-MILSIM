@@ -390,6 +390,37 @@ $editValidTabIds = implode(',', array_map(
                 </div>
               </div>
             </div>
+            <?php
+            $gameLang = is_array($gameLanguage ?? null) ? $gameLanguage : ['primary' => 'fr', 'others' => [], 'source' => 'community'];
+            $gameLangCodes = is_array($gameLanguageCodes ?? null) && $gameLanguageCodes !== [] ? $gameLanguageCodes : [(string) $gameLang['primary']];
+            $gameLangChoices = array_values(array_unique(array_merge($gameLangCodes, [(string) $gameLang['primary']], $gameLang['others'])));
+            ?>
+            <div>
+              <h3 class="mb-1 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">Langue en jeu</h3>
+              <p class="mb-4 text-[11px] text-slate-500">La langue dans laquelle vous jouez et communiquez en opération (radio, briefings). Elle aide l’encadrement à composer les équipes. Elle ne change pas la langue du site.</p>
+              <input type="hidden" name="game_language_form" value="1">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="game_primary_lang" class="mb-1 block text-xs font-bold text-slate-600">Langue principale</label>
+                  <select name="game_primary_lang" id="game_primary_lang" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <?php foreach ($gameLangChoices as $gameCode): ?>
+                      <option value="<?= htmlspecialchars($gameCode, ENT_QUOTES, 'UTF-8') ?>" <?= $gameCode === $gameLang['primary'] ? 'selected' : '' ?>><?= htmlspecialchars(\App\Support\CommunityLanguages::flag($gameCode) . ' ' . \App\Support\CommunityLanguages::fullLabel($gameCode), ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <fieldset>
+                  <legend class="mb-1 block text-xs font-bold text-slate-600">Autres langues comprises</legend>
+                  <div class="flex flex-wrap gap-2">
+                    <?php foreach ($gameLangChoices as $gameCode): ?>
+                      <label class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-700">
+                        <input type="checkbox" name="game_other_langs[]" value="<?= htmlspecialchars($gameCode, ENT_QUOTES, 'UTF-8') ?>" <?= in_array($gameCode, $gameLang['others'], true) ? 'checked' : '' ?>>
+                        <?= htmlspecialchars(\App\Support\CommunityLanguages::flag($gameCode) . ' ' . \App\Support\CommunityLanguages::label($gameCode), ENT_QUOTES, 'UTF-8') ?>
+                      </label>
+                    <?php endforeach; ?>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
             <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
               <label class="flex items-start gap-3 text-sm text-slate-800">
                 <input type="checkbox" name="hide_personal_info" value="1" class="mt-1 rounded border-slate-300 text-amber-900" <?= !empty($d['hide_personal_info']) ? 'checked' : '' ?>>

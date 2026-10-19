@@ -25,6 +25,9 @@ $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : []
 $elevationCooldownByUserId = is_array($elevationCooldownByUserId ?? null) ? $elevationCooldownByUserId : [];
 $badgesByUserId = is_array($badgesByUserId ?? null) ? $badgesByUserId : [];
 $phaseBadgesByUserId = is_array($phaseBadgesByUserId ?? null) ? $phaseBadgesByUserId : [];
+$rosterLanguages = is_array($rosterLanguages ?? null) ? $rosterLanguages : [];
+$rosterLanguageCodes = is_array($rosterLanguageCodes ?? null) ? $rosterLanguageCodes : [];
+$languageFilter = (string) ($filters['langue'] ?? '');
 $cooldownLabel = static function (int $seconds): string {
     $hours = max(1, (int) ceil($seconds / 3600));
     if ($hours < 24) {
@@ -42,6 +45,7 @@ $filterQuery = static function (array $overrides = []) use ($filters, $page): ar
         'sans_affectation' => !empty($filters['sans_affectation']) ? '1' : null,
         'sans_role' => !empty($filters['sans_role']) ? '1' : null,
         'tri' => !empty($filters['tri']) && ($filters['tri'] ?? 'nom') !== 'nom' ? $filters['tri'] : null,
+        'langue' => !empty($filters['langue']) ? $filters['langue'] : null,
         'page' => $page > 1 ? $page : null,
     ];
     foreach ($overrides as $k => $v) {
@@ -107,6 +111,7 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
     || !empty($filters['role_id'])
     || !empty($filters['sans_affectation'])
     || !empty($filters['sans_role'])
+    || !empty($filters['langue'])
     || (($filters['tri'] ?? 'nom') !== 'nom');
 
 $exportQuery = array_filter([
@@ -244,6 +249,17 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     <?php endforeach; ?>
                 </select>
             </div>
+            <?php if (count($rosterLanguageCodes) > 1 || $languageFilter !== ''): ?>
+            <div class="eff-roster-toolbar__field">
+                <label for="eff-langue">Langue</label>
+                <select id="eff-langue" name="langue">
+                    <option value="">Toutes les langues</option>
+                    <?php foreach (array_values(array_unique(array_merge($rosterLanguageCodes, $languageFilter !== '' ? [$languageFilter] : []))) as $langCode): ?>
+                        <option value="<?= htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8') ?>" <?= $languageFilter === $langCode ? 'selected' : '' ?>><?= htmlspecialchars(\App\Support\CommunityLanguages::flag($langCode) . ' ' . \App\Support\CommunityLanguages::label($langCode), ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
             <div class="eff-roster-toolbar__field">
                 <label for="eff-tri">Trier par</label>
                 <select id="eff-tri" name="tri">
@@ -423,6 +439,16 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                             <span class="eff-sheets__badge eff-sheets__badge--grade"><?= htmlspecialchars($grade, ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php else: ?>
                                             <span class="eff-sheets__path-muted">Sans grade</span>
+                                        <?php endif; ?>
+                                        <?php $rowLang = $rosterLanguages[$id] ?? null; ?>
+                                        <?php if (is_array($rowLang)): ?>
+                                            <?php
+                                            $rowLangCodes = array_merge([(string) $rowLang['primary']], $rowLang['others']);
+                                            $rowLangTitle = 'Joue en ' . mb_strtolower(\App\Support\CommunityLanguages::label((string) $rowLang['primary']))
+                                                . ($rowLang['others'] !== [] ? ', comprend ' . implode(', ', array_map(static fn (string $c): string => mb_strtolower(\App\Support\CommunityLanguages::label($c)), $rowLang['others'])) : '')
+                                                . ($rowLang['source'] !== 'member' ? ' (à confirmer)' : '');
+                                            ?>
+                                            <span class="eff-sheets__badge eff-sheets__badge--lang<?= $rowLang['source'] !== 'member' ? ' eff-sheets__badge--muted' : '' ?>" title="<?= htmlspecialchars($rowLangTitle, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(\App\Support\CommunityLanguages::flag((string) $rowLang['primary']) . ' ' . implode('·', array_map('strtoupper', $rowLangCodes)), ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endif; ?>
                                     </span>
                                     <?php if (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== ''): ?>

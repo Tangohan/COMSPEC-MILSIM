@@ -40,16 +40,13 @@ $accentColor = trim((string) ($b['accent_color'] ?? '')) ?: '#0f172a';
 $pm = is_array($c['public_modules'] ?? null) ? $c['public_modules'] : [];
 $registrationMode = \App\Services\Community\TenantCommunityProfileService::normalizeRegistrationMode($c['registration_mode'] ?? 'milsim');
 $registrationLabel = \App\Services\Community\TenantCommunityProfileService::registrationModeLabel($registrationMode);
-$locale = strtolower((string) ($c['default_locale'] ?? 'fr'));
-if ($locale === 'fr-fr') {
-    $locale = 'fr';
-}
-if ($locale === 'en-us') {
-    $locale = 'en';
-}
-if (!in_array($locale, ['fr', 'en'], true)) {
-    $locale = 'fr';
-}
+$locale = \App\Support\CommunityLanguages::communityDefault($c);
+$langSpoken = \App\Support\CommunityLanguages::communityLanguages($c);
+$langOrbat = \App\Support\CommunityLanguages::orbatLanguageSetting($c);
+$langUnitCountry = \App\Support\CommunityLanguages::unitCountry($c);
+$langCountryFromAffiliation = $langUnitCountry !== '' && trim((string) ($c['unit_country'] ?? '')) === '';
+$langCountryOptions = \App\Support\CommunityLanguages::countryOptions();
+$langGradeCountry = \App\Support\CommunityLanguages::preferredGradeCountry(['community' => $c] + (is_array($orgSettings ?? null) ? $orgSettings : []));
 $orbatVis = (string) ($c['orbat_visibility'] ?? 'members');
 if (!in_array($orbatVis, ['public', 'members', 'command'], true)) {
     $orbatVis = 'members';
@@ -208,7 +205,7 @@ $imagesNeedAddress = $slugHint === '';
                 <button type="button" role="tab" id="bo-settings-tab-identite" data-settings-tab="identite" <?= $hubNavSelected('identite') ?>>
                     <span class="bcs-nav__num" aria-hidden="true">1</span>
                     <span class="bcs-nav__label">Identité</span>
-                    <span class="bcs-nav__desc">Nom, adresse, logo, unité représentée</span>
+                    <span class="bcs-nav__desc">Nom, adresse, logo, unité, pays et langues</span>
                 </button>
                 <button type="button" role="tab" id="bo-settings-tab-vitrine" data-settings-tab="vitrine" <?= $hubNavSelected('vitrine') ?>>
                     <span class="bcs-nav__num" aria-hidden="true">2</span>
@@ -252,6 +249,10 @@ $imagesNeedAddress = $slugHint === '';
                 <div class="bcs-status__row">
                     <dt>Recrutement</dt>
                     <dd><span class="bcs-pill <?= $communityLocked ? 'bcs-pill--warn' : 'bcs-pill--ok' ?>"><?= $communityLocked ? 'Fermé' : 'Ouvert' ?></span></dd>
+                </div>
+                <div class="bcs-status__row">
+                    <dt>Pays et langues</dt>
+                    <dd><span class="bcs-pill"><?= $h(trim(($langUnitCountry !== '' ? \App\Support\Profile\PublicFlagCountryCatalog::flagEmoji($langUnitCountry) . ' ' : '') . implode(' · ', array_map('strtoupper', $langSpoken)))) ?></span></dd>
                 </div>
                 <div class="bcs-status__row">
                     <dt>Candidature</dt>
@@ -594,6 +595,77 @@ $imagesNeedAddress = $slugHint === '';
                     </div>
                 </div>
             </section>
+
+            <section class="bcs-card bcs-lang" id="pays-langues">
+                <span id="timezone"></span>
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Pays et langues</h3>
+                        <p class="bcs-card__desc">Le pays de votre unité, la langue de travail et les langues parlées par vos joueurs. Ces réglages servent à l’ORBAT, aux grades proposés en premier, à l’annuaire des unités et à la fiche de chaque membre.</p>
+                        <?php $renderWhere(['ORBAT', 'Effectifs', 'Registre des unités'], 'bcs-card__where'); ?>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="unit_country">Pays de l’unité</label>
+                            <p class="bcs-help">Le pays que votre unité représente en jeu.<?php if ($langCountryFromAffiliation): ?> Repris de l’unité réelle représentée tant que vous n’en choisissez pas un autre.<?php endif; ?></p>
+                            <select id="unit_country" name="unit_country">
+                                <option value="">Non précisé</option>
+                                <?php foreach ($langCountryOptions as $countryCode => $countryLabel): ?>
+                                    <option value="<?= $h($countryCode) ?>" <?= $langUnitCountry === $countryCode ? 'selected' : '' ?>><?= $h(trim(\App\Support\Profile\PublicFlagCountryCatalog::flagEmoji($countryCode) . ' ' . $countryLabel)) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="bcs-example">Grades proposés en premier : <strong><?= $h($langGradeCountry === 'US' ? 'États-Unis' : 'France') ?></strong>. Le catalogue de grades couvre la France et les États-Unis.</p>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="default_locale">Langue de référence</label>
+                            <p class="bcs-help">La langue de travail de l’unité : briefings, ORBAT, annuaire des unités. L’interface du site reste en français ou en anglais, au choix de chaque membre.</p>
+                            <select id="default_locale" name="default_locale" data-lang-default>
+                                <?php foreach (\App\Support\CommunityLanguages::options() as $langCode => $langLabel): ?>
+                                    <option value="<?= $h($langCode) ?>" <?= $locale === $langCode ? 'selected' : '' ?>><?= $h(\App\Support\CommunityLanguages::flag($langCode) . ' ' . $langLabel) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <span class="bcs-label" id="community_languages_label">Langues parlées dans l’unité</span>
+                        <p class="bcs-help">Vos joueurs choisissent leur langue de jeu dans cette liste. La langue de référence en fait toujours partie.</p>
+                        <div class="bcs-checks" role="group" aria-labelledby="community_languages_label">
+                            <?php foreach (\App\Support\CommunityLanguages::options() as $langCode => $langLabel): ?>
+                                <?php $langIsDefault = $langCode === $locale; ?>
+                                <label class="bcs-check">
+                                    <input type="checkbox" name="community_languages[]" value="<?= $h($langCode) ?>" data-lang-spoken <?= in_array($langCode, $langSpoken, true) ? 'checked' : '' ?><?= $langIsDefault ? ' disabled' : '' ?>>
+                                    <span><?= $h(\App\Support\CommunityLanguages::flag($langCode) . ' ' . $langLabel) ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="orbat_language">Langue de l’ORBAT</label>
+                            <p class="bcs-help">Langue des intitulés de la feuille ORBAT imprimable et du PDF. Les noms d’unités et de postes restent tels que vous les avez saisis.</p>
+                            <select id="orbat_language" name="orbat_language">
+                                <option value="" <?= $langOrbat === '' ? 'selected' : '' ?> data-lang-follow>Comme la langue de référence (<?= $h(\App\Support\CommunityLanguages::label($locale)) ?>)</option>
+                                <?php foreach (\App\Support\CommunityLanguages::options() as $langCode => $langLabel): ?>
+                                    <option value="<?= $h($langCode) ?>" <?= $langOrbat === $langCode ? 'selected' : '' ?>><?= $h(\App\Support\CommunityLanguages::flag($langCode) . ' ' . $langLabel) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="bcs-example"><a class="bcs-link" href="<?= $h(url('orbat/export')) ?>" target="_blank" rel="noopener">Voir la feuille ORBAT ↗</a> Chaque lecteur peut aussi changer de langue en haut de la feuille.</p>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="timezone_select">Fuseau horaire</label>
+                            <p class="bcs-help">Sert à afficher les heures des événements, échéances et journaux.</p>
+                            <select id="timezone_select" name="timezone">
+                                <?php foreach ($zones as $z): ?>
+                                    <option value="<?= $h($z) ?>" <?= $z === $currentTz ? 'selected' : '' ?>><?= $h($z) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <input type="hidden" name="languages_form" value="1">
+                </div>
+            </section>
             </div>
 
             <div data-settings-panel="vitrine"<?= $hubTab === 'vitrine' ? '' : ' hidden' ?>>
@@ -714,35 +786,6 @@ $imagesNeedAddress = $slugHint === '';
                 </div>
             </section>
 
-            <section class="bcs-card" id="timezone">
-                <div class="bcs-card__head">
-                    <div class="bcs-card__heading">
-                        <h3 class="bcs-card__title">Langue et fuseau horaire</h3>
-                        <p class="bcs-card__desc">Réglages de référence pour toute la communauté.</p>
-                    </div>
-                </div>
-                <div class="bcs-card__body">
-                    <div class="bcs-grid">
-                        <div class="bcs-field">
-                            <label class="bcs-label" for="timezone_select">Fuseau horaire</label>
-                            <p class="bcs-help">Sert à afficher les heures des événements, échéances et journaux.</p>
-                            <select id="timezone_select" name="timezone">
-                                <?php foreach ($zones as $z): ?>
-                                    <option value="<?= $h($z) ?>" <?= $z === $currentTz ? 'selected' : '' ?>><?= $h($z) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="bcs-field">
-                            <label class="bcs-label" for="default_locale">Langue de référence</label>
-                            <p class="bcs-help">Langue par défaut des textes du portail pour vos membres.</p>
-                            <select id="default_locale" name="default_locale">
-                                <option value="fr" <?= $locale === 'fr' ? 'selected' : '' ?>>Français</option>
-                                <option value="en" <?= $locale === 'en' ? 'selected' : '' ?>>English</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </section>
             </div>
 
             <div data-settings-panel="portail"<?= $hubTab === 'portail' ? '' : ' hidden' ?>>
@@ -1101,6 +1144,25 @@ $imagesNeedAddress = $slugHint === '';
             }, 80);
         }
     }
+})();
+</script>
+<script>
+(function () {
+    // La langue de référence fait toujours partie des langues parlées, et l’ORBAT la suit par défaut.
+    var select = document.querySelector('[data-lang-default]');
+    if (!select) { return; }
+    var labels = <?= json_encode(array_map([\App\Support\CommunityLanguages::class, 'label'], array_combine(\App\Support\CommunityLanguages::codes(), \App\Support\CommunityLanguages::codes())), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+    var sync = function () {
+        document.querySelectorAll('[data-lang-spoken]').forEach(function (box) {
+            var isDefault = box.value === select.value;
+            if (isDefault) { box.checked = true; }
+            box.disabled = isDefault;
+        });
+        var follow = document.querySelector('[data-lang-follow]');
+        if (follow) { follow.textContent = 'Comme la langue de référence (' + (labels[select.value] || select.value) + ')'; }
+    };
+    select.addEventListener('change', sync);
+    sync();
 })();
 </script>
 <script src="<?= $h(asset_url('assets/js/community-settings-hub.js')) ?>"></script>
