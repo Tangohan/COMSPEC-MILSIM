@@ -13,7 +13,7 @@
       ["zoom", +1 | -1]      palier de zoom numérique (x1 à x8)
       ["flash"]              AUTO → FORCÉ → COUPÉ
       ["selfie"]             objectif avant / arrière (avant : arme rangée, bras droit tendu, fn_gestureSelfie)
-      ["pose"]               tient ou relâche la pose du selfie (boucle de la caméra, toutes les 1,2 s)
+      ["pose"]               range l'arme (app ouverte) et tient la pose du selfie, ou ressort l'arme (boucle de la caméra, toutes les 1,2 s)
       ["aim", [dx, dy]]      décale l'objectif (fractions de l'image glissées) ; ["aimReset"] le recentre
       ["shoot", légende]     prend la photo et l'envoie vers Athena (gardée sur le téléphone hors réseau)
       ["osd"]                rafraîchit l'incrustation du viseur (grille, cap, heure, zoom)
@@ -57,21 +57,7 @@ private _pose = {
         private _yaw = (((_v select 0) atan2 (_v select 1)) + _oy + 360) mod 360;
         private _pit = (((asin (((_v select 2) max -1) min 1)) + _op) max -80) min 80;
         _dir = [(sin _yaw) * (cos _pit), (cos _yaw) * (cos _pit), sin _pit];
-        // Arme en main : l'objectif à 30 cm des yeux voyait le canon et ses accessoires en bas de l'image (capture de
-        // TTRD, 19/10). Il passe devant la bouche du canon (fusil ou lanceur 1,25 m, pistolet 0,8 m), ce que la vue du
-        // jeu ne change pas ; un mur ou le sol plus près l'arrête 15 cm avant.
-        private _w = currentWeapon player;
-        private _reach = switch (true) do {
-            case (_w isEqualTo "" || {vehicle player isNotEqualTo player}): { 0.3 };
-            case (_w isEqualTo (handgunWeapon player)): { 0.8 };
-            case (_w isEqualTo (primaryWeapon player) || {_w isEqualTo (secondaryWeapon player)}): { 1.25 };
-            default { 0.3 };
-        };
-        if (_reach > 0.3) then {
-            private _hit = lineIntersectsSurfaces [_eye, _eye vectorAdd (_dir vectorMultiply _reach), player, vehicle player, true, 1, "VIEW", "GEOM"];
-            if (_hit isNotEqualTo []) then { _reach = (((_eye vectorDistance ((_hit select 0) select 0)) - 0.15) max 0.3) min _reach; };
-        };
-        _pos = _eye vectorAdd (_dir vectorMultiply _reach);
+        _pos = _eye vectorAdd (_dir vectorMultiply 0.3);
     };
     private _right = _dir vectorCrossProduct [0, 0, 1];
     private _up = if ((vectorMagnitude _right) < 0.01) then { [0, 1, 0] } else { vectorNormalized (_right vectorCrossProduct _dir) };
@@ -209,22 +195,38 @@ switch (_act) do {
         call _redraw;
         true
     };
-    // Selfie : arme rangée et bras droit tendu, téléphone face au visage (fn_gestureSelfie) ; objectif arrière,
-    // app quittée ou caméra coupée : bras baissé et arme ressortie. Le plein écran (fn_photoMode) reprend la main
-    // avec l'arme gardée de côté, qu'il ressortira à sa fermeture.
+    // App Photo ouverte (les deux objectifs) : arme rangée, sinon le canon entrait dans l'image (TTRD, 19/10 : « force
+    // le mec à ranger son arme »). Une arme ressortie pendant que l'app reste ouverte est rangée de nouveau.
+    // Selfie : en plus, bras droit tendu, téléphone face au visage (fn_gestureSelfie) ; retour à l'objectif arrière :
+    // bras baissé, arme toujours rangée. App quittée ou caméra coupée : arme ressortie. Le plein écran (fn_photoMode)
+    // reprend la main avec l'arme gardée de côté, qu'il ressortira à sa fermeture.
     case "pose": {
-        private _want = _arg isEqualTo true && {_st getOrDefault ["camSelfie", false]} && {alive player} && {vehicle player isEqualTo player};
+        private _want = _arg isEqualTo true && {alive player} && {vehicle player isEqualTo player};
         private _posed = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPosed", false];
         if (_want) then {
             if (!_posed) then {
                 missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPosed", true];
                 missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamWeapon", currentWeapon player];
-                if ((currentWeapon player) isNotEqualTo "") then { player action ["SwitchWeapon", player, player, 299]; };
             };
-            [player, "selfie"] call comspec_atak_native_fnc_gestureSelfie;
+            private _w = currentWeapon player;
+            if (_w isNotEqualTo "" && {_w in [primaryWeapon player, handgunWeapon player, secondaryWeapon player]}) then {
+                missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamWeapon", _w];
+                player action ["SwitchWeapon", player, player, 299];
+            };
+            private _gest = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamGest", false];
+            if (_st getOrDefault ["camSelfie", false]) then {
+                missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamGest", true];
+                [player, "selfie"] call comspec_atak_native_fnc_gestureSelfie;
+            } else {
+                if (_gest) then {
+                    missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamGest", false];
+                    [player, "exit"] call comspec_atak_native_fnc_gestureSelfie;
+                };
+            };
         } else {
             if (_posed) then {
                 missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPosed", false];
+                missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamGest", false];
                 private _w = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamWeapon", ""];
                 if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) then {
                     private _ctx = uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []];
