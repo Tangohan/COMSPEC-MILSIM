@@ -40,6 +40,13 @@ switch (_act) do {
         _arg params [["_kind", ""], ["_r", []]];
         if ((count _r) < 16) exitWith {};
         call _render;
+        // Mon téléphone capturé, validé compromis : COMSPEC Link révoque le certificat de mon terminal Athena. Mode
+        // « terminal compromis » automatique (fn_compromiseView), même sans téléphone sur moi (affiché sur le prochain),
+        // jusqu'à sa levée par Athena. Pas pour un événement rejoué à l'arrivée en partie.
+        if (_kind isEqualTo "validated" && {(_r select 10) isEqualTo getPlayerUID player} && {!(missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false])}) then {
+            ["set", createHashMapFromArray [["origin", "auto"], ["source", "field"], ["state", "compromised"], ["match", "terminal"], ["imei", _r select 4],
+                ["reason", format ["Capturé par l'ennemi vers %1", _r select 5]], ["by", _r select 8], ["ref", _r select 0], ["revoked", "1"]]] call comspec_atak_native_fnc_compromiseView;
+        };
         // L'alerte arrive sur l'ATAK : sans téléphone, rien.
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
         _r params ["_id", "", "_cs", "_num", "_imei", "_grid", "", "", "_by", "", "_ouid", "_lastGrid", "", "_wiped"];

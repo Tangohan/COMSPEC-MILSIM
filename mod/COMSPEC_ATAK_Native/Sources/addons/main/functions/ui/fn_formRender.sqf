@@ -294,7 +294,9 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         case "switch": {
             // Ligne réglage : libellé + aide à gauche, interrupteur à droite ; « IMPOSÉ » si la communauté fixe la valeur.
             _row params ["", "_label", "_on", "_code", ["_help", ""], ["_locked", false]];
-            private _pillW = _font * 3.6 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
+            // Pastille plafonnée au tiers de la ligne : dans le volet étroit de la carte, elle prenait toute la largeur
+            // et le libellé disparaissait (on ne voyait que des « OUI »).
+            private _pillW = (_font * 3.6 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW])) min (_w * 0.3);
             private _card = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
             _card ctrlSetBackgroundColor [0.085, 0.105, 0.095, 1];
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _rowH]] call _mk;
@@ -308,6 +310,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _ph = _fs * 1.35;
             private _pill = ["COMSPEC_RscTextCenter", [_pad + _w - _pillW - _pad / 2, _y + (_h - _ph) / 2, _pillW, _ph], [["NON", "OUI"] select _on, format ["IMPOSÉ · %1", ["NON", "OUI"] select _on]] select _locked] call _mk;
             _pill ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+            [_pill, _pillW, (_fs * 0.85) max COMSPEC_ATAK_FontMin] call _fit;
             _pill ctrlSetBackgroundColor ([[[0.30, 0.34, 0.32, 1], _acc] select _on, [0.55, 0.38, 0.08, 1]] select _locked);
             _pill ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select (_on && {!_locked}));
             if !(_locked) then {
@@ -322,28 +325,25 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             // Section repliable (sous-menu) : grande cible de clic, titre à gauche, résumé et chevron à droite.
             // Retour de jeu : « certains sous-menus sont trop peu visibles ». Carte plus claire et bordée, titre toujours
             // en blanc, barre d'accent plus large, résumé en gris clair ; ouverte, le contenu est encadré d'un filet.
-            // Part du titre réglable (volet étroit de la carte : titre large, compteur court) ; un titre ou un résumé
-            // qui passe à la ligne agrandit la carte au lieu d'être coupé.
-            _row params ["", "_title", ["_sub", ""], ["_open", false], ["_code", {}], ["_tw", 0.5]];
+            // Titre et résumé dans un seul texte (titre à gauche, résumé aligné à droite) sur toute la largeur hors
+            // chevron : deux colonnes fixes coupaient les mots (« SITUAT ION ») et posaient le compteur sur le titre.
+            // Trop long, le résumé passe à la ligne et la carte s'agrandit, sans chevauchement.
+            _row params ["", "_title", ["_sub", ""], ["_open", false], ["_code", {}]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
             private _h = _rowH * 1.25;
             _y = _y + _pad / 3;
             private _cs = _h * 0.5;
             private _cw = _cs / _ratio;
-            private _tW = _w * _tw;
-            // Fond d'abord (l'ordre de création fait l'empilement), à la hauteur finale une fois les textes mesurés.
+            private _tW = _w - _cw - _pad * 2.9;
+            // Fond d'abord (l'ordre de création fait l'empilement), à la hauteur finale une fois le texte mesuré.
             private _card = ["COMSPEC_RscText", [_pad, _y, _w, _h]] call _mk;
             _card ctrlSetBackgroundColor ([[0.12, 0.145, 0.132, 1], [0.15, 0.185, 0.165, 1]] select _open);
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.9, _y, _tW, _h]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>", toUpper _title]) call comspec_atak_native_fnc_tr);
-            private _sw = _w * (0.95 - _tw) - _cw - _pad;
-            private _st = ["COMSPEC_RscStructuredText", [_pad + _w - _cw - _pad * 1.5 - _sw, _y, _sw, _h]] call _mk;
-            _st ctrlSetStructuredText parseText ((format ["<t align='right' size='0.85' color='#c9d4ce'>%1</t>", _sub]) call comspec_atak_native_fnc_tr);
-            _h = _h max ((ctrlTextHeight _t) + _pad / 2) max ((ctrlTextHeight _st) + _pad / 2);
+            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>%2", toUpper _title,
+                ["", format ["<t align='right' size='0.85' color='#c9d4ce'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            _h = _h max ((ctrlTextHeight _t) + _pad / 2);
             _t ctrlSetPosition [_pad * 1.9, _y + (((_h - (ctrlTextHeight _t)) / 2) max 0), _tW, ctrlTextHeight _t];
             _t ctrlCommit 0;
-            _st ctrlSetPosition [_pad + _w - _cw - _pad * 1.5 - _sw, _y + (((_h - (ctrlTextHeight _st)) / 2) max 0), _sw, ctrlTextHeight _st];
-            _st ctrlCommit 0;
             _card ctrlSetPositionH _h;
             _card ctrlCommit 0;
             {

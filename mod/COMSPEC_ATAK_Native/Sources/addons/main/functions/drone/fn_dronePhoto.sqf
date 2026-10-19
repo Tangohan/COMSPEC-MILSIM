@@ -105,7 +105,8 @@ private _prevTex = {
     _pc camSetFov _fov;
     _pc camCommit 0;
     _name setPiPEffect [_vis];
-    private _tex = format ["#(argb,1024,1024,1)r2t(%1,1.7778)", _name];
+    // Texture 512 (1024 auparavant) : l'aperçu tient dans la fiche, quatre fois moins de pixels redessinés à chaque image.
+    private _tex = format ["#(argb,512,512,1)r2t(%1,1.7778)", _name];
     [_pc, "key", _key, true] call comspec_atak_native_fnc_camVar;
     [_pc, "r2t", _name, true] call comspec_atak_native_fnc_camVar;
     [_pc, "tex", _tex, true] call comspec_atak_native_fnc_camVar;

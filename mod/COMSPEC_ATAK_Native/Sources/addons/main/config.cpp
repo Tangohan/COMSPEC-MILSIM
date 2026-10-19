@@ -17,7 +17,7 @@ class CfgFunctions {
             class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class deviceScan {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class perfAcc {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class athenaPulse {}; class syncStats {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {}; class medVitals {}; class integrityCheck {}; class startupCheck {}; class simSos {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
-            class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class keyBlock {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class fontSet {}; class fontApply {}; class fontText {}; class navigate {}; class back {}; class modeToggle {};
+            class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class keyBlock {}; class keybinds {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class fontSet {}; class fontApply {}; class fontText {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class textFit {}; class tileCreate {}; class appList {}; class appBadge {}; class chatUnread {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
             class statusUpdate {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class notifMeta {}; class powerFx {}; class overlayFront {}; class foreignHud {}; class screenSurface {};
             class fx {}; class toast {}; class buzzAlert {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {}; class keyRelang {};
@@ -59,7 +59,7 @@ class CfgFunctions {
             class airplaneMode {}; class btAction {}; class btSounds {}; class btItems {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
-            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {}; class jpcMap {}; class captureServer {}; class compromise {}; class adminNotices {};
+            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {}; class jpcMap {}; class captureServer {}; class compromise {}; class compromiseView {}; class adminNotices {};
         };
         class vehicle { file="z\comspec_atak_native\addons\main\functions\vehicle";
             class vehicleTerminal {}; class vehicleGateway {};
@@ -140,7 +140,7 @@ class COMSPEC_ATAK_Apps {
     class Tracking    { name="Marquer tracking"; page="TRACKING"; function="comspec_atak_native_fnc_pageTracking"; section="Renseignement"; order=117; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dronedetect.paa"; };
     class DataLink    { name="Extraction"; page="DATALINK"; function="comspec_atak_native_fnc_pageDataLink"; section="Renseignement"; order=119; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_datalink.paa"; };
     class Sse         { name="SSE"; page="SSE"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
-    class Osint       { name="OSINT"; page="OSINT"; section="Renseignement"; order=120; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
+    class Osint       { name="OSINT"; page="OSINT"; section="Renseignement"; order=120; dock=0; wip=1; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
     class LinkAlly    { name="Liaison allié"; page="LINKALLY"; function="comspec_atak_native_fnc_pageLinkAlly"; section="Spécialités"; order=82; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_linkally.paa"; };
     class Wanted      { name="Recherchés"; page="WANTED"; section="Renseignement"; order=122; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_wanted.paa"; };
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; };
@@ -336,17 +336,9 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\main\data\jpc_sonim.p3d";
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_sonim_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
-    class COMSPEC_ATAK_JpcPhone_plate: COMSPEC_ATAK_JpcPhone_s7 {
-        model="\z\comspec_atak_native\addons\main\data\jpc_plate.p3d";
-        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_plate_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
-    };
-    class COMSPEC_ATAK_JpcPhone_flip: COMSPEC_ATAK_JpcPhone_s7 {
-        model="\z\comspec_atak_native\addons\main\data\jpc_flip.p3d";
-        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_flip_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
-    };
-    class COMSPEC_ATAK_JpcPhone_ribbed: COMSPEC_ATAK_JpcPhone_s7 {
-        model="\z\comspec_atak_native\addons\main\data\jpc_ribbed.p3d";
-        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_ribbed_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    // S23 : même modèle que le S7 (silhouette et ouverture d'écran presque identiques), atlas du S23 (gen_assets.py jpc).
+    class COMSPEC_ATAK_JpcPhone_s23: COMSPEC_ATAK_JpcPhone_s7 {
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_s23_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";

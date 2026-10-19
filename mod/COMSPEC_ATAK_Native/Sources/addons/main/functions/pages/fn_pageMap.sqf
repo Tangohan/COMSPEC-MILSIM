@@ -350,11 +350,16 @@ if (_interactive) then {
             }];
             private _folds = profileNamespace getVariable ["COMSPEC_ATAK_MapPanelFolds", []];
             if !(_folds isEqualType []) then { _folds = []; };
+            // Vue CONFIGURATION (bouton en tête du volet) : panneau élargi, toutes les sections dépliées, chaque calque
+            // expliqué. Les sections repliées du profil sont gardées pour le retour au volet normal.
+            private _full = missionNamespace getVariable ["COMSPEC_ATAK_InspFull", false];
+            if (_full) then { _folds = []; };
             private _foldCode = { format ["[%1] call (uiNamespace getVariable 'COMSPEC_ATAK_MapPanelFold');", str _this] };
             // Volet défilant sous le bandeau, en sections repliables (fn_formRender) : situation, fond de carte, calques
             // par thème avec leur compteur. Une ligne par calque sur toute la largeur, libellé entier (il passe à la ligne
             // au besoin) et interrupteur OUI / NON à droite : les deux colonnes coupaient les libellés (« Noms des rep »).
-            private _rows = [];
+            private _rows = [["buttons", [[["CONFIGURATION", "FERMER LA CONFIGURATION"] select _full, "['full'] call comspec_atak_native_fnc_inspToggle;", _full, true,
+                ["Tout déplier : fond de carte et calques, avec ce que montre chaque calque", "Revenir au volet normal à côté de la carte"] select _full]]]];
             private _sel = _s getOrDefault ["selectedEntity", createHashMap];
             private _units = values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]);
             private _fr = { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" } count _units;
@@ -363,7 +368,7 @@ if (_interactive) then {
             // Résumés d'en-tête courts (le volet est étroit) : alliés en bleu · contacts (en rouge s'il y en a), ou l'indicatif.
             _rows pushBack ["fold", ["Situation", "Unité sélectionnée"] select ((count _sel) > 0),
                 [format ["<t color='#47b3ff'>%1</t> · <t color='%3'>%2</t>", _fr, _ho, ["#c9d4ce", "#e5483a"] select (_ho > 0)], _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0),
-                _sitOpen, "sit" call _foldCode, 0.55];
+                _sitOpen, "sit" call _foldCode];
             // Texte du résumé ou de la fiche : rafraîchi chaque seconde par fn_inspectorUpdate dans ce même contrôle.
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
             uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0)];
@@ -373,7 +378,7 @@ if (_interactive) then {
             private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]];
             if ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo []) then { _styles pushBack ["PHOTO", "PHOTO"]; };
             private _bgOpen = !("bg" in _folds);
-            _rows pushBack ["fold", "Fond de carte", (_styles select ((_styles findIf { (_x select 1) isEqualTo _style }) max 0)) select 0, _bgOpen, "bg" call _foldCode, 0.7];
+            _rows pushBack ["fold", "Fond de carte", (_styles select ((_styles findIf { (_x select 1) isEqualTo _style }) max 0)) select 0, _bgOpen, "bg" call _foldCode];
             if (_bgOpen) then {
                 private _opts = _styles apply {
                     _x params ["_t", "_k"];
@@ -383,32 +388,32 @@ if (_interactive) then {
                 for "_i" from 0 to ((count _opts) - 1) step _per do { _rows pushBack ["segment", "", _opts select [_i, _per]]; };
             };
             // Calques par thème : [clé, titre, [[libellé, espace (P profil, M mission, C réglage CBA du joueur), variable,
-            // défaut, clé communauté (verrou Athena) ou ""]...]]
+            // défaut, clé communauté (verrou Athena) ou "", explication affichée en vue CONFIGURATION]...]]
             private _groups = [
                 ["forces", "Forces", [
-                    ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""]
+                    ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, "", "Unités amies (joueurs et IA) sur la carte"]
                 ]],
                 ["places", "Repères et lieux", [
-                    ["Coordonnées des marqueurs", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
-                    ["Noms des marqueurs", "C", "comspec_atak_native_map_show_marker_text", true, ""],
-                    ["Villes", "C", "comspec_atak_native_map_show_cities", true, ""],
-                    ["Villages", "C", "comspec_atak_native_map_show_villages", true, ""],
-                    ["Lieux-dits", "C", "comspec_atak_native_map_show_locals", true, ""],
-                    ["Sites", "C", "comspec_atak_native_map_show_sites", true, ""]
+                    ["Coordonnées des marqueurs", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Grille sous chaque marqueur posé"],
+                    ["Noms des marqueurs", "C", "comspec_atak_native_map_show_marker_text", true, "", "Texte des marqueurs (aussi dans le menu CBA)"],
+                    ["Villes", "C", "comspec_atak_native_map_show_cities", true, "", "Noms des villes du terrain"],
+                    ["Villages", "C", "comspec_atak_native_map_show_villages", true, "", "Noms des villages du terrain"],
+                    ["Lieux-dits", "C", "comspec_atak_native_map_show_locals", true, "", "Noms des collines, bois et lieux-dits"],
+                    ["Sites", "C", "comspec_atak_native_map_show_sites", true, "", "Sites remarquables (usines, aéroports...)"]
                 ]],
                 ["intel", "Renseignement", [
-                    ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true, ""],
-                    ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true, ""],
-                    ["Guerre électronique", "P", "COMSPEC_ATAK_LayerEw", true, ""]
+                    ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true, "", "Zones dangereuses et de jeu envoyées par Athena"],
+                    ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true, "", "Émetteurs ennemis estimés par les relais (Athena)"],
+                    ["Guerre électronique", "P", "COMSPEC_ATAK_LayerEw", true, "", "Relèvements, brouilleurs et géolocalisations (app EW)"]
                 ]],
                 ["net", "Réseau et logistique", [
-                    ["Relais", "P", "COMSPEC_ATAK_RelaysLayer", true, ""],
-                    ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false, ""],
-                    ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true, ""]
+                    ["Relais", "P", "COMSPEC_ATAK_RelaysLayer", true, "", "Relais radio et passerelles de véhicule de votre camp"],
+                    ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false, "", "Liens entre téléphones et couverture du réseau maillé"],
+                    ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true, "", "Demandes de ravitaillement ouvertes (app Logistique)"]
                 ]],
                 ["relief", "Relief", [
-                    ["Champ de vision", "M", "COMSPEC_ATAK_ViewshedShow", true, ""],
-                    ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, ""]
+                    ["Champ de vision", "M", "COMSPEC_ATAK_ViewshedShow", true, "", "Ce qui est visible depuis vous (ou un point choisi)"],
+                    ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, "", "Couleurs selon l'altitude du terrain"]
                 ]]
             ];
             _rows pushBack ["title", "Calques"];
@@ -423,12 +428,12 @@ if (_interactive) then {
                     [_on, _locked]
                 };
                 private _gOpen = !(_key in _folds);
-                _rows pushBack ["fold", _title, format ["%1/%2", { _x select 0 } count _st, count _items], _gOpen, _key call _foldCode, 0.7];
+                _rows pushBack ["fold", _title, format ["%1/%2", { _x select 0 } count _st, count _items], _gOpen, _key call _foldCode];
                 if (_gOpen) then {
                     {
-                        _x params ["_lbl", "_ns", "_var", "_def"];
+                        _x params ["_lbl", "_ns", "_var", "_def", "", ["_help", ""]];
                         (_st select _forEachIndex) params ["_on", "_locked"];
-                        _rows pushBack ["switch", _lbl, _on, format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def], "", _locked];
+                        _rows pushBack ["switch", _lbl, _on, format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def], ["", _help] select _full, _locked];
                     } forEach _items;
                 };
             } forEach _groups;
@@ -730,8 +735,9 @@ if (_dv isNotEqualTo "OFF") then {
             } forEach _made;
         };
     } else {
-        // Incrustée : coin haut droit (à gauche de la barre d'outils en main), plus large en miniature.
-        private _iw2 = _mw * ([0.42, 0.62] select _mini);
+        // Incrustée : coin haut droit (à gauche de la barre d'outils en main). Téléphone en petit format : vignette
+        // (retour de TTRD, 19/10 : l'incrustation prenait la moitié de l'écran), AGRANDIR la passe à la place de la carte.
+        private _iw2 = _mw * ([0.42, 0.36] select _mini);
         private _ih2 = _iw2 * 0.5625 * _ratio;
         private _ix = _bx + _mw - _iw2 - _pad - ([0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _pad] select _interactive);
         private _iy = _by + _pad;
@@ -750,8 +756,8 @@ if (_dv isNotEqualTo "OFF") then {
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach [
                 ["MARQUER", ["lock"] call _act, [0.75, 0.18, 0.15, 0.95], "Marque la cible sous le réticule (LOCK suivi sur la carte)"],
-                ["GRANDE VUE", ["view", "FULL"] call _act, [0.08, 0.1, 0.09, 0.9], "La vue du drone remplace la carte"],
-                ["FERMER LA VUE", ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9], "Ferme la vue du drone"]
+                [["GRANDE VUE", "AGRANDIR"] select _mini, ["view", "FULL"] call _act, [0.08, 0.1, 0.09, 0.9], "La vue du drone remplace la carte"],
+                [["FERMER LA VUE", "FERMER"] select _mini, ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9], "Ferme la vue du drone"]
             ];
         };
     };

@@ -1,7 +1,7 @@
 /*
     « Voir l'arrière » : le téléphone retourné au centre de l'écran (coque à la couleur choisie, plaque de fixation,
     appareil photo, étiquette, antenne vissée, batterie externe fixée, patch). Clic, touche ou 12 s : fermé.
-    Modèles XIAOMI X3D, V2 Enhanced, SONIM XP8, tablette et coques (profil COMSPEC_ATAK_PhoneModel) : leur dos seul, sans la coque S7 et ses ajouts.
+    Modèles XIAOMI X3D, V2 Enhanced, SONIM XP8, SAMSUNG S23 et tablette (profil COMSPEC_ATAK_PhoneModel) : leur dos seul, sans la coque S7 et ses ajouts.
 */
 disableSerialization;
 private _parent = findDisplay 46;
@@ -25,7 +25,7 @@ private _y = safeZoneY + safeZoneH / 2 - _h * 0.57;
 // dans un cadre bien plus haut que large, était recentrée autrement que le dos et flottait au-dessus de la coque.
 private _img = _d ctrlCreate ["COMSPEC_RscPhone", -1];
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
-private _s7 = !(_model in ["rugged", "iphone", "sonim", "keys", "plate", "flip", "ribbed"]);
+private _s7 = !(_model in ["rugged", "iphone", "sonim", "keys", "s23"]);
 _img ctrlSetText (((["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa", format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", _suffix]] select _s7)) call comspec_atak_native_fnc_tr);
 _img ctrlSetTextColor [1, 1, 1, 1];
 _img ctrlSetPosition [_x, _y, _w, _h];

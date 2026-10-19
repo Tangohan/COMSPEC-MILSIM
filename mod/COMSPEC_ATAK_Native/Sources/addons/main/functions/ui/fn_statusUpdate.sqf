@@ -56,7 +56,7 @@ if (!isNull _ramCtrl) then {
     private _pct = _ram get "pct";
     _ramCtrl ctrlSetText ((("RAM " + (str _pct) + "%")) call comspec_atak_native_fnc_tr);
     _ramCtrl ctrlSetTextColor (switch (true) do { case (_pct >= 90): { [0.88, 0.25, 0.22, 1] }; case (_pct >= 75): { [0.95, 0.67, 0.20, 1] }; default { [0.62, 0.70, 0.66, 1] }; });
-    _ramCtrl ctrlSetTooltip ((format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr);
+    _ramCtrl ctrlSetTooltip ((format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire · estimation du téléphone, pas la mémoire du PC", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr);
 };
 
 ([] call comspec_atak_native_fnc_weather) params ["_temp", "_speed", "_card"];
@@ -73,7 +73,19 @@ private _linkOk = if ([] call comspec_atak_native_fnc_bridge) then {
 } else {
     _net isEqualTo "CONNECTED"
 };
-(_d displayCtrl 88549) ctrlShow _linkOk;
+// Terminal compromis (fn_compromiseView) : logo rouge clignotant, même relié (certificats révoqués, liaison refusée).
+["refresh"] call comspec_atak_native_fnc_compromiseView;
+private _comp = ["get"] call comspec_atak_native_fnc_compromiseView;
+private _logo = _d displayCtrl 88549;
+if ((count _comp) > 0) then {
+    _logo ctrlShow true;
+    _logo ctrlSetTextColor [0.92, 0.22, 0.18, [0.35, 1] select (((floor diag_tickTime) mod 2) isEqualTo 0)];
+    _logo ctrlSetTooltip ((format ["COMSPEC Link : terminal %1, liaison de données coupée (%2)", ["compromis", "capturé"] select ((_comp getOrDefault ["state", ""]) isEqualTo "captured"), ["origine manuelle", "origine automatique"] select ((_comp getOrDefault ["origin", ""]) isEqualTo "auto")]) call comspec_atak_native_fnc_tr);
+} else {
+    _logo ctrlShow _linkOk;
+    _logo ctrlSetTextColor [0.36, 0.78, 0.42, 1];
+    _logo ctrlSetTooltip (("COMSPEC Link connecté") call comspec_atak_native_fnc_tr);
+};
 
 private _page = _state getOrDefault ["activePage", "LAUNCHER"];
 // App Athena ouverte : se redessine quand la session, la liaison ou le message changent

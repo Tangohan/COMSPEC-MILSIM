@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.89";
+    private const string ExtensionVersion = "2.0.90";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3208,7 +3208,8 @@ public static partial class Extension
 
         // Messages et avis de l'administration pour ce joueur (site : /admin/parc-atak) : compromission, annulation,
         // données ATAK réinitialisées, certificat, numéro, message imposé. L'ATAK natif les affiche en alerte.
-        // args: [json {player_uid, terminal_uid}] → OK|une ligne par message : id\tgenre\tniveau\ttitre\ttexte\tà valider (1/0)
+        // args: [json {player_uid, terminal_uid}] → OK|une ligne par message : id\tgenre\tniveau\ttitre\ttexte\tà valider (1/0)\tméta
+        // (méta d'une compromission : « source=admin;state=captured;revoked=2;… », vide sinon ; ignorée par un ATAK plus ancien)
         if (function == "AdminControl.Poll")
         {
             if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
@@ -3241,7 +3242,8 @@ public static partial class Extension
                 {
                     if (sb.Length > 0) sb.Append('\n');
                     sb.Append(Clean(m, "id")).Append('\t').Append(Clean(m, "kind")).Append('\t').Append(Clean(m, "level")).Append('\t')
-                      .Append(Clean(m, "title")).Append('\t').Append(Clean(m, "body")).Append('\t').Append(Clean(m, "require_ack"));
+                      .Append(Clean(m, "title")).Append('\t').Append(Clean(m, "body")).Append('\t').Append(Clean(m, "require_ack"))
+                      .Append('\t').Append(Clean(m, "meta"));
                 }
                 return "OK|" + sb;
             }

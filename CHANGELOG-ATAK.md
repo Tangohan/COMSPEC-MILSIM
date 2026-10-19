@@ -38,6 +38,86 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Regroupement : Samsung S23 durci, drone refait et plus léger, ATAK compromis visible, touches dans le téléphone (ATAK natif 2.2.1.AB - Denver, COMSPEC Link 2.0.90)
+
+### Résumé joueur
+Type : nouveauté
+FR : COMSPEC ATAK 2.2.1 « Denver » : le Samsung S23 durci, un drone refait et plus léger, un téléphone compromis qui se voit
+- Nouveau téléphone : le Samsung S23 en coque durcie tan, à choisir dans Réglages > Personnaliser > Modèle. Les coques Support JPC, Étui Multicam et Coque nervurée sont retirées : ton téléphone repasse tout seul en Durci S7.
+- Drone : la croix et PLEIN ÉCRAN marchent enfin sur l'image, les onglets passent à gauche en grand format, la vue drone devient une vignette sur la carte en petit format, et VOL > FILMER suit un allié ou toi-même. Il pèse aussi moins sur la mémoire du PC (qualité HAUTE en 1024 px).
+- Un téléphone déclaré capturé ou compromis le montre : logo COMSPEC Link rouge, carte LIAISON DE DONNÉES COUPÉE avec le motif et l'origine, alliés figés à leur dernière position connue.
+- Réglages > Accès et touches refait, avec toutes les touches de l'ATAK modifiables dans le téléphone ; volet SITUATION de la carte lisible avec une vue CONFIGURATION ; arme rangée et visages floutés avec l'app Photo ; Tache de sang sous COMSPEC SSE sans texte cassé ; « Mesurer ma tension » sur soi retiré ; app OSINT en W.I.P.
+EN : COMSPEC ATAK 2.2.1 "Denver": the rugged Samsung S23, a reworked and lighter drone, a compromised phone that shows it
+- New phone: the Samsung S23 in a tan rugged case, picked in Settings > Customize > Model. The JPC mount, Multicam pouch and Ribbed case are removed: your phone switches back to the Rugged S7 on its own.
+- Drone: the cross and FULL SCREEN finally work on the picture, tabs move to the left on the large layout, the drone view becomes a thumbnail on the map on the small layout, and FLIGHT > FILM follows a teammate or yourself. It is also lighter on PC memory (HIGH quality at 1024 px).
+- A phone declared captured or compromised now shows it: red COMSPEC Link logo, DATA LINK SEVERED map with the reason and origin, friendly units frozen at their last known position.
+- Settings > Access and keys redesigned, with every ATAK key changeable right in the phone; readable SITUATION panel on the map with a CONFIGURATION view; weapon lowered and faces blurred with the Photo app; Blood stain under COMSPEC SSE without broken text; self "Measure my blood pressure" removed; OSINT app now W.I.P.
+
+### Détail technique
+Regroupe #937, #941, #942, #945, #948, #949, #950, #951 et #952. `VERSION_STR` « 2.2.1 » (seul comparé), nom affiché « 2.2.1.AB - Denver ». COMSPEC Link 2.0.90 (#952 : 7e colonne méta dans `AdminControl.Poll`) : DLL à recompiler (build_mod.bat). main.pbo reconstruit avec HEMTT une fois toutes les PR fusionnées ; `comspec_sse_biometrics.pbo` repatché par #948. Aucune migration.
+
+#### Samsung S23 durci, trois coques retirées (#937)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Nouveau téléphone : le Samsung S23 durci
+- Le Samsung S23 en coque durcie tan rejoint les modèles du téléphone : à choisir dans Réglages > Personnaliser > Modèle ou dans les options du mod (Modèle du téléphone).
+- Son dos est visible quand on retourne le téléphone, et c'est lui qu'on tient en main en mode photo et selfie.
+- Les coques Support JPC, Étui Multicam et Coque nervurée sont retirées : si tu en utilisais une, ton téléphone repasse tout seul en Durci S7, qui reste le modèle par défaut.
+EN : New phone: the rugged Samsung S23
+- The Samsung S23 in a tan rugged case joins the phone models: pick it in Settings > Customize > Model or in the mod options (Phone model).
+- Its back shows when you flip the phone over, and it is the phone you hold in photo and selfie mode.
+- The JPC mount, Multicam pouch and Ribbed case are removed: if you used one, your phone switches back to the Rugged S7 on its own, which stays the default model.
+
+##### Détail technique
+- Modèle `s23` : coque photo découpée dans la planche de TTRD (`tools/cut_s23.py` → `tools/src/frame_s23.png`, `frame_s23_back.png`), passée par `tools/frame_photos.py` (vraie photo du dos via `BACKS`, plus de panneau dessiné pour ce modèle) ; PAA `phone_{landscape,portrait}_s23{,_night}`, `phone_back_s23`, `dirt_case_s23_{land,port}`, `jpc_s23_ca` (`gen_assets.py <hemtt> s23`, `gen_dirt.py <hemtt> case s23`).
+- Écran et boîte visible dans `fn_layoutGet` (paysage : écran 0.2221 0.3449 0.7553 0.6553, visible 0.1392 0.2983 0.8330 0.7036) ; port SMA décalé de -17 px (`fn_antenna`) ; dos (`fn_backView`), Établi (`fn_pageAccessories`), selfie et JPC (`COMSPEC_ATAK_JpcPhone_s23` = `jpc_s7.p3d` + atlas S23, silhouettes presque identiques).
+- Retirés : `plate`, `flip`, `ribbed` (rendus Blender de `render_phones.py`, jugés laids) dans les listes du téléphone et CBA, les réglages « Objet exigé », `config.cpp`, `model.cfg`, et 33 fichiers (PAA, P3D, rendus). Profil resté sur l'un d'eux : `fn_layoutGet` le repasse en `s7`.
+
+#### App OSINT en W.I.P (#941)
+- `wip=1` sur `class Osint` dans `COMSPEC_ATAK_Apps` (config.cpp) : tuile grisée avec bandeau W.I.P, retirée du dock, message dans le téléphone à l'ouverture ; le code de l'app est gardé.
+
+#### Volet SITUATION de la carte lisible, vue CONFIGURATION (#942)
+- Rendus « fold » et « switch » de `fn_formRender` revus (titres non coupés, compteur à part, nom du calque avec OUI/NON ; touche aussi Équipes, Musique et Réglages) ; `fn_layoutGet` : volet à 34 %, 74 % en CONFIGURATION (`COMSPEC_ATAK_InspFull`) ; `fn_pageMap` : bouton et explication de chaque calque, 18 chaînes EN.
+- À tester en jeu : volet SITUATION en paysage et portrait, CONFIGURATION, écrans Équipes, Musique et Réglages.
+
+#### Réglages > Accès et touches refait, touches réglables dans le téléphone (#945)
+- Nouveau `fn_keybinds` : 19 raccourcis, enregistrés comme le bouton OK de CBA (`cba_keybinding_registry_v3` + saveProfileNamespace) ; capture de la touche dans les KeyDown de `fn_displayLoad` et `fn_open` ; bouton DEFAULT par ligne, alerte quand deux actions partagent une touche.
+- À tester en jeu : changer une touche dans le téléphone puis la retrouver dans les options CBA, conflit de touches, DEFAULT.
+
+#### Tache de sang sous COMSPEC SSE, texte « any … true », tension sur soi retirée (#948)
+- `fn_bioBloodStain` : le `true` final écrasait le résultat du mode `near` (texte « any … true ») ; sortie en `exitWith`, action visible à moins de 2,5 m d'une vraie trace ; nouveau mode `say` vers `fn_notify` (résultats dans le téléphone) ; actions sous `COMSPEC_SSE_SELF` ; « Mesurer ma tension et SpO2 » sur soi retiré (la mesure d'un blessé reste).
+- À tester en jeu : menu ACE près et loin d'une trace, examen, latentes, ADN.
+
+#### App Photo : arme rangée, visages floutés sur l'appareil intégré (#949)
+- `fn_photoCam` mode « pose » : SwitchWeapon 299 à l'ouverture, arme rendue à la fermeture ; au déclenchement, `fn_photoFaces` ajoute les cadres au cliché (ou les garde dans `COMSPEC_ATAK_PhotoFaces` hors réseau, pour un renvoi depuis la Galerie).
+- À tester en jeu : objectif arrière et selfie, photo d'un joueur, renvoi depuis la Galerie.
+
+#### Drone : croix et PLEIN ÉCRAN cliquables, onglets à gauche, vignette, FILMER (#950)
+- `fn_pageDrone` : boutons créés après la surface de la nacelle (qui prenait les clics), mise en page `_leftMenus` ; `fn_droneAction` : cible `UNIT:<netId>` (FILMER un allié, ME FILMER), vue directe annoncée par notification dans le téléphone ; `fn_pageMap` : incrustation réduite à 36 % en petit format.
+- À tester en jeu : croix, PLEIN ÉCRAN, AGRANDIR, FILMER un allié et soi-même.
+
+#### Drone plus léger pour la mémoire du PC (#951)
+- Distance de vue PiP plafonnée à 1500 m (`COMSPEC_ATAK_DronePipVD`) puis rendue au joueur ; HAUTE 2048 → 1024 px (un profil resté sur 2 passe en HAUTE) ; anneau de textures de rendu 8 → 3 noms par qualité ; aperçu du cliché en 512 px ; jauge RAM (`fn_ramUsage`, `fn_statusUpdate`) qui compte les textures du drone.
+- À tester en jeu : mémoire et images par seconde avant/après, drone en BASSE et HAUTE.
+
+#### Terminal compromis : Link rouge et carte dégradée (#952)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Un ATAK compromis le montre enfin
+- Le logo COMSPEC Link passe au rouge dès que ton téléphone est déclaré capturé ou compromis.
+- La carte affiche LIAISON DE DONNÉES COUPÉE, des codes d'erreur, l'IMEI, l'état, le motif et l'origine (manuelle ou automatique).
+- Les amis restent figés à leur dernière position connue ; seule ta position GPS reste en direct.
+EN : A compromised ATAK finally shows it
+- The COMSPEC Link logo turns red as soon as your phone is declared captured or compromised.
+- The map shows DATA LINK SEVERED, error codes, the IMEI, state, reason and origin (manual or automatic).
+- Friendly units stay frozen at their last known position; only your own GPS position stays live.
+
+##### Détail technique
+- Nouveau `fn_compromiseView` (état gardé dans le profil par terminal), `fn_adminNotices`, `fn_compromise`, `fn_mapOnDraw`, `fn_statusUpdate` ; site : méta de l'avis `compromise` (`AtakCompromiseNoticeMeta` : source, état, certificats révoqués, référence) servie par `AtakApiController::adminControlMine` ; COMSPEC Link la passe en 7e colonne de `AdminControl.Poll`.
+- À tester en jeu : compromission manuelle depuis /admin/parc-atak et automatique, logo rouge, carte dégradée, levée de la compromission.
+
 ## Regroupement : réseau qui suit la météo et la charge, français complet, Resynch qui renvoie tout, Réglages, fluidité, nettoyage et correctifs (ATAK natif 2.2.0.AB - Denver, COMSPEC Link 2.0.89)
 
 ### Résumé joueur

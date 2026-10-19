@@ -24,18 +24,18 @@ private _ratio = [pixelH / pixelW, 1024 / (missionNamespace getVariable ["COMSPE
 // Boîte visible et écran mesurés en paysage ; le portrait en est le quart de tour horaire.
 private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
+// Modèles retirés (Support JPC, Étui Multicam, Coque nervurée, 2.2.x) : le profil repasse au S7.
+if (_model in ["plate", "flip", "ribbed"]) then { _model = "s7"; profileNamespace setVariable ["COMSPEC_ATAK_PhoneModel", "s7"]; };
 // Objet exigé pour ce modèle (réglages addon « ATAK · Objets par interface ») absent : le S7 reprend.
 if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 // La tablette du véhicule est commune, pour qui n'a pas son ATAK : avec son téléphone, on garde son téléphone.
 if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
-// iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
+// iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), s23 (SAMSUNG S23), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
 // gardent leurs proportions ; leur écran (paysage) est donc propre à chacune, mesuré sur l'ouverture de la photo.
 private _visLand = (createHashMapFromArray [
     ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1802, 0.3521, 0.8013, 0.7329]], ["iphone", [0.1035, 0.3071, 0.9580, 0.8042]], ["tablet", [0.1655, 0.3237, 0.8105, 0.6772]],
     ["keys", [0.1655, 0.3237, 0.8105, 0.6772]], ["sonim", [0.1089, 0.2456, 0.8613, 0.7031]],
-    ["plate", [0.0728, 0.2974, 0.9272, 0.8013]],
-    ["flip", [0.0972, 0.2671, 0.9028, 0.7104]],
-    ["ribbed", [0.1191, 0.2974, 0.8809, 0.6987]]
+    ["s23", [0.1392, 0.2983, 0.8330, 0.7036]]
 ]) getOrDefault [_model, []];
 if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
 // Vertical : texture tournée d'un quart de tour horaire.
@@ -43,7 +43,8 @@ _visLand params ["_lx0", "_ly0", "_lx1", "_ly1"];
 private _vis = [[1 - _ly1, _lx0, 1 - _ly0, _lx1], _visLand] select _land;
 private _scrLand = (createHashMapFromArray [
     ["rugged", [0.2218, 0.4003, 0.7550, 0.6002]], ["iphone", [0.2220, 0.3709, 0.7552, 0.6299]],
-    ["keys", [0.2217, 0.3666, 0.7549, 0.6336]], ["tablet", [0.2217, 0.3666, 0.7549, 0.6336]], ["sonim", [0.2220, 0.3477, 0.7552, 0.6528]]
+    ["keys", [0.2217, 0.3666, 0.7549, 0.6336]], ["tablet", [0.2217, 0.3666, 0.7549, 0.6336]], ["sonim", [0.2220, 0.3477, 0.7552, 0.6528]],
+    ["s23", [0.2221, 0.3449, 0.7553, 0.6553]]
 ]) getOrDefault [_model, [0.2222, 0.3496, 0.7549, 0.6509]];
 _scrLand params ["_sx0", "_sy0", "_sx1", "_sy1"];
 private _scr = [[1 - _sy1, _sx0, 1 - _sy0, _sx1], _scrLand] select _land;
@@ -129,8 +130,9 @@ private _dock = !_land;
 private _slim = _mini && {!_texture} && {(_s getOrDefault ["activePage", ""]) isEqualTo "MAP"};
 private _dockH = [0, _font * 2.9] select (_dock && {!_slim});
 private _railW = [_font * 2.9 / _ratio, 0] select (_dock || _slim);
-// Panneau SITUATION repliable (réglage profil).
-private _inspW = [0, _sw * 0.24] select (!_mini && {missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]});
+// Panneau SITUATION repliable (réglage profil). Retour de jeu : à 24 % de l'écran, titres et valeurs se coupaient
+// (« SITUAT ION ») ; un tiers de l'écran, et presque tout l'écran en vue CONFIGURATION (tous les calques expliqués).
+private _inspW = [0, _sw * ([0.34, 0.74] select (missionNamespace getVariable ["COMSPEC_ATAK_InspFull", false]))] select (!_mini && {missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]});
 private _pad = _sw * 0.012;
 private _bodyY = _sy + _statusH + _appH;
 private _bodyH = _sh - _statusH - _appH - _dockH;

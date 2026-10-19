@@ -24,7 +24,7 @@
     jambes), recalé sur la hauteur des yeux quand la posture change (debout, accroupi, couché).
 */
 params [["_act", "tick"]];
-private _phones = ["s7", "rugged", "iphone", "sonim", "plate", "flip", "ribbed"];
+private _phones = ["s7", "s23", "rugged", "iphone", "sonim"];
 if (_act isEqualTo "sweep") exitWith {
     { if ((_x getVariable ["COMSPEC_ATAK_Jpc", false]) && {isNull attachedTo _x}) then { deleteVehicle _x; }; } forEach (allSimpleObjects (["COMSPEC_ATAK_JpcTablet"] + (_phones apply { "COMSPEC_ATAK_JpcPhone_" + _x })));
     true
