@@ -78,6 +78,12 @@ final class AtakModReportRepository
         }
 
         $fingerprint = $this->clip((string) ($data['fingerprint'] ?? ''), 64);
+        // Le pack Link (fn_reportDiag) envoie les codes caractères de « error|tx|… » tronqués à 40 chiffres :
+        // tous les échecs Tx d'un joueur avaient la même empreinte et se fondaient en un seul rapport
+        // (message du premier, détail du dernier). On recalcule depuis le message dans ce cas.
+        if (preg_match('/^\d{30,}$/', $fingerprint) === 1) {
+            $fingerprint = '';
+        }
         if ($fingerprint === '') {
             $fingerprint = substr(hash('sha256', strtolower($severity . '|' . $channel . '|' . $message)), 0, 40);
         }

@@ -12,6 +12,7 @@ use App\Repositories\OperationWorkspaceRepository;
 use App\Repositories\TacticalBriefingSlideCommentRepository;
 use App\Repositories\TacticalBriefingSlideRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Atak\GoogleSlidesAccessCheck;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Controllers\Api\AtakApiController;
 
@@ -30,6 +31,7 @@ final class AdminBriefingSlidesController
         private ?TacticalBriefingSlideCommentRepository $comments = null,
         private ?AtakActivityLogService $activityLog = null,
         private ?OperationWorkspaceRepository $operations = null,
+        private ?GoogleSlidesAccessCheck $slidesCheck = null,
     ) {
         $this->slides ??= new TacticalBriefingSlideRepository();
         $this->comments ??= new TacticalBriefingSlideCommentRepository();
@@ -100,6 +102,13 @@ final class AdminBriefingSlidesController
             return Response::redirect(url('back-office/atak/briefing-slides') . '#bo-briefing-google');
         }
 
+        if ($url !== '' && GoogleSlidesAccessCheck::isPublishLink($url)) {
+            Session::flash('error', 'Ce lien « Publier sur le Web » (…/d/e/…/pub) ne peut pas être lu par la tablette en jeu. Collez le lien de la présentation elle-même (…/presentation/d/…/edit), partagée en « Toute personne disposant du lien ».');
+
+            return Response::redirect(url('back-office/atak/briefing-slides') . '#bo-briefing-google');
+        }
+        $access = $url !== '' ? ($this->slidesCheck ?? new GoogleSlidesAccessCheck())->check($url) : GoogleSlidesAccessCheck::UNKNOWN;
+
         $tenants = new TenantRepository();
         $tenants->updateSettings($tenantId, [
             'briefing' => [
@@ -107,11 +116,20 @@ final class AdminBriefingSlidesController
             ],
         ]);
 
+        if ($access === GoogleSlidesAccessCheck::PRIVATE) {
+            // Enregistré quand même (l'admin peut changer le partage juste après), mais il sait pourquoi la tablette échouera.
+            Session::flash('error', 'Lien enregistré, mais Google refuse l’accès à cette présentation : la tablette affichera « présentation inaccessible ». Dans Google Slides : Partager → Accès général → « Toute personne disposant du lien » (Lecteur), puis enregistrez à nouveau pour vérifier.');
+
+            return Response::redirect(url('back-office/atak/briefing-slides') . '#bo-briefing-google');
+        }
+
         Session::flash(
             'success',
             $url === ''
                 ? 'Lien Google Slides retiré.'
-                : 'Lien Google Slides enregistré. Les opérateurs pourront le charger depuis la tablette en jeu.'
+                : ($access === GoogleSlidesAccessCheck::OK
+                    ? 'Lien Google Slides enregistré et vérifié : la présentation est bien lisible depuis la tablette en jeu.'
+                    : 'Lien Google Slides enregistré. Les opérateurs pourront le charger depuis la tablette en jeu.')
         );
 
         return Response::redirect(url('back-office/atak/briefing-slides') . '#bo-briefing-google');

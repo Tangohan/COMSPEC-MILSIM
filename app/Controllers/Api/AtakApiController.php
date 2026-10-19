@@ -3326,6 +3326,14 @@ class AtakApiController
         }
         try {
             $row = $this->casRepo->createMedevac($tenantId, $mapId, $author, $body);
+        } catch (\PDOException $e) {
+            // Erreur base (communauté supprimée, donnée refusée) : réponse explicite plutôt que 503 générique.
+            error_log('medevacStore: ' . $e->getMessage());
+
+            return Response::json([
+                'error' => 'medevac_store_failed',
+                'message' => 'La demande MEDEVAC n’a pas pu être enregistrée sur Athena. Réessayez ; si cela continue, prévenez l’administration.',
+            ], 500);
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'migration_required') {
                 return Response::json([
