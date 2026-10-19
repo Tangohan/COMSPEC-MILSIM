@@ -46,83 +46,150 @@ $sectionIndex = 2;
     </div>
 </div>
 
-<section class="panel">
-    <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">TX.01</span> En-tête de transmission</div>
-        <div class="panel-meta"><?= $h($event['source_system_label'] ?? '') ?></div>
-    </div>
-    <div class="table-wrap">
-        <table>
-            <tbody>
-            <tr>
-                <th scope="row">Horodatage</th>
-                <td><?= $h($when) ?></td>
-            </tr>
-            <tr>
-                <th scope="row">Nature</th>
-                <td><?= $h($event['event_type_label'] ?? '') ?></td>
-            </tr>
-            <tr>
-                <th scope="row">Origine</th>
-                <td><?= $h($event['source_system_label'] ?? '') ?></td>
-            </tr>
-            <tr>
-                <th scope="row">Opérateur</th>
-                <td><?= $h(($event['author_label'] ?? '') !== '' ? $event['author_label'] : 'Non renseigné') ?></td>
-            </tr>
-            <tr>
-                <th scope="row">Unité</th>
-                <td><?= $h(($event['unit_label'] ?? '') !== '' ? $event['unit_label'] : 'Non renseignée') ?></td>
-            </tr>
-            <tr>
-                <th scope="row">Cotation</th>
-                <td><?= $h($event['confidence_code'] ?? '') ?></td>
-            </tr>
-            <?php if ($clientLabel !== ''): ?>
-                <tr>
-                    <th scope="row">Logiciel terrain</th>
-                    <td>
-                        <span class="record-name"><?= $h($clientLabel) ?></span>
-                        <span class="record-sub">Version lue depuis le pack chargé en jeu (CfgPatches)</span>
-                    </td>
-                </tr>
-            <?php endif; ?>
-            <?php if ($entityTitle !== ''): ?>
-                <tr>
-                    <th scope="row">Entité indexée</th>
-                    <td><?= $h($entityTitle) ?></td>
-                </tr>
-            <?php endif; ?>
-            <?php if (($event['lat'] ?? null) !== null && ($event['lng'] ?? null) !== null): ?>
-                <tr>
-                    <th scope="row">Position rapportée</th>
-                    <td class="record-id"><?= $h(number_format((float) $event['lat'], 1, '.', '') . ' / ' . number_format((float) $event['lng'], 1, '.', '')) ?></td>
-                </tr>
-            <?php endif; ?>
-            <?php if (!empty($event['raw_source_id'])): ?>
-                <tr>
-                    <th scope="row">Référence source</th>
-                    <td class="record-id"><?= $h((string) $event['raw_source_id']) ?></td>
-                </tr>
-            <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</section>
+<?php
+$payloadImages = is_array($payloadImages ?? null) ? $payloadImages : [];
+$linkedPerson = is_array($linkedPerson ?? null) ? $linkedPerson : null;
+$kvValue = static function (string $value) use ($h): string {
+    $value = trim($value);
+    if ($value === '') {
+        return '<span class="tx-kv__empty">—</span>';
+    }
+    if (\App\Support\SseTransmissionView::isLong($value)) {
+        return '<details class="tx-kv__long"><summary>' . $h(\App\Support\SseTransmissionView::excerpt($value))
+            . ' <em>Afficher tout (' . mb_strlen($value) . ' caractères)</em></summary><div>' . nl2br($h($value)) . '</div></details>';
+    }
+
+    return nl2br($h($value));
+};
+$headerRows = [
+    ['Horodatage', $when],
+    ['Nature', (string) ($event['event_type_label'] ?? '')],
+    ['Origine', (string) ($event['source_system_label'] ?? '')],
+    ['Opérateur', ($event['author_label'] ?? '') !== '' ? (string) $event['author_label'] : 'Non renseigné'],
+    ['Unité', ($event['unit_label'] ?? '') !== '' ? (string) $event['unit_label'] : 'Non renseignée'],
+    ['Cotation', (string) ($event['confidence_code'] ?? '')],
+];
+if ($entityTitle !== '') {
+    $headerRows[] = ['Entité indexée', $entityTitle];
+}
+if (($event['lat'] ?? null) !== null && ($event['lng'] ?? null) !== null) {
+    $headerRows[] = ['Position rapportée', number_format((float) $event['lat'], 1, '.', '') . ' / ' . number_format((float) $event['lng'], 1, '.', '')];
+}
+if (!empty($event['raw_source_id'])) {
+    $headerRows[] = ['Référence source', (string) $event['raw_source_id']];
+}
+$bioChip = static function (string $label, string $value) use ($h): string {
+    $tone = \App\Support\SseTransmissionView::bioTone($value);
+
+    return '<li class="tx-bio tx-bio--' . $tone . '"><span>' . $h($label) . '</span><strong>' . $h($value !== '' ? $value : '—') . '</strong></li>';
+};
+?>
+<div class="tx-layout<?= ($linkedPerson !== null || $payloadImages !== []) ? ' has-aside' : '' ?>">
+    <?php if ($linkedPerson !== null || $payloadImages !== []): ?>
+    <aside class="tx-aside">
+        <?php if ($linkedPerson !== null): ?>
+        <section class="panel tx-person">
+            <div class="panel-header">
+                <div class="panel-title"><span class="panel-index">TX.ID</span> Identité liée</div>
+                <div class="panel-meta"><?= $h($linkedPerson['ref']) ?></div>
+            </div>
+            <div class="tx-person__body">
+                <?php
+                $pPhotos = is_array($linkedPerson['photos'] ?? null) ? $linkedPerson['photos'] : [];
+                $pPrimary = (string) ($linkedPerson['photo'] ?? '');
+                ?>
+                <div class="tx-person__photos" data-sse-gallery data-gallery-title="<?= $h(($linkedPerson['name'] ?: $linkedPerson['ref']) . ' — photographies') ?>">
+                    <?php if ($pPrimary !== ''): ?>
+                        <figure class="tx-person__photo"><img src="<?= $h($pPrimary) ?>" alt="Photographie faciale" loading="lazy"><figcaption><strong><?= $h($linkedPerson['ref']) ?></strong><span>Photographie faciale</span></figcaption></figure>
+                    <?php else: ?>
+                        <div class="tx-person__photo tx-person__photo--none" aria-hidden="true"><span>Pas de photo</span></div>
+                    <?php endif; ?>
+                    <?php foreach ($pPhotos as $ph): ?>
+                        <?php if ((string) $ph['src'] === $pPrimary) { continue; } ?>
+                        <figure class="tx-person__thumb"><img src="<?= $h($ph['src']) ?>" alt="<?= $h($ph['label']) ?>" loading="lazy"><figcaption><span><?= $h($ph['label']) ?></span></figcaption></figure>
+                    <?php endforeach; ?>
+                </div>
+                <div class="tx-person__id">
+                    <strong><?= $h($linkedPerson['name'] !== '' ? $linkedPerson['name'] : 'Identité sans nom') ?></strong>
+                    <?php if ($linkedPerson['alias'] !== ''): ?><span>« <?= $h($linkedPerson['alias']) ?> »</span><?php endif; ?>
+                </div>
+                <ul class="tx-bios">
+                    <?= $bioChip('Photo visage', $pPrimary !== '' ? 'Disponible' : 'Absente') ?>
+                    <?= $bioChip('Empreintes', (string) $linkedPerson['prints']) ?>
+                    <?= $bioChip('Iris', (string) $linkedPerson['iris']) ?>
+                    <?= $bioChip('ADN', (string) $linkedPerson['dna']) ?>
+                    <?= $bioChip('Qualité capture', $linkedPerson['quality'] !== null ? (int) $linkedPerson['quality'] . ' %' : '—') ?>
+                    <?= $bioChip('Terminal', (string) $linkedPerson['terminal']) ?>
+                </ul>
+                <?php $samples = is_array($linkedPerson['samples'] ?? null) ? $linkedPerson['samples'] : []; ?>
+                <?php if ($samples !== []): ?>
+                    <ul class="tx-samples" aria-label="Relevés biométriques">
+                        <?php foreach ($samples as $sample): ?>
+                            <?php
+                            $sq = $sample['quality'] ?? null;
+                            $lat = (string) ($sample['laterality_label'] ?? '');
+                            $ref = trim((string) ($sample['lab_reference'] ?? ''));
+                            ?>
+                            <li>
+                                <strong><?= $h($sample['kind_label'] ?? 'Relevé') ?></strong>
+                                <span class="tx-samples__q"><?= $sq !== null && $sq !== '' ? (int) $sq . ' %' : '—' ?></span>
+                                <?php if (($lat !== '' && $lat !== '—') || $ref !== ''): ?>
+                                    <em><?= $h(implode(' · ', array_filter([$lat !== '—' ? $lat : '', $ref]))) ?></em>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                <a class="btn tx-person__open" href="<?= $h($linkedPerson['href']) ?>">Ouvrir la fiche identité →</a>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($payloadImages !== []): ?>
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="panel-index">TX.IMG</span> Images transmises</div>
+                <div class="panel-meta"><?= count($payloadImages) ?></div>
+            </div>
+            <div class="tx-images" data-sse-gallery data-gallery-title="Images de la transmission TX-<?= $h((string) (int) ($event['id'] ?? 0)) ?>">
+                <?php foreach ($payloadImages as $img): ?>
+                    <figure><img src="<?= $h($img['src']) ?>" alt="<?= $h($img['label']) ?>" loading="lazy"><figcaption><span><?= $h($img['label']) ?></span></figcaption></figure>
+                <?php endforeach; ?>
+            </div>
+        </section>
+        <?php endif; ?>
+    </aside>
+    <?php endif; ?>
+
+    <div class="tx-main">
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="panel-index">TX.01</span> En-tête de transmission</div>
+                <div class="panel-meta"><?= $h($event['source_system_label'] ?? '') ?></div>
+            </div>
+            <dl class="tx-kv">
+                <?php foreach ($headerRows as [$label, $value]): ?>
+                    <div><dt><?= $h($label) ?></dt><dd><?= $kvValue((string) $value) ?></dd></div>
+                <?php endforeach; ?>
+                <?php if ($clientLabel !== ''): ?>
+                    <div><dt>Logiciel terrain</dt><dd><span class="record-name"><?= $h($clientLabel) ?></span><span class="record-sub">Version lue depuis le pack chargé en jeu (CfgPatches)</span></dd></div>
+                <?php endif; ?>
+            </dl>
+        </section>
 
 <?php if ($payloadSections === []): ?>
-<section class="panel">
-    <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">TX.02</span> Contenu transmis</div>
-    </div>
-    <div class="panel-body">
-        <p class="muted">
-            Cette entrée est antérieure à l’enregistrement détaillé du contenu.
-            Les prochaines transmissions depuis Arma afficheront ici l’identité,
-            les relevés et la version du pack (ex. COMSPEC Overwatch v1.4.17).
-        </p>
-    </div>
-</section>
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="panel-index">TX.02</span> Contenu transmis</div>
+            </div>
+            <div class="panel-body">
+                <p class="muted">
+                    Cette entrée est antérieure à l’enregistrement détaillé du contenu.
+                    Les prochaines transmissions depuis Arma afficheront ici l’identité,
+                    les relevés et la version du pack (ex. COMSPEC Overwatch v1.4.17).
+                </p>
+            </div>
+        </section>
 <?php else: ?>
     <?php foreach ($payloadSections as $sectionTitle => $rows): ?>
         <section class="panel">
@@ -133,22 +200,17 @@ $sectionIndex = 2;
                 </div>
                 <div class="panel-meta"><?= count($rows) ?> champ<?= count($rows) > 1 ? 's' : '' ?></div>
             </div>
-            <div class="table-wrap">
-                <table>
-                    <tbody>
-                    <?php foreach ($rows as $row): ?>
-                        <tr>
-                            <th scope="row"><?= $h($row['label'] ?? '') ?></th>
-                            <td><?= $h($row['value'] ?? '') ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+            <dl class="tx-kv">
+                <?php foreach ($rows as $row): ?>
+                    <div><dt><?= $h($row['label'] ?? '') ?></dt><dd><?= $kvValue((string) ($row['value'] ?? '')) ?></dd></div>
+                <?php endforeach; ?>
+            </dl>
         </section>
         <?php $sectionIndex++; ?>
     <?php endforeach; ?>
 <?php endif; ?>
+    </div>
+</div>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';
