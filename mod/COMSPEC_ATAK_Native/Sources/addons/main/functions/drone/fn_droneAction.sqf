@@ -17,7 +17,7 @@
       ["camBind"]                 → texture du rendu (r2t) à poser dans un RscPicture : la caméra est recréée sur une
                                   cible de rendu neuve quand elle a été suspendue (page quittée, téléphone rangé) ou que la
                                   qualité a changé (une caméra coupée puis relancée sur la même cible donnait une image noire) ;
-      ["quality", 0 | 1 | 2]      qualité du flux (profil COMSPEC_ATAK_DroneQuality) : taille de la texture de rendu ;
+      ["quality", 0 | 1]          qualité du flux (profil COMSPEC_ATAK_DroneQuality) : texture de rendu 512 ou 1024 px ;
       Nacelle (vue caméra) : ["gimbal", [cap relatif, site]] vise (site -90 à +20°, cap relatif au cap du drone, lissé) ;
       ["gimbalNudge", [dcap, dsite]] ; ["recenter"] remet la nacelle devant ; ["zoomBy", facteur] zoom continu x1 à x8 ;
       ["gimbalGet"] → [cap relatif, site] actuels ; ["markMode"] bascule le mode marquage (clic sur l'image = marquer) ;
@@ -236,11 +236,14 @@ private _gridPos = {
 };
 // Le champ de grille de l'onglet TÂCHES est gardé avant chaque nouveau rendu (absent de l'écran : on garde la valeur connue).
 private _saveGrid = { private _v = ["droneTaskGrid", "§"] call comspec_atak_native_fnc_formValue; if (_v isNotEqualTo "§") then { _s set ["droneTaskGridVal", _v]; }; };
-// Qualité du flux (profil COMSPEC_ATAK_DroneQuality : 0 basse, 1 moyenne, 2 haute) : taille de la texture de rendu.
+// Qualité du flux (profil COMSPEC_ATAK_DroneQuality : 0 basse, 1 haute) : taille de la texture de rendu.
 // Largeur et hauteur en puissances de 2 (576 ne l'est pas : texture jamais créée, image noire) ; le 16/9 vient de r2t.
 // Netteté par défaut BASSE (texture 512, celle du TEST VIDÉO qui s'affiche) : la 1024 par défaut pesait sur le jeu
-// (retour de TTRD, 14/10 : « le drone fait très vite une surcharge »).
-private _camQ = { ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 0]) max 0) min 2 };
+// (retour de TTRD, 14/10 : « le drone fait très vite une surcharge »). Plus de texture 2048 (ancienne HAUTE, 19/10 :
+// « ça fait vite RAM ») : quatre fois les pixels de la 1024, redessinés à chaque image, pour une image affichée sur
+// quelques centaines de pixels du téléphone. Un profil resté sur 2 passe en HAUTE (1024).
+private _camQ = { ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 0]) max 0) min 1 };
+private _camPx = { [512, 1024] select (call _camQ) };
 // Boîte englobante du drone dans le repère du modèle : [centre, demi-côtés].
 private _camBox = {
     (boundingBoxReal _d) params ["_b0", "_b1"];
@@ -276,13 +279,13 @@ private _expose = {
 // était recréée sur la même cible de rendu au nom fixe (comspec_dronelive) juste après l'avoir coupée (retour de la
 // CAMÉRA PLEIN ÉCRAN, page quittée puis rouverte, caméra libérée au bout de 5 s), et le zoom faisait un camCommit sur la
 // caméra accrochée. Désormais, comme les caméras du TEST VIDÉO qui s'affichent (lettre F, accrochée) et les flux UAV
-// classiques : cible de rendu neuve à chaque création (anneau de 8 noms par qualité, sans tiret bas ni chiffre, jamais
-// reprise juste après avoir été coupée), caméra posée, rendu lancé, champ validé, puis accrochée au drone une fois ;
+// classiques : cible de rendu neuve à chaque création (anneau de 3 noms par qualité, sans tiret bas ni chiffre, jamais
+// reprise juste après avoir été coupée ; 8 auparavant, jusqu'à 24 textures de rendu gardées par le jeu), caméra posée, rendu lancé, champ validé, puis accrochée au drone une fois ;
 // la boucle de la nacelle ne fait que l'orienter (et la raccroche seulement si le point de la nacelle bouge).
 private _camMake = {
-    private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneR2TN", -1]) + 1) mod 8;
+    private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneR2TN", -1]) + 1) mod 3;
     missionNamespace setVariable ["COMSPEC_ATAK_DroneR2TN", _n];
-    private _name = format ["comspecdronefeed%1%2", ["a", "b", "c"] select (call _camQ), ["a", "b", "c", "d", "e", "f", "g", "h"] select _n];
+    private _name = format ["comspecdronefeed%1%2", ["a", "b"] select (call _camQ), ["a", "b", "c"] select _n];
     private _bc = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamBox", [[0, 0, 0], [0.3, 0.3, 0.15]]]) select 0;
     private _off = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamOff", []];
     if ((count _off) isNotEqualTo 3) then { _off = _bc vectorAdd [0, 0.35, -0.35]; };
@@ -304,7 +307,7 @@ private _camMake = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneExp", []];
     call _expose;
     ["INFO", "DRONE", format ["Flux caméra ouvert : cible de rendu %1, texture %2 px, PiP %3, distance de vue PiP %4 m, drone %5 à %6 m du sol",
-        _name, [512, 1024, 2048] select (call _camQ), ["DÉSACTIVÉE", "active"] select isPiPEnabled, round getPiPViewDistance, typeOf _d,
+        _name, call _camPx, ["DÉSACTIVÉE", "active"] select isPiPEnabled, round getPiPViewDistance, typeOf _d,
         round (((getPosASL _d) select 2) - getTerrainHeightASL (getPosASL _d))]] call comspec_atak_native_fnc_log;
     _cam
 };
@@ -546,7 +549,7 @@ private _camBind = {
     // Même texture que l'app Vidéo Live (caméras fixes) : carrée, rapport 1 (COMSPEC_ATAK_DroneCamAspect pour les
     // cadres LOCK, le clic et le glisser sur l'image).
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamAspect", 1];
-    format ["#(argb,%1,%1,1)r2t(%2,1.0)", [512, 1024, 2048] select (call _camQ), ([_cam, "r2t", "comspec_dronelive"] call comspec_atak_native_fnc_camVar)]
+    format ["#(argb,%1,%1,1)r2t(%2,1.0)", call _camPx, ([_cam, "r2t", "comspec_dronelive"] call comspec_atak_native_fnc_camVar)]
 };
 // Capteur : ce que la caméra voit (vue directe, portée réduite par le brouillard), en 360° ou dans le champ de la nacelle pointée.
 private _scan = {
@@ -1026,9 +1029,9 @@ switch (_act) do {
         call _mapRender;
     };
     case "quality": {
-        profileNamespace setVariable ["COMSPEC_ATAK_DroneQuality", ((_arg max 0) min 2)];
+        profileNamespace setVariable ["COMSPEC_ATAK_DroneQuality", ((_arg max 0) min 1)];
         saveProfileNamespace;
-        ["INFO", format ["Flux du drone : qualité %1", ["basse (512 px, plus fluide)", "moyenne (1024 px)", "haute (2048 px, plus lourde)"] select ((_arg max 0) min 2)]] call _say;
+        ["INFO", format ["Flux du drone : qualité %1", ["basse (512 px, plus fluide)", "haute (1024 px, plus lourde)"] select ((_arg max 0) min 1)]] call _say;
         call _render;
     };
     // Ordre de vol du suivi des cibles marquées (fn_droneSeq) : même chemin que les boutons, sans arrêter ce suivi.
@@ -1712,7 +1715,7 @@ switch (_act) do {
             private _on = { params ["_k"]; private _c = missionNamespace getVariable [_k, objNull]; [0, 1] select (!isNull _c && {([_c, "rendering", true] call comspec_atak_native_fnc_camVar)}) };
             private _dc = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
             ["INFO", "PERF", format ["%1 img/s ; caméras de rendu : drone %2 (qualité %3), aperçu cliché %4, viseur photo %5, live cam %6, carte JPC %7 ; flotte %8 ; page %9 ; téléphone %10",
-                round diag_fps, ["COMSPEC_ATAK_DroneCam"] call _on, (profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 1]),
+                round diag_fps, ["COMSPEC_ATAK_DroneCam"] call _on, (((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 0]) max 0) min 1),
                 ["COMSPEC_ATAK_DronePrevCam"] call _on, ["COMSPEC_ATAK_PhotoCam"] call _on, ["COMSPEC_ATAK_LivecamCam"] call _on, ["COMSPEC_ATAK_JpcMapCam"] call _on,
                 count (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []]), _s getOrDefault ["activePage", ""],
                 ["fermé", "ouvert"] select (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]))]] call comspec_atak_native_fnc_log;

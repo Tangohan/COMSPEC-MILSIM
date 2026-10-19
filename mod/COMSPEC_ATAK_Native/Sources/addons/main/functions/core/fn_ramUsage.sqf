@@ -4,6 +4,9 @@
     apps restées en arrière-plan (apps récentes, 6 au plus par défaut, réglage comspec_atak_native_ram_bg ; Android ferme les plus
     anciennes, et aussi quand la mémoire est pleine),
     appareil photo, live cam, flux drone, musique, guidage GPS. Téléphone rangé : les apps sont compressées.
+    C'est une estimation du téléphone simulé, pas la mémoire du PC (le jeu ne la donne pas aux scripts). Le flux vidéo du
+    drone ne compte que pendant qu'il est vraiment rendu (texture 512 ou 1024 px), plus après la libération de la caméra
+    (page quittée depuis 5 s) ; avant le 19/10, 540 Mo restaient comptés tant qu'un drone était appairé.
     La valeur suit la cible en douceur (pas de saut d'une seconde à l'autre).
     Retourne un HashMap : used, total (Mo), pct (0-100), parts [[libellé, Mo]...], apps (nombre d'apps en mémoire).
     Dernière mesure : missionNamespace COMSPEC_ATAK_Ram.
@@ -16,7 +19,7 @@ private _weight = {
     params ["_p"];
     switch (_p) do {
         case "MAP": { 380 + ((count allMapMarkers) * 0.4 min 160) };
-        case "DRONE": { 360 };
+        case "DRONE": { 200 };
         case "LIVECAM": { 300 };
         case "AAR": { 320 };
         case "RELIEF": { 290 };
@@ -42,7 +45,16 @@ private _bg = [];
 _bg = _bg select [0, round ((missionNamespace getVariable ["comspec_atak_native_ram_bg", 6]) max 0)];
 if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) then { _parts pushBack ["Appareil photo", 450]; };
 if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull])) then { _parts pushBack ["Live cam (encodage vidéo)", 520]; };
-if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then { _parts pushBack ["Liaison drone", 180]; };
+if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
+    private _fleet = { !isNull _x } count (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []]);
+    _parts pushBack ["Liaison drone", 40 + 20 * _fleet];
+    // Flux vidéo : seulement pendant le rendu dans la texture (coupé hors de la page, en vue directe, caméra libérée).
+    private _dc = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+    if (!isNull _dc && {([_dc, "rendering", false] call comspec_atak_native_fnc_camVar)}) then {
+        _parts pushBack ["Flux vidéo du drone", [90, 200] select ((([_dc, "q", 0] call comspec_atak_native_fnc_camVar) max 0) min 1)];
+    };
+    if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DronePrevCam", objNull])) then { _parts pushBack ["Aperçu du cliché drone", 60]; };
+};
 if (((missionNamespace getVariable ["COMSPEC_ATAK_Music", createHashMap]) getOrDefault ["kind", ""]) isNotEqualTo "" && {!((missionNamespace getVariable ["COMSPEC_ATAK_Music", createHashMap]) getOrDefault ["paused", false])}) then { _parts pushBack ["Lecture audio", 90]; };
 if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap])) > 0) then { _parts pushBack ["Guidage GPS", 60]; };
 // Mémoire pleine : Android ferme les apps d'arrière-plan les plus anciennes jusqu'à repasser sous 90 %.

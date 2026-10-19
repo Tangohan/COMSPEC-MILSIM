@@ -189,7 +189,7 @@ if (_view isNotEqualTo "") then {
     private _aim = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
     private _markMode = uiNamespace getVariable ["COMSPEC_ATAK_DroneMarkMode", false];
     private _vis = missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0];
-    private _q = ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 1]) max 0) min 2;
+    private _q = ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 0]) max 0) min 1;
     private _tool = ["", uiNamespace getVariable ["COMSPEC_ATAK_DroneShotTool", ""]] select (_view isEqualTo "SHOT");
     private _shapes = missionNamespace getVariable ["COMSPEC_ATAK_DroneShotMarks", []];
     private _alts = [[15, 30, 60, 100, 150], [2, 3, 5, 8]] select _cqb;
@@ -212,7 +212,7 @@ if (_view isNotEqualTo "") then {
     private _bUp = [[format ["MONTER %1 m", _up], "MONTER"] select (_up < 0), ["alt", _up] call _act, "", format ["Altitude actuelle %1 m : monter au palier suivant", _alt], _up > 0];
     private _bDn = [[format ["DESCENDRE %1 m", _dn], "DESCENDRE"] select (_dn < 0), ["alt", _dn] call _act, "", format ["Altitude actuelle %1 m : descendre au palier précédent", _alt], _dn > 0];
     private _bHover = ["STATIONNAIRE", ["mode", "hover"] call _act, ["", "on"] select (_m isEqualTo "HOVER"), "Le drone s'arrête et reste en vol stationnaire là où il est"];
-    private _bQ = [format ["NETTETÉ : %1", ["BASSE", "MOY.", "HAUTE"] select _q], ["quality", (_q + 1) mod 3] call _act, "", "Qualité de l'image : basse (plus fluide) → moyenne → haute (plus nette, plus lourde)"];
+    private _bQ = [format ["NETTETÉ : %1", ["BASSE", "HAUTE"] select _q], ["quality", 1 - _q] call _act, "", "Qualité de l'image : basse (512 px, plus fluide) ou haute (1024 px, plus nette, plus lourde)"];
     private _bMenus = [["MENUS DU DRONE", "AGRANDIR L'IMAGE"] select _split, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", ["Réduit l'image et affiche dessous les onglets du drone (vol, tâches, cibles, photos, journal)", "Image à la taille de l'écran, onglets masqués"] select _split];
     private _bTotal = [["PLEIN ÉCRAN", "QUITTER LE PLEIN ÉCRAN"] select (_view isEqualTo "TOTAL"), { profileNamespace setVariable ["COMSPEC_ATAK_DroneMiniFull", !(profileNamespace getVariable ["COMSPEC_ATAK_DroneMiniFull", true])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", "Téléphone en petit format : l'image du drone occupe tout l'écran"];
     // Secours si l'image reste noire (PiP qui ne rend rien) : la vue du jeu passe sur la caméra du drone (fn_droneAction "direct").
@@ -972,7 +972,7 @@ switch (_tab) do {
             _rows pushBack ["text", format ["<t size='0.85' color='#8a9a93'>Montée à %1 m puis stationnaire. Tout ordre de vol donné au sol fait aussi décoller le drone.</t>", _alt]];
         };
         // Caméra : ouverture, cliché, qualité du flux, petit format, sens du glisser, source de l'image.
-        private _q = ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 1]) max 0) min 2;
+        private _q = ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 0]) max 0) min 1;
         private _dm = profileNamespace getVariable ["COMSPEC_ATAK_DroneDragMode", 0];
         _rows append [
             ["section", "Caméra", "Image de la caméra, clichés et marquage des cibles"],
@@ -980,8 +980,8 @@ switch (_tab) do {
                 [["OUVRIR LA CAMÉRA", "FERMER LA CAMÉRA"] select _camOn, ["cam"] call _act, !_camOn],
                 ["VISEUR PHOTO", { ["view"] call comspec_atak_native_fnc_dronePhoto; }, false, true, "Cadrer, zoomer, marquer et surligner avant de prendre la photo"]
             ]],
-            ["segment", "Qualité du flux", [["BASSE", ["quality", 0] call _act, _q isEqualTo 0], ["MOYENNE", ["quality", 1] call _act, _q isEqualTo 1], ["HAUTE", ["quality", 2] call _act, _q isEqualTo 2]],
-                "basse : plus fluide · haute : plus net, plus lourd"],
+            ["segment", "Qualité du flux", [["BASSE", ["quality", 0] call _act, _q isEqualTo 0], ["HAUTE", ["quality", 1] call _act, _q isEqualTo 1]],
+                "basse (512 px) : plus fluide · haute (1024 px) : plus net, plus lourd"],
             ["switch", "Vue totale en petit format", profileNamespace getVariable ["COMSPEC_ATAK_DroneMiniFull", true],
                 { profileNamespace setVariable ["COMSPEC_ATAK_DroneMiniFull", !(profileNamespace getVariable ["COMSPEC_ATAK_DroneMiniFull", true])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; },
                 "Téléphone en petit (Ctrl+U) : l'image du drone occupe tout l'écran, incrustations réduites"],

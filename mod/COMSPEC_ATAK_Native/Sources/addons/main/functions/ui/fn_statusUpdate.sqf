@@ -56,7 +56,7 @@ if (!isNull _ramCtrl) then {
     private _pct = _ram get "pct";
     _ramCtrl ctrlSetText ((("RAM " + (str _pct) + "%")) call comspec_atak_native_fnc_tr);
     _ramCtrl ctrlSetTextColor (switch (true) do { case (_pct >= 90): { [0.88, 0.25, 0.22, 1] }; case (_pct >= 75): { [0.95, 0.67, 0.20, 1] }; default { [0.62, 0.70, 0.66, 1] }; });
-    _ramCtrl ctrlSetTooltip ((format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr);
+    _ramCtrl ctrlSetTooltip ((format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire · estimation du téléphone, pas la mémoire du PC", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr);
 };
 
 ([] call comspec_atak_native_fnc_weather) params ["_temp", "_speed", "_card"];
