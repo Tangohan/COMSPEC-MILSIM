@@ -45,16 +45,16 @@ Type : nouveauté
 FR : COMSPEC ATAK 2.2.0 « Denver » : un réseau qui suit la météo, le français partout, un Resynch complet et une série de correctifs
 - Pluie, orage, vent et surcharge des relais comptent maintenant sur le réseau, avec des pertes par rafales ; nouveau bouton Conditions réseau dans le menu Échap, réglable par l'admin ou le Zeus et imposable depuis le site.
 - Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission ; les réglages COMSPEC sont réécrits en français clair.
-- L'app Synchro renvoie tout ce qui manque à Athena et montre l'état de chaque catégorie ; l'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul.
-- Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue (touche B pour le flou) ; l'image du drone ne reste plus noire ; pouls et nom du blessé dans l'app Médical ; guide réseau et capture de carte Zeus réparés ; plus de vieilles fenêtres par-dessus le jeu.
+- L'app Synchro renvoie tout ce qui manque à Athena et montre l'état de chaque catégorie ; l'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul ; les avis de l'administration (compromission, réinitialisation) arrivent dans le téléphone.
+- Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue (touche B pour le flou) ; l'image du drone ne reste plus noire ; pouls et nom du blessé dans l'app Médical ; guide réseau et capture de carte Zeus réparés ; plus de vieilles fenêtres par-dessus le jeu ; le check de démarrage ne part qu'une fois ; les messages du Link gardent leurs accents.
 EN : COMSPEC ATAK 2.2.0 "Denver": a network that follows the weather, French everywhere, a complete Resynch and a batch of fixes
 - Rain, storms, wind and relay congestion now count on the network, with losses in bursts; new Network conditions button in the Escape menu, set by the admin or Zeus and enforceable from the website.
 - The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission; COMSPEC settings have clearer French wording.
-- The Synchro app resends everything Athena is missing and shows the state of each category; the Settings app shows your link status and searches any setting; the Athena link code renews itself.
-- A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view (B key for blur); the drone picture no longer stays black; pulse and casualty name in the Medical app; network guide and Zeus map capture fixed; no more old windows over the game.
+- The Synchro app resends everything Athena is missing and shows the state of each category; the Settings app shows your link status and searches any setting; the Athena link code renews itself; admin notices (compromise, reset) now reach the phone.
+- A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view (B key for blur); the drone picture no longer stays black; pulse and casualty name in the Medical app; network guide and Zeus map capture fixed; no more old windows over the game; the startup check is sent only once; Link messages keep their accents.
 
 ### Détail technique
-Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906, #908, #909, #910, #911 et #913. `VERSION_STR` « 2.2.0 » (seul comparé), nom affiché « 2.2.0.AB - Denver » (passage en 2.2.0 : nouveautés réseau et Réglages, nettoyage de #910). COMSPEC Link 2.0.89 (#909) : DLL à recompiler (build_mod.bat). Le bouton du menu principal de #909 est retiré (#893 garde le guide réseau dans Eden seulement) ; le bouton Conditions réseau du menu Échap reste. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repris de #910 puis repatchés avec les sources fusionnées (#898, #900) ; `comspec_sse_core.pbo` patché par #898. Site à déployer (#909 : Contrôle serveur > Réseau et simulation, `POST /api/atak/net-conditions`, sans migration).
+Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906, #908, #909, #910, #911, #912, #913, #919 et #921. `VERSION_STR` « 2.2.0 » (seul comparé), nom affiché « 2.2.0.AB - Denver » (passage en 2.2.0 : nouveautés réseau et Réglages, nettoyage de #910). COMSPEC Link 2.0.89 (#909, #919, #921) : DLL à recompiler (build_mod.bat). Le bouton du menu principal de #909 est retiré (#893 garde le guide réseau dans Eden seulement) ; le bouton Conditions réseau du menu Échap reste. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repris de #910 puis repatchés avec les sources fusionnées (#898, #900) ; `comspec_sse_core.pbo` patché par #898. Site à déployer : #909 (Contrôle serveur > Réseau et simulation, `POST /api/atak/net-conditions`), #912 (`AtakStartupCheckService`), #921 (avis de l'administration, `run-migrations`).
 
 #### Le réglage Français traduit tout, noms automatiques des marqueurs (#898)
 - `i18n/fr.txt` (anglais vers français) chargé en français, assemblé par `tools/i18n.py fr` depuis `tools/i18n_fr_source.tsv` et les stringtables ; `fn_tr` et les écrans (ATAK, connect, SSE) traduisent dès qu'un dictionnaire est chargé ; langue lue dans le profil CBA dès le preInit ; menus CBA vidés au changement de langue ; actions ACE retraduites à chaque affichage. Noms automatiques des marqueurs (palette, LOCK, détections drone, END/FIN) posés dans la langue du mod et relus par `fn_markerAutoName`.
@@ -273,6 +273,60 @@ EN : COMSPEC settings read in plain French
 - Correctif : `fn_pollOrders` / `fn_pollChat` lisaient `comspec_atak_native_map_id` (inexistant, donc toujours carte 1) ; ils lisent le numéro de carte de l'opération comme `fn_frsSubmit`.
 - PBO repatchés : Overwatch connect ; SSE analysis, biometrics, campaign, compat_ace, compat_bii, core, debug, intel, network.
 - À tester en jeu : options des addons COMSPEC en Français puis English ; app Réglages en français ; menu Échap > Conditions réseau (mêmes noms) ; sans COMSPEC Link, carte n° 2 : les ordres du poste arrivent.
+
+
+#### Check de démarrage : une seule fois au premier lancement, renvoi par Dépannage liaison (#912)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Le check de démarrage n'est envoyé qu'une fois
+- Le rapport du salon startup-check part une seule fois, au premier lancement, et plus à chaque mission ni à chaque reconnexion.
+- Pour le renvoyer : menu Échap > Dépannage liaison > Renvoyer le check de démarrage.
+EN : The startup check is sent only once
+- The startup-check report is sent once, at first launch, and no longer on every mission or reconnection.
+- To send it again: Esc menu > Link troubleshooting > Resend startup check.
+
+##### Détail technique
+- `fn_startupCheck` : « déjà envoyé » (date + réponse d'Athena) et identifiant de session gardés dans `profileNamespace` ; boucle de renvoi à chaque reconnexion retirée ; `["reset"]` efface l'état et refait un envoi ; échec réseau retenté à la mission suivante ; champ `scope=once` passé tel quel par la DLL.
+- Overwatch connect : `fn_diagAction "startup"` + bouton `BtnStartup` (idc 69) dans `display_diag_isolate.hpp`. Texte d'aide du réglage CBA réécrit (« une seule fois », comment renvoyer).
+- Site : `AtakStartupCheckService` garde la déduplication joueur + session ; les anciens mods (sans `scope`) ne postent plus qu'un message par joueur sur 30 jours.
+- À tester en jeu : une carte au premier lancement, aucune après changement de mission, reset de la liaison ou relance d'Arma ; bouton « Renvoyer le check de démarrage » (notification puis carte), en français et en anglais.
+
+
+#### COMSPEC Link : accents UTF-8, Steam en solo, rapports automatiques plus justes (#919)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Les messages du Link gardent leurs accents
+- Les textes envoyés par COMSPEC Link au jeu s'affichent avec leurs accents (plus de « momentan�ment »).
+- En solo et en hôte local, plus d'erreurs d'envoi à cause d'un identifiant Steam factice.
+EN : Link messages keep their accents
+- Texts sent by COMSPEC Link to the game keep their accents.
+- In solo and local host, no more send errors caused by a placeholder Steam ID.
+
+##### Détail technique
+- `Extension.cs` : rappel Arma en pointeurs UTF-8 (`Marshal.StringToCoTaskMemUTF8`, libérés après l'appel, données coupées à 20 000 octets sur une limite de caractère) au lieu de `LPStr` (page de code ANSI). `PairStart` et le code de liaison passent par `ApplySteamUid` (refuse `_SP_`, LOCAL, IA).
+- `Extension_Telemetry.cs` : `NotePostError(code, url, response)` sur un 4xx du lot de télémétrie (raison du serveur gardée).
+- Overwatch connect : `fn_reportDiag` envoie une empreinte vide (le site hache le message complet, deux pannes différentes donnent deux rapports) ; `fn_extensionCallback` : `google_deck_error` `private`/`not_found` en WARN, sans rapport automatique (le site vérifie la présentation à l'enregistrement, #918).
+- À tester en jeu : notification à accents venant du Link ; aperçu Eden en solo sans 400 `telemetry/batch` ; deux pannes d'envoi différentes, deux rapports.
+
+
+#### Avis de l'administration en jeu : compromission, levée, réinitialisation (#921)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Les avis de l'administration arrivent dans le téléphone
+- Quand l'administration ou le poste de commandement déclare ou lève une compromission, réinitialise ton ATAK, change son certificat ou ton numéro, le téléphone affiche une alerte plein écran et une notification.
+- Une carte reste en haut de l'app Alertes jusqu'à ce que tu appuies sur COMPRIS ; les messages envoyés depuis le parc ATAK du site arrivent de la même façon.
+EN : Admin notices now reach the phone
+- When the administration or the command post declares or lifts a compromise, resets your ATAK, changes its certificate or your number, the phone shows a full-screen alert and a notification.
+- A card stays at the top of the Alerts app until you press GOT IT; messages sent from the website's ATAK fleet page arrive the same way.
+
+##### Détail technique
+- Site : `atak_admin_messages.kind` (migration paresseuse, `run-migrations`). `AtakAdminControlRepository::notifyPlayer` appelé par les actions du parc ATAK, la compromission/levée du poste, la régénération de certificat et de numéro. Endpoints joueur `POST /api/atak/admin-control/mine` et `/mine/ack` (session de jeu ou Steam ; seulement ses propres messages).
+- COMSPEC Link : `AdminControl.Poll` (une ligne par message, séparée par tabulations) et `AdminControl.Ack` (en file).
+- ATAK natif : `fn_adminNotices` interroge toutes les 30 s une fois lié à Athena et téléphone porté ; nouvelle section en tête de `fn_pageAlerts` (rouge compromission, vert levée, ambre réinitialisation/certificat) ; 22 phrases dans `i18n/en.txt`.
+- À tester en jeu : compromission déclarée sur sa fiche dans /admin/parc-atak (alerte, carte Alertes, COMPRIS), puis levée (alerte verte) ; ATAK retiré puis relié (alerte « données réinitialisées »).
 
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
