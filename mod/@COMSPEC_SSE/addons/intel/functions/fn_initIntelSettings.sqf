@@ -4,7 +4,7 @@
 [
     "comspec_sse_trainingMode",
     "CHECKBOX",
-    ["Mode entraînement", "Affiche un retour pédagogique après chaque exploitation."],
+    ["Mode entraînement", "Après chaque exploitation, un message explique ce qui a été bien fait et ce qui a été raté."],
     ["COMSPEC SSE", "Intel"],
     false,
     1,
@@ -15,9 +15,9 @@
 [
     "comspec_sse_operatorSkill",
     "LIST",
-    ["Niveau opérateur SSE", "Influence durée et qualité d'exploitation."],
+    ["Niveau de l'opérateur SSE", "Plus le niveau est haut, plus les exploitations sont rapides et donnent de bons résultats."],
     ["COMSPEC SSE", "Intel"],
-    [[0, 1, 2, 3], ["Novice", "Qualifié", "Expérimenté", "Expert TECHINT"], 1],
+    [[0, 1, 2, 3], ["Novice", "Qualifié", "Expérimenté", "Expert renseignement technique"], 1],
     1,
     {},
     true
@@ -26,7 +26,7 @@
 [
     "comspec_sse_autoTriage",
     "CHECKBOX",
-    ["Triage automatique après fouille", "Classe les éléments : EXPLOIT NOW / COLLECT / DOCUMENT ONLY / …"],
+    ["Tri automatique après une fouille", "Classe tout seul ce qui a été trouvé : à exploiter tout de suite, à emporter, à photographier seulement..."],
     ["COMSPEC SSE", "Intel"],
     true,
     1,
@@ -37,7 +37,7 @@
 [
     "comspec_sse_autoPivot",
     "CHECKBOX",
-    ["Pivot automatique", "Cherche d'autres entités partageant numéro, alias ou grid."],
+    ["Recoupement automatique", "Cherche d'autres personnes ou objets qui ont le même numéro, le même surnom ou la même position."],
     ["COMSPEC SSE", "Intel"],
     true,
     1,
@@ -45,21 +45,11 @@
     true
 ] call comspec_sse_fnc_addSetting;
 
-[
-    "comspec_sse_autoMarkers",
-    "CHECKBOX",
-    ["Marqueurs SSE sur la carte", "Retirés : ils se superposaient et rendaient la carte illisible. Les dossiers restent dans le terminal et sur Athena."],
-    ["COMSPEC SSE", "Intel"],
-    false,
-    1,
-    { [] call comspec_sse_fnc_createMapMarkers },
-    true
-] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_crossMissionPersist",
     "CHECKBOX",
-    ["Persistance inter-missions (profil)", "Conserve le graphe logique SSE dans le profil joueur entre missions."],
+    ["Garder les liens SSE d'une mission à l'autre", "Le tableau des liens SSE (qui connaît qui) est gardé dans le profil du joueur d'une mission à l'autre."],
     ["COMSPEC SSE", "Intel"],
     false,
     0,

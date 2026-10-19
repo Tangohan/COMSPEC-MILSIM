@@ -3,10 +3,14 @@
     FPS, erreurs) et de la liaison du joueur à Athena, envoyé à Athena qui le poste dans le salon Discord de debug.
     On y voit qui a un mod ou une DLL cassés, et si la liaison en jeu a bien attribué au joueur son numéro, son IMEI et
     son terminal, ou quelle erreur de connexion l'en a empêché.
-      [] call comspec_atak_native_fnc_startupCheck       depuis XEH_postInitClient, une fois par mission
-    Envoi quand le joueur se lie en jeu (COMSPEC_AthenaReady passe à vrai, identité du téléphone reçue d'Athena), ou,
-    faute de liaison 2 min après le contrôle de l'installation, avec l'erreur de connexion. Chaque nouvelle liaison
-    dans la mission (reconnexion, connexion faite plus tard depuis le téléphone) renvoie un rapport.
+      [] call comspec_atak_native_fnc_startupCheck          depuis XEH_postInitClient, à chaque mission
+      ["reset"] call comspec_atak_native_fnc_startupCheck   Dépannage liaison > « Renvoyer le check de démarrage »
+    Un seul rapport, au premier lancement, puis plus jamais : le profil du joueur garde « déjà envoyé »
+    (COMSPEC_ATAK_StartupCheckOnce) d'une mission et d'un lancement du jeu à l'autre. Seul « reset » l'efface et
+    refait un envoi. Envoi quand le joueur se lie en jeu (COMSPEC_AthenaReady passe à vrai, identité du téléphone
+    reçue d'Athena), ou, faute de liaison 2 min après le contrôle de l'installation, avec l'erreur de connexion. Un
+    envoi qui échoue (réseau, Athena injoignable) est retenté à la mission suivante. L'identifiant de session est
+    gardé dans le profil jusqu'au prochain « reset » : Athena écarte un second rapport de la même session (scope=once).
     Seulement avec le service Athéna sur « Oui » et le réglage CBA « Envoyer le check de démarrage » coché.
     Commande DLL StartupCheck (COMSPEC Link 2.0.82+), POST /api/atak/startup-check : pseudo, indicatif, versions, carte,
     déclencheur (trigger=link | link_failed) et résultat des étapes. Pas d'UID Steam (empreinte seulement), pas
@@ -15,9 +19,24 @@
     « COMSPEC_ATAK_StartupCheckSent » = réponse d'Athena (app Debug, onglet DLL).
 */
 if (!hasInterface) exitWith {};
-if (!canSuspend) exitWith { [] spawn comspec_atak_native_fnc_startupCheck; };
+params [["_mode", "", [""]]];
+if (!canSuspend) exitWith { [_mode] spawn comspec_atak_native_fnc_startupCheck; };
+// Remise à zéro demandée par le joueur : nouvelle session, nouvel envoi (même si un envoi de cette mission attend).
+if (_mode isEqualTo "reset") then {
+    profileNamespace setVariable ["COMSPEC_ATAK_StartupCheckOnce", nil];
+    profileNamespace setVariable ["COMSPEC_ATAK_StartupCheckId", nil];
+    saveProfileNamespace;
+    missionNamespace setVariable ["COMSPEC_ATAK_StartupCheckDone", false];
+    missionNamespace setVariable ["COMSPEC_ATAK_StartupCheckSent", "en cours (remis à zéro)"];
+    ["INFO", "STARTUP", "Check de démarrage remis à zéro par le joueur : nouvel envoi"] call comspec_atak_native_fnc_log;
+};
 if (missionNamespace getVariable ["COMSPEC_ATAK_StartupCheckDone", false]) exitWith {};
 missionNamespace setVariable ["COMSPEC_ATAK_StartupCheckDone", true];
+// Déjà envoyé (premier lancement ou dernier « reset ») : on garde la réponse d'Athena pour l'app Debug, sans envoi.
+private _once = profileNamespace getVariable ["COMSPEC_ATAK_StartupCheckOnce", []];
+if (_once isEqualType [] && {_once isNotEqualTo []}) exitWith {
+    missionNamespace setVariable ["COMSPEC_ATAK_StartupCheckSent", format ["%1 (déjà envoyé le %2 ; Dépannage liaison > Renvoyer le check de démarrage pour un nouvel envoi)", _once param [0, ""], _once param [1, "?"]]];
+};
 
 // Joueur en jeu, puis le contrôle local (15 s) et la comparaison avec Athena (30 s) de fn_integrityCheck.
 waitUntil { sleep 1; !isNull player && {time > 0} };
@@ -152,12 +171,19 @@ private _send = {
     private _v = productVersion select 2;
     private _uid = getPlayerUID player;
     private _key = hashValue ([_uid, profileName] select (_uid isEqualTo ""));
+    // Session : tirée au premier envoi, gardée dans le profil jusqu'au prochain « reset ».
+    private _launch = profileNamespace getVariable ["COMSPEC_ATAK_StartupCheckId", ""];
+    if !(_launch isEqualType "" && {_launch isNotEqualTo ""}) then {
+        _launch = hashValue format ["%1|%2|%3", _key, systemTimeUTC, diag_tickTime];
+        profileNamespace setVariable ["COMSPEC_ATAK_StartupCheckId", _launch];
+        saveProfileNamespace;
+    };
     private _args = [
         "https://athena.ttrd.fr/public",
         "atak=" + _code, "config=" + _cfg, "link=" + _dll, "link_expected=" + (missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", ""]),
         format ["arma=%1.%2", floor (_v / 100), _v mod 100],
         "player=" + profileName, "callsign=" + groupId group player,
-        "player_key=" + _key, "session=" + hashValue format ["%1|%2|%3", _key, missionName, systemTimeUTC],
+        "player_key=" + _key, "session=" + _launch, "scope=once",
         "world=" + worldName, "mission=" + briefingName, "mp=" + str isMultiplayer, "trigger=" + _trigger
     ];
     { _args pushBack format ["step_%1=%2|%3", _x select 0, _x select 1, _x select 2]; } forEach _steps;
@@ -172,6 +198,15 @@ private _send = {
         sleep (30 * _try);
     };
     missionNamespace setVariable ["COMSPEC_ATAK_StartupCheckSent", [_r, "DLL trop ancienne (commande inconnue)"] select (_r isEqualTo "")];
+    // Reçu par Athena (ou DLL sans la commande) : plus jamais d'envoi, sauf « reset » dans Dépannage liaison.
+    if ((_r select [0, 3]) isEqualTo "OK|" || {_r isEqualTo ""}) then {
+        systemTimeUTC params ["_y", "_mo", "_d", "_h", "_mi"];
+        profileNamespace setVariable ["COMSPEC_ATAK_StartupCheckOnce", [
+            missionNamespace getVariable ["COMSPEC_ATAK_StartupCheckSent", ""],
+            format ["%1-%2-%3 %4:%5 UTC", _y, [_mo, 2] call CBA_fnc_formatNumber, [_d, 2] call CBA_fnc_formatNumber, [_h, 2] call CBA_fnc_formatNumber, [_mi, 2] call CBA_fnc_formatNumber]
+        ]];
+        saveProfileNamespace;
+    };
     ["INFO", "STARTUP", format ["Check de %1 (%2) : %3", ["liaison", "démarrage sans liaison"] select (_trigger isEqualTo "link_failed"), _sum, switch (true) do {
         case (_r isEqualTo "OK|posted"): { "posté dans le salon Discord de debug" };
         case (_r isEqualTo "OK|no_channel"): { "reçu par Athena, aucun salon Discord configuré" };
@@ -191,14 +226,7 @@ if (_linked) then {
     private _t1 = diag_tickTime;
     waitUntil { sleep 2; ((missionNamespace getVariable ["comspec_profile_phone", []]) param [0, ""]) isNotEqualTo "" || {diag_tickTime - _t1 > 20} };
 };
+// Un « reset » ou une autre mission a pu envoyer pendant l'attente (rare) : pas de second rapport.
+if ((profileNamespace getVariable ["COMSPEC_ATAK_StartupCheckOnce", []]) isNotEqualTo []) exitWith { true };
 [["link_failed", "link"] select _linked] call _send;
-// Nouvelle liaison dans la mission (reconnexion, liaison faite plus tard depuis le téléphone) : nouveau rapport.
-while { true } do {
-    waitUntil { sleep 5; !(call _ready) };
-    waitUntil { sleep 5; call _ready };
-    if !(missionNamespace getVariable ["comspec_atak_native_startup_report", true]) exitWith {};
-    private _t1 = diag_tickTime;
-    waitUntil { sleep 2; ((missionNamespace getVariable ["comspec_profile_phone", []]) param [0, ""]) isNotEqualTo "" || {diag_tickTime - _t1 > 20} };
-    ["link"] call _send;
-};
 true

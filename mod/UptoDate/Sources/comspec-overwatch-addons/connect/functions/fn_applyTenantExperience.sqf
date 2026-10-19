@@ -42,7 +42,6 @@ private _applyTri = {
 ["order_compose", "comspec_overwatch_order_compose_enabled"] call _applyTri;
 ["sse_require_item", "comspec_sse_require_item"] call _applyTri;
 ["playtime", "comspec_overwatch_playtime_enabled"] call _applyTri;
-["athena_feed", "comspec_overwatch_athena_feed_snapshot"] call _applyTri;
 ["rp_enabled", "comspec_overwatch_roleplay_enabled"] call _applyTri;
 ["rp_network_failures", "comspec_overwatch_roleplay_network_failures"] call _applyTri;
 ["rp_sensor_failures", "comspec_overwatch_roleplay_sensor_failures"] call _applyTri;

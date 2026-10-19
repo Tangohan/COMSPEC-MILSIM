@@ -259,6 +259,8 @@ class AdminAtakFleetController
         $this->journal($terminal, $state === 'compromised'
             ? 'Appareil compromis — déclaré par ' . $by
             : 'Appareil capturé — déclaré par ' . $by, $state);
+        $this->fleet->notifyPlayer($terminal, 'compromise', $state === 'compromised' ? 'ATAK compromis' : 'ATAK capturé',
+            $reason !== '' ? $reason : 'Déclarée par l’administration ATHENA', $actorId);
 
         return $this->back($request, 'success', ($state === 'compromised' ? 'ATAK déclaré compromis' : 'ATAK déclaré capturé')
             . ($done['revoked'] > 0 ? ' : ' . $done['revoked'] . ' certificat(s) révoqué(s).' : '.')
@@ -297,6 +299,12 @@ class AdminAtakFleetController
         if ($done['cleared']) {
             $this->journal($terminal, 'Contrôle appareil rétabli par ' . $this->viewScope()['by'], 'none');
         }
+        if ($done['cleared'] || $done['restored'] > 0) {
+            $this->fleet->notifyPlayer($terminal, 'compromise_cleared', 'Compromission levée', implode(' · ', array_filter([
+                $done['restored'] > 0 ? $done['restored'] . ' certificat(s) rétabli(s)' : '',
+                $note,
+            ])), $actorId);
+        }
 
         return $this->back($request, 'success', implode(' ', array_filter([
             'Compromission annulée.',
@@ -329,6 +337,8 @@ class AdminAtakFleetController
             return $this->back($request, 'error', $revoke ? 'Certificat déjà révoqué.' : 'Certificat non rétabli (déjà valide ou expiré).');
         }
         $this->fleet->log($terminal, $revoke ? 'cert_revoke' : 'cert_restore', (string) $cert['certificate_ref'], $actorId, $actorLabel);
+        $this->fleet->notifyPlayer($terminal, 'certificate', $revoke ? 'Certificat révoqué' : 'Certificat rétabli',
+            'Référence : ' . (string) $cert['certificate_ref'], $actorId);
 
         return $this->back($request, 'success', $revoke
             ? 'Certificat révoqué : l’ATAK n’est plus reconnu sur le réseau avec ce certificat.'
@@ -468,6 +478,8 @@ class AdminAtakFleetController
         foreach ($terminals as $t) {
             if ($this->fleet->retireTerminal($t, $reason)) {
                 $done++;
+                // Avis au joueur : ses données ATAK sont réinitialisées, l'ATAK se réenregistre à la prochaine liaison.
+                $this->fleet->notifyPlayer($t, 'reset', 'Données ATAK réinitialisées', $reason, $actorId);
                 $this->fleet->log($t, 'retire', trim((string) $t['terminal_uid'] . ($reason !== '' ? ' · ' . $reason : '')), $actorId, $actorLabel);
             }
         }

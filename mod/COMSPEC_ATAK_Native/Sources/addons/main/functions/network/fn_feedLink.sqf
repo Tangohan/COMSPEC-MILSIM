@@ -4,7 +4,7 @@
     sur le mien (liaison descendante : fn_linkQuality). Le plus faible des deux fixe la qualité de l'image.
       ["publish"]       : publie ma liaison montante pour les autres clients (boucle de XEH_postInitClient, 10 s) :
                           player getVariable "COMSPEC_ATAK_NetUp" = [kbit/s, perte %, relais]. Diffusé seulement
-                          quand le palier change (débit par 250 kbit/s, perte par 10 %, relais).
+                          quand le palier change (débit par 250 kbit/s, perte par 10 %, relais) et tient deux tours (relais ou coupure : aussitôt).
       ["eval", source]  -> HashMap : kbps, loss, tier ("HD" | "SD" | "BAS" | "MINIMAL" | "COUPÉ"), res (côté de la
                           texture en px, 0 si coupé), drop (part du temps où l'image décroche, 0-0.8),
                           up [kbit/s, perte, relais] de la source, down [kbit/s, perte, relais] du téléphone, why.
@@ -24,7 +24,17 @@ switch (_mode) do {
         if (!hasInterface || {!alive player}) exitWith { false };
         private _up = if ([player] call comspec_atak_native_fnc_hasDevice) then { call _mine } else { [0, 100, ""] };
         private _sig = [round ((_up select 0) / 250), round ((_up select 1) / 10), _up select 2];
-        if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_NetUpSig", []])) exitWith { false };
+        private _old = uiNamespace getVariable ["COMSPEC_ATAK_NetUpSig", []];
+        if (_sig isEqualTo _old) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_NetUpPend", []]; false };
+        // Simple variation du palier (évanouissements, bâtiment) : diffusée seulement si elle tient deux tours de suite,
+        // sinon chaque joueur près d'un relais rediffusait sa liaison toutes les 10 s. Changement de relais, coupure ou
+        // retour du réseau : tout de suite.
+        private _now = (_old param [2, "?"]) isNotEqualTo (_sig select 2) || {((_old param [0, -1]) isEqualTo 0) isNotEqualTo ((_sig select 0) isEqualTo 0)};
+        if (!_now && {_sig isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_NetUpPend", []])}) exitWith {
+            uiNamespace setVariable ["COMSPEC_ATAK_NetUpPend", _sig];
+            false
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_NetUpPend", []];
         uiNamespace setVariable ["COMSPEC_ATAK_NetUpSig", _sig];
         player setVariable ["COMSPEC_ATAK_NetUp", _up, true];
         true

@@ -6,7 +6,8 @@ declare(strict_types=1);
  * Parc ATAK des joueurs (administration du site, /admin/parc-atak).
  *   atak_admin_blocks   : blocages décidés par l’administration (un ATAK, un joueur, une ou toutes les communautés).
  *                         L’API refuse la connexion et les envois du jeu tant qu’un blocage est actif.
- *   atak_admin_messages : messages imposés au joueur en jeu (récupérés par le serveur Arma, accusés de lecture).
+ *   atak_admin_messages : messages imposés au joueur en jeu et avis automatiques (compromission, annulation,
+ *                         réinitialisation, certificat, numéro), récupérés par l’ATAK du joueur, accusés de lecture.
  *   atak_admin_actions  : journal de chaque action de l’administration sur un ATAK.
  *   atak_compromise_events : historique des compromissions d’un ATAK (terrain, Zeus, poste de commandement ou
  *                         administration), avec les certificats révoqués et l’annulation éventuelle.
@@ -119,5 +120,16 @@ function run_atak_admin_control_migration(PDO $pdo): void
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         echo "  atak_compromise_events : table créée.\n";
+    }
+
+    // Genre du message : « message » (texte libre de l'administration) ou un avis que l'ATAK met en forme lui-même
+    // (compromise, compromise_cleared, reset, certificate, phone).
+    $col = $pdo->prepare(
+        "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_admin_messages' AND COLUMN_NAME = 'kind' LIMIT 1"
+    );
+    $col->execute();
+    if (!$col->fetchColumn()) {
+        $pdo->exec("ALTER TABLE `atak_admin_messages` ADD COLUMN `kind` varchar(24) NOT NULL DEFAULT 'message' AFTER `terminal_uid`");
+        echo "  atak_admin_messages.kind : colonne ajoutée.\n";
     }
 }

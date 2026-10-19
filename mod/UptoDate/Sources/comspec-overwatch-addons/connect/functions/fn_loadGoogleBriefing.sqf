@@ -33,11 +33,22 @@ private _requestId = format [
     clientOwner,
     floor (diag_tickTime * 1000)
 ];
+private _newDeck = (missionNamespace getVariable ["COMSPEC_GoogleBriefingUrl", ""]) isNotEqualTo _url;
 missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", _requestId];
 missionNamespace setVariable ["COMSPEC_GoogleBriefingUrl", _url];
 missionNamespace setVariable ["COMSPEC_GoogleBriefingPendingIndex", floor _index];
 
-if (isNull (uiNamespace getVariable ["COMSPEC_ATAK_Briefing_group", controlNull])
+// ATAK natif : la présentation s'affiche dans l'app BRIEFING du téléphone (COMSPEC_GoogleBriefing*), jamais dans l'ancien
+// tableau de briefing ouvert par-dessus le jeu (il apparaissait aussi aux Zeus et aux joueurs sans téléphone, JIP compris).
+private _native = isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main");
+if (_native) then {
+    // Une seule notification par présentation (pas à chaque diapositive).
+    if (_newDeck && {[player] call comspec_atak_native_fnc_hasDevice}) then {
+        ["INFO", "Présentation de briefing diffusée : ouvrez l'app Briefing.", 8, 30, "BRIEFING"] call comspec_atak_native_fnc_notify;
+    };
+};
+if (!_native
+    && {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Briefing_group", controlNull])}
     && {isNull (findDisplay 9970)}
 ) then {
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openBriefing"

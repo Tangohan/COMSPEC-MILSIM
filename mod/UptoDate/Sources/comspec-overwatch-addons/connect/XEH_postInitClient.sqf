@@ -14,9 +14,13 @@ if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") then {
         missionNamespace setVariable ["comspec_overwatch_enabled", false];
     };
 }, 5] call CBA_fnc_addPerFrameHandler;
-// Premier lancement sans passer par le menu principal (connexion directe au serveur) : on pose la question en mission.
+// Premier lancement sans passer par le menu principal (connexion directe au serveur, aperçu Eden, Zeus) : on pose la question en mission.
+// ATAK natif : plus l'ancienne fenêtre par-dessus le jeu ; une notification du téléphone mène à Réglages > Service Athéna.
 [{ !isNull player && {!isNull findDisplay 46} }, {
     if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "") then {
+        if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {
+            ["notify"] call comspec_atak_native_fnc_athenaChoice;
+        };
         [] call comspec_overwatch_connect_fnc_athenaChoiceShow;
     };
 }] call CBA_fnc_waitUntilAndExecute;

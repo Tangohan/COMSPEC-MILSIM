@@ -1,6 +1,6 @@
 /*
     Boutons de la fenêtre Dépannage liaison (display_diag_isolate.hpp).
-      recheck | reconnect | link | enable | athena | copy | bug | quick | full | stop
+      recheck | reconnect | link | enable | athena | copy | bug | quick | full | stop | startup
 */
 params [["_what", "", [""]]];
 if (!hasInterface) exitWith {};
@@ -106,6 +106,14 @@ switch (_what) do {
     case "full": {
         closeDialog 0;
         [] spawn { uiSleep 0.2; [55] call comspec_overwatch_connect_fnc_diagIsolateStart; };
+    };
+    case "startup": {
+        // Check de démarrage Discord (ATAK natif) : envoyé une seule fois, au premier lancement ; ce bouton le refait.
+        if (isNil "comspec_atak_native_fnc_startupCheck") exitWith {
+            ["warn", "Check de démarrage indisponible : mod ATAK natif absent ou trop ancien."] call _say;
+        };
+        ["reset"] call comspec_atak_native_fnc_startupCheck;
+        ["info", "Check de démarrage remis à zéro : un nouveau rapport part sur Discord dans quelques minutes."] call _say;
     };
     case "stop": {
         [] call comspec_overwatch_connect_fnc_diagIsolateStop;

@@ -10,9 +10,10 @@
     Params : les paramètres de KeyDown [display, touche, Maj, Ctrl, Alt].
 */
 params ["_disp", "_key", ["_shift", false], ["_ctrl", false], ["_alt", false]];
-// Appareil photo ouvert : ses touches (Espace, R, F flash, T, zoom) restent au téléphone. Sans cela, le gestionnaire
-// posé ensuite sur le display 46 rendait la main au jeu et F (mode de tir) ressortait l'arme.
-if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {_key in [0x39, 0x13, 0x21, 0x14, 0x0D, 0x4E, 0x0C, 0x4A]}) exitWith { true };
+// Appareil photo ouvert : ses touches (Espace, R, F flash, T, B flou, H / F1 aide, zoom) restent au téléphone. Sans
+// cela, le gestionnaire posé ensuite sur le display 46 rendait la main au jeu (F : mode de tir, l'arme ressortait ;
+// B et H allaient aussi au jeu).
+if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {_key in [0x39, 0x13, 0x21, 0x14, 0x30, 0x23, 0x3B, 0x0D, 0x4E, 0x0C, 0x4A]}) exitWith { true };
 private _phone = uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull];
 if (isNull _phone || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) exitWith { false };
 private _f = focusedCtrl _phone;
