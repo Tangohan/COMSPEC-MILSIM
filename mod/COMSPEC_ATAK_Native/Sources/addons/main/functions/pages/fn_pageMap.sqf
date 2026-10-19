@@ -730,8 +730,9 @@ if (_dv isNotEqualTo "OFF") then {
             } forEach _made;
         };
     } else {
-        // Incrustée : coin haut droit (à gauche de la barre d'outils en main), plus large en miniature.
-        private _iw2 = _mw * ([0.42, 0.62] select _mini);
+        // Incrustée : coin haut droit (à gauche de la barre d'outils en main). Téléphone en petit format : vignette
+        // (retour de TTRD, 19/10 : l'incrustation prenait la moitié de l'écran), AGRANDIR la passe à la place de la carte.
+        private _iw2 = _mw * ([0.42, 0.36] select _mini);
         private _ih2 = _iw2 * 0.5625 * _ratio;
         private _ix = _bx + _mw - _iw2 - _pad - ([0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _pad] select _interactive);
         private _iy = _by + _pad;
@@ -750,8 +751,8 @@ if (_dv isNotEqualTo "OFF") then {
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach [
                 ["MARQUER", ["lock"] call _act, [0.75, 0.18, 0.15, 0.95], "Marque la cible sous le réticule (LOCK suivi sur la carte)"],
-                ["GRANDE VUE", ["view", "FULL"] call _act, [0.08, 0.1, 0.09, 0.9], "La vue du drone remplace la carte"],
-                ["FERMER LA VUE", ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9], "Ferme la vue du drone"]
+                [["GRANDE VUE", "AGRANDIR"] select _mini, ["view", "FULL"] call _act, [0.08, 0.1, 0.09, 0.9], "La vue du drone remplace la carte"],
+                [["FERMER LA VUE", "FERMER"] select _mini, ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9], "Ferme la vue du drone"]
             ];
         };
     };
