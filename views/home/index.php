@@ -576,6 +576,9 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
             </div>
         </section>
 
+        <!-- Aperçu : écrans de la plateforme avec des données fictives -->
+        <?php require base_path('views/home/partials/demo_showcase.php'); ?>
+
         <!-- Modules -->
         <section class="bg-[var(--hi-paper)] text-slate-900 hi-block" aria-labelledby="modules-heading">
             <div class="hi-wrap">

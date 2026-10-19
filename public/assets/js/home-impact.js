@@ -900,3 +900,52 @@
         });
     })();
 })();
+
+/* Aperçu de la plateforme : onglets (données fictives). Flèches, Début/Fin, et lien #apercu-<onglet>. */
+(function () {
+    var root = document.querySelector('[data-hd]');
+    if (!root) return;
+    var tabs = Array.prototype.slice.call(root.querySelectorAll('[data-hd-tab]'));
+    var panels = Array.prototype.slice.call(root.querySelectorAll('[data-hd-panel]'));
+    var pathEl = root.querySelector('b[data-hd-path]');
+    var crumbEl = root.querySelector('[data-hd-crumb]');
+    function select(key, focus) {
+        tabs.forEach(function (t) {
+            var on = t.getAttribute('data-hd-tab') === key;
+            t.classList.toggle('is-active', on);
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+            t.tabIndex = on ? 0 : -1;
+            if (on) {
+                if (focus) t.focus();
+                if (crumbEl) {
+                    var title = t.querySelector('.hd-tab__t');
+                    crumbEl.textContent = title ? title.textContent : '';
+                }
+                if (t.scrollIntoView && window.matchMedia && !window.matchMedia('(min-width: 1024px)').matches) {
+                    t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                }
+            }
+        });
+        panels.forEach(function (p) {
+            var on = p.getAttribute('data-hd-panel') === key;
+            p.hidden = !on;
+            if (on && pathEl) pathEl.textContent = p.getAttribute('data-hd-path') || '';
+        });
+    }
+    tabs.forEach(function (t, i) {
+        t.addEventListener('click', function () { select(t.getAttribute('data-hd-tab'), false); });
+        t.addEventListener('keydown', function (ev) {
+            var next = null;
+            if (ev.key === 'ArrowDown' || ev.key === 'ArrowRight') next = tabs[(i + 1) % tabs.length];
+            else if (ev.key === 'ArrowUp' || ev.key === 'ArrowLeft') next = tabs[(i - 1 + tabs.length) % tabs.length];
+            else if (ev.key === 'Home') next = tabs[0];
+            else if (ev.key === 'End') next = tabs[tabs.length - 1];
+            if (next) {
+                ev.preventDefault();
+                select(next.getAttribute('data-hd-tab'), true);
+            }
+        });
+    });
+    var m = /^#apercu-([a-z]+)$/.exec(window.location.hash || '');
+    if (m && root.querySelector('[data-hd-tab="' + m[1] + '"]')) select(m[1], false);
+})();
