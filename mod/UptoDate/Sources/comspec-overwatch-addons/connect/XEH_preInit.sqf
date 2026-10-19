@@ -297,7 +297,7 @@ private _fnc_applyNet = {
 
 [
     "comspec_overwatch_screen_notifications", "CHECKBOX",
-    ["Bandeaux d'alerte à l’écran", "Décoché par défaut. Coché : de petits bandeaux s'affichent en bas à gauche de l'écran (ex. « Alerte médicale transmise… »). Rien n'est jamais écrit dans le chat du jeu : les messages du poste restent dans le téléphone. Les sons suivent le réglage « Son des notifications »."],
+    ["Bandeaux d'alerte à l’écran", "Décoché par défaut. Coché : de petits bandeaux s'affichent en bas à gauche de l'écran (ex. « Alerte médicale transmise… »). Le mod n’écrit jamais dans le chat du jeu : les messages du poste restent dans le téléphone. Les sons suivent le réglage « Son des notifications »."],
     ["COMSPEC", "Overwatch"], false
 ] call comspec_overwatch_connect_fnc_addSetting;
 
