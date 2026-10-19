@@ -506,6 +506,26 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
     private _conn = getConnectedUAV player;
     private _prev = missionNamespace getVariable ["COMSPEC_ATAK_UavPrev", objNull];
     missionNamespace setVariable ["COMSPEC_ATAK_UavPrev", _conn];
+    // Vue regardée au terminal UAV, publiée pour les Live cam des autres (fn_livecamUav, DRONES DU CAMP) : siège
+    // (DRIVER / GUNNER), champ de la caméra (zoom, 0,75 sans zoom) et vision (0 jour, 1 NV, 2 thermique). Diffusée
+    // seulement quand elle change ; effacée quand l'opérateur quitte la vue du drone.
+    private _vw = [];
+    if (!isNull _conn && {cameraOn isEqualTo _conn}) then {
+        private _ctl = UAVControl _conn;
+        private _ci = _ctl find player;
+        private _seat = if (_ci >= 0) then { _ctl param [_ci + 1, ""] } else { "" };
+        if (_seat in ["DRIVER", "GUNNER"]) then {
+            private _su = [driver _conn, gunner _conn] select (_seat isEqualTo "GUNNER");
+            private _zoom = ((call CBA_fnc_getFov) param [1, 1]) max 0.05;
+            _vw = [_seat, round (7500 / _zoom) / 10000, [0, currentVisionMode _su] select (!isNull _su)];
+        };
+    };
+    (missionNamespace getVariable ["COMSPEC_ATAK_UavViewPub", [objNull, []]]) params ["_pubU", "_pubV"];
+    if (_pubU isNotEqualTo _conn || {_pubV isNotEqualTo _vw}) then {
+        if (!isNull _pubU && {_pubU isNotEqualTo _conn}) then { _pubU setVariable ["COMSPEC_UavView", nil, true]; };
+        if (!isNull _conn) then { if ((count _vw) > 0) then { _conn setVariable ["COMSPEC_UavView", _vw, true]; } else { _conn setVariable ["COMSPEC_UavView", nil, true]; }; };
+        missionNamespace setVariable ["COMSPEC_ATAK_UavViewPub", [_conn, _vw]];
+    };
     private _online = allPlayers apply { getPlayerUID _x };
     {
         private _lock = _x getVariable "COMSPEC_DroneLock";
