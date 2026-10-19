@@ -8,8 +8,9 @@
       - feuillage (mode "full") : là où le rayon passe à moins de 20 m du sol, arbres comptés autour de points du trajet,
         profondeur de feuillage traversée et affaiblissement de Weissberger à 4,9 GHz ; feuillage mouillé par la pluie +20 % ;
       - bâtiments (mode "full") : chaque bâtiment traversé sur les derniers 1 500 m avant la cible, 12 dB (deux murs) ;
-        ceux à moins de 15 m de chaque antenne ne comptent pas (abri du joueur : fn_linkQuality ; support du relais).
-    Réglage serveur comspec_atak_native_net_realism : 0 simplifié (ancien modèle : relief coupé = portée x 0,35, ni
+        ceux à moins de 15 m de chaque antenne ne comptent pas (abri du joueur : fn_linkQuality ; support du relais) ;
+      - météo (condition « Météo », fn_netWeather) : pluie sur le trajet, antennes mouillées, bruit d'orage, vent fort.
+    Condition « Réalisme » (fn_netCond "realism" : site, menu Échap ou réglage CBA comspec_atak_native_net_realism) : 0 simplifié (ancien modèle : relief coupé = portée x 0,35, ni
     feuillage ni bâtiments), 1 réaliste (par défaut : feuillage et bâtiments x 0,6), 2 exigeant (pertes complètes).
     Params : [antenne A ASL, cible B ASL, portée m, mode ("fast" : relief seul | "coarse" : relief, profil grossier |
               "full" : relief, feuillage, bâtiments), objets ignorés []]
@@ -17,7 +18,7 @@
 */
 params ["_a", "_b", "_range", ["_mode", "fast"], ["_ign", []]];
 private _d = (_a distance _b) max 1;
-private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
+private _real = ["realism"] call comspec_atak_native_fnc_netCond;
 if (!(_real isEqualType 0)) then { _real = 1; };
 private _fs = 20 * log ((_range max 1) / _d);
 // Au-delà du double de la portée, rien ne peut plus passer (aucun gain n'atteint +6 dB) : pas de profil à calculer.
@@ -93,6 +94,10 @@ if (_mode isEqualTo "full") then {
         _losses pushBack [format ["Bâtiments sur le trajet (%1)", count _blds], ((count _blds) * 12 * _envK) min 30];
     };
 };
+// Météo : pluie sur le trajet, puis pertes communes à tous les liens (antennes mouillées, orage, vent).
+private _wr = ["path", _d] call comspec_atak_native_fnc_netWeather;
+if (_wr >= 0.2) then { _losses pushBack [format ["Pluie sur le trajet (%1 km)", (_d / 1000) toFixed 1], _wr]; };
+{ if ((_x select 1) >= 0.2) then { _losses pushBack _x; }; } forEach ((["global"] call comspec_atak_native_fnc_netWeather) select 0);
 private _sum = 0;
 { _sum = _sum + (_x select 1); } forEach _losses;
 [_fs - _sum, _losses, _d]

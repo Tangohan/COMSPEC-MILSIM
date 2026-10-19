@@ -38,6 +38,302 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Regroupement : réseau qui suit la météo et la charge, français complet, Resynch qui renvoie tout, Réglages, fluidité, nettoyage et correctifs (ATAK natif 2.2.0.AB - Denver, COMSPEC Link 2.0.89)
+
+### Résumé joueur
+Type : nouveauté
+FR : COMSPEC ATAK 2.2.0 « Denver » : un réseau qui suit la météo, le français partout, un Resynch complet et une série de correctifs
+- Pluie, orage, vent et surcharge des relais comptent maintenant sur le réseau, avec des pertes par rafales ; nouveau bouton Conditions réseau dans le menu Échap, réglable par l'admin ou le Zeus et imposable depuis le site.
+- Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission ; les réglages COMSPEC sont réécrits en français clair.
+- L'app Synchro renvoie tout ce qui manque à Athena et montre l'état de chaque catégorie ; l'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul ; les avis de l'administration (compromission, réinitialisation) arrivent dans le téléphone.
+- Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue (touche B pour le flou) ; l'image du drone ne reste plus noire ; pouls et nom du blessé dans l'app Médical ; guide réseau et capture de carte Zeus réparés ; plus de vieilles fenêtres par-dessus le jeu ; le check de démarrage ne part qu'une fois ; les messages du Link gardent leurs accents.
+EN : COMSPEC ATAK 2.2.0 "Denver": a network that follows the weather, French everywhere, a complete Resynch and a batch of fixes
+- Rain, storms, wind and relay congestion now count on the network, with losses in bursts; new Network conditions button in the Escape menu, set by the admin or Zeus and enforceable from the website.
+- The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission; COMSPEC settings have clearer French wording.
+- The Synchro app resends everything Athena is missing and shows the state of each category; the Settings app shows your link status and searches any setting; the Athena link code renews itself; admin notices (compromise, reset) now reach the phone.
+- A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view (B key for blur); the drone picture no longer stays black; pulse and casualty name in the Medical app; network guide and Zeus map capture fixed; no more old windows over the game; the startup check is sent only once; Link messages keep their accents.
+
+### Détail technique
+Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906, #908, #909, #910, #911, #912, #913, #919, #921 et #935. `VERSION_STR` « 2.2.0 » (seul comparé), nom affiché « 2.2.0.AB - Denver » (passage en 2.2.0 : nouveautés réseau et Réglages, nettoyage de #910). COMSPEC Link 2.0.89 (#909, #919, #921) : DLL à recompiler (build_mod.bat). Le bouton du menu principal de #909 est retiré (#893 garde le guide réseau dans Eden seulement) ; le bouton Conditions réseau du menu Échap reste. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.19 4689fd6 », `i18n/fr.txt` inclus, 96,8 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repris de #910 puis repatchés avec les sources fusionnées (#898, #900) ; `comspec_sse_core.pbo` patché par #898. Site à déployer : #909 (Contrôle serveur > Réseau et simulation, `POST /api/atak/net-conditions`), #912 (`AtakStartupCheckService`), #921 (avis de l'administration, `run-migrations`).
+
+#### Le réglage Français traduit tout, noms automatiques des marqueurs (#898)
+- `i18n/fr.txt` (anglais vers français) chargé en français, assemblé par `tools/i18n.py fr` depuis `tools/i18n_fr_source.tsv` et les stringtables ; `fn_tr` et les écrans (ATAK, connect, SSE) traduisent dès qu'un dictionnaire est chargé ; langue lue dans le profil CBA dès le preInit ; menus CBA vidés au changement de langue ; actions ACE retraduites à chaque affichage. Noms automatiques des marqueurs (palette, LOCK, détections drone, END/FIN) posés dans la langue du mod et relus par `fn_markerAutoName`.
+- À tester en jeu : passer en Français puis en English sans relancer (menus CBA, actions ACE, note bêta, écrans connect, SSE) ; marqueurs automatiques posés en anglais relus en français.
+
+#### Photo plein écran : plus de main devant la vue, touche B (#894)
+- Bras baissé par défaut en objectif arrière, réglage CBA personnel « Photo : téléphone levé en main » pour la remettre ; B « flou <type> » dans la barre des raccourcis ; B, H et F1 gardés par le mode photo (`fn_keyBlock`).
+- À tester en jeu : objectif arrière sans main, réglage coché, selfie, B pendant la visée.
+
+#### App Médical : pouls et nom du patient (#896)
+- `fn_medVitals` publie de nouveau la fréquence cardiaque d'un patient vivant (régression 1.97.0) ; repli sur le pseudo du joueur sans indicatif Athena ; en-tête du moniteur agrandi.
+- À tester en jeu : moniteur, Suivi des troupes et bilan d'un blessé non relié à Athena.
+
+#### Capture de la carte Zeus (#897)
+- « Ciel dégagé à midi » : `_noon` recevait la météo au lieu de la date (erreur setDate, capture arrêtée au départ) ; échelle du rendu plan fixée une fois ; Échap arrête depuis la carte ; pas arrondi à 5 m ; `map_stitch.py` réunit plusieurs captures d'une même hauteur.
+- À tester en jeu : module Zeus « Capture de la carte » avec Ciel dégagé à midi, rendu plan, deux villes à la même hauteur.
+
+#### Guide réseau : toutes les rubriques s'ouvrent, guide seulement dans Eden (#893)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Le guide « Réseau et simulation » affiche enfin chaque rubrique
+- Cliquer sur une rubrique du guide (Relais, Brouillage, Envois, Le téléphone…) affiche bien son texte et son schéma ; avant, la fenêtre restait sur « Vue d'ensemble ».
+- Le bouton du guide disparaît du menu principal du jeu : le guide s'ouvre dans l'éditeur Eden, menu COMSPEC ATAK > Guide : réseau et simulation.
+EN : The "Network and simulation" guide now opens every section
+- Clicking a section of the guide (Relays, Jamming, Transmissions, The phone…) now shows its text and diagram; before, the window stayed on "Overview".
+- The guide button is gone from the game's main menu: the guide opens in the Eden editor, COMSPEC ATAK menu > Guide: network and simulation.
+
+##### Détail technique
+- `fn_netGuide` : le gestionnaire LBSelChanged appelait `fn_tr` à chaque clic ; il s'exécute hors du script qui a créé la fenêtre (namespace de l'interface), où la fonction peut manquer : erreur, rien n'était mis à jour (l'affichage initial, fait dans le script, marchait). Textes et schémas de chaque rubrique sont maintenant traduits et mis en forme à l'ouverture ; le clic n'utilise plus que des commandes du moteur et `lbCurSel`. Cause déduite du code et de la capture, non reproduite en jeu.
+- Menu principal (TTRD) : `fn_mainMenuButton` et son Extended_DisplayLoad RscDisplayMain retirés, clés de stringtable du bouton supprimées ; seule entrée restante : Display3DEN > COMSPEC ATAK > Guide.
+
+#### Drone : image de la caméra noire dans le téléphone (#899)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : L'image du drone ne doit plus rester noire dans le téléphone
+- Après la caméra plein écran, après être sorti de l'app Drone ou après un zoom, l'image du drone repart sur un flux neuf au lieu de rester noire.
+- Si l'image reste noire malgré tout, le bouton TEST VIDÉO (Drone > RÉGLAGES) montre une nouvelle vue J : une caméra simple accrochée au drone. Dites-nous si J et I s'affichent.
+EN : The drone picture should no longer stay black in the phone
+- After the full-screen camera, after leaving the Drone app or after zooming, the drone picture restarts on a fresh feed instead of staying black.
+- If it still stays black, the VIDEO TEST button (Drone > SETTINGS) shows a new view J: a plain camera attached to the drone. Tell us whether J and I show a picture.
+
+##### Détail technique
+- `fn_droneAction` : cible de rendu neuve à chaque création de la caméra du flux (anneau de 8 noms par qualité `comspecdronefeed<q><n>`) ; #830 était revenu à un nom fixe (`comspec_dronelive`) repris juste après un `Terminate` (retour de VUE DIRECTE, page quittée, caméra libérée à 5 s). Caméra créée comme la lettre F du TEST VIDÉO (posée, rendu lancé, `camCommit 0`, accrochée une fois) ; la boucle de la nacelle ne fait plus que l'orienter et ne la raccroche que si le point bouge. Zoom : caméra décrochée, `camCommit`, raccrochée dans la même image. Effet de vision reposé sur chaque cible neuve.
+- `fn_pipCheck` : plus de rebranchement de la texture après coup (Drone et Photo, les deux vues noires, étaient les seules à reposer la texture ; Vidéo Live et le TEST VIDÉO la posent une fois). Nouvelle ligne RPT `[CAMERA] DRONE état` toutes les 15 s tant que l'image est à l'écran (cible, âge, rendu, hauteur, distance au drone, accroche, champ, vision, PiP, i/s, PROBLÈME repéré). TEST VIDÉO : la lettre H (thermique, déjà vue bonne) devient J, caméra de script accrochée au drone.
+- Cause déduite du code (aucune reproduction en jeu possible ici) : à tester en jeu, vision nuit et jour, avant et après CAMÉRA PLEIN ÉCRAN, avant et après un zoom.
+
+
+#### Resynch : tout ce qui est nouveau remonte, et compte rendu par catégorie (#900)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : L'app Synchro renvoie enfin tout, et dit clairement ce qui est parti
+- Le Resynch renvoie maintenant aussi la carte du camp, le plan de briefing, les escouades et équipes, la montre Garmin, les tenues modifiées depuis leur dernier envoi, le catalogue de tes objets avec leurs icônes et la liste des mods.
+- Seul ce qui manque à Athena repart : les photos déjà transmises et les icônes déjà sur le site ne sont pas renvoyées, et rouvrir l'app ne relance plus tout si le dernier renvoi a moins de 5 minutes.
+- Nouvelle page : un état global en haut (à jour, ou ce qui n'est pas parti), une carte par catégorie avec son icône et son état (renvoyé, à jour, en file, pas parti), l'heure du dernier renvoi et un bouton qui affiche le délai avant de pouvoir relancer.
+EN : The Synchro app now resends everything, and clearly says what went out
+- Resynch now also resends the side map, the briefing plan, squads and teams, the Garmin watch, loadouts changed since they were last sent, your item catalogue with its icons and the mod list.
+- Only what Athena is missing goes out again: photos already sent and icons already on the website are not resent, and reopening the app no longer resends everything if the last resync is less than 5 minutes old.
+- New page: an overall status at the top (up to date, or what did not go out), one card per category with its icon and state (resent, up to date, queued, not sent), the time of the last resync and a button that shows how long until you can run it again.
+
+##### Détail technique
+- `fn_resynchRun` (natif) : après `comspec_overwatch_connect_fnc_forceSyncData`, renvoie la carte du camp (instantané `COMSPEC_ATAK_MkSnap` vidé si ce joueur est le relais du camp, sinon le relais est nommé), `planWeb ["force"]`, `squadSync [true]`, `garminTick ["push"]` (nouveau mode : profil écrit et envoyé sans clore l'activité), tenues déjà sur le site dont le sha local diffère du registre (`arsenalLedger`) via `arsenalPushAll [noms]`, et lit la file d'envoi (`COMSPEC_ATAK_NetQueue` + `SendQueue.Status`). Les tenues jamais partagées ne sont pas envoyées (le partage reste un choix fait dans Tenues Athena).
+- `forceSyncData` (connect) : vide `COMSPEC_OpCatalogSentKey`, `COMSPEC_OpModsSentKey` et `COMSPEC_ItemIconsSent` avant la fiche opérateur (catalogue, mods et icônes repartent une fois ; `Item.Icons` n'envoie que les icônes absentes du site), lit le résultat de la fiche (validée, en attente, refusée, écarts signalés) et écrit `COMSPEC_LastResynchItems` = `[[clé, état, titre, détail]...]`. `COMSPEC_LastResynchSummary` (ancien affichage) est gardé tel quel.
+- `fn_pageResynch` refait : carte d'état globale, bouton « RELANCER LE RESYNCH » / « PATIENTEZ N S » (délai de 15 s de `forceSyncData`), nouvelle ligne `cells` de `fn_formRender` (grille de cartes, deux colonnes en paysage : icône de l'app, liseré et état en couleur). Lancement automatique à l'ouverture seulement si le dernier renvoi a plus de 5 min.
+- `comspec_overwatch_connect.pbo` repatché (`tools/pbo_patch.py`, `fn_forceSyncData.sqf`). main.pbo à reconstruire au regroupement. COMSPEC Link inchangé (2.0.88). `i18n/en.txt` : 76 entrées.
+- À tester en jeu : ouvrir Synchro (renvoi auto), relancer (bouton en attente 15 s), rouvrir l'app avant 5 min (pas de renvoi), vérifier sur Athena le plan de briefing, les équipes, la montre Garmin sur la fiche du membre, une tenue modifiée, les icônes du kit ; couper la liaison puis Resynch (ligne « Liaison Athena »).
+
+
+#### App Réglages : état de la liaison, recherche, Athéna et synchronisation, À propos (#905)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : L'app Réglages se met à jour
+- En haut des Réglages, tu vois tout de suite si ton téléphone est connecté et synchronisé avec le poste.
+- Un champ de recherche trouve n'importe quel réglage (par exemple « nuit » ou « boussole ») sans ouvrir chaque catégorie.
+- Nouvelles catégories « Athéna et synchronisation » et « À propos du téléphone » : synchro, envois en attente, Resynch, versions et identité du téléphone.
+- La touche retour te ramène à la liste des Réglages au lieu de fermer l'app.
+EN : The Settings app gets an upgrade
+- At the top of Settings you can see right away whether your phone is connected and synced with the command post.
+- A search field finds any setting (for example "night" or "compass") without opening every category.
+- New "Athena and sync" and "About phone" categories: sync, pending sends, Resynch, versions and phone identity.
+- The back key takes you to the Settings list instead of closing the app.
+
+##### Détail technique
+- Tout est dans `fn_pageSettings.sqf` (réutilise `fn_athenaStatus`, `fn_offline`, `fn_syncStats`, `fn_phoneIdent`, `fn_extVersion` ; DLL interrogée seulement sur la page À propos), `backSub` pour la touche retour. Carte : « Rétablir la carte par défaut » en deux appuis. Traductions dans `i18n/en.txt`, modèle communautaire régénéré. DLL inchangée.
+- À tester en jeu : carte d'état de l'accueil (connecté, non lié, Athéna sur Non), recherche en français et en anglais, touche retour dans une catégorie et dans une recherche, boutons RESYNCH / APP ATHENA / DÉTAIL, versions sur À propos (Link en vert si la DLL correspond).
+
+
+#### Liaison Athena : code renouvelé tout seul, nouveau code si la session tombe (#906)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Le code de liaison Athena se renouvelle tout seul
+- Un code qui expire pendant que l'app Athena est à l'écran est remplacé automatiquement, plus besoin d'appuyer sur NOUVEAU CODE.
+- Si ta session Athena tombe en pleine partie (expirée, révoquée, Steam lié à un autre compte), le téléphone te propose aussitôt un nouveau code.
+EN : The Athena link code now renews itself
+- A code that expires while the Athena app is on screen is replaced automatically, no need to press NEW CODE.
+- If your Athena session drops mid-game (expired, revoked, Steam linked to another account), the phone offers a new code right away.
+
+##### Détail technique
+- `fn_athenaLink` : troisième paramètre `auto` (3 renouvellements au plus, remis à zéro par une demande manuelle) et action `watch`, appelée toutes les 10 s par un PFH de `XEH_postInitClient.sqf` ; une session ouverte qui tombe sur une erreur de session (SESSION_EXPIRED, révocation, refresh, 401, STEAM_NOT_LINKED) propose un code une fois par perte (notification + indice). `fn_athenaStatus` renvoie le `code` d'erreur brut. Côté site : #904 (déjà sur main).
+- À tester en jeu : app Athena ouverte sans session au-delà de 10 min (nouveau code tout seul) ; session ouverte puis appareil révoqué sur le site (notification de code en ~10 s).
+
+
+#### Fluidité : moins de calculs téléphone rangé, carte et menu des apps allégés, derniers textes traduits (#908)
+
+##### Résumé joueur de la PR
+Type : amélioration
+FR : Le téléphone coûte moins d'images par seconde, surtout rangé
+- Téléphone rangé, la qualité du réseau et le meilleur relais sont recalculés moins souvent : beaucoup moins de calculs de relief et de bâtiments en fond, près des relais surtout.
+- La carte ne relit plus tous les marqueurs de la mission chaque seconde : seulement quand un marqueur est posé, modifié ou supprimé.
+- Le menu des apps se redessine plus vite (recherche, épinglage, pastilles), et la lueur d'écran et la musique ne travaillent plus pour rien quand elles ne servent pas.
+- Derniers textes encore en français en mode anglais traduits (débits du réseau, fiches SEEK et SSE en Bluetooth, trois infobulles de modules Eden).
+EN : The phone costs fewer frames per second, especially when stowed
+- With the phone stowed, network quality and the best relay are recomputed less often: far fewer terrain and building checks in the background, especially near relays.
+- The map no longer rereads every mission marker each second: only when a marker is placed, changed or deleted.
+- The apps menu redraws faster (search, pinning, badges), and screen glow and music no longer do work when they are not in use.
+- Last texts still in French in English mode are translated (network throughput, SEEK and SSE records over Bluetooth, three Eden module tooltips).
+
+##### Détail technique
+- `fn_linkQuality` : cache 6 s téléphone fermé (2 s ouvert) ; un cache vidé exprès (antenne, dégâts, mode avion, brouillage, test de débit) vide aussi le meilleur relais.
+- `fn_relayNet "best"` : résultat gardé 1,5 s ouvert / 6 s fermé (`COMSPEC_ATAK_RelayBest`, vidé par `"pin"`) ; `"list"` ne compte plus les téléphones (hasDevice sur chaque joueur) quand aucun relais n'est en service.
+- Marqueurs : compteur `COMSPEC_ATAK_MkRev` (EH MarkerCreated / Deleted / Updated). `fn_mapGameMarkers` relit sur changement (sinon 5 s au lieu de 1 s), `fn_localDataRefresh` sur changement (2 s avec marqueurs Athena, sinon 10 s), `fn_markerWebSweep` (relais du camp, 15 s) ne sérialise plus rien sans changement.
+- `fn_localDataRefresh` : pistes Athena non parcourues quand l'indicatif a déjà trouvé la sienne. `fn_natoSymbol` : cache vidé d'un coup au-delà de 400 unités (plus de copie des clés à chaque image).
+- `fn_feedLink "publish"` : variation de palier diffusée seulement si elle tient deux tours (relais changé ou coupure : aussitôt).
+- `fn_screenGlow "tick"` : sortie immédiate réglage serveur coupé (défaut). `fn_musicTick` : `MusicStatus` (DLL, appel bloquant) au plus toutes les 1,5 s, position extrapolée entre deux. `fn_phoneSecurity` : catalogue cherché dans le HashMap. `fn_relayEden` : éditeur relu toutes les 1,5 s sans tour posée.
+- Lanceur : pastilles calculées une fois par app, mesure des libellés de tuile gardée (`COMSPEC_ATAK_TileFit`, plus de contrôle créé et supprimé par tuile à chaque redessin).
+- i18n : 14 entrées dans `en.txt` (+ modèle communautaire regénéré), 3 infobulles de `modules.hpp` en `$STR_COMSPEC_ATAK_CFG_*`. main.pbo à reconstruire au regroupement. COMSPEC Link inchangé.
+- À tester en jeu : barres de signal et bascule de relais téléphone ouvert et rangé (près d'un relais, en marchant), toast « relais perdu » ; poser, déplacer et supprimer un marqueur (carte du téléphone, et sur Athena pour le relais du camp) ; marqueurs Athena reçus ; recherche, épinglage et pastille Messages dans le menu des apps ; musique DLL (barre de lecture, fin de piste) ; aperçu de tour relais dans Eden ; mode anglais : page Réseau > débits, Bluetooth > fiches SEEK.
+
+
+#### Réseau : météo, surcharge, pertes en rafales et Conditions réseau du menu Échap (#909)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Le réseau du téléphone suit la météo et la charge, et se règle depuis le menu Échap
+- Pluie, orage et vent fort comptent maintenant sur le réseau : antennes mouillées, bruit des éclairs, signal qui fluctue. Le brouillard, lui, ne change rien, comme en vrai.
+- Quand beaucoup de téléphones utilisent le même relais, le canal se remplit : le débit baisse, la latence monte et des paquets se perdent. Les pertes arrivent par rafales, comme sur une vraie radio.
+- Nouveau bouton Conditions réseau dans le menu Échap : chacun y voit ce qui coûte du signal en ce moment. Un administrateur du serveur ou un Zeus y règle la météo, la surcharge, les pertes et la latence pour tout le serveur, avec des modèles prêts à l'emploi.
+- Les administrateurs de la communauté peuvent imposer ces conditions depuis la page Contrôle serveur du site, qui affiche aussi celles appliquées en jeu.
+EN : The phone network follows weather and load, and is set from the Escape menu
+- Rain, storms and strong wind now count on the network: wet antennas, lightning noise, a fluctuating signal. Fog changes nothing, as in real life.
+- When many phones use the same relay, its channel fills up: throughput drops, latency rises and packets are lost. Losses come in bursts, as on a real radio.
+- New Network conditions button in the Escape menu: everyone sees what is costing signal right now. A server admin or a Zeus sets weather, congestion, losses and latency there for the whole server, with ready-made presets.
+- Community admins can enforce these conditions from the Server control page of the website, which also shows the ones applied in game.
+
+##### Détail technique
+- `fn_netCond` : conditions effectives, règle du site (`net_*` de `COMSPEC_TenantExperience`) > menu Échap (`COMSPEC_ATAK_NetCond`, diffusée, JIP) > CBA. Toutes les lectures de `net_sim`, `net_realism`, `relay_only`, `vehicle_gateways`, `offline_hold`, `video_relays` passent par lui. Nouveaux réglages CBA (tous actifs par défaut) : `net_weather`, `net_weather_k`, `net_congestion`, `net_bg_load`, `net_loss`, `net_loss_floor`, `net_latency_add`.
+- `fn_netWeather` : pluie ITU-R P.838 à 4,9 GHz sur le trajet, radômes mouillés, bruit d'orage (`lightnings`, ciel couvert), vent > 8 m/s ; ajoutés au bilan de `fn_radioLink` (le débit suit la MCS) ; sans relais, équivalent sur la liaison directe. Brouillard : aucun effet, affiché.
+- `fn_netLoad` : trafic émis publié par joueur (`COMSPEC_ATAK_NetLoad`, 10 s, seulement s'il change), charge du relais = trafic à portée + trafic de fond ; partage au-delà de 100 %, rendement CSMA, file M/M/1, collisions (`fn_linkQuality`).
+- `fn_netSend` : pertes Gilbert-Elliott (rafales d'environ 3 envois), aucune perte si la condition est coupée ; perte minimale et latence ajoutée dans `fn_linkQuality`.
+- `fn_netConfig` : bouton du menu Échap (`RscDisplayInterrupt`/`RscDisplayMPInterrupt`, sous la barre COMSPEC), fenêtre avec source de chaque condition, modèles, conditions du moment ; application contrôlée côté serveur (admin, hôte, Zeus), notification à tous, envoi au site `NetConditions.Report`.
+- COMSPEC Link 2.0.89 : `GetExperience` transmet toutes les clés `net_*` ; `NetConditions.Report` -> `POST /api/atak/net-conditions`. DLL à recompiler (build_mod.bat).
+- Site : groupe « Réseau et simulation radio » dans Contrôle serveur (13 règles, « Laisser au serveur » par défaut), bloc « Conditions appliquées en jeu » et bouton pour les garder comme règles (`/back-office/atak/controle-serveur/reseau-adopter`). Stockage dans `experience_config.net_live`, sans migration.
+- Guide réseau : rubrique « Météo, surcharge et pertes de paquets ».
+- À tester en jeu : bouton Conditions réseau en solo et en multijoueur (admin connecté, Zeus, simple joueur en lecture seule) ; appliquer un modèle et voir la notification chez tous ; arrivée d'un joueur après application (JIP) ; pluie forte et orage (Zeus météo) et lecture de la page Réseau ; plusieurs joueurs qui envoient des photos sur un même relais (surcharge) ; perte minimale 20 % (renvois, remise en file) ; règle imposée depuis le site (verrouillée dans la fenêtre) avec Link 2.0.89 ; bloc « Conditions appliquées en jeu » sur le site.
+
+
+#### Nettoyage : plus de vieilles fenêtres hors du téléphone (#910)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Plus de vieilles fenêtres par-dessus le jeu
+- Le briefing diffusé s'ouvre dans l'app Briefing du téléphone, plus dans l'ancien tableau, Zeus compris.
+- La question « Votre unité utilise-t-elle Athéna ? » se répond dans le téléphone (app Athena ou Réglages).
+- En Zeus ou sans téléphone, plus aucun écran Athena ne s'affiche au chargement.
+EN : No more old windows over the game
+- A shared briefing opens in the phone's Briefing app, no longer in the old board, Zeus included.
+- The question "Does your unit use Athena?" is answered in the phone (Athena app or Settings).
+- As Zeus or without a phone, no Athena screen shows up while loading any more.
+
+##### Détail technique
+- Overwatch connect embarqué : `fn_loadGoogleBriefing` et `fn_extensionCallback` (`google_deck_ready`) n'ouvrent plus `COMSPEC_Briefing_Dialog` quand `comspec_atak_native_main` est chargé (l'événement JIP l'ouvrait chez tous les clients, Zeus et sans téléphone compris) ; une notification « ouvrez l'app Briefing » par présentation, aux porteurs de téléphone.
+- `XEH_postInitClient` : premier lancement en mission (connexion directe, aperçu Eden, Zeus) sans choix du service Athéna -> `["notify"] call comspec_atak_native_fnc_athenaChoice` au lieu de `COMSPEC_AthenaChoice_Dialog`. La question reste au menu principal et au menu Échap. App Athena : boutons OUI / NON à la place de CHOISIR ; Réglages : bouton « Revoir la question » retiré ; `["show"]` ouvre le téléphone sur Réglages.
+- `fn_athenaLink` : l'indice `hintSilent` du code de connexion seulement si le joueur a un téléphone (`fn_hasDevice`).
+- Zeus : Ctrl + double-clic sur un joueur n'ouvre plus l'ancien panneau ATAK d'Overwatch (`COMSPEC_ZeusAtakPlayerActionsRegistered`, remplacé par « ATAK · Contrôle Zeus »). Ancien module « tableau des relais » masqué dans Eden (`scope = 1`, les missions existantes se chargent). Logo de démarrage d'Overwatch main plus affiché en double avec celui du natif.
+- Code mort retiré d'Overwatch connect (aucun appelant, atak_athena compris) : fenêtres `COMSPEC_Chat_Dialog` (`display.hpp`), `COMSPEC_Hub_Dialog`, `COMSPEC_Callsign_Dialog`, `CfgZeusRelayModules.hpp` (jamais inclus), et 27 fonctions (chat, hub, indicatif, solution de tir, IFF, perte de paquets, `handlePositionUpdateCallback`, `diagIsolateShow`, `tacticalAlertDialogShow`, `openCASDialog`, `showAthenaLinkHelp`, `sseModuleTargets`, `setBriefingScreens`, `checkCASLine`, `updateDangerZone`). ATAK natif : `fn_settingsSave` et `fn_photoTake` (sans appelant).
+- `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repatchés (`tools/pbo_patch.py --changed`, `--rm`). 3 phrases ajoutées à `i18n/en.txt`.
+- À tester en jeu : aperçu Eden sans téléphone et en Zeus avec un profil neuf (aucune fenêtre, pas d'indice Athena) ; avec téléphone et profil neuf (notification Service Athéna, OUI dans l'app Athena) ; briefing Google diffusé par un chef (pas de tableau, app Briefing, Zeus sans fenêtre, joueur JIP) ; Ctrl + double-clic en Zeus ; écran de démarrage (un seul logo) ; menu Échap > Service Athéna toujours là.
+
+
+#### Modèle du téléphone dans les options des addons (#911)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Le modèle du téléphone se choisit aussi dans les options des addons
+- Nouvelle liste « Modèle du téléphone » dans Options des addons > COMSPEC > ATAK · Objets par interface.
+- Le même choix reste dans le téléphone : Réglages > Personnaliser.
+- Le Durci S7 reste le modèle par défaut ; un modèle dont l'objet exigé n'est pas porté reste en S7, et le téléphone te le signale.
+EN : The phone model can now be picked in the addon options
+- New "Phone model" list in Addon Options > COMSPEC > ATAK · Items per interface.
+- The same choice is still in the phone: Settings > Customize.
+- The Rugged S7 stays the default; a model whose required item is not carried stays on the S7.
+
+##### Détail technique
+- `XEH_preInit.sqf` : réglage CBA LIST client `comspec_atak_native_phone_model` (défaut « Set in the phone ») qui écrit le profil `COMSPEC_ATAK_PhoneModel` ; objet exigé absent -> S7 gardé et notification dans le téléphone (pas de message dans le chat). `fn_pageSettings.sqf` (`COMSPEC_ATAK_ProfSet`) remet la liste CBA à jour quand le modèle change dans le téléphone. Aide des « Required item » : ils autorisent un modèle sans le choisir. 4 phrases dans `i18n/en.txt`.
+- À tester en jeu : choisir V2 Enhanced dans les options (châssis changé), objet exigé non porté (S7 + message), changement dans le téléphone (liste CBA suit), relance du jeu (choix gardé).
+
+
+#### Réglages en français clair, réglages morts retirés, réglages manquants ajoutés (#913)
+
+##### Résumé joueur de la PR
+Type : amélioration
+FR : Les réglages COMSPEC se lisent en français clair
+- Les options des addons COMSPEC (ATAK, Overwatch, SSE) et l'app Réglages du téléphone sont réécrites en français naturel ; chaque aide dit ce que fait le réglage, sa valeur par défaut et qui le règle.
+- Des réglages qui ne servaient plus sont retirés, et trois nouveaux apparaissent : portée Wi-Fi des caméras fixes, portée du son Bluetooth, capteur dédié de l'Anti-drone.
+EN : COMSPEC settings read in plain French
+- COMSPEC addon options (ATAK, Overwatch, SSE) and the phone Settings app have clearer French wording; each help text says what the setting does, its default and who sets it.
+- Unused settings were removed and three new ones added: fixed camera Wi-Fi range, Bluetooth sound range, Anti-drone dedicated sensor.
+
+##### Détail technique
+- ~600 phrases réécrites (`XEH_preInit.sqf` natif et Overwatch connect, réglages SSE, `fn_pageSettings`, `fn_netConfig`, `fn_netCond`, `fn_moduleRelay`, `fn_pageNetwork`, `fn_pageMap`, `fn_pageStatus`, palette de marqueurs, dossier ACE « Infos tactiques JVN ») ; l'anglais ne change pas (`i18n/en.txt` reprend l'ancienne traduction). `tools/i18n_fr_source.tsv` corrigé, `fr.txt` et modèle communautaire régénérés ; les packs communautaires indexés sur le français repartent vides pour les phrases réécrites.
+- Retirés (sans effet) : Overwatch « Fréquence de synchronisation », « Rappel Windows : lier le compte Athena », « Aperçus caméra automatiques » et son intervalle ; SSE « Marqueurs SSE sur la carte ». Ajoutés (déjà lus par le code) : `comspec_atak_native_camera_range` (600 m), `comspec_atak_native_bt_sound_range` (20 m), `comspec_atak_native_drone_sensor`.
+- Correctif : `fn_pollOrders` / `fn_pollChat` lisaient `comspec_atak_native_map_id` (inexistant, donc toujours carte 1) ; ils lisent le numéro de carte de l'opération comme `fn_frsSubmit`.
+- PBO repatchés : Overwatch connect ; SSE analysis, biometrics, campaign, compat_ace, compat_bii, core, debug, intel, network.
+- À tester en jeu : options des addons COMSPEC en Français puis English ; app Réglages en français ; menu Échap > Conditions réseau (mêmes noms) ; sans COMSPEC Link, carte n° 2 : les ordres du poste arrivent.
+
+
+#### Check de démarrage : une seule fois au premier lancement, renvoi par Dépannage liaison (#912)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Le check de démarrage n'est envoyé qu'une fois
+- Le rapport du salon startup-check part une seule fois, au premier lancement, et plus à chaque mission ni à chaque reconnexion.
+- Pour le renvoyer : menu Échap > Dépannage liaison > Renvoyer le check de démarrage.
+EN : The startup check is sent only once
+- The startup-check report is sent once, at first launch, and no longer on every mission or reconnection.
+- To send it again: Esc menu > Link troubleshooting > Resend startup check.
+
+##### Détail technique
+- `fn_startupCheck` : « déjà envoyé » (date + réponse d'Athena) et identifiant de session gardés dans `profileNamespace` ; boucle de renvoi à chaque reconnexion retirée ; `["reset"]` efface l'état et refait un envoi ; échec réseau retenté à la mission suivante ; champ `scope=once` passé tel quel par la DLL.
+- Overwatch connect : `fn_diagAction "startup"` + bouton `BtnStartup` (idc 69) dans `display_diag_isolate.hpp`. Texte d'aide du réglage CBA réécrit (« une seule fois », comment renvoyer).
+- Site : `AtakStartupCheckService` garde la déduplication joueur + session ; les anciens mods (sans `scope`) ne postent plus qu'un message par joueur sur 30 jours.
+- À tester en jeu : une carte au premier lancement, aucune après changement de mission, reset de la liaison ou relance d'Arma ; bouton « Renvoyer le check de démarrage » (notification puis carte), en français et en anglais.
+
+
+#### COMSPEC Link : accents UTF-8, Steam en solo, rapports automatiques plus justes (#919)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Les messages du Link gardent leurs accents
+- Les textes envoyés par COMSPEC Link au jeu s'affichent avec leurs accents (plus de « momentan�ment »).
+- En solo et en hôte local, plus d'erreurs d'envoi à cause d'un identifiant Steam factice.
+EN : Link messages keep their accents
+- Texts sent by COMSPEC Link to the game keep their accents.
+- In solo and local host, no more send errors caused by a placeholder Steam ID.
+
+##### Détail technique
+- `Extension.cs` : rappel Arma en pointeurs UTF-8 (`Marshal.StringToCoTaskMemUTF8`, libérés après l'appel, données coupées à 20 000 octets sur une limite de caractère) au lieu de `LPStr` (page de code ANSI). `PairStart` et le code de liaison passent par `ApplySteamUid` (refuse `_SP_`, LOCAL, IA).
+- `Extension_Telemetry.cs` : `NotePostError(code, url, response)` sur un 4xx du lot de télémétrie (raison du serveur gardée).
+- Overwatch connect : `fn_reportDiag` envoie une empreinte vide (le site hache le message complet, deux pannes différentes donnent deux rapports) ; `fn_extensionCallback` : `google_deck_error` `private`/`not_found` en WARN, sans rapport automatique (le site vérifie la présentation à l'enregistrement, #918).
+- À tester en jeu : notification à accents venant du Link ; aperçu Eden en solo sans 400 `telemetry/batch` ; deux pannes d'envoi différentes, deux rapports.
+
+
+#### Avis de l'administration en jeu : compromission, levée, réinitialisation (#921)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Les avis de l'administration arrivent dans le téléphone
+- Quand l'administration ou le poste de commandement déclare ou lève une compromission, réinitialise ton ATAK, change son certificat ou ton numéro, le téléphone affiche une alerte sur son écran et une notification, sans rien par-dessus le jeu.
+- Une carte reste en haut de l'app Alertes jusqu'à ce que tu appuies sur COMPRIS ; les messages envoyés depuis le parc ATAK du site arrivent de la même façon.
+EN : Admin notices now reach the phone
+- When the administration or the command post declares or lifts a compromise, resets your ATAK, changes its certificate or your number, the phone shows an alert on its screen and a notification, with nothing over the game view.
+- A card stays at the top of the Alerts app until you press GOT IT; messages sent from the website's ATAK fleet page arrive the same way.
+
+##### Détail technique
+- Site : `atak_admin_messages.kind` (migration paresseuse, `run-migrations`). `AtakAdminControlRepository::notifyPlayer` appelé par les actions du parc ATAK, la compromission/levée du poste, la régénération de certificat et de numéro. Endpoints joueur `POST /api/atak/admin-control/mine` et `/mine/ack` (session de jeu ou Steam ; seulement ses propres messages).
+- COMSPEC Link : `AdminControl.Poll` (une ligne par message, séparée par tabulations) et `AdminControl.Ack` (en file).
+- ATAK natif : `fn_adminNotices` interroge toutes les 30 s une fois lié à Athena et téléphone porté ; nouvelle section en tête de `fn_pageAlerts` (rouge compromission, vert levée, ambre réinitialisation/certificat) ; 25 phrases dans `i18n/en.txt`.
+- Plus rien sur l'écran du jeu (règle de TTRD : tout reste dans le téléphone) : `fn_fullAlert` devient un bandeau dans l'écran du téléphone, compte à rebours de brèche (`fn_breachTop`) déplacé dans le téléphone, indice `hintSilent` du code Athena et 3 messages d'écran retirés (`fn_athenaLink`, `fn_p2pReceive`, `fn_zeusClient`).
+- À tester en jeu : aucune alerte ni message hors du téléphone ; compromission déclarée sur sa fiche dans /admin/parc-atak (alerte, carte Alertes, COMPRIS), puis levée (alerte verte) ; ATAK retiré puis relié (alerte « données réinitialisées »).
+
+
+#### Crédits du pack chinois : RickLeo et MOYA (#935)
+- App Crédits du téléphone, `CREDITS.md` et page ATAK natif du site : RickLeo et MOYA crédités pour le pack de traduction chinois. 2 phrases dans `i18n/en.txt`.
+
+
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
 ### Résumé joueur

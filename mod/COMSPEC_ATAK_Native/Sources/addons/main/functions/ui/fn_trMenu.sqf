@@ -20,7 +20,6 @@ if (_set isEqualTo "") then {
     };
 };
 private _lang = [[_set, "en"] select (_set isEqualTo "")] call comspec_atak_native_fnc_langResolve;
-if (_lang isEqualTo "fr") exitWith { _text };
 private _prev = missionNamespace getVariable ["COMSPEC_ATAK_Lang", ""];
 if ((missionNamespace getVariable ["COMSPEC_ATAK_I18nLoaded", ""]) isNotEqualTo _lang) then { [false, _lang] call comspec_atak_native_fnc_langApply; };
 missionNamespace setVariable ["COMSPEC_ATAK_Lang", _lang];

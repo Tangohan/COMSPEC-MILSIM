@@ -48,7 +48,7 @@ final class OverwatchVanillaChatSilentAssetTest extends TestCase
             '/"comspec_overwatch_screen_notifications".{0,800}?\["COMSPEC", "Overwatch"\], false/s',
             $pre
         );
-        self::assertStringContainsString('N’écrit jamais dans le chat du jeu', $pre);
+        self::assertStringContainsString('jamais écrit dans le chat du jeu', $pre);
         $this->assertNoVanillaChatCalls($announce, 'fn_announce.sqf');
         self::assertStringContainsString('fnc_pushHtmlAlert', $announce);
     }

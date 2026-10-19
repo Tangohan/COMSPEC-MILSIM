@@ -2,10 +2,9 @@
     Guide « Réseau ATAK et simulation » : comment le réseau fonctionne et ce que le mod simule, pour les joueurs et les
     mission makers. Fenêtre à nous (sommaire à gauche, schéma et texte à droite), ouverte :
       - dans Eden, menu COMSPEC ATAK > Guide : réseau et simulation (config.cpp, Display3DEN) ;
-      - au menu principal d'Arma, bouton « COMSPEC ATAK · Guide réseau » (fn_mainMenuButton) ;
       - en mission, sur l'écran de jeu ou de pause.
     Pas de BIS_fnc_openFieldManual : lancé depuis la barre d'Eden il échoue (voir fn_relayEden "help").
-    Langue : celle du mod (COMSPEC_ATAK_Lang) ; au menu principal, le dictionnaire est chargé à la première ouverture
+    Langue : celle du mod (COMSPEC_ATAK_Lang) ; s'il n'est pas encore chargé (Eden), le dictionnaire l'est à l'ouverture
     (réglage « Langue / Language » s'il est connu, sinon la langue du jeu). Schémas : data\netguide_<nom>_<fr|en>.paa
     (tools/gen_net_guide.py).
     Params : [section à ouvrir (0), écran parent (displayNull : Eden, pause ou jeu)]
@@ -51,7 +50,14 @@ private _sections = [
         "Là où le rayon passe à moins de 20 m du sol, le mod compte les arbres le long du trajet : la profondeur de feuillage traversée coûte de quelques dB à plus de 30 dB (modèle de Weissberger à 4,9 GHz). Le feuillage mouillé par la pluie atténue 20 % de plus.",
         "Chaque bâtiment traversé entre vous et le relais coûte environ 12 dB (deux murs).",
         "À l'intérieur : près d'une fenêtre le signal passe encore ; au fond du bâtiment il chute fortement ; en sous-sol, au cœur d'un grand bâtiment ou sous l'eau, il n'y a plus rien.",
-        "La pluie elle-même et le brouillard n'affaiblissent presque pas une onde à 4,9 GHz : seul le feuillage mouillé compte."
+        "La pluie, l'orage et le vent comptent aussi (rubrique suivante) ; le brouillard n'a aucun effet à 4,9 GHz."
+    ]],
+    ["Météo, surcharge et pertes de paquets", "", [
+        "Pluie : à 4,9 GHz elle affaiblit peu l'onde elle-même (environ 0,05 dB/km sous une averse, 0,5 dB/km sous un déluge, ITU-R P.838), mais elle mouille les antennes (0,5 à 2 dB) et le feuillage (+20 %).",
+        "Orage : les éclairs font monter le bruit radio jusqu'à 6 dB et les paquets se perdent par rafales. Vent fort (au-delà de 30 km/h) : mâts et arbres bougent, le signal fluctue de quelques dB.",
+        "Surcharge : les téléphones à portée d'un même relais se partagent son canal. Plus il est occupé (vos envois, ceux des autres, le trafic de fond fixé par le serveur), plus le débit baisse, la latence monte et des paquets se perdent par collisions. Au-delà de 100 %, la capacité se partage.",
+        "Pertes de paquets : elles arrivent par rafales, comme sur une vraie liaison radio : de mauvaises périodes où plusieurs envois de suite se perdent, puis le lien redevient bon. Les envois perdus repartent automatiquement.",
+        "Conditions réseau (menu Échap) : chacun y voit les conditions du moment ; un administrateur du serveur ou un Zeus les règle pour tous (météo, surcharge, pertes, latence, relais) et elles sont envoyées au site. Une règle de la communauté sur le site (Contrôle serveur > Réseau et simulation) s'impose au serveur."
     ]],
     ["Relais, répéteurs et maillage", "chain", [
         "Raccordé : le relais porte le réseau seul (satellite, fibre). Répéteur : il doit voir un relais raccordé, ou un répéteur qui l'est, de proche en proche. Chaque bond est un vrai lien radio et le débit d'un répéteur est le plus faible de la chaîne.",
@@ -83,7 +89,7 @@ private _sections = [
         "Module ATAK · Relais (Modules > COMSPEC — ATAK · Réseau) : type (radio portable 1,5 km, mât tactique 3 km, tour fixe 6 km, terminal satellite 1 km), portée (cercle du module), débit, hauteur d'antenne, places, camp, canal, raccordé ou répéteur, batterie et autonomie.",
         "Pylônes relais 3D (Objets > Structures > Relais ATAK) : relais prêts à poser. Menu COMSPEC ATAK > TBR : tableau de tous les relais de la mission, répéteurs isolés signalés.",
         "Conseils : placez les relais en hauteur et en vue directe des zones de jeu ; une tour sur une crête couvre plus qu'un mât dans un vallon ; une forêt dense se couvre par un relais haut au-dessus de la canopée, pas par un relais bas à l'orée.",
-        "Réglages serveur (CBA, COMSPEC) : Débit réseau simulé, Réalisme de la simulation radio (Réaliste, Exigeant, Simplifié), Réseau exclusivement par relais, Passerelles de véhicule et PC mobile, Fonctionnement hors connexion, Flux vidéo selon les relais. Case du module : Relais obligatoires.",
+        "Réglages serveur (CBA, COMSPEC) : Débit réseau simulé, Réalisme de la simulation radio (Réaliste, Exigeant, Simplifié), Météo sur le réseau et son intensité, Surcharge du réseau, Trafic de fond, Pertes de paquets, Perte minimale, Latence ajoutée, Réseau exclusivement par relais, Passerelles de véhicule et PC mobile, Fonctionnement hors connexion, Flux vidéo selon les relais. Case du module : Relais obligatoires. En partie, le menu Échap > Conditions réseau les change pour tout le serveur.",
         "Variables de mission : COMSPEC_ATAK_Jammers = [[position, rayon], ...] pose des brouilleurs ; COMSPEC_ATAK_MeshRange règle la portée du maillage entre téléphones (3 000 m)."
     ]],
     ["En jeu : voir le réseau", "", [
@@ -145,32 +151,38 @@ _note ctrlSetStructuredText parseText (((format ["<t size='0.85' color='#9AA59C'
 _note ctrlCommit 0;
 
 // Affichage d'une section : schéma (ou rien), titre, paragraphes à puces ; hauteur du texte ajustée pour le défilement.
-uiNamespace setVariable ["COMSPEC_ATAK_NetGuide", [_sections apply { [(_x select 0) call comspec_atak_native_fnc_tr, [(_x select 1) call _pic, ""] select ((_x select 1) isEqualTo ""), (_x select 2) apply { _x call comspec_atak_native_fnc_tr }] }, _ih, _u]];
+// Textes traduits et mis en forme ici, une fois : le gestionnaire de clic de la liste ne fait qu'afficher. Il s'exécute
+// hors de ce script (namespace de l'interface, menu principal, Eden), où nos fonctions (fn_tr…) peuvent manquer :
+// un appel de fonction dans le clic échouait et la fenêtre restait sur « Vue d'ensemble » (2.1.0).
+private _pages = _sections apply {
+    _x params ["_t", "_k", "_paras"];
+    private _body = format ["<t size='1.35' color='#7ED38A' font='RobotoCondensedBold'>%1</t><br/>", _t call comspec_atak_native_fnc_tr];
+    { _body = _body + format ["<br/><t color='#7ED38A'>• </t>%1<br/>", _x call comspec_atak_native_fnc_tr]; } forEach _paras;
+    [[_k call _pic, ""] select (_k isEqualTo ""), _body]
+};
+uiNamespace setVariable ["COMSPEC_ATAK_NetGuide", [_pages, _ih, _u]];
 private _show = {
     params ["_d", "_i"];
-    (uiNamespace getVariable ["COMSPEC_ATAK_NetGuide", [[], 0, 0]]) params ["_secs", "_ih", "_u"];
-    private _s = _secs param [_i, []];
+    (uiNamespace getVariable ["COMSPEC_ATAK_NetGuide", [[], 0, 0]]) params ["_pages", "_ih", "_u"];
+    private _s = _pages param [_i, []];
     if (_s isEqualTo []) exitWith {};
-    _s params ["_t", "_p", "_paras"];
+    _s params ["_p", "_body"];
     private _pc = _d displayCtrl 102;
     private _tx = _d displayCtrl 103;
-    _pc ctrlSetText ((_p) call comspec_atak_native_fnc_tr);
+    _pc ctrlSetText _p; // i18n:brut (chemin d'image)
     _pc ctrlShow (_p isNotEqualTo "");
     private _y = [0, _ih + _u] select (_p isNotEqualTo "");
-    private _body = format ["<t size='1.35' color='#7ED38A' font='RobotoCondensedBold'>%1</t><br/>", _t];
-    { _body = _body + format ["<br/><t color='#7ED38A'>• </t>%1<br/>", _x]; } forEach _paras;
-    _tx ctrlSetStructuredText parseText ((_body) call comspec_atak_native_fnc_tr);
+    _tx ctrlSetStructuredText parseText _body; // i18n:brut (déjà traduit)
     private _pos = ctrlPosition _tx;
     _tx ctrlSetPosition [_pos select 0, _y, _pos select 2, 0.01];
     _tx ctrlCommit 0;
     _tx ctrlSetPosition [_pos select 0, _y, _pos select 2, (ctrlTextHeight _tx) + 2 * _u];
     _tx ctrlCommit 0;
-    (_d displayCtrl 101) ctrlSetScrollValues [0, -1];
 };
 uiNamespace setVariable ["COMSPEC_ATAK_NetGuideShow", _show];
 _list ctrlAddEventHandler ["LBSelChanged", {
-    params ["_c", "_i"];
-    [ctrlParent _c, _i] call (uiNamespace getVariable "COMSPEC_ATAK_NetGuideShow");
+    params ["_c"];
+    [ctrlParent _c, lbCurSel _c] call (uiNamespace getVariable ["COMSPEC_ATAK_NetGuideShow", {}]);
 }];
 _list lbSetCurSel ((_sec max 0) min ((count _sections) - 1));
 [_d, lbCurSel _list] call _show;

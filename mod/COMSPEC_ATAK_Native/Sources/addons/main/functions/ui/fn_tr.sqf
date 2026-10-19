@@ -1,7 +1,8 @@
 /*
     Traduction à l'affichage. Le code reste écrit en français ; chaque texte montré à l'écran (ctrlSetText,
     ctrlSetStructuredText, ctrlSetTooltip, lbAdd, hint… passés par tools/i18n.py wrap) arrive ici.
-    Langue française : rendu tel quel, sans coût. Langue anglaise : le texte est découpé autour des balises
+    Langue française : rendu tel quel, sauf les textes écrits en anglais dans le code (dictionnaire i18n/fr.txt).
+    Aucune traduction chargée (COMSPEC_ATAK_I18nN = 0) : rendu tel quel, sans coût. Langue anglaise : le texte est découpé autour des balises
     <t …>, des retours à la ligne, des « · » et des « Libellé : valeur », puis chaque morceau est cherché dans le dictionnaire (i18n/en.txt,
     chargé par fn_langApply) : texte exact, texte en capitales, puis modèle avec %1, %2… (« il y a %1 s » ->
     « %1 s ago »), les valeurs capturées étant elles-mêmes traduites. Un texte inconnu reste en français.
@@ -13,7 +14,7 @@ if (_v isEqualType []) exitWith { _v apply { _x call comspec_atak_native_fnc_tr 
 if ((missionNamespace getVariable ["COMSPEC_ATAK_FontAlt", false]) && {_v isEqualType ""} && {((_v find "<t") >= 0) || {(_v find "<br") >= 0}}) then {
     _v = _v call comspec_atak_native_fnc_fontText;
 };
-if (!(_v isEqualType "") || {_v isEqualTo ""} || {(missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isEqualTo "fr"}) exitWith { _v };
+if (!(_v isEqualType "") || {_v isEqualTo ""} || {(missionNamespace getVariable ["COMSPEC_ATAK_I18nN", 0]) isEqualTo 0}) exitWith { _v };
 private _cache = missionNamespace getVariable ["COMSPEC_ATAK_I18nCache", createHashMap];
 private _hit = _cache getOrDefault [_v, nil];
 if (!isNil "_hit") exitWith { _hit };
@@ -24,6 +25,8 @@ if ((_v select [0, 1]) isEqualTo "\" || {(_v select [0, 2]) isEqualTo "#("} || {
 private _exact = missionNamespace getVariable ["COMSPEC_ATAK_I18nExact", createHashMap];
 private _tpls = missionNamespace getVariable ["COMSPEC_ATAK_I18nTpl", createHashMap];
 private _nl = toString [10];
+// « Libellé : valeur » : ponctuation de la langue affichée (espace avant les deux-points en français).
+private _colon = [": ", " : "] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr");
 // Modèles sans début fixe : rangés par fn_langApply sous ce repère + leur fin (3 derniers caractères).
 private _gen = toString [1];
 
@@ -78,7 +81,7 @@ private _seg = {
         private _k = _core find " : ";
         private _lbl = _core select [0, _k];
         private _lblEn = _exact getOrDefault [_lbl, _lbl];
-        if (_lblEn isNotEqualTo _lbl) then { _r = _lblEn + ": " + ([_core select [_k + 3], _depth + 1] call _seg); };
+        if (_lblEn isNotEqualTo _lbl) then { _r = _lblEn + _colon + ([_core select [_k + 3], _depth + 1] call _seg); };
     };
     // Sans lettre (nombres, heures, grilles, ponctuation) : rien à traduire, on évite le parcours des modèles
     // (valeurs capturées surtout : le texte du curseur de carte change à chaque mouvement de souris).

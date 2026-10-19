@@ -1,6 +1,6 @@
 // Avec COMSPEC Link, c'est lui qui interroge Athena (même session, pas de doublon).
 if ([] call comspec_atak_native_fnc_bridge) exitWith { false };
-private _mapId = str (missionNamespace getVariable ["comspec_atak_native_map_id",1]);
+private _mapId = str (missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]]);
 private _raw = ["GetOrders",[_mapId,"40",name player]] call comspec_atak_native_fnc_extensionCall;
 if ((_raw find "OK|") isNotEqualTo 0) exitWith { false };
 

@@ -7,7 +7,7 @@ if (!isNil "comspec_overwatch_connect_fnc_log") then {
 };
 // PBO ou DLL périmés, versions plus récentes sur Athena : signalés dans les notifications du téléphone.
 ["start"] call comspec_atak_native_fnc_integrityCheck;
-// Check de démarrage posté dans le salon Discord de debug d'Athena (une fois par mission, réglage CBA pour refuser).
+// Check de démarrage posté dans le salon Discord de debug d'Athena (une seule fois, au premier lancement ; réglage CBA pour refuser).
 [] call comspec_atak_native_fnc_startupCheck;
 // Arsenal ACE : bouton COMSPEC (colonne de droite) qui regroupe les objets de nos mods (ATAK, Overwatch, SSE).
 if (!isNil "ace_arsenal_fnc_addRightPanelButton") then {
@@ -76,6 +76,9 @@ addMissionEventHandler ["MarkerCreated", {
     _meta set [_m, [(([dayTime, "HH:MM:SS"] call BIS_fnc_timeToString) splitString ":") joinString "", [_owner] call comspec_atak_native_fnc_unitCallsign]];
 }];
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
+// Compteur de changements des marqueurs (créé, supprimé, modifié) : la carte du téléphone ne relit les marqueurs de la
+// mission que lorsqu'il bouge (fn_mapGameMarkers, fn_localDataRefresh), au lieu de tout relire chaque seconde.
+{ addMissionEventHandler [_x, { COMSPEC_ATAK_MkRev = (missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]) + 1; }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BC", "BL", "TL", "TC", "TR", "MR", "ML"];
@@ -205,6 +208,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     };
 }, 2] call CBA_fnc_addPerFrameHandler;
 
+// Surcharge du réseau : trafic émis par ce téléphone, publié toutes les 10 s s'il change (fn_netLoad).
+[{ ["publish"] call comspec_atak_native_fnc_netLoad; }, 10] call CBA_fnc_addPerFrameHandler;
+
 // Réglages de réalisme de la communauté (Athena) : appliqués à tous dès qu'ils changent.
 [{
     private _raw = missionNamespace getVariable ["COMSPEC_TenantExperienceRaw", ""];
@@ -275,6 +281,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     // Étiquette du téléphone (numéro, IMEI, terminal Athena) : lue par le serveur si l'IA ennemie le ramasse (fn_captureServer).
     ["publish"] call comspec_atak_native_fnc_compromise;
 }, 5] call CBA_fnc_addPerFrameHandler;
+
+// Session Athena perdue en cours de partie : un nouveau code est proposé tout de suite (fn_athenaLink « watch »).
+[{ ["watch"] call comspec_atak_native_fnc_athenaLink; }, 10] call CBA_fnc_addPerFrameHandler;
 
 // Tous les marqueurs de la carte vers le web (relais unique par camp).
 [{ [] call comspec_atak_native_fnc_markerWebSweep; }, 15] call CBA_fnc_addPerFrameHandler;
@@ -762,6 +771,8 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 // puis toutes les 10 min).
 [{ ["check"] call comspec_atak_native_fnc_serverPresence; }, 60] call CBA_fnc_addPerFrameHandler;
 [{ ["check"] call comspec_atak_native_fnc_serverPresence; }, [], 20] call CBA_fnc_waitAndExecute;
+// Avis de l'administration ATHENA (compromission, annulation, données réinitialisées, certificat, message imposé).
+[{ ["check"] call comspec_atak_native_fnc_adminNotices; }, 30] call CBA_fnc_addPerFrameHandler;
 
 // Tinder : un joueur m'a liké (match si c'est réciproque).
 ["comspec_atak_native_rencard", {

@@ -102,6 +102,9 @@ $tocGroups = [
             </div>
             <?php endforeach; ?>
             <p class="site-docs__ref-link">
+                <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>">Profils de communauté et accès</a>
+            </p>
+            <p class="site-docs__ref-link">
                 <a href="<?= htmlspecialchars(url('documentation/marqueurs'), ENT_QUOTES, 'UTF-8') ?>">Bibliothèque de marqueurs</a>
             </p>
             <p class="site-docs__ref-link">

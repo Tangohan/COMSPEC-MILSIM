@@ -245,6 +245,17 @@ body.dashboard-atak-shell a {
   background: rgba(16, 185, 129, 0.1);
 }
 
+/* —— Bien démarrer (tutoriel du profil) —— */
+.atak-dash__guide {
+  background: var(--atak-void);
+  padding: 1.75rem 0 0;
+}
+
+.atak-dash__guide > .tpg {
+  width: min(72rem, calc(100% - 2.5rem));
+  margin: 0 auto;
+}
+
 /* —— Modules —— */
 .atak-dash__modules {
   flex: 1 1 auto;

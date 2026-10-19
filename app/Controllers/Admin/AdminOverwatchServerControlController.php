@@ -82,6 +82,7 @@ final class AdminOverwatchServerControlController
             'experienceSchemaReady' => $this->atakConfig->isExperienceSchemaReady(),
             'groupedRules' => $groupedRules,
             'groupLabels' => $exp->groupLabels(),
+            'netLive' => $exp->get($tenantId)['settings']['net_live'] ?? [],
             'bridgeModules' => $moduleRows,
             'enabledModulesCount' => $enabledModules,
             'bridgeModulesTotal' => count($moduleRows),
@@ -124,6 +125,26 @@ final class AdminOverwatchServerControlController
         Session::flash('success', 'Règles de mission enregistrées. Les opérateurs en liaison les reçoivent sous environ une minute.');
 
         return Response::redirect(url('back-office/atak/controle-serveur') . '#regles');
+    }
+
+    /**
+     * Garde comme règles de la communauté les dernières conditions réseau appliquées en jeu (menu Échap).
+     */
+    public function adoptNetwork(Request $request, array $params = []): Response
+    {
+        $redirect = $this->guardPost($request);
+        if ($redirect instanceof Response) {
+            return $redirect;
+        }
+        $n = (new AtakExperienceService())->adoptLiveNetwork($this->tenantId());
+        if ($n > 0) {
+            $this->markControlReviewed($this->tenantId());
+            Session::flash('success', $n . ' condition(s) réseau reprise(s) comme règles de la communauté. Les opérateurs en liaison les reçoivent sous environ une minute.');
+        } else {
+            Session::flash('error', 'Aucune condition réseau appliquée en jeu à reprendre.');
+        }
+
+        return Response::redirect(url('back-office/atak/controle-serveur') . '#conditions-en-jeu');
     }
 
     public function storeModules(Request $request, array $params = []): Response

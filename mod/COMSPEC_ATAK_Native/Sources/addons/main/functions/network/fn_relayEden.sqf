@@ -79,7 +79,9 @@ switch (_mode) do {
                 {
                     if !(_x in _seen) then { deleteVehicle _y; _previews deleteAt _x; };
                 } forEach +_previews;
-                uiSleep 0.4;
+                // Aucun relais « tour » posé : la mission n'est relue que toutes les 1,5 s (all3DENEntities parcourt tout
+                // l'éditeur) ; avec une tour, 0,4 s pour que l'aperçu suive le module déplacé.
+                uiSleep ([1.5, 0.4] select (_seen isNotEqualTo []));
             };
             { deleteVehicle _y; } forEach _previews;
         }];

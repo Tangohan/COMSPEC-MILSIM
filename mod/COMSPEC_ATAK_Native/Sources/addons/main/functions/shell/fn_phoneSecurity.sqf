@@ -62,7 +62,9 @@ switch (_act) do {
     case "tick": {
         if (!hasInterface || {isNull player}) exitWith {};
         // Téléphone porté (pas le terminal d'un véhicule) : un objet du catalogue sur soi.
-        private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
+        [] call comspec_atak_native_fnc_deviceCatalog;
+        // Recherche dans l'ensemble (HashMap) du catalogue plutôt que dans le tableau, comme fn_hasDevice.
+        private _cat = missionNamespace getVariable ["COMSPEC_ATAK_DeviceCatalogSet", createHashMap];
         private _held = (((assignedItems player) + (items player)) findIf { (toLower _x) in _cat }) >= 0;
         private _down = !alive player || {player getVariable ["ace_captives_isHandcuffed", false]} || {player getVariable ["ACE_isUnconscious", false]} || {lifeState player isEqualTo "INCAPACITATED"};
         private _has = !isNil { player getVariable "COMSPEC_ATAK_Data" };

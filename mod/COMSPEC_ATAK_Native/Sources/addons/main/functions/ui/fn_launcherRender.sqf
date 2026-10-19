@@ -171,12 +171,15 @@ if !(_seen isEqualType []) then { _seen = []; };
 // Fondu d'arrivée : seulement en revenant sur l'accueil (pas à chaque frappe de recherche ni rafraîchissement).
 private _fadeIn = (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pagePrev", ""]) isNotEqualTo "LAUNCHER") && {["anim"] call comspec_atak_native_fnc_fx};
 private _rowN = 0;
+// Pastilles calculées une fois par app (en-tête de section replié puis tuile, avant : deux fois).
+private _badgeOf = createHashMap;
+{ _badgeOf set [_x get "page", [_x get "page"] call comspec_atak_native_fnc_appBadge]; } forEach _apps;
 private _chev = "\z\comspec_atak_native\addons\main\data\%1.paa";
 {
     _x params ["_key", "_sec", "_items"];
     private _isFolded = _key isNotEqualTo "" && {_key in _folded};
     private _unread = 0;
-    { _unread = _unread + ([_x get "page"] call comspec_atak_native_fnc_appBadge); } forEach _items;
+    { _unread = _unread + (_badgeOf getOrDefault [_x get "page", 0]); } forEach _items;
     // En-tête : bandeau, barre d'accent, titre, nombre (et non-lus si repliée), chevron, filet ; cliquable pour replier.
     private _band = ["COMSPEC_RscText", [_pad, _y, _gw, _secH]] call comspec_atak_native_fnc_pageCtrl;
     _band ctrlSetBackgroundColor ([[0.03, 0.04, 0.035, 0.55], [0.06, 0.075, 0.068, 0.75]] select _isFolded);
@@ -226,7 +229,7 @@ private _chev = "\z\comspec_atak_native\addons\main\data\%1.paa";
             private _page = _x get "page";
             private _wip = _x getOrDefault ["wip", false];
             private _tile = [_d, _g, [_pad + _col * (_tw + _pad), _y + _row * (_th + _pad), _tw, _th], _x get "icon", _x get "name",
-                [_page] call comspec_atak_native_fnc_appBadge, _page, _font, _wip,
+                _badgeOf getOrDefault [_page, 0], _page, _font, _wip,
                 (_x getOrDefault ["new", false]) && {!(_page in _seen)}, _page in _pins] call comspec_atak_native_fnc_tileCreate;
             // Clic droit : épingler / désépingler (le clic gauche reste à l'ouverture de l'app).
             private _btn = _tile select ((count _tile) - 1);

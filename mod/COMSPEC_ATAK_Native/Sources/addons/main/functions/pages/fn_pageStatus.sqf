@@ -41,7 +41,7 @@ private _rows = [
     ["info", "Attente avant renvoi", format ["%1 s", missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0]]],
     ["section", "Synchronisation", ""],
     ["info", "Dernière synchro", if (_bridge) then { ["en attente", "assurée par Overwatch"] select _ready } else { [_data getOrDefault ["lastNetworkUpdate", -1]] call _ago }],
-    ["info", "Dernier Resynch", ["COMSPEC_ATAK_ResynchAt", "jamais"] call _str],
+    ["info", "Dernière resynchronisation", ["COMSPEC_ATAK_ResynchAt", "jamais"] call _str],
     ["info", "Unités sur la carte", str _units],
     ["info", "Ordres reçus", str _orders],
     ["section", "Terminal", ""],

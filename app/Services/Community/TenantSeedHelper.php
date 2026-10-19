@@ -42,16 +42,19 @@ final class TenantSeedHelper
             }
 
             self::ensureAccessProfilesForTenant($pdo, $tenantId);
+            // Administration et modération réservées au niveau qui les demande (jamais à tous les membres).
+            $sensitive = TenantTypeConfig::sensitivePermissionLevels();
             $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-            foreach (CommunityAccessProfiles::slugs() as $roleSlug) {
-                $rs = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-                $rs->execute([$tenantId, $roleSlug]);
-                $roleId = (int) ($rs->fetchColumn() ?: 0);
+            foreach (CommunityAccessProfiles::definitions() as $def) {
+                $roleId = self::roleId($pdo, $tenantId, $def['slug']);
                 if ($roleId < 1) {
                     continue;
                 }
-                foreach ($permIds as $pid) {
-                    $link->execute([$roleId, $pid]);
+                $rank = TenantTypeConfig::levelRank($def['key']);
+                foreach ($permIds as $slug => $pid) {
+                    if (TenantTypeConfig::levelRank($sensitive[$slug] ?? 'member') <= $rank) {
+                        $link->execute([$roleId, $pid]);
+                    }
                 }
             }
         } else {
@@ -581,6 +584,76 @@ final class TenantSeedHelper
         $r = $st->fetch(PDO::FETCH_ASSOC);
 
         return $r ? (int) $r['id'] : 0;
+    }
+
+    /**
+     * Aligne les trois niveaux d’accès (Membre, RH, Gestionnaire) sur le profil de la communauté :
+     *  - catalogue des habilitations présent, quel que soit le profil (les menus et routes hors profil
+     *    restent masqués par TenantTypeModuleAccessMiddleware) ;
+     *  - jeu standard de chaque niveau + habilitations de base du profil, ajoutés s’ils manquent ;
+     *  - administration, gestion et modération retirées des niveaux Membre et RH quand elles
+     *    n’appartiennent pas à leur jeu standard (anciennes bascules qui les donnaient à tous).
+     * Les niveaux personnalisés (access-custom-*) ne sont pas touchés.
+     * $revokeFromHr = false : seul le niveau Membre est nettoyé (rattrapage automatique des
+     * communautés existantes, sans retirer à la RH un accès dont elle se servait peut-être).
+     *
+     * @return array{granted: int, revoked: int}
+     */
+    public static function alignAccessProfilesForType(PDO $pdo, int $tenantId, string $tenantType, bool $revokeFromHr = true): array
+    {
+        if ($tenantId <= 0) {
+            return ['granted' => 0, 'revoked' => 0];
+        }
+        $tenantType = TenantTypeConfig::normalizeType($tenantType);
+        self::ensureAccessProfilesForTenant($pdo, $tenantId);
+        self::ensureSystemAdminPermissions($pdo, $tenantId);
+        self::ensureTenantPermissionCatalog($pdo, $tenantId);
+        foreach (TenantTypeConfig::basePermissionsByType()[$tenantType] ?? [] as $p) {
+            self::insertPermission($pdo, $tenantId, (string) $p['name'], (string) $p['slug'], (string) $p['module']);
+        }
+
+        $permId = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        $unlink = $pdo->prepare('DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?');
+        $granted = 0;
+        $revoked = 0;
+        foreach (CommunityAccessProfiles::definitions() as $def) {
+            $roleId = self::roleId($pdo, $tenantId, $def['slug']);
+            if ($roleId < 1) {
+                continue;
+            }
+            $key = (string) $def['key'];
+            $wanted = array_values(array_unique(array_merge(
+                CommunityAccessProfiles::permissionSlugsFor($key),
+                TenantTypeConfig::basePermissionSlugsForLevel($tenantType, $key),
+                $key === CommunityAccessProfiles::MANAGER ? ['admin.access', 'admin.organization'] : []
+            )));
+            foreach ($wanted as $slug) {
+                $permId->execute([$tenantId, $slug]);
+                $pid = (int) ($permId->fetchColumn() ?: 0);
+                if ($pid > 0) {
+                    $link->execute([$roleId, $pid]);
+                    $granted += $link->rowCount();
+                }
+            }
+            if ($key === CommunityAccessProfiles::MANAGER || ($key === CommunityAccessProfiles::HR && !$revokeFromHr)) {
+                continue;
+            }
+            $rank = TenantTypeConfig::levelRank($key);
+            foreach (TenantTypeConfig::sensitivePermissionLevels() as $slug => $level) {
+                if (TenantTypeConfig::levelRank($level) <= $rank || in_array($slug, $wanted, true)) {
+                    continue;
+                }
+                $permId->execute([$tenantId, $slug]);
+                $pid = (int) ($permId->fetchColumn() ?: 0);
+                if ($pid > 0) {
+                    $unlink->execute([$roleId, $pid]);
+                    $revoked += $unlink->rowCount();
+                }
+            }
+        }
+
+        return ['granted' => $granted, 'revoked' => $revoked];
     }
 
     public static function ensurePersonnelPanelsAndMatricule(PDO $pdo, int $tenantId): void

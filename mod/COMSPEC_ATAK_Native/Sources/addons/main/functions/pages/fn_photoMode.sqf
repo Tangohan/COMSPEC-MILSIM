@@ -7,7 +7,8 @@
     Clic gauche : photo envoyée sur ATAK web (plusieurs possibles). R : selfie (téléphone à bout de bras, tourné vers soi,
     cadrage à la souris dans la limite du bras). Molette ou + / - : zoom numérique x1 à x8, visée à la souris pendant
     le zoom (caméra scriptée). F : flash AUTO / OUI / NON (AUTO : nuit ou intérieur très sombre).
-    B : type de flou automatique des visages (gaussien, mouvement, pixel, carré noir, aucun ; fn_photoFaces).
+    B : type de flou automatique des visages (gaussien, mouvement, pixel, carré noir, aucun ; fn_photoFaces), affiché
+    dans la barre des raccourcis. Objectif arrière : bras baissé par défaut (CBA « Photo : téléphone levé en main »).
     Espace : quitter et reprendre le téléphone. H (ou F1) : afficher / replier la barre des raccourcis, repliée
     d'elle-même quelques secondes après l'ouverture.
     Params : ["ENTER" | "SHOOT" | "SELFIE" | "ZOOM" | "FLASH" | "BLUR" | "HELP" | "MOUSE" | "FRAME" | "HUD" | "EXIT", légende, argument]
@@ -103,6 +104,9 @@ switch (toUpper _mode) do {
             if (_self && {_anim isEqualTo ""}) then { _anim = trim (missionNamespace getVariable ["comspec_atak_native_photo_anim", "comspec_atak_native_fnc_gestureSelfie"]); };
             // Ancienne valeur par défaut (main tendue sans téléphone) : remplacée par le téléphone tenu en main.
             if ((toLower _anim) isEqualTo "gesturepoint") then { _anim = "comspec_atak_native_fnc_gestureSelfie"; };
+            // Objectif arrière : bras baissé par défaut, sinon la main levée passe devant la vue (capture de TTRD, 18/10).
+            // Réglage CBA personnel « Photo : téléphone levé en main » pour la remettre.
+            if (!_self && {!(missionNamespace getVariable ["comspec_atak_native_photo_arm", false])}) then { _anim = ""; };
             // Passage selfie <-> photo : la fonction de l'animation précédente remet sa pose à zéro.
             private _prev = _st getOrDefault ["lastAnim", ""];
             if (_prev isNotEqualTo _anim && {(toLower _prev) find "_fnc_" >= 0}) then {
@@ -128,8 +132,8 @@ switch (toUpper _mode) do {
                         };
                     };
                 };
-                _st set ["lastAnim", _anim];
             };
+            _st set ["lastAnim", _anim];
         };
         private _selfie = _st getOrDefault ["selfie", false];
         private _zoom = _st getOrDefault ["zoom", 1];
@@ -313,11 +317,13 @@ switch (toUpper _mode) do {
         // Action principale (photo) en vert, touches de sortie plus discrètes. Repliée : photo, aide et quitter seuls.
         private _fls = (createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]]) get _fl;
         private _flash = format ["%1 %2", ("flash") call comspec_atak_native_fnc_tr, (_fls) call comspec_atak_native_fnc_tr];
+        // B : type de flou des visages, nommé dans la barre (la touche n'y figurait pas en objectif arrière).
+        private _blur = format ["%1 %2", ("flou") call comspec_atak_native_fnc_tr, (_bl) call comspec_atak_native_fnc_tr];
         private _open = _st getOrDefault ["helpOpen", true];
         private _keys = switch (true) do {
             case (!_open): { [["CLIC", "photo", 1], "|", ["H", "aide", 2], ["ESPACE", "quitter", 2]] };
-            case (_selfie): { [["CLIC", "photo", 1], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "cadrer", 0], "|", ["F", _flash, 0], ["B", "flou", 0], ["R", "objectif arrière", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
-            default { [["CLIC", "photo", 1], ["T", "marquer", 0], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "viser", 0], "|", ["F", _flash, 0], ["R", "selfie", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
+            case (_selfie): { [["CLIC", "photo", 1], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "cadrer", 0], "|", ["F", _flash, 0], ["B", _blur, 0], ["R", "objectif arrière", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
+            default { [["CLIC", "photo", 1], ["T", "marquer", 0], "|", ["MOLETTE", "zoom", 0], ["B", _blur, 0], "|", ["F", _flash, 0], ["R", "selfie", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
         };
         private _kh = safeZoneH * 0.03;
         private _pad = safeZoneW * 0.005;

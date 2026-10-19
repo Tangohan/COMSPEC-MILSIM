@@ -31,6 +31,31 @@ final class OverwatchServerControlAssetTest extends TestCase
         self::assertArrayHasKey('realisme', $svc->groupLabels());
     }
 
+    public function testNetworkConditionsMatchNativeAtak(): void
+    {
+        $svc = new AtakExperienceService();
+        $net = $svc->networkCatalog();
+        self::assertArrayHasKey('reseau', $svc->groupLabels());
+        $root = dirname(__DIR__, 2);
+        $cond = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_netCond.sqf');
+        $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+        self::assertStringContainsString('StartsWith("net_"', $ext);
+        self::assertStringContainsString('"NetConditions.Report" => "/api/atak/net-conditions"', $ext);
+        foreach ($net as $row) {
+            self::assertStringStartsWith('net_', $row['id']);
+            self::assertSame('player', $row['default']);
+            self::assertSame('reseau', $row['group']);
+            self::assertSame('player', $row['choices'][0]['value']);
+            // Chaque condition du site existe dans l'ATAK natif (fn_netCond) avec la même clé.
+            self::assertStringContainsString('"' . $row['id'] . '"', $cond);
+        }
+        self::assertContains('on', array_column($net[0]['choices'], 'value'));
+        $ids = array_column($svc->catalog(), 'id');
+        self::assertContains('net_weather', $ids);
+        self::assertContains('net_congestion', $ids);
+        self::assertContains('net_loss_floor', $ids);
+    }
+
     public function testAdminPageAndRoutesExist(): void
     {
         $root = dirname(__DIR__, 2);

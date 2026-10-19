@@ -1,0 +1,245 @@
+# Textes écrits en anglais dans le code (Overwatch connect surtout) -> français, pour le réglage Français.
+# tools/i18n.py fr assemble i18n/fr.txt avec ces lignes et l'anglais -> français des stringtables.
+(absent — link account via Athena code)	(absent : liez le compte avec un code Athena)
+. Describe what happened and when. Reports go to the team that maintains the pack.	. Décrivez ce qui s'est passé et quand. Les signalements partent à l'équipe qui maintient le pack.
+9-Line:	9-Line :
+Abort	Annuler
+Account not linked	Compte non lié
+Acknowledged	Pris en compte
+Activity not tracked	Activité non suivie
+Air ops	Opérations aériennes
+Apps	Apps
+Assigned: —	Assigné : —
+Athena account linked through COMSPEC Link	Compte Athena lié par COMSPEC Link
+Athena address not specified	Adresse Athena non renseignée
+Athena is the web platform of COMSPEC units: command post, accounts, reports. Not sure? Ask your unit or answer No, you can change it later.	Athena est la plateforme web des unités COMSPEC : poste de commandement, comptes, comptes rendus. Pas sûr ? Demandez à votre unité ou répondez Non, vous pourrez changer plus tard.
+Athena key refused	Clé Athena refusée
+Athena module unexpected response (%1).	Réponse inattendue du module Athena (%1).
+ATAK phone › Settings › Athena service	Téléphone ATAK › Réglages › Service Athéna
+Back	Retour
+Cancelled	Annulé
+Cardiac arrest	Arrêt cardiaque
+CAS: shown	CAS : affiché
+Change it at any time:	Vous pourrez changer à tout moment :
+Close	Fermer
+Combat	Combat
+Confirming records this note on your profile and registers beta participation with Athena when the connection is available.	En confirmant, cette note est enregistrée sur votre profil et votre participation à la bêta est signalée à Athena dès que la connexion le permet.
+Connect	Se connecter
+Connected	Connecté
+Connected contacts	Contacts connectés
+Connected to	Connecté à
+Connecting…	Connexion…
+Connection log	Journal de connexion
+Connection not established	Connexion non établie
+Connection refused: missing access on portal side.	Connexion refusée : votre compte n'a pas l'accès sur Athena.
+Connection: shown	Connexion : affichée
+Current choice:	Choix actuel :
+Delivered	Distribué
+Disconnect	Déconnecter
+Does your unit use the Athena service?	Votre unité utilise-t-elle le service Athéna ?
+Edit	Modifier
+Engaged	Engagé
+Error	Erreur
+Error:	Erreur :
+Error: No unit	Erreur : aucune unité
+Escape menu › Athena service	Menu Échap › Service Athéna
+Failed	Échec
+Fire solution:	Solution de tir :
+From: %2	De : %2
+Full hub	Menu complet
+Got it	J'ai compris
+Grid: %3	Grille : %3
+Home	Accueil
+In progress	En cours
+Inbound	En approche
+Later	Plus tard
+Link your account right away	Lier mon compte tout de suite
+Linked to Athena	Lié à Athena
+Local ATAK: map, BFT and chat between players on this server	ATAK local : carte, BFT et tchat entre joueurs de ce serveur
+Look into the lens	Regardez l'objectif
+Medical alerts received	Alertes médicales reçues
+Medical assistance	Assistance médicale
+Medical: shown	Médical : affiché
+Mission: %1	Mission : %1
+No CAS request selected	Aucune demande CAS sélectionnée
+No connection, no sync	Pas de connexion, pas de synchro
+No contact — check connection	Aucun contact : vérifiez la connexion
+No data sent outside the game	Aucune donnée envoyée hors du jeu
+No, local	Non, local
+Not connected	Non connecté
+●  Not connected	●  Non connecté
+Overwatch disabled	Overwatch désactivé
+Overwatch Messaging	Messagerie Overwatch
+Photos / messages	Photos / messages
+Place right index on sensor	Posez l'index droit sur le capteur
+Portal: —	Athena : —
+Refresh	Actualiser
+Regular server, usual Arma mods	Serveur classique, avec les mods Arma habituels
+Relief 0	Relève 0
+Report a problem	Signaler un problème
+Roger	Reçu
+Send	Envoyer
+Sent messages appear here.	Les messages envoyés apparaissent ici.
+Situation: %1	Situation : %1
+Status:	État :
+Status: —	État : —
+Status: ACKNOWLEDGED	État : PRIS EN COMPTE
+Sync with the command post: positions, BFT, chat, orders, reports, photos	Synchro avec le poste de commandement : positions, BFT, tchat, ordres, comptes rendus, photos
+Tactical screen	Écran tactique
+Tactical screen ready	Écran tactique prêt
+Target Acquired	Cible acquise
+Team leader	Chef d'équipe
+Time: %4	Heure : %4
+To rescue	À secourir
+Transmission active	Transmission active
+Treated	Soigné
+Unit settings and Athena apps	Réglages de l'unité et apps Athena
+Units	Unités
+Unknown	Inconnu
+Vehicle: %1 / %2	Véhicule : %1 / %2
+Yes, Athena	Oui, Athena
+Your address: —	Votre adresse : —
+Zoom +	Zoom +
+Zoom −	Zoom −
+account not found for this SteamID (link via In-game connection)	compte introuvable pour ce SteamID (liez-le via Connexion en jeu)
+community not identified (link via In-game connection)	communauté non identifiée (liez-la via Connexion en jeu)
+company commander	commandant de compagnie
+electronic warfare	guerre électronique
+in-game + Athena positions	positions en jeu + Athena
+invalid Athena response	réponse Athena invalide
+link Athena for network	liez Athena pour avoir le réseau
+my unit uses Athena	mon unité utilise Athena
+no response (network/DNS/TLS)	pas de réponse (réseau/DNS/TLS)
+not connected	non connecté
+not linked	non lié
+platoon commander	chef de section
+platoon lead	chef de section
+play without Athena	jouer sans Athena
+Public beta notice for a game mod — thank you for helping improve Overwatch.	Note de bêta publique d'un mod de jeu : merci d'aider à améliorer Overwatch.
+Welcome — this is a public beta. Please read this short note before continuing.	Bienvenue, ceci est une bêta publique. Lisez cette courte note avant de continuer.
+COMSPEC Overwatch public beta notice	Note de bêta publique COMSPEC Overwatch
+Found something wrong? In game, use the ACE self-interaction menu →	Un problème ? En jeu, utilisez le menu d'interaction personnelle ACE →
+Contacts %1 | Messages %2 | Images %3 | Locations %4	Contacts %1 | Messages %2 | Images %3 | Positions %4
+Overview / Contacts / Messages / Calls / Files / Photos / Locs / Deleted / Network	Aperçu / Contacts / Messages / Appels / Fichiers / Photos / Positions / Supprimés / Réseau
+Crash (30 s)	Plantage (30 s)
+Crash (30s)	Plantage (30 s)
+Game plan	Game plan
+Installation / position	Installation / position
+Obstacle / mine	Obstacle / mine
+Settings	Réglages
+Messages	Messages
+Message	Message
+%1 message(s)	%1 message(s)
+# Noms des marqueurs de la palette (fn_markerPaletteData, fn_markerLabels) : un marqueur posé en anglais se lit en français (fn_markerAutoName).
+Alert	Alerte
+Antenna	Antenne
+Anti-air	Anti-aérien
+Support by fire	Appui par le feu
+Arrival	Arrivée
+Stop	Arrêt
+Artillery	Artillerie
+Attack by fire	Attaque par le feu
+Aircraft	Avion
+Armor	Blindé
+Friendly armor	Blindé ami
+Hostile armor	Blindé hostile
+Unknown armor	Blindé inconnu
+Block	Bloquer
+Breach	Brèche
+Canalize	Canaliser
+Square	Carré
+Intersection	Carrefour
+Circle	Cercle
+Minefield	Champ de mines
+Chimney	Cheminée
+Retain	Conserver
+Contact circle	Cercle de contact
+Contact arrow	Flèche de contact
+Contain	Contenir
+Bypass	Contourner
+Cordon and search	Cordon et fouille
+Cordon and strike	Cordon et frappe
+Cover	Couverture
+Flag	Drapeau
+Start	Départ
+Disengage	Désengager
+Destroy	Détruire
+Ambush	Embuscade
+Exfiltrate	Exfiltrer
+Pivot	Pivoter
+Fix	Fixer
+Arrow	Flèche
+Main attack arrow	Flèche d'attaque principale
+Double arrow	Flèche double
+Feint arrow	Flèche feinte
+Solid arrow	Flèche pleine
+Guard	Garde
+Helicopter	Hélicoptère
+Friendly helicopter	Hélicoptère ami
+Hostile helicopter	Hélicoptère hostile
+Hospital	Hôpital
+Infantry	Infanterie
+Friendly infantry	Infanterie amie
+Hostile infantry	Infanterie hostile
+Unknown infantry	Infanterie inconnue
+Friendly motorized infantry	Infanterie motorisée amie
+Hostile motorized infantry	Infanterie motorisée hostile
+Friendly mechanized infantry	Infanterie mécanisée amie
+Hostile mechanized infantry	Infanterie mécanisée hostile
+Unknown mechanized infantry	Infanterie mécanisée inconnue
+Deny	Interdire
+Isolate	Isoler
+Junction	Jonction
+Phase line	Ligne de phase
+Logistics	Logistique
+Mortar	Mortier
+Motorized	Motorisé
+Mechanized	Mécanisé
+Medical	Médical
+Clear	Nettoyer
+Neutralize	Neutraliser
+Objective	Objectif
+Occupy	Occuper
+Disrupt	Perturber
+Lighthouse	Phare
+R3P point	Point R3P
+SAR point	Point SAR
+Checkpoint	Point de contrôle
+Start point	Point de départ
+Operational departure point	Point de départ opérationnel
+Link-up point	Point de jonction
+Release point	Point de dislocation
+Waypoint	Point de passage
+Rally point	Point de ralliement
+Casualty collection point	Point de regroupement des blessés
+Civilian assembly point	Point de regroupement des civils
+Viewpoint	Point de vue
+Medical evacuation point	Point d'évacuation sanitaire
+Generic point	Point générique
+Ammo point	Point de ravitaillement en munitions
+Isolated personnel recovery point	Point de récupération de personnel isolé
+Command post	Poste de commandement
+Medical post	Poste médical
+Dock	Quai
+Rally	Ralliement
+Recon	Reconnaissance
+Friendly reconnaissance	Reconnaissance amie
+Hostile reconnaissance	Reconnaissance hostile
+Unknown reconnaissance	Reconnaissance inconnue
+Landmark	Repère
+Rock	Rocher
+Recovery	Récupération
+Seize	Saisir
+Support	Soutien
+Gas station	Station-service
+Follow and support	Suivre et appuyer
+Follow and assume	Suivre et prendre le relais
+Delete	Supprimer
+Secure	Sécuriser
+Tourism	Tourisme
+Flat triangle	Triangle plat
+Empty	Vide
+To destroy	À détruire
+Screen	Écran
+Church	Église
+Electricity	Électricité

@@ -36,6 +36,11 @@ switch (_act) do {
     };
     case "tick": {
         if (!hasInterface) exitWith {};
+        // Réglage serveur coupé (par défaut) : plus rien à faire une fois sa propre lueur remise à 0 et les lumières
+        // éteintes (avant, la liste des joueurs à 1,5 km était parcourue chaque seconde pour rien).
+        if (!(missionNamespace getVariable ["comspec_atak_native_screen_glow", false])
+            && {((player getVariable ["COMSPEC_ATAK_Glow", [0, false]]) select 0) isEqualTo 0}
+            && {(count (uiNamespace getVariable ["COMSPEC_ATAK_GlowLights", createHashMap])) isEqualTo 0}) exitWith {};
         private _lvl = (round ((["level"] call comspec_atak_native_fnc_screenGlow) * 20)) / 20;
         private _pub = [_lvl, (profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"]) isEqualTo "RED"];
         if ((player getVariable ["COMSPEC_ATAK_Glow", [0, false]]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Glow", _pub, true]; };

@@ -35,7 +35,11 @@ private _btns = switch (true) do {
     default {
         switch (_st get "fix") do {
             case "service": { [["ACTIVER LE SERVICE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]] };
-            case "choose": { [["CHOISIR", { ["show"] call comspec_atak_native_fnc_athenaChoice; }, true]] };
+            // Service Athéna pas encore choisi : la réponse se donne ici, plus dans l'ancienne fenêtre d'Overwatch.
+            case "choose": { [
+                ["OUI, MON UNITÉ UTILISE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true],
+                ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+            ] };
             case "reconnect": { [["RECONNECTER", { ["reconnect"] call comspec_atak_native_fnc_athenaAction; }, true, true, "Relance la liaison avec Athena"]] };
             default { [] };
         };

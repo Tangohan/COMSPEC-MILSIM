@@ -32,7 +32,7 @@ switch (_act) do {
         private _hit = _cache getOrDefault [_key, []];
         if ((count _hit) isEqualTo 2 && {diag_tickTime - (_hit select 0) < 1}) exitWith { _hit select 1 };
         private _relays = [];
-        if (missionNamespace getVariable ["comspec_atak_native_video_relays", true]) then {
+        if (["videoRelays"] call comspec_atak_native_fnc_netCond) then {
             _relays = ["list"] call comspec_atak_native_fnc_relayNet;
         };
         // Mode arcade : pas de relais dans la mission, flux parfait tant que l'appelant dit que la liaison passe.

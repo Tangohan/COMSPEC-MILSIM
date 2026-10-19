@@ -168,12 +168,13 @@ if (_tab isEqualTo "TROOPS" && {_showT}) then {
 private _vis = createHashMapFromArray (["state", "blood", "hr"] apply { [_x, [_x, "medical"] call comspec_atak_native_fnc_medShow] });
 _rows pushBack ["section", "Suivi des troupes", ["Camp allié", "Camp allié, les plus graves en premier"] select (_vis get "state")];
 private _rank = createHashMapFromArray [["cardiac_arrest", 0], ["unconscious", 1], ["critical", 2], ["wounded", 3], ["stable", 4]];
+// Nom du patient : indicatif, sinon pseudo du joueur (retour de jeu 2.1.0 : nom vide sans indicatif Athena).
 private _list = [];
 {
     // Constantes cohérentes (fn_medVitals) : classe d'hémorragie estimée plutôt qu'un « % de sang » qu'aucun soignant ne lit.
     private _mv = [_x] call comspec_atak_native_fnc_medVitals;
     private _h = _mv getOrDefault ["state", "stable"];
-    _list pushBack [[[_x, true] call comspec_atak_native_fnc_unitCallsign, _rank getOrDefault [_h, 5]] select (_vis get "state"), _x, _h, _mv getOrDefault ["hemClass", 0], _mv getOrDefault ["hr", 0]];
+    _list pushBack [[[_x] call comspec_atak_native_fnc_unitCallsign, _rank getOrDefault [_h, 5]] select (_vis get "state"), _x, _h, _mv getOrDefault ["hemClass", 0], _mv getOrDefault ["hr", 0]];
 } forEach (allPlayers select { side group _x isEqualTo side group player });
 _list sort true;
 // Blessé suivi au moniteur : choisi dans la liste, sinon le plus grave (moi s'il n'y a personne).
@@ -183,7 +184,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MedMonitor", _mon];
 // Fiche du patient suivi au moniteur : groupe sanguin et poids.
 ([_mon] call _medIdent) params ["_btM", "_wM"];
 ([_btM, _wM, "medical"] call _identRow) params ["_idL", "_idV"];
-_rows pushBack ["info", format ["Patient : %1", [_mon, true] call comspec_atak_native_fnc_unitCallsign], [_idV, ""] select (_idL isEqualTo "")];
+_rows pushBack ["info", format ["Patient : %1", [_mon] call comspec_atak_native_fnc_unitCallsign], [_idV, ""] select (_idL isEqualTo "")];
 {
     _x params ["", "_u", "_h", "_blood", "_hr"];
     private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]]] getOrDefault [_h, ["STABLE", "#5cc76b"]];
@@ -193,7 +194,7 @@ _rows pushBack ["info", format ["Patient : %1", [_mon, true] call comspec_atak_n
     if (_vis get "hr") then { _vit pushBack ([format ["pouls %1", _hr], "pas de pouls"] select (_hr <= 0)); };
     _vit append [format ["%1 m", round (player distance _u)], [getPosASL _u, 6] call comspec_atak_native_fnc_gridRef];
     _rows pushBack ["text", format ["<t color='%1' font='COMSPEC_BarlowBold'>%2</t>  %3  <t size='0.8' color='#8a9a93'>%4</t>",
-        _lab select 1, _lab select 0, [_u, true] call comspec_atak_native_fnc_unitCallsign, _vit joinString " · "]];
+        _lab select 1, _lab select 0, [_u] call comspec_atak_native_fnc_unitCallsign, _vit joinString " · "]];
     _rows pushBack ["buttons", [[["MONITEUR", "● SUIVI"] select (_u isEqualTo _mon), compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medMon', %1]; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str netId _u], _u isEqualTo _mon]]];
 } forEach _list;
 if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun joueur allié.</t>"]; };

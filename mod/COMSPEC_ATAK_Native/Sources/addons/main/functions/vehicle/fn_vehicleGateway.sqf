@@ -22,7 +22,7 @@
 params [["_act", "list"], ["_v", objNull]];
 private _ranges = missionNamespace getVariable ["COMSPEC_ATAK_GwRange", [4000, 10000]];
 private _spec = { params ["_mode"]; [[_ranges select 0, 6], [_ranges select 1, 20]] select (_mode isEqualTo "cp") };
-private _on = missionNamespace getVariable ["comspec_atak_native_vehicle_gateways", false];
+private _on = (["gateways"] call comspec_atak_native_fnc_netCond);
 private _ok = { params ["_o"]; !isNull _o && {alive _o} && {!(_o isKindOf "StaticWeapon")} && {_o isKindOf "LandVehicle" || {_o isKindOf "Ship"} || {_o isKindOf "Helicopter"}} };
 switch (_act) do {
     case "state": { (_v getVariable ["COMSPEC_ATAK_Gateway", []]) param [0, ""] };

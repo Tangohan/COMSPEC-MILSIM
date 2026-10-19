@@ -5428,6 +5428,7 @@ return [
     'Avis' => 'Reviews',
     'Avis %1' => 'Opinion %1',
     'Avis & échanges' => 'Reviews & discussion',
+    'Avis automatique' => 'Automatic notice',
     'Avis de commandement' => 'Command notice',
     'Avis de commandement : %1' => 'Command opinion: %1',
     'Avis de poste associé' => 'Associated job posting',
@@ -36395,4 +36396,7 @@ return [
     '🟡 Événement' => '🟡 Event',
     '🟢 Débutant' => '🟢 Beginner',
     '🧪 Test avec un contact fictif:' => '🧪 Test with a fictitious contact:',
+    'Tout Athena : effectifs, recrutement, formations, opérations, documents, forum et carte ATAK.' => 'All of Athena: roster, recruitment, training, operations, documents, forum and ATAK map.',
+    'Fiches, grades, unités et ORBAT, avec la carte ATAK et le forum. Sans recrutement ni formations.' => 'Personnel files, ranks, units and ORBAT, with the ATAK map and the forum. No recruitment or training.',
+    'La carte ATAK, les équipes de feu et le forum. Le plus simple pour jouer ensemble.' => 'The ATAK map, fire teams and the forum. The simplest way to play together.',
 ];
