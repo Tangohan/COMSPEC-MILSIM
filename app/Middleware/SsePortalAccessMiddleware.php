@@ -18,6 +18,10 @@ final class SsePortalAccessMiddleware
     {
         $svc = new SseAccessCodeService();
         if (!$svc->hasActiveClearance()) {
+            // Après « Quitter », on ne rouvre pas le bureau en douce : retour au sas.
+            if ($svc->hasLeft()) {
+                return Response::redirect(url('atak/sse'));
+            }
             if ($svc->canEnterWithoutCode()) {
                 $tenantId = (int) Session::get('tenant_id');
                 if ($svc->canEnterAsStaff()) {

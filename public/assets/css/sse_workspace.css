@@ -22,7 +22,6 @@ body.sse-iw {
     --surface: var(--bg-panel);
     --surface-2: var(--bg-elevated);
     --surface-3: #222b36;
-    --line: var(--line);
     --border: var(--line);
     --green: var(--success);
     --green-bright: #34d399;
