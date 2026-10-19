@@ -40,7 +40,10 @@ private _open = 0;
 private _canOrder = ([] call comspec_atak_native_fnc_bridge) && {[] call comspec_overwatch_connect_fnc_canIssueOrder};
 private _rows = [];
 if (_canOrder) then { _rows pushBack ["buttons", [["NOUVEL ORDRE", { ['open'] call comspec_atak_native_fnc_orderAction; }, true]]]; };
-_rows append [["section", "Ordres du TOC", [format ["%1 ordre(s), %2 à traiter", count _orders, _open], "Aucun ordre reçu d'Athena"] select ((count _orders) isEqualTo 0)]];
+// Hors connexion (fn_offline) : ordres connus à la perte du signal, les nouveaux arrivent au retour du réseau.
+(["state"] call comspec_atak_native_fnc_offline) params ["_offNow", "_offSync"];
+_rows append [["section", "Ordres du TOC", ([format ["%1 ordre(s), %2 à traiter", count _orders, _open], "Aucun ordre reçu d'Athena"] select ((count _orders) isEqualTo 0))
+    + (["", format [" · hors connexion, ordres connus à %1", _offSync]] select _offNow)]];
 {
     private _id = _x;
     private _ord = _y;

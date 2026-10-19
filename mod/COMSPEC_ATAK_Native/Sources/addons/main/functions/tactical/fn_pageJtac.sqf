@@ -92,20 +92,36 @@ private _mapAt = {
         private _k = (uiNamespace getVariable ["COMSPEC_ATAK_Jtac", createHashMap]) getOrDefault ["mapPick", ""];
         if (_btn isEqualTo 0 && {_k isNotEqualTo ""}) then { ["mapSet", [_k, _c ctrlMapScreenToWorld [_x, _y]]] call comspec_atak_native_fnc_jtacAction; };
     }];
+    // Une carte toute neuve affiche d'abord le coin haut gauche du monde : fn_jtacDraw n'enregistre la vue qu'une fois
+    // la carte calée sur ce but (sinon chaque rafraîchissement de la page repartait de ce coin).
     private _view = uiNamespace getVariable [format ["COMSPEC_ATAK_JtacView_%1", _mode], []];
-    if ((count _view) isEqualTo 2) then {
-        _map ctrlMapAnimAdd [0, _view select 0, _view select 1];
-    } else {
+    if ((count _view) isNotEqualTo 2) then {
         // Première ouverture : cible, IP et JTAC dans le cadre.
         private _pp = (_pts select { (count _x) >= 2 }) + [getPosASL player];
         private _xs = _pp apply { _x select 0 };
         private _ys = _pp apply { _x select 1 };
         private _span = ((selectMax _xs - selectMin _xs) max (selectMax _ys - selectMin _ys)) max 1500;
-        _map ctrlMapAnimAdd [0, ((_span / worldSize) * 1.5) min 1, [(selectMin _xs + selectMax _xs) / 2, (selectMin _ys + selectMax _ys) / 2]];
+        _view = [((_span / worldSize) * 1.5) min 1, [(selectMin _xs + selectMax _xs) / 2, (selectMin _ys + selectMax _ys) / 2]];
     };
+    _map setVariable ["comspec_jtacAim", _view];
+    _map setVariable ["comspec_jtacBorn", diag_tickTime];
+    _map ctrlMapAnimAdd [0, _view select 0, [(_view select 1) select 0, (_view select 1) select 1, 0]];
     ctrlMapAnimCommit _map;
     uiNamespace setVariable ["COMSPEC_ATAK_JtacMap", _map];
     _map
+};
+// Défilement de la fiche gardé d'un rendu à l'autre (fn_pageRender relève les groupes avant d'effacer la page) :
+// le rafraîchissement du contrôle (3 s) ou un appel radio reçu ne ramène plus la fiche en haut.
+private _keepScroll = {
+    params ["_grp", "_name"];
+    private _groups = uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []];
+    _groups pushBack [_name, _grp];
+    uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", _groups];
+    private _v = (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["scrollGroups", createHashMap]) getOrDefault [_name, []]) param [0, -1];
+    if (_v <= 0) exitWith {};
+    _grp ctrlSetScrollValues [_v, -1];
+    // Encore à l'image suivante : la hauteur du contenu n'est connue qu'une fois les contrôles posés.
+    [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
 };
 // Paysage plein écran : carte à gauche, onglets à droite.
 private _split = (_l getOrDefault ["landscape", false]) && {!(_l getOrDefault ["mini", false])};
@@ -162,7 +178,7 @@ if (_view isEqualTo "PILOT") exitWith {
     _rows pushBack ["section", "Journal radio", ""];
     _rows append ([_p, 12, [player] call comspec_atak_native_fnc_unitCallsign] call _logRows);
     if (_split) then { [[0, 0, _mapW, _bh], "PILOT", [_tpos, _ipPos]] call _mapAt; };
-    [_rows, [_mapW, 0, _bw - _mapW, _bh]] call comspec_atak_native_fnc_formRender;
+    [[_rows, [_mapW, 0, _bw - _mapW, _bh]] call comspec_atak_native_fnc_formRender, "JTAC:PILOT"] call _keepScroll;
     true
 };
 
@@ -429,5 +445,5 @@ if (_tab isEqualTo "MAP") exitWith {
     true
 };
 if (_split) then { [[0, 0, _mapW, _bh], "JTAC", [_tgtMap, _ipPos]] call _mapAt; };
-[_rows, [_mapW, 0, _bw - _mapW, _bh]] call comspec_atak_native_fnc_formRender;
+[[_rows, [_mapW, 0, _bw - _mapW, _bh]] call comspec_atak_native_fnc_formRender, format ["JTAC:%1", _tab]] call _keepScroll;
 true

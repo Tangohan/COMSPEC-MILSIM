@@ -6,7 +6,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_SSE_CORE",
     "CHECKBOX",
-    ["Enable SSE Core", "Autorise le noyau SSE (données, events)."],
+    ["Activer le cœur du SSE", "Données et événements du SSE."],
     _cat,
     true,
     0,
@@ -17,7 +17,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_SSE_ACE",
     "CHECKBOX",
-    ["Enable SSE ACE", "Menus ACE interaction (inspect, fouille, photo…)."],
+    ["Activer les menus ACE du SSE", "Menus ACE d'interaction (inspecter, fouiller, photographier...)."],
     _cat,
     true,
     0,
@@ -30,7 +30,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_SSE_DIGITAL",
     "CHECKBOX",
-    ["Enable SSE Digital", "Menus ACE exploitation numérique."],
+    ["Activer l'exploitation numérique", "Menus ACE d'exploitation des téléphones et ordinateurs."],
     _cat,
     true,
     0,
@@ -43,7 +43,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_BIOMETRICS",
     "CHECKBOX",
-    ["Enable SSE Biometrics", "Menus ACE biométrie / SEEK."],
+    ["Activer la biométrie", "Menus ACE de biométrie et du SEEK."],
     _cat,
     true,
     0,
@@ -56,7 +56,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_SSE_ZEUS",
     "CHECKBOX",
-    ["Enable SSE Zeus", "Modules Zeus SSE."],
+    ["Activer les modules Zeus du SSE", "Modules Zeus du SSE."],
     _cat,
     true,
     0,
@@ -67,7 +67,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_MARKERS",
     "CHECKBOX",
-    ["Enable Markers", "Sync / init marqueurs (si présent)."],
+    ["Activer les marqueurs", "Création et synchronisation des marqueurs (si présents)."],
     _cat,
     true,
     0,
@@ -78,7 +78,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_ATAK",
     "CHECKBOX",
-    ["Enable ATAK", "Pont ATAK / Overwatch lié au debug."],
+    ["Activer le lien avec l'ATAK", "Lien entre le SSE et l'ATAK / Overwatch."],
     _cat,
     true,
     0,
@@ -89,7 +89,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_COMPAT_ACE",
     "CHECKBOX",
-    ["Enable Compat ACE dogtags", "Passerelle plaques ACE."],
+    ["Activer la compatibilité plaques ACE", "Plaques d'identité ACE reliées au SSE."],
     _cat,
     true,
     0,
@@ -102,7 +102,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_COMPAT_BII",
     "CHECKBOX",
-    ["Enable Compat BII", "Passerelle BII Identifi."],
+    ["Activer la compatibilité BII", "Lien avec le mod BII Identifi."],
     _cat,
     true,
     0,
@@ -115,7 +115,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
 [
     "COMSPEC_DEBUG_ENABLE_OVERWATCH_SSE_ACE",
     "CHECKBOX",
-    ["Enable Overwatch SSE ACE", "Greffe fiche Athena Overwatch."],
+    ["Activer la fiche Athena dans ACE", "Ajoute la fiche Athena d'Overwatch au menu ACE du SSE."],
     _cat,
     true,
     0,
@@ -130,7 +130,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
 [
     "COMSPEC_DEBUG_TRACE",
     "CHECKBOX",
-    ["Trace ENTER/EXIT", "Journalise chaque enter/exit instrumenté."],
+    ["Tracer les entrées / sorties de fonctions", "Écrit dans le RPT chaque entrée et sortie de fonction suivie."],
     _cat2,
     true,
     0,
@@ -141,7 +141,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
 [
     "COMSPEC_DEBUG_BLOCK_DANGEROUS_ACE",
     "CHECKBOX",
-    ["Block dangerous ACE inheritance", "Refuse Thing/All/AllVehicles avec héritage."],
+    ["Bloquer les menus ACE trop larges", "Refuse les actions ACE ajoutées à Thing, All ou AllVehicles avec héritage (risque de lag)."],
     _cat2,
     true,
     0,
@@ -152,7 +152,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
 [
     "COMSPEC_DEBUG_THROW_ON_RECURSION",
     "CHECKBOX",
-    ["Throw on recursion > 100", "Mode développement uniquement."],
+    ["Arrêter au-delà de 100 appels imbriqués", "Réservé au développement."],
     _cat2,
     false,
     0,
@@ -163,7 +163,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
 [
     "COMSPEC_DEBUG_FORCE_RPT",
     "CHECKBOX",
-    ["Force all debug lines to RPT", "Sinon WARN+ seulement hors mode debug."],
+    ["Tout écrire dans le RPT", "Sinon, hors mode debug, seuls les avertissements et erreurs sont écrits."],
     _cat2,
     true,
     0,
@@ -174,7 +174,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
 [
     "COMSPEC_SAFE_MODE",
     "CHECKBOX",
-    ["Safe Mode", "Core + logger uniquement — aucune interaction ACE globale."],
+    ["Mode sans échec", "Seulement le cœur du SSE et les logs, aucun menu ACE."],
     _cat2,
     false,
     0,

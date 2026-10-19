@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakCommsBackToChannelsAssetTest extends TestCase
 {
@@ -89,7 +90,7 @@ final class AtakCommsBackToChannelsAssetTest extends TestCase
 
         self::assertStringContainsString('COMSPEC_Comms_Menu', $cfg);
         self::assertStringContainsString('athena_commsFooter', $cfg);
-        self::assertStringContainsString('1.0.165', $cfg);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfg));
 
         self::assertStringContainsString('liste des canaux', strtolower($bug));
         self::assertStringContainsString('Live Feed', $bug);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakAthenaJournalLogAssetTest extends TestCase
 {
@@ -62,7 +63,8 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
         self::assertStringContainsString('AFFECTATION', $upd);
 
         self::assertStringContainsString('9770', $lay);
-        self::assertStringContainsString('Liaison OK', $lay);
+        // Libellé « Liaison OK » remplacé par l'état explicite du bouton de liaison (9734).
+        self::assertStringContainsString('Connecté — canal ouvert', $lay);
 
         self::assertStringContainsString('GetLogTail', $log);
         self::assertStringContainsString('COMSPEC_DiagLog', $log);
@@ -80,13 +82,13 @@ final class AtakAthenaJournalLogAssetTest extends TestCase
 
         self::assertStringContainsString('GetScreenshotDirs', $ext);
         self::assertStringContainsString('GetPhotoSaveDir', $ext);
-        self::assertStringContainsString('ExtensionVersion = "1.18.12"', $ext);
+        ModVersion::assertAtLeast('1.18.12', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9.]+)"/', $ext));
 
-        self::assertStringContainsString('1.0.81', $cfg);
+        ModVersion::assertAtLeast('1.0.81', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('athena_collectSessionLog', $cfg);
         self::assertStringContainsString('athena_forcePhotoSend', $cfg);
         self::assertStringContainsString('athena_showPhotoFolder', $cfg);
-        self::assertStringContainsString('1.5.17', $connect);
+        ModVersion::assertAtLeast('1.5.17', ModVersion::fromConfigCpp($connect));
 
         self::assertStringContainsString('journal', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);

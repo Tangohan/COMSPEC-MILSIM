@@ -137,7 +137,7 @@ private _mainAction = ["COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _
 }, _root, _condSync] call _fnc_leaf;
 
 ["COMSPEC_Apps", "Applications", _root] call _fnc_folder;
-["COMSPEC_Situation", "Affichage situation", _root, _condEcoti] call _fnc_folder;
+["COMSPEC_Situation", "Infos tactiques JVN", _root, _condEcoti] call _fnc_folder;
 ["COMSPEC_Transmit", "Transmission", _root] call _fnc_folder;
 ["COMSPEC_MapSurvey", "Cartographie", _root] call _fnc_folder;
 ["COMSPEC_Support", "Appui & mission", _root] call _fnc_folder;

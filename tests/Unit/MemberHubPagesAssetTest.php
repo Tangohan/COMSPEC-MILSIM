@@ -31,7 +31,10 @@ final class MemberHubPagesAssetTest extends TestCase
         self::assertStringContainsString('membres/{id}/fonctions', $routes);
         self::assertStringContainsString('membres/{id}/grade', $routes);
         self::assertStringContainsString('Situation RH', $edit);
-        self::assertStringContainsString('Enregistrer les rôles', $member);
+        // Les rôles cochés sont devenus un niveau d’accès unique (radio access_role_id) posté sur /roles.
+        self::assertStringContainsString("effectifs_workspace_url('membres/' . \$id . '/roles')", $member);
+        self::assertStringContainsString('name="access_role_id"', $member);
+        self::assertStringContainsString('Enregistrer l’accès', $member);
         self::assertStringContainsString('Enregistrer les fonctions', $member);
         self::assertStringContainsString('Enregistrer le grade', $member);
         $personnelEdit = (string) file_get_contents(dirname(__DIR__, 2) . '/views/personnel/edit.php');

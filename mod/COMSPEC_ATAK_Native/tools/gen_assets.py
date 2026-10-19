@@ -96,6 +96,8 @@ ICONS = {
     "app_interteam": '<circle cx="5.5" cy="6" r="2.5"/><circle cx="18.5" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 6h8M7 8.2l3.6 7.6M17 8.2l-3.6 7.6"/><path d="M10 11.5h4" stroke-dasharray="1.5 1.5"/>',
     # Accessoires : téléphone vu de dos, antenne vissée en haut, plaque au centre, fixations latérales.
     "app_accessories": '<rect x="7" y="6" width="10" height="16" rx="2"/><path d="M14.5 6V2"/><circle cx="14.5" cy="2" r="0.6" fill="#fff"/><rect x="9.5" y="11" width="5" height="6" rx="1"/><path d="M3 10h4M3 14h4M17 10h4M17 18h4"/>',
+    # Distances : trajet en pointillés d'un point de départ à un fanion d'arrivée.
+    "app_distance": '<circle cx="5" cy="19" r="2"/><path d="M7 18.5c3-1 3-5 6-5.5s4-3 4-6" stroke-dasharray="2 2"/><path d="M17 3v6M17 3.2h4.5l-1.3 1.7 1.3 1.7H17"/>',
     "app_screentime": '<rect x="6" y="2.5" width="12" height="19" rx="2"/><circle cx="12" cy="12" r="3.8"/><path d="M12 9.8V12l1.6 1.2M10.5 19h3"/>',
     "app_bft": '<circle cx="12" cy="12" r="8"/><path d="M12 6l3.5 9L12 13l-3.5 2z"/>',
     "app_intel": '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -222,6 +224,27 @@ ICONS = {
     "ui_chevron_down": '<path d="M6 9.5l6 6 6-6" stroke-width="2.4"/>',
     "ui_chevron_up": '<path d="M6 14.5l6-6 6 6" stroke-width="2.4"/>',
     "ui_dot": '<circle cx="12" cy="12" r="10" fill="#fff" stroke="none"/>',
+    # App Garmin : montre (cadran rond et bracelet) avec un cœur, puis les pictos de l'app façon Garmin Connect.
+    "app_garmin": '<path d="M9 5.2l.8-3h4.4l.8 3M9 18.8l.8 3h4.4l.8-3"/><circle cx="12" cy="12" r="7"/><path d="M12 15.3l-2.6-2.5a1.5 1.5 0 0 1 2.6-1.7 1.5 1.5 0 0 1 2.6 1.7z" fill="#fff"/>',
+    "g_sync": '<path d="M4.5 10a7.6 7.6 0 0 1 13.6-3.4M19.5 14a7.6 7.6 0 0 1-13.6 3.4"/><path d="M18.6 3v4h-4M5.4 21v-4h4"/>',
+    "g_battery": '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M10 2.2h4"/><path d="M12.8 7.5l-3 5h4.4l-3 5" stroke-width="1.5"/>',
+    "g_heart": '<path d="M12 20.5l-7.6-7.4A4.6 4.6 0 0 1 12 6.6a4.6 4.6 0 0 1 7.6 6.5z" fill="#fff"/>',
+    "g_stress": '<circle cx="12" cy="12" r="8.5"/><path d="M8 10.2l1.6-.8M16 10.2l-1.6-.8M8.5 15.8c1-1 2.2-1 3.5 0s2.5 1 3.5 0"/>',
+    "g_sleep": '<path d="M19.5 14.5A8 8 0 1 1 10 4.5a6.4 6.4 0 0 0 9.5 10z" fill="#fff"/>',
+    "g_steps": '<path d="M7 3.5c1.8 0 2.5 2 2.3 4.5-.2 2-.7 3.2-.7 4.5H5.2C5 11 4.5 9.6 4.6 7.6 4.8 5 5.4 3.5 7 3.5z" fill="#fff"/><path d="M5.3 14.3h3.3v1.6a1.65 1.65 0 0 1-3.3 0z" fill="#fff"/><path d="M17 7.5c1.6 0 2.2 1.5 2.4 4.1.1 2-.4 3.4-.6 4.9h-3.4c0-1.3-.5-2.5-.7-4.5-.2-2.5.5-4.5 2.3-4.5z" fill="#fff"/><path d="M15.4 18.3h3.3v1.6a1.65 1.65 0 0 1-3.3 0z" fill="#fff"/>',
+    "g_run": '<circle cx="15" cy="4" r="1.8" fill="#fff"/><path d="M6.5 10.5l3.5-3h4.2l-1.7 5 3.5 3-1.5 5M12.5 12.5l-2.7 3.5H5.5M14.2 7.5l2.3 3.3 3 .2"/>',
+    "g_walk": '<circle cx="13" cy="3.8" r="1.8" fill="#fff"/><path d="M12.8 7.5l-1.6 6 2.6 3 .8 5M11.2 13.5L9 21.5M12.8 7.5l-3.6 2.2-.6 3.6M12.8 7.5l2 3.5 2.6 1"/>',
+    # App Distances : hélicoptère (heures de pilote).
+    "d_heli": '<path d="M3 4.5h18M12 4.5V8"/><path d="M5 11.5C5 9.5 6.6 8 8.6 8h4.2c1.6 0 2.7 1.3 2.7 3v1.2c0 1.5-1.2 2.8-2.8 2.8H7.8C6.2 15 5 13.7 5 12.2z"/><path d="M15.5 11h5M20.5 9v4"/><path d="M5.5 18.5h11M8.5 15v3.5M13.5 15v3.5"/>',
+    "g_drive": '<path d="M3.5 16.5v-4l2-5h13l2 5v4z"/><path d="M5 12.5h14"/><circle cx="7.5" cy="17.5" r="1.8" fill="#fff"/><circle cx="16.5" cy="17.5" r="1.8" fill="#fff"/>',
+    "g_flight": '<path d="M3 9.5h14.5c1.8 0 3 1 3.5 2.5H8.5L5 9.5"/><path d="M6.5 12l1 3.5h9.5c2 0 4-1.3 4-3.5"/><path d="M11 9.5V6.5M4 6.5h14"/><path d="M10 15.5l-1 3M15 15.5l1 3M6.5 18.5h12"/>',
+    "g_jump": '<path d="M3.5 11a8.5 6.5 0 0 1 17 0c-1.3-1-2.8-1-4.2 0-1.4-1-3-1-4.3 0-1.4-1-3-1-4.3 0-1.4-1-2.9-1-4.2 0z"/><path d="M3.5 11l7 7M20.5 11l-7 7M12 11v7"/><rect x="10.3" y="17.5" width="3.4" height="4" rx="1" fill="#fff"/>',
+    "g_boat": '<path d="M2.5 15h19l-3 4.5h-13z"/><path d="M12 3v12M12 4l6.5 8.5H12M12 6.5L7 12.5h5"/>',
+    "g_swim": '<circle cx="17" cy="7" r="1.8" fill="#fff"/><path d="M5.5 12.5l4-3.5 3 3 3-1M2.5 16.5c1.6 1.2 3.2 1.2 4.8 0 1.6 1.2 3.2 1.2 4.8 0 1.6 1.2 3.2 1.2 4.8 0 1.6 1.2 3.2 1.2 4.6 0M2.5 20.5c1.6 1.2 3.2 1.2 4.8 0 1.6 1.2 3.2 1.2 4.8 0 1.6 1.2 3.2 1.2 4.8 0 1.6 1.2 3.2 1.2 4.6 0"/>',
+    "g_laurel": '<path d="M8 20.5C4.5 18 3 14.5 3.5 10.5M16 20.5c3.5-2.5 5-6 4.5-10"/><path d="M4.2 16.2c1.6.2 2.8-.4 3.3-1.7M3.5 12.5c1.4-.4 2.2-1.3 2.3-2.7M5.2 6.6c.2 1.5 1 2.3 2.3 2.6M19.8 16.2c-1.6.2-2.8-.4-3.3-1.7M20.5 12.5c-1.4-.4-2.2-1.3-2.3-2.7M18.8 6.6c-.2 1.5-1 2.3-2.3 2.6"/><path d="M12 6.5l1.4 2.9 3.1.4-2.3 2.2.6 3.1-2.8-1.5-2.8 1.5.6-3.1-2.3-2.2 3.1-.4z" fill="#fff"/>',
+    "g_check": '<path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.6"/>',
+    "g_home": '<path d="M3.5 11L12 4l8.5 7"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5"/>',
+    "g_list": '<path d="M8.5 6.5h12M8.5 12h12M8.5 17.5h12"/><circle cx="4.5" cy="6.5" r="1.2" fill="#fff"/><circle cx="4.5" cy="12" r="1.2" fill="#fff"/><circle cx="4.5" cy="17.5" r="1.2" fill="#fff"/>',
     "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
 }
 
@@ -1277,7 +1300,7 @@ def phone_back(src):
         bw = 2 + (i * 7) % 5
         p.append(f'<rect x="{578 + i * 5.2}" y="1188" width="{bw * 0.8}" height="52" fill="#111"/>')
     p.append('<text x="655" y="1266" text-anchor="middle" font-family="DejaVu Sans Mono" font-size="15" fill="#333">S/N CS-0417-ATK</text>')
-    # Bossage du port SMA (antenne) en haut à gauche vu de face : à droite vu de dos.
+    # Bossage du port SMA : dessiné avec l'antenne (antenna_img), seulement quand une antenne est vissée.
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" width="2048" height="2048">{"".join(p)}</svg>'
     over = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=2048, output_height=2048))).convert("RGBA")
     out = front.copy()
@@ -1446,6 +1469,7 @@ def vest_phone_atlas(back, tmp):
 # --- Antennes d'extension de débit (port SMA en haut à gauche de la coque, x 430, y 632 de la texture 2048) ---
 ANT_BASE = (430, 632)
 ANT_FRAME = (238, -832, 384, 1536)  # zone dessinée (x, y, l, h) en pixels de la texture du téléphone
+NUT_GRAD = '<linearGradient id="nut" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5c5f5c"/><stop offset="0.45" stop-color="#c9ccc6"/><stop offset="1" stop-color="#4a4c4a"/></linearGradient>'
 
 
 def _sma_svg(x, y):
@@ -1462,12 +1486,12 @@ def _collar_svg(x, y, w=60, h=54):
     return "".join(out)
 
 
-def antenna_svg(kind):
+def antenna_svg(kind, boss=True):
     x, y = ANT_BASE
     defs = ('<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a6a1c"/><stop offset="0.45" stop-color="#f0d27a"/><stop offset="1" stop-color="#7a5c14"/></linearGradient>'
             '<linearGradient id="rub" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0c0d0c"/><stop offset="0.35" stop-color="#3a3c3a"/><stop offset="0.6" stop-color="#1c1d1c"/><stop offset="1" stop-color="#070707"/></linearGradient>'
             '<linearGradient id="pat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3c3a"/><stop offset="1" stop-color="#111211"/></linearGradient></defs>')
-    b = [defs, _sma_svg(x, y)]
+    b = [defs.replace("</defs>", NUT_GRAD + "</defs>"), _boss_svg(x, y) if boss else "", _sma_svg(x, y)]
     top = y - 46
     if kind == "stub":
         b.append(_collar_svg(x, top))
@@ -1502,10 +1526,10 @@ def antenna_svg(kind):
 ANT_PHOTO_H = {"stub": 450}  # hauteur visible au-dessus du port SMA, en pixels de la texture du téléphone
 
 
-def antenna_img(kind):
+def antenna_img(kind, boss=True):
     src = os.path.join(HERE, "src", f"antenna_{kind}_photo.png")
     if kind not in ANT_PHOTO_H or not os.path.exists(src):
-        return antenna_svg(kind)
+        return antenna_svg(kind, boss)
     photo = Image.open(src).convert("RGBA")
     photo = photo.crop(photo.split()[3].point(lambda v: 255 if v > 40 else 0).getbbox())
     fx, fy, fw, fh = ANT_FRAME
@@ -1515,13 +1539,29 @@ def antenna_img(kind):
     w = max(1, int(photo.width * h / photo.height))
     photo = photo.resize((w, h), Image.LANCZOS)
     x, y = ANT_BASE
-    out = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    out = _boss_img() if boss else Image.new("RGBA", (W, H), (0, 0, 0, 0))
     out.alpha_composite(photo, (int((x - fx) * k - w / 2), int((y - fy) * k - h)))
     return out
 
 
+def _boss_svg(x, y):
+    """Bossage du port SMA moulé dans la coque, à cheval sur son bord haut, et écrou six pans de l'embase :
+    l'antenne paraît vissée dans la coque au lieu de flotter au-dessus (seul le port est dessiné, la coque vient de la texture)."""
+    return (f'<rect x="{x - 46}" y="{y - 8}" width="92" height="34" rx="10" fill="#161716" stroke="#050505" stroke-width="3"/>'
+            f'<rect x="{x - 40}" y="{y - 5}" width="80" height="6" rx="3" fill="#ffffff" fill-opacity="0.10"/>'
+            f'<polygon points="{x - 30},{y + 2} {x - 24},{y - 12} {x + 24},{y - 12} {x + 30},{y + 2}" fill="url(#nut)" stroke="#2b2b2b" stroke-width="2"/>'
+            f'<rect x="{x - 2}" y="{y - 11}" width="4" height="12" fill="#000" fill-opacity="0.35"/>')
+
+
+def _boss_img():
+    x, y = ANT_BASE
+    fx, fy, fw, fh = ANT_FRAME
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{fx} {fy} {fw} {fh}" width="256" height="1024"><defs>{NUT_GRAD}</defs>{_boss_svg(x, y)}</svg>'
+    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=256, output_height=1024))).convert("RGBA")
+
+
 def antenna_item(kind, size=256):
-    img = antenna_img(kind)
+    img = antenna_img(kind, boss=False)  # objet d'inventaire : l'antenne seule, sans le bossage de la coque
     if kind == "whip":  # fouet couché en diagonale, sinon trop fin dans la case d'inventaire
         img = img.rotate(-38, expand=True, resample=Image.BICUBIC)
     box = img.getbbox()

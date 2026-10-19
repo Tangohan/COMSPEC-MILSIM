@@ -126,7 +126,8 @@ final class TenantBootstrapService
                 $communitySettings['public_doctrine'] = mb_substr($pdoctrine, 0, 200);
             }
             if ($wizard !== null) {
-                $communitySettings['default_locale'] = (string) $wizard['default_locale'];
+                $communitySettings['default_locale'] = \App\Support\CommunityLanguages::normalize($wizard['default_locale'] ?? null)
+                    ?? \App\Support\CommunityLanguages::DEFAULT;
                 $communitySettings['orbat_visibility'] = (string) $wizard['orbat_visibility'];
                 $communitySettings['default_guest_role_slug'] = 'invite';
                 $cp = $wizard['community_profile'] ?? [];

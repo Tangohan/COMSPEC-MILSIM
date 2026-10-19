@@ -36,4 +36,36 @@ class LoginAttemptRepository
 
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Adresses réseau d’où cette adresse e-mail s’est connectée avec succès (plus récente d’abord).
+     *
+     * @return list<array{ip: string, last_seen: string, logins: int}>
+     */
+    public function listRecentSuccessIpsForEmail(string $email, int $days = 180, int $limit = 10): array
+    {
+        $email = strtolower(trim($email));
+        if ($email === '') {
+            return [];
+        }
+        $days = max(1, min(3650, $days));
+        $limit = max(1, min(50, $limit));
+        $emailEq = SqlText::equals($this->pdo, 'email');
+        $stmt = $this->pdo->prepare(
+            'SELECT ip, MAX(created_at) AS last_seen, COUNT(*) AS logins FROM login_attempts
+             WHERE ' . $emailEq . ' AND success = 1 AND created_at >= DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)
+             GROUP BY ip ORDER BY last_seen DESC LIMIT ' . $limit
+        );
+        $stmt->execute([$email]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $ip = trim((string) ($row['ip'] ?? ''));
+            if ($ip === '') {
+                continue;
+            }
+            $out[] = ['ip' => $ip, 'last_seen' => (string) ($row['last_seen'] ?? ''), 'logins' => (int) ($row['logins'] ?? 0)];
+        }
+
+        return $out;
+    }
 }

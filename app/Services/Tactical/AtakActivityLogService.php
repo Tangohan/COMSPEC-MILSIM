@@ -1386,6 +1386,45 @@ final class AtakActivityLogService
     }
 
     /**
+     * Compromissions d'un ATAK inscrites au journal d'activité (avant l'historique dédié atak_compromise_events).
+     *
+     * @return list<array{state: string, label: string, actor: ?string, source: string, ts: int, map_id: int}>
+     */
+    public function listCompromiseForTerminal(int $tenantId, string $terminalUid, int $limit = 50): array
+    {
+        $terminalUid = trim($terminalUid);
+        if ($tenantId < 1 || $terminalUid === '') {
+            return [];
+        }
+        $out = [];
+        foreach ($this->filesForTenant($tenantId) as $mapId => $path) {
+            $events = $this->readFile($path)['events'] ?? [];
+            if (!is_array($events)) {
+                continue;
+            }
+            foreach ($events as $e) {
+                $meta = is_array($e) && is_array($e['meta'] ?? null) ? $e['meta'] : [];
+                $state = strtolower(trim((string) ($meta['compromise_state'] ?? '')));
+                if ($state === '' || trim((string) ($meta['terminal_uid'] ?? '')) !== $terminalUid) {
+                    continue;
+                }
+                $at = (string) ($e['at'] ?? '');
+                $out[] = [
+                    'state' => $state,
+                    'label' => trim((string) ($e['label'] ?? '')),
+                    'actor' => trim((string) ($e['actor'] ?? '')) ?: null,
+                    'source' => trim((string) ($meta['source'] ?? '')) ?: 'game',
+                    'ts' => $at !== '' ? (strtotime($at) ?: 0) : 0,
+                    'map_id' => (int) $mapId,
+                ];
+            }
+        }
+        usort($out, static fn (array $a, array $b): int => $b['ts'] <=> $a['ts']);
+
+        return array_slice($out, 0, max(1, min(200, $limit)));
+    }
+
+    /**
      * @return array<int, string> mapId => path
      */
     private function filesForTenant(int $tenantId): array

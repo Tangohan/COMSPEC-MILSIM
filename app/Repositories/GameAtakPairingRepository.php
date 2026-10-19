@@ -125,6 +125,21 @@ final class GameAtakPairingRepository
         return $row ?: null;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findById(int $id): ?array
+    {
+        if (!$this->isReady() || $id < 1) {
+            return null;
+        }
+        $st = $this->pdo()->prepare('SELECT * FROM game_atak_pair_challenges WHERE id = ? LIMIT 1');
+        $st->execute([$id]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function approve(int $id, int $accountId, int $userId, int $tenantId): bool
     {
         if (!$this->isReady() || $id < 1) {

@@ -276,6 +276,16 @@ private _pEntity = {
         (_cTxt select _forEachIndex) ctrlCommit 0;
     } forEach _cells;
     _yy = _yy + 2 * (_ch + _cg) + _pad * 0.2;
+    // Actions de nos autres opérateurs sur ce même sujet (journal d'équipe du terminal SEEK, fn_sseTeamLog).
+    private _team = if (isNil "comspec_overwatch_connect_fnc_sseTeamLog") then { [] } else { ["get", _t] call comspec_overwatch_connect_fnc_sseTeamLog };
+    if ((count _team) > 0) then {
+        private _lines = (_team select [0, 4]) apply {
+            _x params [["_hh", ""], ["_cs", ""], ["_uid", ""], ["_what", ""], ["_det", ""]];
+            format ["<t font='%1' size='0.62' color='%2'>%3</t>  <t color='%4'>%5</t> · %6<t size='0.75' color='%2'>%7</t>", _mono, _hMute, _hh,
+                [_hBlue, _hDim] select (_uid isEqualTo getPlayerUID player), [[_cs, "<", "&lt;"] call CBA_fnc_replace, "vous"] select (_uid isEqualTo getPlayerUID player), _what, ["", format [" · %1", _det]] select (_det isNotEqualTo "")]
+        };
+        _yy = _yy + (([[_ox, _yy, _ow, _fs], format ["<t font='%1' size='0.55' color='%2'>ÉQUIPE SUR CE SUJET</t><br/><t size='0.8'>%3</t>", _mono, _hMute, _lines joinString "<br/>"]] call _st) call _hOf) + _pad * 0.3;
+    };
     if (_dist > 4) then {
         _yy = _yy + (([[_ox, _yy, _ow, _fs], format ["<t size='0.78' color='%1'>▲ Approchez-vous à 4 m au plus pour photographier le visage.</t>", _hAmber]] call _st) call _hOf) + _pad * 0.2;
     };

@@ -88,4 +88,11 @@ return static function (PDO $pdo): void {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
     }
+
+    // Pseudo affiché pour l'envoyeur d'un morceau (sinon indicatif ou nom du compte).
+    $col = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+    $col->execute(['music_tracks', 'uploader_alias']);
+    if ($tableExists('music_tracks') && !$col->fetchColumn()) {
+        $pdo->exec('ALTER TABLE music_tracks ADD COLUMN uploader_alias VARCHAR(80) DEFAULT NULL AFTER uploader_user_id');
+    }
 };

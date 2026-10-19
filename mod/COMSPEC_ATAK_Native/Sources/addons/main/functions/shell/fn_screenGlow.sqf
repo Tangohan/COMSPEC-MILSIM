@@ -4,7 +4,7 @@
     et dessine pour lui la lueur des joueurs proches (lumière locale accrochée au torse, éclat visible de loin).
     Atténuée par le mode nuit (rouge, sombre), dans un véhicule, et surtout par le filtre d'écran JVN
     (objet COMSPEC_ATAK_NvgFilter posé : profil COMSPEC_ATAK_NvgFilter) qui coupe le proche infrarouge.
-    Réglage serveur comspec_atak_native_screen_glow.
+    Réglage serveur comspec_atak_native_screen_glow (désactivé par défaut : aucune lumière visible par les autres).
     Params : [action]  "filter" (filtre posé ?) | "toggle" (poser / retirer) | "level" | "tick" (client, chaque seconde)
 */
 params [["_act", "tick"]];
@@ -22,7 +22,7 @@ switch (_act) do {
         !_on
     };
     case "level": {
-        if !(missionNamespace getVariable ["comspec_atak_native_screen_glow", true]) exitWith { 0 };
+        if !(missionNamespace getVariable ["comspec_atak_native_screen_glow", false]) exitWith { 0 };
         private _d = [] call comspec_atak_native_fnc_display;
         if (isNull _d || {!alive player} || {sunOrMoon >= 0.5}) exitWith { 0 };
         if ((([] call comspec_atak_native_fnc_deviceHealth) getOrDefault ["state", "OK"]) in ["OFF", "BROKEN"]) exitWith { 0 };
@@ -36,6 +36,11 @@ switch (_act) do {
     };
     case "tick": {
         if (!hasInterface) exitWith {};
+        // Réglage serveur coupé (par défaut) : plus rien à faire une fois sa propre lueur remise à 0 et les lumières
+        // éteintes (avant, la liste des joueurs à 1,5 km était parcourue chaque seconde pour rien).
+        if (!(missionNamespace getVariable ["comspec_atak_native_screen_glow", false])
+            && {((player getVariable ["COMSPEC_ATAK_Glow", [0, false]]) select 0) isEqualTo 0}
+            && {(count (uiNamespace getVariable ["COMSPEC_ATAK_GlowLights", createHashMap])) isEqualTo 0}) exitWith {};
         private _lvl = (round ((["level"] call comspec_atak_native_fnc_screenGlow) * 20)) / 20;
         private _pub = [_lvl, (profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"]) isEqualTo "RED"];
         if ((player getVariable ["COMSPEC_ATAK_Glow", [0, false]]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Glow", _pub, true]; };

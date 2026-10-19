@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers\Web;
 
 use App\Core\Csrf;
-use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use InvalidArgumentException;
 use App\Repositories\PedagogyRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TrainingCompetencyRepository;
@@ -17,9 +15,9 @@ use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Training\CompetencyUserJourneyService;
 use App\Services\Training\PedagogyPathwayService;
-use App\Services\Community\TenantSeedHelper;
 use App\Services\Training\TenantPedagogyChainGuard;
 use App\Services\Training\TenantPedagogyStructureService;
+use App\Services\Training\TrainingPedagogyDesignationService;
 
 final class TrainingCompetencyController
 {
@@ -33,6 +31,7 @@ final class TrainingCompetencyController
         private PedagogyPathwayService $pedagogyPathwayService,
         private TenantPedagogyStructureService $pedagogyStructureService,
         private TrainingCourseRepository $trainingCourseRepository,
+        private TrainingPedagogyDesignationService $designationService,
     ) {}
 
     private function trainingShellTotalModules(int $tenantId): int
@@ -143,50 +142,18 @@ final class TrainingCompetencyController
                         }
                     }
                 }
-            } elseif ($action === 'quick_chain_referent') {
-                $targetUserId = (int) $request->input('target_user_id', 0);
-                $userRow = $targetUserId > 0 ? $this->userRepository->findById($targetUserId, $tenantId) : null;
-                if ($userRow === null) {
-                    Session::flash('error', 'Choisissez un membre de votre organisation.');
-                } else {
-                    TenantSeedHelper::ensureOperationalRolesForTenant(Database::getPdo(), $tenantId);
-                    foreach (['instructor_trainer', 'trainer_of_trainers'] as $chainSlug) {
-                        $this->roleRepository->ensureCatalogRoleForTenant($tenantId, $chainSlug);
-                    }
-                    $extraIds = array_values(array_filter([
-                        $this->roleRepository->getIdBySlug($tenantId, 'instructor_trainer'),
-                        $this->roleRepository->getIdBySlug($tenantId, 'trainer_of_trainers'),
-                    ], static fn (?int $id): bool => $id !== null && $id > 0));
-                    if ($extraIds === []) {
-                        Session::flash('error', 'La désignation automatique n’est pas disponible : les rôles attendus ne sont pas encore créés pour votre organisation.');
-                    } else {
-                        try {
-                            $current = $this->userRepository->listOrganizationRoleIdsForUser($targetUserId);
-                            $merged = array_values(array_unique(array_merge($current, $extraIds)));
-                            $this->userRepository->syncOrganizationRoles($targetUserId, $tenantId, $merged, $actorUserId);
-                        } catch (InvalidArgumentException) {
-                            Session::flash('error', 'Cette combinaison de rôles n’est pas autorisée pour ce membre. Ajustez d’abord son profil depuis l’administration des comptes, ou désignez une autre personne.');
-
-                            return Response::redirect(training_lms_admin_url('competences/commandement'));
-                        }
-                        if ($this->trainingCompetencyRepository->competencyTrainerRolesSchemaAvailable()) {
-                            $seedIds = array_values(array_filter([
-                                $this->roleRepository->getIdBySlug($tenantId, 'officer'),
-                                $this->roleRepository->getIdBySlug($tenantId, 'tenant_admin'),
-                            ], static fn (?int $id): bool => $id !== null && $id > 0));
-                            if ($seedIds !== []) {
-                                if ($this->trainingCompetencyRepository->pedagogyRoleIdsForKind($tenantId, 'instructor_certifier') === []) {
-                                    $this->trainingCompetencyRepository->savePedagogyRolePicking($tenantId, 'instructor_certifier', $seedIds, $actorUserId);
-                                }
-                                if ($this->trainingCompetencyRepository->pedagogyRoleIdsForKind($tenantId, 'trainer_certifier') === []) {
-                                    $this->trainingCompetencyRepository->savePedagogyRolePicking($tenantId, 'trainer_certifier', $seedIds, $actorUserId);
-                                }
-                            }
-                        }
-                        $this->pedagogyRepository->logAudit($tenantId, $actorUserId, 'quick_chain_referent', 'user', $targetUserId, null);
-                        Session::flash('success', 'Référent désigné : les rôles de validation de chaîne ont été ajoutés à ce membre. Vous pouvez affiner les habilitations dans l’espace formateur.');
-                    }
-                }
+            } elseif ($action === 'quick_chain_referent' || $action === 'designate_referent') {
+                // Référent de chaîne : nommé par personne (les rôles dédiés ne peuvent plus être créés).
+                $result = $this->designationService->designate(
+                    $tenantId,
+                    (int) $request->input('target_user_id', 0),
+                    ['instructor_certifier', 'trainer_certifier'],
+                    $actorUserId,
+                    (bool) $request->input('notify_email')
+                );
+                Session::flash($result['ok'] ? 'success' : 'error', $result['ok'] && $result['added'] !== []
+                    ? $result['message'] . ' Complétez les autres étapes dans l’espace formateur.'
+                    : $result['message']);
             } elseif ($action === 'seed_preset_matrices') {
                 if (!$matricesReady) {
                     Session::flash('error', 'Les groupes suggérés ne peuvent pas être créés pour le moment.');
@@ -293,6 +260,8 @@ final class TrainingCompetencyController
             'competencyMatricesSchemaReady' => $this->trainingCompetencyRepository->competencyMatricesSchemaAvailable(),
             'competencyTrainerSchemaReady' => $this->trainingCompetencyRepository->competencyTrainerRolesSchemaAvailable(),
             'pedagogyChainAssess' => $this->pedagogyChainGuard->assessTenantChain($tenantId),
+            'pedagogyDesignations' => $this->designationService->listAll($tenantId),
+            'pedagogySteps' => TrainingPedagogyDesignationService::steps(),
         ]);
     }
 
@@ -358,19 +327,24 @@ final class TrainingCompetencyController
                     $this->trainingCompetencyRepository->savePedagogyRolePicking($tenantId, 'trainer_certifier', $picked, $actorUserId);
                     Session::flash('success', 'Responsabilité « gouvernance des concepteurs » mise à jour.');
                 }
-            } elseif ($action === 'assign_trainer_roles') {
-                if (!$trainerSchemaReady) {
-                    Session::flash('error', $schemaBlockedMessage);
-                } else {
-                    $targetUserId = (int) $request->input('target_user_id', 0);
-                    if ($targetUserId > 0) {
-                        $current = $this->userRepository->listOrganizationRoleIdsForUser($targetUserId);
-                        $picked = $this->trainingCompetencyRepository->trainerRoleIds($tenantId);
-                        $merged = array_values(array_unique(array_merge($current, $picked)));
-                        $this->userRepository->syncOrganizationRoles($targetUserId, $tenantId, $merged, $actorUserId);
-                        Session::flash('success', 'Les rôles de conception ont été ajoutés à ce membre.');
-                    }
-                }
+            } elseif ($action === 'designate_person') {
+                $kind = (string) $request->input('kind', '');
+                $result = $this->designationService->designate(
+                    $tenantId,
+                    (int) $request->input('target_user_id', 0),
+                    [$kind],
+                    $actorUserId,
+                    (bool) $request->input('notify_email')
+                );
+                Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+                return Response::redirect(training_lms_admin_url('competences/formateur') . '#etape-' . rawurlencode($kind));
+            } elseif ($action === 'remove_designation') {
+                $kind = (string) $request->input('kind', '');
+                $ok = $this->designationService->remove($tenantId, (int) $request->input('user_id', 0), $kind, $actorUserId);
+                Session::flash($ok ? 'success' : 'error', $ok ? 'Nomination retirée.' : 'Cette nomination n’existe plus.');
+
+                return Response::redirect(training_lms_admin_url('competences/formateur') . '#etape-' . rawurlencode($kind));
             }
 
             return Response::redirect(training_lms_admin_url('competences/formateur'));
@@ -388,6 +362,9 @@ final class TrainingCompetencyController
             'tenantUsers' => $this->trainingCompetencyRepository->listTenantUsers($tenantId),
             'competencySchemaAvailable' => $this->trainingCompetencyRepository->competencySchemaAvailable(),
             'competencyTrainerSchemaReady' => $this->trainingCompetencyRepository->competencyTrainerRolesSchemaAvailable(),
+            'pedagogyDesignations' => $this->designationService->listAll($tenantId),
+            'pedagogySteps' => TrainingPedagogyDesignationService::steps(),
+            'pedagogyChainAssess' => $this->pedagogyChainGuard->assessTenantChain($tenantId),
         ]);
     }
 

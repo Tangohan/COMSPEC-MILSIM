@@ -64,7 +64,7 @@ final class AtakReleaseInfo
         if ($md === '') {
             return $out;
         }
-        $heading = '/^## [^\n]*ATAK natif ' . preg_quote($version, '/') . '(?![0-9.])[^\n]*$/m';
+        $heading = '/^## [^\n]*ATAK natif ' . preg_quote($version, '/') . '(?![0-9]|\.[0-9])[^\n]*$/m';
         if (preg_match($heading, $md, $m, PREG_OFFSET_CAPTURE) !== 1) {
             return $out;
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakLinkStripHiddenAssetTest extends TestCase
 {
@@ -30,25 +31,30 @@ final class AtakLinkStripHiddenAssetTest extends TestCase
             $root . '/docs/bugs/2026-09-16-atak-barre-donnees-bas.md'
         );
 
-        self::assertStringContainsString('1.0.165', $cfg);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfg));
+        // L'Athena gelé a retrouvé le peintre du bandeau (99871) : il n'est plus jamais peint parce que
+        // le réglage est forcé à faux et que la sortie « masqué » passe avant toute création.
         self::assertStringContainsString('99871', $strip);
-        self::assertStringContainsString('ctrlShow false', $strip);
-        self::assertStringContainsString('ctrlDelete', $strip);
-        self::assertStringNotContainsString('ctrlCreate', $strip);
-        self::assertStringNotContainsString('fiab.', $strip);
-        self::assertStringNotContainsString('RscStructuredText', $strip);
-        self::assertStringNotContainsString('ctrlSetPosition', $strip);
+        $gate = strpos($strip, 'if (!_visible) exitWith {');
+        $create = strpos($strip, 'ctrlCreate');
+        self::assertNotFalse($gate);
+        self::assertNotFalse($create);
+        self::assertLessThan($create, $gate);
+        self::assertStringContainsString('_ctrl ctrlShow false', substr($strip, $gate, 200));
 
         self::assertStringContainsString('"comspec_overwatch_show_link_strip"', $preInit);
         self::assertMatchesRegularExpression(
-            '/"comspec_overwatch_show_link_strip"[\s\S]{0,800}?false\s*\] call CBA_fnc_addSetting/',
+            '/"comspec_overwatch_show_link_strip"[\s\S]{0,800}?false\s*\] call (?:CBA_fnc_addSetting|comspec_overwatch_connect_fnc_addSetting)/',
             $preInit
         );
         self::assertStringContainsString('[false, true] call comspec_overwatch_connect_fnc_linkStripApplySetting', $postInit);
         self::assertStringNotContainsString('COMSPEC_LinkStripVisible", "UNSET"', $postInit);
 
-        self::assertStringContainsString('plus affich', $settings);
-        self::assertStringContainsString('barre de donn�es', strtolower($bug));
+        // La mention « n'est plus affichée » vit désormais dans la description du réglage (preInit) ;
+        // la page Paramètres d'Athena (gelée) garde un simple sélecteur de la barre.
+        self::assertStringContainsString('plus affich', $preInit);
+        self::assertStringContainsString('class ComboLinkStrip', $settings);
+        self::assertStringContainsString('barre de données', strtolower($bug));
         self::assertStringContainsString('1.0.143', $bug);
         self::assertStringNotContainsString('endpoint', $bug);
     }

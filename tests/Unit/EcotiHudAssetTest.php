@@ -6,6 +6,7 @@ namespace Tests\Unit;
 
 use App\Services\Tactical\AtakBridgeModulesService;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class EcotiHudAssetTest extends TestCase
 {
@@ -89,7 +90,7 @@ final class EcotiHudAssetTest extends TestCase
         );
 
         self::assertStringContainsString('comspec_overwatch_ecoti_hud', $pre);
-        self::assertStringContainsString('Affichage situation (JVN)', $pre);
+        self::assertStringContainsString('Infos tactiques dans les JVN', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_theme', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_show_unit_outline', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_tube_fx', $pre);
@@ -98,7 +99,7 @@ final class EcotiHudAssetTest extends TestCase
         self::assertStringContainsString('comspec_overwatch_ecoti_compass_only', $pre);
         self::assertStringContainsString('Boussole uniquement', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_fusion', $pre);
-        self::assertStringContainsString('D�coupage d��tage (silhouette)', $pre);
+        self::assertStringContainsString("Vue par étage d'un bâtiment", $pre);
         self::assertStringContainsString('class ecotiInit', $cfg);
         self::assertStringContainsString('class ecotiDrawBadge', $cfg);
         self::assertStringContainsString('class ecotiThemeColors', $cfg);
@@ -112,8 +113,8 @@ final class EcotiHudAssetTest extends TestCase
         self::assertStringContainsString('class ecotiDrawFusion', $cfg);
         self::assertStringContainsString('class ecotiApplyTubeInfoSetting', $cfg);
         self::assertStringContainsString('class COMSPEC_EcotiChromeHud', $cfg);
-        self::assertStringContainsString('1.6.9', $cfg);
-        self::assertStringContainsString('1.0.165', $atakCfg);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfg));
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($atakCfg));
         self::assertStringContainsString('class athena_ecotiThemeSave', $atakCfg);
         self::assertStringContainsString('class athena_ecotiTubeInfoSave', $atakCfg);
         self::assertStringContainsString('ecotiInit', $post);
@@ -152,7 +153,13 @@ final class EcotiHudAssetTest extends TestCase
         self::assertStringContainsString('ecoti_compass_only', $chrome);
         self::assertStringContainsString('Couleurs situation (JVN)', $page);
         self::assertStringContainsString('JVN (cyan clair)', $settings);
-        self::assertStringContainsString('COMSPEC_EcotiHudEnabled', $save);
+        // Persistence moved out of the ATAK save handler into connect's ecotiApplyHudSetting.
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_ecotiApplyHudSetting', $save);
+        self::assertStringContainsString('class ecotiApplyHudSetting', $cfg);
+        $applyHud = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ecotiApplyHudSetting.sqf'
+        );
+        self::assertStringContainsString('profileNamespace setVariable ["COMSPEC_EcotiHudEnabled", _enabled]', $applyHud);
         self::assertStringContainsString('ecotiApplyCutawaySetting', $cutSave);
         self::assertStringContainsString('cba_settings_fnc_set', $cutApply);
         self::assertStringNotContainsString('COMSPEC_EcotiCutawayEnabled', $cutApply);

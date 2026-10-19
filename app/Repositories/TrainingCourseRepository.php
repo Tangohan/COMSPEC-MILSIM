@@ -48,6 +48,23 @@ class TrainingCourseRepository
         return $this->lessonPlayerModeColumn;
     }
 
+    /** Colonnes formation « lien » (delivery_mode / delivery_url) présentes ? Non mis en cache : appelé après TrainingUrlDeliverySchema::ensure. */
+    public function hasDeliveryColumns(): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'training_courses'
+                   AND COLUMN_NAME IN ('delivery_mode', 'delivery_url')"
+            );
+            $st->execute();
+
+            return (int) $st->fetchColumn() === 2;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /** @return list<string> valeurs distinctes de category pour autocomplétion, sans catalogue dédié. */
     public function listDistinctCategoriesForTenant(int $tenantId): array
     {
@@ -388,7 +405,7 @@ class TrainingCourseRepository
     {
         $fields = [];
         $params = [];
-        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope', 'pedagogical_owner_user_id', 'final_validator_user_id', 'lesson_player_mode'];
+        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope', 'pedagogical_owner_user_id', 'final_validator_user_id', 'lesson_player_mode', 'delivery_mode', 'delivery_url'];
         foreach ($allowed as $k) {
             if (array_key_exists($k, $data)) {
                 $fields[] = "`$k` = ?";

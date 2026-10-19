@@ -274,6 +274,10 @@ final class PersonnelCorrectionController
             (string) $request->input('resolution_note', '')
         );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+        // Décision prise depuis la page Effectifs « À traiter » : on y revient.
+        if ((string) $request->input('return_to', '') === 'a-traiter') {
+            return Response::redirect(effectifs_workspace_url('a-traiter'));
+        }
 
         return Response::redirect(url('back-office/personnel/corrections'));
     }

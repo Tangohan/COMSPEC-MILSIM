@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 final class DutyRosterRepository
@@ -40,9 +41,10 @@ final class DutyRosterRepository
         if ($slug === '') {
             return null;
         }
-        $st = $this->pdo()->prepare(
+        $pdo = $this->pdo();
+        $st = $pdo->prepare(
             'SELECT * FROM duty_roster_slots
-             WHERE tenant_id = ? AND position_slug = ?
+             WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'position_slug') . '
                AND starts_at <= NOW() AND ends_at > NOW()
              ORDER BY starts_at DESC
              LIMIT 1'

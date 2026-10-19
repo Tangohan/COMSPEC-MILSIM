@@ -243,6 +243,7 @@ switch (_tab) do {
                 ["OÙ ES-TU ?", compile format ["['ask', %1] call comspec_atak_native_fnc_datingAction;", str _open], true],
                 ["MARQUER SUR LA CARTE", compile format ["['mark', %1] call comspec_atak_native_fnc_datingAction;", str _open]]
             ]];
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["DATING", { ['open', ''] call comspec_atak_native_fnc_datingAction; }]];
             _rows pushBack ["buttons", [
                 ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }],
                 ["RETOUR", { ['open', ''] call comspec_atak_native_fnc_datingAction; }]

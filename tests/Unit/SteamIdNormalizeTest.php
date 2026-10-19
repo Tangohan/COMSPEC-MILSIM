@@ -20,6 +20,15 @@ final class SteamIdNormalizeTest extends TestCase
         self::assertNull(SteamId::normalize('not-a-steam-id'));
     }
 
+    public function testPlaceholdersAreRecognised(): void
+    {
+        self::assertTrue(SteamId::isPlaceholder('_SP_PLAYER_'));
+        self::assertTrue(SteamId::isPlaceholder('"_SP_AI_"'));
+        self::assertTrue(SteamId::isPlaceholder('local'));
+        self::assertFalse(SteamId::isPlaceholder('76561198029539485'));
+        self::assertFalse(SteamId::isPlaceholder('abc'));
+    }
+
     public function testSteam64IsKept(): void
     {
         self::assertSame('76561198000000000', SteamId::normalize('76561198000000000'));

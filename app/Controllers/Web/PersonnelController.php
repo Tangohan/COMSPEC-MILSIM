@@ -205,6 +205,18 @@ class PersonnelController
     }
 
     /** Formulaire d’édition : sa propre fiche se modifie dans le back-office. */
+    /** @return array<string, mixed> */
+    private function communitySettingsForLanguages(int $tenantId): array
+    {
+        try {
+            $settings = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->getSettings($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return is_array($settings['community'] ?? null) ? $settings['community'] : [];
+    }
+
     private function personnelEditUrl(array $target, bool $isSelf): string
     {
         return $isSelf
@@ -896,6 +908,22 @@ class PersonnelController
             $atakPlayStats = null;
         }
 
+        // Distances parcourues en jeu et heures de pilote par type d'appareil (app Distances de l'ATAK natif).
+        $atakDistance = null;
+        try {
+            $atakDistance = (new \App\Repositories\AtakDistanceRepository())->summaryForUser((int) $tenantId, $uid);
+        } catch (\Throwable) {
+            $atakDistance = null;
+        }
+
+        // Montre de l'app Garmin de l'ATAK natif (Body Battery, pas, sommeil, activités), envoyée par le PC du joueur.
+        $atakGarmin = null;
+        try {
+            $atakGarmin = (new \App\Repositories\AtakGarminRepository())->summaryForUser((int) $tenantId, $uid);
+        } catch (\Throwable) {
+            $atakGarmin = null;
+        }
+
         // Encadrement : corriger le temps par rôle (déplacer vers le bon rôle) et voir le journal des corrections.
         $canCorrectRoleTime = $previewAs === null && $this->canCorrectRoleTime();
         $roleTimeMoves = [];
@@ -1107,6 +1135,8 @@ class PersonnelController
             'seniorityDetailLines' => $seniorityDetailLines,
             'armaPlaytime' => $armaPlaytime,
             'atakRoleTimes' => $atakRoleTimes,
+            'atakDistance' => $atakDistance,
+            'atakGarmin' => $atakGarmin,
             'atakPlayStats' => $atakPlayStats,
             'canCorrectRoleTime' => $canCorrectRoleTime,
             'roleTimeMoves' => $roleTimeMoves,
@@ -1228,6 +1258,7 @@ class PersonnelController
         );
         $returnTo = trim((string) ($request->input('return_to') ?? ''));
         if ($returnTo === 'edit') {
+            $isSelf = $actorId === (int) $target['id'];
             return Response::redirect($this->personnelEditUrl($target, $isSelf));
         }
 
@@ -1613,6 +1644,12 @@ class PersonnelController
 
         $service = new \App\Services\Organization\OrbatChartPdfService();
 
+        // Langue de la feuille : ?lang= du lecteur, sinon la langue ORBAT de la communauté.
+        $orbatCommunity = $this->communitySettingsForLanguages($tid);
+        $sheetLang = \App\Support\CommunityLanguages::normalize($request->query('lang', ''))
+            ?? \App\Support\CommunityLanguages::orbatLanguage($orbatCommunity);
+        $sheetCountry = \App\Support\CommunityLanguages::unitCountry($orbatCommunity);
+
         $paper = strtoupper(trim((string) $request->query('paper', '')));
         if (!in_array($paper, ['A3', 'A2', 'A1', 'A0'], true)) {
             $paper = '';
@@ -1627,6 +1664,9 @@ class PersonnelController
             'include_notes' => (string) $request->query('notes', '0') === '1',
             'include_legend' => (string) $request->query('legend', '1') === '1',
             'paper' => $paper,
+            'lang' => $sheetLang,
+            'country' => $sheetCountry,
+            'country_label' => \App\Support\CommunityLanguages::countryLabel($sheetCountry),
         ]);
     }
 
@@ -1849,8 +1889,15 @@ class PersonnelController
         $canStaffEditNow = $this->canStaffEditPersonnel();
         $advancedEditNow = $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid);
 
+        $gameLanguageCommunity = $this->communitySettingsForLanguages($tenantId);
+        $gameLanguage = \App\Core\Container::get(\App\Repositories\MemberLanguageRepository::class)
+            ->resolvedForUsers($tenantId, [$uid], $gameLanguageCommunity)[$uid]
+            ?? \App\Support\CommunityLanguages::resolveMember(null, null, $gameLanguageCommunity);
+
         return Response::view($embeddedInEffectifs ? 'personnel.edit' : ($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main'), [
             'content' => 'personnel.edit',
+            'gameLanguage' => $gameLanguage,
+            'gameLanguageCodes' => \App\Support\CommunityLanguages::communityLanguages($gameLanguageCommunity),
             'title' => 'Modifier ma fiche',
             'isBackOfficeShell' => $inBackOffice,
             'boPageGroup' => 'Opérateur',
@@ -1948,7 +1995,9 @@ class PersonnelController
             return $this->personnelMissingResponse(true);
         }
         $isSelf = (int) $currentUser['id'] === (int) $target['id'];
-        $canStaffEdit = $this->canStaffEditPersonnel();
+        // Gérants et RH changent l'image opérateur depuis la fiche Effectifs : même règle que l'édition des dossiers.
+        $canStaffEdit = $this->canStaffEditPersonnel()
+            || \App\Support\EffectifsLmsAccess::canEditProfiles(Gate::getInstance());
         if (!$isSelf && !$canStaffEdit) {
             return $this->personnelForbiddenResponse(true, url('personnel'));
         }
@@ -2609,6 +2658,20 @@ class PersonnelController
                     PlatformUserProfileService::interfaceLanguageOptions(),
                     (string) ($existingUserProfile['language'] ?? '')
                 );
+                if ((string) $request->input('game_language_form', '') === '1') {
+                    $gameOthers = $request->input('game_other_langs', []);
+                    try {
+                        \App\Core\Container::get(\App\Repositories\MemberLanguageRepository::class)->save(
+                            $tenantId,
+                            (int) $target['id'],
+                            \App\Support\CommunityLanguages::normalize($request->input('game_primary_lang', '')),
+                            \App\Support\CommunityLanguages::normalizeList(is_array($gameOthers) ? $gameOthers : []),
+                            (int) $target['id']
+                        );
+                    } catch (\Throwable) {
+                        // La langue de jeu est secondaire : la fiche s’enregistre quand même.
+                    }
+                }
             }
             $this->userProfileRepository->upsert((int) $target['id'], $profileUpsert);
             $derivedDn = trim($firstName . ' ' . $lastName);

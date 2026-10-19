@@ -30,9 +30,13 @@ final class OrbatChartPdfAssetTest extends TestCase
         self::assertStringContainsString('OrbatChartPdfService', $controller);
         self::assertStringContainsString('orbat/export', $canvas);
         self::assertStringContainsString('Exporter PDF', $canvas);
-        self::assertStringContainsString('ORGANIZATION CHART (ORBAT)', $view);
-        self::assertStringContainsString('COMPOSITION GÉNÉRALE', $view);
-        self::assertStringContainsString('SYNTHÈSE EFFECTIFS', $view);
+        $labels = (string) file_get_contents($root . '/app/Support/OrbatSheetLabels.php');
+        self::assertStringContainsString("\$t('chart')", $view);
+        self::assertStringContainsString("\$t('composition')", $view);
+        self::assertStringContainsString("\$t('strength_summary')", $view);
+        self::assertStringContainsString('ORGANIZATION CHART (ORBAT)', $labels);
+        self::assertStringContainsString('COMPOSITION GÉNÉRALE', $labels);
+        self::assertStringContainsString('SYNTHÈSE EFFECTIFS', $labels);
         self::assertStringContainsString('tcpdfFriendlyHtml', $service);
         self::assertStringContainsString('buildDocument', $service);
         self::assertFileExists($root . '/docs/design/ATHENA_ORBAT_Mockup_Full.html');

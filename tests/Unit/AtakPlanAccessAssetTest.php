@@ -18,7 +18,8 @@ final class AtakPlanAccessAssetTest extends TestCase
         $iff = (string) file_get_contents($root . '/app/Controllers/Api/IffController.php');
 
         self::assertStringContainsString('AtakPlanAccess::allows($id)', $ctrl);
-        self::assertStringContainsString('AtakPlanAccess::deniedJson()', $ctrl);
+        self::assertStringContainsString('AtakPlanAccess::deniedJson($basic)', $ctrl);
+        self::assertStringContainsString('AtakPlanAccess::isBasicPath($request->path())', $ctrl);
         self::assertStringContainsString("'atak'", $helper);
         self::assertStringContainsString('feature_unavailable', $helper);
         self::assertStringContainsString('La carte et les liaisons ne sont pas disponibles', $helper);
@@ -44,5 +45,31 @@ final class AtakPlanAccessAssetTest extends TestCase
         self::assertTrue(AtakPlanAccess::isDenialReport('ÉCHEC · PhotoUpload — http_403', 'ERR|http_403|a.png|feature_unavailable'));
         self::assertFalse(AtakPlanAccess::isDenialReport('ÉCHEC · PhotoUpload — http_403', 'ERR|http_403|a.png'));
         self::assertSame('', AtakPlanAccess::diagnosis(0));
+    }
+
+    public function testBasicLinkCoversPositionsReportsAndBriefingOnly(): void
+    {
+        foreach ([
+            '/api/atak/position', '/api/atak/units', '/api/units/12', '/api/atak/reports/5/acknowledge',
+            '/api/atak/salute', '/api/atak/briefing-plan', '/api/atak/briefing-slides/3/comments',
+            '/api/atak/whoami', '/api/atak/game-session/heartbeat', '/api/atak/telemetry/batch',
+            '/sous-dossier/api/atak/position?x=1', '/api/atak/screen-time/batch',
+        ] as $path) {
+            self::assertTrue(AtakPlanAccess::isBasicPath($path), $path);
+        }
+        foreach ([
+            '/api/recon/images', '/api/intel/photos', '/api/atak/video-feeds', '/api/atak/markers',
+            '/api/cas', '/api/atak/positionx', '/api/atak/unitsx', '/api/atak/zones', '/api/atak/explosive-timers',
+            '/atak/position', '/api/atak/orders',
+        ] as $path) {
+            self::assertFalse(AtakPlanAccess::isBasicPath($path), $path);
+        }
+    }
+
+    public function testDeniedJsonWithBasicLinkNamesTheHigherPlan(): void
+    {
+        $body = AtakPlanAccess::deniedJson(true)->body();
+        self::assertStringContainsString('feature_unavailable', $body);
+        self::assertStringContainsString('Standard', $body);
     }
 }

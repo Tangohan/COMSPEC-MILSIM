@@ -49,7 +49,8 @@ final class MusicTrackStorage
 
     /**
      * @param array<string, mixed>|mixed $file entrée de $_FILES
-     * @return array{path:?string, ext:?string, mime:?string, size:int, sha1:?string, original_name:?string, error:?string}
+     * @return array{path:?string, ext:?string, mime:?string, size:int, sha1:?string, original_name:?string, error:?string,
+     *   game?:array{status:string, message:string, removed:int}}
      */
     public static function storeFromUpload(int $tenantId, int $userId, mixed $file): array
     {
@@ -97,15 +98,24 @@ final class MusicTrackStorage
             return $fail('Enregistrement impossible.');
         }
         @chmod($abs, 0640);
+        // Lisible en jeu ? Un MP3 dont le son est caché derrière une grosse pochette est réparé, un faux MP3 refusé.
+        $game = MusicGameCheck::check($abs, $ext);
+        if ($game['status'] === MusicGameCheck::BAD) {
+            @unlink($abs);
+
+            return $fail('Illisible en jeu : ' . $game['message']);
+        }
+        clearstatcache(true, $abs);
 
         return [
             'path' => $relDir . '/' . $name,
             'ext' => $ext,
             'mime' => self::EXT_MIME[$ext],
-            'size' => $size,
+            'size' => (int) (@filesize($abs) ?: $size),
             'sha1' => (string) sha1_file($abs),
             'original_name' => $original,
             'error' => null,
+            'game' => $game,
         ];
     }
 

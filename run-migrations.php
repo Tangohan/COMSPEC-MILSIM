@@ -490,6 +490,13 @@ try {
     echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
     $migrationRunner->warn('training_course_lms_platform_version', $e);
 }
+$trainingUrlDeliveryMigrate = require $root . '/bootstrap/training_url_delivery_migration.php';
+try {
+    $trainingUrlDeliveryMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_url_delivery : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_url_delivery', $e);
+}
 $trainingCoursesLmsScopeMigrate = require $root . '/bootstrap/training_courses_lms_scope_migration.php';
 try {
     $trainingCoursesLmsScopeMigrate($pdo);
@@ -2567,6 +2574,22 @@ try {
     $migrationRunner->warn('account_purge_requests', $e);
 }
 
+require_once $root . '/bootstrap/platform_account_bans_migration.php';
+try {
+    run_platform_account_bans_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] platform_account_bans : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('platform_account_bans', $e);
+}
+
+require_once $root . '/bootstrap/atak_admin_control_migration.php';
+try {
+    run_atak_admin_control_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_admin_control : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_admin_control', $e);
+}
+
 $personnelCorrectionRequestsMigrate = require $root . '/bootstrap/personnel_correction_requests_migration.php';
 try {
     echo "Migration personnel_correction_requests (corrections RH fiche opérateur)...\n";
@@ -2842,6 +2865,15 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] organization_catalog : ' . $e->getMessage() . "\n";
     $migrationRunner->warn('organization_catalog', $e);
+}
+
+require_once $root . '/bootstrap/community_ecosystem_migration.php';
+try {
+    echo "Migration hub inter-communautés (recommandations, avis, bourse)...\n";
+    run_community_ecosystem_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_ecosystem : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_ecosystem', $e);
 }
 
 $trainingOnboardingBulk = $root . '/bootstrap/training_onboarding_bulk_assign.php';
@@ -3888,6 +3920,20 @@ $migrationRunner->step('atak_squads_screen_time', static function () use ($atakS
     $atakSquadsMigrate($pdo);
 });
 
+// App Distances de l'ATAK natif : distances parcourues par session et heures de pilote par appareil (COMSPEC Link 2.0.86).
+$atakDistanceMigrate = require $root . '/bootstrap/atak_distance_migration.php';
+$migrationRunner->step('atak_distance', static function () use ($atakDistanceMigrate, $pdo): void {
+    echo "Migration atak_distance_stats / atak_pilot_time (distances parcourues, heures de pilote)...\n";
+    $atakDistanceMigrate($pdo);
+});
+
+// App Garmin de l'ATAK natif : montre du joueur par jour, activités et dernier état (COMSPEC Link 2.0.87).
+$atakGarminMigrate = require $root . '/bootstrap/atak_garmin_migration.php';
+$migrationRunner->step('atak_garmin', static function () use ($atakGarminMigrate, $pdo): void {
+    echo "Migration atak_garmin_days / atak_garmin_activities / atak_garmin_status (montre de l'app Garmin)...\n";
+    $atakGarminMigrate($pdo);
+});
+
 // Corrections du temps par rôle par l'encadrement (déplacer vers le bon rôle, journal annulable).
 $migrationRunner->step('atak_role_time_moves', static function () use ($pdo): void {
     echo "Migration atak_role_time_moves (corrections du temps par rôle)...\n";
@@ -3920,6 +3966,13 @@ $planGiftMigrate = require $root . '/bootstrap/plan_gift_migration.php';
 $migrationRunner->step('plan_gifts', static function () use ($planGiftMigrate, $pdo): void {
     echo "Migration plan_gifts / plan_gift_notices (formules offertes)...\n";
     $planGiftMigrate($pdo);
+});
+
+// Envois d'e-mails sous quota : récapitulatif des alertes d'exploitation, compteur du jour.
+$emailDigestMigrate = require $root . '/bootstrap/email_digest_migration.php';
+$migrationRunner->step('email_digest', static function () use ($emailDigestMigrate, $pdo): void {
+    echo "Migration email_digest_items (récapitulatif des alertes e-mail)...\n";
+    $emailDigestMigrate($pdo);
 });
 
 $atakSendQueueMigrate = require $root . '/bootstrap/atak_send_queue_migration.php';
@@ -3976,6 +4029,16 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_nine_line_mission_kind : ' . $e->getMessage() . "\n";
     $migrationRunner->warn('atak_nine_line_mission_kind', $e);
+}
+$migrationEnsurePdo();
+
+$atakNineLineGeoMigrate = require $root . '/bootstrap/atak_nine_line_geo_migration.php';
+try {
+    echo "Migration atak_nine_line.geo_json (géométrie de l'app JTAC)...\n";
+    $atakNineLineGeoMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_nine_line_geo : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_nine_line_geo', $e);
 }
 $migrationEnsurePdo();
 
@@ -4570,6 +4633,13 @@ $migrationRunner->step('permissions.code', static function () use ($pdo): void {
 
 // FBAC must run last so no legacy seed can recreate a global or role-derived grant.
 $migrationRunner->step('function_based_access_v2', static fn () => run_function_based_access_v2_migration($pdo));
+
+// Fiches dossier en double (lignes sans communauté recréées à chaque ouverture de son propre dossier).
+$personnelDossierDedupe = require $root . '/bootstrap/personnel_dossier_dedupe_migration.php';
+$migrationRunner->step('personnel_dossier_dedupe', static function () use ($personnelDossierDedupe, $pdo): void {
+    echo "Nettoyage des fiches dossier en double (personnel_profiles, personnel_extras)...\n";
+    $personnelDossierDedupe($pdo);
+});
 
 require_once $root . '/bootstrap/migrations_full_post.php';
 comspec_print_post_migration_report($pdo, $root, $migrationFlush);

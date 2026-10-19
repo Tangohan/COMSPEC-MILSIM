@@ -16,7 +16,7 @@ final class UnitActivityRepository
 
     private function pdo(): PDO
     {
-        return $this->pdo ??= Database::connection();
+        return $this->pdo ??= Database::getPdo();
     }
 
     public function schemaReady(): bool

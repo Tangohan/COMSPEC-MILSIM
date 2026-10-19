@@ -54,7 +54,12 @@ final class AtakSceneBoundsTest extends TestCase
     {
         self::assertSame(AtakSceneBounds::SHAPE_POLE, AtakSceneBounds::shapeClass(0.6, 0.6, 8.0));
         self::assertSame(AtakSceneBounds::SHAPE_RIBBON, AtakSceneBounds::shapeClass(12.0, 0.8, 2.5));
-        self::assertSame(AtakSceneBounds::SHAPE_PANEL, AtakSceneBounds::shapeClass(1.5, 0.4, 3.5));
+        // Plaque de 0,4 m plus haute que large : démotée en poteau (même règle que
+        // shapeOf() côté OverwatchGlLayers.js). Le panneau reste l'emprise courte et trapue.
+        self::assertSame(AtakSceneBounds::SHAPE_POLE, AtakSceneBounds::shapeClass(1.5, 0.4, 3.5));
+        self::assertSame(AtakSceneBounds::SHAPE_PANEL, AtakSceneBounds::shapeClass(2.0, 1.3, 3.0));
+        // Un mur long et fin n'est jamais un poteau, même haut.
+        self::assertSame(AtakSceneBounds::SHAPE_RIBBON, AtakSceneBounds::shapeClass(40.0, 0.5, 9.0));
         self::assertSame(AtakSceneBounds::SHAPE_BUILDING, AtakSceneBounds::shapeClass(10.0, 8.0, 6.0));
     }
 

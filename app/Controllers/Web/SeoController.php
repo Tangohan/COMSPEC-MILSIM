@@ -69,6 +69,7 @@ final class SeoController
             ['/a-propos', 'monthly', '0.8'],
             ['/sse', 'monthly', '0.85'],
             ['/atak-natif', 'monthly', '0.85'],
+            ['/traduire-atak', 'monthly', '0.6'],
             ['/soutenir-atak', 'monthly', '0.6'],
             ['/contact', 'monthly', '0.7'],
             ['/nouveautes', 'weekly', '0.8'],

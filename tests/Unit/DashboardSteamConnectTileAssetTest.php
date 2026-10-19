@@ -22,7 +22,8 @@ final class DashboardSteamConnectTileAssetTest extends TestCase
         self::assertStringContainsString('if (!$dashSteamLinked)', $cc);
         self::assertStringContainsString('Connexion Steam', $cc);
         self::assertStringContainsString("url('account/steam/connect')", $cc);
-        self::assertStringContainsString('Se connecter avec Steam', $cc);
+        self::assertStringContainsString('Associez votre compte Steam', $cc);
+        self::assertStringContainsString('<span class="dash-action-tile__cta">Se connecter</span>', $cc);
         self::assertStringContainsString('$acctSteamLinked', $aside);
         self::assertStringContainsString("url('account/steam/connect')", $aside);
         self::assertStringContainsString("url('account/steam/connect')", $prefs);
@@ -30,7 +31,8 @@ final class DashboardSteamConnectTileAssetTest extends TestCase
         self::assertStringContainsString("/account/steam/callback", $routes);
         self::assertStringContainsString('function steamConnect', $ctrl);
         self::assertStringContainsString('function steamCallback', $ctrl);
-        self::assertStringContainsString('dash-steam-tile', $css);
+        self::assertStringContainsString('dash-action-tile--steam', $cc);
+        self::assertStringContainsString('.dash-action-tile--steam', $css);
         self::assertStringNotContainsString('openid', strtolower($cc));
         self::assertStringNotContainsString('/api/', $cc);
     }

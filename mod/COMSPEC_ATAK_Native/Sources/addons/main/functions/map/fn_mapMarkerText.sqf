@@ -33,6 +33,8 @@ if (_now > (_cand select 0)) then {
         private _m = _y;
         private _txt = _m getOrDefault ["text", ""];
         if (_txt isEqualTo "") then { continue };
+        // Nom posé automatiquement (palette, LOCK…) : relu dans la langue du mod, quelle que soit celle de son auteur.
+        _txt = [_txt] call comspec_atak_native_fnc_markerAutoName;
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) isNotEqualTo "ICON") then { continue };
         if ((_m getOrDefault ["alpha", 1]) <= 0.05) then { continue };
         private _type = _m getOrDefault ["type", "mil_dot"];
@@ -56,7 +58,7 @@ if (_now > (_cand select 0)) then {
         if (_sz < 0) then { _sz = getNumber (configFile >> "CfgMarkers" >> _type >> "size"); if (_sz <= 0) then { _sz = 32; }; _sizeCache set [_type, _sz]; };
         _sz = _sz * (((_m getOrDefault ["size", [1, 1]]) param [0, 1]) max 0.3);
         private _id = _m getOrDefault ["id", _x];
-        private _eni = ((toLower _type) select [0, 2]) isEqualTo "o_" || {(toUpper (_txt select [0, 4])) isEqualTo "ENI "};
+        private _eni = ((toLower _type) select [0, 2]) isEqualTo "o_" || {(toUpper (_txt select [0, 4])) in ["ENI ", "ENY "]};
         // LOCK 098 · MH-6M Little Bird (drone) -> ["LOCK 098", "MH-6M Little Bird · drone"]
         private _lock = [];
         if ((_txt select [0, 5]) isEqualTo "LOCK " && {(_txt find " · ") > 0}) then {
@@ -88,10 +90,13 @@ private _fill = "#(rgb,8,8,3)color(1,1,1,1)";
 private _none = "#(argb,8,8,3)color(0,0,0,0)";
 private _fB = COMSPEC_ATAK_FontSet select 1;
 private _fR = COMSPEC_ATAK_FontSet select 0;
-private _fs = 0.021 * _ts * _kt;
-private _fs2 = _fs * 0.86;
+// Taille relevée (0,021 -> 0,024) : sur la petite carte du téléphone porté, les noms étaient trop petits à côté des symboles.
+private _fs = 0.024 * _ts * _kt;
+private _fs2 = _fs * 0.9;
 private _h = _fs * 1.3;
 private _px = pixelW;
+// Symboles des marqueurs à l'échelle de l'écran (fn_mapGameMarkers) : même facteur pour décoller le nom.
+private _mkS = uiNamespace getVariable ["COMSPEC_ATAK_MkScale", 1];
 private _gap = 4 * _px;
 private _bar = 3 * _px;
 private _pad = 5 * _px;
@@ -125,7 +130,7 @@ private _n = 0;
     private _sp = _map ctrlMapWorldToScreen _pos;
     _sp params ["_sx", "_sy"];
     if (_sx < _mx || {_sx > (_mx + _mw)} || {_sy < _my} || {_sy > (_my + _mh)}) then { continue };
-    private _half = ((_sz * 0.5 * _px) max (5 * _px)) min (40 * _px);
+    private _half = ((_sz * _mkS * 0.5 * _px) max (4 * _px)) min (40 * _px);
     private _force = _isLock || {_id isEqualTo _sel};
 
     // 1. Textes et taille de l'étiquette selon le style.
@@ -193,7 +198,7 @@ private _n = 0;
     _rects pushBack _r;
     private _x1 = _x0 + _bw;
     private _y1 = _y0 + _bh;
-    private _tc = [[0.95, 0.96, 0.95, 1], _redTxt] select _isLock;
+    private _tc = [[1, 1, 1, 1], _redTxt] select _isLock;
 
     // 3. Dessin.
     switch (_style) do {
@@ -221,7 +226,7 @@ private _n = 0;
         };
         default {
             // PLATE : plaque sombre, liseré de couleur à gauche, capitales grasses ; LOCK bordé de rouge.
-            [_x0, _y0, _x1, _y1, [0.045, 0.055, 0.05, 0.84]] call _rect;
+            [_x0, _y0, _x1, _y1, [0.035, 0.042, 0.038, 0.93]] call _rect;
             [_x0, _y0, _x0 + _bar, _y1, [_c, _red] select _isLock] call _rect;
             if (_isLock) then { [_x0, _y0, _x1, _y1, [0.91, 0.28, 0.23, 0.75], ""] call _rect; };
             if (_id isEqualTo _sel) then { [_x0, _y0, _x1, _y1, [0.36, 0.78, 0.42, 1], ""] call _rect; };

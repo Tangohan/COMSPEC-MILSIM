@@ -3,10 +3,21 @@ _page = toUpper _page;
 // Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos).
 private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
 if !(_page in _allowed) then { _page = "LAUNCHER"; };
+// App en chantier (config wip=1, ex. Brèche) : affichée grisée au lanceur, ne s'ouvre d'aucune façon (tuile, dock, recherche).
+if ((([] call comspec_atak_native_fnc_appList) findIf { (_x get "page") isEqualTo _page && {_x getOrDefault ["wip", false]} }) >= 0) exitWith {
+    ["Application en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast;
+    false
+};
 
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Touche accueil (coque ou barre d'app) sur l'écran de verrouillage : déverrouille.
 if (_page isEqualTo "LAUNCHER" && {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]}) then { ["unlock"] call comspec_atak_native_fnc_lockScreen; };
+// Téléphone verrouillé : aucune app ne s'ouvre par-dessus l'écran de verrouillage (dock, raccourci, notification).
+// Un redessin sans empilement (mode, orientation) passe : fn_pageRender remet l'écran de verrouillage devant.
+if (_push && {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]}) exitWith {
+    ["Déverrouillez d'abord le téléphone", 2] call comspec_atak_native_fnc_toast;
+    false
+};
 private _prevPage = _s getOrDefault ["activePage", ""];
 private _history = _s getOrDefault ["history", []];
 private _last = if ((count _history) > 0) then { _history select ((count _history) - 1) } else { "" };
@@ -18,6 +29,15 @@ _s set ["history", _history];
 // Retour arrière ou redessin sans empilement : fn_pageRender retrouve le défilement de la page.
 _s set ["scrollRestore", !_push];
 _s set ["activePage", _page];
+// Lanceur : apps récentes (profil, gardées d'une partie à l'autre) et apps déjà ouvertes (fin de la pastille NOUVEAU).
+if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES"])}) then {
+    private _rec = profileNamespace getVariable ["COMSPEC_ATAK_AppRecent", []];
+    if !(_rec isEqualType []) then { _rec = []; };
+    _rec = [_page] + (_rec - [_page]);
+    profileNamespace setVariable ["COMSPEC_ATAK_AppRecent", _rec select [0, 12]];
+    private _seen = profileNamespace getVariable ["COMSPEC_ATAK_AppSeen", []];
+    if (_seen isEqualType [] && {!(_page in _seen)}) then { _seen pushBack _page; profileNamespace setVariable ["COMSPEC_ATAK_AppSeen", _seen]; };
+};
 
 [_page] call comspec_atak_native_fnc_pageRender;
 // Mouvement (fn_fx) : l'app s'ouvre en grandissant depuis le point touché ; l'accueil revient en fondu.

@@ -6,6 +6,8 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
 private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Boussole fluide : aiguille et cadran suivent le cap à chaque image (fn_mapOverlayUpdate, boussole seulement).
+[false, true] call comspec_atak_native_fnc_mapOverlayUpdate;
 // Téléphone porté (ou « Suivre ma position ») : la carte suit le joueur à chaque image, sans à-coup.
 // fn_mapCenter pose le premier centrage et son décalage (comspec_lastAim) ; ensuite on glisse du même écart que le joueur.
 if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
@@ -31,7 +33,8 @@ private _lblOn = _labels && {_lblStyle isNotEqualTo "NONE"};
 // textes proportionnels aussi mais jamais sous une taille lisible.
 private _kRaw = ((ctrlPosition _map) select 3) / (safeZoneH * 0.7);
 private _k = (_kRaw max 0.35) min 1.35;
-private _kt = (_kRaw max 0.8) min 1.25;
+// Textes : plancher relevé de 0,8 à 0,95 (petite carte du téléphone porté : étiquettes illisibles sinon).
+private _kt = (_kRaw max 0.95) min 1.25;
 // Étiquettes : blanc cerné de noir (ombre 2), lisible sur tous les fonds de carte.
 private _clear = "#(argb,8,8,3)color(0,0,0,0)";
 // Réglages > Carte : taille des textes (indicatifs, grilles, libellés) et des symboles. Défaut 1.25 (plus grand qu'avant).
@@ -39,6 +42,10 @@ private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]
 private _is = ((profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25]) max 0.8) min 2.2;
 uiNamespace setVariable ["COMSPEC_ATAK_MapTs", _ts];
 uiNamespace setVariable ["COMSPEC_ATAK_MapIs", _is];
+// Marqueurs de la mission (fn_mapGameMarkers) : symbole Arma (32 px pour l'OTAN) ramené à l'échelle de l'écran de l'ATAK,
+// comme les unités ; gardé pour fn_mapMarkerText, qui décolle les noms du symbole.
+private _mk = 0.62 * ((_kRaw max 0.45) min 1.2) * _is;
+uiNamespace setVariable ["COMSPEC_ATAK_MkScale", _mk];
 private _bgStyle = [] call comspec_atak_native_fnc_mapStyle;
 // Cartouches façon ATAK (fn_mapLabels) en carte plein écran ; la petite carte (téléphone en HUD) garde l'indicatif simple.
 private _boxOn = _lblOn && {_kRaw > 0.75} && {_scale < 0.25};
@@ -70,6 +77,8 @@ if (isNil "_mkIconCache") then { _mkIconCache = createHashMap; uiNamespace setVa
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
+// Fond PHOTO (capture de la carte) : tuiles sous tous les symboles.
+if (_bgStyle isEqualTo "PHOTO") then { [_map] call comspec_atak_native_fnc_photoMap; };
 // Fond de carte (Réglages > Carte ou CALQUES) : voile sous tous les symboles (dessiné en premier).
 private _veil = switch (_bgStyle) do {
     case "LIGHT": { [1, 1, 1, 0.38] };
@@ -144,6 +153,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
 // écrit plus (COMSPEC_RscMapAtak) ; chaque catégorie se masque dans CALQUES.
 [_map, _ts, _kt, _scale] call comspec_atak_native_fnc_mapPlaceText;
 
+// Marqueurs de la mission (symboles, zones, traits) : la carte Arma ne les dessine plus (showMarkers = 0).
+[_map, _mk] call comspec_atak_native_fnc_mapGameMarkers;
+
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
 private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
 if ((count _route) > 0) then {
@@ -184,25 +196,11 @@ private _perfT = diag_tickTime;
 // Plan de briefing (app Plan) sous les unités : plan partagé du camp et mon brouillon (plus pâle). Affiché par défaut.
 if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
     [_map, (missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", side group player], [0, [], ""]]) param [1, []], 0.85] call comspec_atak_native_fnc_planDraw;
+    // Salle collaborative rejointe (code) : dessinée comme le plan du camp.
+    private _planRoom = uiNamespace getVariable ["COMSPEC_ATAK_PlanRoomId", ""];
+    if (_planRoom isNotEqualTo "") then { [_map, (missionNamespace getVariable ["COMSPEC_ATAK_PlanRoom_" + _planRoom, [0, [], ""]]) param [1, []], 0.85] call comspec_atak_native_fnc_planDraw; };
     private _planDraft = missionNamespace getVariable ["COMSPEC_ATAK_PlanDraft", []];
     if ((count _planDraft) > 0) then { [_map, _planDraft, 0.55] call comspec_atak_native_fnc_planDraw; };
-};
-
-// Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
-private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
-private _wpts = _wp getOrDefault ["pts", []];
-if ((count _wpts) > 0) then {
-    private _wi = _wp getOrDefault ["idx", 0];
-    private _dash = {
-        params ["_a", "_b", "_c"];
-        private _n = ((round ((_a distance2D _b) / 40)) max 1) min 60;
-        for "_k" from 0 to (_n - 1) step 2 do { _map drawLine [_a vectorAdd ((_b vectorDiff _a) vectorMultiply (_k / _n)), _a vectorAdd ((_b vectorDiff _a) vectorMultiply ((_k + 1) / _n)), _c]; };
-    };
-    for "_i" from 0 to ((count _wpts) - 2) do { [(_wpts select _i) select 0, (_wpts select (_i + 1)) select 0, [0.95, 0.75, 0.18, 0.9]] call _dash; };
-    if (_wp getOrDefault ["nav", false]) then { _map drawArrow [getPosATL vehicle player, (_wpts select _wi) select 0, [0.36, 0.78, 0.42, 0.9]]; };
-    {
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [[0.95, 0.75, 0.18, 1], [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _wi), _x select 0, 22 * _k * _is, 22 * _k * _is, 0, _x select 1, 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
-    } forEach _wpts;
 };
 
 // Guerre électronique : position brouillée (GPS) et pistes BFT dégradées.
@@ -402,6 +400,21 @@ if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDis
     _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (player distance2D _c),round (player getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
+// Point de pose choisi d'un clic droit en mode MARQUEUR (fn_markerPlace) : aperçu du type choisi dans un anneau qui pulse.
+private _anchor = _state getOrDefault ["markerAnchor", []];
+if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualTo "MARKER"}) then {
+    private _ap = [_anchor select 0, _anchor select 1, 0];
+    private _pulse = 0.55 + 0.45 * (abs sin (diag_tickTime * 180));
+    private _ring = [0.36, 0.78, 0.42, _pulse];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _ring, _ap, 34 * _is, 34 * _is, 0, "", 0];
+    private _ic = getText (configFile >> "CfgMarkers" >> (_state getOrDefault ["markerType", "mil_dot"]) >> "icon");
+    if (_ic isNotEqualTo "") then { _map drawIcon [_ic, [1, 1, 1, 0.75], _ap, 20 * _is, 20 * _is, 0, "", 0]; };
+    _map drawIcon [_dot, [0.36, 0.78, 0.42, 1], _ap, 6, 6, 0, "  " + (("POINT DE POSE · VALIDER") call comspec_atak_native_fnc_tr), 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+};
+
+// Points de passage : tronçons, étapes nommées et typées, point choisi en mode POINTS DE PASSAGE (fn_wpDraw).
+[_map, _k * _is, _ts, _cursor] call comspec_atak_native_fnc_wpDraw;
+
 // Mesure A -> B (ou A -> curseur tant que B n'est pas posé)
 private _measure = +(_state getOrDefault ["mapMeasure",[]]);
 if ((count _measure) isEqualTo 1 && {(count _cursor) >= 2}) then { _measure pushBack [_cursor select 0,_cursor select 1,0]; };
@@ -489,10 +502,11 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         private _id = _m getOrDefault ["id", _x];
         private _title = _m getOrDefault ["text", ""];
         if (_title isEqualTo "") then { continue };
+        _title = [_title] call comspec_atak_native_fnc_markerAutoName;
         if ((_m getOrDefault ["local", false]) && {(_id find "_USER_DEFINED") < 0}) then { continue };
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) in ["POLYLINE", "RECTANGLE", "ELLIPSE"]) then { continue };
         // Contacts ENI : déjà dans un cartouche rouge (fn_mapLabels).
-        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) isEqualTo "ENI "}}) then { continue };
+        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) in ["ENI ", "ENY "]}}) then { continue };
         private _pos = _m getOrDefault ["position", []];
         if ((count _pos) < 2) then { continue };
         private _sp = _map ctrlMapWorldToScreen _pos;
@@ -579,7 +593,7 @@ if (_spanX > 1 && {_spanY > 1}) then {
     if (_si < 0) then { _si = (count _steps) - 1; };
     private _step = _steps select _si;
     private _gs = 0.019 * _k * _ts;
-    private _light = _bgStyle in ["DARK", "NIGHT"];
+    private _light = _bgStyle in ["DARK", "NIGHT", "PHOTO"];
     private _gc = [[0.05, 0.05, 0.05, 0.95], [0.90, 0.94, 0.91, 0.95]] select _light;
     private _none = "#(argb,8,8,3)color(0,0,0,0)";
     private _cfgGrid = configFile >> "CfgWorlds" >> worldName >> "Grid";

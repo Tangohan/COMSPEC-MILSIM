@@ -33,7 +33,8 @@ final class AtakSceneBounds
         if ($short < 1.15 && $height >= 3.2 && $height >= ($long * 1.15)) {
             return self::SHAPE_POLE;
         }
-        if ($short < 1.0 && $height > ($short * 3.5)) {
+        /* Plus haut que long : un mur fin de 40 m n'est pas un poteau. */
+        if ($short < 1.0 && $height > ($short * 3.5) && $height >= $long) {
             return self::SHAPE_POLE;
         }
         if ($short < 1.55 && $long / max(0.01, $short) >= 4.0) {

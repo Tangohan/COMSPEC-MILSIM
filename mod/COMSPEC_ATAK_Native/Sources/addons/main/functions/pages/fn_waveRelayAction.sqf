@@ -5,7 +5,8 @@
                     links [[index A, index B, qualité %]...], hops [sauts jusqu'à la passerelle, -1 si coupé],
                     me (mon index), gw (index de la passerelle ou -1), gwLabel.
                     Lien si la distance est sous la portée (COMSPEC_ATAK_MeshRange, 3 000 m par défaut),
-                    portée réduite à 35 % quand le relief coupe la ligne entre les deux antennes.
+                    qualité tirée du bilan radio entre les deux antennes (fn_radioLink : relief, zone de Fresnel) ;
+                    réglage comspec_atak_native_net_realism à 0 : portée réduite à 35 % quand le relief coupe la ligne.
                     Passerelles : tous les relais Overwatch intacts et passerelles de véhicule / PC mobiles (fn_relayNet) ;
                     la principale est le relais le plus proche, sinon la passerelle de véhicule, sinon le chef de groupe.
       "talkgroup" : choisit le talkgroup data (variable publique COMSPEC_ATAK_Talkgroup) quand ACRE2 est absent.
@@ -41,7 +42,8 @@ switch (_act) do {
             _gw = _nodes findIf { (_x select 0) isEqualTo _lead };
             if (_gw >= 0) then { _gwLabel = format ["Chef de groupe (%1)", (_nodes select _gw) select 2]; };
         };
-        // Liens : portée de la paire = la plus petite des deux, réduite si le relief masque, pluie en léger malus.
+        // Liens : portée de la paire = la plus petite des deux ; qualité = marge du bilan radio sur 20 dB.
+        private _real = (["realism"] call comspec_atak_native_fnc_netCond);
         private _links = [];
         private _adj = _nodes apply { [] };
         private _n = count _nodes;
@@ -53,10 +55,18 @@ switch (_act) do {
                 private _pb = _b select 1;
                 private _d = _pa distance _pb;
                 private _eff = (_a select 4) min (_b select 4);
-                if (_d > _eff) then { continue };
-                if (terrainIntersectASL [_pa, _pb]) then { _eff = _eff * 0.35; };
-                if (_d > _eff) then { continue };
-                private _q = round (100 * (1 - (_d / _eff) ^ 2) * (1 - 0.15 * rain));
+                if (_d > 2 * _eff) then { continue };
+                // Bilan radio téléphone à téléphone (fn_radioLink, profil grossier) : relief, zone de Fresnel au ras du sol.
+                // Modèle simplifié : portée x 0,35 derrière le relief, petit malus de pluie.
+                private _q = 0;
+                if (_real isEqualTo 0) then {
+                    if (_d > _eff) then { continue };
+                    if (terrainIntersectASL [_pa, _pb]) then { _eff = _eff * 0.35; };
+                    if (_d > _eff) then { continue };
+                    _q = round (100 * (1 - (_d / _eff) ^ 2) * (1 - 0.15 * rain));
+                } else {
+                    _q = round (100 * (((([_pa, _pb, _eff, "coarse"] call comspec_atak_native_fnc_radioLink) select 0) / 20) min 1));
+                };
                 if (_q < 1) then { continue };
                 _links pushBack [_i, _j, _q];
                 (_adj select _i) pushBack _j;

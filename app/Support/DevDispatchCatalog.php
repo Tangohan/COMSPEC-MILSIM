@@ -293,6 +293,41 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(924, '2026-10-19', 'Accueil : aperçu de la plateforme avec une unité fictive', 'La page d’accueil publique montre enfin Athena en action. Une nouvelle section « Voyez-le tourner » présente six écrans d’une unité imaginaire, TF ORION : son ORBAT avec les effectifs par unité, un tableau des opérateurs (qualifications, présence, statut), le centre de commandement, une formation en cours, le briefing d’une manœuvre avec carte et slots, et l’extranet JNET alimenté par l’ATAK en jeu. Toutes les données sont inventées et signalées comme telles. Rechargez le portail (Ctrl+F5).', [
+                'Section « Voyez-le tourner » sur l’accueil : six écrans de démonstration à onglets',
+                'ORBAT, personnel, commandement, formation, manœuvre et JNET d’une unité fictive',
+                'Version anglaise de la démonstration',
+            ], [
+                'Onglets utilisables au clavier (flèches, Début, Fin) et lien direct #apercu-orbat, #apercu-jnet…',
+            ], [], ['platform'], [
+                'Ouvrez l’accueil public, descendez sous « Un portail pensé pour commander » et parcourez les six onglets de l’aperçu.',
+            ], 'Portail Athena'),
+            $pr(866, '2026-10-18', 'Bureau recrutement : la file se range par prochaine action', 'La file des candidatures devient un tableau en colonnes : À prendre, En instruction, Entretien, En attente, Intégration et Bilan 30 jours. Chaque carte dit ce qu’il faut faire, qui le porte et si c’est en retard, avec un bouton qui mène au bon endroit de la fiche. Des filtres rapides isolent vos dossiers, ceux sans recruteur et ceux en retard ; la liste complète reste disponible. La fiche candidat s’ouvre sur une barre de pilotage : frise des 4 étapes, prochaine action, référent et délai. Rechargez le portail (Ctrl+F5).', [
+                'Tableau en colonnes par prochaine action, trié du plus urgent au moins urgent',
+                'Filtres rapides « Mes dossiers », « Sans recruteur », « En retard » et recherche par nom, e-mail ou n° de dossier',
+                '« Me désigner » directement depuis une carte, sans quitter la file',
+                'Barre de pilotage en tête de la fiche candidat : étapes, prochaine action, référent, délai',
+            ], [
+                'Un entretien passé sans décision est signalé « Conclure l’entretien » au lieu de rester « dans les délais »',
+                'La liste complète gagne une colonne « Prochaine action »',
+                'Le délai d’alerte se règle depuis un menu compact en tête de file',
+            ], [
+                'Les candidatures acceptées en cours d’intégration s’affichaient « Statut à vérifier » dans la liste',
+                'Le récapitulatif de la fiche indiquait l’étape 2 sur 4 pour un dossier encore sans référent',
+            ], ['personnel'], [
+                'Ouvrez Bureau recrutement → File des dossiers : les dossiers sont rangés par colonne. Cliquez « Sans recruteur » puis « Me désigner » sur une carte : elle passe dans « En instruction » et dans « Mes dossiers ».',
+            ], 'Portail Athena'),
+            $pr(758,'2026-10-18', 'Portail Athena 1.7.0 « Denver » : chaque version porte un nom de ville', 'Le portail passe en version 1.7.0 et s’appelle Denver. Désormais, chaque nouvelle version du site reçoit le nom d’une ville américaine, jamais réutilisé ; les correctifs gardent le nom de leur version. Toutes les versions jusqu’à 1.6 restent Phoenix, la prochaine sera Austin. La bannière « Production en ligne » affiche le nom de ville et les versions à jour de l’ATAK en jeu, de COMSPEC Link et d’Overwatch. Rechargez le portail (Ctrl+F5).', [
+                'Nom de ville à côté du numéro de version du portail (Phoenix, Denver, puis Austin…)',
+                'Versions de COMSPEC ATAK et COMSPEC Link lues directement dans le mod, toujours à jour',
+            ], [
+                'La bannière affiche le nom de ville seul, sans le mot « Opération »',
+                'Les cartes de la bannière suivent l’ATAK en jeu, COMSPEC Link et le poste de commandement Overwatch',
+            ], [
+                'La date de dernière mise en production restait bloquée au 28 septembre',
+            ], ['atak', 'command'], [
+                'Ouvrez Nouveautés de l’organisation : la bannière indique Portail Athena v1.7.0 et Denver, avec ATAK 1.96.0 et Link 2.0.86.',
+            ], 'Portail Athena'),
             $pr(757, '2026-10-14', 'JNET : les reco du jeu remontent dans l’espace de l’unité', 'Les notes de reco, photos et rapports envoyés depuis l’ATAK en jeu arrivent désormais dans JNET. Chacun devient un échange de l’unité de l’opérateur, remonté vers son échelon supérieur : la chaîne de commandement le voit dans « Remonté » et dans le flux commun. Une reco modifiée en jeu met à jour son échange. Les photos confidentielles ou liées au bureau SSE ne montrent jamais l’image, seulement un lien d’ouverture sur Athena. Rechargez le portail (Ctrl+F5).', [
                 'Reco, photos et rapports ATAK (Contact, SALUTE, BDA, FRAGO…) relayés dans l’espace JNET de l’unité',
                 'Badge d’origine « Reco terrain », « Photo terrain » ou « Rapport ATAK », vignette de la photo et lien vers la carte',

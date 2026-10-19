@@ -38,7 +38,9 @@ final class AtakRelayCoverageViewTest extends TestCase
         self::assertStringContainsString('COMSPEC_ATAK_Coverage', $draw);
         self::assertStringContainsString('COMSPEC_ATAK_Trilat', $draw);
         $ctx = $this->read(self::MAIN . '/functions/map/fn_mapCtxMenu.sqf');
-        self::assertStringContainsString('["locate", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_relayNet;', $ctx);
+        // Localisation différée (6 à 10 s, annulable) puis « locate » ; effaçable depuis le même menu.
+        self::assertStringContainsString('["locateStart", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_relayNet;', $ctx);
+        self::assertStringContainsString('"LOCDEL"', $ctx);
         self::assertStringContainsString('["compute", [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_reliefAction;', $ctx);
         self::assertStringContainsString('["at", _p] call comspec_atak_native_fnc_relayNet', $this->read(self::MAIN . '/functions/map/fn_mapOverlayUpdate.sqf'));
         self::assertStringContainsString('["COUVERTURE", "COV"] call _tabBtn', $this->read(self::MAIN . '/functions/pages/fn_pageWaveRelay.sqf'));

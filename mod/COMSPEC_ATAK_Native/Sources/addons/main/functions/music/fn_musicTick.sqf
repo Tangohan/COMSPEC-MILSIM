@@ -28,7 +28,14 @@ if ((_m get "kind") isNotEqualTo "" && {!_enabled || {!alive player} || {([] cal
 };
 private _key = call _ownKey;
 if (_key isNotEqualTo "" && {(_cur select 0) isEqualTo _key}) then {
+    // Lecteur DLL interrogé au plus toutes les 1,5 s (appel bloquant pour le jeu ; la boucle tourne toutes les 0,5 s).
     if ((_cur select 1) isEqualTo "dll") then {
+        // Entre deux relevés, la position avance d'elle-même (barre de lecture fluide).
+        if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_MusicStatusAt", -10]) < 1.5) exitWith {
+            private _st0 = _m getOrDefault ["status", []];
+            if ((_st0 param [0, ""]) isEqualTo "playing") then { _st0 set [1, (_now - (_m get "start")) * 1000]; };
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_MusicStatusAt", diag_tickTime];
         private _st = [["MusicStatus"] call comspec_atak_native_fnc_extensionCall, "|"] call CBA_fnc_split;
         if ((_st param [0, ""]) isNotEqualTo "OK") exitWith {};
         _st params ["", ["_state", ""], ["_pos", "0"], ["_len", "0"], ["_title", ""], ["_err", ""]];

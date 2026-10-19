@@ -13,6 +13,14 @@ final class ContainerIntegrations
     {
         return match ($id) {
             Gate::class => Gate::getInstance(),
+            \App\Services\Community\CommunityPageEditorAccess::class => new \App\Services\Community\CommunityPageEditorAccess(
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Services\Rbac\RbacService::class),
+            ),
+            \App\Controllers\Web\CommunityPageEditorController::class => new \App\Controllers\Web\CommunityPageEditorController(
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Services\Community\CommunityPageEditorAccess::class),
+            ),
             \App\Controllers\Admin\Organization\OrganizationProgressionHubController::class => new \App\Controllers\Admin\Organization\OrganizationProgressionHubController(
                 Container::get(\App\Services\Auth\AuthService::class),
                 Gate::getInstance(),
@@ -44,6 +52,12 @@ final class ContainerIntegrations
                 Gate::getInstance(),
             ),
             \App\Services\Notifications\ActivityHubPresentationService::class => new \App\Services\Notifications\ActivityHubPresentationService(),
+            \App\Repositories\CommunityEcosystemRepository::class => new \App\Repositories\CommunityEcosystemRepository(),
+            \App\Services\Ecosystem\CommunityStatsService::class => new \App\Services\Ecosystem\CommunityStatsService(
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\CommunityEcosystemRepository::class),
+            ),
             \App\Repositories\AsyncJobRepository::class => new \App\Repositories\AsyncJobRepository(),
             \App\Repositories\TenantApiKeyRepository::class => new \App\Repositories\TenantApiKeyRepository(),
             \App\Controllers\Web\ActivityHubController::class => new \App\Controllers\Web\ActivityHubController(

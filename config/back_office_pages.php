@@ -35,25 +35,10 @@ return [
             ['label' => 'Besoin d’aide ?', 'href' => 'back-office/onboarding-recovery'],
             ['label' => 'Paramètres', 'href' => 'back-office/organisation/parametres'],
         ]],
-        ['path' => 'back-office/community/presentation', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Page d’accueil publique', 'subtitle' => 'Ce que voient les visiteurs avant de s’inscrire : présentation, photos et appel à candidater.'],
-        ['path' => 'back-office/community/inscription', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Nom, logo, page publique, inscription et écran d’accueil des membres.', 'quick' => [
-            ['label' => 'Identité', 'href' => 'back-office/community?onglet=identite'],
-            ['label' => 'Vitrine', 'href' => 'back-office/community?onglet=vitrine'],
-            ['label' => 'Inscription', 'href' => 'back-office/community?onglet=inscription'],
-            ['label' => 'Accueil', 'href' => 'back-office/community?onglet=accueil'],
-        ]],
-        ['path' => 'back-office/community', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Nom, logo, page publique, inscription et écran d’accueil des membres.', 'quick' => [
-            ['label' => 'Identité', 'href' => 'back-office/community?onglet=identite'],
-            ['label' => 'Vitrine', 'href' => 'back-office/community?onglet=vitrine'],
-            ['label' => 'Inscription', 'href' => 'back-office/community?onglet=inscription'],
-            ['label' => 'Accueil', 'href' => 'back-office/community?onglet=accueil'],
-        ]],
-        ['path' => 'back-office/organisation/parametres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Nom, logo, page publique, inscription et écran d’accueil des membres.', 'quick' => [
-            ['label' => 'Identité', 'href' => 'back-office/organisation/parametres?onglet=identite'],
-            ['label' => 'Vitrine', 'href' => 'back-office/organisation/parametres?onglet=vitrine'],
-            ['label' => 'Inscription', 'href' => 'back-office/organisation/parametres?onglet=inscription'],
-            ['label' => 'Accueil', 'href' => 'back-office/organisation/parametres?onglet=accueil'],
-        ]],
+        ['path' => 'back-office/community/presentation', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Page d’accueil publique', 'subtitle' => 'Ce que voient les visiteurs avant de rejoindre : votre page publique, votre carte dans le registre des unités, le contact et le formulaire de candidature.', 'css' => ['back-office-community-settings.css']],
+        ['path' => 'back-office/community/inscription', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
+        ['path' => 'back-office/community', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
+        ['path' => 'back-office/organisation/parametres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
         ['path' => 'back-office/media', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MÉDIAS', 'title' => 'Médias de la communauté', 'subtitle' => 'Les photos et vidéos affichées sur votre page publique.', 'css' => ['back-office-media.css'], 'quick' => [
             ['label' => 'Vitrine publique', 'href' => 'back-office/community/presentation'],
         ]],
@@ -72,8 +57,20 @@ return [
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Configuration', 'subtitle' => 'Tous les réglages de votre communauté au même endroit : identité, structure, accès, recrutement, contenu et modération.', 'css' => ['back-office-configuration.css']],
-        ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Reliez Discord et les autres services : choix des salons, envoi des photos et des transmissions, clés d’accès.'],
+        ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Reliez votre communauté à Discord, à votre propre adresse d’envoi d’e-mails et à vos outils : tout se règle ici, sans clé à demander à l’administrateur du serveur.', 'css' => ['back-office-integrations.css']],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail', 'subtitle' => 'Les liens épinglés sur le tableau de bord des membres.'],
+        ['path' => 'back-office/equipement-joueurs', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ÉQUIPEMENT', 'title' => 'Équipement des joueurs', 'subtitle' => 'Ce que les joueurs portent réellement en jeu, remonté par le mod : armes, gilets, casques, optiques, radios et mods chargés.', 'css' => ['back-office-game-equipment.css'], 'quick' => [
+            ['label' => 'Kits par rôle', 'href' => 'back-office/kits-roles'],
+            ['label' => 'Tenues de la communauté', 'href' => 'equipment'],
+        ]],
+        ['path' => 'back-office/kits-roles/nouveau', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ÉQUIPEMENT', 'title' => 'Nouveau kit', 'subtitle' => 'Composez le kit à partir de l’équipement vu en jeu. Il sera proposé dans l’arsenal à toute la communauté.', 'css' => ['back-office-game-equipment.css'], 'quick' => [
+            ['label' => 'Kits par rôle', 'href' => 'back-office/kits-roles'],
+            ['label' => 'Équipement des joueurs', 'href' => 'back-office/equipement-joueurs'],
+        ]],
+        ['path' => 'back-office/kits-roles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ÉQUIPEMENT', 'title' => 'Kits par rôle', 'subtitle' => 'Des kits prêts à porter pour chaque fonction, publiés dans la collection « Kits par rôle » de l’arsenal en jeu.', 'css' => ['back-office-game-equipment.css'], 'quick' => [
+            ['label' => 'Nouveau kit', 'href' => 'back-office/kits-roles/nouveau'],
+            ['label' => 'Équipement des joueurs', 'href' => 'back-office/equipement-joueurs'],
+        ]],
         ['path' => 'back-office/dashboard-tenues/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · TABLEAU DE BORD', 'title' => 'Mettre une tenue en avant', 'css' => ['dashboard-impact.css'], 'quick' => [
             ['label' => 'Vitrine', 'href' => 'back-office/dashboard-tenues'],
             ['label' => 'Tableau de bord', 'href' => 'dashboard'],
@@ -243,6 +240,8 @@ return [
         ]],
         ['path' => 'back-office/remontees', 'group' => 'Renseignement', 'kicker' => 'RENSEIGNEMENT · SUIVI', 'title' => 'Remontées', 'subtitle' => 'Comptes rendus et fiches de renseignement : fil de suivi, attribution, exploitation, caviardage.', 'css' => ['back-office-intel-intake.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/escouades', 'group' => 'ATAK', 'kicker' => 'ATAK · EN JEU', 'title' => 'Escouades en jeu', 'subtitle' => 'Escouades et équipes de feu envoyées par les téléphones : couleurs, icônes, descriptions et rôles.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
+        ['path' => 'back-office/partage', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · DOCUMENTS', 'title' => 'Fichiers partagés', 'subtitle' => 'Dossiers et fichiers de la communauté, privés par défaut et ouverts seulement sur partage.', 'flags' => ['boSkipPageHead' => true]],
+        ['path' => 'back-office/metriques-joueurs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · SUIVI', 'title' => 'Métriques joueurs', 'subtitle' => 'Temps de jeu, temps d’écran, distances parcourues, heures de vol et montre Garmin, par membre et pour la communauté.', 'css' => ['back-office-atak-squads.css', 'back-office-player-metrics.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/temps-ecran', 'group' => 'ATAK', 'kicker' => 'ATAK · SUIVI', 'title' => 'Temps d’écran et rôles', 'subtitle' => 'Temps du téléphone allumé, apps utilisées et temps de jeu par rôle, par membre.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/heures', 'group' => 'ATAK', 'kicker' => 'ATAK · SUIVI', 'title' => 'Heures de jeu (tableur)', 'subtitle' => 'Heures par joueur, rôle, type et détection, filtrables et exportables en CSV.', 'css' => ['back-office-atak-squads.css', 'back-office-atak-hours.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/files-envoi', 'group' => 'ATAK', 'kicker' => 'ATAK · SUIVI', 'title' => 'Files d’envoi Athena', 'subtitle' => 'Envois du jeu vers Athena en attente, réessayés ou en échec, et état de charge d’Athena.', 'css' => ['back-office-atak-squads.css', 'back-office-atak-send-queue.css'], 'flags' => ['boSkipPageHead' => true]],
@@ -259,6 +258,7 @@ return [
             ['label' => 'Mode roleplay', 'href' => 'back-office/atak/roleplay'],
         ]],
         ['path' => 'back-office/atak/operateurs', 'group' => 'ATAK', 'kicker' => 'ATAK · SESSIONS', 'title' => 'Sessions & connexions', 'subtitle' => 'Qui est connecté en ce moment, et l’historique des connexions.'],
+        ['path' => 'back-office/atak/parc-atak', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Parc ATAK des membres', 'subtitle' => 'Les ATAK des membres : chiffres de jeu, compromissions, messages imposés et blocage dans la communauté.', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/fiche-operateur', 'group' => 'ATAK', 'kicker' => 'ATAK · FICHE OPÉRATEUR', 'title' => 'Fiche opérateur', 'subtitle' => 'Tout sur un opérateur : identité, appareil, certificat et liaison.'],
         ['path' => 'back-office/atak/realisme', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Parc de terminaux', 'subtitle' => 'Les appareils reliés à la plateforme et le membre qui utilise chacun.', 'css' => ['back-office-atak-devices.css'], 'quick' => [
             ['label' => 'Certificats', 'href' => 'back-office/atak/certificats'],

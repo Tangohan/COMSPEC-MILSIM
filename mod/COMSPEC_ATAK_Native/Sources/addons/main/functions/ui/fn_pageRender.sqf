@@ -28,6 +28,8 @@ private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore"
 _st set ["scrollRestore", false];
 _st set ["pageDrawn", _page];
 _st set ["pagePrev", _drawn]; // page dessinée juste avant (centre de notifications : « nouveau » à l'entrée seulement)
+// Sous-écran déclaré pour la touche retour (fn_back) : la page le redéclare pendant son dessin si elle en affiche un.
+_st deleteAt "backSub";
 [] call comspec_atak_native_fnc_frsDraftSave;
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;

@@ -102,6 +102,11 @@ final class GameAtakPairingService
             return $this->fail('invalid', 400, 'Appairage refusé.');
         }
 
+        // Même contrôle que le code du portail : un Steam ou une adresse bannis du mod ne reçoivent pas de session.
+        $blocked = $this->modBlocked((int) ($row['tenant_id'] ?? 0), SteamId::normalize((string) ($row['steam_id'] ?? '')));
+        if ($blocked !== null) {
+            return $blocked;
+        }
         $issued = $this->issueFromChallenge($row, [
             'steam_uid' => (string) ($row['steam_id'] ?? ''),
             'mod_version' => (string) ($row['mod_version'] ?? ''),
@@ -145,14 +150,21 @@ final class GameAtakPairingService
             return $this->fail('unavailable', 503, 'Ce compte ne peut pas encore lier un terminal de jeu.');
         }
         $steam = SteamId::normalize((string) ($row['steam_id'] ?? ''));
+        $blocked = $this->modBlocked($tenantId, $steam);
+        if ($blocked !== null) {
+            return $blocked;
+        }
+        if (!$this->challenges->approve((int) $row['id'], (int) $account['id'], $userId, $tenantId)) {
+            return $this->fail('invalid_code', 409, 'Ce code a déjà été utilisé.');
+        }
+        $moved = [];
         if ($steam !== null) {
+            // Le joueur qui saisit le code tient le jeu : son Steam passe sur ce compte, et seulement celui-ci.
+            $moved = $this->users->detachSteamFromOtherUsers($tenantId, $steam, $userId);
             $existing = SteamId::normalize((string) ($user['steam_id'] ?? ''));
             if ($existing !== $steam) {
                 $this->users->update($userId, $tenantId, ['steam_id' => $steam]);
             }
-        }
-        if (!$this->challenges->approve((int) $row['id'], (int) $account['id'], $userId, $tenantId)) {
-            return $this->fail('invalid_code', 409, 'Ce code a déjà été utilisé.');
         }
 
         return [
@@ -161,8 +173,64 @@ final class GameAtakPairingService
             'payload' => [
                 'ok' => true,
                 'message' => 'Terminal validé. Le téléphone termine la liaison tout seul.',
+                'challenge_id' => (int) $row['id'],
+                'steam_moved_from' => $moved,
             ],
         ];
+    }
+
+    /**
+     * Ce que le jeu a demandé, montré sur /lier avant d'autoriser : le joueur vérifie que c'est bien son jeu
+     * (un code reçu d'un tiers donnerait sa session à ce tiers).
+     *
+     * @return array{state: string, steam: string, steam_elsewhere: bool, steam_here: bool, mod_version: string, asked_min: int, left_min: int}|null
+     */
+    public function describePending(string $userCode, int $userId, int $tenantId): ?array
+    {
+        $code = $this->normalizeCode($userCode);
+        if (strlen($code) < 6 || !$this->challenges->isReady()) {
+            return null;
+        }
+        $row = $this->challenges->findPendingByUserHash(hash('sha256', $code));
+        if ($row === null) {
+            return null;
+        }
+        $state = strtolower((string) ($row['status'] ?? ''));
+        if ($state === 'pending' && self::isExpiredRow($row)) {
+            $state = 'expired';
+        }
+        $steam = SteamId::normalize((string) ($row['steam_id'] ?? '')) ?? '';
+        $owner = $steam !== '' && $tenantId > 0 ? $this->users->findBySteamIdForTenant($tenantId, $steam) : null;
+        $created = strtotime(((string) ($row['created_at'] ?? '')) . ' UTC') ?: time();
+        $expires = strtotime(((string) ($row['expires_at'] ?? '')) . ' UTC') ?: time();
+
+        return [
+            'state' => $state,
+            'steam' => $steam,
+            'steam_here' => $owner !== null && (int) ($owner['id'] ?? 0) === $userId,
+            'steam_elsewhere' => $owner !== null && (int) ($owner['id'] ?? 0) !== $userId,
+            'mod_version' => (string) ($row['mod_version'] ?? ''),
+            'asked_min' => max(0, intdiv(time() - $created, 60)),
+            'left_min' => max(0, (int) ceil(($expires - time()) / 60)),
+        ];
+    }
+
+    /**
+     * Suivi après autorisation (/lier/etat) : « approved » tant que le jeu n'a pas repris sa session,
+     * « consumed » dès qu'il l'a reprise. Seul le compte qui a autorisé le code peut le suivre.
+     */
+    public function approvalProgress(int $challengeId, int $userId): string
+    {
+        $row = $this->challenges->findById($challengeId);
+        if ($row === null || (int) ($row['user_id'] ?? 0) !== $userId || $userId < 1) {
+            return 'unknown';
+        }
+        $state = strtolower((string) ($row['status'] ?? ''));
+        if ($state === 'approved' && self::isExpiredRow($row)) {
+            return 'expired';
+        }
+
+        return in_array($state, ['approved', 'consumed', 'expired'], true) ? $state : 'unknown';
     }
 
     /**
@@ -198,17 +266,9 @@ final class GameAtakPairingService
             return $this->fail('invalid', 404, 'Code invalide.');
         }
         $steam = SteamId::normalize((string) ($body['steam_uid'] ?? $body['steam_id'] ?? $body['player_uid'] ?? ''));
-        $modBlock = $this->armaGuard->assertModNotBlocked($tenantId, $steam);
+        $modBlock = $this->modBlocked($tenantId, $steam);
         if ($modBlock !== null) {
-            $decoded = json_decode($modBlock->body(), true);
-
-            return [
-                'ok' => false,
-                'status' => $modBlock->statusCode(),
-                'payload' => is_array($decoded)
-                    ? $decoded
-                    : ['error' => 'mod_blocked', 'message' => 'Pack non autorisé pour cette communauté.'],
-            ];
+            return $modBlock;
         }
         if ($steam !== null) {
             $user = $this->users->findById($userId, $tenantId);
@@ -226,6 +286,26 @@ final class GameAtakPairingService
         $this->gameLinks->markRedeemed((int) $row['id'], $steam);
 
         return $this->withLegacyFields($issued, $tenantId, (string) ($body['terminal_uid'] ?? ''));
+    }
+
+    /**
+     * @return array{ok: bool, status: int, payload: array<string, mixed>}|null
+     */
+    private function modBlocked(int $tenantId, ?string $steam): ?array
+    {
+        $modBlock = $this->armaGuard->assertModNotBlocked($tenantId, $steam);
+        if ($modBlock === null) {
+            return null;
+        }
+        $decoded = json_decode($modBlock->body(), true);
+
+        return [
+            'ok' => false,
+            'status' => $modBlock->statusCode(),
+            'payload' => is_array($decoded)
+                ? $decoded
+                : ['error' => 'mod_blocked', 'message' => 'Pack non autorisé pour cette communauté.'],
+        ];
     }
 
     /**

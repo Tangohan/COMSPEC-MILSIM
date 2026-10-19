@@ -244,92 +244,11 @@ $statusBand = match ($statusRaw) {
     default => 'from-stone-400 to-stone-600',
 };
 
-$recapMeta = match ($statusRaw) {
-    'submitted' => $instructionFollowup === 'pending'
-        ? [
-            'step' => 'Étape 2 sur 4',
-            'title' => 'Dossier mis en attente',
-            'bar' => 'w-2/3',
-            'barColor' => 'bg-sky-400',
-            'hint' => 'Le traitement est temporairement suspendu. Le candidat a été informé ; vous pouvez reprendre l’instruction quand vous voulez.',
-        ]
-        : ($instructionFollowup === 'interview'
-            ? [
-                'step' => 'Étape 2 sur 4',
-                'title' => 'Entretien proposé',
-                'bar' => 'w-2/3',
-                'barColor' => 'bg-violet-400',
-                'hint' => 'Un entretien a été proposé au candidat. La décision finale reste à rendre après l’échange.',
-            ]
-            : [
-                'step' => 'Étape 2 sur 4',
-                'title' => 'En cours de traitement',
-                'bar' => 'w-2/3',
-                'barColor' => 'bg-amber-400',
-                'hint' => 'Étape suivante : décision finale et notification candidat.',
-            ]),
-    'reviewed' => (static function () use ($e): array {
-        $stage = \App\Support\EnlistmentStatusCatalog::stage($e);
-
-        return match ($stage['key']) {
-            'onboarding' => [
-                'step' => 'Étape 3 sur 4',
-                'title' => 'Acceptée — intégration à finaliser',
-                'bar' => 'w-3/4',
-                'barColor' => 'bg-amber-400',
-                'hint' => 'Choisissez les rôles, l’unité et le profil Steam pour terminer l’intégration.',
-            ],
-            'link_account' => [
-                'step' => 'Étape 3 sur 4',
-                'title' => 'Acceptée — compte à rattacher',
-                'bar' => 'w-3/4',
-                'barColor' => 'bg-rose-400',
-                'hint' => 'Aucun compte membre n’est encore lié à ce dossier : rattachez-le pour terminer le parcours.',
-            ],
-            default => [
-                'step' => 'Étape 4 sur 4',
-                'title' => 'Candidat intégré',
-                'bar' => 'w-full',
-                'barColor' => 'bg-emerald-500',
-                'hint' => 'Parcours terminé. Le bilan d’équipe est attendu 30 jours après l’acceptation.',
-            ],
-        };
-    })(),
-    'rejected' => [
-        'step' => 'Dossier clos',
-        'title' => 'Candidature refusée',
-        'bar' => 'w-full',
-        'barColor' => 'bg-rose-500',
-        'hint' => 'Décision négative enregistrée. Le journal conserve la trace des échanges.',
-    ],
-    'blocked' => [
-        'step' => 'Dossier clos',
-        'title' => 'Non admis',
-        'bar' => 'w-full',
-        'barColor' => 'bg-stone-500',
-        'hint' => 'Candidature écartée sans suite d’adhésion.',
-    ],
-    'cancelled' => [
-        'step' => 'Dossier clos',
-        'title' => 'Candidature annulée',
-        'bar' => 'w-full',
-        'barColor' => 'bg-stone-400',
-        'hint' => 'Dossier archivé : la ligne est conservée pour l’historique.',
-    ],
-    default => [
-        'step' => 'Étape 1 sur 4',
-        'title' => 'Réception du dossier',
-        'bar' => 'w-1/3',
-        'barColor' => 'bg-stone-400',
-        'hint' => 'Statut à préciser côté instruction.',
-    ],
-};
-
 // Bilan 30 jours : visible pour toute candidature acceptée (formulaire à J+30 après l’acceptation),
 // ou dès qu’un bilan existe. Jamais pour un dossier refusé, non admis ou annulé.
 $showRetroBlockNav = $statusRaw === 'reviewed' || $staffRetroFeedback !== null || $candidateRetroFeedback !== null;
 $dossierNavItems = [
-    ['id' => 'recap-dossier', 'label' => 'Récapitulatif', 'num' => '01', 'show' => true],
+    ['id' => 'recap-dossier', 'label' => 'Pilotage du dossier', 'num' => '01', 'show' => true],
     ['id' => 'coordination-dossier', 'label' => 'Coordination', 'num' => '02', 'show' => !$isDossierClos],
     ['id' => 'bilan-recrutement', 'label' => 'Bilan 30 jours', 'num' => '03', 'show' => $showRetroBlockNav],
     ['id' => 'activite-dossier', 'label' => 'Activité récente', 'num' => '04', 'show' => $analyticsMergedRows !== [] && !$isDossierClos],
@@ -362,6 +281,8 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
 
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem] xl:grid-cols-[minmax(0,1fr)_17rem]">
             <div class="space-y-6 min-w-0 order-1">
+                <?php require base_path('views/admin/recruitments/partials/dossier_pilot_bar.php'); ?>
+
                 <?php if ($isDossierClos): ?>
                 <section class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-gradient-to-br <?= htmlspecialchars($statusBand, ENT_QUOTES, 'UTF-8') ?> px-6 py-5 text-white shadow-sm sm:px-8">
                     <div class="flex flex-wrap items-center gap-3">
@@ -450,22 +371,6 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                 </section>
                 <?php endif; ?>
 
-                <section id="recap-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
-                    <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500"><?= htmlspecialchars($recapMeta['step'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <h2 class="mt-1 text-xl font-black tracking-tight text-stone-900"><?= htmlspecialchars($recapMeta['title'], ENT_QUOTES, 'UTF-8') ?></h2>
-                        <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200">
-                            <div class="h-full <?= htmlspecialchars($recapMeta['bar'], ENT_QUOTES, 'UTF-8') ?> rounded-full <?= htmlspecialchars($recapMeta['barColor'], ENT_QUOTES, 'UTF-8') ?>"></div>
-                        </div>
-                        <p class="mt-3 text-xs leading-relaxed text-stone-600"><?= htmlspecialchars($recapMeta['hint'], ENT_QUOTES, 'UTF-8') ?></p>
-                    </div>
-                    <div class="grid gap-4 px-6 py-4 text-sm text-stone-800 md:grid-cols-2 xl:grid-cols-4">
-                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">N° de dossier</p><p class="mt-1 font-semibold text-stone-900">#<?= $id ?></p></div>
-                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Statut</p><p class="mt-1 font-semibold text-stone-900"><?= htmlspecialchars($statusLabel ?: '—', ENT_QUOTES, 'UTF-8') ?></p></div>
-                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Attribué à</p><p class="mt-1 font-semibold text-stone-900"><?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p></div>
-                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Nature</p><p class="mt-1 font-semibold text-stone-900"><?= $isInternalOpeningApplication ? 'Mobilité interne' : 'Candidature externe' ?></p></div>
-                    </div>
-                </section>
 
                 <?php if (!$isDossierClos): ?>
                 <section id="coordination-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">

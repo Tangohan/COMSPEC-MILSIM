@@ -27,8 +27,8 @@ if (_now > (_eni select 0)) then {
     {
         private _key = _x;
         private _m = _y;
-        private _txt = _m getOrDefault ["text", ""];
-        if !(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_" || {(toUpper (_txt select [0, 4])) isEqualTo "ENI "}) then { continue };
+        private _txt = [_m getOrDefault ["text", ""]] call comspec_atak_native_fnc_markerAutoName;
+        if !(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_" || {(toUpper (_txt select [0, 4])) in ["ENI ", "ENY "]}) then { continue };
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) isNotEqualTo "ICON") then { continue };
         private _pos = _m getOrDefault ["position", []];
         if ((count _pos) < 2) then { continue };
@@ -53,7 +53,7 @@ if (_now > (_eni select 0)) then {
             _meta set [_key, _mt];
         };
         _mt params ["_hms", "_who"];
-        private _title = toUpper ([_txt, "ENI CONTACT"] select (_txt isEqualTo ""));
+        private _title = toUpper ([_txt, ["ENY CONTACT", "ENI CONTACT"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")] select (_txt isEqualTo ""));
         _list pushBack [_key, [_pos select 0, _pos select 1, 0], _title, [_hms, format ["%1 · signalé %2", _hms, toUpper _who]] select (_who isNotEqualTo "")];
     } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["markers", createHashMap]);
     _eni = [_now + 1, _list];

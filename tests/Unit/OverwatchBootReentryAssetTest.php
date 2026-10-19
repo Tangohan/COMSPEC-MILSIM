@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class OverwatchBootReentryAssetTest extends TestCase
 {
@@ -47,9 +48,9 @@ final class OverwatchBootReentryAssetTest extends TestCase
 
         self::assertStringContainsString('COMSPEC_Athena_PreInitDone', $athPre);
         self::assertStringContainsString('COMSPEC_Athena_PostInitDone', $athPost);
-        self::assertStringContainsString('1.6.4', $cfg);
+        ModVersion::assertAtLeast('1.6.4', ModVersion::fromConfigCpp($cfg));
 
-        self::assertStringContainsString('corrigé', strtolower($bug));
+        self::assertStringContainsString('corrigÃ©', strtolower($bug));
         self::assertStringNotContainsString('endpoint', $bug);
         self::assertStringNotContainsString('callExtension', $bug);
     }

@@ -78,9 +78,9 @@ final class AccountPurgeRequestAssetTest extends TestCase
         $platUsers = (string) file_get_contents($root . '/views/admin/system/users.php');
         self::assertStringContainsString('Demandes de suppression de compte', $platUsers);
         self::assertStringContainsString('purge-requests/approve', $platUsers);
-        self::assertStringContainsString('Approuver &amp; purger', $platUsers);
+        self::assertStringContainsString('Accepter et effacer la fiche', $platUsers);
         self::assertStringContainsString('Ancien membre', $platUsers);
-        self::assertStringContainsString('Retirer les fiches anonymisées', $platUsers);
+        self::assertStringContainsString('Nettoyer les comptes anonymisés', $platUsers);
 
         $container = (string) file_get_contents($root . '/app/Core/Container.php');
         self::assertStringContainsString('AccountPurgeRequestRepository::class', $container);

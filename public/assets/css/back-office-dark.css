@@ -245,3 +245,11 @@ html[data-bo-theme="dark"] .ath-bo-search__hint kbd {
 html[data-bo-theme="dark"] .ath-bo-search__empty a {
   color: #34d399;
 }
+
+/* Fichiers partagés : accent éclairci pour rester lisible sur fond sombre. */
+html[data-bo-theme="dark"] .fs {
+  --fs-accent: #2dd4bf;
+  --fs-accent-soft: rgba(45, 212, 191, 0.13);
+}
+html[data-bo-theme="dark"] .fs .fs-btn--primary,
+html[data-bo-theme="dark"] .fs .fs-seg label:has(input:checked) { background: #0f766e; border-color: #0f766e; color: #fff; }

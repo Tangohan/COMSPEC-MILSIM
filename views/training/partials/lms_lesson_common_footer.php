@@ -77,34 +77,69 @@ if ($footerNext !== null) {
 }
 ?>
                 <?php if (!empty($resources)): ?>
-                <div class="mt-5 border-t border-slate-200 pt-4">
-                    <h3 class="mb-2 text-sm font-semibold text-slate-700">Ressources</h3>
+                <div class="lms-lesson-annexes" id="lms-lesson-annexes">
+                    <div class="lms-lesson-annexes__head">
+                        <h3>Annexes du formateur</h3>
+                        <span><?= count($resources) ?> élément<?= count($resources) > 1 ? 's' : '' ?></span>
+                    </div>
                     <ul class="lms-lesson-resources space-y-3">
                         <?php foreach ($resources as $r):
                             $rIsImage = function_exists('training_lms_resource_is_image') && training_lms_resource_is_image($r) && !empty($r['file_path']);
                             $rImgUrl = $rIsImage
                                 ? url('api/training/resource/' . (int) $r['id'] . '/download?inline=1')
                                 : '';
+                            $rTitle = trim((string) ($r['title'] ?? ''));
+                            if ($rTitle === '') {
+                                $rTitle = 'Annexe';
+                            }
+                            $rKind = function_exists('training_lms_studio_resource_kind_label_fr')
+                                ? training_lms_studio_resource_kind_label_fr($r)
+                                : '';
+                            $rExt = trim((string) ($r['external_url'] ?? ''));
+                            $rExtIsSite = $rExt !== '' && (new \App\Services\Forum\ExternalLeaveService())->isInternalUrl($rExt);
+                            // Google Docs / Sheets / Slides / draw.io… : visionneuse directement dans la leçon.
+                            $rExtEmbed = ($rExt !== '' && !$rExtIsSite && function_exists('training_url_viewer_embed_src'))
+                                ? training_url_viewer_embed_src($rExt)
+                                : null;
                         ?>
                         <li class="<?= $rIsImage ? 'lms-lesson-resources__image' : '' ?>">
                             <?php if ($rIsImage && $rImgUrl !== ''): ?>
                             <figure class="lms-res-figure">
-                                <img src="<?= htmlspecialchars($rImgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($r['title'] ?? 'Image')) ?>" loading="lazy" class="lms-res-figure__img">
-                                <figcaption class="mt-1.5 text-sm font-medium text-slate-700"><?= htmlspecialchars((string) $r['title']) ?></figcaption>
+                                <a href="<?= htmlspecialchars($rImgUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">
+                                    <img src="<?= htmlspecialchars($rImgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($rTitle) ?>" loading="lazy" class="lms-res-figure__img">
+                                </a>
+                                <figcaption class="mt-1.5 text-sm font-medium text-slate-700"><?= htmlspecialchars($rTitle) ?></figcaption>
                             </figure>
                             <?php elseif (($r['resource_type'] ?? '') === 'library_document' && !empty($r['document_id'])): ?>
-                            <a href="<?= htmlspecialchars(url('api/training/resource/' . (int) $r['id'] . '/document?inline=1'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
+                            <a href="<?= htmlspecialchars(url('api/training/resource/' . (int) $r['id'] . '/document?inline=1'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener" class="lms-lesson-annexes__file">
+                                <span class="lms-lesson-annexes__kind">Document</span>
+                                <span class="lms-lesson-annexes__name"><?= htmlspecialchars($rTitle) ?></span>
+                            </a>
                             <?php elseif (!empty($r['file_path'])): ?>
-                            <a href="<?= url('api/training/resource/' . (int) $r['id'] . '/download') ?>" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
-                            <?php elseif (!empty($r['external_url'])): ?>
-                            <?php $extResHref = training_lms_resource_external_href((string) $r['external_url']); ?>
+                            <a href="<?= url('api/training/resource/' . (int) $r['id'] . '/download') ?>" class="lms-lesson-annexes__file">
+                                <span class="lms-lesson-annexes__kind"><?= htmlspecialchars($rKind !== '' ? $rKind : 'Fichier') ?></span>
+                                <span class="lms-lesson-annexes__name"><?= htmlspecialchars($rTitle) ?></span>
+                            </a>
+                            <?php elseif ($rExtEmbed !== null): ?>
+                            <?php
+                            $viewerUrl = $rExt;
+                            $viewerTitle = $rTitle;
+                            $viewerForceFrame = false;
+                            $viewerCompact = true;
+                            require base_path('views/training/partials/url_viewer.php');
+                            ?>
+                            <?php elseif ($rExt !== ''): ?>
+                            <?php $extResHref = training_lms_resource_external_href($rExt); ?>
                             <?php if ($extResHref !== null): ?>
-                            <a href="<?= htmlspecialchars($extResHref, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="font-medium text-emerald-600 hover:underline"><?= htmlspecialchars((string) $r['title']) ?></a>
+                            <a href="<?= htmlspecialchars($extResHref, ENT_QUOTES, 'UTF-8') ?>"<?= $rExtIsSite ? '' : ' target="_blank" rel="noopener noreferrer"' ?> class="lms-lesson-annexes__file">
+                                <span class="lms-lesson-annexes__kind">Lien</span>
+                                <span class="lms-lesson-annexes__name"><?= htmlspecialchars($rTitle) ?></span>
+                            </a>
                             <?php else: ?>
-                            <span class="text-slate-600"><?= htmlspecialchars((string) $r['title']) ?></span>
+                            <span class="text-slate-600"><?= htmlspecialchars($rTitle) ?></span>
                             <?php endif; ?>
                             <?php else: ?>
-                            <span class="text-slate-600"><?= htmlspecialchars((string) $r['title']) ?></span>
+                            <span class="text-slate-600"><?= htmlspecialchars($rTitle) ?></span>
                             <?php endif; ?>
                         </li>
                         <?php endforeach; ?>

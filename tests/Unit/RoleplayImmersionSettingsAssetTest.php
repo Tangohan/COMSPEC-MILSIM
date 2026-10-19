@@ -51,8 +51,11 @@ final class RoleplayImmersionSettingsAssetTest extends TestCase
         self::assertStringContainsString('back-office-roleplay-immersion.css', $pages);
         self::assertStringContainsString('Parcours d’immersion', $pages);
         self::assertStringContainsString("'title' => 'Parcours d’immersion'", $controller);
-        self::assertStringContainsString("'rp_followup_enabled'", $controller);
-        self::assertStringContainsString("'rp_followup_stages'", $controller);
+        // La lecture du formulaire est passée du contrôleur au service de réglages.
+        self::assertStringContainsString('RoleplayFollowupSettings::patchFromImmersionPost($request->all())', $controller);
+        $settings = (string) file_get_contents($root . '/app/Services/Personnel/RoleplayFollowupSettings.php');
+        self::assertStringContainsString("'rp_followup_enabled'", $settings);
+        self::assertStringContainsString("'rp_followup_stages'", $settings);
 
         self::assertStringContainsString('bo-imm__hero', $css);
         self::assertStringContainsString('bo-imm__cap', $css);

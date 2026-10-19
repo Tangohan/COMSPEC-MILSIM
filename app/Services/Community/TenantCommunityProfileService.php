@@ -990,6 +990,10 @@ final class TenantCommunityProfileService
         if ($raw === 'en' || str_starts_with($raw, 'en-')) {
             return ['en', 'English'];
         }
+        $code = \App\Support\CommunityLanguages::normalize($raw);
+        if ($code !== null) {
+            return [$code, \App\Support\CommunityLanguages::nativeLabel($code)];
+        }
 
         return ['', ''];
     }

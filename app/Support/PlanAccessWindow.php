@@ -225,7 +225,7 @@ final class PlanAccessWindow
         if ($en) {
             $what = $kind === 'gift' ? 'The ' . $planName . ' plan gifted to ' . $tenantName : 'The founder trial (' . $planName . ' plan) of ' . $tenantName;
             $lost = $atakLost
-                ? 'After that date, the in-game link (map, photos, positions and reports sent from Arma 3) stops working and the modules not included in your current plan are locked.'
+                ? 'After that date, photos, drone video and the full tactical map stop (positions, reports and briefing from Arma 3 keep working) and the modules not included in your current plan are locked.'
                 : 'After that date, the modules not included in your current plan are locked.';
             $grace = $graceDays > 0
                 ? 'A grace period of ' . $graceDays . ' day' . ($graceDays > 1 ? 's' : '') . ' keeps everything running after that date.'
@@ -247,7 +247,7 @@ final class PlanAccessWindow
 
         $what = $kind === 'gift' ? 'La formule ' . $planName . ' offerte à ' . $tenantName : 'L’essai fondateur (formule ' . $planName . ') de ' . $tenantName;
         $lost = $atakLost
-            ? 'Après cette date, la liaison avec le jeu (carte, photos, positions et comptes rendus envoyés depuis Arma 3) s’arrête et les modules absents de votre formule actuelle sont verrouillés.'
+            ? 'Après cette date, les photos, la vidéo drone et la carte tactique complète s’arrêtent (positions, comptes rendus et briefing envoyés depuis Arma 3 continuent) et les modules absents de votre formule actuelle sont verrouillés.'
             : 'Après cette date, les modules absents de votre formule actuelle sont verrouillés.';
         $grace = $graceDays > 0
             ? 'Une période de grâce de ' . $graceDays . ' jour' . ($graceDays > 1 ? 's' : '') . ' laisse tout fonctionner après cette date.'
@@ -277,13 +277,13 @@ final class PlanAccessWindow
         $date = PlanGift::formatDate($graceEndsAt, $locale);
         if (PlanGift::locale($locale) === 'en') {
             return [
-                'text' => 'Your ' . $planName . ' plan has ended. Grace period: everything keeps working until ' . $date . ', then the in-game link and the locked modules stop.',
+                'text' => 'Your ' . $planName . ' plan has ended. Grace period: everything keeps working until ' . $date . ', then photos, drone video, the full map and the locked modules stop.',
                 'cta' => 'Keep access',
             ];
         }
 
         return [
-            'text' => 'Votre formule ' . $planName . ' est terminée. Période de grâce : tout fonctionne jusqu’au ' . $date . ', puis la liaison avec le jeu et les modules verrouillés s’arrêtent.',
+            'text' => 'Votre formule ' . $planName . ' est terminée. Période de grâce : tout fonctionne jusqu’au ' . $date . ', puis les photos, la vidéo drone, la carte complète et les modules verrouillés s’arrêtent.',
             'cta' => 'Garder l’accès',
         ];
     }

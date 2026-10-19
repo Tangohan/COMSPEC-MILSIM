@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakChargeAtakDetonateAssetTest extends TestCase
 {
@@ -39,6 +40,6 @@ final class AtakChargeAtakDetonateAssetTest extends TestCase
         self::assertStringContainsString('#scripted', $local);
         self::assertStringContainsString('find "scripted"', $timers);
         self::assertStringContainsString('MineBase', $find);
-        self::assertStringContainsString('1.5.16', $cfg);
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp($cfg));
     }
 }

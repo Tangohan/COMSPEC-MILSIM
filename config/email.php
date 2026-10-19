@@ -5,7 +5,8 @@ declare(strict_types=1);
 /**
  * Configuration emails transactionnels — envoi via PHPMailer (voir .env.example).
  *
- * MAIL_MAILER : file | smtp | sendgrid | mailgun | ses (sendgrid/mailgun/ses = SMTP relais avec hôte par défaut si MAIL_HOST vide).
+ * MAIL_MAILER : file | smtp | brevo | sendgrid | mailgun | ses (brevo/sendgrid/mailgun/ses = SMTP relais avec hôte par défaut si MAIL_HOST vide).
+ * MAIL_DAILY_LIMIT : quota quotidien du fournisseur (90 par défaut, 0 = aucun) ; modifiable dans Administration > Envois d'e-mails.
  */
 return [
     'default_mailer' => env('MAIL_MAILER', 'file'),

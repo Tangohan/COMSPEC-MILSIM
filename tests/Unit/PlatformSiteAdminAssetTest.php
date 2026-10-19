@@ -71,7 +71,7 @@ final class PlatformSiteAdminAssetTest extends TestCase
         $helpers = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/helpers.php');
 
         self::assertMatchesRegularExpression(
-            "/\\$prefixes\\s*=\\s*\\[[^;]*'users'[^;]*\\];/s",
+            '/\$prefixes\s*=\s*\[[^;]*\'users\'[^;]*\];/s',
             $helpers,
             'Les pages /admin/users et leurs sous-routes doivent conserver la navigation plateforme.'
         );

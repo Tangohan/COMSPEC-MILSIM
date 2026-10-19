@@ -20,10 +20,17 @@ final class PlatformAdminSkinAssetTest extends TestCase
         self::assertStringContainsString('.pa-skin > :not(.pa)', $css);
 
         // Chaque page plateforme écrite en utilitaires marque son en-tête pour le bandeau commun.
-        $paShell = ['dashboard', 'plan_gifts', 'platform_review_index', 'tenant_recovery', 'tenants_index', 'tenants_plan_form', 'ux_feedback_index'];
+        // Les pages refondues sur la coque « .pa » (bandeau pa-hero) en sont exemptées : le skin
+        // ne s'applique qu'aux enfants :not(.pa).
+        $paShell = ['dashboard', 'mail_traffic', 'name_filter', 'plan_gifts', 'platform_review_index', 'tenant_recovery', 'tenants_index', 'tenants_plan_form', 'users', 'ux_feedback_index'];
         foreach (glob($root . '/views/admin/system/*.php') ?: [] as $file) {
             $view = (string) file_get_contents($file);
-            if (!str_contains($view, '<h1') || in_array(basename($file, '.php'), $paShell, true)) {
+            if (!str_contains($view, '<h1')) {
+                continue;
+            }
+            if (in_array(basename($file, '.php'), $paShell, true)) {
+                self::assertMatchesRegularExpression('/<div class="pa[ "]/', $view, basename($file));
+                self::assertStringContainsString('pa-hero__title', $view, basename($file));
                 continue;
             }
             self::assertStringContainsString('pa-head', $view, basename($file));

@@ -322,6 +322,10 @@ $headHtml = ob_get_clean();
                                             ? 'bg-violet-500/10 text-violet-900 border border-violet-400/25'
                                             : 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20' ?>"><?= htmlspecialchars($scopeBadge) ?></span>
                                         <?php endif; ?>
+                                        <?php $cardDeliveryMode = (string) ($c['delivery_mode'] ?? 'parcours'); ?>
+                                        <?php if ($cardDeliveryMode === 'url_redirect' || $cardDeliveryMode === 'url_viewer'): ?>
+                                        <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold leading-tight bg-sky-500/10 text-sky-900 border border-sky-400/25"><?= $cardDeliveryMode === 'url_viewer' ? 'Visionneuse' : 'Lien' ?></span>
+                                        <?php endif; ?>
                                         <span class="text-[11px] font-medium text-slate-500"><?= htmlspecialchars($cat) ?></span>
                                     </div>
                                 </div>

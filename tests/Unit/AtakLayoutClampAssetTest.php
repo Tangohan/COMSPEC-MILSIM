@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakLayoutClampAssetTest extends TestCase
 {
@@ -52,7 +53,7 @@ final class AtakLayoutClampAssetTest extends TestCase
         self::assertStringNotContainsString('ctrlDelete', $drawer);
         self::assertStringNotContainsString('_extra ctrlEnable false', $drawer);
         self::assertStringNotContainsString('_cellW * _col', $drawer);
-        self::assertStringContainsString('1.0.165', $cfg);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('class message;', $cfg);
         self::assertStringContainsString('class Athena: message', $cfg);
         self::assertStringContainsString('class athena_syncAtakApps {}', $cfg);

@@ -46,7 +46,11 @@ final class AtakFrsPhoneFrameAssetTest extends TestCase
 
         self::assertStringContainsString('FRS/FRM', $cfg);
         self::assertStringContainsString('Rédiger une fiche', $note);
-        self::assertStringContainsString('AtakNote', $post);
+        // L'app FRS/FRM est déclarée dans ATAK_APPs (config.cpp) ; le PostInit passe la liste
+        // du tiroir par athena_filterDrawerApps au lieu d'y injecter AtakNote lui-même.
+        self::assertStringContainsString('class AtakNote: message', $cfg);
+        self::assertStringContainsString('PAGE_CTRL = "COMSPEC_ATAK_Note"', $cfg);
+        self::assertStringContainsString('athena_filterDrawerApps', $post);
 
         self::assertStringContainsString('Valider et transmettre', $bug);
         self::assertStringNotContainsString('endpoint', $bug);

@@ -796,7 +796,8 @@ window.ArmaMapMarkers = (function () {
   function mapLabelHtml(rawLabel, labelColor, framed) {
     var t = String(rawLabel || '').trim();
     if (!t) return '';
-    if (/^rep[eè]re\b/i.test(t)) return '';
+    // « Repère » seul est du bruit ; « Repère · TA1 » dit qui l'a posé (point simple sans texte).
+    if (/^rep[eè]re$/i.test(t)) return '';
     return labelSpanHtml(t, labelColor || '#93c5fd', !!framed);
   }
 
@@ -835,6 +836,10 @@ window.ArmaMapMarkers = (function () {
     var framed = isInvisibleArmaIcon(data);
     var pngUrl = framed ? '' : resolvePngUrl(data);
     if (!shouldUsePngGlyph(decoded, pngUrl)) pngUrl = '';
+    // Point simple (mil_dot, hd_dot) : le PNG du jeu ne remplit qu'un quart de l'image (point de 5 px, noir par défaut,
+    // invisible sur l'imagerie). Rond plein cerclé de blanc à la place.
+    var simpleDot = !framed && (typeKey === 'dot' || /(^|_)dot(_ca)?$/.test(normalizeTypeKey(data && data.type)));
+    if (simpleDot) pngUrl = '';
 
     var S = window.ATAKMarkerSizes;
     var glyphPx = S ? S.px('normal') : 17;
@@ -862,7 +867,7 @@ window.ArmaMapMarkers = (function () {
       if (dir && needsRotation(typeKey)) {
         rotateStyle = 'transform:rotate(' + dir + 'deg);transform-origin:center center;';
       }
-      var shape = shapeHtml(framed ? 'box' : typeKey, color);
+      var shape = shapeHtml(framed ? 'box' : (simpleDot ? 'dot' : typeKey), color);
       // Diamant rouge pour repères hostiles simples (Marker Dropper)
       if ((decoded.kind === 'handdrawn' || decoded.kind === 'unknown') && /red|opfor|east/i.test(String((data && data.color) || ''))) {
         if (framed || typeKey === 'dot' || typeKey === 'marker') {

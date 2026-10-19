@@ -778,14 +778,24 @@
             <French>Pylône relais monopole 20 m (ruine)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_NAME">
-            <Original>Bande de fréquence</Original>
-            <English>Frequency band</English>
-            <French>Bande de fréquence</French>
+            <Original>Fréquence</Original>
+            <English>Frequency</English>
+            <French>Fréquence</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_NAME">
+            <Original>Réseau exclusivement par relais</Original>
+            <English>Network through relays only</English>
+            <French>Réseau exclusivement par relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_TIP">
+            <Original>Coché sur un des modules : dans toute la mission, le réseau ATAK ne passe que par les relais. Hors de portée de tout relais, ou sans aucun relais en service, le téléphone n'a plus aucun réseau (messages en attente). Même effet que le réglage serveur Réseau exclusivement par relais.</Original>
+            <English>Checked on any module: across the whole mission, the ATAK network only runs through relays. Out of range of every relay, or with no working relay, the phone has no network at all (messages wait). Same as the server setting Network through relays only.</English>
+            <French>Coché sur un des modules : dans toute la mission, le réseau ATAK ne passe que par les relais. Hors de portée de tout relais, ou sans aucun relais en service, le téléphone n'a plus aucun réseau (messages en attente). Même effet que le réglage serveur Réseau exclusivement par relais.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_TIP">
-            <Original>Bande radio du relais, retenue pour les fréquences à venir (brouillage, compatibilité). Automatique : aucune bande imposée.</Original>
-            <English>Relay radio band, stored for upcoming frequency features (jamming, compatibility). Automatic: no band set.</English>
-            <French>Bande radio du relais, retenue pour les fréquences à venir (brouillage, compatibilité). Automatique : aucune bande imposée.</French>
+            <Original>Canal radio du relais. Deux relais en service sur le même canal, dont les portées se couvrent, se brouillent : débit réduit, perte et latence en hausse. Automatique : premier canal libre de la bande C (4 940 à 4 975 MHz) parmi les relais voisins.</Original>
+            <English>Relay radio channel. Two working relays on the same channel whose ranges overlap interfere: lower throughput, more loss and latency. Automatic: first free C-band channel (4,940 to 4,975 MHz) among neighbouring relays.</English>
+            <French>Canal radio du relais. Deux relais en service sur le même canal, dont les portées se couvrent, se brouillent : débit réduit, perte et latence en hausse. Automatique : premier canal libre de la bande C (4 940 à 4 975 MHz) parmi les relais voisins.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_AUTO">
             <Original>Automatique</Original>
@@ -796,6 +806,11 @@
             <Original>TBR · Tableau des relais</Original>
             <English>TBR · Relay table</English>
             <French>TBR · Tableau des relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_MENU">
+            <Original>Guide : réseau et simulation</Original>
+            <English>Guide: network and simulation</English>
+            <French>Guide : réseau et simulation</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TBR_HELP">
             <Original>Aide : poser un relais</Original>
@@ -926,6 +941,46 @@
             <Original>ATAK · Brouilleur de zone</Original>
             <English>ATAK · Area jammer</English>
             <French>ATAK · Brouilleur de zone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_BF7BE30836">
+            <Original>Partage des caméras</Original>
+            <English>Camera sharing</English>
+            <French>Partage des caméras</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_146C6595D4">
+            <Original>Partage caméras</Original>
+            <English>Camera sharing</English>
+            <French>Partage caméras</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C9AF05C42B">
+            <Original>Une caméra fixe n'est visible que de son poseur, la caméra d'un téléphone que de son porteur, jusqu'à ce qu'ils la partagent.%1%3Partager%4%2App Vidéo live : choisissez la caméra (ou Ma caméra), bouton PARTAGER.%2Choisissez la méthode, puis le destinataire : un ATAK, ou TOUS.%2La caméra apparaît dans la liste Vidéo live du destinataire. RETIRER LES ACCÈS reprend tous les partages.%1%3NFC%4%2Téléphones dos à dos, à moins de 2 m.%2Aucun réseau nécessaire : coupure totale, mode avion, ou ATAK sans réseau.%2TOUS = chaque ATAK à moins de 2 m.%1%3Bluetooth%4%2Portée réaliste entre les téléphones (15 m par défaut, réglage serveur Portée Bluetooth).%2Bluetooth allumé des deux côtés (app Bluetooth). Pas de réseau nécessaire.%2TOUS = chaque ATAK à portée.%1%3Relais%4%2Par le réseau, en direct ou à travers les relais radio et vidéo, sans limite de distance.%2Les deux téléphones doivent avoir du réseau. TOUS = tout le camp.%1%3L'image%4%2Le partage donne l'accès. Une caméra fixe se regarde par son Wi-Fi à portée, même sans réseau ; sinon le flux passe par le réseau et les relais.%2Réglage serveur Partage des caméras : Tout le camp voit tout rend le partage inutile (comme avant).</Original>
+            <English>A fixed camera is only visible to whoever placed it, a phone camera only to its wearer, until they share it.%1%3Sharing%4%2Live video app: pick the camera (or My camera), SHARE button.%2Pick the method, then the recipient: one ATAK, or ALL.%2The camera shows up in the recipient's Live video list. REVOKE ACCESS takes back every share.%1%3NFC%4%2Phones back to back, within 2 m.%2No network needed: total outage, airplane mode, or an ATAK without network.%2ALL = every ATAK within 2 m.%1%3Bluetooth%4%2Realistic range between phones (15 m by default, server setting Bluetooth range).%2Bluetooth on at both ends (Bluetooth app). No network needed.%2ALL = every ATAK in range.%1%3Relay%4%2Over the network, direct or through the radio and video relays, no distance limit.%2Both phones need network. ALL = the whole side.%1%3The picture%4%2Sharing grants access. A fixed camera is viewed over its own Wi-Fi when in range, even without network; otherwise the feed goes over the network and relays.%2Server setting Camera sharing: Whole side sees everything makes sharing unnecessary (as before).</English>
+            <French>Une caméra fixe n'est visible que de son poseur, la caméra d'un téléphone que de son porteur, jusqu'à ce qu'ils la partagent.%1%3Partager%4%2App Vidéo live : choisissez la caméra (ou Ma caméra), bouton PARTAGER.%2Choisissez la méthode, puis le destinataire : un ATAK, ou TOUS.%2La caméra apparaît dans la liste Vidéo live du destinataire. RETIRER LES ACCÈS reprend tous les partages.%1%3NFC%4%2Téléphones dos à dos, à moins de 2 m.%2Aucun réseau nécessaire : coupure totale, mode avion, ou ATAK sans réseau.%2TOUS = chaque ATAK à moins de 2 m.%1%3Bluetooth%4%2Portée réaliste entre les téléphones (15 m par défaut, réglage serveur Portée Bluetooth).%2Bluetooth allumé des deux côtés (app Bluetooth). Pas de réseau nécessaire.%2TOUS = chaque ATAK à portée.%1%3Relais%4%2Par le réseau, en direct ou à travers les relais radio et vidéo, sans limite de distance.%2Les deux téléphones doivent avoir du réseau. TOUS = tout le camp.%1%3L'image%4%2Le partage donne l'accès. Une caméra fixe se regarde par son Wi-Fi à portée, même sans réseau ; sinon le flux passe par le réseau et les relais.%2Réglage serveur Partage des caméras : Tout le camp voit tout rend le partage inutile (comme avant).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_957A6195AE">
+            <Original>Montre Garmin</Original>
+            <English>Garmin watch</English>
+            <French>Montre Garmin</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0AFE1639F8">
+            <Original>Montre GPS connectée : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK. À porter dans l'emplacement montre.</Original>
+            <English>Connected GPS watch: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone. Wear it in the watch slot.</English>
+            <French>Montre GPS connectée : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK. À porter dans l'emplacement montre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_838F8C2B63">
+            <Original>#rrggbb, vide = couleur du thème.</Original>
+            <English>#rrggbb, empty = theme colour.</English>
+            <French>#rrggbb, vide = couleur du thème.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AB5C9325A0">
+            <Original>Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.</Original>
+            <English>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</English>
+            <French>Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_297613D47A">
+            <Original>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</Original>
+            <English>Run on the server when a download finishes. params ["_object", "_player", "_files"]. Also: CBA event comspec_atak_native_dataDownloaded.</English>
+            <French>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</French>
         </Key>
     </Package>
 </Project>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakOrderSessionFilterAssetTest extends TestCase
 {
@@ -26,16 +27,18 @@ final class AtakOrderSessionFilterAssetTest extends TestCase
         self::assertStringContainsString("'created_after' => true", $api);
 
         self::assertStringContainsString('created_after=', $ext);
-        self::assertStringContainsString('2.0.52', $ext);
+        ModVersion::assertAtLeast('2.0.52', ModVersion::match('/ExtensionVersion = "([0-9.]+)"/', $ext));
 
         self::assertStringContainsString('COMSPEC_OrdersSessionStartedAt', $orders);
         self::assertStringContainsString('systemTimeUTC', $orders);
         self::assertStringContainsString('["GetOrders", [_mapId, "40", _callsign, _sessionStart]]', $orders);
         self::assertStringContainsString('isEqualTo "web") then { continue }', $orders);
 
-        self::assertStringContainsString('["GetAiOrders", [_mapId, _sessionStart]]', $ai);
+        // L'appel est désormais asynchrone (extAwait) : [_mapId, _sessionStart] est passé au spawn.
+        self::assertStringContainsString('[_mapId, _sessionStart] spawn', $ai);
+        self::assertStringContainsString('"GetAiOrders", _this] call comspec_overwatch_connect_fnc_extAwait', $ai);
 
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfg);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfg));
 
         self::assertStringContainsString('1.5.87', $bug);
         self::assertStringNotContainsString('endpoint', $bug);

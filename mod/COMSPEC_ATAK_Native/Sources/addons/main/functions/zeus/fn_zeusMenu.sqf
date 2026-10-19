@@ -41,6 +41,8 @@ switch (_act) do {
             ["bat100", "Dégâts et effets", "Recharger la batterie", "Batterie à 100 %."],
             ["batset", "Dégâts et effets", "Batterie au niveau choisi", "Batterie réglée sur l'intensité (0-100 %).", true],
             ["reboot", "Dégâts et effets", "Redémarrer le téléphone", "Arrêt puis écran de démarrage."],
+            ["blood", "Dégâts et effets", "Couvrir l'écran de sang", "Éclaboussures, traînées et coulures sur l'écran et la coque (intensité = quantité)."],
+            ["clean", "Dégâts et effets", "Nettoyer l'écran", "Retire d'un coup la poussière, les traces et le sang de l'écran et de la coque."],
             ["destroy", "Dégâts et effets", "Détruire l'appareil", "Écran éclaté, inutilisable jusqu'à réparation ou remplacement."],
             ["repair", "Dégâts et effets", "Réparer l'appareil", "Efface les dégâts (écran, composants)."],
             ["reset", "Tout", "Tout rétablir", "Retire tous les effets Zeus et répare le téléphone."]
@@ -112,6 +114,8 @@ switch (_act) do {
             case "bat100": { ["battery", [100]] call _once; };
             case "batset": { ["battery", [(_i max 0) min 100]] call _once; };
             case "reboot": { ["reboot"] call _once; };
+            case "blood": { ["blood", [[50, _int] select (_int > 0)]] call _once; };
+            case "clean": { ["clean"] call _once; };
             case "destroy": { ["destroy"] call _once; };
             case "repair": { ["repair"] call _once; };
             case "reset": { ["reset", [_units]] call _send; };

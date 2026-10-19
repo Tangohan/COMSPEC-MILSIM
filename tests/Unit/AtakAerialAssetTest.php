@@ -26,9 +26,18 @@ final class AtakAerialAssetTest extends TestCase
         $home = (string) file_get_contents($this->root() . '/app/Controllers/Web/HomeController.php');
 
         self::assertStringContainsString('function atak_aerial_layer_config', $helpers);
-        self::assertStringContainsString('maps/3/295/{z}/{x}/{y}.webp', $helpers);
+        // Le motif de tuiles est désormais construit par atak_atlas_overlay_spec($layerId) :
+        // on vérifie les URL effectivement produites (Altis photo aérienne = 295, carte du jeu = 3).
+        self::assertStringContainsString('function atak_atlas_overlay_spec', $helpers);
+        self::assertStringContainsString("atak_atlas_overlay_spec('295', 7)", $helpers);
+        self::assertStringContainsString("atak_atlas_overlay_spec('3', 6)", $helpers);
+        require_once $this->root() . '/app/Support/helpers.php';
+        $aerial = atak_aerial_layer_config('altis');
+        self::assertIsArray($aerial);
+        self::assertStringEndsWith('maps/3/295/{z}/{x}/{y}.webp', $aerial['tilePattern']);
+        self::assertNull(atak_aerial_layer_config('stratis'));
+        self::assertStringEndsWith('maps/3/3/{z}/{x}/{y}.webp', atak_atlas_overlay_spec('3', 6)['tilePattern']);
         self::assertStringContainsString('function atak_map_fond_layers', $helpers);
-        self::assertStringContainsString('maps/3/3/{z}/{x}/{y}.webp', $helpers);
         self::assertStringContainsString('Carte du jeu', $helpers);
 
         self::assertStringContainsString('window.ATAKAerial', $js);
@@ -44,8 +53,11 @@ final class AtakAerialAssetTest extends TestCase
         self::assertStringContainsString("tileSize: 381", $js);
         self::assertStringContainsString('Math.floor((1 - (south + 1e-6) / W) * nn) + 1', $js);
         self::assertStringContainsString('Math.floor((1 - (south + 1e-6) / W) * n) + 1', $js);
-        self::assertStringNotContainsString('/ W * nn) + 1;', $js);
-        self::assertStringNotContainsString('/ W * n) + 1);', $js);
+        // Borne est : epsilon pour ne pas déborder d'une tuile ; borne sud : jamais l'ancienne formule sans (1 - …).
+        self::assertStringContainsString('Math.floor((east - 1e-6) / W * nn) + 1', $js);
+        self::assertStringContainsString('Math.floor((east - 1e-6) / W * n) + 1', $js);
+        self::assertDoesNotMatchRegularExpression('/y1 = [^;\\n]*\\/ W \\* nn?\\) \\+ 1/', $js);
+        self::assertStringNotContainsString('Math.floor(south / W', $js);
         self::assertStringNotContainsString('crossOrigin', $js);
 
         self::assertStringContainsString('ATAKAerial.attach', $map);

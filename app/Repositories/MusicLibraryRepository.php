@@ -21,7 +21,8 @@ final class MusicLibraryRepository
 
     private const TRACK_COLS = 't.id, t.tenant_id, t.uploader_user_id, t.scope, t.status, t.title, t.artist, t.genre, t.duration_seconds,
         t.file_path, t.file_ext, t.size_bytes, t.play_count, t.created_at,
-        COALESCE(NULLIF(u.callsign, \'\'), NULLIF(u.display_name, \'\'), \'Membre\') AS uploader_name, tn.name AS tenant_name';
+        t.uploader_alias,
+        COALESCE(NULLIF(t.uploader_alias, \'\'), NULLIF(u.callsign, \'\'), NULLIF(u.display_name, \'\'), \'Membre\') AS uploader_name, tn.name AS tenant_name';
 
     public function __construct(private ?Database $db = null)
     {
@@ -121,16 +122,59 @@ final class MusicLibraryRepository
     public function createTrack(array $data): int
     {
         return $this->db->insert(
-            'INSERT INTO music_tracks (tenant_id, uploader_user_id, scope, status, title, artist, genre, duration_seconds, file_path, file_ext, mime, size_bytes, sha1)
-             VALUES (?, ?, ?, \'active\', ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO music_tracks (tenant_id, uploader_user_id, uploader_alias, scope, status, title, artist, genre, duration_seconds, file_path, file_ext, mime, size_bytes, sha1)
+             VALUES (?, ?, ?, ?, \'active\', ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                (int) $data['tenant_id'], (int) $data['uploader_user_id'],
+                (int) $data['tenant_id'], (int) $data['uploader_user_id'], self::nullable($data['uploader_alias'] ?? null, 80),
                 in_array($data['scope'] ?? '', self::SCOPES, true) ? $data['scope'] : 'org',
                 mb_substr((string) $data['title'], 0, 160), self::nullable($data['artist'] ?? null, 120), self::nullable($data['genre'] ?? null, 60),
                 max(0, (int) ($data['duration_seconds'] ?? 0)),
                 (string) $data['file_path'], (string) $data['file_ext'], (string) $data['mime'], (int) $data['size_bytes'], (string) $data['sha1'],
             ]
         );
+    }
+
+    /**
+     * Morceaux déjà en ligne dont le titre ressemble à celui proposé (doublons probables).
+     * Plateforme : tous les morceaux ; organisation : ceux qu'elle voit (les siens et la bibliothèque communautaire).
+     *
+     * @return list<array{id: int, title: string, artist: ?string, uploader_name: string, tenant_name: ?string, score: float}>
+     */
+    public function findSimilarTitles(string $title, ?int $visibleToTenantId, int $limit = 5): array
+    {
+        if (\App\Support\MusicTitleSimilarity::normalize($title) === '') {
+            return [];
+        }
+        $where = 't.status = \'active\'';
+        $params = [];
+        if ($visibleToTenantId !== null) {
+            $where .= ' AND (t.scope = \'community\' OR t.tenant_id = ?)';
+            $params[] = $visibleToTenantId;
+        }
+        $rows = $this->db->fetchAll(
+            'SELECT t.id, t.title, t.artist, tn.name AS tenant_name,
+                COALESCE(NULLIF(t.uploader_alias, \'\'), NULLIF(u.callsign, \'\'), NULLIF(u.display_name, \'\'), \'Membre\') AS uploader_name
+             FROM music_tracks t LEFT JOIN users u ON u.id = t.uploader_user_id LEFT JOIN tenants tn ON tn.id = t.tenant_id
+             WHERE ' . $where . ' ORDER BY t.created_at DESC LIMIT 5000',
+            $params
+        );
+        $out = [];
+        foreach ($rows as $r) {
+            $score = \App\Support\MusicTitleSimilarity::score($title, (string) $r['title']);
+            if ($score >= \App\Support\MusicTitleSimilarity::THRESHOLD) {
+                $out[] = [
+                    'id' => (int) $r['id'],
+                    'title' => (string) $r['title'],
+                    'artist' => $r['artist'] !== null ? (string) $r['artist'] : null,
+                    'uploader_name' => (string) $r['uploader_name'],
+                    'tenant_name' => $r['tenant_name'] !== null ? (string) $r['tenant_name'] : null,
+                    'score' => $score,
+                ];
+            }
+        }
+        usort($out, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+
+        return array_slice($out, 0, $limit);
     }
 
     /** @param array<string, mixed> $data */
@@ -146,6 +190,15 @@ final class MusicLibraryRepository
         if (($data['scope'] ?? '') !== 'community') {
             $this->setTrackScope($id, 'org');
         }
+        if (array_key_exists('uploader_alias', $data)) {
+            $this->db->execute('UPDATE music_tracks SET uploader_alias = ? WHERE id = ?', [self::nullable($data['uploader_alias'], 80), $id]);
+        }
+    }
+
+    /** Fichier réécrit sur le serveur (contrôle « lisible en jeu ») : nouvelle taille et empreinte. */
+    public function updateTrackFile(int $id, int $sizeBytes, string $sha1): void
+    {
+        $this->db->execute('UPDATE music_tracks SET size_bytes = ?, sha1 = ?, updated_at = NOW() WHERE id = ?', [$sizeBytes, $sha1, $id]);
     }
 
     public function setTrackStatus(int $id, string $status, int $moderatorId, string $note = ''): void

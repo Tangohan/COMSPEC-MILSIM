@@ -24,6 +24,8 @@ private _ratio = [pixelH / pixelW, 1024 / (missionNamespace getVariable ["COMSPE
 // Boîte visible et écran mesurés en paysage ; le portrait en est le quart de tour horaire.
 private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
+// Objet exigé pour ce modèle (réglages addon « ATAK · Objets par interface ») absent : le S7 reprend.
+if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 // La tablette du véhicule est commune, pour qui n'a pas son ATAK : avec son téléphone, on garde son téléphone.
 if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
 // iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
@@ -65,17 +67,22 @@ private _dh = if (_land) then {
     ([safeZoneH * 0.94 * _fullScale, (safeZoneH * 0.62 * _miniScale) min (safeZoneH * 0.94)] select _mini) / (_vy1 - _vy0)
 };
 private _dw = _dh / _ratio;
-// Emplacement du mini choisi dans les réglages : coin ou milieu de bord (T/M/B + L/R), bas droit par défaut.
+// Emplacement du mini choisi dans les réglages : coin ou milieu de bord (T/M/B + L/R/C), bas droit par défaut.
+// Haut centre et bas centre (TC, BC) : centré en largeur ; bas centre posé tout en bas de l'écran (sans marge).
 private _anchor = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
-if !(_anchor in ["TL", "TR", "ML", "MR", "BL", "BR"]) then { _anchor = "BR"; };
+if !(_anchor in ["TL", "TR", "TC", "ML", "MR", "BL", "BR", "BC"]) then { _anchor = "BR"; };
 private _dx = if (_mini) then {
-    if ((_anchor select [1, 1]) isEqualTo "L") then { safeZoneX + safeZoneW * 0.01 - _dw * _vx0 } else { safeZoneX + safeZoneW * 0.99 - _dw * _vx1 }
+    switch (_anchor select [1, 1]) do {
+        case "L": { safeZoneX + safeZoneW * 0.01 - _dw * _vx0 };
+        case "C": { safeZoneX + (safeZoneW - _dw * (_vx0 + _vx1)) / 2 };
+        default { safeZoneX + safeZoneW * 0.99 - _dw * _vx1 };
+    }
 } else { safeZoneX + (safeZoneW - _dw * (_vx0 + _vx1)) / 2 };
 private _dy = if (_mini) then {
     switch (_anchor select [0, 1]) do {
-        case "T": { safeZoneY + safeZoneH * 0.02 - _dh * _vy0 };
+        case "T": { safeZoneY + safeZoneH * ([0.02, 0] select (_anchor isEqualTo "TC")) - _dh * _vy0 };
         case "M": { safeZoneY + (safeZoneH - _dh * (_vy0 + _vy1)) / 2 };
-        default { safeZoneY + safeZoneH * 0.98 - _dh * _vy1 };
+        default { safeZoneY + safeZoneH * ([0.98, 1] select (_anchor isEqualTo "BC")) - _dh * _vy1 };
     }
 } else { safeZoneY + (safeZoneH - _dh * (_vy0 + _vy1)) / 2 };
 // Décalage choisi par le joueur (glisser la coque), par mode et orientation.

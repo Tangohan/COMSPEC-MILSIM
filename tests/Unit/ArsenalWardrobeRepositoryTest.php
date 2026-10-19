@@ -70,36 +70,54 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         $overlay = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayShow.sqf'
         );
-        self::assertStringContainsString('Tenues de la communauté', $overlay);
+        // Panneau « Tenues Athena » refondu : onglets Mes tenues / Communauté, filtres et pastilles de
+        // collection (arsenalOverlayShow), liste multicolonne (arsenalOverlayFill), actions dans arsenalOverlayAction.
+        self::assertStringContainsString('"COMMUNAUTÉ", "tabCloud"', $overlay);
+        self::assertStringContainsString('"MES TENUES", "tabLocal"', $overlay);
         self::assertStringContainsString('13 * _gridW', $overlay);
         self::assertStringContainsString('ctrlShow false', $overlay);
-        self::assertStringContainsString('Athena', $overlay);
+        self::assertStringContainsString('ATHENA · TENUES', $overlay);
         self::assertStringContainsString('884400', $overlay);
-        self::assertStringContainsString('884405', $overlay);
-        self::assertStringContainsString('Mes tenues', $overlay);
-        self::assertStringContainsString('Envoyer cette', $overlay);
-        self::assertStringContainsString('Envoyer toutes', $overlay);
-        self::assertStringContainsString('Récupérer cette', $overlay);
-        self::assertStringContainsString('Récupérer toutes', $overlay);
-        self::assertStringContainsString('Supprimer', $overlay);
-        self::assertStringContainsString('BIS_fnc_guiMessage', $overlay);
-        self::assertStringContainsString('arsenalDeleteLocal', $overlay);
-        self::assertStringContainsString('arsenalDeleteCloud', $overlay);
-        self::assertStringContainsString('0.72 * safezoneH', $overlay);
-        self::assertStringContainsString('arsenalPullAll', $overlay);
+        self::assertStringContainsString('884404', $overlay);
+        self::assertStringContainsString('"ENFILER", "apply"', $overlay);
+        self::assertStringContainsString('"keep"', $overlay);
+        self::assertStringContainsString('"remove", "COMSPEC_RscButtonAtakDanger"', $overlay);
+        self::assertStringContainsString('"bulk"', $overlay);
+        self::assertStringContainsString('"ENREGISTRER ET ENVOYER", "saveCurrent"', $overlay);
+        // Panneau placé entre les deux colonnes de l'arsenal (plus de hauteur fixe 0.72 * safezoneH).
+        self::assertStringContainsString('private _px0 = safeZoneX + _sideW + _gap;', $overlay);
         self::assertStringNotContainsString('safeZoneW - 0.28', $overlay);
         self::assertStringNotContainsString('WARDROBES', $overlay);
+
+        $action = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayAction.sqf'
+        );
+        self::assertStringContainsString('Envoyer au site %1 tenue(s)', $action);
+        self::assertStringContainsString('Importer %1 tenue(s) dans votre arsenal', $action);
+        self::assertStringContainsString('Supprimer « %1 » de votre arsenal', $action);
+        self::assertStringContainsString('BIS_fnc_guiMessage', $action);
+        self::assertStringContainsString('arsenalDeleteLocal', $action);
+        self::assertStringContainsString('arsenalDeleteCloud', $action);
+        self::assertStringContainsString('arsenalPullAll', $action);
+        self::assertStringContainsString('arsenalPushAll', $action);
+
         $refresh = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayRefresh.sqf'
         );
-        self::assertStringContainsString('aucune tenue dans la communauté', $refresh);
-        self::assertStringContainsString('aucune tenue dans cet arsenal', $refresh);
-        self::assertStringContainsString('_parts select 7', $refresh);
-        self::assertStringContainsString('lbSetPicture', $refresh);
+        // Colonne auteur (index 7) de ListWardrobes, lue sans splitString.
+        self::assertStringContainsString('["_upd", ""], ["_owner", ""]', $refresh);
         self::assertStringContainsString('arsenalCollectionName', $refresh);
-        self::assertStringContainsString('COMSPEC_ArsenalCollapsedLocal', $refresh);
-        self::assertStringContainsString('"▸"', $refresh);
-        self::assertStringContainsString('"▾"', $refresh);
+        self::assertStringContainsString('arsenalListWardrobes', $refresh);
+
+        $fill = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayFill.sqf'
+        );
+        self::assertStringContainsString("Aucune tenue partagée par l'organisation pour l'instant.", $fill);
+        self::assertStringContainsString('Aucune tenue dans votre arsenal', $fill);
+        self::assertStringContainsString('lnbSetPicture', $fill);
+        // Les groupes repliables (▸ / ▾) ont été remplacés par des pastilles de collection.
+        self::assertStringContainsString('COMSPEC_ArsenalChips', $fill);
+        self::assertStringContainsString('COMSPEC_ArsenalColl', $fill);
         $groupFn = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalCollectionName.sqf'
         );

@@ -53,7 +53,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
 }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_wpStore", {
     params ["_grp", "_pts", "_who"];
-    COMSPEC_ATAK_SrvRoutes set [_grp, [_pts, _who]];
+    // Itinéraire effacé par le groupe : plus rien à rejouer aux arrivants.
+    if ((count _pts) isEqualTo 0) then { COMSPEC_ATAK_SrvRoutes deleteAt _grp; } else { COMSPEC_ATAK_SrvRoutes set [_grp, [_pts, _who]]; };
     // Groupes disparus retirés (une entrée par groupe ayant reçu un itinéraire, jamais supprimée sinon).
     { if (isNull (groupFromNetId _x)) then { COMSPEC_ATAK_SrvRoutes deleteAt _x; }; } forEach (keys COMSPEC_ATAK_SrvRoutes);
 }] call CBA_fnc_addEventHandler;
@@ -98,6 +99,8 @@ COMSPEC_ATAK_FtCheck = {
     missionNamespace setVariable ["COMSPEC_ATAK_SrvPlayOK", (_r select [0, 3]) isEqualTo "OK|", true];
     ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
 }, [], 15] call CBA_fnc_waitAndExecute;
+// Distances parcourues et heures de pilote de chaque joueur (app Distances), envoyées à Athena toutes les 10 min (fn_distanceServer).
+[{ ["tick"] call comspec_atak_native_fnc_distanceServer; }, 3] call CBA_fnc_addPerFrameHandler;
 // Ménage différé demandé par un client (caisses larguées...) : fait ici pour survivre à son départ.
 ["comspec_atak_native_deleteLater", {
     params [["_objs", []], ["_delay", 1800]];
@@ -106,11 +109,12 @@ COMSPEC_ATAK_FtCheck = {
 addMissionEventHandler ["HandleDisconnect", {
     params [["_unit", objNull], "", "_uid"];
     ["leave", _uid] call comspec_atak_native_fnc_playTimeServer;
+    ["leave", _uid] call comspec_atak_native_fnc_distanceServer;
     // Téléphone de gilet accroché au joueur qui part : retirés (ils restaient dans la partie).
     if (!isNull _unit) then {
         { if ((typeOf _x) isEqualTo "COMSPEC_ATAK_VestPhone") then { deleteVehicle _x; }; } forEach (attachedObjects _unit);
     };
     false
 }];
-addMissionEventHandler ["MPEnded", { ["flush"] call comspec_atak_native_fnc_playTimeServer; }];
+addMissionEventHandler ["MPEnded", { ["flush"] call comspec_atak_native_fnc_playTimeServer; ["flush"] call comspec_atak_native_fnc_distanceServer; }];
 diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "postInit serveur", round ((diag_tickTime - _perfT0) * 1000)];

@@ -111,6 +111,19 @@ if (_linked) then {
 
 private _debit = format ["%1 ko/s", _rateKo];
 private _total = format ["%1 envois · %2 ko reçus", round _sent, _totalInKo];
+// COMSPEC Link 2.0.88+ : volume réel dans les deux sens (requêtes et réponses comptées par la DLL, gzip compris),
+// moyenne sur 5 min, et réponses inchangées qu'Athena n'a pas renvoyées. Avant, seuls les retours étaient comptés.
+private _ss = ["COMSPECExtension" callExtension ["SyncStats", []]] call comspec_overwatch_connect_fnc_extResult;
+if (_ss isEqualType "" && {(_ss select [0, 3]) isEqualTo "OK|"}) then {
+    (((((_ss select [3]) splitString toString [10]) param [0, ""])) splitString toString [9]) params [
+        ["_up", "1"], ["_outT", "0"], ["_inT", "0"], ["_calls", "0"], ["_nm", "0"], ["_saved", "0"], ["_wOut", "0"], ["_wIn", "0"], ["_span", "1"]
+    ];
+    private _sp = (parseNumber _span) max 1;
+    _debit = format ["%1 ko/s envoyés · %2 ko/s reçus (moyenne 5 min)",
+        (round ((parseNumber _wOut) / _sp / 100)) / 10, (round ((parseNumber _wIn) / _sp / 100)) / 10];
+    _total = format ["%1 requêtes · %2 ko envoyés · %3 ko reçus · %4 inchangées (%5 ko évités)",
+        _calls, round ((parseNumber _outT) / 1000), round ((parseNumber _inT) / 1000), _nm, round ((parseNumber _saved) / 1000)];
+};
 private _mods = format ["Overwatch %1 · %2 %3 · liaison %4", _ow, _athLabel, _ath, _extVer];
 private _returns = format [
     "messages %1 · marqueurs %2 · ordres %3 · formes %4",
