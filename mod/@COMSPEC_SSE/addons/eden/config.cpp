@@ -66,7 +66,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_6844285EAD";
                         property = "comspec_sse_forcedType";
                         control = "Combo";
-                        expression = "if (_value isNotEqualTo '') then { _this setVariable ['comspec_sse_forcedType', _value, true]; };";
+                        expression = "if (_value isNotEqualTo '') then { _this setVariable ['comspec_sse_forcedType', _value, isServer]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         condition = "objectSimulated - objectBrain";

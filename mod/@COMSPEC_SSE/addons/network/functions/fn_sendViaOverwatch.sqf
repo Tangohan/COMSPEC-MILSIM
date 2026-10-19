@@ -50,9 +50,9 @@ private _needsTypedApi = _needsPersonApi
     || {(toUpper _command) in ["SENDSSE", "SUBMITSSEDIGITAL"]}
     || {(toUpper _kind) in ["DIGITAL", "GENERIC"]};
 
-if (_preferExt) exitWith {
-    // _json déclaré ICI : un private du parent n’est pas toujours visible dans exitWith,
-    // et une sérialisation qui plante laissait [_json] indéfini (Resynch / file SEEK).
+// Envoi par l'extension (fiches typées Athena). Renvoie true si l'extension répond OK.
+private _tryExt = {
+    // _json déclaré ICI : une sérialisation qui plante laissait [_json] indéfini (Resynch / file SEEK).
     private _json = "";
     if ((toUpper _command) isEqualTo "SUBMITSSEPERSON" && {!isNil "comspec_sse_fnc_toJsonPerson"}) then {
         _json = [_payload] call comspec_sse_fnc_toJsonPerson;
@@ -122,7 +122,9 @@ if (_preferExt) exitWith {
     };
 };
 
-if (!_needsTypedApi && {!isNil "comspec_overwatch_connect_fnc_sendIntel"}) exitWith {
+// Envoi en texte (note HUMINT via Overwatch connect) : seulement pour les envois non typés.
+private _tryText = {
+    if (_needsTypedApi || {isNil "comspec_overwatch_connect_fnc_sendIntel"}) exitWith { false };
     private _sseUid = _payload getOrDefault ["sse_uid", ""];
     if (_sseUid isEqualTo "") then { _sseUid = _payload getOrDefault ["record_id", "?"]; };
     if (_sseUid isEqualType "" && {(_sseUid find "e+") >= 0 || {(_sseUid find "e-") >= 0} || {(_sseUid find "E+") >= 0}}) then {
@@ -152,6 +154,18 @@ if (!_needsTypedApi && {!isNil "comspec_overwatch_connect_fnc_sendIntel"}) exitW
     ["sendViaOverwatch OK via sendIntel"] call comspec_sse_fnc_log;
     true
 };
+
+// Ordre selon le réglage, avec repli sur l'autre voie. Les fiches typées (personne, biométrie,
+// numérique) passent toujours par l'extension : en texte elles n'iraient pas au registre Athena.
+private _order = if (_preferExt || {_needsTypedApi}) then { [_tryExt, _tryText] } else { [_tryText, _tryExt] };
+private _sentOk = false;
+{
+    if (!_sentOk) then {
+        private _r = [] call _x;
+        _sentOk = !isNil "_r" && {_r isEqualTo true};
+    };
+} forEach _order;
+if (_sentOk) exitWith { true };
 
 [format ["sendViaOverwatch unavailable kind=%1 cmd=%2", _kind, _command], "WARN"] call comspec_sse_fnc_log;
 false

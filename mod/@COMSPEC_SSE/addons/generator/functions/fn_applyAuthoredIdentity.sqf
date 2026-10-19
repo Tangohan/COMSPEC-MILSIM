@@ -24,6 +24,10 @@ private _mode = toUpper (_entity getVariable ["comspec_sse_identityMode", "AUTO"
 
 private _full = trim (format ["%1 %2", _first, _last]);
 private _fromUnit = false;
+// Identité écrite à la main : attachIntelLayers ne la remplacera pas par « UNKNOWN ».
+if (_full isNotEqualTo "" || {_alias isNotEqualTo ""}) then {
+    _entity setVariable ["comspec_sse_identityAuthored", true, true];
+};
 
 private _useUnitName = (_full isEqualTo "")
     && {_entity isKindOf "CAManBase"}

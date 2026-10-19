@@ -14,6 +14,8 @@ if (_entity isEqualType []) then {
 };
 
 if (isNull _entity) exitWith { false };
+// Fiche écrite par le serveur seul (les clients reçoivent la fiche et leurs menus via comspec_sse_recordChanged).
+if (!isServer) exitWith { false };
 
 private _profile = _entity getVariable ["comspec_sse_profile", "RANDOM"];
 private _complexity = _entity getVariable ["comspec_sse_complexity", "STANDARD"];
@@ -62,7 +64,8 @@ if (_missionSeed != "") then {
 };
 
 if (_advanced != "") then {
-    private _parsed = call compile _advanced;
+    // parseSimpleArray : pas d'exécution de code venant d'un attribut texte.
+    private _parsed = parseSimpleArray _advanced;
     if (_parsed isEqualType []) then {
         [_entity, _parsed] call comspec_sse_fnc_setIdentity;
     };

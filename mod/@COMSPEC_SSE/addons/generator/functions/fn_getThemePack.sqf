@@ -9,11 +9,20 @@ params [
     ["_pools", createHashMap, [createHashMap]]
 ];
 
+// Grids réelles de la carte jouée : lieu principal, puis lieu secondaire dans un rayon de 2 km.
 private _grid = _cluster getOrDefault ["depotGrid", ""];
+private _place = _cluster getOrDefault ["depotPlace", ""];
+private _mainPos = [];
 if (_grid isEqualTo "") then {
-    private _gx = 40000 + (([_seed, "gx"] call comspec_sse_fnc_hash) mod 20000);
-    private _gy = 90000 + (([_seed, "gy"] call comspec_sse_fnc_hash) mod 20000);
-    _grid = format ["%1 %2", round _gx, round _gy];
+    ([_seed, "depot"] call comspec_sse_fnc_seededMapGrid) params ["_g", "_p", "_n"];
+    _grid = _g;
+    _mainPos = _p;
+    _place = _n;
+};
+private _gridB = if (_mainPos isEqualTo []) then {
+    ([_seed, "second"] call comspec_sse_fnc_seededMapGrid) select 0
+} else {
+    ([_seed, "second", _mainPos, 2000] call comspec_sse_fnc_seededMapGrid) select 0
 };
 
 private _codewords = ["ALPHA","BRAVO","SAND","OLIVE","NIGHT","RIVER","STONE","EAGLE"];
@@ -40,8 +49,8 @@ private _pack = switch (toLower _theme) do {
             ]],
             ["locations", [
                 ["Dépôt carburant", _grid],
-                ["Point ALPHA", "048100 094500"],
-                ["Station-relais", "047850 094300"]
+                ["Point ALPHA", _gridB],
+                ["Station-relais", _gridB]
             ]],
             ["intel", [
                 format ["Réseau logistique carburant — code %1", _cw],
@@ -69,8 +78,8 @@ private _pack = switch (toLower _theme) do {
             ]],
             ["locations", [
                 ["Cache principale", _grid],
-                ["Point de transfert", "048200 094600"],
-                ["Atelier", "047700 094100"]
+                ["Point de transfert", _gridB],
+                ["Atelier", _gridB]
             ]],
             ["intel", [
                 "Cellule armement active",
@@ -95,7 +104,7 @@ private _pack = switch (toLower _theme) do {
                 "Pas de téléphone demain.",
                 format ["Signal : %1", _cw]
             ]],
-            ["locations", [["Point ALPHA", "048100 094500"], ["Lieu de repli", _grid]]],
+            ["locations", [["Point ALPHA", _gridB], ["Lieu de repli", _grid]]],
             ["intel", ["Réunion de coordination prévue"]],
             ["computerFiles", ["ordre_du_jour.txt", "liste_presents.doc"]]
         ]
@@ -112,7 +121,7 @@ private _pack = switch (toLower _theme) do {
                 "Confirmer réception par SMS unique.",
                 format ["Véhicule %1 — %2", _vehicle, _plate]
             ]],
-            ["locations", [["Remise", _grid], ["Relais 1", "048050 094480"]]],
+            ["locations", [["Remise", _grid], ["Relais 1", _gridB]]],
             ["intel", ["Chaîne de courriers active"]],
             ["computerFiles", ["tracking_colis.csv", "chauffeurs.txt"]]
         ]
@@ -129,7 +138,7 @@ private _pack = switch (toLower _theme) do {
                 "Factures à brûler après lecture.",
                 format ["Réf transfert : %1-%2", _cw, ([_seed,"fin"] call comspec_sse_fnc_hash) mod 9999]
             ]],
-            ["locations", [["Changeur", _grid], ["Café comptable", "047900 094250"]]],
+            ["locations", [["Changeur", _grid], ["Café comptable", _gridB]]],
             ["intel", ["Circuit de financement local"]],
             ["computerFiles", ["comptes_secondaires.xls", "transferts_mois.pdf"]]
         ]
@@ -146,7 +155,7 @@ private _pack = switch (toLower _theme) do {
                 format ["Code chantier : %1", _cw],
                 "Photos interdites dans l'atelier."
             ]],
-            ["locations", [["Atelier", _grid], ["Point test", "048300 094700"]]],
+            ["locations", [["Atelier", _grid], ["Point test", _gridB]]],
             ["intel", ["Activité engins explosifs improvisés"]],
             ["computerFiles", ["schemas_ied.pdf", "fournisseurs_composants.txt"]]
         ]
@@ -162,7 +171,7 @@ private _pack = switch (toLower _theme) do {
                 "Changer les draps. Effacer traces.",
                 format ["Hôte : code %1", _cw]
             ]],
-            ["locations", [["Safehouse", _grid], ["Issue de secours", "048120 094520"]]],
+            ["locations", [["Safehouse", _grid], ["Issue de secours", _gridB]]],
             ["intel", ["Planque opérationnelle identifiée"]],
             ["computerFiles", ["plan_maison.jpg", "rotations_garde.txt"]]
         ]
@@ -178,7 +187,7 @@ private _pack = switch (toLower _theme) do {
                 format ["Lieu screening : %1", _grid],
                 "Ne pas parler d'armes au premier contact."
             ]],
-            ["locations", [["Marché", "047900 094200"], ["Salle entretien", _grid]]],
+            ["locations", [["Marché", _gridB], ["Salle entretien", _grid]]],
             ["intel", ["Pipeline de recrutement"]],
             ["computerFiles", ["candidats.doc", "propagande_scripts.txt"]]
         ]
@@ -194,7 +203,7 @@ private _pack = switch (toLower _theme) do {
                 format ["Point passage %1", _grid],
                 format ["Signal radio : %1", _cw]
             ]],
-            ["locations", [["Passage", _grid], ["Entrepôt", "048400 094800"]]],
+            ["locations", [["Passage", _grid], ["Entrepôt", _gridB]]],
             ["intel", ["Itinéraire de contrebande"]],
             ["computerFiles", ["routes_frontieres.kml", "manifestes.csv"]]
         ]
@@ -210,7 +219,7 @@ private _pack = switch (toLower _theme) do {
                 "Vidéo à transmettre chiffrée.",
                 format ["Indicatif : %1", _cw]
             ]],
-            ["locations", [["Lancement", _grid], ["Observation", "048180 094550"]]],
+            ["locations", [["Lancement", _grid], ["Observation", _gridB]]],
             ["intel", ["Capacité ISR/drone locale"]],
             ["computerFiles", ["logs_vol.csv", "cartes_zone.png", "firmware_notes.txt"]]
         ]
@@ -226,7 +235,7 @@ private _pack = switch (toLower _theme) do {
                 format ["Studio temporaire grid %1", _grid],
                 "Supprimer les rushes bruts."
             ]],
-            ["locations", [["Studio", _grid], ["Point diffusion", "047950 094280"]]],
+            ["locations", [["Studio", _grid], ["Point diffusion", _gridB]]],
             ["intel", ["Production de contenus de propagande"]],
             ["computerFiles", ["rushes_bruts", "script_v3.doc", "comptes_diffusion.txt"]]
         ]
@@ -242,7 +251,7 @@ private _pack = switch (toLower _theme) do {
                 "Besoin d'antibiotiques supplémentaires.",
                 "Ne pas mélanger avec le reste."
             ]],
-            ["locations", [["Infirmerie clandestine", _grid], ["Dépôt med", "048060 094410"]]],
+            ["locations", [["Infirmerie clandestine", _grid], ["Dépôt med", _gridB]]],
             ["intel", ["Réseau soutien médical parallèle"]],
             ["computerFiles", ["stocks_med.xls", "besoins_semaine.txt"]]
         ]
@@ -261,6 +270,7 @@ private _pack = switch (toLower _theme) do {
 };
 
 _pack set ["grid", _grid];
+_pack set ["place", _place];
 _pack set ["codeword", _cw];
 _pack set ["vehicle", _vehicle];
 _pack set ["plate", _plate];

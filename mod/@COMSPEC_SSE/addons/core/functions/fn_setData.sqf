@@ -1,6 +1,10 @@
 /*
-    Écrit les données SSE sur une entité (public).
+    Écrit les données SSE sur une entité.
     [_entity, _data, _public] call comspec_sse_fnc_setData
+    _public = false : copie locale seulement (génération en cours, affichage).
+    _public = true  : le serveur est l'unique écrivain public (comspec_sse_fnc_commitData).
+                      Sur un client : copie locale immédiate + proposition au serveur, qui
+                      fusionne champ par champ et rediffuse la fiche de référence.
 */
 params [
     ["_entity", objNull, [objNull]],
@@ -17,8 +21,18 @@ private _sameUid = (_prev isEqualType [])
     && {([_prev, "uid", ""] call comspec_sse_fnc_getPair) isEqualTo _uid}
     && {_uid isNotEqualTo "?" && {_uid isNotEqualTo ""}};
 
-_entity setVariable ["comspec_sse_data", _data, _public];
-_entity setVariable ["comspec_sse_enabled", true, _public];
+if (_public) then {
+    if (isServer) then {
+        [_entity, _data, 2, false] call comspec_sse_fnc_commitData;
+    } else {
+        _entity setVariable ["comspec_sse_data", _data];
+        _entity setVariable ["comspec_sse_enabled", true];
+        ["comspec_sse_recordCommit", [_entity, _data, clientOwner]] call CBA_fnc_serverEvent;
+    };
+} else {
+    _entity setVariable ["comspec_sse_data", _data];
+    _entity setVariable ["comspec_sse_enabled", true];
+};
 
 // Anti-spam journal : ne logger INFO que si nouvel uid / première écriture.
 private _lastLog = _entity getVariable ["comspec_sse_setDataLogAt", -1e9];
