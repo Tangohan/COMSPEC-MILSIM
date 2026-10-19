@@ -573,6 +573,7 @@ return [
     'atakn_credits_team' => 'SOAR team',
     'atakn_credits_dev' => 'Development by NewPI',
     'atakn_credits_bce' => 'Some features are adapted from Better CAS Environment (Aaren882), under the APL-SA licence.',
+    'atakn_credits_translations' => 'Community translations: Simplified Chinese by RickLeo and MOYA (full translation and creation of the language pack).',
     'atakn_final_title' => 'Ready to pull out the phone?',
     'atakn_cta_translate' => 'Translate the mod',
     'atakn_final_b' => 'Download the mod from your ATAK space, then link the phone to your account in game.',
