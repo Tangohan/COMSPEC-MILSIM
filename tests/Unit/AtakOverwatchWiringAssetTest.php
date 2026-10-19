@@ -65,4 +65,20 @@ final class AtakOverwatchWiringAssetTest extends TestCase
         $session = $this->read('public/assets/js/atak-overwatch-session.js');
         self::assertStringContainsString('data-request-url', $session);
     }
+
+    public function testClassicModulesPortedToOverwatch(): void
+    {
+        $beta = $this->read('public/assets/js/atak-overwatch-beta.js');
+        self::assertStringContainsString("'/api/atak/medevac/' : '/api/cas/'", $beta);
+        self::assertStringContainsString('data-ow-medevac-delete', $beta);
+        self::assertStringContainsString("'/api/atak/mission-plan?mapId='", $beta);
+        self::assertStringContainsString('window.ATAKMissionPlan = {', $beta);
+
+        $telemetry = $this->read('public/assets/js/atak-overwatch-telemetry.js');
+        self::assertStringContainsString("'/api/atak/logistics/resupply/status'", $telemetry);
+        self::assertStringContainsString("meta.kind !== 'resupply_request'", $telemetry);
+
+        $tools = $this->read('public/assets/js/atak-overwatch-tools.js');
+        self::assertStringContainsString("'/api/atak/session-workspace'", $tools);
+    }
 }
