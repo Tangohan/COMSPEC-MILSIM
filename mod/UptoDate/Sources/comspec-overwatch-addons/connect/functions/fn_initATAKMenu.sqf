@@ -4,6 +4,9 @@
  */
 
 if (!hasInterface) exitWith { false };
+// ATAK natif : rapports, SEEK, appui et MEDEVAC sont dans les apps du téléphone, pas dans ce sous-menu ACE
+// (ses entrées ouvraient d'anciennes fenêtres plein écran par-dessus le jeu).
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith { false };
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith { false };
 if (isNil "ace_interact_menu_fnc_createAction") exitWith { false };
 if (isNull player) exitWith { false };

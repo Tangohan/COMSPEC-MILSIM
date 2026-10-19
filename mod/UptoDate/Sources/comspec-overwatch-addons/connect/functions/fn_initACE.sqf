@@ -116,11 +116,23 @@ private _fnc_folder = {
     [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 };
 
+// ATAK natif : plus les entrées qui ouvraient une ancienne fenêtre plein écran par-dessus le jeu, ni celles qui
+// cherchaient l'ancien ATAK (toast « ATAK Enhanced non disponible ») ; tout cela est dans les apps du téléphone.
+// Restent les actions sans fenêtre et sans équivalent au téléphone (ECOTI, ping, bilan santé, photos Recon/casque/drone,
+// code laser, tenues, resynchro, ordres rapides). Un dossier vidé (Appui & mission) disparaît de lui-même dans ACE.
+private _nativeDrop = if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) then { [
+    "COMSPEC_Account", "COMSPEC_Tablet", "COMSPEC_OrderInbox", "COMSPEC_Messages", "COMSPEC_Photos",
+    "COMSPEC_Briefing", "COMSPEC_IntelNote", "COMSPEC_MedInbox", "COMSPEC_ReconNote", "COMSPEC_TheaterSurvey",
+    "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderCompose", "COMSPEC_OrderFrago", "COMSPEC_Callsign",
+    "COMSPEC_BugReport", "COMSPEC_DiagIsolate"
+] } else { [] };
+
 private _fnc_leaf = {
     params ["_id", "_label", "_stmt", "_path", ["_cond", {
         (missionNamespace getVariable ["comspec_overwatch_enabled", true])
         && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
     }]];
+    if (_id in _nativeDrop) exitWith {};
     private _a = [_id, _label, "", _stmt, _cond, { [] }] call comspec_overwatch_connect_fnc_aceAction;
     [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 };

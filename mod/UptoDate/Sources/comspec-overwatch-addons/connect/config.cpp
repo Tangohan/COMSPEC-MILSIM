@@ -301,6 +301,7 @@ class CfgFunctions {
             class getFireTeams {};
             class downloadBriefingSlide {};
             class openBriefingBoard {};
+            class openNativePage {};
             class briefingBoardShow {};
             class briefingBoardStep {};
             class refreshBriefingSlides {};

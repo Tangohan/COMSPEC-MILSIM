@@ -13818,6 +13818,8 @@
 ["Équipes de feu du camp", "", "Side fire teams"],
 ["Équipes et suivi", "", "Teams and tracking"],
 ["Équipez un téléphone ATAK pour consulter le briefing.", "", "Equip an ATAK phone to view the briefing."],
+["Équipez un téléphone ATAK pour demander une évacuation sanitaire.", "", "Equip an ATAK phone to request a medical evacuation."],
+["Équipez un téléphone ATAK pour rédiger une fiche de renseignement.", "", "Equip an ATAK phone to write an intelligence report."],
 ["Équipier hors ligne, inconscient ou qui ne répond plus", "", "Teammate offline, unconscious, or unresponsive"],
 ["Équipiers avec un téléphone, à moins de 50 m", "", "Teammates with a phone, within 50 m"],
 ["Équipé seulement (ItemAndroid)", "", "Item slot only (ItemAndroid)"],
