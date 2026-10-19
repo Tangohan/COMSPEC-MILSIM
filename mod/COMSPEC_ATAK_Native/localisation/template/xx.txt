@@ -1148,6 +1148,7 @@
 ["Analyste", "", "Analyst"],
 ["Analysé et jugé plausible", "", "Analyzed and judged plausible"],
 ["ANALYSÉE", "", "ANALYZED"],
+["Ancien bandeau sous la carte du téléphone (vitesse, altitude, cap, coordonnées). Il n'est plus affiché : ce réglage n'a plus d'effet.", "", "Old strip under the phone map (speed, altitude, heading, coordinates). It is no longer shown: this setting has no effect."],
 ["Ancien employé d'emprise, badge révoqué", "", "Former site employee, badge revoked"],
 ["Ancienne tablette Overwatch : écran web", "", "Advanced tablet (integrated screen)"],
 ["ancienne, noircie", "", "old, blackened"],

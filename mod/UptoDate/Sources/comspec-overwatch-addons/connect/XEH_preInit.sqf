@@ -572,7 +572,7 @@ private _fnc_applyNet = {
     "comspec_overwatch_show_link_strip", "CHECKBOX",
     [
         "Barre d'infos sous la carte",
-        "Bandeau sous la carte du téléphone avec vitesse, altitude, cap et coordonnées. Aussi réglable dans le téléphone (Réglages > Réalisme)."
+        "Ancien bandeau sous la carte du téléphone (vitesse, altitude, cap, coordonnées). Il n'est plus affiché : ce réglage n'a plus d'effet."
     ],
     ["COMSPEC", "Overwatch · Téléphone ATAK"],
     false
