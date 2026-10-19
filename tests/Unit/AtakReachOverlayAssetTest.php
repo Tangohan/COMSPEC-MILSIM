@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakReachOverlayAssetTest extends TestCase
 {
@@ -73,9 +74,9 @@ final class AtakReachOverlayAssetTest extends TestCase
         self::assertStringContainsString('reachOverlayClick', $install);
         self::assertStringContainsString('ctrlMapWorldToScreen', (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_reachOverlayClick.sqf'));
 
-        self::assertMatchesRegularExpression('/versionStr = "1\\.0\\.\\d+"/', $cfgA);
+        ModVersion::assertAtLeast('1.0.0', ModVersion::fromConfigCpp($cfgA));
         self::assertStringContainsString('class athena_installReachMap', $cfgA);
-        self::assertMatchesRegularExpression('/versionStr = "1\\.5\\.\\d+"/', $cfgC);
+        ModVersion::assertAtLeast('1.5.0', ModVersion::fromConfigCpp($cfgC));
         self::assertStringContainsString('class reachOverlayDraw', $cfgC);
     }
 }

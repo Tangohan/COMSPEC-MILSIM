@@ -37,9 +37,13 @@ final class AtakDeviceAuthContractTest extends TestCase
     {
         $di = (string) file_get_contents(base_path('app/Core/ContainerIntegrations.php'));
         self::assertStringContainsString('AtakDeviceSecurityController::class', $di);
-        self::assertStringContainsString('AtakDeviceAuthApiController::class', $di);
-        self::assertStringContainsString('AtakDeviceAuthService::class', $di);
-        self::assertStringContainsString('AtakDeviceAuthRepository::class', $di);
+        // L'appairage initié par le terminal passe désormais par GameAtakPairing* (routes /api/atak/pair/*) ;
+        // AtakDeviceAuthApiController se construit seul (voir test suivant) et n'est plus câblé ici.
+        self::assertStringContainsString('GameAtakPairingRepository::class', $di);
+        self::assertStringContainsString('GameAtakPairingService::class', $di);
+        self::assertStringContainsString('GameAtakPairingApiController::class', $di);
+        $routes = (string) file_get_contents(base_path('routes/web.php'));
+        self::assertStringContainsString('$gamePair = \\App\\Controllers\\Api\\Game\\GameAtakPairingApiController::class;', $routes);
     }
 
     public function testApiControllerCanBeBuiltWithoutContainerWiring(): void
@@ -65,10 +69,15 @@ final class AtakDeviceAuthContractTest extends TestCase
     {
         $view = file_get_contents(base_path('views/atak.php'));
         self::assertIsString($view);
-        self::assertStringContainsString('id="atak-device-pair-code"', $view);
-        self::assertStringContainsString("url('atak/device-pairing/lookup')", $view);
-        self::assertStringContainsString("url('atak/device-pairing/decision')", $view);
-        self::assertStringContainsString('Valable 10 min', $view);
+        // Le code affiché par le terminal (« Associer ce terminal ») est validé depuis le site.
+        self::assertStringContainsString('id="atak-game-link-confirm"', $view);
+        self::assertStringContainsString('Valider un terminal ATAK', $view);
+        self::assertStringContainsString('id="atak-device-pair-pill"', $view);
+        self::assertStringContainsString("url('atak/game-link/confirm-pair')", $view);
+        $routes = (string) file_get_contents(base_path('routes/web.php'));
+        self::assertStringContainsString("'/atak/game-link/confirm-pair', [AtakController::class, 'confirmPairCode']", $routes);
+        $ctrl = (string) file_get_contents(base_path('app/Controllers/Web/AtakController.php'));
+        self::assertStringContainsString('->approveFromWeb($raw, $userId, $tenantId)', $ctrl);
         self::assertStringNotContainsString('Sécurisé · 10 min', $view);
         self::assertStringNotContainsString('function initGameLink()', $view);
         self::assertStringNotContainsString('data-game-link-url=', $view);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakMarkerDropperWebAssetTest extends TestCase
 {
@@ -25,8 +26,8 @@ final class AtakMarkerDropperWebAssetTest extends TestCase
         self::assertStringContainsString('_isWidget', $sync);
         self::assertStringContainsString('if (!_force && {_isWidget}) then { _force = true; };', $sync);
         self::assertStringContainsString('class syncNearbyMapMarkers {}', $cfgC);
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
-        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
 
         self::assertStringContainsString('o_', $isSync);
         self::assertStringContainsString('_defined #', $isSync);
@@ -37,7 +38,10 @@ final class AtakMarkerDropperWebAssetTest extends TestCase
 
         self::assertStringContainsString('MouseButtonDblClick', $reach);
         self::assertStringContainsString('syncNearbyMapMarkers', $reach);
-        self::assertStringContainsString('syncNearbyMapMarkers', $nearby);
+        // La fonction ne se nomme plus elle-même dans son en-tête : vérifier son enregistrement et son travail.
+        self::assertStringContainsString('class syncNearbyMapMarkers', $cfgC);
+        self::assertStringContainsString('isSyncableMapMarker', $nearby);
+        self::assertStringContainsString('[_name, false, true] call comspec_overwatch_connect_fnc_syncMapMarker', $nearby);
 
         self::assertStringContainsString('allMapMarkers', $bridge);
         self::assertStringContainsString('o_', $bridge);

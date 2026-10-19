@@ -77,7 +77,7 @@ final class AdminAtakRealismVerifyController
     private function testTablesExist(): array
     {
         try {
-            $pdo = Database::connection();
+            $pdo = Database::getPdo();
             
             $st = $pdo->query("SHOW TABLES LIKE 'atak_realism_config'");
             $tableExists = $st->rowCount() > 0;
@@ -322,7 +322,7 @@ final class AdminAtakRealismVerifyController
     private function testOverridesTable(): array
     {
         try {
-            $pdo = Database::connection();
+            $pdo = Database::getPdo();
             
             $st = $pdo->query("SELECT COUNT(*) FROM atak_relay_overrides");
             $count = $st->fetchColumn();

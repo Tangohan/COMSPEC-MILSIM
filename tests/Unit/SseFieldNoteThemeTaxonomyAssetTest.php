@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 /**
  * Les fiches FRS / FRC / FRM exposent 17 thèmes colorés, côté portail et jeu.
@@ -36,9 +37,9 @@ final class SseFieldNoteThemeTaxonomyAssetTest extends TestCase
         self::assertStringContainsString("size='0.68'", $contents);
         self::assertStringContainsString("size='0.82'", $contents);
         self::assertStringNotContainsString("size='0.40'", $contents);
-        self::assertStringContainsString('1.5.16', (string) file_get_contents(
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp((string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp'
-        ));
+        )));
     }
 
     public function testJsSubmitsSourceAndTitle(): void

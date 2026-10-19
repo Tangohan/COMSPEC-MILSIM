@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakPhotoLibraryAthenaSendAssetTest extends TestCase
 {
@@ -19,8 +20,8 @@ final class AtakPhotoLibraryAthenaSendAssetTest extends TestCase
         $bridge = (string) file_get_contents($root . '/functions/fn_athena_bridgeIcemanPhoto.sqf');
         $note = (string) file_get_contents(dirname(__DIR__, 2) . '/docs/bugs/2026-09-19-photo-library-transferer.md');
 
-        self::assertStringContainsString('TRANSF�RER', $install);
-        self::assertStringContainsString('TOUT TRANSF�RER', $install);
+        self::assertStringContainsString('TRANSFÉRER', $install);
+        self::assertStringContainsString('TOUT TRANSFÉRER', $install);
         self::assertStringContainsString('ctrlCreate', $install);
         self::assertStringContainsString('RscButton', $install);
         self::assertStringContainsString('CBA_fnc_addPerFrameHandler', $install);
@@ -32,19 +33,19 @@ final class AtakPhotoLibraryAthenaSendAssetTest extends TestCase
         self::assertStringContainsString('deleteFile _p', $remove);
         self::assertStringContainsString('class athena_sendLibraryPhoto {}', $cfg);
         self::assertStringContainsString('class athena_removeIcemanPhoto {}', $cfg);
-        self::assertStringContainsString('versionStr = "1.0.165"', $cfg);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('listLocalScreenshots', $send);
         self::assertStringContainsString('Aucune vue', $send);
         $ext = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         self::assertStringContainsString('ATAK_PhotoLibrary', $ext);
         self::assertStringContainsString('EnumerateIcemanPhotoLibraryDirs', $ext);
-        self::assertStringContainsString('2.0.52', $ext);
+        ModVersion::assertAtLeast('2.0.52', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9.]+)"/', $ext));
         self::assertStringContainsString('_started = _started + 1', $poll);
         self::assertStringContainsString('rememberLocalPhoto', $bridge);
         self::assertTrue(
             strpos($bridge, 'rememberLocalPhoto') < strpos($bridge, 'COMSPEC_AthenaReady')
         );
-        self::assertStringContainsString('Transf�rer', $note);
+        self::assertStringContainsString('Transférer', $note);
         self::assertStringNotContainsString('endpoint', $note);
     }
 }

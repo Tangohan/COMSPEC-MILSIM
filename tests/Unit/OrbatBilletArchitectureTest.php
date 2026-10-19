@@ -121,7 +121,11 @@ final class OrbatBilletArchitectureTest extends TestCase
         self::assertSame('Vacant', BilletStatus::seatLabel(BilletStatus::ACTIVE, 0, 1));
         self::assertSame('Gelé', BilletStatus::seatLabel(BilletStatus::FROZEN, 0, 1));
         $catalog = OrgDomainModel::catalog();
-        self::assertCount(6, $catalog);
+        // Le modèle a gagné DUTY_MISSION et WORKFLOW (docs/architecture/2026-10-01-org-duty-workbench.md).
+        self::assertCount(8, $catalog);
+        self::assertSame(OrgDomainModel::ALL, array_column($catalog, 'id'));
+        self::assertContains(OrgDomainModel::DUTY_MISSION, array_column($catalog, 'id'));
+        self::assertContains(OrgDomainModel::WORKFLOW, array_column($catalog, 'id'));
         self::assertSame(OrgDomainModel::PERSONNEL, $catalog[0]['id']);
     }
 

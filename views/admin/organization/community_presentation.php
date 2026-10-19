@@ -287,6 +287,7 @@ $cpNum = 0;
         <div class="bcs-box bcs-aside__extra">
             <div class="bcs-box__actions" style="margin-top:0;">
                 <?php if ($publicPageUrl !== ''): ?>
+                    <a class="bcs-btn bcs-btn--block bcs-btn--primary" href="<?= $h($publicPageUrl . '?edition=1') ?>" target="_blank" rel="noopener">Modifier directement sur la page ↗</a>
                     <a class="bcs-btn bcs-btn--block" href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir la page publique ↗</a>
                 <?php endif; ?>
                 <a class="bcs-btn bcs-btn--block" href="<?= $h(url('communities')) ?>" target="_blank" rel="noopener">Voir le registre des unités ↗</a>

@@ -75,8 +75,9 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('/api/replay/mission/', $ops);
         self::assertStringContainsString('circleByRadius', $ops);
 
-        self::assertStringContainsString('appendTrack(id, trueLoc)', $beta);
-        self::assertStringNotContainsString('if (tracksOn) appendTrack(id, trueLoc)', $beta);
+        // appendTrack reçoit maintenant aussi l'unité ; la trace reste alimentée même pistes masquées.
+        self::assertStringContainsString('appendTrack(id, trueLoc, unit)', $beta);
+        self::assertStringNotContainsString('if (tracksOn) appendTrack(id, trueLoc', $beta);
         self::assertStringContainsString("if (window.OverwatchOps && window.OverwatchOps.afterRenderMap) window.OverwatchOps.afterRenderMap()", $beta);
         self::assertStringContainsString('if (lastGroupKey) html += \'</div></div>\'', $beta);
         self::assertStringContainsString('ow-raw-preview', $beta);

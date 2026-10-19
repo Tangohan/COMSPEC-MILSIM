@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakMultiMapQueueAssetTest extends TestCase
 {
@@ -25,7 +26,7 @@ final class AtakMultiMapQueueAssetTest extends TestCase
         self::assertStringContainsString('LoadQueueFromDisk()', $dll);
         self::assertStringContainsString('str _mapId', $connect);
         self::assertStringContainsString('comspec_overwatch_map_id', $pre);
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
-        self::assertMatchesRegularExpression('/ExtensionVersion = "2\\.0\\.50"/', $dll);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
+        ModVersion::assertAtLeast('2.0.50', ModVersion::match('/ExtensionVersion = "([0-9.]+)"/', $dll));
     }
 }

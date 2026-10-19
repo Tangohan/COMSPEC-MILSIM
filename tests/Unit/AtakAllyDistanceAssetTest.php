@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakAllyDistanceAssetTest extends TestCase
 {
@@ -27,6 +28,6 @@ final class AtakAllyDistanceAssetTest extends TestCase
         self::assertStringContainsString('isTrackedAi', $map);
         self::assertStringContainsString('nato-sidc--last-known', $map);
         self::assertStringContainsString('nato-sidc--last-known', $css);
-        self::assertStringContainsString('1.5.16', $cfg);
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp($cfg));
     }
 }

@@ -30,7 +30,10 @@ final class DashboardUiTourAssetTest extends TestCase
 
         self::assertStringContainsString('Masquer le guide', $js);
         self::assertStringContainsString('dash-tour-nav', $js);
-        self::assertStringContainsString('api/ui-tours/dismiss', $js);
+        // The save endpoint is now injected by the controller (save_url) instead of hard-coded in the JS.
+        self::assertStringContainsString('cfg.save_url', $js);
+        self::assertStringContainsString("'save_url' => url('api/ui-tours/dismiss')", $home);
+        self::assertStringContainsString("'save_url'", $boot);
         self::assertStringContainsString('tour_key', $js);
         self::assertStringNotContainsString('localStorage', $js);
 
@@ -50,7 +53,9 @@ final class DashboardUiTourAssetTest extends TestCase
         self::assertStringContainsString('Guide', $header);
 
         self::assertStringContainsString('id="dash-tour-hero"', $cc);
-        self::assertStringContainsString('id="dash-tour-formations"', $cc);
+        // The training showcase moved to its own partial, still required by the command centre.
+        self::assertStringContainsString('dashboard_catalog_showcase.php', $cc);
+        self::assertStringContainsString('id="dash-tour-formations"', (string) file_get_contents($root . '/views/partials/dashboard_catalog_showcase.php'));
         self::assertStringContainsString('id="dash-tour-activity"', $cc);
         self::assertStringContainsString('id="dash-tour-identity"', (string) file_get_contents($root . '/views/partials/dashboard_idstrip.php'));
         self::assertStringContainsString('id="dash-rail"', (string) file_get_contents($root . '/views/partials/dashboard_aside.php'));
@@ -60,7 +65,9 @@ final class DashboardUiTourAssetTest extends TestCase
         self::assertStringContainsString("post('/api/ui-tours/dismiss'", $routes);
         self::assertStringContainsString('CREATE TABLE user_ui_tours', $mig);
         self::assertStringContainsString('run_user_ui_tours_migration', $run);
-        self::assertStringContainsString("tour_key !== UserUiTourRepository::KEY_DASHBOARD", $ctrl);
+        // The controller now normalises the key into $key before refusing unknown guides.
+        self::assertStringContainsString('trim((string) $request->input(\'tour_key\', \'\'))', $ctrl);
+        self::assertStringContainsString('$key !== UserUiTourRepository::KEY_DASHBOARD', $ctrl);
         self::assertStringNotContainsString('Cette annonce ne peut pas être masquée', $ctrl);
     }
 }

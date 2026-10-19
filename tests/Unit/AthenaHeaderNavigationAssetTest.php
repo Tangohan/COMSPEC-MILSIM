@@ -13,7 +13,8 @@ final class AthenaHeaderNavigationAssetTest extends TestCase
         $header = $this->headerSource();
 
         self::assertStringContainsString("'abbr' => 'BO'", $header);
-        self::assertStringContainsString("'label' => 'Back-office'", $header);
+        // Administrators see "Back-office"; other members see their own "Mon back-office".
+        self::assertStringContainsString('\'label\' => $canAdmin ? \'Back-office\' : \'Mon back-office\'', $header);
         self::assertStringContainsString("'href' => url('back-office')", $header);
     }
 

@@ -36,7 +36,8 @@ final class CommunityOnboardingValidationTest extends TestCase
         $result = (new CommunityOnboardingValidationService())->validate($wizard);
         self::assertTrue($result['ok'], implode(' ', $result['errors'] ?? []));
         self::assertSame('older', $result['normalized']['org_founding_choice'] ?? '');
-        self::assertNull($result['normalized']['org_founding_date'] ?? 'x');
+        self::assertArrayHasKey('org_founding_date', $result['normalized'] ?? []);
+        self::assertNull($result['normalized']['org_founding_date']);
     }
 
     public function testOlderUnitWithPastDateIsKept(): void

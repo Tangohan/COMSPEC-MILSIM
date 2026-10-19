@@ -11,6 +11,7 @@
 /** @var string $sort */
 /** @var list<array<string, mixed>> $actions */
 /** @var bool $tablesReady */
+/** @var array{tenant: bool, base: string, home: string, home_label: string, by: string} $fleetScope */
 
 use App\Repositories\AtakAdminControlRepository as Fleet;
 use App\Support\PlayerMetrics;
@@ -28,7 +29,11 @@ $sort = (string) ($sort ?? 'recent');
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $csrf = \App\Core\Csrf::token();
-$base = url('admin/parc-atak');
+// Même page pour l'administration de la plateforme (toutes communautés) et la gestion d'une communauté (ses membres).
+$fs = is_array($fleetScope ?? null) ? $fleetScope : ['tenant' => false, 'base' => 'admin/parc-atak', 'home' => 'admin', 'home_label' => 'Administration du site'];
+$inTenant = !empty($fs['tenant']);
+$base = url((string) $fs['base']);
+$pageTitle = $inTenant ? 'Parc ATAK des membres' : 'Parc ATAK des joueurs';
 
 $listUrl = static function (array $over = []) use ($base, $search, $tenantFilter, $stateFilter, $sort): string {
     $p = array_merge(['q' => $search, 'communaute' => $tenantFilter ?: '', 'etat' => $stateFilter, 'tri' => $sort === 'recent' ? '' : $sort], $over);
@@ -73,19 +78,27 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
     <div class="pa__frame">
         <header class="pa-hero">
             <p class="pa-crumb">
-                <a class="paf-link" href="<?= $h(url('admin')) ?>">Administration du site</a>
+                <a class="paf-link" href="<?= $h(url((string) $fs['home'])) ?>"><?= $h((string) $fs['home_label']) ?></a>
                 <span aria-hidden="true"> / </span>
-                Parc ATAK des joueurs
+                <?= $h($pageTitle) ?>
             </p>
             <div class="pa-hero__row">
                 <div>
                     <p class="pa-hero__kicker">Mod COMSPEC ATAK</p>
-                    <h1 class="pa-hero__title">Parc ATAK des joueurs</h1>
+                    <h1 class="pa-hero__title"><?= $h($pageTitle) ?></h1>
+                    <?php if ($inTenant): ?>
+                    <p class="pa-hero__lead">
+                        Les ATAK des membres de votre communauté, avec ce que le jeu remonte de chacun : temps de jeu, distances,
+                        heures de vol, classe et rôle. Imposez un message en jeu, déclarez ou annulez une compromission,
+                        fermez les sessions ou bloquez un ATAK dans votre communauté.
+                    </p>
+                    <?php else: ?>
                     <p class="pa-hero__lead">
                         Tous les ATAK enregistrés par le mod, toutes communautés, avec ce que le jeu remonte de chaque joueur :
                         temps de jeu, distances, heures de vol, classe et rôle. Bloquez un ATAK, retirez-le, fermez ses sessions
                         ou imposez-lui un message en jeu.
                     </p>
+                    <?php endif; ?>
                 </div>
                 <aside class="pa-hero__meta">
                     <p class="pa-hero__meta-kicker">Parc</p>
@@ -105,7 +118,11 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
             <p class="pa-flash pa-flash--err" role="alert"><?= $h((string) $flash) ?></p>
         <?php endif; ?>
         <?php if (empty($tablesReady)): ?>
+            <?php if ($inTenant): ?>
+            <p class="pa-flash pa-flash--warn">Le blocage et les messages imposés ne sont pas encore activés sur le serveur : prévenez l’administration de la plateforme.</p>
+            <?php else: ?>
             <p class="pa-flash pa-flash--warn">Les tables du blocage et des messages n’existent pas encore : lancez <code>php run-migrations.php</code> sur le serveur.</p>
+            <?php endif; ?>
         <?php endif; ?>
 
         <ul class="pa-kpi-strip paf-kpis">
@@ -153,6 +170,7 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
                     <span class="paf-label">Rechercher</span>
                     <input type="search" name="q" value="<?= $h($search) ?>" placeholder="Indicatif, nom, e-mail, Steam, identifiant ATAK…">
                 </label>
+                <?php if (!$inTenant): ?>
                 <label class="paf-field">
                     <span class="paf-label">Communauté</span>
                     <select name="communaute">
@@ -162,6 +180,7 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
                         <?php endforeach; ?>
                     </select>
                 </label>
+                <?php endif; ?>
                 <label class="paf-field">
                     <span class="paf-label">Trier par</span>
                     <select name="tri">
@@ -184,7 +203,7 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
                     <p>Un ATAK apparaît ici dès que le téléphone d’un joueur se relie au site depuis le jeu.</p>
                 </div>
             <?php else: ?>
-            <form id="paf-bulk" method="post" action="<?= $h(url('admin/parc-atak/message')) ?>" class="paf-bulk">
+            <form id="paf-bulk" method="post" action="<?= $h($base . '/message') ?>" class="paf-bulk">
                 <?= $returnFields ?>
                 <div class="paf-bulk__head">
                     <label class="paf-check">
@@ -215,35 +234,51 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
                         <summary>Bloquer</summary>
                         <div class="paf-act__body">
                             <div class="paf-row">
+                                <?php if ($inTenant): ?>
+                                <p class="paf-field paf-hint">Le blocage vaut dans votre communauté.</p>
+                                <?php else: ?>
                                 <label class="paf-field"><span class="paf-label">Portée</span>
                                     <select name="portee"><option value="communaute">Sa communauté</option><option value="toutes">Toutes les communautés</option></select>
                                 </label>
+                                <?php endif; ?>
                                 <label class="paf-field"><span class="paf-label">Durée</span>
                                     <select name="duree_jours"><option value="1">1 jour</option><option value="7">7 jours</option><option value="30">30 jours</option><option value="0" selected>Sans fin</option></select>
                                 </label>
                             </div>
                             <label class="paf-field"><span class="paf-label">Motif (interne)</span><input type="text" name="motif" maxlength="500"></label>
-                            <label class="paf-field"><span class="paf-label">Message montré au joueur</span><input type="text" name="message_joueur" maxlength="500" placeholder="Votre ATAK a été bloqué par l’administration ATHENA…"></label>
-                            <button type="submit" formaction="<?= $h(url('admin/parc-atak/bloquer')) ?>" class="pa-btn pa-btn--sm paf-btn--danger" data-paf-needs
+                            <label class="paf-field"><span class="paf-label">Message montré au joueur</span><input type="text" name="message_joueur" maxlength="500" placeholder="<?= $h($inTenant ? 'Votre ATAK a été bloqué par la gestion de votre communauté…' : 'Votre ATAK a été bloqué par l’administration ATHENA…') ?>"></label>
+                            <button type="submit" formaction="<?= $h($base . '/bloquer') ?>" class="pa-btn pa-btn--sm paf-btn--danger" data-paf-needs
                                     onclick="return confirm('Bloquer les ATAK cochés ? Le jeu sera refusé à leur prochaine connexion.');">Bloquer les ATAK cochés</button>
                         </div>
                     </details>
+                    <?php if ($inTenant): ?>
+                    <details class="paf-act">
+                        <summary>Déconnecter</summary>
+                        <div class="paf-act__body">
+                            <p class="paf-hint">Ferme les sessions de jeu dans votre communauté : le jeu se reconnecte seul s’il n’est pas bloqué. Le retrait définitif d’un ATAK reste réservé à l’administration de la plateforme.</p>
+                            <div class="paf-buttons">
+                                <button type="submit" formaction="<?= $h($base . '/deconnecter') ?>" class="pa-btn pa-btn--sm pa-btn--line" data-paf-needs>Déconnecter</button>
+                            </div>
+                        </div>
+                    </details>
+                    <?php else: ?>
                     <details class="paf-act">
                         <summary>Déconnecter ou retirer</summary>
                         <div class="paf-act__body">
                             <p class="paf-hint">Déconnecter ferme les sessions de jeu : le jeu se reconnecte seul. Retirer révoque les certificats et supprime la fiche : le joueur devra refaire la liaison.</p>
                             <div class="paf-buttons">
-                                <button type="submit" formaction="<?= $h(url('admin/parc-atak/deconnecter')) ?>" class="pa-btn pa-btn--sm pa-btn--line" data-paf-needs>Déconnecter</button>
-                                <button type="submit" formaction="<?= $h(url('admin/parc-atak/retirer')) ?>" class="pa-btn pa-btn--sm paf-btn--danger" data-paf-needs
+                                <button type="submit" formaction="<?= $h($base . '/deconnecter') ?>" class="pa-btn pa-btn--sm pa-btn--line" data-paf-needs>Déconnecter</button>
+                                <button type="submit" formaction="<?= $h($base . '/retirer') ?>" class="pa-btn pa-btn--sm paf-btn--danger" data-paf-needs
                                         onclick="return confirm('Retirer définitivement les ATAK cochés ?');">Retirer</button>
                             </div>
                         </div>
                     </details>
+                    <?php endif; ?>
                 </div>
             </form>
 
             <?php if ($matching > count($rows)): ?>
-            <p class="paf-hint">Les <?= count($rows) ?> premiers ATAK sont affichés sur <?= (int) $matching ?>. Affinez avec la recherche ou la communauté.</p>
+            <p class="paf-hint">Les <?= count($rows) ?> premiers ATAK sont affichés sur <?= (int) $matching ?>. Affinez avec la recherche<?= $inTenant ? '' : ' ou la communauté' ?>.</p>
             <?php endif; ?>
 
             <div class="pa-table-wrap">
@@ -272,7 +307,7 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
                         $role = $m['role'] ?? '';
                         $block = $r['block'] ?? null;
                         $compromised = !in_array((string) ($r['compromise_state'] ?? 'none'), ['', 'none'], true);
-                        $fiche = url('admin/parc-atak/fiche') . '?id=' . $id;
+                        $fiche = $base . '/fiche?id=' . $id;
                         ?>
                         <tr class="<?= $block !== null ? 'is-blocked' : '' ?>">
                             <td class="paf-col-check">
@@ -281,7 +316,11 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
                             <td>
                                 <p class="pa-name"><a href="<?= $h($fiche) ?>"><?= $h($name) ?></a></p>
                                 <p class="pa-sub paf-muted">
+                                    <?php if ($inTenant): ?>
+                                    <?= $h($real !== '' && $real !== $name ? $real : ((int) ($r['user_id'] ?? 0) > 0 ? 'Membre de la communauté' : 'ATAK sans compte du site')) ?>
+                                    <?php else: ?>
                                     <?= $h($real !== '' && $real !== $name ? $real . ' · ' : '') ?><?= $h((string) ($r['tenant_name'] ?? ('Communauté #' . (int) $r['tenant_id']))) ?>
+                                    <?php endif; ?>
                                 </p>
                             </td>
                             <td>
@@ -308,7 +347,8 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
                             </td>
                             <td class="paf-states">
                                 <?php if ($block !== null): ?>
-                                    <span class="pa-pill pa-pill--rose" title="<?= $h((string) ($block['reason'] ?? '')) ?>">Bloqué<?= (int) ($block['tenant_id'] ?? 0) === 0 ? ' partout' : '' ?></span>
+                                    <?php $platformBlock = (int) ($block['tenant_id'] ?? 0) === 0; ?>
+                                    <span class="pa-pill pa-pill--rose" title="<?= $h((string) ($block['reason'] ?? '')) ?>">Bloqué<?= $platformBlock ? ($inTenant ? ' par la plateforme' : ' partout') : '' ?></span>
                                 <?php elseif (($r['seen_ago'] ?? null) !== null && $r['seen_ago'] <= 7 * 86400): ?>
                                     <span class="pa-pill pa-pill--mint">Actif</span>
                                 <?php else: ?>
@@ -331,12 +371,12 @@ $hasFilters = $search !== '' || $tenantFilter > 0 || $stateFilter !== '';
             <?php if ($actions !== []): ?>
             <section class="pa-card paf-journal" aria-labelledby="paf-journal-title">
                 <p class="pa-card__kicker">Journal</p>
-                <h2 id="paf-journal-title" class="pa-card__title">Dernières actions de l’administration</h2>
+                <h2 id="paf-journal-title" class="pa-card__title"><?= $h($inTenant ? 'Dernières actions sur les ATAK de la communauté' : 'Dernières actions de l’administration') ?></h2>
                 <ol class="paf-log">
                     <?php foreach ($actions as $a): ?>
                     <li>
                         <span class="paf-log__when"><?= $h($fmtDate($a['created_at'] ?? null)) ?></span>
-                        <span class="paf-log__what"><strong><?= $h(Fleet::ACTIONS[(string) $a['action']] ?? (string) $a['action']) ?></strong> · <?= $h((string) ($a['label'] ?? '')) ?><?php if (trim((string) ($a['tenant_name'] ?? '')) !== ''): ?> (<?= $h((string) $a['tenant_name']) ?>)<?php endif; ?></span>
+                        <span class="paf-log__what"><strong><?= $h(Fleet::ACTIONS[(string) $a['action']] ?? (string) $a['action']) ?></strong> · <?= $h((string) ($a['label'] ?? '')) ?><?php if (!$inTenant && trim((string) ($a['tenant_name'] ?? '')) !== ''): ?> (<?= $h((string) $a['tenant_name']) ?>)<?php endif; ?></span>
                         <span class="paf-log__who">par <?= $h((string) ($a['actor_label'] ?? '—')) ?><?php if (trim((string) ($a['detail'] ?? '')) !== ''): ?> · <?= $h((string) $a['detail']) ?><?php endif; ?></span>
                     </li>
                     <?php endforeach; ?>

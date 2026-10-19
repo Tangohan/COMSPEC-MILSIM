@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakMarkerUplinkAssetTest extends TestCase
 {
@@ -30,11 +31,11 @@ final class AtakMarkerUplinkAssetTest extends TestCase
         self::assertStringContainsString('SanitizeLooseJsonObject(NormalizeArmaJson', $dll);
         self::assertStringContainsString('markerDataRaw == "{}"', $dll);
         self::assertStringContainsString('NormalizeArmaJson(raw ?? "")', $dll);
-        self::assertMatchesRegularExpression('/ExtensionVersion = "2\\.0\\.32"/', $dll);
+        ModVersion::assertAtLeast('2.0.32', ModVersion::match('/ExtensionVersion = "([0-9.]+)"/', $dll));
 
         self::assertStringContainsString('invalid_marker_pos', $api);
 
-        self::assertStringContainsString('versionStr = "1.5.54"', $cfg);
+        ModVersion::assertAtLeast('1.5.54', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('file d’attente', $note);
         self::assertStringNotContainsString('endpoint', $note);
     }

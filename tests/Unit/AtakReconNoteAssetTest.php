@@ -6,6 +6,7 @@ namespace Tests\Unit;
 
 use App\Support\ReconNoteCatalog;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakReconNoteAssetTest extends TestCase
 {
@@ -47,8 +48,8 @@ final class AtakReconNoteAssetTest extends TestCase
         $apply = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/ui/fn_applyMapLayers.sqf');
         $catalog = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
 
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
-        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
         self::assertStringContainsString('class reconPushNote {}', $cfgC);
         self::assertStringContainsString('class reconNoteShow {}', $cfgC);
         self::assertStringContainsString('display_recon_note.hpp', $cfgC);
@@ -67,7 +68,12 @@ final class AtakReconNoteAssetTest extends TestCase
         self::assertStringContainsString('AtakRecon', $filter);
         self::assertStringContainsString('comspec_atak_recon', $hide);
         self::assertStringContainsString('COMSPEC_ATAK_Recon', $page);
-        self::assertStringContainsString('Véhicule', $page);
+        // Les types ne sont plus écrits dans le hpp : la page déclare le combo
+        // (idc 9784) et fn_athena_updateRecon le remplit.
+        self::assertStringContainsString('idc = 9784', $page);
+        $updRecon = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateRecon.sqf');
+        self::assertStringContainsString('controlsGroupCtrl 9784', $updRecon);
+        self::assertStringContainsString('["Véhicule", "vehicle"]', $updRecon);
         self::assertStringContainsString('createMarker', $push);
         self::assertStringContainsString('RECON.Note', $push);
         self::assertStringContainsString('serverTime', $push);
@@ -77,7 +83,7 @@ final class AtakReconNoteAssetTest extends TestCase
         self::assertStringContainsString('Véhicule', $dlg);
         self::assertStringContainsString('8', $show);
         self::assertStringContainsString('"comspec_recon_"', $sync);
-        self::assertStringContainsString('2.0.52', $ext);
+        ModVersion::assertAtLeast('2.0.52', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9.]+)"/', $ext));
         self::assertStringContainsString('RECON.Note', $ext);
         self::assertStringContainsString('/api/recon/notes', $ext);
         self::assertStringContainsString('ReconNote', $ext);

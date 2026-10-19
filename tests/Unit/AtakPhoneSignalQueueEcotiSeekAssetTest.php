@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakPhoneSignalQueueEcotiSeekAssetTest extends TestCase
 {
@@ -28,8 +29,8 @@ final class AtakPhoneSignalQueueEcotiSeekAssetTest extends TestCase
         $strip = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateLinkStrip.sqf');
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
 
-        self::assertStringContainsString('versionStr = "1.0.165"', $cfgA);
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfgC);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
         self::assertStringContainsString('class atakSignalState {}', $cfgC);
         self::assertStringContainsString('class ecotiSetFloor {}', $cfgC);
         self::assertStringContainsString('class seekHistoryPush {}', $cfgC);
@@ -62,7 +63,7 @@ final class AtakPhoneSignalQueueEcotiSeekAssetTest extends TestCase
         self::assertStringContainsString('athena_updateQueueBadge', $strip);
         self::assertStringContainsString('athena_updateBuildingSheet', $strip);
 
-        self::assertStringContainsString('2.0.52', $ext);
+        ModVersion::assertAtLeast('2.0.52', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9.]+)"/', $ext));
         self::assertStringContainsString('GetPendingQueueCount', $ext);
     }
 }

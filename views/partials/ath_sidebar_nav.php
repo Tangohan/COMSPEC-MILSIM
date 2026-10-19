@@ -234,6 +234,7 @@ $cooperationChildren = [
 
 $atakDeviceChildren = [
     ['label' => 'Parc de terminaux', 'href' => url('back-office/atak/realisme'), 'active' => $navAtakDevicesActive],
+    ['label' => 'Parc ATAK des membres', 'href' => url('back-office/atak/parc-atak'), 'active' => $navAt('back-office/atak/parc-atak')],
     ['label' => 'Sessions et connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive],
     ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],

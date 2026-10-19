@@ -9,6 +9,7 @@
 /** @var list<array<string, mixed>> $messages */
 /** @var list<array<string, mixed>> $actions */
 /** @var list<array<string, mixed>> $compromises */
+/** @var array{tenant: bool, base: string, home: string, home_label: string, by: string} $fleetScope */
 
 use App\Repositories\AtakAdminControlRepository as Fleet;
 use App\Support\AtakAdminBlockGate;
@@ -26,6 +27,10 @@ $actions = is_array($actions ?? null) ? $actions : [];
 $compromises = is_array($compromises ?? null) ? $compromises : [];
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+// Même fiche pour l'administration de la plateforme et la gestion de la communauté (actions limitées, voir BackOfficeAtakFleetController).
+$fs = is_array($fleetScope ?? null) ? $fleetScope : ['tenant' => false, 'base' => 'admin/parc-atak', 'home' => 'admin', 'home_label' => 'Administration du site'];
+$inTenant = !empty($fs['tenant']);
+$base = url((string) $fs['base']);
 $v = static fn (mixed $x): string => trim((string) $x) !== '' ? trim((string) $x) : '—';
 $fmtDate = static function (mixed $raw): string {
     $ts = UtcDateTime::timestamp($raw);
@@ -72,9 +77,9 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
     <div class="pa__frame">
         <header class="pa-hero">
             <p class="pa-crumb">
-                <a class="paf-link" href="<?= $h(url('admin')) ?>">Administration du site</a>
+                <a class="paf-link" href="<?= $h(url((string) $fs['home'])) ?>"><?= $h((string) $fs['home_label']) ?></a>
                 <span aria-hidden="true"> / </span>
-                <a class="paf-link" href="<?= $h(url('admin/parc-atak')) ?>">Parc ATAK des joueurs</a>
+                <a class="paf-link" href="<?= $h($base) ?>"><?= $h($inTenant ? 'Parc ATAK des membres' : 'Parc ATAK des joueurs') ?></a>
                 <span aria-hidden="true"> / </span>
                 <?= $h($name) ?>
             </p>
@@ -90,9 +95,11 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                             <span class="pa-pill pa-pill--<?= $h($compromiseTone[$compromiseState] ?? 'amber') ?>"><?= $h(Fleet::COMPROMISE_STATES[$compromiseState] ?? 'Compromis') ?></span>
                         <?php endif; ?>
                         <?php if ($activeBlock !== null): ?>
-                            <span class="pa-pill pa-pill--rose">Bloqué<?= (int) ($activeBlock['tenant_id'] ?? 0) === 0 ? ' dans toutes les communautés' : '' ?></span>
+                            <span class="pa-pill pa-pill--rose">Bloqué<?= (int) ($activeBlock['tenant_id'] ?? 0) === 0 ? ($inTenant ? ' par la plateforme' : ' dans toutes les communautés') : '' ?></span>
                         <?php endif; ?>
-                        <?php if ($userId > 0): ?>
+                        <?php if ($userId > 0 && $inTenant): ?>
+                            <a class="pa-btn pa-btn--ghost" href="<?= $h(effectifs_workspace_url('membres/' . $userId)) ?>">Fiche du membre</a>
+                        <?php elseif ($userId > 0): ?>
                             <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/users/person') . '?user_id=' . $userId) ?>">Compte de la personne</a>
                         <?php endif; ?>
                     </div>
@@ -176,7 +183,9 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                         <div><dt>Matricule</dt><dd><?= $h($v($t['operator_military_id'] ?? '')) ?></dd></div>
                         <div><dt>Steam</dt><dd class="paf-mono"><?= $h($v($t['steam_id'] ?? '')) ?></dd></div>
                         <div><dt>Version ATAK · Link</dt><dd><?= $h($v($t['mod_version'] ?? '')) ?> · <?= $h($v($t['extension_version'] ?? '')) ?></dd></div>
+                        <?php if (!$inTenant): ?>
                         <div><dt>Adresse réseau</dt><dd class="paf-mono"><?= $h($v($t['last_client_ip'] ?? '')) ?></dd></div>
+                        <?php endif; ?>
                         <div><dt>Statut de la fiche</dt><dd><?= $h($v($t['status'] ?? '')) ?><?= $isCompromised ? ' · ' . $h(mb_strtolower(Fleet::COMPROMISE_STATES[$compromiseState] ?? 'compromis')) : '' ?></dd></div>
                         <div><dt>Compte du site</dt><dd><?= $h($v($t['email'] ?? '')) ?><?= trim((string) ($t['user_status'] ?? '')) !== '' ? ' · ' . $h((string) $t['user_status']) : '' ?></dd></div>
                     </dl>
@@ -195,14 +204,14 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                             </div>
                             <p class="paf-muted"><span>Émis le</span> <?= $h($fmtDate($c['issued_at'] ?? null)) ?><?php if (!empty($c['expires_at'])): ?> · <span>expire le</span> <?= $h($fmtDate($c['expires_at'])) ?><?php endif; ?><?php if ($cs === 'revoked'): ?> · <span>révoqué le</span> <?= $h($fmtDate($c['revoked_at'] ?? null)) ?><?php if ((string) ($c['revoked_reason'] ?? '') === 'keyCompromise'): ?> <span>(compromission)</span><?php endif; ?><?php endif; ?></p>
                             <?php if (in_array($cs, ['active', 'issued'], true)): ?>
-                            <form method="post" action="<?= $h(url('admin/parc-atak/certificat')) ?>">
+                            <form method="post" action="<?= $h($base . '/certificat') ?>">
                                 <?= $hidden ?>
                                 <input type="hidden" name="certificat_id" value="<?= (int) $c['id'] ?>">
                                 <input type="hidden" name="operation" value="revoquer">
                                 <button type="submit" class="pa-btn pa-btn--sm pa-btn--line" onclick="return confirm('Révoquer ce certificat ?');">Révoquer</button>
                             </form>
                             <?php elseif ($cs === 'revoked' && !$expired): ?>
-                            <form method="post" action="<?= $h(url('admin/parc-atak/certificat')) ?>">
+                            <form method="post" action="<?= $h($base . '/certificat') ?>">
                                 <?= $hidden ?>
                                 <input type="hidden" name="certificat_id" value="<?= (int) $c['id'] ?>">
                                 <input type="hidden" name="operation" value="retablir">
@@ -225,7 +234,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                     <div class="paf-alert paf-alert--<?= $h($compromiseTone[$compromiseState] ?? 'amber') ?>">
                         <p><strong><?= $h(Fleet::COMPROMISE_STATES[$compromiseState] ?? 'Compromis') ?> depuis le <?= $h($fmtDate($t['compromised_at'] ?? null)) ?></strong></p>
                         <?php if (trim((string) ($t['compromise_reason'] ?? '')) !== ''): ?><p><?= $h((string) $t['compromise_reason']) ?></p><?php endif; ?>
-                        <form method="post" action="<?= $h(url('admin/parc-atak/compromission/annuler')) ?>" class="paf-undo">
+                        <form method="post" action="<?= $h($base . '/compromission/annuler') ?>" class="paf-undo">
                             <?= $hidden ?>
                             <label class="paf-field"><span class="paf-label">Note (facultatif)</span><input type="text" name="note" maxlength="255" placeholder="Faux positif, téléphone récupéré…"></label>
                             <label class="paf-check"><input type="hidden" name="certificats" value="0"><input type="checkbox" name="certificats" value="1" checked> <span>Rétablir les certificats révoqués par la compromission</span></label>
@@ -259,7 +268,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                             <?php if ($undone): ?>
                             <p class="paf-muted"><span>Annulée le</span> <?= $h($fmtDate($e['undone_at'])) ?> <span>par</span> <?= $h($v($e['undone_by_label'] ?? '')) ?><?= trim((string) ($e['undo_note'] ?? '')) !== '' ? ' · ' . $h((string) $e['undo_note']) : '' ?></p>
                             <?php elseif ($es !== 'none' && (int) $e['id'] > 0): ?>
-                            <form method="post" action="<?= $h(url('admin/parc-atak/compromission/annuler')) ?>">
+                            <form method="post" action="<?= $h($base . '/compromission/annuler') ?>">
                                 <?= $hidden ?>
                                 <input type="hidden" name="evenement_id" value="<?= (int) $e['id'] ?>">
                                 <input type="hidden" name="certificats" value="1">
@@ -276,36 +285,43 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
 
                 <section class="pa-card paf-actions-card">
                     <p class="pa-card__kicker">Actions</p>
-                    <h2 class="pa-card__title">Administrer cet ATAK</h2>
+                    <h2 class="pa-card__title"><?= $h($inTenant ? 'Gérer cet ATAK' : 'Administrer cet ATAK') ?></h2>
 
                     <?php if ($activeBlock !== null): ?>
+                    <?php $platformBlock = (int) ($activeBlock['tenant_id'] ?? 0) === 0; ?>
                     <div class="paf-blocked">
-                        <p><strong>Bloqué depuis le <?= $h($fmtDate($activeBlock['created_at'] ?? null)) ?></strong>
+                        <p><strong>Bloqué<?= $inTenant && $platformBlock ? ' par l’administration de la plateforme' : '' ?> depuis le <?= $h($fmtDate($activeBlock['created_at'] ?? null)) ?></strong>
                             <?= !empty($activeBlock['expires_at']) ? ' jusqu’au ' . $h($fmtDate($activeBlock['expires_at'])) : ', sans fin' ?>.</p>
                         <?php if (trim((string) ($activeBlock['reason'] ?? '')) !== ''): ?><p>Motif : <?= $h((string) $activeBlock['reason']) ?></p><?php endif; ?>
                         <p class="paf-muted">Le joueur voit : « <?= $h(AtakAdminBlockGate::playerMessage($activeBlock)) ?> »</p>
-                        <form method="post" action="<?= $h(url('admin/parc-atak/debloquer')) ?>">
+                        <?php if ($inTenant && $platformBlock): ?>
+                        <p class="paf-hint">Seule l’administration de la plateforme peut lever ce blocage.</p>
+                        <?php else: ?>
+                        <form method="post" action="<?= $h($base . '/debloquer') ?>">
                             <?= $hidden ?>
                             <input type="hidden" name="blocage_id" value="<?= (int) $activeBlock['id'] ?>">
                             <button type="submit" class="pa-btn pa-btn--sm pa-btn--mint">Lever le blocage</button>
                         </form>
+                        <?php endif; ?>
                     </div>
                     <?php else: ?>
-                    <details class="paf-act" open>
-                        <summary>Bloquer</summary>
-                        <form method="post" action="<?= $h(url('admin/parc-atak/bloquer')) ?>" class="paf-act__body">
+                    <details class="paf-act"<?= $inTenant ? '' : ' open' ?>>
+                        <summary><?= $h($inTenant ? 'Bloquer dans la communauté' : 'Bloquer') ?></summary>
+                        <form method="post" action="<?= $h($base . '/bloquer') ?>" class="paf-act__body">
                             <?= $hidden ?>
-                            <p class="paf-hint">L’API refuse la connexion Athena du jeu, la reprise de session, l’enregistrement du téléphone et tous les envois du jeu. Les sessions ouvertes sont fermées.</p>
+                            <p class="paf-hint">L’API refuse la connexion Athena du jeu, la reprise de session, l’enregistrement du téléphone et tous les envois du jeu<?= $inTenant ? ' dans votre communauté' : '' ?>. Les sessions ouvertes sont fermées.</p>
                             <div class="paf-row">
+                                <?php if (!$inTenant): ?>
                                 <label class="paf-field"><span class="paf-label">Portée</span>
                                     <select name="portee"><option value="communaute">Sa communauté</option><option value="toutes">Toutes les communautés</option></select>
                                 </label>
+                                <?php endif; ?>
                                 <label class="paf-field"><span class="paf-label">Durée</span>
                                     <select name="duree_jours"><option value="1">1 jour</option><option value="7">7 jours</option><option value="30">30 jours</option><option value="0" selected>Sans fin</option></select>
                                 </label>
                             </div>
                             <label class="paf-field"><span class="paf-label">Motif (interne)</span><input type="text" name="motif" maxlength="500"></label>
-                            <label class="paf-field"><span class="paf-label">Message montré au joueur</span><input type="text" name="message_joueur" maxlength="500" placeholder="Votre ATAK a été bloqué par l’administration ATHENA…"></label>
+                            <label class="paf-field"><span class="paf-label">Message montré au joueur</span><input type="text" name="message_joueur" maxlength="500" placeholder="<?= $h($inTenant ? 'Votre ATAK a été bloqué par la gestion de votre communauté…' : 'Votre ATAK a été bloqué par l’administration ATHENA…') ?>"></label>
                             <button type="submit" class="pa-btn pa-btn--sm paf-btn--danger" onclick="return confirm('Bloquer cet ATAK ?');">Bloquer</button>
                         </form>
                     </details>
@@ -313,7 +329,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
 
                     <details class="paf-act">
                         <summary>Imposer un message en jeu</summary>
-                        <form method="post" action="<?= $h(url('admin/parc-atak/message')) ?>" class="paf-act__body">
+                        <form method="post" action="<?= $h($base . '/message') ?>" class="paf-act__body">
                             <?= $hidden ?>
                             <label class="paf-field"><span class="paf-label">Titre</span><input type="text" name="titre" maxlength="120" required></label>
                             <label class="paf-field"><span class="paf-label">Texte</span><textarea name="texte" rows="4" maxlength="2000" required></textarea></label>
@@ -334,7 +350,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                     <?php if (!$isCompromised): ?>
                     <details class="paf-act" data-act="compromise">
                         <summary>Déclarer une compromission</summary>
-                        <form method="post" action="<?= $h(url('admin/parc-atak/compromission')) ?>" class="paf-act__body">
+                        <form method="post" action="<?= $h($base . '/compromission') ?>" class="paf-act__body">
                             <?= $hidden ?>
                             <p class="paf-hint">Comme une compromission validée sur le terrain : « Compromis » révoque aussi ses certificats valides. Vous pourrez l’annuler depuis l’historique.</p>
                             <label class="paf-field"><span class="paf-label">État</span>
@@ -348,27 +364,31 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
 
                     <details class="paf-act" data-act="note">
                         <summary>Ajouter une note interne</summary>
-                        <form method="post" action="<?= $h(url('admin/parc-atak/note')) ?>" class="paf-act__body">
+                        <form method="post" action="<?= $h($base . '/note') ?>" class="paf-act__body">
                             <?= $hidden ?>
-                            <label class="paf-field"><span class="paf-label">Note (visible de l’administration seulement)</span><textarea name="note" rows="3" maxlength="1000" required></textarea></label>
+                            <label class="paf-field"><span class="paf-label"><?= $h($inTenant ? 'Note (visible des gestionnaires de la communauté et de l’administration)' : 'Note (visible de l’administration seulement)') ?></span><textarea name="note" rows="3" maxlength="1000" required></textarea></label>
                             <button type="submit" class="pa-btn pa-btn--sm pa-btn--line">Ajouter au journal</button>
                         </form>
                     </details>
 
                     <details class="paf-act">
-                        <summary>Déconnecter ou retirer</summary>
+                        <summary><?= $h($inTenant ? 'Déconnecter' : 'Déconnecter ou retirer') ?></summary>
                         <div class="paf-act__body">
-                            <form method="post" action="<?= $h(url('admin/parc-atak/deconnecter')) ?>">
+                            <form method="post" action="<?= $h($base . '/deconnecter') ?>">
                                 <?= $hidden ?>
                                 <p class="paf-hint">Ferme les sessions de jeu ouvertes. Le jeu se reconnecte seul s’il n’est pas bloqué.</p>
                                 <button type="submit" class="pa-btn pa-btn--sm pa-btn--line">Déconnecter</button>
                             </form>
-                            <form method="post" action="<?= $h(url('admin/parc-atak/retirer')) ?>" class="paf-retire">
+                            <?php if ($inTenant): ?>
+                            <p class="paf-hint">Le retrait définitif d’un ATAK et le blocage dans toutes les communautés restent réservés à l’administration de la plateforme.</p>
+                            <?php else: ?>
+                            <form method="post" action="<?= $h($base . '/retirer') ?>" class="paf-retire">
                                 <?= $hidden ?>
                                 <p class="paf-hint">Révoque les certificats et l’appareil de confiance, ferme les sessions et supprime la fiche. Le joueur devra refaire la liaison ; bloquez-le aussi pour l’en empêcher.</p>
                                 <label class="paf-field"><span class="paf-label">Motif</span><input type="text" name="motif" maxlength="255"></label>
                                 <button type="submit" class="pa-btn pa-btn--sm paf-btn--danger" onclick="return confirm('Retirer définitivement cet ATAK ?');">Retirer l’ATAK</button>
                             </form>
+                            <?php endif; ?>
                         </div>
                     </details>
                 </section>
@@ -394,10 +414,10 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                             <p class="paf-msg__body"><?= nl2br($h((string) $msg['body'])) ?></p>
                             <p class="paf-muted">Le <?= $h($fmtDate($msg['created_at'] ?? null)) ?> par <?= $h($v($msg['actor_callsign'] ?? $msg['actor_name'] ?? '')) ?><?= !empty($msg['acked_at']) ? ' · lu le ' . $h($fmtDate($msg['acked_at'])) : '' ?></p>
                             <?php if ($stLabel === 'En attente' || $stLabel === 'Affiché en jeu'): ?>
-                            <form method="post" action="<?= $h(url('admin/parc-atak/message/annuler')) ?>">
+                            <form method="post" action="<?= $h($base . '/message/annuler') ?>">
                                 <?= $hidden ?>
                                 <input type="hidden" name="message_id" value="<?= (int) $msg['id'] ?>">
-                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line">Annuler cette compromission</button>
+                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line">Annuler ce message</button>
                             </form>
                             <?php endif; ?>
                         </li>
@@ -409,7 +429,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                 <?php if ($blocks !== [] || $actions !== []): ?>
                 <section class="pa-card">
                     <p class="pa-card__kicker">Journal</p>
-                    <h2 class="pa-card__title">Actions de l’administration</h2>
+                    <h2 class="pa-card__title"><?= $h($inTenant ? 'Actions sur cet ATAK' : 'Actions de l’administration') ?></h2>
                     <ol class="paf-log">
                         <?php foreach ($actions as $a): ?>
                         <li>
@@ -426,7 +446,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                         <li>
                             Du <?= $h($fmtDate($b['created_at'] ?? null)) ?>
                             <?= !empty($b['lifted_at']) ? 'au ' . $h($fmtDate($b['lifted_at'])) . ' (levé)' : (!empty($b['expires_at']) ? 'au ' . $h($fmtDate($b['expires_at'])) : '(sans fin)') ?>
-                            · <?= (int) ($b['tenant_id'] ?? 0) === 0 ? 'toutes les communautés' : 'sa communauté' ?>
+                            · <?= (int) ($b['tenant_id'] ?? 0) === 0 ? ($inTenant ? 'plateforme, toutes les communautés' : 'toutes les communautés') : 'sa communauté' ?>
                             <?php if (trim((string) ($b['reason'] ?? '')) !== ''): ?> · <?= $h((string) $b['reason']) ?><?php endif; ?>
                         </li>
                         <?php endforeach; ?>

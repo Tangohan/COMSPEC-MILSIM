@@ -39,6 +39,7 @@ final class AtakAdminControlRepository
         'cert_revoke' => 'Certificat révoqué',
         'cert_restore' => 'Certificat rétabli',
         'note' => 'Note interne',
+        'note_gestion' => 'Note de la gestion',
     ];
 
     /** États de compromission d'un ATAK (atak_terminals.compromise_state). */
@@ -54,6 +55,7 @@ final class AtakAdminControlRepository
         'position' => 'Remontée du terrain',
         'web' => 'Poste de commandement',
         'admin' => 'Administration du site',
+        'gestion' => 'Gestion de la communauté',
     ];
 
     /** Avis automatiques que l'ATAK du joueur met en forme et affiche en alerte (genre => niveau). */
@@ -559,7 +561,7 @@ final class AtakAdminControlRepository
      *
      * @return list<array<string, mixed>>
      */
-    public function blocksFor(?int $userId, ?string $steamUid, ?string $terminalUid): array
+    public function blocksFor(?int $userId, ?string $steamUid, ?string $terminalUid, int $tenantId = 0): array
     {
         if (!$this->ready()) {
             return [];
@@ -567,6 +569,11 @@ final class AtakAdminControlRepository
         [$match, $args] = $this->targetMatch($userId, $steamUid, $terminalUid);
         if ($match === '') {
             return [];
+        }
+        // Vue d'une communauté : ses blocages et ceux de la plateforme (toutes communautés), jamais ceux d'une autre.
+        if ($tenantId > 0) {
+            $match .= ' AND (b.tenant_id IS NULL OR b.tenant_id = ?)';
+            $args[] = $tenantId;
         }
 
         return $this->rows(
@@ -735,7 +742,7 @@ final class AtakAdminControlRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function messagesFor(?int $userId, ?string $steamUid, ?string $terminalUid): array
+    public function messagesFor(?int $userId, ?string $steamUid, ?string $terminalUid, int $tenantId = 0): array
     {
         if (!$this->ready()) {
             return [];
@@ -743,6 +750,10 @@ final class AtakAdminControlRepository
         [$match, $args] = $this->targetMatch($userId, $steamUid, $terminalUid);
         if ($match === '') {
             return [];
+        }
+        if ($tenantId > 0) {
+            $match .= ' AND b.tenant_id = ?';
+            $args[] = $tenantId;
         }
 
         return $this->rows(
@@ -974,8 +985,9 @@ final class AtakAdminControlRepository
      * @param array<string, mixed> $terminal
      * @return array{event_id: int, revoked: int}
      */
-    public function markCompromised(array $terminal, string $state, string $reason, bool $revokeCertificates, ?int $actorId, string $actorLabel): array
+    public function markCompromised(array $terminal, string $state, string $reason, bool $revokeCertificates, ?int $actorId, string $actorLabel, string $source = 'admin'): array
     {
+        $source = isset(self::COMPROMISE_SOURCES[$source]) ? $source : 'admin';
         $tenantId = (int) ($terminal['tenant_id'] ?? 0);
         $id = (int) ($terminal['id'] ?? 0);
         $state = $state === 'compromised' ? 'compromised' : 'captured';
@@ -985,7 +997,7 @@ final class AtakAdminControlRepository
         $this->exec(
             'UPDATE atak_terminals SET compromise_state = ?, compromised_at = UTC_TIMESTAMP(), compromise_reason = ?, updated_at = UTC_TIMESTAMP()
              WHERE tenant_id = ? AND id = ?',
-            [$state, mb_substr($reason !== '' ? $reason : 'Déclaré par l’administration du site', 0, 255), $tenantId, $id]
+            [$state, mb_substr($reason !== '' ? $reason : ($source === 'gestion' ? 'Déclaré par la gestion de la communauté' : 'Déclaré par l’administration du site'), 0, 255), $tenantId, $id]
         );
         $revoked = [];
         if ($revokeCertificates) {
@@ -997,7 +1009,7 @@ final class AtakAdminControlRepository
         }
 
         return [
-            'event_id' => $this->recordCompromise($terminal, $state, $reason, 'admin', $revoked, $actorId, $actorLabel),
+            'event_id' => $this->recordCompromise($terminal, $state, $reason, $source, $revoked, $actorId, $actorLabel),
             'revoked' => count($revoked),
         ];
     }
@@ -1011,8 +1023,9 @@ final class AtakAdminControlRepository
      * @param array<string, mixed>|null $event
      * @return array{cleared: bool, restored: int}
      */
-    public function undoCompromise(array $terminal, ?array $event, bool $restoreCertificates, string $note, ?int $actorId, string $actorLabel): array
+    public function undoCompromise(array $terminal, ?array $event, bool $restoreCertificates, string $note, ?int $actorId, string $actorLabel, string $source = 'admin'): array
     {
+        $source = isset(self::COMPROMISE_SOURCES[$source]) ? $source : 'admin';
         $tenantId = (int) ($terminal['tenant_id'] ?? 0);
         $id = (int) ($terminal['id'] ?? 0);
         $uid = (string) ($terminal['terminal_uid'] ?? '');
@@ -1062,7 +1075,7 @@ final class AtakAdminControlRepository
             array_merge([$actorId, mb_substr($actorLabel, 0, 190), $note !== '' ? $note : null], $args)
         );
         if ($isCurrent) {
-            $this->recordCompromise($terminal, 'none', $note !== '' ? $note : 'Compromission annulée par l’administration du site', 'admin', [], $actorId, $actorLabel);
+            $this->recordCompromise($terminal, 'none', $note !== '' ? $note : ($source === 'gestion' ? 'Compromission annulée par la gestion de la communauté' : 'Compromission annulée par l’administration du site'), $source, [], $actorId, $actorLabel);
         }
 
         return ['cleared' => $isCurrent, 'restored' => $restored];
@@ -1157,12 +1170,15 @@ final class AtakAdminControlRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function recentActions(int $limit = 40, ?int $userId = null, ?string $terminalUid = null): array
+    public function recentActions(int $limit = 40, ?int $userId = null, ?string $terminalUid = null, int $tenantId = 0): array
     {
         if (!$this->ready()) {
             return [];
         }
         $limit = max(1, min(200, $limit));
+        // Vue d'une communauté : seulement les actions sur ses ATAK.
+        // Les notes internes de l'administration de la plateforme ne sont pas montrées à la gestion.
+        $scope = $tenantId > 0 ? ' AND a.tenant_id = ' . $tenantId . " AND a.action <> 'note'" : '';
         if ($userId !== null || $terminalUid !== null) {
             $match = [];
             $args = [];
@@ -1179,14 +1195,14 @@ final class AtakAdminControlRepository
             }
 
             return $this->rows(
-                'SELECT * FROM atak_admin_actions WHERE ' . implode(' OR ', $match) . ' ORDER BY id DESC LIMIT ' . $limit,
+                'SELECT a.* FROM atak_admin_actions a WHERE (' . implode(' OR ', $match) . ')' . $scope . ' ORDER BY a.id DESC LIMIT ' . $limit,
                 $args
             );
         }
 
         return $this->rows(
             'SELECT a.*, tn.name AS tenant_name FROM atak_admin_actions a LEFT JOIN tenants tn ON tn.id = a.tenant_id
-             ORDER BY a.id DESC LIMIT ' . $limit
+             WHERE 1 = 1' . $scope . ' ORDER BY a.id DESC LIMIT ' . $limit
         );
     }
 

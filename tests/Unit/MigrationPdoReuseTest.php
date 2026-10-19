@@ -129,9 +129,21 @@ final class MigrationPdoReuseTest extends TestCase
 
             public function query(string $query, ?int $fetchMode = null, mixed ...$fetchModeArgs): PDOStatement|false
             {
+                // migration_pdo_is_alive() lit la ligne puis ferme le curseur : le stub doit
+                // répondre comme un vrai `SELECT 1`, sans aucune connexion MySQL.
                 return new class extends PDOStatement {
                     public function __construct()
                     {
+                    }
+
+                    public function fetchColumn(int $column = 0): mixed
+                    {
+                        return 1;
+                    }
+
+                    public function closeCursor(): bool
+                    {
+                        return true;
                     }
                 };
             }

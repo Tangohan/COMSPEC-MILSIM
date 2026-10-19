@@ -27,9 +27,13 @@ final class EffectifsMemberFunctionsSaveTest extends TestCase
             dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/member.php'
         );
 
-        self::assertStringContainsString('Fonctions opérationnelles', $view);
-        self::assertStringContainsString('Elle n’accorde aucun droit d’accès au site', $view);
-        self::assertStringContainsString('Rôles d’accès', $view);
-        self::assertStringContainsString('Un rôle accorde des habilitations dans Athena', $view);
+        // Member file redesign (#855): "Fonctions" and "Niveau d’accès" cards, still explaining
+        // that a function is a post held, not an access right, and that access is a single level.
+        self::assertStringContainsString('id="fonctions"', $view);
+        self::assertStringContainsString('La fonction décrit le poste tenu', $view);
+        self::assertStringContainsString('Ce n’est ni l’équipe ni un droit d’accès.', $view);
+        self::assertStringContainsString('Niveau d’accès', $view);
+        self::assertStringContainsString('Un seul niveau par personne.', $view);
+        self::assertStringContainsString('Corriger ce qu’un niveau a le droit de faire', $view);
     }
 }

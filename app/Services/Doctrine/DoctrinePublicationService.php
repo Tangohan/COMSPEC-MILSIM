@@ -29,6 +29,7 @@ final class DoctrinePublicationService
         private DocumentAudienceRepository $audienceRepository,
         private DocumentCategoryRepository $categoryRepository,
         private DoctrineReferenceService $referenceService,
+        private DoctrineNotificationService $notificationService,
         private UnitRepository $unitRepository,
         private AuditService $auditService,
         private DocumentAuditRepository $documentAuditRepository,
