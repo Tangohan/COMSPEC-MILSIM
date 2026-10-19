@@ -56,7 +56,23 @@ class CfgFunctions {
             class loadDataset {};
             class applyDatasetRole {};
             class applyDataset {};
+            // Sites et kits préfabriqués (serveur).
+            class compositionData {};
+            class spawnComposition {};
+            class siteProcess {};
+            class siteDossier {};
+            class spawnSiteNetwork {};
+            class seedEvidence {};
+            class spawnKitBox {};
+            class siteRequest {};
         };
+    };
+};
+
+// Sites et kits : les modules Zeus demandent la création au serveur (liste blanche d'Overwatch).
+class CfgRemoteExec {
+    class Functions {
+        class comspec_sse_fnc_siteRequest { allowedTargets = 2; jip = 0; };
     };
 };
 

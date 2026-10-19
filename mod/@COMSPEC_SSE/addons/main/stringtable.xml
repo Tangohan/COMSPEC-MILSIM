@@ -32,6 +32,11 @@
             <English>Standard - restricted distribution</English>
             <French>Standard — diffusion restreinte</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_014C543192">
+            <Original>-1 : selon le site (planque et PC occupés, cache et boîte aux lettres vides).</Original>
+            <English>-1: per site (safehouse and command post occupied, cache and dead drop empty).</English>
+            <French>-1 : selon le site (planque et PC occupés, cache et boîte aux lettres vides).</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_01AA4D2337">
             <Original>Irak</Original>
             <English>Iraq</English>
@@ -212,6 +217,11 @@
             <English>Digital modules</English>
             <French>Modules numérique</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0BC4F565FF">
+            <Original>Sac à documents</Original>
+            <English>Document bag</English>
+            <French>Sac à documents</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_0BF3305EBB">
             <Original>Sachet de preuve SSE</Original>
             <English>SSE evidence bag</English>
@@ -221,6 +231,11 @@
             <Original>Linux (terminal vert)</Original>
             <English>Linux (green terminal)</English>
             <French>Linux (terminal vert)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0C6C97D939">
+            <Original>Cache d'armes</Original>
+            <English>Weapons cache</English>
+            <French>Cache d'armes</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_0C8B638B56">
             <Original>Nom affiché en tête de l'écran de connexion, par exemple MINISTÈRE DE LA DÉFENSE ou une entreprise écran. Vide : aucun.</Original>
@@ -371,6 +386,11 @@
             <Original>Fixer le palier d'accès</Original>
             <English>Set the access tier</English>
             <French>Fixer le palier d'accès</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_124659002B">
+            <Original>Écouvillons stériles sous tube, étiquettes et sachet de transport. Un écouvillon par prélèvement : ADN de contact ou résidus de tir sur les mains.</Original>
+            <English>Sterile tubed swabs, labels and transport pouch. One swab per sample: touch DNA or gunshot residue on hands.</English>
+            <French>Écouvillons stériles sous tube, étiquettes et sachet de transport. Un écouvillon par prélèvement : ADN de contact ou résidus de tir sur les mains.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_12B553B4AB">
             <Original>Logisticien</Original>
@@ -652,6 +672,11 @@
             <English>Leader / HVT</English>
             <French>Chef / HVT</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_21CF681B20">
+            <Original>Poser un site SSE</Original>
+            <English>Place an SSE site</English>
+            <French>Poser un site SSE</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_221A82EE48">
             <Original>Cellule renseignement</Original>
             <English>Intelligence cell</English>
@@ -661,6 +686,11 @@
             <Original>Téléphone satellitaire collecté pour exploitation.</Original>
             <English>Satellite phone collected for exploitation.</English>
             <French>Téléphone satellitaire collecté pour exploitation.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_236C3EC690">
+            <Original>Nœud hawala / changeur</Original>
+            <English>Hawala node / money changer</English>
+            <French>Nœud hawala / changeur</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_23D692F07A">
             <Original>Parent</Original>
@@ -682,6 +712,11 @@
             <English>E.g. falcon_hvt, falcon_courier, falcon_ied…</English>
             <French>Ex. falcon_hvt, falcon_courier, falcon_ied…</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_24A895354C">
+            <Original>SEEK II</Original>
+            <English>SEEK II</English>
+            <French>SEEK II</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_24E46784CB">
             <Original>3 minutes</Original>
             <English>3 minutes</English>
@@ -696,6 +731,11 @@
             <Original>Paquet 2 — entités (une par ligne)</Original>
             <English>Pack 2 — entities (one per line)</English>
             <French>Paquet 2 — entités (une par ligne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2528475D3C">
+            <Original>COMSPEC SSE - Kits</Original>
+            <English>COMSPEC SSE - Kits</English>
+            <French>COMSPEC SSE - Kits</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_2547BF4CA0">
             <Original>Écran de connexion</Original>
@@ -747,6 +787,11 @@
             <English>Nothing: to discover (check, biometrics, exploitation). Suspected: the person appears with a « ? ». Confirmed: their membership is already established.</English>
             <French>Rien : à découvrir (contrôle, biométrie, exploitation). Soupçonnée : la personne apparaît avec un « ? ». Confirmée : son appartenance est déjà établie.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_28AE03E00A">
+            <Original>Pose 3 à 6 sites reliés près de lieux réels : chaque site cite le suivant, le PC de la cellule cite tous les autres, les chefs sont reliés.</Original>
+            <English>Places 3 to 6 linked sites near real places: each site cites the next one, the cell command post cites all the others, the leaders are linked.</English>
+            <French>Pose 3 à 6 sites reliés près de lieux réels : chaque site cite le suivant, le PC de la cellule cite tous les autres, les chefs sont reliés.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_28D07A4B05">
             <Original>Terminal SSE terrain</Original>
             <English>Field SSE terminal</English>
@@ -756,6 +801,11 @@
             <Original>Un opérateur équipé de l'ATAK et du câble DL-7 peut se brancher sur cet objet et en télécharger les données.</Original>
             <English>An operator equipped with the ATAK and the DL-7 cable can plug into this object and download its data.</English>
             <French>Un opérateur équipé de l'ATAK et du câble DL-7 peut se brancher sur cet objet et en télécharger les données.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_29BA873C30">
+            <Original>Gants nitrile à usage unique. Portés pendant la fouille, ils évitent de déposer vos empreintes et votre ADN sur les pièces.</Original>
+            <English>Single-use nitrile gloves. Worn during the search, they keep your fingerprints and DNA off the evidence.</English>
+            <French>Gants nitrile à usage unique. Portés pendant la fouille, ils évitent de déposer vos empreintes et votre ADN sur les pièces.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_2A78F654E6">
             <Original>Texte lu sur le document (résumé, fonds, annotations).</Original>
@@ -852,6 +902,11 @@
             <English>Trigger alarm</English>
             <French>Déclencher l'alarme</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2FADDEA9A3">
+            <Original>Dans un bâtiment proche</Original>
+            <English>In a nearby building</English>
+            <French>Dans un bâtiment proche</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_2FD4FC4095">
             <Original>FALCON — cellule Irak 2012 (6 rôles)</Original>
             <English>FALCON — Iraq cell 2012 (6 roles)</English>
@@ -896,6 +951,11 @@
             <Original>Ajouter un renseignement</Original>
             <English>Add intelligence</English>
             <French>Ajouter un renseignement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_33141040EE">
+            <Original>COMSPEC SSE - Preuves</Original>
+            <English>COMSPEC SSE - Evidence</English>
+            <French>COMSPEC SSE - Preuves</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3343043971">
             <Original>Tableau des liens</Original>
@@ -982,6 +1042,11 @@
             <English>Each chapter of this manual matches a real step of an SSE.</English>
             <French>Chaque chapitre de ce manuel correspond à une étape réelle d'un SSE.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3657A10269">
+            <Original>Terminal de terrain</Original>
+            <English>Field terminal</English>
+            <French>Terminal de terrain</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3693546040">
             <Original>Technicien IED</Original>
             <English>IED technician</English>
@@ -1022,6 +1087,11 @@
             <English>Paper appearance (optional)</English>
             <French>Aspect du papier (optionnel)</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_39C7BC08FA">
+            <Original>Kit biométrie</Original>
+            <English>Biometrics kit</English>
+            <French>Kit biométrie</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_39D6FD18FC">
             <Original>Titre · fiche d'une personne</Original>
             <English>Title · person record</English>
@@ -1036,6 +1106,11 @@
             <Original>Accès établi</Original>
             <English>Access established</English>
             <French>Accès établi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3AF582D7C9">
+            <Original>Semer des preuves</Original>
+            <English>Seed evidence</English>
+            <French>Semer des preuves</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3B12544651">
             <Original>Inventer un nom SSE</Original>
@@ -1071,6 +1146,11 @@
             <Original>Automatique : le jeu compose les pièces. Personnaliser : seules les pièces remplies ci-dessous sont utilisées. Ne pas inclure : aucun document.</Original>
             <English>Automatic: the game builds the items. Customize: only the items filled in below are used. Do not include: no documents.</English>
             <French>Automatique : le jeu compose les pièces. Personnaliser : seules les pièces remplies ci-dessous sont utilisées. Ne pas inclure : aucun document.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3C7903BF6D">
+            <Original>Insurgés (indépendants)</Original>
+            <English>Insurgents (independent)</English>
+            <French>Insurgés (indépendants)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3CBCBC1C17">
             <Original>Motif (journal de campagne)</Original>
@@ -1162,10 +1242,20 @@
             <English>SSE camera</English>
             <French>Appareil photo SSE</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3FF39FF030">
+            <Original>Ce que le bâtiment abrite.</Original>
+            <English>What the building houses.</English>
+            <French>Ce que le bâtiment abrite.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3FF683EADD">
             <Original>Génère un réseau SSE cohérent autour du module à partir d'un brief libre ou d'un pack scénario prédéfini.</Original>
             <English>Generates a coherent SSE network around the module from a free-form brief or a predefined scenario pack.</English>
             <French>Génère un réseau SSE cohérent autour du module à partir d'un brief libre ou d'un pack scénario prédéfini.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4007A61ED8">
+            <Original>PC de cellule</Original>
+            <English>Cell command post</English>
+            <French>PC de cellule</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_402DCBB9A9">
             <Original>Appareil photo</Original>
@@ -1182,10 +1272,20 @@
             <English>Title · evidence file</English>
             <French>Titre · dossier de pièces</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_40BB5C6E81">
+            <Original>Rayon (m)</Original>
+            <English>Radius (m)</English>
+            <French>Rayon (m)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_40DD5E3E2E">
             <Original>Quantité d'éléments exploitables générés (légère → haute valeur).</Original>
             <English>Quantity of exploitable items generated (light → high value).</English>
             <French>Quantité d'éléments exploitables générés (légère → haute valeur).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_41547EA607">
+            <Original>Les sites sont posés près de villes et villages réels dans ce rayon.</Original>
+            <English>Sites are placed near real towns and villages within this radius.</English>
+            <French>Les sites sont posés près de villes et villages réels dans ce rayon.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_41824AF0CC">
             <Original>Sous-titre · compte rendu</Original>
@@ -1222,6 +1322,11 @@
             <English>Optional: cell under the organization.</English>
             <French>Facultatif : cellule sous l'organisation.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_430B0F3E9F">
+            <Original>Cônes de preuve numérotés</Original>
+            <English>Numbered evidence markers</English>
+            <French>Cônes de preuve numérotés</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_431CAD1E47">
             <Original>Sauvegarde toute seule dans le profil du serveur à cet intervalle, pour ne rien perdre si le serveur tombe. Sans effet sur une campagne temporaire (rien n'est gardé).</Original>
             <English>Saves on its own in the server profile at this interval, so nothing is lost if the server goes down. No effect on a temporary campaign (nothing is kept).</English>
@@ -1251,6 +1356,11 @@
             <Original>Sur un même objet, ne combinez pas le module DL-7 · Données à extraire et la case Extractible au câble DL-7 : le dernier appliqué remplace l'autre. Posez le module Ajouter un fichier après.</Original>
             <English>On a single object, do not combine the DL-7 · Data to extract module and the Extractable with DL-7 cable box: the last one applied replaces the other. Place the Add a file module after.</English>
             <French>Sur un même objet, ne combinez pas le module DL-7 · Données à extraire et la case Extractible au câble DL-7 : le dernier appliqué remplace l'autre. Posez le module Ajouter un fichier après.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_43AE29872B">
+            <Original>Sac de Faraday</Original>
+            <English>Faraday bag</English>
+            <French>Sac de Faraday</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_43C9CA349C">
             <Original>Recherché — correspondance confirmée</Original>
@@ -1301,6 +1411,16 @@
             <Original>10 min</Original>
             <English>10 min</English>
             <French>10 min</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_46397059AC">
+            <Original>Poser une caisse de kit</Original>
+            <English>Place a kit crate</English>
+            <French>Poser une caisse de kit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_46DDBDA375">
+            <Original>De 3 à 6 ; le dernier est toujours le PC de la cellule.</Original>
+            <English>From 3 to 6; the last one is always the cell command post.</English>
+            <French>De 3 à 6 ; le dernier est toujours le PC de la cellule.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_46DE8428AC">
             <Original>Chef</Original>
@@ -1402,10 +1522,20 @@
             <English>Intelligence service</English>
             <French>Service de renseignement</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4C379DB100">
+            <Original>Occupants par site</Original>
+            <English>Occupants per site</English>
+            <French>Occupants par site</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_4C4DE74821">
             <Original>Élevée</Original>
             <English>High</English>
             <French>Élevée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4C8BDFF9D2">
+            <Original>Selon le site</Original>
+            <English>Per site</English>
+            <French>Selon le site</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_4C8CC7A3EC">
             <Original>Contrebande frontière</Original>
@@ -1416,6 +1546,11 @@
             <Original>Zone prise en compte.</Original>
             <English>Area taken into account.</English>
             <French>Zone prise en compte.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4CEA110634">
+            <Original>Les pièces vont d'abord dans les bâtiments du rayon.</Original>
+            <English>Items go into the buildings within the radius first.</English>
+            <French>Les pièces vont d'abord dans les bâtiments du rayon.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_4CF0E07E9E">
             <Original>Photos / dossier</Original>
@@ -1432,6 +1567,11 @@
             <English>Device (USB key, card, drive)</English>
             <French>Support (clé USB, carte, disque)</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4E5AC91468">
+            <Original>Valise DOMEX de terrain</Original>
+            <English>DOMEX field case</English>
+            <French>Valise DOMEX de terrain</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_4ECFD04A93">
             <Original>Sous-titre affiché sous le titre du compte rendu. Vide = texte du modèle.</Original>
             <English>Subtitle displayed under the report title. Empty = template text.</English>
@@ -1441,6 +1581,11 @@
             <Original>Prise utilisée par le câble DL-7. USB-C par défaut ; RJ45 plus rapide, série plus lent.</Original>
             <English>Connector used by the DL-7 cable. USB-C by default; RJ45 faster, serial slower.</English>
             <French>Prise utilisée par le câble DL-7. USB-C par défaut ; RJ45 plus rapide, série plus lent.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4F964CA2C8">
+            <Original>Registre de comptes (preuve)</Original>
+            <English>Account ledger (evidence)</English>
+            <French>Registre de comptes (preuve)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_50149D262E">
             <Original>Carnet / notes manuscrites collectées.</Original>
@@ -1456,6 +1601,11 @@
             <Original>Titre en tête d'un dossier documentaire (téléphone, papiers, support numérique). Vide = texte du modèle.</Original>
             <English>Title at the top of a document file (phone, papers, digital media). Empty = template text.</English>
             <French>Titre en tête d'un dossier documentaire (téléphone, papiers, support numérique). Vide = texte du modèle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_516BD343FE">
+            <Original>Jeu de cônes jaunes numérotés 1 à 20. On cône chaque pièce et on la photographie avant de la collecter.</Original>
+            <English>Set of yellow markers numbered 1 to 20. Mark and photograph each item before collecting it.</English>
+            <French>Jeu de cônes jaunes numérotés 1 à 20. On cône chaque pièce et on la photographie avant de la collecter.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_517F2D54EE">
             <Original>Disque dur extrait pour exploitation numérique.</Original>
@@ -1537,10 +1687,25 @@
             <English>Description</English>
             <French>Description</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_567B8D6D17">
+            <Original>Caisse kit SSE d'équipe</Original>
+            <English>SSE team kit crate</English>
+            <French>Caisse kit SSE d'équipe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_569DF69C16">
+            <Original>Caisse kit biométrie</Original>
+            <English>Biometrics kit crate</English>
+            <French>Caisse kit biométrie</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_56C051C840">
             <Original>Les joueurs dans le rayon comptent aussi : éloignez le module des joueurs.</Original>
             <English>Players inside the radius count too: keep the module away from the players.</English>
             <French>Les joueurs dans le rayon comptent aussi : éloignez le module des joueurs.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5703B331E0">
+            <Original>Atelier de faux papiers</Original>
+            <English>Document forgery workshop</English>
+            <French>Atelier de faux papiers</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_576B2E731F">
             <Original>Compare ce que les joueurs ont découvert sur la cible à la vérité complète.</Original>
@@ -1556,6 +1721,11 @@
             <Original>Pièce 2 — intitulé</Original>
             <English>Item 2 — label</English>
             <French>Pièce 2 — intitulé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_580E55558E">
+            <Original>Décoché : occupants sans arme (jamais armés pour des civils).</Original>
+            <English>Unchecked: unarmed occupants (civilians are never armed).</English>
+            <French>Décoché : occupants sans arme (jamais armés pour des civils).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_58AC927D81">
             <Original>Renseignement scénarisé. Ce n'est pas une preuve.</Original>
@@ -1577,6 +1747,11 @@
             <English>Players can exploit the item on site.</English>
             <French>Les joueurs peuvent exploiter le support sur place.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_594C5CA807">
+            <Original>Carte annotée (preuve)</Original>
+            <English>Annotated map (evidence)</English>
+            <French>Carte annotée (preuve)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_59AC04E471">
             <Original>Même identifiant dans chaque mission de la campagne, par exemple OP-SABLE (vraie carte) ou BOOTCAMP (drills). Créée au premier lancement.</Original>
             <English>Same ID in every mission of the campaign, for example OP-SABLE (real map) or BOOTCAMP (drills). Created on first launch.</English>
@@ -1586,6 +1761,11 @@
             <Original>Objet appartenant à une organisation (document, cache, véhicule) : l'exploiter la révèle aux joueurs.</Original>
             <English>Object belonging to an organization (document, cache, vehicle): exploiting it reveals it to players.</English>
             <French>Objet appartenant à une organisation (document, cache, véhicule) : l'exploiter la révèle aux joueurs.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5AD25706D4">
+            <Original>Liasse de documents (preuve)</Original>
+            <English>Bundle of documents (evidence)</English>
+            <French>Liasse de documents (preuve)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5AD6252BF7">
             <Original>Nom du réseau / SSID / canal.</Original>
@@ -1646,6 +1826,11 @@
             <Original>Nature du premier renseignement contenu.</Original>
             <English>Nature of the first piece of intelligence contained.</English>
             <French>Nature du premier renseignement contenu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5D8296B420">
+            <Original>Nombre de personnes présentes (-1 : selon le site). La première devient le chef de la cellule.</Original>
+            <English>Number of people present (-1: per site). The first one becomes the cell leader.</English>
+            <French>Nombre de personnes présentes (-1 : selon le site). La première devient le chef de la cellule.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5DF2E5143B">
             <Original>Facultatif. Change seulement le papier (propre, taché, froissé, jauni) en gardant les textes du modèle.</Original>
@@ -1766,6 +1951,16 @@
             <Original>Courrier</Original>
             <English>Courier</English>
             <French>Courrier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_637DD26429">
+            <Original>Quantité d'indices des fiches.</Original>
+            <English>Amount of clues in the records.</English>
+            <French>Quantité d'indices des fiches.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_63DB4D7079">
+            <Original>Camp des occupants</Original>
+            <English>Occupants' side</English>
+            <French>Camp des occupants</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_63F20CBF0F">
             <Original>Nom du réseau</Original>
@@ -1947,6 +2142,11 @@
             <English>Stable reference (e.g. FALCON-IQ-2012-A). Filled in automatically by the dataset if empty.</English>
             <French>Référence stable (ex. FALCON-IQ-2012-A). Renseignée auto par le dataset si vide.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6C543AF206">
+            <Original>Gants d'examen</Original>
+            <English>Examination gloves</English>
+            <French>Gants d'examen</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_6C68FEA85E">
             <Original>Coordonnée / point</Original>
             <English>Coordinate / point</English>
@@ -1992,6 +2192,11 @@
             <English>Organization</English>
             <French>Organisation</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6ED8A6301D">
+            <Original>Rayon (km)</Original>
+            <English>Radius (km)</English>
+            <French>Rayon (km)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_6F8F4AE415">
             <Original>Papier froissé</Original>
             <English>Crumpled paper</English>
@@ -2036,6 +2241,11 @@
             <Original>Créer un site SSE complet</Original>
             <English>Create a full SSE site</English>
             <French>Créer un site SSE complet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_744489D776">
+            <Original>Peupler un bâtiment</Original>
+            <English>Populate a building</English>
+            <French>Peupler un bâtiment</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_748B65B7BD">
             <Original>Kit de prélèvement ADN terrain.</Original>
@@ -2102,10 +2312,25 @@
             <English>Iraq 2010-2020 — Financial relay</English>
             <French>Irak 2010-2020 — Relais financier</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_769D705C52">
+            <Original>Réseau multi-sites</Original>
+            <English>Multi-site network</English>
+            <French>Réseau multi-sites</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_76E2EB1D5E">
+            <Original>Valise (preuve)</Original>
+            <English>Suitcase (evidence)</English>
+            <French>Valise (preuve)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_770CB7BEB2">
             <Original>Eden</Original>
             <English>Eden</English>
             <French>Eden</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_770D7BB59C">
+            <Original>Posé sur un bâtiment habitable (15 m au plus), le transforme en site SSE : mobilier réparti dans les pièces, preuves, occupants, pièges.</Original>
+            <English>Placed on an enterable building (15 m at most), turns it into an SSE site: furniture spread through the rooms, evidence, occupants, traps.</English>
+            <French>Posé sur un bâtiment habitable (15 m au plus), le transforme en site SSE : mobilier réparti dans les pièces, preuves, occupants, pièges.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_771988E23B">
             <Original>Temporaire : le bac à sable est vidé à la place.</Original>
@@ -2157,6 +2382,11 @@
             <English>Narrative role of the subject: steers contacts, messages and documents.</English>
             <French>Rôle narratif du sujet : oriente contacts, messages et documents.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7AA3BFB0ED">
+            <Original>Civils</Original>
+            <English>Civilians</English>
+            <French>Civils</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_7AB382A5D2">
             <Original>Associé</Original>
             <English>Associate</English>
@@ -2166,6 +2396,16 @@
             <Original>Réseau, groupe, clan... dont la personne est membre. Créé s'il n'existe pas.</Original>
             <English>Network, group, clan… the person is a member of. Created if it does not exist.</English>
             <French>Réseau, groupe, clan... dont la personne est membre. Créé s'il n'existe pas.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7B15FC7613">
+            <Original>Téléphone portable (preuve)</Original>
+            <English>Mobile phone (evidence)</English>
+            <French>Téléphone portable (preuve)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7B21FB2E3F">
+            <Original>Camp des occupants créés.</Original>
+            <English>Side of the created occupants.</English>
+            <French>Camp des occupants créés.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_7B2239F605">
             <Original>Confiance</Original>
@@ -2186,6 +2426,11 @@
             <Original>8 (défaut)</Original>
             <English>8 (default)</English>
             <French>8 (défaut)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7BD28D4768">
+            <Original>Sachet à scellés</Original>
+            <English>Evidence bag</English>
+            <French>Sachet à scellés</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_7C4F51B20E">
             <Original>Facultatif. Texte du bandeau rouge tout en haut de chaque fiche. Vide : celui du modèle (Standard : DIFFUSION RESTREINTE — EXPLOITATION TERRAIN).</Original>
@@ -2226,6 +2471,11 @@
             <Original>Rattaché à l'organisation</Original>
             <English>Attached to the organization</English>
             <French>Rattaché à l'organisation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7E693DDE9A">
+            <Original>Cherche un bâtiment habitable à moins de 40 m ; sinon le site est posé au sol.</Original>
+            <English>Looks for an enterable building within 40 m; otherwise the site is placed on the ground.</English>
+            <French>Cherche un bâtiment habitable à moins de 40 m ; sinon le site est posé au sol.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_7E91360C00">
             <Original>Nom de variable d'une autre unité (ou son identifiant biométrique). Leurs ADN partageront des allèles : le laboratoire signalera la parenté.</Original>
@@ -2332,6 +2582,11 @@
             <English>SSE case</English>
             <French>Dossier SSE</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_845BE63EE0">
+            <Original>Kit exploitation numérique</Original>
+            <English>Digital exploitation kit</English>
+            <French>Kit exploitation numérique</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_84775AE87C">
             <Original>Planque</Original>
             <English>Safe house</English>
@@ -2351,6 +2606,11 @@
             <Original>Modules SSE</Original>
             <English>SSE modules</English>
             <French>Modules SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_857F05E3FA">
+            <Original>Nombre de pièces</Original>
+            <English>Number of items</English>
+            <French>Nombre de pièces</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_858C62EAA6">
             <Original>Un modèle est une recette de génération toute prête (profil, région, thème, alias, messages, documents). Choisissez-en un : il est appliqué aux personnes et objets synchronisés. « Choisir au Zeus » : en Zeus, la liste complète s'ouvre à la pose (modèles intégrés, de la mission et ceux que vous avez enregistrés).</Original>
@@ -2397,6 +2657,16 @@
             <English>Personal</English>
             <French>Personnel</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_88B181E6CE">
+            <Original>Écouvillons ADN / résidus de tir</Original>
+            <English>DNA / gunshot residue swabs</English>
+            <French>Écouvillons ADN / résidus de tir</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8960D4CA42">
+            <Original>Labo d'IED</Original>
+            <English>IED lab</English>
+            <French>Labo d'IED</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_898AB8D570">
             <Original>Entreprise écran</Original>
             <English>Front company</English>
@@ -2442,6 +2712,11 @@
             <English>Phone on this person</English>
             <French>Téléphone sur cette personne</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8BD1B86B56">
+            <Original>Disque dur externe (preuve)</Original>
+            <English>External hard drive (evidence)</English>
+            <French>Disque dur externe (preuve)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_8C266B946B">
             <Original>Logistique</Original>
             <English>Logistics</English>
@@ -2471,6 +2746,16 @@
             <Original>« Pièces que je détiens » liste ce que vous portez.</Original>
             <English>« Items I hold » lists what you carry.</English>
             <French>« Pièces que je détiens » liste ce que vous portez.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8D69643C5D">
+            <Original>Pièges</Original>
+            <English>Traps</English>
+            <French>Pièges</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8DEF2E7D60">
+            <Original>Caisses de kit</Original>
+            <English>Kit crates</English>
+            <French>Caisses de kit</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_8DF66CF5F5">
             <Original>Outils Zeus</Original>
@@ -2552,6 +2837,11 @@
             <English>Save at end of mission</English>
             <French>Sauvegarder à la fin de la mission</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_91BF6F557E">
+            <Original>Kit</Original>
+            <English>Kit</English>
+            <French>Kit</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_91F500D4DD">
             <Original>Applique un modèle SSE (intégré, mission ou local) sur la cible. Zeus : sans identifiant, la liste des modèles s'ouvre.</Original>
             <English>Applies an SSE template (built-in, mission or local) to the target. Zeus: without an ID, the template list opens.</English>
@@ -2561,6 +2851,11 @@
             <Original>Documents sur cette personne</Original>
             <English>Documents on this person</English>
             <French>Documents sur cette personne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_932C8B7F30">
+            <Original>Radio portable (preuve)</Original>
+            <English>Portable radio (evidence)</English>
+            <French>Radio portable (preuve)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_9399696D1F">
             <Original>Cataracte</Original>
@@ -2577,6 +2872,11 @@
             <English>With no synced or attached unit, only players within this radius around the module receive the terminal. Keep it short (25 m by default) so as not to equip a whole company.</English>
             <French>Sans unité synchronisée ni attachée, seuls les joueurs dans ce rayon autour du module reçoivent le terminal. Garder court (25 m par défaut) pour ne pas doter toute une compagnie.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_93C1E25EC9">
+            <Original>Pose des pièces de preuve (téléphones, clés USB, documents, carnets…) dans les bâtiments du rayon, reliées aux personnes présentes.</Original>
+            <English>Places evidence (phones, USB sticks, documents, notebooks…) in the buildings within the radius, linked to the people present.</English>
+            <French>Pose des pièces de preuve (téléphones, clés USB, documents, carnets…) dans les bâtiments du rayon, reliées aux personnes présentes.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_94BD8BF502">
             <Original>Bandeau rouge</Original>
             <English>Red banner</English>
@@ -2586,6 +2886,21 @@
             <Original>Mot de passe</Original>
             <English>Password</English>
             <French>Mot de passe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_95EA9F3A0A">
+            <Original>Téléphone satellite (preuve)</Original>
+            <English>Satellite phone (evidence)</English>
+            <French>Téléphone satellite (preuve)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_96BDE4A5DE">
+            <Original>Mobilier, pièces de preuve et thème narratif propres à chaque site.</Original>
+            <English>Furniture, evidence and storyline specific to each site.</English>
+            <French>Mobilier, pièces de preuve et thème narratif propres à chaque site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_96DB5DE772">
+            <Original>Outils de terrain</Original>
+            <English>Field tools</English>
+            <French>Outils de terrain</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_97231AC7E7">
             <Original>Immédiat</Original>
@@ -2616,6 +2931,16 @@
             <Original>Enfant</Original>
             <English>Child</English>
             <French>Enfant</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_987B452302">
+            <Original>Mine à fil à l'entrée, engin piégé dans un labo d'IED.</Original>
+            <English>Tripwire mine at the entrance, booby trap in an IED lab.</English>
+            <French>Mine à fil à l'entrée, engin piégé dans un labo d'IED.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_98A09F2C4C">
+            <Original>Valeurs et bagages</Original>
+            <English>Valuables and luggage</English>
+            <French>Valeurs et bagages</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_98E82155A6">
             <Original>Indice affiché sous le champ du mot de passe, par exemple « date de naissance du fils ». Vide : aucun.</Original>
@@ -2651,6 +2976,11 @@
             <Original>Le SSE (Sensitive Site Exploitation) exploite tout ce qu'on trouve sur un objectif : personnes, corps, documents, téléphones, ordinateurs, caches.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Où sont les actions&lt;/t&gt;&lt;br/&gt;Menu ACE (touche Windows) sur une personne ou un objet : COMSPEC SSE. Menu ACE personnel (Ctrl+Windows) : COMSPEC SSE pour le journal, le terminal, le tableau des liens, le registre des scellés, la campagne et ce guide.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Le matériel&lt;/t&gt;&lt;br/&gt;Terminal SEEK II (relevés biométriques), kit d'empreintes, kit ADN, appareil photo, sachets de preuve, gants, sac de tête. « Équiper le kit SSE » dans le menu personnel donne le kit de base.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Raccourci&lt;/t&gt;&lt;br/&gt;Ctrl+Maj+S ouvre le terminal SEEK.</Original>
             <English>SSE (Sensitive Site Exploitation) exploits everything found on an objective: people, bodies, documents, phones, computers, caches.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Where the actions are&lt;/t&gt;&lt;br/&gt;ACE menu (Windows key) on a person or object: COMSPEC SSE. Personal ACE menu (Ctrl+Windows): COMSPEC SSE for the log, the terminal, the link board, the seal register, the campaign and this guide.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Equipment&lt;/t&gt;&lt;br/&gt;SEEK II terminal (biometric captures), fingerprint kit, DNA kit, camera, evidence bags, gloves, head bag. "Equip SSE kit" in the personal menu gives the basic kit.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Shortcut&lt;/t&gt;&lt;br/&gt;Ctrl+Shift+S opens the SEEK terminal.</English>
             <French>Le SSE (Sensitive Site Exploitation) exploite tout ce qu'on trouve sur un objectif : personnes, corps, documents, téléphones, ordinateurs, caches.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Où sont les actions&lt;/t&gt;&lt;br/&gt;Menu ACE (touche Windows) sur une personne ou un objet : COMSPEC SSE. Menu ACE personnel (Ctrl+Windows) : COMSPEC SSE pour le journal, le terminal, le tableau des liens, le registre des scellés, la campagne et ce guide.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Le matériel&lt;/t&gt;&lt;br/&gt;Terminal SEEK II (relevés biométriques), kit d'empreintes, kit ADN, appareil photo, sachets de preuve, gants, sac de tête. « Équiper le kit SSE » dans le menu personnel donne le kit de base.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Raccourci&lt;/t&gt;&lt;br/&gt;Ctrl+Maj+S ouvre le terminal SEEK.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9B52E497DD">
+            <Original>Occupants armés</Original>
+            <English>Armed occupants</English>
+            <French>Occupants armés</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_9B8BFED207">
             <Original>Fixe la référence de dossier (ex. SSE-2026-0007) utilisée pour toutes les fiches transmises vers Athena.</Original>
@@ -2842,6 +3172,11 @@
             <English>Sync a trigger: when it activates, the campaign is saved (or the temporary drill wiped).</English>
             <French>Synchronisez un déclencheur : à son activation, la campagne est sauvegardée (ou le drill temporaire vidé).</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A71DAD0BE0">
+            <Original>Carnet manuscrit (preuve)</Original>
+            <English>Handwritten notebook (evidence)</English>
+            <French>Carnet manuscrit (preuve)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_A721993901">
             <Original>Non</Original>
             <English>No</English>
@@ -2942,10 +3277,20 @@
             <English>Changes the access tier of the item. At the "access established" tier, the contents planned for that tier join the queue.</English>
             <French>Change le palier d'accès du support. Au palier « accès établi », les contenus prévus pour ce palier rejoignent la file.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AB3382193F">
+            <Original>Caisse kit exploitation numérique</Original>
+            <English>Digital exploitation kit crate</English>
+            <French>Caisse kit exploitation numérique</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_ABAA25A627">
             <Original>Le modèle du sac se règle dans les réglages CBA (COMSPEC SSE, Biométrie).</Original>
             <English>The bag model is set in the CBA settings (COMSPEC SSE, Biometrics).</English>
             <French>Le modèle du sac se règle dans les réglages CBA (COMSPEC SSE, Biométrie).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_ABEBEF7E33">
+            <Original>Pochette blindée à fermeture roulée. Un téléphone ou une tablette saisi dedans ne reçoit plus rien : pas d'effacement à distance, pas de localisation.</Original>
+            <English>Shielded roll-top pouch. A seized phone or tablet inside receives nothing: no remote wipe, no tracking.</English>
+            <French>Pochette blindée à fermeture roulée. Un téléphone ou une tablette saisi dedans ne reçoit plus rien : pas d'effacement à distance, pas de localisation.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_AC5486390A">
             <Original>Personnes concernées autour du module.</Original>
@@ -2961,6 +3306,11 @@
             <Original>Chaque personnage a ses propres empreintes (dix doigts, minuties, classification de Henry), ses iris, son visage et son ADN. Deux personnages différents ne partagent jamais une biométrie.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Relever&lt;/t&gt;&lt;br/&gt;Sur le sujet, menu ACE, SSE : empreintes, iris, visage, ADN, ou tout. Sur un corps, l'opérateur s'agenouille ; un sujet debout et coopérant tend la main.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;La qualité compte&lt;/t&gt;&lt;br/&gt;Nuit, pluie, sujet agité, corps ancien, mains ou visage blessés (ACE) dégradent la qualité ; trop abîmé, le relevé est impossible. Un mauvais relevé peut rater la bonne personne ou sortir un faux candidat « à confirmer ».&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Interroger la base&lt;/t&gt;&lt;br/&gt;Hors liaison, le terminal ne connaît que sa base locale. En liaison, la recherche part sur l'ABIS. Résultats : MATCH, correspondance possible, NO MATCH, alerte de faux papiers. L'ADN part au laboratoire : résultat différé.</Original>
             <English>Each character has their own fingerprints (ten fingers, minutiae, Henry classification), irises, face and DNA. Two different characters never share a biometric.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Capturing&lt;/t&gt;&lt;br/&gt;On the subject, ACE menu, SSE: fingerprints, iris, face, DNA, or all. On a body, the operator kneels; a standing, cooperative subject holds out their hand.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Quality matters&lt;/t&gt;&lt;br/&gt;Night, rain, agitated subject, old body, injured hands or face (ACE) degrade quality; if too damaged, the capture is impossible. A bad capture can miss the right person or return a false "to be confirmed" candidate.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Querying the database&lt;/t&gt;&lt;br/&gt;Offline, the terminal knows only its local database. When linked, the search goes to the ABIS. Results: MATCH, possible match, NO MATCH, false documents alert. DNA goes to the laboratory: delayed result.</English>
             <French>Chaque personnage a ses propres empreintes (dix doigts, minuties, classification de Henry), ses iris, son visage et son ADN. Deux personnages différents ne partagent jamais une biométrie.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Relever&lt;/t&gt;&lt;br/&gt;Sur le sujet, menu ACE, SSE : empreintes, iris, visage, ADN, ou tout. Sur un corps, l'opérateur s'agenouille ; un sujet debout et coopérant tend la main.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;La qualité compte&lt;/t&gt;&lt;br/&gt;Nuit, pluie, sujet agité, corps ancien, mains ou visage blessés (ACE) dégradent la qualité ; trop abîmé, le relevé est impossible. Un mauvais relevé peut rater la bonne personne ou sortir un faux candidat « à confirmer ».&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Interroger la base&lt;/t&gt;&lt;br/&gt;Hors liaison, le terminal ne connaît que sa base locale. En liaison, la recherche part sur l'ABIS. Résultats : MATCH, correspondance possible, NO MATCH, alerte de faux papiers. L'ADN part au laboratoire : résultat différé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AD24147564">
+            <Original>Pose une caisse de kit SSE à ouvrir (équipe, biométrie, exploitation numérique, valise DOMEX). Les caisses existent aussi comme objets dans Eden et Zeus.</Original>
+            <English>Places an SSE kit crate to open (team, biometrics, digital exploitation, DOMEX case). The crates also exist as objects in Eden and Zeus.</English>
+            <French>Pose une caisse de kit SSE à ouvrir (équipe, biométrie, exploitation numérique, valise DOMEX). Les caisses existent aussi comme objets dans Eden et Zeus.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_ADEDF35BDA">
             <Original>Objet divers</Original>
@@ -3107,6 +3457,11 @@
             <English>COMSPEC SSE — Intelligence</English>
             <French>COMSPEC SSE — Renseignement</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B70FF1E6D2">
+            <Original>Kit ADN</Original>
+            <English>DNA kit</English>
+            <French>Kit ADN</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_B72C6C2193">
             <Original>Vide = accès libre. Pensez à le cacher ailleurs : document, autre appareil, interrogatoire.</Original>
             <English>Empty = open access. Remember to hide it elsewhere: document, other device, interrogation.</English>
@@ -3146,6 +3501,11 @@
             <Original>Prothèse œil droit</Original>
             <English>Right eye prosthesis</English>
             <French>Prothèse œil droit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B926BFDE9F">
+            <Original>Unité centrale (preuve)</Original>
+            <English>Desktop tower (evidence)</English>
+            <French>Unité centrale (preuve)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_B972CCAE08">
             <Original>Clé USB</Original>
@@ -3207,6 +3567,11 @@
             <English>FALCON · IED technician « L'INGÉNIEUR »</English>
             <French>FALCON · Technicien IED « L'INGÉNIEUR »</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BBB9F5D542">
+            <Original>Photos et fiches (preuve)</Original>
+            <English>Photos and files (evidence)</English>
+            <French>Photos et fiches (preuve)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BBC7E79964">
             <Original>Membre</Original>
             <English>Member</English>
@@ -3244,7 +3609,7 @@
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BDDC7ADB12">
             <Original>Nature</Original>
-            <English>Nature</English>
+            <English>Kind</English>
             <French>Nature</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BDE87EFDEA">
@@ -3307,6 +3672,11 @@
             <English>Additional identity (advanced use)</English>
             <French>Complément d’identité (usage avancé)</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C0EC90BC1C">
+            <Original>Clé USB (preuve)</Original>
+            <English>USB stick (evidence)</English>
+            <French>Clé USB (preuve)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_C0F632D7E1">
             <Original>Donnez le même nom (ex. RESEAU-NORD) à plusieurs personnes ou objets : ils sont traités comme un même réseau, avec contacts et liens croisés. Vide : aucun.</Original>
             <English>Give the same name (e.g. NORTH-NETWORK) to several people or objects: they are treated as one network, with shared contacts and links. Empty: none.</English>
@@ -3321,6 +3691,11 @@
             <Original>Indice</Original>
             <English>Hint</English>
             <French>Indice</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C20D94C6EA">
+            <Original>Pose un site préfabriqué exploitable : mobilier, pièces de preuve, occupants et pièges optionnels, dossier qui cite d'autres lieux réels de la carte.</Original>
+            <English>Places an exploitable prefab site: furniture, evidence, optional occupants and traps, a file citing other real places on the map.</English>
+            <French>Pose un site préfabriqué exploitable : mobilier, pièces de preuve, occupants et pièges optionnels, dossier qui cite d'autres lieux réels de la carte.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_C211FD39A4">
             <Original>Radio / liaisons</Original>
@@ -3341,6 +3716,11 @@
             <Original>Générique</Original>
             <English>Generic</English>
             <French>Générique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C2FA969DBB">
+            <Original>Smartphone (preuve)</Original>
+            <English>Smartphone (evidence)</English>
+            <French>Smartphone (preuve)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_C3162D0B05">
             <Original>Présentation des documents SSE</Original>
@@ -3532,6 +3912,11 @@
             <English>Missing fingers</English>
             <French>Doigts manquants</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CDABB7E48D">
+            <Original>Poudre magnétique, pinceau, rubans de relevé et cartes décadactylaires. Consommables : un nombre limité de relevés par kit.</Original>
+            <English>Magnetic powder, brush, lifting tape and ten-print cards. Consumables: a limited number of lifts per kit.</English>
+            <French>Poudre magnétique, pinceau, rubans de relevé et cartes décadactylaires. Consommables : un nombre limité de relevés par kit.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_CE784579DC">
             <Original>Ce que le bureau verra. Vide en Zeus = formulaire.</Original>
             <English>What the office will see. Empty in Zeus = form.</English>
@@ -3541,6 +3926,11 @@
             <Original>Trop d'essais</Original>
             <English>Too many attempts</English>
             <French>Trop d'essais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CFCAF85D8C">
+            <Original>De 1 à 20.</Original>
+            <English>From 1 to 20.</English>
+            <French>De 1 à 20.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_D031524C84">
             <Original>Russie / théâtre Est</Original>
@@ -3561,6 +3951,16 @@
             <Original>Groupe armé</Original>
             <English>Armed group</English>
             <French>Groupe armé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D191D931CF">
+            <Original>SSE · Sites et kits</Original>
+            <English>SSE · Sites and kits</English>
+            <French>SSE · Sites et kits</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D1D38AAC02">
+            <Original>Liasse de billets (preuve)</Original>
+            <English>Bundle of banknotes (evidence)</English>
+            <French>Liasse de billets (preuve)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_D249EAD79B">
             <Original>Pied de page</Original>
@@ -3647,6 +4047,11 @@
             <English>Place an intelligence object</English>
             <French>Poser un objet de renseignement</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D5245BAA89">
+            <Original>Appareil photo de preuve</Original>
+            <English>Evidence camera</English>
+            <French>Appareil photo de preuve</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_D599F5BE5C">
             <Original>Après le délai d’exploitation</Original>
             <English>After the exploitation delay</English>
@@ -3661,6 +4066,11 @@
             <Original>Exporte le graphe de renseignement de la mission.</Original>
             <English>Exports the mission's intelligence graph.</English>
             <French>Exporte le graphe de renseignement de la mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D5EB867897">
+            <Original>Tablette (preuve)</Original>
+            <English>Tablet (evidence)</English>
+            <French>Tablette (preuve)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_D5FAA07334">
             <Original>Modules : mission et scénario</Original>
@@ -3762,6 +4172,11 @@
             <English>Schedule</English>
             <French>Horaire</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DB18959EF2">
+            <Original>Occupants</Original>
+            <English>Occupants</English>
+            <French>Occupants</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_DB6388D385">
             <Original>Organisations et tableau des liens</Original>
             <English>Organizations and link board</English>
@@ -3772,10 +4187,20 @@
             <English>Nature shown on the link chart and on records. Descriptive only: does not change generation.</English>
             <French>Nature affichée au tableau des liens et sur les fiches. Purement descriptif : ne change pas la génération.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DBAE9D4694">
+            <Original>Kit SSE d'équipe</Original>
+            <English>SSE team kit</English>
+            <French>Kit SSE d'équipe</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_DBB1867285">
             <Original>USB-C</Original>
             <English>USB-C</English>
             <French>USB-C</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DBE91E171E">
+            <Original>Carte mémoire (preuve)</Original>
+            <English>Memory card (evidence)</English>
+            <French>Carte mémoire (preuve)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_DBEE120484">
             <Original>Usage avancé, à laisser vide. Pour imposer du contenu, utilisez plutôt les catégories COMSPEC SSE — Documents, Téléphone et Ordinateur.</Original>
@@ -3786,6 +4211,11 @@
             <Original>&lt;t color='#7fd08a'&gt;Le kit de base&lt;/t&gt;&lt;br/&gt;« Équiper le kit SSE » (menu ACE personnel) donne : terminal SEEK II, kit d'empreintes, kit ADN, appareil photo, sachets de preuve, gants, pochette documents, terminal SSE terrain.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;À quoi sert chaque objet&lt;/t&gt;&lt;br/&gt;Terminal SEEK II : ouvrir SEEK, relevés d'iris, capture complète ; il remplace aussi les kits d'empreintes, ADN et l'appareil photo.&lt;br/&gt;Kit d'empreintes : empreintes, empreintes latentes sur objets et armes.&lt;br/&gt;Kit ADN : prélèvement ADN (résultat différé du laboratoire).&lt;br/&gt;Appareil photo : photographier, photo faciale.&lt;br/&gt;Sachet de preuve : collecter, mettre sous scellé, collecter un support USB/SD ; il n'est pas consommé.&lt;br/&gt;Sac de tête : posé sur un prisonnier, rendu quand on le retire.&lt;br/&gt;Gants, pochette documents, terminal SSE terrain : matériel d'ambiance, aucun geste ne les exige.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Objets saisis&lt;/t&gt;&lt;br/&gt;Clé USB et carte mémoire saisies apparaissent en collectant un support. Disque dur, ordinateur, téléphones, carnet saisis : objets d'inventaire pour le roleplay et l'Arsenal.&lt;br/&gt;&lt;br/&gt;Réglage CBA COMSPEC SSE, Matériel : Exiger le matériel SSE (décoché : aucun objet requis), Accepter les items d'autres mods.</Original>
             <English>&lt;t color='#7fd08a'&gt;The basic kit&lt;/t&gt;&lt;br/&gt;« Equip SSE kit » (ACE self menu) gives: SEEK II terminal, fingerprint kit, DNA kit, camera, evidence bags, gloves, document pouch, SSE field terminal.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;What each item is for&lt;/t&gt;&lt;br/&gt;SEEK II terminal: open SEEK, iris captures, full capture; it also replaces the fingerprint kit, DNA kit and camera.&lt;br/&gt;Fingerprint kit: fingerprints, latent prints on objects and weapons.&lt;br/&gt;DNA kit: DNA swab (delayed lab result).&lt;br/&gt;Camera: take photos, face photo.&lt;br/&gt;Evidence bag: collect, seal, collect a USB/SD device; it is not used up.&lt;br/&gt;Head bag: put on a prisoner, given back when removed.&lt;br/&gt;Gloves, document pouch, SSE field terminal: flavour items, no action requires them.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Seized items&lt;/t&gt;&lt;br/&gt;Seized USB key and memory card appear when collecting a device. Seized hard drive, laptop, phones, notebook: inventory items for roleplay and the Arsenal.&lt;br/&gt;&lt;br/&gt;CBA setting COMSPEC SSE, Equipment: Require SSE equipment (unchecked: no item needed), Accept items from other mods.</English>
             <French>&lt;t color='#7fd08a'&gt;Le kit de base&lt;/t&gt;&lt;br/&gt;« Équiper le kit SSE » (menu ACE personnel) donne : terminal SEEK II, kit d'empreintes, kit ADN, appareil photo, sachets de preuve, gants, pochette documents, terminal SSE terrain.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;À quoi sert chaque objet&lt;/t&gt;&lt;br/&gt;Terminal SEEK II : ouvrir SEEK, relevés d'iris, capture complète ; il remplace aussi les kits d'empreintes, ADN et l'appareil photo.&lt;br/&gt;Kit d'empreintes : empreintes, empreintes latentes sur objets et armes.&lt;br/&gt;Kit ADN : prélèvement ADN (résultat différé du laboratoire).&lt;br/&gt;Appareil photo : photographier, photo faciale.&lt;br/&gt;Sachet de preuve : collecter, mettre sous scellé, collecter un support USB/SD ; il n'est pas consommé.&lt;br/&gt;Sac de tête : posé sur un prisonnier, rendu quand on le retire.&lt;br/&gt;Gants, pochette documents, terminal SSE terrain : matériel d'ambiance, aucun geste ne les exige.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Objets saisis&lt;/t&gt;&lt;br/&gt;Clé USB et carte mémoire saisies apparaissent en collectant un support. Disque dur, ordinateur, téléphones, carnet saisis : objets d'inventaire pour le roleplay et l'Arsenal.&lt;br/&gt;&lt;br/&gt;Réglage CBA COMSPEC SSE, Matériel : Exiger le matériel SSE (décoché : aucun objet requis), Accepter les items d'autres mods.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DE5B822DEC">
+            <Original>Nombre de sites</Original>
+            <English>Number of sites</English>
+            <French>Nombre de sites</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_DE6493C844">
             <Original>Frère / sœur</Original>
@@ -3821,6 +4251,11 @@
             <Original>Menu COMSPEC SSE de la barre d'Eden : ce manuel à tout moment.</Original>
             <English>COMSPEC SSE menu in the Eden menu bar: this manual at any time.</English>
             <French>Menu COMSPEC SSE de la barre d'Eden : ce manuel à tout moment.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E07D1F89CF">
+            <Original>Contenu de la caisse.</Original>
+            <English>Crate contents.</English>
+            <French>Contenu de la caisse.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_E11BD7E4AB">
             <Original>Rien (à découvrir)</Original>
@@ -3912,6 +4347,11 @@
             <English>Nickname by which the subject is known</English>
             <French>Surnom sous lequel le sujet est connu</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E4B1C64B59">
+            <Original>Pièges de chaque site.</Original>
+            <English>Traps of each site.</English>
+            <French>Pièges de chaque site.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_E4E69F4E5C">
             <Original>Signalé — correspondance partielle</Original>
             <English>Flagged — partial match</English>
@@ -3961,6 +4401,11 @@
             <Original>Facultatif. Sous-titre sous le titre du compte rendu d'exploitation. Vide : celui du modèle (Standard : Compte rendu d'exploitation).</Original>
             <English>Optional. Subtitle under the report title. Empty: the template one (Standard: Compte rendu d'exploitation).</English>
             <French>Facultatif. Sous-titre sous le titre du compte rendu d'exploitation. Vide : celui du modèle (Standard : Compte rendu d'exploitation).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E7C960B706">
+            <Original>Boîte aux lettres morte</Original>
+            <English>Dead drop</English>
+            <French>Boîte aux lettres morte</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_E7EC1A8FA0">
             <Original>Place de la personne dans l'organigramme (ORBAT) du tableau des liens, du chef au sympathisant.</Original>
@@ -4147,6 +4592,11 @@
             <English>Depends on device</English>
             <French>Selon l'appareil</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F362018DB4">
+            <Original>Ordinateur portable (preuve)</Original>
+            <English>Laptop (evidence)</English>
+            <French>Ordinateur portable (preuve)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F364E0157C">
             <Original>Vraie identité (si faux papiers)</Original>
             <English>True identity (if false papers)</English>
@@ -4232,6 +4682,11 @@
             <English>Modules: sites, objects and people</English>
             <French>Modules : sites, objets et personnes</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F69385CF90">
+            <Original>Mine à fil sur la sortie du bâtiment, engin piégé dans un labo d'IED.</Original>
+            <English>Tripwire mine on the building exit, booby trap in an IED lab.</English>
+            <French>Mine à fil sur la sortie du bâtiment, engin piégé dans un labo d'IED.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F734A5538E">
             <Original>Niveau de révélation</Original>
             <English>Revelation level</English>
@@ -4282,6 +4737,11 @@
             <English>Automatic: SEEK uses the name from the Eden Identity panel (or COMSPEC Last/First name if filled in). Invent: ignores the Eden identity. Force: same effect as automatic, Eden name enforced.</English>
             <French>Automatique : SEEK reprend le nom du panneau Identité Eden (ou Nom/Prénom COMSPEC s’ils sont remplis). Inventer : ignore l’identité Eden. Forcer : même effet que automatique, nom Eden imposé.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FA79BDC9FF">
+            <Original>Insurgés (OPFOR)</Original>
+            <English>Insurgents (OPFOR)</English>
+            <French>Insurgés (OPFOR)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_FAE0B0104A">
             <Original>Compte rendu SSE (AAR) + graphe</Original>
             <English>SSE after-action report (AAR) + graph</English>
@@ -4326,6 +4786,11 @@
             <Original>COMSPEC SSE — Ordinateur</Original>
             <English>COMSPEC SSE — Computer</English>
             <French>COMSPEC SSE — Ordinateur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FDF8067B09">
+            <Original>Kit empreintes</Original>
+            <English>Fingerprint kit</English>
+            <French>Kit empreintes</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_FE035157CD">
             <Original>Port</Original>
