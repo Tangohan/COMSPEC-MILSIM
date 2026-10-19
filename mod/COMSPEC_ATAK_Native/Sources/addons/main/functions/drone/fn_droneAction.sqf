@@ -461,7 +461,13 @@ private _camOpen = {
                 private _e = (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]) getOrDefault [_k select [5], createHashMap];
                 if ((count _e) > 0) then { _p = [_e get "pos", aimPos (_e get "obj")] select ((_e get "state") isEqualTo "TRACK" && {alive (_e get "obj")}); };
             };
-            if (_k isNotEqualTo "" && {!(_k in ["NADIR", "PT"])} && {(_k select [0, 5]) isNotEqualTo "LOCK:"}) then {
+            // Joueur ou équipier filmé (VOL > Suivre un joueur > FILMER, retour de TTRD, 19/10 : « la caméra suit un
+            // joueur ») : la nacelle reste braquée sur lui tant qu'il est en vie ; mort ou parti, la caméra revient devant.
+            if ((_k select [0, 5]) isEqualTo "UNIT:") then {
+                private _u = objectFromNetId (_k select [5]);
+                if (alive _u) then { _p = aimPos _u; } else { missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""]; };
+            };
+            if (_k isNotEqualTo "" && {!(_k in ["NADIR", "PT"])} && {!((_k select [0, 5]) in ["LOCK:", "UNIT:"])}) then {
                 private _tr = (missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap]) getOrDefault [_k, []];
                 if ((count _tr) > 0) then {
                     _tr params ["_o", "", "_pos", "_seen"];
@@ -1278,8 +1284,9 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectCam", _v];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", _v];
         [] call comspec_atak_native_fnc_close;
-        ("COMSPEC_ATAK_DroneDirect" call BIS_fnc_rscLayer) cutText [format ["<t size='1.1' shadow='2'>VUE DIRECTE · %1</t><br/><t size='0.85' shadow='2' color='#c9d4cf'>Échap : retour au téléphone</t>",
-            [_d, ["link"] call comspec_atak_native_fnc_droneAction, "NAME"] call comspec_atak_native_fnc_droneOsd] call comspec_atak_native_fnc_tr, "PLAIN DOWN", 0.5, true, true];
+        // Rien écrit sur l'écran du jeu (règle de TTRD, 19/10 : tout message reste dans le téléphone) : le rappel
+        // « Échap : retour au téléphone » est dans l'infobulle des boutons et dans les notifications du téléphone.
+        ["INFO", "Vue directe : Échap pour revenir au téléphone"] call _say;
         private _eh = (findDisplay 46) displayAddEventHandler ["KeyDown", {
             if ((_this select 1) isNotEqualTo 0x01) exitWith { false };
             [{ ["directEnd", true] call comspec_atak_native_fnc_droneAction; }] call CBA_fnc_execNextFrame;
