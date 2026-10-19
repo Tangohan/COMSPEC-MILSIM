@@ -99,6 +99,16 @@ class AtakController
 
         $atakMap = $tenantId ? $this->atakMapRepository->getDefaultForTenant($tenantId) : $this->atakMapRepository->getBySlug('altis');
         $atakMapsList = $this->atakMapRepository->getAll();
+        // ?mapId=N (liens du back-office, sélecteur de carte d'Overwatch) : seulement une carte connue.
+        $requestedMapId = (int) ($_GET['mapId'] ?? 0);
+        if ($requestedMapId > 0) {
+            foreach ($atakMapsList as $m) {
+                if ((int) ($m['id'] ?? 0) === $requestedMapId) {
+                    $atakMap = $m;
+                    break;
+                }
+            }
+        }
         $atakWorkspaces = [];
         foreach ($atakMapsList as $m) {
             $atakWorkspaces[] = [

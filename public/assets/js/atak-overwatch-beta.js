@@ -444,6 +444,103 @@
     if (!text) return '';
     return '<span class="ow-pill is-' + escapeHtml(kind || 'ok') + '">' + escapeHtml(text) + '</span>';
   }
+  // Commandes sur un contact (comme le menu de l'ancien ATAK web) : terminal, indicatif, liaison.
+  function unitCaps() { return window.ATAK_CAPS || {}; }
+  function unitDbId(unit) {
+    var id = Number(unit && unit.id);
+    return Number.isFinite(id) && id > 0 ? id : 0;
+  }
+  function isOwnUnit(unit) {
+    var mine = [user.callsign, user.armaCallsign].map(function (v) { return String(v || '').trim().toUpperCase(); }).filter(Boolean);
+    return mine.indexOf(callsign(unit).trim().toUpperCase()) >= 0;
+  }
+  function canDeleteThisUnit(unit) {
+    var c = unitCaps();
+    return !!c.canDeleteUnitStaff || (!!c.canDeleteOwnUnit && isOwnUnit(unit));
+  }
+  function unitCommandsHtml(unit) {
+    if (!unitDbId(unit)) return '';
+    var c = unitCaps();
+    var linked = !isDisconnected(unit);
+    function cmd(action, label, enabled, title, danger) {
+      return '<button type="button" class="ow-secondary' + (danger ? ' is-danger' : '') + '" data-unit-cmd="' + action + '"' +
+        (enabled ? '' : ' disabled') + (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' + escapeHtml(label) + '</button>';
+    }
+    var offline = 'Hors liaison : le terminal ne peut pas recevoir la demande.';
+    var html = '<div class="ow-btn-row">' +
+      cmd('vibrate', 'Faire vibrer', linked && !!c.loggedIn, linked ? 'Fait vibrer le téléphone ATAK du joueur' : offline) +
+      cmd('notify', 'Notification…', linked && !!c.loggedIn, linked ? 'Affiche une notification sur le terminal' : offline) +
+      '</div><div class="ow-btn-row">' +
+      cmd('helmet-snap', 'Photo casque', linked && !!c.loggedIn, linked ? 'Le terminal envoie un cliché au poste' : offline) +
+      cmd('helmet-snap-hd', 'Photo casque HD', linked && !!c.loggedIn, linked ? 'Cliché haute définition' : offline) +
+      '</div><div class="ow-btn-row">' +
+      cmd('rename', 'Renommer…', !!c.canRenameUnit, c.canRenameUnit ? 'Changer l’indicatif du contact' : 'Connexion requise pour renommer') +
+      '</div>';
+    if (canDeleteThisUnit(unit)) {
+      html += '<div class="ow-btn-row">' +
+        cmd('disconnect', 'Couper la liaison', linked, linked ? 'Marquer ce contact hors liaison (carte et effectifs)' : 'Ce contact est déjà hors liaison', true) +
+        cmd('delete', 'Supprimer', true, 'Retirer ce contact de la carte et des effectifs', true) +
+        '</div>';
+    }
+    return discBlock('Commandes du contact', html);
+  }
+  function unitRequest(unit, suffix, method, body) {
+    var headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    var csrf = csrfToken();
+    if (csrf) headers['X-CSRF-TOKEN'] = csrf;
+    return fetch(apiBase + '/api/units/' + encodeURIComponent(unitDbId(unit)) + suffix, {
+      method: method,
+      credentials: 'include',
+      headers: headers,
+      body: method === 'DELETE' ? undefined : JSON.stringify(Object.assign({ _csrf_token: csrf }, body || {}))
+    }).then(function (response) {
+      if (response.status === 204) return {};
+      return response.json().catch(function () { return {}; }).then(function (payload) {
+        if (!response.ok) throw new Error((payload && payload.message) || 'La commande a échoué.');
+        return payload || {};
+      });
+    });
+  }
+  function runUnitCommand(action, unit) {
+    if (!unit || !unitDbId(unit)) return;
+    var cs = callsign(unit);
+    var job = null;
+    var done = '';
+    if (action === 'vibrate') { job = unitRequest(unit, '/vibrate', 'POST'); done = 'Vibration envoyée au terminal de ' + cs + '.'; }
+    if (action === 'notify') {
+      var msg = window.prompt('Notification à afficher sur le terminal de ' + cs + ' :', '');
+      if (!msg || !msg.trim()) return;
+      job = unitRequest(unit, '/notify', 'POST', { message: msg.trim() });
+      done = 'Notification envoyée à ' + cs + '.';
+    }
+    if (action === 'helmet-snap' || action === 'helmet-snap-hd') {
+      job = unitRequest(unit, '/request-helmet-media', 'POST', { mode: action === 'helmet-snap-hd' ? 'snap_hd' : 'snap' });
+      done = 'Photo casque demandée à ' + cs + ' : elle arrivera dans Photos.';
+    }
+    if (action === 'rename') {
+      var next = window.prompt('Nouvel indicatif pour ' + cs + ' :', cs);
+      if (!next || !next.trim() || next.trim() === cs) return;
+      job = unitRequest(unit, '', 'PATCH', { call_sign: next.trim() });
+      done = cs + ' renommé en ' + next.trim() + '.';
+    }
+    if (action === 'disconnect') {
+      if (!window.confirm('Couper la liaison de ' + cs + ' ? Le contact passe hors liaison sur la carte et dans les effectifs.')) return;
+      job = unitRequest(unit, '/disconnect', 'POST');
+      done = 'Liaison de ' + cs + ' coupée.';
+    }
+    if (action === 'delete') {
+      if (!window.confirm('Supprimer ' + cs + ' de la carte et des effectifs ?')) return;
+      job = unitRequest(unit, '', 'DELETE');
+      done = cs + ' supprimé.';
+    }
+    if (!job) return;
+    job.then(function () {
+      toast(done);
+      if (action === 'delete') document.getElementById('ow-drawer').hidden = true;
+      refreshAll();
+    }).catch(function (err) { toast(err && err.message ? err.message : 'La commande a échoué.'); });
+  }
+
   function discBlock(title, inner, warn) {
     return '<details class="ow-disc">' +
       '<summary' + (warn ? ' class="is-warn"' : '') + '>' + escapeHtml(title) +
@@ -2389,6 +2486,22 @@
       return other && stackBucketKey(other) === key;
     });
   }
+  // « Grille sous l'indicatif » (Calques) : coordonnées de grille affichées sous le nom du contact.
+  var LABEL_GRID_KEY = 'athena:ow-label-grid';
+  function labelGridOn() {
+    var box = document.getElementById('ow-label-grid');
+    return !!(box && box.checked);
+  }
+  (function bindLabelGrid() {
+    var box = document.getElementById('ow-label-grid');
+    if (!box) return;
+    try { box.checked = localStorage.getItem(LABEL_GRID_KEY) === '1'; } catch (e) {}
+    box.addEventListener('change', function () {
+      try { localStorage.setItem(LABEL_GRID_KEY, box.checked ? '1' : '0'); } catch (e) {}
+      renderMap();
+    });
+  })();
+
   function markerIcon(unit, opts) {
     opts = opts || {};
     // Curseur personnalisé de mon propre contact (atak-overwatch-intel.js).
@@ -2421,7 +2534,12 @@
     var hint = '';
     if (disc) hint = 'Dernière position connue' + (age ? ' · ' + age : '');
     else if (stalePos || lagging) hint = 'Différé' + (age ? ' · ' + age : '');
-    var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + '</span>' : '';
+    var gridLine = '';
+    if (showLabel && labelGridOn()) {
+      var gLoc = point(unit);
+      if (gLoc) gridLine = '<small class="ow-cs-grid">' + escapeHtml(gridLabel(gLoc).replace(/^Grille /, '')) + '</small>';
+    }
+    var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + gridLine + '</span>' : '';
     var badge = (opts.forceLabel && stackCount > 1) ? '<b class="ow-stack-n">+' + (stackCount - 1) + '</b>' : '';
     return L.divIcon({
       className: 'ow-marker ow-mark-' + prefs.style + extra,
@@ -2429,6 +2547,19 @@
       iconAnchor: [8, 8],
       html: '<div' + (hint ? ' title="' + escapeHtml(hint) + '"' : '') + ' style="--ow-iff:' + escapeHtml(stateColor) + ';--ow-state:' + escapeHtml(stateColor) + ';--ow-squad:' + escapeHtml(squad) + '"><i></i>' + label + badge + '</div>'
     });
+  }
+
+  // « Ma position » : centre sur sa propre unité BFT (indicatif du compte), sinon sur le théâtre.
+  function locateSelf() {
+    var mine = String(user.callsign || user.displayName || '').trim().toLowerCase();
+    var own = mine ? units.find(function (unit) { return callsign(unit).trim().toLowerCase() === mine && point(unit); }) : null;
+    if (own) {
+      selectUnit(own);
+      map.setView(point(own), Math.max(map.getZoom(), 5));
+      return;
+    }
+    map.setView(center, Math.max(map.getZoom(), 4));
+    toast('Votre position n’est pas reçue (ATAK hors liaison) : recentrage sur le théâtre.');
   }
 
   function selectUnit(unit) {
@@ -2531,6 +2662,7 @@
         : '') +
       '</div>' +
       discBlock('Téléphone ATAK', phoneHtml) +
+      unitCommandsHtml(unit) +
       discBlock('Alerte plein écran', fullscreenAlertFormHtml({ dest: 'unit:' + callsign(unit), solo: true }), true);
     document.getElementById('ow-drawer').hidden = false;
     bindFsAlertForms(document.getElementById('ow-drawer'));
@@ -2558,9 +2690,24 @@
     }
   }
 
+  // Opérateurs masqués localement depuis l'ORBAT (Masquer / afficher), par identifiant BFT.
+  var locallyHiddenUnits = {};
+  function isUnitHidden(unit) {
+    return !!locallyHiddenUnits[unitId(unit)];
+  }
+  function setUnitsHidden(list, hidden) {
+    (list || []).forEach(function (unit) {
+      var id = unitId(unit);
+      if (!id) return;
+      if (hidden) locallyHiddenUnits[id] = true; else delete locallyHiddenUnits[id];
+    });
+    renderMap();
+  }
+
   function layerVisible(unit) {
     if (tooOldToShow(unit)) return false;
     if (hiddenLayers.units) return false;
+    if (isUnitHidden(unit)) return false;
     if (isAir(unit) && hiddenLayers.air) return false;
     if (isVehicle(unit) && hiddenLayers.vehicles) return false;
     return true;
@@ -3019,6 +3166,8 @@
     renderList();
     syncStatus(true);
     window.dispatchEvent(new CustomEvent('overwatch:units-updated', { detail: { units: units } }));
+    // Nom historique attendu par les modules partagés (anneaux de géolocalisation, messages du poste…).
+    try { window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { units: units } })); } catch (e0) {}
     try {
       window.dispatchEvent(new CustomEvent('atak:units-markers-updated', { detail: { units: units } }));
     } catch (e) {}
@@ -4279,9 +4428,7 @@
     map.getContainer().style.cursor = tool === 'cursor' ? '' : 'crosshair';
     if (tool === 'center') map.fitBounds(bounds);
     if (tool === 'refresh') refreshAll();
-    if (tool === 'locate' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(function () { map.setView(center, Math.max(map.getZoom(), 4)); toast('Recentrage théâtre.'); });
-    }
+    if (tool === 'locate') locateSelf();
     if (tool === 'eta') toast('Maintenez du départ à l’arrivée, ou cliquez les points puis double-clic.');
     if (tool === 'profile') toast('Maintenez pour tracer le profil, relâchez pour relever le relief.');
     if (tool === 'circle') toast('Maintenez au centre et glissez le rayon.');
@@ -5793,6 +5940,7 @@
   document.querySelectorAll('[data-ow-layer]').forEach(function (input) {
     input.addEventListener('change', function () {
       hiddenLayers[input.dataset.owLayer] = !input.checked;
+      try { localStorage.setItem('athena:ow-layer-' + input.dataset.owLayer, input.checked ? '1' : '0'); } catch (e) {}
       if (input.dataset.owLayer === 'tracks') {
         tracksOn = input.checked;
         Object.keys(trackLines).forEach(function (id) {
@@ -6882,17 +7030,13 @@
       : 'Par défaut, le téléphone transmet sans exiger un relais. Un responsable peut imposer le passage par antenne dans les réglages de la communauté.';
     return card('Situation réseau', String(relayCount + terminals.length),
       '<div class="ow-event"><span>Relais</span><strong>' + relayCount + '</strong></div>' +
-      '<div class="ow-event"><span>Terminaux ATAK</span><strong>' + terminals.length + '</strong></div>' +
-      '<div class="ow-event"><span>Satellites</span><strong>0</strong></div>') +
+      '<div class="ow-event"><span>Terminaux ATAK</span><strong>' + terminals.length + '</strong></div>') +
       '<p class="ow-kicker">Relais</p>' +
       '<p class="ow-help">' + escapeHtml(modeHelp) + '</p>' +
       '<div id="ow-network-relays">' + networkRelaysListHtml() + '</div>' +
       '<p class="ow-kicker">Terminaux ATAK</p>' +
       '<p class="ow-help">Appareils qui ont déjà contacté le poste : certificat, liaison, transmission, versions et adresse quand elles sont connues.</p>' +
-      '<div id="ow-network-terminals">' + networkTerminalsListHtml() + '</div>' +
-      '<p class="ow-kicker">Satellites</p>' +
-      '<p class="ow-help">Aucun catalogue satellitaire n’est fourni pour ce théâtre. Rien n’est inventé.</p>' +
-      '<div id="ow-network-sats"><p class="ow-help">La liste restera vide tant qu’aucune orbite n’est déclarée pour la mission.</p></div>';
+      '<div id="ow-network-terminals">' + networkTerminalsListHtml() + '</div>';
   }
 
   function layersHtml() {
@@ -7589,6 +7733,10 @@
     mapPingMarkers[id] = marker;
   }
   function setPingsOnMap(list) {
+    // Super ping reçu : pulse + son (le premier lot ne sert qu'à mémoriser les pings déjà présents).
+    if (window.ATAKSuperPing && typeof window.ATAKSuperPing.ingest === 'function') {
+      try { window.ATAKSuperPing.ingest(list); } catch (e) {}
+    }
     var seen = {};
     (Array.isArray(list) ? list : []).forEach(function (p) {
       if (!p || p.pos_x == null || p.pos_y == null) return;
@@ -7962,6 +8110,8 @@
       var location = selected && point(selected);
       if (location) map.setView(location, Math.max(map.getZoom(), 4));
     }
+    var unitCmdBtn = event.target.closest('[data-unit-cmd]');
+    if (unitCmdBtn && selected && !unitCmdBtn.disabled) runUnitCommand(unitCmdBtn.getAttribute('data-unit-cmd'), selected);
     if (event.target.matches('[data-fit-squad]') && selected) fitSquad(selected);
     if (event.target.matches('[data-squad-task-from-unit]') && selected) {
       var unitKey = squadKey(selected);
@@ -8473,6 +8623,9 @@
     csrf: csrfToken,
     commands: commands,
     getUnits: function () { return units; },
+    isUnitHidden: isUnitHidden,
+    setUnitsHidden: setUnitsHidden,
+    openSquadTaskForm: openSquadTaskForm,
     getShapes: function () { return shapes; },
     getShapeLayers: function () { return shapeLayers; },
     getTrackSamples: function () { return trackSamples; },
@@ -8559,52 +8712,13 @@
     toggleSettingsBtn.addEventListener('click', toggleSettingsAside);
   }
 
-  restoreSettingsCollapsed();
-
-  // Gestion des calques (layers)
-  document.querySelectorAll('[data-ow-layer]').forEach(function(checkbox) {
-    // Restaurer l'état sauvegardé
-    var layer = checkbox.getAttribute('data-ow-layer');
-    try {
-      var saved = localStorage.getItem('athena:ow-layer-' + layer);
-      if (saved !== null) {
-        checkbox.checked = saved === '1';
-      }
-    } catch(e) {}
-    
-    // Event listener pour changements
-    checkbox.addEventListener('change', function() {
-      var visible = checkbox.checked;
-      
-      switch(layer) {
-        case 'units':
-          hiddenLayers.units = !visible;
-          renderMap();
-          break;
-        case 'labels':
-          document.body.classList.toggle('ow-labels-hidden', !visible);
-          break;
-        case 'shapes':
-          hiddenLayers.shapes = !visible;
-          Object.keys(shapeLayers).forEach(function(id) {
-            var shapeLayer = shapeLayers[id];
-            if (visible) {
-              if (!map.hasLayer(shapeLayer)) map.addLayer(shapeLayer);
-            } else {
-              if (map.hasLayer(shapeLayer)) map.removeLayer(shapeLayer);
-            }
-          });
-          break;
-        case 'aerial-view':
-          applyLook(visible ? 'aerial' : 'classic');
-          break;
-      }
-      
-      // Sauvegarder la préférence
-      try {
-        localStorage.setItem('athena:ow-layer-' + layer, visible ? '1' : '0');
-      } catch(e) {}
-    });
+  // Calques : restaure la préférence enregistrée et la rejoue dans le gestionnaire unique (hiddenLayers, tracksOn).
+  document.querySelectorAll('[data-ow-layer]').forEach(function (input) {
+    var saved = null;
+    try { saved = localStorage.getItem('athena:ow-layer-' + input.dataset.owLayer); } catch (e) {}
+    if (saved === null || (saved === '1') === input.checked) return;
+    input.checked = saved === '1';
+    input.dispatchEvent(new Event('change'));
   });
 
   window.addEventListener('resize', function () { map.invalidateSize({ animate: false }); });

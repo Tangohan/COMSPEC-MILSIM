@@ -584,7 +584,9 @@ window.OverwatchGlLayers = (function () {
     var samples = clock != null && ow.getTrackSamples ? ow.getTrackSamples() : null;
     var selected = selectedUnitId();
     var zoom = glMap && glMap.getZoom ? glMap.getZoom() : 14;
-    return (ow.getUnits() || []).map(function (unit) {
+    return (ow.getUnits() || []).filter(function (unit) {
+      return !(ow.isUnitHidden && ow.isUnitHidden(unit));
+    }).map(function (unit) {
       var x = Number(unit.pos_x != null ? unit.pos_x : unit.x);
       var y = Number(unit.pos_y != null ? unit.pos_y : unit.y);
       if (clock != null && samples && ow.unitId) {
