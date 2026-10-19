@@ -26,6 +26,8 @@ if (_interactive) exitWith {
     if (!isNull _disp) then {
         _disp displayAddEventHandler ["KeyDown", {
             params ["", "_key", "_shift", "_ctrl", "_alt"];
+            // Touche prise pour un raccourci en cours de réglage (fn_keybinds) : rien d'autre ne part.
+            if (["key", _this] call comspec_atak_native_fnc_keybinds) exitWith { true };
             private _hit = {
                 params ["_action", "_default"];
                 private _kb = ["COMSPEC ATAK", _action] call CBA_fnc_getKeybind;

@@ -95,11 +95,15 @@ if (isNull _hBg || {(ctrlParent _hBg) isNotEqualTo _d}) then {
     _hIc ctrlSetTextColor [0.88, 0.93, 0.9, 0.95];
     _hKey = _d ctrlCreate ["COMSPEC_RscTextCenter", -1];
     _hKey ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
-    _hKey ctrlSetText (("Ctrl+Maj+U") call comspec_atak_native_fnc_tr);
     _hKey ctrlSetBackgroundColor [1, 1, 1, 0.13];
     _hKey ctrlSetTextColor [0.92, 0.96, 0.93, 1];
     uiNamespace setVariable ["COMSPEC_ATAK_HandHintCtrls", [_hBg, _hIc, _hKey]];
 };
+// Touche affichée : celle choisie pour « prendre en main » (Réglages > Accès et touches ou menu CBA), sinon la principale.
+private _hBind = (["get", "PhoneHold"] call comspec_atak_native_fnc_keybinds) select 0;
+if (_hBind isEqualTo []) then { _hBind = (["get", "PhoneMain"] call comspec_atak_native_fnc_keybinds) select 0; };
+_hKey ctrlSetText ((["name", _hBind] call comspec_atak_native_fnc_keybinds) call comspec_atak_native_fnc_tr);
+if (isNil "cba_keybinding_actions") then { _hKey ctrlSetText (("Ctrl+Maj+U") call comspec_atak_native_fnc_tr); };
 private _hShow = !_interactive && {profileNamespace getVariable ["COMSPEC_ATAK_HandHint", true]};
 _hKey ctrlSetFontHeight ((_fontS * 0.8) max COMSPEC_ATAK_FontMin);
 private _hh = _ah * 0.58;

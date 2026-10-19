@@ -40,6 +40,8 @@ if ((missionNamespace getVariable ["COMSPEC_ATAK_I18nN", 0]) > 0) then {
 if (_interactive) then {
     _display displayAddEventHandler ["KeyDown", {
         params ["", "_key", "_shift", "_ctrl"];
+        // Réglages > Accès et touches : nouvelle touche attendue pour un raccourci (fn_keybinds), prise avant tout le reste.
+        if (["key", _this] call comspec_atak_native_fnc_keybinds) exitWith { true };
         // Suppr : efface le marqueur pointé (ou sélectionné), sauf pendant la saisie d'un texte.
         if (_key isEqualTo 0xD3 && {(ctrlType (focusedCtrl (_this select 0))) isNotEqualTo 2}) exitWith {
             private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
