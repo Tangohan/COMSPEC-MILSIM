@@ -4,8 +4,8 @@ $t = static fn (string $key): string => htmlspecialchars(__('site.atakn_' . $key
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 $asset = static fn (string $file): string => htmlspecialchars(asset_url('assets/atak-native/' . $file), ENT_QUOTES, 'UTF-8');
 $isEn = str_starts_with((string) html_lang(), 'en');
-// Pas d'identifiant Workshop connu côté site : recherche Workshop Arma 3 (appid 107410), toujours juste.
-$steamHref = 'https://steamcommunity.com/workshop/browse/?appid=107410&searchtext=COMSPEC+ATAK';
+// Fiche Steam Workshop du mod COMSPEC ATAK.
+$steamHref = 'https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708';
 $translateHref = $e(url('traduire-atak'));
 // Dernière version publiée (mêmes valeurs que GET /api/atak/version) et son « Résumé joueur » du changelog.
 $release = \App\Support\AtakReleaseInfo::latest();
