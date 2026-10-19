@@ -142,7 +142,7 @@ final class OperatorGameObservationNormalizer
 
         return array_merge($identity, [
             'steam_id' => $steamId,
-            'blood_type' => $this->firstString($medical['blood_type'] ?? null, $identity['blood_type'] ?? null),
+            'blood_type' => $this->bloodType($this->firstString($medical['blood_type'] ?? null, $identity['blood_type'] ?? null)),
             'sex' => $this->firstString($identity['sex'] ?? null, $identity['sex_detected'] ?? null),
             'versions' => $versions,
         ]);
@@ -152,6 +152,17 @@ final class OperatorGameObservationNormalizer
     private function assoc(mixed $value): array
     {
         return is_array($value) ? $value : [];
+    }
+
+    /** « O POS », « A Positive » ou un index ACE comparés comme O+ / A+ à la fiche personnel. */
+    private function bloodType(?string $raw): ?string
+    {
+        if ($raw === null) {
+            return null;
+        }
+        $normalized = \App\Support\RoleplayDeadlinePolicy::normalizeBloodType($raw);
+
+        return $normalized !== '' ? $normalized : $raw;
     }
 
     private function firstString(mixed ...$candidates): ?string

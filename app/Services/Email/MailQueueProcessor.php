@@ -55,7 +55,8 @@ final class MailQueueProcessor
                 isset($data['payloadSummary']) && is_array($data['payloadSummary']) ? $data['payloadSummary'] : null,
                 isset($data['campaignId']) ? (int) $data['campaignId'] : null,
                 false,
-                true
+                true,
+                EmailService::attachmentsFromQueue($data['attachments'] ?? [])
             );
             $this->jobs->delete($id);
             $out['processed']++;
