@@ -37,7 +37,7 @@ class CfgFunctions {
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class netCond {}; class netWeather {}; class netLoad {}; class netConfig {}; class offline {}; class relayNet {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaStatus {}; class feedLink {}; class extVersion {};
+            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class netCond {}; class netWeather {}; class netLoad {}; class netConfig {}; class offline {}; class relayNet {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaStatus {}; class feedLink {}; class extVersion {}; class mpu5 {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
@@ -183,6 +183,17 @@ class CfgWeapons {
         model="\z\comspec_atak_native\addons\items\data\item3d_battery.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=2; };
+    };
+    // Radio maillée MPU5 (Wave Relay, fn_mpu5) : pas de modèle 3D propre, modèle et icône de la radio d'Arma.
+    // Portée dans l'inventaire, elle relève la portée du nœud dans le maillage et relaie le débit reçu à l'équipe.
+    class COMSPEC_ATAK_MPU5: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_09B95E249C";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_A55435B201";
+        picture="\A3\Weapons_F\Data\UI\gear_item_radio_ca.paa";
+        model="\A3\Weapons_F\Ammo\mag_radio.p3d";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=15; };
     };
     // Kit de réparation du téléphone (action ACE « Réparer le téléphone ATAK », consommé ; fn_repairStart).
     class COMSPEC_ATAK_RepairKit: ItemCore {

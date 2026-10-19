@@ -1,8 +1,9 @@
 /*
     Relais du réseau ATAK : liste, carte de couverture (débit, perte) et triangulation d'un appareil par les relais qui l'entendent.
       "list"     : relais (COMSPEC_AtakRelays : module « ATAK · Relais » ou Overwatch, du camp ou sans camp) puis
-                   passerelles de véhicule et PC mobiles du camp (si le réglage serveur les autorise). Caché 2 s ("force" : non).
-                   [[objet, position antenne ASL, nom, type ("relay" | "gw" | "cp"), portée m, Mbit/s reçus du réseau,
+                   passerelles de véhicule et PC mobiles du camp (si le réglage serveur les autorise), puis radios MPU5
+                   des équipiers qui reçoivent un relais (fn_mpu5). Caché 2 s ("force" : non).
+                   [[objet, position antenne ASL, nom, type ("relay" | "gw" | "cp" | "mpu5"), portée m, Mbit/s reçus du réseau,
                      en service, état ("" | "détruit" | "éteint" | "batterie vide" | "brouillé" | "sans liaison"),
                      téléphones à portée, places (0 = illimité), batterie % (-1 = secteur), raccordé, relais amont du répéteur,
                      fréquence MHz, fréquence automatique, perte %, structure % (100 - dégâts), santé ("nominal" | "dégradé" |
@@ -157,6 +158,20 @@ switch (_act) do {
                 4985, false, 0, round (100 * (1 - damage _o)), "", 0, 0, 0];
             _jf pushBack 1;
         } forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);
+        // Radios maillées MPU5 des équipiers (fn_mpu5) : relais portés qui redistribuent le débit montant que leur
+        // téléphone reçoit d'un relais ou d'une autre MPU5 (au plus 3 bonds, publiés dans COMSPEC_ATAK_Mpu5).
+        private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
+        {
+            (_x getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_hp", 0]];
+            if (!(_up isEqualType 0) || {_up <= 0} || {_hp >= 3}) then { continue };
+            private _ant = (eyePos _x) vectorAdd [0, 0, 0.4];
+            private _j = [_ant] call _jamAt;
+            private _m = _up * _j;
+            private _st = ["", "brouillé"] select (_m < 0.05);
+            _out pushBack [_x, _ant, format ["MPU5 %1", [_x, true] call comspec_atak_native_fnc_unitCallsign], "mpu5", _mR, _m, _st isEqualTo "", _st, 0, 0, -1, false, objNull,
+                4990, false, 0, round (100 * (1 - damage _x)), "", _hp, 0, 0];
+            _jf pushBack _j;
+        } forEach (allPlayers select { alive _x && {_x isNotEqualTo player} && {str side group _x isEqualTo _side} });
         // Saturation : au-delà de ses places, le débit du relais se partage entre les téléphones à portée.
         // Aucun relais en service : pas de comptage des téléphones (hasDevice sur chaque joueur, toutes les 2 s).
         private _users = if ((_out findIf { _x select 6 }) < 0) then { [] } else {
@@ -210,7 +225,8 @@ switch (_act) do {
         // fort que le relais) ; la voie descendante a 4 dB de plus, d'où une frange « réception seule » au-delà de la
         // portée, où l'on reçoit encore sans pouvoir émettre. Terminal de bord ou passerelle (antenne de toit) : +3 dB.
         // Évanouissements lents (multitrajets) de ±2 dB propres à chaque relais, plus profonds en mouvement rapide.
-        private _gain = [0, 3] select (([player] call comspec_atak_native_fnc_vehicleTerminal) isNotEqualTo "");
+        // MPU5 portée (fn_mpu5) : le téléphone passe par la radio maillée, plus puissante (réglage comspec_atak_native_mpu5_gain).
+        private _gain = ([0, 3] select (([player] call comspec_atak_native_fnc_vehicleTerminal) isNotEqualTo "")) + (["gain"] call comspec_atak_native_fnc_mpu5);
         private _spd = (abs speed vehicle player) / 3.6;
         private _dl = [4, 0] select (_real isEqualTo 0);
         private _cands = [];

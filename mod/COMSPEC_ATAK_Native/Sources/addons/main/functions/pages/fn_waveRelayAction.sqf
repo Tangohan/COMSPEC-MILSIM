@@ -4,10 +4,12 @@
                     nodes [[objet, position antenne ASL, indicatif, type ("me", "node", "gw")]...],
                     links [[index A, index B, qualité %]...], hops [sauts jusqu'à la passerelle, -1 si coupé],
                     me (mon index), gw (index de la passerelle ou -1), gwLabel.
-                    Lien si la distance est sous la portée (COMSPEC_ATAK_MeshRange, 3 000 m par défaut),
+                    Lien si la distance est sous la portée (COMSPEC_ATAK_MeshRange, 3 000 m par défaut ; nœud qui porte une
+                    MPU5 : réglage comspec_atak_native_mpu5_range, 6 000 m par défaut, fn_mpu5),
                     qualité tirée du bilan radio entre les deux antennes (fn_radioLink : relief, zone de Fresnel) ;
                     réglage comspec_atak_native_net_realism à 0 : portée réduite à 35 % quand le relief coupe la ligne.
-                    Passerelles : tous les relais Overwatch intacts et passerelles de véhicule / PC mobiles (fn_relayNet) ;
+                    Passerelles : tous les relais Overwatch intacts et passerelles de véhicule / PC mobiles (fn_relayNet,
+                    sans les MPU5 des équipiers, déjà nœuds du maillage) ;
                     la principale est le relais le plus proche, sinon la passerelle de véhicule, sinon le chef de groupe.
       "talkgroup" : choisit le talkgroup data (variable publique COMSPEC_ATAK_Talkgroup) quand ACRE2 est absent.
       "channel"   : [id radio ACRE, canal] change le canal d'une radio ACRE2.
@@ -24,13 +26,14 @@ switch (_act) do {
         private _side = side group player;
         private _units = (allPlayers select { alive _x && {side group _x isEqualTo _side} && {_x isNotEqualTo player} && {[_x] call comspec_atak_native_fnc_hasDevice} }) select [0, 63];
         private _ant = { params ["_u"]; (eyePos _u) vectorAdd [0, 0, 0.5] };
-        private _nodes = [[player, [player] call _ant, [player, true] call comspec_atak_native_fnc_unitCallsign, "me", _range]];
-        { _nodes pushBack [_x, [_x] call _ant, [_x, true] call comspec_atak_native_fnc_unitCallsign, "node", _range]; } forEach _units;
+        // Radio maillée MPU5 portée (fn_mpu5) : portée du nœud relevée (réglage comspec_atak_native_mpu5_range).
+        private _nodes = [[player, [player] call _ant, [player, true] call comspec_atak_native_fnc_unitCallsign, "me", ["range", [player]] call comspec_atak_native_fnc_mpu5]];
+        { _nodes pushBack [_x, [_x] call _ant, [_x, true] call comspec_atak_native_fnc_unitCallsign, "node", ["range", [_x]] call comspec_atak_native_fnc_mpu5]; } forEach _units;
         // Passerelles : tous les relais Overwatch intacts (le plus proche d'abord), puis passerelles de véhicule et PC mobiles
         // du camp (fn_relayNet "list"). La passerelle principale est la plus proche ; à défaut, le chef de groupe.
         private _gw = -1;
         private _gwLabel = "";
-        private _rl = ((["list"] call comspec_atak_native_fnc_relayNet) select { _x select 6 }) apply { [[player distance2D (_x select 0), 1e6 + (player distance2D (_x select 0))] select ((_x select 3) isNotEqualTo "relay"), _x] };
+        private _rl = ((["list"] call comspec_atak_native_fnc_relayNet) select { (_x select 6) && {(_x select 3) isNotEqualTo "mpu5"} }) apply { [[player distance2D (_x select 0), 1e6 + (player distance2D (_x select 0))] select ((_x select 3) isNotEqualTo "relay"), _x] };
         _rl sort true;
         {
             (_x select 1) params ["_o", "_ap", "_n", "_k", "_r"];

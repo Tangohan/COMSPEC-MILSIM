@@ -364,6 +364,19 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Réseau réaliste", "Le réseau dépend du terrain : bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts du téléphone réduisent le débit. Messages et photos peuvent mettre du temps à partir, se perdre et être renvoyés, ou attendre le retour du réseau. Décoché : réseau parfait partout."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// Radio maillée MPU5 (objet d'inventaire, fn_mpu5).
+["comspec_atak_native_mpu5_range", "SLIDER",
+    ["Portée de la MPU5 (m)", "Portée dans le maillage Wave Relay d'un joueur qui porte une radio MPU5 (objet « Radio maillée MPU5 » ou toute classe contenant MPU5). Le téléphone seul porte à 3 000 m."],
+    _sim, [1000, 15000, 6000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu5_gain", "SLIDER",
+    ["Gain de la MPU5 (dB)", "Marge radio ajoutée à la liaison du téléphone vers les relais quand le joueur porte une MPU5 (plus puissante que le téléphone). 6 dB double à peu près la portée."],
+    _sim, [0, 15, 8, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu5_mbps", "SLIDER",
+    ["Débit relayé par une MPU5 (Mbit/s)", "Débit maximal qu'une MPU5 redistribue aux équipiers à sa portée, pris sur ce qu'elle reçoit elle-même d'un relais."],
+    _sim, [1, 50, 20, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu5_items", "EDITBOX",
+    ["Objets MPU5 d'autres mods", "Classes d'objets d'inventaire qui comptent comme une radio MPU5, séparées par des virgules. Les classes dont le nom contient MPU5 comptent déjà, comme l'objet « Radio maillée MPU5 »."],
+    _sim, "", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_realism", "LIST",
     ["Niveau de réalisme radio", "Réaliste (par défaut) : calcul radio complet (relief, végétation, bâtiments, variations du signal, bord de couverture, brouillage selon la force du signal, envois un par un). Exigeant : comme Réaliste, mais forêts et bâtiments coupent beaucoup plus. Simplifié : ancien calcul, la portée est juste divisée par trois derrière le relief."],
     _sim, [[1, 2, 0], ["Réaliste", "Exigeant", "Simplifié (ancien calcul)"], 0], 1] call comspec_atak_native_fnc_addSetting;
