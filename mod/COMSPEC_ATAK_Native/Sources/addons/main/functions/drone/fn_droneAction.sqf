@@ -293,11 +293,11 @@ private _camMake = {
     _cam camCommit 0;
     _cam attachTo [_d, _off];
     _cam setVectorDirAndUp [[0, 0.8, -0.6], [0, 0.6, 0.8]];
-    _cam setVariable ["off", _off];
-    _cam setVariable ["rendering", true];
-    _cam setVariable ["r2t", _name];
-    _cam setVariable ["q", call _camQ];
-    _cam setVariable ["born", diag_tickTime];
+    [_cam, "off", _off, true] call comspec_atak_native_fnc_camVar;
+    [_cam, "rendering", true, true] call comspec_atak_native_fnc_camVar;
+    [_cam, "r2t", _name, true] call comspec_atak_native_fnc_camVar;
+    [_cam, "q", call _camQ, true] call comspec_atak_native_fnc_camVar;
+    [_cam, "born", diag_tickTime, true] call comspec_atak_native_fnc_camVar;
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCam", _cam];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneR2T", _name];
     // Effet de vision reposé sur la cible neuve (sinon rien ne le relance : même vision, même niveau).
@@ -315,7 +315,7 @@ private _camFov = {
     params ["_cam", "_z"];
     if (isNull _cam) exitWith {};
     private _host = attachedTo _cam;
-    private _off = _cam getVariable ["off", []];
+    private _off = ([_cam, "off", []] call comspec_atak_native_fnc_camVar);
     private _vd = vectorDirVisual _cam;
     private _vu = vectorUpVisual _cam;
     private _p = getPosASLVisual _cam;
@@ -329,7 +329,7 @@ private _camFov = {
         _cam setVectorDirAndUp [_host vectorWorldToModelVisual _vd, _host vectorWorldToModelVisual _vu];
     } else {
         _cam setVectorDirAndUp [_vd, _vu];
-        _cam setVariable ["off", nil];
+        [_cam, "off", nil, true] call comspec_atak_native_fnc_camVar;
     };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_DroneFovFn", _camFov];
@@ -367,35 +367,35 @@ private _camOpen = {
         // Rendu coupé après 1,5 s hors de la page (un aller-retour rapide garde la même cible de rendu), caméra et boucle
         // libérées après 5 s (camPark, rouverte par la page au retour). Avant : 3 s et 60 s, puis 20 s (retour de TTRD :
         // le jeu rame).
-        if (_show) then { _cam setVariable ["hiddenSince", -1]; } else {
-            private _h0 = _cam getVariable ["hiddenSince", -1];
-            if (_h0 < 0) then { _cam setVariable ["hiddenSince", diag_tickTime]; _h0 = diag_tickTime; };
+        if (_show) then { [_cam, "hiddenSince", -1, true] call comspec_atak_native_fnc_camVar; } else {
+            private _h0 = ([_cam, "hiddenSince", -1] call comspec_atak_native_fnc_camVar);
+            if (_h0 < 0) then { [_cam, "hiddenSince", diag_tickTime, true] call comspec_atak_native_fnc_camVar; _h0 = diag_tickTime; };
             if (diag_tickTime - _h0 > 5) exitWith { ["camPark"] call comspec_atak_native_fnc_droneAction; };
             if (diag_tickTime - _h0 < 1.5) then { _show = true; };
         };
         if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith {};
         if (!_show) exitWith {
-            if (_cam getVariable ["rendering", true]) then {
-                _cam setVariable ["rendering", false];
-                _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", "comspec_dronecam"]];
-                ["INFO", "DRONE", format ["Flux caméra suspendu (app Drone quittée) : rendu %1 coupé", _cam getVariable ["r2t", ""]]] call comspec_atak_native_fnc_log;
+            if (([_cam, "rendering", true] call comspec_atak_native_fnc_camVar)) then {
+                [_cam, "rendering", false, true] call comspec_atak_native_fnc_camVar;
+                _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", "comspec_dronecam"] call comspec_atak_native_fnc_camVar)];
+                ["INFO", "DRONE", format ["Flux caméra suspendu (app Drone quittée) : rendu %1 coupé", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]] call comspec_atak_native_fnc_log;
             };
         };
         // Plein écran (vue directe) : la vue du jeu montre déjà le drone, le rendu dans la texture est coupé (deux rendus
         // de la scène à chaque image sinon) ; la caméra reste pour porter la pose de la nacelle.
         private _direct = !isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectCam", objNull]);
-        if (_direct && {_cam getVariable ["rendering", true]}) then {
-            _cam setVariable ["rendering", false];
-            _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", "comspec_dronecam"]];
+        if (_direct && {([_cam, "rendering", true] call comspec_atak_native_fnc_camVar)}) then {
+            [_cam, "rendering", false, true] call comspec_atak_native_fnc_camVar;
+            _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", "comspec_dronecam"] call comspec_atak_native_fnc_camVar)];
         };
         // Photo demandée par le poste web (Overwatch connect, fn_webCmdUavPhoto) : elle relance cette caméra sur l'ancienne
         // cible fixe comspec_dronecam ; à la fin du cliché, caméra et cible neuves.
         private _web = missionNamespace getVariable ["COMSPEC_WebUavPhotoBusy", false];
-        if (!_web && {_cam getVariable ["webBusy", false]}) then { _cam setVariable ["rendering", false]; };
-        _cam setVariable ["webBusy", _web];
+        if (!_web && {([_cam, "webBusy", false] call comspec_atak_native_fnc_camVar)}) then { [_cam, "rendering", false, true] call comspec_atak_native_fnc_camVar; };
+        [_cam, "webBusy", _web, true] call comspec_atak_native_fnc_camVar;
         // De retour à l'écran : la page appelle camBind (caméra et cible neuves). Si elle a été dessinée avant que la
         // coupure soit vue, on recrée la caméra ici et on redessine la page (une fois : camBind remet rendering).
-        if (!_direct && {!(_cam getVariable ["rendering", true])}) exitWith {
+        if (!_direct && {!(([_cam, "rendering", true] call comspec_atak_native_fnc_camVar))}) exitWith {
             ["camBind"] call comspec_atak_native_fnc_droneAction;
             [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame;
         };
@@ -413,7 +413,7 @@ private _camOpen = {
                 detach _cam;
                 _cam setPosASL _fp;
                 _cam setVectorDirAndUp [_fd, _fu];
-                _cam setVariable ["off", nil];
+                [_cam, "off", nil, true] call comspec_atak_native_fnc_camVar;
             };
         };
         // Autre source du flux (sélecteur SOURCE de la vue caméra) : caméra du téléphone, tenue devant le joueur, ou caméra
@@ -423,7 +423,7 @@ private _camOpen = {
         if (_src isNotEqualTo "DRONE") exitWith {
             private _u = [player, missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", objNull]] select (_src isEqualTo "HELMET");
             if (isNull _u || {!alive _u}) exitWith {};
-            if (!isNull (attachedTo _cam)) then { detach _cam; _cam setVariable ["off", nil]; };
+            if (!isNull (attachedTo _cam)) then { detach _cam; [_cam, "off", nil, true] call comspec_atak_native_fnc_camVar; };
             private _dir = vectorNormalized ([eyeDirection _u, getCameraViewDirection _u] select (_u isEqualTo player));
             private _eye = (eyePos _u) vectorAdd ([[0, 0, 0.1] vectorAdd (_dir vectorMultiply 0.12), [0, 0, -0.2] vectorAdd (_dir vectorMultiply 0.45)] select (_src isEqualTo "PHONE"));
             private _side = _dir vectorCrossProduct [0, 0, 1];
@@ -499,9 +499,9 @@ private _camOpen = {
         };
         // Caméra raccrochée seulement si elle s'est décrochée ou si le point de la nacelle bouge (plus de 1 cm) ;
         // chaque image, seule son orientation change (comme les flux UAV qui s'affichent).
-        if ((attachedTo _cam) isNotEqualTo _d || {(_off distance (_cam getVariable ["off", [1e6, 0, 0]])) > 0.01}) then {
+        if ((attachedTo _cam) isNotEqualTo _d || {(_off distance (([_cam, "off", [1e6, 0, 0]] call comspec_atak_native_fnc_camVar))) > 0.01}) then {
             _cam attachTo [_d, _off];
-            _cam setVariable ["off", _off];
+            [_cam, "off", _off, true] call comspec_atak_native_fnc_camVar;
             missionNamespace setVariable ["COMSPEC_ATAK_DroneCamOff", _off];
         };
         _cam setVectorDirAndUp [_mDir, _mUp];
@@ -517,7 +517,7 @@ private _camOpen = {
 };
 private _camClose = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
-    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", "comspec_dronecam"]]; camDestroy _cam; };
+    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", "comspec_dronecam"] call comspec_atak_native_fnc_camVar)]; camDestroy _cam; };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCam", objNull];
     [missionNamespace getVariable ["COMSPEC_ATAK_DroneCamPfh", -1]] call CBA_fnc_removePerFrameHandler;
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", -1];
@@ -531,16 +531,16 @@ private _camBind = {
     call _camOpen;
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
     if (isNull _cam) exitWith { "" };
-    if (!(_cam getVariable ["rendering", false]) || {(_cam getVariable ["q", -1]) isNotEqualTo (call _camQ)}) then {
-        _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", "comspec_dronecam"]];
+    if (!(([_cam, "rendering", false] call comspec_atak_native_fnc_camVar)) || {(([_cam, "q", -1] call comspec_atak_native_fnc_camVar)) isNotEqualTo (call _camQ)}) then {
+        _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", "comspec_dronecam"] call comspec_atak_native_fnc_camVar)];
         camDestroy _cam;
         _cam = call _camMake;
     };
-    _cam setVariable ["hiddenSince", -1];
+    [_cam, "hiddenSince", -1, true] call comspec_atak_native_fnc_camVar;
     // Même texture que l'app Vidéo Live (caméras fixes) : carrée, rapport 1 (COMSPEC_ATAK_DroneCamAspect pour les
     // cadres LOCK, le clic et le glisser sur l'image).
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamAspect", 1];
-    format ["#(argb,%1,%1,1)r2t(%2,1.0)", [512, 1024, 2048] select (call _camQ), _cam getVariable ["r2t", "comspec_dronelive"]]
+    format ["#(argb,%1,%1,1)r2t(%2,1.0)", [512, 1024, 2048] select (call _camQ), ([_cam, "r2t", "comspec_dronelive"] call comspec_atak_native_fnc_camVar)]
 };
 // Capteur : ce que la caméra voit (vue directe, portée réduite par le brouillard), en 360° ou dans le champ de la nacelle pointée.
 private _scan = {
@@ -1248,7 +1248,7 @@ switch (_act) do {
         _arg params [["_pic", controlNull], ["_tex", ""]];
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
         if (_tex isEqualTo "" || {isNull _cam}) exitWith {};
-        private _name = _cam getVariable ["r2t", ""];
+        private _name = ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar);
         // Texture posée une seule fois par image (comme Vidéo Live, qui s'affiche) : plus de rebranchement.
         if (_name isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DroneWatched", ""])) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_DroneWatched", _name];
@@ -1267,7 +1267,7 @@ switch (_act) do {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
         if (isNull _cam) exitWith { ["WARNING", "Caméra du drone indisponible"] call _say; };
         private _v = "camera" camCreate (getPosATL _cam);
-        _v attachTo [_d, _cam getVariable ["off", [0, 0.3, -0.3]]];
+        _v attachTo [_d, ([_cam, "off", [0, 0.3, -0.3]] call comspec_atak_native_fnc_camVar)];
         _v setVectorDirAndUp [_d vectorWorldToModelVisual (vectorDirVisual _cam), _d vectorWorldToModelVisual (vectorUpVisual _cam)];
         _v cameraEffect ["Internal", "Back"];
         _v camSetFov (0.7 / ((missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) max 1));
@@ -1702,7 +1702,7 @@ switch (_act) do {
         // qui rendent dans une texture (chacune redessine la scène à chaque image) et les images par seconde.
         if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PerfLogAt", 0])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_PerfLogAt", diag_tickTime + 30];
-            private _on = { params ["_k"]; private _c = missionNamespace getVariable [_k, objNull]; [0, 1] select (!isNull _c && {_c getVariable ["rendering", true]}) };
+            private _on = { params ["_k"]; private _c = missionNamespace getVariable [_k, objNull]; [0, 1] select (!isNull _c && {([_c, "rendering", true] call comspec_atak_native_fnc_camVar)}) };
             private _dc = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
             ["INFO", "PERF", format ["%1 img/s ; caméras de rendu : drone %2 (qualité %3), aperçu cliché %4, viseur photo %5, live cam %6, carte JPC %7 ; flotte %8 ; page %9 ; téléphone %10",
                 round diag_fps, ["COMSPEC_ATAK_DroneCam"] call _on, (profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 1]),
