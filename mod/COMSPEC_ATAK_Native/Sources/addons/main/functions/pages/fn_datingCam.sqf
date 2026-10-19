@@ -34,7 +34,7 @@ private _pose = {
 };
 private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DateCam", objNull];
-    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", ""]]; camDestroy _cam; };
+    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _cam; };
     missionNamespace setVariable ["COMSPEC_ATAK_DateCam", objNull];
     ["stop"] call comspec_atak_native_fnc_blackStage;
     private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_DateCamPfh", -1];
@@ -54,14 +54,14 @@ switch (_act) do {
             _cam = "camera" camCreate (ASLToAGL (eyePos _u));
             _cam cameraEffect ["Internal", "Back", _name];
             _name setPiPEffect [0];
-            _cam setVariable ["r2t", _name];
+            [_cam, "r2t", _name, true] call comspec_atak_native_fnc_camVar;
             missionNamespace setVariable ["COMSPEC_ATAK_DateCam", _cam];
         };
-        _cam setVariable ["source", _u];
+        [_cam, "source", _u, true] call comspec_atak_native_fnc_camVar;
         private _clone = ["unit", _u] call comspec_atak_native_fnc_blackStage;
         if (!isNull _clone) then { _u = _clone; };
-        _cam setVariable ["unit", _u];
-        _cam setVariable ["shot", _shot];
+        [_cam, "unit", _u, true] call comspec_atak_native_fnc_camVar;
+        [_cam, "shot", _shot, true] call comspec_atak_native_fnc_camVar;
         ([_u, _shot] call _pose) params ["_pos", "_dir", "_up", "_fov"];
         _cam setPosASL _pos; _cam setVectorDirAndUp [_dir, _up]; _cam camSetFov _fov; _cam camCommit 0;
         if ((missionNamespace getVariable ["COMSPEC_ATAK_DateCamPfh", -1]) < 0) then {
@@ -69,18 +69,18 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_DateCamPfh", [{
                 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DateCam", objNull];
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-                private _src = if (isNull _cam) then { objNull } else { _cam getVariable ["source", objNull] };
-                private _u = if (isNull _cam) then { objNull } else { _cam getVariable ["unit", objNull] };
+                private _src = if (isNull _cam) then { objNull } else { ([_cam, "source", objNull] call comspec_atak_native_fnc_camVar) };
+                private _u = if (isNull _cam) then { objNull } else { ([_cam, "unit", objNull] call comspec_atak_native_fnc_camVar) };
                 // Studio noir : tenue de la copie tenue à jour (et copie recréée si elle a disparu).
-                if (!isNull _src && {_u isNotEqualTo _src}) then { _u = ["unit", _src] call comspec_atak_native_fnc_blackStage; if (isNull _u) then { _u = _src; }; _cam setVariable ["unit", _u]; };
+                if (!isNull _src && {_u isNotEqualTo _src}) then { _u = ["unit", _src] call comspec_atak_native_fnc_blackStage; if (isNull _u) then { _u = _src; }; [_cam, "unit", _u, true] call comspec_atak_native_fnc_camVar; };
                 // Hors de Tinder, téléphone fermé ou personne disparue : caméra coupée.
                 if (isNull _cam || {isNull _src} || {(_s getOrDefault ["activePage", ""]) isNotEqualTo "DATING"}
                     || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])} || {!alive player}) exitWith { ["stop"] call comspec_atak_native_fnc_datingCam; };
-                ([_u, _cam getVariable ["shot", 0]] call (missionNamespace getVariable "COMSPEC_ATAK_DateCamPose")) params ["_pos", "_dir", "_up", "_fov"];
+                ([_u, ([_cam, "shot", 0] call comspec_atak_native_fnc_camVar)] call (missionNamespace getVariable "COMSPEC_ATAK_DateCamPose")) params ["_pos", "_dir", "_up", "_fov"];
                 _cam setPosASL _pos; _cam setVectorDirAndUp [_dir, _up]; _cam camSetFov _fov; _cam camCommit 0;
             }, 0] call CBA_fnc_addPerFrameHandler];
         };
-        format ["#(argb,512,512,1)r2t(%1,%2)", _cam getVariable ["r2t", "comspec_datecam0"], _aspect]
+        format ["#(argb,512,512,1)r2t(%1,%2)", ([_cam, "r2t", "comspec_datecam0"] call comspec_atak_native_fnc_camVar), _aspect]
     };
     case "stop": { call _stop; true };
     default { "" };

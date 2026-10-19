@@ -894,5 +894,9 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
     [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call CBA_fnc_addPerFrameHandler;
 }] call CBA_fnc_waitUntilAndExecute;
 // Arsenal ACE ouvert : repère dans le journal (l'ouverture elle-même apparaît en « Image figée … arsenal ouvert »).
+// Touches COMSPEC traduites une fois toutes déclarées (ATAK natif ici, Overwatch et SSE dans leurs propres init) :
+// image suivante, puis 5 s plus tard pour les addons déclarés après.
+[{ [] call comspec_atak_native_fnc_keyRelang; }] call CBA_fnc_execNextFrame;
+[{ [] call comspec_atak_native_fnc_keyRelang; }, [], 5] call CBA_fnc_waitAndExecute;
 ["ace_arsenal_displayOpened", { diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arsenal ACE ouvert (%1 FPS)", round diag_fps]; }] call CBA_fnc_addEventHandler;
 diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "postInit client", round ((diag_tickTime - _perfT0) * 1000)];

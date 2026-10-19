@@ -90,7 +90,7 @@ private _place = {
 };
 private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
-    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", ""]]; camDestroy _cam; };
+    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _cam; };
     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCam", objNull];
     ["pose", false] call comspec_atak_native_fnc_photoCam;
     private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPfh", -1];
@@ -132,7 +132,7 @@ switch (_act) do {
             _cam = "camera" camCreate (ASLToAGL (eyePos player));
             [_cam] call _place;
             _cam cameraEffect ["Internal", "Back", _name];
-            _cam setVariable ["r2t", _name];
+            [_cam, "r2t", _name, true] call comspec_atak_native_fnc_camVar;
             missionNamespace setVariable ["COMSPEC_ATAK_PhotoCam", _cam];
             private _lvl = [_name] call _expose;
             ["INFO", "PHOTO", format ["Viseur : caméra %1, PiP %2, lumière %3 (soleil/lune %4), exposition %5", _name, isPiPEnabled, (getLightingAt player) param [1, 0], sunOrMoon, _lvl]] call comspec_atak_native_fnc_log;
@@ -169,13 +169,13 @@ switch (_act) do {
         };
         // Largeur et hauteur en puissances de 2, dans le sens du viseur.
         // Texture carrée 512 (taille du TEST VIDÉO qui s'affiche, et moins lourde) ; le rapport passé à r2t donne le cadrage.
-        format ["#(argb,512,512,1)r2t(%1,%2)", _cam getVariable ["r2t", "comspecphotocama"], _aspect]
+        format ["#(argb,512,512,1)r2t(%1,%2)", ([_cam, "r2t", "comspecphotocama"] call comspec_atak_native_fnc_camVar), _aspect]
     };
     case "stop": { call _stop; true };
     case "expose": {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
         if (isNull _cam) exitWith { -1 };
-        [_cam getVariable ["r2t", ""]] call _expose
+        [([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)] call _expose
     };
     // Boucle par image : la caméra suit la vue du joueur (même pose que la prise de vue).
     case "place": {

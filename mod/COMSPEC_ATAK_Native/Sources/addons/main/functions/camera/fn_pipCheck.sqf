@@ -111,7 +111,7 @@ switch (_act) do {
                 };
                 };
                 _name setPiPEffect [[0, 2] select (_mode isEqualTo "thermal")];
-                _cam setVariable ["pipTest", [_k, _mode, _pos]];
+                [_cam, "pipTest", [_k, _mode, _pos], true] call comspec_atak_native_fnc_camVar;
                 _tex = format ["#(argb,%1,%1,1)r2t(%2,%3)", _size, _name, _aspect];
             };
             // Image aux proportions de la texture (pixels carrés), la plus grande qui tient dans la case.
@@ -141,7 +141,7 @@ switch (_act) do {
             private _eye = eyePos player;
             private _dir = getCameraViewDirection player;
             {
-                (_x getVariable ["pipTest", ["", "", []]]) params ["", "_mode"];
+                (([_x, "pipTest", ["", "", []]] call comspec_atak_native_fnc_camVar)) params ["", "_mode"];
                 switch (_mode) do {
                     case "photo": {
                         private _p = _eye vectorAdd (_dir vectorMultiply 0.3);
@@ -168,7 +168,7 @@ switch (_act) do {
         // devant lui : la caméra n'était pas là où le script l'avait posée).
         [{
             {
-                (_x getVariable ["pipTest", ["", "", []]]) params ["_k", "_mode", "_want"];
+                (([_x, "pipTest", ["", "", []]] call comspec_atak_native_fnc_camVar)) params ["_k", "_mode", "_want"];
                 private _at = getPosASL _x;
                 ["INFO", "CAMERA", format ["TEST VIDÉO %1 : caméra à %2 m du joueur, %3 m au-dessus du sol, à %4 m de la position posée au départ, regarde %5",
                     _k, round ((_at distance (eyePos player)) * 10) / 10, round (((_at select 2) - getTerrainHeightASL _at) * 10) / 10,
@@ -189,7 +189,7 @@ switch (_act) do {
         if (!isNull _top) then { _top closeDisplay 2; };
         {
             if (!isNull _x) then {
-                private _k = (_x getVariable ["pipTest", ["a"]]) select 0;
+                private _k = (([_x, "pipTest", ["a"]] call comspec_atak_native_fnc_camVar)) select 0;
                 _x cameraEffect ["Terminate", "Back", "comspecpiptest" + toLower _k];
                 camDestroy _x;
             };
@@ -226,16 +226,16 @@ switch (_act) do {
         if (isNull _cam) exitWith { ["WARNING", format ["%1 état : caméra absente", _src]] call _say; false };
         private _asl = getPosASLVisual _cam;
         private _gnd = getTerrainHeightASL _asl;
-        private _name = _cam getVariable ["r2t", ""];
+        private _name = ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar);
         private _vd = vectorDirVisual _cam;
         private _bad = [];
         if !(isPiPEnabled) then { _bad pushBack "PiP coupée"; };
         if ((_asl select 2) < _gnd - 0.2) then { _bad pushBack "caméra sous le sol"; };
         if (!isNull _host && {(_cam distance _host) > 5}) then { _bad pushBack "caméra loin du drone"; };
-        if !(_cam getVariable ["rendering", true]) then { _bad pushBack "rendu coupé"; };
+        if !([_cam, "rendering", true] call comspec_atak_native_fnc_camVar) then { _bad pushBack "rendu coupé"; };
         if ((vectorMagnitude _vd) < 0.5 || {!finite (_vd select 0)}) then { _bad pushBack "orientation invalide"; };
         [["INFO", "WARNING"] select (_bad isNotEqualTo []), format ["%1 état : cible %2 (créée il y a %3 s), rendu %4, caméra à %5 m du sol et %6 m du drone, accrochée à %7, regarde %8, champ x%9, vision %10, PiP %11 à %12 m, %13 i/s%14",
-            _src, _name, round (diag_tickTime - (_cam getVariable ["born", diag_tickTime])), ["COUPÉ", "actif"] select (_cam getVariable ["rendering", true]),
+            _src, _name, round (diag_tickTime - ([_cam, "born", diag_tickTime] call comspec_atak_native_fnc_camVar)), ["COUPÉ", "actif"] select ([_cam, "rendering", true] call comspec_atak_native_fnc_camVar),
             round (((_asl select 2) - _gnd) * 10) / 10, [round ((_cam distance _host) * 10) / 10, "-"] select (isNull _host),
             [typeOf (attachedTo _cam), "rien"] select (isNull (attachedTo _cam)), _vd apply { (round (_x * 100)) / 100 },
             missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1], ["JOUR", "NUIT", "THERMIQUE"] select ((missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]) max 0 min 2),
