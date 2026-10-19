@@ -2582,6 +2582,14 @@ try {
     $migrationRunner->warn('platform_account_bans', $e);
 }
 
+require_once $root . '/bootstrap/atak_admin_control_migration.php';
+try {
+    run_atak_admin_control_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_admin_control : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_admin_control', $e);
+}
+
 $personnelCorrectionRequestsMigrate = require $root . '/bootstrap/personnel_correction_requests_migration.php';
 try {
     echo "Migration personnel_correction_requests (corrections RH fiche opérateur)...\n";

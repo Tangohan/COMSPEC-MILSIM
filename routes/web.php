@@ -1924,6 +1924,19 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/admin/atak-mod-reports/bulk', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'bulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/reply', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'reply'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/gravity', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateGravity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Parc ATAK des joueurs, toutes communautés : chiffres de jeu, blocage appliqué par l'API, retrait, messages imposés.
+    $router->get('/admin/parc-atak', [\App\Controllers\Admin\AdminAtakFleetController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/parc-atak/fiche', [\App\Controllers\Admin\AdminAtakFleetController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/bloquer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'block'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/debloquer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'unblock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/retirer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'retire'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/deconnecter', [\App\Controllers\Admin\AdminAtakFleetController::class, 'disconnect'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/message', [\App\Controllers\Admin\AdminAtakFleetController::class, 'message'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/message/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'cancelMessage'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/compromission', [\App\Controllers\Admin\AdminAtakFleetController::class, 'compromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/compromission/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'undoCompromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/certificat', [\App\Controllers\Admin\AdminAtakFleetController::class, 'certificate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/note', [\App\Controllers\Admin\AdminAtakFleetController::class, 'note'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);
@@ -2440,6 +2453,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
     $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
     $router->post('/api/atak/distance/batch', [AtakApiController::class, 'distanceBatch']);
+    // Serveur Arma : messages imposés et blocages décidés dans /admin/parc-atak.
+    $router->post('/api/atak/admin-control/pending', [AtakApiController::class, 'adminControlPending']);
+    $router->post('/api/atak/admin-control/ack', [AtakApiController::class, 'adminControlAck']);
     $router->post('/api/atak/item-icons/missing', [AtakApiController::class, 'itemIconsMissing']);
     $router->post('/api/atak/item-icons', [AtakApiController::class, 'itemIconUpload']);
     $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);

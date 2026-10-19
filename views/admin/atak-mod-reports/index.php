@@ -13,6 +13,7 @@
 
 use App\Repositories\AtakModReportRepository as Reports;
 use App\Services\Monitoring\AtakModReportGravity as Gravity;
+use App\Support\AtakModReportDetail as Detail;
 use App\Services\Monitoring\AtakModReportReplyService as Replies;
 
 $rows = is_array($rows ?? null) ? $rows : [];
@@ -304,10 +305,40 @@ $gravityTone = [
                 <p class="amr-note">Les <?= count($rows) ?> rapports les plus récents sont affichés sur <?= (int) $total ?>. Les actions « Tout… » s’appliquent aux <?= (int) $total ?>.</p>
                 <?php endif; ?>
 
+                <?php
+                // Même problème (même empreinte) au même stade de suivi : replié sous le premier affiché.
+                $repeatsOf = [];
+                $repeatSkip = [];
+                $groupHost = [];
+                foreach ($rows as $r) {
+                    $fp = trim((string) ($r['fingerprint'] ?? ''));
+                    if ($fp === '') {
+                        continue;
+                    }
+                    $key = $fp . '|' . strtolower(trim((string) ($r['workflow_status'] ?? '')));
+                    $rid = (int) ($r['id'] ?? 0);
+                    if (!isset($groupHost[$key])) {
+                        $groupHost[$key] = $rid;
+                        continue;
+                    }
+                    $repeatsOf[$groupHost[$key]][] = $r;
+                    $repeatSkip[$rid] = true;
+                }
+                ?>
+                <?php if ($repeatSkip !== []): ?>
+                <p class="amr-note">
+                    <?= count($repeatSkip) ?> rapport(s) identique(s) à un autre sont repliés sous le premier. Ouvrez « Mêmes rapports » sur une carte pour les voir ou les cocher.
+                </p>
+                <?php endif; ?>
+
                 <ol class="amr-list">
                 <?php foreach ($rows as $row): ?>
                     <?php
                     $id = (int) ($row['id'] ?? 0);
+                    if (isset($repeatSkip[$id])) {
+                        continue;
+                    }
+                    $repeats = $repeatsOf[$id] ?? [];
                     $sev = strtolower(trim((string) ($row['severity'] ?? 'error')));
                     [$sevLabel, $sevTone] = $severityMeta($sev);
                     $wf = strtolower(trim((string) ($row['workflow_status'] ?? Reports::STATUS_NEW)));
@@ -353,6 +384,9 @@ $gravityTone = [
                                 <span class="amr-card__channel" title="Envoyé tout seul par le mod, le joueur n’a rien signalé">Détection auto</span>
                                 <?php endif; ?>
                                 <span class="amr-card__channel"><?= $h((string) ($row['channel'] ?? '') ?: '—') ?></span>
+                                <?php if ($repeats !== []): ?>
+                                <a class="amr-card__repeats" href="#memes-<?= $id ?>" title="Autres rapports identiques, repliés en bas de la carte">+ <?= count($repeats) ?> identique(s)</a>
+                                <?php endif; ?>
                                 <?php if ($hits > 1): ?>
                                 <span class="amr-card__hits" title="Envois regroupés (même problème, même joueur, moins de 30 min d’écart)">× <?= $hits ?></span>
                                 <?php endif; ?>
@@ -497,9 +531,50 @@ $gravityTone = [
                                 </form>
                             </details>
                             <?php if ($detail !== ''): ?>
+                            <?php
+                            $parsed = Detail::parse($detail);
+                            $hintCode = '';
+                            $hint = '';
+                            foreach ($parsed['facts'] as $fact) {
+                                if ($fact['label'] === 'Code HTTP' && $hintCode === '') {
+                                    $hintCode = 'HTTP ' . $fact['value'];
+                                    $hint = $hint !== '' ? $hint : (string) ($fact['note'] ?? '');
+                                } elseif (in_array($fact['label'], ['Message du serveur', 'Diagnostic Athena'], true)) {
+                                    $hint = $fact['value'];
+                                    break;
+                                }
+                            }
+                            ?>
                             <details class="amr-details">
-                                <summary>Détail technique</summary>
-                                <pre class="amr-pre"><?= $h($detail) ?></pre>
+                                <summary>
+                                    Détail technique
+                                    <?php if ($hintCode !== ''): ?><span class="amr-details__code"><?= $h($hintCode) ?></span><?php endif; ?>
+                                    <?php if ($hint !== ''): ?><span class="amr-details__hint"><?= $h(mb_strimwidth($hint, 0, 90, '…')) ?></span><?php endif; ?>
+                                </summary>
+                                <?php if ($parsed['readable']): ?>
+                                <div class="amr-tech">
+                                    <?php if ($parsed['facts'] !== []): ?>
+                                    <dl class="amr-tech__facts">
+                                        <?php foreach ($parsed['facts'] as $fact): ?>
+                                        <div><dt><?= $h($fact['label']) ?></dt><dd><?= $h($fact['value']) ?><?php if (isset($fact['note'])): ?> <span class="amr-tech__note"><?= $h($fact['note']) ?></span><?php endif; ?></dd></div>
+                                        <?php endforeach; ?>
+                                    </dl>
+                                    <?php endif; ?>
+                                    <?php if ($parsed['text'] !== ''): ?>
+                                    <p class="amr-tech__text"><?= nl2br($h($parsed['text'])) ?></p>
+                                    <?php endif; ?>
+                                    <?php if ($parsed['json'] !== null): ?>
+                                    <p class="amr-tech__label">Réponse du serveur</p>
+                                    <pre class="amr-pre amr-pre--json"><?= $h($parsed['json']) ?></pre>
+                                    <?php endif; ?>
+                                    <details class="amr-tech__raw">
+                                        <summary>Texte brut reçu du mod<?php if ($parsed['repaired']): ?> <span class="amr-tech__note">accents réparés</span><?php endif; ?></summary>
+                                        <pre class="amr-pre"><?= $h($parsed['raw']) ?></pre>
+                                    </details>
+                                </div>
+                                <?php else: ?>
+                                <pre class="amr-pre"><?= $h($parsed['raw']) ?></pre>
+                                <?php endif; ?>
                             </details>
                             <?php endif; ?>
                             <?php if ($sessionLog !== ''): ?>
@@ -517,6 +592,34 @@ $gravityTone = [
                                     <div><dt>Steam</dt><dd><?= $h($steam !== '' ? $steam : '—') ?></dd></div>
                                     <div><dt>Arma</dt><dd><?= $h(trim((string) ($row['arma_build'] ?? '')) ?: '—') ?></dd></div>
                                 </dl>
+                            </details>
+                            <?php endif; ?>
+                            <?php if ($repeats !== []): ?>
+                            <details class="amr-details amr-repeats" id="memes-<?= $id ?>">
+                                <summary>Mêmes rapports <span class="amr-tabs__n"><?= count($repeats) ?></span></summary>
+                                <ul class="amr-repeats__list">
+                                    <?php foreach ($repeats as $rep): ?>
+                                    <?php
+                                    $repId = (int) ($rep['id'] ?? 0);
+                                    $repWho = implode(' · ', array_filter([trim((string) ($rep['player_name'] ?? '')), trim((string) ($rep['callsign'] ?? ''))])) ?: '—';
+                                    $repHits = (int) ($rep['hit_count'] ?? 1);
+                                    ?>
+                                    <li class="amr-repeats__row" id="rapport-<?= $repId ?>">
+                                        <label class="amr-check">
+                                            <input type="checkbox" name="ids[]" value="<?= $repId ?>" form="amr-bulk" data-amr-item aria-label="Cocher ce rapport">
+                                        </label>
+                                        <time datetime="<?= $h((string) ($rep['last_seen_at'] ?? '')) ?>"><?= $h($fmtDate($rep['last_seen_at'] ?? $rep['created_at'] ?? '')) ?></time>
+                                        <span class="amr-repeats__who"><?= $h($repWho) ?></span>
+                                        <?php if ($repHits > 1): ?><span class="amr-card__hits">× <?= $repHits ?></span><?php endif; ?>
+                                        <span class="amr-repeats__ver"><?= $h(trim((string) ($rep['mod_version'] ?? '')) !== '' ? 'Mod ' . trim((string) $rep['mod_version']) : '') ?></span>
+                                        <span class="amr-repeats__id">#<?= $repId ?></span>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <p class="amr-repeats__foot">
+                                    <button type="button" class="pa-btn pa-btn--sm pa-btn--line" data-amr-check-repeats>Cocher ce rapport et les identiques</button>
+                                    <span class="amr-hint">puis utilisez les actions groupées en haut de la liste.</span>
+                                </p>
                             </details>
                             <?php endif; ?>
                         </div>
@@ -559,6 +662,15 @@ $gravityTone = [
         if (e.target && e.target.hasAttribute('data-amr-autosubmit') && e.target.form) { e.target.form.submit(); }
     });
     root.addEventListener('click', function (e) {
+        var group = e.target && e.target.closest ? e.target.closest('[data-amr-check-repeats]') : null;
+        if (group) {
+            var card = group.closest('.amr-card');
+            if (card) {
+                card.querySelectorAll('[data-amr-item]').forEach(function (c) { c.checked = true; });
+                refresh();
+            }
+            return;
+        }
         var btn = e.target && e.target.closest ? e.target.closest('[data-amr-template]') : null;
         if (!btn) { return; }
         var form = btn.closest('form');
