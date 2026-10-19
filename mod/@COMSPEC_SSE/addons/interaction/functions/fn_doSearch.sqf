@@ -21,7 +21,7 @@ private _time = if (_full) then {
         [_target] call comspec_sse_fnc_ensureGenerated;
         ["setstate", _target, ["SEARCHED"]] call comspec_sse_fnc_requestServerOp;
 
-        private _quality = [if (_full) then {70} else {45}, true, if (_full) then {1.2} else {0.7}, 1] call comspec_sse_fnc_calcQuality;
+        private _quality = [if (_full) then {70} else {45}, true, if (_full) then {1.2} else {0.7}, 1, 1, _player, _target, "search"] call comspec_sse_fnc_calcQuality;
         private _skill = if (!isNil "comspec_sse_fnc_getOperatorSkill") then { [] call comspec_sse_fnc_getOperatorSkill } else { 1 };
         _quality = (_quality + (_skill * 5)) min 95;
 
@@ -51,7 +51,7 @@ private _time = if (_full) then {
             };
         };
 
-        hint ((((_fog getOrDefault ["title", "SSE"]) + endl + (_lines joinString endl))) call comspec_sse_fnc_tr);
+        [(_fog getOrDefault ["title", "SSE"]) + endl + (_lines joinString endl), "INFO"] call comspec_sse_fnc_notify;
 
         [
             _fog getOrDefault ["uid", "?"],
