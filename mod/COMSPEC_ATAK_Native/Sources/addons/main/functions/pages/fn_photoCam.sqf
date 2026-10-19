@@ -57,7 +57,21 @@ private _pose = {
         private _yaw = (((_v select 0) atan2 (_v select 1)) + _oy + 360) mod 360;
         private _pit = (((asin (((_v select 2) max -1) min 1)) + _op) max -80) min 80;
         _dir = [(sin _yaw) * (cos _pit), (cos _yaw) * (cos _pit), sin _pit];
-        _pos = _eye vectorAdd (_dir vectorMultiply 0.3);
+        // Arme en main : l'objectif à 30 cm des yeux voyait le canon et ses accessoires en bas de l'image (capture de
+        // TTRD, 19/10). Il passe devant la bouche du canon (fusil ou lanceur 1,25 m, pistolet 0,8 m), ce que la vue du
+        // jeu ne change pas ; un mur ou le sol plus près l'arrête 15 cm avant.
+        private _w = currentWeapon player;
+        private _reach = switch (true) do {
+            case (_w isEqualTo "" || {vehicle player isNotEqualTo player}): { 0.3 };
+            case (_w isEqualTo (handgunWeapon player)): { 0.8 };
+            case (_w isEqualTo (primaryWeapon player) || {_w isEqualTo (secondaryWeapon player)}): { 1.25 };
+            default { 0.3 };
+        };
+        if (_reach > 0.3) then {
+            private _hit = lineIntersectsSurfaces [_eye, _eye vectorAdd (_dir vectorMultiply _reach), player, vehicle player, true, 1, "VIEW", "GEOM"];
+            if (_hit isNotEqualTo []) then { _reach = (((_eye vectorDistance ((_hit select 0) select 0)) - 0.15) max 0.3) min _reach; };
+        };
+        _pos = _eye vectorAdd (_dir vectorMultiply _reach);
     };
     private _right = _dir vectorCrossProduct [0, 0, 1];
     private _up = if ((vectorMagnitude _right) < 0.01) then { [0, 1, 0] } else { vectorNormalized (_right vectorCrossProduct _dir) };
@@ -299,10 +313,22 @@ switch (_act) do {
                 _light setLightDayLight (sunOrMoon >= 0.5);
             };
             uiSleep 0.3;
+            // Visages à flouter, repérés depuis la caméra de prise de vue (Athena floute à la réception). L'appareil
+            // intégré n'envoyait aucun cadre : seul le plein écran (fn_photoMode) floutait.
+            private _faces = [((_meta select 9) param [0, []]) isEqualTo ["lens", "selfie"]] call comspec_atak_native_fnc_photoFaces;
+            (_meta select 9) append _faces;
             // Débit simulé : sans réseau, la photo reste sur le téléphone (app Galerie pour l'envoyer plus tard).
             private _noNet = ((([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) isEqualTo 0);
             private _ok = if (_noNet) then {
-                screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
+                private _file = format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
+                screenshot _file;
+                // Visages gardés avec le nom du fichier : l'envoi depuis la Galerie les floute aussi (40 photos au plus).
+                if (_faces isNotEqualTo []) then {
+                    private _kept = profileNamespace getVariable ["COMSPEC_ATAK_PhotoFaces", []];
+                    if !(_kept isEqualType []) then { _kept = []; };
+                    _kept pushBack [toLower _file, _faces];
+                    profileNamespace setVariable ["COMSPEC_ATAK_PhotoFaces", _kept select [((count _kept) - 40) max 0]];
+                };
                 false
             } else { ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage };
             // Le fichier est écrit en fin d'image : on garde la vue un instant.
