@@ -19,7 +19,7 @@ $tenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 try {
     $tid = (int) \App\Core\Session::get('tenant_id');
     if ($tid > 0) {
-        $tr = (new \App\Repositories\TenantRepository())->findById($tid);
+        $tr = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
         if ($tr !== null) {
             $tenantLabel = trim((string) ($tr['name'] ?? ''));
             $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
