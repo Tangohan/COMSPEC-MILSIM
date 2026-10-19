@@ -324,6 +324,13 @@ return function (Router $router) {
     $router->post('/api/traduire-atak/packs/{id}/settings', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'settings']);
     $router->post('/api/traduire-atak/packs/{id}/rotate', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'rotate']);
     $router->post('/api/traduire-atak/packs/{id}/delete', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'delete']);
+    $router->post('/api/traduire-atak/packs/{id}/publish', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'publish']);
+    $router->post('/api/traduire-atak/packs/{id}/listing', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'listing']);
+    // Workshop des langues : catalogue public des packs publiés, fiche, téléchargement direct, retrait par l'administration.
+    $router->get('/traduire-atak/workshop', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'catalog']);
+    $router->get('/traduire-atak/workshop/{id}', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'item']);
+    $router->get('/traduire-atak/workshop/{id}/telecharger', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'download']);
+    $router->post('/traduire-atak/workshop/{id}/moderer', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'moderate']);
     $router->get('/renseignement-sse', fn () => \App\Core\Response::redirect(url('sse')));
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
