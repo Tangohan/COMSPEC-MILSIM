@@ -81,4 +81,30 @@ final class AtakOverwatchWiringAssetTest extends TestCase
         $tools = $this->read('public/assets/js/atak-overwatch-tools.js');
         self::assertStringContainsString("'/api/atak/session-workspace'", $tools);
     }
+
+    public function testTeamsReplayCamsAndTerminalsArePorted(): void
+    {
+        $view = $this->read('views/atak-overwatch-beta.php');
+        self::assertStringContainsString('data-view="teams"', $view);
+        self::assertStringContainsString('atak-overwatch-teams.js', $view);
+        self::assertStringContainsString('id="ow-replay-session"', $view);
+        self::assertStringContainsString('id="ow-replay-events"', $view);
+
+        $teams = $this->read('public/assets/js/atak-overwatch-teams.js');
+        self::assertStringContainsString("'/api/atak/fire-teams'", $teams);
+        self::assertStringContainsString("'/api/atak/assignments'", $teams);
+        self::assertStringContainsString('consumeMapClick: consumeMapClick', $teams);
+
+        $beta = $this->read('public/assets/js/atak-overwatch-beta.js');
+        self::assertStringContainsString('window.OverwatchTeams.consumeMapClick(ll)', $beta);
+        self::assertStringContainsString("'/api/atak/personnel'", $beta);
+        self::assertStringContainsString('link_user_id: Number(userId)', $beta);
+        self::assertStringContainsString("'/certificate/regenerate'", $beta);
+        self::assertStringContainsString("'/api/atak/terminals/compromise'", $beta);
+        self::assertStringContainsString("'/api/atak/video-feeds?mapId='", $beta);
+
+        $ops = $this->read('public/assets/js/atak-overwatch-ops.js');
+        self::assertStringContainsString("'/api/replay/sessions/'", $ops);
+        self::assertStringContainsString("'/api/replay/events/'", $ops);
+    }
 }

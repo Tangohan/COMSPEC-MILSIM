@@ -1756,16 +1756,32 @@
       if (replayPlaying) tickReplay();
       else if (replayTimer) { window.clearTimeout(replayTimer); replayTimer = null; }
     });
+    var sessionSel = document.getElementById('ow-replay-session');
     if (source) source.addEventListener('change', function () {
-      if (source.value === 'mission') loadMissionReplay();
+      var sessionWrap = document.getElementById('ow-replay-session-wrap');
+      if (sessionWrap) sessionWrap.hidden = source.value !== 'mission';
+      if (source.value === 'mission') { loadReplaySessions(); loadMissionReplay(); }
       else {
         missionFrames = [];
+        missionEvents = [];
         clearMissionGhosts();
+        paintReplayEvents(null);
         toast('Replay de la session en cours.');
       }
     });
+    if (sessionSel) sessionSel.addEventListener('change', function () {
+      replayMissionKey = sessionSel.value || '';
+      loadMissionReplay();
+    });
     if (scrub) scrub.addEventListener('input', function () {
       if (source && source.value === 'mission' && missionFrames.length) applyMissionFrame(Number(scrub.value));
+    });
+    var evBox = document.getElementById('ow-replay-events');
+    if (evBox) evBox.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('[data-replay-x]') : null;
+      var api = ow();
+      if (!btn || !api) return;
+      api.map.setView(api.worldToLatLng(Number(btn.getAttribute('data-replay-x')), Number(btn.getAttribute('data-replay-y'))), Math.max(api.map.getZoom(), 3));
     });
     var stop = document.getElementById('ow-follow-stop');
     if (stop) stop.addEventListener('click', function () {
@@ -1795,10 +1811,75 @@
     replayTimer = window.setTimeout(tickReplay, 400);
   }
 
+  /* Sessions jouées (clé de mission de l'ATAK natif) et événements clés de la relecture. */
+  var replayMissionKey = '';
+  var missionEvents = [];
+  function replayQuery() {
+    return replayMissionKey ? '?mission_key=' + encodeURIComponent(replayMissionKey) : '';
+  }
+  function replayStamp(ts) {
+    var s = String(ts || '').trim();
+    if (!s) return '';
+    var ms = /^\d+$/.test(s) ? (Number(s) < 1e12 ? Number(s) * 1000 : Number(s)) : Date.parse(s.indexOf('T') >= 0 ? s : s.replace(' ', 'T') + 'Z');
+    if (!isFinite(ms)) return s;
+    var d = new Date(ms);
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function loadReplaySessions() {
+    var api = ow();
+    var sel = document.getElementById('ow-replay-session');
+    if (!api || !sel) return;
+    api.api('/api/replay/sessions/' + encodeURIComponent(missionId())).then(function (payload) {
+      var list = Array.isArray(payload && payload.sessions) ? payload.sessions : [];
+      sel.innerHTML = '<option value="">Toutes les sessions</option>' + list.map(function (m) {
+        var range = [replayStamp(m.from), replayStamp(m.to)].filter(Boolean).join(' → ');
+        return '<option value="' + esc(String(m.key)) + '">' + esc(String(m.label || m.key)) + (range ? ' · ' + esc(range) : '') + '</option>';
+      }).join('');
+      sel.value = replayMissionKey;
+    }).catch(function () {});
+  }
+  function loadReplayEvents() {
+    var api = ow();
+    if (!api) return;
+    api.api('/api/replay/events/' + encodeURIComponent(missionId()) + replayQuery()).then(function (payload) {
+      missionEvents = Array.isArray(payload && payload.events) ? payload.events : [];
+      paintReplayEvents(missionFrames.length ? missionFrames[0].timestamp : null);
+    }).catch(function () { missionEvents = []; paintReplayEvents(null); });
+  }
+  function replayMs(ts) {
+    var s = String(ts || '').trim();
+    if (!s) return NaN;
+    if (/^\d+$/.test(s)) return Number(s) < 1e12 ? Number(s) * 1000 : Number(s);
+    var iso = s.indexOf('T') >= 0 ? s : s.replace(' ', 'T');
+    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += 'Z';
+    return Date.parse(iso);
+  }
+  function paintReplayEvents(frameTs) {
+    var box = document.getElementById('ow-replay-events');
+    if (!box) return;
+    if (!missionEvents.length) { box.hidden = true; box.innerHTML = ''; return; }
+    var t = replayMs(frameTs);
+    var list = isFinite(t)
+      ? missionEvents.filter(function (ev) { var et = replayMs(ev.timestamp); return isFinite(et) && Math.abs(et - t) <= 120000; }).slice(0, 6)
+      : missionEvents.slice(0, 6);
+    box.hidden = false;
+    if (!list.length) { box.innerHTML = '<p class="ow-help">Aucun événement clé à cet instant.</p>'; return; }
+    box.innerHTML = '<p class="ow-kicker">Événements clés</p>' + list.map(function (ev) {
+      var x = Number(ev.x);
+      var y = Number(ev.y);
+      var label = esc(ev.label || ev.type || 'Événement');
+      var head = '<span class="ow-mono">' + esc(replayStamp(ev.timestamp)) + '</span> ' + label;
+      return isFinite(x) && isFinite(y)
+        ? '<button type="button" class="ow-event ow-replay-ev is-' + esc(String(ev.type || 'contact')) + '" data-replay-x="' + x + '" data-replay-y="' + y + '">' + head + '</button>'
+        : '<div class="ow-event ow-replay-ev is-' + esc(String(ev.type || 'contact')) + '">' + head + '</div>';
+    }).join('');
+  }
+
   function loadMissionReplay() {
     var api = ow();
     if (!api) return;
-    api.api('/api/replay/mission/' + encodeURIComponent(missionId())).then(function (payload) {
+    loadReplayEvents();
+    api.api('/api/replay/mission/' + encodeURIComponent(missionId()) + replayQuery()).then(function (payload) {
       missionFrames = (payload && payload.timeline) || [];
       if (!missionFrames.length) {
         toast('Aucune mission enregistrée pour rejouer.');
@@ -1825,6 +1906,7 @@
     var now = document.getElementById('ow-replay-now');
     var live = document.getElementById('ow-replay-live');
     if (now) now.textContent = frame.timestamp || ('T+' + idx);
+    paintReplayEvents(frame.timestamp);
     if (live) live.textContent = 'Mission';
     var seen = {};
     (frame.units || []).forEach(function (u) {

@@ -124,6 +124,15 @@ class AtakController
         $atakCallsignToUser = [];
         if ($tenantId) {
             $users = $this->userRepository->allForTenant($tenantId);
+            // Image opérateur (portrait de la fiche personnel), jamais la photo du compte : initiales sinon.
+            try {
+                $portraits = \App\Support\OperatorPortraits::forUsers(
+                    (int) $tenantId,
+                    array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $users)
+                );
+            } catch (\Throwable) {
+                $portraits = [];
+            }
             foreach ($users as $u) {
                 $userId = (int) ($u['id'] ?? 0);
                 $profile = $this->userProfileRepository->getByUserId($userId);
@@ -132,7 +141,7 @@ class AtakController
                 $personnelUrl = url('personnel/' . $userId);
                 $effective = $callsign !== '' ? $callsign : $legacyArma;
                 if ($effective !== '') {
-                    $avatar = trim((string) ($u['avatar_url'] ?? ''));
+                    $avatar = trim((string) ($portraits[$userId] ?? ''));
                     $atakCallsignToUser[strtoupper($effective)] = [
                         'userId' => $userId,
                         'url' => $personnelUrl,
