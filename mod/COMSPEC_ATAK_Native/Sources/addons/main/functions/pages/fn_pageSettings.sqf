@@ -440,26 +440,28 @@ private _changed = 0;
         _access pushBack ["section", _gTitle, _gSub];
     };
     {
-        _x params ["_id", "", "_title", "_help", "_icon"];
+        _x params ["_id", "", "_title", "_help", "_icon", ["_wip", false]];
         (["get", _id] call comspec_atak_native_fnc_keybinds) params ["_cur", "_def"];
         if (_cur isNotEqualTo _def) then { _changed = _changed + 1; };
         if (_open) then {
             private _users = ["users", _cur, _id] call comspec_atak_native_fnc_keybinds;
             private _note = switch (true) do {
+                case (_wip): { "<br/><t size='0.8' color='#8a9a93'>En chantier (W.I.P), désactivé pour le moment</t>" };
                 case (_capAct isEqualTo _id): { "<br/><t size='0.8' color='#f2ab33'>Appuyez sur la nouvelle touche (avec Ctrl, Maj ou Alt si besoin). Échap : annuler.</t>" };
                 case ((count _users) > 0): { format ["<br/><t size='0.8' color='#f2ab33'>Même touche que : %1</t>", _users joinString ", "] };
                 default { format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _help] };
             };
             private _keyBtn = switch (true) do {
+                case (_wip): { ["W.I.P", {}, false, false, "En chantier, la touche ne fait rien pour le moment"] };
                 case (_capAct isEqualTo _id): { ["APPUYEZ…", compile "['capture', ''] call comspec_atak_native_fnc_keybinds;", "red", true, "Échap ou nouvel appui : annuler"] };
                 case (_cur isEqualTo []): { ["AUCUNE", compile format ["['capture', '%1'] call comspec_atak_native_fnc_keybinds;", _id], false, true, "Pas de touche : appuyez pour en choisir une"] };
                 default { [toUpper (["name", _cur] call comspec_atak_native_fnc_keybinds), compile format ["['capture', '%1'] call comspec_atak_native_fnc_keybinds;", _id], true, true, "Appuyez, puis tapez la nouvelle touche"] };
             };
             _access pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon],
-                format ["<t font='COMSPEC_BarlowBold'>%1</t>%2", _title, _note],
-                [_keyBtn, ["DÉFAUT", compile format ["['reset', '%1'] call comspec_atak_native_fnc_keybinds; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _id], false, _cur isNotEqualTo _def,
+                format ["<t font='COMSPEC_BarlowBold'%3>%1</t>%4%2", _title, _note, ["", " color='#8a9a93'"] select _wip, ["", "  <t size='0.75' color='#d99a1f'>W.I.P</t>"] select _wip],
+                [_keyBtn, ["DÉFAUT", compile format ["['reset', '%1'] call comspec_atak_native_fnc_keybinds; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _id], false, !_wip && {_cur isNotEqualTo _def},
                     format ["Touche par défaut : %1", ["name", _def] call comspec_atak_native_fnc_keybinds]]],
-                [[0.55, 0.6, 0.57, 1], _accent] select (_cur isNotEqualTo [])];
+                [[0.55, 0.6, 0.57, 1], _accent] select (!_wip && {_cur isNotEqualTo []})];
         };
     } forEach _items;
 } forEach [

@@ -104,9 +104,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_VestMark", _vestMark];
 [_vestPath, "COMSPEC_ATAK_VestMarkOff", "Mon gilet n'a pas d'ATAK", "", { [false] call (missionNamespace getVariable "COMSPEC_ATAK_VestMark"); },
     { [_player] call comspec_atak_native_fnc_vestBuiltin }] call _add;
 
-// Tablette durcie sur le rabat du JPC, écran ATAK en 3D (fn_jpcScreen).
+// Tablette durcie sur le rabat du JPC, écran ATAK en 3D (fn_jpcScreen). En chantier (W.I.P) : actions masquées.
 [_root, "COMSPEC_ATAK_JpcOpen", "Ouvrir l'ATAK sur le JPC", "", { ["toggle"] call comspec_atak_native_fnc_jpcScreen; },
-    { vest _player isNotEqualTo "" && {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["texture", false]) || {isNull ([] call comspec_atak_native_fnc_display)}} }] call _add;
+    { !(["wip"] call comspec_atak_native_fnc_jpcScreen) && {vest _player isNotEqualTo ""} && {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["texture", false]) || {isNull ([] call comspec_atak_native_fnc_display)}} }] call _add;
 [_root, "COMSPEC_ATAK_JpcClose", "Rabattre la tablette du JPC", "", { ["toggle"] call comspec_atak_native_fnc_jpcScreen; },
     { !isNull ([] call comspec_atak_native_fnc_display) && {(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["texture", false]} }] call _add;
 

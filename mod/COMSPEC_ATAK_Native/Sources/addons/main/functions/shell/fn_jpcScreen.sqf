@@ -16,6 +16,7 @@
       ["open"]    relève la tablette et affiche l'ATAK dessus (appelé par fn_open, terminal porté) ;
       ["close"]   rabat la tablette, écran éteint (appelé par fn_close) ;
       ["toggle"]  touche / action ACE « Tablette sur le JPC » : choisit le style JPC et ouvre, ou range ;
+      ["wip"]     true si la fonction est en chantier (W.I.P, _allowed faux) ;
       ["sweep"]   serveur : objets orphelins après une déconnexion.
     Réglages fins pour les essais en jeu (missionNamespace) : COMSPEC_ATAK_JpcOffset [x, y, z] (depuis les yeux du
     porteur, repère du corps : x à droite, y devant, z en haut ; [0, 0.22, -0.4] par défaut), COMSPEC_ATAK_JpcTilt
@@ -35,7 +36,9 @@ private _off = "#(argb,8,8,3)color(0,0,0,1)";
 private _style = profileNamespace getVariable ["COMSPEC_ATAK_CarryStyle", "hud"];
 // ATAK sur le JPC en chantier (WIP) : bloqué pour tous pour le moment (demande TTRD), le terminal porté reste la
 // miniature. Pour le rouvrir plus tard : _allowed = réglage serveur « ATAK en 3D visible » (comspec_atak_native_phone_3d).
+// ["wip"] : true tant que c'est fermé (touche CBA sans effet, actions ACE masquées, réglage grisé W.I.P).
 private _allowed = false;
+if (_act isEqualTo "wip") exitWith { !_allowed };
 if (!_allowed) then { _style = "hud"; };
 // Modèle du profil (la tablette de bord des véhicules n'est pas portable : S7) ; S7 : teinte de la coque.
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
