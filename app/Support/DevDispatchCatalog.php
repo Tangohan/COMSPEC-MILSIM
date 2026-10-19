@@ -293,6 +293,17 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(996, '2026-10-19', 'Bureau SSE : fiche de transmission lisible, avec photo et iris', 'La fiche d’une transmission terrain redevient lisible : une seule valeur longue (les échantillons biométriques, par exemple) poussait toutes les autres hors de l’écran. Les champs s’affichent maintenant en liste nom / valeur, et les valeurs très longues se replient. Quand la transmission concerne une identité, sa photo, ses autres clichés et ses relevés biométriques (empreintes, iris, ADN, qualité de capture, terminal) s’affichent à côté, avec un lien vers sa fiche. Les images transmises s’affichent comme images et s’ouvrent dans la galerie 3D. Rechargez le portail (Ctrl+F5).', [
+                'Identité liée sur la fiche de transmission : photo, clichés, empreintes, iris, ADN, qualité, terminal et relevés',
+                'Images transmises affichées en vignettes, ouvertes dans la galerie',
+            ], [
+                'Champs transmis en liste nom / valeur lisible ; valeurs très longues repliées',
+            ], [
+                'Une valeur longue rendait illisible tout le tableau de la fiche de transmission',
+                'Même correctif pour les autres tableaux nom / valeur du bureau SSE',
+            ], ['atak'], [
+                'Ouvrez Bureau SSE → Transmissions terrain → une fiche biométrique : la photo et l’iris s’affichent à gauche, les champs à droite.',
+            ], 'Portail Athena'),
             $pr(994, '2026-10-19', 'Bureau SSE : navigation rangée, accès corrigé, animations de déchiffrement', 'Le bureau de renseignement gagne une navigation claire : une trentaine d’entrées numérotées dans le désordre deviennent huit sections repliables qui suivent le cycle du renseignement (pilotage, collecte, dossiers, référentiel, analyse, production, préparation), sans doublon. Ctrl+K ouvre une palette pour aller à n’importe quelle page ou lancer une action. Le bandeau rouge affiche désormais votre vraie habilitation. « Quitter » ferme vraiment la session, et l’engagement de confidentialité n’est plus redemandé toutes les quatre heures. Les titres se déchiffrent à l’ouverture, un rideau couvre le passage d’une page à l’autre, et les photos d’un dossier se parcourent dans une galerie 3D. Rechargez le portail (Ctrl+F5).', [
                 'Palette Ctrl+K : toutes les pages du bureau et les actions (fiche, dossier, investigation, objet)',
                 'Galerie 3D des pièces d’un dossier et des pièces jointes d’une fiche (clavier, molette, glisser)',

@@ -509,7 +509,7 @@
             if (seen.indexOf(root) !== -1) return;
             seen.push(root);
             var items = collectItems(root);
-            if (items.length < 2) return;
+            if (items.length === 0) return;
             var title = root.getAttribute('data-gallery-title') || (document.querySelector('.iw-main h1') || {}).textContent || 'Pièces';
             var gal = null;
             function ensure() { if (!gal) gal = new Gallery(items, String(title).trim()); return gal; }
@@ -519,7 +519,8 @@
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="1.5" transform="skewY(-8)"/><path d="M18 7v12M21 9v8"/></svg>'
                 + 'Parcourir en galerie (' + items.length + ')';
             btn.addEventListener('click', function () { ensure().open(0, btn); });
-            root.parentNode.insertBefore(btn, root);
+            // Le bouton n'apparaît qu'à partir de deux pièces ; une seule s'ouvre d'un clic sur l'image.
+            if (items.length >= 2) root.parentNode.insertBefore(btn, root);
             items.forEach(function (it, i) {
                 // Un clic sur la vignette ouvre la galerie à cette pièce, sauf si la vignette est déjà un lien.
                 if (it.img.closest('a[href]')) return;

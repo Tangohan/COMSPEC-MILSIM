@@ -501,10 +501,60 @@ final class SsePortalController
 
         $payloadRows = SseIntelEventRepository::flattenPayloadRows($payload);
         $clientLabel = (string) ($event['client_label'] ?? SseIntelEventRepository::clientSoftwareLabel($payload));
+        // Images transmises (URL ou fichier du portail) : affichées comme images, pas comme texte.
+        $payloadImages = [];
         $sections = [];
         foreach ($payloadRows as $row) {
+            $val = trim((string) ($row['value'] ?? ''));
+            if (\App\Support\SseTransmissionView::isImageValue($val)) {
+                $payloadImages[] = ['src' => $val, 'label' => (string) ($row['label'] ?? 'Image')];
+                continue;
+            }
             $sec = (string) ($row['section'] ?? 'Compléments');
             $sections[$sec][] = $row;
+        }
+
+        // Identité liée : photo, relevés biométriques (empreintes, iris, ADN) — comme sur sa fiche.
+        $linkedPerson = null;
+        if ($personId > 0) {
+            try {
+                $person = $this->persons->findById($personId, $this->tenantId());
+                if ($person !== null) {
+                    $person = $this->clearance->redactPeopleForScreens([$person], $this->tenantId(), null)[0] ?? $person;
+                    $terrain = [];
+                    try {
+                        $terrain = $this->terrain->personTerrainDossier($this->tenantId(), $person);
+                    } catch (\Throwable) {
+                        $terrain = [];
+                    }
+                    $samples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
+                    $photos = [];
+                    foreach ((array) ($person['photos'] ?? []) as $ph) {
+                        $u = is_array($ph) ? trim((string) ($ph['url'] ?? '')) : '';
+                        if ($u !== '') {
+                            $photos[] = ['src' => $u, 'label' => (string) ($ph['caption'] ?? $ph['kind_label'] ?? 'Photographie')];
+                        }
+                    }
+                    $primary = is_array($person['primary_photo'] ?? null) ? trim((string) ($person['primary_photo']['url'] ?? '')) : '';
+                    $linkedPerson = [
+                        'id' => $personId,
+                        'href' => url('atak/sse/identites/' . $personId),
+                        'ref' => 'IDN-' . str_pad((string) $personId, 5, '0', STR_PAD_LEFT),
+                        'name' => (string) ($person['display_name'] ?? ''),
+                        'alias' => (string) ($person['alias'] ?? ''),
+                        'photo' => $primary,
+                        'photos' => $photos,
+                        'prints' => SseTerrainService::biometricModalityLabel($samples, 'empreintes'),
+                        'iris' => SseTerrainService::biometricModalityLabel($samples, 'iris'),
+                        'dna' => SseTerrainService::biometricModalityLabel($samples, 'adn'),
+                        'quality' => ($terrain['acquisition_quality_avg'] ?? null) !== null ? (int) $terrain['acquisition_quality_avg'] : null,
+                        'terminal' => SseTerrainService::personTerminalLabel($person),
+                        'samples' => $samples,
+                    ];
+                }
+            } catch (\Throwable) {
+                $linkedPerson = null;
+            }
         }
 
         return $this->portalView('atak.sse.transmission_show', [
@@ -515,6 +565,8 @@ final class SsePortalController
             'relatedLabel' => $relatedLabel,
             'payloadRows' => $payloadRows,
             'payloadSections' => $sections,
+            'payloadImages' => $payloadImages,
+            'linkedPerson' => $linkedPerson,
             'clientLabel' => $clientLabel,
             'canManage' => $this->canManage(),
             'activeNav' => 'transmissions',
