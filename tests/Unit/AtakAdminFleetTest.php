@@ -71,4 +71,31 @@ final class AtakAdminFleetTest extends TestCase
         self::assertStringContainsString("'/api/atak/admin-control/pending'", $routes);
         self::assertStringContainsString('run_atak_admin_control_migration', $this->read('run-migrations.php'));
     }
+
+    public function testCompromiseHistoryIsNewestFirst(): void
+    {
+        $sorted = AdminAtakFleetController::sortCompromises([
+            ['id' => 0, 'ts' => 100, 'legacy' => true],
+            ['id' => 4, 'ts' => 300],
+            ['id' => 5, 'ts' => 300],
+            ['id' => 2, 'ts' => 200],
+        ]);
+        self::assertSame([5, 4, 2, 0], array_column($sorted, 'id'));
+    }
+
+    public function testCompromisesAreRecordedAndUndoable(): void
+    {
+        // Les compromissions du jeu, du poste de commandement et des positions alimentent l'historique de la fiche.
+        self::assertStringContainsString('recordCompromise(', $this->read('app/Controllers/Api/AtakRealismApiController.php'));
+        self::assertStringContainsString('recordCompromise(', $this->read('app/Controllers/Api/AtakApiController.php'));
+        self::assertStringContainsString('atak_compromise_events', $this->read('bootstrap/atak_admin_control_migration.php'));
+        $routes = $this->read('routes/web.php');
+        foreach (['compromission', 'compromission/annuler', 'certificat', 'note'] as $path) {
+            self::assertStringContainsString("'/admin/parc-atak/{$path}'", $routes);
+        }
+        self::assertArrayHasKey('compromis', Fleet::STATES);
+        foreach (['compromise', 'compromise_undo', 'cert_revoke', 'cert_restore', 'note'] as $action) {
+            self::assertArrayHasKey($action, Fleet::ACTIONS);
+        }
+    }
 }

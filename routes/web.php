@@ -1929,6 +1929,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/admin/parc-atak/deconnecter', [\App\Controllers\Admin\AdminAtakFleetController::class, 'disconnect'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/message', [\App\Controllers\Admin\AdminAtakFleetController::class, 'message'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/message/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'cancelMessage'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/compromission', [\App\Controllers\Admin\AdminAtakFleetController::class, 'compromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/compromission/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'undoCompromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/certificat', [\App\Controllers\Admin\AdminAtakFleetController::class, 'certificate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/note', [\App\Controllers\Admin\AdminAtakFleetController::class, 'note'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);

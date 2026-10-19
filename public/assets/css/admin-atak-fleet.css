@@ -230,3 +230,50 @@ html[data-bo-theme="dark"] .paf {
   .paf-log li { grid-template-columns: 1fr; }
   .paf-log__when { grid-row: auto; }
 }
+
+/* Compromissions et certificats (fiche) */
+.paf-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--paf-danger);
+  border-left-width: 3px;
+  border-radius: 12px;
+  background: var(--paf-danger-soft);
+  font-size: 13.5px;
+}
+.paf-alert--amber { border-color: var(--pa-tone-amber-fg); background: var(--pa-tone-amber-bg); }
+.paf-alert p { margin: 0; }
+.paf-undo { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.paf-undo > .pa-btn { align-self: flex-start; }
+.paf-ok { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; font-size: 13px; }
+
+.paf-timeline { list-style: none; margin: 14px 0 0; padding: 0 0 0 16px; border-left: 2px solid var(--pa-line); display: flex; flex-direction: column; gap: 14px; }
+.paf-timeline__item { position: relative; font-size: 13px; }
+.paf-timeline__item::before {
+  content: "";
+  position: absolute;
+  left: -22px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--pa-surface, #fff);
+  background: var(--pa-tone-amber-fg);
+}
+.paf-timeline__item--rose::before { background: var(--paf-danger); }
+.paf-timeline__item--mint::before { background: var(--pa-mint); }
+.paf-timeline__item--undone::before { background: var(--pa-muted); }
+.paf-timeline__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.paf-timeline__when { font-weight: 700; font-variant-numeric: tabular-nums; margin-right: 2px; }
+.paf-timeline__item p { margin: 4px 0 0; line-height: 1.45; }
+.paf-timeline__what { color: var(--pa-ink-2); }
+.paf-timeline__item form { margin-top: 6px; }
+
+.paf-certs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.paf-cert { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--pa-line); border-radius: 10px; background: var(--pa-surface-2); font-size: 13px; }
+.paf-cert__main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.paf-cert p { margin: 0; grid-column: 1; font-size: 12.5px; }
+.paf-cert form { grid-column: 2; grid-row: 1 / span 2; }
