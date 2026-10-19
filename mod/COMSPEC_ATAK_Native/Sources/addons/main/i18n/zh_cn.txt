@@ -25644,5 +25644,7 @@
 ["Guide: network and simulation", "指南：网络与仿真"],
 ["  COMSPEC ATAK · Network and simulation", "  COMSPEC ATAK · 网络与仿真"],
 ["COMSPEC ATAK · Network and simulation", "COMSPEC ATAK · 网络与仿真"],
-["Specialties", "专长"]
+["Specialties", "专长"],
+["Tourner la vue de 30° à gauche", "视角向左转 30°"],
+["Tourner la vue de 30° à droite", "视角向右转 30°"]
 ]
