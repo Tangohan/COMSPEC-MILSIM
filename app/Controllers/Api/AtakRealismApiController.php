@@ -183,6 +183,18 @@ final class AtakRealismApiController
             'notes' => $request->input('notes'),
         ];
         $body['user_id'] = $this->resolveUserId($tenantId, $body);
+        // ATAK bloqué par l'administration du site : il ne peut pas se réenregistrer.
+        if ($this->isGameClient()) {
+            $blocked = \App\Support\AtakAdminBlockGate::deny(
+                $tenantId,
+                ((int) ($body['user_id'] ?? 0)) ?: null,
+                null,
+                trim((string) ($body['terminal_uid'] ?? '')) ?: null
+            );
+            if ($blocked !== null) {
+                return $blocked;
+            }
+        }
         $body = $this->tagWebSessionIfNeeded($tenantId, $pairingToken, $body);
         $body['last_client_ip'] = AtakRealismRepository::extractClientIp($request->ip());
         $host = $this->requestHost();

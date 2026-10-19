@@ -2178,6 +2178,11 @@ class Container
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
             ),
+            \App\Repositories\AtakAdminControlRepository::class => new \App\Repositories\AtakAdminControlRepository(),
+            \App\Controllers\Admin\AdminAtakFleetController::class => new \App\Controllers\Admin\AdminAtakFleetController(
+                self::get(\App\Repositories\AtakAdminControlRepository::class),
+                self::get(AuthService::class),
+            ),
             \App\Controllers\Admin\AdminAtakModReportsController::class => new \App\Controllers\Admin\AdminAtakModReportsController(
                 self::get(\App\Repositories\AtakModReportRepository::class),
                 self::get(AuthService::class),

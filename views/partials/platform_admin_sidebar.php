@@ -57,6 +57,7 @@ $icons = [
     'audit' => 'M9 3h6M4 6h16v15H4zM8 11h8M8 15h5',
     'file-check' => 'M6 3h9l4 4v14H6zM9 14l2 2 4-4',
     'home' => 'M4 11l8-7 8 7v9H4zM10 20v-6h4v6',
+    'phone' => 'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
     'music' => 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0M20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
 ];
 $icon = static fn (string $key): string => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' . ($icons[$key] ?? $icons['gear']) . '"></path></svg>';
@@ -115,6 +116,7 @@ $platformNav = [
         ['path' => 'admin/system/deployment/communities', 'label' => 'Communautés de test', 'icon' => 'flask', 'access' => 'system', 'desc' => 'Communautés qui reçoivent les préversions'],
     ]],
     ['key' => 'overwatch', 'label' => 'Mod Overwatch', 'items' => [
+        ['path' => 'admin/parc-atak', 'label' => 'Parc ATAK des joueurs', 'icon' => 'phone', 'access' => 'system', 'desc' => 'Tous les ATAK, chiffres de jeu, blocage, retrait, messages imposés'],
         ['path' => 'admin/atak-beta', 'label' => 'Accès anticipé', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Joueurs inscrits au pack bêta, toutes communautés'],
         ['path' => 'admin/atak-mod-reports', 'label' => 'Rapports d’erreurs du mod', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Erreurs remontées par le pack, toutes communautés'],
     ]],
