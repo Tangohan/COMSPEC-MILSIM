@@ -33,7 +33,7 @@ if (isNil "comspec_sse_extCbEh") then {
     };
 }, 45] call CBA_fnc_addPerFrameHandler;
 
-// Snapshot profil toutes les 3 min même hors flush
+// Snapshot profil toutes les 3 min (file non vide ; flushQueue réécrit aussi le profil quand la file se vide)
 [{
     if (!isNil "comspec_sse_txQueue" && {count comspec_sse_txQueue > 0}) then {
         [] call comspec_sse_fnc_persistQueue;

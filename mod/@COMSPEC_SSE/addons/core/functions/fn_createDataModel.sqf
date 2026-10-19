@@ -11,10 +11,11 @@ params [
 ];
 
 if (_seed < 0) then {
-    _seed = floor random 2147483647;
+    _seed = floor random 16777215;
 };
 
-private _uid = ["SSE"] call comspec_sse_fnc_generateUID;
+// UID dérivé de la graine : identique quelle que soit la machine qui crée la fiche.
+private _uid = ["SSE", _seed] call comspec_sse_fnc_generateUID;
 
 [
     ["uid", _uid],
@@ -29,7 +30,7 @@ private _uid = ["SSE"] call comspec_sse_fnc_generateUID;
     ["searched", false],
     ["exploited", false],
     ["createdBy", _createdBy],
-    ["createdAt", time],
+    ["createdAt", serverTime],
     ["sections", createHashMapFromArray [
         ["identity", createHashMap],
         ["biometrics", createHashMap],

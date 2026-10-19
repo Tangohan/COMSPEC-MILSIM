@@ -39,6 +39,7 @@ class CfgFunctions {
             class resolveComplexity {};
             class getNarrativePools {};
             class getThemePack {};
+            class seededMapGrid {};
             class createModel {};
             class registerBuiltinModels {};
             class saveModel {};

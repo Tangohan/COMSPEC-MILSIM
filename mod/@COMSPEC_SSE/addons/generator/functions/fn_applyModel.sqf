@@ -42,9 +42,7 @@ if (_noise >= 0) then { missionNamespace setVariable ["comspec_sse_noiseProbabil
 if (_falseP >= 0) then { missionNamespace setVariable ["comspec_sse_falseLeadProbability", _falseP]; };
 
 // Construire cluster pré-rempli depuis le modèle
-private _seed = floor random 2147483647;
-private _pos = getPosASL _entity;
-_seed = [_seed, format ["mdl_%1_%2", _model getOrDefault ["id", ""], netId _entity]] call comspec_sse_fnc_hash;
+private _seed = [_entity, format ["mdl_%1", _model getOrDefault ["id", ""]]] call comspec_sse_fnc_entitySeed;
 
 private _pools = [_region] call comspec_sse_fnc_getNarrativePools;
 if (_theme isEqualTo "" || {toUpper _theme == "RANDOM"}) then {

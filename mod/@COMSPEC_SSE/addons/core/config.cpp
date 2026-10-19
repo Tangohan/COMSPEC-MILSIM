@@ -37,6 +37,10 @@ class CfgFunctions {
             class setPair {};
             class getSection {};
             class setSection {};
+            class commitData {};
+            class recordOp {};
+            class missionSeed {};
+            class entitySeed {};
             class getSeed {};
             class setSeed {};
             class getState {};

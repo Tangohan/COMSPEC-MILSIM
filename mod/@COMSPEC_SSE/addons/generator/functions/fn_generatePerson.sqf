@@ -47,10 +47,11 @@ private _lang = [_seed, "lang", _langs] call comspec_sse_fnc_pickFromSeed;
 private _prefix = [_seed, "pfx", _prefixes] call comspec_sse_fnc_pickFromSeed;
 private _phone = _cluster getOrDefault ["primaryPhone", ""];
 if (_phone isEqualTo "") then {
+    // Blocs complétés par des zéros (« +964 072 0093 », jamais « +964 72 93 »).
     _phone = format ["%1 %2 %3",
         _prefix,
-        ([_seed, "p1"] call comspec_sse_fnc_hash) mod 1000,
-        ([_seed, "p2"] call comspec_sse_fnc_hash) mod 10000
+        ((1000 + (([_seed, "p1"] call comspec_sse_fnc_hash) mod 1000)) toFixed 0) select [1],
+        ((10000 + (([_seed, "p2"] call comspec_sse_fnc_hash) mod 10000)) toFixed 0) select [1]
     ];
     _cluster set ["primaryPhone", _phone];
 };
@@ -76,6 +77,7 @@ if (_theme isEqualTo "") then {
 };
 private _pack = [_theme, _seed, _cluster, _pools] call comspec_sse_fnc_getThemePack;
 _cluster set ["depotGrid", _pack getOrDefault ["grid", ""]];
+_cluster set ["depotPlace", _pack getOrDefault ["place", ""]];
 _cluster set ["codeword", _pack getOrDefault ["codeword", ""]];
 _cluster set ["sharedDocument", _pack getOrDefault ["documentTitle", "Document"]];
 _cluster set ["deliveryNote", (_pack getOrDefault ["sms", [""]]) select 0];
@@ -147,8 +149,8 @@ private _idH = [_seed, "idcode"] call comspec_sse_fnc_hash;
 private _idCode = format [
     "%1-%2-%3",
     100 + (_idH mod 800),
-    10 + ((_idH / 10) mod 80),
-    1000 + ((_idH / 100) mod 8000)
+    10 + ((floor (_idH / 10)) mod 80),
+    1000 + ((floor (_idH / 100)) mod 8000)
 ];
 private _dobApprox = format ["19%1", 70 + (([_seed, "dob"] call comspec_sse_fnc_hash) mod 30)];
 
