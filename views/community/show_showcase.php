@@ -593,11 +593,13 @@ $pbPageTheme = (string) ($pageLayout['theme'] ?? 'light');
 ?>
 <div id="top" class="community-public-vitrine community-landing cl-vitrine" data-pb-theme="<?= htmlspecialchars($pbPageTheme, ENT_QUOTES, 'UTF-8') ?>"<?= $pbEditing ? ' data-cl-editing="1"' : '' ?><?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
 <?php
-$pbCssFile = base_path('public/assets/css/community-page-builder.css');
-if (is_readable($pbCssFile)) {
-    echo '<style id="community-page-builder-css">' . (string) file_get_contents($pbCssFile) . '</style>';
+foreach (['community-page-builder', 'community-orbat-styles'] as $pbCssName) {
+    $pbCssFile = base_path('public/assets/css/' . $pbCssName . '.css');
+    if (is_readable($pbCssFile)) {
+        echo '<style id="' . $pbCssName . '-css">' . (string) file_get_contents($pbCssFile) . '</style>';
+    }
 }
-unset($pbCssFile);
+unset($pbCssFile, $pbCssName);
 ?>
 <?php if ($pbPageTheme === 'auto'): ?>
 <script>(function(){var r=document.currentScript.parentNode,m=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');function a(){r.classList.toggle('pb-dark',!!(m&&m.matches));}a();if(m&&m.addEventListener){m.addEventListener('change',a);}})();</script>
@@ -1019,6 +1021,10 @@ unset($pbCssFile);
   <?php $pbBuf['command'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($showUnits): ?>
     <?php
+      /* ORBAT public : un seul balisage, mis en forme par le style choisi dans l’éditeur
+         (data-pb-orbat-* sur la section, voir community-orbat-styles.css) : l’aperçu change sans recharger. */
+      $orbLang = \App\Support\PublicOrbat::language(is_array($communityConfig ?? null) ? $communityConfig : []);
+      $orbL = \App\Support\PublicOrbat::labels($orbLang);
       $publicUnitsById = [];
       $publicUnitChildIds = [];
       foreach ($publicUnits as $puRow) {
@@ -1048,15 +1054,40 @@ unset($pbCssFile);
               break;
           }
       }
+      $orbCommanders = \App\Support\PublicOrbat::commanders(
+          (int) ($tenant['id'] ?? 0),
+          array_map(static fn (array $u): int => (int) ($u['commander_user_id'] ?? 0), array_values($publicUnitsById))
+      );
+      $orbUnitTone = static function (array $unit): string {
+          $tone = trim((string) ($unit['public_accent_color'] ?? ''));
+          if (preg_match('/^#[0-9A-Fa-f]{6}$/', $tone)) {
+              return $tone;
+          }
+          $typeRaw = strtolower((string) ($unit['type'] ?? ''));
+          if (str_contains($typeRaw, 'support') || str_contains($typeRaw, 'log')) {
+              return '#c98a12';
+          }
+          if (str_contains($typeRaw, 'instruct') || str_contains($typeRaw, 'école') || str_contains($typeRaw, 'ecole')) {
+              return '#1e6fbf';
+          }
+
+          return '#0b8a5c';
+      };
+      /* Style « liste par branche » : une seule unité racine → ses sous-unités font les branches. */
+      $orbBranchDepth = count($publicUnitRoots) === 1 && $publicOrbatHasTree ? 1 : 0;
       $renderPublicUnitCard = null;
-      $renderPublicUnitCard = static function (int $unitId, int $depth = 0) use (
+      $renderPublicUnitCard = static function (int $unitId, int $depth = 0, string $branchTone = '', string $parentName = '') use (
           &$renderPublicUnitCard,
           $publicUnitsById,
           $publicUnitChildIds,
           $unitMemberCounts,
           $commanderNames,
-          $slug,
-          $publicOrbatHasTree
+          $orbCommanders,
+          $orbUnitTone,
+          $orbL,
+          $orbLang,
+          $orbBranchDepth,
+          $slug
       ): void {
           $unit = $publicUnitsById[$unitId] ?? null;
           if (!is_array($unit)) {
@@ -1066,9 +1097,12 @@ unset($pbCssFile);
           $mc = (int) ($unitMemberCounts[$uid] ?? 0);
           $blurb = trim((string) ($unit['public_blurb'] ?? ''));
           $code = trim((string) ($unit['code'] ?? ''));
+          $unitName = (string) ($unit['name'] ?? '');
           $unitSlugForLink = trim((string) ($unit['slug'] ?? ''));
           $cmdId = (int) ($unit['commander_user_id'] ?? 0);
           $cmdName = $cmdId > 0 ? ($commanderNames[$cmdId] ?? '') : '';
+          $cmdGrade = $cmdName !== '' ? (string) ($orbCommanders[$cmdId]['grade'] ?? '') : '';
+          $cmdPortrait = $cmdName !== '' ? ($orbCommanders[$cmdId]['portrait'] ?? null) : null;
           $capacity = isset($unit['public_capacity']) && $unit['public_capacity'] !== null && $unit['public_capacity'] !== ''
               ? (int) $unit['public_capacity']
               : null;
@@ -1078,27 +1112,27 @@ unset($pbCssFile);
           if ($openSlotsRaw !== null && $openSlotsRaw !== '') {
               $os = (int) $openSlotsRaw;
               if ($os === -1) {
-                  $openSlotsLabel = 'Ouvert';
+                  $openSlotsLabel = $orbL['open'];
                   $slotsTone = 'info';
               } elseif ($os === 0) {
-                  $openSlotsLabel = 'Complet';
+                  $openSlotsLabel = $orbL['full'];
                   $slotsTone = 'warn';
               } else {
-                  $openSlotsLabel = $os . ' place' . ($os > 1 ? 's' : '');
+                  $openSlotsLabel = $os . ' ' . ($os > 1 ? $orbL['slots_n'] : $orbL['slot']);
                   $slotsTone = $os <= 2 ? 'warn' : 'ok';
               }
           }
           $strengthLabel = $capacity !== null && $capacity > 0
               ? $mc . ' / ' . $capacity
-              : ($mc . ' membre' . ($mc > 1 ? 's' : ''));
-          $tone = trim((string) ($unit['public_accent_color'] ?? ''));
-          if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $tone)) {
-              $tone = '#0b8a5c';
-              $typeRaw = strtolower((string) ($unit['type'] ?? ''));
-              if (str_contains($typeRaw, 'support') || str_contains($typeRaw, 'log')) {
-                  $tone = '#c98a12';
-              } elseif (str_contains($typeRaw, 'instruct') || str_contains($typeRaw, 'école') || str_contains($typeRaw, 'ecole')) {
-                  $tone = '#1e6fbf';
+              : ($mc . ' ' . ($mc > 1 ? $orbL['members'] : $orbL['member']));
+          $strengthPct = $capacity !== null && $capacity > 0 ? (int) max(0, min(100, round($mc * 100 / $capacity))) : null;
+          $tone = $orbUnitTone($unit);
+          $branchTone = $branchTone !== '' ? $branchTone : $tone;
+          $typeLabel = trim((string) ($unit['type'] ?? ''));
+          if ($typeLabel !== '' && class_exists('App\\Support\\OrbatSheetLabels') && method_exists('App\\Support\\OrbatSheetLabels', 'typeLabel')) {
+              try {
+                  $typeLabel = (string) \App\Support\OrbatSheetLabels::typeLabel($typeLabel, $orbLang) ?: $typeLabel;
+              } catch (\Throwable) {
               }
           }
           $childIds = $publicUnitChildIds[$uid] ?? [];
@@ -1107,48 +1141,69 @@ unset($pbCssFile);
           if ($unitFoundedRaw !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $unitFoundedRaw, $ufm)) {
               $unitFoundedDisp = ((int) $ufm[3]) . '/' . $ufm[2] . '/' . $ufm[1];
           }
+          $unitHref = $unitSlugForLink !== '' ? url('c/' . rawurlencode((string) $slug) . '/unite/' . rawurlencode($unitSlugForLink)) : '';
+          $cardStyle = '--cl-unit-tone:' . $tone . ';--orb-branch:' . $branchTone . ';--orb-depth:' . $depth . ';--orb-rel:' . max(0, $depth - $orbBranchDepth);
+          $branchAttr = $depth === $orbBranchDepth ? ' data-branch-head="1"' : ($depth < $orbBranchDepth ? ' data-branch-root="1"' : '');
           ?>
-      <li class="cl-orbat-node" data-depth="<?= (int) $depth ?>">
-        <article class="cl-unit<?= $depth > 0 ? ' cl-unit--child' : '' ?>" style="--cl-unit-tone:<?= htmlspecialchars($tone, ENT_QUOTES, 'UTF-8') ?>">
-          <?php if ($code !== ''): ?>
-          <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($code)) ?></div>
-          <?php else: ?>
-          <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper((string) ($unit['type'] ?? 'Unité'))) ?></div>
-          <?php endif; ?>
-          <h3 class="cl-unit__name"><?= name_blur_html((string) ($unit['name'] ?? '')) ?></h3>
+      <li class="cl-orbat-node" data-depth="<?= (int) $depth ?>"<?= $branchAttr ?>>
+        <article class="cl-unit<?= $depth > 0 ? ' cl-unit--child' : '' ?>" style="<?= htmlspecialchars($cardStyle, ENT_QUOTES, 'UTF-8') ?>">
+          <div class="orb-top">
+            <span class="orb-badge" aria-hidden="true"><?= htmlspecialchars(\App\Support\PublicOrbat::insignia($code, name_mask_text($unitName))) ?></span>
+            <div class="orb-titles">
+              <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($code !== '' ? $code : ($typeLabel !== '' ? $typeLabel : $orbL['unit']))) ?></div>
+              <h3 class="cl-unit__name"><?= name_blur_html($unitName) ?></h3>
+              <?php if ($parentName !== ''): ?>
+              <p class="orb-parent"><?= htmlspecialchars($orbL['under']) ?> <?= name_blur_html($parentName) ?></p>
+              <?php endif; ?>
+            </div>
+            <span class="orb-count">
+              <span class="orb-count__n cl-mono"><?= htmlspecialchars($strengthLabel) ?></span>
+              <?php if ($openSlotsLabel !== null): ?>
+              <span class="orb-count__slots cl-badge cl-badge--<?= htmlspecialchars($slotsTone) ?>"><?= htmlspecialchars($openSlotsLabel) ?></span>
+              <?php endif; ?>
+            </span>
+          </div>
           <?php if ($blurb !== ''): ?>
           <p class="cl-unit__desc"><?= nl2br(htmlspecialchars($blurb)) ?></p>
-          <?php elseif ($cmdName !== ''): ?>
-          <p class="cl-unit__desc">Chef d’unité : <?= htmlspecialchars($cmdName) ?></p>
-          <?php elseif ($cmdId < 1): ?>
-          <p class="cl-unit__desc cl-unit__desc--vacant">Responsable non publié</p>
-          <?php else: ?>
-          <p class="cl-unit__desc">Unité visible sur la page publique.</p>
           <?php endif; ?>
-          <div class="cl-unit__meta">
-            <span>Effectif</span>
+          <?php if ($cmdName !== ''): ?>
+          <div class="orb-cmd">
+            <span class="orb-cmd__face"><?php if ($cmdPortrait): ?><img src="<?= htmlspecialchars((string) $cmdPortrait, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async"><?php else: ?><?= htmlspecialchars(mb_strtoupper(mb_substr($cmdName, 0, 1))) ?><?php endif; ?></span>
+            <span class="orb-cmd__txt">
+              <span class="orb-cmd__k"><?= htmlspecialchars($orbL['leader']) ?></span>
+              <span class="orb-cmd__v"><?php if ($cmdGrade !== ''): ?><span class="orb-cmd__grade"><?= htmlspecialchars($cmdGrade) ?></span> <?php endif; ?><?= htmlspecialchars($cmdName) ?></span>
+            </span>
+          </div>
+          <?php elseif ($cmdId < 1 && $blurb === ''): ?>
+          <p class="cl-unit__desc cl-unit__desc--vacant"><?= htmlspecialchars($orbL['vacant']) ?></p>
+          <?php endif; ?>
+          <div class="cl-unit__meta orb-meta--strength">
+            <span><?= htmlspecialchars($orbL['strength']) ?></span>
             <span class="cl-mono"><?= htmlspecialchars($strengthLabel) ?></span>
           </div>
+          <?php if ($strengthPct !== null): ?>
+          <div class="orb-bar" role="img" aria-label="<?= htmlspecialchars($orbL['strength'] . ' ' . $strengthLabel, ENT_QUOTES, 'UTF-8') ?>"><span style="width:<?= (int) $strengthPct ?>%"></span></div>
+          <?php endif; ?>
           <?php if ($unitFoundedDisp !== ''): ?>
-          <div class="cl-unit__meta">
-            <span>Création</span>
+          <div class="cl-unit__meta orb-meta--founded">
+            <span><?= htmlspecialchars($orbL['founded']) ?></span>
             <span class="cl-mono"><?= htmlspecialchars($unitFoundedDisp) ?></span>
           </div>
           <?php endif; ?>
           <?php if ($openSlotsLabel !== null): ?>
-          <div class="cl-unit__meta">
-            <span>Places</span>
+          <div class="cl-unit__meta orb-meta--slots">
+            <span><?= htmlspecialchars($orbL['slots']) ?></span>
             <span class="cl-badge cl-badge--<?= htmlspecialchars($slotsTone) ?>"><?= htmlspecialchars($openSlotsLabel) ?></span>
           </div>
           <?php endif; ?>
-          <?php if ($unitSlugForLink !== ''): ?>
-          <a class="cl-unit__link" href="<?= htmlspecialchars(url('c/' . rawurlencode((string) $slug) . '/unite/' . rawurlencode($unitSlugForLink)), ENT_QUOTES, 'UTF-8') ?>">Voir la fiche →</a>
+          <?php if ($unitHref !== ''): ?>
+          <a class="cl-unit__link" href="<?= htmlspecialchars($unitHref, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($orbL['record']) ?></a>
           <?php endif; ?>
         </article>
         <?php if ($childIds !== []): ?>
-        <ul class="cl-orbat-children" aria-label="Sous-unités de <?= htmlspecialchars((string) ($unit['name'] ?? 'unité'), ENT_QUOTES, 'UTF-8') ?>">
+        <ul class="cl-orbat-children" aria-label="<?= htmlspecialchars($orbL['subunits'] . ' ' . name_mask_text($unitName), ENT_QUOTES, 'UTF-8') ?>">
           <?php foreach ($childIds as $childId): ?>
-            <?php $renderPublicUnitCard((int) $childId, $depth + 1); ?>
+            <?php $renderPublicUnitCard((int) $childId, $depth + 1, $branchTone, $unitName); ?>
           <?php endforeach; ?>
         </ul>
         <?php endif; ?>
@@ -1156,7 +1211,7 @@ unset($pbCssFile);
           <?php
       };
     ?>
-    <section id="organisation" class="cl-rise" aria-labelledby="cl-org-title">
+    <section id="organisation" class="cl-rise" aria-labelledby="cl-org-title"<?= $orbLang !== 'fr' ? ' data-orb-lang="' . htmlspecialchars($orbLang, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
       <div class="cl-section-head">
         <div>
           <p class="cl-kicker"<?= $clEs('organisation', 'kicker') ?>><?= htmlspecialchars($clT('organisation', 'kicker', 'Organisation')) ?></p>
@@ -1164,11 +1219,13 @@ unset($pbCssFile);
         </div>
         <p class="cl-section-aside"<?= $clF('public_sections_lead') ?>><?= htmlspecialchars($sectionsLead !== '' ? $sectionsLead : ($publicOrbatHasTree ? 'Hiérarchie publique des unités et places ouvertes.' : 'Les places ouvertes sont indiquées par unité.')) ?></p>
       </div>
-      <ul class="cl-units<?= $publicOrbatHasTree ? ' cl-units--orbat' : '' ?>"<?= $publicOrbatHasTree ? ' aria-label="Chaîne de commandement publique"' : '' ?>>
+      <div class="orb-scroll">
+      <ul class="cl-units<?= $publicOrbatHasTree ? ' cl-units--orbat' : '' ?>" aria-label="<?= htmlspecialchars($orbL['chain'], ENT_QUOTES, 'UTF-8') ?>">
         <?php foreach ($publicUnitRoots as $rootId): ?>
           <?php $renderPublicUnitCard((int) $rootId, 0); ?>
         <?php endforeach; ?>
       </ul>
+      </div>
     </section>
     <?php endif; ?>
 
