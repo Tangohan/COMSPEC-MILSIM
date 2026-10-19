@@ -55,55 +55,55 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 // Intro au démarrage du jeu (fn_introSplash), désactivée par défaut (TTRD, 1.67.0 : buggée). Les deux réglages sont
 // recopiés dans le profil : l'intro joue avant que CBA lise ses réglages.
 ["comspec_atak_native_intro_enabled", "CHECKBOX",
-    ["Intro au démarrage", "Désactivée par défaut. Cochée : la marque COMSPEC et un trait vert s'affichent sur l'écran de démarrage d'Arma. Pris en compte au prochain lancement du jeu."],
+    ["Intro au lancement du jeu", "Décoché par défaut. Coché : le logo COMSPEC s'affiche sur l'écran de chargement d'Arma. Prend effet au prochain lancement du jeu."],
     ["COMSPEC", "ATAK · Intro"], false, 0,
     { profileNamespace setVariable ["COMSPEC_ATAK_IntroEnabled", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_intro_sound", "CHECKBOX",
-    ["Son d'intro au démarrage", "Carillon court joué avec la marque COMSPEC sur l'écran de démarrage d'Arma. Pris en compte au prochain lancement du jeu."],
+    ["Son de l'intro", "Petit jingle joué avec le logo COMSPEC au lancement d'Arma (seulement si l'intro est activée). Prend effet au prochain lancement du jeu."],
     ["COMSPEC", "ATAK · Intro"], true, 0,
     { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
 
 // Check de démarrage (fn_startupCheck), par joueur : résultat du contrôle du mod posté dans le salon de debug du Discord Athena.
 ["comspec_atak_native_startup_report", "CHECKBOX",
-    ["Envoyer le check de démarrage", "Coché par défaut : quand vous vous liez à Athena en jeu (ou si la liaison échoue), le résultat du contrôle du mod (versions, DLL, connexion, numéro et IMEI attribués, terminal porté, FPS, erreurs) est posté avec votre pseudo et votre indicatif dans le salon de debug du Discord Athena, pour aider au dépannage. Ni UID Steam, ni adresse IP. Décocher pour ne rien envoyer."],
+    ["Envoyer le rapport de démarrage", "Coché par défaut. Quand vous vous connectez à Athena en jeu (ou si la connexion échoue), un rapport sur l'état du mod est posté dans le salon de debug du Discord Athena, avec votre pseudo et votre indicatif : versions, DLL, connexion, numéro et IMEI du téléphone, appareil porté, FPS, erreurs. Ça aide l'équipe à vous dépanner. Aucun UID Steam ni adresse IP. Décochez pour ne rien envoyer."],
     ["COMSPEC", "ATAK · Debug"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
 ["comspec_atak_native_full_scale", "SLIDER",
-    ["Taille du téléphone en plein écran", "Réduit le téléphone ouvert en plein écran (en main), qui reste centré : 100 % = taille d'origine. Le texte et les boutons suivent."],
+    ["Taille du téléphone en main", "Taille du téléphone quand vous l'avez en main (plein écran). 100 % = taille normale ; en dessous, il rétrécit en restant centré, texte et boutons compris."],
     ["COMSPEC", "ATAK · Affichage"], [0.6, 1, 1, 0, true], 0,
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
 
 // HUD des autres mods (boussole F-PANO / ECOTI, température, heure...) masqué sous le téléphone (par joueur, fn_foreignHud).
 ["comspec_atak_native_hide_foreign_hud", "CHECKBOX",
-    ["Masquer le HUD des autres mods sous le téléphone", "Activé par défaut : tant que le téléphone est affiché (mini ou plein écran), les textes et boussoles que d'autres mods dessinent par-dessus (F-PANO / ECOTI, températures, heure, distance...) sont cachés à l'endroit du téléphone, puis reviennent quand il est rangé. Décocher pour les laisser visibles."],
+    ["Cacher le HUD des autres mods derrière le téléphone", "Coché par défaut. Quand le téléphone est à l'écran (porté ou en main), les infos que d'autres mods affichent au même endroit (boussole F-PANO / ECOTI, température, heure, distance...) sont cachées pour ne pas passer par-dessus. Elles reviennent dès que vous rangez le téléphone. Décochez pour toujours les voir."],
     ["COMSPEC", "ATAK · Affichage"], true, 0,
     { missionNamespace setVariable ["COMSPEC_ATAK_ForeignNext", 0]; }] call comspec_atak_native_fnc_addSetting;
 
 // Étiquettes de la carte du téléphone (par joueur, enregistrées dans le profil par CBA), aussi dans Réglages > Carte
 // et CALQUES : style des noms de repères (fn_mapMarkerText) et des lieux (fn_mapPlaceText), catégories masquables.
 ["comspec_atak_native_map_marker_style", "LIST",
-    ["Style des noms de repères", "Comment le téléphone écrit le nom des repères et des cibles accrochées (LOCK) sur sa carte. Plaque : plaque sombre au liseré de la couleur du repère (par défaut). Pilule : pilule sombre arrondie. Cartouche : boîte décalée reliée au repère, avec distance et azimut. Contour : texte blanc détouré. Classique : texte Arma d'avant."],
-    ["COMSPEC", "ATAK · Carte"], [["plate", "pill", "card", "outline", "classic"], ["Plaque", "Pilule", "Cartouche + trait", "Contour", "Classique (avant)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+    ["Style des noms de marqueurs", "Présentation des noms de marqueurs et des cibles verrouillées (LOCK) sur la carte du téléphone. Plaque (par défaut) : étiquette sombre bordée de la couleur du marqueur. Pilule : étiquette sombre aux bords arrondis. Étiquette reliée : encadré à côté du marqueur, relié par un trait, avec distance et azimut. Contour : texte blanc avec contour noir. Classique : texte Arma d'origine."],
+    ["COMSPEC", "ATAK · Carte"], [["plate", "pill", "card", "outline", "classic"], ["Plaque", "Pilule", "Étiquette reliée", "Contour", "Classique (Arma)"], 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_map_place_style", "LIST",
-    ["Style des noms de lieux", "Comment le téléphone écrit les villes, villages et lieux-dits sur sa carte. Tactique : capitales grasses détourées (par défaut). Étiquette : plaque sombre et losange de couleur. Discret : petit texte clair. Classique : couleurs de la carte Arma."],
-    ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic"], ["Tactique", "Étiquette", "Discret", "Classique (avant)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+    ["Style des noms de lieux", "Présentation des villes, villages et lieux-dits sur la carte du téléphone. Tactique (par défaut) : majuscules en gras avec contour. Étiquette : étiquette sombre avec un losange de couleur. Discret : petit texte clair. Classique : comme la carte d'Arma."],
+    ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic"], ["Tactique", "Étiquette", "Discret", "Classique (Arma)"], 0], 0] call comspec_atak_native_fnc_addSetting;
 // Pose des marqueurs (fn_markerPlace) : menu ouvert par « Mettre un marqueur » (clic droit) et le double clic, canal.
 ["comspec_atak_native_marker_menu", "LIST",
-    ["Menu de pose des marqueurs", "Ce qui s'ouvre avec « Mettre un marqueur » du clic droit et le double clic sur la carte. Palette : icônes par camp, couleur, taille et canal, puis VALIDER au point cliqué (par défaut). Éditeur complet : le formulaire titre, description, type, couleur, taille, orientation, opacité et canal."],
+    ["Fenêtre de création de marqueur", "Ce qui s'ouvre quand vous faites « Mettre un marqueur » (clic droit) ou un double-clic sur la carte. Palette d'icônes (par défaut) : vous choisissez une icône, sa couleur, sa taille et le canal, puis VALIDER la pose à l'endroit cliqué. Éditeur complet : formulaire avec titre, description, type, couleur, taille, orientation, opacité et canal."],
     ["COMSPEC", "ATAK · Carte"], [["palette", "editor"], ["Palette d'icônes", "Éditeur complet"], 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_marker_channel", "LIST",
-    ["Canal des marqueurs", "Canal sur lequel le téléphone pose les marqueurs (palette, traits, LZ, éditeur). Général : vus de tous les joueurs (par défaut). Se change aussi à chaque pose, ligne CANAL de la palette."],
-    ["COMSPEC", "ATAK · Carte"], [[0, 1, 2, 3, 4, 5], ["Général", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"], 0], 0] call comspec_atak_native_fnc_addSetting;
+    ["Canal des marqueurs", "Canal par défaut des marqueurs posés depuis le téléphone (palette, traits, LZ, éditeur), comme les canaux de la carte d'Arma. Global (par défaut) : visibles par tous les joueurs. Modifiable à chaque pose (ligne CANAL de la palette)."],
+    ["COMSPEC", "ATAK · Carte"], [[0, 1, 2, 3, 4, 5], ["Global", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"], 0], 0] call comspec_atak_native_fnc_addSetting;
 {
     _x params ["_k", "_t", "_h"];
     [_k, "CHECKBOX", [_t, _h], ["COMSPEC", "ATAK · Carte"], true, 0] call comspec_atak_native_fnc_addSetting;
 } forEach [
-    ["comspec_atak_native_map_show_marker_text", "Noms des repères", "Texte des repères et des cibles accrochées sur la carte du téléphone (les symboles restent). Aussi dans CALQUES."],
-    ["comspec_atak_native_map_show_cities", "Noms des villes", "Villes et capitales sur la carte du téléphone. Aussi dans CALQUES."],
-    ["comspec_atak_native_map_show_villages", "Noms des villages", "Villages sur la carte du téléphone, à partir d'un zoom moyen. Aussi dans CALQUES."],
-    ["comspec_atak_native_map_show_locals", "Noms des lieux-dits", "Lieux-dits et noms marins sur la carte du téléphone, en zoom rapproché. Aussi dans CALQUES."],
-    ["comspec_atak_native_map_show_sites", "Noms des sites", "Aéroports et sites militaires (base, camp, caserne...) sur la carte du téléphone, en zoom rapproché. Aussi dans CALQUES."]
+    ["comspec_atak_native_map_show_marker_text", "Noms des marqueurs", "Affiche le nom des marqueurs et des cibles verrouillées sur la carte du téléphone. Décoché, seules les icônes restent. Aussi réglable dans CALQUES."],
+    ["comspec_atak_native_map_show_cities", "Noms des villes", "Affiche les villes et capitales sur la carte du téléphone. Aussi réglable dans CALQUES."],
+    ["comspec_atak_native_map_show_villages", "Noms des villages", "Affiche les villages sur la carte du téléphone, à partir d'un zoom moyen. Aussi réglable dans CALQUES."],
+    ["comspec_atak_native_map_show_locals", "Noms des lieux-dits", "Affiche les lieux-dits et les noms en mer sur la carte du téléphone, en zoom rapproché. Aussi réglable dans CALQUES."],
+    ["comspec_atak_native_map_show_sites", "Noms des sites militaires", "Affiche les aéroports et les sites militaires (bases, camps, casernes...) sur la carte du téléphone, en zoom rapproché. Aussi réglable dans CALQUES."]
 ];
 
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
@@ -111,84 +111,84 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 private _cat = ["COMSPEC", "ATAK · Accès au téléphone"];
 private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_require_item", "CHECKBOX",
-    ["Item obligatoire pour avoir l'ATAK", "Activé par défaut : il faut porter un téléphone (ItemAndroid de cTab ou équivalent d'un autre mod) pour sortir ou prendre le téléphone. Décocher pour donner l'ATAK à tout le monde."],
+    ["Item obligatoire pour utiliser l'ATAK", "Coché par défaut : il faut avoir un téléphone dans son équipement (ItemAndroid de cTab ou équivalent d'un autre mod) pour utiliser l'ATAK. Décochez pour donner l'ATAK à tout le monde."],
     _cat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_photo_anim", "EDITBOX",
-    ["Animation de l'appareil photo", "Jouée tant que l'appareil photo est ouvert (vue normale). Par défaut comspec_atak_native_fnc_gestureSelfie : téléphone du profil (S7 par défaut) tenu en main devant le visage, la photo part de son objectif arrière. Sinon nom d'une action ou d'un geste (ex. gestureGo ; gesturePoint, l'ancienne valeur, reprend le téléphone en main), d'une animation (CfgMoves, ex. AmovPercMstpSrasWrflDnon_AinvPercMstpSrasWrflDnon), ou d'une fonction (ex. mon_fnc_photoPose, appelée avec [joueur, ""photo""]). Vide : aucune animation."],
+    ["Animation de l'appareil photo", "Pour mission makers. Animation jouée tant que l'appareil photo est ouvert. Par défaut (comspec_atak_native_fnc_gestureSelfie) : le personnage tient le téléphone devant son visage et la photo est prise par l'objectif arrière. Vous pouvez mettre à la place un geste (ex. gestureGo), une animation CfgMoves (ex. AmovPercMstpSrasWrflDnon_AinvPercMstpSrasWrflDnon) ou une fonction (ex. mon_fnc_photoPose, appelée avec [joueur, ""photo""]). Vide : aucune animation."],
     ["COMSPEC", "ATAK · Photo"], "comspec_atak_native_fnc_gestureSelfie", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_photo_arm", "CHECKBOX",
-    ["Photo : téléphone levé en main", "Désactivé par défaut : en objectif arrière, le bras reste baissé (la main ne passe pas devant la vue plein écran). Coché : bras levé, téléphone en main (animation de l'appareil photo ci-dessus), visible des autres joueurs. Le selfie garde toujours le téléphone en main. Réglage personnel."],
+    ["Photo : lever le téléphone", "Réglage personnel, décoché par défaut : pendant une photo, votre bras reste baissé et votre main ne gêne pas la vue. Coché : votre personnage lève le téléphone devant lui (animation ci-dessus), et les autres joueurs le voient. En selfie, le téléphone est toujours levé."],
     ["COMSPEC", "ATAK · Photo"], false, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_selfie_anim", "EDITBOX",
-    ["Animation du selfie", "Jouée en mode selfie. Par défaut comspec_atak_native_fnc_gestureSelfie : bras droit tendu devant le visage, téléphone tourné vers soi. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo."],
+    ["Animation du selfie", "Pour mission makers. Animation jouée en selfie. Par défaut : bras droit tendu, téléphone tourné vers soi. Même format que l'animation de l'appareil photo : geste, animation CfgMoves ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : même animation que l'appareil photo."],
     ["COMSPEC", "ATAK · Photo"], "comspec_atak_native_fnc_gestureSelfie", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_selfie_invert_x", "CHECKBOX",
-    ["Selfie : inverser gauche / droite", "Désactivé par défaut. Coché : en mode selfie, la souris vers la droite cadre vers la gauche (et inversement). Réglage personnel."],
+    ["Selfie : inverser gauche / droite", "Réglage personnel, décoché par défaut. Coché : en selfie, bouger la souris à droite fait tourner le cadrage vers la gauche, et inversement."],
     ["COMSPEC", "ATAK · Photo"], false, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_selfie_invert_y", "CHECKBOX",
-    ["Selfie : inverser haut / bas", "Désactivé par défaut. Coché : en mode selfie, la souris vers le haut cadre vers le bas (et inversement). Réglage personnel."],
+    ["Selfie : inverser haut / bas", "Réglage personnel, décoché par défaut. Coché : en selfie, monter la souris fait descendre le cadrage, et inversement."],
     ["COMSPEC", "ATAK · Photo"], false, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_blur_type", "LIST",
-    ["Flou automatique des visages", "Les visages visibles sur une photo du mode photo sont floutés par Athena à la réception (l'original n'est pas gardé). Mouvement : traîne selon l'angle. Pixel : mosaïque. Carré noir : cache opaque. Flou gaussien : flou doux (par défaut). Aucun : photo telle quelle. La touche B du mode photo change le type pour la partie. Réglage personnel."],
-    ["COMSPEC", "ATAK · Photo"], [["gauss", "motion", "pixel", "black", "off"], ["Flou gaussien", "Mouvement", "Pixel", "Carré noir", "Aucun"], 0], 0] call comspec_atak_native_fnc_addSetting;
+    ["Floutage automatique des visages", "Réglage personnel. Athena floute les visages des photos que vous envoyez, dès leur réception (l'original n'est pas conservé). Flou classique (par défaut) : flou doux. Flou de mouvement : effet de bougé dans une direction. Pixelisé : mosaïque. Bande noire : carré noir sur le visage. Aucun : photo telle quelle. En mode photo, la touche B change de type pour la partie en cours."],
+    ["COMSPEC", "ATAK · Photo"], [["gauss", "motion", "pixel", "black", "off"], ["Flou classique", "Flou de mouvement", "Pixelisé", "Bande noire", "Aucun"], 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_blur_target", "LIST",
-    ["Visages floutés", "Alliés (par défaut) : seulement les visages de votre camp et des camps amis, vous compris en selfie. Tout le monde : aussi les ennemis et les civils."],
+    ["Visages à flouter", "Alliés (par défaut) : seulement les visages de votre camp et des camps amis, y compris le vôtre en selfie. Tout le monde : les ennemis et les civils aussi."],
     ["COMSPEC", "ATAK · Photo"], [["allies", "all"], ["Alliés", "Tout le monde"], 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_blur_force", "SLIDER",
-    ["Flou : force", "1 à 100 (60 par défaut) : intensité du flou, taille des pixels de la mosaïque ou longueur de la traîne."],
+    ["Flou : intensité", "De 1 à 100 (60 par défaut). Plus c'est haut, plus le flou est fort, les pixels gros ou l'effet de bougé long."],
     ["COMSPEC", "ATAK · Photo"], [1, 100, 60, 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_blur_opacity", "SLIDER",
-    ["Flou : opacité", "0 à 100 % (100 par défaut) : à 50 %, le visage reste deviné sous le flou ou le carré noir."],
+    ["Flou : opacité", "De 0 à 100 % (100 par défaut). À 50 %, on devine encore le visage sous le flou ou la bande noire."],
     ["COMSPEC", "ATAK · Photo"], [0, 100, 100, 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_blur_size", "SLIDER",
-    ["Flou : taille", "50 à 300 % (130 par défaut) : taille de la zone floutée par rapport à la tête (au-delà de 100 %, cou et casque compris)."],
+    ["Flou : taille de la zone", "De 50 à 300 % (130 par défaut) : taille de la zone floutée par rapport à la tête. Au-dessus de 100 %, le cou et le casque sont aussi floutés."],
     ["COMSPEC", "ATAK · Photo"], [50, 300, 130, 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_blur_angle", "SLIDER",
-    ["Flou : angle", "0 à 179° (0 par défaut, horizontal) : direction de la traîne du flou de mouvement."],
+    ["Flou de mouvement : direction", "De 0 à 179° (0 par défaut = horizontal) : direction de l'effet de bougé, pour le flou de mouvement uniquement."],
     ["COMSPEC", "ATAK · Photo"], [0, 179, 0, 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_blur_range", "SLIDER",
-    ["Flou : portée", "Distance maximale des visages floutés, en mètres (150 par défaut). Au-delà, un visage est trop petit pour être reconnu."],
+    ["Flou : distance max", "Distance maximale des visages floutés, en mètres (150 par défaut). Plus loin, un visage est trop petit pour être reconnu."],
     ["COMSPEC", "ATAK · Photo"], [20, 600, 150, 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dating_black", "CHECKBOX",
-    ["Photos de profil sur fond noir", "Activé par défaut : dans Tinder (profils joueurs, HVT et SSE), la personne est filmée dans un studio noir (copie locale de sa tenue et de son visage) au lieu de son décor. Décocher pour la filmer en direct là où elle se trouve. Réglage personnel."],
+    ["Photos de profil sur fond noir", "Réglage personnel, coché par défaut. Dans Tinder (profils de joueurs, HVT et SSE), la personne est montrée sur fond noir, comme en studio. Décochez pour la voir en direct, là où elle se trouve sur la carte."],
     ["COMSPEC", "ATAK · Photo"], true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_gesture_finger", "CHECKBOX",
-    ["Gestes doigt d'honneur", "Désactivé par défaut. Coché : les touches CBA « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » jouent le geste (à attribuer dans les touches COMSPEC ATAK)."],
+    ["Geste du doigt d'honneur", "Décoché par défaut. Coché : les touches « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » font le geste. À assigner dans Options > Contrôles > Configurer les addons > COMSPEC ATAK."],
     ["COMSPEC", "ATAK · Gestes"], false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_items", "EDITBOX",
-    ["Batteries de rechange", "Objets (classes exactes, séparées par des virgules) qui rechargent le téléphone à 100 % quand on change la batterie. L'objet est consommé. La « Batterie ATAK » (COMSPEC_ATAK_Battery) est toujours acceptée."],
+    ["Batteries de rechange", "Items (noms de classe exacts, séparés par des virgules) qui servent de batterie de rechange : le téléphone repart à 100 % et l'item est consommé. La « Batterie ATAK » (COMSPEC_ATAK_Battery) marche toujours."],
     _cat, "COMSPEC_ATAK_Battery,ACE_UAVBattery", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_patterns", "EDITBOX",
-    ["Batteries d'autres mods (motifs)", "Tout objet porté dont le nom de classe contient un de ces mots sert aussi de batterie de rechange (piles, batteries de drone…). Séparer par des virgules ; vider pour n'accepter que la liste ci-dessus."],
+    ["Batteries d'autres mods (mots-clés)", "Tout item dont le nom de classe contient un de ces mots sert aussi de batterie de rechange (piles, batteries de drone...). Séparés par des virgules ; videz le champ pour n'accepter que la liste ci-dessus."],
     _cat, "battery,batterie,pile", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_device_patterns", "EDITBOX",
-    ["Détection des autres mods (motifs)", "Tout objet chargé dont le nom de classe contient un de ces mots compte comme téléphone. Séparer par des virgules. Par défaut : android,atak,smartphone."],
+    ["Téléphones d'autres mods (mots-clés)", "Tout item dont le nom de classe contient un de ces mots compte comme un téléphone ATAK. Séparés par des virgules. Par défaut : android,atak,smartphone."],
     _cat, "android,atak,smartphone", 1, _recompute] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_device_items", "EDITBOX",
-    ["Objets acceptés en plus", "Noms de classes exacts, séparés par des virgules (ex. un téléphone d'un pack d'équipement qui n'a pas « android » dans son nom)."],
+    ["Téléphones acceptés en plus", "Noms de classe exacts, séparés par des virgules. Utile pour un téléphone de votre pack d'équipement qui n'a pas « android » dans son nom."],
     _cat, "", 1, _recompute] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_device_tablets", "CHECKBOX",
-    ["Les tablettes et DAGR comptent aussi", "ItemcTab, MicroDAGR (cTab) et MicroDAGR (ACE) ouvrent aussi le téléphone."],
+    ["Les tablettes et MicroDAGR comptent aussi", "Coché : la tablette cTab et les MicroDAGR (cTab et ACE) donnent aussi accès à l'ATAK."],
     _cat, false, 1, _recompute] call comspec_atak_native_fnc_addSetting;
 
 // Objet exigé par type d'interface (Réglages > Personnaliser > Modèle) : vide = n'importe quel terminal reconnu.
 // Classes exactes ou mots cherchés dans la classe, séparés par des virgules ; sans l'objet, le modèle n'est pas
 // proposé et le téléphone reprend le S7 (la tablette de bord des véhicules n'est pas concernée).
-private _uiCat = ["COMSPEC", "ATAK · Objets par interface"];
+private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
 // Modèle du téléphone en liste déroulante (retour de joueur : « l'objet exigé ne change pas le modèle »). Réglage
 // joueur, le même que Réglages > Personnaliser > Modèle (COMSPEC_ATAK_ProfSet tient les deux à jour) ; vide = choix du
 // téléphone conservé. Le S7 reste le défaut et reprend si l'objet exigé pour le modèle n'est pas porté.
 ["comspec_atak_native_phone_model", "LIST",
-    ["Modèle du téléphone", "Châssis du téléphone ATAK, aussi dans Réglages > Personnaliser du téléphone. Un modèle dont l'objet exigé (ci-dessous) n'est pas porté reste en Durci S7."],
+    ["Modèle du téléphone", "Apparence du téléphone ATAK, aussi réglable dans le téléphone (Réglages > Personnaliser). Si le modèle demande un item (voir ci-dessous) que vous n'avez pas, le téléphone reste en Durci S7."],
     _uiCat, [["", "s7", "iphone", "rugged", "sonim", "plate", "flip", "ribbed", "keys"],
-        ["Choisi dans le téléphone", "Durci S7", "V2 Enhanced", "Xiaomi X3D", "Sonim XP8", "Support JPC", "Étui Multicam", "Coque nervurée", "Tablette"], 0], 0,
+        ["Celui choisi dans le téléphone", "Durci S7", "V2 Enhanced", "Xiaomi X3D", "Sonim XP8", "Support JPC", "Étui Multicam", "Coque nervurée", "Tablette"], 0], 0,
     {
         params ["_v"];
         if (_v isEqualTo "" || {_v isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"])}) exitWith {};
         profileNamespace setVariable ["COMSPEC_ATAK_PhoneModel", _v];
         saveProfileNamespace;
         if (!isNull player && {_v isNotEqualTo "s7"} && {!([_v, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then {
-            systemChat ("ATAK : objet exigé pour ce modèle non porté, le Durci S7 reste affiché." call comspec_atak_native_fnc_tr);
+            systemChat ("ATAK : il vous manque l'item demandé pour ce modèle, le Durci S7 reste affiché." call comspec_atak_native_fnc_tr);
         };
         [{
             private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];
@@ -198,7 +198,7 @@ private _uiCat = ["COMSPEC", "ATAK · Objets par interface"];
 {
     _x params ["_k", "_name", "_def"];
     [format ["comspec_atak_native_ui_items_%1", _k], "EDITBOX",
-        [format ["Objet exigé : %1", _name], format ["Classes ou mots (séparés par des virgules) d'un objet à porter pour utiliser l'interface %1. Vide : tout terminal ATAK reconnu suffit. Ne change pas le modèle affiché : le choisir dans « Modèle du téléphone » ci-dessus ou dans Réglages > Personnaliser.", _name]],
+        [format ["Item requis : %1", _name], format ["Item à avoir sur soi pour utiliser le modèle %1 : noms de classe ou mots-clés, séparés par des virgules. Vide : n'importe quel téléphone ATAK suffit. Ce réglage ne change pas le modèle affiché : choisissez-le dans « Modèle du téléphone » ci-dessus ou dans le téléphone (Réglages > Personnaliser).", _name]],
         _uiCat, _def, 1, { missionNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap]; }] call comspec_atak_native_fnc_addSetting;
 } forEach [
     ["s7", "Durci S7", ""], ["iphone", "V2 Enhanced", ""], ["rugged", "Xiaomi X3D", ""], ["sonim", "Sonim XP8", ""],
@@ -221,59 +221,59 @@ missionNamespace setVariable ["COMSPEC_ATAK_ModelOk", {
 
 // ATAK en 3D et lumières vues par les autres (retour de jeu : coupés par défaut).
 ["comspec_atak_native_phone_3d", "CHECKBOX",
-    ["ATAK en 3D visible", "Désactivé par défaut. Coché : le téléphone peut être accroché au gilet (modèle 3D vu par tous) et l'ATAK peut s'ouvrir sur la tablette du JPC (en test). Décoché : aucun modèle 3D de l'ATAK n'est porté."],
+    ["Téléphone visible en 3D", "Décoché par défaut. Coché : le téléphone peut être fixé sur le gilet (les autres joueurs le voient) et l'ATAK peut s'ouvrir sur la tablette du JPC (en test). Décoché : le téléphone n'apparaît jamais sur le personnage."],
     ["COMSPEC", "ATAK · Affichage"], false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_stowed_damage", "CHECKBOX",
-    ["Téléphone rangé : peut être détruit", "Activé par défaut. Coché : le téléphone rangé (poche, gilet) peut aussi être abîmé ou détruit par les balles, explosions et chutes, comme en main. Décoché : seul le téléphone sorti s'abîme."],
+    ["Téléphone rangé : peut être détruit", "Coché par défaut : même rangé (poche, gilet), le téléphone peut être abîmé ou détruit par les balles, les explosions et les chutes. Décoché : seul un téléphone sorti peut s'abîmer."],
     ["COMSPEC", "ATAK · Accès au téléphone"], true, 1] call comspec_atak_native_fnc_addSetting;
 
 // Gilets qui ont déjà un ATAK modélisé (fn_vestBuiltin) : notre téléphone n'y est pas accroché, sauf choix du joueur (menu ACE).
 private _vestReset = { missionNamespace setVariable ["COMSPEC_ATAK_VestBuiltinCache", createHashMap]; };
 ["comspec_atak_native_vest_atak_items", "EDITBOX",
-    ["Gilets avec ATAK intégré", "Classes exactes de gilets dont le modèle porte déjà un ATAK, séparées par des virgules. Chaque joueur peut aussi marquer son gilet dans le menu ACE « Téléphone ATAK > Gilet »."],
+    ["Gilets avec ATAK déjà modélisé", "Noms de classe exacts des gilets qui ont déjà un ATAK dessiné dessus, séparés par des virgules : notre téléphone 3D n'y est pas ajouté. Chaque joueur peut aussi le signaler pour son gilet dans le menu ACE « Téléphone ATAK > Gilet »."],
     ["COMSPEC", "ATAK · Gilet"], "", 1, _vestReset] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_vest_atak_patterns", "EDITBOX",
-    ["Gilets avec ATAK intégré (motifs)", "Mots cherchés dans la classe, le nom et le modèle du gilet. Séparer par des virgules ; vider pour n'utiliser que la liste."],
+    ["Gilets avec ATAK déjà modélisé (mots-clés)", "Mots cherchés dans la classe, le nom et le modèle du gilet, séparés par des virgules. Videz le champ pour n'utiliser que la liste ci-dessus."],
     ["COMSPEC", "ATAK · Gilet"], "atak,eud", 1, _vestReset] call comspec_atak_native_fnc_addSetting;
 
 private _mus = ["COMSPEC", "ATAK · Musique"];
 ["comspec_atak_native_music_enabled", "CHECKBOX",
-    ["App Musique", "Lecture de fichiers locaux, de pistes du serveur (musiques d'Arma, des mods et de la mission) et de liens audio."],
+    ["App Musique", "Active l'app Musique : vos fichiers, les musiques d'Arma, des mods et de la mission, et les liens audio."],
     _mus, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_music_speaker", "CHECKBOX",
-    ["Haut-parleur", "Les joueurs proches entendent la musique d'un téléphone en haut-parleur."],
+    ["Haut-parleur", "Les joueurs proches entendent la musique d'un téléphone mis en haut-parleur."],
     _mus, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_music_range", "SLIDER",
-    ["Portée du haut-parleur (m)", "Au-delà, on n'entend plus rien ; le son baisse en s'éloignant."],
+    ["Portée du haut-parleur (m)", "Le son baisse avec la distance et ne s'entend plus au-delà de cette portée."],
     _mus, [5, 100, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_music_urls", "CHECKBOX",
-    ["Lecture de liens (URL)", "Autorise la lecture de fichiers audio et webradios par adresse web."],
+    ["Liens audio (URL)", "Autorise la lecture de fichiers audio et de webradios à partir d'une adresse web."],
     _mus, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_music_athena", "CHECKBOX",
-    ["Bibliothèque Athena", "Onglet ATHENA : playlist globale, bibliothèque communautaire, bibliothèque de l'organisation et playlists publiques du site, lues par COMSPEC Link."],
+    ["Bibliothèque Athena", "Onglet ATHENA de l'app Musique : playlist générale, bibliothèque de la communauté et de votre unité, playlists publiques du site (lues via COMSPEC Link)."],
     _mus, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_music_radio", "EDITBOX",
-    ["Radio de la mission", "Liens proposés à tous dans l'onglet SERVEUR, sous la forme Titre|https://...;Titre 2|https://..."],
+    ["Radio de la mission", "Liens audio proposés à tous dans l'onglet SERVEUR, au format Titre|https://...;Titre 2|https://..."],
     _mus, "", 1] call comspec_atak_native_fnc_addSetting;
 
 private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_damage_sim", "CHECKBOX",
-    ["Dégâts du téléphone", "Selon où il est porté (en main, sur le gilet, en poche, dans le sac), la partie du corps touchée, la munition et ce que le gilet arrête : balles, éclats, souffle, chutes, accidents et eau peuvent ne rien faire, rayer ou fêler l'écran, tuer des pixels, abîmer la batterie, le haut-parleur, le GPS ou l'antenne, éteindre ou détruire le téléphone. Réparation : kit de réparation ou caisse à outils, ou nouvel appareil (actions ACE). Réalisme ATAK d'Overwatch : niveau 1 = extinction seulement, 2 = jamais détruit."],
+    ["Dégâts du téléphone", "Le téléphone peut être abîmé par les balles, éclats, explosions, chutes, accidents et l'eau. Le résultat dépend de l'endroit où il est porté (main, gilet, poche, sac), de la zone touchée, de la munition et de la protection du gilet : rien, écran rayé ou fêlé, pixels morts, batterie, haut-parleur, GPS ou antenne abîmés, téléphone éteint ou détruit. Réparation par action ACE avec un kit de réparation ou une caisse à outils, ou en changeant d'appareil. Avec le réglage Overwatch « Réalisme ATAK » : niveau 1 = le téléphone peut seulement s'éteindre, niveau 2 = jamais détruit."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dirt_sim", "CHECKBOX",
-    ["Saleté et sang sur l'écran", "Poussière dehors (plus vite couché, en véhicule ouvert, après une explosion), traces de doigts, sang sur l'écran et la coque (soins, blessures, homme tué tout près, mains en sang). Nettoyage sans kit ni objet, autant de fois qu'on veut : action ACE « Nettoyer l'écran » ou « Nettoyage complet », app Profil, Réglages. Chaque joueur peut aussi le couper dans Réglages > Réalisme."],
+    ["Saleté et sang sur l'écran", "L'écran se salit : poussière dehors (plus vite couché, dans un véhicule ouvert ou après une explosion), traces de doigts, sang sur l'écran et la coque (soins, blessures, mort à côté de vous, mains en sang). Nettoyage gratuit et illimité : action ACE « Nettoyer l'écran » ou « Nettoyage complet », app Profil ou Réglages. Chaque joueur peut aussi désactiver l'effet pour lui dans Réglages > Réalisme."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_blood_style", "LIST",
-    ["Sang sur l'écran", "Discret : quelques taches pâles. Réaliste : éclaboussures, traces de doigts, coulures, paumes. Gore : taches plus grandes et plus nombreuses, nappes épaisses et mains entières."],
+    ["Sang sur l'écran", "Discret : quelques taches pâles. Réaliste : éclaboussures, traces de doigts, coulures, marques de paume. Gore : taches plus grandes et plus nombreuses, flaques épaisses, mains entières."],
     _sim, [[0, 1, 2], ["Discret", "Réaliste", "Gore"], 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_clean_items", "EDITBOX",
-    ["Kits de nettoyage (en plus)", "Le nettoyage se fait toujours sans objet. Avec un de ces objets (classes exactes, séparées par des virgules), un coup de chiffon va deux fois plus vite et enlève tout, sang compris. L'objet n'est pas consommé. Vide : aucun kit."],
+    ["Kits de nettoyage (optionnel)", "On peut toujours nettoyer l'écran sans rien. Avec un de ces items sur soi (noms de classe exacts, séparés par des virgules), c'est deux fois plus rapide et tout part, sang compris. L'item n'est pas consommé. Vide : aucun kit."],
     _sim, "ACE_fieldDressing,ACE_elasticBandage,ACE_packingBandage,ACE_quikclot", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ew_open", "CHECKBOX",
-    ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
+    ["Guerre électronique pour tous", "Coché : tout joueur avec un téléphone peut brouiller et localiser des émetteurs (goniométrie). Décoché : réservé aux unités marquées COMSPEC_ATAK_EwOperator ou aux rôles « guerre électronique », « brouilleur » ou « SIGINT »."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zeus_crows", "CHECKBOX",
-    ["Brouilleurs Crows Electronic Warfare", "Avec le mod Crows Electronic Warfare chargé, ses brouilleurs (modules Zeus du mod) brouillent aussi le téléphone ATAK : débit, GPS et BFT, plein effet dans leur rayon efficace."],
+    ["Brouilleurs du mod Crows Electronic Warfare", "Si le mod Crows Electronic Warfare est chargé, ses brouilleurs (posés par Zeus) brouillent aussi l'ATAK : réseau, GPS et BFT, à plein effet dans leur rayon d'action."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 // Contrôle Zeus des ATAK : le menu clic droit ZEN d'Overwatch (« ATAK — Infos / dégâts / brouillage », état du téléphone
 // d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.
@@ -281,193 +281,204 @@ missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];
 missionNamespace setVariable ["COMSPEC_AceAtakZeusInteractRegistered", true];
 // Ctrl + double-clic sur un joueur en Zeus : plus l'ancien panneau ATAK d'Overwatch (fn_zeusShowPlayerAtak).
 missionNamespace setVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", true];
-private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
+private _geo = ["COMSPEC", "ATAK · Géolocalisation"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
-    ["Traçage des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone à partir de son numéro, de son IMEI ou de son adresse MAC (roleplay)."],
+    ["Géolocalisation des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone avec son numéro, son IMEI ou son adresse MAC (roleplay)."],
     _geo, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_ew_only", "CHECKBOX",
-    ["Réservé aux opérateurs GE", "Coché : seuls ceux qui ont droit à la guerre électronique (voir Simulation) peuvent lancer une géolocalisation."],
+    ["Réservé aux opérateurs GE", "Coché : seuls les joueurs qui ont accès à la guerre électronique (voir ATAK · Simulation) peuvent géolocaliser."],
     _geo, false, 1] call comspec_atak_native_fnc_addSetting;
 {
     _x params ["_k", "_label", "_def"];
     [format ["comspec_atak_native_geoloc_%1", _k], "CHECKBOX",
-        [format ["Traçables : %1", _label], format ["Les téléphones des unités %1 peuvent être géolocalisés par les autres camps.", _label]],
+        [format ["Géolocalisables : %1", _label], format ["Les téléphones du camp %1 peuvent être géolocalisés par les autres camps.", _label]],
         _geo, _def, 1] call comspec_atak_native_fnc_addSetting;
 } forEach [["west", "BLUFOR", true], ["east", "OPFOR", true], ["guer", "INDÉPENDANTS", true], ["civ", "CIVILS", true]];
 ["comspec_atak_native_geoloc_own", "CHECKBOX",
-    ["Tracer son propre camp", "Coché : on peut aussi géolocaliser un téléphone allié (sinon, ennemis et autres camps seulement)."],
+    ["Géolocaliser son propre camp", "Coché : on peut aussi géolocaliser un téléphone de son camp. Décoché : seulement les autres camps."],
     _geo, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_ai", "CHECKBOX",
-    ["IA traçables", "Les IA qui portent un téléphone ont un numéro et peuvent être géolocalisées."],
+    ["IA géolocalisables", "Les IA qui ont un téléphone reçoivent un numéro et peuvent être géolocalisées."],
     _geo, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_precision", "SLIDER",
-    ["Précision (m)", "Rayon d'incertitude de la position renvoyée (triangulation par antennes)."],
+    ["Précision (m)", "Marge d'erreur de la position trouvée, comme une triangulation par antennes relais."],
     _geo, [10, 1000, 150, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_refresh", "SLIDER",
-    ["Rafraîchissement du suivi (s)", "Intervalle entre deux positions quand un suivi est actif."],
+    ["Mise à jour du suivi (s)", "Temps entre deux positions quand vous suivez un téléphone en continu."],
     _geo, [10, 300, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_warn", "CHECKBOX",
-    ["Prévenir la cible", "La cible reçoit une alerte discrète « activité réseau anormale » quand elle est géolocalisée."],
+    ["Prévenir la cible", "Le joueur géolocalisé reçoit une alerte discrète « activité réseau anormale »."],
     _geo, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_sim_sos", "CHECKBOX",
-    ["Mode secours de la carte SIM", "Batterie vide : le téléphone s'éteint mais sa carte SIM s'annonce encore aux relais. On peut le localiser par son numéro ou son IMEI (GÉOLOC de l'app GE, RECHERCHER de la carte), avec une précision qui dépend du nombre de relais qui l'entendent."],
+    ["Carte SIM localisable téléphone éteint", "Quand la batterie est vide, le téléphone s'éteint mais sa carte SIM continue d'être captée par les relais. On peut alors le retrouver par son numéro ou son IMEI (onglet GÉOLOC de l'app GE, RECHERCHER sur la carte), plus ou moins précisément selon le nombre de relais qui le captent."],
     _geo, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_sim_sos_own", "CHECKBOX",
-    ["Secours SIM : retrouver un allié", "Coché : on peut localiser le téléphone d'un allié en mode secours SIM, même si « Tracer son propre camp » est décoché."],
+    ["Téléphone éteint : retrouver un allié", "Coché : on peut retrouver le téléphone éteint d'un allié par sa carte SIM, même si « Géolocaliser son propre camp » est décoché."],
     _geo, true, 1] call comspec_atak_native_fnc_addSetting;
 // IA ennemie qui ramasse les téléphones des joueurs et s'en sert pour les traquer (fn_captureServer, fn_compromise).
 private _cap = ["COMSPEC", "ATAK · Capture par l'ennemi"];
 ["comspec_atak_native_capture_enabled", "CHECKBOX",
-    ["L'IA ennemie ramasse les ATAK", "Une IA ennemie proche d'un téléphone de joueur (corps, joueur à terre ou menotté, téléphone posé au sol) va le chercher et le prend. Tant que la compromission n'est pas validée, elle voit sur le BFT les joueurs dont la balise est active."],
+    ["L'IA ennemie ramasse les téléphones", "Une IA ennemie qui passe près du téléphone d'un joueur (sur un corps, un joueur à terre ou menotté, ou posé au sol) va le récupérer. Tant que le vol n'a pas été déclaré (compromission validée), elle voit sur le BFT les joueurs dont la balise est allumée."],
     _cap, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_capture_radius", "SLIDER",
-    ["Distance de ramassage (m)", "Une IA ennemie à moins de cette distance d'un téléphone va le chercher."],
+    ["Distance de ramassage (m)", "Une IA ennemie plus proche que cette distance va chercher le téléphone."],
     _cap, [10, 500, 100, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_capture_crack", "SLIDER",
-    ["Forçage du code (s)", "Temps qu'il faut à l'IA pour déverrouiller un téléphone protégé par un code avant de s'en servir."],
+    ["Temps pour casser le code (s)", "Temps qu'il faut à l'IA pour déverrouiller un téléphone protégé par un code."],
     _cap, [0, 900, 120, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_capture_hunt", "CHECKBOX",
-    ["Traque", "Coché : le groupe qui a le téléphone, et jusqu'à 3 groupes voisins, partent chercher et détruire le joueur le plus proche. Décoché : ils connaissent seulement les positions."],
+    ["Chasse aux joueurs", "Coché : le groupe IA qui a le téléphone, et jusqu'à 3 groupes voisins, partent attaquer le joueur le plus proche. Décoché : ils connaissent vos positions mais ne bougent pas pour autant."],
     _cap, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_capture_hunt_radius", "SLIDER",
-    ["Portée de la traque (m)", "Seuls les joueurs à moins de cette distance du téléphone volé sont révélés et traqués."],
+    ["Portée de la chasse (m)", "Seuls les joueurs à moins de cette distance du téléphone volé sont repérés et pris en chasse."],
     _cap, [200, 10000, 3000, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_capture_share", "SLIDER",
-    ["Partage aux groupes voisins (m)", "Les groupes IA du même camp à moins de cette distance du téléphone volé reçoivent aussi les positions (0 = seulement le groupe qui l'a)."],
+    ["Partage aux groupes IA voisins (m)", "Les groupes IA du même camp à moins de cette distance reçoivent aussi vos positions (0 = seul le groupe qui a le téléphone)."],
     _cap, [0, 5000, 1500, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_capture_refresh", "SLIDER",
-    ["Rafraîchissement des positions (s)", "Intervalle entre deux lectures du BFT par le téléphone volé."],
+    ["Mise à jour des positions (s)", "Temps entre deux lectures du BFT par l'IA qui a le téléphone volé."],
     _cap, [5, 300, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_capture_validate", "LIST",
-    ["Qui valide une compromission", "Valider coupe le téléphone volé du réseau et demande à Athena de révoquer son certificat."],
+    ["Qui peut déclarer un téléphone volé", "Déclarer le vol (valider la compromission) coupe le téléphone volé du réseau et le bloque sur Athena."],
     _cap, [[0, 1], ["Chefs de groupe, propriétaire et Zeus", "Tout le camp"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_sim", "CHECKBOX",
-    ["Batterie simulée", "La batterie du téléphone se vide selon l'usage (écran, appareil photo, live cam, GPS, envois de données, recherche de réseau, brouilleur) et se recharge en véhicule moteur allumé. À 0 % le téléphone s'éteint et passe hors ligne dans le BFT."],
+    ["Batterie réaliste", "La batterie se vide selon l'utilisation (écran, appareil photo, caméra en direct, GPS, envoi de données, recherche de réseau, brouilleur) et se recharge dans un véhicule moteur allumé. À 0 %, le téléphone s'éteint et apparaît hors ligne sur le BFT."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 // Batterie et mémoire vive du téléphone : réglés par l'admin du serveur ou de la mission.
 private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_battery_hours", "SLIDER",
-    ["Autonomie écran en main (h)", "Durée d'une charge complète téléphone en main, écran allumé. Les autres usages (veille, appareil photo, live cam, GPS, brouilleur…) consomment dans la même proportion : 3 h en main donnent environ 14 h en veille."],
+    ["Autonomie en main (heures)", "Combien de temps tient une batterie pleine avec le téléphone en main, écran allumé. Le reste (veille, appareil photo, caméra en direct, GPS, brouilleur...) suit la même échelle : 3 h en main = environ 14 h en veille."],
     _pow, [0.5, 24, 3, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_start", "SLIDER",
-    ["Charge au début de la mission (%)", "Niveau de la batterie quand le joueur arrive en jeu. Les batteries de rechange sont toujours pleines."],
+    ["Batterie au début de la mission (%)", "Niveau de batterie quand le joueur arrive en jeu. Les batteries de rechange sont toujours pleines."],
     _pow, [5, 100, 100, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_vehicle", "SLIDER",
-    ["Recharge en véhicule (% par minute)", "Vitesse de recharge à bord d'un véhicule moteur allumé. 0 : pas de recharge en véhicule."],
+    ["Recharge en véhicule (% par minute)", "Vitesse de recharge dans un véhicule moteur allumé. 0 : pas de recharge en véhicule."],
     _pow, [0, 20, 3, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ram_total", "LIST",
-    ["Mémoire vive du téléphone", "RAM du téléphone (le S7 a 4 Go). Android en prend environ 1,2 Go ; avec moins de mémoire, les apps en arrière-plan sont fermées plus tôt."],
+    ["Mémoire vive (RAM) du téléphone", "RAM du téléphone (4 Go sur un S7). Le système en prend environ 1,2 Go ; avec moins de RAM, les apps restées ouvertes en fond se ferment plus vite."],
     _pow, [[2048, 3072, 4096, 6144, 8192, 12288], ["2 Go", "3 Go", "4 Go (S7)", "6 Go", "8 Go", "12 Go"], 2], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ram_bg", "SLIDER",
-    ["Apps gardées en arrière-plan", "Nombre maximum d'apps qu'Android garde en mémoire derrière l'app ouverte. Au-delà, ou quand la mémoire est pleine, les plus anciennes sont fermées."],
+    ["Apps gardées ouvertes en fond", "Nombre maximum d'apps qui restent ouvertes derrière celle que vous utilisez. Au-delà, ou si la RAM est pleine, les plus anciennes se ferment."],
     _pow, [0, 10, 6, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_sim", "CHECKBOX",
-    ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
+    ["Réseau réaliste", "Le réseau dépend du terrain : bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts du téléphone réduisent le débit. Messages et photos peuvent mettre du temps à partir, se perdre et être renvoyés, ou attendre le retour du réseau. Décoché : réseau parfait partout."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_realism", "LIST",
-    ["Réalisme de la simulation radio", "Réaliste : bilan radio en dB (relief et zone de Fresnel, feuillage, bâtiments, évanouissements, frange de réception seule, brouillage selon la force du signal, envois l'un après l'autre). Exigeant : forêt et bâtiments comptés en entier. Simplifié : ancien modèle (portée x 0,35 derrière le relief)."],
-    _sim, [[1, 2, 0], ["Réaliste", "Exigeant", "Simplifié (ancien modèle)"], 0], 1] call comspec_atak_native_fnc_addSetting;
+    ["Niveau de réalisme radio", "Réaliste (par défaut) : calcul radio complet (relief, végétation, bâtiments, variations du signal, bord de couverture, brouillage selon la force du signal, envois un par un). Exigeant : comme Réaliste, mais forêts et bâtiments coupent beaucoup plus. Simplifié : ancien calcul, la portée est juste divisée par trois derrière le relief."],
+    _sim, [[1, 2, 0], ["Réaliste", "Exigeant", "Simplifié (ancien calcul)"], 0], 1] call comspec_atak_native_fnc_addSetting;
 // Conditions réseau (fn_netCond) : toutes les simulations actives par défaut. Le menu Échap (Conditions réseau) les
 // applique au serveur en cours de partie ; une règle de la communauté sur le site l'emporte sur les deux.
 ["comspec_atak_native_net_weather", "CHECKBOX",
-    ["Météo sur le réseau", "Pluie sur le trajet, antennes mouillées, bruit des orages et vent fort réduisent la marge radio ; orage et vent font perdre des paquets par rafales. Le brouillard n'a aucun effet à 4,9 GHz."],
+    ["La météo gêne le réseau", "La pluie, les orages et le vent fort affaiblissent le signal ; orages et vent font aussi perdre des envois par moments. Le brouillard ne change rien."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_weather_k", "LIST",
-    ["Intensité de la météo sur le réseau", "100 % : valeurs réelles à 4,9 GHz. Au-dessus, la météo pèse davantage (scénario dégradé) ; 0 % : aucun effet."],
+    ["Force de l'effet météo", "100 % : effet réaliste. Au-dessus, la météo gêne plus (scénario dégradé). 0 % : aucun effet."],
     _sim, [[0, 50, 100, 150, 200], ["0 %", "50 %", "100 % (réel)", "150 %", "200 %"], 2], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_congestion", "CHECKBOX",
-    ["Surcharge du réseau", "Les téléphones à portée d'un même relais se partagent son canal : plus il est chargé, plus le débit baisse, la latence monte et des paquets se perdent par collisions."],
+    ["Saturation du réseau", "Les téléphones qui passent par le même relais se partagent sa capacité : plus ils sont nombreux, plus le réseau ralentit, la latence monte et des envois se perdent."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_bg_load", "LIST",
-    ["Trafic de fond", "Part de la capacité de chaque relais déjà occupée par d'autres utilisateurs (flux vidéo, synchronisations, unités hors jeu)."],
+    ["Réseau déjà occupé", "Part de chaque relais déjà prise par d'autres utilisateurs fictifs (vidéos, synchronisations, unités hors jeu)."],
     _sim, [[0, 10, 25, 50, 75, 90], ["0 %", "10 %", "25 %", "50 %", "75 %", "90 %"], 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_loss", "CHECKBOX",
-    ["Pertes de paquets", "Des envois se perdent selon la qualité du lien, par rafales (mauvaises périodes), et repartent automatiquement. Décoché : rien ne se perd, seuls le débit et la latence comptent."],
+    ["Envois perdus", "Selon la qualité du signal, des envois se perdent, parfois plusieurs d'affilée, puis repartent tout seuls. Décoché : rien ne se perd, seuls la vitesse et le délai comptent."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_loss_floor", "LIST",
-    ["Perte minimale", "Pertes de paquets imposées partout, même avec un excellent signal (zone dégradée, matériel usé)."],
+    ["Pertes minimum", "Part d'envois perdus partout, même avec un excellent signal (zone difficile, matériel usé)."],
     _sim, [[0, 1, 3, 5, 10, 20], ["0 %", "1 %", "3 %", "5 %", "10 %", "20 %"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_net_latency_add", "LIST",
-    ["Latence ajoutée", "Délai ajouté à chaque envoi, par exemple pour une liaison satellite vers le poste (600 ms)."],
+    ["Délai ajouté", "Délai ajouté à chaque envoi, par exemple 600 ms pour simuler une liaison satellite vers le poste de commandement."],
     _sim, [[0, 50, 150, 300, 600, 1200], ["0 ms", "50 ms", "150 ms", "300 ms", "600 ms (satellite)", "1 200 ms"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_offline_hold", "CHECKBOX",
-    ["Fonctionnement hors connexion", "Sans signal, le téléphone garde ses dernières données (fil Athena, ordres, alertes, unités) et retient comptes rendus, MEDEVAC, alertes, appels JTAC et itinéraires reçus : tout arrive au retour du réseau, avec un bilan. Décoché : ils arrivent même sans signal."],
+    ["Mode hors connexion", "Sans réseau, le téléphone garde ses dernières infos (fil Athena, ordres, alertes, unités) et met en attente les comptes rendus, MEDEVAC, alertes, demandes JTAC et itinéraires : tout arrive au retour du réseau, avec un résumé. Décoché : tout arrive même sans réseau."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_offline_save", "CHECKBOX",
-    ["Données gardées entre deux connexions", "SMS, messages, ordres et alertes du téléphone sont enregistrés dans le profil du joueur pour la mission en cours : après un crash ou une reconnexion au serveur, ils restent consultables même sans réseau."],
+    ["Garder les données après une déconnexion", "SMS, messages, ordres et alertes sont sauvegardés dans le profil du joueur pour la mission en cours : après un crash ou une reconnexion, on les retrouve, même sans réseau."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_vehicle_gateways", "CHECKBOX",
-    ["Passerelles de véhicule et PC mobile", "Permet à l'équipage de faire de n'importe quel véhicule un relais ATAK (4 km) ou un poste de commandement à mât (10 km). Désactivé par défaut, peu réaliste : seuls les relais posés par la mission (module Eden ou Zeus « ATAK · Relais ») portent le réseau."],
+    ["Véhicules relais et PC mobile", "Décoché par défaut (peu réaliste). Coché : l'équipage peut transformer n'importe quel véhicule en relais ATAK (4 km) ou en poste de commandement avec mât (10 km). Décoché : seuls les relais posés par la mission (module Eden ou Zeus « ATAK · Relais ») font passer le réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_only", "CHECKBOX",
-    ["Réseau exclusivement par relais", "Le réseau ATAK ne passe que par les relais de la mission (pylônes, module « ATAK · Relais »). Hors de portée de tout relais, ou si la mission n'en a aucun, le téléphone n'a plus aucun réseau : messages, photos et positions attendent le retour d'un relais. Décoché : sans relais, le téléphone garde sa liaison directe."],
+    ["Réseau uniquement par les relais", "Coché : le réseau ATAK passe uniquement par les relais de la mission (pylônes, module « ATAK · Relais »). Loin de tout relais, ou si la mission n'en a pas, plus de réseau du tout : messages, photos et positions attendent d'être à portée. Décoché : sans relais, le téléphone garde quand même du réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
-    ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s (et les pertes amies) pour l'app Rejeu. Décocher pour ne rien enregistrer."],
+    ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_drone_range", "SLIDER", ["Portée de la liaison drone", "Distance en mètres entre le téléphone du pilote et son drone (divisée par trois derrière le relief). Au-delà, le drone rentre seul à son point de décollage. Avec le mod Mavic, sa portée maximale (mavic_setting_maxConnectionDistance) l'emporte si elle est plus grande."], _sim, [500, 12000, 6000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_drone_range", "SLIDER", ["Portée de la liaison drone (m)", "Distance maximale entre le téléphone du pilote et son drone, divisée par trois si le relief les sépare. Au-delà, le drone rentre seul à son point de décollage. Avec le mod Mavic, sa propre portée (mavic_setting_maxConnectionDistance) s'applique si elle est plus grande."], _sim, [500, 12000, 6000, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_video_relays", "CHECKBOX",
-    ["Flux vidéo selon les relais", "Quand la mission pose des relais ATAK, les flux vidéo (drone, caméra casque, Live cam, caméras fixes) passent par eux : débit, définition (1080p à image par image), images par seconde, latence et défauts d'image suivent la distance aux relais, le nombre de bonds et la perte d'un relais. Sans relais dans la mission, rien ne change. Décocher pour garder les flux comme avant."],
+    ["Vidéo dépendante des relais", "Si la mission a des relais ATAK, les vidéos (drone, caméra casque, caméra en direct, caméras fixes) passent par eux : qualité (de 1080p à image par image), fluidité, délai et parasites dépendent de la distance aux relais, du nombre de relais traversés et de la perte d'un relais. Sans relais dans la mission, rien ne change. Décochez pour toujours avoir une vidéo parfaite."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_camera_share", "LIST",
-    ["Partage des caméras", "Partage obligatoire : une caméra fixe n'est visible que de son poseur, la caméra d'un téléphone que de son porteur, jusqu'à ce qu'ils la partagent (app Vidéo live > PARTAGER, par NFC, Bluetooth ou relais, à un ATAK ou à TOUS). Tout le camp : chaque ATAK voit toutes les caméras du camp sans partage (comme avant)."],
+    ["Partage des caméras", "Partage obligatoire (par défaut) : une caméra fixe n'est visible que par celui qui l'a posée, et la caméra d'un téléphone que par son propriétaire, tant qu'ils ne l'ont pas partagée (app Vidéo live > PARTAGER, par NFC, Bluetooth ou relais, à un joueur ou à TOUS). Tout le camp voit tout : chaque ATAK voit toutes les caméras de son camp sans rien faire."],
     _sim, [[0, 1], ["Partage obligatoire", "Tout le camp voit tout"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_bt_range", "SLIDER",
-    ["Portée Bluetooth (m)", "Distance maximale entre deux téléphones pour l'appairage, l'envoi de sons et le partage de caméras par Bluetooth. Le NFC reste à 2 m (téléphones dos à dos)."],
+    ["Portée Bluetooth (m)", "Distance maximale entre deux téléphones pour se jumeler, s'envoyer des sons ou partager une caméra en Bluetooth. Le NFC, lui, marche à 2 m (téléphones dos à dos)."],
     _sim, [5, 100, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Réglages lus par le code sans entrée dans le menu (valeur fixe jusqu'ici) : portée Wi-Fi des caméras fixes (fn_feedLink,
+// fn_camAction, fn_camShare), portée du son joué en Bluetooth (fn_btAction), capteur du détecteur de drones (fn_droneDetectScan).
+["comspec_atak_native_camera_range", "SLIDER",
+    ["Portée Wi-Fi des caméras fixes (m)", "Distance jusqu'à laquelle une caméra fixe envoie son image directement au téléphone le plus proche, sans passer par le réseau. Au-delà, il faut un relais ou la liaison Athena."],
+    _sim, [100, 2000, 600, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_bt_sound_range", "SLIDER",
+    ["Portée du son envoyé en Bluetooth (m)", "Distance à laquelle les joueurs autour entendent un son joué par un téléphone après un envoi Bluetooth."],
+    _sim, [5, 100, 20, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_drone_sensor", "CHECKBOX",
+    ["Anti-drone : capteur dédié", "Coché par défaut : l'app Anti-drone a un vrai capteur radio, portée normale. Décoché : elle n'a que l'antenne du téléphone, portée divisée par deux. Une mission peut aussi le régler par joueur (variable COMSPEC_ATAK_DroneSensor)."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_strike", "CHECKBOX",
-    ["Drones armés", "Permet de fixer une charge (roquette RPG, charge de démolition, grenade) sur un drone et de l'envoyer en tir et oublie ou en recherche et frappe."],
+    ["Drones armés", "Permet d'accrocher une charge sous un drone (roquette de RPG, charge de démolition, grenade) et de l'envoyer frapper : sur une cible désignée (tire et oublie) ou en patrouille qui attaque ce qu'elle trouve (recherche et frappe)."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_autospot", "CHECKBOX",
-    ["Repérage automatique par drone", "La caméra du drone relève seule les ennemis qu'elle voit (onglet CIBLES, pistes sur la carte) et la garde rapprochée de la flotte prévient le pilote des ennemis proches. Désactivé : le pilote repère et marque lui-même."],
+    ["Repérage automatique par les drones", "Décoché par défaut : le pilote repère et marque lui-même. Coché : la caméra du drone repère seule les ennemis qu'elle voit (onglet CIBLES, traces sur la carte) et les drones d'escorte préviennent le pilote quand des ennemis sont proches."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_apps_off", "EDITBOX", ["Apps désactivées", "Noms de classe d'apps à retirer de tous les téléphones, séparés par des virgules (ex. Dating, Food, MonModule). Vaut aussi pour les modules externes."], _sim, "", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_apps_off", "EDITBOX", ["Apps retirées", "Apps à retirer de tous les téléphones : leurs noms de classe séparés par des virgules (ex. Dating, Food, MonModule). Marche aussi pour les apps ajoutées par d'autres mods."], _sim, "", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_civil_apps", "CHECKBOX",
-    ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
+    ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décochez pour les retirer de tous les téléphones."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dating_specials", "LIST",
-    ["Tinder : profils HVT et SSE", "Fréquence des profils tirés des IA de la carte (HVT et personnes SSE à moins de 5 km) entre deux joueurs. Le Zeus peut aussi marquer une IA avec le module « Tinder : profil HVT / SSE »."],
-    _sim, [[0, 1, 2, 3], ["Jamais", "Rare (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call comspec_atak_native_fnc_addSetting;
+    ["Tinder : profils HVT et SSE", "À quelle fréquence Tinder glisse, entre deux joueurs, un profil d'IA de la carte (HVT ou personne SSE à moins de 5 km). Zeus peut aussi désigner une IA avec le module « Tinder : profil HVT / SSE »."],
+    _sim, [[0, 1, 2, 3], ["Jamais", "Rarement (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call comspec_atak_native_fnc_addSetting;
 
 // Marquage au viseur (caméra du drone, appareil photo du téléphone) et cibles perdues.
-private _lock = ["COMSPEC", "ATAK · Marquage au viseur"];
+private _lock = ["COMSPEC", "ATAK · Marquage de cible"];
 ["comspec_atak_native_lock_enabled", "CHECKBOX",
-    ["Marquage au viseur", "Réticule de la caméra du drone ou de l'appareil photo sur un ennemi, un appui : la cible est marquée sur la carte (LOCK) et suivie tant qu'elle est vue."],
+    ["Marquage de cible à la caméra", "Visez un ennemi avec la caméra du drone ou l'appareil photo et appuyez : la cible est marquée sur la carte (LOCK) et suivie tant qu'elle reste visible."],
     _lock, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_lock_live", "CHECKBOX",
-    ["Le marqueur suit la cible", "Coché : tant que la source voit la cible, le marqueur se déplace avec elle (une fois par seconde). Décoché : il reste où la cible a été marquée."],
+    ["Le marqueur suit la cible", "Coché : tant que la caméra voit la cible, le marqueur bouge avec elle (une fois par seconde). Décoché : il reste là où la cible a été marquée."],
     _lock, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_lock_grace", "SLIDER",
-    ["Délai avant cible perdue", "Secondes sans voir la cible (sortie du champ de la caméra, masquée, hors portée, drone hors liaison) avant qu'elle soit déclarée perdue."],
+    ["Délai avant cible perdue (s)", "Nombre de secondes sans voir la cible (hors champ, cachée, trop loin, drone sans liaison) avant qu'elle soit considérée comme perdue."],
     _lock, [1, 30, 5, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_lock_lost", "LIST",
-    ["Cible perdue", "Ce qui se passe quand la cible n'est plus vue. Le calque est le cadre LOCK dessiné sur l'image ; le marqueur est celui de la carte (et d'Athena)."],
-    _lock, [[0, 1, 2, 3], ["Calque retiré, marqueur gardé à la dernière position", "Calque retiré, marqueur effacé après le délai ci-dessous", "Calque et marqueur effacés aussitôt", "Tout gardé (cadre gris à la dernière position)"], 0], 1] call comspec_atak_native_fnc_addSetting;
+    ["Cible perdue", "Ce qui se passe quand la cible n'est plus visible. Le cadre est le carré LOCK dessiné sur l'image de la caméra ; le marqueur est celui de la carte (et d'Athena)."],
+    _lock, [[0, 1, 2, 3], ["Cadre retiré, marqueur laissé à la dernière position", "Cadre retiré, marqueur effacé après le délai ci-dessous", "Cadre et marqueur effacés tout de suite", "Tout est gardé (cadre gris à la dernière position)"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_lock_keep", "SLIDER",
-    ["Durée de vie d'un marqueur perdu", "Secondes avant d'effacer le marqueur d'une cible perdue (réglage « effacé après le délai ») ou neutralisée."],
+    ["Durée d'un marqueur de cible perdue (s)", "Secondes avant d'effacer le marqueur d'une cible perdue (choix « effacé après le délai ») ou neutralisée."],
     _lock, [30, 1800, 300, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_lock_reacquire", "CHECKBOX",
-    ["Raccrochage automatique", "Une cible perdue qui revient dans le champ est raccrochée seule (même numéro LOCK). Décoché : il faut la marquer à nouveau."],
+    ["Reprise automatique de la cible", "Une cible perdue qui réapparaît à l'image est reprise toute seule, avec le même numéro LOCK. Décoché : il faut la marquer de nouveau."],
     _lock, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_lock_range", "SLIDER",
-    ["Portée du marquage au téléphone", "Distance maximale en mètres pour marquer et suivre une cible à l'appareil photo du téléphone (la caméra du drone garde sa portée de capteur)."],
+    ["Portée du marquage à l'appareil photo (m)", "Distance maximale pour marquer et suivre une cible avec l'appareil photo du téléphone. La caméra du drone garde sa propre portée."],
     _lock, [100, 2000, 800, 0], 1] call comspec_atak_native_fnc_addSetting;
 
 // App Garmin : la montre Garmin (objet COMSPEC_ATAK_GarminWatch) portée dans l'emplacement montre.
 ["comspec_atak_native_garmin_watch", "CHECKBOX",
-    ["Montre Garmin obligatoire", "Activé par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site tant que le joueur ne porte pas la « Montre Garmin » dans l'emplacement montre. Décocher pour que le téléphone mesure seul."],
+    ["Montre Garmin obligatoire", "Coché par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site si le joueur ne porte pas la « Montre Garmin » à la place de la montre. Décochez pour que le téléphone mesure tout seul."],
     ["COMSPEC", "ATAK · Garmin"], true, 1] call comspec_atak_native_fnc_addSetting;
 
 // Extraction de données au câble DL-7 (app Extraction, modules Zeus / Eden « ATAK · Données »).
 private _data = ["COMSPEC", "ATAK · Extraction de données"];
 ["comspec_atak_native_data_cable", "CHECKBOX",
-    ["Câble DL-7 obligatoire", "Coché : il faut l'objet « Câble de données DL-7 » dans l'équipement pour se brancher sur un support. Décoché : le téléphone suffit."],
+    ["Câble DL-7 obligatoire", "Coché : il faut le « Câble de données DL-7 » dans son équipement pour se brancher sur un appareil à exploiter. Décoché : le téléphone suffit."],
     _data, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_data_length", "SLIDER",
-    ["Longueur du câble (m)", "Distance au support au-delà de laquelle le câble est arraché (transfert coupé, fichiers déjà reçus gardés)."],
+    ["Longueur du câble (m)", "Si vous vous éloignez plus que ça de l'appareil branché, le câble s'arrache : le transfert s'arrête, mais les fichiers déjà copiés sont gardés."],
     _data, [1.5, 10, 3, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_data_speed", "SLIDER",
-    ["Vitesse des transferts", "Multiplie la vitesse de téléchargement et de forçage réglée par le mission maker (2 = deux fois plus rapide)."],
+    ["Vitesse des transferts", "Multiplie la vitesse de copie et de déverrouillage prévue par le mission maker (2 = deux fois plus rapide)."],
     _data, [0.25, 4, 1, 2], 1] call comspec_atak_native_fnc_addSetting;
 // Serveur de l'extraction : branché dès le preInit (les modules Eden posent leurs données au démarrage).
 if (isServer) then { ["comspec_atak_native_dataSrv", { _this call comspec_atak_native_fnc_dataServer; }] call CBA_fnc_addEventHandler; };
@@ -484,43 +495,43 @@ private _med = ["COMSPEC", "ATAK · Données médicales"];
 {
     _x params ["_k", "_label"];
     [format ["comspec_atak_native_med_%1", _k], "CHECKBOX",
-        [format ["Afficher : %1", _label], "Décoché : jamais affiché dans l'ATAK (app Médical, moniteur, liaison NFC et rapports, carte, alertes), pour tous les joueurs. Coché : chaque joueur peut encore le masquer dans Réglages > Réalisme."],
+        [format ["Afficher : %1", _label], "Décoché : n'apparaît nulle part dans l'ATAK (app Médical, moniteur, échange NFC, rapports, carte, alertes), pour tout le monde. Coché : chaque joueur peut quand même le cacher pour lui dans Réglages > Réalisme."],
         _med, true, 1] call comspec_atak_native_fnc_addSetting;
 } forEach ((["fields"] call comspec_atak_native_fnc_medShow) + (["contexts"] call comspec_atak_native_fnc_medShow));
 
 // Socle de recharge CS-10 (fn_dockServer).
 private _dock = ["COMSPEC", "ATAK · Socle de recharge"];
 ["comspec_atak_native_dock_rate", "SLIDER",
-    ["Vitesse de charge (% par minute)", "Charge rendue à chaque téléphone posé sur un socle CS-10. 1,5 % par minute : un téléphone vide est plein en un peu plus d'une heure."],
+    ["Vitesse de charge (% par minute)", "Recharge de chaque téléphone posé sur un socle CS-10. À 1,5 % par minute, un téléphone vide est plein en un peu plus d'une heure."],
     _dock, [0.5, 10, 1.5, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dock_offline", "CHECKBOX",
-    ["La charge continue entre deux parties", "Un téléphone laissé sur un socle se charge aussi pendant que le serveur est éteint (temps réel écoulé)."],
+    ["La charge continue entre deux parties", "Un téléphone laissé sur un socle continue de charger pendant que le serveur est éteint (selon le temps réel écoulé)."],
     _dock, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dock_persist", "CHECKBOX",
-    ["Mémoriser les socles posés", "Les socles posés avec le kit sont recréés à leur place au lancement suivant sur la même carte, avec leurs téléphones. Les téléphones des socles de la mission (Eden, Zeus) sont toujours mémorisés."],
+    ["Garder les socles posés", "Les socles posés par les joueurs reviennent à leur place, avec leurs téléphones, à la prochaine partie sur la même carte. Pour les socles de la mission (Eden, Zeus), les téléphones sont toujours gardés."],
     _dock, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dock_anyone", "CHECKBOX",
-    ["Tout le monde peut reprendre n'importe quel téléphone", "Sinon seul le propriétaire (identifiant Steam) reprend son téléphone ; Zeus et l'admin le peuvent toujours."],
+    ["Tout le monde peut reprendre n'importe quel téléphone", "Décoché : seul le propriétaire (compte Steam) peut reprendre son téléphone. Zeus et l'admin peuvent toujours."],
     _dock, false, 1] call comspec_atak_native_fnc_addSetting;
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",
-    ["ATAK pour les équipages d'aéronef", "Pilote, copilote et postes de tourelle d'un hélicoptère ou d'un avion ont l'ATAK par la tablette de bord, même sans téléphone porté, téléphone vide ou cassé. Il se range en quittant l'appareil."],
+    ["ATAK pour les équipages d'hélico et d'avion", "Pilote, copilote et tireurs d'un hélicoptère ou d'un avion ont l'ATAK sur la tablette de bord, même sans téléphone ou avec un téléphone vide ou cassé. Elle se range quand on descend."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_vehicle_terminal", "LIST",
-    ["Tablette des véhicules", "Conducteur, tireur, chef de bord et tourelles d'un véhicule terrestre ou d'un bateau ont l'ATAK sur une tablette durcie de bord, sans téléphone porté. « Kit » : seulement les véhicules où le kit terminal a été installé (action ACE)."],
+    ["Tablette dans les véhicules", "Conducteur, tireur et chef de bord d'un véhicule ou d'un bateau ont l'ATAK sur une tablette fixée à bord, sans avoir besoin de téléphone. « Avec le kit installé » : seulement dans les véhicules équipés du kit tablette (action ACE)."],
     _team, [["all", "kit", "off"], ["Tous les véhicules", "Avec le kit installé", "Aucun"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_screen_glow", "CHECKBOX",
-    ["Lueur des écrans la nuit", "Désactivé par défaut : aucune lumière de l'ATAK n'est visible par les autres joueurs. Coché : un téléphone allumé de nuit éclaire son porteur et se voit de loin (encore plus aux JVN) ; mode nuit, véhicule et filtre d'écran JVN la réduisent."],
+    ["Écrans visibles la nuit", "Décoché par défaut : la lumière de l'ATAK n'est jamais visible par les autres. Coché : la nuit, un téléphone allumé éclaire le visage de son porteur et se voit de loin (encore plus aux JVN). Le mode nuit, un véhicule ou le filtre d'écran JVN réduisent cette lueur."],
     _team, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_screen_time", "CHECKBOX",
-    ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],
+    ["Temps d'écran et temps par rôle", "Compte le temps passé sur le téléphone (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe...). À voir dans l'app Temps d'écran et sur Athena (fiche du membre)."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_distance", "CHECKBOX",
-    ["Distances parcourues", "Le serveur compte pour chaque joueur les pas, les kilomètres à pied, en véhicule, en vol et en saut, et les heures de pilote par appareil. Visible dans l'app Distances et envoyé à Athena (fiche du membre)."],
+    ["Distances parcourues", "Le serveur compte, pour chaque joueur, les pas, les kilomètres à pied, en véhicule, en vol et en parachute, et les heures de vol par appareil. À voir dans l'app Distances et sur Athena (fiche du membre)."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;
 // App Plan (carte de briefing) : qui modifie le plan partagé du camp ; le serveur seul l'écrit (fn_planServer).
 ["comspec_atak_native_plan_edit", "LIST",
-    ["Plan de briefing : édition", "Qui peut dessiner sur le plan partagé du camp (app Plan). Les autres le voient et préparent leur brouillon, ajouté ensuite par un chef."],
+    ["Plan de briefing : qui peut dessiner", "Qui peut dessiner sur le plan commun du camp (app Plan). Les autres le voient et peuvent préparer un brouillon, qu'un chef ajoute ensuite."],
     _team, [[0, 1, 2], ["Tout le monde", "Chefs de groupe, Zeus et admins", "Zeus et admins seulement"], 1], 1] call comspec_atak_native_fnc_addSetting;
 // App Plan : historique ANNULER / RÉTABLIR (ce que le serveur a changé pour moi) et salle collaborative créée.
 if (hasInterface) then {
@@ -535,10 +546,10 @@ if (isServer) then {
 
 // Interface (réglage propre à chaque joueur).
 ["comspec_atak_native_action_menu", "LIST",
-    ["Masquer le menu d'actions", "Le menu d'actions d'Arma (liste en haut à gauche, molette) ne s'ouvre plus tant que le téléphone est affiché. « En main » : seulement quand on a la souris sur le téléphone. Téléphone rangé : rien ne change (ACE et actions normales)."],
+    ["Bloquer le menu d'actions (molette)", "Empêche le menu d'actions d'Arma (la liste à la molette) de s'ouvrir quand le téléphone est à l'écran, pour que la molette serve au téléphone. « En main seulement » : uniquement quand vous tenez le téléphone. Téléphone rangé : rien ne change."],
     ["COMSPEC", "ATAK · Interface"], [[0, 1, 2], ["Jamais", "En main seulement", "En main et porté"], 2], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_action_menu_vehicle", "CHECKBOX",
-    ["Menu d'actions libre en véhicule", "Dans un véhicule (conducteur, passager, tireur), la molette et le menu d'actions d'Arma restent disponibles quand le téléphone est porté en miniature : démarrer le moteur, changer de place, descendre. Téléphone en main, la molette reste au téléphone."],
+    ["Menu d'actions autorisé en véhicule", "Dans un véhicule, la molette et le menu d'actions d'Arma restent utilisables quand le téléphone est porté (en petit à l'écran) : démarrer le moteur, changer de place, descendre... Téléphone en main, la molette reste au téléphone."],
     ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // Mode drone : les ordres s'exécutent là où le drone est local (pilote, serveur ou client qui l'a posé).

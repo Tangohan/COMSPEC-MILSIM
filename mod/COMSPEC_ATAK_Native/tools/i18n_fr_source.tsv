@@ -5,10 +5,10 @@
 9-Line:	9-Line :
 Abort	Annuler
 Account not linked	Compte non lié
-Acknowledged	Accusé
+Acknowledged	Pris en compte
 Activity not tracked	Activité non suivie
 Air ops	Opérations aériennes
-Apps	Applications
+Apps	Apps
 Assigned: —	Assigné : —
 Athena account linked through COMSPEC Link	Compte Athena lié par COMSPEC Link
 Athena address not specified	Adresse Athena non renseignée
@@ -20,21 +20,21 @@ Back	Retour
 Cancelled	Annulé
 Cardiac arrest	Arrêt cardiaque
 CAS: shown	CAS : affiché
-Change it at any time:	Modifiable à tout moment :
+Change it at any time:	Vous pourrez changer à tout moment :
 Close	Fermer
 Combat	Combat
-Confirming records this note on your profile and registers beta participation with Athena when the connection is available.	Confirmer enregistre cette note sur votre profil et inscrit votre participation à la bêta auprès d'Athena dès que la connexion est disponible.
-Connect	Connexion
+Confirming records this note on your profile and registers beta participation with Athena when the connection is available.	En confirmant, cette note est enregistrée sur votre profil et votre participation à la bêta est signalée à Athena dès que la connexion le permet.
+Connect	Se connecter
 Connected	Connecté
 Connected contacts	Contacts connectés
 Connected to	Connecté à
 Connecting…	Connexion…
 Connection log	Journal de connexion
 Connection not established	Connexion non établie
-Connection refused: missing access on portal side.	Connexion refusée : accès manquant côté portail.
+Connection refused: missing access on portal side.	Connexion refusée : votre compte n'a pas l'accès sur Athena.
 Connection: shown	Connexion : affichée
 Current choice:	Choix actuel :
-Delivered	Remis
+Delivered	Distribué
 Disconnect	Déconnecter
 Does your unit use the Athena service?	Votre unité utilise-t-elle le service Athéna ?
 Edit	Modifier
@@ -46,7 +46,7 @@ Escape menu › Athena service	Menu Échap › Service Athéna
 Failed	Échec
 Fire solution:	Solution de tir :
 From: %2	De : %2
-Full hub	Hub complet
+Full hub	Menu complet
 Got it	J'ai compris
 Grid: %3	Grille : %3
 Home	Accueil
@@ -56,7 +56,7 @@ Later	Plus tard
 Link your account right away	Lier mon compte tout de suite
 Linked to Athena	Lié à Athena
 Local ATAK: map, BFT and chat between players on this server	ATAK local : carte, BFT et tchat entre joueurs de ce serveur
-Look into the lens	Regardez dans l'objectif
+Look into the lens	Regardez l'objectif
 Medical alerts received	Alertes médicales reçues
 Medical assistance	Assistance médicale
 Medical: shown	Médical : affiché
@@ -72,9 +72,9 @@ Overwatch disabled	Overwatch désactivé
 Overwatch Messaging	Messagerie Overwatch
 Photos / messages	Photos / messages
 Place right index on sensor	Posez l'index droit sur le capteur
-Portal: —	Portail : —
+Portal: —	Athena : —
 Refresh	Actualiser
-Regular server, usual Arma mods	Serveur classique, mods Arma habituels
+Regular server, usual Arma mods	Serveur classique, avec les mods Arma habituels
 Relief 0	Relève 0
 Report a problem	Signaler un problème
 Roger	Reçu
@@ -83,7 +83,7 @@ Sent messages appear here.	Les messages envoyés apparaissent ici.
 Situation: %1	Situation : %1
 Status:	État :
 Status: —	État : —
-Status: ACKNOWLEDGED	État : ACCUSÉ
+Status: ACKNOWLEDGED	État : PRIS EN COMPTE
 Sync with the command post: positions, BFT, chat, orders, reports, photos	Synchro avec le poste de commandement : positions, BFT, tchat, ordres, comptes rendus, photos
 Tactical screen	Écran tactique
 Tactical screen ready	Écran tactique prêt
@@ -92,8 +92,8 @@ Team leader	Chef d'équipe
 Time: %4	Heure : %4
 To rescue	À secourir
 Transmission active	Transmission active
-Treated	Traité
-Unit settings and Athena apps	Réglages d'unité et applications Athena
+Treated	Soigné
+Unit settings and Athena apps	Réglages de l'unité et apps Athena
 Units	Unités
 Unknown	Inconnu
 Vehicle: %1 / %2	Véhicule : %1 / %2
@@ -107,7 +107,7 @@ company commander	commandant de compagnie
 electronic warfare	guerre électronique
 in-game + Athena positions	positions en jeu + Athena
 invalid Athena response	réponse Athena invalide
-link Athena for network	liez Athena pour le réseau
+link Athena for network	liez Athena pour avoir le réseau
 my unit uses Athena	mon unité utilise Athena
 no response (network/DNS/TLS)	pas de réponse (réseau/DNS/TLS)
 not connected	non connecté
@@ -123,7 +123,7 @@ Contacts %1 | Messages %2 | Images %3 | Locations %4	Contacts %1 | Messages %2 |
 Overview / Contacts / Messages / Calls / Files / Photos / Locs / Deleted / Network	Aperçu / Contacts / Messages / Appels / Fichiers / Photos / Positions / Supprimés / Réseau
 Crash (30 s)	Plantage (30 s)
 Crash (30s)	Plantage (30 s)
-Game plan	Plan de jeu
+Game plan	Game plan
 Installation / position	Installation / position
 Obstacle / mine	Obstacle / mine
 Settings	Réglages
@@ -148,13 +148,13 @@ Block	Bloquer
 Breach	Brèche
 Canalize	Canaliser
 Square	Carré
-Intersection	Carréfour
+Intersection	Carrefour
 Circle	Cercle
 Minefield	Champ de mines
 Chimney	Cheminée
 Retain	Conserver
-Contact circle	Contact cercle
-Contact arrow	Contact flèche
+Contact circle	Cercle de contact
+Contact arrow	Flèche de contact
 Contain	Contenir
 Bypass	Contourner
 Cordon and search	Cordon et fouille
@@ -166,7 +166,7 @@ Disengage	Désengager
 Destroy	Détruire
 Ambush	Embuscade
 Exfiltrate	Exfiltrer
-Pivot	Faire pivoter
+Pivot	Pivoter
 Fix	Fixer
 Arrow	Flèche
 Main attack arrow	Flèche d'attaque principale
@@ -205,19 +205,19 @@ Lighthouse	Phare
 R3P point	Point R3P
 SAR point	Point SAR
 Checkpoint	Point de contrôle
-Start point	Point de depart
-Operational departure point	Point de depart opérationnel
+Start point	Point de départ
+Operational departure point	Point de départ opérationnel
 Link-up point	Point de jonction
-Release point	Point de libération
+Release point	Point de dislocation
 Waypoint	Point de passage
 Rally point	Point de ralliement
-Casualty collection point	Point de ramassage blessés
-Civilian assembly point	Point de regroupement civils
+Casualty collection point	Point de regroupement des blessés
+Civilian assembly point	Point de regroupement des civils
 Viewpoint	Point de vue
-Medical evacuation point	Point evacuation médicale
+Medical evacuation point	Point d'évacuation sanitaire
 Generic point	Point générique
-Ammo point	Point munitions
-Isolated personnel recovery point	Point recuperation personnel isolé
+Ammo point	Point de ravitaillement en munitions
+Isolated personnel recovery point	Point de récupération de personnel isolé
 Command post	Poste de commandement
 Medical post	Poste médical
 Dock	Quai

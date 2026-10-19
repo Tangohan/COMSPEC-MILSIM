@@ -243,7 +243,7 @@ private _chans = [0, 1, 2, 3, 4, 5];
 private _chW = (_w * 0.58) / (count _chans);
 {
     private _on = _x isEqualTo _chan;
-    private _b = ["COMSPEC_RscButton", [_x0 + _w * 0.12 + _forEachIndex * _chW, _y, _chW - _pad / 3, _rh], ["Général", "Camp", "Chefs", "Groupe", "Véhicule", "Direct"] select _forEachIndex] call _mk;
+    private _b = ["COMSPEC_RscButton", [_x0 + _w * 0.12 + _forEachIndex * _chW, _y, _chW - _pad / 3, _rh], ["Global", "Camp", "Chefs", "Groupe", "Véhicule", "Direct"] select _forEachIndex] call _mk;
     _b ctrlSetFontHeight ((_fs * 0.72) max COMSPEC_ATAK_FontMin);
     if (_on) then { _b ctrlSetBackgroundColor _green; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
     _b ctrlSetTooltip (([

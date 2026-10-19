@@ -22,7 +22,7 @@ switch (_mode) do {
         (_c max 0) min 5
     };
     case "channelName": {
-        (["Général", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"] param [_arg, format ["%1", _arg]]) call comspec_atak_native_fnc_tr
+        (["Global", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"] param [_arg, format ["%1", _arg]]) call comspec_atak_native_fnc_tr
     };
     case "setChannel": {
         _s set ["markerChannel", _arg];

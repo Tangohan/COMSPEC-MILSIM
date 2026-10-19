@@ -389,8 +389,8 @@ if (_interactive) then {
                     ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""]
                 ]],
                 ["places", "Repères et lieux", [
-                    ["Coordonnées des repères", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
-                    ["Noms des repères", "C", "comspec_atak_native_map_show_marker_text", true, ""],
+                    ["Coordonnées des marqueurs", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
+                    ["Noms des marqueurs", "C", "comspec_atak_native_map_show_marker_text", true, ""],
                     ["Villes", "C", "comspec_atak_native_map_show_cities", true, ""],
                     ["Villages", "C", "comspec_atak_native_map_show_villages", true, ""],
                     ["Lieux-dits", "C", "comspec_atak_native_map_show_locals", true, ""],

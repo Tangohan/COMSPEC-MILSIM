@@ -30,7 +30,7 @@ final class OverwatchAceAthenaMenuAssetTest extends TestCase
         self::assertStringContainsString('Connexion Athena', $ace);
         self::assertStringContainsString('openLogin', $ace);
         self::assertStringNotContainsString('"COMSPEC Overwatch"', $ace);
-        self::assertStringContainsString('Menus ACE Overwatch étendus', $pre);
+        self::assertStringContainsString('Menus ACE Overwatch complets', $pre);
         self::assertMatchesRegularExpression('/"comspec_overwatch_ace_menus"[\s\S]{0,900},\s*true\s*\]\s*call CBA_fnc_addSetting/', $pre);
         self::assertStringContainsString('[] call comspec_overwatch_connect_fnc_initACE;', $post);
         self::assertStringContainsString('[] call comspec_overwatch_connect_fnc_initATAKMenu;', $post);

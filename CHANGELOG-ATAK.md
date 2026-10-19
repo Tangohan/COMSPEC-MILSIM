@@ -44,17 +44,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 Type : nouveauté
 FR : COMSPEC ATAK 2.2.0 « Denver » : un réseau qui suit la météo, le français partout, un Resynch complet et une série de correctifs
 - Pluie, orage, vent et surcharge des relais comptent maintenant sur le réseau, avec des pertes par rafales ; nouveau bouton Conditions réseau dans le menu Échap, réglable par l'admin ou le Zeus et imposable depuis le site.
-- Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission.
+- Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission ; les réglages COMSPEC sont réécrits en français clair.
 - L'app Synchro renvoie tout ce qui manque à Athena et montre l'état de chaque catégorie ; l'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul.
 - Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue (touche B pour le flou) ; l'image du drone ne reste plus noire ; pouls et nom du blessé dans l'app Médical ; guide réseau et capture de carte Zeus réparés ; plus de vieilles fenêtres par-dessus le jeu.
 EN : COMSPEC ATAK 2.2.0 "Denver": a network that follows the weather, French everywhere, a complete Resynch and a batch of fixes
 - Rain, storms, wind and relay congestion now count on the network, with losses in bursts; new Network conditions button in the Escape menu, set by the admin or Zeus and enforceable from the website.
-- The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission.
+- The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission; COMSPEC settings have clearer French wording.
 - The Synchro app resends everything Athena is missing and shows the state of each category; the Settings app shows your link status and searches any setting; the Athena link code renews itself.
 - A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view (B key for blur); the drone picture no longer stays black; pulse and casualty name in the Medical app; network guide and Zeus map capture fixed; no more old windows over the game.
 
 ### Détail technique
-Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906, #908, #909, #910 et #911. `VERSION_STR` « 2.2.0 » (seul comparé), nom affiché « 2.2.0.AB - Denver » (passage en 2.2.0 : nouveautés réseau et Réglages, nettoyage de #910). COMSPEC Link 2.0.89 (#909) : DLL à recompiler (build_mod.bat). Le bouton du menu principal de #909 est retiré (#893 garde le guide réseau dans Eden seulement) ; le bouton Conditions réseau du menu Échap reste. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repris de #910 puis repatchés avec les sources fusionnées (#898, #900) ; `comspec_sse_core.pbo` patché par #898. Site à déployer (#909 : Contrôle serveur > Réseau et simulation, `POST /api/atak/net-conditions`, sans migration).
+Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906, #908, #909, #910, #911 et #913. `VERSION_STR` « 2.2.0 » (seul comparé), nom affiché « 2.2.0.AB - Denver » (passage en 2.2.0 : nouveautés réseau et Réglages, nettoyage de #910). COMSPEC Link 2.0.89 (#909) : DLL à recompiler (build_mod.bat). Le bouton du menu principal de #909 est retiré (#893 garde le guide réseau dans Eden seulement) ; le bouton Conditions réseau du menu Échap reste. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repris de #910 puis repatchés avec les sources fusionnées (#898, #900) ; `comspec_sse_core.pbo` patché par #898. Site à déployer (#909 : Contrôle serveur > Réseau et simulation, `POST /api/atak/net-conditions`, sans migration).
 
 #### Le réglage Français traduit tout, noms automatiques des marqueurs (#898)
 - `i18n/fr.txt` (anglais vers français) chargé en français, assemblé par `tools/i18n.py fr` depuis `tools/i18n_fr_source.tsv` et les stringtables ; `fn_tr` et les écrans (ATAK, connect, SSE) traduisent dès qu'un dictionnaire est chargé ; langue lue dans le profil CBA dès le preInit ; menus CBA vidés au changement de langue ; actions ACE retraduites à chaque affichage. Noms automatiques des marqueurs (palette, LOCK, détections drone, END/FIN) posés dans la langue du mod et relus par `fn_markerAutoName`.
@@ -254,6 +254,25 @@ EN : The phone model can now be picked in the addon options
 ##### Détail technique
 - `XEH_preInit.sqf` : réglage CBA LIST client `comspec_atak_native_phone_model` (défaut « Set in the phone ») qui écrit le profil `COMSPEC_ATAK_PhoneModel` ; objet exigé absent -> S7 gardé et message. `fn_pageSettings.sqf` (`COMSPEC_ATAK_ProfSet`) remet la liste CBA à jour quand le modèle change dans le téléphone. Aide des « Required item » : ils autorisent un modèle sans le choisir. 4 phrases dans `i18n/en.txt`.
 - À tester en jeu : choisir V2 Enhanced dans les options (châssis changé), objet exigé non porté (S7 + message), changement dans le téléphone (liste CBA suit), relance du jeu (choix gardé).
+
+
+#### Réglages en français clair, réglages morts retirés, réglages manquants ajoutés (#913)
+
+##### Résumé joueur de la PR
+Type : amélioration
+FR : Les réglages COMSPEC se lisent en français clair
+- Les options des addons COMSPEC (ATAK, Overwatch, SSE) et l'app Réglages du téléphone sont réécrites en français naturel ; chaque aide dit ce que fait le réglage, sa valeur par défaut et qui le règle.
+- Des réglages qui ne servaient plus sont retirés, et trois nouveaux apparaissent : portée Wi-Fi des caméras fixes, portée du son Bluetooth, capteur dédié de l'Anti-drone.
+EN : COMSPEC settings read in plain French
+- COMSPEC addon options (ATAK, Overwatch, SSE) and the phone Settings app have clearer French wording; each help text says what the setting does, its default and who sets it.
+- Unused settings were removed and three new ones added: fixed camera Wi-Fi range, Bluetooth sound range, Anti-drone dedicated sensor.
+
+##### Détail technique
+- ~600 phrases réécrites (`XEH_preInit.sqf` natif et Overwatch connect, réglages SSE, `fn_pageSettings`, `fn_netConfig`, `fn_netCond`, `fn_moduleRelay`, `fn_pageNetwork`, `fn_pageMap`, `fn_pageStatus`, palette de marqueurs, dossier ACE « Infos tactiques JVN ») ; l'anglais ne change pas (`i18n/en.txt` reprend l'ancienne traduction). `tools/i18n_fr_source.tsv` corrigé, `fr.txt` et modèle communautaire régénérés ; les packs communautaires indexés sur le français repartent vides pour les phrases réécrites.
+- Retirés (sans effet) : Overwatch « Fréquence de synchronisation », « Rappel Windows : lier le compte Athena », « Aperçus caméra automatiques » et son intervalle ; SSE « Marqueurs SSE sur la carte ». Ajoutés (déjà lus par le code) : `comspec_atak_native_camera_range` (600 m), `comspec_atak_native_bt_sound_range` (20 m), `comspec_atak_native_drone_sensor`.
+- Correctif : `fn_pollOrders` / `fn_pollChat` lisaient `comspec_atak_native_map_id` (inexistant, donc toujours carte 1) ; ils lisent le numéro de carte de l'opération comme `fn_frsSubmit`.
+- PBO repatchés : Overwatch connect ; SSE analysis, biometrics, campaign, compat_ace, compat_bii, core, debug, intel, network.
+- À tester en jeu : options des addons COMSPEC en Français puis English ; app Réglages en français ; menu Échap > Conditions réseau (mêmes noms) ; sans COMSPEC Link, carte n° 2 : les ordres du poste arrivent.
 
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)

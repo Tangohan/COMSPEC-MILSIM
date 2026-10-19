@@ -146,7 +146,7 @@ private _bearer = switch (true) do {
             ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp")]
     };
     case (_only): {
-        ["Aucun relais", "Réseau exclusivement par relais", "aucun relais reçu : aucun réseau", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
+        ["Aucun relais", "Réseau uniquement par les relais", "aucun relais reçu : aucun réseau", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
     };
     case (_hops > 1): {
         ["Maillage Wave Relay", format ["%1 sauts via équipiers", _hops - 1], format ["jusqu'à %1", [_mesh getOrDefault ["gwLabel", ""]] call _esc], "warn", 2, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
@@ -372,7 +372,7 @@ if (_bridge) then {
     }] call _para;
     // Fonctions d'Overwatch absentes d'une version plus ancienne : la page continue sans elles.
     if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive") then {
-        ["Simulation de liaison dégradée", ["<t color='#8a9a93'>désactivée</t>", "<t color='#f2ab33'>active : pertes et délais simulés</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
+        ["Liaison instable simulée", ["<t color='#8a9a93'>désactivée</t>", "<t color='#f2ab33'>active : pertes et délais simulés</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
     };
     if (_best isNotEqualTo []) then {
         ["Relais utilisé", format ["%1 · %2 · %3 Mbit/s", [_best select 1] call _esc, [_best select 2] call _dist, (_best select 3) toFixed 1]] call _info;
