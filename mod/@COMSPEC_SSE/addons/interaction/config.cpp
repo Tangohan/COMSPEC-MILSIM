@@ -14,7 +14,8 @@ class CfgPatches {
             "comspec_sse_network",
             "comspec_sse_intel",
             "ace_interact_menu",
-            "ace_common"
+            "ace_common",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;

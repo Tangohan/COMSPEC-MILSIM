@@ -30,7 +30,8 @@ class CfgPatches {
             "cba_main",
             "cba_common",
             "ace_common",
-            "A3_Characters_F"
+            "A3_Characters_F",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;

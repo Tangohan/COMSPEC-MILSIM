@@ -33,6 +33,7 @@ Conçu pour les unités milsim et les chefs de mission qui préparent un théât
 [*] [b]Arma 3[/b]
 [*] [b]CBA A3[/b] (obligatoire) — [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]Workshop CBA[/url]
 [*] [b]ACE3[/b] (obligatoire) — [url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]Workshop ACE3[/url]
+[*] [b]COMSPEC ATAK Native[/b] (obligatoire) — [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]Workshop COMSPEC ATAK Native[/url]
 [*] [b]COMSPEC Overwatch[/b] (optionnel) — pour envoyer vers Athena
 [/list]
 

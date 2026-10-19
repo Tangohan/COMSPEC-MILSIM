@@ -11,7 +11,8 @@ class CfgPatches {
             "comspec_sse_interaction",
             "comspec_sse_evidence",
             "comspec_sse_ui",
-            "ace_interact_menu"
+            "ace_interact_menu",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;

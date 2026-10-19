@@ -3,6 +3,6 @@
 #define PATCHLVL 0
 #define BUILD 1
 
-#define REQUIRED_VERSION 2.10
+#define REQUIRED_VERSION 2.14
 
 #define VERSION_CONFIG version = 0.9.0; versionStr = "0.9.0"; versionAr[] = {0,9,0,0}
