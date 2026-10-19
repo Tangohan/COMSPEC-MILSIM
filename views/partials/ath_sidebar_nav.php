@@ -345,9 +345,8 @@ if ($isOperatorBoNav) {
             'key' => 'terrain',
             'label' => 'TERRAIN',
             'items' => [
-                ['label' => 'Carte ATAK', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
+                ['label' => 'Overwatch', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
                 ['label' => 'Ma liaison ATAK', 'href' => url('back-office/ma-situation/liaison-atak'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/liaison-atak') || str_starts_with($p, 'back-office/ma-situation/appareils') || str_starts_with($p, 'back-office/ma-situation/premiere-liaison')],
-                ['label' => 'Overwatch Beta', 'href' => url('-ATAK-OVERWATCH-Beta'), 'icon' => 'ops', 'active' => in_array($p, ['-ATAK-OVERWATCH-Beta', 'atak-overwatch-beta', 'ATAK-OVERWATCH-Beta'], true), 'badge' => 'BETA'],
                 [
                     'label' => 'Événements',
                     'href' => url('back-office/ma-situation/evenements'),

@@ -15,7 +15,7 @@ $modes = is_array($detectionModes ?? null) ? $detectionModes : [];
 $types = is_array($detectionTypes ?? null) ? $detectionTypes : [];
 $radii = is_array($detectionRadii ?? null) ? $detectionRadii : [10, 20, 50, 100, 200, 500];
 $formAction = (string) ($detectionFormAction ?? url('back-office/atak/detection-marqueurs'));
-$overwatchUrl = url('-ATAK-OVERWATCH-Beta');
+$overwatchUrl = url('atak');
 
 $sentence = static function (array $rule) use ($modes, $types): string {
     $mode = (string) ($rule['match_mode'] ?? '');
@@ -51,7 +51,7 @@ $sentence = static function (array $rule) use ($modes, $types): string {
         </p>
         <div class="mt-5 flex flex-wrap gap-2">
           <a href="<?= $h(url('back-office/atak')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50">Poste de situation</a>
-          <a href="<?= $h($overwatchUrl) ?>" class="inline-flex items-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-950 shadow-sm hover:bg-blue-50/80">Overwatch Beta</a>
+          <a href="<?= $h($overwatchUrl) ?>" class="inline-flex items-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-950 shadow-sm hover:bg-blue-50/80">Overwatch</a>
         </div>
       </div>
     </header>

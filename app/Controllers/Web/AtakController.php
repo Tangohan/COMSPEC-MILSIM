@@ -50,11 +50,14 @@ class AtakController
      * Charge Overwatch avec exactement le même contexte, les mêmes droits et les
      * mêmes services temps réel que l'ATAK historique. Seule la composition UI change.
      */
+    /**
+     * Anciennes adresses de l'Overwatch Beta : Overwatch est désormais la carte ATAK web (/atak).
+     */
     public function overwatchBeta(Request $request, array $params = []): Response
     {
-        $params['_overwatch_beta'] = true;
+        $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
 
-        return $this->index($request, $params);
+        return Response::redirect(url('atak') . ($query !== '' ? '?' . $query : ''), 301);
     }
 
     public function index(Request $request, array $params = []): Response
@@ -303,8 +306,9 @@ class AtakController
             }
         }
 
-        return Response::view(!empty($params['_overwatch_beta']) ? 'atak-overwatch-beta' : 'atak', [
-            'atakOverwatchBeta' => !empty($params['_overwatch_beta']),
+        // Overwatch remplace l'ancienne interface ATAK web (views/atak.php n'est plus servie).
+        return Response::view('atak-overwatch-beta', [
+            'atakOverwatchBeta' => true,
             'atakToken' => $token,
             'atakTenantId' => $tenantId,
             'nodeAtakUrl' => $nodeUrl,

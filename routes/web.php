@@ -993,9 +993,8 @@ return function (Router $router) {
     $router->get('/atak/sse/guide', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak/sse/documentation', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak', [AtakController::class, 'index'], $mwAtakWeb);
-    // Workspace cartographique expérimental, volontairement isolé de l'interface ATAK historique.
+    // Anciennes adresses de l'Overwatch Beta : redirection permanente vers /atak (Overwatch en production).
     $router->get('/-ATAK-OVERWATCH-Beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
-    // Alias mémorisables : l'URL beta reste accessible même si le serveur normalise la casse.
     $router->get('/atak-overwatch-beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
     $router->get('/ATAK-OVERWATCH-Beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
     $router->get('/atak/mobile', [\App\Controllers\Web\AtakMobileController::class, 'index'], $mwAtakWeb);

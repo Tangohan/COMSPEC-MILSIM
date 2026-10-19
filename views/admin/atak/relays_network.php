@@ -295,7 +295,7 @@ $statusMeta = static function (bool $alive, int $reliability): array {
                 <article class="relay-tuto-panel hidden" data-relay-panel="4" role="tabpanel" hidden>
                     <h3 class="text-base font-bold text-slate-900">Ce que voit le poste de commandement</h3>
                     <ul class="mt-3 space-y-2 text-sm text-slate-700">
-                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Sur Overwatch Beta : calque <strong>Relais ATAK</strong> et espace <strong>Réseau</strong> pour la liste.</span></li>
+                        <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Sur Overwatch : calque <strong>Relais ATAK</strong> et espace <strong>Réseau</strong> pour la liste.</span></li>
                         <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Sur cette page : état, portée, places occupées, débit et dernière activité.</span></li>
                         <li class="flex gap-2"><span class="text-emerald-700 font-bold">•</span><span>Un mât détruit passe hors service ici et sur la carte (pastille et emprise rouges).</span></li>
                     </ul>
