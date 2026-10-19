@@ -65,7 +65,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 
 // Check de démarrage (fn_startupCheck), par joueur : résultat du contrôle du mod posté dans le salon de debug du Discord Athena.
 ["comspec_atak_native_startup_report", "CHECKBOX",
-    ["Envoyer le check de démarrage", "Coché par défaut : quand vous vous liez à Athena en jeu (ou si la liaison échoue), le résultat du contrôle du mod (versions, DLL, connexion, numéro et IMEI attribués, terminal porté, FPS, erreurs) est posté avec votre pseudo et votre indicatif dans le salon de debug du Discord Athena, pour aider au dépannage. Ni UID Steam, ni adresse IP. Décocher pour ne rien envoyer."],
+    ["Envoyer le check de démarrage", "Coché par défaut : une seule fois, au premier lancement, quand vous vous liez à Athena en jeu (ou si la liaison échoue), le résultat du contrôle du mod (versions, DLL, connexion, numéro et IMEI attribués, terminal porté, FPS, erreurs) est posté avec votre pseudo et votre indicatif dans le salon de debug du Discord Athena, pour aider au dépannage. Pour un nouvel envoi : menu Échap > Dépannage liaison > Renvoyer le check de démarrage. Ni UID Steam, ni adresse IP. Décocher pour ne rien envoyer."],
     ["COMSPEC", "ATAK · Debug"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.

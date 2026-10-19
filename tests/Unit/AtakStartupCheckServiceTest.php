@@ -28,7 +28,7 @@ final class AtakStartupCheckServiceTest extends TestCase
             'callsign' => 'Alpha 1-1',
             'player_key' => 'k' . bin2hex(random_bytes(6)),
             'session' => $session,
-            'scope' => 'launch',
+            'scope' => 'once',
             'world' => 'Altis',
             'mission' => 'Op Test',
             'mp' => '1',
@@ -67,16 +67,16 @@ final class AtakStartupCheckServiceTest extends TestCase
         self::assertSame('ATAK 1.75.0 · Link 2.0.81 · Arma 2.18', $embed['fields'][1]['value']);
     }
 
-    public function testOneEmbedPerGameLaunch(): void
+    public function testOneEmbedPerSessionUntilReset(): void
     {
         $sent = [];
         $svc = $this->service($sent);
         $body = $this->body('s' . bin2hex(random_bytes(6)));
 
-        // Même lancement : nouvelle mission, puis reconnexion avec un autre déclencheur.
+        // Même session : relance du jeu, nouvelle mission, reconnexion.
         self::assertSame('posted', $svc->handle($body + ['trigger' => 'link_failed'])['status']);
         self::assertSame('duplicate', $svc->handle(['trigger' => 'link', 'mission' => 'Autre'] + $body)['status']);
-        // Lancement suivant du jeu : nouvelle session, nouveau message.
+        // Reset dans Dépannage liaison : nouvelle session, nouveau message.
         $body['session'] = 's' . bin2hex(random_bytes(6));
         self::assertSame('posted', $svc->handle($body)['status']);
         self::assertCount(2, $sent);

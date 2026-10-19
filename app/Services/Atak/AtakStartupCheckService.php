@@ -57,10 +57,10 @@ final class AtakStartupCheckService
     private const DEDUPE_SECONDS = 6 * 3600;
 
     /**
-     * Mods d'avant scope=launch : une session par mission, donc un rapport à chaque mission et à chaque reconnexion.
-     * Pour eux, un seul message par joueur sur cette fenêtre (environ une soirée de jeu).
+     * Mods d'avant scope=once : une session par mission, donc un rapport à chaque mission et à chaque reconnexion.
+     * Pour eux, un seul message par joueur sur 30 jours (le mod à jour envoie le sien, une seule fois, avec scope=once).
      */
-    private const LEGACY_PLAYER_DEDUPE_SECONDS = 3 * 3600;
+    private const LEGACY_PLAYER_DEDUPE_SECONDS = 30 * 86400;
     private const PLAYER_MAX_PER_HOUR = 6;
     private const GLOBAL_MAX_PER_MINUTE = 20;
 
@@ -123,7 +123,7 @@ final class AtakStartupCheckService
         if ($this->limiter->hit('atak_startup:' . $player . ':' . $report['session'], self::DEDUPE_SECONDS) > 1) {
             return ['ok' => true, 'status' => 'duplicate', 'http' => 200];
         }
-        if (!$report['launch_scoped']
+        if (!$report['stable_session']
             && $this->limiter->hit('atak_startup_legacy:' . $player, self::LEGACY_PLAYER_DEDUPE_SECONDS) > 1) {
             return ['ok' => true, 'status' => 'duplicate', 'http' => 200];
         }
@@ -200,7 +200,7 @@ final class AtakStartupCheckService
      *
      * @param array<string, mixed> $body
      * @return array{atak:string, config:string, link:string, link_expected:string, arma:string, player:string,
-     *   callsign:string, player_key:string, session:string, launch_scoped:bool, world:string, mission:string, mp:bool,
+     *   callsign:string, player_key:string, session:string, stable_session:bool, world:string, mission:string, mp:bool,
      *   trigger:string, community:string, steps:list<array{id:string, status:string, detail:string}>}|null
      */
     public static function normalize(array $body): ?array
@@ -243,8 +243,8 @@ final class AtakStartupCheckService
             'callsign' => $str('callsign', 32),
             'player_key' => substr((string) $key, 0, 64) ?: hash('sha256', 'anon:' . $player),
             'session' => substr((string) $session, 0, 64) ?: 'none',
-            // Mod récent : session = lancement du jeu (un seul rapport par lancement, côté mod et ici).
-            'launch_scoped' => ($body['scope'] ?? null) === 'launch',
+            // Mod récent : session gardée dans le profil (un seul rapport, au premier lancement, jusqu'à un reset dans Dépannage liaison).
+            'stable_session' => ($body['scope'] ?? null) === 'once',
             'world' => $str('world', 40),
             'mission' => $str('mission', 60),
             'mp' => in_array(strtolower(trim((string) (is_scalar($body['mp'] ?? null) ? $body['mp'] : ''))), ['1', 'true'], true),
