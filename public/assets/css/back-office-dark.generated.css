@@ -3015,6 +3015,11 @@ html[data-bo-theme="dark"] .bo-setup__progress-meta {
   color: #a2b3ab;
 }
 
+/* ——— back-office-integrations.css ——— */
+html[data-bo-theme="dark"] .bo-int-switch__thumb {
+  background: #111513;
+}
+
 /* ——— back-office-intel-intake.css ——— */
 html[data-bo-theme="dark"] .rmt {
   --rmt-bg: var(--ds-color-bg, #141917);

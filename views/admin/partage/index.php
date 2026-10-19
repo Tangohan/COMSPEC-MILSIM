@@ -248,7 +248,7 @@ $visibleFolderCount = count($entries);
     </header>
 
     <div class="fs__layout">
-        <aside class="fs__side" aria-label="Arborescence des dossiers">
+        <div class="fs__side" role="navigation" aria-label="Arborescence des dossiers">
             <nav class="fs-tree">
                 <a class="fs-tree__home<?= $folderId === 0 && $tab === '' ? ' is-current' : '' ?>" href="<?= $h($link()) ?>"><?= $ico('users') ?>Partagés avec moi</a>
                 <?= $tree($entries, 0) ?>
@@ -264,9 +264,9 @@ $visibleFolderCount = count($entries);
                 </dl>
                 <p class="fs__muted">Un partage sur un dossier vaut pour tout ce qu’il contient. Le créateur d’un dossier le gère toujours.</p>
             </div>
-        </aside>
+        </div>
 
-        <main class="fs__main">
+        <div class="fs__main">
 <?php if ($tab === 'corbeille'): ?>
             <?php $trashFolders = $fsTrashFolders ?? []; $trashFiles = $fsTrashFiles ?? []; ?>
             <section class="fs-panel">
@@ -481,7 +481,7 @@ $visibleFolderCount = count($entries);
                 </section>
             <?php endif; ?>
 <?php endif; ?>
-        </main>
+        </div>
     </div>
 
     <?php if ($canRoot && $folder === null && $tab === ''): ?>

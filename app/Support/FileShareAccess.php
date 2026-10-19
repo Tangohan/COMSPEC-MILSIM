@@ -176,6 +176,9 @@ final class FileShareAccess
 
     public static function humanSize(int $bytes): string
     {
+        if ($bytes <= 0) {
+            return '0 Mo';
+        }
         if ($bytes < 1024) {
             return $bytes . ' o';
         }
