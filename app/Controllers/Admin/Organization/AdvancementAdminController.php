@@ -138,6 +138,9 @@ final class AdvancementAdminController
         [$tenantId] = $ctx;
         $this->repository->archiveGrade((int) ($params['id'] ?? 0), $tenantId);
         Session::flash('success', 'Grade archivé. L’historique des personnels qui le détiennent est conservé.');
+        if ((string) $request->input('return_to') === 'referentiel') {
+            return Response::redirect(url('back-office/referentiels/grades') . '?tab=perso');
+        }
 
         return Response::redirect(url('back-office/organisation/grades'));
     }

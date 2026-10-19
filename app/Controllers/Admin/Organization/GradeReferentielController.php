@@ -144,7 +144,8 @@ class GradeReferentielController
             return Response::redirect(url('back-office/referentiels/grades/create'));
         }
         $systemId = (int) $request->input('grade_system_id');
-        $returnTab = $this->tabForSystemId($systemId);
+        // Un grade créé par la communauté apparaît dans l'onglet « Grades personnalisés ».
+        $returnTab = 'perso';
         $categoryId = (int) $request->input('grade_category_id');
         $code = strtoupper(trim((string) $request->input('code')));
         $labelShort = trim((string) $request->input('label_short'));
@@ -293,12 +294,12 @@ class GradeReferentielController
 
     private function normalizeTab(string $tab): string
     {
-        return in_array($tab, ['fr', 'us'], true) ? $tab : 'fr';
+        return in_array($tab, ['fr', 'us', 'perso'], true) ? $tab : 'fr';
     }
 
     private function normalizeGradeTab(string $tab): string
     {
-        return $tab === 'us' ? 'us' : 'fr';
+        return in_array($tab, ['us', 'perso'], true) ? $tab : 'fr';
     }
 
     /** @param array<string, mixed>|null $grade */

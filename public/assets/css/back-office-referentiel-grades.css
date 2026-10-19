@@ -296,3 +296,37 @@
 }
 .grd-ref__system:not(.is-other) .grd-ref__switch { background: transparent; color: var(--ath-ink, #0c1116); }
 .grd-ref__switch:hover { opacity: 0.88; }
+
+/* Onglet « Grades personnalisés » : compteur dans l'onglet et lien de pied de liste */
+.grd-ref__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border: 1px solid #c5e4f4;
+  background: #eef8fd;
+  color: #0e4a63;
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.grd-ref__tabs a.is-active .grd-ref__count {
+  border-color: var(--ath-ink, #0c1116);
+  background: var(--ath-ink, #0c1116);
+  color: #fff;
+}
+
+.grd-ref__foot {
+  margin: 1rem 0 0;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.8125rem;
+}
+
+.grd-ref__foot a {
+  color: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+}
+
