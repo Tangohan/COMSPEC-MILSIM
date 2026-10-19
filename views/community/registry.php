@@ -97,6 +97,60 @@ $nameInitials = static function (string $name): string {
     return $out !== '' ? $out : 'C';
 };
 
+/* Badge « images » du hero : unités en tendance d'abord, puis celles qui ont un logo, 5 au plus. */
+$heroBadgeRows = array_values($registryTrending);
+foreach ($registryTenants as $hbRow) {
+    if (!in_array($hbRow, $heroBadgeRows, true)) {
+        $heroBadgeRows[] = $hbRow;
+    }
+}
+$hbHasLogo = static function (array $row): bool {
+    $l = trim((string) ($row['logo_url'] ?? ''));
+    return $l !== '' && filter_var($l, FILTER_VALIDATE_URL) !== false;
+};
+usort($heroBadgeRows, static fn (array $a, array $b): int => (int) $hbHasLogo($b) <=> (int) $hbHasLogo($a));
+$heroBadgeItems = [];
+foreach (array_slice($heroBadgeRows, 0, 5) as $hbRow) {
+    $heroBadgeItems[] = [
+        'src' => $hbHasLogo($hbRow) ? trim((string) $hbRow['logo_url']) : null,
+        'initials' => $nameInitials(name_mask_text((string) ($hbRow['name'] ?? $hbRow['slug'] ?? ''))),
+    ];
+}
+
+/* Compteurs des filtres (nombre de communautés par pays, langue, type, jeu, tag). */
+$filterCounts = ['pays' => [], 'langue' => [], 'jeu' => [], 'tag' => []];
+foreach ($registryTenants as $fcRow) {
+    $fcCountry = strtolower(trim((string) ($fcRow['registry_country'] ?? '')));
+    if ($fcCountry !== '') {
+        $filterCounts['pays'][$fcCountry] = ($filterCounts['pays'][$fcCountry] ?? 0) + 1;
+    }
+    $fcLang = trim((string) ($fcRow['registry_locale'] ?? ''));
+    if ($fcLang !== '') {
+        $filterCounts['langue'][$fcLang] = ($filterCounts['langue'][$fcLang] ?? 0) + 1;
+    }
+    $fcGame = trim((string) ($fcRow['game_label'] ?? ''));
+    if ($fcGame !== '') {
+        $filterCounts['jeu'][$fcGame] = ($filterCounts['jeu'][$fcGame] ?? 0) + 1;
+    }
+    foreach ((is_array($fcRow['registry_tag_slugs'] ?? null) ? $fcRow['registry_tag_slugs'] : []) as $fcTag) {
+        if (is_string($fcTag) && $fcTag !== '') {
+            $filterCounts['tag'][$fcTag] = ($filterCounts['tag'][$fcTag] ?? 0) + 1;
+        }
+    }
+}
+$registryOpenCount = 0;
+foreach ($registryTenants as $roRow) {
+    $roOpen = array_key_exists('registry_recruitment_open', $roRow)
+        ? !empty($roRow['registry_recruitment_open'])
+        : empty($roRow['registry_locked']);
+    $registryOpenCount += $roOpen ? 1 : 0;
+}
+$filterCountSuffix = static function (string $group, string $key) use ($filterCounts): string {
+    $n = (int) ($filterCounts[$group][$key] ?? 0);
+    // « · » : HtmlTranslator traduit chaque morceau séparément (le libellé, pas le nombre).
+    return $n > 0 ? ' · ' . $n : '';
+};
+
 if ($registryCount === 0) {
     $countLabel = 'Aucune communauté listée';
 } elseif ($registryCount === 1) {
@@ -128,6 +182,25 @@ if ($registryCount === 0) {
         <a href="<?= htmlspecialchars(url('join')) ?>" class="cr-btn cr-btn--accent">Rejoindre par code</a>
         <a href="<?= htmlspecialchars($createCommunityUrl) ?>" class="cr-btn cr-btn--ghost"><?= htmlspecialchars($createCommunityLabel) ?></a>
       </div>
+      <?php if ($registryCount > 0): ?>
+      <aside class="cr-hero__aside" aria-label="L’annuaire en chiffres">
+        <?php
+        $ibItems = $heroBadgeItems;
+        $ibCount = $registryCount;
+        $ibLabel = $registryCount === 1 ? 'communauté' : 'communautés';
+        $ibHref = '#cr-catalog-title';
+        $ibTone = 'dark';
+        $ibAria = 'Voir les ' . $registryCount . ' communautés de l’annuaire';
+        require base_path('views/partials/images_badge.php');
+        unset($ibItems, $ibCount, $ibLabel, $ibHref, $ibTone, $ibAria);
+        ?>
+        <dl class="cr-hero__stats">
+          <div><dt>Recrutent</dt><dd><?= (int) $registryOpenCount ?></dd></div>
+          <div><dt>Pays représentés</dt><dd><?= count($filterCountries) ?></dd></div>
+          <div><dt>Langues</dt><dd><?= count($filterLocales) ?></dd></div>
+        </dl>
+      </aside>
+      <?php endif; ?>
     </div>
   </section>
 
@@ -173,7 +246,7 @@ if ($registryCount === 0) {
             <select name="pays" data-cr-country aria-label="Pays">
               <option value="">Tous les pays</option>
               <?php foreach ($filterCountries as $countryKey => $countryLabel): ?>
-              <option value="<?= htmlspecialchars(strtolower((string) $countryKey), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $countryLabel) ?></option>
+              <option value="<?= htmlspecialchars(strtolower((string) $countryKey), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $countryLabel . $filterCountSuffix('pays', strtolower((string) $countryKey))) ?></option>
               <?php endforeach; ?>
             </select>
           </label>
@@ -185,7 +258,7 @@ if ($registryCount === 0) {
             <select name="langue" data-cr-lang aria-label="Langue">
               <option value="">Toutes les langues</option>
               <?php foreach ($filterLocales as $langKey => $langLabel): ?>
-              <option value="<?= htmlspecialchars((string) $langKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $langLabel) ?></option>
+              <option value="<?= htmlspecialchars((string) $langKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $langLabel . $filterCountSuffix('langue', (string) $langKey)) ?></option>
               <?php endforeach; ?>
             </select>
           </label>
@@ -207,7 +280,7 @@ if ($registryCount === 0) {
             <select name="tag" data-cr-tag aria-label="Tag">
               <option value="">Tous les tags</option>
               <?php foreach ($filterTags as $tagKey => $tagLabel): ?>
-              <option value="<?= htmlspecialchars((string) $tagKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $tagLabel) ?></option>
+              <option value="<?= htmlspecialchars((string) $tagKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $tagLabel . $filterCountSuffix('tag', (string) $tagKey)) ?></option>
               <?php endforeach; ?>
             </select>
           </label>
@@ -219,7 +292,7 @@ if ($registryCount === 0) {
             <select name="jeu" data-cr-game aria-label="Jeu">
               <option value="">Tous les jeux</option>
               <?php foreach ($filterGames as $gameOpt): ?>
-              <option value="<?= htmlspecialchars(mb_strtolower($gameOpt), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($gameOpt) ?></option>
+              <option value="<?= htmlspecialchars(mb_strtolower($gameOpt), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($gameOpt . $filterCountSuffix('jeu', $gameOpt)) ?></option>
               <?php endforeach; ?>
             </select>
           </label>
@@ -240,16 +313,16 @@ if ($registryCount === 0) {
 
         <div class="cr-filters__foot">
           <div class="cr-chips" role="group" aria-label="Affiner la liste">
-            <button type="button" class="cr-chip is-active" data-cr-filter="all" aria-pressed="true">Toutes</button>
+            <button type="button" class="cr-chip is-active" data-cr-filter="all" aria-pressed="true">Toutes <span class="cr-chip__n"><?= (int) $registryCount ?></span></button>
             <?php if ($registryPinnedCount > 0): ?>
-            <button type="button" class="cr-chip" data-cr-filter="pinned" aria-pressed="false">Épinglées</button>
+            <button type="button" class="cr-chip" data-cr-filter="pinned" aria-pressed="false">Épinglées <span class="cr-chip__n"><?= (int) $registryPinnedCount ?></span></button>
             <?php endif; ?>
             <?php if ($registryTrending !== []): ?>
-            <button type="button" class="cr-chip" data-cr-filter="trending" aria-pressed="false">Tendance</button>
+            <button type="button" class="cr-chip" data-cr-filter="trending" aria-pressed="false">Tendance <span class="cr-chip__n"><?= count($registryTrending) ?></span></button>
             <?php endif; ?>
             <button type="button" class="cr-chip" data-cr-filter="featured" aria-pressed="false">À la une</button>
-            <button type="button" class="cr-chip" data-cr-filter="open" aria-pressed="false">Recrutement ouvert</button>
-            <button type="button" class="cr-chip" data-cr-filter="closed" aria-pressed="false">Recrutement fermé</button>
+            <button type="button" class="cr-chip" data-cr-filter="open" aria-pressed="false">Recrutement ouvert <span class="cr-chip__n"><?= (int) $registryOpenCount ?></span></button>
+            <button type="button" class="cr-chip" data-cr-filter="closed" aria-pressed="false">Recrutement fermé <span class="cr-chip__n"><?= (int) ($registryCount - $registryOpenCount) ?></span></button>
           </div>
           <div class="cr-sort">
             <label class="cr-select cr-select--sort">

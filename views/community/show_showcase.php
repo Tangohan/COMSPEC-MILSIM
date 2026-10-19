@@ -1434,7 +1434,36 @@ unset($pbCssFile, $pbCssName);
         </div>
         <div class="cl-media__actions">
           <a class="cl-btn cl-btn--accent" href="<?= htmlspecialchars($reelsUrl, ENT_QUOTES, 'UTF-8') ?>">Voir le fil</a>
+          <?php
+          // Badge « images » vers la galerie : seulement des photos sans zone floutée (visages, plaques…).
+          $mediaBadgeItems = [];
+          foreach ($galleryImages as $gbItem) {
+              if (\App\Support\CommunityMediaDetails::parseBlurRegions($gbItem['blur_regions_json'] ?? null) !== []) {
+                  continue;
+              }
+              $gbUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($gbItem['storage_path']) ? (string) $gbItem['storage_path'] : null);
+              if ($gbUrl) {
+                  $mediaBadgeItems[] = ['src' => $gbUrl];
+              }
+              if (count($mediaBadgeItems) >= 3) {
+                  break;
+              }
+          }
+          ?>
+          <?php if (count($mediaBadgeItems) >= 2): ?>
+          <?php
+          $ibItems = $mediaBadgeItems;
+          $ibCount = $mediaCount;
+          $ibLabel = $mediaCount === 1 ? 'média' : 'médias';
+          $ibHref = $mediasUrl;
+          $ibTone = 'light';
+          $ibAria = 'Ouvrir la galerie complète';
+          require base_path('views/partials/images_badge.php');
+          unset($ibItems, $ibCount, $ibLabel, $ibHref, $ibTone, $ibAria);
+          ?>
+          <?php else: ?>
           <a class="cl-btn cl-btn--light" href="<?= htmlspecialchars($mediasUrl, ENT_QUOTES, 'UTF-8') ?>">Galerie complète</a>
+          <?php endif; ?>
         </div>
       </div>
       <?php if ($publicMediaCollections !== []): ?>
