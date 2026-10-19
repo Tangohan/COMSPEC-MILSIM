@@ -109,10 +109,6 @@ require base_path('views/partials/alert_banners.php');
         </div>
     </section>
 
-    <div class="atak-dash__guide" id="dash-tour-getting-started">
-        <?php $tpgType = 'atak'; require base_path('views/partials/tenant_profile_getting_started.php'); ?>
-    </div>
-
     <section class="atak-dash__modules" id="dash-tour-modules" aria-label="Accès rapides">
         <div class="atak-dash__modules-inner">
             <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module">

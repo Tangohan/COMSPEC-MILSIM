@@ -284,11 +284,6 @@ require base_path('views/partials/alert_banners.php');
         <?php endif; ?>
 
         <?php if (!$dashboard_is_default_tenant): ?>
-            <?php if (function_exists('can') && (can('admin.organization') || can('admin.access'))): ?>
-                <div class="mx-auto max-w-6xl px-4 pt-6 sm:px-6" id="dash-tour-getting-started">
-                    <?php $tpgType = 'full'; require base_path('views/partials/tenant_profile_getting_started.php'); ?>
-                </div>
-            <?php endif; ?>
             <?php require base_path('views/partials/dashboard_command_center.php'); ?>
         <?php endif; ?>
     </main>
