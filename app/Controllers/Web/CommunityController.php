@@ -69,6 +69,12 @@ class CommunityController
     public function registry(Request $request, array $params = []): Response
     {
         $tenants = array_map(fn (array $t): array => $this->maskPublicNames($t), $this->tenantRepository->listForRegistry());
+        // Épingles de l'administration du site + tendance 30 jours (sur les seules communautés listées).
+        try {
+            $tenants = (new \App\Services\Community\RegistryDirectory())->forRegistry($tenants);
+        } catch (\Throwable) {
+            // annuaire affiché sans épingles ni tendance
+        }
 
         $registryDesc = 'Annuaire public des communautés et unités MILSIM sur Athena. Parcourez les fiches, filtrez par jeu ou langue, et rejoignez une organisation.';
         $registryUrl = rtrim((string) url('communities'), '/');

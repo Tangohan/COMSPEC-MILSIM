@@ -1,0 +1,174 @@
+/**
+ * Administration du site — Annuaire public : épinglage et tendance (/admin/system/annuaire).
+ * S'appuie sur la coque .pa (platform-admin.css) : jetons --pa-*, le mode nuit suit sans règle dédiée.
+ */
+
+.par .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.par-columns {
+  display: grid;
+  gap: 0 1.15rem;
+}
+@media (min-width: 1100px) {
+  .par-columns { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+}
+
+.par-empty {
+  margin: 0.9rem 0 0;
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--pa-line);
+  border-radius: 12px;
+  color: var(--pa-muted);
+  font-size: 0.86rem;
+}
+.par-empty[hidden] { display: none; }
+
+.par-pins {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.par-pin {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--pa-line);
+  border-left: 3px solid #d79a2b;
+  border-radius: 12px;
+  background: var(--pa-surface-2);
+}
+.par-pin--off { border-left-color: var(--pa-line); opacity: 0.78; }
+.par-pin__pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--pa-ink);
+  color: var(--pa-surface);
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+.par-pin__body .pa-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; }
+.par-pin__note {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--pa-muted);
+}
+.par-pin__remove { margin: 0; }
+
+.par-edit { margin-top: 0.5rem; }
+.par-edit > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.8rem;
+  font-weight: 750;
+  color: var(--pa-mint);
+}
+.par-edit > summary::-webkit-details-marker { display: none; }
+.par-edit--row { margin: 0; text-align: right; }
+.par-edit--row[open] { text-align: left; min-width: min(420px, 80vw); }
+.par-edit--row > summary.pa-btn { color: var(--pa-ink); font-size: inherit; }
+.par-form {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.9rem 0.9rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 12px;
+  background: var(--pa-surface);
+}
+.par-form__grid {
+  display: grid;
+  gap: 0 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+.par-form .pa-field input[type="date"] {
+  width: 100%;
+  margin-top: 0.45rem;
+  min-height: 2.6rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 0.75rem;
+  background: var(--pa-surface);
+  color: var(--pa-ink);
+  font: inherit;
+  font-size: 0.92rem;
+}
+.par-form [hidden] { display: none; }
+.par-optional { font-weight: 500; color: var(--pa-muted); }
+.par-form .pa-actions { margin-top: 0.9rem; }
+
+.par-trend {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+.par-trend li {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  grid-template-areas: "rank name score" "rank signals score";
+  gap: 0.1rem 0.6rem;
+  align-items: center;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 12px;
+  background: var(--pa-surface-2);
+}
+.par-trend__rank { grid-area: rank; font-weight: 900; color: var(--pa-mint); }
+.par-trend__name { grid-area: name; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.par-trend__signals { grid-area: signals; font-size: 0.78rem; color: var(--pa-muted); }
+.par-trend__score { grid-area: score; font-weight: 900; font-variant-numeric: tabular-nums; }
+
+.par-all__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+.par-search input {
+  min-width: min(280px, 100%);
+  min-height: 2.5rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 0.75rem;
+  background: var(--pa-surface);
+  color: var(--pa-ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.par-search input:focus { outline: none; border-color: var(--pa-mint); }
+.par tr[hidden] { display: none; }
+
+@media (max-width: 640px) {
+  .par-pin { grid-template-columns: auto minmax(0, 1fr); }
+  .par-pin__remove { grid-column: 2; }
+  .par-search, .par-search input { width: 100%; }
+}
+
+/* Mobile : la liste passe en fiches empilées plutôt qu'un tableau à faire défiler. */
+@media (max-width: 720px) {
+  .par .pa-table thead { display: none; }
+  .par .pa-table,
+  .par .pa-table tbody,
+  .par .pa-table tr,
+  .par .pa-table td { display: block; width: 100%; min-width: 0; }
+  .par .pa-table tr { padding: 0.75rem 0; border-bottom: 1px solid var(--pa-line); }
+  .par .pa-table tr[hidden] { display: none; }
+  .par .pa-table td { padding: 0.2rem 0; border: 0; text-align: left !important; }
+  .par-edit--row, .par-edit--row[open] { text-align: left; min-width: 0; }
+}
