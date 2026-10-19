@@ -32,7 +32,7 @@ $hasFilter = trim((string) $opts['q']) !== '' || ((string) $opts['col'] !== '' &
 $storageTab = 'data';
 ?>
 <div class="mx-auto max-w-[100rem] px-4 sm:px-6 py-8 space-y-5">
-    <header class="flex flex-wrap items-end justify-between gap-3">
+    <header class="pa-head flex flex-wrap items-end justify-between gap-3">
         <div class="min-w-0">
             <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-800 mb-1"><a href="<?= $h(url('admin/system/storage/donnees')) ?>" class="hover:underline">Explorateur de données</a> · toutes les communautés</p>
             <h1 class="font-mono text-2xl font-black text-slate-900 break-all"><?= $h($table) ?></h1>
