@@ -119,6 +119,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         private _icon = switch (_kind) do {
             case "cp": { "\A3\ui_f\data\map\markers\nato\b_hq.paa" };
             case "gw": { "\A3\ui_f\data\map\markers\nato\b_motor_inf.paa" };
+            case "mpu5": { "\A3\ui_f\data\map\markers\nato\b_inf.paa" };
             default { "\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa" };
         };
         _map drawIcon [_icon, _col, _p, 15, 15, 0, "", 0, 0, _font, "center"];

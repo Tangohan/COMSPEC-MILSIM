@@ -88,7 +88,7 @@ if (_best isNotEqualTo []) then {
     if (_gh in ["dégradé", "critique"]) then { _f pushBack [format ["Relais %1 (%2 MHz)", _gh, _gf], format ["perte %1 %%", _gl]]; };
     // Relais obligatoires : on a le débit du relais ; sinon il ne fait qu'améliorer le direct.
     if (_req) then { _kbps = (round (_gmb * 1000)) max 200; _loss = _loss max _gl; } else { _kbps = _kbps max round (_gmb * 1000); };
-    _f pushBack [format ["%1 %2 à %3 m", createHashMapFromArray [["relay", "Relais"], ["gw", "Passerelle"], ["cp", "Poste de commandement"]] getOrDefault [_gk, "Relais"], _gn, round _gd], format ["%1 Mbit/s", _gmb toFixed 1]];
+    _f pushBack [format ["%1 %2 à %3 m", createHashMapFromArray [["relay", "Relais"], ["gw", "Passerelle"], ["cp", "Poste de commandement"], ["mpu5", "Radio maillée"]] getOrDefault [_gk, "Relais"], _gn, round _gd], format ["%1 Mbit/s", _gmb toFixed 1]];
     if (_gs > 0 && {_gu > _gs}) then { _f pushBack [format ["Relais saturé (%1 téléphones pour %2 places)", _gu, _gs], format ["-%1 %%", round (100 * (1 - _gs / _gu))]]; };
 };
 private _unit = vehicle player;

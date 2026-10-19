@@ -165,6 +165,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 // Contrôle Zeus des ATAK : effets reçus du serveur (fn_zeusClient), boucle d'une seconde, menu clic droit ZEN du Zeus.
 ["comspec_atak_native_zeusFx", { _this call comspec_atak_native_fnc_zeusClient; }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_zeusClient; }, 1] call CBA_fnc_addPerFrameHandler;
+// Radio maillée MPU5 et voix ACRE2 (fn_mpu5) : détection de l'objet, réseau voix publié, qui émet.
+["init"] call comspec_atak_native_fnc_mpu5;
 ["register"] call comspec_atak_native_fnc_zeusMenu;
 // Attributs ZEN des relais (fenêtre Éditer d'un pylône ou relais) et menu clic droit « ATAK · Relais ».
 ["register"] call comspec_atak_native_fnc_relayZeus;
