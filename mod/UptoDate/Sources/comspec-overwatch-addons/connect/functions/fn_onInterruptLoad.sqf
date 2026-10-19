@@ -101,6 +101,13 @@ _ath ctrlSetFontHeight _fontH;
 _ath ctrlSetPosition [_xDiag + _wDiag + _gap, _y, _wAth, _h];
 _ath ctrlCommit 0;
 _ath ctrlSetTooltip (("Changer de choix : Athena (liaison avec le poste) ou ATAK local") call comspec_overwatch_connect_fnc_tr);
-_ath ctrlAddEventHandler ["ButtonClick", { [true] call comspec_overwatch_connect_fnc_athenaChoiceShow; }];
+// ATAK natif avec téléphone : la question est dans Réglages > Service Athéna ; l'ancienne fenêtre reste pour qui n'a pas de téléphone.
+_ath ctrlAddEventHandler ["ButtonClick", {
+    if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main") && {[player] call comspec_atak_native_fnc_hasDevice}) exitWith {
+        (findDisplay 49) closeDisplay 2;
+        [{ ["show"] call comspec_atak_native_fnc_athenaChoice; }] call CBA_fnc_execNextFrame;
+    };
+    [true] call comspec_overwatch_connect_fnc_athenaChoiceShow;
+}];
 
 ["DEBUG", "Esc", "Barre COMSPEC injectée (haut droite)"] call comspec_overwatch_connect_fnc_log;

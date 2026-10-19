@@ -794,6 +794,8 @@ if (_hubOverwrite) then {
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        // ATAK natif : l'app MEDICAL du téléphone, pas l'ancienne fenêtre MEDEVAC plein écran.
+        if (["MEDICAL", "Équipez un téléphone ATAK pour demander une évacuation sanitaire."] call comspec_overwatch_connect_fnc_openNativePage) exitWith { true };
         [] call comspec_overwatch_connect_fnc_medevacDialogShow;
         true
     },
