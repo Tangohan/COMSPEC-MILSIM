@@ -26,6 +26,8 @@ final class DiscordWebhookCatalog
     public const KEY_ATAK_RECON_NOTES = 'atak_recon_notes';
     /** Check de démarrage du mod de chaque joueur de la communauté (étapes, versions, carte). */
     public const KEY_ATAK_STARTUP_CHECK = 'atak_startup_check';
+    /** Signalements du mod envoyés par les joueurs de la communauté (Échap > Signaler, erreurs du mod). */
+    public const KEY_ATAK_MOD_REPORTS = 'atak_mod_reports';
 
     public const MODE_OFF = 'off';
     public const MODE_DEFAULT = 'default';
@@ -84,6 +86,13 @@ final class DiscordWebhookCatalog
                 'group' => 'Téléphone ATAK',
                 'label' => 'Check de démarrage du mod',
                 'hint' => 'Quand un joueur de la communauté lie son téléphone en jeu : étapes vérifiées (mod, DLL, compte, téléphone, terminal…), versions et carte, en français et en anglais. Utile pour aider un joueur bloqué. Liens, adresses IP et dossiers Windows retirés.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ATAK_MOD_REPORTS,
+                'group' => 'Téléphone ATAK',
+                'label' => 'Signalements du mod',
+                'hint' => 'Quand un joueur de la communauté signale un problème depuis le jeu (Échap > Signaler un problème) ou que le mod remonte une erreur : gravité, indicatif, module, message et versions. Les incidents passagers ne sont pas postés. Ni Steam, ni adresse IP, ni lien.',
                 'default_mode' => self::MODE_OFF,
             ],
             [

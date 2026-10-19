@@ -183,6 +183,18 @@ final class AtakRealismApiController
             'notes' => $request->input('notes'),
         ];
         $body['user_id'] = $this->resolveUserId($tenantId, $body);
+        // ATAK bloqué par l'administration du site : il ne peut pas se réenregistrer.
+        if ($this->isGameClient()) {
+            $blocked = \App\Support\AtakAdminBlockGate::deny(
+                $tenantId,
+                ((int) ($body['user_id'] ?? 0)) ?: null,
+                null,
+                trim((string) ($body['terminal_uid'] ?? '')) ?: null
+            );
+            if ($blocked !== null) {
+                return $blocked;
+            }
+        }
         $body = $this->tagWebSessionIfNeeded($tenantId, $pairingToken, $body);
         $body['last_client_ip'] = AtakRealismRepository::extractClientIp($request->ip());
         $host = $this->requestHost();
@@ -340,14 +352,23 @@ final class AtakRealismApiController
 
         // Compromission validée (sur le terrain ou par le Zeus) : la clé du terminal n'est plus sûre,
         // ses certificats encore valides sont révoqués (motif RFC 5280 keyCompromise).
-        $revoked = 0;
+        $revokedIds = [];
         if ($state === 'compromised' && (int) ($terminal['id'] ?? 0) > 0) {
             try {
-                $revoked = $this->realismRepository->revokeCertificatesForTerminal($tenantId, (int) $terminal['id'], 'keyCompromise');
+                $revokedIds = $this->realismRepository->revokeCertificateIdsForTerminal($tenantId, (int) $terminal['id'], 'keyCompromise');
             } catch (\Throwable) {
-                $revoked = 0;
+                $revokedIds = [];
             }
         }
+        $revoked = count($revokedIds);
+        // Historique de l'ATAK (/admin/parc-atak/fiche), d'où l'administration du site peut l'annuler.
+        (new \App\Repositories\AtakAdminControlRepository())->recordCompromise(
+            $terminal,
+            $state,
+            $reason !== '' ? $reason : null,
+            $this->isGameClient() ? 'game' : 'web',
+            $revokedIds
+        );
 
         try {
             $activity = new \App\Services\Tactical\AtakActivityLogService();

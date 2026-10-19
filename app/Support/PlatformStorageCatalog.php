@@ -145,6 +145,7 @@ final class PlatformStorageCatalog
             ['path' => 'public/uploads/sse', 'label' => 'Pièces SSE', 'purgeable' => false],
             ['path' => 'public/uploads/login-accueil', 'label' => 'Photos d’accueil après connexion', 'purgeable' => false],
             ['path' => 'storage/documents', 'label' => 'Documents des communautés', 'purgeable' => false],
+            ['path' => 'storage/private/partage', 'label' => 'Fichiers partagés des communautés', 'purgeable' => false],
             ['path' => 'storage/logs', 'label' => 'Journaux serveur', 'purgeable' => true],
             ['path' => 'storage/cache', 'label' => 'Cache', 'purgeable' => true],
             ['path' => 'storage/updates', 'label' => 'Paquets de mise à jour', 'purgeable' => false],

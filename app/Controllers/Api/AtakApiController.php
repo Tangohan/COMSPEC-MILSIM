@@ -2625,6 +2625,24 @@ class AtakApiController
             static fn (\App\Services\Monitoring\AtakModReportDiscordTicketService $t) => $t->onReport($reportId)
         );
 
+        // Copie dans le salon Discord de la communauté du joueur (« Signalements du mod »), après la réponse au jeu.
+        if ($result['created'] && $steam !== null) {
+            try {
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                \App\Services\Integrations\CommunityModReportRelay::defer((int) ($accounts[$steam]['tenant_id'] ?? 0), [
+                    'gravity' => $result['gravity'],
+                    'source' => $source,
+                    'channel' => $channel,
+                    'message' => $message,
+                    'callsign' => $callsign,
+                    'player_name' => $playerName,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
+
         // Signalement joueur (Échap > Signaler un problème) ou erreur automatique critique : e-mail à
         // l'exploitation, jamais bloquant. Les autres détections automatiques restent sur la page.
         if ($result['created']) {
@@ -3308,6 +3326,14 @@ class AtakApiController
         }
         try {
             $row = $this->casRepo->createMedevac($tenantId, $mapId, $author, $body);
+        } catch (\PDOException $e) {
+            // Erreur base (communauté supprimée, donnée refusée) : réponse explicite plutôt que 503 générique.
+            error_log('medevacStore: ' . $e->getMessage());
+
+            return Response::json([
+                'error' => 'medevac_store_failed',
+                'message' => 'La demande MEDEVAC n’a pas pu être enregistrée sur Athena. Réessayez ; si cela continue, prévenez l’administration.',
+            ], 500);
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'migration_required') {
                 return Response::json([
@@ -6688,11 +6714,17 @@ class AtakApiController
                 $existing = $realism->findTerminalByUid($tenantId, $terminalUidPos);
                 $prev = strtolower((string) ($existing['compromise_state'] ?? 'none'));
                 if ($existing !== null && $prev !== $compromisePos) {
-                    $realism->setTerminalCompromise(
+                    $updated = $realism->setTerminalCompromise(
                         $tenantId,
                         $terminalUidPos,
                         $compromisePos,
                         $compromisePos === 'none' ? null : 'Remonté depuis le terrain'
+                    );
+                    (new \App\Repositories\AtakAdminControlRepository())->recordCompromise(
+                        $updated ?? $existing,
+                        $compromisePos,
+                        $compromisePos === 'none' ? null : 'Remonté depuis le terrain',
+                        'position'
                     );
                     if ($compromisePos !== 'none') {
                         $this->activityLog->record(
@@ -7128,6 +7160,77 @@ class AtakApiController
         }
 
         return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched]);
+    }
+
+    /**
+     * Serveur Arma : ce que l'administration du site impose aux joueurs connectés (/admin/parc-atak).
+     * Corps : {players: [steam…]} (vide = toute la communauté). Réponse : {ok, messages: [{id, steam_uid, title, body,
+     * level, require_ack, created_at}], blocked: [{steam_uid, message, until}]}. Le serveur affiche les messages au joueur
+     * puis appelle /api/atak/admin-control/ack ; un joueur bloqué voit son ATAK verrouillé.
+     */
+    public function adminControlPending(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $steams = [];
+        foreach (is_array($body['players'] ?? null) ? array_slice($body['players'], 0, 300) : [] as $p) {
+            $s = SteamId::normalize(is_array($p) ? (string) ($p['player_uid'] ?? $p['steam_uid'] ?? '') : (string) $p);
+            if ($s !== null) {
+                $steams[$s] = $s;
+            }
+        }
+        $repo = new \App\Repositories\AtakAdminControlRepository();
+        $messages = [];
+        foreach ($repo->pendingForTenant($tenantId, array_values($steams)) as $m) {
+            $messages[] = [
+                'id' => (int) $m['id'],
+                'steam_uid' => (string) ($m['steam_uid'] ?? ''),
+                'title' => (string) $m['title'],
+                'body' => (string) $m['body'],
+                'level' => (string) $m['level'],
+                'require_ack' => (int) $m['require_ack'] === 1,
+                'created_at' => (string) $m['created_at'],
+            ];
+        }
+        $blocked = [];
+        foreach ($steams as $s) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $s);
+            $block = $repo->activeBlockFor($tenantId, $user !== null ? (int) $user['id'] : null, $s);
+            if ($block !== null) {
+                $blocked[] = [
+                    'steam_uid' => $s,
+                    'message' => \App\Support\AtakAdminBlockGate::playerMessage($block),
+                    'until' => (string) ($block['expires_at'] ?? ''),
+                ];
+            }
+        }
+
+        return Response::json(['ok' => true, 'messages' => $messages, 'blocked' => $blocked]);
+    }
+
+    /** Serveur Arma : messages imposés affichés ({ids, state: "delivered"}) ou validés par le joueur ({ids, state: "acked"}). */
+    public function adminControlAck(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $body = $this->jsonBody($request);
+        $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 200) : [];
+        $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
+        $n = (new \App\Repositories\AtakAdminControlRepository())->markMessages($r, array_map('intval', $ids), $state);
+
+        return Response::json(['ok' => true, 'updated' => $n]);
     }
 
     /**
