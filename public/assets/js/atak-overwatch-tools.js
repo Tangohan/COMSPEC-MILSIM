@@ -358,7 +358,8 @@
     if (!api) return;
     var stored = '';
     try { stored = localStorage.getItem(NOTE_KEY) || ''; } catch (e) {}
-    var html = '<p class="ow-help">Bloc-notes du poste, conservé sur cet ordinateur. Il n’est pas transmis aux opérateurs tant que vous ne l’envoyez pas sur un canal.</p>' +
+    var html = '<p class="ow-help">Bloc-notes partagé du poste pour cette carte : les autres membres du poste le voient. Il n’est pas transmis aux opérateurs tant que vous ne l’envoyez pas sur un canal.</p>' +
+      '<p class="ow-help" id="ow-note-meta" aria-live="polite"></p>' +
       '<textarea id="ow-notepad" rows="10" style="width:100%;min-height:180px;background:#0e1211;border:1px solid #27302d;color:#e4e8e8;padding:8px">' + esc(stored) + '</textarea>' +
       '<div class="ow-row" style="margin-top:8px;gap:8px">' +
       '<button type="button" class="ow-primary" id="ow-note-save">Enregistrer</button>' +
@@ -367,9 +368,24 @@
     var area = document.getElementById('ow-notepad');
     var save = document.getElementById('ow-note-save');
     var send = document.getElementById('ow-note-send');
+    var meta = document.getElementById('ow-note-meta');
+    function showMeta(ws) {
+      if (!meta || !ws) return;
+      meta.textContent = ws.updated_at ? 'Dernière mise à jour ' + new Date(ws.updated_at).toLocaleString() + (ws.updated_by ? ' par ' + ws.updated_by : '') : '';
+    }
+    // Bloc-notes partagé (/api/atak/session-workspace), copie locale si le serveur est injoignable.
+    api.api('/api/atak/session-workspace?mapId=' + encodeURIComponent(api.mapId)).then(function (ws) {
+      if (ws && typeof ws.notepad === 'string' && area && (ws.notepad !== '' || !area.value)) area.value = ws.notepad;
+      showMeta(ws);
+    }).catch(function () {});
     if (save) save.addEventListener('click', function () {
       try { localStorage.setItem(NOTE_KEY, area.value); } catch (e2) {}
-      toast('Notes enregistrées sur ce poste.');
+      api.api('/api/atak/session-workspace', { method: 'POST', body: { mapId: api.mapId, notepad: area.value } }).then(function (ws) {
+        showMeta(ws);
+        toast('Notes partagées enregistrées.');
+      }).catch(function () {
+        toast('Notes gardées sur ce poste uniquement (connexion membre requise pour les partager).');
+      });
     });
     if (send) send.addEventListener('click', function () {
       var text = String(area.value || '').trim();

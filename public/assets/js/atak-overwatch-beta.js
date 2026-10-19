@@ -6255,11 +6255,45 @@
     if (grid) kv += '<span>Point initial</span><span>' + escapeHtml(grid) + '</span>';
     if (target) kv += '<span>Objectif</span><span>' + escapeHtml(target) + '</span>';
     if (row.line7) kv += '<span>Type</span><span>' + escapeHtml(String(row.line7)) + '</span>';
+    var actions = casRows.indexOf(row) >= 0 && row.id ? nineLineFlowHtml('cas', row) : '';
     return '<div class="ow-card">' +
       '<div class="ow-card-head"><span>' + escapeHtml(author) +
       '</span><span class="ow-tag">' + escapeHtml(jtacStatusLabel(row.status)) + '</span></div>' +
-      (kv ? '<div class="ow-card-body"><div class="ow-kv">' + kv + '</div></div>' : '') +
+      (kv || actions ? '<div class="ow-card-body">' + (kv ? '<div class="ow-kv">' + kv + '</div>' : '') + actions + '</div>' : '') +
       '</div>';
+  }
+
+  // Suivi d'une demande 9-line (CAS dans Air, CASEVAC dans Mission) : mêmes statuts que l'ATAK natif.
+  function nineLineTerminal(status) {
+    var st = String(status || '').toUpperCase();
+    return st === 'COMPLETE' || st === 'ABORTED' || st === 'CANCELLED';
+  }
+  function nineLineFlowHtml(kind, row) {
+    var id = escapeHtml(String(row.id));
+    function b(status, label) {
+      return '<button type="button" class="ow-tag" data-ow-nine-status="' + status + '" data-ow-nine-kind="' + kind + '" data-ow-nine-id="' + id + '">' + escapeHtml(label) + '</button>';
+    }
+    var html = '<div class="ow-btn-row">';
+    if (!nineLineTerminal(row.status)) {
+      html += b('ACKNOWLEDGED', 'Prise en compte') + b('INBOUND', 'En approche') + b('COMPLETE', 'Terminée') + b('ABORTED', 'Annuler');
+    }
+    if (kind === 'medevac') {
+      html += '<button type="button" class="ow-tag" data-ow-medevac-delete="' + id + '">Supprimer</button>';
+    }
+    return html + '</div>';
+  }
+  function refreshMissionDrawer() {
+    var drawer = document.getElementById('ow-drawer');
+    var title = document.getElementById('ow-drawer-title');
+    if (drawer && !drawer.hidden && title && title.textContent === 'Mission') openView('mission');
+  }
+  function setNineLineStatus(kind, id, status) {
+    var path = kind === 'medevac' ? '/api/atak/medevac/' : '/api/cas/';
+    api(path + encodeURIComponent(id) + '/status', { method: 'POST', body: { status: status } }).then(function () {
+      toast('Demande ' + (kind === 'medevac' ? 'CASEVAC' : 'd’appui') + ' : ' + jtacStatusLabel(status) + '.');
+      if (kind === 'medevac') return loadMedevac().then(refreshMissionDrawer);
+      return loadCas();
+    }).catch(function () { toast('Le statut n’a pas pu être mis à jour.'); });
   }
 
   function nineFormHtml() {
@@ -6407,8 +6441,47 @@
     }).catch(function () { return null; });
   }
 
+  // Plan de mission publié (bureau Opérations) : en-tête de Mission et poste prévu dans la fiche contact.
+  var missionPlanSnap = null;
+  function loadMissionPlan() {
+    return api('/api/atak/mission-plan?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
+      missionPlanSnap = payload && typeof payload === 'object' ? payload : null;
+      return missionPlanSnap;
+    }).catch(function () { return missionPlanSnap; });
+  }
+  if (!window.ATAKMissionPlan) {
+    window.ATAKMissionPlan = {
+      refresh: loadMissionPlan,
+      snapshot: function () { return missionPlanSnap; },
+      slotFor: function (cs) {
+        var slots = missionPlanSnap && missionPlanSnap.slots;
+        return slots ? (slots[String(cs || '').toUpperCase()] || null) : null;
+      }
+    };
+    loadMissionPlan();
+    window.setInterval(loadMissionPlan, 30000);
+  }
+  function missionPlanHtml() {
+    var plan = missionPlanSnap && missionPlanSnap.plan;
+    if (!plan || !plan.id) {
+      return '<p class="ow-kicker">Plan de mission</p><p class="ow-help">Aucun ordre de mission publié pour cette carte. Il se prépare dans le bureau Opérations.</p>';
+    }
+    var next = (missionPlanSnap.next_events || []).slice(0, 4).map(function (ev) {
+      return '<div class="ow-event"><span>' + escapeHtml(String(ev.clock || '')) + '</span><strong>' + escapeHtml(String(ev.label || '')) + '</strong></div>';
+    }).join('');
+    var statusRows = (missionPlanSnap.unit_status || []).slice(0, 8).map(function (u) {
+      return '<div class="ow-event"><span>' + escapeHtml(String(u.code || '')) + '</span><strong>' + escapeHtml(String(u.status_label || '')) + '</strong></div>';
+    }).join('');
+    return '<p class="ow-kicker">Plan de mission</p>' +
+      card(clean(plan.operation_name || plan.title, 'Opération'), clean(plan.phase_label, 'Phase'),
+        '<div class="ow-event"><span>En liaison</span><strong>' + escapeHtml(String(plan.live || 0)) + '</strong></div>' +
+        '<div class="ow-event"><span>Hors liaison</span><strong>' + escapeHtml(String(plan.offline || 0)) + '</strong></div>' +
+        statusRows) +
+      (next ? '<p class="ow-help">Prochains jalons</p>' + next : '');
+  }
+
   function missionHtml() {
-    return card('Opération', 'Actif',
+    return missionPlanHtml() + card('Opération', 'Actif',
       '<div class="ow-event"><span>Contacts</span><strong>' + units.length + '</strong></div>' +
       '<div class="ow-event"><span>Tracés</span><strong>' + shapes.length + '</strong></div>' +
       '<div class="ow-event"><span>Photos</span><strong>' + photos.length + '</strong></div>') +
@@ -6444,7 +6517,8 @@
       '<div id="ow-logistics-host"><p class="ow-help">Chargement…</p></div>' +
       '<p class="ow-kicker">CASEVAC</p>' +
       (medevacs.slice(0, 5).map(function (row) {
-        return '<div class="ow-event"><span>' + escapeHtml(clean(row.call_sign || row.author, 'MEDEVAC')) + '</span><span class="ow-tag amber">' + escapeHtml(clean(row.status, 'OPEN')) + '</span></div>';
+        return '<div class="ow-card"><div class="ow-card-head"><span>' + escapeHtml(clean(row.call_sign || row.author, 'MEDEVAC')) + '</span><span class="ow-tag amber">' + escapeHtml(jtacStatusLabel(row.status || 'SUBMITTED')) + '</span></div>' +
+          (row.id ? '<div class="ow-card-body">' + nineLineFlowHtml('medevac', row) + '</div>' : '') + '</div>';
       }).join('') || '<p class="ow-help">Aucune évacuation ouverte.</p>') +
       '<form class="ow-form-grid" id="ow-medevac-form">' +
       '<label>Indicatif<input name="callsign" value="' + escapeHtml(authorName) + '"></label>' +
@@ -7458,7 +7532,7 @@
     if (name === 'comms') { switchChatTab('channels'); map.invalidateSize(); return; }
     if (name === 'layers') { restoreOpsPanels(); openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
     if (name === 'mission') {
-      Promise.all([loadNine(), loadCas(), loadMedevac()]).then(function () {
+      Promise.all([loadNine(), loadCas(), loadMedevac(), loadMissionPlan()]).then(function () {
         restoreOpsPanels();
         openDrawer('Opérations', 'Mission', missionHtml());
         bindDrawerForms();
@@ -8109,6 +8183,20 @@
     if (event.target.matches('[data-center-selected]')) {
       var location = selected && point(selected);
       if (location) map.setView(location, Math.max(map.getZoom(), 4));
+    }
+    var nineBtn = event.target.closest('[data-ow-nine-status]');
+    if (nineBtn) {
+      setNineLineStatus(nineBtn.getAttribute('data-ow-nine-kind'), nineBtn.getAttribute('data-ow-nine-id'), nineBtn.getAttribute('data-ow-nine-status'));
+      return;
+    }
+    var medDel = event.target.closest('[data-ow-medevac-delete]');
+    if (medDel) {
+      if (!window.confirm('Supprimer définitivement cette demande CASEVAC ?')) return;
+      api('/api/atak/medevac/' + encodeURIComponent(medDel.getAttribute('data-ow-medevac-delete')), { method: 'DELETE' }).then(function () {
+        toast('Demande CASEVAC supprimée.');
+        return loadMedevac().then(refreshMissionDrawer);
+      }).catch(function () { toast('La demande n’a pas pu être supprimée.'); });
+      return;
     }
     var unitCmdBtn = event.target.closest('[data-unit-cmd]');
     if (unitCmdBtn && selected && !unitCmdBtn.disabled) runUnitCommand(unitCmdBtn.getAttribute('data-unit-cmd'), selected);
