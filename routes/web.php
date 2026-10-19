@@ -1022,6 +1022,14 @@ return function (Router $router) {
     $router->get('/admin/system/annuaire', [\App\Controllers\Admin\System\SystemRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/epingler', [\App\Controllers\Admin\System\SystemRegistryController::class, 'pin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/annuaire/discord', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/valider', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'approve'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/refuser', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'reject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/bloquer', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'block'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/debloquer', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'unblock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/retirer', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'remove'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/reglages', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'settings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/verifier', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'check'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/blocklist', [SystemIndicatorBlocklistController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/add', [SystemIndicatorBlocklistController::class, 'add'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/revoke', [SystemIndicatorBlocklistController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1280,6 +1288,10 @@ return function (Router $router) {
     $router->post('/back-office/mise-a-niveau/rouvrir', [ConfigurationUpdateController::class, 'reopen'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/community/discord', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/community/discord/demander', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'request'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/community/discord/annuler', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/community/discord/retirer', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'withdraw'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/media', [CommunityMediaAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/media', [CommunityMediaAdminController::class, 'storeItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/media/{id}', [CommunityMediaAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

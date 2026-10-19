@@ -78,6 +78,8 @@ $platformNav = [
     ]],
     ['key' => 'communautes', 'label' => 'Communautés', 'items' => [
         ['path' => 'admin/tenants', 'label' => 'Annuaire des communautés', 'icon' => 'globe', 'access' => 'system', 'also' => ['admin/system/tenants'], 'desc' => 'Fiches, formules, interventions'],
+        ['path' => 'admin/system/annuaire', 'label' => 'Annuaire public', 'icon' => 'star', 'access' => 'system', 'not' => ['admin/system/annuaire/discord'], 'desc' => 'Épinglage et unités en tendance'],
+        ['path' => 'admin/system/annuaire/discord', 'label' => 'Vitrine Discord', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Annonces des communautés sur le Discord Athena'],
         ['path' => 'admin/system/tenant-recovery', 'label' => 'Récupération communauté', 'icon' => 'lifebuoy', 'access' => 'system', 'desc' => 'Rendre la main à une communauté bloquée'],
         ['path' => 'admin/system/subscription-plans', 'label' => 'Formules d’accès', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Paliers, modules et plafonds'],
         ['path' => 'admin/formules-offertes', 'label' => 'Formules offertes', 'icon' => 'star', 'access' => 'system', 'desc' => 'Offrir une formule à une communauté, e-mail et fenêtre aux gestionnaires'],

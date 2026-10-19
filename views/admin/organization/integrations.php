@@ -325,6 +325,8 @@ $flashSuccess = \App\Core\Session::getFlash('success');
             <p class="bo-int-guide__note"><?= $icon('warn') ?> L’identifiant du salon (le grand nombre de « Copier l’identifiant du salon ») et le lien <code>discord.com/channels/…</code> ne suffisent pas : Athena publie sans bot, Discord n’accepte que le lien webhook.</p>
         </details>
 
+        <p class="bo-int-guide__note"><?= $icon('send') ?> Pour présenter votre communauté sur le Discord Athena (salon des communautés), voyez <a href="<?= $h(url('back-office/community/discord')) ?>">Annoncer sur Discord</a>.</p>
+
         <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>" id="form-relais-discord" class="bo-int-discord" data-discord-form>
             <?= \App\Core\Csrf::field() ?>
             <div class="bo-int-common">

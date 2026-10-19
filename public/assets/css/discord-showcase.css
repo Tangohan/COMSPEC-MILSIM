@@ -1,0 +1,307 @@
+/**
+ * Vitrine Discord des communautés.
+ * - .dsc-msg : aperçu du post Discord (toujours sombre, comme Discord), partagé par les deux pages.
+ * - .dsc     : page du back-office « Annoncer ma communauté sur Discord » (jetons --ath-* du shell).
+ * - .dsa     : page de l'administration du site (jetons --pa-*).
+ */
+
+/* ── Aperçu du post Discord ────────────────────────────────────────── */
+
+.dsc-msg {
+  margin: 0;
+  padding: 14px 16px 16px;
+  border-radius: 10px;
+  background: #313338;
+  color: #dbdee1;
+  font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.375;
+  overflow: hidden;
+}
+
+.dsc-msg__thread {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #3f4147;
+}
+
+.dsc-msg__forum svg { width: 18px; height: 18px; color: #80848e; display: block; }
+.dsc-msg__thread-name { font-weight: 700; color: #f2f3f5; font-size: 17px; margin-right: 6px; }
+
+.dsc-msg__tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #3f4147;
+  color: #dbdee1;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dsc-msg__row { display: flex; gap: 14px; }
+
+.dsc-msg__avatar {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #0b8a5c, #12d18e);
+  color: #fff;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.dsc-msg__body { min-width: 0; flex: 1; }
+.dsc-msg__author { margin: 0 0 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dsc-msg__name { color: #f2f3f5; font-weight: 600; }
+.dsc-msg__app { padding: 0 4px; border-radius: 3px; background: #5865f2; color: #fff; font-size: 10px; font-weight: 700; line-height: 15px; }
+.dsc-msg__time { color: #949ba4; font-size: 12px; }
+.dsc-msg__link { color: #00a8fc; cursor: default; }
+
+.dsc-embed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  max-width: 520px;
+  padding: 10px 16px 16px 12px;
+  border-radius: 4px;
+  border-left: 4px solid var(--dsc-color, #3b82f6);
+  background: #2b2d31;
+}
+
+.dsc-embed__main { min-width: 0; }
+.dsc-embed__title { margin: 6px 0 0; color: #00a8fc; font-weight: 600; font-size: 16px; }
+.dsc-embed__desc { margin: 8px 0 0; font-size: 14px; white-space: normal; overflow-wrap: anywhere; }
+
+.dsc-embed__fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.dsc-embed__field--wide { grid-column: 1 / -1; }
+.dsc-embed__fname { margin: 0 0 2px; color: #f2f3f5; font-weight: 600; font-size: 14px; }
+.dsc-embed__fvalue { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+
+.dsc-embed__image {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  margin-top: 16px;
+  border-radius: 4px;
+}
+
+.dsc-embed__thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.dsc-embed__footer { margin: 8px 0 0; color: #b5bac1; font-size: 12px; }
+
+@media (max-width: 520px) {
+  .dsc-msg { padding: 12px 10px; font-size: 14px; }
+  .dsc-embed { grid-template-columns: minmax(0, 1fr) 48px; gap: 10px; padding: 8px 10px 12px 10px; }
+  .dsc-embed__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dsc-embed__thumb { width: 48px; height: 48px; }
+  .dsc-msg__row { gap: 8px; }
+  .dsc-msg__avatar { display: none; }
+}
+
+@media (max-width: 640px) {
+  .dsc-panel { padding: 14px; }
+}
+
+/* ── Back-office : Annoncer ma communauté sur Discord ──────────────── */
+
+.dsc {
+  --dsc-discord: #5865f2;
+  --dsc-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--ath-ink, #0f172a);
+  min-width: 0;
+}
+
+.dsc__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .dsc__layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+.dsc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--ath-line, #e2e8f0);
+  border-radius: var(--dsc-radius);
+  background: var(--ath-surface, #fff);
+  min-width: 0;
+}
+
+.dsc-panel--preview { background: var(--ath-bg, #f8fafc); }
+.dsc-panel__kicker { margin: 0; color: var(--dsc-discord); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.dsc-panel__title { margin: -8px 0 0; font-size: 19px; font-weight: 700; }
+.dsc-panel__text { margin: 0; color: var(--ath-muted, #475569); }
+
+.dsc-flash { margin: 0; padding: 10px 14px; border-radius: 8px; font-weight: 600; }
+.dsc-flash--ok { background: rgba(18, 209, 142, .12); color: var(--ath-accent, #0b8a5c); }
+.dsc-flash--err { background: var(--ath-danger-bg, #fde8e8); color: var(--ath-danger, #c72e2e); }
+
+.dsc-status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--ath-line, #e2e8f0);
+  background: var(--ath-bg, #f8fafc);
+}
+
+.dsc-status p { margin: 0; }
+.dsc-status--warn { border-color: var(--ath-warn-bd, #f0d199); background: var(--ath-warn-bg, #fff7e6); }
+.dsc-status--danger { border-color: rgba(199, 46, 46, .35); background: var(--ath-danger-bg, #fde8e8); }
+.dsc-status--ok { border-color: rgba(18, 209, 142, .4); background: rgba(18, 209, 142, .08); }
+.dsc-status--info { border-color: rgba(88, 101, 242, .35); background: rgba(88, 101, 242, .08); }
+.dsc-status__reason { font-weight: 600; }
+.dsc-status__meta { color: var(--ath-muted, #475569); font-size: 13px; }
+.dsc-status .dsc-btn { align-self: flex-start; }
+
+.dsc-badge {
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--ath-line, #e2e8f0);
+  color: var(--ath-ink, #0f172a);
+}
+
+.dsc-badge--ok { background: #12d18e; color: #04291b; }
+.dsc-badge--warn { background: #f5b83d; color: #3d2600; }
+.dsc-badge--danger { background: #e5484d; color: #fff; }
+.dsc-badge--info { background: var(--dsc-discord); color: #fff; }
+
+.dsc-form { display: flex; flex-direction: column; gap: 8px; }
+.dsc-form__label { font-weight: 600; }
+.dsc-optional { color: var(--ath-muted, #475569); font-weight: 400; }
+
+.dsc-form textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1px solid var(--ath-line, #e2e8f0);
+  border-radius: 8px;
+  background: var(--ath-surface, #fff);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+.dsc-form__hint { margin: 0; color: var(--ath-muted, #475569); font-size: 13px; }
+.dsc-note { margin: 0; color: var(--ath-muted, #475569); }
+.dsc-inline { margin: 0; }
+
+.dsc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.dsc-btn--solid { background: var(--dsc-discord); color: #fff; }
+.dsc-btn--solid:hover { background: #4752c4; }
+.dsc-btn--line { background: transparent; border-color: var(--ath-line, #cbd5e1); color: var(--ath-ink, #0f172a); }
+.dsc-btn--danger { background: transparent; border-color: rgba(199, 46, 46, .4); color: var(--ath-danger, #c72e2e); }
+
+.dsc-rules {
+  margin: 0;
+  padding: 12px 14px 12px 32px;
+  border-radius: 10px;
+  background: var(--ath-bg, #f8fafc);
+  color: var(--ath-muted, #475569);
+  font-size: 13px;
+  display: grid;
+  gap: 4px;
+}
+
+html[data-bo-theme="dark"] .dsc-panel--preview,
+html[data-bo-theme="dark"] .dsc-rules,
+html[data-bo-theme="dark"] .dsc-status { background: rgba(255, 255, 255, .03); }
+
+/* ── Administration du site : vitrine Discord ──────────────────────── */
+
+.dsa-mode {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--pa-line, #e2e8f0);
+}
+
+.dsa-mode--sim { background: rgba(245, 184, 61, .12); border-color: rgba(245, 184, 61, .45); }
+.dsa-mode--live { background: rgba(88, 101, 242, .1); border-color: rgba(88, 101, 242, .4); }
+
+.dsa .pa-card { margin-bottom: 16px; }
+.dsa-list { display: grid; gap: 12px; margin-top: 12px; }
+
+.dsa-item {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--pa-line, #e2e8f0);
+  border-radius: 10px;
+  background: var(--pa-surface, #fff);
+}
+
+.dsa-item--pending { border-color: rgba(245, 184, 61, .6); }
+.dsa-item__head p { margin: 0; }
+.dsa-warn { color: #b45309; font-weight: 600; }
+.dsa-note { color: var(--pa-muted, #475569); font-size: 13px; }
+.dsa-preview summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }
+.dsa-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.dsa-actions form { margin: 0; }
+.dsa-reason { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.dsa-reason input { min-width: 220px; min-height: 34px; padding: 0 10px; border: 1px solid var(--pa-line, #e2e8f0); border-radius: 8px; background: var(--pa-surface, #fff); color: inherit; }
+.dsa-block { display: flex; gap: 6px; }
+.dsa-block summary { list-style: none; cursor: pointer; }
+.dsa-block summary::-webkit-details-marker { display: none; }
+.dsa-block[open] { flex-basis: 100%; flex-direction: column; }
+.dsa-settings { display: grid; gap: 12px; margin-top: 12px; }
+.dsa-settings__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.dsa-label { display: block; font-weight: 600; margin-bottom: 4px; }
+.dsa-check { display: flex; gap: 8px; align-items: center; font-weight: 400; margin-top: 6px; }
+.dsa-tags { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; border: 1px solid var(--pa-line, #e2e8f0); border-radius: 10px; padding: 10px 14px 14px; }
+.dsa-tags legend { padding: 0 6px; font-weight: 600; }
+
+@media (max-width: 640px) {
+  .dsa-reason input { min-width: 0; width: 100%; }
+}
+
+.dsa-settings input[type="password"],
+.dsa-settings input[type="number"],
+.dsa-settings select { width: 100%; max-width: 560px; }

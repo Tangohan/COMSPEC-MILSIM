@@ -481,6 +481,7 @@ return [
                         ['label' => 'Synthèse opérationnelle', 'path' => 'admin/ops-center', 'permission' => 'admin.system', 'description' => 'Signaux critiques et vue transversale'],
                         ['label' => 'Annuaire des communautés', 'path' => 'admin/tenants', 'permission' => 'admin.system', 'description' => 'Liste des organisations et effectifs comptes'],
                         ['label' => 'Annuaire public : épinglage', 'path' => 'admin/system/annuaire', 'permission' => 'admin.system', 'description' => 'Épingler des communautés et suivre les unités en tendance'],
+                        ['label' => 'Vitrine Discord des communautés', 'path' => 'admin/system/annuaire/discord', 'permission' => 'admin.system', 'description' => 'Valider les annonces des communautés sur le Discord Athena'],
                         ['label' => 'Récupération communauté', 'path' => 'admin/system/tenant-recovery', 'permission' => 'admin.system', 'description' => 'Recréer une fiche tenants orpheline sans restore complet'],
                         ['label' => 'Indicateurs transverses', 'path' => 'admin/analytics', 'permission' => 'admin.system', 'description' => 'Usage, volumes et répartition sur plusieurs fenêtres de temps'],
                         ['label' => 'Formules d’accès (paliers)', 'path' => 'admin/system/subscription-plans', 'permission' => 'admin.system', 'description' => 'Noms, ordre, fonctionnalités et quotas par offre'],
