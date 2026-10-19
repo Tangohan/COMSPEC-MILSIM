@@ -5,7 +5,8 @@
     (cba_keybinding_registry_v3). Les gestionnaires du téléphone en main (fn_open, fn_displayLoad) relisent
     CBA_fnc_getKeybind : la nouvelle touche marche tout de suite, téléphone rangé, porté ou en main.
     Seule la première touche de l'action change ; les touches alternatives posées dans le menu CBA restent.
-    ["list"]                  -> [[action, groupe, titre, aide, icône]...]
+    ["list"]                  -> [[action, groupe, titre, aide, icône, en chantier]...] (en chantier : grisé W.I.P,
+                                 touche non modifiable)
     ["get", action]           -> [touche [DIK, [maj, ctrl, alt]] ou [], touche par défaut ou []]
     ["name", touche]          -> texte de la touche (« Ctrl+U »), « AUCUNE » sans touche
     ["set", action, touche]   enregistre ([] : aucune touche) ; renvoie true si c'est fait
@@ -21,7 +22,7 @@ private _list = [
     ["PhoneMain", "PHONE", "Prendre en main / reposer", "Miniature ou rangé : le téléphone passe en grand, à la souris. En grand : il redevient la miniature.", "ui_hand"],
     ["PhoneCarry", "PHONE", "Sortir / ranger (porté)", "Affiche ou range la miniature dans un coin de l'écran : on continue à jouer.", "ui_collapse"],
     ["PhoneHold", "PHONE", "Prendre en main (touche alternative)", "Même effet que la touche principale.", "ui_hand"],
-    ["PhoneJpc", "PHONE", "Tablette sur le JPC", "Relève ou rabat la tablette du porte-plaques : vue libre, arme disponible.", "app_accessories"],
+    ["PhoneJpc", "PHONE", "Tablette sur le JPC", "Relève ou rabat la tablette du porte-plaques : vue libre, arme disponible.", "app_accessories", ["wip"] call comspec_atak_native_fnc_jpcScreen],
     ["PhoneOrient", "MINI", "Orientation", "Miniature verticale ou horizontale.", "ui_rotate"],
     ["PhonePosition", "MINI", "Position de la miniature", "Coin suivant : bas droit, bas gauche, haut gauche, haut droit, milieu.", "ui_expand"],
     ["PhoneZoomIn", "MINI", "Zoomer la carte", "Zoom avant, aussi téléphone porté en marchant ou en conduisant.", "ui_sort_up"],
@@ -131,6 +132,7 @@ switch (_mode) do {
         _n
     };
     case "capture": {
+        if ((_list findIf { (_x select 0) isEqualTo _a && {_x param [5, false]} }) >= 0) exitWith { false };
         private _cap = [_a, diag_tickTime + 10];
         uiNamespace setVariable ["COMSPEC_ATAK_KeyCapture", _cap];
         call _rerender;

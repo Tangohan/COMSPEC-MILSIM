@@ -4989,6 +4989,8 @@
 ["EN BOUCLE", "LOOP"],
 ["En cas d'échec, l'engrenage en haut à droite explique pourquoi.", "If it fails, the gear at the top right explains why."],
 ["En cas de capture, l'ennemi peut brancher un câble DL-7 sur votre téléphone. Le code le protège (3 essais, puis effacement ; forçable en 2 min).", "If captured, the enemy can plug a DL-7 cable into your phone. The code protects it (3 tries, then wipe; can be forced in 2 min)."],
+["En chantier (W.I.P), désactivé pour le moment", "Work in progress (W.I.P), disabled for now"],
+["En chantier, la touche ne fait rien pour le moment", "Work in progress, the key does nothing for now"],
 ["en charge", "charging"],
 ["En choisissant Compris, vous confirmez avoir lu cette note. Plus tard ferme la fenêtre sans enregistrer la confirmation ; l’avis pourra réapparaître lors d’un prochain lancement.", "By selecting Got it, you confirm you have read this note. Choosing Later closes the window without recording confirmation; it may appear again on a later launch."],
 ["En clair", "In the clear"],

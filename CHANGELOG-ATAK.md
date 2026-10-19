@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Tablette sur le JPC désactivée, en chantier (ATAK natif 2.3.5.AB - Denver)
+
+### Résumé joueur
+Type : patch
+FR : La tablette sur le JPC passe en chantier
+- La tablette relevée sur le porte-plaques est désactivée pour le moment : sa touche ne fait plus rien et les actions ACE « Ouvrir l'ATAK sur le JPC » ne s'affichent plus.
+- Dans Réglages > Accès et touches, la ligne « Tablette sur le JPC » est grisée avec l'étiquette W.I.P. Elle reviendra dans une prochaine version.
+- Le téléphone porté reste la miniature dans un coin de l'écran, comme avant.
+EN : The tablet on the JPC is now work in progress
+- The tablet raised on the plate carrier is disabled for now: its key does nothing and the ACE actions "Open ATAK on the JPC" no longer show.
+- In Settings > Access and keys, the "Tablet on the JPC" row is greyed out with a W.I.P tag. It will come back in a future version.
+- The carried phone stays the thumbnail in a corner of the screen, as before.
+
+### Détail technique
+- `fn_jpcScreen.sqf` : nouvelle action `["wip"]` (vrai tant que `_allowed` est faux) ; le code de la tablette est conservé, `_allowed = true` le rouvre.
+- `XEH_postInitClient.sqf` : la touche CBA « PhoneJpc » ne fait rien en W.I.P (la touche repasse au jeu). `fn_aceMenu.sqf` : action « Ouvrir l'ATAK sur le JPC » masquée.
+- `fn_keybinds.sqf` / `fn_pageSettings.sqf` : 6e champ « en chantier » ; ligne grisée, étiquette W.I.P, boutons touche et DÉFAUT inactifs, capture refusée. Traductions EN ajoutées.
+- Version 2.3.5, main.pbo reconstruit avec HEMTT, COMSPEC Link inchangé (2.0.90).
+
 ## Drone : le flux DRONES DU CAMP suit la vue du terminal UAV (ATAK natif 2.3.4.AB - Denver)
 
 ### Résumé joueur
