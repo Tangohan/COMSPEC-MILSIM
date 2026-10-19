@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Samsung S23 durci, trois coques retirées (ATAK natif 2.2.1.AB - Denver)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouveau téléphone : le Samsung S23 durci
+- Le Samsung S23 en coque durcie tan rejoint les modèles du téléphone : à choisir dans Réglages > Personnaliser > Modèle ou dans les options du mod (Modèle du téléphone).
+- Son dos est visible quand on retourne le téléphone, et c'est lui qu'on tient en main en mode photo et selfie.
+- Les coques Support JPC, Étui Multicam et Coque nervurée sont retirées : si tu en utilisais une, ton téléphone repasse tout seul en Durci S7, qui reste le modèle par défaut.
+EN : New phone: the rugged Samsung S23
+- The Samsung S23 in a tan rugged case joins the phone models: pick it in Settings > Customize > Model or in the mod options (Phone model).
+- Its back shows when you flip the phone over, and it is the phone you hold in photo and selfie mode.
+- The JPC mount, Multicam pouch and Ribbed case are removed: if you used one, your phone switches back to the Rugged S7 on its own, which stays the default model.
+
+### Détail technique
+- Modèle `s23` : coque photo découpée dans la planche de TTRD (`tools/cut_s23.py` → `tools/src/frame_s23.png`, `frame_s23_back.png`), passée par `tools/frame_photos.py` (vraie photo du dos via `BACKS`, plus de panneau dessiné pour ce modèle) ; PAA `phone_{landscape,portrait}_s23{,_night}`, `phone_back_s23`, `dirt_case_s23_{land,port}`, `jpc_s23_ca` (`gen_assets.py <hemtt> s23`, `gen_dirt.py <hemtt> case s23`).
+- Écran et boîte visible dans `fn_layoutGet` (paysage : écran 0.2221 0.3449 0.7553 0.6553, visible 0.1392 0.2983 0.8330 0.7036) ; port SMA décalé de -17 px (`fn_antenna`) ; dos (`fn_backView`), Établi (`fn_pageAccessories`), selfie et JPC (`COMSPEC_ATAK_JpcPhone_s23` = `jpc_s7.p3d` + atlas S23, silhouettes presque identiques).
+- Retirés : `plate`, `flip`, `ribbed` (rendus Blender de `render_phones.py`, jugés laids) dans les listes du téléphone et CBA, les réglages « Objet exigé », `config.cpp`, `model.cfg`, et 33 fichiers (PAA, P3D, rendus). Profil resté sur l'un d'eux : `fn_layoutGet` le repasse en `s7`.
+- `VERSION_STR` 2.2.1 provisoire : la version finale est fixée par le regroupement natif suivant. COMSPEC Link inchangé (2.0.89).
+
 ## Regroupement : réseau qui suit la météo et la charge, français complet, Resynch qui renvoie tout, Réglages, fluidité, nettoyage et correctifs (ATAK natif 2.2.0.AB - Denver, COMSPEC Link 2.0.89)
 
 ### Résumé joueur

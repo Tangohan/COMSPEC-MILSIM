@@ -336,17 +336,9 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\main\data\jpc_sonim.p3d";
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_sonim_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
-    class COMSPEC_ATAK_JpcPhone_plate: COMSPEC_ATAK_JpcPhone_s7 {
-        model="\z\comspec_atak_native\addons\main\data\jpc_plate.p3d";
-        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_plate_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
-    };
-    class COMSPEC_ATAK_JpcPhone_flip: COMSPEC_ATAK_JpcPhone_s7 {
-        model="\z\comspec_atak_native\addons\main\data\jpc_flip.p3d";
-        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_flip_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
-    };
-    class COMSPEC_ATAK_JpcPhone_ribbed: COMSPEC_ATAK_JpcPhone_s7 {
-        model="\z\comspec_atak_native\addons\main\data\jpc_ribbed.p3d";
-        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_ribbed_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    // S23 : même modèle que le S7 (silhouette et ouverture d'écran presque identiques), atlas du S23 (gen_assets.py jpc).
+    class COMSPEC_ATAK_JpcPhone_s23: COMSPEC_ATAK_JpcPhone_s7 {
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_s23_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";

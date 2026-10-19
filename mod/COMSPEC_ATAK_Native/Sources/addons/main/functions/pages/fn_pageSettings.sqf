@@ -112,7 +112,7 @@ private _fold = {
     ["fold", _t, _sub, [_k, _def] call _foldOpen, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_SetFold');", _k, _def]]
 };
 // Modèles du téléphone : seuls ceux dont l'objet exigé est porté sont proposés (Options des addons > ATAK · Objets par interface).
-private _models = [["DURCI S7", "s7"], ["V2 ENHANCED", "iphone"], ["XIAOMI X3D", "rugged"], ["SONIM XP8", "sonim"], ["SUPPORT JPC", "plate"], ["ÉTUI MULTICAM", "flip"], ["COQUE NERVURÉE", "ribbed"], ["TABLETTE", "keys"]];
+private _models = [["DURCI S7", "s7"], ["SAMSUNG S23", "s23"], ["V2 ENHANCED", "iphone"], ["XIAOMI X3D", "rugged"], ["SONIM XP8", "sonim"], ["TABLETTE", "keys"]];
 private _modelOk = missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }];
 private _okModels = _models select { (_x select 1) isEqualTo "s7" || {[_x select 1, player] call _modelOk} };
 private _noModels = (_models - _okModels) apply { _x select 0 };

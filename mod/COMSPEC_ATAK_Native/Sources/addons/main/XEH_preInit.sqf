@@ -180,8 +180,8 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
 // téléphone conservé. Le S7 reste le défaut et reprend si l'objet exigé pour le modèle n'est pas porté.
 ["comspec_atak_native_phone_model", "LIST",
     ["Modèle du téléphone", "Apparence du téléphone ATAK, aussi réglable dans le téléphone (Réglages > Personnaliser). Si le modèle demande un item (voir ci-dessous) que vous n'avez pas, le téléphone reste en Durci S7."],
-    _uiCat, [["", "s7", "iphone", "rugged", "sonim", "plate", "flip", "ribbed", "keys"],
-        ["Celui choisi dans le téléphone", "Durci S7", "V2 Enhanced", "Xiaomi X3D", "Sonim XP8", "Support JPC", "Étui Multicam", "Coque nervurée", "Tablette"], 0], 0,
+    _uiCat, [["", "s7", "s23", "iphone", "rugged", "sonim", "keys"],
+        ["Celui choisi dans le téléphone", "Durci S7", "Samsung S23", "V2 Enhanced", "Xiaomi X3D", "Sonim XP8", "Tablette"], 0], 0,
     {
         params ["_v"];
         if (_v isEqualTo "" || {_v isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"])}) exitWith {};
@@ -202,8 +202,7 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
         [format ["Item requis : %1", _name], format ["Item à avoir sur soi pour utiliser le modèle %1 : noms de classe ou mots-clés, séparés par des virgules. Vide : n'importe quel téléphone ATAK suffit. Ce réglage ne change pas le modèle affiché : choisissez-le dans « Modèle du téléphone » ci-dessus ou dans le téléphone (Réglages > Personnaliser).", _name]],
         _uiCat, _def, 1, { missionNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap]; }] call comspec_atak_native_fnc_addSetting;
 } forEach [
-    ["s7", "Durci S7", ""], ["iphone", "V2 Enhanced", ""], ["rugged", "Xiaomi X3D", ""], ["sonim", "Sonim XP8", ""],
-    ["plate", "Support JPC", ""], ["flip", "Étui Multicam", ""], ["ribbed", "Coque nervurée", ""],
+    ["s7", "Durci S7", ""], ["s23", "Samsung S23", ""], ["iphone", "V2 Enhanced", ""], ["rugged", "Xiaomi X3D", ""], ["sonim", "Sonim XP8", ""],
     ["keys", "Tablette", "tablet,tablette,ctab"]
 ];
 // [modèle, unité] -> l'unité porte-t-elle l'objet exigé pour ce modèle ? (cache 2 s : fn_layoutGet l'appelle souvent).
