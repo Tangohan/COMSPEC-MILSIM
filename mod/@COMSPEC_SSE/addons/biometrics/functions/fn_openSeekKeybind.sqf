@@ -11,12 +11,13 @@
 */
 if (!hasInterface) exitWith { false };
 
-// 1. App SSE du téléphone ATAK natif.
+// 1. App SSE du téléphone ATAK natif : « SSE terrain » du pack (compat_atak, page SSEFIELD), sinon l'app SSE de l'ATAK.
 if (!isNil "comspec_atak_native_fnc_hasDevice" && {[player] call comspec_atak_native_fnc_hasDevice}) exitWith {
     if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
         [true] call comspec_atak_native_fnc_open;
     };
-    [{ ["SSE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    private _page = ["SSE", "SSEFIELD"] select (isClass (configFile >> "COMSPEC_ATAK_Apps" >> "SseField"));
+    [{ [_this] call comspec_atak_native_fnc_navigate; }, _page] call CBA_fnc_execNextFrame;
     true
 };
 
