@@ -98,4 +98,19 @@ final class AtakAdminFleetTest extends TestCase
             self::assertArrayHasKey($action, Fleet::ACTIONS);
         }
     }
+
+    public function testAdminNoticesReachThePlayerAtak(): void
+    {
+        $routes = $this->read('routes/web.php');
+        self::assertStringContainsString("'/api/atak/admin-control/mine'", $routes);
+        self::assertStringContainsString("'/api/atak/admin-control/mine/ack'", $routes);
+        foreach (['compromise', 'compromise_cleared', 'reset', 'certificate', 'phone'] as $kind) {
+            self::assertArrayHasKey($kind, Fleet::NOTICE_KINDS);
+        }
+        // Le site envoie l'avis, COMSPEC Link le récupère et l'ATAK natif l'affiche.
+        self::assertStringContainsString("notifyPlayer(", $this->read('app/Controllers/Admin/AdminAtakFleetController.php'));
+        self::assertStringContainsString('"AdminControl.Poll"', $this->read('mod/UptoDate/COMSPECExtension/Extension.cs'));
+        self::assertStringContainsString('AdminControl.Poll', $this->read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/shell/fn_adminNotices.sqf'));
+        self::assertStringContainsString('class adminNotices {}', $this->read('mod/COMSPEC_ATAK_Native/Sources/addons/main/config.cpp'));
+    }
 }

@@ -2472,6 +2472,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // Serveur Arma : messages imposés et blocages décidés dans /admin/parc-atak.
     $router->post('/api/atak/admin-control/pending', [AtakApiController::class, 'adminControlPending']);
     $router->post('/api/atak/admin-control/ack', [AtakApiController::class, 'adminControlAck']);
+    // ATAK du joueur : ses propres messages et avis de l'administration (COMSPEC Link AdminControl.Poll / AdminControl.Ack).
+    $router->post('/api/atak/admin-control/mine', [AtakApiController::class, 'adminControlMine']);
+    $router->post('/api/atak/admin-control/mine/ack', [AtakApiController::class, 'adminControlMineAck']);
     $router->post('/api/atak/item-icons/missing', [AtakApiController::class, 'itemIconsMissing']);
     $router->post('/api/atak/item-icons', [AtakApiController::class, 'itemIconUpload']);
     $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);

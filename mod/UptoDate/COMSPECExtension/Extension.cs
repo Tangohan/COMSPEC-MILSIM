@@ -3206,6 +3206,65 @@ public static partial class Extension
             catch (Exception ex) { return FormatCaughtError(ex); }
         }
 
+        // Messages et avis de l'administration pour ce joueur (site : /admin/parc-atak) : compromission, annulation,
+        // données ATAK réinitialisées, certificat, numéro, message imposé. L'ATAK natif les affiche en alerte.
+        // args: [json {player_uid, terminal_uid}] → OK|une ligne par message : id\tgenre\tniveau\ttitre\ttexte\tà valider (1/0)
+        if (function == "AdminControl.Poll")
+        {
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            if (!TryBuildRequestUri(_baseUrl, "/api/atak/admin-control/mine", out var acUri, out var acErr) || acUri is null)
+                return "ERR|" + acErr;
+            try
+            {
+                using var acCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                var resp = SendJsonPost(acUri.AbsoluteUri, EnrichAtakPayload(args.Length > 0 ? args[0] : "{}"), acCts.Token);
+                var body = ReadContentUtf8(resp, acCts.Token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(body);
+                if (!doc.RootElement.TryGetProperty("messages", out var list) || list.ValueKind != JsonValueKind.Array) return "OK|";
+                string Clean(JsonElement m, string k)
+                {
+                    if (!m.TryGetProperty(k, out var v)) return "";
+                    var t = v.ValueKind switch
+                    {
+                        JsonValueKind.String => v.GetString() ?? "",
+                        JsonValueKind.Number => v.GetRawText(),
+                        JsonValueKind.True => "1",
+                        JsonValueKind.False => "0",
+                        _ => "",
+                    };
+                    return t.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+                }
+                var sb = new StringBuilder();
+                foreach (var m in list.EnumerateArray().Take(20))
+                {
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(Clean(m, "id")).Append('\t').Append(Clean(m, "kind")).Append('\t').Append(Clean(m, "level")).Append('\t')
+                      .Append(Clean(m, "title")).Append('\t').Append(Clean(m, "body")).Append('\t').Append(Clean(m, "require_ack"));
+                }
+                return "OK|" + sb;
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        // L'ATAK signale ses messages affichés (delivered) ou validés par le joueur (acked).
+        // args: [ids séparés par des virgules, "delivered" | "acked", player_uid] → OK|queued
+        if (function == "AdminControl.Ack")
+        {
+            if (args.Length < 2 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            var ids = args[0].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(x => long.TryParse(x, NumberStyles.Integer, CultureInfo.InvariantCulture, out _)).Take(50).ToArray();
+            if (ids.Length == 0) return "ERR|payload_empty";
+            var state = args[1] == "acked" ? "acked" : "delivered";
+            var uid = args.Length > 2 ? new string((args[2] ?? "").Where(char.IsDigit).ToArray()) : "";
+            var json = "{\"ids\":[" + string.Join(",", ids) + "],\"state\":\"" + state + "\"" + (uid.Length > 0 ? ",\"player_uid\":\"" + uid + "\"" : "") + "}";
+            EnqueueOrSend(_baseUrl + "/api/atak/admin-control/mine/ack", EnrichAtakPayload(json));
+            return "OK|queued";
+        }
+
         if (function == "SetMapId")
         {
             ApplyMapId(args.Length > 0 ? args[0] : "");

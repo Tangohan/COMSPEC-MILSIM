@@ -389,6 +389,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                                 <strong><?= $h((string) $msg['title']) ?></strong>
                                 <span class="pa-pill pa-pill--<?= $h($levelTone[(string) $msg['level']] ?? 'blue') ?>"><?= $h(Fleet::LEVELS[(string) $msg['level']] ?? (string) $msg['level']) ?></span>
                                 <span class="pa-pill pa-pill--<?= $h($stTone) ?>"><?= $h($stLabel) ?></span>
+                                <?php if ((string) ($msg['kind'] ?? 'message') !== 'message'): ?><span class="pa-pill pa-pill--slate">Avis automatique</span><?php endif; ?>
                             </div>
                             <p class="paf-msg__body"><?= nl2br($h((string) $msg['body'])) ?></p>
                             <p class="paf-muted">Le <?= $h($fmtDate($msg['created_at'] ?? null)) ?> par <?= $h($v($msg['actor_callsign'] ?? $msg['actor_name'] ?? '')) ?><?= !empty($msg['acked_at']) ? ' · lu le ' . $h($fmtDate($msg['acked_at'])) : '' ?></p>

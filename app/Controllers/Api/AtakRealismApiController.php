@@ -361,8 +361,18 @@ final class AtakRealismApiController
             }
         }
         $revoked = count($revokedIds);
+        $fleet = new \App\Repositories\AtakAdminControlRepository();
+        if (!$this->isGameClient()) {
+            // Décidé au poste de commandement : le joueur en est averti sur son ATAK (en jeu, le camp l'est déjà par le mod).
+            $fleet->notifyPlayer(
+                $terminal,
+                $state === 'none' ? 'compromise_cleared' : 'compromise',
+                $state === 'none' ? 'Compromission levée' : ($state === 'compromised' ? 'ATAK compromis' : 'ATAK capturé'),
+                $reason !== '' ? $reason : ($state === 'none' ? 'Levée par le poste de commandement' : 'Déclarée par le poste de commandement')
+            );
+        }
         // Historique de l'ATAK (/admin/parc-atak/fiche), d'où l'administration du site peut l'annuler.
-        (new \App\Repositories\AtakAdminControlRepository())->recordCompromise(
+        $fleet->recordCompromise(
             $terminal,
             $state,
             $reason !== '' ? $reason : null,
@@ -422,6 +432,13 @@ final class AtakRealismApiController
         $cert = $result['certificate'];
         $replaced = !empty($result['replaced']);
         $ref = trim((string) ($cert['certificate_ref'] ?? ''));
+        // Le joueur voit sur son ATAK que son certificat a été régénéré.
+        (new \App\Repositories\AtakAdminControlRepository())->notifyPlayer(
+            $this->realismRepository->findTerminalById($tenantId, $terminalId) ?? [],
+            'certificate',
+            $replaced ? 'Certificat régénéré' : 'Certificat émis',
+            $ref !== '' ? 'Référence : ' . $ref : ''
+        );
         $message = $replaced
             ? 'Certificat renouvelé. L’opérateur en liaison le recevra d’ici quelques instants.'
             : 'Certificat émis. L’opérateur en liaison le recevra d’ici quelques instants.';

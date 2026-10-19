@@ -5353,6 +5353,7 @@ return [
     'Avis' => 'Reviews',
     'Avis %1' => 'Opinion %1',
     'Avis & échanges' => 'Reviews & discussion',
+    'Avis automatique' => 'Automatic notice',
     'Avis de commandement' => 'Command notice',
     'Avis de commandement : %1' => 'Command opinion: %1',
     'Avis de poste associé' => 'Associated job posting',

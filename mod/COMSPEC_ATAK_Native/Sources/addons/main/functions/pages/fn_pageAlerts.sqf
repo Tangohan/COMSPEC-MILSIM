@@ -4,6 +4,7 @@
         directement (marche sans Athena) et le poste par COMSPEC Link ;
       - ALERTES RAPIDES : contact (TIC), fin de contact, appareil abattu, en trois tuiles ;
       - JOURNAL : alertes reçues du camp et envoyées, en cartes de la couleur de leur type (CARTE pour centrer).
+    En tête, les avis de l'administration ATHENA (fn_adminNotices) jusqu'à COMPRIS.
     Le compte rendu SALUTE a son app à lui (fn_pageSalute) ; un raccourci y mène depuis les alertes rapides.
 */
 disableSerialization;
@@ -80,9 +81,37 @@ _chip ctrlSetBackgroundColor ([[0.13, 0.16, 0.14, 1], [0.36, 0.78, 0.42, 1]] sel
 _chip ctrlCommit 0;
 _chip ctrlSetTooltip ((["Athena hors ligne : l'alerte part aux téléphones du camp", "L'alerte part aux téléphones du camp et au poste Athena"] select _bridge) call comspec_atak_native_fnc_tr);
 
-// ---------- PANIQUE ----------
+// ---------- ADMINISTRATION ATHENA ----------
+// Avis non validés (compromission, levée, données réinitialisées, certificat, numéro, message imposé) : en tête, COMPRIS pour fermer.
 private _w = _bw - 2 * _pad;
 private _y = _hdrH + _pad;
+private _notices = ["list"] call comspec_atak_native_fnc_adminNotices;
+if ((count _notices) > 0) then {
+    _y = [_pad, _y, _w, "Administration ATHENA", format ["%1 à lire", count _notices], [1, 0.8, 0.3, 1]] call _sec;
+    private _bwOk = (_font * 4.2) min (_w * 0.3);
+    {
+        (["style", _x] call comspec_atak_native_fnc_adminNotices) params ["_t", "_msg", "_rgba"];
+        _x params ["_id", "_kind", "", "", "_body", "", "_hour"];
+        private _col = [(_rgba select 0) * 1.4 min 1, (_rgba select 1) * 1.4 min 1, (_rgba select 2) * 1.4 min 1, 1];
+        private _ch3 = _fs * 4.4;
+        [[_pad, _y, _w, _ch3], [(_rgba select 0) * 0.35, (_rgba select 1) * 0.35, (_rgba select 2) * 0.35, 1]] call _box;
+        [[_pad, _y, pixelW * 5, _ch3], _col] call _box;
+        private _cx = _pad * 1.8;
+        private _c = ["COMSPEC_RscStructuredText", [_cx, _y + _fs * 0.15, _w - (_cx - _pad) - _bwOk - _pad, _ch3 - _fs * 0.2]] call _mk;
+        _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t font='EtelkaMonospacePro' size='0.8' color='#c9d2cd'>%3</t><br/><t size='0.9' color='#ffffff'>%4</t>%5",
+            (_col select [0, 3]) call BIS_fnc_colorRGBtoHTML, [toUpper _t] call _esc, _hour, [_msg] call _esc,
+            ["", format ["<br/><t size='0.8' color='#c9d2cd'>%1</t>", [_body] call _esc]] select (_kind isNotEqualTo "message" && {_body isNotEqualTo ""})]) call comspec_atak_native_fnc_tr);
+        _c ctrlSetFontHeight _fs;
+        private _bx = _pad + _w - _bwOk - _pad * 0.4;
+        [[_bx, _y + _ch3 * 0.25, _bwOk, _ch3 * 0.5], _col] call _box;
+        ["COMSPEC_RscTextCenter", [_bx, _y + _ch3 * 0.25, _bwOk, _ch3 * 0.5], "COMPRIS", _fs * 0.85, _cInk, true] call _lbl;
+        [[_bx, _y + _ch3 * 0.25, _bwOk, _ch3 * 0.5], compile format ["['ack', %1] call comspec_atak_native_fnc_adminNotices;", str _id], "Fermer l'avis (Athena est prévenu)"] call _hit;
+        _y = _y + _ch3 + _pad * 0.4;
+    } forEach (_notices select [0, 4]);
+    _y = _y + _pad * 0.6;
+};
+
+// ---------- PANIQUE ----------
 private _ph = (_font * 4.2) max (_bh * 0.26);
 _ph = _ph min (_font * 6);
 // Repos : rouge sombre, cadre rouge. Armé : rouge vif, texte sombre.

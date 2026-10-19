@@ -56,6 +56,16 @@ final class AtakAdminControlRepository
         'admin' => 'Administration du site',
     ];
 
+    /** Avis automatiques que l'ATAK du joueur met en forme et affiche en alerte (genre => niveau). */
+    public const NOTICE_KINDS = [
+        'message' => 'info',
+        'compromise' => 'critical',
+        'compromise_cleared' => 'info',
+        'reset' => 'warning',
+        'certificate' => 'warning',
+        'phone' => 'info',
+    ];
+
     /** Filtres d'état de la liste. */
     public const STATES = [
         '' => 'Tous',
@@ -570,7 +580,7 @@ final class AtakAdminControlRepository
     // ── Messages imposés ────────────────────────────────────────────────────
 
     /**
-     * @param array{tenant_id: int, user_id: ?int, steam_uid: ?string, terminal_uid: ?string, title: string, body: string, level: string, require_ack: bool, expires_at: ?string, actor_id: ?int} $m
+     * @param array{tenant_id: int, user_id: ?int, steam_uid: ?string, terminal_uid: ?string, title: string, body: string, level: string, require_ack: bool, expires_at: ?string, actor_id: ?int, kind?: string} $m
      */
     public function createMessage(array $m): int
     {
@@ -579,14 +589,16 @@ final class AtakAdminControlRepository
         }
         $st = $this->pdo()->prepare(
             'INSERT INTO atak_admin_messages
-                (tenant_id, user_id, steam_uid, terminal_uid, title, body, level, require_ack, expires_at, created_by_user_id, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())'
+                (tenant_id, user_id, steam_uid, terminal_uid, kind, title, body, level, require_ack, expires_at, created_by_user_id, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())'
         );
+        $kind = (string) ($m['kind'] ?? 'message');
         $st->execute([
             $m['tenant_id'],
             $m['user_id'] ?: null,
             $m['steam_uid'] !== null ? SteamId::normalize($m['steam_uid']) : null,
             $m['terminal_uid'] !== null && $m['terminal_uid'] !== '' ? mb_substr($m['terminal_uid'], 0, 64) : null,
+            isset(self::NOTICE_KINDS[$kind]) ? $kind : 'message',
             mb_substr($m['title'], 0, 120),
             mb_substr($m['body'], 0, 2000),
             isset(self::LEVELS[$m['level']]) ? $m['level'] : 'info',
@@ -596,6 +608,109 @@ final class AtakAdminControlRepository
         ]);
 
         return (int) $this->pdo()->lastInsertId();
+    }
+
+    /**
+     * Avis automatique au joueur, affiché en alerte par son ATAK (compromission, annulation, réinitialisation…).
+     * Le joueur le valide en jeu. Ne bloque jamais l'action qui l'envoie.
+     *
+     * @param array<string, mixed> $target fiche ATAK ou joueur (tenant_id, user_id, steam_id, terminal_uid)
+     */
+    public function notifyPlayer(array $target, string $kind, string $title, string $detail = '', ?int $actorId = null): int
+    {
+        $tenantId = (int) ($target['tenant_id'] ?? 0);
+        $userId = (int) ($target['user_id'] ?? 0);
+        $steam = trim((string) ($target['steam_id'] ?? $target['steam_uid'] ?? ''));
+        if ($tenantId < 1 || ($userId < 1 && $steam === '') || !isset(self::NOTICE_KINDS[$kind])) {
+            return 0;
+        }
+        try {
+            return $this->createMessage([
+                'tenant_id' => $tenantId,
+                'user_id' => $userId ?: null,
+                'steam_uid' => $steam !== '' ? $steam : null,
+                'terminal_uid' => trim((string) ($target['terminal_uid'] ?? '')) ?: null,
+                'kind' => $kind,
+                'title' => $title,
+                'body' => $detail,
+                'level' => self::NOTICE_KINDS[$kind],
+                'require_ack' => true,
+                'expires_at' => gmdate('Y-m-d H:i:s', time() + 14 * 86400),
+                'actor_id' => $actorId,
+            ]);
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
+     * Messages pas encore validés d'un joueur (son ATAK les récupère avec sa session de jeu).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function pendingForPlayer(int $tenantId, ?int $userId, ?string $steamUid): array
+    {
+        if ($tenantId < 1 || !$this->ready()) {
+            return [];
+        }
+        [$match, $args] = $this->playerMatch($userId, $steamUid);
+        if ($match === '') {
+            return [];
+        }
+
+        return $this->rows(
+            "SELECT m.* FROM atak_admin_messages m
+             WHERE m.tenant_id = ? AND m.acked_at IS NULL AND m.cancelled_at IS NULL
+               AND (m.expires_at IS NULL OR m.expires_at > UTC_TIMESTAMP()) AND {$match}
+             ORDER BY m.id ASC LIMIT 20",
+            array_merge([$tenantId], $args)
+        );
+    }
+
+    /**
+     * L'ATAK du joueur signale ses messages affichés (delivered) ou validés (acked) ; seulement les siens.
+     *
+     * @param list<int> $ids
+     */
+    public function markMessagesForPlayer(int $tenantId, ?int $userId, ?string $steamUid, array $ids, string $state): int
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+        [$match, $args] = $this->playerMatch($userId, $steamUid);
+        if ($tenantId < 1 || $ids === [] || $match === '' || !$this->ready()) {
+            return 0;
+        }
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $set = $state === 'acked'
+            ? 'acked_at = COALESCE(acked_at, UTC_TIMESTAMP()), delivered_at = COALESCE(delivered_at, UTC_TIMESTAMP())'
+            : 'delivered_at = COALESCE(delivered_at, UTC_TIMESTAMP())';
+        try {
+            $st = $this->pdo()->prepare(
+                "UPDATE atak_admin_messages m SET {$set} WHERE m.tenant_id = ? AND m.cancelled_at IS NULL AND m.id IN ({$in}) AND {$match}"
+            );
+            $st->execute(array_merge([$tenantId], $ids, $args));
+
+            return $st->rowCount();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /** @return array{0: string, 1: list<mixed>} */
+    private function playerMatch(?int $userId, ?string $steamUid): array
+    {
+        $match = [];
+        $args = [];
+        if ($userId !== null && $userId > 0) {
+            $match[] = 'm.user_id = ?';
+            $args[] = $userId;
+        }
+        $steam = $steamUid !== null ? SteamId::normalize($steamUid) : null;
+        if ($steam !== null) {
+            $match[] = 'm.steam_uid = ?';
+            $args[] = $steam;
+        }
+
+        return [$match === [] ? '' : '(' . implode(' OR ', $match) . ')', $args];
     }
 
     public function cancelMessage(int $id): bool
@@ -671,7 +786,7 @@ final class AtakAdminControlRepository
         if ($tenantId < 1 || !$this->ready()) {
             return [];
         }
-        $sql = 'SELECT m.id, m.user_id, COALESCE(m.steam_uid, u.steam_id) AS steam_uid, m.terminal_uid, m.title, m.body, m.level,
+        $sql = 'SELECT m.*, COALESCE(m.steam_uid, u.steam_id) AS steam_uid,
                        m.require_ack, m.created_at, m.expires_at, m.delivered_at
                 FROM atak_admin_messages m LEFT JOIN users u ON u.id = m.user_id
                 WHERE m.tenant_id = ? AND m.acked_at IS NULL AND m.cancelled_at IS NULL
