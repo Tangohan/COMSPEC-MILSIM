@@ -4012,6 +4012,7 @@
 ["Ctrl+Z pour annuler", "Ctrl+Z to undo"],
 ["Cuisine", "Cooking"],
 ["Cuisine de ration", "Ration cooking"],
+["CURSEUR", "CURSOR"],
 ["Cyan clair (JVN)", "NVG (light cyan)"],
 ["Câblage / chargeur téléphone", "Phone cable / charger"],
 ["CÂBLE", "CABLE"],

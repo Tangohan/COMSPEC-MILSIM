@@ -1,9 +1,9 @@
 /*
     Carte façon ATAK : la carte occupe l'écran, les informations flottent par-dessus.
     - Haut gauche : boussole (aiguille = cap du joueur).
-    - Bas gauche : panneau curseur (grille, altitude, distance, azimut), boutons « Outils carte » et « RECHERCHER »
+    - Bas gauche : bandeau d'information en deux cases (curseur : grille, distance, azimut, MGRS, altitude ; moi : cap,
+      indicatif, équipe de feu, grille), boutons « Outils carte » et « RECHERCHER »
       (IMEI, numéro, balise GPS, indicatif : fn_mapSearch, panneau en haut à gauche, fiche du résultat en bas).
-    - Bas droite : carte « moi » (indicatif, cap, grille).
     - Droite (en main) : centrer, suivre, zoom, marqueur, libellés.
     - Bas (réglage « Barre de données sous la carte ») : vitesse, altitude, cap, grille, heure.
 */
@@ -78,53 +78,61 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
     _ov set ["heading", _hd];
 };
 
-// Carte « moi » (bas droite) et panneau curseur (bas gauche) : fond + liseré + texte en retrait.
-// Police = petite police × taille des textes de carte (Réglages > Carte) ; hauteur calculée sur le nombre de lignes
-// (le panneau curseur en a 2 : grille et altitude, distance et azimut) pour ne jamais couper la dernière.
+// Bandeau d'information (bas gauche) : une seule pastille, deux cases séparées d'un filet, même hauteur, liseré vert
+// à gauche. Case 1 : curseur (en main) ou ma position (porté) ; case 2 : mon cap, mon indicatif et mon équipe de feu
+// (couleur de l'anneau autour de mon symbole). Ligne 1 = valeur principale en grand, ligne 2 = détails en petit gris
+// (fn_mapOverlayUpdate). Largeur calée sur le texte (avant : bandeau étiré jusqu'à la carte « moi », à moitié vide)
+// et rectangle gardé pour que les noms des repères et des lieux ne passent plus dessous (fn_mapMarkerText).
+// Police = petite police × taille des textes de carte (Réglages > Carte).
 private _mini = _l get "mini";
 private _mts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
 private _panFs = _fs * ([0.78, 0.7] select _mini) * _mts;
 private _panW = ((((_mw * 0.34) min (_font * 9 / _ratio)) * ([1, 0.75] select _mini)) * (_mts max 1)) min (_mw * ([0.44, 0.62] select _mini));
 private _panIn = _pad * 0.6;
 private _panLine = _panFs * 1.18;
-private _panel = {
-    params ["_px0", "_lines", ["_panW", _panW]];
-    private _h = _panLine * _lines + _panIn * 2;
-    private _py0 = _by + _mh - _h - _pad;
-    private _bg = ["COMSPEC_RscText", [_px0, _py0, _panW, _h]] call _mk;
-    _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, 0.86];
-    private _edge = ["COMSPEC_RscText", [_px0, _py0, _panW, pixelH * 2]] call _mk;
-    _edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.55];
-    private _t = ["COMSPEC_RscStructuredText", [_px0 + _panIn / _ratio * 0.6, _py0 + _panIn, _panW - _panIn / _ratio * 1.2, _h - _panIn * 1.5]] call _mk;
-    _t ctrlSetFontHeight ((_panFs) max COMSPEC_ATAK_FontMin);
-    [_t, _h]
-};
-// En main, la barre d'outils occupe le bord droit : la carte « moi » se cale à sa gauche (elle passait dessous).
+// En main, la barre d'outils occupe le bord droit : le bandeau s'arrête avant.
 private _toolCol = [0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _pad] select _interactive;
-([_bx + _mw - _panW - _pad - _toolCol, [3, 2] select _mini] call _panel) params ["_me", "_meH"];
-_ov set ["me", _me];
-private _panH = _meH;
-
-// Porté (sans souris) : la même barre en bas à gauche donne la position du joueur (grille, MGRS, altitude).
-if (!_interactive) then {
-    private _curW = ((_bx + _mw - _panW - _pad) - _pad - (_bx + _pad)) max (_panW * 0.9);
-    private _curWrap = (_curW - _panIn / _ratio * 1.2) < (52 * _panFs * 0.58 / _ratio);
-    ([_bx + _pad, [1, 2] select _curWrap, _curW] call _panel) params ["_cur", "_curH"];
-    _panH = _curH;
-    _ov set ["cursor", _cur];
-    _ov set ["cursorWrap", _curWrap];
+// Largeur d'un caractère à chasse fixe (taille 1) et marges intérieures d'une case.
+private _chW = _panFs * 0.6 / _ratio;
+private _cellIn = _panIn / _ratio * 1.2;
+private _avail = (_mw - 2 * _pad - _toolCol) max (_panW * 1.2);
+// Case 2 : « 317° NO » en grand, « TA1 · BLEU · 1519 1729 » en petit (sans grille en porté : la case 1 la donne).
+private _meW = ((([18, 13] select _mini) * _chW) + _cellIn * 2) min (_avail * 0.45);
+// Case 1 : « CURSEUR 1732 1750  2135 m · 085° E » (taille 1,2) ; trop étroite : distance et azimut en ligne 2,
+// MGRS et altitude en ligne 3.
+private _curNeed = ([36, 30] select _mini) * 1.2 * _chW + _cellIn * 2;
+private _curW = (_avail - _meW) min (_curNeed max (_panW * 0.9));
+private _curWrap = _curW < (_curNeed * 0.92);
+private _lines = [2.15, 3.1] select _curWrap;
+private _panH = _panLine * _lines + _panIn * 2;
+private _py0 = _by + _mh - _panH - _pad;
+private _px0 = _bx + _pad;
+private _stripW = _curW + _meW;
+private _bg = ["COMSPEC_RscText", [_px0, _py0, _stripW, _panH]] call _mk;
+_bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, 0.74];
+private _edge = ["COMSPEC_RscText", [_px0, _py0, pixelW * 3, _panH]] call _mk;
+_edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9];
+private _sep = ["COMSPEC_RscText", [_px0 + _curW, _py0 + _panIn, pixelW, _panH - _panIn * 2]] call _mk;
+_sep ctrlSetBackgroundColor [0.55, 0.62, 0.58, 0.35];
+private _cell = {
+    params ["_x0", "_w"];
+    private _t = ["COMSPEC_RscStructuredText", [_x0 + _cellIn, _py0 + _panIn * 0.7, _w - _cellIn * 1.6, _panH - _panIn * 1.2]] call _mk;
+    _t ctrlSetFontHeight ((_panFs) max COMSPEC_ATAK_FontMin);
+    _t
 };
+private _cur = [_px0 + pixelW * 3, _curW - pixelW * 3] call _cell;
+private _me = [_px0 + _curW, _meW] call _cell;
+_ov set ["cursor", _cur];
+_ov set ["cursorWrap", _curWrap];
+_ov set ["me", _me];
+// Rectangles de l'interface posée sur la carte, relatifs au coin de la carte, avec sa taille : fn_mapHudRects les
+// rend aux noms des repères, des lieux et aux cartouches, qui ne passent plus dessous.
+private _hud = [[_px0 - _bx, _py0 - _by, _px0 + _stripW - _bx, _py0 + _panH - _by]];
+private _hdC = _ov getOrDefault ["heading", controlNull];
+if (!isNull _hdC) then { (ctrlPosition _hdC) params ["_hx", "_hy", "_hw", "_hh"]; _hud pushBack [_hx - _bx, _hy - _by, _hx + _hw - _bx, _hy + _hh - _by]; };
+uiNamespace setVariable ["COMSPEC_ATAK_MapHudRects", [[_mw, _mh], _hud]];
 
 if (_interactive) then {
-    // Ligne curseur (bas gauche, jusqu'à la carte « moi ») en chasse fixe :
-    // « CURSEUR <grille> · <dist> m · <azimut>° E · MGRS <zone> <grille> · ALT <m> » (fn_mapOverlayUpdate).
-    // Trop étroite pour une ligne (petit écran) : MGRS passe sur une seconde ligne.
-    private _curW = ((_bx + _mw - _panW - _pad - _toolCol) - _pad - (_bx + _pad)) max (_panW * 0.9);
-    private _curWrap = (_curW - _panIn / _ratio * 1.2) < (64 * _panFs * 0.58 / _ratio);
-    ([_bx + _pad, [1, 2] select _curWrap, _curW] call _panel) params ["_cur", "_curH"];
-    _panH = _curH;
-    _ov set ["cursor", _cur];
-    _ov set ["cursorWrap", _curWrap];
     // Bouton « OUTILS » bien visible (icône + libellé) : ouvre le menu des outils carte.
     private _th = _fs * 1.9;
     private _tw = _th / _ratio;
@@ -611,7 +619,8 @@ if (_wpn getOrDefault ["nav", false] && {(count (_wpn getOrDefault ["pts", []]))
     private _aw = _ah / _ratio;
     private _pw = _aw + _font * 5.5 / _ratio;
     private _px = _bx + (_mw - _pw) / 2;
-    private _py = _by + _mh - _ah - _pad * ([1, 6] select (_interactive && {!(_l get "mini")}));
+    // Au-dessus du bandeau d'information (il passait dessus quand le bandeau dépassait le centre).
+    private _py = _by + _mh - _panH - _pad * 2 - _ah;
     private _abg = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ah]] call _mk;
     _abg ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.88];
     private _arr = ["COMSPEC_RscIcon", [_px, _py, _aw, _ah], _dir + "nav_straight.paa"] call _mk;

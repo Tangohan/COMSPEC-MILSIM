@@ -9,10 +9,14 @@ params [["_cursorOnly", false], ["_compassOnly", false]];
 disableSerialization;
 private _ov = uiNamespace getVariable ["COMSPEC_ATAK_MapOverlay", createHashMap];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Points cardinaux dans la langue du téléphone (O / W) : « NO » ne passait pas par le dictionnaire.
 private _cardinal = {
     params ["_a"];
-    ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_a / 45)) mod 8)
+    ([["N", "NE", "E", "SE", "S", "SW", "W", "NW"], ["N", "NE", "E", "SE", "S", "SO", "O", "NO"]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isEqualTo "fr")) select ((round (_a / 45)) mod 8)
 };
+// Azimut sur trois chiffres (« 085° ») et distance en m puis en km.
+private _az3 = { params ["_a"]; private _t = str ((round _a) mod 360); while {(count _t) < 3} do { _t = "0" + _t; }; _t };
+private _distTxt = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 2]] select (_d >= 1000) };
 if (_compassOnly) exitWith {
     private _h = getDirVisual (vehicle player);
     if ((abs (_h - (_ov getOrDefault ["compassH", -1]))) < 0.2) exitWith { false };
@@ -54,21 +58,28 @@ if (!isNull _cur) then {
         _zone = [worldName, _z];
         uiNamespace setVariable ["COMSPEC_ATAK_MgrsZone", _zone];
     };
-    private _br = [" · ", "<br/>"] select (_ov getOrDefault ["cursorWrap", false]);
+    // Bandeau d'information, case 1 : ligne 1 = libellé discret + valeur principale en grand, ligne 2 = détails en
+    // petit gris ; case trop étroite (cursorWrap) : distance et azimut passent en ligne 2, le reste en ligne 3.
+    private _wrap = _ov getOrDefault ["cursorWrap", false];
+    private _lbl = { params ["_t", ["_c", "#5cc76b"]]; format ["<t size='0.78' color='%2'>%1</t> ", _t, _c] };
+    private _big = { params ["_t"]; format ["<t font='EtelkaMonospaceProBold' size='1.2'>%1</t>", _t] };
+    private _sub = { params ["_t"]; format ["<br/><t size='0.85' color='#b7c1bc'>%1</t>", _t] };
+    private _grey = "<t color='#7f8c86'>%1</t>";
     private _text = if ((count _measure) >= 2) then {
         _measure params ["_a", "_b"];
         private _az = _a getDir _b;
-        format ["<t font='EtelkaMonospacePro'><t color='#f2ab33'>A-B</t> %1 m · %2° %3 · <t color='#8a9a93'>Δ ALT</t> %4 m</t>", round (_a distance2D _b), round _az, [_az] call _cardinal, round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a))]
+        format ["<t font='EtelkaMonospacePro'>%1%2  %3° %4%5</t>", ["A-B", "#f2ab33"] call _lbl, [[_a distance2D _b] call _distTxt] call _big, [_az] call _az3, [_az] call _cardinal,
+            [format [_grey + " %2 m", "Δ ALT", round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a))]] call _sub]
     } else {
         if !(_s getOrDefault ["interactive", false]) exitWith {
-            // Téléphone porté : pas de curseur, la barre donne la position du joueur.
+            // Téléphone porté : pas de curseur, le bandeau donne la position du joueur.
             private _pp = getPosASL (vehicle player);
             private _dig = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
             private _g8 = [[_pp, 8] call comspec_atak_native_fnc_gridRef, [_pp] call comspec_atak_native_fnc_gridRef] select (_dig isEqualTo 8);
-            format ["<t font='EtelkaMonospacePro'><t color='#5cc76b'>MOI</t> %1%4<t color='#8a9a93'>MGRS</t> %2 %1 · <t color='#8a9a93'>ALT</t> %3 m</t>",
-                _g8, _zone select 1, round (_pp select 2), _br]
+            format ["<t font='EtelkaMonospacePro'>%1%2%3</t>", ["MOI"] call _lbl, [_g8] call _big,
+                [format [_grey + " %2 %3 · " + _grey + " %4 m", "MGRS", _zone select 1, _g8, "ALT", round (_pp select 2)]] call _sub]
         };
-        if ((count _p) < 2) then { "<t font='EtelkaMonospacePro' color='#8a9a93'>CURSEUR · survolez la carte</t>" } else {
+        if ((count _p) < 2) then { format ["<t font='EtelkaMonospacePro'>%1<t color='#8a9a93'>survolez la carte</t></t>", ["CURSEUR"] call _lbl] } else {
             private _az = player getDir _p;
             private _alt = getTerrainHeightASL _p;
             private _dig = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
@@ -79,11 +90,16 @@ if (!isNull _cur) then {
             if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
                 private _cv = ["at", _p] call comspec_atak_native_fnc_relayNet;
                 if (_cv isNotEqualTo []) then {
-                    _net = [format [" · <t color='#8a9a93'>RÉSEAU</t> %1 Mbit/s %2 %%", (_cv select 0) toFixed 1, _cv select 1], " · <t color='#e5483a'>ZONE BLANCHE</t>"] select ((_cv select 0) <= 0);
+                    _net = [format [" · " + _grey + " %2 Mbit/s %3 %%", "RÉSEAU", (_cv select 0) toFixed 1, _cv select 1], " · <t color='#e5483a'>ZONE BLANCHE</t>"] select ((_cv select 0) <= 0);
                 };
             };
-            format ["<t font='EtelkaMonospacePro'><t color='#5cc76b'>CURSEUR</t> %1 · %2 m · %3° %4%8<t color='#8a9a93'>MGRS</t> %5 %6 · <t color='#8a9a93'>ALT</t> %7 m%9</t>",
-                _g, round (player distance2D _p), (round _az) mod 360, [_az] call _cardinal, _zone select 1, _g8, round _alt, _br, _net]
+            private _da = format ["%1 · %2° %3", [player distance2D _p] call _distTxt, [_az] call _az3, [_az] call _cardinal];
+            private _det = format [_grey + " %2 %3 · " + _grey + " %4 m%5", "MGRS", _zone select 1, _g8, "ALT", round _alt, _net];
+            if (_wrap) then {
+                format ["<t font='EtelkaMonospacePro'>%1%2%3%4</t>", ["CURSEUR"] call _lbl, [_g] call _big, [_da] call _sub, [_det] call _sub]
+            } else {
+                format ["<t font='EtelkaMonospacePro'>%1%2  %3%4</t>", ["CURSEUR"] call _lbl, [_g] call _big, _da, [_det] call _sub]
+            }
         }
     };
     // Texte inchangé (souris immobile) : ni traduction ni texte structuré refaits.
@@ -142,13 +158,21 @@ if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", round _h, [_h] call
 
 private _me = _ov getOrDefault ["me", controlNull];
 if (!isNull _me) then {
-    // Mini : indicatif et cap seulement ; plein écran : avec la grille.
-    _me ctrlSetStructuredText parseText (((if (([] call comspec_atak_native_fnc_layoutGet) get "mini") then {
-        format ["<t align='right'><t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t><br/>%2 %3°</t>", [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h]
-    } else {
-        format ["<t align='right'><t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t><br/>%2 %3°<br/>%4</t>",
-            [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h, [player] call comspec_atak_native_fnc_gridRef]
-    })) call comspec_atak_native_fnc_tr);
+    // Case 2 du bandeau : mon cap en grand ; en dessous mon indicatif à la couleur de mon équipe de feu (celle de
+    // l'anneau autour de mon symbole) avec son nom, et ma grille en main (porté : déjà dans la case 1 ; mini : sans).
+    private _ft = [player] call comspec_atak_native_fnc_ftInfo;
+    private _inFt = (_ft get "id") isNotEqualTo "";
+    private _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", [player] call comspec_atak_native_fnc_unitCallsign, ["#5cc76b", _ft get "hex"] select _inFt];
+    if (_inFt) then { _l2 = _l2 + format [" <t size='0.85' color='%2'>%1</t>", toUpper (_ft get "name"), _ft get "hex"]; };
+    if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
+        _l2 = _l2 + format [" <t color='#7f8c86'>·</t> %1", [player] call comspec_atak_native_fnc_gridRef];
+    };
+    private _meTxt = format ["<t font='EtelkaMonospacePro'><t font='EtelkaMonospaceProBold' size='1.2'>%1°</t> <t size='0.85' color='#b7c1bc'>%2</t><br/><t size='0.85' color='#b7c1bc'>%3</t></t>",
+        [_h] call _az3, [_h] call _cardinal, _l2];
+    if ((_me getVariable ["txt", ""]) isNotEqualTo _meTxt) then {
+        _me setVariable ["txt", _meTxt];
+        _me ctrlSetStructuredText parseText ((_meTxt) call comspec_atak_native_fnc_tr);
+    };
 };
 
 private _bar = _ov getOrDefault ["databar", controlNull];
