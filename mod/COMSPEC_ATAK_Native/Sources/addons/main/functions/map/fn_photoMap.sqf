@@ -39,7 +39,10 @@ if (isNil "_info") then {
     _info = [];
     private _cfg = ("(toLower getText (_x >> 'world')) isEqualTo (toLower worldName)" configClasses (configFile >> "COMSPEC_ATAK_PhotoMaps")) param [0, configNull];
     if (!isNull _cfg && {getNumber (_cfg >> "extent") > 0}) then {
-        _info = [getNumber (_cfg >> "extent"), (getNumber (_cfg >> "tileSize")) max 1, getNumber (_cfg >> "minZoom"), getNumber (_cfg >> "maxZoom"), getText (_cfg >> "path"), getText (_cfg >> "ext"), "pbo", 0, 0, 0];
+        // zoomPaths[] = {{niveau, chemin}} : niveau rangé dans une autre PBO (une seule dépasserait 2 Go), tuiles x\y.
+        private _zp = createHashMap;
+        { if (_x isEqualType [] && {(count _x) >= 2}) then { _zp set [_x select 0, _x select 1]; }; } forEach (getArray (_cfg >> "zoomPaths"));
+        _info = [getNumber (_cfg >> "extent"), (getNumber (_cfg >> "tileSize")) max 1, getNumber (_cfg >> "minZoom"), getNumber (_cfg >> "maxZoom"), getText (_cfg >> "path"), getText (_cfg >> "ext"), "pbo", 0, 0, 0, _zp];
     };
     uiNamespace setVariable [format ["COMSPEC_ATAK_PhotoInfo_%1", worldName], _info];
 };
@@ -199,8 +202,11 @@ while { _z > _zMin && {(((_r select 2) - (_r select 1) + 1) * ((_r select 4) - (
 };
 _r params ["_T", "_x0", "_x1", "_y0", "_y1"];
 if (_x1 < _x0 || {_y1 < _y0}) exitWith {};
+private _zPaths = _info param [10, createHashMap];
 private _file = {
     params ["_zz", "_tx", "_ty"];
+    private _zp = _zPaths getOrDefault [_zz, ""];
+    if (_zp isNotEqualTo "") exitWith { _zp + str _tx + _sep + str _ty + _fx };
     _path + str _zz + _sep + str _tx + _sep + str _ty + _fx
 };
 private _now = diag_tickTime;
@@ -230,17 +236,28 @@ private _exists = if (_web) then {
 // débordaient sur leurs voisines (TTRD 20/10, raccord parfait avec 1080 / 1440 = 0,75). Retouche éventuelle :
 // COMSPEC_ATAK_PhotoPxFix (profil, défaut 1).
 private _k = 1080 / ((getResolution select 1) max 1) * ((profileNamespace getVariable ["COMSPEC_ATAK_PhotoPxFix", 1]) max 0.1);
+// Un seul niveau par image : deux hauteurs de capture ne tombent pas au mètre près au même endroit, un mélange de
+// tuiles fines et d'ancêtres agrandis donnait une mosaïque décalée (TTRD 20/10). Le niveau le plus fin, capturé
+// seulement autour des localités (vue 120 m), ne sert que s'il couvre toute l'image ; aux autres niveaux, une tuile
+// absente est de la mer (non photographiée) : le bleu dessiné dessous suffit.
 private _fine = [];
 private _coarse = createHashMap;
-for "_ty" from _y0 to _y1 do {
-    for "_tx" from _x0 to _x1 do {
-        if ([_z, _tx, _ty] call _exists) then { _fine pushBack [_z, _tx, _ty]; continue };
-        // Ancêtre le plus proche (une seule fois par image).
-        for "_up" from 1 to (_z - _zMin) do {
-            private _a = [_z - _up, floor (_tx / (2 ^ _up)), floor (_ty / (2 ^ _up))];
-            if (_a call _exists) exitWith { _coarse set [str _a, _a]; };
+private _collect = {
+    _fine = [];
+    private _miss = 0;
+    for "_ty" from _y0 to _y1 do {
+        for "_tx" from _x0 to _x1 do {
+            if ([_z, _tx, _ty] call _exists) then { _fine pushBack [_z, _tx, _ty]; } else { _miss = _miss + 1; };
         };
     };
+    _miss
+};
+private _miss = call _collect;
+if (_z isEqualTo _zMax && {_miss > 0} && {_z > _zMin}) then {
+    _z = _z - 1;
+    ([_z] call _range) params ["_T2", "_x02", "_x12", "_y02", "_y12"];
+    _T = _T2; _x0 = _x02; _x1 = _x12; _y0 = _y02; _y1 = _y12;
+    call _collect;
 };
 private _draw = {
     params ["_zz", "_tx", "_ty"];
