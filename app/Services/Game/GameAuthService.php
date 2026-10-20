@@ -454,7 +454,10 @@ final class GameAuthService
         $exp = $this->experience->get($tenantId);
         $modVersion = trim((string) ($body['mod_version'] ?? ''));
         $min = trim((string) ($exp['min_mod_version'] ?? ''));
-        if ($modVersion !== '' && $min !== '' && version_compare($modVersion, $min, '<')) {
+        // « Pack Overwatch minimal » : seul un numéro de pack est comparé. L'ATAK natif sans Overwatch envoie « native »,
+        // que version_compare() classe sous toute version : le code autorisé sur /lier finissait refusé en 426.
+        if ($modVersion !== '' && $min !== '' && preg_match('/^\d+(\.\d+)*$/', $modVersion) === 1
+            && version_compare($modVersion, $min, '<')) {
             return $this->fail('MOD_OUTDATED', 426, [
                 'min_mod_version' => $min,
                 'detected_mod_version' => $modVersion,

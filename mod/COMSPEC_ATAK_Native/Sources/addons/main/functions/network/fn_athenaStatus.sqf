@@ -51,6 +51,16 @@ if !(_dllVer isEqualType "") then { _dllVer = ""; };
 // Code de connexion (fn_athenaLink).
 (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]) params ["_ls", "_lc", "_lu", "", "", "_ld"];
 if (_ls isEqualTo "pending" && {diag_tickTime >= _lu}) then { _ls = "expired"; };
+// Code refusé par Athena (réponse HTTP 4xx) : le serveur répond, c'est le compte, la communauté ou le mod qui bloque.
+private _refused = _ls isEqualTo "error" && {(_ld find "http_4") isEqualTo 0};
+private _refusal = switch (true) do {
+    case (!_refused): { [] };
+    case (_ld isEqualTo "http_426"): { ["Votre mod est plus ancien que la version minimale de votre communauté.", "Mettez le mod à jour sur Steam, ou demandez à votre staff de baisser la version minimale (réglages ATAK de la communauté sur Athena)."] };
+    case (_ld isEqualTo "http_403"): { ["Athena a refusé ce compte pour le jeu.", "Compte désactivé, pas membre de la communauté, ATAK bloqué ou mod non autorisé : prévenez votre staff avec ce message."] };
+    case (_ld isEqualTo "http_401"): { ["Athena n'a pas reconnu le compte qui a autorisé le code.", "Connectez-vous au bon compte sur le site, puis NOUVEAU CODE."] };
+    case (_ld isEqualTo "http_429"): { ["Trop de demandes envoyées à Athena.", "Patientez une minute, puis RÉESSAYER."] };
+    default { ["Athena a refusé ce code.", "Demandez un nouveau code et autorisez-le à nouveau sur le site."] };
+};
 
 // Indicatif et nom affichés.
 private _cs = ["comspec_profile_callsign"] call _v;
@@ -136,6 +146,9 @@ switch (true) do {
     case (_ls in ["asking", "approved"] || {_syncing} || {_link isEqualTo "connecting"}): {
         ["syncing", format ["Connexion en cours : %1…", [_stepName, "synchronisation du profil"] select (_ls isEqualTo "approved")], "Patientez quelques secondes.", "", _amber, ""] call _set;
     };
+    case (_refused): {
+        ["error", "Erreur : Athena a refusé la connexion", format ["%1 (%2)", _refusal select 0, toUpper _ld], _refusal select 1, _red, "code"] call _set;
+    };
     case (_notLinked): {
         ["unlinked", format ["Non connecté : %1 (non lié)", [_cs, name player] select (_cs isEqualTo "")], "Le serveur Athena répond, mais ce jeu n'est relié à aucun compte Athena.", "Reliez-le : OBTENIR MON CODE, puis autorisez-le sur le site.", _red, "code"] call _set;
     };
@@ -167,11 +180,11 @@ _steps pushBack (switch (_mode) do {
     case "off": { ["Service Athena", "off", "désactivé (ATAK local)", ""] };
     default { ["Service Athena", "warn", "pas encore choisi", ""] };
 });
-private _netKo = _code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_503", "HTTP_502", "HTTP_504"] || {_ls isEqualTo "error"};
+private _netKo = _code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_503", "HTTP_502", "HTTP_504"] || {_ls isEqualTo "error" && {!_refused}};
 _steps pushBack (switch (true) do {
     case (_mode isEqualTo "off" || {_dllDown}): { ["Serveur Athena", "off", "pas contacté", ""] };
     case (_netKo): { ["Serveur Athena", "ko", "injoignable", "Connexion internet du jeu coupée, pare-feu, ou site Athena en maintenance."] };
-    case (_logged || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena.ttrd.fr%1", _latText], ""] };
+    case (_logged || {_refused} || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena.ttrd.fr%1", _latText], ""] };
     case (_syncing || {_link isEqualTo "connecting"} || {_ls isEqualTo "asking"}): { ["Serveur Athena", "now", "contact en cours", ""] };
     default { ["Serveur Athena", "todo", "pas encore contacté", ""] };
 });
@@ -180,6 +193,7 @@ _steps pushBack (switch (true) do {
     case (_mode isEqualTo "off" || {_dllDown}): { ["Compte Athena", "off", "non connecté", ""] };
     case (_ls isEqualTo "pending"): { ["Compte Athena", "now", format ["code %1 en attente", _lc], "À autoriser sur le site Athena."] };
     case (_ls isEqualTo "approved" || {_syncing}): { ["Compte Athena", "now", _stepName, ""] };
+    case (_refused): { ["Compte Athena", "ko", "refusé par Athena", _refusal select 0] };
     case (_notLinked): { ["Compte Athena", "ko", format ["%1 (non lié)", [_cs, name player] select (_cs isEqualTo "")], "Ce jeu n'est relié à aucun compte."] };
     case (_why isNotEqualTo []): { ["Compte Athena", "ko", _why select 0, ""] };
     default { ["Compte Athena", "todo", "non connecté", ""] };

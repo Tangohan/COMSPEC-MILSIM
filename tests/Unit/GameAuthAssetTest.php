@@ -253,4 +253,20 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('membershipHasSteam', $source);
         self::assertStringContainsString('steamNoticesForAccount', $source);
     }
+
+    public function testNonNumericModVersionSkipsMinimumPackCheck(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $svc = (string) file_get_contents($root . '/app/Services/Game/GameAuthService.php');
+        $link = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_athenaLink.sqf');
+        $status = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_athenaStatus.sqf');
+
+        // L'ATAK natif sans Overwatch envoie mod_version « native » : jamais comparé au pack minimal (426 après /lier).
+        self::assertStringContainsString('preg_match(\'/^\d+(\.\d+)*$/\', $modVersion) === 1', $svc);
+        self::assertTrue(version_compare('native', '1.5.0', '<'));
+        self::assertSame(0, preg_match('/^\d+(\.\d+)*$/', 'native'));
+        // Le téléphone garde le code HTTP du refus et ne dit plus « serveur injoignable » quand Athena a répondu.
+        self::assertStringContainsString('_fail = (_r splitString "|") param [1, "http_4xx"];', $link);
+        self::assertStringContainsString('private _refused = _ls isEqualTo "error" && {(_ld find "http_4") isEqualTo 0};', $status);
+    }
 }
