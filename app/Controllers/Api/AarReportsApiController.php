@@ -9,6 +9,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AarReportRepository;
+use App\Services\Rbac\RolePermissionMatrixCatalog;
+use App\Support\ModuleFeatureAccess;
 
 final class AarReportsApiController
 {
@@ -23,6 +25,9 @@ final class AarReportsApiController
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
+        }
+        if (!ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'view')) {
+            return Response::json(['ok' => false, 'error' => 'Accès refusé.'], 403);
         }
 
         return Response::json([
@@ -40,6 +45,10 @@ final class AarReportsApiController
         }
         if (!$this->csrfOk($request)) {
             return Response::json(['ok' => false, 'error' => 'Session expirée.'], 419);
+        }
+        // Même droit que le back-office : rédiger ou modifier un compte rendu demande la gestion ATAK.
+        if (!ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage')) {
+            return Response::json(['ok' => false, 'error' => 'Droit insuffisant pour modifier les comptes rendus.'], 403);
         }
 
         $body = $this->body() + [

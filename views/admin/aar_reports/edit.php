@@ -1,28 +1,25 @@
 <?php
 declare(strict_types=1);
 
-$report = is_array($aarReport ?? null) ? $aarReport : [];
-$missions = is_array($aarMissions ?? null) ? $aarMissions : (is_array($missions ?? null) ? $missions : []);
-$csrfToken = (string) ($csrfToken ?? \App\Core\Csrf::token());
-$id = (int) ($report['id'] ?? 0);
-$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-$operation = trim((string) ($report['operation_label'] ?? $report['title'] ?? ''));
-?>
+/**
+ * Modification d'un compte rendu (/back-office/atak/comptes-rendus/{id}/edit).
+ */
+$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$base = url('back-office/atak/comptes-rendus');
 
-<div class="ath-aar-edit ath-rise">
-    <p class="ath-aar-edit__lead">
-        Modification du compte rendu<?= $operation !== '' ? ' — ' . $h($operation) : '' ?>.
-        Les sections vides ne s’afficheront pas à la lecture.
-    </p>
-    <form method="post" action="<?= $h(url('back-office/atak/comptes-rendus/' . $id)) ?>" class="ath-card ath-aar-form-card">
-        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-        <?php
-        $isEdit = true;
-        require base_path('views/admin/aar_reports/partials/form_fields.php');
-        ?>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-            <button type="submit" class="ath-btn ath-btn--solid">Enregistrer les modifications</button>
-            <a href="<?= $h(url('back-office/atak/comptes-rendus/' . $id)) ?>" class="ath-btn">Annuler</a>
-        </div>
-    </form>
-</div>
+$report = is_array($aarReport ?? null) ? $aarReport : [];
+$missions = is_array($aarMissions ?? null) ? $aarMissions : [];
+$templates = [];
+$isEdit = true;
+$id = (int) ($report['id'] ?? 0);
+?>
+<form method="post" action="<?= $h($base . '/' . $id) ?>" class="bo-aar bo-aar-form" id="bo-aar-form">
+  <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken ?? '') ?>">
+  <?php require base_path('views/admin/aar_reports/partials/form_fields.php'); ?>
+  <div class="bo-aar-formbar">
+    <span class="bo-aar-muted">Les sections laissées vides n’apparaissent pas à la lecture ni dans le PDF.</span>
+    <a class="ath-btn" href="<?= $h($base . '/' . $id) ?>">Annuler</a>
+    <button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button>
+  </div>
+</form>
+<script src="<?= $h(asset_url('assets/js/back-office-aar.js')) ?>" defer></script>

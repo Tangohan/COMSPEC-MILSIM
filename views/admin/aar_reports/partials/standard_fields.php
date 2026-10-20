@@ -2,39 +2,57 @@
 declare(strict_types=1);
 
 /**
- * Formulaire standard (synthèse, points, actions).
+ * Formulaire standard : synthèse, points forts / faibles, enseignements, conclusion (actions : actions_fields.php).
  *
- * @var callable(string, string=):string $val
- * @var callable(string):string $h
- * @var string $strengthsText
- * @var string $weaknessesText
- * @var string $openActionsText
- * @var string $closedActionsText
+ * @var array<string, mixed> $report
+ * @var callable $val
+ * @var callable $h
  */
+$lines = static fn (mixed $items): string => implode("\n", array_values(array_filter(
+    array_map(static fn ($i) => trim(is_array($i) ? (string) ($i['label'] ?? '') : (string) $i), is_array($items) ? $items : []),
+    static fn (string $s): bool => $s !== ''
+)));
 ?>
-<label for="aar-summary-heading">Titre de synthèse</label>
-<input id="aar-summary-heading" name="summary_heading" value="<?= $h($val('summary_heading')) ?>" placeholder="Ex. Mission remplie sans perte">
+<fieldset class="ath-panel bo-aar-fs">
+  <legend class="bo-aar-fs__legend">1 · Synthèse</legend>
+  <label class="bo-aar-field">
+    <span>Titre de synthèse</span>
+    <input name="summary_heading" maxlength="200" value="<?= $h($val('summary_heading')) ?>" placeholder="Ex. Mission remplie sans perte">
+  </label>
+  <label class="bo-aar-field">
+    <span>Déroulé et résultat</span>
+    <textarea name="summary_text" rows="5" placeholder="Ce qui était prévu, ce qui s’est passé, le résultat obtenu."><?= $h($val('summary_text')) ?></textarea>
+  </label>
+</fieldset>
 
-<label for="aar-summary">Synthèse</label>
-<textarea id="aar-summary" name="summary_text" rows="4" placeholder="Résumé opérationnel"><?= $h($val('summary_text')) ?></textarea>
+<fieldset class="ath-panel bo-aar-fs">
+  <legend class="bo-aar-fs__legend">2 · Points relevés</legend>
+  <div class="bo-aar-grid bo-aar-grid--2">
+    <label class="bo-aar-field">
+      <span class="bo-aar-ok">Points forts</span>
+      <textarea name="strengths" rows="5" placeholder="Un point par ligne"><?= $h($lines($report['strengths'] ?? [])) ?></textarea>
+    </label>
+    <label class="bo-aar-field">
+      <span class="bo-aar-warn">Points faibles</span>
+      <textarea name="weaknesses" rows="5" placeholder="Un point par ligne"><?= $h($lines($report['weaknesses'] ?? [])) ?></textarea>
+    </label>
+  </div>
+</fieldset>
 
-<label for="aar-strengths">Points forts (une ligne par point)</label>
-<textarea id="aar-strengths" name="strengths" rows="3"><?= $h($strengthsText) ?></textarea>
-
-<label for="aar-weaknesses">Points faibles (une ligne par point)</label>
-<textarea id="aar-weaknesses" name="weaknesses" rows="3"><?= $h($weaknessesText) ?></textarea>
-
-<label for="aar-lessons">Enseignements</label>
-<textarea id="aar-lessons" name="lessons_learned" rows="2"><?= $h($val('lessons_learned')) ?></textarea>
-
-<label for="aar-lessons-ctx">Contexte enseignements</label>
-<input id="aar-lessons-ctx" name="lessons_context" value="<?= $h($val('lessons_context')) ?>" placeholder="Ex. prochaine opération">
-
-<label for="aar-conclusion">Conclusion</label>
-<textarea id="aar-conclusion" name="conclusion_text" rows="2"><?= $h($val('conclusion_text')) ?></textarea>
-
-<label for="aar-open-actions">Actions en cours (une ligne par action)</label>
-<textarea id="aar-open-actions" name="open_actions" rows="2" placeholder="Libellé — responsable"><?= $h($openActionsText) ?></textarea>
-
-<label for="aar-closed-actions">Actions closes (une ligne par action)</label>
-<textarea id="aar-closed-actions" name="closed_actions" rows="2"><?= $h($closedActionsText) ?></textarea>
+<fieldset class="ath-panel bo-aar-fs">
+  <legend class="bo-aar-fs__legend">3 · Enseignements et conclusion</legend>
+  <div class="bo-aar-grid bo-aar-grid--2">
+    <label class="bo-aar-field">
+      <span>Enseignements</span>
+      <textarea name="lessons_learned" rows="4" placeholder="Ce qu’il faut retenir"><?= $h($val('lessons_learned')) ?></textarea>
+    </label>
+    <label class="bo-aar-field">
+      <span>Conclusion du commandement</span>
+      <textarea name="conclusion_text" rows="4" placeholder="Avis général"><?= $h($val('conclusion_text')) ?></textarea>
+    </label>
+  </div>
+  <label class="bo-aar-field">
+    <span>Enseignements à retenir pour…</span>
+    <input name="lessons_context" maxlength="200" value="<?= $h($val('lessons_context')) ?>" placeholder="Ex. la prochaine opération de nuit">
+  </label>
+</fieldset>
