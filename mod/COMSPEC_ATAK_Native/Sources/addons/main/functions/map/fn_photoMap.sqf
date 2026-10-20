@@ -23,8 +23,8 @@
     l'heure à laquelle la redemander) : le disque n'est jamais testé à l'image. Tuiles inconnues demandées par lots
     (MapPhoto.Want, qui répond tout de suite pour celles déjà en cache), une fois par seconde au plus, avec le relevé
     des arrivées (MapPhoto.Status). Dessiné en PHOTO seulement (JPEG sans transparence : pas par-dessus la vue SATELLITE).
-    Taille des icônes : la largeur à l'écran divisée par pixelW, corrigée par COMSPEC_ATAK_PhotoPx (profil, défaut 1)
-    si les tuiles se chevauchent ou laissent des joints.
+    Taille des icônes : la largeur à l'écran divisée par pixelW, en 480es de la hauteur de la zone d'affichage (unité
+    de drawIcon), retouchable par COMSPEC_ATAK_PhotoPxAdjust (profil, défaut 1) si les tuiles se chevauchent ou laissent des joints.
 */
 params [["_arg", "info"], ["_style", "PHOTO"]];
 private _call = comspec_atak_native_fnc_extensionCall;
@@ -39,26 +39,18 @@ if (isNil "_info") then {
     _info = [];
     private _cfg = ("(toLower getText (_x >> 'world')) isEqualTo (toLower worldName)" configClasses (configFile >> "COMSPEC_ATAK_PhotoMaps")) param [0, configNull];
     if (!isNull _cfg && {getNumber (_cfg >> "extent") > 0}) then {
-        _info = [getNumber (_cfg >> "extent"), (getNumber (_cfg >> "tileSize")) max 1, getNumber (_cfg >> "minZoom"), getNumber (_cfg >> "maxZoom"), getText (_cfg >> "path"), getText (_cfg >> "ext"), "pbo", 0, 0, 0];
+        // zoomPaths[] = {{niveau, chemin}} : niveau rangé dans une autre PBO (une seule dépasserait 2 Go), tuiles x\y.
+        private _zp = createHashMap;
+        { if (_x isEqualType [] && {(count _x) >= 2}) then { _zp set [_x select 0, _x select 1]; }; } forEach (getArray (_cfg >> "zoomPaths"));
+        // fullMaxZoom : dernier niveau qui couvre toute la carte (au-delà : autour des localités seulement).
+        private _full = if (isNumber (_cfg >> "fullMaxZoom")) then { getNumber (_cfg >> "fullMaxZoom") } else { getNumber (_cfg >> "maxZoom") };
+        _info = [getNumber (_cfg >> "extent"), (getNumber (_cfg >> "tileSize")) max 1, getNumber (_cfg >> "minZoom"), getNumber (_cfg >> "maxZoom"), getText (_cfg >> "path"), getText (_cfg >> "ext"), "pbo", 0, 0, 0, _zp, _full];
     };
     uiNamespace setVariable [format ["COMSPEC_ATAK_PhotoInfo_%1", worldName], _info];
 };
-// Sans PBO : fond d'Athena (meta en cache sur le disque ou demandée au site). En route : redemandée dans 3 s ; sans
-// liaison : dans 30 s ; aucun fond sur Athena ou DLL absente : plus de la mission.
-if (_info isEqualTo []) then {
-    _info = missionNamespace getVariable ["COMSPEC_ATAK_PhotoWeb", []];
-    if (_info isEqualTo [] && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PhotoWebNext", 0])}) then {
-        private _r = ["MapPhoto.Meta", [worldName, "sat"]] call _call;
-        private _p = _r splitString "|";
-        missionNamespace setVariable ["COMSPEC_ATAK_PhotoWebAnswer", _r];
-        if ((_p param [0, ""]) isEqualTo "OK" && {(count _p) >= 10}) then {
-            _info = [parseNumber (_p select 1), (parseNumber (_p select 2)) max 1, parseNumber (_p select 3), parseNumber (_p select 4), _p select 6, _p select 5, "web", parseNumber (_p select 7), parseNumber (_p select 8), parseNumber (_p select 9)];
-            missionNamespace setVariable ["COMSPEC_ATAK_PhotoWeb", _info];
-        } else {
-            missionNamespace setVariable ["COMSPEC_ATAK_PhotoWebNext", diag_tickTime + (switch (_r) do { case "OK|pending": { 3 }; case "ERR|not_connected": { 30 }; default { 1e9 }; })];
-        };
-    };
-};
+// Fond d'Athena téléchargé en jeu (MapPhoto.*) : désactivé. Arma ne charge pas une image hors d'un PBO ou du dossier
+// de la mission, même sous son propre dossier (« Cannot load texture f:/…/arma 3/comspec_cache/… », TTRD 20/10) :
+// les tuiles téléchargées restaient invisibles. Le fond SATELLITE vient seulement du mod @COMSPEC_ATAK_Photo.
 if (_arg isEqualTo "info") exitWith { _info };
 private _web = (_info param [6, ""]) isEqualTo "web";
 private _have = missionNamespace getVariable "COMSPEC_ATAK_PhotoWebHave";
@@ -67,13 +59,11 @@ private _name = getText (configFile >> "CfgWorlds" >> worldName >> "description"
 if (_name isEqualTo "") then { _name = worldName; };
 private _rerender = { [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 
-if (_arg isEqualTo "prefetch") exitWith {
-    if (_info isNotEqualTo [] || {(missionNamespace getVariable ["COMSPEC_ATAK_PhotoWebNext", 0]) > diag_tickTime + 1e8}) exitWith {};
-    private _n = (missionNamespace getVariable ["COMSPEC_ATAK_PhotoWebTries", 0]) + 1;
-    missionNamespace setVariable ["COMSPEC_ATAK_PhotoWebTries", _n];
-    if (_n < 60) then { [{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 5] call CBA_fnc_waitAndExecute; };
-};
+// Meta d'Athena au démarrage : plus demandée (fond téléchargé désactivé, voir plus haut).
+if (_arg isEqualTo "prefetch") exitWith {};
 
+// Section « Cartes hors ligne » des Réglages : rien sans fond (le mod suffit, rien à télécharger).
+if (_arg isEqualTo "rows" && {_info isEqualTo []}) exitWith { [] };
 // Relevé de la DLL : [en file, téléchargées, octets, erreurs, en cours, état hors ligne, faites, total, tuiles en cache,
 // octets en cache] ; arrivées notées présentes, manquées redemandées dans une minute.
 if (_arg isEqualTo "poll") exitWith {
@@ -123,10 +113,10 @@ if (_arg isEqualTo "clear") exitWith {
 };
 
 if (_arg isEqualTo "rows") exitWith {
-    private _rows = [["section", "Cartes hors ligne", "Fond PHOTO de la carte en cours, téléchargé depuis Athena et gardé sur ce PC"]];
+    private _rows = [["section", "Cartes hors ligne", "Fond SATELLITE de la carte en cours, téléchargé depuis Athena et gardé sur ce PC"]];
     switch (true) do {
         case ((_info param [6, ""]) isEqualTo "pbo"): {
-            _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>Fond PHOTO de %1 fourni par le mod COMSPEC ATAK Photo : rien à télécharger.</t>", _name]];
+            _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>Fond SATELLITE de %1 fourni par le mod COMSPEC ATAK Photo : rien à télécharger.</t>", _name]];
         };
         case (_info isEqualTo []): {
             private _ans = missionNamespace getVariable ["COMSPEC_ATAK_PhotoWebAnswer", ""];
@@ -171,7 +161,7 @@ if (_arg isEqualTo "rows") exitWith {
                 [["EFFACER", "CONFIRMER"] select _armed, { ["clear"] call comspec_atak_native_fnc_photoMap; }, false, _cached > 0 || {_running},
                     "Effacer le fond photo de cette carte de ce PC (second appui pour confirmer) ; il se recharge à la demande"]
             ]];
-            _rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Sans téléchargement, le fond PHOTO se charge à la demande, là où la carte est regardée.</t>"];
+            _rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Sans téléchargement, le fond SATELLITE se charge à la demande, là où la carte est regardée.</t>"];
             // Progression : page redessinée toutes les 2 s tant que la catégorie Carte des Réglages est ouverte.
             if (_running && {diag_tickTime >= (uiNamespace getVariable ["COMSPEC_ATAK_PhotoDlRefresh", 0])}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_PhotoDlRefresh", diag_tickTime + 1.9];
@@ -214,8 +204,11 @@ while { _z > _zMin && {(((_r select 2) - (_r select 1) + 1) * ((_r select 4) - (
 };
 _r params ["_T", "_x0", "_x1", "_y0", "_y1"];
 if (_x1 < _x0 || {_y1 < _y0}) exitWith {};
+private _zPaths = _info param [10, createHashMap];
 private _file = {
     params ["_zz", "_tx", "_ty"];
+    private _zp = _zPaths getOrDefault [_zz, ""];
+    if (_zp isNotEqualTo "") exitWith { _zp + str _tx + _sep + str _ty + _fx };
     _path + str _zz + _sep + str _tx + _sep + str _ty + _fx
 };
 private _now = diag_tickTime;
@@ -241,18 +234,34 @@ private _exists = if (_web) then {
         _k
     }
 };
-private _k = (profileNamespace getVariable ["COMSPEC_ATAK_PhotoPx", 1]) max 0.1;
+// drawIcon compte sa taille en 480es de la hauteur de la zone d'affichage (getResolution select 3, l'écran virtuel
+// 640 × 480 d'Arma), pas en pixels : en 1440p, interface « Petite » (zone de 792 px), 480 / 792 = 0,606. Mesuré en jeu
+// (TTRD 20/10) : 1 débordait, 0,75 aussi, 0,55 laissait des joints de 10 %. Retouche éventuelle :
+// COMSPEC_ATAK_PhotoPxAdjust (profil, défaut 1).
+private _k = 480 / ((getResolution select 3) max 1) * ((profileNamespace getVariable ["COMSPEC_ATAK_PhotoPxAdjust", 1]) max 0.1);
+// Un seul niveau par image : deux hauteurs de capture ne tombent pas au mètre près au même endroit, un mélange de
+// tuiles fines et d'ancêtres agrandis donnait une mosaïque décalée (TTRD 20/10). Les niveaux au-delà de fullMaxZoom,
+// capturés seulement autour des localités (vues 120 m, 45 m), ne servent que s'ils couvrent toute l'image ; jusqu'à
+// fullMaxZoom, une tuile absente est de la mer (non photographiée) : le bleu dessiné dessous suffit.
 private _fine = [];
 private _coarse = createHashMap;
-for "_ty" from _y0 to _y1 do {
-    for "_tx" from _x0 to _x1 do {
-        if ([_z, _tx, _ty] call _exists) then { _fine pushBack [_z, _tx, _ty]; continue };
-        // Ancêtre le plus proche (une seule fois par image).
-        for "_up" from 1 to (_z - _zMin) do {
-            private _a = [_z - _up, floor (_tx / (2 ^ _up)), floor (_ty / (2 ^ _up))];
-            if (_a call _exists) exitWith { _coarse set [str _a, _a]; };
+private _collect = {
+    _fine = [];
+    private _miss = 0;
+    for "_ty" from _y0 to _y1 do {
+        for "_tx" from _x0 to _x1 do {
+            if ([_z, _tx, _ty] call _exists) then { _fine pushBack [_z, _tx, _ty]; } else { _miss = _miss + 1; };
         };
     };
+    _miss
+};
+private _zFull = _info param [11, _zMax];
+private _miss = call _collect;
+while { _z > _zFull && {_miss > 0} && {_z > _zMin} } do {
+    _z = _z - 1;
+    ([_z] call _range) params ["_T2", "_x02", "_x12", "_y02", "_y12"];
+    _T = _T2; _x0 = _x02; _x1 = _x12; _y0 = _y02; _y1 = _y12;
+    _miss = call _collect;
 };
 private _draw = {
     params ["_zz", "_tx", "_ty"];
@@ -260,8 +269,13 @@ private _draw = {
     private _px = _k * _S / _mpp;
     _map drawIcon [[_zz, _tx, _ty] call _file, [1, 1, 1, 1], [(_tx + 0.5) * _S, _ext - (_ty + 0.5) * _S, 0], _px, _px, 0, "", 0];
 };
+// Mer sous la photo, sur toute la carte : les cases entièrement en mer ne sont pas photographiées (noir sinon).
+// Bleu des tuiles corrigées (RVB 72, 104, 155).
+_map drawRectangle [[worldSize / 2, worldSize / 2, 0], worldSize / 2, worldSize / 2, 0, [0.282, 0.408, 0.608, 1], "#(rgb,8,8,3)color(0.282,0.408,0.608,1)"];
 { _y call _draw; } forEach _coarse;
 { _x call _draw; } forEach _fine;
+// Relief des bâtiments (ombre portée, contour des toits) aux zooms proches ; Réglages > Carte pour le couper.
+if (profileNamespace getVariable ["COMSPEC_ATAK_PhotoRelief", true]) then { [_map, _wM, _tl, _br] call comspec_atak_native_fnc_photoRelief; };
 if (!_web) exitWith {};
 
 // Une fois par seconde au plus : arrivées relevées, puis tuiles inconnues demandées d'un coup (celles déjà en cache

@@ -279,6 +279,7 @@ private _map = [
     ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "Fond de carte", [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]], ""] call _profSegment,
     // Deuxième rangée : vues satellite (texture du terrain, capture HD là où elle existe) et capture seule.
     ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "", [["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]] + ([[], [["SATELLITE", "PHOTO"]]] select ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo [])), "Carte topo d'Arma, version claire, sombre, bleu nuit, classique (vue satellite du terrain d'Arma), hybride (classique avec routes et pistes), ou satellite (la vraie photo de la carte, capturée par COMSPEC : mod COMSPEC ATAK Photo ou téléchargée depuis Athena)"] call _profSegment,
+    ["COMSPEC_ATAK_PhotoRelief", true, "Relief des bâtiments", [["OUI", true], ["NON", false]], "Fond SATELLITE : ombre portée et contour de chaque bâtiment aux zooms proches"] call _profSegment,
     // Réglages de la carte gardés dans le profil, remis par défaut en deux appuis (les réglages CBA et mon icône, vue
     // par les autres, ne bougent pas).
     ["buttons", [[["RÉTABLIR LA CARTE PAR DÉFAUT", "CONFIRMER : CARTE PAR DÉFAUT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MapResetArm", -10]) < 5), {
