@@ -14311,5 +14311,7 @@
 ["Téléchargement annulé, les tuiles reçues restent", "Download cancelled, tiles already received are kept"],
 ["Fond photo effacé de ce PC", "Photo background deleted from this PC"],
 ["Fond photo disponible pour %1 (%2) : il se charge à la demande ; Réglages > Carte pour le télécharger en entier", "Photo background available for %1 (%2): it loads on demand; Settings > Map to download it all"],
-["Carte topo d'Arma, version claire, sombre, bleu nuit, classique (vue satellite du terrain d'Arma), hybride (classique avec routes et pistes), ou satellite (la vraie photo de la carte, capturée par COMSPEC : mod COMSPEC ATAK Photo ou téléchargée depuis Athena)", "Arma topo map, light, dark or night-blue version, classic (Arma terrain satellite view), hybrid (classic with roads and tracks), or satellite (the real photo of the map captured by COMSPEC: COMSPEC ATAK Photo mod or downloaded from Athena)"]
+["Carte topo d'Arma, version claire, sombre, bleu nuit, classique (vue satellite du terrain d'Arma), hybride (classique avec routes et pistes), ou satellite (la vraie photo de la carte, capturée par COMSPEC : mod COMSPEC ATAK Photo ou téléchargée depuis Athena)", "Arma topo map, light, dark or night-blue version, classic (Arma terrain satellite view), hybrid (classic with roads and tracks), or satellite (the real photo of the map captured by COMSPEC: COMSPEC ATAK Photo mod or downloaded from Athena)"],
+["Relief des bâtiments", "Building relief"],
+["Fond SATELLITE : ombre portée et contour de chaque bâtiment aux zooms proches", "SATELLITE background: cast shadow and outline of each building at close zoom"]
 ]

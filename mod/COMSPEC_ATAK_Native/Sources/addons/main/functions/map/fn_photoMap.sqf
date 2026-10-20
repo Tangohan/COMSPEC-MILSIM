@@ -271,8 +271,8 @@ private _draw = {
 _map drawRectangle [[worldSize / 2, worldSize / 2, 0], worldSize / 2, worldSize / 2, 0, [0.282, 0.408, 0.608, 1], "#(rgb,8,8,3)color(0.282,0.408,0.608,1)"];
 { _y call _draw; } forEach _coarse;
 { _x call _draw; } forEach _fine;
-// Relief des bâtiments (ombre portée, contour des toits) aux zooms proches.
-[_map, _wM, _tl, _br] call comspec_atak_native_fnc_photoRelief;
+// Relief des bâtiments (ombre portée, contour des toits) aux zooms proches ; Réglages > Carte pour le couper.
+if (profileNamespace getVariable ["COMSPEC_ATAK_PhotoRelief", true]) then { [_map, _wM, _tl, _br] call comspec_atak_native_fnc_photoRelief; };
 if (!_web) exitWith {};
 
 // Une fois par seconde au plus : arrivées relevées, puis tuiles inconnues demandées d'un coup (celles déjà en cache
