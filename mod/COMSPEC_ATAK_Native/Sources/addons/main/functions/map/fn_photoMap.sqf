@@ -23,8 +23,8 @@
     l'heure à laquelle la redemander) : le disque n'est jamais testé à l'image. Tuiles inconnues demandées par lots
     (MapPhoto.Want, qui répond tout de suite pour celles déjà en cache), une fois par seconde au plus, avec le relevé
     des arrivées (MapPhoto.Status). Dessiné en PHOTO seulement (JPEG sans transparence : pas par-dessus la vue SATELLITE).
-    Taille des icônes : la largeur à l'écran divisée par pixelW, ramenée à un écran de 1080 pixels de haut (unité de
-    drawIcon), retouchable par COMSPEC_ATAK_PhotoPxFix (profil, défaut 1) si les tuiles se chevauchent ou laissent des joints.
+    Taille des icônes : la largeur à l'écran divisée par pixelW, en 480es de la hauteur de la zone d'affichage (unité
+    de drawIcon), retouchable par COMSPEC_ATAK_PhotoPxAdjust (profil, défaut 1) si les tuiles se chevauchent ou laissent des joints.
 */
 params [["_arg", "info"], ["_style", "PHOTO"]];
 private _call = comspec_atak_native_fnc_extensionCall;
@@ -232,10 +232,11 @@ private _exists = if (_web) then {
         _k
     }
 };
-// drawIcon compte sa taille pour un écran de 1080 pixels de haut : en 1440p, des tuiles 1,33 fois trop grandes, qui
-// débordaient sur leurs voisines (TTRD 20/10, raccord parfait avec 1080 / 1440 = 0,75). Retouche éventuelle :
-// COMSPEC_ATAK_PhotoPxFix (profil, défaut 1).
-private _k = 1080 / ((getResolution select 1) max 1) * ((profileNamespace getVariable ["COMSPEC_ATAK_PhotoPxFix", 1]) max 0.1);
+// drawIcon compte sa taille en 480es de la hauteur de la zone d'affichage (getResolution select 3, l'écran virtuel
+// 640 × 480 d'Arma), pas en pixels : en 1440p, interface « Petite » (zone de 792 px), 480 / 792 = 0,606. Mesuré en jeu
+// (TTRD 20/10) : 1 débordait, 0,75 aussi, 0,55 laissait des joints de 10 %. Retouche éventuelle :
+// COMSPEC_ATAK_PhotoPxAdjust (profil, défaut 1).
+private _k = 480 / ((getResolution select 3) max 1) * ((profileNamespace getVariable ["COMSPEC_ATAK_PhotoPxAdjust", 1]) max 0.1);
 // Un seul niveau par image : deux hauteurs de capture ne tombent pas au mètre près au même endroit, un mélange de
 // tuiles fines et d'ancêtres agrandis donnait une mosaïque décalée (TTRD 20/10). Le niveau le plus fin, capturé
 // seulement autour des localités (vue 120 m), ne sert que s'il couvre toute l'image ; aux autres niveaux, une tuile
