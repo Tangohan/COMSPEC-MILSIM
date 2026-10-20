@@ -23,8 +23,8 @@
     l'heure à laquelle la redemander) : le disque n'est jamais testé à l'image. Tuiles inconnues demandées par lots
     (MapPhoto.Want, qui répond tout de suite pour celles déjà en cache), une fois par seconde au plus, avec le relevé
     des arrivées (MapPhoto.Status). Dessiné en PHOTO seulement (JPEG sans transparence : pas par-dessus la vue SATELLITE).
-    Taille des icônes : la largeur à l'écran divisée par pixelW, corrigée par COMSPEC_ATAK_PhotoPx (profil, défaut 1)
-    si les tuiles se chevauchent ou laissent des joints.
+    Taille des icônes : la largeur à l'écran divisée par pixelW, ramenée à un écran de 1080 pixels de haut (unité de
+    drawIcon), retouchable par COMSPEC_ATAK_PhotoPxFix (profil, défaut 1) si les tuiles se chevauchent ou laissent des joints.
 */
 params [["_arg", "info"], ["_style", "PHOTO"]];
 private _call = comspec_atak_native_fnc_extensionCall;
@@ -226,7 +226,10 @@ private _exists = if (_web) then {
         _k
     }
 };
-private _k = (profileNamespace getVariable ["COMSPEC_ATAK_PhotoPx", 1]) max 0.1;
+// drawIcon compte sa taille pour un écran de 1080 pixels de haut : en 1440p, des tuiles 1,33 fois trop grandes, qui
+// débordaient sur leurs voisines (TTRD 20/10, raccord parfait avec 1080 / 1440 = 0,75). Retouche éventuelle :
+// COMSPEC_ATAK_PhotoPxFix (profil, défaut 1).
+private _k = 1080 / ((getResolution select 1) max 1) * ((profileNamespace getVariable ["COMSPEC_ATAK_PhotoPxFix", 1]) max 0.1);
 private _fine = [];
 private _coarse = createHashMap;
 for "_ty" from _y0 to _y1 do {
@@ -245,6 +248,9 @@ private _draw = {
     private _px = _k * _S / _mpp;
     _map drawIcon [[_zz, _tx, _ty] call _file, [1, 1, 1, 1], [(_tx + 0.5) * _S, _ext - (_ty + 0.5) * _S, 0], _px, _px, 0, "", 0];
 };
+// Mer sous la photo, sur toute la carte : les cases entièrement en mer ne sont pas photographiées (noir sinon).
+// Bleu des tuiles corrigées (RVB 72, 104, 155).
+_map drawRectangle [[worldSize / 2, worldSize / 2, 0], worldSize / 2, worldSize / 2, 0, [0.282, 0.408, 0.608, 1], "#(rgb,8,8,3)color(0.282,0.408,0.608,1)"];
 { _y call _draw; } forEach _coarse;
 { _x call _draw; } forEach _fine;
 if (!_web) exitWith {};
