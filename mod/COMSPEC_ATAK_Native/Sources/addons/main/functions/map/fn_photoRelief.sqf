@@ -24,7 +24,11 @@ private _cell = {
         private _o = _x;
         // Emprise de la case par le centre de l'objet : chaque bâtiment n'est relevé qu'une fois.
         private _p = getPosWorld _o;
-        if ((floor ((_p select 0) / _cellM)) isEqualTo _cx && {(floor ((_p select 1) / _cellM)) isEqualTo _cy}) then {
+        // Ruines, épaves et bâtiments détruits : leur boîte ne colle plus à rien de visible (contours à côté des
+        // décombres, TTRD 20/10).
+        private _t = toLower ((typeOf _o) + " " + ((getModelInfo _o) param [0, ""]));
+        if (alive _o && {(_t find "ruin") < 0} && {(_t find "wreck") < 0} && {(_t find "destr") < 0} && {(_t find "rubble") < 0}
+            && {(floor ((_p select 0) / _cellM)) isEqualTo _cx} && {(floor ((_p select 1) / _cellM)) isEqualTo _cy}) then {
             (0 boundingBoxReal _o) params ["_mn", "_mx"];
             private _h = (_mx select 2) - (_mn select 2);
             private _w = (_mx select 0) - (_mn select 0);
