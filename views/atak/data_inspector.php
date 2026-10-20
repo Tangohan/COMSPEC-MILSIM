@@ -1,21 +1,67 @@
-<?php $h=static fn(mixed $v):string=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8'); ?>
+<?php
+$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$canPlatform = !empty($inspectorCanPlatform);
+$tabs = [
+    'overview' => 'Vue d’ensemble',
+    'pipeline' => 'Chaîne de remontée',
+    'players' => 'Joueurs',
+    'mods' => 'Mods',
+    'terminals' => 'Terminaux ATAK',
+    'traffic' => 'Débit',
+    'errors' => 'Erreurs & disponibilité',
+];
+if ($canPlatform) {
+    $tabs['communities'] = 'Communautés';
+}
+?>
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/athena-data-inspector.css')) ?>">
-<main class="adi" id="athena-data-inspector" data-api="<?= $h(url('api/athena/v2/inspector')) ?>" data-hillshade-api="<?= $h(url('api/atak/terrain/hillshade?mapId=1')) ?>" data-dev-api="<?= $h(url('api/athena/v2/dev/seed')) ?>" data-csrf="<?= $h(\App\Core\Csrf::token()) ?>">
- <header class="adi-top"><div><span class="adi-kicker">ATHENA · C2 DATA PIPELINE</span><h1>Data Inspector</h1></div><div class="adi-connection"><i></i><span id="adi-connection">CONNEXION…</span><small id="adi-clock">—</small></div></header>
- <nav class="adi-tabs" aria-label="Vues de l’inspecteur">
-  <?php foreach(['live'=>'LIVE','map'=>'MAP','payload'=>'PAYLOAD','history'=>'HISTORY','health'=>'HEALTH'] as $key=>$label): ?><button type="button" data-tab="<?= $key ?>" class="<?= $key==='live'?'is-active':'' ?>"><?= $label ?></button><?php endforeach; ?>
- </nav>
- <div class="adi-grid">
-  <aside class="adi-left"><section><h2>DATA SOURCES <span id="adi-source-count">0</span></h2><div id="adi-sources" class="adi-sources"><p class="adi-empty">Aucune source reçue.</p></div></section><section><h2>FILTERS</h2><label>Recherche<input id="adi-search" type="search" placeholder="ID, source, type…"></label><label>Type<select id="adi-type"><option value="">Tous</option><?php foreach(['position','bft','marker','drawing','route','zone','terrain','scene','geo','weather','drone','intel','photo','system'] as $t): ?><option><?= $h($t) ?></option><?php endforeach; ?></select></label><label>Monde<select id="adi-world"><option value="">Tous</option></select></label><label>Statut<select id="adi-status"><option value="">Tous</option><option>accepted</option><option>rejected</option></select></label></section><section><h2>SYNC CENTER</h2><div id="adi-sync" class="adi-small-list">En attente des terminaux.</div></section></aside>
-  <section class="adi-main">
-   <div data-panel="live" class="adi-panel is-active"><div class="adi-toolbar"><button id="adi-pause">⏸ Pause</button><button id="adi-clear">Effacer la vue</button><span id="adi-row-count">0 paquets</span></div><div class="adi-table-wrap"><table><thead><tr><th>TIME</th><th>SOURCE</th><th>TYPE</th><th>ENTITY</th><th>WORLD</th><th>SIZE</th><th>STATUS</th><th>LATENCY</th></tr></thead><tbody id="adi-live"><tr><td colspan="8" class="adi-empty">En attente de données persistées…</td></tr></tbody></table></div></div>
-   <div data-panel="map" class="adi-panel"><div class="adi-toolbar"><label class="adi-check"><input id="adi-raw" type="checkbox"> Show raw server state</label><span>Relief et volumes déjà remontés par ATAK · coordonnées monde Arma</span></div><div class="adi-map"><canvas id="adi-map" width="1200" height="700"></canvas><div class="adi-map-legend"><b>SERVER STATE</b><span><i class="unit"></i> Live/BFT</span><span><i class="object"></i> Bâtiment</span><span><i class="forest"></i> Forêt</span><span><i class="deleted"></i> Tombstone</span></div></div><div id="adi-coverage" class="adi-coverage"></div></div>
-   <div data-panel="payload" class="adi-panel"><div class="adi-payload-actions"><button id="adi-copy">Copier JSON</button><button id="adi-raw-json">Voir brut</button><button id="adi-entity-history">Voir historique de l’entité</button></div><div id="adi-payload-full" class="adi-payload-empty">Sélectionnez une ligne dans LIVE ou HISTORY.</div></div>
-   <div data-panel="history" class="adi-panel"><div class="adi-toolbar"><strong>Historique opérationnel persistant</strong><span>Les états haute fréquence sont coalescés.</span></div><div class="adi-table-wrap"><table><thead><tr><th>CLIENT TIME</th><th>EVENT ID</th><th>ACTOR</th><th>ACTION</th><th>ENTITY</th><th>MISSION</th></tr></thead><tbody id="adi-history"></tbody></table></div></div>
-   <div data-panel="health" class="adi-panel"><div id="adi-metrics" class="adi-metrics"></div><h2 class="adi-section-title">PIPELINE HEALTH</h2><div id="adi-health" class="adi-health"></div><h2 class="adi-section-title">TERRAIN / COVERAGE</h2><div id="adi-health-coverage" class="adi-coverage"></div></div>
+<main class="adi" id="athena-data-inspector"
+      data-api="<?= $h(url('api/athena/inspector/metrics')) ?>"
+      data-platform="<?= $canPlatform ? '1' : '0' ?>"
+      data-remontees="<?= $h(url('back-office/remontees')) ?>">
+  <header class="adi-head">
+    <div class="adi-head-title">
+      <span class="adi-kicker">ATHENA · C2 · DONNÉES TERRAIN</span>
+      <h1>Data Inspector</h1>
+      <p class="adi-sub">Tout ce que les joueurs font remonter du jeu : mods, terminaux, débit, comptes rendus, erreurs et disponibilité.</p>
+    </div>
+    <div class="adi-controls">
+      <?php if ($canPlatform): ?>
+      <div class="adi-seg" role="group" aria-label="Portée" data-control="scope">
+        <button type="button" data-value="tenant" class="is-on">Ma communauté</button>
+        <button type="button" data-value="platform">Plateforme</button>
+      </div>
+      <?php endif; ?>
+      <div class="adi-seg" role="group" aria-label="Période" data-control="hours">
+        <?php foreach ([1 => '1 h', 24 => '24 h', 168 => '7 j', 720 => '30 j'] as $v => $l): ?>
+        <button type="button" data-value="<?= $v ?>" class="<?= $v === 24 ? 'is-on' : '' ?>"><?= $l ?></button>
+        <?php endforeach; ?>
+      </div>
+      <div class="adi-live" id="adi-live"><i></i><span>Connexion…</span></div>
+    </div>
+  </header>
+
+  <nav class="adi-tabs" role="tablist" aria-label="Vues">
+    <?php foreach ($tabs as $k => $l): ?>
+    <button type="button" role="tab" data-tab="<?= $h($k) ?>" class="<?= $k === 'overview' ? 'is-active' : '' ?>"><?= $h($l) ?></button>
+    <?php endforeach; ?>
+  </nav>
+
+  <div class="adi-notice" id="adi-notice" hidden></div>
+
+  <section class="adi-body">
+    <div class="adi-toolbar" id="adi-toolbar" hidden>
+      <input type="search" id="adi-q" placeholder="Rechercher un joueur, un indicatif, un mod, un terminal…" aria-label="Recherche">
+      <a class="adi-btn" id="adi-csv" href="#" download>Exporter CSV</a>
+    </div>
+    <div id="adi-view" class="adi-view" aria-live="polite"><div class="adi-loading">Chargement des métriques…</div></div>
   </section>
-  <aside class="adi-inspector"><h2>PAYLOAD INSPECTOR</h2><div id="adi-details" class="adi-details"><p class="adi-empty">Aucun paquet sélectionné.</p></div><h2>PIPELINE DEBUG</h2><div id="adi-pipeline" class="adi-pipeline"><span>ARMA generated_at</span><b>N/A</b><span>EXTENSION received_at</span><b>N/A</b><span>HTTP request_at</span><b>N/A</b><span>ATHENA accepted_at</span><b>N/A</b><span>REALTIME published_at</span><b>N/A</b><span>WEB displayed_at</span><b>N/A</b></div></aside>
- </div>
- <?php if(!\App\Support\ComspecApiKeyAuth::isAppProduction()): ?><button id="adi-dev-seed" class="adi-dev">DEV / DEBUG · GÉNÉRER DES DONNÉES</button><?php endif; ?>
+
+  <div class="adi-drawer" id="adi-drawer" hidden>
+    <div class="adi-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="adi-drawer-title">
+      <header><h2 id="adi-drawer-title">Détail</h2><button type="button" class="adi-x" data-close aria-label="Fermer">×</button></header>
+      <div id="adi-drawer-body"></div>
+    </div>
+  </div>
 </main>
 <script src="<?= $h(asset_url('assets/js/athena-data-inspector.js')) ?>" defer></script>

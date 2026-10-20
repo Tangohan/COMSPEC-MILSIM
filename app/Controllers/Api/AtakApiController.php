@@ -201,7 +201,7 @@ class AtakApiController
     private ?AtakRelayRepository $relayRepo = null;
     private bool $ingestRecorded = false;
 
-    private function recordGameIngest(int $tenantId, int $mapId, bool $isPhoto = false): void
+    private function recordGameIngest(int $tenantId, int $mapId, bool $isPhoto = false, ?string $steamUid = null, ?string $callsign = null): void
     {
         if ($this->ingestRecorded || $tenantId < 1) {
             return;
@@ -219,6 +219,8 @@ class AtakApiController
         }
         $this->ingestRecorded = true;
         $this->ingestTrafficRepo()->record($tenantId, $mapId, $len, $isPhoto);
+        // Data Inspector : débit par joueur (best-effort).
+        (new \App\Repositories\AtakIngestPlayerStatsRepository())->recordRequest($tenantId, $steamUid, $callsign, $len, $isPhoto);
     }
 
     private ?AtakDeviceLogRepository $deviceLogRepository = null;
@@ -6313,7 +6315,8 @@ class AtakApiController
         if ($mapId < 1) {
             $mapId = self::DEFAULT_MAP_ID;
         }
-        $this->recordGameIngest($tenantId, $mapId, false);
+        $actorSteam = is_array($actor) && is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
+        $this->recordGameIngest($tenantId, $mapId, false, $actorSteam, $this->batchCallsign($body));
 
         $ingest = new \App\Services\Tactical\AtakTelemetryBatchIngest(
             $this->atak,
@@ -6349,6 +6352,14 @@ class AtakApiController
         if (($result['accepted'] ?? 0) === 0 && ($result['rejected'] ?? 0) > 0) {
             $http = 422;
         }
+        (new \App\Repositories\AtakIngestPlayerStatsRepository())->recordBatchOutcome(
+            $tenantId,
+            $actorSteam,
+            $actorCs !== '' ? $actorCs : $this->batchCallsign($body),
+            (int) ($result['accepted'] ?? 0),
+            (int) ($result['rejected'] ?? 0),
+            is_array($result['results'] ?? null) ? $result['results'] : []
+        );
 
         return Response::json([
             'ok' => (bool) ($result['ok'] ?? false),
@@ -6364,6 +6375,26 @@ class AtakApiController
                 'sigint' => '/api/atak/sigint',
             ],
         ], $http);
+    }
+
+    /**
+     * Indicatif de l'émetteur d'un lot : premier événement position/heartbeat qui en porte un.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function batchCallsign(array $body): ?string
+    {
+        foreach ((array) ($body['events'] ?? []) as $ev) {
+            if (!is_array($ev)) {
+                continue;
+            }
+            $cs = trim((string) ($ev['call_sign'] ?? $ev['cs'] ?? ''));
+            if ($cs !== '') {
+                return $cs;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -6520,8 +6551,8 @@ class AtakApiController
     private function ingestPositionPayload(int $tenantId, array $actor, array $body): Response
     {
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
-        $this->recordGameIngest($tenantId, $mapId, false);
         $callSign = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? ''));
+        $this->recordGameIngest($tenantId, $mapId, false, is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null, $callSign);
         $steamNorm = $actor['steam_uid'] ?? null;
         $rawExtra = $body['extra'] ?? null;
         $extraEarly = AtakDataRepository::decodeExtra($rawExtra);
@@ -12308,7 +12339,7 @@ class AtakApiController
             'pos_y' => $y,
             'pos_z' => $z,
         ]);
-        $this->recordGameIngest($tenantId, max(1, $mapId), false);
+        $this->recordGameIngest($tenantId, max(1, $mapId), false, $authorUid !== '' ? (string) $authorUid : null, (string) ($body['author'] ?? ''));
         if ($row !== []) {
             // Relais JNET : la reco remonte de l'unité de l'opérateur vers son échelon supérieur.
             $this->jnetBridge()->relayReconNote($tenantId, $this->jnetGameUserId($tenantId, $actor, $authorUid), $row);
