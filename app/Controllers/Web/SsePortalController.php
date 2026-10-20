@@ -515,6 +515,31 @@ final class SsePortalController
         }
 
         // Identité liée : photo, relevés biométriques (empreintes, iris, ADN) — comme sur sa fiche.
+        $linkedPerson = $this->transmissionLinkedPerson($personId);
+
+        return $this->portalView('atak.sse.transmission_show', [
+            'title' => 'Fiche de transmission',
+            'event' => $event,
+            'entity' => $entity,
+            'relatedHref' => $relatedHref,
+            'relatedLabel' => $relatedLabel,
+            'payloadRows' => $payloadRows,
+            'payloadSections' => $sections,
+            'payloadImages' => $payloadImages,
+            'linkedPerson' => $linkedPerson,
+            'clientLabel' => $clientLabel,
+            'canManage' => $this->canManage(),
+            'activeNav' => 'transmissions',
+        ]);
+    }
+
+    /**
+     * Identité liée à une transmission (photo, relevés biométriques) — page et PDF.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function transmissionLinkedPerson(int $personId): ?array
+    {
         $linkedPerson = null;
         if ($personId > 0) {
             try {
@@ -557,20 +582,7 @@ final class SsePortalController
             }
         }
 
-        return $this->portalView('atak.sse.transmission_show', [
-            'title' => 'Fiche de transmission',
-            'event' => $event,
-            'entity' => $entity,
-            'relatedHref' => $relatedHref,
-            'relatedLabel' => $relatedLabel,
-            'payloadRows' => $payloadRows,
-            'payloadSections' => $sections,
-            'payloadImages' => $payloadImages,
-            'linkedPerson' => $linkedPerson,
-            'clientLabel' => $clientLabel,
-            'canManage' => $this->canManage(),
-            'activeNav' => 'transmissions',
-        ]);
+        return $linkedPerson;
     }
 
     public function transmissionsPdf(Request $request, array $params = []): Response
@@ -590,13 +602,21 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/transmissions'));
         }
         $payload = is_array($event['payload'] ?? null) ? $event['payload'] : [];
-        $sections = [];
+        $images = [];
         foreach (SseIntelEventRepository::flattenPayloadRows($payload) as $row) {
-            $sec = (string) ($row['section'] ?? 'Compléments');
-            $sections[$sec][] = $row;
+            $val = trim((string) ($row['value'] ?? ''));
+            if (\App\Support\SseTransmissionView::isImageValue($val)) {
+                $images[] = ['src' => $val, 'label' => (string) ($row['label'] ?? 'Image')];
+            }
         }
+        $event['client_label'] = (string) ($event['client_label'] ?? SseIntelEventRepository::clientSoftwareLabel($payload));
 
-        return (new SseTransmissionPdfService())->exportEvent($event, $sections);
+        return (new SseTransmissionPdfService())->exportEvent(
+            $event,
+            $payload,
+            $this->transmissionLinkedPerson((int) ($payload['person_id'] ?? 0)),
+            $images
+        );
     }
 
     public function transmissionDiscordStore(Request $request, array $params = []): Response
