@@ -13,12 +13,17 @@ use ZipArchive;
  * storage/map-photo/{carte}/{rendu}/meta.json et {z}/{x}/{y}.webp ; mètres Arma, côté « extent », tuile y = 0 au nord.
  * Une tuile absente (zone capturée moins finement) est découpée dans l'ancêtre le plus proche puis gardée en cache
  * (_fill), pour que le zoom reste photo partout.
+ * Même pyramide en JPEG ({z}/{x}/{y}.jpg, envoyée à côté par map_stitch.py --upload) pour le téléphone ATAK : Arma ne
+ * lit pas le WebP, la DLL télécharge ces tuiles en jeu (fond PHOTO sans mod). Pas de découpe d'ancêtre en JPEG : le
+ * téléphone dessine lui-même l'ancêtre qu'il a. À la publication : _stats.json (nombre et poids des tuiles par format)
+ * et index-jpg.txt (une tuile JPEG « z/x/y » par ligne, pour que la DLL ne demande que les tuiles qui existent).
  * L'envoi se fait par paquets ZIP : le premier (reset) ouvre un dossier d'arrivée, le dernier (avec meta.json)
  * remplace d'un coup l'ancien fond.
  */
 final class AtakMapPhotoStore
 {
     public const MODES = ['sat', 'plan'];
+    public const EXTS = ['webp', 'jpg'];
     private const TILE = 256;
     private const MAX_ENTRIES = 20000;
     private const MAX_ENTRY_BYTES = 2 * 1024 * 1024;
@@ -94,10 +99,13 @@ final class AtakMapPhotoStore
     }
 
     /**
-     * Fichier de la tuile, découpée dans un ancêtre si elle manque ; null hors du fond.
+     * Fichier de la tuile, découpée dans un ancêtre si elle manque (WebP seulement) ; null hors du fond.
      */
-    public function tileFile(string $world, string $mode, int $z, int $x, int $y): ?string
+    public function tileFile(string $world, string $mode, int $z, int $x, int $y, string $ext = 'webp'): ?string
     {
+        if (!in_array($ext, self::EXTS, true)) {
+            return null;
+        }
         $meta = $this->meta($world, $mode);
         if ($meta === null || $z < 0 || $z > (int) ($meta['maxZoom'] ?? 0) || $z > 22) {
             return null;
@@ -107,9 +115,12 @@ final class AtakMapPhotoStore
             return null;
         }
         $dir = $this->dir($world, $mode);
-        $own = $dir . DIRECTORY_SEPARATOR . $z . DIRECTORY_SEPARATOR . $x . DIRECTORY_SEPARATOR . $y . '.webp';
+        $own = $dir . DIRECTORY_SEPARATOR . $z . DIRECTORY_SEPARATOR . $x . DIRECTORY_SEPARATOR . $y . '.' . $ext;
         if (is_file($own)) {
             return $own;
+        }
+        if ($ext === 'jpg') {
+            return null;
         }
         $fill = $dir . DIRECTORY_SEPARATOR . '_fill' . DIRECTORY_SEPARATOR . $z . DIRECTORY_SEPARATOR . $x . DIRECTORY_SEPARATOR . $y . '.webp';
         if (is_file($fill)) {
@@ -197,7 +208,7 @@ final class AtakMapPhotoStore
                 continue;
             }
             $isMeta = $name === 'meta.json';
-            if (!$isMeta && preg_match('#^(\d{1,2})/(\d{1,7})/(\d{1,7})\.webp$#', $name) !== 1) {
+            if (!$isMeta && preg_match('#^(\d{1,2})/(\d{1,7})/(\d{1,7})\.(webp|jpg)$#', $name, $em) !== 1) {
                 continue;
             }
             if ((int) ($stat['size'] ?? 0) > self::MAX_ENTRY_BYTES) {
@@ -212,7 +223,9 @@ final class AtakMapPhotoStore
                 if (!is_array($meta) || (float) ($meta['extent'] ?? 0) <= 0) {
                     continue;
                 }
-            } elseif (!str_starts_with($data, 'RIFF') || substr($data, 8, 4) !== 'WEBP') {
+            } elseif ($em[4] === 'webp' && (!str_starts_with($data, 'RIFF') || substr($data, 8, 4) !== 'WEBP')) {
+                continue;
+            } elseif ($em[4] === 'jpg' && !str_starts_with($data, "\xFF\xD8\xFF")) {
                 continue;
             }
             $target = $incoming . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $name);
@@ -236,6 +249,7 @@ final class AtakMapPhotoStore
             if (is_dir($live) && !@rename($live, $old)) {
                 return ['ok' => false, 'files' => $written, 'error' => 'swap_failed'];
             }
+            $this->writeIndex($incoming);
             if (!@rename($incoming, $live)) {
                 if (is_dir($old)) {
                     @rename($old, $live);
@@ -248,6 +262,120 @@ final class AtakMapPhotoStore
         }
 
         return ['ok' => true, 'files' => $written, 'published' => $published];
+    }
+
+    /**
+     * Nombre et poids des tuiles par format (_stats.json, écrit à la publication ; recalculé pour un fond plus ancien).
+     *
+     * @return array{webpTiles:int,webpBytes:int,jpgTiles:int,jpgBytes:int}
+     */
+    public function stats(string $world, string $mode): array
+    {
+        $dir = $this->dir($world, $mode);
+        $file = $dir . DIRECTORY_SEPARATOR . '_stats.json';
+        $st = is_file($file) ? json_decode((string) file_get_contents($file), true) : null;
+        if (is_array($st) && isset($st['webpTiles'], $st['jpgTiles'])) {
+            return [
+                'webpTiles' => (int) $st['webpTiles'], 'webpBytes' => (int) ($st['webpBytes'] ?? 0),
+                'jpgTiles' => (int) $st['jpgTiles'], 'jpgBytes' => (int) ($st['jpgBytes'] ?? 0),
+            ];
+        }
+        if (!is_dir($dir)) {
+            return ['webpTiles' => 0, 'webpBytes' => 0, 'jpgTiles' => 0, 'jpgBytes' => 0];
+        }
+
+        return $this->writeIndex($dir);
+    }
+
+    /**
+     * Tuiles JPEG du fond (« z/x/y » par ligne), ou null sans fond ou sans JPEG.
+     */
+    public function jpgIndex(string $world, string $mode): ?string
+    {
+        if ($this->meta($world, $mode) === null) {
+            return null;
+        }
+        $file = $this->dir($world, $mode) . DIRECTORY_SEPARATOR . 'index-jpg.txt';
+        if (!is_file($file)) {
+            $this->writeIndex($this->dir($world, $mode));
+        }
+        $txt = is_file($file) ? (string) file_get_contents($file) : '';
+
+        return $txt === '' ? null : $txt;
+    }
+
+    /**
+     * Fonds publiés : carte, rendu, niveau maximal, tuiles et poids (tous formats), date, et la part JPEG (jeu).
+     *
+     * @return list<array{world:string,mode:string,maxZoom:int,tiles:int,bytes:int,created:string,jpgTiles:int,jpgBytes:int}>
+     */
+    public function listAll(): array
+    {
+        $out = [];
+        if (!is_dir((string) $this->root)) {
+            return $out;
+        }
+        foreach (scandir((string) $this->root) ?: [] as $w) {
+            // Dossiers d'arrivée et anciens fonds (altis/sat.incoming…) : sous la carte, jamais à ce niveau.
+            if (self::world($w) !== $w) {
+                continue;
+            }
+            foreach (self::MODES as $mode) {
+                $meta = $this->meta($w, $mode);
+                if ($meta === null) {
+                    continue;
+                }
+                $st = $this->stats($w, $mode);
+                $out[] = [
+                    'world' => $w,
+                    'mode' => $mode,
+                    'maxZoom' => (int) ($meta['maxZoom'] ?? 0),
+                    'tiles' => $st['webpTiles'] + $st['jpgTiles'],
+                    'bytes' => $st['webpBytes'] + $st['jpgBytes'],
+                    'created' => (string) ($meta['created'] ?? ''),
+                    'jpgTiles' => $st['jpgTiles'],
+                    'jpgBytes' => $st['jpgBytes'],
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Relève les tuiles d'un dossier de fond (_fill exclu) : écrit _stats.json et index-jpg.txt.
+     *
+     * @return array{webpTiles:int,webpBytes:int,jpgTiles:int,jpgBytes:int}
+     */
+    private function writeIndex(string $dir): array
+    {
+        $st = ['webpTiles' => 0, 'webpBytes' => 0, 'jpgTiles' => 0, 'jpgBytes' => 0];
+        $jpg = [];
+        foreach (scandir($dir) ?: [] as $z) {
+            if (preg_match('/^\d{1,2}$/', $z) !== 1 || !is_dir($dir . DIRECTORY_SEPARATOR . $z)) {
+                continue;
+            }
+            foreach (scandir($dir . DIRECTORY_SEPARATOR . $z) ?: [] as $x) {
+                $xd = $dir . DIRECTORY_SEPARATOR . $z . DIRECTORY_SEPARATOR . $x;
+                if (preg_match('/^\d{1,7}$/', $x) !== 1 || !is_dir($xd)) {
+                    continue;
+                }
+                foreach (scandir($xd) ?: [] as $f) {
+                    if (preg_match('/^(\d{1,7})\.(webp|jpg)$/', $f, $m) !== 1) {
+                        continue;
+                    }
+                    $st[$m[2] . 'Tiles']++;
+                    $st[$m[2] . 'Bytes'] += (int) @filesize($xd . DIRECTORY_SEPARATOR . $f);
+                    if ($m[2] === 'jpg') {
+                        $jpg[] = $z . '/' . $x . '/' . $m[1];
+                    }
+                }
+            }
+        }
+        @file_put_contents($dir . DIRECTORY_SEPARATOR . '_stats.json', (string) json_encode($st));
+        @file_put_contents($dir . DIRECTORY_SEPARATOR . 'index-jpg.txt', $jpg === [] ? '' : implode("\n", $jpg) . "\n");
+
+        return $st;
     }
 
     private static function removeTree(string $dir): void

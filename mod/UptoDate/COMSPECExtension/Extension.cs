@@ -3120,6 +3120,8 @@ public static partial class Extension
         if (function == "Item.Icons") return HandleItemIcons(args);
         // Capture de la carte (2.0.91) : tuiles vérifiées, corrigées, compressées et rangées hors de Screenshots.
         if (function != null && function.StartsWith("MapCap.", StringComparison.Ordinal)) return HandleMapCapture(function, args);
+        // Fond PHOTO téléchargé en jeu depuis Athena (2.0.92) : tuiles JPEG en cache, réponse immédiate, réseau en tâche de fond.
+        if (function != null && function.StartsWith("MapPhoto.", StringComparison.Ordinal)) return HandleMapPhoto(function, args);
 
         if (function == "Distance.Batch")
         {

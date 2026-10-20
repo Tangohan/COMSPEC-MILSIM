@@ -107,6 +107,39 @@ final class AtakMapPhotoStoreTest extends TestCase
         self::assertNull($store->tileFile('stratis', 'plan', 0, 0, 0));
     }
 
+    public function testJpegTilesForThePhoneAreIndexedAndListed(): void
+    {
+        $store = new AtakMapPhotoStore($this->root);
+        // Le magasin ne vérifie que l'en-tête JPEG (FF D8 FF) : pas besoin d'une vraie image.
+        $jpg = "\xFF\xD8\xFF\xE0" . str_repeat('x', 96);
+        $zip = $this->zip([
+            '0/0/0.webp' => $this->webp(10, 120, 30),
+            '0/0/0.jpg' => $jpg,
+            '1/1/0.jpg' => $jpg,
+            '1/0/0.jpg' => 'RIFF pas un jpeg',
+            'meta.json' => (string) json_encode(['extent' => 8192, 'tileSize' => 256, 'maxZoom' => 1, 'created' => '2026-10-20T10:00:00Z']),
+        ]);
+        $store->importZip('malden', 'sat', $zip, true, true);
+        @unlink($zip);
+        self::assertNotNull($store->tileFile('malden', 'sat', 0, 0, 0, 'jpg'));
+        self::assertNotNull($store->tileFile('malden', 'sat', 1, 1, 0, 'jpg'));
+        // JPEG refusé à l'envoi, et pas de découpe d'ancêtre en JPEG (le téléphone dessine l'ancêtre lui-même).
+        self::assertNull($store->tileFile('malden', 'sat', 1, 0, 0, 'jpg'));
+        self::assertNull($store->tileFile('malden', 'sat', 0, 0, 0, 'png'));
+        self::assertSame("0/0/0\n1/1/0\n", $store->jpgIndex('malden', 'sat'));
+        $st = $store->stats('malden', 'sat');
+        self::assertSame(2, $st['jpgTiles']);
+        self::assertSame(200, $st['jpgBytes']);
+        self::assertSame(1, $st['webpTiles']);
+        $list = $store->listAll();
+        self::assertCount(1, $list);
+        self::assertSame('malden', $list[0]['world']);
+        self::assertSame(1, $list[0]['maxZoom']);
+        self::assertSame(3, $list[0]['tiles']);
+        self::assertSame('2026-10-20T10:00:00Z', $list[0]['created']);
+        self::assertNull($store->jpgIndex('malden', 'plan'));
+    }
+
     public function testSlugs(): void
     {
         self::assertSame('altis', AtakMapPhotoStore::world('Altis'));

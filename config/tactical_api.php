@@ -17,6 +17,9 @@ return [
         // n’envoie ni cookie de session ni clé). Les hôtes sont déjà allowlistés dans
         // AtakRemoteTileGuard — voir AtakMapDataController::proxy.
         '/api/atak/tiles',
+        // Fonds « Photo COMSPEC » publiés (fond PHOTO du téléphone, proposé avant toute liaison ; tuiles déjà publiques
+        // sous /map-photo).
+        '/api/atak/map-photo/list',
         // Code court à usage unique : le secret est le code lui-même (TTL court).
         '/api/atak/game-link/redeem',
         // Steam déjà lié au compte : l’UID Steam du client Arma fait office de preuve (pas de clé ATAK).
