@@ -165,15 +165,24 @@ final class AarReportRepository
         $validatedAt = $status === 'validated'
             ? ($this->dateValue($payload['validated_at'] ?? null) ?? ($existing['validated_at'] ?? null) ?? gmdate('Y-m-d H:i:s'))
             : null;
-        $validatorId = $status === 'validated' ? $authorUserId : null;
+        // Un rapport déjà validé garde son relecteur d'origine quand on le retouche.
+        $validatorId = $status === 'validated'
+            ? (($existing['status'] ?? '') === 'validated' && (int) ($existing['validated_by_user_id'] ?? 0) > 0
+                ? (int) $existing['validated_by_user_id']
+                : $authorUserId)
+            : null;
         $summaryText = $this->nullableText($payload['summary_text'] ?? null, 20000);
 
         $scores = $this->normalizeScores($payload['scores'] ?? []);
-        $metrics = $this->normalizeMetrics($payload['metrics'] ?? []);
+        // Les indicateurs posés à l'ouverture (brouillon de planification) ne sont pas perdus à l'édition.
+        $metrics = $this->normalizeMetrics(array_merge(
+            is_array($existing['metrics'] ?? null) ? $existing['metrics'] : [],
+            is_array($payload['metrics'] ?? null) ? $payload['metrics'] : []
+        ));
         $strengths = $this->normalizeStringList($payload['strengths'] ?? []);
         $weaknesses = $this->normalizeStringList($payload['weaknesses'] ?? []);
-        $openActions = $this->normalizeActionList($payload['open_actions'] ?? []);
-        $closedActions = $this->normalizeActionList($payload['closed_actions'] ?? []);
+        $openActions = $this->normalizeActionList($payload['open_actions'] ?? [], 'open');
+        $closedActions = $this->normalizeActionList($payload['closed_actions'] ?? [], 'closed');
         $templateId = (int) ($payload['template_id'] ?? ($existing['template_id'] ?? 0));
         $customAnswersJson = $this->encodeCustomAnswers($payload['custom_answers'] ?? ($existing['custom_answers_raw'] ?? null));
 
@@ -341,6 +350,10 @@ final class AarReportRepository
             'mission_started_at' => $row['mission_started_at'] ?? null,
             'mission_ended_at' => $row['mission_ended_at'] ?? null,
             'summary_text' => $row['summary_text'] ?? null,
+            'author_user_id' => isset($row['author_user_id']) ? (int) $row['author_user_id'] : null,
+            'validated_by_user_id' => isset($row['validated_by_user_id']) ? (int) $row['validated_by_user_id'] : null,
+            'created_at' => $row['created_at'] ?? null,
+            'updated_at' => $row['updated_at'] ?? null,
             'author_name' => (string) ($row['author_name'] ?? ''),
             'validator_name' => (string) ($row['validator_name'] ?? ''),
             'mission_title' => (string) ($row['mission_title'] ?? ''),
@@ -370,6 +383,63 @@ final class AarReportRepository
                 'rapports_traites' => ((string) ($row['status'] ?? 'pending')) === 'validated' ? 1 : 0,
             ],
         ];
+    }
+
+    /**
+     * Change le statut sans toucher au contenu (circuit de relecture).
+     */
+    public function setStatus(int $tenantId, int $id, string $status, int $userId): bool
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
+            return false;
+        }
+        $status = $this->allowed($status);
+        $validated = $status === 'validated';
+        $st = $this->pdo->prepare(
+            'UPDATE aar_reports
+             SET status = ?, validated_at = ' . ($validated ? 'UTC_TIMESTAMP()' : 'NULL') . ',
+                 validated_by_user_id = ?, updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND id = ?'
+        );
+        $st->execute([$status, $validated && $userId > 0 ? $userId : null, $tenantId, $id]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /**
+     * Remplace les listes d'actions (suivi : clôture / réouverture).
+     *
+     * @param list<array<string, mixed>> $open
+     * @param list<array<string, mixed>> $closed
+     */
+    public function saveActions(int $tenantId, int $id, array $open, array $closed): bool
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE aar_reports SET open_actions_json = ?, closed_actions_json = ?, updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND id = ?'
+        );
+        $st->execute([
+            $this->json($this->normalizeActionList($open, 'open')),
+            $this->json($this->normalizeActionList($closed, 'closed')),
+            $tenantId,
+            $id,
+        ]);
+
+        return $st->rowCount() > 0;
+    }
+
+    public function delete(int $tenantId, int $id): bool
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare('DELETE FROM aar_reports WHERE tenant_id = ? AND id = ?');
+        $st->execute([$tenantId, $id]);
+
+        return $st->rowCount() > 0;
     }
 
     private function missionWindow(int $tenantId, int $missionId): array
@@ -451,11 +521,14 @@ final class AarReportRepository
     /**
      * @return list<array{label:string,status:string,owner:?string,due_at:?string}>
      */
-    private function normalizeActionList(mixed $value): array
+    private function normalizeActionList(mixed $value, ?string $force = null): array
     {
         if (is_string($value)) {
             $lines = preg_split('/\r\n|\r|\n/', $value) ?: [];
-            $value = array_map(static fn ($line) => ['label' => $line], $lines);
+            $value = array_map(
+                static fn ($line) => \App\Services\Aar\AarReportAdminService::parseActionLine((string) $line),
+                $lines
+            );
         }
         if (!is_array($value)) {
             return [];
@@ -470,12 +543,17 @@ final class AarReportRepository
                 continue;
             }
             $status = strtolower(trim((string) ($item['status'] ?? 'open')));
-            $out[] = [
+            $entry = [
                 'label' => $this->clip($label, 500),
-                'status' => in_array($status, ['open', 'closed'], true) ? $status : 'open',
+                'status' => $force ?? (in_array($status, ['open', 'closed'], true) ? $status : 'open'),
                 'owner' => $this->nullableString($item['owner'] ?? null, 160),
                 'due_at' => $this->dateValue($item['due_at'] ?? null),
             ];
+            $closedAt = $this->dateValue($item['closed_at'] ?? null);
+            if ($closedAt !== null) {
+                $entry['closed_at'] = $closedAt;
+            }
+            $out[] = $entry;
         }
 
         return array_values(array_slice($out, 0, 30));

@@ -1964,6 +1964,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/certificats/{id}/revoquer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'revokeCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats/{id}/supprimer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'deleteCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/export.csv', [\App\Controllers\Admin\AdminAarReportsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/modeles', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesIndex'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/modeles/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesCreate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/modeles', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesStore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1971,8 +1973,13 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesUpdate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}/archiver', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesArchive'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}/reactiver', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesRestore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/modeles/{id}/dupliquer', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesDuplicate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/{id}/edit', [\App\Controllers\Admin\AdminAarReportsController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/{id}/pdf', [\App\Controllers\Admin\AdminAarReportsController::class, 'pdf'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/{id}/statut', [\App\Controllers\Admin\AdminAarReportsController::class, 'status'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/{id}/actions/basculer', [\App\Controllers\Admin\AdminAarReportsController::class, 'toggleAction'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/{id}/supprimer', [\App\Controllers\Admin\AdminAarReportsController::class, 'destroy'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

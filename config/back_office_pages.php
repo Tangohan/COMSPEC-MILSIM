@@ -224,16 +224,16 @@ return [
         ['path' => 'back-office/events/insights', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · PRÉSENCES', 'title' => 'Bilan de participation', 'subtitle' => 'Qui vient, qui annule, qui ne répond pas : la participation sur les événements passés.', 'css' => ['back-office-events.css']],
         ['path' => 'back-office/events/reponses-nominatives', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · CRÉNEAU', 'title' => 'Réponses nominatives', 'subtitle' => 'Suivi nominatif des réponses pour ce créneau.', 'css' => ['back-office-events.css']],
         ['path' => 'back-office/events', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · REGISTRE', 'title' => 'Événements', 'subtitle' => 'Les opérations et entraînements à venir et passés, avec les inscriptions.', 'css' => ['back-office-events.css']],
-        ['path' => 'back-office/atak/comptes-rendus', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Comptes rendus', 'subtitle' => 'Les retours rédigés après chaque opération, à relire et valider.', 'css' => ['back-office-aar.css'], 'quick' => [
-            ['label' => 'En attente', 'href' => 'back-office/atak/comptes-rendus?status=pending'],
-            ['label' => 'Validés', 'href' => 'back-office/atak/comptes-rendus?status=validated'],
-            ['label' => 'Actions ouvertes', 'href' => 'back-office/atak/comptes-rendus?open_actions=1'],
-            ['label' => 'Modèles', 'href' => 'back-office/atak/comptes-rendus/modeles'],
+        ['path' => 'back-office/atak/comptes-rendus', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Comptes rendus', 'subtitle' => 'Les retours rédigés après chaque opération : relecture, validation et suivi des actions décidées.', 'css' => ['back-office-aar.css'], 'quick' => [
+            ['label' => 'À relire', 'href' => 'back-office/atak/comptes-rendus?status=pending'],
+            ['label' => 'Suivi des actions', 'href' => 'back-office/atak/comptes-rendus?vue=actions'],
+            ['label' => 'Missions sans retour', 'href' => 'back-office/atak/comptes-rendus?vue=missions'],
         ]],
         ['path' => 'back-office/atak/comptes-rendus/modeles', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Modèles de debriefing', 'subtitle' => 'Questionnaires de compte rendu : questions courtes, listes, cases à cocher et texte libre.', 'css' => ['back-office-aar.css'], 'quick' => [
             ['label' => 'Comptes rendus', 'href' => 'back-office/atak/comptes-rendus'],
             ['label' => 'Nouveau modèle', 'href' => 'back-office/atak/comptes-rendus/modeles/nouveau'],
         ]],
+        ['path' => 'back-office/atak/comptes-rendus/nouveau', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Nouveau compte rendu', 'css' => ['back-office-aar.css']],
         ['path' => 'back-office/atak/comptes-rendus/modeles/nouveau', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Nouveau modèle de debriefing', 'css' => ['back-office-aar.css']],
         ['path' => 'back-office/atak/cycle-mission', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · POSTE DE COMMANDEMENT', 'title' => 'Cycle de mission', 'subtitle' => 'Les étapes d’une mission, de la préparation au compte rendu.', 'css' => ['back-office-mission-cycle.css']],
         ['path' => 'back-office/atak/briefing-slides', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diapositives de briefing', 'subtitle' => 'Images du briefing, ordre de passage et visibilité en jeu pour Arma et les téléphones ATAK.', 'quick' => [
