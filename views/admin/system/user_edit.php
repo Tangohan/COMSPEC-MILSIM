@@ -567,6 +567,7 @@ if ($uid < 1) {
                 </button>
             </div>
         </form>
+        <?php require __DIR__ . '/_user_atak_panel.php'; ?>
         <?php if (empty($GLOBALS['grade_doctrine_cascade_js'])): ?>
         <?php $GLOBALS['grade_doctrine_cascade_js'] = true; ?>
         <script defer src="<?= htmlspecialchars(asset_url('assets/js/grade-doctrine-cascade.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
