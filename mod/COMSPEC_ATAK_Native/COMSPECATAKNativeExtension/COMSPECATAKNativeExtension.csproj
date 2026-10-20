@@ -23,6 +23,9 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SendJournal.cs" Link="Extension_SendJournal.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SyncStats.cs" Link="Extension_SyncStats.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_ItemIcons.cs" Link="Extension_ItemIcons.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapCapture.cs" Link="Extension_MapCapture.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapPhoto.cs" Link="Extension_MapPhoto.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\MapTileImage.cs" Link="MapTileImage.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\GameAuth.cs" Link="GameAuth.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\GoogleSlidesDeck.cs" Link="GoogleSlidesDeck.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\BetaNoticeWindow.cs" Link="BetaNoticeWindow.cs" />

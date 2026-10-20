@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.90";
+    private const string ExtensionVersion = "2.0.91";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3118,6 +3118,10 @@ public static partial class Extension
         // Icônes des objets portés (Item.Icons, 2.0.88) : .paa lu dans le PBO puis envoyé une fois par classe.
         // args: [json {items: [[classe, picture]…]}] ou ["status"] → OK|queued
         if (function == "Item.Icons") return HandleItemIcons(args);
+        // Capture de la carte (2.0.91) : tuiles vérifiées, corrigées, compressées et rangées hors de Screenshots.
+        if (function != null && function.StartsWith("MapCap.", StringComparison.Ordinal)) return HandleMapCapture(function, args);
+        // Fond PHOTO téléchargé en jeu depuis Athena (2.0.92) : tuiles JPEG en cache, réponse immédiate, réseau en tâche de fond.
+        if (function != null && function.StartsWith("MapPhoto.", StringComparison.Ordinal)) return HandleMapPhoto(function, args);
 
         if (function == "Distance.Batch")
         {
@@ -9497,6 +9501,8 @@ public static partial class Extension
         if (!IsImageExtension(Path.GetExtension(fullPath))) return;
         if (IsSseIdentityCaptureName(fullPath)) return;
         if (IsSseNoteCaptureName(fullPath)) return;
+        // Tuiles de la capture de carte (fn_mapCapture) : rangées par MapCap.Collect, jamais envoyées comme photos.
+        if (IsMapCaptureName(fullPath)) return;
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth()) return;
 
         // Debounce Created+Changed pendant l'écriture.

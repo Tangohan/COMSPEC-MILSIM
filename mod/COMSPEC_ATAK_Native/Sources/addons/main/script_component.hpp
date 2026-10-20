@@ -1,13 +1,13 @@
 #define COMPONENT atak_native
 #define COMPONENT_BEAUTIFIED ATAK Native
 #define PREFIX comspec_atak_native
-#define VERSION 2.3.6
-#define VERSION_STR "2.3.6"
+#define VERSION 2.3.8
+#define VERSION_STR "2.3.8"
 // Nom affiché au joueur (Réglages, Crédits, Statut, journal, check de démarrage) : jamais comparé, voir docs/VERSIONING.md.
-#define VERSION_NAME "2.3.6.AB - Denver"
+#define VERSION_NAME "2.3.8.AB - Denver"
 // Empreinte du build (date, commit), jamais comparée : voir docs/VERSIONING.md.
 #include "build_info.hpp"
 // Version de la DLL COMSPEC Link (mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj) livrée avec ce main.pbo.
 // fn_integrityCheck la compare à la DLL chargée ; un test PHP vérifie que les deux restent alignées.
-#define LINK_VERSION_STR "2.0.90"
+#define LINK_VERSION_STR "2.0.92"
 #define UI_GENERATION "native-rsc-v1"
