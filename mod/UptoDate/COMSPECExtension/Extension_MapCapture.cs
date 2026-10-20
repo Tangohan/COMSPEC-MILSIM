@@ -197,6 +197,8 @@ public static partial class Extension
                 var h = args[3] ?? "";
                 var id = args[4] ?? "";
                 var keepPng = args.Length > 5 && args[5] == "1";
+                // Vue oblique : cadrage de l'image (CMAPG), gardé à côté du JPEG (.grid.txt) pour le redressement.
+                var grid = args.Length > 6 ? args[6] ?? "" : "";
                 if (!IsMapCaptureName(file) || world.Length == 0) return "ERR|args";
                 Interlocked.Increment(ref _mapCapPending);
                 _ = Task.Run(async () =>
@@ -216,6 +218,8 @@ public static partial class Extension
                                 if (fi.Exists && fi.Length > 1024)
                                 {
                                     ok = MapCapStore(src, world, mode, h, file, keepPng);
+                                    if (ok && grid.Length > 0)
+                                        File.WriteAllText(Path.ChangeExtension(MapCapTarget(world, mode, h, file), ".grid.txt"), grid);
                                     break;
                                 }
                             }

@@ -31,6 +31,7 @@
     sous chaque image :
       CMAPL|carte|mode|hauteur demandée|taille carte|altitude caméra|fov|ax|ay|u0|v0|pas|largeur|hauteur|x0|y0|nx|ny|grille|portée
       CMAPS|fichier|x|y|altitude caméra|altitudes (grille × grille, du sud-ouest, lignes vers le nord)
+      CMAPG|fichier|x|y|z caméra|fov|x,y,z,u,v;… (vue oblique : 13 × 13 points du sol et leur position à l'écran × 10000)
     map_stitch.py s'en sert pour redresser chaque image sur le relief (orthophoto vraie).
     Suivi du relevé (profil du joueur, COMSPEC_ATAK_MapCapProg) : pour chaque carte, rendu et hauteur, le pas de la
     grille et les cases prises. Relu sur le disque (images réellement présentes) à l'ouverture du formulaire et au
@@ -596,6 +597,28 @@ switch (_act) do {
                     private _fr = diag_frameNo;
                     waitUntil { diag_frameNo > _fr + 2 };
                     private _file = format ["cmap_%1_%2_h%3_s%4_w%5_o%6-%7_x%8_y%9.png", worldName, _mode, round _h, _step, _fw, round _x0, round _y0, _ix, _iy];
+                    // Vue oblique (3d) : cadrage de l'image même, relevé avant la photo (caméra en place) : position à
+                    // l'écran (0 à 1) d'une grille de 13 × 13 points du sol sur deux pas autour de la case, pour la
+                    // redresser sur le sol (map_stitch.py ; les bâtiments penchent vers le nord, effet 3D). Gardé dans le
+                    // journal (CMAPG) et à côté de l'image (.grid.txt, par la DLL).
+                    private _grid3d = "";
+                    if (_mode isEqualTo "3d") then {
+                        private _pts = [];
+                        for "_j" from 0 to 12 do {
+                            for "_i" from 0 to 12 do {
+                                private _gx = _px + (_i / 12 - 0.5) * 2 * _step;
+                                private _gy = _py + (_j / 12 - 0.5) * 2 * _step;
+                                private _sc = worldToScreen [_gx, _gy, 0];
+                                if ((count _sc) isEqualTo 2) then {
+                                    _pts pushBack format ["%1,%2,%3,%4,%5", round _gx, round _gy, (round ((getTerrainHeightASL [_gx, _gy]) * 10)) / 10,
+                                        (((((_sc select 0) - safeZoneX) / safeZoneW) * 10000) toFixed 0), (((((_sc select 1) - safeZoneY) / safeZoneH) * 10000) toFixed 0)];
+                                };
+                            };
+                        };
+                        private _cp = getPosASL _cam;
+                        _grid3d = format ["%1|%2|%3|%4|%5|%6", _file, round (_cp select 0), round (_cp select 1), round (_cp select 2), _fov, _pts joinString ";"];
+                        diag_log text ("CMAPG|" + _grid3d);
+                    };
                     // Refus du moteur noté dans le journal (écran éteint ou dossier plein : aucune image).
                     if !(screenshot _file) then { ["WARNING", "MAPCAP", format ["Photo refusée par le moteur : %1", _file]] call comspec_atak_native_fnc_log; };
                     diag_log text format ["CMAPF|%1", _file];
@@ -612,7 +635,7 @@ switch (_act) do {
                     uiSleep 0.35;
                     if (_dll) then {
                         // Case en entier (toFixed : au-delà d'un million, format écrivait « 1.85011e+06 »).
-                        ["MapCap.Collect", [_file, worldName, _mode, str (round _h), format ["%1:%2", _k, _id toFixed 0], ["0", "1"] select _keepPng]] call comspec_atak_native_fnc_extensionCall;
+                        ["MapCap.Collect", [_file, worldName, _mode, str (round _h), format ["%1:%2", _k, _id toFixed 0], ["0", "1"] select _keepPng, _grid3d]] call comspec_atak_native_fnc_extensionCall;
                     } else {
                         _done set [_id, true];
                     };
