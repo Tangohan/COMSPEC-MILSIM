@@ -197,6 +197,14 @@ final class AccountPurgeService
      */
     public function purge(int $userId, array $siblingIds = []): array
     {
+        // Avant la suppression de la fiche : les tables de jeu sans user_id (Steam, indicatif) sont retrouvées par elle.
+        foreach (array_unique(array_merge([$userId], array_map('intval', $siblingIds))) as $pid) {
+            try {
+                (new \App\Services\Admin\PlayerTracePurgeService())->purgeUser((int) $pid, null);
+            } catch (\Throwable) {
+            }
+        }
+
         $report = [
             'ok' => true,
             'purged_user_ids' => [],

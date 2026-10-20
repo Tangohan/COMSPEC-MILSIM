@@ -151,7 +151,7 @@ final class OperatorGameProfileRepository
 
     private function findLinkedUserId(int $tenantId, string $sid): ?int
     {
-        $st = $this->pdo()->prepare('SELECT id FROM users WHERE tenant_id = ? AND steam_id = ? LIMIT 1');
+        $st = $this->pdo()->prepare("SELECT id FROM users WHERE tenant_id = ? AND steam_id = ? AND deleted_at IS NULL AND COALESCE(status, '') NOT IN ('merged', 'deleted') LIMIT 1");
         $st->execute([$tenantId, $sid]);
         $id = $st->fetchColumn();
         if ($id !== false && (int) $id > 0) {
@@ -161,6 +161,7 @@ final class OperatorGameProfileRepository
         $st = $this->pdo()->prepare(
             "SELECT id, steam_id FROM users
              WHERE tenant_id = ? AND steam_id IS NOT NULL AND TRIM(steam_id) <> ''
+               AND deleted_at IS NULL AND COALESCE(status, '') NOT IN ('merged', 'deleted')
              ORDER BY id DESC
              LIMIT 80"
         );

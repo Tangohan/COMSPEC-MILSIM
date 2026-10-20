@@ -608,6 +608,9 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
+            \App\Services\Cron\Jobs\PlayerDataRetentionCronJob::class => new \App\Services\Cron\Jobs\PlayerDataRetentionCronJob(
+                \App\Core\Database::getPdo()
+            ),
             \App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class => new \App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob(
                 \App\Core\Database::getPdo()
             ),
@@ -673,6 +676,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AttendanceRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\CooperationRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\PlayerDataRetentionCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseAnalystDigestCronJob::class),
