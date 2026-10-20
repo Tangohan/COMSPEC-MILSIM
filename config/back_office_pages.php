@@ -273,7 +273,7 @@ return [
             ['label' => 'Données chiffrées', 'href' => 'back-office/atak/roleplay#intel-scramble'],
         ]],
         ['path' => 'back-office/ressources/atak-mod-blocks', 'group' => 'Ressources', 'title' => 'Restrictions d’accès au mod', 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/ressources/atak-diffusion-rapports', 'group' => 'Ressources', 'title' => 'Diffusion des rapports', 'css' => ['back-office-atak-routing.css'], 'flags' => ['boSkipPageHead' => true]],
+        ['path' => 'back-office/ressources/atak-diffusion-rapports', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diffusion des rapports', 'subtitle' => 'Qui doit lire chaque compte rendu dès sa réception, qui prévenir si personne ne réagit, et ce qui a réellement été diffusé.', 'css' => ['back-office-atak-routing.css']],
         ['path' => 'back-office/ressources/atak-realism', 'group' => 'Ressources', 'title' => 'Réglages réalisme', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/ressources/atak-mod', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · MOD', 'title' => 'Mod Arma', 'css' => ['back-office-atak-mod.css']],
         ['path' => 'back-office/audit', 'group' => 'Système', 'kicker' => 'SYSTÈME · TRAÇABILITÉ', 'title' => 'Journal d\'audit', 'subtitle' => 'Toutes les actions des administrateurs, datées et conservées 24 mois.', 'flags' => ['hideAuditPageHeader' => true]],
