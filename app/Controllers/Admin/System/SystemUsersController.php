@@ -211,6 +211,11 @@ final class SystemUsersController
         $memberships = $this->users->communityMemberships();
         $memberships->leave($userId, $tenantId);
         $memberships->upsertProfile($userId, $tenantId, ['status' => 'inactive']);
+        try {
+            // Retiré de la communauté : ses traces de jeu y disparaissent aussi (carte, registre, statistiques).
+            (new \App\Services\Admin\PlayerTracePurgeService())->purgeUser($userId, $tenantId);
+        } catch (\Throwable) {
+        }
         if ((int) ($target['tenant_id'] ?? 0) === $tenantId) {
             // Session ouverte sur cette communauté : elle sera fermée à la requête suivante.
             $this->users->bumpSessionEpoch($userId);

@@ -122,6 +122,9 @@ final class AccountDeletionService
         foreach ($relatedIds as $relatedId) {
             $this->scrubRelatedPersonalData((int) $relatedId);
         }
+        foreach ($relatedIds as $relatedId) {
+            $this->purgeGameTraces((int) $relatedId, null);
+        }
 
         return ['ok' => $ok, 'anonymized_user_ids' => array_values(array_map('intval', $relatedIds))];
     }
@@ -146,6 +149,8 @@ final class AccountDeletionService
             'callsign' => null,
         ]);
         $this->revokeAthenaAccess($userId, $tenantId);
+        // Le joueur quitte la communauté : ses traces de jeu y disparaissent (carte, registre, statistiques).
+        $this->purgeGameTraces($userId, $tenantId);
 
         return ['ok' => true, 'anonymized_user_ids' => []];
     }
@@ -159,6 +164,7 @@ final class AccountDeletionService
         $ids = $this->users->releaseEmailHeldByDeletedAccounts($email);
         foreach ($ids as $id) {
             $this->scrubRelatedPersonalData((int) $id);
+            $this->purgeGameTraces((int) $id, null);
         }
 
         return count($ids);
@@ -221,6 +227,9 @@ final class AccountDeletionService
                 $ok = false;
             }
         }
+        foreach ($siblingIds as $sid) {
+            $this->purgeGameTraces((int) $sid, null);
+        }
 
         return $ok;
     }
@@ -275,6 +284,19 @@ final class AccountDeletionService
      * seule colonne users.steam_id ne suffit pas : son refresh token pouvait
      * continuer à réafficher l'identité supprimée pendant trente jours.
      */
+    /**
+     * Traces de jeu (carte, registre opérateur, mods, statistiques, terminaux…) : les tables ATAK sont
+     * indexées par Steam ou indicatif, que l'anonymisation de la fiche ne touchait pas.
+     */
+    private function purgeGameTraces(int $userId, ?int $tenantId): void
+    {
+        try {
+            (new \App\Services\Admin\PlayerTracePurgeService())->purgeUser($userId, $tenantId);
+        } catch (\Throwable $e) {
+            error_log('[account_deletion] purge des traces de jeu #' . $userId . ' : ' . $e->getMessage());
+        }
+    }
+
     private function revokeAthenaAccess(int $userId, ?int $tenantId): void
     {
         $pdo = Database::getPdo();
