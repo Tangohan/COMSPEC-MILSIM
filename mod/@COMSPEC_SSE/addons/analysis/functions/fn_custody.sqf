@@ -159,12 +159,14 @@ switch (_op) do {
             _p set ["holder", name _to];
             _p set ["holderUid", [_to] call _uidOf];
             [_p] call _publish;
-            // Le sachet scellé change de mains.
-            if ("COMSPEC_SSE_EvidenceBag" in (items _from)) then {
-                _from removeItem "COMSPEC_SSE_EvidenceBag";
-                if (_to canAdd "COMSPEC_SSE_EvidenceBag") then { _to addItem "COMSPEC_SSE_EvidenceBag"; };
-            };
         } forEach _ids;
+        // Les sachets scellés changent de mains, une fois pour toutes les pièces. removeItem / addItem n'agissent que
+        // là où l'unité est locale (le joueur, pas le serveur) : l'inventaire est modifié chez chacun.
+        private _bags = ({ _x isEqualTo "COMSPEC_SSE_EvidenceBag" } count (items _from)) min (count _ids);
+        if (_bags > 0) then {
+            ["comspec_sse_custodyBags", [_from, -_bags], _from] call CBA_fnc_targetEvent;
+            ["comspec_sse_custodyBags", [_to, _bags], _to] call CBA_fnc_targetEvent;
+        };
         if (_ids isNotEqualTo []) then {
             [_to, format ["%1 vous remet %2 pièce(s) : %3.", name _from, count _ids, _ids joinString ", "]] call _note;
             [_from, format ["%1 pièce(s) remise(s) à %2, inscrit au registre.", count _ids, name _to]] call _note;

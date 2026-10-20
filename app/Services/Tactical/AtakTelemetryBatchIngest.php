@@ -264,10 +264,17 @@ final class AtakTelemetryBatchIngest
         }
         try {
             $id = $this->vehicles->upsert($payload);
+            if ($id === 0) {
+                // Véhicule inconnu sans position (drone relâché avant sa 1re remontée) : rien à faire.
+                return ['ok' => true, 'skipped' => true, 'http' => 200];
+            }
             return ['ok' => $id > 0, 'error' => $id > 0 ? null : 'vehicle_upsert_failed', 'http' => $id > 0 ? 200 : 422];
         } catch (\InvalidArgumentException) {
             return ['ok' => false, 'error' => 'vehicle_callsign_required', 'http' => 400];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            error_log('[atak/telemetry/batch] vehicle_exception '
+                . \App\Repositories\AtakVehicleTrackingRepository::resolveCallsign($payload) . ' : '
+                . mb_substr($e->getMessage(), 0, 300));
             return ['ok' => false, 'error' => 'vehicle_exception', 'http' => 500];
         }
     }

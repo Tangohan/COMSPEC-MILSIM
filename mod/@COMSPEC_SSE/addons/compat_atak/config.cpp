@@ -3,7 +3,7 @@
 /*
     Passerelle SSE ↔ ATAK natif : le câble DL-7 se configure dans le SSE.
 
-    Chargée seulement si l'ATAK natif est présent (skipWhenMissingDependencies) :
+    Toujours chargée (l'ATAK natif est une dépendance obligatoire du SSE) :
       - les modules d'extraction de l'ATAK passent dans « COMSPEC SSE · 4. Numérique » ;
       - catégorie Eden « COMSPEC SSE — Extraction DL-7 » sur n'importe quel objet ;
       - le contenu numérique généré par le SSE (fichiers, courriels, messages,
@@ -24,7 +24,6 @@ class CfgPatches {
             "comspec_sse_eden",
             "comspec_atak_native_main"
         };
-        skipWhenMissingDependencies = 1;
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -39,8 +38,23 @@ class CfgFunctions {
             class dl7Apply {};
             class dl7ApplyEden {};
             class dl7ZeusForm {};
+            class dl7Auto {};
+            class dl7Downloaded {};
+            class fieldTarget {};
+            class fieldSite {};
+            class fieldPage {};
+            class fieldAction {};
+            class photoWatch {};
+            class evidencePhoto {};
+            class remoteWipe {};
+            class domexBoost {};
         };
     };
+};
+
+// App « SSE terrain » du téléphone ATAK : le travail SSE passe par le terminal plutôt que par les menus ACE.
+class COMSPEC_ATAK_Apps {
+    class SseField { name="SSE terrain"; page="SSEFIELD"; function="comspec_sse_fnc_fieldPage"; section="Renseignement"; order=119; dock=0; new=1; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
 };
 
 class Extended_PostInit_EventHandlers {
@@ -52,6 +66,9 @@ class Extended_PostInit_EventHandlers {
 class CfgRemoteExec {
     class Functions {
         class comspec_sse_fnc_dl7Apply { allowedTargets = 2; };
+        class comspec_sse_fnc_domexBoost { allowedTargets = 2; };
+        class comspec_sse_fnc_notify { allowedTargets = 1; };
+        class comspec_atak_native_fnc_notify { allowedTargets = 1; };
     };
 };
 
@@ -112,7 +129,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_AC66EEB9F9";
                         property = "COMSPEC_SSE_Dl7_Files";
                         control = "EditMulti5";
-                        expression = "_this setVariable ['COMSPEC_SSE_Dl7_Files', _value];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Dl7_Files', _value]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         DL7_COND;
@@ -161,7 +178,9 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_B72C6C2193";
                         property = "COMSPEC_SSE_Dl7_Password";
                         control = "Edit";
-                        expression = "_this setVariable ['COMSPEC_SSE_Dl7_Password', _value];";
+                        // Serveur seulement : l'expression Eden s'exécute sur chaque poste, le mot de passe y était en
+                        // clair (l'ATAK ne diffuse que son empreinte). Indice et fichiers : même règle.
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Dl7_Password', _value]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         DL7_COND;
@@ -171,7 +190,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_98E82155A6";
                         property = "COMSPEC_SSE_Dl7_Hint";
                         control = "Edit";
-                        expression = "_this setVariable ['COMSPEC_SSE_Dl7_Hint', _value];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Dl7_Hint', _value]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         DL7_COND;

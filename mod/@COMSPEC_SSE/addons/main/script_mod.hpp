@@ -1,8 +1,8 @@
-#define MAJOR 0
-#define MINOR 8
+#define MAJOR 1
+#define MINOR 0
 #define PATCHLVL 0
 #define BUILD 1
 
-#define REQUIRED_VERSION 2.10
+#define REQUIRED_VERSION 2.14
 
-#define VERSION_CONFIG version = 0.9.0; versionStr = "0.9.0"; versionAr[] = {0,9,0,0}
+#define VERSION_CONFIG version = 1.0; versionStr = "1.0.0"; versionAr[] = {1,0,0,0}

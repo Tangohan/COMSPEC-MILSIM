@@ -8,6 +8,8 @@ class COMSPEC_SSE_GenerateDialog {
     idd = 93001;
     movingEnable = 0;
     enableSimulation = 1;
+    // Textes et bulles d'aide écrits en français : traduits au chargement (langue du téléphone).
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; [_this select 0, 'COMSPEC_SSE_GenerateDialog'] call comspec_sse_fnc_trTooltips";
 
     class controlsBackground {
         class Dim: COMSPEC_SSE_RscDim { SSE_FULLSCREEN; };

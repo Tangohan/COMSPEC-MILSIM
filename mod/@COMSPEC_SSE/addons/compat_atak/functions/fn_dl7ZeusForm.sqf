@@ -33,4 +33,4 @@ if (isNil "zen_dialog_fnc_create") exitWith { ["Zeus Enhanced requis pour ce for
     },
     {},
     _objs
-] call zen_dialog_fnc_create;
+] call comspec_sse_fnc_zenDialog;

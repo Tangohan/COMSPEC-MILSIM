@@ -32,14 +32,13 @@ if (_mode isEqualTo "near") exitWith {
     } forEach (missionNamespace getVariable ["COMSPEC_SSE_BloodTraces", []]);
     _best
 };
-// Retour à l'opérateur : notification dans le téléphone ATAK natif, jamais sur l'écran du jeu.
-// Sans l'ATAK natif (SSE seul), la bulle d'aide reste le seul retour possible.
+// Retour à l'opérateur : notification du téléphone ATAK natif. Téléphone fermé (le joueur regarde le sol), le toast
+// de l'ATAK ne s'affiche pas : comspec_sse_fnc_notify met alors le même texte dans une bulle d'aide discrète.
+// Texte en français : chaque ligne est traduite par notify (une ligne déjà traduite reste telle quelle).
 if (_mode isEqualTo "say") exitWith {
     _args params [["_txt", ""], ["_type", "INFO"]];
     if (!hasInterface || {_txt isEqualTo ""}) exitWith {};
-    private _t = _txt call comspec_sse_fnc_tr;
-    if (!isNil "comspec_atak_native_fnc_notify") exitWith { [_type, (_t splitString endl) joinString " · ", 8, 30] call comspec_atak_native_fnc_notify; };
-    hint _t;
+    [_txt, _type, "SSE · Tache de sang"] call comspec_sse_fnc_notify;
 };
 
 switch (_mode) do {
@@ -97,11 +96,19 @@ switch (_mode) do {
             {}, [], [0, 0, 0], 2.5, _p] call comspec_sse_fnc_aceAction;
         private _kids = [
             ["COMSPEC_SSE_BloodLook", "Examiner la tache", { ["examine", [_this select 0]] call comspec_sse_fnc_bioBloodStain }, { true }],
-            ["COMSPEC_SSE_BloodLatent", "Relever les empreintes sanglantes", { ["latent", [_this select 0]] call comspec_sse_fnc_bioBloodStain },
-                { missionNamespace getVariable ["comspec_sse_bio_latents", true] }],
-            ["COMSPEC_SSE_BloodDna", "Prélever l'ADN (sang)", { ["dna", [_this select 0]] call comspec_sse_fnc_bioBloodStain }, { true }]
+            // Relevés : seulement avec le kit porté (un usage consommé), l'examen à l'œil reste libre.
+            ["COMSPEC_SSE_BloodLatent", "Relever les empreintes sanglantes", {
+                    if (([_this select 0, "COMSPEC_SSE_FingerprintKit", 10] call comspec_sse_fnc_kitUse) > 0) then { ["latent", [_this select 0]] call comspec_sse_fnc_bioBloodStain; };
+                },
+                { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {"COMSPEC_SSE_FingerprintKit" in (items (_this select 0))} }],
+            ["COMSPEC_SSE_BloodDna", "Prélever l'ADN (sang)", {
+                    private _cls = ["COMSPEC_SSE_SwabKit", "COMSPEC_SSE_DNKit"] select ("COMSPEC_SSE_DNKit" in (items (_this select 0)));
+                    if (([_this select 0, _cls, 12] call comspec_sse_fnc_kitUse) > 0) then { ["dna", [_this select 0]] call comspec_sse_fnc_bioBloodStain; };
+                },
+                { ((items (_this select 0)) findIf { _x in ["COMSPEC_SSE_SwabKit", "COMSPEC_SSE_DNKit"] }) >= 0 }]
         ];
-        // Sous le menu COMSPEC SSE (action d'objet posée sur le joueur, reposée à la réapparition).
+        // À la racine des actions personnelles, visible seulement près d'une trace (posée sur le joueur,
+        // reposée à la réapparition) : il n'y a plus de menu personnel « COMSPEC SSE ».
         private _acts = [_root] + (_kids apply {
             _x params ["_id", "_label", "_code", "_cond"];
             [_id, _label, "", _code, _cond, {}, [], [0, 0, 0], 2.5, _p] call comspec_sse_fnc_aceAction
@@ -112,8 +119,8 @@ switch (_mode) do {
             if (_unit getVariable ["comspec_sse_bloodSelf", false]) exitWith {};
             _unit setVariable ["comspec_sse_bloodSelf", true];
             private _acts = missionNamespace getVariable ["COMSPEC_SSE_BloodActs", []];
-            [_unit, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _acts select 0] call ace_interact_menu_fnc_addActionToObject;
-            { [_unit, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF", "COMSPEC_SSE_Blood"], _x] call ace_interact_menu_fnc_addActionToObject; } forEach (_acts select [1]);
+            [_unit, 1, ["ACE_SelfActions"], _acts select 0] call ace_interact_menu_fnc_addActionToObject;
+            { [_unit, 1, ["ACE_SelfActions", "COMSPEC_SSE_Blood"], _x] call ace_interact_menu_fnc_addActionToObject; } forEach (_acts select [1]);
         };
         missionNamespace setVariable ["COMSPEC_SSE_BloodInstall", _install];
         [{ !isNull player }, { [player] call (missionNamespace getVariable "COMSPEC_SSE_BloodInstall"); }] call CBA_fnc_waitUntilAndExecute;
@@ -184,7 +191,7 @@ switch (_mode) do {
                             ["LATENT", "biometrics", "latent", _lines select 1, _res getOrDefault ["score", 0], "LOCAL"] call comspec_sse_fnc_addJournalEntry;
                         };
                     }] call comspec_sse_fnc_bioRequest;
-                }, [_t, _toucher, _prints]] call comspec_sse_fnc_progressAction;
+                }, [_t, _toucher, _prints], _pos] call comspec_sse_fnc_progressAction;
                 player playActionNow "Medic";
             };
             case "dna": {
@@ -198,7 +205,7 @@ switch (_mode) do {
                     ["dna", createHashMapFromArray [["unit", _src], ["key", _key], ["dna", _q], ["dnaRef", _id]], {
                         ["say", ["Écouvillon de sang expédié au laboratoire : résultat à venir.", "SUCCESS"]] call comspec_sse_fnc_bioBloodStain;
                     }] call comspec_sse_fnc_bioRequest;
-                }, [_id, _key, _src, _q]] call comspec_sse_fnc_progressAction;
+                }, [_id, _key, _src, _q], _pos] call comspec_sse_fnc_progressAction;
                 player playActionNow "Medic";
             };
         };

@@ -10,6 +10,8 @@
     Parcours par zones (2.3.7) : la caméra prend une case de la hauteur la plus haute, puis descend sur les cases plus
     basses qui sont dessous, avant de passer à la case haute suivante. Une capture arrêtée laisse des zones finies à
     toutes les hauteurs, et la caméra ne traverse plus la carte d'une hauteur à l'autre.
+    Côté PC : build_photo_pack.bat regroupe les captures, assemble le fond et fabrique le pack secondaire
+    @COMSPEC_ATAK_Photo (tools/map_stitch.py).
     Chaque tuile est d'abord écrite par le moteur dans le dossier Screenshots du profil Arma, sous un nom qui la décrit :
       cmap_<carte>_<mode>_h<hauteur>_s<pas en m>_w<largeur couverte en m>_o<origine x>-<origine y>_x<colonne>_y<ligne>.png
     (colonne 0 à l'ouest, ligne 0 au sud), puis la DLL (COMSPEC Link 2.0.91, MapCap.*) la vérifie, la corrige (voile de
@@ -266,7 +268,9 @@ switch (_act) do {
         if !(missionNamespace getVariable ["COMSPEC_ATAK_MapCapRunning", false]) then { call _sync; };
         ["Capture de la carte", [
             ["COMBO", "Rendu", [["sat", "3d", "plan"], ["Satellite (vue de dessus)", "3D oblique (45°)", "Plan topographique"], 0]],
-            ["EDIT", ["Hauteurs (m, séparées par des virgules)", "Une couche par hauteur, soit un niveau de zoom du fond, comme Google Maps. Altis entière (images de 1 à 2 Mo) : 3500 m ≈ 35 images, 1200 m ≈ 300, 800 m ≈ 650, 300 m ≈ 4000 images (8 Go, 3 h), 150 m ≈ 16 000 (32 Go, 11 h), 50 m ≈ 140 000 (280 Go) : en dessous de 300 m, plutôt une zone (ville). Estimation affichée au lancement."], "300, 800, 1200, 3500"],
+            ["COMBO", ["Niveaux de zoom", "Une hauteur par niveau de zoom du fond PHOTO, comme Google Maps : plus bas = vue plus proche et détaillée, plus haut = vue d'ensemble. 120 m : autour des localités seulement si la case ci-dessous est cochée."],
+                [[0, 1, 2], ["Standard : 300, 800, 1200, 3500 m", "Avec les villes : 120, 300, 800, 1200, 3500 m", "Personnalisé (hauteurs ci-dessous)"], 1]],
+            ["EDIT", ["Hauteurs (m, séparées par des virgules)", "Avec « Personnalisé ». Une couche par hauteur, soit un niveau de zoom du fond, comme Google Maps. Altis entière (images de 1 à 2 Mo) : 3500 m ≈ 35 images, 1200 m ≈ 300, 800 m ≈ 650, 300 m ≈ 4000 images (8 Go, 3 h), 150 m ≈ 16 000 (32 Go, 11 h), 50 m ≈ 140 000 (280 Go) : en dessous de 300 m, plutôt une zone (ville). Estimation affichée au lancement."], "300, 800, 1200, 3500"],
             ["COMBO", "Zone", [[0, 1], ["Autour de la position du module", "Carte entière"], 1]],
             ["SLIDER", "Rayon de la zone (m)", [100, 20000, 1500, 0]],
             ["SLIDER", "Attente par tuile (s)", [0.5, 6, 2, 1]],
@@ -280,8 +284,9 @@ switch (_act) do {
             ["EDIT:MULTI", ["Suivi du relevé", format ["Part de la carte déjà photographiée, par rendu et hauteur, d'après les images présentes dans %1", call _shotDir]], call _progText]
         ], {
             params ["_values", "_pos"];
-            _values params ["_mode", "_hs", "_zone", "_radius", "_wait", "_clear", "_hide", "_resume", "_skipSea", "_towns", "_keepPng", "_reset"];
-            private _heights = ((_hs splitString ", ;") apply { parseNumber _x }) select { _x >= 20 && {_x <= 10000} };
+            _values params ["_mode", "_preset", "_hs", "_zone", "_radius", "_wait", "_clear", "_hide", "_resume", "_skipSea", "_towns", "_keepPng", "_reset"];
+            private _heights = [[300, 800, 1200, 3500], [120, 300, 800, 1200, 3500]] param [_preset, []];
+            if (_heights isEqualTo []) then { _heights = ((_hs splitString ", ;") apply { parseNumber _x }) select { _x >= 20 && {_x <= 10000} }; };
             if (_heights isEqualTo []) then { _heights = [300, 800, 1200, 3500]; };
             if (_reset) then { ["reset"] call comspec_atak_native_fnc_mapCapture; };
             ["start", [_mode, _heights, [[], _pos] select (_zone isEqualTo 0), _radius, 0.15, _wait, _clear, _hide, _resume && !_reset, _skipSea, _keepPng, [0, 200] select _towns]] call comspec_atak_native_fnc_mapCapture;
@@ -692,7 +697,7 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_MapCapRunning", false];
             if (_why isNotEqualTo "") then { ["ERROR", _why, 15, 50] call comspec_atak_native_fnc_notify; };
             private _summary = _layers apply { format ["%1 m %2%3", _x select 0, (floor (100 * (count (_x select 12)) / ((_x select 13) max 1))) min 100, "%"] };
-            ["SUCCESS", format ["Capture de la carte terminée : %1 image(s) en %2 min dans %3. Assemblage : tools/map_stitch.py", [_shots, _okCount] select _dll, round ((diag_tickTime - _t0) / 60), call _shotDir], 12, 40] call comspec_atak_native_fnc_notify;
+            ["SUCCESS", format ["Capture de la carte terminée : %1 image(s) en %2 min dans %3. Sur le PC : build_photo_pack.bat (pack @COMSPEC_ATAK_Photo)", [_shots, _okCount] select _dll, round ((diag_tickTime - _t0) / 60), call _shotDir], 12, 40] call comspec_atak_native_fnc_notify;
             ["INFO", format ["Relevé de %1 (%2), part de la carte prise : %3", worldName, _mode, _summary joinString ", "], 12, 40] call comspec_atak_native_fnc_notify;
         };
         true

@@ -10,7 +10,8 @@ class CfgPatches {
             "comspec_sse_main",
             "cba_main",
             "cba_xeh",
-            "cba_settings"
+            "cba_settings",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;

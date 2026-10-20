@@ -11,7 +11,7 @@ if (isNull _entity) exitWith { [] };
 private _keys = [];
 private _id = [_entity, "identity"] call comspec_sse_fnc_getSection;
 if (!isNil "_id" && {_id isEqualType createHashMap}) then {
-    { if (_y != "") then { _keys pushBackUnique (toLower str _y); }; } forEach [
+    { if (_x isEqualType "" && {_x != ""}) then { _keys pushBackUnique (toLower _x); }; } forEach [
         _id getOrDefault ["alias", ""],
         _id getOrDefault ["phone", ""],
         _id getOrDefault ["plate", ""],
@@ -40,6 +40,12 @@ if (!isNil "_locs" && {_locs isEqualType []}) then {
 if (_keys isEqualTo []) exitWith { [] };
 
 private _matches = [];
+// Candidats : entités SSE uniquement, sans doublons (allMissionObjects recoupe allUnits/vehicles).
+private _candidates = (allUnits + vehicles + (allMissionObjects "All")) select {
+    _x getVariable ["comspec_sse_enabled", false]
+};
+_candidates = _candidates arrayIntersect _candidates;
+
 {
     private _o = _x;
     if (!isNull _o && {_o != _entity} && {!isNil {[_o] call comspec_sse_fnc_getData}}) then {
@@ -51,6 +57,6 @@ private _matches = [];
             ["SSE_NetworkLinked", [netId _entity, netId _o, _keys]] call comspec_sse_fnc_emitEvent;
         };
     };
-} forEach (allUnits + vehicles + (allMissionObjects "All"));
+} forEach _candidates;
 
 _matches

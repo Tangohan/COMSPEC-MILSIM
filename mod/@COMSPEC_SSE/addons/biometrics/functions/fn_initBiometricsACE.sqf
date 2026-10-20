@@ -31,53 +31,14 @@ private _aceParams = [false, false, false, false, true];
 private _icon = "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa";
 private _cond = { [_this select 0] call comspec_sse_fnc_canInspect };
 
-private _items = [
-    ["COMSPEC_SSE_SeekOpen", "Ouvrir SEEK II", { [_this select 0] call comspec_sse_fnc_openSeek }],
-    ["COMSPEC_SSE_FP", "Empreintes", { [_this select 0, _this select 1] call comspec_sse_fnc_captureFingerprint }],
-    ["COMSPEC_SSE_IR", "Iris", { [_this select 0, _this select 1] call comspec_sse_fnc_captureIris }],
-    ["COMSPEC_SSE_Face", "Photo faciale", { [_this select 0, _this select 1] call comspec_sse_fnc_captureFace }],
-    ["COMSPEC_SSE_DNA", "ADN", { [_this select 0, _this select 1] call comspec_sse_fnc_captureDNA }],
-    ["COMSPEC_SSE_BioAll", "Capture complète", { [_this select 0, _this select 1] call comspec_sse_fnc_captureAll }],
-    ["COMSPEC_SSE_Identify", "Identifier", { [_this select 0, _this select 1] call comspec_sse_fnc_identifySubject }]
-];
-private _bioChildren = _items apply {
-    _x params ["_id", "_label", "_code"];
-    [_id, _label, _icon, _code, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction
-};
-
-private _insertBio = {
-    params ["_target"];
-    private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
-    if (!(_cache isEqualType createHashMap)) exitWith { [] };
-    [_target, _cache getOrDefault ["bioChildren", []]] call comspec_sse_fnc_aceWrapMenuChildren
-};
-
-private _bioRoot = [
-    "COMSPEC_SSE_Bio", "Biométrie", _icon, {}, _cond, _insertBio, [], {[0,0,0]}, 4, _aceParams, {}
-] call comspec_sse_fnc_aceAction;
-if (!isNil "comspec_sse_fnc_acePadAction") then {
-    _bioRoot = [_bioRoot] call comspec_sse_fnc_acePadAction;
-};
-
-private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
-if (!(_cache isEqualType createHashMap)) then { _cache = createHashMap; };
-_cache set ["bioRoot", _bioRoot];
-_cache set ["bioChildren", _bioChildren];
-// Objets : empreintes latentes (armes au sol, objets saisis).
-_cache set ["bioObjectChildren", [
-    ["COMSPEC_SSE_Latent", "Relever des empreintes latentes", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa",
-        { [_this select 0, _this select 1] call comspec_sse_fnc_bioCaptureLatentAction },
-        { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {[_this select 0] call comspec_sse_fnc_canInspect} },
-        _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction
-]];
-missionNamespace setVariable ["comspec_sse_aceMenuCache", _cache];
-
-// Armes et équipements au sol : pas de menu SSE, mais des empreintes à relever.
+// Plus de sous-menu « Biométrie » : les relevés passent par les kits portés (interaction/fn_kitActions :
+// empreintes, ADN, résidus de tir, SEEK II), l'identification par le SEEK et l'app SSE terrain.
+// Armes et équipements au sol : pas de menu SSE, mais des empreintes à relever (kit empreintes porté).
 if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
     private _latentHolder = [
         "COMSPEC_SSE_LatentHolder", "Relever des empreintes latentes", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa",
-        { [_this select 0, _this select 1] call comspec_sse_fnc_bioCaptureLatentAction },
-        { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {(missionNamespace getVariable ["comspec_sse_bio_enabled", true])} },
+        { if (([_this select 1, "COMSPEC_SSE_FingerprintKit", 10] call comspec_sse_fnc_kitUse) > 0) then { [_this select 0, _this select 1] call comspec_sse_fnc_bioCaptureLatentAction; }; },
+        { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {(missionNamespace getVariable ["comspec_sse_bio_enabled", true])} && {"COMSPEC_SSE_FingerprintKit" in (items (_this select 1))} },
         _noChildren, [], {[0,0,0]}, 3, _aceParams
     ] call comspec_sse_fnc_aceAction;
     {
@@ -93,8 +54,9 @@ if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
         "COMSPEC_SSE_HeadBagOn", "Mettre un sac sur la tête", "\a3\ui_f\data\igui\cfg\simpleTasks\types\danger_ca.paa",
         {
             params ["_t", "_p"];
-            [4, [_t, _p], { (_this select 0) params ["_t", "_p"]; ["on", _t, _p] call comspec_sse_fnc_headBag; }, {}, "Sac de tête…",
-                { (_this select 0) params ["_t", "_p"]; ["canOn", _t, _p] call comspec_sse_fnc_headBag }] call ace_common_fnc_progressBar;
+            // Barre commune (distance, véhicule, annulation) avec la condition propre au sac.
+            [4, "Sac de tête…", { params ["_t", "_p"]; ["on", _t, _p] call comspec_sse_fnc_headBag; }, [_t, _p], _t,
+                { params ["_t", "_p"]; ["canOn", _t, _p] call comspec_sse_fnc_headBag }] call comspec_sse_fnc_progressAction;
             _p playActionNow "Medic";
         },
         { ["canOn", _this select 0, _this select 1] call comspec_sse_fnc_headBag },
@@ -104,8 +66,8 @@ if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
         "COMSPEC_SSE_HeadBagOff", "Retirer le sac de tête", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
         {
             params ["_t", "_p"];
-            [2, [_t, _p], { (_this select 0) params ["_t", "_p"]; ["off", _t, _p] call comspec_sse_fnc_headBag; }, {}, "Retrait du sac…",
-                { (_this select 0) params ["_t", "_p"]; ["canOff", _t, _p] call comspec_sse_fnc_headBag }] call ace_common_fnc_progressBar;
+            [2, "Retrait du sac…", { params ["_t", "_p"]; ["off", _t, _p] call comspec_sse_fnc_headBag; }, [_t, _p], _t,
+                { params ["_t", "_p"]; ["canOff", _t, _p] call comspec_sse_fnc_headBag }] call comspec_sse_fnc_progressAction;
             _p playActionNow "Medic";
         },
         { ["canOff", _this select 0, _this select 1] call comspec_sse_fnc_headBag },

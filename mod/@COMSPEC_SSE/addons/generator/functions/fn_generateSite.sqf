@@ -29,8 +29,9 @@ private _wantDigital = _opt getOrDefault ["digital", true];
 private _wantDocs = _opt getOrDefault ["documents", true];
 private _wantNetwork = _opt getOrDefault ["network", true];
 
-private _seed = [round ((_pos select 0) * 10), format ["site_%1_%2", round (_pos select 1), _radius]] call comspec_sse_fnc_hash;
-private _cluster = [_seed, _profile, _complexity] call comspec_sse_fnc_generateCluster;
+private _seed = [[] call comspec_sse_fnc_missionSeed, format ["site_%1_%2_%3", round ((_pos select 0) * 10), round ((_pos select 1) * 10), _radius]] call comspec_sse_fnc_hash;
+private _region = _opt getOrDefault ["region", missionNamespace getVariable ["comspec_sse_region", "IRAQ"]];
+private _cluster = [_seed, _profile, _complexity, _region] call comspec_sse_fnc_generateCluster;
 
 private _nearMen = nearestObjects [_pos, ["CAManBase"], _radius];
 private _nearVehicles = nearestObjects [_pos, ["LandVehicle"], _radius];
@@ -69,10 +70,15 @@ private _processOne = {
 
     if (_ent isKindOf "CAManBase") then {
         [_ent, _profile, _complexity, "SITE", _cluster] call comspec_sse_fnc_generateData;
-        if (_wantNetwork && {count _processed > 0}) then {
-            private _other = _processed select 0;
-            if (!isNull _other && {_other isKindOf "CAManBase"}) then {
-                [_ent, _other, "CONTACT", 0.75, "SITE"] call comspec_sse_fnc_linkEntities;
+        // Organigramme : le premier homme est le chef ; les deux suivants lui sont subordonnés,
+        // les autres sont en contact avec un membre déjà traité (choix déterministe).
+        private _men = _processed select { !isNull _x && {_x isKindOf "CAManBase"} };
+        if (_wantNetwork && {_men isNotEqualTo []}) then {
+            if (count _men < 3) then {
+                [_ent, _men select 0, "SUBORDINATE", 0.8, "SITE"] call comspec_sse_fnc_linkEntities;
+            } else {
+                private _pick = ([[_ent] call comspec_sse_fnc_entitySeed, "contact"] call comspec_sse_fnc_hash) mod (count _men);
+                [_ent, _men select _pick, "CONTACT", 0.7, "SITE"] call comspec_sse_fnc_linkEntities;
             };
         };
     } else {

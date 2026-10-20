@@ -19,18 +19,16 @@ if (_entity getVariable ["comspec_sse_generating", false]) exitWith {
 };
 _entity setVariable ["comspec_sse_generating", true];
 
-_profile = [_profile] call comspec_sse_fnc_resolveProfile;
 _complexity = toUpper _complexity;
 
 private _type = [_entity] call comspec_sse_fnc_resolveEntityType;
 
+// Graine : celle de la fiche si elle existe, sinon dérivée de la mission et de l'objet (déterministe).
 private _existing = [_entity] call comspec_sse_fnc_getData;
-private _seed = if (isNil "_existing" || {!(_existing isEqualType [])}) then {
-    private _pos = getPosASL _entity;
-    [floor random 999999, format ["%1_%2_%3_%4", typeOf _entity, round (_pos select 0), round (_pos select 1), netId _entity]] call comspec_sse_fnc_hash
-} else {
-    [_existing, "seed", floor random 999999] call comspec_sse_fnc_getPair
-};
+private _seed = if (isNil "_existing" || {!(_existing isEqualType [])}) then { -1 } else { [_existing, "seed", -1] call comspec_sse_fnc_getPair };
+if !(_seed isEqualType 0) then { _seed = -1; };
+if (_seed < 0) then { _seed = [_entity] call comspec_sse_fnc_entitySeed; };
+_profile = [_profile, _seed] call comspec_sse_fnc_resolveProfile;
 
 private _data = if (isNil "_existing" || {!(_existing isEqualType [])}) then {
     [_type, _createdBy, _profile, _complexity, _seed] call comspec_sse_fnc_createDataModel
@@ -56,8 +54,24 @@ _data = [_data, "lazyReady", true] call comspec_sse_fnc_setPair;
 _data = [_data, "createdBy", _createdBy] call comspec_sse_fnc_setPair;
 
 if ((_cluster getOrDefault ["clusterId", ""]) isEqualTo "") then {
-    private _region = _entity getVariable ["comspec_sse_region", "IRAQ"];
+    private _region = _entity getVariable ["comspec_sse_region", missionNamespace getVariable ["comspec_sse_region", "IRAQ"]];
     _cluster = [_seed, _profile, _complexity, _region] call comspec_sse_fnc_generateCluster;
+} else {
+    // Cluster partagé (site, modèle, brief) : le premier PERSON prend l'identité du chef (primary*),
+    // les suivants reçoivent une identité propre tirée de leur graine. Copie locale :
+    // l'identité écrite d'une entité ne doit pas fuir vers les autres membres.
+    private _shared = _cluster;
+    _cluster = +_cluster;
+    if (_type == "PERSON") then {
+        if (_shared getOrDefault ["primaryClaimed", false]) then {
+            { _cluster deleteAt _x; } forEach ["primaryName", "primaryAlias", "primaryPhone", "nameForced"];
+            _cluster set ["chiefName", _shared getOrDefault ["primaryName", ""]];
+            _cluster set ["chiefAlias", _shared getOrDefault ["primaryAlias", ""]];
+        } else {
+            _shared set ["primaryClaimed", true];
+            _cluster set ["isChief", true];
+        };
+    };
 };
 if (!isNil "comspec_sse_fnc_applyAuthoredIdentity") then {
     _cluster = [_entity, _cluster] call comspec_sse_fnc_applyAuthoredIdentity;
@@ -67,10 +81,13 @@ _data = [_data, "theme", _cluster getOrDefault ["theme", ""]] call comspec_sse_f
 
 private _sections = [_data, "sections", createHashMap] call comspec_sse_fnc_getPair;
 private _region = _cluster getOrDefault ["region", "IRAQ"];
-private _pools = [_region] call comspec_sse_fnc_getNarrativePools;
+private _pools = [_region, _seed] call comspec_sse_fnc_getNarrativePools;
 
 switch (_type) do {
     case "PERSON": {
+        // Bruit fixé par le module Zeus pour cette cible (zeusGenerateTargets).
+        private _nz = _entity getVariable ["comspec_sse_noiseOverride", -1];
+        if (_nz isEqualType 0 && {_nz >= 0}) then { _cluster set ["noiseProbability", _nz]; };
         private _person = [_seed, _profile, _complexity, _cluster] call comspec_sse_fnc_generatePerson;
         _cluster = _person getOrDefault ["cluster", _cluster];
         _sections set ["identity", _person get "identity"];

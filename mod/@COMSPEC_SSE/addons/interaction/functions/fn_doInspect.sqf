@@ -23,12 +23,12 @@ private _time = missionNamespace getVariable ["comspec_sse_timeInspect", 5];
 
         ["setstate", _target, ["DISCOVERED"]] call comspec_sse_fnc_requestServerOp;
 
-        private _quality = [40, true, 0.7, 1] call comspec_sse_fnc_calcQuality;
+        private _quality = [40, true, 0.7, 1, 1, _player, _target, "inspect"] call comspec_sse_fnc_calcQuality;
         private _fog = [_target, "inspect", _quality] call comspec_sse_fnc_revealFog;
 
         private _lines = _fog getOrDefault ["lines", []];
         private _msg = (_fog getOrDefault ["title", "SSE"]) + endl + (_lines joinString endl);
-        hint ((_msg) call comspec_sse_fnc_tr);
+        [_msg, "INFO"] call comspec_sse_fnc_notify;
 
         [
             _fog getOrDefault ["uid", "?"],

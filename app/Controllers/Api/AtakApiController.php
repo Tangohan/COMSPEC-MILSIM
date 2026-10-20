@@ -14684,6 +14684,9 @@ class AtakApiController
         }
 
         $vehicleId = $repo->upsert($data);
+        if ($vehicleId === 0) {
+            return Response::json(['ok' => true, 'skipped' => 'vehicule_inconnu_sans_position']);
+        }
         $vehicle = $repo->findById($vehicleId);
         
         return Response::json($vehicle);

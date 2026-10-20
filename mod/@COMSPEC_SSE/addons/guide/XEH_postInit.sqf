@@ -17,18 +17,7 @@ if (!hasInterface) exitWith {};
     };
 }, [], 120] call CBA_fnc_waitUntilAndExecute;
 
-[{ !isNil "ace_interact_menu_fnc_createAction" && {!isNull player} }, {
-    private _mk = {
-        ["COMSPEC_SSE_Guide", "Guide SSE (manuel)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa",
-            { ["COMSPEC_SSE", "Start"] call BIS_fnc_openFieldManual }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call comspec_sse_fnc_aceAction
-    };
-    [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], call _mk] call ace_interact_menu_fnc_addActionToObject;
-    missionNamespace setVariable ["comspec_sse_guideActionMk", _mk];
-    player addEventHandler ["Respawn", {
-        params ["_unit"];
-        [_unit, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], call (missionNamespace getVariable "comspec_sse_guideActionMk")] call ace_interact_menu_fnc_addActionToObject;
-    }];
-}, [], 60] call CBA_fnc_waitUntilAndExecute;
+// Guide SSE : bouton de l'onglet JOURNAL de l'app « SSE terrain » (plus d'action ACE personnelle).
 
 [{ !isNil "zen_custom_modules_fnc_register" }, {
     ["COMSPEC SSE · Outils", "Tutoriel : manuel du Zeus", { ["Zeus"] call comspec_sse_fnc_openGuide }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call comspec_sse_fnc_zenModule;
@@ -40,7 +29,7 @@ if (!hasInterface) exitWith {};
             ("Manuel SSE") call comspec_sse_fnc_tr,
             [["COMBO", ("Chapitre") call comspec_sse_fnc_tr, [_ids, _lbls, 0]]],
             { params ["_v"]; [_v select 0] call comspec_sse_fnc_openGuide; }
-        ] call zen_dialog_fnc_create;
+        ] call comspec_sse_fnc_zenDialog;
     }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call comspec_sse_fnc_zenModule;
     ["COMSPEC SSE · Outils", "Tutoriel : poser un exercice ici", {
         params ["_pos"];

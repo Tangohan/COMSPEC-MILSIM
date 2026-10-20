@@ -1,6 +1,7 @@
 /*
     Émet un événement CBA SSE + journalise.
     [_eventName, _args] call comspec_sse_fnc_emitEvent
+    Diffusé une fois sur chaque machine ; l'émetteur est ajouté en dernier argument (clientOwner).
     Events: SSE_RecordCreated, SSE_RecordCollected, SSE_RecordExploited,
             SSE_IntelDiscovered, SSE_NetworkLinked, SSE_TriageDone, SSE_HookFired
 */
@@ -33,10 +34,9 @@ private _map = createHashMapFromArray [
 ];
 
 private _evt = _map getOrDefault [_full, format ["comspec_sse_%1", _eventName]];
-[_evt, _args] call CBA_fnc_localEvent;
-if (isServer) then {
-    [_evt, _args] call CBA_fnc_globalEvent;
-};
+// Une seule émission par machine (globalEvent inclut la machine locale).
+// Dernier argument ajouté : clientOwner de l'émetteur, pour les retours réservés au joueur qui agit.
+[_evt, _args + [clientOwner]] call CBA_fnc_globalEvent;
 
 comspec_sse_emitEventDepth = (comspec_sse_emitEventDepth - 1) max 0;
 [format ["event %1", _evt]] call comspec_sse_fnc_log;

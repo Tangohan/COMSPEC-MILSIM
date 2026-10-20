@@ -10,7 +10,7 @@ class CfgPatches {
         units[] = {"COMSPEC_SSE_Module_Campaign", "COMSPEC_SSE_Module_CampaignSave"};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_main", "comspec_sse_core", "comspec_sse_biometrics", "comspec_sse_analysis", "comspec_sse_zeus", "A3_Modules_F", "cba_xeh"};
+        requiredAddons[] = {"comspec_sse_main", "comspec_sse_core", "comspec_sse_biometrics", "comspec_sse_analysis", "comspec_sse_zeus", "A3_Modules_F", "cba_xeh", "comspec_atak_native_main"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -54,15 +54,10 @@ class Extended_InitPost_EventHandlers {
 };
 
 class CfgVehicles {
-    class Logic;
-    class Module_F: Logic {
-        class AttributesBase {
-            class Edit;
-            class Combo;
-            class CheckboxNumber;
-        };
-        class ModuleDescription {};
-    };
+    // Déclaration seule : rouvrir Module_F: Logic (AttributesBase, ModuleDescription) casse Eden / Zeus / ACE
+    // (« Updating base class ») et faisait hériter le bloc de description du module au lieu du contrôle.
+    // Attributs « à plat », comme les modules de comspec_sse_zeus.
+    class Module_F;
 
     class COMSPEC_SSE_Module_Campaign: Module_F {
         author = "COMSPEC";
@@ -79,22 +74,28 @@ class CfgVehicles {
         icon = "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa";
         portrait = "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa";
 
-        class Attributes: AttributesBase {
-            class Id: Edit {
+        class Attributes {
+            class Id {
+                control = "Edit";
+                expression = "_this setVariable ['Id', _value];";
                 property = "COMSPEC_SSE_Campaign_Id";
                 displayName = "$STR_COMSPEC_SSE_CFG_68E546FCE7";
                 tooltip = "$STR_COMSPEC_SSE_CFG_3D733DBC98";
                 typeName = "STRING";
                 defaultValue = "''";
             };
-            class Name: Edit {
+            class Name {
+                control = "Edit";
+                expression = "_this setVariable ['Name', _value];";
                 property = "COMSPEC_SSE_Campaign_Name";
                 displayName = "$STR_COMSPEC_SSE_CFG_7FF20370C8";
                 tooltip = "$STR_COMSPEC_SSE_CFG_17208B92CD";
                 typeName = "STRING";
                 defaultValue = "''";
             };
-            class Type: Combo {
+            class Type {
+                control = "Combo";
+                expression = "_this setVariable ['Type', _value];";
                 property = "COMSPEC_SSE_Campaign_Type";
                 displayName = "$STR_COMSPEC_SSE_CFG_3DEB745651";
                 tooltip = "$STR_COMSPEC_SSE_CFG_00DFF861D0";
@@ -106,14 +107,18 @@ class CfgVehicles {
                     class Temporaire { name = "$STR_COMSPEC_SSE_CFG_33814F2738"; value = "temporaire"; };
                 };
             };
-            class CopyFrom: Edit {
+            class CopyFrom {
+                control = "Edit";
+                expression = "_this setVariable ['CopyFrom', _value];";
                 property = "COMSPEC_SSE_Campaign_CopyFrom";
                 displayName = "$STR_COMSPEC_SSE_CFG_DB05277DFF";
                 tooltip = "$STR_COMSPEC_SSE_CFG_6BC5A2F521";
                 typeName = "STRING";
                 defaultValue = "''";
             };
-            class Autosave: Combo {
+            class Autosave {
+                control = "Combo";
+                expression = "_this setVariable ['Autosave', _value];";
                 property = "COMSPEC_SSE_Campaign_Autosave";
                 displayName = "$STR_COMSPEC_SSE_CFG_46F719D58D";
                 tooltip = "$STR_COMSPEC_SSE_CFG_431CAD1E47";
@@ -128,16 +133,17 @@ class CfgVehicles {
                     class M60 { name = "$STR_COMSPEC_SSE_CFG_04AF531503"; value = 60; };
                 };
             };
-            class SaveAtEnd: CheckboxNumber {
+            class SaveAtEnd {
+                control = "CheckboxNumber";
+                expression = "_this setVariable ['SaveAtEnd', _value];";
                 property = "COMSPEC_SSE_Campaign_SaveAtEnd";
                 displayName = "$STR_COMSPEC_SSE_CFG_91B1EF61F7";
                 tooltip = "$STR_COMSPEC_SSE_CFG_7749B9EDD8";
                 typeName = "NUMBER";
                 defaultValue = "1";
             };
-            class ModuleDescription: ModuleDescription {};
         };
-        class ModuleDescription: ModuleDescription {
+        class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_8F17D61D8E";
         };
     };
@@ -157,8 +163,10 @@ class CfgVehicles {
         icon = "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa";
         portrait = "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa";
 
-        class Attributes: AttributesBase {
-            class Action: Combo {
+        class Attributes {
+            class Action {
+                control = "Combo";
+                expression = "_this setVariable ['Action', _value];";
                 property = "COMSPEC_SSE_CampaignSave_Action";
                 displayName = "$STR_COMSPEC_SSE_CFG_97C89A4D66";
                 tooltip = "$STR_COMSPEC_SSE_CFG_325E6A9763";
@@ -169,16 +177,17 @@ class CfgVehicles {
                     class End { name = "$STR_COMSPEC_SSE_CFG_BF2E09C2F4"; value = "end"; };
                 };
             };
-            class Reason: Edit {
+            class Reason {
+                control = "Edit";
+                expression = "_this setVariable ['Reason', _value];";
                 property = "COMSPEC_SSE_CampaignSave_Reason";
                 displayName = "$STR_COMSPEC_SSE_CFG_3CBCBC1C17";
                 tooltip = "$STR_COMSPEC_SSE_CFG_EEEF930C08";
                 typeName = "STRING";
                 defaultValue = "'objectif atteint'";
             };
-            class ModuleDescription: ModuleDescription {};
         };
-        class ModuleDescription: ModuleDescription {
+        class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_53AA62AC95";
         };
     };

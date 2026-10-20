@@ -1,27 +1,43 @@
 /*
-    [_target, _player] call comspec_sse_fnc_doCollect
+    [_target, _player, _seal] call comspec_sse_fnc_doCollect
+    _seal = true : « Mettre sous scellé » (action ACE unique) : collecte puis scellé dans la foulée,
+                   un sachet consommé (comspec_sse_fnc_bagEvidence).
 */
 params [
     ["_target", objNull, [objNull]],
-    ["_player", player, [objNull]]
+    ["_player", player, [objNull]],
+    ["_seal", false, [false]]
 ];
 
 if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint (("Sachet de preuve SSE (ou kit médical ACE compatible) requis.") call comspec_sse_fnc_tr);
+    ["Sachet de preuve SSE (ou kit médical ACE compatible) requis.", "WARNING"] call comspec_sse_fnc_notify;
+};
+// Une seule collecte par entité (état COLLECTED posé par le serveur) : la collecte se répétait à l'infini, chaque
+// fois avec une ligne de plus dans la chaîne de possession, le journal et le registre.
+if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
+    // Déjà collectée mais pas encore scellée : le scellé seul reste à faire.
+    if (_seal) exitWith { [_target, _player] call comspec_sse_fnc_bagEvidence; };
+    ["Pièce déjà collectée : voir le registre des scellés.", "WARNING"] call comspec_sse_fnc_notify;
+};
+if (_seal && {!("COMSPEC_SSE_EvidenceBag" in (items _player))}) exitWith {
+    ["Sachet de preuve SSE requis pour mettre la pièce sous scellé.", "WARNING"] call comspec_sse_fnc_notify;
 };
 
 [
     8,
     "Collecte SSE...",
     {
-        params ["_target", "_player"];
+        params ["_target", "_player", ["_seal", false]];
+        if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
+            ["Pièce déjà collectée par un équipier.", "WARNING"] call comspec_sse_fnc_notify;
+        };
         [_target] call comspec_sse_fnc_ensureGenerated;
 
         private _data = [_target] call comspec_sse_fnc_getData;
         private _uid = if (isNil "_data") then { ["SSE-EVD"] call comspec_sse_fnc_generateUID } else {
             format ["SSE-EVD-%1", [_data, "uid", "X"] call BIS_fnc_getFromPairs]
         };
-        private _quality = [65, true, 1, 1] call comspec_sse_fnc_calcQuality;
+        private _quality = [65, true, 1, 1, 1, _player, _target, "collect"] call comspec_sse_fnc_calcQuality;
         private _pos = getPosATL _target;
 
         private _entry = createHashMapFromArray [
@@ -40,15 +56,16 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
 
         ["collect", _target, [_quality, _entry]] call comspec_sse_fnc_requestServerOp;
         if (!isNil "comspec_sse_fnc_custody") then { ["open", [_target, _player, format ["collecte, qualité %1 %%", _quality]]] call comspec_sse_fnc_custody; };
+        if (_seal) then { [_target, _player] call comspec_sse_fnc_bagEvidence; };
 
-        hint ((format [
+        [format [
             "Preuve collectée\n%1\nPar : %2\nHeure : %3\nGrid : %4\nQualité : %5%%",
             _uid,
             name _player,
             _entry get "missionTime",
             _entry get "grid",
             _quality
-        ]) call comspec_sse_fnc_tr);
+        ], "SUCCESS"] call comspec_sse_fnc_notify;
 
         [
             _uid,
@@ -59,5 +76,5 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
             "QUEUED"
         ] call comspec_sse_fnc_addJournalEntry;
     },
-    [_target, _player]
+    [_target, _player, _seal]
 ] call comspec_sse_fnc_progressAction;

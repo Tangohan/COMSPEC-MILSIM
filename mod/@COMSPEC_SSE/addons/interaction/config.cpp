@@ -14,7 +14,8 @@ class CfgPatches {
             "comspec_sse_network",
             "comspec_sse_intel",
             "ace_interact_menu",
-            "ace_common"
+            "ace_common",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;
@@ -44,6 +45,12 @@ class CfgFunctions {
             class getJournal {};
             class openJournal {};
             class progressAction {};
+            class kitUse {};
+            class kitActions {};
+            class gsrTest {};
+            class faradayBag {};
+            class placeMarker {};
+            class placeMarkerServer {};
         };
     };
 };

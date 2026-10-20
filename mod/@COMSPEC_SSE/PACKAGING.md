@@ -76,6 +76,12 @@ Get-ChildItem .\..\publisher\@COMSPEC_SSE -Recurse -File |
 # → doit ne rien retourner
 ```
 
+## Dépendances Workshop
+
+Tous les addons SSE déclarent `comspec_atak_native_main` dans `requiredAddons` (et `requiredVersion = 2.14`, via la macro `REQUIRED_VERSION` de `addons/main/script_mod.hpp`, recopiée par `tools/sync_headers.py`) : sans COMSPEC ATAK Native, Arma refuse de charger le SSE.
+
+Sur la fiche Workshop du SSE (3790566777), **Required items** doit lister à la main : CBA A3, ACE3 et **COMSPEC ATAK Native (3684656708)**. Le Publisher ne le fait pas tout seul. COMSPEC Overwatch reste optionnel : ne pas l’ajouter.
+
 ## Signature PBO (optionnel)
 
 Aucune clé n’est versionnée dans ce dépôt.
@@ -87,3 +93,27 @@ Si vous signez : DSCreateKey + DSSignFile (Arma 3 Tools), puis relancer `worksho
 - [docs/PUBLICATION.md](docs/PUBLICATION.md) — où cliquer dans le Publisher (chef de mission)
 - [STEAM_DESCRIPTION.md](STEAM_DESCRIPTION.md) — texte à coller sur la fiche Workshop (ne pas l’inclure dans le pack)
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — historique des versions
+
+## Galerie Workshop
+
+Images de la galerie Steam (1920 x 1080, JPEG < 1 Mo), dans la charte des pages Workshop COMSPEC (celle d'ATAK
+Native) : `tools/make_workshop_gallery.py` (Python 3 + Pillow, police Bahnschrift de Windows).
+
+```powershell
+cd mod\@COMSPEC_SSE
+python tools\make_workshop_gallery.py              # FR et EN
+python tools\make_workshop_gallery.py --list       # diapositives, sources trouvées ou absentes
+python tools\make_workshop_gallery.py --only seek --lang en
+```
+
+- **Entrées** : captures en jeu dans `docs/workshop/source/` (noms attendus et cadrage :
+  [docs/workshop/CAPTURES_A_FAIRE.md](docs/workshop/CAPTURES_A_FAIRE.md)), visuels de la charte dans
+  `public/assets/workshop/sse/{fr,en}/`, rendus des objets dans `tools/icons/png/`. Une diapositive sans source est
+  sautée ; les autres sont produites.
+- **Sortie** : `docs/workshop/gallery/{fr,en}/sse-NN-*.jpg` (`--out` pour changer). Jamais dans `mod/publisher/`
+  (vidé par `workshop-pack.ps1` ; le script refuse ce dossier), jamais dans le pack (`docs/` n'est pas copié).
+- **Textes** : liste `SLIDES` du script, FR et EN. N'y écrire que ce que le mod fait.
+- **Envoi** : à la main, sur la page Steam › « Ajouter / modifier des images et vidéos », dans l'ordre des numéros
+  (version FR ; les images EN servent à la traduction anglaise ou aux annonces). La description BBCode est dans
+  [STEAM_DESCRIPTION.md](STEAM_DESCRIPTION.md). Ne rien publier sans demande.
+- **Dépendance** : COMSPEC ATAK Native (3684656708) s'ajoute à la main comme « Required item » sur la page Steam.

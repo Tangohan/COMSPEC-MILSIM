@@ -15,7 +15,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_A355663EEA";
             property = "COMSPEC_SSE_BioDb";
             control = "Combo";
-            expression = "if (_value isNotEqualTo 'auto') then { _this setVariable ['COMSPEC_SSE_BioDb', _value, true]; };";
+            expression = "if (_value isNotEqualTo 'auto') then { _this setVariable ['COMSPEC_SSE_BioDb', _value, isServer]; };";
             defaultValue = "'auto'";
             typeName = "STRING";
             condition = "objectBrain";
@@ -34,7 +34,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_D7546487E0";
             property = "COMSPEC_SSE_BioReason";
             control = "Edit";
-            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioReason', _value, true]; };";
+            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioReason', _value, isServer]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain";
@@ -44,7 +44,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_C1AD41F8F0";
             property = "COMSPEC_SSE_BioFalsePapers";
             control = "Combo";
-            expression = "if (_value isNotEqualTo 'auto') then { _this setVariable ['COMSPEC_SSE_BioFalsePapers', _value, true]; };";
+            expression = "if (_value isNotEqualTo 'auto') then { _this setVariable ['COMSPEC_SSE_BioFalsePapers', _value, isServer]; };";
             defaultValue = "'auto'";
             typeName = "STRING";
             condition = "objectBrain";
@@ -59,7 +59,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_C9D8D09F08";
             property = "COMSPEC_SSE_BioTrueName";
             control = "Edit";
-            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioTrueName', _value, true]; };";
+            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioTrueName', _value, isServer]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain";
@@ -69,7 +69,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_73BF33117C";
             property = "COMSPEC_SSE_BioId";
             control = "Edit";
-            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioId', _value, true]; };";
+            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioId', _value, isServer]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain";
@@ -79,7 +79,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_7E91360C00";
             property = "COMSPEC_SSE_BioRelativeOf";
             control = "Edit";
-            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioRelativeOf', _value, true]; };";
+            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioRelativeOf', _value, isServer]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain";
@@ -89,7 +89,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_99FA083267";
             property = "COMSPEC_SSE_BioRelation";
             control = "Combo";
-            expression = "_this setVariable ['COMSPEC_SSE_BioRelation', _value, true];";
+            expression = "_this setVariable ['COMSPEC_SSE_BioRelation', _value, isServer];";
             defaultValue = "'frere'";
             typeName = "STRING";
             condition = "objectBrain";
@@ -104,7 +104,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_9BC060EDCD";
             property = "COMSPEC_SSE_BioMissingFingers";
             control = "Edit";
-            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioMissingFingers', _value, true]; };";
+            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioMissingFingers', _value, isServer]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain";
@@ -114,7 +114,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_D910355068";
             property = "COMSPEC_SSE_BioIrisState";
             control = "Combo";
-            expression = "if (_value isNotEqualTo 'auto') then { _this setVariable ['COMSPEC_SSE_BioIrisState', _value, true]; };";
+            expression = "if (_value isNotEqualTo 'auto') then { _this setVariable ['COMSPEC_SSE_BioIrisState', _value, isServer]; };";
             defaultValue = "'auto'";
             typeName = "STRING";
             condition = "objectBrain";
@@ -132,7 +132,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_C89290ABA5";
             property = "COMSPEC_SSE_BioLatentOwners";
             control = "Edit";
-            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioLatentOwners', _value, true]; };";
+            expression = "if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_SSE_BioLatentOwners', _value, isServer]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated + objectVehicle";

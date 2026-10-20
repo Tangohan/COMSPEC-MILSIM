@@ -42,6 +42,11 @@ class CfgPatches {
             "COMSPEC_SSE_Module_DomexAddIntel",
             "COMSPEC_SSE_Module_DomexSetStage",
             "COMSPEC_SSE_Module_DomexMapPoint",
+            "COMSPEC_SSE_Module_PlaceSite",
+            "COMSPEC_SSE_Module_PopulateBuilding",
+            "COMSPEC_SSE_Module_SeedEvidence",
+            "COMSPEC_SSE_Module_SiteNetwork",
+            "COMSPEC_SSE_Module_PlaceKit",
             "COMSPEC_Module_SSE_Case",
             "COMSPEC_Module_SSE_Profile",
             "COMSPEC_Module_SSE_Equip",
@@ -49,7 +54,7 @@ class CfgPatches {
         };
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_core", "comspec_sse_generator", "comspec_sse_intel", "comspec_sse_ui", "comspec_sse_main", "comspec_sse_eden", "comspec_sse_network", "cba_xeh", "A3_Modules_F"};
+        requiredAddons[] = {"comspec_sse_core", "comspec_sse_generator", "comspec_sse_intel", "comspec_sse_ui", "comspec_sse_main", "comspec_sse_eden", "comspec_sse_network", "cba_xeh", "A3_Modules_F", "comspec_atak_native_main"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -64,6 +69,11 @@ class CfgFactionClasses {
     };
     class COMSPEC_SSE_Domex: NO_CATEGORY {
         displayName = "$STR_COMSPEC_SSE_CFG_722625B3ED";
+        priority = 2;
+        side = 7;
+    };
+    class COMSPEC_SSE_Sites: NO_CATEGORY {
+        displayName = "$STR_COMSPEC_SSE_CFG_D191D931CF";
         priority = 2;
         side = 7;
     };
@@ -100,6 +110,7 @@ class CfgFunctions {
             class moduleDomexSetStage {};
             class moduleDomexMapPoint {};
             class moduleContext {};
+            class moduleArgs {};
             class zeusNotify {};
             class zeusChoices {};
             class zeusComboData {};
@@ -127,6 +138,13 @@ class CfgFunctions {
             class moduleDocChrome {};
             class giveSeek {};
             class registerZenSseModules {};
+            // Sites et kits préfabriqués (création sur le serveur : comspec_sse_fnc_siteRequest).
+            class modulePlaceSite {};
+            class modulePopulateBuilding {};
+            class moduleSeedEvidence {};
+            class moduleSiteNetwork {};
+            class modulePlaceKit {};
+            class siteNotify {};
         };
     };
 };
@@ -1382,16 +1400,25 @@ class CfgVehicles {
 
     // Modules Eden repris du mod Overwatch (Dossier, Identité, SEEK, Documents).
     #include "modules_seek.hpp"
+
+    // Sites et kits préfabriqués (planque, labo d'IED, réseau multi-sites, caisses de kit…).
+    #include "modules_sites.hpp"
 };
 
 // Overwatch impose une liste blanche stricte (mode = 1) : sans ces entrées, les appels
 // distants du pack SSE seraient rejetés en silence quand les deux mods sont chargés.
 class CfgRemoteExec {
     class Functions {
-        class comspec_sse_fnc_setCaseReference { allowedTargets = 0; jip = 1; };
+        class comspec_sse_fnc_setCaseReference { allowedTargets = 2; jip = 0; };
         class comspec_sse_fnc_applyProfile { allowedTargets = 2; };
         class comspec_sse_fnc_linkEntities { allowedTargets = 2; };
         class comspec_sse_fnc_giveSeek { allowedTargets = 0; };
+        // Compte rendu du serveur au Zeus qui a posé un module « sites et kits ».
+        class comspec_sse_fnc_siteNotify { allowedTargets = 1; jip = 0; };
+    };
+    // Commande appelée à distance par le pack : objets posés rendus éditables par les Zeus (serveur).
+    class Commands {
+        class addCuratorEditableObjects { allowedTargets = 2; };
     };
 };
 

@@ -3,7 +3,8 @@
     [_text, _overrides] call comspec_sse_fnc_createIntelDatum
 
     Champs : INTEL_VALUE, TIME_SENSITIVITY, CONFIDENCE, RELEVANCE,
-             confidenceKind, tags, triage, discoveryState, expiresAt, sources
+             confidenceKind, tags, triage, discoveryState, ttl, sources
+    ttl (s) : durée de validité ; l'échéance (expiresAt, en serverTime) est posée à la découverte.
 */
 params [
     ["_text", "", [""]],
@@ -16,8 +17,9 @@ private _o = if (_ov isEqualType createHashMap) then { _ov } else {
     _h
 };
 
-private _id = format ["SSE-INTEL-%1", floor random 999999];
-if ((_o getOrDefault ["id", ""]) != "") then { _id = _o get "id"; };
+// Sans ID fourni : jeton provisoire, que l'appelant remplace par un ID déterministe (autoId).
+private _autoId = (_o getOrDefault ["id", ""]) isEqualTo "";
+private _id = if (_autoId) then { format ["SSE-INTEL-%1", [floor random 999999, _text] call comspec_sse_fnc_idToken] } else { _o get "id" };
 
 private _intelValue = _o getOrDefault ["INTEL_VALUE", -1];
 if (_intelValue < 0) then { _intelValue = _o getOrDefault ["intelValue", 40]; };
@@ -45,9 +47,11 @@ createHashMapFromArray [
     ["levelRequired", _o getOrDefault ["levelRequired", "TACTICAL"]], // TACTICAL | FIELD | DETAILED | FUSION
     ["sources", _sources],
     ["expiresAt", _o getOrDefault ["expiresAt", -1]],
+    ["ttl", _o getOrDefault ["ttl", -1]],
+    ["autoId", _autoId],
     ["contradicts", _contradicts],
     ["falsePositive", _o getOrDefault ["falsePositive", false]],
     ["actionable", _o getOrDefault ["actionable", false]],
     ["hookId", _o getOrDefault ["hookId", ""]],
-    ["createdAt", time]
+    ["createdAt", serverTime]
 ]

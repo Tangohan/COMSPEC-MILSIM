@@ -43,6 +43,8 @@ if ((trim _name) isEqualTo "") then {
 private _sorted = _units apply { [[_seed, [_x] call comspec_sse_fnc_bioPersonKey] call comspec_sse_fnc_hash, _x] };
 _sorted = ([_sorted, [], { _x select 0 }, "ASCEND"] call BIS_fnc_sortBy) apply { _x select 1 };
 
+// Diffusion regroupée ; appelée dans un lot plus large (module Organisation), la publication revient à l'appelant.
+private _wasBatch = missionNamespace getVariable ["comspec_sse_orgBatch", false];
 comspec_sse_orgBatch = true;
 private _root = ["ensure", [_name, _kind, "", _threat]] call comspec_sse_fnc_orgOp;
 private _assign = {
@@ -76,8 +78,8 @@ if (_n <= 4) then {
     };
 };
 
-comspec_sse_orgBatch = false;
-["publish", []] call comspec_sse_fnc_orgOp;
+comspec_sse_orgBatch = _wasBatch;
+if (!_wasBatch) then { ["publish", []] call comspec_sse_fnc_orgOp; };
 
 // Ce que les services savent au début.
 if (_known >= 2) then {

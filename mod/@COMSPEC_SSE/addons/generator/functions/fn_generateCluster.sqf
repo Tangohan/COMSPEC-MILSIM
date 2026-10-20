@@ -12,12 +12,12 @@ params [
     ["_region", "IRAQ", [""]]
 ];
 
-_profile = [_profile] call comspec_sse_fnc_resolveProfile;
+_profile = [_profile, _seed] call comspec_sse_fnc_resolveProfile;
 _complexity = toUpper _complexity;
 _region = toUpper _region;
 
 private _clusterId = format ["CLUS-%1", [_seed, "cluster", 9] call comspec_sse_fnc_idToken];
-private _pools = [_region] call comspec_sse_fnc_getNarrativePools;
+private _pools = [_region, _seed] call comspec_sse_fnc_getNarrativePools;
 
 private _fn = [_seed, "fn", _pools getOrDefault ["firstNames", ["Ali"]]] call comspec_sse_fnc_pickFromSeed;
 private _ln = [_seed, "ln", _pools getOrDefault ["lastNames", ["Hassan"]]] call comspec_sse_fnc_pickFromSeed;
@@ -26,8 +26,8 @@ private _alias = [_seed, "alias", _pools getOrDefault ["aliases", ["ABU X"]]] ca
 private _prefix = [_seed, "pfx", _pools getOrDefault ["phonePrefixes", ["+964"]]] call comspec_sse_fnc_pickFromSeed;
 private _phone = format ["%1 %2 %3",
     _prefix,
-    ([_seed, "p1"] call comspec_sse_fnc_hash) mod 1000,
-    ([_seed, "p2"] call comspec_sse_fnc_hash) mod 10000
+    ((1000 + (([_seed, "p1"] call comspec_sse_fnc_hash) mod 1000)) toFixed 0) select [1],
+    ((10000 + (([_seed, "p2"] call comspec_sse_fnc_hash) mod 10000)) toFixed 0) select [1]
 ];
 private _theme = [_seed, "theme", _pools getOrDefault ["themes", ["fuel_delivery"]]] call comspec_sse_fnc_pickFromSeed;
 

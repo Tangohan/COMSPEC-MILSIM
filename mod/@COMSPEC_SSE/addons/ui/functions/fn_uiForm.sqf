@@ -25,7 +25,7 @@ params [
 if (!hasInterface) exitWith { false };
 
 if !(createDialog "COMSPEC_SSE_FormDialog") exitWith {
-    hint (("COMSPEC SSE : impossible d'ouvrir le formulaire.") call comspec_sse_fnc_tr);
+    ["COMSPEC SSE : impossible d'ouvrir le formulaire.", "WARNING"] call comspec_sse_fnc_notify;
     false
 };
 

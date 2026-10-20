@@ -13,12 +13,28 @@ if (isServer) then {
     [{ [] call comspec_sse_fnc_orgApplyEden; }, [], 1.5] call CBA_fnc_waitAndExecute;
 };
 
+// Sachets scellés remis à un équipier (custody « transfer », serveur) : inventaire modifié là où l'unité est locale.
+["comspec_sse_custodyBags", {
+    params [["_unit", objNull], ["_n", 0]];
+    if (isNull _unit || {!local _unit}) exitWith {};
+    for "_i" from 1 to (abs _n) do {
+        if (_n < 0) then { _unit removeItem "COMSPEC_SSE_EvidenceBag"; } else {
+            if (_unit canAdd "COMSPEC_SSE_EvidenceBag") then { _unit addItem "COMSPEC_SSE_EvidenceBag"; } else {
+                // Inventaire plein : le sachet est posé aux pieds du destinataire plutôt que perdu.
+                private _h = createVehicle ["GroundWeaponHolder", getPosATL _unit, [], 0, "CAN_COLLIDE"];
+                _h addItemCargoGlobal ["COMSPEC_SSE_EvidenceBag", 1];
+            };
+        };
+    };
+}] call CBA_fnc_addEventHandler;
+
 if (!hasInterface) exitWith {};
 
 ["comspec_sse_anaNote", {
     params [["_msg", "", [""]]];
     if (_msg isEqualTo "") exitWith {};
-    hint ((parseText format ["<t color='#7fd08a' size='1.1'>SSE · Analyse</t><br/><br/>%1", _msg]) call comspec_sse_fnc_tr);
+    // Notification du téléphone (bulle si fermé), traduite avant la mise en forme.
+    [_msg, "INFO", "SSE · Analyse"] call comspec_sse_fnc_notify;
 }] call CBA_fnc_addEventHandler;
 
 // Tableau des liens et registre ouverts : suivent l'état diffusé par le serveur
@@ -38,27 +54,7 @@ if (!hasInterface) exitWith {};
 [{ !isNil "ace_interact_menu_fnc_createAction" && {!isNull player} }, {
     private _p = [false, false, false, false, true];
     private _none = { [] };
-    private _self = [
-        (["COMSPEC_SSE_Chart", "Tableau des liens", "\A3\ui_f\data\map\markers\nato\o_hq.paa", { [false] call comspec_sse_fnc_chartOpen }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction),
-        (["COMSPEC_SSE_Register", "Registre des scellés", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { ["evidence"] call comspec_sse_fnc_uiOpenScreen }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction),
-        (["COMSPEC_SSE_MySeals", "Pièces que je détiens", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", {
-            private _ids = ["held", [player]] call comspec_sse_fnc_custody;
-            private _all = missionNamespace getVariable ["comspec_sse_custody", createHashMap];
-            hint ((parseText format ["<t color='#7fd08a'>Pièces détenues : %1</t><br/>%2", count _ids,
-                (_ids apply { private _p = _all get _x; format ["%1 · %2 · %3", _x, _p getOrDefault ["state", "?"], _p getOrDefault ["desc", ""]] }) joinString "<br/>"]) call comspec_sse_fnc_tr);
-        }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction)
-    ];
-    missionNamespace setVariable ["comspec_sse_anaSelfActions", _self];
-    private _install = {
-        params ["_unit"];
-        if (_unit getVariable ["comspec_sse_anaSelf", false]) exitWith {};
-        _unit setVariable ["comspec_sse_anaSelf", true];
-        { [_unit, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _x] call ace_interact_menu_fnc_addActionToObject; } forEach (missionNamespace getVariable ["comspec_sse_anaSelfActions", []]);
-    };
-    [player] call _install;
-    missionNamespace setVariable ["comspec_sse_anaSelfInstall", _install];
-    player addEventHandler ["Respawn", { params ["_unit"]; [_unit] call (missionNamespace getVariable "comspec_sse_anaSelfInstall"); }];
-
+    // Tableau des liens, registre et pièces détenues : app « SSE terrain » du téléphone ATAK (onglets SITE et SCELLÉS).
     // Remise des pièces à un équipier : inscrite au journal de chacune.
     private _give = [
         "COMSPEC_SSE_GiveSeals", "Remettre mes pièces scellées", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",

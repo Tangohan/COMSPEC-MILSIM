@@ -46,6 +46,9 @@ if (_idemKey isNotEqualTo "") then {
 
 _payload set ["txStatus", "QUEUED"];
 _payload set ["queuedAt", time];
+// Origine de l'envoi : une entrée d'une autre opération n'est jamais rejouée (restoreQueue).
+_payload set ["txMission", missionName];
+_payload set ["txCase", [] call comspec_sse_fnc_getCaseReference];
 _payload set ["txAttempts", _payload getOrDefault ["txAttempts", 0]];
 if (_idemKey isNotEqualTo "") then { _payload set ["idempotency_key", _idemKey]; };
 

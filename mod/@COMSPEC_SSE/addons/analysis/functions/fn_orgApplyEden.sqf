@@ -6,6 +6,10 @@
 */
 if (!isServer) exitWith { false };
 private _n = 0;
+// Diffusion regroupée : chaque « member » publiait trois tables entières et un événement global (jusqu'à neuf
+// diffusions par personne) ; une seule publication à la fin.
+private _wasBatch = missionNamespace getVariable ["comspec_sse_orgBatch", false];
+missionNamespace setVariable ["comspec_sse_orgBatch", true];
 {
     private _org = _x getVariable ["COMSPEC_SSE_Org_Name", ""];
     if (_org isEqualType "" && {(trim _org) isNotEqualTo ""}) then {
@@ -21,4 +25,6 @@ private _n = 0;
         _n = _n + 1;
     };
 } forEach (allUnits + allDeadMen);
+missionNamespace setVariable ["comspec_sse_orgBatch", _wasBatch];
+if (!_wasBatch && {_n > 0}) then { ["publish", []] call comspec_sse_fnc_orgOp; };
 _n

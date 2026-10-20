@@ -22,9 +22,11 @@ params [
 _targets = _targets select { _x isEqualType objNull && {!isNull _x} };
 if (_targets isEqualTo []) exitWith { 0 };
 
+// Bruit propre à ces cibles (lu par generateData) : le réglage de mission comspec_sse_noiseProbability n'est plus
+// modifié, sinon un module changeait le bruit de toutes les générations suivantes de la mission.
 private _noise = _options getOrDefault ["noise", -1];
 if (_noise isEqualType 0 && {_noise >= 0}) then {
-    missionNamespace setVariable ["comspec_sse_noiseProbability", ((_noise / 100) max 0) min 1, true];
+    { _x setVariable ["comspec_sse_noiseOverride", ((_noise / 100) max 0) min 1]; } forEach _targets;
 };
 
 {
