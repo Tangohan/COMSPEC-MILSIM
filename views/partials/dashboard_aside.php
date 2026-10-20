@@ -358,6 +358,35 @@ if ($canAtakOperators) {
         'atak'
     );
 }
+// Remontées terrain : mêmes droits que la page (administrateurs, responsables SSE) ; badge = remontées à traiter.
+$canIntelIntake = false;
+try {
+    $canIntelIntake = class_exists(\App\Controllers\Admin\AdminIntelIntakeController::class)
+        && \App\Controllers\Admin\AdminIntelIntakeController::allowed();
+} catch (\Throwable) {
+    $canIntelIntake = false;
+}
+if ($canIntelIntake) {
+    $intelIntakeBadge = null;
+    try {
+        $intelIntakeBadge = \App\Controllers\Admin\AdminIntelIntakeController::asideBadge();
+    } catch (\Throwable) {
+        $intelIntakeBadge = null;
+    }
+    $backofficeTiles[] = $tile(
+        'intel-intake',
+        'Remontées terrain',
+        'CR, fiches et données des joueurs',
+        'bo',
+        $intelIntakeBadge,
+        $links([
+            ['label' => 'À traiter', 'href' => url('back-office/remontees'), 'hint' => 'Comptes rendus et fiches ouverts'],
+            ['label' => 'Par joueur', 'href' => url('back-office/remontees/joueurs'), 'hint' => 'Tout ce que chaque joueur a remonté'],
+            ['label' => 'Traitées', 'href' => url('back-office/remontees') . '?etat=closed', 'hint' => 'Exploitées, transmises, doublons, closes'],
+        ]),
+        'documents'
+    );
+}
 if ($canAdmin) {
     $backofficeTiles[] = $tile('backoffice', 'Back-office', 'Espace état-major', 'bo', null, $links([
         ['label' => 'Back-office', 'href' => url('back-office'), 'hint' => 'Espace état-major'],

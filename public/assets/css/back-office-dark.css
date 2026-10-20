@@ -270,3 +270,13 @@ html[data-bo-theme="dark"] .grd-ref__btn:hover {
   background: #34d399;
   color: #0c1116;
 }
+
+/* Remontées par joueur : étiquettes de catégorie éclaircies sur fond sombre. */
+html[data-bo-theme="dark"] .rmt__label.rmt__label--cat {
+  color: color-mix(in srgb, var(--rmt-cat, #8c959f) 45%, #ffffff);
+  background: color-mix(in srgb, var(--rmt-cat, #8c959f) 22%, #111513);
+  border-color: color-mix(in srgb, var(--rmt-cat, #8c959f) 50%, #111513);
+}
+html[data-bo-theme="dark"] .rmt__num.is-zero {
+  color: #4a5550;
+}
