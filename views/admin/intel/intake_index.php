@@ -43,6 +43,8 @@ $stateIcon = static fn (string $s): string => match ($s) {
     'en_cours' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>',
     'exploitee' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.8" fill="currentColor"/><path d="M5 8.2l2 2 4-4.2" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     'non_exploitable' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.2 11.8l7.6-7.6" stroke="currentColor" stroke-width="1.6"/></svg>',
+    'transmise' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.3 8h5.2M8.4 5.8 10.6 8l-2.2 2.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    'doublon' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.1" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9.9" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
     default => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.8" fill="currentColor"/><path d="M5.5 5.5l5 5m0-5l-5 5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
 };
 // Priorité du compte rendu ou urgence de la fiche ; routine et normal ne sont pas affichés.
@@ -53,19 +55,31 @@ $prioLabel = ['FLASH' => 'Flash', 'IMMEDIATE' => 'Immédiat', 'PRIORITY' => 'Pri
         <header class="rmt__hero">
             <p class="rmt__kicker">Renseignement · Suivi</p>
             <h1 class="rmt__title">Remontées</h1>
-            <p class="rmt__lead">Tous les comptes rendus et toutes les fiches de renseignement (FRS : FRM, FRO, FRC, FRA, FRT) arrivés du terrain, du téléphone ATAK et du bureau SSE. Ouvrez une remontée pour la commenter, l’attribuer, changer son type, corriger ses données, la caviarder ou la marquer exploitée.</p>
+            <p class="rmt__lead">Tous les comptes rendus et toutes les fiches de renseignement (FRS : FRM, FRO, FRC, FRA, FRT) arrivés du terrain, du téléphone ATAK et du bureau SSE. Ouvrez une remontée pour la commenter, l’attribuer, changer son type, corriger ses données, la caviarder, la marquer exploitée, transmise ou doublon. La vue <strong>Par joueur</strong> réunit tout ce que chaque joueur a envoyé du jeu (MEDEVAC, SIGINT, photos, POI, pertes…).</p>
         </header>
+        <?php $rmtNav = 'list'; require base_path('views/admin/intel/_intake_nav.php'); ?>
 
         <?php if (empty($intakeReady)): ?>
             <p class="rmt__notice">Les tables du suivi des remontées ne sont pas encore créées : un administrateur plateforme doit lancer <strong>run-migrations.php</strong>.</p>
         <?php else: ?>
 
         <form class="rmt__filters" method="get" action="<?= $h(url('back-office/remontees')) ?>" role="search">
-            <input type="hidden" name="etat" value="<?= $h($tab) ?>">
             <label class="rmt__search">
                 <span class="rmt__sr">Rechercher</span>
                 <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                 <input type="search" name="q" value="<?= $h($f['q']) ?>" placeholder="Référence, texte, indicatif…">
+            </label>
+            <label class="rmt__select"><span class="rmt__sr">État</span>
+                <select name="etat">
+                    <?php foreach (['open' => 'Ouvertes', 'closed' => 'Traitées', 'mine' => 'Attribuées à moi', 'all' => 'Tous les états', 'deleted' => 'Supprimées'] as $k => $label): ?>
+                        <option value="<?= $h($k) ?>"<?= $tab === $k ? ' selected' : '' ?>><?= $h($label) ?></option>
+                    <?php endforeach; ?>
+                    <optgroup label="État précis">
+                        <?php foreach (IntelIntakeService::STATES as $k => $label): ?>
+                            <option value="<?= $h($k) ?>"<?= $tab === $k ? ' selected' : '' ?>><?= $h($label) ?> (<?= (int) ($counts['states'][$k] ?? 0) ?>)</option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                </select>
             </label>
             <label class="rmt__select"><span class="rmt__sr">Source</span>
                 <select name="source">
@@ -111,6 +125,12 @@ $prioLabel = ['FLASH' => 'Flash', 'IMMEDIATE' => 'Immédiat', 'PRIORITY' => 'Pri
                         <strong><?= (int) $n ?></strong> <?= $h($label) ?>
                     </a>
                 <?php endforeach; ?>
+                <?php if (isset(IntelIntakeService::STATES[$tab])): ?>
+                    <a href="<?= $h($link(['etat' => $tab])) ?>" class="rmt__tab is-active" aria-current="page" title="<?= $h(IntelIntakeService::STATE_HINTS[$tab] ?? '') ?>">
+                        <span class="rmt__state rmt__state--<?= $h($tab) ?>"><?= $stateIcon($tab) ?></span>
+                        <strong><?= (int) ($counts['states'][$tab] ?? 0) ?></strong> <?= $h(IntelIntakeService::STATES[$tab]) ?>
+                    </a>
+                <?php endif; ?>
             </nav>
 
             <?php if ($items === []): ?>
@@ -132,9 +152,17 @@ $prioLabel = ['FLASH' => 'Flash', 'IMMEDIATE' => 'Immédiat', 'PRIORITY' => 'Pri
                                 <?php if ($prio !== ''): ?><span class="rmt__label rmt__label--hot"><?= $h($prio) ?></span><?php endif; ?>
                                 <?php if (!empty($it['redacted'])): ?><span class="rmt__label">Caviardée</span><?php endif; ?>
                                 <p class="rmt__meta">
-                                    <?= $h($it['ref']) ?> · <?= $h($it['type_label']) ?> · remontée <?= $h($ago((string) $it['at'])) ?> par <strong><?= $h($it['author']) ?></strong>
+                                    <?= $h($it['ref']) ?> · <?= $h($it['type_label']) ?> · remontée <span title="<?= $h($it['at']) ?>"><?= $h($ago((string) $it['at'])) ?></span> par <strong><?= $h($it['author']) ?></strong>
+                                    <?php if ((string) ($it['author_steam'] ?? '') !== ''): ?><span class="rmt__mono" title="Identifiant Steam">· <?= $h($it['author_steam']) ?></span><?php endif; ?>
                                     · <?= $h($it['state_label']) ?>
                                 </p>
+                                <?php if (trim((string) ($it['grid'] ?? '')) !== '' || (string) ($it['mission'] ?? '') !== '' || (int) ($it['attachments'] ?? 0) > 0): ?>
+                                    <p class="rmt__meta rmt__meta--chips">
+                                        <?php if (trim((string) ($it['grid'] ?? '')) !== ''): ?><span class="rmt__chip" title="Position">⌖ <?= $h(trim((string) $it['grid'])) ?></span><?php endif; ?>
+                                        <?php if ((string) ($it['mission'] ?? '') !== ''): ?><span class="rmt__chip" title="Mission"><?= $h($it['mission']) ?></span><?php endif; ?>
+                                        <?php if ((int) ($it['attachments'] ?? 0) > 0): ?><span class="rmt__chip" title="Pièces jointes"><?= (int) $it['attachments'] ?> pièce<?= (int) $it['attachments'] > 1 ? 's' : '' ?> jointe<?= (int) $it['attachments'] > 1 ? 's' : '' ?></span><?php endif; ?>
+                                    </p>
+                                <?php endif; ?>
                             </div>
                             <div class="rmt__side">
                                 <?php if ($it['assignee_user_id'] !== null): ?>

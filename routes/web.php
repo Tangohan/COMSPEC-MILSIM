@@ -1919,6 +1919,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/files-envoi', [\App\Controllers\Admin\AdminAtakSendQueueController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     // Remontées : comptes rendus et fiches de renseignement suivis comme des pull requests (contrôle d'accès dans le contrôleur).
     $router->get('/back-office/remontees', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'index'], [AuthMiddleware::class]);
+    // Par joueur : déclaré AVANT {source}/{id}, le routeur prend la première route qui correspond.
+    $router->get('/back-office/remontees/joueurs', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'players'], [AuthMiddleware::class]);
+    $router->get('/back-office/remontees/joueurs/{key}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'player'], [AuthMiddleware::class]);
     $router->get('/back-office/remontees/{source}/{id}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/back-office/remontees/{source}/{id}/{action}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'action'], [AuthMiddleware::class]);
     $router->get('/back-office/atak/fire-teams', [AdminFireTeamsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
