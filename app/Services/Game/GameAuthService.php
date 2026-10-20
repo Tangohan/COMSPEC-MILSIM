@@ -249,6 +249,49 @@ final class GameAuthService
     }
 
     /**
+     * Ce qui refuserait la session du jeu à ce membre (mêmes contrôles qu'issueForUser), dit en clair.
+     * Vérifié sur /lier avant d'autoriser le code : sinon le site annonçait « jeu lié » et le jeu recevait
+     * un 403 sans motif.
+     *
+     * @return array{code: string, message: string}|null null : rien ne bloque
+     */
+    public function gameAccessProblem(int $userId, int $tenantId): ?array
+    {
+        $user = $this->users->findById($userId, $tenantId);
+        if ($user === null) {
+            return ['code' => 'INVALID_CREDENTIALS', 'message' => 'Fiche membre introuvable : reconnectez-vous sur le site.'];
+        }
+        $userStatus = (string) ($user['status'] ?? 'active');
+        if ($userStatus !== 'active') {
+            return ['code' => 'ACCOUNT_DISABLED', 'message' => 'La fiche membre avec laquelle vous êtes connecté n’est pas active (' . $userStatus . '). Déconnectez-vous du site, reconnectez-vous, puis réessayez ; sinon votre staff doit réactiver la fiche.'];
+        }
+        $account = $this->ensureAccountForUser($userId, $tenantId);
+        if ($account === null) {
+            return ['code' => 'INVALID_CREDENTIALS', 'message' => 'Aucun compte Athena pour l’e-mail de cette fiche.'];
+        }
+        $accountStatus = (string) ($account['status'] ?? '');
+        if ($accountStatus !== 'active') {
+            return ['code' => 'ACCOUNT_DISABLED', 'message' => 'Le compte Athena de cet e-mail est « ' . ($accountStatus !== '' ? $accountStatus : 'sans statut') . ' » : un administrateur du site doit le réactiver.'];
+        }
+        $member = false;
+        foreach ($this->accounts->listActiveMemberships((int) $account['id']) as $row) {
+            if ((int) ($row['tenant_id'] ?? 0) === $tenantId && (string) ($row['status'] ?? '') === 'active') {
+                $member = true;
+                break;
+            }
+        }
+        if (!$member) {
+            return ['code' => 'NO_TENANT', 'message' => 'Le compte Athena n’est pas rattaché à cette communauté (fiche inactive ou remplacée). Votre staff doit vérifier votre fiche membre.'];
+        }
+        $block = \App\Support\AtakAdminBlockGate::find($tenantId, $userId, SteamId::normalize((string) ($user['steam_id'] ?? '')));
+        if ($block !== null) {
+            return ['code' => 'ATAK_BLOCKED', 'message' => \App\Support\AtakAdminBlockGate::payload($block)['message']];
+        }
+
+        return null;
+    }
+
+    /**
      * @param array<string, mixed> $body
      * @return array{ok: bool, status: int, payload: array<string, mixed>}
      */

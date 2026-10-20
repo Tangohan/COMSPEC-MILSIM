@@ -94,4 +94,21 @@ final class GameAtakPairingLinkTest extends TestCase
         self::assertSame('consumed', $svc->approvalProgress(42, 5));
         self::assertSame('unknown', $svc->approvalProgress(42, 6));
     }
+
+    public function testApprovalIsRefusedWithTheReasonTheGameWouldGet(): void
+    {
+        $users = $this->createMock(UserRepository::class);
+        $users->method('findById')->willReturn(['id' => 5, 'steam_id' => null]);
+        $users->expects(self::never())->method('detachSteamFromOtherUsers');
+        $auth = $this->createMock(GameAuthService::class);
+        $auth->method('ensureAccountForUser')->willReturn(['id' => 9]);
+        $auth->method('gameAccessProblem')->willReturn(['code' => 'ACCOUNT_DISABLED', 'message' => 'Fiche inactive.']);
+
+        $result = $this->service($this->pendingRow(), $users, $auth)->approveFromWeb('ABCD-2345', 5, 3);
+
+        self::assertFalse($result['ok']);
+        self::assertSame(403, $result['status']);
+        self::assertSame('account_disabled', $result['payload']['error']);
+        self::assertSame('Fiche inactive.', $result['payload']['message']);
+    }
 }

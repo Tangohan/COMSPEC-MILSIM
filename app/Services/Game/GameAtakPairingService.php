@@ -105,6 +105,8 @@ final class GameAtakPairingService
         // Même contrôle que le code du portail : un Steam ou une adresse bannis du mod ne reçoivent pas de session.
         $blocked = $this->modBlocked((int) ($row['tenant_id'] ?? 0), SteamId::normalize((string) ($row['steam_id'] ?? '')));
         if ($blocked !== null) {
+            error_log('[atak/pair] session refusée challenge=' . (int) $row['id'] . ' : ' . (string) ($blocked['payload']['error'] ?? 'mod_blocked'));
+
             return $blocked;
         }
         $issued = $this->issueFromChallenge($row, [
@@ -114,6 +116,8 @@ final class GameAtakPairingService
             'terminal_uid' => (string) ($row['terminal_uid'] ?? ''),
         ]);
         if (!$issued['ok']) {
+            error_log('[atak/pair] session refusée challenge=' . (int) $row['id'] . ' : ' . (string) ($issued['payload']['error'] ?? $issued['status']));
+
             return $issued;
         }
         $this->challenges->markConsumed((int) $row['id']);
@@ -153,6 +157,13 @@ final class GameAtakPairingService
         $blocked = $this->modBlocked($tenantId, $steam);
         if ($blocked !== null) {
             return $blocked;
+        }
+        // Le jeu serait refusé juste après (403 sans motif dans le téléphone) : le dire ici, en clair.
+        $problem = $this->auth->gameAccessProblem($userId, $tenantId);
+        if ($problem !== null) {
+            error_log('[atak/pair] autorisation refusée user=' . $userId . ' tenant=' . $tenantId . ' : ' . $problem['code']);
+
+            return $this->fail(strtolower($problem['code']), 403, $problem['message']);
         }
         if (!$this->challenges->approve((int) $row['id'], (int) $account['id'], $userId, $tenantId)) {
             return $this->fail('invalid_code', 409, 'Ce code a déjà été utilisé.');
