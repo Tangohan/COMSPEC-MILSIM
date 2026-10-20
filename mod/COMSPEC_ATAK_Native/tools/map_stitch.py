@@ -21,7 +21,13 @@ passe devant là où elle existe (une ville à 300 m, le reste de l'île à 1200
 y = 0 au nord. Avec le journal Arma (--rpt, trouvé tout seul sous Windows), chaque image satellite est redressée sur
 le relief (orthophoto) : le cadrage mesuré en jeu et les altitudes notées sous l'image (lignes CMAPL / CMAPS).
 
-  --upload https://athena.ttrd.fr/public --key <X_COMSPEC_KEY>   envoie le fond au site (calque « Photo COMSPEC »)
+  --upload https://athena.ttrd.fr/public --key <X_COMSPEC_KEY>   envoie le fond au site (calque « Photo COMSPEC ») :
+                      tuiles WebP (site) et leur copie JPEG z/x/y.jpg (fond PHOTO du téléphone, téléchargé en jeu par la
+                      DLL : Arma ne lit pas le WebP) ; --upload-format pour n'envoyer que l'un des deux. Clé lue aussi
+                      dans la variable d'environnement COMSPEC_KEY (sans --key : la clé n'apparaît pas dans l'historique)
+  Fond déjà fabriqué (dossier <sortie>/<carte>_<rendu> avec meta.json) donné à la place des captures : envoyé tel quel,
+  sans refaire la pyramide :
+    python3 tools/map_stitch.py sortie/Altis_sat sortie --upload https://athena.ttrd.fr/public
   --addon <dossier>   fabrique @COMSPEC_ATAK_Photo/addons/comspec_atak_photo_<carte>.pbo, le fond PHOTO du téléphone
                       (mod optionnel à charger avec @COMSPEC_ATAK_Native ; PAA par HEMTT 1.15 ou plus, sinon JPG)
 
@@ -445,11 +451,11 @@ def build_pyramid(world, mode, lays, outdir, quality, cache_size):
     return final, meta
 
 
-def pyramid_tiles(folder):
+def pyramid_tiles(folder, ext=".webp"):
     out = []
     for root, _, names in os.walk(folder):
         for n in names:
-            if n.endswith(".webp"):
+            if n.endswith(ext):
                 rel = os.path.relpath(os.path.join(root, n), folder).replace("\\", "/")
                 parts = rel.split("/")
                 if len(parts) == 3:
@@ -457,10 +463,34 @@ def pyramid_tiles(folder):
     return sorted(out)
 
 
-def upload(folder, meta, base, key, chunk_mb=6.0):
+def jpg_tiles(folder, quality=85):
+    """Copie JPEG de chaque tuile WebP (z/x/y.jpg à côté), pour le téléphone ATAK : Arma ne lit pas le WebP. Le
+    transparent (bord d'une zone capturée) devient noir, comme dans le mod @COMSPEC_ATAK_Photo en JPG. Une copie plus
+    récente que sa tuile est gardée."""
+    def conv(t):
+        *_, p = t
+        dst = p[:-5] + ".jpg"
+        if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(p):
+            return
+        im = Image.open(p).convert("RGBA")
+        flat = Image.new("RGB", im.size, (0, 0, 0))
+        flat.paste(im, mask=im.split()[3])
+        flat.save(dst + ".part", "JPEG", quality=quality, optimize=True)
+        os.replace(dst + ".part", dst)
+
+    tiles = pyramid_tiles(folder)
+    with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as ex:
+        list(ex.map(conv, tiles))
+    print("%d tuiles JPEG pour le téléphone (%.0f Mo)" % (len(tiles), sum(os.path.getsize(t[3][:-5] + ".jpg") for t in tiles) / 1048576.0))
+
+
+def upload(folder, meta, base, key, chunk_mb=6.0, fmt="both"):
     """Envoie le fond au site par paquets ZIP (le premier remplace l'ancien fond de cette carte)."""
     url = base.rstrip("/") + "/api/atak/map-photo/upload?world=%s&mode=%s" % (meta["world"], meta["mode"])
-    files = [(os.path.relpath(p, folder).replace("\\", "/"), p) for *_, p in pyramid_tiles(folder)]
+    exts = {"both": [".webp", ".jpg"], "webp": [".webp"], "jpg": [".jpg"]}[fmt]
+    if ".jpg" in exts:
+        jpg_tiles(folder)
+    files = [(os.path.relpath(p, folder).replace("\\", "/"), p) for e in exts for *_, p in pyramid_tiles(folder, e)]
     files.append(("meta.json", os.path.join(folder, "meta.json")))  # en dernier : le fond n'apparaît qu'une fois complet
     limit = int(chunk_mb * 1024 * 1024)
     part, size, n = [], 0, 0
@@ -605,12 +635,29 @@ def main():
     ap.add_argument("--quality", type=int, default=82, help="qualité WebP du fond (82)")
     ap.add_argument("--cache", type=int, default=64, help="images gardées en mémoire (64, environ 6 Mo chacune)")
     ap.add_argument("--upload", metavar="URL", help="adresse du site (ex. https://athena.ttrd.fr/public)")
-    ap.add_argument("--key", help="clé plateforme X_COMSPEC_KEY du site (avec --upload)")
+    ap.add_argument("--key", default=os.environ.get("COMSPEC_KEY", ""),
+                    help="clé plateforme X_COMSPEC_KEY du site (avec --upload) ; défaut : variable d'environnement COMSPEC_KEY")
+    ap.add_argument("--upload-format", choices=["both", "webp", "jpg"], default="both",
+                    help="tuiles envoyées : WebP (site) et JPEG (téléphone, défaut), ou l'un des deux")
     ap.add_argument("--addon", metavar="DOSSIER", help="fabrique @COMSPEC_ATAK_Photo (fond PHOTO du téléphone) dans ce dossier")
     ap.add_argument("--addon-max-tiles", type=int, default=12000, help="tuiles au plus dans le mod (12000, environ 250 Mo en PAA)")
     ap.add_argument("--addon-format", choices=["paa", "jpg"], default="paa", help="format des tuiles du mod (paa)")
     a = ap.parse_args()
     os.makedirs(a.sortie, exist_ok=True)
+    # Fond déjà fabriqué (meta.json) : envoi et mod seulement, sans refaire la pyramide.
+    built = os.path.join(a.captures, "meta.json")
+    if os.path.isfile(built):
+        with open(built, encoding="utf-8") as fh:
+            meta = json.load(fh)
+        if a.upload:
+            if not a.key:
+                sys.exit("--upload demande la clé : variable d'environnement COMSPEC_KEY ou --key")
+            upload(a.captures, meta, a.upload, a.key, fmt=a.upload_format)
+        if a.addon and meta.get("mode") == "sat":
+            build_addon(a.captures, meta, a.addon, a.addon_max_tiles, a.addon_format)
+        if not a.upload and not a.addon:
+            sys.exit("Fond déjà fabriqué : préciser --upload ou --addon")
+        return
     found = layers(a.captures)
     if a.world:
         found = {k: v for k, v in found.items() if k[0].lower() == a.world.lower()}
@@ -638,8 +685,8 @@ def main():
         folder, meta = build_pyramid(world, mode, lays, a.sortie, a.quality, a.cache)
         if a.upload:
             if not a.key:
-                sys.exit("--upload demande --key (X_COMSPEC_KEY du .env du site)")
-            upload(folder, meta, a.upload, a.key)
+                sys.exit("--upload demande la clé : variable d'environnement COMSPEC_KEY ou --key (X_COMSPEC_KEY du .env du site)")
+            upload(folder, meta, a.upload, a.key, fmt=a.upload_format)
         if a.addon and mode == "sat":
             build_addon(folder, meta, a.addon, a.addon_max_tiles, a.addon_format)
 

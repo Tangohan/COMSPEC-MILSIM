@@ -77,9 +77,9 @@ if (isNil "_mkIconCache") then { _mkIconCache = createHashMap; uiNamespace setVa
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
-// Fond PHOTO (capture de la carte) : tuiles sous tous les symboles ; en SATELLITE, la capture remplace la texture du
-// terrain là où elle existe.
-if (_bgStyle in ["PHOTO", "SAT"]) then { [_map] call comspec_atak_native_fnc_photoMap; };
+// Fond PHOTO (capture de la carte : mod, ou fond d'Athena téléchargé en jeu) : tuiles sous tous les symboles ; en
+// SATELLITE, la capture du mod remplace la texture du terrain là où elle existe.
+if (_bgStyle in ["PHOTO", "SAT"]) then { [_map, _bgStyle] call comspec_atak_native_fnc_photoMap; };
 // Fond de carte (Réglages > Carte ou CALQUES) : voile sous tous les symboles (dessiné en premier).
 private _veil = switch (_bgStyle) do {
     case "LIGHT": { [1, 1, 1, 0.38] };

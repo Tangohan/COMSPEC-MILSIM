@@ -293,6 +293,8 @@ private _map = [
         [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }, false, true, "Indicatifs, couleurs, boussole, coordonnées, tailles et fond de carte reviennent aux réglages d'origine"]]]
 ];
+// Cartes hors ligne : fond PHOTO de la carte en cours téléchargé depuis Athena (état, téléchargement, effacement).
+_map append (["rows"] call comspec_atak_native_fnc_photoMap);
 // Bandeaux coupés par type (profil COMSPEC_ATAK_NotifMuted, aussi réglable depuis le web) : gardés dans le centre seulement.
 uiNamespace setVariable ["COMSPEC_ATAK_MuteToggle", {
     params ["_t"];

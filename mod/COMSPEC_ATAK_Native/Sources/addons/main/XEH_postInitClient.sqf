@@ -935,6 +935,9 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 [] call comspec_atak_native_fnc_dataInit;
 // Icônes PAA gardées en mémoire (sinon elles disparaissent un instant à chaque rafraîchissement de page).
 [{ !isNull (findDisplay 46) }, { [] call comspec_atak_native_fnc_textureKeep; }] call CBA_fnc_waitUntilAndExecute;
+// Fond PHOTO d'Athena (sans le mod @COMSPEC_ATAK_Photo) : meta demandée à la DLL une fois la liaison faite, pour que
+// PHOTO soit proposé dès la première ouverture de la carte.
+[{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 15] call CBA_fnc_waitAndExecute;
 // Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
 // (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
 [{ time > 0 && {!isNull (findDisplay 46)} }, {
