@@ -1,14 +1,16 @@
 /*
-    Marquage de cibles au viseur : caméra du drone appairé ou appareil photo du téléphone.
+    Marquage de cibles au viseur : caméra du drone appairé, appareil photo du téléphone ou flux d'un drone du camp
+    regardé dans Vidéo Live (« LIVECAM », lecture seule : le drone n'est jamais piloté, la cible est suivie tant que
+    le flux est regardé).
     Le réticule doit être sur la cible (tolérance qui se resserre avec le zoom) et la cible assez visible
     (pas noyée dans la végétation ou derrière un mur) : un appui la marque, comme un « lock » de nacelle.
     Le marqueur posé sur la carte suit la cible tant que la source la voit ; sortie du champ, masquée ou
     hors portée, la cible est « perdue » après le délai réglé, puis traitée selon le réglage serveur
     comspec_atak_native_lock_lost (calque retiré, marqueur gardé, effacé après délai, ou tout gardé).
-      ["mark", "DRONE" | "PHONE"(, objet(, [œil ASL, direction]))]   marque la cible sous le réticule ; renvoie la clé ou "" ;
+      ["mark", "DRONE" | "PHONE" | "LIVECAM"(, objet(, [œil ASL, direction]))]   marque la cible sous le réticule ; renvoie la clé ou "" ;
                                     objet donné : marque cet objet (détection du drone accrochée depuis l'onglet CIBLES) ;
                                     rayon donné : celui d'un clic sur l'image de la vue drone, à la place du réticule ;
-      ["aimed", "DRONE" | "PHONE"]  cible sous le réticule (objet ou objNull), sans marquer ;
+      ["aimed", "DRONE" | "PHONE" | "LIVECAM"]  cible sous le réticule (objet ou objNull), sans marquer ;
       ["tick"]                      suivi des cibles marquées (toutes les 0,5 s, XEH_postInitClient) ;
       ["release", clé | ""]         libère une cible (ou toutes) et retire son marqueur ;
       ["list"]                      cibles marquées, les plus récentes d'abord : [[clé, entrée]...] ;
@@ -39,6 +41,18 @@ private _source = {
         private _fov = 0.7 / (missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]);
         private _k = 1 - 0.7 * fog;
         [_eye, vectorNormalized _dir, _fov, 700 * _k * ((missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) max 1) ^ 0.5, _d, !isNull _cam]
+    };
+    // Drone du camp regardé dans Vidéo Live (fn_livecamUav) : caméra du flux, direction gardée dans le repère du drone,
+    // champ du terminal de l'opérateur.
+    if (_src isEqualTo "LIVECAM") exitWith {
+        private _u = missionNamespace getVariable ["COMSPEC_ATAK_LivecamUav", objNull];
+        private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
+        private _ld = missionNamespace getVariable ["COMSPEC_ATAK_LivecamUavDir", []];
+        if (isNull _u || {!alive _u} || {isNull _cam} || {(count _ld) < 3}) exitWith { [] };
+        private _fov = (missionNamespace getVariable ["COMSPEC_ATAK_LivecamUavSync", [0.75]]) select 0;
+        if (!(_fov isEqualType 0) || {_fov <= 0}) then { _fov = 0.75; };
+        private _k = 1 - 0.7 * fog;
+        [_cam modelToWorldVisualWorld [0, 0, 0], vectorNormalized (_u vectorModelToWorldVisual _ld), _fov, 700 * _k * ((0.75 / _fov) max 1) ^ 0.5, _u, true]
     };
     // Téléphone : objectif du mode photo s'il est ouvert, sinon le regard du joueur.
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_PhotoSt", createHashMap];
@@ -133,7 +147,7 @@ private _seesIt = {
         private _up = _right vectorCrossProduct _dir;
         private _aspect = [missionNamespace getVariable ["COMSPEC_ATAK_DroneCamAspect", 1], getResolution select 4] select ((_e get "src") isEqualTo "PHONE");
         (abs ((_v vectorDotProduct _right) / _z)) < (_fov * _aspect * 1.02) && {(abs ((_v vectorDotProduct _up) / _z)) < (_fov * 1.02)}
-    } else { ((_e get "src") isEqualTo "DRONE") || {(_dir vectorCos _v) > 0.8} };
+    } else { ((_e get "src") in ["DRONE", "LIVECAM"]) || {(_dir vectorCos _v) > 0.8} };
     _in && {([_self, "VIEW", _o] checkVisibility [_eye, aimPos _o]) > 0.2}
 };
 
@@ -168,7 +182,7 @@ private _dropMarker = {
     private _m = [_e get "pos"] call comspec_atak_native_fnc_markerDrop;
     { if ((_old select _forEachIndex) isEqualTo "§") then { _s deleteAt _x; } else { _s set [_x, _old select _forEachIndex]; }; } forEach _keys;
     if (_m isNotEqualTo "") then {
-        _m setMarkerText format ["LOCK %1 · %2 (%3)", [_e get "num", 3] call CBA_fnc_formatNumber, _e get "name", (["téléphone", "drone"] select ((_e get "src") isEqualTo "DRONE")) call comspec_atak_native_fnc_tr];
+        _m setMarkerText format ["LOCK %1 · %2 (%3)", [_e get "num", 3] call CBA_fnc_formatNumber, _e get "name", (["téléphone", "drone"] select ((_e get "src") in ["DRONE", "LIVECAM"])) call comspec_atak_native_fnc_tr];
     };
     _m
 };
@@ -391,7 +405,7 @@ switch (_act) do {
                     _e set ["state", "TRACK"];
                     _e set ["ghost", false];
                     if (_m isEqualTo "" || {(markerShape _m) isEqualTo ""}) then { _e set ["pos", _p]; _m = [_e] call _dropMarker; _e set ["marker", _m]; };
-                    if (_m isNotEqualTo "") then { _m setMarkerAlphaLocal 1; _m setMarkerText format ["LOCK %1 · %2 (%3)", _num, _e get "name", (["téléphone", "drone"] select ((_e get "src") isEqualTo "DRONE")) call comspec_atak_native_fnc_tr]; };
+                    if (_m isNotEqualTo "") then { _m setMarkerAlphaLocal 1; _m setMarkerText format ["LOCK %1 · %2 (%3)", _num, _e get "name", (["téléphone", "drone"] select ((_e get "src") in ["DRONE", "LIVECAM"])) call comspec_atak_native_fnc_tr]; };
                     // Bandeau « raccroché » seulement si la perte avait été annoncée (sinon le journal suffit).
                     if (_e getOrDefault ["toasted", false]) then { ["INFO", format ["LOCK %1 raccroché", _num]] call _say; };
                     _e set ["toasted", false];

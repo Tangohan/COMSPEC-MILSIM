@@ -9,8 +9,8 @@
     HD, SD, BAS ou MINIMAL fixent la définition de l'image ; les pertes la font décrocher par moments ; sans liaison,
     pas d'image et la raison est affichée. Qualité réévaluée toutes les 3 s (page redessinée si le palier change).
     Drones du camp (fn_livecamUav) : la nacelle d'un drone allié en vol, piloté au terminal UAV ou par un téléphone,
-    comme le flux de BCE ; l'image passe par la station de son opérateur. Lecture seule : réticule, point visé et
-    MARQUER LE POINT VISÉ (marqueur de la palette), sans commande du drone.
+    comme le flux de BCE ; l'image passe par la station de son opérateur. Lecture seule : réticule, point visé, cadres
+    sur les cibles, MARQUER LA CIBLE (LOCK suivi) et MARQUER LE POINT (marqueur de la palette), sans commande du drone.
     Partage (fn_camShare) : par défaut, une caméra n'est listée que si elle est à moi ou partagée avec moi. Le bouton
     PARTAGER sous la liste ouvre, à la place de l'image, le choix de la méthode (NFC, Bluetooth, relais, chacune avec
     ses conditions) puis du destinataire (un ATAK ou TOUS). « Ma caméra » (mon téléphone) est en tête de liste.
@@ -304,9 +304,12 @@ if (_isUav) then {
     _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
         [_unit, [], "NAME"] call comspec_atak_native_fnc_droneOsd, [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit)]) call comspec_atak_native_fnc_tr);
 };
-// Drone du camp, en lecture seule (comme le flux de BCE) : réticule, point visé (rafraîchi par fn_livecamUav) et
-// MARQUER LE POINT VISÉ, pour que le chef de groupe marque ce que l'opérateur regarde sans piloter le drone.
+// Drone du camp, en lecture seule (comme le flux de BCE) : réticule, point visé (rafraîchi par fn_livecamUav), cadres
+// sur les cibles (fn_droneFlir « LIVECAM » : jaune sous le réticule, rouge LOCK marquées), MARQUER LA CIBLE (LOCK suivi
+// sur la carte, fn_lockAction) et MARQUER LE POINT VISÉ, pour que le chef de groupe marque ce que l'opérateur regarde
+// sans piloter le drone.
 if (_isUav) then {
+    ["build", [_vx, _vy, _vw, _vh], "LIVECAM", true] call comspec_atak_native_fnc_droneFlir;
     private _cx = _vx + _vw / 2;
     private _cy = _vy + _vh / 2;
     private _rw = _vw * 0.035;
@@ -321,7 +324,12 @@ if (_isUav) then {
     private _aim = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _vh - _btnH - _pad - _rowH, _vw - _pad, _rowH]] call comspec_atak_native_fnc_pageCtrl;
     _aim ctrlSetStructuredText parseText (("<t size='0.8' shadow='2' shadowColor='#000000'>VISÉ : …</t>") call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_LivecamAimOsd", _aim];
-    private _mk = ["COMSPEC_RscButton", [_vx + _pad / 2, _vy + _vh - _btnH - _pad / 2, _vw * 0.36, _btnH], "MARQUER LE POINT VISÉ"] call comspec_atak_native_fnc_pageCtrl;
+    private _lk = ["COMSPEC_RscButton", [_vx + _pad / 2, _vy + _vh - _btnH - _pad / 2, _vw * 0.3, _btnH], "MARQUER LA CIBLE"] call comspec_atak_native_fnc_pageCtrl;
+    _lk ctrlSetFontHeight _fs;
+    _lk ctrlSetBackgroundColor [0.45, 0.08, 0.06, 0.6];
+    _lk ctrlSetTooltip (("Accroche la personne ou le véhicule sous le réticule (cadre jaune) : cadre LOCK rouge dans l'image et marqueur qui suit la cible sur la carte tant que vous regardez ce flux. Le drone n'est pas piloté.") call comspec_atak_native_fnc_tr);
+    _lk ctrlAddEventHandler ["ButtonClick", { ["mark", "LIVECAM"] call comspec_atak_native_fnc_lockAction; }];
+    private _mk = ["COMSPEC_RscButton", [_vx + _pad + _vw * 0.3, _vy + _vh - _btnH - _pad / 2, _vw * 0.3, _btnH], "MARQUER LE POINT"] call comspec_atak_native_fnc_pageCtrl;
     _mk ctrlSetFontHeight _fs;
     _mk ctrlSetBackgroundColor [0, 0, 0, 0.45];
     _mk ctrlSetTooltip (("Pose sur la carte un marqueur de la palette (mode MARQUEUR) au point sous le réticule. Le drone n'est pas piloté.") call comspec_atak_native_fnc_tr);

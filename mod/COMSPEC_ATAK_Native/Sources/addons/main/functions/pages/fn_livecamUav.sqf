@@ -12,7 +12,7 @@
     Rendue dans le même écran que le Live cam (r2t comspec_livecam). Le flux passe par la station de l'opérateur
     (fn_feedLink) : sans opérateur à portée, pas d'image.
     Lecture seule, pour le chef de groupe qui regarde avec l'opérateur (idée d'un joueur, 20/10, comme BCE) : réticule
-    au centre de l'image, point visé (grille, distance) rafraîchi chaque seconde, et MARQUER LE POINT VISÉ (fn_pageLivecam)
+    au centre de l'image, point visé (grille, distance) rafraîchi chaque seconde, MARQUER LA CIBLE et MARQUER LE POINT (fn_pageLivecam)
     qui pose un marqueur de la palette sur la carte, sans jamais toucher au drone.
     Params : [drone, mode 0 jour / 1 NV / 2 thermique]
              ["aim"] : point du sol sous le réticule (ATL), [] sans image ou vers le ciel (3 km au plus).

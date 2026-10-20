@@ -3,7 +3,8 @@
     coins de cadrage, incrustations (mode de vision, heure, cap, altitude, grille du drone et du point visé, distance)
     et cadres « LOCK » sur les cibles marquées, suivis image par image.
       ["build", [x, y, w, h], style, dans le groupe de page]   style : "FULL" (carte remplacée), "INSET" (incrustation
-          sur la carte ou dans la miniature), "FEED" (vue caméra de l'app Drone : cadres seulement, incrustations déjà là) ;
+          sur la carte ou dans la miniature), "FEED" (vue caméra de l'app Drone : cadres seulement, incrustations déjà là),
+          "LIVECAM" (flux d'un drone du camp dans Vidéo Live, fn_livecamUav : cadres seulement, sur la caméra du flux) ;
       ["frame"]               mise à jour (gestionnaire par image, retiré seul quand les contrôles disparaissent) ;
       ["project", posASL]     → [u, v] dans l'image (0..1), [] derrière la caméra ;
       ["click", [x, y]]       clic sur l'image (coordonnées écran) : la nacelle vise ce point ; le rayon du clic est gardé
@@ -18,6 +19,18 @@ private _aspect = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamAspect", 1
 
 // Repère de la caméra : position, direction, droite, haut, tangente verticale.
 private _basis = {
+    if ((_f getOrDefault ["style", ""]) isEqualTo "LIVECAM") exitWith {
+        private _u = missionNamespace getVariable ["COMSPEC_ATAK_LivecamUav", objNull];
+        private _c = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
+        private _ld = missionNamespace getVariable ["COMSPEC_ATAK_LivecamUavDir", []];
+        if (isNull _u || {isNull _c} || {(count _ld) < 3}) exitWith { [] };
+        private _dir = vectorNormalized (_u vectorModelToWorldVisual _ld);
+        private _right = _dir vectorCrossProduct [0, 0, 1];
+        _right = if ((vectorMagnitude _right) < 0.01) then { [1, 0, 0] } else { vectorNormalized _right };
+        private _fov = (missionNamespace getVariable ["COMSPEC_ATAK_LivecamUavSync", [0.75]]) select 0;
+        if (!(_fov isEqualType 0) || {_fov <= 0}) then { _fov = 0.75; };
+        [_c modelToWorldVisualWorld [0, 0, 0], _dir, _right, _right vectorCrossProduct _dir, _fov]
+    };
     private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
     if (isNull _d || {isNull _cam}) exitWith { [] };
@@ -76,7 +89,7 @@ switch (_act) do {
         private _f2 = createHashMapFromArray [["rect", [_rx, _ry, _w, _h]], ["style", _style], ["boxes", []], ["texts", []], ["next", 0]];
         private _disp = [] call comspec_atak_native_fnc_display;
         _f2 set ["offset", [[0, 0], [(ctrlPosition (_disp displayCtrl 88531)) select 0, (ctrlPosition (_disp displayCtrl 88531)) select 1]] select _inGroup];
-        if (_style isNotEqualTo "FEED") then {
+        if !(_style in ["FEED", "LIVECAM"]) then {
             private _bg = ["COMSPEC_RscText", [_rx, _ry, _w, _h]] call _mk;
             _bg ctrlSetBackgroundColor [0, 0, 0, 1];
             // Caméra relancée (ou recréée) avant que l'image soit posée : sinon image noire au retour sur la vue.
@@ -234,7 +247,7 @@ switch (_act) do {
             // Cible sous le réticule (pas encore marquée) : cadre jaune, relevé quatre fois par seconde.
             if (diag_tickTime >= (_f getOrDefault ["nextAim", 0])) then {
                 _f set ["nextAim", diag_tickTime + 0.25];
-                _f set ["aimed", ["aimed", "DRONE"] call comspec_atak_native_fnc_lockAction];
+                _f set ["aimed", ["aimed", ["DRONE", "LIVECAM"] select ((_f get "style") isEqualTo "LIVECAM")] call comspec_atak_native_fnc_lockAction];
             };
             private _a = _f getOrDefault ["aimed", objNull];
             if (!isNull _a && {alive _a} && {!((hashValue _a) in (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]))}) then {
