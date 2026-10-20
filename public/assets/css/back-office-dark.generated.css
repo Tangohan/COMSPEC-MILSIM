@@ -3344,6 +3344,42 @@ html[data-bo-theme="dark"] .rmt__event-dot {
 html[data-bo-theme="dark"] .rmt__count {
   background: #191e1c;
 }
+html[data-bo-theme="dark"] .rmt__chip {
+  background: #141917;
+}
+html[data-bo-theme="dark"] .rmt__seg-btn:hover {
+  background: #141917;
+}
+html[data-bo-theme="dark"] .rmt__ptable thead th {
+  background: #141917;
+}
+html[data-bo-theme="dark"] .rmt__ptable tfoot th, html[data-bo-theme="dark"] .rmt__ptable tfoot td {
+  background: #141917;
+}
+html[data-bo-theme="dark"] .rmt__ptable tbody tr:hover th, html[data-bo-theme="dark"] .rmt__ptable tbody tr:hover td {
+  background: #141917;
+}
+html[data-bo-theme="dark"] .rmt__ptable-total {
+  background: #141917 !important;
+}
+html[data-bo-theme="dark"] .rmt__avatar--user {
+  background: #1b282e;
+  color: #569ffa;
+}
+html[data-bo-theme="dark"] .rmt__avatar--steam {
+  background: #34311e;
+  color: #ffbe52;
+}
+html[data-bo-theme="dark"] .rmt__avatar--callsign, html[data-bo-theme="dark"] .rmt__avatar--unknown {
+  background: #191e1c;
+  color: #b9c6bf;
+}
+html[data-bo-theme="dark"] .rmt__day {
+  background: #141917;
+}
+html[data-bo-theme="dark"] .rmt__tl-img {
+  background: #202724;
+}
 
 /* ——— back-office-legacy.css ——— */
 html[data-bo-theme="dark"] .bo-legacy a[href]:is(.text-sm, html[data-bo-theme="dark"] .text-xs).text-slate-500:first-child, html[data-bo-theme="dark"] .bo-legacy a[href].text-slate-600.hover\:underline {

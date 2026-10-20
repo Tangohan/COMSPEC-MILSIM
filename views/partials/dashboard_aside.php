@@ -299,7 +299,7 @@ if ($canDocs) {
 $espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', $atakOperatorsLinkedBadge, $links([
     ['label' => 'Overwatch', 'href' => url('atak'), 'hint' => 'Carte, BFT, mission et renseignement'],
     (function_exists('can') && (can('admin.access') || can('admin.organization') || can('admin.system')))
-        ? ['label' => 'Data Inspector', 'href' => url('athena/data-inspector'), 'hint' => 'Ingestion et synchronisation']
+        ? ['label' => 'Data Inspector', 'href' => url('back-office/atak/data-inspector'), 'hint' => 'Mods, terminaux, débit, erreurs']
         : null,
     $canAtakOperators
         ? ['label' => 'Effectifs en liaison', 'href' => url('back-office/atak/operateurs'), 'hint' => 'Tableur des opérateurs connectés']
@@ -356,6 +356,35 @@ if ($canAtakOperators) {
             ['label' => 'Carte tactique', 'href' => url('atak'), 'hint' => 'Situation sur la carte'],
         ]),
         'atak'
+    );
+}
+// Remontées terrain : mêmes droits que la page (administrateurs, responsables SSE) ; badge = remontées à traiter.
+$canIntelIntake = false;
+try {
+    $canIntelIntake = class_exists(\App\Controllers\Admin\AdminIntelIntakeController::class)
+        && \App\Controllers\Admin\AdminIntelIntakeController::allowed();
+} catch (\Throwable) {
+    $canIntelIntake = false;
+}
+if ($canIntelIntake) {
+    $intelIntakeBadge = null;
+    try {
+        $intelIntakeBadge = \App\Controllers\Admin\AdminIntelIntakeController::asideBadge();
+    } catch (\Throwable) {
+        $intelIntakeBadge = null;
+    }
+    $backofficeTiles[] = $tile(
+        'intel-intake',
+        'Remontées terrain',
+        'CR, fiches et données des joueurs',
+        'bo',
+        $intelIntakeBadge,
+        $links([
+            ['label' => 'À traiter', 'href' => url('back-office/remontees'), 'hint' => 'Comptes rendus et fiches ouverts'],
+            ['label' => 'Par joueur', 'href' => url('back-office/remontees/joueurs'), 'hint' => 'Tout ce que chaque joueur a remonté'],
+            ['label' => 'Traitées', 'href' => url('back-office/remontees') . '?etat=closed', 'hint' => 'Exploitées, transmises, doublons, closes'],
+        ]),
+        'documents'
     );
 }
 if ($canAdmin) {
