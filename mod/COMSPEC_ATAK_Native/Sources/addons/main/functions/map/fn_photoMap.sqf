@@ -43,22 +43,9 @@ if (isNil "_info") then {
     };
     uiNamespace setVariable [format ["COMSPEC_ATAK_PhotoInfo_%1", worldName], _info];
 };
-// Sans PBO : fond d'Athena (meta en cache sur le disque ou demandée au site). En route : redemandée dans 3 s ; sans
-// liaison : dans 30 s ; aucun fond sur Athena ou DLL absente : plus de la mission.
-if (_info isEqualTo []) then {
-    _info = missionNamespace getVariable ["COMSPEC_ATAK_PhotoWeb", []];
-    if (_info isEqualTo [] && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PhotoWebNext", 0])}) then {
-        private _r = ["MapPhoto.Meta", [worldName, "sat"]] call _call;
-        private _p = _r splitString "|";
-        missionNamespace setVariable ["COMSPEC_ATAK_PhotoWebAnswer", _r];
-        if ((_p param [0, ""]) isEqualTo "OK" && {(count _p) >= 10}) then {
-            _info = [parseNumber (_p select 1), (parseNumber (_p select 2)) max 1, parseNumber (_p select 3), parseNumber (_p select 4), _p select 6, _p select 5, "web", parseNumber (_p select 7), parseNumber (_p select 8), parseNumber (_p select 9)];
-            missionNamespace setVariable ["COMSPEC_ATAK_PhotoWeb", _info];
-        } else {
-            missionNamespace setVariable ["COMSPEC_ATAK_PhotoWebNext", diag_tickTime + (switch (_r) do { case "OK|pending": { 3 }; case "ERR|not_connected": { 30 }; default { 1e9 }; })];
-        };
-    };
-};
+// Fond d'Athena téléchargé en jeu (MapPhoto.*) : désactivé. Arma ne charge pas une image hors d'un PBO ou du dossier
+// de la mission, même sous son propre dossier (« Cannot load texture f:/…/arma 3/comspec_cache/… », TTRD 20/10) :
+// les tuiles téléchargées restaient invisibles. Le fond SATELLITE vient seulement du mod @COMSPEC_ATAK_Photo.
 if (_arg isEqualTo "info") exitWith { _info };
 private _web = (_info param [6, ""]) isEqualTo "web";
 private _have = missionNamespace getVariable "COMSPEC_ATAK_PhotoWebHave";
@@ -67,13 +54,11 @@ private _name = getText (configFile >> "CfgWorlds" >> worldName >> "description"
 if (_name isEqualTo "") then { _name = worldName; };
 private _rerender = { [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 
-if (_arg isEqualTo "prefetch") exitWith {
-    if (_info isNotEqualTo [] || {(missionNamespace getVariable ["COMSPEC_ATAK_PhotoWebNext", 0]) > diag_tickTime + 1e8}) exitWith {};
-    private _n = (missionNamespace getVariable ["COMSPEC_ATAK_PhotoWebTries", 0]) + 1;
-    missionNamespace setVariable ["COMSPEC_ATAK_PhotoWebTries", _n];
-    if (_n < 60) then { [{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 5] call CBA_fnc_waitAndExecute; };
-};
+// Meta d'Athena au démarrage : plus demandée (fond téléchargé désactivé, voir plus haut).
+if (_arg isEqualTo "prefetch") exitWith {};
 
+// Section « Cartes hors ligne » des Réglages : rien sans fond (le mod suffit, rien à télécharger).
+if (_arg isEqualTo "rows" && {_info isEqualTo []}) exitWith { [] };
 // Relevé de la DLL : [en file, téléchargées, octets, erreurs, en cours, état hors ligne, faites, total, tuiles en cache,
 // octets en cache] ; arrivées notées présentes, manquées redemandées dans une minute.
 if (_arg isEqualTo "poll") exitWith {
@@ -123,10 +108,10 @@ if (_arg isEqualTo "clear") exitWith {
 };
 
 if (_arg isEqualTo "rows") exitWith {
-    private _rows = [["section", "Cartes hors ligne", "Fond PHOTO de la carte en cours, téléchargé depuis Athena et gardé sur ce PC"]];
+    private _rows = [["section", "Cartes hors ligne", "Fond SATELLITE de la carte en cours, téléchargé depuis Athena et gardé sur ce PC"]];
     switch (true) do {
         case ((_info param [6, ""]) isEqualTo "pbo"): {
-            _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>Fond PHOTO de %1 fourni par le mod COMSPEC ATAK Photo : rien à télécharger.</t>", _name]];
+            _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>Fond SATELLITE de %1 fourni par le mod COMSPEC ATAK Photo : rien à télécharger.</t>", _name]];
         };
         case (_info isEqualTo []): {
             private _ans = missionNamespace getVariable ["COMSPEC_ATAK_PhotoWebAnswer", ""];
@@ -171,7 +156,7 @@ if (_arg isEqualTo "rows") exitWith {
                 [["EFFACER", "CONFIRMER"] select _armed, { ["clear"] call comspec_atak_native_fnc_photoMap; }, false, _cached > 0 || {_running},
                     "Effacer le fond photo de cette carte de ce PC (second appui pour confirmer) ; il se recharge à la demande"]
             ]];
-            _rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Sans téléchargement, le fond PHOTO se charge à la demande, là où la carte est regardée.</t>"];
+            _rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Sans téléchargement, le fond SATELLITE se charge à la demande, là où la carte est regardée.</t>"];
             // Progression : page redessinée toutes les 2 s tant que la catégorie Carte des Réglages est ouverte.
             if (_running && {diag_tickTime >= (uiNamespace getVariable ["COMSPEC_ATAK_PhotoDlRefresh", 0])}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_PhotoDlRefresh", diag_tickTime + 1.9];

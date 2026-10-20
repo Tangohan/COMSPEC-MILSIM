@@ -268,7 +268,7 @@ switch (_act) do {
         if !(missionNamespace getVariable ["COMSPEC_ATAK_MapCapRunning", false]) then { call _sync; };
         ["Capture de la carte", [
             ["COMBO", "Rendu", [["sat", "3d", "plan"], ["Satellite (vue de dessus)", "3D oblique (45°)", "Plan topographique"], 0]],
-            ["COMBO", ["Niveaux de zoom", "Une hauteur par niveau de zoom du fond PHOTO, comme Google Maps : plus bas = vue plus proche et détaillée, plus haut = vue d'ensemble. 120 m : autour des localités seulement si la case ci-dessous est cochée."],
+            ["COMBO", ["Niveaux de zoom", "Une hauteur par niveau de zoom du fond SATELLITE, comme Google Maps : plus bas = vue plus proche et détaillée, plus haut = vue d'ensemble. 120 m : autour des localités seulement si la case ci-dessous est cochée."],
                 [[0, 1, 2], ["Standard : 300, 800, 1200, 3500 m", "Avec les villes : 120, 300, 800, 1200, 3500 m", "Personnalisé (hauteurs ci-dessous)"], 1]],
             ["EDIT", ["Hauteurs (m, séparées par des virgules)", "Avec « Personnalisé ». Une couche par hauteur, soit un niveau de zoom du fond, comme Google Maps. Altis entière (images de 1 à 2 Mo) : 3500 m ≈ 35 images, 1200 m ≈ 300, 800 m ≈ 650, 300 m ≈ 4000 images (8 Go, 3 h), 150 m ≈ 16 000 (32 Go, 11 h), 50 m ≈ 140 000 (280 Go) : en dessous de 300 m, plutôt une zone (ville). Estimation affichée au lancement."], "300, 800, 1200, 3500"],
             ["COMBO", "Zone", [[0, 1], ["Autour de la position du module", "Carte entière"], 1]],
