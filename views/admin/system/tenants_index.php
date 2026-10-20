@@ -30,6 +30,9 @@ $err = \App\Core\Session::getFlash('error');
                 Toutes les organisations du site, avec le profil d’outils, la formule et l’effectif.
                 Ouvrez Administrer pour l’identité, le profil et la formule, ou Accès super tenant pour intervenir dans son back-office.
             </p>
+            <p class="pa-hero__lead">
+                Pour retirer une communauté (doublon, test), archivez-la d’abord : rien n’est effacé et elle se restaure. La suppression définitive vient ensuite, après sauvegarde.
+            </p>
             <div class="pa-hero__actions">
                 <a class="pa-btn pa-btn--solid" href="<?= $h(url('communities/create')) ?>">Créer une communauté</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('communities')) ?>">Annuaire public</a>
@@ -82,6 +85,8 @@ $err = \App\Core\Session::getFlash('error');
                                 $publicUrl = $slug !== '' ? url('c/' . rawurlencode($slug)) : '';
                                 $editUrl = $id > 0 ? url('admin/tenants/' . $id . '/edit') : '';
                                 $interventionUrl = $id > 1 ? url('admin/system/tenants/' . $id . '/intervention') : '';
+                                $removalUrl = $id > 1 && $slug !== 'default' ? url('admin/tenants/' . $id . '/retrait') : '';
+                                $archived = is_array($t['archive'] ?? null);
                                 $tenantType = (string) ($t['tenant_type'] ?? 'full');
                                 $typeMeta = [
                                     'full' => ['label' => 'Complet', 'pill' => 'slate'],
@@ -92,8 +97,8 @@ $err = \App\Core\Session::getFlash('error');
                                 ?>
                                 <tr>
                                     <td>
-                                        <p class="pa-name"><?= $h($name) ?></p>
-                                        <?php if ($publicUrl !== ''): ?>
+                                        <p class="pa-name"><?= $h($name) ?><?php if ($archived): ?> <span class="pa-pill pa-pill--amber">Archivée</span><?php endif; ?></p>
+                                        <?php if ($publicUrl !== '' && !$archived): ?>
                                             <p class="pa-sub"><a href="<?= $h($publicUrl) ?>" target="_blank" rel="noopener">Page publique</a></p>
                                         <?php endif; ?>
                                     </td>
@@ -116,6 +121,9 @@ $err = \App\Core\Session::getFlash('error');
                                                 <a class="pa-btn pa-btn--line" href="<?= $h($editUrl) ?>">Administrer</a>
                                                 <?php if ($interventionUrl !== ''): ?>
                                                     <a class="pa-btn pa-btn--solid" href="<?= $h($interventionUrl) ?>">Accès super tenant</a>
+                                                <?php endif; ?>
+                                                <?php if ($removalUrl !== ''): ?>
+                                                    <a class="pa-btn pa-btn--line" href="<?= $h($removalUrl) ?>"><?= $archived ? 'Restaurer ou supprimer' : 'Archiver ou supprimer' ?></a>
                                                 <?php endif; ?>
                                             </div>
                                         <?php else: ?>

@@ -100,6 +100,8 @@ final class AuditActionLabel
         'user.membership_removed' => 'Retrait d’une communauté',
         'user.membership_restored' => 'Réintégration dans une communauté',
         'platform.tenant_deleted' => 'Communauté supprimée',
+        'platform.tenant_archived' => 'Communauté archivée',
+        'platform.tenant_restored' => 'Communauté restaurée',
         'user_purge_requested' => 'Demande de suppression définitive (orga)',
         'platform.tenant_plan_assigned' => 'Formule d’accès affectée à une communauté',
         'platform.tenant_identity_updated' => 'Identité d’une communauté mise à jour',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Services\Community\TenantArchiveState;
 use App\Support\LazyDatabaseConnection;
 use App\Support\SqlText;
 
@@ -61,13 +62,21 @@ class TenantRepository
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
+    /**
+     * Une communauté archivée par l’administration du site n’est plus trouvée par son adresse
+     * (page publique, recrutement, forum…). L’adresse reste réservée (slugExists).
+     */
     public function findBySlug(string $slug): ?array
     {
         $slugEq = SqlText::equals($this->pdo(), 'slug');
         $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        if (!$row || TenantArchiveState::isArchived($row)) {
+            return null;
+        }
+
+        return $row;
     }
 
     /**
@@ -91,7 +100,7 @@ class TenantRepository
         }
         $out = [];
         foreach ($rows as $row) {
-            if (strtolower(trim((string) ($row['slug'] ?? ''))) === 'default') {
+            if (strtolower(trim((string) ($row['slug'] ?? ''))) === 'default' || TenantArchiveState::isArchived($row)) {
                 continue;
             }
             $community = [];
@@ -170,8 +179,11 @@ class TenantRepository
         $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE ' . $codeEq . ' LIMIT 1');
         $stmt->execute([$norm]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row || TenantArchiveState::isArchived($row)) {
+            return null;
+        }
 
-        return $row ?: null;
+        return $row;
     }
 
     public function isCommunityCodeTaken(string $normalizedCode, ?int $exceptTenantId = null): bool
@@ -606,6 +618,7 @@ SQL;
                 'plan_gift' => \App\Support\PlanGift::activeFromSettings($row['settings'] ?? null),
                 // Seules les clés utiles aux fins de formule (essai fondateur, formule offerte même terminée).
                 'plan_window' => self::planWindowSettings($row['settings'] ?? null),
+                'archive' => TenantArchiveState::infoFromSettings($row['settings'] ?? null),
             ];
         }
 

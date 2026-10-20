@@ -85,9 +85,12 @@ final class TenantRecoveryService
             }
         }
 
+        // Une communauté supprimée volontairement (journal plateforme) n’est pas une orpheline :
+        // les lignes sans clé étrangère qu’elle laisse ne doivent pas la proposer à la recréation.
+        $deliberatelyDeleted = $this->deliberatelyDeletedTenantIds();
         $orphans = [];
         foreach (array_keys($candidates) as $id) {
-            if (!isset($existing[$id])) {
+            if (!isset($existing[$id]) && !isset($deliberatelyDeleted[$id])) {
                 $orphans[] = (int) $id;
             }
         }
@@ -432,6 +435,26 @@ final class TenantRecoveryService
         try {
             $stmt = $this->pdo()->query('SELECT id FROM tenants');
             foreach ($stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : [] as $rawId) {
+                $map[(int) $rawId] = true;
+            }
+        } catch (Throwable) {
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return array<int, true>
+     */
+    private function deliberatelyDeletedTenantIds(): array
+    {
+        $map = [];
+        try {
+            $stmt = $this->pdo()->prepare(
+                "SELECT DISTINCT entity_id FROM audit_logs WHERE action = ? AND entity_type = 'tenant'"
+            );
+            $stmt->execute([AuditAction::TENANT_DELETED]);
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $rawId) {
                 $map[(int) $rawId] = true;
             }
         } catch (Throwable) {

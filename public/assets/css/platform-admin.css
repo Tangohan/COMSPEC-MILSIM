@@ -263,6 +263,13 @@
 .pa-btn--ghost:hover,
 .pa-btn--line:hover { border-color: var(--pa-mint-bright); background: var(--pa-mint-soft); }
 
+/* Action définitive (suppression d’une communauté) */
+.pa-btn--danger {
+  background: #b42318;
+  color: #fff;
+}
+.pa-btn--danger:hover { background: #8f1c13; box-shadow: 0 6px 16px -10px rgba(180, 35, 24, 0.8); }
+
 /* ── Navigation interne : onglets en pastilles sur le fond de page ── */
 
 .pa-jump {
@@ -1254,6 +1261,8 @@ html[data-bo-theme="dark"] .pa {
 
 html[data-bo-theme="dark"] .pa-hero { border-color: #1f2a26; }
 html[data-bo-theme="dark"] .pa-btn--mint:hover { background: #0b8a5c; }
+html[data-bo-theme="dark"] .pa-btn--danger { background: #c4382c; }
+html[data-bo-theme="dark"] .pa-btn--danger:hover { background: #e0493c; }
 html[data-bo-theme="dark"] .pa-btn--solid:hover,
 html[data-bo-theme="dark"] .pa-btn--ink:hover { background: var(--pa-mint-bright); color: #04140d; }
 html[data-bo-theme="dark"] .pa-flash--ok { border-color: #1d4a39; background: #10241c; color: #7fe3bd; }

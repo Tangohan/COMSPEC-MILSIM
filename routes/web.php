@@ -1122,6 +1122,10 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/identity', [SystemTenantsController::class, 'updateIdentity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/profil', [SystemTenantsController::class, 'updateType'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/tenants/{id}/retrait', [SystemTenantsController::class, 'removal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/archiver', [SystemTenantsController::class, 'archive'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/restaurer', [SystemTenantsController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/supprimer', [SystemTenantsController::class, 'destroy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/formules-offertes/reglages', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
