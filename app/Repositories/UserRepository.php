@@ -1435,7 +1435,10 @@ class UserRepository
             return null;
         }
         $stmt = $this->pdo()->prepare(
-            'SELECT * FROM users WHERE steam_id = ? ORDER BY id DESC LIMIT 1'
+            // Fiche active d'abord : un doublon plus récent (supprimé, fusionné, suspendu) gardant le même Steam
+            // faisait refuser la connexion jeu par Steam (STEAM_NOT_LINKED) au titulaire actif.
+            "SELECT * FROM users WHERE steam_id = ?
+             ORDER BY (status = 'active' AND email NOT LIKE '%@deleted.invalid') DESC, id DESC LIMIT 1"
         );
         $stmt->execute([$sid]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
