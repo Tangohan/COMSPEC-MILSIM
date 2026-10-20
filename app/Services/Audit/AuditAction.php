@@ -90,6 +90,12 @@ final class AuditAction
     /** Suppression définitive d’une communauté et de ses données (administration du site). */
     public const TENANT_DELETED = 'platform.tenant_deleted';
 
+    /** Archivage réversible d’une communauté (administration du site). */
+    public const TENANT_ARCHIVED = 'platform.tenant_archived';
+
+    /** Restauration d’une communauté archivée (administration du site). */
+    public const TENANT_RESTORED = 'platform.tenant_restored';
+
     public const MEMBER_INTEGRATION_CREATED = 'member_integration.created';
     public const MEMBER_INTEGRATION_STEP_FORCED = 'member_integration.step_forced';
     public const MEMBER_INTEGRATION_APPOINTMENT = 'member_integration.appointment';

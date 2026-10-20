@@ -247,6 +247,27 @@ $err = \App\Core\Session::getFlash('error');
                         </form>
                     <?php endif; ?>
                 </section>
+
+                <?php
+                $removalArchive = is_array($platformTenantArchive ?? null) ? $platformTenantArchive : null;
+                $removalUrl = (string) ($platformTenantRemovalUrl ?? '');
+                ?>
+                <?php if ($removalUrl !== '' && $tenantId > 1 && $slug !== 'default'): ?>
+                    <section id="retrait" class="pa-card scroll-mt-24">
+                        <p class="pa-card__kicker">04 · Retrait</p>
+                        <h2 class="pa-card__title">Archiver ou supprimer la communauté</h2>
+                        <p class="pa-card__help">
+                            <?php if ($removalArchive !== null): ?>
+                                Cette communauté est archivée : elle n’est plus visible, ses données sont intactes. Vous pouvez la restaurer ou la supprimer définitivement.
+                            <?php else: ?>
+                                L’archivage ferme la communauté sans rien effacer (réversible). La suppression définitive vient ensuite, après sauvegarde. Les comptes des joueurs sont toujours conservés.
+                            <?php endif; ?>
+                        </p>
+                        <div class="pa-actions">
+                            <a class="pa-btn pa-btn--line" href="<?= $h($removalUrl) ?>">Voir ce qui serait retiré</a>
+                        </div>
+                    </section>
+                <?php endif; ?>
             </div>
         </div>
     </div>
