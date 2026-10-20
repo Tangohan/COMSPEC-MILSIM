@@ -10,6 +10,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakAdminControlRepository as Fleet;
 use App\Services\Auth\AuthService;
+use App\Support\AtakFleetLink;
+use App\Support\SteamId;
 
 /**
  * Parc ATAK des joueurs, toutes communautés (/admin/parc-atak) : liste, fiche par ATAK,
@@ -72,28 +74,51 @@ class AdminAtakFleetController
     {
         $search = mb_substr(trim((string) $request->query('q', '')), 0, 80);
         $scope = $this->scopeTenantId();
+        $platform = $scope === 0;
         $tenantId = $scope > 0 ? $scope : max(0, (int) $request->query('communaute', 0));
         $state = (string) $request->query('etat', '');
-        $state = isset(Fleet::STATES[$state]) ? $state : '';
+        $state = isset(Fleet::STATES[$state]) && ($platform || !in_array($state, Fleet::PLATFORM_ONLY, true)) ? $state : '';
         $sort = (string) $request->query('tri', 'recent');
-        $sort = isset(Fleet::SORTS[$sort]) ? $sort : 'recent';
+        $sort = isset(Fleet::SORTS[$sort]) && ($platform || !in_array($sort, Fleet::PLATFORM_ONLY, true)) ? $sort : 'recent';
+        $reverse = $request->query('sens') === 'inverse';
+        $typeFilter = $platform ? (string) $request->query('type', '') : '';
+        $planFilter = $platform ? mb_substr(trim((string) $request->query('formule', '')), 0, 50) : '';
 
         $this->fleet->ready();
         $terminals = $this->fleet->listTerminals($search, $tenantId, 2000);
+        foreach ($terminals as $i => $t) {
+            $terminals[$i]['kind'] = 'atak';
+        }
+        if ($platform) {
+            $terminals = array_merge($terminals, $this->steamRows($terminals, $search, $tenantId));
+        }
         $metrics = $this->fleet->metricsForUsers(array_map(static fn (array $t): int => (int) ($t['user_id'] ?? 0), $terminals));
         $blocks = $this->fleet->activeBlocks();
         $pending = $this->fleet->pendingCountByUser();
+        $tenantInfo = $platform ? $this->fleet->tenantProfiles(array_map(static fn (array $t): int => (int) $t['tenant_id'], $terminals)) : [];
+        if ($platform) {
+            $terminals = $this->correlate($terminals, $tenantInfo);
+        }
 
         $now = time();
         $rows = [];
         $counts = array_fill_keys(array_keys(Fleet::STATES), 0);
         foreach ($terminals as $t) {
             $key = (int) $t['tenant_id'] . ':' . (int) ($t['user_id'] ?? 0);
-            $t['metrics'] = $metrics[$key] ?? null;
+            $t['metrics'] = (int) ($t['user_id'] ?? 0) > 0 ? ($metrics[$key] ?? null) : null;
             $t['block'] = Fleet::blockMatching($t, $blocks);
-            $t['pending_messages'] = (int) ($pending[$key] ?? 0);
+            $t['pending_messages'] = (int) ($t['user_id'] ?? 0) > 0 ? (int) ($pending[$key] ?? 0) : 0;
             $seen = \App\Support\UtcDateTime::timestamp($t['last_seen_at'] ?? null);
             $t['seen_ago'] = $seen !== null ? max(0, $now - $seen) : null;
+            $t['tenant'] = $tenantInfo[(int) $t['tenant_id']] ?? null;
+            $t['plan_access'] = $t['tenant']['atak'] ?? ($platform ? 'unknown' : 'full');
+            $t['denials'] = $platform ? AtakFleetLink::denialReasons((string) ($t['link'] ?? 'ok'), $t['plan_access'], $t['block']) : [];
+            if ($typeFilter !== '' && ($t['tenant']['type'] ?? '') !== $typeFilter) {
+                continue;
+            }
+            if ($planFilter !== '' && ($t['tenant']['plan'] ?? '') !== $planFilter) {
+                continue;
+            }
             $tags = [''];
             if ($t['seen_ago'] !== null && $t['seen_ago'] <= 7 * 86400) {
                 $tags[] = 'actifs';
@@ -110,6 +135,15 @@ class AdminAtakFleetController
             if (!in_array((string) ($t['compromise_state'] ?? 'none'), ['', 'none'], true)) {
                 $tags[] = 'compromis';
             }
+            if ($t['kind'] !== 'atak') {
+                $tags[] = 'steam';
+            }
+            if ($platform && !in_array((string) ($t['link'] ?? 'ok'), ['ok', 'no_terminal'], true)) {
+                $tags[] = 'a_verifier';
+            }
+            if ($platform && in_array($t['plan_access'], ['basic', 'none'], true)) {
+                $tags[] = 'sans_carte';
+            }
             foreach ($tags as $tag) {
                 $counts[$tag]++;
             }
@@ -117,7 +151,7 @@ class AdminAtakFleetController
                 $rows[] = $t;
             }
         }
-        $rows = self::sortRows($rows, $sort);
+        $rows = self::sortRows($rows, $sort, $reverse);
 
         $totals = ['play' => 0, 'total_m' => 0, 'reports' => 0];
         $seenUsers = [];
@@ -131,6 +165,16 @@ class AdminAtakFleetController
                 $totals[$k] += (int) $r['metrics'][$k];
             }
         }
+        $kinds = ['atak' => 0, 'steam' => 0, 'no_account' => 0, 'denied' => 0];
+        foreach ($terminals as $t) {
+            $kinds[$t['kind'] === 'atak' ? 'atak' : 'steam']++;
+            if (in_array((string) ($t['link'] ?? ''), ['no_account', 'account_only'], true)) {
+                $kinds['no_account']++;
+            }
+        }
+        foreach ($rows as $r) {
+            $kinds['denied'] += $r['denials'] !== [] ? 1 : 0;
+        }
 
         return Response::view('layout.main', $this->shell() + [
             'title' => $scope > 0 ? 'Parc ATAK des membres' : 'Parc ATAK des joueurs',
@@ -139,16 +183,174 @@ class AdminAtakFleetController
             'rows' => array_slice($rows, 0, self::PAGE),
             'matching' => count($rows),
             'counts' => $counts,
+            'kinds' => $kinds,
             'totals' => $totals,
             'players' => count($seenUsers),
             'tenants' => $scope > 0 ? [] : $this->fleet->tenantsWithTerminals(),
+            'planOptions' => $platform ? $this->planOptions() : [],
             'search' => $search,
             'tenantFilter' => $tenantId,
             'stateFilter' => $state,
+            'typeFilter' => $typeFilter,
+            'planFilter' => $planFilter,
             'sort' => $sort,
+            'reverse' => $reverse,
             'actions' => $this->fleet->recentActions(12, null, null, $scope),
             'tablesReady' => $this->fleet->ready(),
         ]);
+    }
+
+    /**
+     * Joueurs connus par leur Steam sans ATAK enregistré : vus en jeu (profil par communauté),
+     * sinon seulement par les rapports du mod des 30 derniers jours (communauté inconnue).
+     *
+     * @param list<array<string, mixed>> $terminals
+     * @return list<array<string, mixed>>
+     */
+    private function steamRows(array $terminals, string $search, int $tenantId): array
+    {
+        $byUser = [];
+        $bySteam = [];
+        foreach ($terminals as $t) {
+            if ((int) ($t['user_id'] ?? 0) > 0) {
+                $byUser[(int) $t['tenant_id'] . ':' . (int) $t['user_id']] = true;
+            }
+            $steam = SteamId::normalize((string) ($t['steam_id'] ?? ''));
+            if ($steam !== null) {
+                $bySteam[(int) $t['tenant_id'] . ':' . $steam] = true;
+                $bySteam['*:' . $steam] = true;
+            }
+        }
+        $out = [];
+        foreach ($this->fleet->steamPlayers($search, $tenantId, 2000) as $p) {
+            $steam = SteamId::normalize((string) $p['steam_id']);
+            $tid = (int) $p['tenant_id'];
+            if ($steam === null || isset($bySteam[$tid . ':' . $steam]) || ((int) ($p['user_id'] ?? 0) > 0 && isset($byUser[$tid . ':' . (int) $p['user_id']]))) {
+                continue;
+            }
+            $bySteam[$tid . ':' . $steam] = true;
+            $bySteam['*:' . $steam] = true;
+            $out[] = [
+                'kind' => 'steam',
+                'id' => 0,
+                'tenant_id' => $tid,
+                'user_id' => null,
+                'game_user_id' => (int) ($p['user_id'] ?? 0),
+                'terminal_uid' => '',
+                'steam_id' => $steam,
+                'operator_callsign' => trim((string) ($p['callsign'] ?? '')),
+                'display_name' => trim((string) ($p['arma_player_name'] ?? '')) ?: trim((string) ($p['display_name'] ?? '')),
+                'mod_version' => (string) ($p['atak_version'] ?? ''),
+                'game_role' => (string) ($p['role'] ?? ''),
+                'game_faction' => (string) ($p['faction'] ?? ''),
+                'server_name' => (string) ($p['server_name'] ?? ''),
+                'last_seen_at' => $p['last_seen_at'] ?? null,
+                'tenant_name' => $p['tenant_name'] ?? null,
+                'compromise_state' => 'none',
+            ];
+        }
+        if ($tenantId === 0) {
+            foreach ($this->fleet->steamFromModReports($search, 30, 500) as $r) {
+                $steam = (string) $r['steam_id'];
+                if (isset($bySteam['*:' . $steam])) {
+                    continue;
+                }
+                $out[] = [
+                    'kind' => 'report',
+                    'id' => 0,
+                    'tenant_id' => 0,
+                    'user_id' => null,
+                    'terminal_uid' => '',
+                    'steam_id' => $steam,
+                    'operator_callsign' => trim((string) ($r['callsign'] ?? '')),
+                    'display_name' => trim((string) ($r['player_name'] ?? '')),
+                    'mod_version' => (string) ($r['mod_version'] ?? ''),
+                    'last_seen_at' => $r['last_seen_at'] ?? null,
+                    'reports' => (int) $r['reports'],
+                    'denied' => (int) $r['denied'],
+                    'last_denial' => (string) $r['last_denial'],
+                    'compromise_state' => 'none',
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Corrélation de chaque ligne avec un compte Athena ($row['link'], $row['link_user']).
+     * Une ligne des rapports du mod prend la communauté de la fiche membre qui porte son Steam.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @param array<int, array<string, mixed>> $tenantInfo complété pour les communautés trouvées ainsi
+     * @return list<array<string, mixed>>
+     */
+    private function correlate(array $rows, array &$tenantInfo): array
+    {
+        $userIds = [];
+        $steams = [];
+        foreach ($rows as $r) {
+            if ((int) ($r['user_id'] ?? 0) > 0) {
+                $userIds[] = (int) $r['user_id'];
+            }
+            if (($s = SteamId::normalize((string) ($r['steam_id'] ?? ''))) !== null) {
+                $steams[] = $s;
+            }
+        }
+        $users = $this->fleet->usersById($userIds);
+        $steamUsers = $this->fleet->usersBySteam($steams);
+        $gameSteam = $this->fleet->gameSteamByUser($userIds);
+        $orphans = array_values(array_filter($steams, static fn (string $s): bool => !isset($steamUsers[$s])));
+        $accountSteam = $orphans !== [] ? $this->fleet->accountSteams($orphans) : [];
+        $more = [];
+        foreach ($rows as $i => $r) {
+            $steam = SteamId::normalize((string) ($r['steam_id'] ?? '')) ?? '';
+            $user = (int) ($r['user_id'] ?? 0) > 0 ? ($users[(int) $r['user_id']] ?? null) : null;
+            $on = $steam !== '' ? ($steamUsers[$steam] ?? []) : [];
+            if ($r['kind'] === 'report' && count($on) === 1 && $on[0]['tenant_id'] > 0) {
+                $rows[$i]['tenant_id'] = $r['tenant_id'] = $on[0]['tenant_id'];
+                $more[] = $on[0]['tenant_id'];
+            }
+            $rows[$i]['link'] = AtakFleetLink::classify(
+                $r['kind'] === 'atak',
+                (int) $r['tenant_id'],
+                $user,
+                $on,
+                $gameSteam[(int) $r['tenant_id'] . ':' . (int) ($r['user_id'] ?? 0)] ?? '',
+                isset($accountSteam[$steam])
+            );
+            $rows[$i]['link_users'] = $on;
+            if ($user !== null && $steam === '') {
+                $rows[$i]['steam_id'] = (string) ($user['steam_id'] ?? '');
+            }
+        }
+        $more = array_diff(array_unique($more), array_keys($tenantInfo));
+        if ($more !== []) {
+            $tenantInfo += $this->fleet->tenantProfiles(array_values($more));
+            foreach ($rows as $i => $r) {
+                if ($r['kind'] === 'report' && empty($r['tenant_name']) && isset($tenantInfo[(int) $r['tenant_id']])) {
+                    $rows[$i]['tenant_name'] = $tenantInfo[(int) $r['tenant_id']]['name'];
+                }
+            }
+        }
+
+        return $rows;
+    }
+
+    /** @return array<string, string> formules connues (slug => nom), pour le filtre */
+    private function planOptions(): array
+    {
+        try {
+            $st = \App\Core\Database::getPdo()->query('SELECT slug, name FROM subscription_plans ORDER BY sort_order, name');
+            $out = [];
+            foreach ($st ? ($st->fetchAll(\PDO::FETCH_ASSOC) ?: []) : [] as $p) {
+                $out[(string) $p['slug']] = (string) $p['name'];
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function show(Request $request, array $params = []): Response
@@ -394,7 +596,7 @@ class AdminAtakFleetController
         if (!$this->fleet->ready()) {
             return $this->back($request, 'error', 'Tables du parc ATAK absentes : lancez run-migrations.php.');
         }
-        $terminals = $this->targets($request);
+        $terminals = $this->targets($request, true);
         if ($terminals === []) {
             return $this->back($request, 'error', 'Aucun ATAK sélectionné.');
         }
@@ -408,11 +610,13 @@ class AdminAtakFleetController
 
         $done = 0;
         foreach ($terminals as $t) {
+            // Joueur des rapports du mod sans communauté connue : le blocage vaut partout.
+            $everywhere = $allTenants || (int) $t['tenant_id'] < 1;
             $id = $this->fleet->createBlock([
-                'tenant_id' => $allTenants ? null : (int) $t['tenant_id'],
+                'tenant_id' => $everywhere ? null : (int) $t['tenant_id'],
                 'user_id' => ((int) ($t['user_id'] ?? 0)) ?: null,
                 'steam_uid' => trim((string) ($t['steam_id'] ?? '')) ?: null,
-                'terminal_uid' => (string) $t['terminal_uid'],
+                'terminal_uid' => (string) $t['terminal_uid'] !== '' ? (string) $t['terminal_uid'] : null,
                 'label' => Fleet::playerLabel($t),
                 'reason' => $reason,
                 'player_message' => $playerMessage,
@@ -424,9 +628,10 @@ class AdminAtakFleetController
             }
             $done++;
             // Ferme les sessions ouvertes : le jeu doit se reconnecter et l'API le refuse.
-            $closed = $this->fleet->revokeGameSessions($allTenants ? 0 : (int) $t['tenant_id'], (int) ($t['user_id'] ?? 0));
+            $closed = (int) ($t['user_id'] ?? 0) > 0 ? $this->fleet->revokeGameSessions($everywhere ? 0 : (int) $t['tenant_id'], (int) $t['user_id']) : 0;
             $this->fleet->log($t, 'block', implode(' · ', array_filter([
-                $allTenants ? 'Toutes les communautés' : 'Sa communauté',
+                $everywhere ? 'Toutes les communautés' : 'Sa communauté',
+                (string) $t['terminal_uid'] === '' ? 'Steam ' . (string) $t['steam_id'] : '',
                 $days > 0 ? $days . ' jour(s)' : 'Sans fin',
                 $reason !== '' ? 'Motif : ' . $reason : '',
                 $closed > 0 ? $closed . ' session(s) de jeu fermée(s)' : '',
@@ -522,7 +727,8 @@ class AdminAtakFleetController
         if ($title === '' || $body === '') {
             return $this->back($request, 'error', 'Le titre et le texte du message sont obligatoires.');
         }
-        $terminals = $this->targets($request);
+        // Un message imposé va à un joueur d'une communauté connue.
+        $terminals = array_values(array_filter($this->targets($request, true), static fn (array $t): bool => (int) $t['tenant_id'] > 0));
         if ($terminals === []) {
             return $this->back($request, 'error', 'Aucun ATAK sélectionné.');
         }
@@ -533,7 +739,7 @@ class AdminAtakFleetController
         $seen = [];
         foreach ($terminals as $t) {
             // Un message par joueur, même s'il a plusieurs ATAK cochés.
-            $who = (int) $t['tenant_id'] . ':' . ((int) ($t['user_id'] ?? 0) ?: (string) $t['terminal_uid']);
+            $who = (int) $t['tenant_id'] . ':' . ((int) ($t['user_id'] ?? 0) ?: ((string) $t['terminal_uid'] ?: (string) ($t['steam_id'] ?? '')));
             if (isset($seen[$who])) {
                 continue;
             }
@@ -542,7 +748,7 @@ class AdminAtakFleetController
                 'tenant_id' => (int) $t['tenant_id'],
                 'user_id' => ((int) ($t['user_id'] ?? 0)) ?: null,
                 'steam_uid' => trim((string) ($t['steam_id'] ?? '')) ?: null,
-                'terminal_uid' => (string) $t['terminal_uid'],
+                'terminal_uid' => (string) $t['terminal_uid'] !== '' ? (string) $t['terminal_uid'] : null,
                 'title' => $title,
                 'body' => $body,
                 'level' => $level,
@@ -585,32 +791,40 @@ class AdminAtakFleetController
     }
 
     /**
-     * Tri de la liste.
+     * Tri de la liste ($reverse : ordre inverse, clic répété sur l'en-tête de colonne).
      *
      * @param list<array<string, mixed>> $rows
      * @return list<array<string, mixed>>
      */
-    public static function sortRows(array $rows, string $sort): array
+    public static function sortRows(array $rows, string $sort, bool $reverse = false): array
     {
         $metric = static fn (array $r, string $k): int => (int) ($r['metrics'][$k] ?? 0);
-        usort($rows, static function (array $a, array $b) use ($sort, $metric): int {
+        $recent = static fn (array $r): array => [($r['seen_ago'] ?? null) === null, $r['seen_ago'] ?? 0];
+        $planRank = ['none' => 0, 'basic' => 1, 'unknown' => 2, 'full' => 3];
+        usort($rows, static function (array $a, array $b) use ($sort, $metric, $recent, $planRank): int {
             return match ($sort) {
                 'jeu' => [$metric($b, 'play'), $metric($b, 'total_m')] <=> [$metric($a, 'play'), $metric($a, 'total_m')],
                 'distance' => [$metric($b, 'total_m'), $metric($b, 'play')] <=> [$metric($a, 'total_m'), $metric($a, 'play')],
                 'nom' => strnatcasecmp(Fleet::playerLabel($a), Fleet::playerLabel($b)),
-                default => [$a['seen_ago'] === null, $a['seen_ago'] ?? 0] <=> [$b['seen_ago'] === null, $b['seen_ago'] ?? 0],
+                'compte' => [AtakFleetLink::rank((string) ($a['link'] ?? 'ok')), $recent($a)] <=> [AtakFleetLink::rank((string) ($b['link'] ?? 'ok')), $recent($b)],
+                'communaute' => [strnatcasecmp((string) ($a['tenant']['name'] ?? $a['tenant_name'] ?? '~'), (string) ($b['tenant']['name'] ?? $b['tenant_name'] ?? '~')), $recent($a)] <=> [0, $recent($b)],
+                'formule' => [$planRank[$a['plan_access'] ?? 'full'] ?? 3, (string) ($a['tenant']['plan'] ?? ''), $recent($a)] <=> [$planRank[$b['plan_access'] ?? 'full'] ?? 3, (string) ($b['tenant']['plan'] ?? ''), $recent($b)],
+                'etat' => [($a['block'] ?? null) === null, ($a['denials'] ?? []) === [], in_array((string) ($a['compromise_state'] ?? 'none'), ['', 'none'], true), $recent($a)]
+                    <=> [($b['block'] ?? null) === null, ($b['denials'] ?? []) === [], in_array((string) ($b['compromise_state'] ?? 'none'), ['', 'none'], true), $recent($b)],
+                default => $recent($a) <=> $recent($b),
             };
         });
 
-        return $rows;
+        return $reverse ? array_reverse($rows) : $rows;
     }
 
     /**
-     * ATAK visés par le formulaire (terminal_id ou terminal_ids[]).
+     * ATAK visés par le formulaire (terminal_id ou terminal_ids[]). Avec $withSteam, aussi les joueurs Steam
+     * sans ATAK enregistré (steam_keys[] « communauté:steam », administration de la plateforme seulement).
      *
      * @return list<array<string, mixed>>
      */
-    private function targets(Request $request): array
+    private function targets(Request $request, bool $withSteam = false): array
     {
         $ids = $request->input('terminal_ids', []);
         $ids = is_array($ids) ? $ids : [];
@@ -619,6 +833,15 @@ class AdminAtakFleetController
         foreach (array_unique(array_map('intval', $ids)) as $id) {
             if ($id > 0 && count($out) < 500 && ($t = $this->terminal($id)) !== null) {
                 $out[] = $t;
+            }
+        }
+        $keys = $withSteam && $this->scopeTenantId() === 0 ? $request->input('steam_keys', []) : [];
+        foreach (array_unique(is_array($keys) ? array_map('strval', $keys) : []) as $key) {
+            if (count($out) >= 500 || preg_match('/^(\d{1,10}):(\d{15,20})$/', $key, $m) !== 1) {
+                continue;
+            }
+            if (($p = $this->fleet->findSteamPlayer((int) $m[1], $m[2])) !== null) {
+                $out[] = $p;
             }
         }
 
@@ -657,7 +880,7 @@ class AdminAtakFleetController
             return Response::redirect(url(static::BASE . '/fiche') . '?id=' . (int) $m[1]);
         }
         $qs = [];
-        foreach (['q', 'communaute', 'etat', 'tri'] as $k) {
+        foreach (['q', 'communaute', 'etat', 'tri', 'sens', 'type', 'formule'] as $k) {
             $v = trim((string) $request->input('retour_' . $k, ''));
             if ($v !== '') {
                 $qs[$k] = $v;

@@ -7,6 +7,7 @@ namespace Tests\Unit;
 use App\Controllers\Admin\AdminAtakFleetController;
 use App\Repositories\AtakAdminControlRepository as Fleet;
 use App\Support\AtakAdminBlockGate;
+use App\Support\AtakFleetLink;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -139,5 +140,76 @@ final class AtakAdminFleetTest extends TestCase
         self::assertSame(0, (new \ReflectionMethod($admin, 'scopeTenantId'))->invoke($admin));
         self::assertArrayHasKey('gestion', Fleet::COMPROMISE_SOURCES);
         self::assertArrayHasKey('note_gestion', Fleet::ACTIONS);
+    }
+
+    public function testSteamCorrelationMatchesGameLoginRules(): void
+    {
+        $member = ['id' => 18, 'tenant_id' => 3, 'status' => 'active', 'email' => 'a@b.fr', 'steam_id' => '76561198000000101'];
+        $on = [$member];
+        self::assertSame('ok', AtakFleetLink::classify(true, 3, $member, $on, '76561198000000101'));
+        self::assertSame('steam_mismatch', AtakFleetLink::classify(true, 3, $member, $on, '76561198000000999'));
+        self::assertSame('no_steam', AtakFleetLink::classify(true, 3, ['steam_id' => ''] + $member, []));
+        self::assertSame('duplicate', AtakFleetLink::classify(true, 3, $member, [$member, ['id' => 99] + $member]));
+        self::assertSame('disabled', AtakFleetLink::classify(true, 3, ['status' => 'banned'] + $member, $on));
+        self::assertSame('bad_email', AtakFleetLink::classify(true, 3, ['email' => ''] + $member, $on));
+        self::assertSame('unlinked', AtakFleetLink::classify(true, 3, null, []));
+        // Joueur connu par son seul Steam (vu en jeu ou par les rapports du mod).
+        self::assertSame('no_account', AtakFleetLink::classify(false, 7, null, []));
+        self::assertSame('account_only', AtakFleetLink::classify(false, 7, null, [], '', true));
+        self::assertSame('no_terminal', AtakFleetLink::classify(false, 3, null, $on));
+        self::assertSame('other_tenant', AtakFleetLink::classify(false, 7, null, $on));
+        self::assertSame('no_terminal', AtakFleetLink::classify(false, 0, null, $on));
+    }
+
+    public function testDenialReasonsExplainA403(): void
+    {
+        self::assertSame([], AtakFleetLink::denialReasons('ok', 'full', null));
+        self::assertSame([], AtakFleetLink::denialReasons('no_terminal', 'basic', null));
+        $why = AtakFleetLink::denialReasons('no_account', 'none', ['tenant_id' => null]);
+        self::assertCount(3, $why);
+        self::assertStringContainsString('toutes les communautés', $why[0]);
+        self::assertSame(AtakFleetLink::STATES['no_account'][0], $why[1]);
+        self::assertSame('Formule sans la carte', $why[2]);
+        // Ordre du tri « Compte Athena » : les cas bloquants d'abord, « Corrélé » en dernier.
+        self::assertLessThan(AtakFleetLink::rank('ok'), AtakFleetLink::rank('no_account'));
+        self::assertSame(count(AtakFleetLink::STATES) - 1, AtakFleetLink::rank('ok'));
+    }
+
+    public function testNewSortsAndReverseOrder(): void
+    {
+        $rows = [
+            ['id' => 1, 'operator_callsign' => 'A', 'seen_ago' => 10, 'link' => 'ok', 'plan_access' => 'full', 'tenant' => ['name' => 'Zulu', 'plan' => 'pro'], 'block' => null, 'denials' => []],
+            ['id' => 2, 'operator_callsign' => 'B', 'seen_ago' => 20, 'link' => 'no_account', 'plan_access' => 'none', 'tenant' => ['name' => 'Alpha', 'plan' => 'free'], 'block' => null, 'denials' => ['x']],
+            ['id' => 3, 'operator_callsign' => 'C', 'seen_ago' => 30, 'link' => 'steam_mismatch', 'plan_access' => 'basic', 'tenant' => ['name' => 'Mike', 'plan' => 'free'], 'block' => ['id' => 1], 'denials' => ['y']],
+        ];
+        self::assertSame([2, 3, 1], array_column(AdminAtakFleetController::sortRows($rows, 'compte'), 'id'));
+        self::assertSame([2, 3, 1], array_column(AdminAtakFleetController::sortRows($rows, 'communaute'), 'id'));
+        self::assertSame([2, 3, 1], array_column(AdminAtakFleetController::sortRows($rows, 'formule'), 'id'));
+        self::assertSame([3, 2, 1], array_column(AdminAtakFleetController::sortRows($rows, 'etat'), 'id'));
+        self::assertSame([3, 2, 1], array_column(AdminAtakFleetController::sortRows($rows, 'recent', true), 'id'));
+    }
+
+    public function testSteamPlayersWithoutAccountAreListedForThePlatformOnly(): void
+    {
+        foreach (['steam', 'a_verifier', 'sans_carte'] as $state) {
+            self::assertArrayHasKey($state, Fleet::STATES);
+            self::assertContains($state, Fleet::PLATFORM_ONLY);
+        }
+        $controller = $this->read('app/Controllers/Admin/AdminAtakFleetController.php');
+        self::assertStringContainsString('steamPlayers(', $controller);
+        self::assertStringContainsString('steamFromModReports(', $controller);
+        self::assertStringContainsString("'steam_keys'", $controller);
+        $view = $this->read('views/admin/atak-fleet/index.php');
+        self::assertStringContainsString('name="steam_keys[]"', $view);
+        self::assertStringContainsString("admin/formules-offertes", $view);
+        // Libellés traduits en anglais (parité i18n).
+        $en = require dirname(__DIR__, 2) . '/lang/en/site_auto.php';
+        foreach (AtakFleetLink::STATES as $info) {
+            self::assertArrayHasKey($info[0], $en);
+            self::assertArrayHasKey($info[2], $en);
+        }
+        foreach (AtakFleetLink::PLAN_ACCESS as $info) {
+            self::assertArrayHasKey($info[0], $en);
+        }
     }
 }
