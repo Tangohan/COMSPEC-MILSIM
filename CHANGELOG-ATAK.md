@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vidéo Live : flux drone en lecture seule avec cadres sur les cibles, marquage LOCK et marquage du point visé (ATAK natif, version fixée au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le chef de groupe peut marquer ce que regarde l'opérateur du drone
+- Dans Vidéo Live, un drone de DRONES DU CAMP s'affiche avec un réticule, le cap de la caméra et la grille et la distance du point visé.
+- Un cadre jaune entoure la personne ou le véhicule sous le réticule ; MARQUER LA CIBLE l'accroche : cadre LOCK rouge dans l'image et marqueur qui suit la cible sur la carte tant que tu regardes le flux.
+- MARQUER LE POINT pose un marqueur de ta palette sur la carte à l'endroit visé, partagé comme tes autres marqueurs.
+- Le flux reste en lecture seule : l'opérateur du terminal UAV garde le contrôle du drone.
+EN : Squad leaders can mark what the drone operator is looking at
+- In Live video, a drone from FRIENDLY DRONES shows a reticle, the camera heading and the grid and distance of the aimed point.
+- A yellow box surrounds the person or vehicle under the reticle; MARK TARGET locks it: red LOCK box in the picture and a marker that follows the target on the map while you watch the feed.
+- MARK POINT drops a marker from your palette on the map at the aimed spot, shared like your other markers.
+- The feed stays read-only: the UAV terminal operator keeps control of the drone.
+
+### Détail technique
+- `fn_livecamUav.sqf` : direction de la caméra gardée dans le repère du drone (`COMSPEC_ATAK_LivecamUavDir`) ; mode `["aim"]` = point du sol sous le réticule (3 km) ; ligne CAP / VISÉ rafraîchie chaque seconde.
+- `fn_lockAction.sqf` : nouvelle source `LIVECAM` (caméra du flux, champ du terminal de l'opérateur) pour `mark`, `aimed` et le suivi.
+- `fn_droneFlir.sqf` : style `LIVECAM` (cadres seulement, repère de la caméra du flux) : cadre jaune « VISÉ » et cadres LOCK.
+- `fn_pageLivecam.sqf` : réticule, ligne VISÉ, boutons MARQUER LA CIBLE et MARQUER LE POINT (`fn_markerDrop`, 2 s entre deux marques) pour un drone du camp seulement.
+- `fn_livecamStop.sqf` : nettoyage. `i18n/en.txt` : 4 textes.
+- Pas de bump ni de main.pbo reconstruit : à faire au regroupement.
+
 ## Regroupement : bandeau de la carte, arsenal ACE réparé, briefing et CAS dans le téléphone, ancien menu ACE retiré, diapositives Athena, Connexion Athena dans Eden (SSE), chargement plus fluide (ATAK natif 2.3.5.AB - Denver)
 
 ### Résumé joueur
