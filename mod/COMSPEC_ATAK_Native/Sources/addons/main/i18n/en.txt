@@ -14049,5 +14049,6 @@
 ["Capture de la carte (%1) : environ %2 images (%3 Go, %4), début dans 5 s. Échap pour arrêter, la capture reprend où elle s'est arrêtée.", "Map capture (%1): about %2 images (%3 GB, %4), starting in 5 s. Esc to stop, the capture resumes where it stopped."],
 ["%1 m : %2 cases, trop pour une capture. Choisir une zone (rayon) pour cette hauteur.", "%1 m: %2 tiles, too many for one capture. Pick an area (radius) for this height."],
 ["Garder les PNG d'origine", "Keep the original PNGs"],
-["En cours : ", "In progress: "]
+["En cours : ", "In progress: "],
+["Joueur mort ou inconscient : les effets d'écran brouilleraient les photos. Capture arrêtée, la relancer avec un joueur en vie (elle reprend où elle s'est arrêtée).", "Player dead or unconscious: screen effects would blur the photos. Capture stopped, start it again with a living player (it resumes where it stopped)."]
 ]

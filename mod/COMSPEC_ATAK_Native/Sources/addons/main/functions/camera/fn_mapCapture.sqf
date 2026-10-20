@@ -347,6 +347,10 @@ switch (_act) do {
                 0 setOvercast 0; 0 setRain 0; 0 setFog 0;
             };
             if (_clear) then { (_weather select 0) call _noon; forceWeatherChange; };
+            // Joueur invulnérable le temps de la capture : mort ou inconscient, les effets d'écran (flou, gris) se
+            // retrouvaient sur toutes les photos (TTRD, 20/10). Remis comme avant à la fin.
+            private _dmgKeep = isDamageAllowed player;
+            player allowDamage false;
             // Unités, morts et véhicules cachés (localement), le joueur compris.
             private _hidden = [];
             if (_hide) then {
@@ -552,6 +556,11 @@ switch (_act) do {
                 private _id = (_gx0 + _ix) * 10000 + _gy0 + _iy;
                 if (!(_resume && {_id in _done}) && {_towns isEqualTo [] || {(_ix * 10000 + _iy) in _towns}}
                     && {!_skipSea || {!([_px, _py, _step * 1.2] call _isSea)}}) then {
+                    // Joueur mort ou inconscient malgré tout (tué avant la capture) : arrêt plutôt que des photos floues.
+                    if (!alive player || {(lifeState player) isNotEqualTo "HEALTHY" && {(lifeState player) isNotEqualTo "INJURED"}}) exitWith {
+                        _why = "Joueur mort ou inconscient : les effets d'écran brouilleraient les photos. Capture arrêtée, la relancer avec un joueur en vie (elle reprend où elle s'est arrêtée).";
+                        missionNamespace setVariable ["COMSPEC_ATAK_MapCapStop", true];
+                    };
                     [_L, _px, _py] call _place;
                     // Chargement des objets et du terrain détaillé avant la photo (plus long au premier passage).
                     if (!isNull _cam) then { preloadCamera (getPosATL _cam); };
@@ -582,7 +591,8 @@ switch (_act) do {
                     private _fr = diag_frameNo;
                     waitUntil { diag_frameNo > _fr + 2 };
                     private _file = format ["cmap_%1_%2_h%3_s%4_w%5_o%6-%7_x%8_y%9.png", worldName, _mode, round _h, _step, _fw, round _x0, round _y0, _ix, _iy];
-                    screenshot _file;
+                    // Refus du moteur noté dans le journal (écran éteint ou dossier plein : aucune image).
+                    if !(screenshot _file) then { ["WARNING", "MAPCAP", format ["Photo refusée par le moteur : %1", _file]] call comspec_atak_native_fnc_log; };
                     diag_log text format ["CMAPF|%1", _file];
                     if (_calib isNotEqualTo []) then {
                         private _span = _step * 1.2;
@@ -596,7 +606,8 @@ switch (_act) do {
                     };
                     uiSleep 0.35;
                     if (_dll) then {
-                        ["MapCap.Collect", [_file, worldName, _mode, str (round _h), format ["%1:%2", _k, _id], ["0", "1"] select _keepPng]] call comspec_atak_native_fnc_extensionCall;
+                        // Case en entier (toFixed : au-delà d'un million, format écrivait « 1.85011e+06 »).
+                        ["MapCap.Collect", [_file, worldName, _mode, str (round _h), format ["%1:%2", _k, _id toFixed 0], ["0", "1"] select _keepPng]] call comspec_atak_native_fnc_extensionCall;
                     } else {
                         _done set [_id, true];
                     };
@@ -671,6 +682,7 @@ switch (_act) do {
             setObjectViewDistance (_keep select 1);
             setTerrainGrid (_keep select 2);
             { if (!isNull _x) then { _x hideObject false; }; } forEach _hidden;
+            player allowDamage _dmgKeep;
             if (_clear) then {
                 _weather params ["_date", "_oc", "_fog", "_rain"];
                 setDate _date;
