@@ -1871,6 +1871,9 @@ return function (Router $router) {
     $router->get('/back-office/ressources/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/etat', [AdminAtakReportRoutingController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports/ordre', [AdminAtakReportRoutingController::class, 'reorder'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports/simuler', [AdminAtakReportRoutingController::class, 'simulate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/dupliquer', [AdminAtakReportRoutingController::class, 'duplicate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/supprimer', [AdminAtakReportRoutingController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
