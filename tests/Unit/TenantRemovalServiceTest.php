@@ -100,8 +100,26 @@ final class TenantRemovalServiceTest extends TestCase
         $restore = $this->service()->restore(2);
         self::assertTrue($restore['ok']);
         self::assertSame(3, $restore['memberships']);
+        self::assertSame(2, $restore['moved_back']);
+        self::assertSame(2, (int) $this->pdo->query('SELECT tenant_id FROM users WHERE id = 10')->fetchColumn());
+        self::assertSame(2, (int) $this->pdo->query('SELECT tenant_id FROM users WHERE id = 11')->fetchColumn());
         $row = $this->pdo->query('SELECT * FROM tenants WHERE id = 2')->fetch(PDO::FETCH_ASSOC);
         self::assertFalse(TenantArchiveState::isArchived($row));
+    }
+
+    public function testRestoreOfAnOlderArchiveBringsBackAccountsLeftWithoutOrganisation(): void
+    {
+        self::assertTrue($this->service()->archive(2, 99)['ok']);
+        // Archive faite avant l'ajout de `moved_users` : la liste des comptes déplacés manque.
+        $this->pdo->exec("UPDATE tenants SET settings = '{\"platform_archive\":{\"archived_at\":\"2026-10-20\"}}' WHERE id = 2");
+
+        $restore = $this->service()->restore(2);
+
+        self::assertTrue($restore['ok']);
+        self::assertSame(1, $restore['moved_back']);
+        self::assertSame(2, (int) $this->pdo->query('SELECT tenant_id FROM users WHERE id = 11')->fetchColumn());
+        // Le compte parti dans une autre vraie communauté y reste.
+        self::assertSame(3, (int) $this->pdo->query('SELECT tenant_id FROM users WHERE id = 10')->fetchColumn());
     }
 
     public function testDeleteRequiresArchiveAndExactSlug(): void

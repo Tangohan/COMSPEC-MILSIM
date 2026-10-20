@@ -8571,6 +8571,7 @@ return [
     'Communauté rattachée. Validez maintenant votre côté — l’autre communauté doit aussi confirmer.' => 'Community linked. Now confirm your side — the other community must also confirm.',
     'Communauté restaurée' => 'Community restored',
     'Communauté restaurée : %1 appartenance(s) réactivée(s). Les membres la retrouvent dans leur sélecteur de communauté.' => 'Community restored: %1 membership(s) reactivated. Members find it again in their community switcher.',
+    'Communauté restaurée : %1 appartenance(s) réactivée(s), %2 compte(s) ramené(s) dans la communauté.' => 'Community restored: %1 membership(s) reactivated, %2 account(s) brought back into the community.',
     'Communauté sans nom' => 'Unnamed community',
     'Communauté supprimée' => 'Community deleted',
     'Communauté « %1 » supprimée définitivement. Sauvegarde : %2. Les comptes des joueurs sont conservés.' => 'Community “%1” permanently deleted. Backup: %2. Player accounts are kept.',
