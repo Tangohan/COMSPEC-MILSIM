@@ -42,7 +42,9 @@ if (isNil "_info") then {
         // zoomPaths[] = {{niveau, chemin}} : niveau rangé dans une autre PBO (une seule dépasserait 2 Go), tuiles x\y.
         private _zp = createHashMap;
         { if (_x isEqualType [] && {(count _x) >= 2}) then { _zp set [_x select 0, _x select 1]; }; } forEach (getArray (_cfg >> "zoomPaths"));
-        _info = [getNumber (_cfg >> "extent"), (getNumber (_cfg >> "tileSize")) max 1, getNumber (_cfg >> "minZoom"), getNumber (_cfg >> "maxZoom"), getText (_cfg >> "path"), getText (_cfg >> "ext"), "pbo", 0, 0, 0, _zp];
+        // fullMaxZoom : dernier niveau qui couvre toute la carte (au-delà : autour des localités seulement).
+        private _full = if (isNumber (_cfg >> "fullMaxZoom")) then { getNumber (_cfg >> "fullMaxZoom") } else { getNumber (_cfg >> "maxZoom") };
+        _info = [getNumber (_cfg >> "extent"), (getNumber (_cfg >> "tileSize")) max 1, getNumber (_cfg >> "minZoom"), getNumber (_cfg >> "maxZoom"), getText (_cfg >> "path"), getText (_cfg >> "ext"), "pbo", 0, 0, 0, _zp, _full];
     };
     uiNamespace setVariable [format ["COMSPEC_ATAK_PhotoInfo_%1", worldName], _info];
 };
@@ -238,9 +240,9 @@ private _exists = if (_web) then {
 // COMSPEC_ATAK_PhotoPxAdjust (profil, défaut 1).
 private _k = 480 / ((getResolution select 3) max 1) * ((profileNamespace getVariable ["COMSPEC_ATAK_PhotoPxAdjust", 1]) max 0.1);
 // Un seul niveau par image : deux hauteurs de capture ne tombent pas au mètre près au même endroit, un mélange de
-// tuiles fines et d'ancêtres agrandis donnait une mosaïque décalée (TTRD 20/10). Le niveau le plus fin, capturé
-// seulement autour des localités (vue 120 m), ne sert que s'il couvre toute l'image ; aux autres niveaux, une tuile
-// absente est de la mer (non photographiée) : le bleu dessiné dessous suffit.
+// tuiles fines et d'ancêtres agrandis donnait une mosaïque décalée (TTRD 20/10). Les niveaux au-delà de fullMaxZoom,
+// capturés seulement autour des localités (vues 120 m, 45 m), ne servent que s'ils couvrent toute l'image ; jusqu'à
+// fullMaxZoom, une tuile absente est de la mer (non photographiée) : le bleu dessiné dessous suffit.
 private _fine = [];
 private _coarse = createHashMap;
 private _collect = {
@@ -253,12 +255,13 @@ private _collect = {
     };
     _miss
 };
+private _zFull = _info param [11, _zMax];
 private _miss = call _collect;
-if (_z isEqualTo _zMax && {_miss > 0} && {_z > _zMin}) then {
+while { _z > _zFull && {_miss > 0} && {_z > _zMin} } do {
     _z = _z - 1;
     ([_z] call _range) params ["_T2", "_x02", "_x12", "_y02", "_y12"];
     _T = _T2; _x0 = _x02; _x1 = _x12; _y0 = _y02; _y1 = _y12;
-    call _collect;
+    _miss = call _collect;
 };
 private _draw = {
     params ["_zz", "_tx", "_ty"];

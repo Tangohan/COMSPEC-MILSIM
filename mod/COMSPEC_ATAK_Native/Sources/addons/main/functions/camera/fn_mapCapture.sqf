@@ -45,7 +45,8 @@
                  rayon (m, avec un centre), recouvrement (0 à 0.5, défaut 0.15), attente par tuile (s, défaut 2),
                  ciel dégagé à midi (défaut vrai), cacher unités et véhicules (défaut vrai),
                  reprendre le relevé (défaut vrai), passer la mer (défaut vrai), garder les PNG d'origine (défaut faux),
-                 hauteurs prises autour des localités seulement : en dessous de (m, défaut 0 : partout)]]
+                 hauteurs prises autour des localités seulement : en dessous de (m, défaut 0 : partout),
+                 autour des villes et aéroports seulement (sans les villages) : en dessous de (m, défaut 0)]]
       ["stop"]   arrête la capture en cours
       ["count", mêmes arguments que start] → [nombre de tuiles à prendre, pas en m] (estimation, sans rien capturer)
       ["progress"] → texte du suivi du relevé de la carte en cours (avec l'état de la capture en cours)
@@ -133,9 +134,11 @@ private _landCount = {
 // Cases proches d'une localité (vues basses) : HashMap colonne × 10000 + ligne de la grille -> vrai. Rayon selon le type,
 // ou la taille de la localité si elle est plus grande.
 private _townCells = {
-    params ["_x0", "_y0", "_nx", "_ny", "_step"];
+    params ["_x0", "_y0", "_nx", "_ny", "_step", ["_villages", true]];
     private _cells = createHashMap;
     private _radii = createHashMapFromArray [["NameCityCapital", 900], ["NameCity", 600], ["NameVillage", 300], ["Airport", 1000]];
+    // Vues très basses : villes, capitale et aéroports seulement (sans les villages).
+    if (!_villages) then { _radii deleteAt "NameVillage"; };
     {
         private _p = locationPosition _x;
         private _r = (_radii getOrDefault [type _x, 300]) max (((size _x) select 0) max ((size _x) select 1));
@@ -219,7 +222,7 @@ private _progText = {
 };
 // Estimation avant la capture (pas par défaut, ou celui du relevé déjà commencé).
 private _estimate = {
-    params ["_mode", "_heights", "_center", "_radius", "_overlap", "_resume", "_skipSea", ["_townsBelow", 0]];
+    params ["_mode", "_heights", "_center", "_radius", "_overlap", "_resume", "_skipSea", ["_townsBelow", 0], ["_citiesBelow", 0]];
     private _total = 0; private _steps = [];
     private _all = call _progAll;
     {
@@ -229,6 +232,7 @@ private _estimate = {
         if (_rec isNotEqualTo []) then { _step = _rec select 0; };
         ([_center, _radius, _step] call _grid) params ["_x0", "_y0", "_nx", "_ny"];
         private _n = switch (true) do {
+            case (_x < _citiesBelow): { count ([_x0, _y0, _nx, _ny, _step, false] call _townCells) };
             case (_x < _townsBelow): { count ([_x0, _y0, _nx, _ny, _step] call _townCells) };
             case (_skipSea): { [_x0, _y0, _nx, _ny, _step] call _landIn };
             default { _nx * _ny };
@@ -251,9 +255,9 @@ switch (_act) do {
     };
     case "count": {
         _arg params [["_mode", "sat"], ["_heights", [400]], ["_center", []], ["_radius", 1000], ["_overlap", 0.15], "", "", "",
-            ["_resume", true], ["_skipSea", true], "", ["_townsBelow", 0]];
+            ["_resume", true], ["_skipSea", true], "", ["_townsBelow", 0], ["_citiesBelow", 0]];
         if (_center isEqualType objNull) then { _center = getPosATL _center; };
-        [_mode, _heights, _center, _radius, _overlap, _resume, _skipSea, _townsBelow] call _estimate
+        [_mode, _heights, _center, _radius, _overlap, _resume, _skipSea, _townsBelow, _citiesBelow] call _estimate
     };
     case "progress": { call _progText };
     case "sync": { call _sync };
@@ -270,7 +274,7 @@ switch (_act) do {
         ["Capture de la carte", [
             ["COMBO", "Rendu", [["sat", "3d", "plan"], ["Satellite (vue de dessus)", "3D oblique (45°)", "Plan topographique"], 0]],
             ["COMBO", ["Niveaux de zoom", "Une hauteur par niveau de zoom du fond SATELLITE, comme Google Maps : plus bas = vue plus proche et détaillée, plus haut = vue d'ensemble. 120 m : autour des localités seulement si la case ci-dessous est cochée."],
-                [[0, 1, 2], ["Standard : 300, 800, 1200, 3500 m", "Avec les villes : 120, 300, 800, 1200, 3500 m", "Personnalisé (hauteurs ci-dessous)"], 1]],
+                [[0, 1, 2], ["Standard : 300, 800, 1200, 3500 m", "Avec les villes : 120, 300, 800, 1200, 3500 m", "Villes en détail : 45, 120, 300, 800, 1200, 3500 m", "Personnalisé (hauteurs ci-dessous)"], 1]],
             ["EDIT", ["Hauteurs (m, séparées par des virgules)", "Avec « Personnalisé ». Une couche par hauteur, soit un niveau de zoom du fond, comme Google Maps. Altis entière (images de 1 à 2 Mo) : 3500 m ≈ 35 images, 1200 m ≈ 300, 800 m ≈ 650, 300 m ≈ 4000 images (8 Go, 3 h), 150 m ≈ 16 000 (32 Go, 11 h), 50 m ≈ 140 000 (280 Go) : en dessous de 300 m, plutôt une zone (ville). Estimation affichée au lancement."], "300, 800, 1200, 3500"],
             ["COMBO", "Zone", [[0, 1], ["Autour de la position du module", "Carte entière"], 1]],
             ["SLIDER", "Rayon de la zone (m)", [100, 20000, 1500, 0]],
@@ -279,18 +283,18 @@ switch (_act) do {
             ["CHECKBOX", ["Cacher unités et véhicules", "Rien de mobile sur les images (vue locale, remis après)"], true],
             ["CHECKBOX", ["Reprendre le relevé", "Saute les cases dont l'image existe déjà (suivi ci-dessous)"], true],
             ["CHECKBOX", ["Passer la mer", "Ne photographie pas les cases entièrement en mer"], true],
-            ["CHECKBOX", ["Vues basses autour des localités seulement", "Hauteurs sous 200 m (ex. 120 m) : seulement près des villes, villages, de la capitale et des aéroports. Ailleurs, la vue de 300 m montre déjà tout ce que le sol d'Arma a de détails."], true],
+            ["CHECKBOX", ["Vues basses autour des localités seulement", "Hauteurs sous 200 m (ex. 120 m) : seulement près des villes, villages, de la capitale et des aéroports ; sous 80 m (ex. 45 m) : villes, capitale et aéroports seulement. Ailleurs, la vue de 300 m montre déjà tout ce que le sol d'Arma a de détails."], true],
             ["CHECKBOX", ["Garder les PNG d'origine", "En plus des JPEG corrigés : environ 20 Mo par image, dans un sous-dossier png"], false],
             ["CHECKBOX", ["Repartir de zéro", "Oublie le suivi de cette carte avant de commencer (les images déjà prises restent sur le disque)"], false],
             ["EDIT:MULTI", ["Suivi du relevé", format ["Part de la carte déjà photographiée, par rendu et hauteur, d'après les images présentes dans %1", call _shotDir]], call _progText]
         ], {
             params ["_values", "_pos"];
             _values params ["_mode", "_preset", "_hs", "_zone", "_radius", "_wait", "_clear", "_hide", "_resume", "_skipSea", "_towns", "_keepPng", "_reset"];
-            private _heights = [[300, 800, 1200, 3500], [120, 300, 800, 1200, 3500]] param [_preset, []];
+            private _heights = [[300, 800, 1200, 3500], [120, 300, 800, 1200, 3500], [45, 120, 300, 800, 1200, 3500]] param [_preset, []];
             if (_heights isEqualTo []) then { _heights = ((_hs splitString ", ;") apply { parseNumber _x }) select { _x >= 20 && {_x <= 10000} }; };
             if (_heights isEqualTo []) then { _heights = [300, 800, 1200, 3500]; };
             if (_reset) then { ["reset"] call comspec_atak_native_fnc_mapCapture; };
-            ["start", [_mode, _heights, [[], _pos] select (_zone isEqualTo 0), _radius, 0.15, _wait, _clear, _hide, _resume && !_reset, _skipSea, _keepPng, [0, 200] select _towns]] call comspec_atak_native_fnc_mapCapture;
+            ["start", [_mode, _heights, [[], _pos] select (_zone isEqualTo 0), _radius, 0.15, _wait, _clear, _hide, _resume && !_reset, _skipSea, _keepPng, [0, 200] select _towns, [0, 80] select _towns]] call comspec_atak_native_fnc_mapCapture;
         }, {}, ASLToAGL _arg] call zen_dialog_fnc_create;
         true
     };
@@ -300,7 +304,7 @@ switch (_act) do {
             false
         };
         _arg params [["_mode", "sat"], ["_heights", [400]], ["_center", []], ["_radius", 1000], ["_overlap", 0.15], ["_wait", 2], ["_clear", true], ["_hide", true],
-            ["_resume", true], ["_skipSea", true], ["_keepPng", false], ["_townsBelow", 0]];
+            ["_resume", true], ["_skipSea", true], ["_keepPng", false], ["_townsBelow", 0], ["_citiesBelow", 0]];
         _mode = toLower _mode;
         if !(_mode in ["sat", "3d", "plan"]) then { _mode = "sat"; };
         if (_center isEqualType objNull) then { _center = getPosATL _center; };
@@ -311,7 +315,7 @@ switch (_act) do {
         private _dll = call _dllDir;
         if (_dll isNotEqualTo "") then { call _sync; };
         // Rien à l'écran pendant la capture : estimation annoncée avant, interface Zeus et téléphone fermés.
-        ([_mode, _heights, _center, _radius, _overlap, _resume, _skipSea, _townsBelow] call _estimate) params ["_total"];
+        ([_mode, _heights, _center, _radius, _overlap, _resume, _skipSea, _townsBelow, _citiesBelow] call _estimate) params ["_total"];
         if (_total isEqualTo 0) exitWith {
             ["SUCCESS", "Rien à relever : toutes les cases de cette zone sont déjà prises (ou en mer). Décocher « Reprendre le relevé » pour les refaire.", 8, 40] call comspec_atak_native_fnc_notify;
             false
@@ -328,9 +332,9 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_MapCapRunning", true];
         missionNamespace setVariable ["COMSPEC_ATAK_MapCapStop", false];
         [_mode, _heights, _center, _radius, (_overlap max 0) min 0.5, _wait max 0.3, _clear, _hide, _defaultFoot, _grid,
-            _resume, _skipSea, _isSea, _progAll, _progKey, _progPut, _landCount, _shotDir, _stamp, _dll isNotEqualTo "", _keepPng, _total, _landIn, _townsBelow, _townCells] spawn {
+            _resume, _skipSea, _isSea, _progAll, _progKey, _progPut, _landCount, _shotDir, _stamp, _dll isNotEqualTo "", _keepPng, _total, _landIn, _townsBelow, _townCells, _citiesBelow] spawn {
             params ["_mode", "_heights", "_center", "_radius", "_overlap", "_wait", "_clear", "_hide", "_defaultFoot", "_grid",
-                "_resume", "_skipSea", "_isSea", "_progAll", "_progKey", "_progPut", "_landCount", "_shotDir", "_stamp", "_dll", "_keepPng", "_estimated", "_landIn", "_townsBelow", "_townCells"];
+                "_resume", "_skipSea", "_isSea", "_progAll", "_progKey", "_progPut", "_landCount", "_shotDir", "_stamp", "_dll", "_keepPng", "_estimated", "_landIn", "_townsBelow", "_townCells", "_citiesBelow"];
             disableSerialization;
             private _layer = "COMSPEC_ATAK_MapCapUI" call BIS_fnc_rscLayer;
             private _status = {
@@ -494,7 +498,11 @@ switch (_act) do {
                         _step, _fw, _fh, _x0, _y0, _nx, _ny, _gn, _step * 1.2];
                 };
                 // Vue basse : cases autour des localités seulement ([] : toutes).
-                private _towns = [[], [_x0, _y0, _nx, _ny, _step] call _townCells] select (_h < _townsBelow);
+                private _towns = switch (true) do {
+                    case (_h < _citiesBelow): { [_x0, _y0, _nx, _ny, _step, false] call _townCells };
+                    case (_h < _townsBelow): { [_x0, _y0, _nx, _ny, _step] call _townCells };
+                    default { [] };
+                };
                 _layers pushBack [_h, _alt, _fov, _planScale, _step, _x0, _y0, _nx, _ny, round (_x0 / _step), round (_y0 / _step), _key, _done, _land, _calib, createHashMap, round _fw, _towns];
             } forEach _heights;
             // 2. Parcours par zones : chaque case d'une hauteur rattachée à la case de la hauteur au-dessus qui contient son
