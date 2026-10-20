@@ -134,6 +134,8 @@ switch (_action) do {
                 ["open"] call comspec_atak_native_fnc_athenaLink;
             };
             private _result = "";
+            // Refus d'Athena pendant le suivi du code (ex. http_426, http_403) : gardé pour l'afficher, le serveur a bien répondu.
+            private _fail = "";
             while { (call _mine) && {_result isEqualTo ""} && {diag_tickTime < _until} } do {
                 sleep _every;
                 if !(call _mine) exitWith {};
@@ -141,7 +143,11 @@ switch (_action) do {
                 switch (true) do {
                     case (_r isEqualTo "OK|approved"): { _result = "approved"; };
                     case ((_r find "ERR|expired") isEqualTo 0 || {(_r find "ERR|no_pairing") isEqualTo 0}): { _result = "expired"; };
-                    case ((_r find "ERR|http_4") isEqualTo 0): { _result = "error"; };
+                    case ((_r find "ERR|http_4") isEqualTo 0): {
+                        _result = "error";
+                        _fail = (_r splitString "|") param [1, "http_4xx"];
+                        ["WARN", "ATHENA", format ["PairStatus refusé par Athena : %1", _r]] call comspec_atak_native_fnc_log;
+                    };
                     default {};
                 };
             };
@@ -157,7 +163,7 @@ switch (_action) do {
                 ["INFO", "ATHENA", format ["Code de connexion %1 expiré, app Athena ouverte : nouveau code (%2/3)", _code, _renew + 1]] call comspec_atak_native_fnc_log;
                 ["start", false, true] call comspec_atak_native_fnc_athenaLink;
             };
-            uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", [_result, _code, 0, _uri, _full, ""]];
+            uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", [_result, _code, 0, _uri, _full, _fail]];
             ["INFO", "ATHENA", format ["Code de connexion %1 : %2", _code, _result]] call comspec_atak_native_fnc_log;
             if (_result isEqualTo "approved") then {
                 ["SUCCESS", "Compte Athena connecté : synchronisation de votre profil.", 6, 40] call comspec_atak_native_fnc_notify;

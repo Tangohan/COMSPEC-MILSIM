@@ -146,7 +146,12 @@ if (_logged) then {
                     };
                     case "error": {
                         _rows append [
-                            ["text", format ["<t color='#f2c66b'>Athena n'a pas donné de code (%1). Vérifiez la connexion internet du jeu.</t>", _ld], _card],
+                            ["text", if ((_ld find "http_4") isEqualTo 0) then {
+                                // Athena a répondu mais refuse : cause et action lues dans fn_athenaStatus.
+                                format ["<t color='#f2c66b'>%1</t><br/><t color='#c9d4cf'>%2</t>", _st getOrDefault ["text", ""], _st getOrDefault ["action", ""]]
+                            } else {
+                                format ["<t color='#f2c66b'>Athena n'a pas donné de code (%1). Vérifiez la connexion internet du jeu.</t>", _ld]
+                            }, _card],
                             ["buttons", [["RÉESSAYER", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
                         ];
                     };
