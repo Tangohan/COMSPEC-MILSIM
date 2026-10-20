@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vidéo Live : flux drone en lecture seule avec réticule et marquage du point visé (ATAK natif, version fixée au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le chef de groupe peut marquer ce que regarde l'opérateur du drone
+- Dans Vidéo Live, un drone de DRONES DU CAMP s'affiche maintenant avec un réticule au centre et, en bas, le cap de la caméra et la grille et la distance du point visé.
+- Le bouton MARQUER LE POINT VISÉ pose sur la carte un marqueur de ta palette à l'endroit sous le réticule, partagé comme tes autres marqueurs.
+- Le flux reste en lecture seule : personne ne prend la main sur le drone, l'opérateur du terminal UAV garde le contrôle.
+EN : Squad leaders can mark what the drone operator is looking at
+- In Live video, a drone from FRIENDLY DRONES now shows a centre reticle and, at the bottom, the camera heading plus the grid and distance of the aimed point.
+- The MARK AIMED POINT button drops a marker from your palette on the map at the spot under the reticle, shared like your other markers.
+- The feed stays read-only: nobody takes over the drone, the UAV terminal operator keeps control.
+
+### Détail technique
+- `fn_livecamUav.sqf` : direction de la caméra gardée dans le repère du drone (`COMSPEC_ATAK_LivecamUavDir`) ; mode `["aim"]` = point du sol sous le réticule (`lineIntersectsSurfaces`, 3 km) ; ligne CAP / VISÉ rafraîchie chaque seconde.
+- `fn_pageLivecam.sqf` : réticule, ligne VISÉ et bouton MARQUER LE POINT VISÉ (`fn_markerDrop`, 2 s entre deux marques, nom du drone ajouté au marqueur) pour un drone du camp seulement.
+- `fn_livecamStop.sqf` : nettoyage. `i18n/en.txt` : 3 textes.
+- Pas de bump ni de main.pbo reconstruit : à faire au regroupement.
+
 ## Regroupement : bandeau de la carte, arsenal ACE réparé, briefing et CAS dans le téléphone, ancien menu ACE retiré, diapositives Athena, Connexion Athena dans Eden (SSE), chargement plus fluide (ATAK natif 2.3.5.AB - Denver)
 
 ### Résumé joueur

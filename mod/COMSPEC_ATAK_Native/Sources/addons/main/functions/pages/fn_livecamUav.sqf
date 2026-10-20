@@ -11,9 +11,24 @@
     deux fois), toujours sur la nacelle même quand l'opérateur pilotait, et sans zoom.
     Rendue dans le même écran que le Live cam (r2t comspec_livecam). Le flux passe par la station de l'opérateur
     (fn_feedLink) : sans opérateur à portée, pas d'image.
+    Lecture seule, pour le chef de groupe qui regarde avec l'opérateur (idée d'un joueur, 20/10, comme BCE) : réticule
+    au centre de l'image, point visé (grille, distance) rafraîchi chaque seconde, et MARQUER LE POINT VISÉ (fn_pageLivecam)
+    qui pose un marqueur de la palette sur la carte, sans jamais toucher au drone.
     Params : [drone, mode 0 jour / 1 NV / 2 thermique]
+             ["aim"] : point du sol sous le réticule (ATL), [] sans image ou vers le ciel (3 km au plus).
 */
 params [["_uav", objNull], ["_mode", 0]];
+if (_uav isEqualTo "aim") exitWith {
+    private _c = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
+    private _u = missionNamespace getVariable ["COMSPEC_ATAK_LivecamUav", objNull];
+    private _d = missionNamespace getVariable ["COMSPEC_ATAK_LivecamUavDir", []];
+    if (isNull _c || {isNull _u} || {(count _d) < 3}) exitWith { [] };
+    // Direction gardée dans le repère du drone par la boucle (la caméra est attachée) : remise dans le monde ici.
+    private _eye = _c modelToWorldVisualWorld [0, 0, 0];
+    private _hit = lineIntersectsSurfaces [_eye, _eye vectorAdd ((_u vectorModelToWorldVisual _d) vectorMultiply 3000), _u, objNull, true, 1];
+    if ((count _hit) isEqualTo 0) exitWith { [] };
+    ASLToATL ((_hit select 0) select 0)
+};
 if (isNull _uav) exitWith { false };
 ["check", "LIVE CAM"] call comspec_atak_native_fnc_pipCheck;
 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
@@ -71,6 +86,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
             _dir = if (_p0 isNotEqualTo [0, 0, 0] && {_p1 isNotEqualTo [0, 0, 0]}) then { _p1 vectorDiff _p0 } else { [0, 0.94, -0.34] };
         };
         _dir = vectorNormalized _dir;
+        missionNamespace setVariable ["COMSPEC_ATAK_LivecamUavDir", _dir];
         private _side = _dir vectorCrossProduct [0, 0, 1];
         if ((vectorMagnitude _side) < 0.01) then { _side = [1, 0, 0]; };
         _cam setVectorDirAndUp [_dir, vectorNormalized (_side vectorCrossProduct _dir)];
@@ -111,6 +127,18 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
             _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · alt %4 m · %5 · %6</t>",
                 [_u, [], "NAME"] call comspec_atak_native_fnc_droneOsd, [getPosASL _u, 8] call comspec_atak_native_fnc_gridRef, round (player distance _u), round ((getPosATL _u) select 2),
                 [format ["opérateur %1", [_op, true] call comspec_atak_native_fnc_unitCallsign], "sans opérateur"] select (isNull _op), [daytime, "HH:MM:SS"] call BIS_fnc_timeToString]) call comspec_atak_native_fnc_tr);
+        };
+        // Point visé sous le réticule (lecture seule) : grille et distance depuis le drone, cap de la caméra.
+        private _aimOsd = uiNamespace getVariable ["COMSPEC_ATAK_LivecamAimOsd", controlNull];
+        if (!isNull _aimOsd) then {
+            private _p = ["aim"] call comspec_atak_native_fnc_livecamUav;
+            private _w = _u vectorModelToWorldVisual (missionNamespace getVariable ["COMSPEC_ATAK_LivecamUavDir", [0, 1, 0]]);
+            private _cap = [round (((_w select 0) atan2 (_w select 1)) + 360) mod 360, 3] call CBA_fnc_formatNumber;
+            _aimOsd ctrlSetStructuredText parseText ((if (_p isEqualTo []) then {
+                format ["<t size='0.8' shadow='2' shadowColor='#000000'>CAP %1° · VISÉ : Ciel</t>", _cap]
+            } else {
+                format ["<t size='0.8' shadow='2' shadowColor='#000000'>CAP %1° · VISÉ : <t font='COMSPEC_BarlowBold'>%2</t> · %3 m</t>", _cap, [_p, 8] call comspec_atak_native_fnc_gridRef, round (_u distance _p)]
+            }) call comspec_atak_native_fnc_tr);
         };
     }, 0, [0]] call CBA_fnc_addPerFrameHandler];
 };
