@@ -228,6 +228,12 @@ function run_user_community_identity_migration(PDO $pdo, ?callable $log = null):
 
     if ($tableExists('account_tenant_memberships') && $indexExists('account_tenant_memberships', 'uk_atm_user')) {
         try {
+            // fk_atm_user s'appuie sur cet index : sans un index simple sur user_id à sa place, MySQL refuse
+            // le DROP (« needed in a foreign key constraint ») et un membre reste rattaché à une seule communauté
+            // (connexion jeu refusée en NO_TENANT dans la communauté rejointe ensuite).
+            if (!$indexExists('account_tenant_memberships', 'idx_atm_user')) {
+                $pdo->exec('ALTER TABLE account_tenant_memberships ADD INDEX idx_atm_user (user_id)');
+            }
             $pdo->exec('ALTER TABLE account_tenant_memberships DROP INDEX uk_atm_user');
             $say('account_tenant_memberships.uk_atm_user dropped (un user, plusieurs communautés)');
         } catch (Throwable $e) {
