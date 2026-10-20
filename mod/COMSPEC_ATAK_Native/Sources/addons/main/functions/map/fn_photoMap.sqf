@@ -4,7 +4,8 @@
       - le mod optionnel @COMSPEC_ATAK_Photo (une PBO par carte, classe COMSPEC_ATAK_PhotoMaps), prioritaire s'il est
         chargé ;
       - sinon le fond publié sur Athena (map_stitch.py --upload, tuiles JPEG), téléchargé en jeu par la DLL
-        (MapPhoto.*, Extension_MapPhoto.cs) dans Documents\COMSPEC_MapCapture\cache\<carte>\sat\z\x\y.jpg et dessiné
+        (MapPhoto.*, Extension_MapPhoto.cs) dans Arma 3\COMSPEC_cache\map-photo\<carte>\sat\z\x\y.jpg (Arma ne charge pas une image hors de son
+        dossier ou de ceux des mods) et dessiné
         par son chemin absolu à barres obliques (C:/…/y.jpg, comme les images de briefing téléchargées par la DLL) :
         rien à installer, rien à redémarrer. Meta demandée une fois par mission (MapPhoto.Meta, réponse immédiate).
     Params :

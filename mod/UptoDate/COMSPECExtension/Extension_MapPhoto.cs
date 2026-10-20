@@ -15,7 +15,7 @@ namespace COMSPECExtension;
 /// <summary>
 /// Fond PHOTO du téléphone ATAK téléchargé en jeu depuis Athena (2.0.92), sans mod Steam ni redémarrage : les tuiles
 /// JPEG publiques du site (/map-photo/&lt;carte&gt;/&lt;rendu&gt;/z/x/y.jpg, envoyées par tools/map_stitch.py --upload) sont
-/// gardées dans Documents\COMSPEC_MapCapture\cache\&lt;carte&gt;\&lt;rendu&gt;\z\x\y.jpg (écriture .part puis renommage),
+/// gardées dans Arma 3\COMSPEC_cache\map-photo\&lt;carte&gt;\&lt;rendu&gt;\z\x\y.jpg (voir MapPhotoCacheRoot) (écriture .part puis renommage),
 /// avec meta.json et index.txt (tuiles qui existent sur le site). Le téléphone les dessine par leur chemin absolu à
 /// barres obliques (C:/…/y.jpg), comme les images de briefing téléchargées (DownloadBriefingSlideImage).
 /// Jamais bloquant : chaque commande répond tout de suite, le réseau et le disque travaillent en tâche de fond
@@ -105,7 +105,39 @@ public static partial class Extension
         return s;
     }
 
-    private static string MapPhotoCacheRoot() => Path.Combine(MapCapRoot(), "cache");
+    /// <summary>Dossier du cache : Arma ne charge une image par chemin absolu que sous son propre dossier ou celui d'un
+    /// mod (« Cannot load texture c:/users/…/documents/… » : rien ne s'affichait, TTRD 20/10). Dossier d'Arma
+    /// (Arma 3\COMSPEC_cache\map-photo), gardé d'une mise à jour Steam à l'autre ; sinon celui de la DLL (le mod,
+    /// comme les images de briefing) ; Documents en dernier recours.</summary>
+    private static string MapPhotoCacheRoot()
+    {
+        var c = _mapPhotoCacheRoot;
+        if (c != null) return c;
+        var tries = new List<string>();
+        try
+        {
+            var exe = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exe) && Path.GetFileName(exe).StartsWith("arma3", StringComparison.OrdinalIgnoreCase))
+                tries.Add(Path.Combine(Path.GetDirectoryName(exe)!, "COMSPEC_cache", "map-photo"));
+        }
+        catch { /* chemin du jeu inconnu */ }
+        tries.Add(Path.Combine(AppContext.BaseDirectory, "comspec_cache", "map-photo"));
+        tries.Add(Path.Combine(MapCapRoot(), "cache"));
+        foreach (var dir in tries)
+        {
+            try
+            {
+                Directory.CreateDirectory(dir);
+                var probe = Path.Combine(dir, ".write_test");
+                File.WriteAllText(probe, "ok");
+                File.Delete(probe);
+                return _mapPhotoCacheRoot = dir;
+            }
+            catch { /* dossier suivant */ }
+        }
+        return _mapPhotoCacheRoot = tries[^1];
+    }
+    private static string? _mapPhotoCacheRoot;
 
     private static string MapPhotoFile(MapPhotoSet set, long k) =>
         Path.Combine(set.Dir, ((int)(k >> 48)).ToString(CultureInfo.InvariantCulture), ((int)((k >> 24) & 0xFFFFFF)).ToString(CultureInfo.InvariantCulture),
