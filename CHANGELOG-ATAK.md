@@ -38,28 +38,37 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Vidéo Live : flux drone en lecture seule avec cadres sur les cibles, marquage LOCK et marquage du point visé (ATAK natif, version fixée au regroupement)
+## Regroupement : marquage depuis le flux d'un drone du camp, GPS sans position périmée, connexion Athena du natif, matériel SSE reconnu, pack photo de la carte (ATAK natif 2.3.6.AB - Denver)
 
 ### Résumé joueur
 Type : nouveauté
-FR : Le chef de groupe peut marquer ce que regarde l'opérateur du drone
-- Dans Vidéo Live, un drone de DRONES DU CAMP s'affiche avec un réticule, le cap de la caméra et la grille et la distance du point visé.
-- Un cadre jaune entoure la personne ou le véhicule sous le réticule ; MARQUER LA CIBLE l'accroche : cadre LOCK rouge dans l'image et marqueur qui suit la cible sur la carte tant que tu regardes le flux.
-- MARQUER LE POINT pose un marqueur de ta palette sur la carte à l'endroit visé, partagé comme tes autres marqueurs.
-- Le flux reste en lecture seule : l'opérateur du terminal UAV garde le contrôle du drone.
-EN : Squad leaders can mark what the drone operator is looking at
-- In Live video, a drone from FRIENDLY DRONES shows a reticle, the camera heading and the grid and distance of the aimed point.
-- A yellow box surrounds the person or vehicle under the reticle; MARK TARGET locks it: red LOCK box in the picture and a marker that follows the target on the map while you watch the feed.
-- MARK POINT drops a marker from your palette on the map at the aimed spot, shared like your other markers.
-- The feed stays read-only: the UAV terminal operator keeps control of the drone.
+FR : Marque ce que voit le drone, GPS plus juste, connexion Athena réparée
+- Vidéo Live : sur un drone de DRONES DU CAMP, un réticule donne le cap, la grille et la distance du point visé ; MARQUER LA CIBLE accroche la personne ou le véhicule encadré (LOCK suivi sur la carte) et MARQUER LE POINT pose un marqueur à l'endroit visé. L'opérateur du terminal UAV garde le contrôle.
+- GPS : sans fix, le téléphone ne te place plus là où tu étais il y a 100 m ; il passe sur une position par le réseau autour de toi (plus précise avec plus de barres), ou dit qu'il n'a pas de position fiable.
+- Connexion Athena : avec l'ATAK natif seul, un code autorisé sur le site ouvre bien la session ; en cas de refus, le téléphone affiche la vraie cause au lieu de « serveur injoignable ».
+- Aussi : l'appareil photo, le SEEK et le terminal de COMSPEC SSE fonctionnent avec le téléphone ATAK natif, et la capture de la carte propose des vues plus proches et plus lointaines pour le nouveau pack photo optionnel.
+EN : Mark what the drone sees, more honest GPS, Athena sign-in fixed
+- Live video: on a FRIENDLY DRONES drone, a reticle gives the heading, grid and distance of the aimed point; MARK TARGET locks the boxed person or vehicle (LOCK followed on the map) and MARK POINT drops a marker at the aimed spot. The UAV terminal operator keeps control.
+- GPS: without a fix, the phone no longer places you where you were 100 m ago; it switches to a network position around you (more accurate with more bars), or says it has no reliable position.
+- Athena sign-in: with the native ATAK alone, a code authorised on the website now opens the session; when it is refused, the phone shows the real reason instead of "server unreachable".
+- Also: the COMSPEC SSE camera, SEEK and terminal work with the native ATAK phone, and map capture offers closer and wider views for the new optional photo pack.
 
 ### Détail technique
-- `fn_livecamUav.sqf` : direction de la caméra gardée dans le repère du drone (`COMSPEC_ATAK_LivecamUavDir`) ; mode `["aim"]` = point du sol sous le réticule (3 km) ; ligne CAP / VISÉ rafraîchie chaque seconde.
-- `fn_lockAction.sqf` : nouvelle source `LIVECAM` (caméra du flux, champ du terminal de l'opérateur) pour `mark`, `aimed` et le suivi.
-- `fn_droneFlir.sqf` : style `LIVECAM` (cadres seulement, repère de la caméra du flux) : cadre jaune « VISÉ » et cadres LOCK.
-- `fn_pageLivecam.sqf` : réticule, ligne VISÉ, boutons MARQUER LA CIBLE et MARQUER LE POINT (`fn_markerDrop`, 2 s entre deux marques) pour un drone du camp seulement.
-- `fn_livecamStop.sqf` : nettoyage. `i18n/en.txt` : 4 textes.
-- Pas de bump ni de main.pbo reconstruit : à faire au regroupement.
+- #993 (déjà sur main) : `fn_gpsFix` ne garde la dernière position connue que 30 s et tant que le joueur n'a pas bougé de plus de 25 m ; ensuite position par le réseau autour de la vraie position (150 m d'incertitude à une barre, 30 m à quatre, décalage de direction gardé), sinon pas de position fiable (500 m).
+- #1000 (déjà sur main) : SSE `hasEquipment` accepte le téléphone ATAK natif (`comspec_atak_native_fnc_hasDevice`, Overwatch connect en repli) ; `fn_deviceScan` ne prend plus les pièces saisies du SSE (`COMSPEC_SSE_Smartphone`…) pour le téléphone du joueur.
+- #1001 (déjà sur main) : pack secondaire optionnel `@COMSPEC_ATAK_Photo` (`build_photo_pack.bat`, `tools/map_stitch.py` : collecte des captures, raccords fondus, WebP/DXT1) ; formulaire Zeus de capture : niveaux Standard / Plus proche (150 m) / Plus loin (4000 m) / Complet / Personnalisé.
+- #1008 (déjà sur main, partie site déployée) : `GameAuthService` ne compare le pack Overwatch minimal qu'à une version numérique (le natif envoie `native`, d'où un 426 à chaque code autorisé) ; `fn_athenaLink` garde le code HTTP du refus et le journalise, `fn_athenaStatus` / `fn_pageAthena` affichent « Athena a refusé la connexion » avec la cause.
+- #1010, flux drone en lecture seule :
+  - `fn_livecamUav.sqf` : direction de la caméra gardée dans le repère du drone (`COMSPEC_ATAK_LivecamUavDir`) ; mode `["aim"]` = point du sol sous le réticule (3 km) ; ligne CAP / VISÉ rafraîchie chaque seconde.
+  - `fn_lockAction.sqf` : nouvelle source `LIVECAM` (caméra du flux, champ du terminal de l'opérateur) pour `mark`, `aimed` et le suivi.
+  - `fn_droneFlir.sqf` : style `LIVECAM` (cadres seulement, repère de la caméra du flux) : cadre jaune « VISÉ » et cadres LOCK.
+  - `fn_pageLivecam.sqf` : réticule, ligne VISÉ, boutons MARQUER LA CIBLE et MARQUER LE POINT (`fn_markerDrop`, 2 s entre deux marques) pour un drone du camp seulement.
+  - `fn_livecamStop.sqf` : nettoyage. `i18n/en.txt` : 4 textes.
+- Tests SSE : la version attendue du mod SSE passe de 0.9.0 à 1.0.0 (#1006).
+- Version 2.3.6, main.pbo reconstruit avec HEMTT, `verify_build.py` OK. COMSPEC Link inchangé (2.0.90).
+- À tester en jeu : réticule, cadre jaune et LOCK sur un drone du camp (vue nacelle et pilote) ; GPS à couvert après un fix dehors ; OBTENIR MON CODE puis autorisation sur /lier avec l'ATAK natif seul ; appareil photo, SEEK et terminal SSE avec le téléphone natif ; capture Zeus Plus proche et Plus loin.
+
+---
 
 ## Regroupement : bandeau de la carte, arsenal ACE réparé, briefing et CAS dans le téléphone, ancien menu ACE retiré, diapositives Athena, Connexion Athena dans Eden (SSE), chargement plus fluide (ATAK natif 2.3.5.AB - Denver)
 

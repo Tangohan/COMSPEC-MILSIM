@@ -34,7 +34,7 @@ final class SseZeusAuthoredNameAssetTest extends TestCase
         );
         self::assertStringContainsString('_identity set ["name", _full]', $sqf);
         self::assertStringContainsString('comspec_sse_fnc_setSection', $sqf);
-        self::assertStringContainsString('0.9.0', (string) file_get_contents(
+        self::assertStringContainsString('1.0.0', (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/main/script_mod.hpp'
         ));
     }
