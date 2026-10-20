@@ -2377,6 +2377,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $athenaInspectorMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
     $router->get('/athena/data-inspector', [AthenaDataInspectorController::class, 'index'], $athenaInspectorMw);
     $router->get('/api/athena/v2/inspector', [AthenaDataApiController::class, 'dashboard'], $athenaInspectorMw);
+    $router->get('/api/athena/inspector/metrics', [\App\Controllers\Api\AthenaInspectorMetricsController::class, 'metrics'], $athenaInspectorMw);
     $router->post('/api/athena/v2/dev/seed', [AthenaDataApiController::class, 'devSeed'], $athenaInspectorMw);
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
