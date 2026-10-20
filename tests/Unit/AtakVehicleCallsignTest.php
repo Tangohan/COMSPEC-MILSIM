@@ -9,6 +9,23 @@ use PHPUnit\Framework\TestCase;
 
 final class AtakVehicleCallsignTest extends TestCase
 {
+    /** Ticket #710 : valeurs du mod hors ENUM → vehicle_exception en SQL strict. */
+    public function testEnumsNormalizedForStrictSql(): void
+    {
+        $n = AtakVehicleTrackingRepository::normalizeEnums([
+            'vehicle_class' => 'MORTAR',
+            'side' => 'GUER',
+            'status' => 'inconnu',
+            'mission_type' => 'gps_beacon',
+        ]);
+        self::assertSame('ARTILLERY', $n['vehicle_class']);
+        self::assertSame('INDEPENDENT', $n['side']);
+        self::assertArrayNotHasKey('status', $n);
+        self::assertSame('GPS_BEACON', $n['mission_type']);
+        self::assertSame('OTHER', AtakVehicleTrackingRepository::normalizeEnums(['vehicle_class' => 'XYZ'])['vehicle_class']);
+        self::assertSame('ABANDONED', AtakVehicleTrackingRepository::normalizeEnums(['status' => 'abandoned'])['status']);
+    }
+
     public function testCallsignFallsBackAndTrims(): void
     {
         self::assertSame('HUNTER-1', AtakVehicleTrackingRepository::resolveCallsign(['vehicle_callsign' => ' HUNTER-1 ']));

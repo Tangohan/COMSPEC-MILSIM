@@ -46,6 +46,7 @@ class AtakVehicleTrackingRepository
             throw new \InvalidArgumentException('vehicle_callsign requis');
         }
         $data['vehicle_callsign'] = $callsign;
+        $data = self::normalizeEnums($data);
 
         // Vérifier si le véhicule existe déjà
         $existing = $this->findByCallsign(
@@ -59,7 +60,74 @@ class AtakVehicleTrackingRepository
             return (int) $existing['id'];
         }
 
+        // Véhicule inconnu sans position (ex. drone relâché/détruit avant sa première remontée) :
+        // pos_x/pos_y sont NOT NULL, rien à créer. 0 = ignoré, pas une erreur.
+        if (!is_numeric($data['pos_x'] ?? null) || !is_numeric($data['pos_y'] ?? null)) {
+            return 0;
+        }
+
         return $this->create($data);
+    }
+
+    private const VEHICLE_CLASSES = [
+        'LIGHT_VEHICLE', 'TRUCK', 'APC', 'IFV', 'TANK', 'ARTILLERY',
+        'HELICOPTER', 'FIXED_WING', 'UAV', 'BOAT', 'STATIC', 'OTHER',
+    ];
+    private const SIDES = ['BLUFOR', 'OPFOR', 'INDEPENDENT', 'CIVILIAN'];
+    private const STATUSES = ['OPERATIONAL', 'DAMAGED', 'IMMOBILIZED', 'DESTROYED', 'ABANDONED'];
+
+    /**
+     * Ramène les valeurs du mod dans les ENUM de la table : une valeur hors liste
+     * fait échouer l'écriture en mode SQL strict (vehicle_exception côté lot télémétrie).
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public static function normalizeEnums(array $data): array
+    {
+        if (array_key_exists('vehicle_class', $data)) {
+            $c = strtoupper(trim((string) $data['vehicle_class']));
+            $c = match ($c) {
+                'MORTAR' => 'ARTILLERY',
+                'INFANTRY', 'CAR', 'MRAP' => 'LIGHT_VEHICLE',
+                'HELI', 'HELO' => 'HELICOPTER',
+                'PLANE', 'JET' => 'FIXED_WING',
+                'DRONE' => 'UAV',
+                'SHIP' => 'BOAT',
+                default => $c,
+            };
+            $data['vehicle_class'] = in_array($c, self::VEHICLE_CLASSES, true) ? $c : 'OTHER';
+        }
+        if (array_key_exists('side', $data)) {
+            $s = strtoupper(trim((string) $data['side']));
+            $s = match ($s) {
+                'WEST' => 'BLUFOR',
+                'EAST' => 'OPFOR',
+                'GUER', 'RESISTANCE', 'INDEP', 'INDFOR' => 'INDEPENDENT',
+                'CIV' => 'CIVILIAN',
+                default => $s,
+            };
+            if (in_array($s, self::SIDES, true)) {
+                $data['side'] = $s;
+            } else {
+                unset($data['side']);
+            }
+        }
+        if (array_key_exists('status', $data)) {
+            $st = strtoupper(trim((string) $data['status']));
+            if (in_array($st, self::STATUSES, true)) {
+                $data['status'] = $st;
+            } else {
+                unset($data['status']);
+            }
+        }
+        if (array_key_exists('mission_type', $data)) {
+            // Colonne passée en VARCHAR(40) (GPS_BEACON, types libres via COMSPEC_MissionType).
+            $m = strtoupper(preg_replace('/[^A-Za-z0-9_]/', '_', trim((string) $data['mission_type'])) ?? '');
+            $data['mission_type'] = $m === '' ? null : mb_substr($m, 0, 40);
+        }
+
+        return $data;
     }
 
     /**
