@@ -177,6 +177,7 @@ final class TenantRemovalService
             'memberships_archived' => $memberships,
             'moved_other' => $moved['other'],
             'moved_no_org' => $moved['no_org'],
+            'moved_users' => $moved['users'],
         ];
         $this->writeSettings($tenantId, $settings);
 
@@ -201,6 +202,8 @@ final class TenantRemovalService
         if (!TenantArchiveState::isArchived($tenant)) {
             return ['ok' => false, 'error' => 'Cette communauté n’est pas archivée.'];
         }
+        $settings = $this->decodeSettings($tenant['settings'] ?? null);
+        $movedBack = $this->bringBack($tenantId, $settings[TenantArchiveState::SETTINGS_KEY] ?? []);
         $memberships = 0;
         if ($this->tableExists('user_community_memberships')) {
             $st = $this->pdo()->prepare(
@@ -210,11 +213,10 @@ final class TenantRemovalService
             $st->execute([$this->now(), $tenantId]);
             $memberships = $st->rowCount();
         }
-        $settings = $this->decodeSettings($tenant['settings'] ?? null);
         unset($settings[TenantArchiveState::SETTINGS_KEY]);
         $this->writeSettings($tenantId, $settings);
 
-        return ['ok' => true, 'memberships' => $memberships];
+        return ['ok' => true, 'memberships' => $memberships, 'moved_back' => $movedBack];
     }
 
     /**
@@ -295,23 +297,25 @@ final class TenantRemovalService
     }
 
     /**
-     * @return array{other: int, no_org: int, blocked: int}
+     * @return array{other: int, no_org: int, blocked: int, users: list<array{user_id: int, to: int}>}
      */
     private function rehome(int $tenantId): array
     {
-        $out = ['other' => 0, 'no_org' => 0, 'blocked' => 0];
+        $out = ['other' => 0, 'no_org' => 0, 'blocked' => 0, 'users' => []];
         $noOrg = $this->noOrgTenantId();
         foreach ($this->planRehome($tenantId) as $step) {
             $userId = $step['user_id'];
             $done = false;
             if ($step['kind'] === 'other' && $this->moveUser($userId, $tenantId, (int) $step['target'])) {
                 $out['other']++;
+                $out['users'][] = ['user_id' => $userId, 'to' => (int) $step['target']];
                 $done = true;
             }
             if (!$done && $noOrg !== null && $noOrg !== $tenantId) {
                 $this->ensureActiveMembership($userId, $noOrg);
                 if ($this->moveUser($userId, $tenantId, $noOrg)) {
                     $out['no_org']++;
+                    $out['users'][] = ['user_id' => $userId, 'to' => $noOrg];
                     $done = true;
                 }
             }
@@ -321,6 +325,41 @@ final class TenantRemovalService
         }
 
         return $out;
+    }
+
+    /**
+     * Ramène dans la communauté restaurée les comptes que l'archivage avait déplacés, s'ils n'ont pas
+     * changé de communauté depuis. Les archives antérieures à `moved_users` n'ont pas la liste : on
+     * ramène alors les membres archivés qui sont restés dans « Aucune organisation ».
+     */
+    private function bringBack(int $tenantId, mixed $archive): int
+    {
+        $moves = [];
+        foreach (is_array($archive) && is_array($archive['moved_users'] ?? null) ? $archive['moved_users'] : [] as $m) {
+            if (is_array($m) && (int) ($m['user_id'] ?? 0) > 0 && (int) ($m['to'] ?? 0) > 0) {
+                $moves[(int) $m['user_id']] = (int) $m['to'];
+            }
+        }
+        $noOrg = $this->noOrgTenantId();
+        if ($noOrg !== null && $noOrg !== $tenantId && $this->tableExists('user_community_memberships')) {
+            $st = $this->pdo()->prepare(
+                "SELECT m.user_id FROM user_community_memberships m
+                 INNER JOIN users u ON u.id = m.user_id
+                 WHERE m.tenant_id = ? AND m.status = 'archived' AND u.tenant_id = ?"
+            );
+            $st->execute([$tenantId, $noOrg]);
+            foreach ($st->fetchAll(PDO::FETCH_COLUMN) ?: [] as $userId) {
+                $moves[(int) $userId] ??= $noOrg;
+            }
+        }
+        $n = 0;
+        foreach ($moves as $userId => $from) {
+            if ($this->moveUser($userId, $from, $tenantId)) {
+                $n++;
+            }
+        }
+
+        return $n;
     }
 
     private function moveUser(int $userId, int $fromTenantId, int $toTenantId): bool

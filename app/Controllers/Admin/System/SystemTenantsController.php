@@ -443,11 +443,12 @@ final class SystemTenantsController
             'tenant',
             $tenantId,
             ['archived' => true, 'archive' => TenantArchiveState::info($before)],
-            ['archived' => false, 'memberships_restored' => (int) ($result['memberships'] ?? 0)],
+            ['archived' => false, 'memberships_restored' => (int) ($result['memberships'] ?? 0), 'moved_back' => (int) ($result['moved_back'] ?? 0)],
         );
         Session::flash(
             'success',
-            'Communauté restaurée : ' . (int) ($result['memberships'] ?? 0) . ' appartenance(s) réactivée(s). Les membres la retrouvent dans leur sélecteur de communauté.'
+            'Communauté restaurée : ' . (int) ($result['memberships'] ?? 0) . ' appartenance(s) réactivée(s), '
+            . (int) ($result['moved_back'] ?? 0) . ' compte(s) ramené(s) dans la communauté.'
         );
 
         return Response::redirect($back);
