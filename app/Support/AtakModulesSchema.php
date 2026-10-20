@@ -55,11 +55,36 @@ final class AtakModulesSchema
                 ]);
             }
 
+            if (isset($have['atak_vehicle_tracking'])) {
+                self::widenVehicleMissionType($pdo);
+            }
+
             if (isset($have['atak_vehicle_tracking']) && !isset($have['v_atak_active_vehicles'])) {
                 self::createActiveVehiclesView($pdo, isset($have['atak_vehicle_service_requests']));
             }
         } catch (Throwable) {
             // L’appelant gère l’erreur SQL si la création échoue encore.
+        }
+    }
+
+    /**
+     * mission_type était un ENUM sans GPS_BEACON (balises GPS du mod) : chaque balise
+     * faisait échouer l'upsert véhicule (vehicle_exception). Même correctif que la migration
+     * 2026_10_20_001, appliqué ici si elle n'a pas encore tourné.
+     */
+    private static function widenVehicleMissionType(PDO $pdo): void
+    {
+        try {
+            $st = $pdo->query(
+                "SELECT DATA_TYPE FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_vehicle_tracking'
+                   AND COLUMN_NAME = 'mission_type'"
+            );
+            $type = $st !== false ? strtolower((string) $st->fetchColumn()) : '';
+            if ($type === 'enum') {
+                $pdo->exec('ALTER TABLE atak_vehicle_tracking MODIFY mission_type VARCHAR(40) NULL');
+            }
+        } catch (Throwable) {
         }
     }
 
