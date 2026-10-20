@@ -1165,6 +1165,7 @@ return function (Router $router) {
     $router->post('/admin/users/merge', [SystemUsersController::class, 'mergeAccounts'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/{id}/edit', [SystemUsersController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/{id}/update', [SystemUsersController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/{id}/atak/{action}', [\App\Controllers\Admin\System\SystemUserAtakController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/set-status', [SystemUsersController::class, 'setStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/delete', [SystemUsersController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge', [SystemUsersController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

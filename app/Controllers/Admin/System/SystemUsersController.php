@@ -793,6 +793,13 @@ final class SystemUsersController
             'content' => 'admin.system.user_edit',
             'platformEdit' => $pack,
             'platformEditUserId' => $userId,
+            'platformEditAtak' => (static function () use ($userId): ?array {
+                try {
+                    return (new \App\Services\Admin\AdminUserAtakService())->overview($userId);
+                } catch (\Throwable) {
+                    return null;
+                }
+            })(),
         ]);
     }
 

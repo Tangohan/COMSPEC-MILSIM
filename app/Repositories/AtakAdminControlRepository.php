@@ -40,6 +40,10 @@ final class AtakAdminControlRepository
         'cert_restore' => 'Certificat rétabli',
         'note' => 'Note interne',
         'note_gestion' => 'Note de la gestion',
+        'link_force' => 'Liaison forcée',
+        'link_approve' => 'Liaison validée',
+        'link_code' => 'Code de liaison généré',
+        'unlink' => 'Steam délié',
     ];
 
     /** États de compromission d'un ATAK (atak_terminals.compromise_state). */
