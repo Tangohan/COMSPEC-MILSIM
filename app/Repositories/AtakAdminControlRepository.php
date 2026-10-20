@@ -76,6 +76,9 @@ final class AtakAdminControlRepository
         'compromis' => 'Compromis',
         'messages' => 'Message en attente',
         'dormants' => 'Sans signe depuis 30 jours',
+        'steam' => 'Joueurs Steam sans ATAK',
+        'a_verifier' => 'Compte à vérifier',
+        'sans_carte' => 'Formule sans la carte',
     ];
 
     public const SORTS = [
@@ -83,7 +86,14 @@ final class AtakAdminControlRepository
         'jeu' => 'Temps de jeu',
         'distance' => 'Distance totale',
         'nom' => 'Indicatif',
+        'compte' => 'Compte Athena (problèmes d’abord)',
+        'communaute' => 'Communauté',
+        'formule' => 'Formule (sans la carte d’abord)',
+        'etat' => 'État (bloqués d’abord)',
     ];
+
+    /** Filtres et tris réservés à l'administration de la plateforme (corrélation, formule, joueurs sans compte). */
+    public const PLATFORM_ONLY = ['steam', 'a_verifier', 'sans_carte', 'compte', 'communaute', 'formule'];
 
     private ?PDO $pdo;
 
@@ -226,6 +236,270 @@ final class AtakAdminControlRepository
         }
 
         return $out;
+    }
+
+    // ── Joueurs Steam et corrélation (administration de la plateforme) ──────
+
+    /**
+     * Joueurs vus en jeu par leur Steam (operator_game_profiles, gardé même sans compte Athena), plus récents d'abord.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function steamPlayers(string $search = '', int $tenantId = 0, int $limit = 2000): array
+    {
+        $where = ['1 = 1'];
+        $args = [];
+        if ($tenantId > 0) {
+            $where[] = 'p.tenant_id = ?';
+            $args[] = $tenantId;
+        }
+        $search = trim($search);
+        if ($search !== '') {
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_substr($search, 0, 80)) . '%';
+            $where[] = '(p.steam_id LIKE ? OR p.callsign LIKE ? OR p.arma_player_name LIKE ? OR p.display_name LIKE ? OR tn.name LIKE ?)';
+            array_push($args, $like, $like, $like, $like, $like);
+        }
+
+        return $this->rows(
+            'SELECT p.tenant_id, p.user_id, p.steam_id, p.callsign, p.arma_player_name, p.display_name, p.role, p.faction,
+                    p.atak_version, p.server_name, p.mission_name, p.first_seen_at, p.last_seen_at,
+                    tn.name AS tenant_name, tn.slug AS tenant_slug
+             FROM operator_game_profiles p LEFT JOIN tenants tn ON tn.id = p.tenant_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY p.last_seen_at DESC LIMIT ' . max(1, min(2000, $limit)),
+            $args
+        );
+    }
+
+    /**
+     * Steam vus par les rapports du mod (refus 401/403 compris) sur les $days derniers jours, un par Steam.
+     * Seule trace d'un joueur sans compte quand le serveur ne remonte pas ses joueurs.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function steamFromModReports(string $search = '', int $days = 30, int $limit = 500): array
+    {
+        $args = [max(1, min(365, $days))];
+        $filter = '';
+        $search = trim($search);
+        if ($search !== '') {
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_substr($search, 0, 80)) . '%';
+            $filter = ' AND (steam_uid LIKE ? OR callsign LIKE ? OR player_name LIKE ?)';
+            array_push($args, $like, $like, $like);
+        }
+        $out = [];
+        foreach ($this->rows(
+            "SELECT steam_uid, callsign, player_name, mod_version, extension_version, message, hit_count, last_seen_at
+             FROM atak_mod_reports
+             WHERE steam_uid IS NOT NULL AND steam_uid <> '' AND last_seen_at >= UTC_TIMESTAMP() - INTERVAL ? DAY" . $filter . '
+             ORDER BY last_seen_at DESC LIMIT 5000',
+            $args
+        ) as $r) {
+            $steam = SteamId::normalize((string) $r['steam_uid']);
+            if ($steam === null) {
+                continue;
+            }
+            if (!isset($out[$steam])) {
+                if (count($out) >= $limit) {
+                    continue;
+                }
+                $out[$steam] = $r + ['steam_id' => $steam, 'reports' => 0, 'denied' => 0, 'last_denial' => ''];
+            }
+            $out[$steam]['reports'] += max(1, (int) $r['hit_count']);
+            $text = strtolower((string) $r['message']);
+            if (str_contains($text, '403') || str_contains($text, '401') || str_contains($text, 'unauthorized') || str_contains($text, 'forbidden')
+                || str_contains($text, 'feature_unavailable') || str_contains($text, 'blocked')) {
+                $out[$steam]['denied'] += max(1, (int) $r['hit_count']);
+                if ($out[$steam]['last_denial'] === '') {
+                    $out[$steam]['last_denial'] = mb_substr((string) $r['message'], 0, 160);
+                }
+            }
+            foreach (['callsign', 'player_name', 'mod_version'] as $k) {
+                if (trim((string) ($out[$steam][$k] ?? '')) === '' && trim((string) ($r[$k] ?? '')) !== '') {
+                    $out[$steam][$k] = $r[$k];
+                }
+            }
+        }
+
+        return array_values($out);
+    }
+
+    /**
+     * Fiches membres qui portent ces Steam, toutes communautés (plusieurs fiches = doublon).
+     *
+     * @param list<string> $steamIds
+     * @return array<string, list<array{id: int, tenant_id: int, status: string, email: string, steam_id: string, name: string}>>
+     */
+    public function usersBySteam(array $steamIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(static fn ($s): string => SteamId::normalize((string) $s) ?? '', $steamIds))));
+        $out = [];
+        foreach (array_chunk($ids, 500) as $chunk) {
+            foreach ($this->rows(
+                'SELECT id, tenant_id, status, email, steam_id, callsign, display_name FROM users WHERE steam_id IN ('
+                . implode(',', array_fill(0, count($chunk), '?')) . ') ORDER BY id',
+                $chunk
+            ) as $u) {
+                $steam = SteamId::normalize((string) $u['steam_id']) ?? '';
+                if ($steam === '') {
+                    continue;
+                }
+                $out[$steam][] = [
+                    'id' => (int) $u['id'],
+                    'tenant_id' => (int) ($u['tenant_id'] ?? 0),
+                    'status' => (string) ($u['status'] ?? ''),
+                    'email' => (string) ($u['email'] ?? ''),
+                    'steam_id' => $steam,
+                    'name' => trim((string) ($u['callsign'] ?? '')) ?: trim((string) ($u['display_name'] ?? '')),
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Steam présents sur un compte Athena (athena_accounts), pour repérer ceux qui ne sont sur aucune fiche membre.
+     *
+     * @param list<string> $steamIds
+     * @return array<string, true>
+     */
+    public function accountSteams(array $steamIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(static fn ($s): string => SteamId::normalize((string) $s) ?? '', $steamIds))));
+        $out = [];
+        foreach (array_chunk($ids, 500) as $chunk) {
+            foreach ($this->rows(
+                'SELECT steam_id FROM athena_accounts WHERE steam_id IN (' . implode(',', array_fill(0, count($chunk), '?')) . ')',
+                $chunk
+            ) as $a) {
+                $out[(string) $a['steam_id']] = true;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Steam vu en jeu pour ces membres (clé « tenant:user »).
+     *
+     * @param list<int> $userIds
+     * @return array<string, string>
+     */
+    public function gameSteamByUser(array $userIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        $out = [];
+        foreach (array_chunk($ids, 500) as $chunk) {
+            foreach ($this->rows(
+                'SELECT tenant_id, user_id, steam_id FROM operator_game_profiles WHERE user_id IN ('
+                . implode(',', array_fill(0, count($chunk), '?')) . ') ORDER BY last_seen_at',
+                $chunk
+            ) as $p) {
+                $steam = SteamId::normalize((string) $p['steam_id']);
+                if ($steam !== null) {
+                    $out[(int) $p['tenant_id'] . ':' . (int) $p['user_id']] = $steam;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Fiches membres par id (corrélation des ATAK enregistrés).
+     *
+     * @param list<int> $userIds
+     * @return array<int, array<string, mixed>>
+     */
+    public function usersById(array $userIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        $out = [];
+        foreach (array_chunk($ids, 500) as $chunk) {
+            foreach ($this->rows(
+                'SELECT id, tenant_id, status, email, steam_id FROM users WHERE id IN (' . implode(',', array_fill(0, count($chunk), '?')) . ')',
+                $chunk
+            ) as $u) {
+                $out[(int) $u['id']] = $u;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Communautés : nom, type, formule appliquée (offerte, abonnement, essai) et accès du jeu qu'elle donne.
+     *
+     * @param list<int> $tenantIds
+     * @return array<int, array{id: int, name: string, slug: string, type: string, type_label: string, plan: string, plan_label: string, gift: bool, atak: string}>
+     */
+    public function tenantProfiles(array $tenantIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $tenantIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $plans = [];
+        foreach ($this->rows('SELECT slug, name FROM subscription_plans') as $p) {
+            $plans[(string) $p['slug']] = (string) $p['name'];
+        }
+        $out = [];
+        foreach ($this->rows('SELECT * FROM tenants WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')', $ids) as $t) {
+            $id = (int) $t['id'];
+            $plan = \App\Support\PlanGift::effectivePlanSlug($t);
+            $type = \App\Services\Community\TenantTypeConfig::normalizeType((string) ($t['tenant_type'] ?? 'full'));
+            $out[$id] = [
+                'id' => $id,
+                'name' => trim((string) ($t['name'] ?? '')) ?: ('Communauté #' . $id),
+                'slug' => (string) ($t['slug'] ?? ''),
+                'type' => $type,
+                'type_label' => \App\Services\Community\TenantTypeConfig::label($type),
+                'plan' => $plan,
+                'plan_label' => $plans[$plan] ?? ucfirst($plan),
+                'gift' => \App\Support\PlanGift::activeFromSettings($t['settings'] ?? null) !== null,
+                'atak' => \App\Support\AtakPlanAccess::allows($id) ? 'full' : (\App\Support\AtakPlanAccess::allowsBasic($id) ? 'basic' : 'none'),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Joueur Steam (ligne sans ATAK enregistré) visé par une action : profil vu en jeu, sinon rapports du mod.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findSteamPlayer(int $tenantId, string $steamId): ?array
+    {
+        $steam = SteamId::normalize($steamId);
+        if ($steam === null) {
+            return null;
+        }
+        $label = '';
+        if ($tenantId > 0) {
+            $p = $this->rows('SELECT callsign, arma_player_name, display_name FROM operator_game_profiles WHERE tenant_id = ? AND steam_id = ? LIMIT 1', [$tenantId, $steam]);
+            $label = trim((string) ($p[0]['callsign'] ?? '')) ?: trim((string) ($p[0]['arma_player_name'] ?? '')) ?: trim((string) ($p[0]['display_name'] ?? ''));
+        }
+        if ($label === '') {
+            $r = $this->rows('SELECT callsign, player_name FROM atak_mod_reports WHERE steam_uid = ? ORDER BY last_seen_at DESC LIMIT 1', [$steam]);
+            $label = trim((string) ($r[0]['callsign'] ?? '')) ?: trim((string) ($r[0]['player_name'] ?? ''));
+        }
+        $userId = 0;
+        foreach ($this->usersBySteam([$steam])[$steam] ?? [] as $u) {
+            if ($tenantId > 0 && $u['tenant_id'] === $tenantId) {
+                $userId = $u['id'];
+            }
+        }
+
+        return [
+            'id' => 0,
+            'tenant_id' => $tenantId,
+            'user_id' => $userId ?: null,
+            'terminal_uid' => '',
+            'steam_id' => $steam,
+            'operator_callsign' => $label !== '' ? $label : 'Steam ' . $steam,
+        ];
     }
 
     /**

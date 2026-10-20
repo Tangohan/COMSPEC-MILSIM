@@ -277,3 +277,112 @@ html[data-bo-theme="dark"] .paf {
 .paf-cert__main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .paf-cert p { margin: 0; grid-column: 1; font-size: 12.5px; }
 .paf-cert form { grid-column: 2; grid-row: 1 / span 2; }
+
+/* ── Joueurs Steam, corrélation, tri par colonne, menu d'actions (administration de la plateforme) ── */
+
+@media (min-width: 860px) {
+  .paf-search--wide { grid-template-columns: minmax(0, 1fr) 12rem 11rem 11rem 12rem auto; }
+}
+@media (min-width: 860px) and (max-width: 1279px) {
+  .paf-search--wide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .paf-search--wide .paf-search__actions { align-self: end; }
+}
+
+.paf-table--platform { min-width: 78rem; }
+.paf-table th { white-space: nowrap; }
+.paf-table tr.is-steam td { background: color-mix(in srgb, var(--pa-tone-blue-bg) 45%, transparent); }
+.paf-table tr.is-steam.is-blocked td { background: color-mix(in srgb, var(--paf-danger-soft) 60%, transparent); }
+.paf-table td .pa-pill { white-space: nowrap; }
+.paf-table td .pa-pill + .pa-sub { margin-top: 4px; }
+.paf-steam { color: var(--pa-subtle); font-size: 11.5px; }
+
+.paf-sort { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.paf-sort:hover { color: var(--pa-ink); }
+.paf-sort__arrow { font-size: 10px; color: var(--pa-subtle); }
+.paf-sort.is-active { color: var(--pa-ink); }
+.paf-sort.is-active .paf-sort__arrow { color: var(--pa-mint); }
+
+.paf-deny {
+  margin: 6px 0 0;
+  padding: 4px 8px;
+  border-left: 3px solid var(--paf-danger);
+  border-radius: 6px;
+  background: var(--paf-danger-soft);
+  color: var(--paf-danger);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+  max-width: 16rem;
+}
+.paf-deny--soft { border-left-color: var(--pa-tone-amber-fg); background: var(--pa-tone-amber-bg); color: var(--pa-tone-amber-fg); }
+
+.paf-col-act { width: 2.75rem; text-align: right; }
+.paf-menu { position: relative; display: inline-block; }
+.paf-menu > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--pa-line);
+  border-radius: 10px;
+  background: var(--pa-surface);
+  color: var(--pa-ink-2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.paf-menu > summary::-webkit-details-marker { display: none; }
+.paf-menu[open] > summary, .paf-menu > summary:hover { border-color: var(--pa-mint); color: var(--pa-ink); }
+.paf-menu__pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 15rem;
+  padding: 6px;
+  border: 1px solid var(--pa-line);
+  border-radius: 12px;
+  background: var(--pa-surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  text-align: left;
+}
+.paf-menu__pop form { margin: 0; }
+.paf-menu__pop a,
+.paf-menu__pop button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--pa-ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.paf-menu__pop a:hover,
+.paf-menu__pop button:hover { background: var(--pa-line-soft); }
+.paf-menu__pop .paf-menu__danger { color: var(--paf-danger); font-weight: 650; }
+.paf-menu__pop [data-paf-copied]::after { content: " ✓"; color: var(--pa-mint); }
+
+.paf-legend { margin: 12px 0 0; border: 1px solid var(--pa-line); border-radius: 12px; background: var(--pa-surface-2); }
+.paf-legend > summary { padding: 10px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.paf-legend dl { margin: 0; padding: 0 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+.paf-legend dl > div { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 10px; align-items: start; font-size: 12.5px; }
+.paf-legend dd { margin: 0; color: var(--pa-ink-2); line-height: 1.45; }
+@media (max-width: 640px) {
+  .paf-legend dl > div { grid-template-columns: 1fr; gap: 2px; }
+}
+.paf-table--platform { min-width: 66rem; }
+.paf-table--platform .paf-mono { word-break: normal; white-space: nowrap; }
+.paf-table--platform .paf-steam { white-space: nowrap; }
+.paf-table--platform td:nth-child(2) { min-width: 9rem; }
+.paf-noatak { margin: 0; font-size: 12.5px; font-weight: 650; color: var(--pa-tone-blue-fg); white-space: nowrap; }
+.paf-sort-sep { color: var(--pa-subtle); margin: 0 2px; }
+.paf-table td .pa-sub + .pa-pill { margin-top: 4px; }
