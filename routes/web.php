@@ -2378,7 +2378,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
 
     // Athena Data Inspector — accès opérationnel réservé aux administrateurs du tenant.
     $athenaInspectorMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
-    $router->get('/athena/data-inspector', [AthenaDataInspectorController::class, 'index'], $athenaInspectorMw);
+    $router->get('/back-office/atak/data-inspector', [AthenaDataInspectorController::class, 'index'], $athenaInspectorMw);
+    // Ancienne adresse (hors coque back-office) : redirection.
+    $router->get('/athena/data-inspector', [AthenaDataInspectorController::class, 'legacyRedirect'], $athenaInspectorMw);
     $router->get('/api/athena/v2/inspector', [AthenaDataApiController::class, 'dashboard'], $athenaInspectorMw);
     $router->get('/api/athena/inspector/metrics', [\App\Controllers\Api\AthenaInspectorMetricsController::class, 'metrics'], $athenaInspectorMw);
     $router->post('/api/athena/v2/dev/seed', [AthenaDataApiController::class, 'devSeed'], $athenaInspectorMw);

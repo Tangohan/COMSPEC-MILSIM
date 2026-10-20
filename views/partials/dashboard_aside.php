@@ -299,7 +299,7 @@ if ($canDocs) {
 $espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', $atakOperatorsLinkedBadge, $links([
     ['label' => 'Overwatch', 'href' => url('atak'), 'hint' => 'Carte, BFT, mission et renseignement'],
     (function_exists('can') && (can('admin.access') || can('admin.organization') || can('admin.system')))
-        ? ['label' => 'Data Inspector', 'href' => url('athena/data-inspector'), 'hint' => 'Ingestion et synchronisation']
+        ? ['label' => 'Data Inspector', 'href' => url('back-office/atak/data-inspector'), 'hint' => 'Mods, terminaux, débit, erreurs']
         : null,
     $canAtakOperators
         ? ['label' => 'Effectifs en liaison', 'href' => url('back-office/atak/operateurs'), 'hint' => 'Tableur des opérateurs connectés']
