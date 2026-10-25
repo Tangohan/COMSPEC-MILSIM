@@ -169,7 +169,7 @@ return [
     'atak_loop_3_b' => 'The post sees what the field actually sent — not a decorative copy.',
 
     'about_meta_title' => 'About Athena — MILSIM portal',
-    'about_meta_description' => 'Athena Comspec is a portal for Arma 3 MILSIM units: organisation, training, recruitment, forum and field command.',
+    'about_meta_description' => 'Athena Comspec is a portal for Arma 3 MILSIM units: organisation, training, recruitment, personnel and field command.',
     'about_kicker' => 'About',
     'about_title' => 'One foundation to command a MILSIM unit',
     'about_lead' => 'Athena brings together what an Arma 3 community handles day to day: people, doctrine, training and the link to the field. One space per community, one path from recruitment to debrief.',
@@ -201,7 +201,7 @@ return [
     'about_eco_lead' => 'The portal organises the unit, the phone equips it in game, and the link carries information between the two.',
     'about_eco_athena_t' => 'COMSPEC Athena',
     'about_eco_athena_r' => 'Web portal',
-    'about_eco_athena_b' => 'Roster, training, recruitment, forum, calendar, command post map and a dashboard for each community.',
+    'about_eco_athena_b' => 'Roster, training, recruitment, calendar, command post map and a dashboard for each community.',
     'about_eco_atak_t' => 'COMSPEC ATAK',
     'about_eco_atak_r' => 'In-game phone',
     'about_eco_atak_b' => 'A native ATAK inside Arma 3: map, contacts, messaging, fire support and health. Free for players.',

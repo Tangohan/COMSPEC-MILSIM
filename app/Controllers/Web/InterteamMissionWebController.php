@@ -10,7 +10,6 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\EmailTokenRepository;
-use App\Repositories\ForumTopicRepository;
 use App\Repositories\InterteamMissionRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
@@ -24,7 +23,6 @@ use App\Services\Cooperation\CooperationConsentDefaults;
 use App\Services\Cooperation\CooperationProgress;
 use App\Services\Cooperation\CooperationTransitionRules;
 use App\Services\Cooperation\CooperationWorkflowService;
-use App\Services\Interteam\InterteamCoopForumService;
 use App\Support\CooperationAccess;
 use App\Support\CooperationDictionary;
 
@@ -36,8 +34,6 @@ class InterteamMissionWebController
     public function __construct(
         private InterteamMissionRepository $interteamRepository,
         private TenantRepository $tenantRepository,
-        private ForumTopicRepository $topicRepository,
-        private InterteamCoopForumService $coopForumService,
         private UnitRepository $unitRepository,
         private UserRepository $userRepository,
         private EmailService $emailService,
@@ -758,7 +754,7 @@ class InterteamMissionWebController
             return null;
         }
 
-        $isForumHost = $this->interteamRepository->tenantIsForumHost($missionId, $tenantId);
+        $isHost = $this->interteamRepository->tenantIsLead($missionId, $tenantId);
         $canPilot = $this->interteamRepository->tenantCanPilotMission($missionId, $tenantId);
         $canManage = $canPilot && $this->canManageInterteam();
         $canRespond = $this->canRespondInterteam();
@@ -766,12 +762,6 @@ class InterteamMissionWebController
             ? CooperationTransitionRules::invitablePicker($this->tenantRepository->listBasicExcluding($tenantId), $participants, $tenantId)
             : [];
         $status = (string) ($mission['status'] ?? '');
-        $grants = ($status === 'active')
-            ? $this->interteamRepository->listGrantsForMission($missionId)
-            : [];
-        $topicChoices = ($isForumHost && $canManage && $status === 'active')
-            ? $this->topicRepository->listRecentTitlesForTenant($tenantId, 100)
-            : [];
         $events = $this->interteamRepository->listEvents($missionId, 60);
         $meetings = $this->interteamRepository->listMeetings($missionId, 10);
         $orbatBlocks = $this->buildOrbatBlocks($participants);
@@ -780,11 +770,6 @@ class InterteamMissionWebController
         $jitsiEnabled = $jitsiDomain !== '' && filter_var((string) env('JITSI_COOP_ENABLED', '1'), FILTER_VALIDATE_BOOLEAN);
         $consentDone = !$this->interteamRepository->consentsTableExists()
             || $this->interteamRepository->hasVerifiedConsent($missionId, $userId);
-        $coopTopicId = (int) ($mission['coop_forum_topic_id'] ?? 0);
-        $missionSlug = (string) ($mission['slug'] ?? '');
-        $coopTopicUrl = ($coopTopicId > 0 && $missionSlug !== '')
-            ? url('forum/coop/' . rawurlencode($missionSlug) . '/sujet/' . $coopTopicId)
-            : '';
 
         $partnerCanCounter = $this->interteamRepository->partnerCanProposeCounter($missionId, $tenantId);
         $counterPending = $this->interteamRepository->counterProposalPending($missionId);
@@ -836,8 +821,7 @@ class InterteamMissionWebController
         return [
             'interteamMission' => $mission,
             'interteamParticipants' => $participants,
-            'interteamGrants' => $grants,
-            'interteamIsLead' => $isForumHost,
+            'interteamIsLead' => $isHost,
             'interteamCanManage' => $canManage,
             'interteamCanPilot' => $canPilot,
             'interteamCanRespond' => $canRespond,
@@ -845,7 +829,6 @@ class InterteamMissionWebController
             'interteamInvitationRule' => CooperationTransitionRules::invitation($mission),
             'interteamLaunchReadiness' => CooperationTransitionRules::launchReadiness($mission, $participants, $counterPending),
             'interteamIsTerminal' => CooperationTransitionRules::isTerminal($mission),
-            'interteamTopicChoices' => $topicChoices,
             'interteamEvents' => $events,
             'interteamMeetings' => $meetings,
             'interteamOrbatBlocks' => $orbatBlocks,
@@ -853,7 +836,6 @@ class InterteamMissionWebController
             'interteamJitsiDomain' => $jitsiDomain,
             'interteamJitsiEnabled' => $jitsiEnabled,
             'interteamConsentDone' => $consentDone,
-            'interteamCoopTopicUrl' => $coopTopicUrl,
             'trainingCompetencyCommandUrl' => training_lms_admin_url('competences/commandement'),
             'sessionTenantId' => $tenantId,
             'interteamPartnerCanCounter' => $partnerCanCounter,
@@ -1097,11 +1079,6 @@ class InterteamMissionWebController
     public function removePartner(Request $request, array $params = []): Response
     {
         return $this->ajaxify($this->handleRemovePartner($request, $params));
-    }
-
-    public function revokeGrant(Request $request, array $params = []): Response
-    {
-        return $this->ajaxify($this->handleRevokeGrant($request, $params));
     }
 
     public function addSitrep(Request $request, array $params = []): Response
@@ -1360,11 +1337,9 @@ class InterteamMissionWebController
         }
         $reason = mb_substr(trim((string) $request->input('remove_reason', '')), 0, 1000);
         $this->interteamRepository->setParticipantStatus($id, $targetTid, 'left');
-        $revoked = $this->interteamRepository->deleteGrantsForConsumer($id, $targetTid);
         $this->interteamRepository->logEvent($id, $userId, $tenantId, 'partner_removed', array_filter([
             'partner_tenant_id' => $targetTid,
             'previous_status' => $check['was'],
-            'grants_revoked' => $revoked,
             'reason' => $reason,
         ], static fn ($v) => $v !== '' && $v !== 0));
         $this->cooperationAnnouncementDispatcher->dispatch(
@@ -1378,7 +1353,7 @@ class InterteamMissionWebController
         $name = (string) ($p['tenant_name'] ?? 'L’unité');
         Session::flash('success', $check['was'] === 'invited'
             ? 'Invitation retirée : ' . $name . ' ne fait plus partie des unités sollicitées.'
-            : $name . ' a été retirée de la coopération' . ($revoked > 0 ? ' ; ses accès partagés au brief sont fermés.' : '.'));
+            : $name . ' a été retirée de la coopération' . '.');
 
         return Response::redirect(cooperation_mission_show_url($id));
     }
@@ -1420,7 +1395,6 @@ class InterteamMissionWebController
             }
         }
         $this->interteamRepository->updateClosureMeta($id, ['closure_motive' => $motive]);
-        $this->coopForumService->closeMission($id);
         $this->interteamRepository->markCancelled($id);
         $this->interteamRepository->logEvent($id, $userId, $tenantId, 'proposal_cancelled', ['reason' => $motive]);
         $this->cooperationAnnouncementDispatcher->dispatch(
@@ -1602,9 +1576,8 @@ class InterteamMissionWebController
             'accepted' => $ready['accepted'],
             'ignored' => $ready['ignored'],
         ]);
-        $this->coopForumService->ensureCooperativeSpace($id);
         $this->cooperationAnnouncementDispatcher->dispatch(CooperationAnnouncementEvents::MISSION_ACTIVATED, $id, $userId, $tenantId, []);
-        Session::flash('success', 'La coopération est en cours avec ' . implode(', ', $ready['accepted']) . '. Un fil commun a été préparé sur le brief de l’unité support.'
+        Session::flash('success', 'La coopération est en cours avec ' . implode(', ', $ready['accepted']) . '.'
             . ($ready['ignored'] !== [] ? ' Non engagées (refus ou retrait) : ' . implode(', ', $ready['ignored']) . '.' : ''));
 
         return Response::redirect(cooperation_mission_show_url($id));
@@ -1756,73 +1729,6 @@ class InterteamMissionWebController
         return Response::redirect(cooperation_mission_show_url($id));
     }
 
-    public function grantTopic(Request $request, array $params = []): Response
-    {
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Jeton de sécurité invalide.');
-            $id = (int) ($params['id'] ?? 0);
-
-            return Response::redirect($id > 0 ? cooperation_mission_show_url($id) : cooperation_mission_index_url());
-        }
-        $id = (int) ($params['id'] ?? 0);
-        $tenantId = (int) Session::get('tenant_id');
-        $mission = $this->interteamRepository->findById($id);
-        if (!$mission || ($mission['status'] ?? '') !== 'active'
-            || !$this->interteamRepository->tenantIsForumHost($id, $tenantId) || !$this->canManageInterteam()) {
-            Session::flash('error', 'Action non autorisée.');
-
-            return Response::redirect(cooperation_mission_show_url($id));
-        }
-        $topicId = (int) $request->input('topic_id', 0);
-        $consumerId = (int) $request->input('consumer_tenant_id', 0);
-        if ($topicId <= 0 || $consumerId <= 0 || $consumerId === $tenantId) {
-            Session::flash('error', 'Sujet ou unité destinataire invalide.');
-
-            return Response::redirect(cooperation_mission_show_url($id));
-        }
-        $topic = $this->topicRepository->findById($topicId, $tenantId);
-        if (!$topic) {
-            Session::flash('error', 'Ce sujet n’existe pas dans votre brief ou n’appartient pas à votre unité.');
-
-            return Response::redirect(cooperation_mission_show_url($id));
-        }
-        $this->interteamRepository->addForumGrant($id, 'topic', $topicId, $tenantId, $consumerId);
-        $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'topic_shared', [
-            'topic_id' => $topicId,
-            'consumer_tenant_id' => $consumerId,
-        ]);
-        Session::flash('success', 'Autorisation enregistrée. Les membres de l’unité destinataire verront l’espace dans leur brief (section coopération).');
-
-        return Response::redirect(cooperation_mission_exchange_url($id));
-    }
-
-    private function handleRevokeGrant(Request $request, array $params = []): Response
-    {
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Jeton de sécurité invalide.');
-            $mid = (int) ($params['id'] ?? 0);
-
-            return Response::redirect($mid > 0 ? cooperation_mission_show_url($mid) : cooperation_mission_index_url());
-        }
-        $mid = (int) ($params['id'] ?? 0);
-        $grantId = (int) ($params['grantId'] ?? 0);
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$this->interteamRepository->tenantIsForumHost($mid, $tenantId) || !$this->canManageInterteam() || $grantId <= 0) {
-            Session::flash('error', 'Action non autorisée.');
-
-            return Response::redirect(cooperation_mission_show_url($mid));
-        }
-        if (!$this->interteamRepository->deleteGrant($grantId, $mid)) {
-            Session::flash('error', 'Cette autorisation n’existe pas sur cette coopération (déjà retirée ?).');
-
-            return Response::redirect(cooperation_mission_exchange_url($mid));
-        }
-        $this->interteamRepository->logEvent($mid, (int) Session::get('user_id'), $tenantId, 'grant_revoked', ['grant_id' => $grantId]);
-        Session::flash('success', 'Autorisation d’accès retirée.');
-
-        return Response::redirect(cooperation_mission_exchange_url($mid));
-    }
-
     public function close(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -1859,7 +1765,6 @@ class InterteamMissionWebController
             'closure_summary' => $summary !== '' ? $summary : null,
             'archive_retention' => $retention,
         ]);
-        $this->coopForumService->closeMission($id);
         $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'mission_closed', []);
         $this->cooperationAnnouncementDispatcher->dispatch(
             CooperationAnnouncementEvents::MISSION_CLOSED,
@@ -1946,7 +1851,7 @@ class InterteamMissionWebController
         }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) Session::get('tenant_id');
-        if (!$this->interteamRepository->tenantIsForumHost($id, $tenantId) || !$this->canManageInterteam()) {
+        if (!$this->interteamRepository->tenantIsLead($id, $tenantId) || !$this->canManageInterteam()) {
             Session::flash('error', 'Action non autorisée.');
 
             return Response::redirect(cooperation_mission_index_url());
@@ -1968,32 +1873,6 @@ class InterteamMissionWebController
         Session::flash('success', 'Co-pilote désigné : cette unité peut désormais inviter et lancer la coopération avec vous.');
 
         return Response::redirect(cooperation_mission_show_url($id));
-    }
-
-    public function saveExchangeLock(Request $request, array $params = []): Response
-    {
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Jeton de sécurité invalide.');
-            $id = (int) ($params['id'] ?? 0);
-
-            return Response::redirect($id > 0 ? cooperation_mission_exchange_url($id) : cooperation_mission_index_url());
-        }
-        $id = (int) ($params['id'] ?? 0);
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$this->interteamRepository->tenantIsForumHost($id, $tenantId) || !$this->canManageInterteam()) {
-            Session::flash('error', 'Action non autorisée.');
-
-            return Response::redirect(cooperation_mission_index_url());
-        }
-        $mode = (string) $request->input('exchange_lock_mode', 'none');
-        if (!in_array($mode, ['none', 'full', 'main_only', 'after_close'], true)) {
-            $mode = 'none';
-        }
-        $this->interteamRepository->updateMissionMeta($id, ['exchange_lock_mode' => $mode]);
-        $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'mission_meta_updated', ['exchange_lock_mode' => $mode]);
-        Session::flash('success', 'Règles d’accès à l’espace commun enregistrées.');
-
-        return Response::redirect(cooperation_mission_exchange_url($id));
     }
 
     public function duplicateMission(Request $request, array $params = []): Response

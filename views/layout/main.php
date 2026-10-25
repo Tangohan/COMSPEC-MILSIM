@@ -434,7 +434,6 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php if (empty($usesAdminSidebarShell) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
     <?php require base_path('views/partials/navbar_info_banners.php'); ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
-    <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <?php endif; ?>
     <?php if (empty($usesAdminSidebarShell)): ?>
     <?php require base_path('views/partials/advanced_fiche_edit_banner.php'); ?>
@@ -509,7 +508,6 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
                     require base_path('views/partials/navbar_info_banners.php');
                     require base_path('views/partials/alert_banners.php');
                 }
-                require base_path('views/partials/forum_moderation_alerts.php');
                 require base_path('views/partials/advanced_fiche_edit_banner.php');
                 ?>
                 <?php if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)): ?>

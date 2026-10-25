@@ -8,7 +8,6 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use App\Repositories\ForumPostRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\ModerationDecisionRepository;
 use App\Repositories\UserRepository;
@@ -20,7 +19,7 @@ use App\Services\Moderation\ModerationService;
 use App\Services\Moderation\ModerationSourceType;
 
 /**
- * File d'attente modération contenus (quarantaine, fichiers forum, courrier texte).
+ * File d'attente modération contenus (quarantaine, documents, courrier texte).
  */
 final class ContentModerationController
 {
@@ -28,7 +27,6 @@ final class ContentModerationController
         private ModerationArtifactRepository $artifactRepository,
         private ModerationDecisionRepository $decisionRepository,
         private DocumentUploadService $documentUploadService,
-        private ForumPostRepository $forumPostRepository,
         private UserRepository $userRepository,
         private ModerationService $moderationService,
         private AuthService $authService
@@ -50,7 +48,6 @@ final class ContentModerationController
                 'page' => 1,
                 'perPage' => 30,
                 'missingTables' => true,
-                'recentForumPublished' => [],
                 'moduleLabels' => ModerationRestrictionsCatalog::moduleLabels(),
             ]);
         }
@@ -58,23 +55,12 @@ final class ContentModerationController
         $perPage = 30;
         $artifacts = $this->artifactRepository->listQueue($tenantId, null, $page, $perPage);
         $total = $this->artifactRepository->countQueue($tenantId, null);
-        $recentForumPublished = $this->artifactRepository->listRecentPublishedForumUploads($tenantId, 15);
-        $postIds = [];
         $userIds = [];
         foreach ($artifacts as $a) {
-            if (($a['source_type'] ?? '') === ModerationSourceType::FORUM_UPLOAD && (int) ($a['source_id'] ?? 0) > 0) {
-                $postIds[] = (int) $a['source_id'];
-            }
             if ((int) ($a['user_id'] ?? 0) > 0) {
                 $userIds[] = (int) $a['user_id'];
             }
         }
-        foreach ($recentForumPublished as $r) {
-            if (($r['source_type'] ?? '') === ModerationSourceType::FORUM_UPLOAD && (int) ($r['source_id'] ?? 0) > 0) {
-                $postIds[] = (int) $r['source_id'];
-            }
-        }
-        $briefsByPost = $this->forumPostRepository->findTopicBriefsForPosts($postIds, $tenantId);
         $usersById = $this->userRepository->findByIdsForTenant($tenantId, $userIds);
         foreach ($artifacts as &$a) {
             if (!empty($a['reason_codes']) && is_string($a['reason_codes'])) {
@@ -83,14 +69,9 @@ final class ContentModerationController
             if (!empty($a['scan_log']) && is_string($a['scan_log'])) {
                 $a['scan_log'] = json_decode($a['scan_log'], true) ?: [];
             }
-            $this->attachModerationContext($a, $briefsByPost, $usersById);
+            $this->attachModerationContext($a, $usersById);
         }
         unset($a);
-        foreach ($recentForumPublished as &$r) {
-            $pid = (int) ($r['source_id'] ?? 0);
-            $r['forum_context'] = ($pid > 0 && isset($briefsByPost[$pid])) ? $briefsByPost[$pid] : null;
-        }
-        unset($r);
 
         return Response::view('layout.main', [
             'content' => 'admin.content_moderation_index',
@@ -100,68 +81,8 @@ final class ContentModerationController
             'page' => $page,
             'perPage' => $perPage,
             'missingTables' => false,
-            'recentForumPublished' => $recentForumPublished,
             'moduleLabels' => ModerationRestrictionsCatalog::moduleLabels(),
         ]);
-    }
-
-    /**
-     * Aperçu sécurisé d’une pièce encore en stockage (quarantaine), réservé aux modérateurs.
-     */
-    public function preview(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) (Session::get('tenant_id') ?? 0);
-        if ($tenantId <= 0) {
-            return $this->previewDenied();
-        }
-        $id = (int) ($params['id'] ?? 0);
-        $artifact = $this->artifactRepository->findById($id, $tenantId);
-        if ($artifact === null) {
-            return $this->previewDenied();
-        }
-        $state = (string) ($artifact['state'] ?? '');
-        if (!in_array($state, [ModerationArtifactState::QUARANTINED, ModerationArtifactState::PENDING_SCAN], true)) {
-            return $this->previewDenied();
-        }
-        if (($artifact['source_type'] ?? '') !== ModerationSourceType::FORUM_UPLOAD) {
-            return $this->previewDenied();
-        }
-        $rel = str_replace('\\', '/', (string) ($artifact['file_path'] ?? ''));
-        $expectedPrefix = 'quarantine/' . $tenantId . '/';
-        if ($rel === '' || !str_starts_with($rel, $expectedPrefix) || str_contains($rel, '..')) {
-            return $this->previewDenied();
-        }
-        $full = base_path('storage/' . $rel);
-        $storageRoot = realpath(base_path('storage/quarantine/' . $tenantId));
-        $resolved = realpath($full);
-        if ($storageRoot === false || $resolved === false || !str_starts_with($resolved, $storageRoot)) {
-            return $this->previewDenied();
-        }
-        if (!is_file($resolved) || !is_readable($resolved)) {
-            return $this->previewDenied();
-        }
-        $mime = (string) ($artifact['mime'] ?? 'application/octet-stream');
-        if (!preg_match('#^(image/(jpeg|png|gif|webp)|application/pdf)$#', $mime)) {
-            return $this->previewDenied();
-        }
-        $filename = basename($rel);
-        $disp = 'inline; filename="' . str_replace(['"', "\r", "\n"], '', $filename) . '"';
-
-        $response = new Response();
-        $response->setStatusCode(200)
-            ->header('Content-Type', $mime)
-            ->header('X-Content-Type-Options', 'nosniff')
-            ->header('Cache-Control', 'private, max-age=120')
-            ->header('Content-Disposition', $disp)
-            ->setBodyStream(static function () use ($resolved): void {
-                $h = fopen($resolved, 'rb');
-                if ($h !== false) {
-                    fpassthru($h);
-                    fclose($h);
-                }
-            });
-
-        return $response;
     }
 
     public function approve(Request $request, array $params = []): Response
@@ -185,9 +106,7 @@ final class ContentModerationController
         }
         $type = (string) ($artifact['source_type'] ?? '');
         try {
-            if ($type === ModerationSourceType::FORUM_UPLOAD) {
-                $this->releaseForumFile($artifact, $tenantId);
-            } elseif ($type === ModerationSourceType::DOCUMENT_VERSION) {
+            if ($type === ModerationSourceType::DOCUMENT_VERSION) {
                 $result = $this->documentUploadService->approveQuarantinedDocumentArtifact($artifact, $tenantId, $userId, 'Approbation modérateur');
                 $vid = (int) ($result['version_id'] ?? 0);
                 $fp = (string) ($result['file_path'] ?? '');
@@ -335,7 +254,6 @@ final class ContentModerationController
 
         $restrictions = [
             'account_lock' => false,
-            'forum' => 'full_access',
             'messages_blocked' => false,
             'join_blocked' => false,
             'modules_blocked' => $modsClean,
@@ -363,22 +281,14 @@ final class ContentModerationController
 
     /**
      * @param array<string, mixed> $artifact
-     * @param array<int, array{post_id: int, topic_id: int, topic_title: string}> $briefsByPost
      * @param array<int, array<string, mixed>> $usersById
      */
-    private function attachModerationContext(array &$artifact, array $briefsByPost, array $usersById): void
+    private function attachModerationContext(array &$artifact, array $usersById): void
     {
         $uid = (int) ($artifact['user_id'] ?? 0);
         $artifact['uploader_label'] = null;
         if ($uid > 0 && isset($usersById[$uid])) {
             $artifact['uploader_label'] = $this->memberDisplayLabel($usersById[$uid]);
-        }
-        $artifact['forum_context'] = null;
-        if (($artifact['source_type'] ?? '') === ModerationSourceType::FORUM_UPLOAD) {
-            $pid = (int) ($artifact['source_id'] ?? 0);
-            if ($pid > 0 && isset($briefsByPost[$pid])) {
-                $artifact['forum_context'] = $briefsByPost[$pid];
-            }
         }
     }
 
@@ -393,45 +303,5 @@ final class ContentModerationController
         }
 
         return trim((string) ($userRow['email'] ?? '')) !== '' ? (string) $userRow['email'] : 'Membre';
-    }
-
-    /**
-     * @param array<string, mixed> $artifact
-     */
-    private function releaseForumFile(array $artifact, int $tenantId): void
-    {
-        $rel = (string) ($artifact['file_path'] ?? '');
-        $key = (string) ($artifact['source_key'] ?? '');
-        if ($rel === '' || $key === '') {
-            throw new \RuntimeException('Chemin artefact forum invalide.');
-        }
-        $src = base_path('storage/' . $rel);
-        $destDir = base_path('public/uploads/forum');
-        if (!is_dir($destDir)) {
-            mkdir($destDir, 0755, true);
-        }
-        $dest = $destDir . DIRECTORY_SEPARATOR . $key;
-        if (!is_file($src)) {
-            throw new \RuntimeException('Fichier source absent.');
-        }
-        if (!@copy($src, $dest)) {
-            throw new \RuntimeException('Impossible de publier le fichier.');
-        }
-        @unlink($src);
-        $this->artifactRepository->markApprovedOverride(
-            (int) $artifact['id'],
-            $tenantId,
-            0,
-            'public/uploads/forum/' . $key
-        );
-    }
-
-    private function previewDenied(): Response
-    {
-        return (new Response())
-            ->setStatusCode(404)
-            ->header('Content-Type', 'text/plain; charset=utf-8')
-            ->header('X-Content-Type-Options', 'nosniff')
-            ->setBody('Aperçu indisponible.');
     }
 }

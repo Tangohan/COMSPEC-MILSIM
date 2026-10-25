@@ -9,8 +9,6 @@ namespace App\Services\Moderation;
  */
 final class ModerationRestrictionsCatalog
 {
-    public const KEY_FORUM = 'forum';
-
     public const KEY_DOCUMENTS = 'documents';
 
     public const KEY_TRAINING = 'training';

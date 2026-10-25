@@ -78,7 +78,7 @@ require base_path('views/partials/alert_banners.php');
             </p>
             <p class="atak-dash__scope">
                 <span class="atak-dash__scope-kicker">Périmètre actif</span>
-                <span>Carte ATAK, Overwatch, équipes de feu, matériel, relais et forum, avec une gestion allégée des membres. Effectifs, recrutement et formations restent hors périmètre.</span>
+                <span>Carte ATAK, Overwatch, équipes de feu, matériel et relais, avec une gestion allégée des membres. Effectifs, recrutement et formations restent hors périmètre.</span>
                 <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>">Comprendre les profils</a>
                 <?php if ($canAdjustTenantType): ?>
                 <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>">
@@ -163,9 +163,6 @@ require base_path('views/partials/alert_banners.php');
             <a href="<?= htmlspecialchars(url('back-office/invitations'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Invitations<?= $pending_invitations_count > 0 ? ' (' . $pending_invitations_count . ')' : '' ?></a>
             <a href="<?= htmlspecialchars(url('back-office/users/create'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Créer un compte</a>
             <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Membres</a>
-            <?php endif; ?>
-            <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
-            <a href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Forum</a>
             <?php endif; ?>
             <a href="<?= htmlspecialchars(url('atak/passerelle'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Passerelle inter-équipes</a>
             <a href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Mes tenues</a>

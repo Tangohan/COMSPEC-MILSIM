@@ -13,7 +13,7 @@ use App\Services\Community\CommunityReportNotificationService;
 use App\Services\Community\CommunityReportService;
 
 /**
- * Signalements contenus hors forum (auth requise, sans sanction forum).
+ * Signalements de contenus par les membres (auth requise).
  */
 final class CommunityReportController
 {

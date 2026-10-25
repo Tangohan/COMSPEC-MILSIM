@@ -27,7 +27,7 @@ $canOrganization = $canOrganization ?? false;
                 </span>
                 <h2 class="text-lg font-black text-slate-900">Communauté (/back-office)</h2>
             </div>
-            <p class="text-sm text-slate-600">Membres, invitations, unités, rôles communautaires, recrutement, événements. Les modules forum / LMS / modpacks s’y rattachent (session tenant).</p>
+            <p class="text-sm text-slate-600">Membres, invitations, unités, rôles communautaires, recrutement, événements. Les modules LMS / modpacks s’y rattachent (session tenant).</p>
         </a>
         <?php endif; ?>
     </div>

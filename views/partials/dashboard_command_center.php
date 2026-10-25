@@ -754,47 +754,9 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 <header class="dash-zone__head">
                     <p class="dash-zone__kicker">Unité</p>
                     <h2 id="dash-zone-community-title" class="dash-zone__title">Communauté</h2>
-                    <p class="dash-zone__lead">Salons, épingles et démarches liées à votre espace.</p>
+                    <p class="dash-zone__lead">Épingles et démarches liées à votre espace.</p>
                 </header>
             <div class="dash-zone__stack">
-            <?php $followedChannels = (function_exists('forum_public_nav_visible') && !forum_public_nav_visible())
-                ? []
-                : (is_array($followed_channels ?? null) ? $followed_channels : []); ?>
-            <?php if ($followedChannels !== []): ?>
-            <section class="cc-card overflow-hidden" aria-labelledby="dash-channels-heading">
-                <div class="cc-card__head">
-                    <div>
-                        <p class="cc-kicker cc-kicker--primary">Salons</p>
-                        <h3 id="dash-channels-heading" class="cc-card__title">Mes salons suivis</h3>
-                    </div>
-                    <a href="<?= url('forum') ?>" class="cc-card__link">Ouvrir le forum</a>
-                </div>
-                <ul class="dash-channels-list">
-                    <?php foreach ($followedChannels as $ch): ?>
-                        <?php
-                        $chUnread = (int) ($ch['unread_count'] ?? 0);
-                        $chHref = $chUnread > 0 && !empty($ch['last_topic_href']) ? (string) $ch['last_topic_href'] : (string) ($ch['href'] ?? '#');
-                        $chLast = trim((string) ($ch['last_topic_title'] ?? ''));
-                        ?>
-                        <li>
-                            <a href="<?= htmlspecialchars($chHref, ENT_QUOTES, 'UTF-8') ?>" class="dash-channels-item">
-                                <span class="dash-channels-item__hash" aria-hidden="true">#</span>
-                                <span class="dash-channels-item__body">
-                                    <span class="dash-channels-item__name"><?= htmlspecialchars((string) ($ch['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php if ($chLast !== ''): ?>
-                                        <span class="dash-channels-item__last"><?= htmlspecialchars($chLast, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php endif; ?>
-                                </span>
-                                <?php if ($chUnread > 0): ?>
-                                    <span class="dash-channels-item__badge"><?= $chUnread > 99 ? '99+' : $chUnread ?></span>
-                                <?php endif; ?>
-                            </a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </section>
-            <?php endif; ?>
-
             <?php
             $linkPins = [];
             foreach ($pins as $pin) {
@@ -1332,45 +1294,4 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 .dash-rsvp-quick__title { margin: 0.15rem 0 0; font-size: 1.05rem; font-weight: 900; color: #0f172a; letter-spacing: -0.01em; line-height: 1.25; }
 .dash-rsvp-quick__meta { margin: 0.25rem 0 0; font-size: 0.75rem; font-weight: 600; color: #64748b; }
 
-.dash-channels-list { list-style: none; margin: 0; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; }
-.dash-channels-item {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    padding: 0.6rem 0.65rem;
-    border-radius: 0.65rem;
-    text-decoration: none;
-    transition: background 0.15s ease;
-}
-.dash-channels-item:hover { background: #f0fdf4; }
-.dash-channels-item__hash {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 0.5rem;
-    background: #f1f5f9;
-    color: #64748b;
-    font-weight: 900;
-    font-size: 0.9375rem;
-}
-.dash-channels-item__body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-.dash-channels-item__name { font-size: 0.8125rem; font-weight: 800; color: #0f172a; }
-.dash-channels-item__last { font-size: 0.6875rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dash-channels-item__badge {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.35rem;
-    height: 1.35rem;
-    padding: 0 0.35rem;
-    border-radius: 999px;
-    background: #059669;
-    color: #fff;
-    font-size: 0.6875rem;
-    font-weight: 900;
-}
 </style>

@@ -9,7 +9,6 @@
 /** @var array<int,int> $unitMemberCounts */
 /** @var array<int,string> $commanderNames */
 /** @var bool $hasMembershipInTenant */
-/** @var bool $showForumCta */
 $slug = $tenant['slug'] ?? '';
 $name = $tenant['name'] ?? '';
 $cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig ?? [], (string) ($tenant['slug'] ?? ''));
@@ -19,7 +18,6 @@ $publicRosterRows = is_array($publicRosterRows ?? null) ? $publicRosterRows : []
 $unitMemberCounts = is_array($unitMemberCounts ?? null) ? $unitMemberCounts : [];
 $commanderNames = is_array($commanderNames ?? null) ? $commanderNames : [];
 $hasMembershipInTenant = $hasMembershipInTenant ?? false;
-$showForumCta = $showForumCta ?? true;
 $communityCode = trim((string) ($tenant['community_code'] ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
@@ -56,10 +54,6 @@ $publicMission = trim((string) ($sv['publicMission'] ?? ''));
 $publicDoctrine = trim((string) ($sv['publicDoctrine'] ?? ''));
 $contactIntro = trim((string) ($cp['contactIntro'] ?? ''));
 $publicModuleCatalog = [
-    'forum' => [
-        'label' => 'Forum communautaire',
-        'desc' => 'Briefings, discussions et annonces ouvertes aux visiteurs ou aux membres selon la configuration.',
-    ],
     'documents' => [
         'label' => 'Documents',
         'desc' => 'Doctrine, consignes et ressources partagées une fois intégré à la communauté.',
@@ -79,9 +73,6 @@ $publicModuleCatalog = [
 ];
 $enabledPublicModules = [];
 foreach ($publicModuleCatalog as $moduleKey => $moduleMeta) {
-    if ($moduleKey === 'forum' && function_exists('forum_public_nav_visible') && !forum_public_nav_visible()) {
-        continue;
-    }
     if (empty($mods[$moduleKey])) {
         continue;
     }
@@ -331,7 +322,6 @@ $enlistUrl = url('c/' . $slug . '/enlistment');
 if ($discordOnlyRecruit && $discordUrl !== '') {
     $enlistUrl = $discordUrl;
 }
-$forumUrl = url('c/' . $slug . '/forum');
 $mediasUrl = url('c/' . rawurlencode((string) $slug) . '/medias');
 $reelsUrl = url('c/' . rawurlencode((string) $slug) . '/reels');
 
@@ -356,10 +346,6 @@ if ($ctaPrimaryLabel === null || $ctaPrimaryHref === null) {
         $primaryCta = 'contacter';
         $ctaPrimaryLabel = 'Nous contacter';
         $ctaPrimaryHref = '#contact';
-    } elseif ($showForumCta) {
-        $primaryCta = 'forum';
-        $ctaPrimaryLabel = 'Voir le forum';
-        $ctaPrimaryHref = $forumUrl;
     } else {
         $primaryCta = 'medias';
         $ctaPrimaryLabel = 'Voir les médias';
@@ -380,7 +366,6 @@ $ctaPrimaryHint ??= match ((string) $primaryCta) {
     'rejoindre' => 'Accès membres : code communauté ou inscription.',
     'candidater' => 'Déposez une candidature pour intégrer l’unité.',
     'contacter' => 'Écrivez à l’état-major sans engagement.',
-    'forum' => 'Échanges ouverts sur le forum de la communauté.',
     'medias' => 'Parcourez les publications publiques.',
     default => '',
 };
@@ -388,7 +373,6 @@ $navCtaLabel = match ((string) $primaryCta) {
     'rejoindre' => 'Rejoindre',
     'candidater' => 'Candidater',
     'contacter' => 'Contacter',
-    'forum' => 'Forum',
     'medias' => 'Médias',
     default => $ctaPrimaryLabel,
 };
@@ -510,10 +494,6 @@ $rosterIndicatif = static function (array $r): string {
     $cs = trim((string) ($r['callsign'] ?? ''));
     if ($cs !== '') {
         return $cs;
-    }
-    $fa = trim((string) ($r['forum_alias'] ?? ''));
-    if ($fa !== '') {
-        return $fa;
     }
     $dn = trim((string) ($r['display_name'] ?? ''));
     return $dn !== '' ? $dn : '—';
@@ -728,8 +708,6 @@ unset($pbCssFile, $pbCssName);
           </a>
           <?php elseif ($showMedia && (string) $primaryCta !== 'medias'): ?>
           <a href="#medias" class="cl-btn cl-btn--ghost">Voir les médias</a>
-          <?php elseif ($showForumCta && (string) $primaryCta !== 'forum'): ?>
-          <a href="<?= htmlspecialchars($forumUrl) ?>" class="cl-btn cl-btn--ghost">Voir le forum</a>
           <?php endif; ?>
         </div>
         <?php $ctaPrimaryHint = $clT('hero', 'lead', $ctaPrimaryHint); ?>
@@ -979,10 +957,7 @@ unset($pbCssFile, $pbCssName);
           $moduleDesc = (string) ($moduleMeta['desc'] ?? '');
           $moduleHref = null;
           $moduleCta = 'En savoir plus';
-          if ($moduleKey === 'forum' && $showForumCta) {
-              $moduleHref = $forumUrl;
-              $moduleCta = 'Ouvrir le forum';
-          } elseif ($moduleKey === 'events' && $showAgenda) {
+          if ($moduleKey === 'events' && $showAgenda) {
               $moduleHref = '#agenda';
               $moduleCta = 'Voir l’agenda';
           } elseif ($moduleKey === 'roster' && $showRoster) {
@@ -1736,9 +1711,6 @@ unset($pbCssFile, $pbCssName);
         <?php endif; ?>
         <?php if ($contactEmail !== ''): ?>
         <a href="mailto:<?= htmlspecialchars($contactEmail) ?>" class="cl-btn cl-btn--ghost">Écrire un e-mail</a>
-        <?php endif; ?>
-        <?php if ($showForumCta): ?>
-        <a href="<?= htmlspecialchars($forumUrl) ?>" class="cl-btn cl-btn--ghost">Forum</a>
         <?php endif; ?>
       </div>
       <?php if ($contactFormEnabled): ?>

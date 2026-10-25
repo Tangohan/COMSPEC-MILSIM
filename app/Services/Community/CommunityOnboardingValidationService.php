@@ -41,7 +41,7 @@ final class CommunityOnboardingValidationService
     {
         $moduleLabels = [
             'admin' => 'Administration',
-            'forum' => 'Forum',
+            'moderation' => 'Modération',
             'documents' => 'Documents',
             'training' => 'Formations',
             'personnel' => 'Membres / RH',

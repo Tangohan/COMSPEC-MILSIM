@@ -30,14 +30,11 @@ final class UxFeedbackAudit
         return [
             'views/training/my-training.php',
             'views/training/partials/lms_course_sidebar.php',
-            'views/forum/topic.php',
             'views/admin/organization/dashboard_pins.php',
             'views/back_office/cooperation/missions/exchange.php',
             'views/back_office/cooperation/missions/negotiate.php',
             'views/partials/orbat/orbat_canvas.php',
             'public/assets/js/training_canvas_editor.js',
-            'public/assets/js/forum/forum_category_context.js',
-            'public/assets/js/forum-composer.js',
         ];
     }
 }

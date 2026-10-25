@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Catalogue des types de coopération (plateforme + communauté) et gabarits d’annonces (courriel, portail, forum).
+ * Catalogue des types de coopération (plateforme + communauté) et gabarits d’annonces (courriel, portail).
  * Idempotent — invoqué depuis run-migrations.php.
  */
 
@@ -49,10 +49,9 @@ return function (PDO $pdo): void {
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             tenant_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT "0 = défaut plateforme",
             event_key VARCHAR(64) NOT NULL,
-            channel ENUM(\'email\',\'in_app\',\'forum\') NOT NULL,
+            channel ENUM(\'email\',\'in_app\') NOT NULL,
             subject VARCHAR(255) DEFAULT NULL,
             body TEXT NOT NULL,
-            forum_settings_json JSON DEFAULT NULL,
             min_interval_hours INT UNSIGNED NOT NULL DEFAULT 24,
             is_active TINYINT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -63,22 +62,6 @@ return function (PDO $pdo): void {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
         echo "Table cooperation_announcement_templates créée.\n";
-    }
-
-    $hasLog = $pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cooperation_forum_announcement_log' LIMIT 1");
-    if (!$hasLog || !$hasLog->fetch()) {
-        $pdo->exec(
-            'CREATE TABLE cooperation_forum_announcement_log (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            mission_id BIGINT UNSIGNED NOT NULL,
-            event_key VARCHAR(64) NOT NULL,
-            posted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY uq_coop_forum_ann (mission_id, event_key),
-            KEY idx_coop_forum_ann_time (posted_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-        );
-        echo "Table cooperation_forum_announcement_log créée.\n";
     }
 
     // Semis typologies plateforme (équivalent CooperationDictionary) si table vide pour tenant_id=0
@@ -167,18 +150,6 @@ return function (PDO $pdo): void {
         foreach ($events as $e) {
             $insI->execute([$e[0], $e[1] . ' — ' . mb_substr(preg_replace('/\s+/', ' ', $e[2]), 0, 200)]);
         }
-        $insF = $pdo->prepare(
-            'INSERT INTO cooperation_announcement_templates (tenant_id, event_key, channel, subject, body, forum_settings_json, min_interval_hours, is_active, created_at)
-             VALUES (0, ?, \'forum\', NULL, ?, ?, 24, 0, NOW())'
-        );
-        $forumBody = [];
-        foreach ($events as $ev) {
-            $forumBody[$ev[0]] = $ev[2];
-        }
-        foreach (['coop_invitation_sent', 'coop_mission_activated', 'coop_mission_closed'] as $ek) {
-            $settings = json_encode(['as_draft' => true, 'category_id' => null, 'topic_id' => null], JSON_UNESCAPED_UNICODE);
-            $insF->execute([$ek, (string) ($forumBody[$ek] ?? ''), $settings]);
-        }
-        echo "Semis cooperation_announcement_templates (plateforme, e-mails et forum désactivés par défaut).\n";
+        echo "Semis cooperation_announcement_templates (plateforme, e-mails désactivés par défaut).\n";
     }
 };

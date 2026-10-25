@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Personnel;
 
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
@@ -32,7 +32,7 @@ final class RoleplayFollowupNotificationService
         private EmailService $emailService,
         private UserRepository $userRepository,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
-        private ForumNotificationRepository $forumNotificationRepository,
+        private MemberNotificationRepository $memberNotificationRepository,
         private TenantRepository $tenantRepository,
     ) {}
 
@@ -154,10 +154,10 @@ final class RoleplayFollowupNotificationService
         string $summary,
         string $href,
     ): void {
-        if (!$this->forumNotificationRepository->tableExists()) {
+        if (!$this->memberNotificationRepository->tableExists()) {
             return;
         }
-        $this->forumNotificationRepository->create($tenantId, $recipientUserId, 'roleplay_followup', [
+        $this->memberNotificationRepository->create($tenantId, $recipientUserId, 'roleplay_followup', [
             'recipient_role' => $recipientRole,
             'subject_label' => $subjectMemberLabel,
             'summary' => $summary,

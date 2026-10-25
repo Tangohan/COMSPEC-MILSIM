@@ -53,12 +53,10 @@ final class TenantTypeSwitchService
             if ($newType === TenantTypeConfig::TYPE_FULL) {
                 $this->ensureFullSeeds($pdo, $tenantId);
             } elseif ($newType === TenantTypeConfig::TYPE_EFFECTIFS) {
-                TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-                TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+                TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
                 TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
             } elseif ($newType === TenantTypeConfig::TYPE_ATAK) {
-                TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-                TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+                TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
             }
 
             try {
@@ -109,8 +107,7 @@ final class TenantTypeSwitchService
 
     private function ensureFullSeeds(PDO $pdo, int $tenantId): void
     {
-        TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-        TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+        TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
         TenantSeedHelper::seedDocumentsEquipment($pdo, $tenantId);
         TenantSeedHelper::ensureSystemAdminPermissions($pdo, $tenantId);
         TenantSeedHelper::ensureTenantPermissionCatalog($pdo, $tenantId);

@@ -97,14 +97,13 @@ $platformNav = [
     ]],
     ['key' => 'moderation', 'label' => 'Modération & sécurité', 'items' => [
         ['path' => 'admin/system/blocklist', 'label' => 'Liste de restriction', 'icon' => 'ban', 'access' => 'system', 'desc' => 'E-mails et réseaux bloqués sur tout le site'],
-        ['path' => 'admin/system/member-sanctions', 'label' => 'Sanctions du site', 'icon' => 'gavel', 'access' => 'system', 'desc' => 'Restrictions de compte, forum, messagerie'],
+        ['path' => 'admin/system/member-sanctions', 'label' => 'Sanctions du site', 'icon' => 'gavel', 'access' => 'system', 'desc' => 'Restrictions de compte, messagerie, modules'],
         ['path' => 'admin/system/noms-inappropries', 'label' => 'Noms inappropriés', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Mots floutés dans les noms d’unités, alertes à traiter'],
     ]],
     ['key' => 'communication', 'label' => 'Communication', 'items' => [
         ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'hub', 'desc' => 'Bandeaux et annonces sur le portail'],
         ['path' => 'admin/system/e-mails', 'label' => 'Envois d’e-mails', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Quota quotidien, alertes regroupées, volume par type'],
         ['path' => 'admin/newsletter', 'label' => 'Lettre d’information', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Inscrits depuis la page d’accueil'],
-        ['path' => 'admin/system/brief', 'label' => 'Brief membres', 'icon' => 'book', 'access' => 'system', 'desc' => 'Message de bienvenue des membres'],
         ['path' => 'admin/system/cooperation/catalog', 'label' => 'Types de coopération', 'icon' => 'coop', 'access' => 'system', 'desc' => 'Catalogue des coopérations entre unités'],
         ['path' => 'admin/system/cooperation/announcements', 'label' => 'Annonces de coopération', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Messages diffusés aux communautés'],
         ['path' => 'admin/musique', 'label' => 'Musique', 'icon' => 'music', 'access' => 'system', 'desc' => 'Bibliothèque du site et de l’app Musique de l’ATAK, playlist globale'],

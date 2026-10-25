@@ -403,7 +403,6 @@ $renderToggle = static function (
                 <div class="bo-setting-group__rows">
                     <?php
                     $modLabels = [
-                        'forum' => 'Forum',
                         'documents' => 'Documents',
                         'events' => 'Événements',
                         'roster' => 'Effectifs',

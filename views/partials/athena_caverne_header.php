@@ -15,7 +15,7 @@ declare(strict_types=1);
  * @var array<string,mixed>|null $currentUser Alias optionnel
  * @var bool|null $show_staff_enlistments
  * @var string|null $athena_header_section  Sous-ligne brand (ex. Tableau de bord)
- * @var string|null $athena_header_current Clé lien actif (dashboard|hub|forum|formations|effectifs|recrutement|admin|…)
+ * @var string|null $athena_header_current Clé lien actif (dashboard|hub|formations|effectifs|recrutement|admin|…)
  */
 
 $h = static function (string $value): string {
@@ -49,8 +49,6 @@ if ($currentKey === '') {
         $currentKey = 'dashboard';
     } elseif (str_starts_with($currentPath, 'hub')) {
         $currentKey = 'hub';
-    } elseif (str_starts_with($currentPath, 'forum')) {
-        $currentKey = 'forum';
     } elseif (str_starts_with($currentPath, 'formations')) {
         $currentKey = 'formations';
     } elseif (str_starts_with($currentPath, 'personnel') || str_starts_with($currentPath, 'orbat')) {
@@ -72,7 +70,6 @@ if ($currentKey === '') {
 $sectionLabelByKey = [
     'dashboard' => 'Tableau de bord',
     'hub' => 'Hub',
-    'forum' => 'Forum',
     'formations' => 'Formations',
     'effectifs' => 'Effectifs',
     'recrutement' => 'Recrutement',
@@ -100,7 +97,7 @@ $headerTenantType = function_exists('navigation_current_tenant_type')
     ? navigation_current_tenant_type()
     : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 $headerTypeLabel = \App\Services\Community\TenantTypeConfig::label($headerTenantType);
-// Compte sans organisation : seules les pages utiles restent (tableau de bord, forum, registre,
+// Compte sans organisation : seules les pages utiles restent (tableau de bord, registre,
 // création de communauté, compte). Suit l’appartenance à chaque requête.
 $headerNoOrg = class_exists(\App\Support\PortalAccessChoice::class)
     && \App\Support\PortalAccessChoice::restrictsNavigationToNoOrganization();
@@ -130,9 +127,6 @@ $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => url('dashboard'), 'path' => 'dashboard'],
     ['key' => 'hub', 'label' => 'Hub', 'href' => url('hub'), 'path' => 'hub'],
 ];
-if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()) {
-    $navItems[] = ['key' => 'forum', 'label' => 'Forum', 'href' => url('forum'), 'path' => 'forum'];
-}
 $navItems[] = ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'];
 $navItems[] = ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'];
 if ($headerNoOrg) {

@@ -132,7 +132,7 @@ final class TenantDefaultRoleDefinitions
     }
 
     /**
-     * Rôles métiers livrés avec le forum / documents (couche intra ou communauté selon le slug).
+     * Rôles métiers livrés avec les documents (couche intra ou communauté selon le slug).
      *
      * @return list<array{slug: string, name: string, description: string, role_layer: string, is_system: int, is_locked: int}>
      */
@@ -142,7 +142,7 @@ final class TenantDefaultRoleDefinitions
             [
                 'slug' => 'member',
                 'name' => 'Membre',
-                'description' => 'Membre titulaire de l’unité : accès forum, documents standards et formations selon affectation.',
+                'description' => 'Membre titulaire de l’unité : accès aux documents standards et formations selon affectation.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
                 'is_locked' => 0,
@@ -254,7 +254,7 @@ final class TenantDefaultRoleDefinitions
             [
                 'slug' => 'probation',
                 'name' => 'Période d’essai',
-                'description' => 'Intégration provisoire : participation encadrée au forum en attendant la titularisation.',
+                'description' => 'Intégration provisoire : participation encadrée en attendant la titularisation.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
                 'is_locked' => 0,
@@ -287,7 +287,6 @@ final class TenantDefaultRoleDefinitions
     public static function defaultPermissionSlugsForOperationalRoles(): array
     {
         $officerCore = [
-            'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
             'documents.view', 'documents.download.standard', 'training.view',
             'personnel.profile.view',
             'operational.board.view',
@@ -311,7 +310,7 @@ final class TenantDefaultRoleDefinitions
             ],
             'member' => CommunityAccessProfiles::memberPermissionSlugs(),
             'hr' => [
-                'documents.view', 'forum.view', 'forum.create_topic', 'forum.reply', 'training.view',
+                'documents.view', 'training.view',
                 'invitations.send', 'admin.members.view', 'personnel.profile.view', 'personnel.profile.update',
                 'dashboard.pins.manage',
                 'organization.orbat.view',
@@ -321,7 +320,6 @@ final class TenantDefaultRoleDefinitions
                 'member_integration.note', 'member_integration.template_manage',
             ],
             'recruiter' => [
-                'forum.view', 'forum.create_topic', 'forum.reply',
                 'invitations.send', 'admin.members.view', 'personnel.profile.view',
                 'operational.board.view',
                 'organization.orbat.view',
@@ -329,7 +327,6 @@ final class TenantDefaultRoleDefinitions
                 'member_integration.view', 'member_integration.assign', 'member_integration.note',
             ],
             'instructor' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
                 'training.create', 'training.update', 'training.manage',
@@ -340,7 +337,6 @@ final class TenantDefaultRoleDefinitions
                 'member_integration.view',
             ],
             'trainer' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
                 'training.create', 'training.update', 'training.manage',
@@ -350,7 +346,6 @@ final class TenantDefaultRoleDefinitions
                 'organization.orbat.view',
             ],
             'senior_instructor' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
                 'training.create', 'training.update', 'training.delete', 'training.publish',
@@ -361,7 +356,6 @@ final class TenantDefaultRoleDefinitions
                 'organization.orbat.view',
             ],
             'instructor_trainer' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
                 'personnel.profile.view',
@@ -370,7 +364,6 @@ final class TenantDefaultRoleDefinitions
                 'organization.orbat.view',
             ],
             'trainer_of_trainers' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
                 'personnel.profile.view',
@@ -379,34 +372,26 @@ final class TenantDefaultRoleDefinitions
                 'organization.orbat.view',
             ],
             'medic' => [
-                'forum.view', 'forum.reply',
                 'documents.view', 'documents.download.standard',
                 'personnel.profile.view', 'personnel.sensitive.view',
                 'organization.orbat.view',
             ],
             'logistics' => [
-                'forum.view', 'forum.create_topic', 'forum.reply',
                 'documents.view', 'documents.upload', 'documents.metadata.update',
                 'organization.orbat.view',
             ],
             'rto' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own',
                 'comms.announcement.send',
                 'comms.email.send.orbat',
                 'comms.email.send.activity',
                 'comms.email.send.custom',
                 'organization.orbat.view',
             ],
-            'probation' => [
-                'forum.view', 'forum.reply',
-            ],
+            'probation' => [],
             'officer' => $officerCore,
             'video_creator' => [
                 'media.view',
                 'media.upload',
-                'forum.view',
-                'forum.create_topic',
-                'forum.reply',
                 'documents.view',
                 'documents.upload',
                 'operational.board.view',
@@ -420,10 +405,6 @@ final class TenantDefaultRoleDefinitions
                 'media.manage',
                 'admin.branding.manage',
                 'admin.backoffice.view',
-                'forum.view',
-                'forum.create_topic',
-                'forum.reply',
-                'forum.announcements.publish',
                 'comms.announcement.send',
                 'documents.view',
                 'documents.upload',
@@ -445,9 +426,6 @@ final class TenantDefaultRoleDefinitions
                 'media.view',
                 'media.upload',
                 'media.collections.manage',
-                'forum.view',
-                'forum.categories.manage',
-                'forum.manage_categories',
                 'organization.orbat.view',
                 'dashboard.pins.manage',
             ],
@@ -461,9 +439,7 @@ final class TenantDefaultRoleDefinitions
                 'admin.members.invite',
                 'admin.audit.view',
                 'invitations.send',
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own',
-                'forum.moderate_organization',
-                'forum.announcements.publish',
+                'moderation.reports.manage',
                 'documents.view', 'documents.upload', 'documents.download.standard',
                 'training.view',
                 'personnel.profile.view', 'personnel.profile.update', 'personnel.assignments.manage',
@@ -496,7 +472,6 @@ final class TenantDefaultRoleDefinitions
                 'comms.email.send.activity',
             ]))),
             'training_officer' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
                 'training.certifications.manage', 'training.prerequisites.manage',
@@ -528,15 +503,12 @@ final class TenantDefaultRoleDefinitions
                 'admin.audit.view',
                 'personnel.profile.view',
                 'personnel.status.manage',
-                'forum.view', 'forum.reply',
-                'forum.moderate_organization',
-                'forum.reports.manage',
+                'moderation.reports.manage',
                 'organization.effectifs.hub.view',
                 'organization.orbat.view',
                 'documents.view',
             ],
             'recruitment_officer' => [
-                'forum.view', 'forum.create_topic', 'forum.reply',
                 'invitations.send',
                 'admin.backoffice.view',
                 'admin.members.view',
@@ -556,9 +528,7 @@ final class TenantDefaultRoleDefinitions
                 'admin.members.view',
                 'admin.members.moderate',
                 'personnel.profile.view',
-                'forum.view',
-                'forum.moderate_organization',
-                'forum.reports.manage',
+                'moderation.reports.manage',
                 'documents.view',
                 'documents.sensitive.view',
                 'organization.orbat.view',

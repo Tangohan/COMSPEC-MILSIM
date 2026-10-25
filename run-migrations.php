@@ -200,7 +200,7 @@ $bootstrapFiles = [
     'hr_charter_lms_migration.php',
     'recon_pv_tammuc_migration.php',
     'core_schema_extensions_migration.php',
-    'forum_reporting_workflow_migration.php',
+    'forum_removal_migration.php',
     'request_telemetry_migration.php',
     'platform_admin_tenant_intervention_migration.php',
     'users_platform_admin_flag_migration.php',
@@ -223,6 +223,13 @@ set_time_limit(0);
 $schemaPath = $root . '/migrations/schema.sql';
 echo "Exécution du schéma...\n";
 $migrationFlush();
+
+try {
+    run_forum_removal_pre_schema($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] forum_removal (avant schéma) : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('forum_removal_pre_schema', $e);
+}
 
 if (!$migrationRunner->runSchema($schemaPath)) {
     exit(1);
@@ -346,10 +353,10 @@ try {
     $migrationRunner->warn('users_platform_admin_flag', $e);
 }
 try {
-    run_forum_reporting_workflow_migration($pdo);
+    run_forum_removal_post_schema($pdo);
 } catch (Throwable $e) {
-    echo '  [ATTENTION] forum_reporting_workflow : ' . $e->getMessage() . "\n";
-    $migrationRunner->warn('forum_reporting_workflow', $e);
+    echo '  [ATTENTION] forum_removal : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('forum_removal', $e);
 }
 try {
     run_roles_organic_architecture_migration($pdo);
@@ -1268,7 +1275,7 @@ if ($stmt && !$stmt->fetch()) {
     }
 }
 
-// Préférences affichage forum / fiche (pseudo forum, visibilité)
+// Préférences d’affichage de la fiche
 $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings'");
 if ($stmt && !$stmt->fetch()) {
     echo "Création user_profile_display_settings...\n";
@@ -1304,26 +1311,6 @@ if ($stmt && !$stmt->fetch()) {
         $migrationRunner->warn('hide_personal_info', $e);
     }
 }
-$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'hide_forum_level'");
-if ($stmt && !$stmt->fetch()) {
-    echo "Migration hide_forum_level (user_profile_display_settings)...\n";
-    try {
-        $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN hide_forum_level tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = masquer LVL sur carte forum' AFTER show_bio_forum");
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] hide_forum_level : ' . $e->getMessage() . "\n";
-        $migrationRunner->warn('hide_forum_level', $e);
-    }
-}
-$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'forum_visible_role_id'");
-if ($stmt && !$stmt->fetch()) {
-    echo "Migration forum_visible_role_id (user_profile_display_settings)...\n";
-    try {
-        $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN forum_visible_role_id int unsigned DEFAULT NULL COMMENT 'Rôle org affiché sur carte forum (NULL = rôle principal du compte)' AFTER forum_label_mode");
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] forum_visible_role_id : ' . $e->getMessage() . "\n";
-        $migrationRunner->warn('forum_visible_role_id', $e);
-    }
-}
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'site_photo_priority'");
 if ($stmt && !$stmt->fetch()) {
     echo "Migration site_photo_priority (user_profile_display_settings)...\n";
@@ -1335,28 +1322,6 @@ if ($stmt && !$stmt->fetch()) {
     }
 }
 
-$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_topics' AND COLUMN_NAME = 'is_official'");
-if ($stmt && !$stmt->fetch()) {
-    echo "Migration forum_topics is_official / auto_locked_at / suppress_auto_lock...\n";
-    try {
-        $pdo->exec("ALTER TABLE forum_topics ADD COLUMN is_official tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Communiqué officiel (modo)' AFTER is_hidden");
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] is_official : ' . $e->getMessage() . "\n";
-        $migrationRunner->warn('is_official', $e);
-    }
-    try {
-        $pdo->exec("ALTER TABLE forum_topics ADD COLUMN auto_locked_at datetime DEFAULT NULL COMMENT 'Verrouillage auto 6 mois' AFTER updated_at");
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] auto_locked_at : ' . $e->getMessage() . "\n";
-        $migrationRunner->warn('auto_locked_at', $e);
-    }
-    try {
-        $pdo->exec("ALTER TABLE forum_topics ADD COLUMN suppress_auto_lock tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = déverrouillage manuel, ne pas reverrouiller auto' AFTER auto_locked_at");
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] suppress_auto_lock : ' . $e->getMessage() . "\n";
-        $migrationRunner->warn('suppress_auto_lock', $e);
-    }
-}
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'units' AND COLUMN_NAME = 'public_blurb'");
 if ($stmt && !$stmt->fetch()) {
     echo "Migration units public_blurb / public_tags / show_on_public_page...\n";
@@ -2285,49 +2250,6 @@ HTM;
     echo "Preset et template CERBERE OK.\n";
 }
 
-// Forum : colonnes et tables additionnelles (category icon, post is_hidden, category subscriptions)
-$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_categories' AND COLUMN_NAME = 'icon'");
-if ($stmt && !$stmt->fetch()) {
-    echo "Ajout forum_categories.icon...\n";
-    $pdo->exec("ALTER TABLE forum_categories ADD COLUMN icon varchar(50) DEFAULT NULL AFTER description");
-}
-$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'is_hidden'");
-if ($stmt && !$stmt->fetch()) {
-    echo "Ajout forum_posts.is_hidden...\n";
-    $pdo->exec("ALTER TABLE forum_posts ADD COLUMN is_hidden tinyint(1) DEFAULT 0 AFTER body");
-}
-$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_posts' AND COLUMN_NAME = 'body_format'");
-if ($stmt && !$stmt->fetch()) {
-    echo "Ajout forum_posts.body_format...\n";
-    $pdo->exec("ALTER TABLE forum_posts ADD COLUMN body_format VARCHAR(20) NOT NULL DEFAULT 'markdown' AFTER body");
-    try {
-        $pdo->exec("UPDATE forum_posts SET body_format = 'html' WHERE body LIKE '%rofa-wrap%'");
-    } catch (\Throwable $e) {
-        echo '  [note] backfill forum_posts.body_format : ' . $e->getMessage() . "\n";
-    }
-}
-$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_category_subscriptions'");
-if ($stmt && !$stmt->fetch()) {
-    echo "Création table forum_category_subscriptions...\n";
-    $pdo->exec("CREATE TABLE forum_category_subscriptions (
-        user_id int unsigned NOT NULL,
-        category_id int unsigned NOT NULL,
-        created_at datetime DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (user_id, category_id),
-        CONSTRAINT forum_category_subscriptions_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT forum_category_subscriptions_category_id_fk FOREIGN KEY (category_id) REFERENCES forum_categories (id) ON DELETE CASCADE ON UPDATE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-}
-
-$forumPremiumMigrate = require $root . '/bootstrap/forum_premium_migration.php';
-$migrationRunner->step('forumPremiumMigrate', static fn () => $forumPremiumMigrate($pdo));
-
-$forumV2Migrate = require $root . '/bootstrap/forum_v2_migration.php';
-$migrationRunner->step('forumV2Migrate', static fn () => $forumV2Migrate($pdo));
-
-$forumModerationBotMigrate = require $root . '/bootstrap/forum_moderation_bot_migration.php';
-$migrationRunner->step('forumModerationBotMigrate', static fn () => $forumModerationBotMigrate($pdo));
-
 $alertsMigrate = require $root . '/bootstrap/alerts_migration.php';
 $migrationRunner->step('alertsMigrate', static fn () => $alertsMigrate($pdo));
 
@@ -2673,14 +2595,6 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_login_accueil_images : ' . $e->getMessage() . "\n";
     $migrationRunner->warn('tenant_login_accueil_images', $e);
-}
-
-$forumTopicPinOnDashboardMigrate = require $root . '/bootstrap/forum_topic_pin_on_dashboard_migration.php';
-try {
-    $forumTopicPinOnDashboardMigrate($pdo);
-} catch (Throwable $e) {
-    echo '  [ATTENTION] forum_topic_pin_on_dashboard : ' . $e->getMessage() . "\n";
-    $migrationRunner->warn('forum_topic_pin_on_dashboard', $e);
 }
 
 $demoNdaGateMigrate = require $root . '/bootstrap/demo_nda_gate_migration.php';
@@ -3078,101 +2992,6 @@ if ($stmt && $stmt->fetch()) {
     );
 }
 
-// ----- Seed forum (permissions, rôles, catégories) — idempotent -----
-$run_forum_seed = function (PDO $pdo, int $tenantId): void {
-    $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'forum.view') . ' LIMIT 1');
-    $stmt->execute([$tenantId]);
-    if ($stmt->fetch()) {
-        echo "Forum seed déjà appliqué (permissions existantes).\n";
-        return;
-    }
-
-    echo "Seed forum : permissions et rôles...\n";
-
-    $permissions = [
-        ['admin.access', 'Accès administration', 'admin'],
-        ['forum.view', 'Voir le forum', 'forum'],
-        ['forum.create_topic', 'Créer un sujet', 'forum'],
-        ['forum.reply', 'Répondre', 'forum'],
-        ['forum.edit_own', 'Modifier son message', 'forum'],
-        ['forum.delete_own', 'Supprimer son message', 'forum'],
-        ['forum.moderate', 'Modérer le forum', 'forum'],
-        ['forum.moderate_organization', 'Modérer la section forum de l\'organisation', 'forum'],
-        ['forum.manage_categories', 'Gérer les catégories', 'forum'],
-    ];
-
-    $permIds = [];
-    $insertPerm = $pdo->prepare("INSERT INTO permissions (tenant_id, name, slug, module, created_at) VALUES (?, ?, ?, ?, NOW())");
-    foreach ($permissions as $p) {
-        $insertPerm->execute([$tenantId, $p[1], $p[0], $p[2]]);
-        $permIds[$p[0]] = (int) $pdo->lastInsertId();
-    }
-
-    $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'tenant_admin') . ' LIMIT 1');
-    $adminRole->execute([$tenantId]);
-    $adminRoleId = (int) ($adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-    if ($adminRoleId) {
-        $link = $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
-        foreach ($permIds as $pid) {
-            $link->execute([$adminRoleId, $pid]);
-        }
-    }
-
-    foreach (['forum_moderator' => 'Modérateur forum', 'member' => 'Membre', 'officer' => 'Officier'] as $slug => $roleName) {
-        $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $stmt->execute([$tenantId, $slug]);
-        if (!$stmt->fetch()) {
-            $pdo->prepare("INSERT INTO roles (tenant_id, name, slug, description, is_system, created_at) VALUES (?, ?, ?, ?, 1, NOW())")
-                ->execute([$tenantId, $roleName, $slug, '']);
-        }
-    }
-
-    $modRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'forum_moderator') . ' LIMIT 1');
-    $modRole->execute([$tenantId]);
-    $modRoleId = (int) ($modRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-    if ($modRoleId) {
-        $link = $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
-        foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.moderate', 'forum.moderate_organization'] as $slug) {
-            if (isset($permIds[$slug])) {
-                $link->execute([$modRoleId, $permIds[$slug]]);
-            }
-        }
-    }
-
-    $memberRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'member') . ' LIMIT 1');
-    $memberRole->execute([$tenantId]);
-    $memberRoleId = (int) ($memberRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-    if ($memberRoleId) {
-        $link = $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
-        foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own'] as $slug) {
-            if (isset($permIds[$slug])) {
-                $link->execute([$memberRoleId, $permIds[$slug]]);
-            }
-        }
-    }
-
-    $stmt = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? LIMIT 1");
-    $stmt->execute([$tenantId]);
-    if ($stmt->fetch()) {
-        echo "Catégories forum déjà présentes.\n";
-        return;
-    }
-
-    echo "Création des catégories forum par défaut...\n";
-    $categories = [
-        ['Communiqués officiels', 'annonces', 'Annonces et communiqués de l\'équipe.', 'orange', 10],
-        ['Général', 'general', 'Discussions générales et présentation.', 'indigo', 20],
-        ['Missions & Opérations', 'missions', 'Briefs et retours d\'opérations.', 'violet', 30],
-        ['Support & Technique', 'support', 'Aide, ATAK, équipement, technique.', 'rose', 40],
-        ['Hors sujet', 'hors-sujet', 'Échanges informels.', 'emerald', 50],
-    ];
-    $insCat = $pdo->prepare("INSERT INTO forum_categories (tenant_id, parent_id, name, slug, description, color_theme, display_order, is_locked, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, ?, ?, 0, NOW(), NOW())");
-    foreach ($categories as $c) {
-        $insCat->execute([$tenantId, $c[0], $c[1], $c[2], $c[3], $c[4]]);
-    }
-    echo "Forum seed OK.\n";
-};
-
 $run_documents_seed = function (PDO $pdo, int $tenantId): void {
     $docPermSlugs = ['documents.view', 'documents.upload', 'documents.update', 'documents.archive', 'documents.download_sensitive'];
     $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'documents.view') . ' LIMIT 1');
@@ -3275,8 +3094,6 @@ if ($stmt && $stmt->fetch()) {
         }
         $pdo->exec("INSERT IGNORE INTO tenant_matricule_config (tenant_id, prefix, format_pattern, next_number, updated_at) VALUES ($tenantId, 'ATH', '{prefix}-{seq:5}', 1, NOW())");
     }
-
-    $run_forum_seed($pdo, $tenantId);
 
     // S'assurer que la permission admin.access existe et est liée au rôle Administrator (menu Admin)
     $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . \App\Support\SqlText::equalsLiteral($pdo, 'slug', 'admin.access') . ' LIMIT 1');
@@ -3440,20 +3257,6 @@ if ($stmt && $stmt->fetch()) {
         $migrationRunner->warn('training_lessons canvas', $e);
     }
 
-    try {
-        $fr = $pdo->query("SHOW TABLES LIKE 'forum_reports'");
-        if ($fr && $fr->fetch()) {
-            $ck = $pdo->query("SHOW COLUMNS FROM forum_reports LIKE 'content_kind'");
-            if ($ck && !$ck->fetch()) {
-                $pdo->exec('ALTER TABLE forum_reports ADD COLUMN content_kind VARCHAR(64) NULL DEFAULT NULL');
-                echo "forum_reports.content_kind ajouté (signalements étendus).\n";
-            }
-        }
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] forum_reports.content_kind : ' . $e->getMessage() . "\n";
-        $migrationRunner->warn('forum_reports.content_kind', $e);
-    }
-
     echo "Seed déjà présent — poursuite des migrations annexes (Discord, ATAK, etc.).\n";
     $migrationFlush();
 } else {
@@ -3506,7 +3309,6 @@ if ($stmt && $stmt->fetch()) {
     }
     $pdo->exec("INSERT INTO tenant_matricule_config (tenant_id, prefix, format_pattern, next_number, updated_at) VALUES ($tenantId, 'ATH', '{prefix}-{seq:5}', 1, NOW())");
 
-    $run_forum_seed($pdo, $tenantId);
     $run_documents_seed($pdo, $tenantId);
 
     try {
@@ -4544,15 +4346,6 @@ try {
 }
 $migrationEnsurePdo();
 
-$atakForumChannelsSeed = require $root . '/bootstrap/atak_forum_channels_seed.php';
-try {
-    echo "Seed forum ATAK / COMSPEC (changelogs, FAQ, retours)...\n";
-    $atakForumChannelsSeed($pdo);
-} catch (Throwable $e) {
-    echo '  [ATTENTION] atak_forum_channels_seed : ' . $e->getMessage() . "\n";
-    $migrationRunner->warn('atak_forum_channels_seed', $e);
-}
-$migrationEnsurePdo();
 
 $trainingGroupsMigrate = require $root . '/bootstrap/training_groups_migration.php';
 try {

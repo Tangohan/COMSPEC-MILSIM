@@ -27,8 +27,7 @@ $canDocs = $gate->allows('documents.upload') || $gate->allows('admin.access');
 $canTraining = $gate->allows('training.manage') || $gate->allows('training.assign') || $gate->allows('admin.access');
 $canOrgAdmin = $gate->allows('admin.organization') || $gate->allows('admin.access');
 $canModerateMembers = $gate->allows('admin.members.moderate');
-$canModerateForum = $gate->allows('forum.moderate') || $gate->allows('forum.moderate_organization') || $canOrgAdmin;
-$forumVisible = !function_exists('forum_public_nav_visible') || forum_public_nav_visible();
+$canModerateReports = $gate->allows('moderation.reports.manage') || $canOrgAdmin;
 
 $nUnits = count($units);
 $nGrades = count($grades);
@@ -96,7 +95,7 @@ $sections = [
         'lead' => 'Ce que voient les visiteurs et les membres : nom, adresse, vitrine et annonces.',
         'items' => [
             ['href' => url('back-office/community'), 'title' => 'Identité & code rejoindre', 'desc' => 'Nom, adresse courte du lien et code communauté pour rejoindre l’unité.', 'value' => $tenantName !== '' ? $tenantName : null, 'value_raw' => true, 'keywords' => 'nom slug url code invitation rejoindre identite'],
-            ['href' => url('back-office/community/presentation'), 'title' => 'Fiche registre & vitrine', 'desc' => 'Textes publics, modèle vitrine ou classique, ORBAT, recrutement, forum visiteurs.', 'value' => $layoutPub . ' · ORBAT ' . mb_strtolower($orbatLabel), 'keywords' => 'vitrine classique orbat public presentation registre langue locale'],
+            ['href' => url('back-office/community/presentation'), 'title' => 'Fiche registre & vitrine', 'desc' => 'Textes publics, modèle vitrine ou classique, ORBAT, recrutement.', 'value' => $layoutPub . ' · ORBAT ' . mb_strtolower($orbatLabel), 'keywords' => 'vitrine classique orbat public presentation registre langue locale'],
             ['href' => url('back-office/configuration-initiale'), 'title' => 'Configuration initiale', 'desc' => 'Assistant des cinq réglages essentiels : identité, contact, inscription, modules visibles, rôle des nouveaux.', 'keywords' => 'assistant demarrage setup logo contact inscription modules'],
             ['href' => url('back-office/alerts'), 'title' => 'Alertes & annonces', 'desc' => 'Bandeaux et messages pour les membres connectés.', 'keywords' => 'bandeau message annonce alerte'],
         ],
@@ -147,9 +146,8 @@ $sections = [
         'id' => 'contenu',
         'icon' => 'content',
         'title' => 'Contenu & événements',
-        'lead' => 'Forum, agenda, documents, formations et mesure d’audience.',
+        'lead' => 'Agenda, documents, formations et mesure d’audience.',
         'items' => array_values(array_filter([
-            $forumVisible ? ['href' => url('back-office/categories'), 'title' => 'Catégories forum', 'desc' => 'Organisation des espaces de discussion.', 'keywords' => 'forum categorie discussion'] : null,
             ['href' => url('back-office/events'), 'title' => 'Événements & pointage', 'desc' => 'Séances, présences, rappels.', 'keywords' => 'evenement agenda presence pointage rappel seance'],
             ['href' => url('back-office/analytics'), 'title' => 'Analytics', 'desc' => 'Indicateurs d’usage de la communauté.', 'keywords' => 'statistiques indicateurs usage audience'],
             $canDocs ? ['href' => url('documents/gestion'), 'title' => 'Documents', 'desc' => 'Bibliothèque et dépôt selon vos droits.', 'keywords' => 'document bibliotheque fichier depot'] : null,
@@ -164,8 +162,8 @@ $sections = [
         'items' => array_values(array_filter([
             $canModerateMembers ? ['href' => url('back-office/moderation'), 'title' => 'Restrictions membres', 'desc' => 'Limitations d’activité dans la communauté (formations, documents, etc.).', 'keywords' => 'restriction sanction limitation membre'] : null,
             ['href' => url('back-office/audit'), 'title' => 'Journal d’activité', 'desc' => 'Traçabilité des actions administratives.', 'keywords' => 'journal audit trace historique log'],
-            ($canModerateForum && $forumVisible) ? ['href' => url('back-office/forum-moderation'), 'title' => 'Modération forum', 'desc' => 'Files et outils modérateur forum.', 'keywords' => 'forum moderation signalement'] : null,
-            $canModerateForum ? ['href' => url('back-office/content-moderation'), 'title' => 'Modération fichiers', 'desc' => 'Approbation des pièces jointes et médias.', 'keywords' => 'fichier media piece jointe approbation'] : null,
+            $canModerateReports ? ['href' => url('back-office/signalements'), 'title' => 'Signalements membres', 'desc' => 'Fiches, photos et contenus signalés par les membres.', 'keywords' => 'moderation signalement'] : null,
+            $canModerateReports ? ['href' => url('back-office/content-moderation'), 'title' => 'Modération fichiers', 'desc' => 'Approbation des pièces jointes et médias.', 'keywords' => 'fichier media piece jointe approbation'] : null,
         ])),
     ],
 ];
@@ -350,12 +348,12 @@ $renderItem = static function (array $item, string $sectionTitle) use ($h, $icon
 
             <?php if ($sec['id'] === 'acces' && $canOrgAdmin): ?>
             <section class="bo-cfg-section bo-cfg-section--form" id="cfg-affichage" data-cfg-section="affichage"
-                     data-cfg-search="<?= $h(mb_strtolower('affichage des rôles badge badges rôle affiché priorité langue intitulés français anglais doctrine américaine forum portail')) ?>">
+                     data-cfg-search="<?= $h(mb_strtolower('affichage des rôles badge badges rôle affiché priorité langue intitulés français anglais doctrine américaine portail')) ?>">
                 <header class="bo-cfg-section__head">
                     <span class="bo-cfg-section__icon"><?= $icon('display') ?></span>
                     <div>
                         <h2 class="bo-cfg-section__title">Affichage des rôles</h2>
-                        <p class="bo-cfg-section__lead">Comment les rôles de l’organisation apparaissent sur le forum, le portail et dans le back-office. Les droits attachés aux rôles ne changent pas.</p>
+                        <p class="bo-cfg-section__lead">Comment les rôles de l’organisation apparaissent sur le portail et dans le back-office. Les droits attachés aux rôles ne changent pas.</p>
                     </div>
                 </header>
 
@@ -366,7 +364,7 @@ $renderItem = static function (array $item, string $sectionTitle) use ($h, $icon
                     <div class="bo-cfg-field" data-cfg-field data-cfg-default="0">
                         <div class="bo-cfg-field__text">
                             <p class="bo-cfg-field__label" id="cfg-choose-label">Choix du rôle affiché par le membre <span class="bo-cfg-badge bo-cfg-badge--dirty" data-cfg-dirty-badge hidden>Modifié</span></p>
-                            <p class="bo-cfg-field__help">Chaque membre choisit, parmi ses rôles organisation, celui qui apparaît en priorité sur le forum et dans le portail.</p>
+                            <p class="bo-cfg-field__help">Chaque membre choisit, parmi ses rôles organisation, celui qui apparaît en priorité dans le portail.</p>
                             <p class="bo-cfg-field__default">Par défaut : désactivé</p>
                         </div>
                         <div class="bo-cfg-field__control">

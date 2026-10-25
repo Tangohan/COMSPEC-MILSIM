@@ -204,7 +204,7 @@ $communityChildren = array_values(array_filter([
         ? ['label' => 'Médias', 'href' => url('back-office/media'), 'active' => $navMediasActive]
         : null,
     ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'active' => $navAt('back-office/dashboard-pins')],
-    ['label' => 'Catégories du forum', 'href' => url('back-office/categories'), 'active' => $navAt('back-office/categories')],
+    ['label' => 'Catégories', 'href' => url('back-office/categories'), 'active' => $navAt('back-office/categories')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $messagesChildren = [
@@ -416,7 +416,7 @@ if ($isOperatorBoNav) {
         ],
     ];
 } else {
-    $forumModBadge = $fmtNavBadge((int) ($boBadges['forum_moderation_total'] ?? 0));
+    $reportsModBadge = $fmtNavBadge((int) ($boBadges['reports_moderation_total'] ?? 0));
     $anyActive = static function (array $children): bool {
         foreach ($children as $child) {
             if (is_array($child) && !empty($child['active'])) {
@@ -602,15 +602,14 @@ if ($isOperatorBoNav) {
                     'children' => $doctrineChildren,
                 ],
                 [
-                    'label' => 'Modération du forum',
-                    'href' => url('back-office/forum-moderation'),
+                    'label' => 'Signalements membres',
+                    'href' => url('back-office/signalements'),
                     'icon' => 'shield',
-                    'active' => $navAt('back-office/forum-moderation'),
-                    'badge' => $forumModBadge,
-                    'warn' => $forumModBadge !== null,
+                    'active' => $navAt('back-office/signalements'),
+                    'badge' => $reportsModBadge,
+                    'warn' => $reportsModBadge !== null,
                 ],
                 ['label' => 'Fichiers en quarantaine', 'href' => url('back-office/content-moderation'), 'icon' => 'shield', 'active' => $navAt('back-office/content-moderation')],
-                ['label' => 'Configuration du forum', 'href' => url('back-office/ressources/forum-config'), 'icon' => 'gear', 'active' => $navAt('back-office/ressources/forum-config')],
                 ['label' => 'Musique', 'href' => url('back-office/ressources/musique'), 'icon' => 'radio', 'active' => $navAt('back-office/ressources/musique')],
             ], static fn (?array $row): bool => is_array($row))),
         ],

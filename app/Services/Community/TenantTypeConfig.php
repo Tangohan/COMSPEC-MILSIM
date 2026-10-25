@@ -24,18 +24,18 @@ final class TenantTypeConfig
         return [
             self::TYPE_FULL => [
                 'label' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Complet') : 'Complet',
-                'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Tout Athena : effectifs, recrutement, formations, opérations, documents, forum et carte ATAK.') : 'Tout Athena : effectifs, recrutement, formations, opérations, documents, forum et carte ATAK.',
+                'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Tout Athena : effectifs, recrutement, formations, opérations, documents et carte ATAK.') : 'Tout Athena : effectifs, recrutement, formations, opérations, documents et carte ATAK.',
                 'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Tous les modules du portail deviennent disponibles. Les données déjà présentes restent en place.') : 'Tous les modules du portail deviennent disponibles. Les données déjà présentes restent en place.',
             ],
             self::TYPE_EFFECTIFS => [
                 'label' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Bureau des effectifs') : 'Bureau des effectifs',
                 'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Le registre de l’unité tenu comme un tableur : fiches, grades, unités et ORBAT, sans compte pour les membres. Recrutement uniquement sur Discord.') : 'Le registre de l’unité tenu comme un tableur : fiches, grades, unités et ORBAT, sans compte pour les membres. Recrutement uniquement sur Discord.',
-                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Formations, recrutement sur le site, documents et messagerie interne ne seront plus accessibles : on vous rejoint par Discord. Effectifs (avec fiches sans compte et import de tableur), forum, administration et carte ATAK restent disponibles.') : 'Formations, recrutement sur le site, documents et messagerie interne ne seront plus accessibles : on vous rejoint par Discord. Effectifs (avec fiches sans compte et import de tableur), forum, administration et carte ATAK restent disponibles.',
+                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Formations, recrutement sur le site, documents et messagerie interne ne seront plus accessibles : on vous rejoint par Discord. Effectifs (avec fiches sans compte et import de tableur), administration et carte ATAK restent disponibles.') : 'Formations, recrutement sur le site, documents et messagerie interne ne seront plus accessibles : on vous rejoint par Discord. Effectifs (avec fiches sans compte et import de tableur), administration et carte ATAK restent disponibles.',
             ],
             self::TYPE_ATAK => [
                 'label' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'Carte ATAK') : 'Carte ATAK',
-                'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'La carte ATAK, les équipes de feu et le forum. Le plus simple pour jouer ensemble.') : 'La carte ATAK, les équipes de feu et le forum. Le plus simple pour jouer ensemble.',
-                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'La carte tactique, Overwatch, le matériel, les relais, le forum public et la gestion des membres restent accessibles. Effectifs, formations et recrutement sur le site seront masqués : on vous rejoint par Discord.') : 'La carte tactique, Overwatch, le matériel, les relais, le forum public et la gestion des membres restent accessibles. Effectifs, formations et recrutement sur le site seront masqués : on vous rejoint par Discord.',
+                'description' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'La carte ATAK et les équipes de feu. Le plus simple pour jouer ensemble.') : 'La carte ATAK et les équipes de feu. Le plus simple pour jouer ensemble.',
+                'consequences' => function_exists('i18n_phrase') ? i18n_phrase('nav', 'La carte tactique, Overwatch, le matériel, les relais et la gestion des membres restent accessibles. Effectifs, formations et recrutement sur le site seront masqués : on vous rejoint par Discord.') : 'La carte tactique, Overwatch, le matériel, les relais et la gestion des membres restent accessibles. Effectifs, formations et recrutement sur le site seront masqués : on vous rejoint par Discord.',
             ],
         ];
     }
@@ -50,7 +50,6 @@ final class TenantTypeConfig
         return [
             self::TYPE_FULL => [
                 'admin',
-                'forum',
                 'documents',
                 'personnel',
                 'training',
@@ -64,7 +63,6 @@ final class TenantTypeConfig
             ],
             self::TYPE_EFFECTIFS => [
                 'admin',
-                'forum',
                 'personnel',
                 'analytics',
                 'atak',
@@ -72,7 +70,6 @@ final class TenantTypeConfig
             ],
             self::TYPE_ATAK => [
                 'admin',
-                'forum',
                 'atak',
                 'equipment',
             ],
@@ -88,12 +85,6 @@ final class TenantTypeConfig
      */
     public static function basePermissionsByType(): array
     {
-        $forum = [
-            ['slug' => 'forum.view', 'name' => 'Voir le forum', 'module' => 'forum', 'level' => 'member'],
-            ['slug' => 'forum.create_topic', 'name' => 'Créer un sujet', 'module' => 'forum', 'level' => 'member'],
-            ['slug' => 'forum.reply', 'name' => 'Répondre au forum', 'module' => 'forum', 'level' => 'member'],
-            ['slug' => 'forum.edit_own', 'name' => 'Modifier ses messages forum', 'module' => 'forum', 'level' => 'member'],
-        ];
         $admin = [
             ['slug' => 'admin.access', 'name' => 'Accès administration', 'module' => 'admin', 'level' => 'manager'],
             ['slug' => 'invitations.send', 'name' => 'Envoyer des invitations', 'module' => 'admin', 'level' => 'hr'],
@@ -105,13 +96,13 @@ final class TenantTypeConfig
 
         return [
             self::TYPE_FULL => [],
-            self::TYPE_EFFECTIFS => array_merge($admin, $forum, [
+            self::TYPE_EFFECTIFS => array_merge($admin, [
                 ['slug' => 'personnel.view', 'name' => 'Voir les effectifs', 'module' => 'personnel', 'level' => 'member'],
                 ['slug' => 'personnel.profile.view', 'name' => 'Voir les fiches personnelles', 'module' => 'personnel', 'level' => 'member'],
                 ['slug' => 'personnel.edit', 'name' => 'Modifier les effectifs', 'module' => 'personnel', 'level' => 'hr'],
                 ['slug' => 'personnel.manage', 'name' => 'Gérer les effectifs', 'module' => 'personnel', 'level' => 'hr'],
             ], $atak),
-            self::TYPE_ATAK => array_merge($admin, $forum, $atak),
+            self::TYPE_ATAK => array_merge($admin, $atak),
         ];
     }
 
@@ -154,9 +145,7 @@ final class TenantTypeConfig
         return [
             'admin.access' => 'manager',
             'atak.manage' => 'manager',
-            'forum.moderate' => 'manager',
-            'forum.moderate_organization' => 'manager',
-            'forum.manage_categories' => 'manager',
+            'moderation.reports.manage' => 'manager',
             'personnel.manage' => 'hr',
             'personnel.edit' => 'hr',
             'invitations.send' => 'hr',
@@ -336,14 +325,10 @@ final class TenantTypeConfig
             'back-office/ma-situation/liaison-atak' => 'atak',
             'back-office/ma-situation/appareils' => 'atak',
             'back-office/ma-situation/premiere-liaison' => 'atak',
-            // Forum
-            'forum' => 'forum',
-            'admin/forum-config' => 'forum',
-            'back-office/forum' => 'forum',
-            'back-office/forum-moderation' => 'forum',
-            'admin/content-moderation' => 'forum',
-            'back-office/ressources/forum-config' => 'forum',
-            'back-office/content-moderation' => 'forum',
+            // Modération (signalements, fichiers en quarantaine)
+            'back-office/signalements' => 'admin',
+            'admin/content-moderation' => 'admin',
+            'back-office/content-moderation' => 'admin',
             // Documents / courrier
             'documents' => 'documents',
             'courrier' => 'documents',
@@ -374,7 +359,7 @@ final class TenantTypeConfig
             'back-office/roles-functions' => 'personnel',
             'back-office/groups' => 'personnel',
             'back-office/teams' => 'personnel',
-            'back-office/categories' => 'forum',
+            'back-office/categories' => 'admin',
             'back-office/referentiels/grades' => 'personnel',
             'back-office/positions' => 'personnel',
             'back-office/roleplay-followup' => 'personnel',
@@ -571,7 +556,6 @@ final class TenantTypeConfig
     {
         return [
             'atak' => ['label' => 'Carte tactique ATAK', 'description' => 'Carte en temps réel, téléphones en jeu, équipes de feu, temps de jeu et rôles, relecture.'],
-            'forum' => ['label' => 'Forum', 'description' => 'Annonces, discussions et sections publiques de la communauté.'],
             'admin' => ['label' => 'Administration', 'description' => 'Membres, invitations, niveaux d’accès, identité et vitrine de la communauté.'],
             'equipment' => ['label' => 'Arsenal et tenues', 'description' => 'Tenues et dotations partagées, reprises par le mod en jeu.'],
             'personnel' => ['label' => 'Effectifs', 'description' => 'Fiches, grades, unités et ORBAT, fonctions, avancement, décorations, intégration des nouveaux.'],
@@ -603,7 +587,7 @@ final class TenantTypeConfig
 
         $guide = match ($type) {
             self::TYPE_ATAK => [
-                'tagline' => 'Le strict nécessaire pour jouer ensemble sur la carte : téléphones ATAK, équipes de feu et forum.',
+                'tagline' => 'Le strict nécessaire pour jouer ensemble sur la carte : téléphones ATAK et équipes de feu.',
                 'ideal_for' => [
                     'Une équipe ou un serveur qui veut la carte ATAK sans gérer de dossiers RH.',
                     'Une communauté qui tient déjà ses effectifs ailleurs (Discord, tableur).',
@@ -611,7 +595,7 @@ final class TenantTypeConfig
                 ],
                 'not_for' => 'Pas de fiches, de grades ni de recrutement : si vous voulez suivre vos membres, choisissez « Bureau des effectifs » ou « Complet ».',
                 'levels' => [
-                    'member' => 'Ouvre la carte, relie son téléphone en jeu, lit et écrit sur le forum, gère ses tenues.',
+                    'member' => 'Ouvre la carte, relie son téléphone en jeu, gère ses tenues.',
                     'hr' => 'Comme un membre, et invite de nouveaux joueurs.',
                     'manager' => 'Tout : réglages de la carte et du mod, serveurs de jeu, parc ATAK, matériel et kits, réseau de relais, équipes de feu, temps de jeu, membres et niveaux d’accès.',
                 ],
@@ -633,7 +617,7 @@ final class TenantTypeConfig
                 ],
                 'not_for' => 'Pas de candidature sur le site (on vous rejoint par Discord), pas de formations, d’opérations ni de documents : passez au profil « Complet » quand vous en aurez besoin, rien n’est perdu.',
                 'levels' => [
-                    'member' => 'N’a pas besoin de compte : sa fiche est tenue par l’état-major. S’il en a un, il consulte sa fiche, l’ORBAT, la carte ATAK et le forum.',
+                    'member' => 'N’a pas besoin de compte : sa fiche est tenue par l’état-major. S’il en a un, il consulte sa fiche, l’ORBAT et la carte ATAK.',
                     'hr' => 'Tient les fiches : création sans compte, import de tableur, grades, affectations, fonctions, indicatifs, matricules.',
                     'manager' => 'Tout : structure des unités, référentiels, niveaux d’accès, réglages ATAK et de la communauté.',
                 ],
@@ -654,7 +638,7 @@ final class TenantTypeConfig
                 ],
                 'not_for' => 'Si vous ne voulez que la carte, le profil « Carte ATAK » garde une interface plus simple.',
                 'levels' => [
-                    'member' => 'Forum, documents, formations, sa fiche et l’annuaire, événements et pointage, carte ATAK.',
+                    'member' => 'Documents, formations, sa fiche et l’annuaire, événements et pointage, carte ATAK.',
                     'hr' => 'Fiches, grades, affectations, recrutement et intégration des nouveaux.',
                     'manager' => 'Tout le portail : paramètres, niveaux d’accès, vitrine, opérations, formations, ATAK.',
                 ],
@@ -705,27 +689,24 @@ final class TenantTypeConfig
     /**
      * Retourne la configuration de seed minimale selon le type.
      *
-     * @return array{seed_forum: bool, seed_documents: bool, seed_training: bool, seed_recruitment: bool, seed_personnel: bool}
+     * @return array{seed_documents: bool, seed_training: bool, seed_recruitment: bool, seed_personnel: bool}
      */
     public static function getSeedConfig(string $tenantType): array
     {
         return match (self::normalizeType($tenantType)) {
             self::TYPE_EFFECTIFS => [
-                'seed_forum' => true,
                 'seed_documents' => false,
                 'seed_training' => false,
                 'seed_recruitment' => false,
                 'seed_personnel' => true,
             ],
             self::TYPE_ATAK => [
-                'seed_forum' => true,
                 'seed_documents' => false,
                 'seed_training' => false,
                 'seed_recruitment' => false,
                 'seed_personnel' => false,
             ],
             default => [
-                'seed_forum' => true,
                 'seed_documents' => true,
                 'seed_training' => true,
                 'seed_recruitment' => true,

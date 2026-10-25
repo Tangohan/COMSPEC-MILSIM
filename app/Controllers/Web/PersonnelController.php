@@ -693,7 +693,7 @@ class PersonnelController
         if ($roleplayFollowupConfig['enabled'] && ($isSelf || $canStaffView || $canStaffEdit) && $this->personnelRoleplayTimelineRepository->tableExists()) {
             $roleplayTimelineEvents = $this->personnelRoleplayTimelineRepository->listForUser((int) $tenantId, $uid, 80);
         }
-        $isForumMod = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
+        $isReportModerator = function_exists('moderation_user_can_moderate') && moderation_user_can_moderate();
         /** Accès commandement : tableau de suivi sur la même fiche (sans écran de choix). */
         $canAccessRhView = $canStaffView || $canStaffEdit || $canSensitive;
         $personnelViewRaw = strtolower(trim((string) ($request->query('view', '') ?? '')));
@@ -709,7 +709,7 @@ class PersonnelController
         $canViewCommandNotes = $isSelf || $canStaffEdit;
         $displaySettings = $this->displaySettingsRepository->getOrDefaults((int) $target['id']);
         $hidePersonalInfo = (int) ($displaySettings['hide_personal_info'] ?? 0) === 1;
-        $viewerPrivilegedForPersonal = $isSelf || $canStaffView || $canStaffEdit || $canSensitive || $isForumMod;
+        $viewerPrivilegedForPersonal = $isSelf || $canStaffView || $canStaffEdit || $canSensitive || $isReportModerator;
         $redactPersonalPresentation = $hidePersonalInfo && !$viewerPrivilegedForPersonal;
         $canViewCivilSection = $canViewCivil && !$redactPersonalPresentation;
         $gateInst = Gate::getInstance();
@@ -719,7 +719,7 @@ class PersonnelController
             || $gateInst->allows('admin.system')
         );
         $showEmailInContact = $canViewMemberEmail;
-        $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
+        $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isReportModerator || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
 
         if ($personnelAnonymizedForViewer) {
             $anonLabel = $visibilityMeta['anonymized_label'] !== ''
@@ -1792,28 +1792,17 @@ class PersonnelController
         $tenantSettingsForJobRoles = $this->tenantRepository->getSettings($tenantId);
         $maxJobRolesPerMember = \App\Services\Personnel\PersonnelJobRoleAssignmentsSettings::resolve($tenantSettingsForJobRoles)['max_roles_per_member'];
 
-        $forumQuickMode = trim((string) $request->query('forum_mode', ''));
-        if (!in_array($forumQuickMode, ['display_name', 'callsign', 'character_name', 'forum_alias'], true)) {
-            $forumQuickMode = '';
+        $displayRoleChoices = [];
+        foreach ($this->userRepository->listOrganizationRoleIdsForUser($uid) as $rid) {
+            $rid = (int) $rid;
+            $row = $rid > 0 ? $this->roleRepository->findById($rid, $tenantId) : null;
+            if ($row === null) {
+                continue;
+            }
+            $displayRoleChoices[$rid] = ['id' => $rid, 'name' => trim((string) ($row['name'] ?? '')) ?: 'Rôle'];
         }
-        $forumFocus = trim((string) $request->query('forum_focus', ''));
-        if (!in_array($forumFocus, ['label', 'hide_level'], true)) {
-            $forumFocus = '';
-        }
-        $forumPreHideLevel = (string) $request->query('forum_hide_level', '') === '1';
-
-        $targetEmail = strtolower(trim((string) ($target['email'] ?? '')));
-        $siteRoleRepo = Container::get(\App\Repositories\SiteRoleAssignmentRepository::class);
-        $forumOrgRoleChoices = function_exists('forum_build_visible_role_choices')
-            ? forum_build_visible_role_choices(
-                $uid,
-                $tenantId,
-                $targetEmail,
-                $this->userRepository,
-                $this->roleRepository,
-                $siteRoleRepo
-            )
-            : [];
+        $displayRoleChoices = array_values($displayRoleChoices);
+        usort($displayRoleChoices, static fn (array $x, array $y): int => strcasecmp($x['name'], $y['name']));
 
         $settings = $this->tenantRepository->getSettings($tenantId);
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
@@ -1913,9 +1902,6 @@ class PersonnelController
             'targetUser' => $target,
             'personnelProfile' => $personnelProfile,
             'displaySettings' => $displaySettings,
-            'forumQuickMode' => $forumQuickMode,
-            'forumFocus' => $forumFocus,
-            'forumPreHideLevel' => $forumPreHideLevel,
             'units' => $units,
             'userProfile' => $userProfile,
             'grades' => $grades,
@@ -1946,7 +1932,7 @@ class PersonnelController
             'currentJobRoles' => $currentJobRoles,
             'maxJobRolesPerMember' => $maxJobRolesPerMember,
             'maxUnitAssignmentsPerMember' => 8,
-            'forumOrgRoleChoices' => $forumOrgRoleChoices,
+            'displayRoleChoices' => $displayRoleChoices,
             'memberCanChooseDisplayRole' => $memberCanChooseDisplayRole,
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'rpTutorChoices' => $rpTutorChoices,
@@ -2693,15 +2679,7 @@ class PersonnelController
         }
 
         if ($isSelf || $canStaffEdit) {
-            $mode = 'character_name';
             $displayUpsert = [
-                'forum_alias' => null,
-                'forum_label_mode' => $mode,
-                'show_matricule_forum' => $request->input('show_matricule_forum') ? 1 : 0,
-                'show_grade_forum' => $request->input('show_grade_forum') ? 1 : 0,
-                'show_unit_forum' => $request->input('show_unit_forum') ? 1 : 0,
-                'show_bio_forum' => $request->input('show_bio_forum') ? 1 : 0,
-                'hide_forum_level' => $request->input('hide_forum_level') ? 1 : 0,
                 'fiche_show_email_to_others' => $request->input('fiche_show_email_to_others') ? 1 : 0,
                 'fiche_show_matricule_to_others' => $request->input('fiche_show_matricule_to_others') ? 1 : 0,
                 'public_roster_opt_in' => $request->input('public_roster_opt_in') ? 1 : 0,
@@ -2709,25 +2687,6 @@ class PersonnelController
             if ($isSelf) {
                 $displayUpsert['hide_personal_info'] = $request->input('hide_personal_info') ? 1 : 0;
             }
-            $forumVisibleRoleRaw = $request->input('forum_visible_role_id');
-            $forumVisibleRoleId = ($forumVisibleRoleRaw === null || $forumVisibleRoleRaw === '') ? null : (int) $forumVisibleRoleRaw;
-            if ($forumVisibleRoleId !== null && $forumVisibleRoleId <= 0) {
-                $forumVisibleRoleId = null;
-            }
-            $targetMail = strtolower(trim((string) ($target['email'] ?? '')));
-            $siteRoleRepo = Container::get(\App\Repositories\SiteRoleAssignmentRepository::class);
-            if ($forumVisibleRoleId !== null && !forum_user_may_set_visible_role_id(
-                (int) $target['id'],
-                $targetMail,
-                $forumVisibleRoleId,
-                $this->userRepository,
-                $siteRoleRepo
-            )) {
-                Session::flash('error', 'Le rôle affiché sur le forum doit correspondre à un rôle réellement attribué à ce compte (communauté ou plateforme).');
-
-                return Response::redirect($this->personnelEditUrl($target, $isSelf));
-            }
-            $displayUpsert['forum_visible_role_id'] = $forumVisibleRoleId;
             $this->displaySettingsRepository->upsert((int) $target['id'], $displayUpsert);
         }
         if ($isSelf) {

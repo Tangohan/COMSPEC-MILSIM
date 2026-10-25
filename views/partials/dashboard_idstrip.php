@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Barre d’identité opérationnelle — chrome sous la navbar Dashboard / Hub / Forum.
+ * Barre d’identité opérationnelle — chrome sous la navbar Dashboard / Hub.
  * Inclus depuis dashboard_command_center.php, immédiatement après header_dashboard.
  *
  * Attend les variables calculées par dashboard_command_center (unité, grade, matricule, etc.).

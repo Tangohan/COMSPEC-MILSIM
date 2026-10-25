@@ -36,7 +36,7 @@ $boHrefAllowed = static function (string $href) use ($tenantType): bool {
         : trim((string) $href, '/');
     if ($path !== '' && !\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
         $tenantOk = false;
-        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'forum/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
+        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
             $pos = strpos($path, $needle);
             if ($pos !== false) {
                 $tenantOk = \App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, substr($path, $pos));
@@ -70,7 +70,7 @@ try {
 
 $boBadges = [
     'recruitments_submitted' => 0,
-    'forum_moderation_total' => 0,
+    'reports_moderation_total' => 0,
     'personal_inbox' => 0,
     'messages_unread' => 0,
     'events_rsvp_pending' => 0,

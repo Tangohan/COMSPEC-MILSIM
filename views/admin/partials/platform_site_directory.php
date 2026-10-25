@@ -72,7 +72,6 @@ $item = static function (string $href, string $title, string $desc) use ($h): vo
             <ul class="pa-map__list">
                 <?php
                 $item(url('admin/system/alerts'), 'Alertes plateforme', 'Messages visibles partout');
-                $item(url('admin/system/brief'), 'Brief membres', 'Accès au brief pour les comptes');
                 $item(url('admin/system/cooperation/catalog'), 'Types de coopération', 'Formats d’échange entre unités');
                 $item(url('admin/system/cooperation/announcements'), 'Annonces de coopération', 'Textes par défaut');
                 $item(url('admin/system/military-referential'), 'Référentiel militaire', 'Unités et affiliations');

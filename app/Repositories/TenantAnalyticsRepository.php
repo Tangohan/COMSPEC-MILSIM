@@ -436,8 +436,6 @@ class TenantAnalyticsRepository
      *   users_registered_in_period: int,
      *   audit_actions_in_period: int,
      *   enlistments_created_in_period: int,
-     *   forum_topics_in_period: int,
-     *   forum_posts_in_period: int,
      *   training_enrollments_assigned_in_period: int,
      *   training_completions_in_period: int,
      *   usage_events_in_period: int,
@@ -455,8 +453,6 @@ class TenantAnalyticsRepository
             'users_registered_in_period' => 0,
             'audit_actions_in_period' => 0,
             'enlistments_created_in_period' => 0,
-            'forum_topics_in_period' => 0,
-            'forum_posts_in_period' => 0,
             'training_enrollments_assigned_in_period' => 0,
             'training_completions_in_period' => 0,
             'usage_events_in_period' => 0,
@@ -499,16 +495,6 @@ class TenantAnalyticsRepository
             $st = $this->pdo->prepare('SELECT COUNT(*) FROM enlistments WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
             $st->execute([$days]);
             $empty['enlistments_created_in_period'] = (int) $st->fetchColumn();
-        }
-        if ($this->hasTable('forum_topics')) {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
-            $st->execute([$days]);
-            $empty['forum_topics_in_period'] = (int) $st->fetchColumn();
-        }
-        if ($this->hasTable('forum_posts')) {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_posts WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
-            $st->execute([$days]);
-            $empty['forum_posts_in_period'] = (int) $st->fetchColumn();
         }
         if ($this->hasTable('training_enrollments')) {
             $st = $this->pdo->prepare('SELECT COUNT(*) FROM training_enrollments WHERE assigned_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
@@ -890,8 +876,6 @@ class TenantAnalyticsRepository
      *   members_registered_in_period: int,
      *   audit_actions_in_period: int,
      *   enlistments_created_in_period: int,
-     *   forum_topics_in_period: int,
-     *   forum_posts_in_period: int,
      *   training_enrollments_assigned_in_period: int,
      *   training_completions_in_period: int
      * }
@@ -903,8 +887,6 @@ class TenantAnalyticsRepository
             'members_registered_in_period' => 0,
             'audit_actions_in_period' => 0,
             'enlistments_created_in_period' => 0,
-            'forum_topics_in_period' => 0,
-            'forum_posts_in_period' => 0,
             'training_enrollments_assigned_in_period' => 0,
             'training_completions_in_period' => 0,
         ];
@@ -939,16 +921,6 @@ class TenantAnalyticsRepository
             $st = $this->pdo->prepare('SELECT COUNT(*) FROM enlistments WHERE tenant_id = ? AND created_at >= ?');
             $st->execute([$tenantId, $sinceIso]);
             $empty['enlistments_created_in_period'] = (int) $st->fetchColumn();
-        }
-        if ($this->hasTable('forum_topics')) {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE tenant_id = ? AND created_at >= ?');
-            $st->execute([$tenantId, $sinceIso]);
-            $empty['forum_topics_in_period'] = (int) $st->fetchColumn();
-        }
-        if ($this->hasTable('forum_posts')) {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_posts WHERE tenant_id = ? AND created_at >= ?');
-            $st->execute([$tenantId, $sinceIso]);
-            $empty['forum_posts_in_period'] = (int) $st->fetchColumn();
         }
         if ($this->hasTable('training_enrollments')) {
             $st = $this->pdo->prepare('SELECT COUNT(*) FROM training_enrollments WHERE tenant_id = ? AND assigned_at >= ?');
@@ -992,7 +964,6 @@ class TenantAnalyticsRepository
 
         return $out;
     }
-
 
     /**
      * @return array{
@@ -1090,5 +1061,4 @@ class TenantAnalyticsRepository
 
         return $empty;
     }
-
 }

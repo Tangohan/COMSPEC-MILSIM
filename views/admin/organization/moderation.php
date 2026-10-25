@@ -90,7 +90,7 @@ $flashWarning = \App\Core\Session::getFlash('warning');
         (formations, documents, candidatures…). Les <strong>blocages e-mail et réseau</strong> déclenchés par la
         modération automatique du portail recrutement se lèvent dans
         <a href="<?= $h(url('back-office/security-indicators')) ?>">Blocages portail &amp; sécurité</a>.
-        Les mesures sur le compte, le forum, la messagerie ou les listes globales du site restent du ressort
+        Les mesures sur le compte, la messagerie ou les listes globales du site restent du ressort
         de l’administration de la plateforme.
     </p>
 </div>

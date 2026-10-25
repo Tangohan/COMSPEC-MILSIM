@@ -1422,7 +1422,7 @@ if ($personnelFileIsRhFull) {
 
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Emploi</h2>
-                    <p class="mb-6 max-w-3xl text-sm leading-relaxed text-slate-600">La fonction tenue, distincte de l’équipe. L’emploi principal apparaît sur la fiche, l’organigramme et le forum. Il n’ouvre aucun droit d’accès.</p>
+                    <p class="mb-6 max-w-3xl text-sm leading-relaxed text-slate-600">La fonction tenue, distincte de l’équipe. L’emploi principal apparaît sur la fiche et l’organigramme. Il n’ouvre aucun droit d’accès.</p>
                     <?php if ($personnelJobRoleAssignments !== []): ?>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <?php foreach ($personnelJobRoleAssignments as $jr):

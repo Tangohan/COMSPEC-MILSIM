@@ -11,7 +11,6 @@ namespace App\Services\Billing;
 final class SubscriptionPlanFeaturesCatalog
 {
     public const BOOL_FEATURES = [
-        'forum',
         'documents',
         'messages',
         'personnel',
@@ -42,11 +41,6 @@ final class SubscriptionPlanFeaturesCatalog
     public static function definitions(): array
     {
         return [
-            'forum' => [
-                'label' => 'Forum communauté',
-                'help' => 'Sujets, réponses et moderation du forum.',
-                'type' => 'bool',
-            ],
             'documents' => [
                 'label' => 'Documents',
                 'help' => 'Bibliothèque documentaire et pieces jointes.',
@@ -154,7 +148,6 @@ final class SubscriptionPlanFeaturesCatalog
     {
         return [
             'free' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -176,7 +169,6 @@ final class SubscriptionPlanFeaturesCatalog
                 'max_training_courses' => 5,
             ],
             'standard' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -198,7 +190,6 @@ final class SubscriptionPlanFeaturesCatalog
                 'max_training_courses' => 25,
             ],
             'pro' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -220,7 +211,6 @@ final class SubscriptionPlanFeaturesCatalog
                 'max_training_courses' => 100,
             ],
             'pro_plus' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,

@@ -200,7 +200,7 @@ $issuingAuthorityDefault = $issuingAuthorityDefault ?? '';
 
                         <div id="edit-panel-role" class="hidden rounded-xl border border-violet-200 bg-violet-50/50 p-3">
                             <p class="text-xs font-bold text-violet-900">Rôles autorisés (intra-tenant)</p>
-                            <p class="mt-1 text-[11px] leading-relaxed text-violet-900/85">Seuls les membres dont le <strong>rôle communauté</strong> est coché pourront lire le document publié (intra-tenant). Le <strong>commandement</strong> et le <strong>propriétaire communauté</strong> gardent l’accès complet (y compris édition). Les <strong>modérateurs forum</strong> voient tout en lecture ; la classification s’applique toujours.</p>
+                            <p class="mt-1 text-[11px] leading-relaxed text-violet-900/85">Seuls les membres dont le <strong>rôle communauté</strong> est coché pourront lire le document publié (intra-tenant). Le <strong>commandement</strong> et le <strong>propriétaire communauté</strong> gardent l’accès complet (y compris édition). Les <strong>responsables communication</strong> voient tout en lecture ; la classification s’applique toujours.</p>
                             <div class="mt-2 max-h-40 space-y-1 overflow-y-auto rounded border border-violet-100 bg-white p-2">
                                 <?php foreach ($tenantRoles as $role): ?>
                                 <?php $slug = (string) ($role['slug'] ?? ''); ?>

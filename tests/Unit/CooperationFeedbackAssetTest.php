@@ -16,7 +16,7 @@ final class CooperationFeedbackAssetTest extends TestCase
     public function testShortActionsAnswerJsonOnlyWhenAskedAndKeepTheirChecks(): void
     {
         $c = $this->read('app/Controllers/Web/InterteamMissionWebController.php');
-        foreach (['invite', 'accept', 'decline', 'remindPartner', 'removePartner', 'revokeGrant', 'addSitrep', 'assignMissionMember'] as $a) {
+        foreach (['invite', 'accept', 'decline', 'remindPartner', 'removePartner', 'addSitrep', 'assignMissionMember'] as $a) {
             $h = 'handle' . ucfirst($a);
             self::assertStringContainsString('return $this->ajaxify($this->' . $h . '($request, $params));', $c, $a);
         }

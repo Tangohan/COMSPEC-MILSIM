@@ -438,39 +438,6 @@ class RecruitmentOpeningRepository
         return $v ? (string) $v : null;
     }
 
-    public function recruitmentForumLinkColumnsExist(): bool
-    {
-        if (!$this->tablesExist()) {
-            return false;
-        }
-
-        return $this->hasColumn('forum_topic_id_externe') && $this->hasColumn('forum_topic_id_interne');
-    }
-
-    public function setForumTopicExterne(int $id, int $tenantId, int $topicId): bool
-    {
-        if (!$this->hasColumn('forum_topic_id_externe')) {
-            return false;
-        }
-        $stmt = $this->pdo->prepare(
-            'UPDATE recruitment_openings SET forum_topic_id_externe = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
-        );
-
-        return $stmt->execute([$topicId, $id, $tenantId]) && $stmt->rowCount() > 0;
-    }
-
-    public function setForumTopicInterne(int $id, int $tenantId, int $topicId): bool
-    {
-        if (!$this->hasColumn('forum_topic_id_interne')) {
-            return false;
-        }
-        $stmt = $this->pdo->prepare(
-            'UPDATE recruitment_openings SET forum_topic_id_interne = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
-        );
-
-        return $stmt->execute([$topicId, $id, $tenantId]) && $stmt->rowCount() > 0;
-    }
-
     private function hasRequiredPassColumn(): bool
     {
         return $this->hasColumn('required_pass_id');

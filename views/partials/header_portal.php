@@ -26,7 +26,7 @@ $n = static function (string $fr): string {
 
 /*
  * Navbar Athena (style Caverne) unifiée : appliquée à toutes les pages membre
- * du portail authentifié (hub, forum, formations, effectifs, documents, back-office, …).
+ * du portail authentifié (hub, formations, effectifs, documents, back-office, …).
  * Les visiteurs non connectés (vitrine communauté, pages marketing) gardent le méga-menu ci-dessous.
  */
 $useAthenaHeader = $loggedIn;

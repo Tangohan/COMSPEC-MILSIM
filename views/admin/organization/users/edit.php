@@ -216,7 +216,7 @@ $formatDateFr = static function (?string $raw): string {
 
                 <section class="bo-user-edit__panel" aria-labelledby="sec-identity">
                     <h2 id="sec-identity" class="bo-user-edit__panel-title">Identité personnage</h2>
-                    <p class="bo-user-edit__panel-lead">Prénom et nom du personnage uniquement — utilisés partout (listes, forum, dossier). L’indicatif reste optionnel.</p>
+                    <p class="bo-user-edit__panel-lead">Prénom et nom du personnage uniquement — utilisés partout (listes, dossier). L’indicatif reste optionnel.</p>
                     <div class="bo-user-edit__grid">
                         <div>
                             <label for="first_name" class="bo-user-edit__label">Prénom</label>
@@ -362,7 +362,7 @@ $formatDateFr = static function (?string $raw): string {
                     <div>
                         <h2 class="bo-user-edit__panel-title">Dossier opérationnel</h2>
                         <p class="bo-user-edit__panel-lead">
-                            Identité de personnage, habilitation détaillée et forum — distinct du compte ci-dessus.
+                            Identité de personnage et habilitation détaillée — distinct du compte ci-dessus.
                         </p>
                     </div>
                     <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--dark">Ouvrir le dossier personnel →</a>

@@ -35,7 +35,6 @@ final class PlanFeaturesSchemaTest extends TestCase
     public function testFreePlanKeepsCoreModulesWithoutPremium(): void
     {
         $f = SubscriptionPlanFeaturesCatalog::defaultsForSlug('free');
-        self::assertTrue($f['forum']);
         self::assertTrue($f['messages']);
         self::assertTrue($f['recruitment']);
         self::assertFalse($f['atak']);
