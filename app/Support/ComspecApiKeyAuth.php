@@ -25,6 +25,9 @@ final class ComspecApiKeyAuth
     /** @var int|null Utilisateur lié à la session jeu acceptée. */
     private static ?int $matchedUserId = null;
 
+    /** @var bool Clé plateforme acceptée pour la requête en cours. */
+    private static bool $matchedPlatformKey = false;
+
     /** @var string|null php://input lu une fois (middleware + contrôleurs). */
     private static ?string $rawJsonCache = null;
 
@@ -82,6 +85,49 @@ final class ComspecApiKeyAuth
     public static function matchedTenantId(): ?int
     {
         return self::$matchedTenantId;
+    }
+
+    /** Requête authentifiée par la clé plateforme (X_COMSPEC_KEY / ATAK_INTEL_SECRET). */
+    public static function matchedPlatformKey(): bool
+    {
+        return self::$matchedPlatformKey;
+    }
+
+    /**
+     * Clé plateforme + tenant_id / tenant_slug fournis par le client : refusé par défaut,
+     * sauf si le tenant demandé est ATAK_DEFAULT_TENANT_ID (mono-communauté) ou si
+     * l’exploitant l’autorise explicitement (X_COMSPEC_KEY_ALLOW_TENANT_PARAM=true,
+     * intégrations serveur de confiance uniquement). Sans paramètre de communauté,
+     * la clé plateforme reste acceptée (outils d’exploitation, communauté par défaut).
+     */
+    private static function platformKeyMayUseRequestTenant(): bool
+    {
+        $raw = (string) (($_ENV['X_COMSPEC_KEY_ALLOW_TENANT_PARAM'] ?? null) ?: (getenv('X_COMSPEC_KEY_ALLOW_TENANT_PARAM') ?: ''));
+        if (filter_var($raw, FILTER_VALIDATE_BOOLEAN)) {
+            return true;
+        }
+        $body = self::peekJsonObject();
+        $slugs = [$_GET['tenant_slug'] ?? null, $_POST['tenant_slug'] ?? null, $body['tenant_slug'] ?? null];
+        foreach ($slugs as $slug) {
+            if (is_scalar($slug) && trim((string) $slug) !== '') {
+                return false;
+            }
+        }
+        $default = (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID') ?: 0);
+        $ids = [$_GET['tenant_id'] ?? null, $_POST['tenant_id'] ?? null, $body['tenant_id'] ?? null];
+        foreach ($ids as $id) {
+            if ($id === null || $id === '' || !is_scalar($id)) {
+                continue;
+            }
+            if ((int) $id < 1) {
+                continue;
+            }
+            if ($default < 1 || (int) $id !== $default) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** Steam porté par la session jeu validée (null si auth hors session jeu ou Steam absent). */
@@ -205,6 +251,7 @@ final class ComspecApiKeyAuth
         self::$matchedTenantId = null;
         self::$matchedSteamId = null;
         self::$matchedUserId = null;
+        self::$matchedPlatformKey = false;
         self::$rawJsonCache = null;
         self::$jsonObjectCache = null;
         self::$tacticalConfigCache = null;
@@ -215,6 +262,7 @@ final class ComspecApiKeyAuth
         self::$matchedTenantId = null;
         self::$matchedSteamId = null;
         self::$matchedUserId = null;
+        self::$matchedPlatformKey = false;
         $candidates = self::presentedAuthCandidates();
         if ($candidates === []) {
             return false;
@@ -223,7 +271,14 @@ final class ComspecApiKeyAuth
         $secret = self::expectedSecret();
         foreach ($candidates as $presented) {
             if ($secret !== '' && hash_equals($secret, $presented)) {
-                return true;
+                // Clé plateforme : la communauté ne doit pas être choisie par le client
+                // (elle a été distribuée aux joueurs des communautés sans clé dédiée).
+                if (self::platformKeyMayUseRequestTenant()) {
+                    self::$matchedPlatformKey = true;
+
+                    return true;
+                }
+                continue;
             }
 
             try {
