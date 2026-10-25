@@ -16,11 +16,17 @@ class ForumVoteRepository
         $this->pdo = Database::getPdo();
     }
 
+    /** Mémoïsé pour la durée de la requête (appelé pour chaque message d’un sujet). */
+    private static ?bool $tableExistsCache = null;
+
     public function tableExists(): bool
     {
-        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_post_votes' LIMIT 1");
+        if (self::$tableExistsCache === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_post_votes' LIMIT 1");
+            self::$tableExistsCache = (bool) $stmt?->fetchColumn();
+        }
 
-        return (bool) $stmt?->fetchColumn();
+        return self::$tableExistsCache;
     }
 
     public function getUserVote(int $postId, int $userId): ?int
@@ -66,5 +72,51 @@ class ForumVoteRepository
         $stmt->execute([$postId]);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Scores de plusieurs messages en une requête (page d’un sujet).
+     *
+     * @param list<int> $postIds
+     * @return array<int, int> postId => somme des votes
+     */
+    public function sumForPosts(array $postIds): array
+    {
+        $postIds = array_values(array_filter(array_map('intval', $postIds), fn ($id) => $id > 0));
+        if ($postIds === [] || !$this->tableExists()) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+        $stmt = $this->pdo->prepare("SELECT post_id, COALESCE(SUM(value), 0) AS score FROM forum_post_votes WHERE post_id IN ($placeholders) GROUP BY post_id");
+        $stmt->execute($postIds);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[(int) $row['post_id']] = (int) $row['score'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Votes de l’utilisateur sur plusieurs messages en une requête.
+     *
+     * @param list<int> $postIds
+     * @return array<int, int> postId => valeur (absent si pas de vote)
+     */
+    public function getUserVotesForPosts(int $userId, array $postIds): array
+    {
+        $postIds = array_values(array_filter(array_map('intval', $postIds), fn ($id) => $id > 0));
+        if ($postIds === [] || !$this->tableExists()) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+        $stmt = $this->pdo->prepare("SELECT post_id, value FROM forum_post_votes WHERE user_id = ? AND post_id IN ($placeholders)");
+        $stmt->execute(array_merge([$userId], $postIds));
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[(int) $row['post_id']] = (int) $row['value'];
+        }
+
+        return $out;
     }
 }
