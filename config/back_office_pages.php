@@ -43,10 +43,10 @@ return [
         ['path' => 'back-office/media', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MÉDIAS', 'title' => 'Médias de la communauté', 'subtitle' => 'Les photos et vidéos affichées sur votre page publique.', 'css' => ['back-office-media.css'], 'quick' => [
             ['label' => 'Vitrine publique', 'href' => 'back-office/community/presentation'],
         ]],
-        ['path' => 'back-office/alerts/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ANNONCES', 'title' => 'Nouvelle annonce', 'subtitle' => 'Rédigez le message, choisissez son importance et ses dates d’affichage.', 'css' => ['back-office-alerts.css'], 'quick' => [
+        ['path' => 'back-office/alerts/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ANNONCES', 'title' => 'Nouvelle annonce', 'subtitle' => 'Rédigez le message, choisissez son importance et ses dates d’affichage.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
             ['label' => 'Liste des annonces', 'href' => 'back-office/alerts'],
         ]],
-        ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces', 'subtitle' => 'Les bandeaux affichés en haut du portail pour tous les membres connectés.', 'css' => ['back-office-alerts.css'], 'quick' => [
+        ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces', 'subtitle' => 'Les bandeaux affichés en haut du portail pour tous les membres connectés.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
             ['label' => 'Nouvelle annonce', 'href' => 'back-office/alerts/create'],
         ]],
         ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'quick' => [
@@ -149,7 +149,7 @@ return [
             ['label' => 'Offres', 'href' => 'back-office/recruitment/offers'],
         ]],
         ['path' => 'back-office/organisation/indicatifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Indicatifs radio', 'subtitle' => 'Comment les indicatifs sont attribués : séries, numéros réservés et historique.'],
-        ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes', 'subtitle' => 'Regroupez des membres en sous-unités ou en cellules.'],
+        ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes', 'subtitle' => 'Regroupez des membres en sous-unités ou en cellules.', 'css' => ['back-office-groups.css']],
         ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes', 'subtitle' => 'Des équipes formées pour une mission ou un créneau.'],
         ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories du forum', 'subtitle' => 'Les rubriques du forum et l’ordre dans lequel elles apparaissent.'],
         ['path' => 'back-office/referentiels/grades', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Grades', 'subtitle' => 'La liste des grades de votre communauté, dans l’ordre hiérarchique.'],

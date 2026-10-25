@@ -151,7 +151,7 @@ final class EventRsvpNominativeRepository
         if ($out === false) {
             return '';
         }
-        fputcsv($out, $headers, ';');
+        fputcsv($out, $headers, ';', '"', '\\');
         foreach ($rows as $row) {
             fputcsv($out, [
                 (string) ($row['matricule'] ?? ''),
@@ -167,7 +167,7 @@ final class EventRsvpNominativeRepository
                 (string) ($row['reminder_count'] ?? 0),
                 isset($row['historical_presence_pct']) ? ((string) $row['historical_presence_pct'] . ' %') : '',
                 (string) ($row['admin_comment'] ?? ''),
-            ], ';');
+            ], ';', '"', '\\');
         }
         rewind($out);
         $csv = stream_get_contents($out);

@@ -390,6 +390,10 @@ return function (Router $router) {
     $router->get('/platform/upgrade', [PlatformSubscriptionController::class, 'upgrade'], [AuthMiddleware::class]);
     $router->post('/platform/upgrade/checkout', [PlatformSubscriptionController::class, 'checkout'], [AuthMiddleware::class]);
     $router->get('/platform/upgrade/complete', [PlatformSubscriptionController::class, 'complete'], [AuthMiddleware::class]);
+    // Page de paiement PayPal d’Athena (référence ATH-…).
+    $router->get('/paiement/{reference}', [\App\Controllers\Web\PlanPaymentController::class, 'show'], [AuthMiddleware::class]);
+    $router->get('/paiement/{reference}/qr.png', [\App\Controllers\Web\PlanPaymentController::class, 'qr'], [AuthMiddleware::class]);
+    $router->post('/paiement/{reference}/declarer', [\App\Controllers\Web\PlanPaymentController::class, 'declare'], [AuthMiddleware::class]);
     $router->get('/cron/run', [\App\Controllers\Web\CronController::class, 'run']);
     $router->post('/cron/run', [\App\Controllers\Web\CronController::class, 'run']);
     $router->post('/analytics/beacon', [AnalyticsBeaconController::class, 'post']);
@@ -592,6 +596,11 @@ return function (Router $router) {
     $router->post('/compte/formule-offerte/{id}/vu', [\App\Controllers\Web\PlanGiftNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/compte/retours-signalement/vu', [\App\Controllers\Web\ModReportReplyNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
+    // Compte simple (usage sans organisation).
+    $router->post('/account/usage-solo', [\App\Controllers\Web\AccountUsageController::class, 'chooseSolo'], [AuthMiddleware::class]);
+    $router->post('/account/usage-solo/annuler', [\App\Controllers\Web\AccountUsageController::class, 'leaveSolo'], [AuthMiddleware::class]);
+    $router->post('/account/compte-simple', [\App\Controllers\Web\AccountUsageController::class, 'convert'], [AuthMiddleware::class]);
+    $router->post('/account/compte-simple/plus-tard', [\App\Controllers\Web\AccountUsageController::class, 'dismissOffer'], [AuthMiddleware::class]);
     $router->post('/account/sessions/fermer-les-autres', [AccountController::class, 'revokeOtherSessions'], [AuthMiddleware::class]);
     $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/account/donnees/export', [AccountPrivacyController::class, 'export'], [AuthMiddleware::class]);
@@ -1151,6 +1160,11 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/archiver', [SystemTenantsController::class, 'archive'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/restaurer', [SystemTenantsController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/supprimer', [SystemTenantsController::class, 'destroy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Paiements PayPal des formules : vérification et activation manuelle.
+    $router->get('/admin/paiements', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/reglages', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/activer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'activate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/refuser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'reject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/formules-offertes/reglages', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1163,6 +1177,7 @@ return function (Router $router) {
     $router->post('/admin/audit/{id}/rollback', [SystemAuditController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/audit/{id}/alert', [SystemAuditController::class, 'alert'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/create', [SystemMaintenanceController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/maintenance/apercu', [SystemMaintenanceController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance', [SystemMaintenanceController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/{id}/audit', [SystemMaintenanceController::class, 'audit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/{id}/edit', [SystemMaintenanceController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

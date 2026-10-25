@@ -107,27 +107,27 @@ final class SystemSubscriptionPlansController
             return Response::redirect(url('admin/system/subscription-plans/' . $id . '/edit'));
         }
 
-        $stripeM = $this->nullableExternalId($request->input('stripe_price_id_monthly'));
-        $stripeY = $this->nullableExternalId($request->input('stripe_price_id_yearly'));
-        $paypalM = $this->nullableExternalId($request->input('paypal_plan_id_monthly'));
-        $paypalY = $this->nullableExternalId($request->input('paypal_plan_id_yearly'));
-        if ($stripeM === false || $stripeY === false || $paypalM === false || $paypalY === false) {
-            Session::flash('error', 'Les identifiants de paiement ne peuvent dépasser 100 caractères.');
+        $priceMonthly = self::eurosToCents((string) $request->input('price_monthly', ''));
+        $priceYearly = self::eurosToCents((string) $request->input('price_yearly', ''));
+        if ($priceMonthly === false || $priceYearly === false) {
+            Session::flash('error', 'Prix invalide : indiquez un montant en euros (ex. 9,99), ou laissez vide.');
 
             return Response::redirect(url('admin/system/subscription-plans/' . $id . '/edit'));
         }
 
+        // Les anciens identifiants Stripe / PayPal (abonnements) ne sont plus saisis : on garde les valeurs en base.
         $payload = [
             'name' => $name,
             'sort_order' => $sortOrder,
             'features_json' => $featuresJson,
             'limits_json' => $limitsJson,
-            'stripe_price_id_monthly' => $stripeM,
-            'stripe_price_id_yearly' => $stripeY,
-            'paypal_plan_id_monthly' => $paypalM,
-            'paypal_plan_id_yearly' => $paypalY,
+            'stripe_price_id_monthly' => $before['stripe_price_id_monthly'] ?? null,
+            'stripe_price_id_yearly' => $before['stripe_price_id_yearly'] ?? null,
+            'paypal_plan_id_monthly' => $before['paypal_plan_id_monthly'] ?? null,
+            'paypal_plan_id_yearly' => $before['paypal_plan_id_yearly'] ?? null,
         ];
         $this->plans->update($id, $payload);
+        $this->plans->updatePrices($id, $priceMonthly, $priceYearly);
 
         $after = $this->plans->findById($id) ?? [];
         $actorId = Session::get('user_id');
@@ -167,7 +167,24 @@ final class SystemSubscriptionPlansController
             'stripe_price_id_yearly' => (string) ($row['stripe_price_id_yearly'] ?? ''),
             'paypal_plan_id_monthly' => (string) ($row['paypal_plan_id_monthly'] ?? ''),
             'paypal_plan_id_yearly' => (string) ($row['paypal_plan_id_yearly'] ?? ''),
+            'price_monthly_cents' => (string) ($row['price_monthly_cents'] ?? ''),
+            'price_yearly_cents' => (string) ($row['price_yearly_cents'] ?? ''),
         ];
+    }
+
+    /** « 9,99 » / « 9.99 » / « 10 » → centimes ; vide → null ; false si invalide. */
+    public static function eurosToCents(string $raw): int|null|false
+    {
+        $raw = str_replace([' ', "\u{00A0}", '€'], '', trim($raw));
+        if ($raw === '') {
+            return null;
+        }
+        if (preg_match('/^\d{1,5}([.,]\d{1,2})?$/', $raw) !== 1) {
+            return false;
+        }
+        $cents = (int) round((float) str_replace(',', '.', $raw) * 100);
+
+        return $cents > 0 ? $cents : null;
     }
 
     /** @return string|null|false false = flash error already set */
@@ -197,19 +214,5 @@ final class SystemSubscriptionPlansController
         }
 
         return $enc;
-    }
-
-    /** @return string|null|false */
-    private function nullableExternalId(mixed $v): string|null|false
-    {
-        $s = trim((string) $v);
-        if ($s === '') {
-            return null;
-        }
-        if (strlen($s) > 100) {
-            return false;
-        }
-
-        return $s;
     }
 }

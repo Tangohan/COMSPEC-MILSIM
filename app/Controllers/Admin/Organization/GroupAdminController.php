@@ -26,10 +26,14 @@ class GroupAdminController
             return Response::redirect(url('login'));
         }
         $units = $this->unitRepository->getGroups($tenantId);
+        $unitIds = array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $units);
+        $commanderIds = array_map(static fn (array $u): int => (int) ($u['commander_user_id'] ?? 0), $units);
         return Response::view('layout.main', [
             'content' => 'admin.organization.groups.index',
             'title' => 'Groupes',
             'groups' => $units,
+            'memberCounts' => $this->userRepository->countActiveByUnits($unitIds),
+            'commanders' => $this->userRepository->findByIdsForTenant($tenantId, $commanderIds),
         ]);
     }
 
@@ -115,9 +119,11 @@ class GroupAdminController
         return Response::view('layout.main', [
             'content' => 'admin.organization.groups.show',
             'title' => $unit['name'],
+            'boSkipPageHead' => true,
             'group' => $unit,
             'members' => $members,
             'commander' => $commander,
+            'parent' => !empty($unit['parent_id']) ? $this->unitRepository->findById((int) $unit['parent_id'], $tenantId) : null,
         ]);
     }
 

@@ -2270,6 +2270,27 @@ class UserRepository
         return $ok;
     }
 
+    /**
+     * Départ d’une communauté : seule l’appartenance à cette communauté se termine.
+     * Le compte Athena (users.status) reste actif pour les autres communautés et la connexion ;
+     * avant, le statut « inactive » était écrit sur le compte global et bloquait toute reconnexion.
+     */
+    public function leaveCommunity(int $userId, int $tenantId): void
+    {
+        if ($userId < 1 || $tenantId < 1) {
+            return;
+        }
+        if (!$this->hasCommunityMembershipTable()) {
+            // Ancien modèle : une ligne users par communauté, le statut est déjà scopé.
+            $this->update($userId, $tenantId, ['status' => 'inactive']);
+
+            return;
+        }
+        $memberships = $this->communityMemberships();
+        $memberships->leave($userId, $tenantId);
+        $memberships->upsertProfile($userId, $tenantId, ['status' => 'inactive']);
+    }
+
     /** Mot de passe du compte plateforme (toutes communautés), sans filtre de communauté. */
     public function updatePasswordHash(int $userId, string $passwordHash): bool
     {
@@ -3171,6 +3192,33 @@ class UserRepository
         );
         $stmt->execute([$unitId]);
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * Nombre d’affectations en cours par unité, en une seule requête (liste des groupes).
+     *
+     * @param list<int> $unitIds
+     * @return array<int, int> unit_id => nombre de membres
+     */
+    public function countActiveByUnits(array $unitIds): array
+    {
+        $unitIds = array_values(array_unique(array_filter(array_map('intval', $unitIds), static fn (int $v): bool => $v > 0)));
+        if ($unitIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($unitIds), '?'));
+        $stmt = $this->pdo()->prepare(
+            'SELECT unit_id, COUNT(DISTINCT user_id) AS n FROM user_units
+             WHERE unit_id IN (' . $placeholders . ') AND (ended_at IS NULL OR ended_at > NOW())
+             GROUP BY unit_id'
+        );
+        $stmt->execute($unitIds);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['unit_id']] = (int) $row['n'];
+        }
+
+        return $out;
     }
 
     /** @return list<int> Unit IDs auxquelles l'utilisateur est affecté (user_units, non terminée). */

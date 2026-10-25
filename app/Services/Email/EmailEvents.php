@@ -15,6 +15,10 @@ final class EmailEvents
     public const COMMUNITY_CREATION_CHECKLIST = 'COMMUNITY_CREATION_CHECKLIST';
     /** Formule offerte à la communauté par l'administration de la plateforme — e-mail aux gestionnaires. */
     public const PLAN_GIFT_GRANTED = 'PLAN_GIFT_GRANTED';
+    /** Paiement PayPal d’une formule déclaré par la personne — e-mail à l’administration du site. */
+    public const PLAN_PAYMENT_DECLARED = 'PLAN_PAYMENT_DECLARED';
+    /** Paiement PayPal activé ou refusé par l’administration — e-mail à la personne qui a payé. */
+    public const PLAN_PAYMENT_DECIDED = 'PLAN_PAYMENT_DECIDED';
     /** Essai fondateur ou formule offerte qui se termine bientôt — e-mail aux gestionnaires. */
     public const PLAN_END_WARNING = 'PLAN_END_WARNING';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';

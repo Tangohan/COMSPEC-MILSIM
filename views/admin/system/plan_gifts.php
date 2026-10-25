@@ -21,10 +21,11 @@ $now = time();
 $endWatch = is_array($planEndWatch ?? null) ? $planEndWatch : ['ending' => [], 'grace' => [], 'gated' => []];
 $endCfg = is_array($planEndConfig ?? null) ? $planEndConfig : null;
 $endAction = (string) ($planEndSettingsAction ?? url('admin/formules-offertes/reglages'));
-$kindLabels = ['trial' => 'Essai fondateur', 'gift' => 'Formule offerte'];
+$kindLabels = ['trial' => 'Essai fondateur', 'gift' => 'Formule offerte', 'paid' => 'Formule payée (PayPal)'];
 $gatedReasons = [
     'trial_ended' => 'Essai fondateur terminé',
     'gift_ended' => 'Formule offerte terminée',
+    'paid_ended' => 'Formule payée échue',
     'past_due' => 'Paiement en retard',
     'base_plan' => 'Formule sans la carte',
 ];

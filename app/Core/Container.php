@@ -100,7 +100,6 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\ReferralRepository::class),
-                self::get(\App\Services\Moderation\SystemModeratorAccountService::class)
             ),
             \App\Services\Community\DefaultTenantSessionService::class => new \App\Services\Community\DefaultTenantSessionService(
                 self::get(UserRepository::class),
@@ -125,7 +124,6 @@ class Container
                 self::get(RbacService::class),
                 self::get(\App\Repositories\ReferralRepository::class),
                 self::get(\App\Repositories\PendingCommunityCreateRepository::class),
-                self::get(\App\Services\Billing\StripeCheckoutService::class),
                 self::get(\App\Services\Billing\PayPalCheckoutService::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
                 self::get(\App\Services\EmailService::class),
@@ -148,9 +146,7 @@ class Container
             \App\Controllers\Web\PlatformSubscriptionController::class => new \App\Controllers\Web\PlatformSubscriptionController(
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Repositories\SubscriptionPlanRepository::class),
-                self::get(\App\Services\Billing\PayPalCheckoutService::class),
-                self::get(\App\Services\Billing\StripeCheckoutService::class),
+                self::get(\App\Services\Billing\PlanPaymentService::class),
             ),
             \App\Controllers\Web\AnalyticsBeaconController::class => new \App\Controllers\Web\AnalyticsBeaconController(
                 self::get(\App\Services\Analytics\AnalyticsEventService::class)
@@ -2600,6 +2596,10 @@ class Container
             \App\Services\Alerts\ProbationOverdueAlertsBuilder::class => new \App\Services\Alerts\ProbationOverdueAlertsBuilder(
                 self::get(\App\Repositories\ProbationOversightRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
+            ),
+            \App\Services\Alerts\PlanEndAlertsBuilder::class => new \App\Services\Alerts\PlanEndAlertsBuilder(
+                self::get(\App\Repositories\TenantRepository::class),
+                self::get(\App\Repositories\SubscriptionPlanRepository::class),
             ),
             \App\Services\Alerts\AlertPresentationService::class => new \App\Services\Alerts\AlertPresentationService(
                 self::get(\App\Repositories\PlatformAlertRepository::class),

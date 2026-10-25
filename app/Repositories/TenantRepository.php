@@ -626,7 +626,7 @@ SQL;
     }
 
     /**
-     * @return array{founder_trial_ends_at: ?string, plan_gift: ?array<string, mixed>, plan_end_warning_sent: ?string}
+     * @return array{founder_trial_ends_at: ?string, plan_gift: ?array<string, mixed>, plan_end_warning_sent: ?string, manual_billing: ?array<string, mixed>}
      */
     private static function planWindowSettings(mixed $raw): array
     {
@@ -637,11 +637,13 @@ SQL;
         $trial = $s['founder_trial_ends_at'] ?? null;
         $gift = $s[\App\Support\PlanGift::SETTINGS_KEY] ?? null;
         $warned = $s[\App\Support\PlanAccessWindow::WARNED_KEY] ?? null;
+        $manual = $s[\App\Support\ManualBilling::SETTINGS_KEY] ?? null;
 
         return [
             'founder_trial_ends_at' => is_string($trial) && $trial !== '' ? $trial : null,
             'plan_gift' => is_array($gift) ? $gift : null,
             'plan_end_warning_sent' => is_string($warned) ? $warned : null,
+            'manual_billing' => is_array($manual) ? $manual : null,
         ];
     }
 

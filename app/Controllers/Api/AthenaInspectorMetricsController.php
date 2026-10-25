@@ -119,9 +119,9 @@ final class AthenaInspectorMetricsController
             $r = array_map(static fn ($v) => is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : $v, $r);
             if ($header === null) {
                 $header = array_keys($r);
-                fputcsv($fh, $header, ';');
+                fputcsv($fh, $header, ';', '"', '\\');
             }
-            fputcsv($fh, array_map(static fn ($k) => $r[$k] ?? '', $header), ';');
+            fputcsv($fh, array_map(static fn ($k) => $r[$k] ?? '', $header), ';', '"', '\\');
         }
         rewind($fh);
         $body = (string) stream_get_contents($fh);
