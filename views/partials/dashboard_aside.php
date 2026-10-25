@@ -8,7 +8,7 @@ declare(strict_types=1);
  * tuiles restent inertes — voir data-dash-rail-open / data-dash-rail-nested).
  * Pattern repris de l’aside « Registre » (clic profil → masque la liste, affiche le panneau, retour).
  *
- * Regroupe les entrées de l’ancienne navbar (Dashboard, Hub, Forum, Formations,
+ * Regroupe les entrées de l’ancienne navbar (Dashboard, Hub, Formations,
  * Effectifs, Back-office, Administration, Espaces, Invitations, Compte) avec permissions.
  *
  * @var string|null $dashboard_tenant_label
@@ -39,8 +39,6 @@ $canAtakOperators = !empty($can_view_atak_operators)
 $atakOperatorsLinkedBadge = isset($atak_operators_linked_count) && $atak_operators_linked_count !== null
     ? (string) (int) $atak_operators_linked_count
     : null;
-$canForum = !function_exists('can') || can('forum.view');
-$canForumCreate = function_exists('can') && can('forum.create_topic');
 $canTrainingManage = function_exists('can') && (
     can('admin.access') || can('training.manage') || can('training.create')
     || can('training.assign') || can('training.update') || can('training.publish')
@@ -93,7 +91,6 @@ $icon = static function (string $key): string {
         'backoffice' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"/><path stroke-linecap="round" d="M4 8.5 12 13l8-4.5M12 13v7"/></svg>',
         'admin' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6.5v5.4c0 4.6-3 7.7-7 8.6-4-.9-7-4-7-8.6V6.5L12 3.5Z"/><path stroke-linecap="round" d="M12 8v4.5M12 15.2h.01"/></svg>',
         'profile' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.2" r="3.4"/><path stroke-linecap="round" d="M4.8 19.5c.9-3.4 3.8-5.4 7.2-5.4s6.3 2 7.2 5.4"/></svg>',
-        'forum' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5h11a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H9l-4 3v-3H4A1.5 1.5 0 0 1 2.5 13V7A1.5 1.5 0 0 1 4 5.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 9.5H20a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-1v2.5l-3.4-2.5H11a1.5 1.5 0 0 1-1.5-1.5V16"/></svg>',
         'messages' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17h-1A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5Z"/><path stroke-linecap="round" d="M7.5 9.5h9M7.5 12.5h5.5"/></svg>',
         'trainings' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 9 12 4.5 21.5 9 12 13.5 2.5 9Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.5 11v4.5c0 1.4 2.5 3 5.5 3s5.5-1.6 5.5-3V11M21.5 9v5"/></svg>',
         'effectifs' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8.5" r="3"/><path stroke-linecap="round" d="M3.5 19.5c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="16.8" cy="9.2" r="2.4"/><path stroke-linecap="round" d="M16.2 14.6c2.3.1 3.9 1.7 4.3 4.4"/></svg>',
@@ -220,20 +217,9 @@ if ($canAdmin) {
     );
 }
 
-$forumNavOpen = !function_exists('forum_public_nav_visible') || forum_public_nav_visible();
-if ($canForum && $forumNavOpen) {
-    $navTiles[] = $tile('forum', 'Forum', 'Échanges de la communauté', 'default', null, $links([
-        ['label' => 'Accueil du forum', 'href' => url('forum'), 'hint' => 'Rubriques et sujets'],
-        ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
-        $canForumCreate
-            ? ['label' => 'Publier un sujet', 'href' => url('forum/new-topic'), 'hint' => 'Démarrer une discussion']
-            : null,
-    ]), 'forum');
-} elseif ($forumNavOpen === false) {
-    $navTiles[] = $tile('messages', 'Messagerie interne', 'Échanges avec l’encadrement', 'default', null, $links([
-        ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
-    ]), 'messages');
-}
+$navTiles[] = $tile('messages', 'Messagerie interne', 'Échanges avec l’encadrement', 'default', null, $links([
+    ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
+]), 'messages');
 
 $navTiles[] = $tile(
     'trainings',
@@ -392,9 +378,6 @@ if ($canAdmin) {
         ['label' => 'Back-office', 'href' => url('back-office'), 'hint' => 'Espace état-major'],
         ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations'), 'hint' => 'File actionnable'],
         ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté'],
-        (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
-            ? ['label' => 'Rubriques du forum', 'href' => url('back-office/categories'), 'hint' => 'Arborescence']
-            : null,
         ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité, vitrine, inscription et accueil'],
     ]), 'backoffice');
 } else {

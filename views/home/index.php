@@ -128,7 +128,6 @@ $homeUnits = array_slice($featuredUnits, 0, $homeUnitsLimit);
 $kpis = [
     ['v' => $kpiValue('communities_total'), 'l' => __('home.kpi_communities')],
     ['v' => $kpiValue('users_active_total'), 'l' => __('home.kpi_members')],
-    ['v' => $kpiValue('forum_posts_in_period'), 'l' => __('home.kpi_forum')],
     ['v' => $kpiValue('training_completions_in_period'), 'l' => __('home.kpi_training')],
     ['v' => $kpiValue('enlistments_created_in_period'), 'l' => __('home.kpi_enlistments')],
     ['v' => $kpiValue('usage_events_in_period'), 'l' => __('home.kpi_interactions')],
@@ -834,7 +833,6 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
                             ['hub', __('home.eye_ops'), __('home.strip_ops')],
                             ['manoeuvres', __('home.eye_presence'), __('home.strip_presence')],
                             ['communities', __('home.eye_units'), __('home.strip_units')],
-                            ['forum', __('home.eye_info'), __('home.strip_info')],
                             ['orbat', __('home.eye_structure'), __('home.strip_structure')],
                             ['c2', __('home.eye_c2'), __('home.strip_c2')],
                             ['formations', __('home.eye_lms'), __('home.strip_lms')],

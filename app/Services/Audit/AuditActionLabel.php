@@ -33,7 +33,7 @@ final class AuditActionLabel
         // Modération
         'moderation.action_applied' => 'Action de modération appliquée',
         'moderation.action_revoked' => 'Action de modération révoquée',
-        'forum.moderation_action' => 'Modération forum',
+        'report.moderation_action' => 'Modération des signalements',
         // Sécurité
         'security.event' => 'Événement de sécurité',
         // Rôles & permissions
@@ -136,7 +136,7 @@ final class AuditActionLabel
         return self::humanizeSlug($action);
     }
 
-    /** Fallback : forum.post_hidden → « Forum · post hidden » */
+    /** Fallback : moderation.user_muted → « Moderation · user muted » */
     private static function humanizeSlug(string $action): string
     {
         $parts = explode('.', $action, 2);

@@ -8,7 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Services\Monitoring\AtakModReportReplyService;
 use App\Support\ModReportReplyNotice;
 
@@ -18,7 +18,7 @@ use App\Support\ModReportReplyNotice;
  */
 final class ModReportReplyNoticeController
 {
-    public function __construct(private ?ForumNotificationRepository $notifications = null)
+    public function __construct(private ?MemberNotificationRepository $notifications = null)
     {
     }
 
@@ -39,7 +39,7 @@ final class ModReportReplyNoticeController
         }
         $done = 0;
         try {
-            $repo = $this->notifications ?? new ForumNotificationRepository();
+            $repo = $this->notifications ?? new MemberNotificationRepository();
             $done = $repo->markReadForUser(array_map('intval', $ids), $userId, AtakModReportReplyService::NOTIFICATION_TYPE);
         } catch (\Throwable) {
         }

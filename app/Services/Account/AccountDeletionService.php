@@ -17,7 +17,7 @@ use PDO;
 /**
  * Suppression de compte (admin soft-delete + self-service RGPD).
  *
- * L’historique métier (posts forum, documents, messages…) reste rattaché à l’ancien
+ * L’historique métier (documents, messages…) reste rattaché à l’ancien
  * users.id — une nouvelle inscription avec le même e-mail crée un nouvel id et ne
  * récupère jamais cet historique. Les traces personnelles sont scrubées et les
  * libellés publics passent par « Compte supprimé ».
@@ -236,7 +236,7 @@ final class AccountDeletionService
 
     /**
      * Efface / neutralise les tables personnelles liées (hors users).
-     * Les contenus publics (forum, docs…) restent liés à users.id mais affichent
+     * Les contenus publics (documents…) restent liés à users.id mais affichent
      * « Compte supprimé » via display_name + absence d’alias / profil.
      */
     public function scrubRelatedPersonalData(int $userId): void
@@ -275,7 +275,6 @@ final class AccountDeletionService
         $this->deleteOptionalRowsByUserId($userId, [
             'personnel_media',
             'personnel_admin_data',
-            'user_forum_stats',
         ]);
     }
 

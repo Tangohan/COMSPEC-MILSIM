@@ -21,8 +21,6 @@ $kpis = is_array($platformOperationalKpis ?? null) ? $platformOperationalKpis : 
     'users_registered_in_period' => 0,
     'audit_actions_in_period' => 0,
     'enlistments_created_in_period' => 0,
-    'forum_topics_in_period' => 0,
-    'forum_posts_in_period' => 0,
     'training_enrollments_assigned_in_period' => 0,
     'training_completions_in_period' => 0,
     'usage_events_in_period' => 0,
@@ -77,8 +75,6 @@ $activityRows = [
     ['group' => 'Membres', 'label' => 'Membres actifs', 'value' => (int) ($kpis['users_active_total'] ?? 0), 'hint' => 'Toutes communautés'],
     ['group' => 'Membres', 'label' => 'Nouveaux comptes', 'value' => (int) ($kpis['users_registered_in_period'] ?? 0), 'hint' => 'Sur la période'],
     ['group' => 'Recrutement', 'label' => 'Candidatures déposées', 'value' => (int) ($kpis['enlistments_created_in_period'] ?? 0), 'hint' => 'Sur la période'],
-    ['group' => 'Forum', 'label' => 'Sujets créés', 'value' => (int) ($kpis['forum_topics_in_period'] ?? 0), 'hint' => 'Sur la période'],
-    ['group' => 'Forum', 'label' => 'Messages publiés', 'value' => (int) ($kpis['forum_posts_in_period'] ?? 0), 'hint' => 'Sur la période'],
     ['group' => 'Formations', 'label' => 'Inscriptions aux parcours', 'value' => (int) ($kpis['training_enrollments_assigned_in_period'] ?? 0), 'hint' => 'Sur la période'],
     ['group' => 'Formations', 'label' => 'Parcours terminés', 'value' => (int) ($kpis['training_completions_in_period'] ?? 0), 'hint' => 'Sur la période', 'accent' => true],
     ['group' => 'Pilotage', 'label' => 'Écritures au journal d’activité', 'value' => (int) ($kpis['audit_actions_in_period'] ?? 0), 'hint' => 'Sur la période'],
@@ -121,10 +117,10 @@ $priorityRows = [
     ],
     [
         'title' => 'Vigilance communauté',
-        'summary' => 'Croiser activité forum et journal pour détecter les zones à surveiller.',
-        'signal' => (int) ($kpis['audit_actions_in_period'] ?? 0) + (int) ($kpis['forum_posts_in_period'] ?? 0),
+        'summary' => 'Suivre le journal d’audit pour détecter les zones à surveiller.',
+        'signal' => (int) ($kpis['audit_actions_in_period'] ?? 0),
         'signal_label' => 'Signaux croisés',
-        'status' => (((int) ($kpis['audit_actions_in_period'] ?? 0) + (int) ($kpis['forum_posts_in_period'] ?? 0)) > 0) ? 'watch' : 'risk',
+        'status' => ((int) ($kpis['audit_actions_in_period'] ?? 0) > 0) ? 'watch' : 'risk',
     ],
 ];
 
@@ -218,7 +214,7 @@ $barPct = static function (int $value, int $max): int {
             <p class="text-[11px] font-black uppercase tracking-[0.28em] text-emerald-700">Athena · Administration site</p>
             <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Indicateurs transverses</h1>
             <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
-                Lecture consolidée de l’activité sur tout le portail — communautés, membres, forum, formations et mesures d’usage.
+                Lecture consolidée de l’activité sur tout le portail — communautés, membres, formations et mesures d’usage.
                 Les durées moyennes ne concernent que les visites où une mesure d’audience a été acceptée.
             </p>
         </div>

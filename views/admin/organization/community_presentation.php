@@ -227,7 +227,7 @@ $renderTodo = static function (array $it) use ($h): void {
 };
 
 $cpPanels = [
-    'visibilite' => ['Visibilité & registre', 'Annuaire, image, forum'],
+    'visibilite' => ['Visibilité & registre', 'Annuaire, image'],
     'vitrine' => ['Page publique', 'Bandeau, sections, recrutement'],
     'textes' => ['Présentation & contact', 'Texte libre, attentes, contact'],
     'profil' => ['Jeu & inscription', 'Type de candidature, mods, style'],
@@ -344,14 +344,6 @@ $cpNum = 0;
                         </span>
                     </div>
                     <?php endif; ?>
-                    <?php $renderSwitch(
-                        'forum_members_only',
-                        !empty($c['forum_members_only']),
-                        'Réserver le forum aux membres',
-                        'Concerne le bouton « Accéder au forum » de votre page publique.',
-                        'les visiteurs non membres ne voient pas le bouton du forum.',
-                        'tout visiteur peut ouvrir et lire le forum depuis votre page publique.'
-                    ); ?>
                     <p class="bcs-notice bcs-notice--info">Faites aussi connaître votre communauté sur le Discord Athena : <a class="bcs-link" href="<?= $h(url('back-office/community/discord')) ?>">Annoncer sur Discord</a>.</p>
                 </div>
             </section>
@@ -705,7 +697,6 @@ $cpNum = 0;
                 <div class="bcs-card__body">
                     <?php foreach ([
                         'events' => ['Événements', 'Vos prochaines opérations et entraînements ouverts.'],
-                        'forum' => ['Forum', 'Les derniers sujets publics du forum.'],
                         'documents' => ['Documents', 'Les documents marqués comme publics (règlement, doctrine…).'],
                         'roster' => ['Effectifs', 'La composition de l’unité.'],
                         'training' => ['Formations', 'Le catalogue des formations proposées.'],

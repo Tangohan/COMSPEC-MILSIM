@@ -86,7 +86,7 @@ final class CommunityAccessProfiles
         return match (strtolower(trim($module))) {
             'personnel' => 'Dossiers et effectifs',
             'admin' => 'Administration de la communauté',
-            'forum' => 'Forum',
+            'moderation' => 'Modération',
             'documents' => 'Documents',
             'training' => 'Formations',
             'operations' => 'Opérations',
@@ -110,7 +110,7 @@ final class CommunityAccessProfiles
         return match (strtolower(trim($module))) {
             'personnel' => 'Fiches, grades, affectations et annuaire — ce n’est pas l’emploi (radio, médic…).',
             'admin' => 'Pilotage de la communauté : paramètres, membres et outils d’organisation.',
-            'forum' => 'Lire et publier sur le forum communautaire.',
+            'moderation' => 'Traiter les signalements des membres.',
             'documents' => 'Consulter ou publier la doctrine et les consignes.',
             'training' => 'Suivre ou administrer les parcours de formation.',
             'operations' => 'Manœuvres, pointages et cycle opérationnel.',
@@ -137,7 +137,7 @@ final class CommunityAccessProfiles
             'personnel',
             'admin',
             'organization',
-            'forum',
+            'moderation',
             'documents',
             'training',
             'operations',
@@ -180,7 +180,7 @@ final class CommunityAccessProfiles
                 'key' => self::MEMBER,
                 'slug' => self::SLUG_MEMBER,
                 'name' => 'Membre',
-                'description' => 'Accès courant du portail : forum, documents, formations en lecture, annuaire, sa fiche et les outils ATAK de base. Ne confère pas la gestion des effectifs.',
+                'description' => 'Accès courant du portail : documents, formations en lecture, annuaire, sa fiche et les outils ATAK de base. Ne confère pas la gestion des effectifs.',
                 'role_layer' => 'intra',
                 'is_system' => 1,
                 'is_locked' => 1,
@@ -304,7 +304,6 @@ final class CommunityAccessProfiles
     public static function memberPermissionSlugs(): array
     {
         return [
-            'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
             'documents.view', 'documents.download.standard',
             'training.view',
             'personnel.profile.view', 'personnel.progression.view',

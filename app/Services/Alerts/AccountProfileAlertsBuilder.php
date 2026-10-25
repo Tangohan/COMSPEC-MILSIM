@@ -74,7 +74,7 @@ final class AccountProfileAlertsBuilder
                 'id' => -1002,
                 'kind' => 'novelty',
                 'title' => 'Identité personnage à compléter',
-                'body' => 'Renseignez au minimum le prénom et le nom du personnage (ou la nationalité) sur votre fiche pour l’ORBAT et le forum.',
+                'body' => 'Renseignez au minimum le prénom et le nom du personnage (ou la nationalité) sur votre fiche pour l’ORBAT.',
                 'cta_label' => 'Éditer la fiche personnel',
                 'cta_url' => url('personnel/me/edit'),
                 'coupon_code' => null,

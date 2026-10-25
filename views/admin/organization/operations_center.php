@@ -111,7 +111,7 @@ $profileUrl = static fn (string $p): string => url('back-office/centre-operation
 
 <?php
 $athKpis = [
-    ['label' => 'SIGNALEMENTS FORUM', 'value' => (string) $moderationOpen, 'delta' => '', 'tone' => $moderationOpen === 0 ? '#0b8a5c' : '#c72e2e', 'pct' => $moderationOpen === 0 ? '0%' : '100%', 'note' => 'dossiers en attente'],
+    ['label' => 'SIGNALEMENTS', 'value' => (string) $moderationOpen, 'delta' => '', 'tone' => $moderationOpen === 0 ? '#0b8a5c' : '#c72e2e', 'pct' => $moderationOpen === 0 ? '0%' : '100%', 'note' => 'dossiers en attente'],
     ['label' => 'CANDIDATURES', 'value' => (string) count($pendingRecruitments), 'delta' => '', 'tone' => count($pendingRecruitments) === 0 ? '#0b8a5c' : '#c98a12', 'pct' => count($pendingRecruitments) === 0 ? '0%' : '100%', 'note' => 'à instruire'],
     ['label' => 'ÉVÉNEMENTS J+1', 'value' => (string) count($eventsJ1), 'delta' => '', 'tone' => '#c98a12', 'pct' => count($eventsJ1) === 0 ? '0%' : '100%', 'note' => 'à préparer'],
     ['label' => 'ÉVÉNEMENTS J+7', 'value' => (string) count($eventsJ7), 'delta' => '', 'tone' => '#1e4f80', 'pct' => count($eventsJ7) === 0 ? '0%' : '100%', 'note' => 'à planifier'],
@@ -121,9 +121,7 @@ require base_path('views/partials/ath_kpis.php');
 ?>
 
 <div class="ath-form__actions" style="border-top:0;margin:0 0 16px;padding-top:0;">
-    <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
-    <a href="<?= $h(url('back-office/forum-moderation')) ?>" class="ath-btn">Console forum</a>
-    <?php endif; ?>
+    <a href="<?= $h(url('back-office/signalements')) ?>" class="ath-btn">Signalements</a>
     <?php if (\App\Core\Gate::getInstance()->allows('admin.members.moderate')): ?>
     <a href="<?= $h(url('back-office/moderation')) ?>" class="ath-btn">Restrictions membres</a>
     <?php endif; ?>

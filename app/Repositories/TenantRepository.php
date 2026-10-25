@@ -88,7 +88,7 @@ class TenantRepository
 
     /**
      * Une communauté archivée par l’administration du site n’est plus trouvée par son adresse
-     * (page publique, recrutement, forum…). L’adresse reste réservée (slugExists).
+     * (page publique, recrutement…). L’adresse reste réservée (slugExists).
      */
     public function findBySlug(string $slug): ?array
     {

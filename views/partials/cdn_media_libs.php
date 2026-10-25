@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Variables :
  * - $cdnLibs : list|string|null — packs demandés (null = defaults du layout)
  * - $cdnPhase : 'head'|'body' (défaut head)
- * - $cdnPreset : 'portal'|'forum'|null
+ * - $cdnPreset : 'portal'|null
  * - $cdnSkipLocal : bool — ne pas charger athena_media.css/js locaux
  */
 

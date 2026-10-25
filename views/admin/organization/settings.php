@@ -95,7 +95,6 @@ $publicAboutBody = trim((string) ($c['public_about_body'] ?? ''));
 $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($c);
 
 $registryListed = !array_key_exists('registry_listed', $c) || !empty($c['registry_listed']);
-$forumMembersOnly = !empty($c['forum_members_only']);
 $unitAffiliation = is_array($c['unit_affiliation'] ?? null) ? $c['unit_affiliation'] : [];
 $unitAffiliationIsReal = !empty($unitAffiliation['is_real']);
 $unitAffiliationMode = $unitAffiliation !== [] ? ($unitAffiliationIsReal ? 'real' : 'fictional') : '';
@@ -732,14 +731,6 @@ $imagesNeedAddress = $slugHint === '';
                         'votre carte est visible dans l’annuaire et mène à votre page publique.',
                         'vous n’apparaissez pas dans l’annuaire. Votre page publique reste accessible à qui a le lien.'
                     ); ?>
-                    <?php $renderToggle(
-                        'Forum réservé aux membres',
-                        'Concerne le bouton « Accéder au forum » de votre page publique.',
-                        'forum_members_only',
-                        $forumMembersOnly,
-                        'les visiteurs non connectés ne voient pas le bouton du forum.',
-                        'tout visiteur peut ouvrir et lire le forum depuis votre page publique.'
-                    ); ?>
                     <div class="bcs-field">
                         <span class="bcs-label">Page publique</span>
                         <p class="bcs-help">
@@ -774,7 +765,6 @@ $imagesNeedAddress = $slugHint === '';
                 <div class="bcs-card__body">
                     <?php
                     $moduleHelp = [
-                        'forum' => ['Forum', 'Les derniers sujets publics du forum.'],
                         'documents' => ['Documents', 'Les documents marqués comme publics (règlement, doctrine…).'],
                         'events' => ['Événements', 'Vos prochaines opérations et entraînements ouverts.'],
                         'roster' => ['Effectifs', 'Le nombre de membres et la composition de l’unité.'],

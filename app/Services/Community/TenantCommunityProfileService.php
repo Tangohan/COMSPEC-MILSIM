@@ -396,7 +396,6 @@ final class TenantCommunityProfileService
         $c['registration_mode'] = self::normalizeRegistrationMode($request->input('registration_mode', self::REGISTRATION_MODE_MILSIM));
 
         $c['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
-        $c['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';
 
         $c['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
         $c['main_mods'] = $this->clip((string) $request->input('main_mods', ''), 4000);
@@ -461,7 +460,6 @@ final class TenantCommunityProfileService
         $c['public_roster_enabled'] = (string) $request->input('public_roster_enabled', '0') === '1';
         $c['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
         $mods = [
-            'forum' => (string) $request->input('public_mod_forum', '0') === '1',
             'documents' => (string) $request->input('public_mod_documents', '0') === '1',
             'events' => (string) $request->input('public_mod_events', '0') === '1',
             'roster' => (string) $request->input('public_mod_roster', '0') === '1',
@@ -646,7 +644,6 @@ final class TenantCommunityProfileService
         }
         $mods = is_array($community['public_modules'] ?? null) ? $community['public_modules'] : [];
         $modules = [
-            'forum' => !empty($mods['forum']),
             'documents' => !empty($mods['documents']),
             'events' => !empty($mods['events']),
             'roster' => !empty($mods['roster']),

@@ -433,7 +433,7 @@ $formatWhen = static function (mixed $raw): string {
         ?>
         <div x-data="personnelJobRolesEditor(<?= $currentJobRolesJson ?>, <?= $jobRoleOptionsJson ?>, <?= (int) $maxJobRolesPerMember ?>)">
           <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <p class="text-[11px] text-slate-500">L’emploi principal apparaît sur la fiche, l’organigramme et le forum.</p>
+            <p class="text-[11px] text-slate-500">L’emploi principal apparaît sur la fiche et l’organigramme.</p>
             <label class="relative block sm:w-80">
               <span class="sr-only">Rechercher une fonction</span>
               <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400" aria-hidden="true">⌕</span>

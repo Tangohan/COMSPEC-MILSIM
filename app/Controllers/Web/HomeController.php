@@ -18,7 +18,6 @@ class HomeController
         $platformKpis = [
             'communities_total' => 0,
             'users_active_total' => 0,
-            'forum_posts_in_period' => 0,
             'training_completions_in_period' => 0,
             'enlistments_created_in_period' => 0,
             'usage_events_in_period' => 0,
@@ -30,7 +29,6 @@ class HomeController
             $raw = $analyticsRepo->getPlatformOperationalKpis($days);
             $platformKpis['communities_total'] = (int) ($raw['communities_total'] ?? 0);
             $platformKpis['users_active_total'] = (int) ($raw['users_active_total'] ?? 0);
-            $platformKpis['forum_posts_in_period'] = (int) ($raw['forum_posts_in_period'] ?? 0);
             $platformKpis['training_completions_in_period'] = (int) ($raw['training_completions_in_period'] ?? 0);
             $platformKpis['enlistments_created_in_period'] = (int) ($raw['enlistments_created_in_period'] ?? 0);
             $platformKpis['usage_events_in_period'] = (int) ($raw['usage_events_in_period'] ?? 0);
@@ -235,7 +233,6 @@ class HomeController
         $dashboardAnnounceItems = [];
         $dashboardPopupItems = [];
         $dashboardMiniArticles = [];
-        $followedChannels = [];
         $missionBriefing = null;
         $dashboardTesterProgram = null;
         $candidateEnlistmentTracking = [];
@@ -284,7 +281,6 @@ class HomeController
             }
             $allowsTraining = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'training');
             $allowsRecruitment = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'recruitment');
-            $allowsForum = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'forum');
             $allowsPersonnel = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'personnel');
             $allowsAtak = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'atak');
 
@@ -629,28 +625,6 @@ class HomeController
                     $dashboardPins = [];
                 }
 
-                if ($allowsForum) {
-                    try {
-                        $followedChannelsRows = \App\Core\Container::get(\App\Repositories\ForumCategoryRepository::class)
-                            ->listSubscribedForUser($uid, $tid);
-                        foreach ($followedChannelsRows as $fc) {
-                            $lastTopicId = (int) ($fc['last_topic_id'] ?? 0);
-                            $followedChannels[] = [
-                                'name' => (string) ($fc['name'] ?? ''),
-                                'slug' => (string) ($fc['slug'] ?? ''),
-                                'href' => url('forum/category/' . rawurlencode((string) ($fc['slug'] ?? ''))),
-                                'icon' => (string) ($fc['icon'] ?? ''),
-                                'unread_count' => (int) ($fc['unread_count'] ?? 0),
-                                'last_topic_title' => trim((string) ($fc['last_topic_title'] ?? '')),
-                                'last_topic_href' => $lastTopicId > 0 ? url('forum/topic/' . $lastTopicId) : null,
-                                'last_activity_at' => $fc['last_activity_at'] ?? null,
-                            ];
-                        }
-                    } catch (\Throwable) {
-                        $followedChannels = [];
-                    }
-                }
-
                 try {
                     $alertRows = \App\Core\Container::get(\App\Services\Alerts\AlertPresentationService::class)
                         ->forCurrentRequest();
@@ -707,34 +681,6 @@ class HomeController
                         'cta_label' => null,
                         'cta_url' => null,
                     ];
-                }
-
-                if ($allowsForum) {
-                    try {
-                        /** @var \App\Repositories\ForumTopicRepository $forumTopicRepo */
-                        $forumTopicRepo = \App\Core\Container::get(\App\Repositories\ForumTopicRepository::class);
-                        $forumDashPins = $forumTopicRepo->listPinnedOnDashboardForTenant($tid, 8);
-                        foreach ($forumDashPins as $ftPin) {
-                            $title = trim((string) ($ftPin['title'] ?? ''));
-                            if ($title === '') {
-                                continue;
-                            }
-                            $rawBody = trim((string) ($ftPin['first_post_body'] ?? ''));
-                            $excerpt = self::plainTextExcerpt($rawBody, 220);
-                            $topicId = (int) ($ftPin['id'] ?? 0);
-                            $dashboardAnnounceItems[] = [
-                                'kind' => 'forum_pin',
-                                'category' => 'Message épinglé',
-                                'title' => $title,
-                                'body' => $excerpt,
-                                'cta_label' => 'Ouvrir le message',
-                                'cta_url' => $topicId > 0 ? url('forum/topic/' . $topicId) : null,
-                                'scope' => 'tenant',
-                            ];
-                        }
-                    } catch (\Throwable) {
-                        // Optionnel si le schéma forum n’est pas prêt.
-                    }
                 }
 
                 if ($showcaseTrainingFeature && $showcaseItems !== []) {
@@ -941,7 +887,6 @@ class HomeController
             'dashboard_pins' => $dashboardPins,
             'dashboard_announce_items' => $dashboardAnnounceItems,
             'dashboard_popup_items' => $dashboardPopupItems,
-            'followed_channels' => $followedChannels,
             'mission_briefing' => $missionBriefing,
             'dashboard_tester_program' => $dashboardTesterProgram,
             'dashboard_next_steps' => $dashboardNextSteps,
@@ -980,32 +925,6 @@ class HomeController
             'dashboard_mini_articles' => $dashboardMiniArticles,
             'dashboard_ui_tour' => $this->dashboardUiTourPayload($currentUser),
         ]);
-    }
-
-    /**
-     * Extrait texte brut pour tuiles dashboard (messages forum épinglés).
-     */
-    private static function plainTextExcerpt(string $raw, int $maxLen = 220): string
-    {
-        $text = trim(strip_tags($raw));
-        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
-        $text = trim($text);
-        if ($text === '') {
-            return '';
-        }
-        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
-            if (mb_strlen($text) > $maxLen) {
-                return rtrim(mb_substr($text, 0, $maxLen - 1)) . '…';
-            }
-
-            return $text;
-        }
-        if (strlen($text) > $maxLen) {
-            return rtrim(substr($text, 0, $maxLen - 1)) . '…';
-        }
-
-        return $text;
     }
 
     /**

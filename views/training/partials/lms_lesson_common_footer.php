@@ -96,7 +96,7 @@ if ($footerNext !== null) {
                                 ? training_lms_studio_resource_kind_label_fr($r)
                                 : '';
                             $rExt = trim((string) ($r['external_url'] ?? ''));
-                            $rExtIsSite = $rExt !== '' && (new \App\Services\Forum\ExternalLeaveService())->isInternalUrl($rExt);
+                            $rExtIsSite = $rExt !== '' && (new \App\Services\Navigation\ExternalLeaveService())->isInternalUrl($rExt);
                             // Google Docs / Sheets / Slides / draw.io… : visionneuse directement dans la leçon.
                             $rExtEmbed = ($rExt !== '' && !$rExtIsSite && function_exists('training_url_viewer_embed_src'))
                                 ? training_url_viewer_embed_src($rExt)

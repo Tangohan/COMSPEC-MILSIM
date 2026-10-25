@@ -48,7 +48,7 @@ $kicker = $isPortalSuspended ? 'Suivi candidature' : 'Soumission interrompue';
         <p class="ds-hint" style="margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Que faire&nbsp;?</p>
         <?php if ($isPortalSuspended): ?>
         <ul style="margin:0;padding-left:1.1rem;color:var(--ds-text-alt);font-size:0.95rem;line-height:1.55">
-            <li>Contactez l’équipe recrutement par un moyen déjà utilisé (courriel, forum, etc.).</li>
+            <li>Contactez l’équipe recrutement par un moyen déjà utilisé (courriel, Discord, etc.).</li>
             <li>Indiquez que le lien de suivi ne s’ouvre plus : ils peuvent rétablir l’accès depuis l’administration.</li>
             <li>Si le lien avait une date limite, un nouveau lien pourra vous être envoyé.</li>
         </ul>

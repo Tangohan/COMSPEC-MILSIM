@@ -680,7 +680,7 @@ class AccountController
                 'group' => 'Signalements et modération',
             ],
         ];
-        if (function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
+        if (function_exists('moderation_user_can_moderate') && moderation_user_can_moderate()) {
             $items[] = [
                 'key' => EmailEvents::COMMUNITY_REPORT_NEW_STAFF,
                 'label' => 'Nouveaux signalements pour l’équipe',

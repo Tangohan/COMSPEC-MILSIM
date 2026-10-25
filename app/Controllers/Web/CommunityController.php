@@ -194,9 +194,6 @@ class CommunityController
             'publishedAt' => (string) ($communityConfig['public_page_builder']['published_at'] ?? ''),
         ];
 
-        $forumMembersOnly = !empty($communityConfig['forum_members_only']);
-        $showForumCta = (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
-            && (!$forumMembersOnly || ($this->authService->check() && $hasMembershipInTenant));
         $communityProfile = TenantCommunityProfileService::getPublicViewModel($communityConfig, (string) ($tenant['slug'] ?? ''));
 
         $publicLayout = TenantCommunityProfileService::resolvePublicPageLayout($communityConfig['public_page_layout'] ?? null);
@@ -348,7 +345,6 @@ class CommunityController
             'communityConfig' => $communityConfig,
             'communityProfile' => $communityProfile,
             'hasMembershipInTenant' => $hasMembershipInTenant,
-            'showForumCta' => $showForumCta,
             'tenantSettings' => $settings,
             'publicLayout' => $publicLayout,
             'showcaseVm' => $showcaseVm,
@@ -930,32 +926,6 @@ class CommunityController
     }
 
     /**
-     * Accès forum dans le contexte d’une communauté : bascule la session si l’utilisateur y a un compte.
-     */
-    public function enterForum(Request $request, array $params = []): Response
-    {
-        $slug = (string) ($params['slug'] ?? '');
-        $tenant = $this->tenantRepository->findBySlug($slug);
-        if (!$tenant) {
-            Session::flash('error', 'Communauté introuvable.');
-            return Response::redirect(url(''));
-        }
-        if (!$this->authService->check()) {
-            Session::flash('error', 'Connectez-vous pour accéder au forum de cette communauté.');
-            return Response::redirect(url('login'));
-        }
-        if (!$this->authService->switchToTenant((int) $tenant['id'])) {
-            Session::flash('error', 'Vous n’avez pas de compte dans cette communauté. Demandez une invitation ou créez une communauté.');
-            return Response::redirect(url('c/' . $slug));
-        }
-        $user = $this->authService->user();
-        if ($user) {
-            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
-        }
-        return Response::redirect(url('forum'));
-    }
-
-    /**
      * Bascule la session sur la communauté cible puis redirige vers le formulaire d’enrôlement (compte Athena).
      */
     public function enterEnlistment(Request $request, array $params = []): Response
@@ -1073,7 +1043,7 @@ class CommunityController
                 'slug' => 'free',
                 'title' => 'Quartier libre',
                 'eyebrow' => 'Sans engagement',
-                'description' => 'Forum, documents, messagerie, effectifs et formations de base pour démarrer sans frais.',
+                'description' => 'Documents, messagerie, effectifs et formations de base pour démarrer sans frais.',
                 'meta' => 'Gratuit',
                 'limits' => ['10 places', '5 formations', '3 événements par mois', 'Liaison jeu de base (positions, comptes rendus, briefing)'],
                 'value' => 'free',

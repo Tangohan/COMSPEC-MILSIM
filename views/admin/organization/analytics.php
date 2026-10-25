@@ -71,8 +71,6 @@ $operationalKpis += [
     'members_registered_in_period' => 0,
     'audit_actions_in_period' => 0,
     'enlistments_created_in_period' => 0,
-    'forum_topics_in_period' => 0,
-    'forum_posts_in_period' => 0,
     'training_enrollments_assigned_in_period' => 0,
     'training_completions_in_period' => 0,
 ];
@@ -410,11 +408,6 @@ if ($analyticsFocus === 'conversion') {
                     <span class="bo-an-metric__label">Actions journalisées</span>
                     <span class="bo-an-metric__value"><?= $h($int($operationalKpis['audit_actions_in_period'])) ?></span>
                     <span class="bo-an-metric__note">journal d’audit <?= $source(false) ?></span>
-                </div>
-                <div class="bo-an-metric">
-                    <span class="bo-an-metric__label">Sujets de forum</span>
-                    <span class="bo-an-metric__value"><?= $h($int($operationalKpis['forum_topics_in_period'])) ?></span>
-                    <span class="bo-an-metric__note"><?= $h($int($operationalKpis['forum_posts_in_period'])) ?> messages publiés <?= $source(false) ?></span>
                 </div>
                 <div class="bo-an-metric">
                     <span class="bo-an-metric__label">Formations achevées</span>

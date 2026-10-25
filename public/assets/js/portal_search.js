@@ -1,6 +1,6 @@
 /**
  * Recherche portail : saisie avec debounce, annulation des requêtes précédentes, rendu des sections.
- * Scopes alignés sur l’API / la palette : documents, forum, personnel, events, training, commands.
+ * Scopes alignés sur l’API / la palette : documents, personnel, events, training, commands.
  */
 (function () {
     var root = document.getElementById('portal-search-root');
@@ -20,7 +20,6 @@
     var emptyHint = document.getElementById('portal-search-empty-hint');
     var scopes = {
         documents: document.getElementById('scope-documents'),
-        forum: document.getElementById('scope-forum'),
         personnel: document.getElementById('scope-personnel'),
         events: document.getElementById('scope-events'),
         training: document.getElementById('scope-training'),
@@ -45,7 +44,6 @@
     function anyScopeChecked() {
         return (
             scopeChecked(scopes.documents) ||
-            scopeChecked(scopes.forum) ||
             scopeChecked(scopes.personnel) ||
             scopeChecked(scopes.events) ||
             scopeChecked(scopes.training) ||
@@ -146,12 +144,11 @@
             return;
         }
         var docs = data.documents || [];
-        var forum = data.forum || [];
         var pers = data.personnel || [];
         var events = data.events || [];
         var training = data.training || [];
         var commands = data.commands || [];
-        var total = docs.length + forum.length + pers.length + events.length + training.length + commands.length;
+        var total = docs.length + pers.length + events.length + training.length + commands.length;
 
         if (total === 0) {
             var hubU = typeof window.__portalHubUrl === 'string' ? window.__portalHubUrl.trim() : '';
@@ -182,7 +179,6 @@
         var blocks = [];
         var icons = {
             docs: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>',
-            forum: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3.819-2.24a9.015 9.015 0 0 1-5.801 0l-3.82 2.24v-3.09c-.34-.02-.68-.046-1.02-.072-1.132-.094-1.98-1.057-1.98-2.193V10.61c0-.97.616-1.813 1.5-2.097V6.75A2.25 2.25 0 0 1 4.5 4.5h15a2.25 2.25 0 0 1 2.25 2.25v1.761Z"/></svg>',
             pers: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>',
             events: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>',
             training: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.25c2.582 0 5.093-.33 7.492-.956.466-.135.937-.281 1.408-.434a60.44 60.44 0 0 0-.491-6.347m-15.918 0A61.5 61.5 0 0 1 12 9.75c2.582 0 5.093.33 7.492.956.466.135.937.281 1.408.434m-15.918 0A48.456 48.456 0 0 1 12 8.25c2.582 0 5.093.33 7.492.956"/></svg>',
@@ -194,9 +190,6 @@
         }
         if (docs.length) {
             blocks.push(section('Documents', icons.docs, 'bg-emerald-600', docs.map(function (it) { return hitRow(it); }).join('')));
-        }
-        if (forum.length) {
-            blocks.push(section('Forum', icons.forum, 'bg-sky-600', forum.map(function (it) { return hitRow(it); }).join('')));
         }
         if (pers.length) {
             blocks.push(section('Personnel & fonctions', icons.pers, 'bg-indigo-600', pers.map(function (it) { return hitRow(it); }).join('')));
@@ -236,7 +229,7 @@
         if (!anyScopeChecked()) {
             if (resultsEl) {
                 resultsEl.innerHTML =
-                    '<div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-8 text-center text-sm text-amber-900">Cochez au moins une source (documents, forum, personnel, événements, formations ou raccourcis) pour lancer la recherche.</div>';
+                    '<div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-8 text-center text-sm text-amber-900">Cochez au moins une source (documents, personnel, événements, formations ou raccourcis) pour lancer la recherche.</div>';
             }
             setStatus('', '');
             setLive('');

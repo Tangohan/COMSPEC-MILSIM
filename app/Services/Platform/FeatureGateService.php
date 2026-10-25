@@ -44,12 +44,12 @@ final class FeatureGateService
             return false;
         }
         if ($this->isPastDueWithoutGift($tenant)) {
-            return $feature === 'forum' || $feature === 'documents';
+            return $feature === 'documents';
         }
         $planSlug = $this->effectivePlanSlug($tenant);
         $plan = $this->planRepository->findBySlug($planSlug);
         if (!$plan) {
-            return $feature === 'forum';
+            return false;
         }
         $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
         if (!is_array($features)) {
@@ -73,12 +73,12 @@ final class FeatureGateService
             return false;
         }
         if ($this->isPastDueWithoutGift($tenant)) {
-            return $feature === 'forum' || $feature === 'documents';
+            return $feature === 'documents';
         }
         $planSlug = $this->effectivePlanSlug($tenant);
         $plan = $this->planRepository->findBySlug($planSlug);
         if (!$plan) {
-            return $feature === 'forum';
+            return false;
         }
         $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
         if (!is_array($features)) {

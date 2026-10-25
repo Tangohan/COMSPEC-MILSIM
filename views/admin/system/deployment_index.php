@@ -68,7 +68,7 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
 
             <section class="mt-12 rounded-xl border border-slate-200 bg-white p-6 shadow-sm" id="nouveau">
                 <h2 class="text-lg font-bold text-slate-900">Nouvelle fonctionnalité déployable</h2>
-                <p class="mt-1 text-xs text-slate-500">Référence technique : identifiant stable aligné sur le code métier utilisé par le moteur d’habilitation (ex. training, forum).</p>
+                <p class="mt-1 text-xs text-slate-500">Référence technique : identifiant stable aligné sur le code métier utilisé par le moteur d’habilitation (ex. training, documents).</p>
                 <form method="post" action="<?= htmlspecialchars(url('admin/system/deployment/modules'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 grid gap-4 sm:grid-cols-2">
                     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                     <div>

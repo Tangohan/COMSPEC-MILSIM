@@ -176,7 +176,7 @@ final class OrganizationKitDefinitions
             'job_roles' => [
                 ['category_key' => 'encad', 'name' => 'Administrateur', 'slug' => 'administrateur-communaute', 'description' => 'Pilote la communauté au quotidien.', 'sort_order' => 10],
                 ['category_key' => 'encad', 'name' => 'Animateur', 'slug' => 'animateur-communaute', 'description' => 'Propose et conduit les sessions.', 'sort_order' => 20],
-                ['category_key' => 'encad', 'name' => 'Modérateur', 'slug' => 'moderateur-communaute', 'description' => 'Veille au respect des règles sur le forum et le serveur vocal.', 'sort_order' => 30],
+                ['category_key' => 'encad', 'name' => 'Modérateur', 'slug' => 'moderateur-communaute', 'description' => 'Veille au respect des règles sur le portail et le serveur vocal.', 'sort_order' => 30],
                 ['category_key' => 'encad', 'name' => 'Responsable communication', 'slug' => 'communication-communaute', 'description' => 'Publie les annonces, les médias et les comptes rendus.', 'sort_order' => 40],
                 ['category_key' => 'accueil', 'name' => 'Recruteur', 'slug' => 'recruteur-communaute', 'description' => 'Accueille les nouveaux et suit les candidatures.', 'sort_order' => 10],
                 ['category_key' => 'accueil', 'name' => 'Guide', 'slug' => 'guide-communaute', 'description' => 'Accompagne les arrivants dans les premiers pas.', 'sort_order' => 20],
@@ -190,7 +190,7 @@ final class OrganizationKitDefinitions
             'roles' => [
                 ['name' => 'Administration de communauté', 'slug' => 'kit-communaute-admin', 'description' => 'Pilotage de la communauté.', 'preset' => 'commandement_unite'],
                 ['name' => 'Cellule recrutement', 'slug' => 'kit-communaute-recrutement', 'description' => 'Accueil et dossiers d’arrivée.', 'preset' => 'cellule_recrutement'],
-                ['name' => 'Modération du forum', 'slug' => 'kit-communaute-moderation', 'description' => 'Modération des échanges de la communauté.', 'preset' => 'forum_moderator_org'],
+                ['name' => 'Modération', 'slug' => 'kit-communaute-moderation', 'description' => 'Traitement des signalements des membres.', 'preset' => 'forum_moderator_org'],
                 ['name' => 'Membre', 'slug' => 'kit-communaute-membre', 'description' => 'Profil de base des joueurs.', 'preset' => 'member'],
             ],
         ];

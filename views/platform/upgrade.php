@@ -112,7 +112,7 @@ $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
                             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Essentiel</p>
                             <p class="mt-2 text-xl font-black text-slate-900">Gratuit</p>
                             <ul class="mt-4 space-y-2.5 text-sm text-slate-600">
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Forum, documents, messagerie</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Documents, messagerie</li>
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Effectifs et formations de base</li>
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Quotas limités sur certains modules</li>
                             </ul>

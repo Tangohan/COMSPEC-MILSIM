@@ -37,7 +37,7 @@ final class TenantPermissionCatalog
             self::transmissionDefinitions(),
             self::operationsDomainDefinitions(),
             self::dashboardDefinitions(),
-            self::forumDefinitions(),
+            self::moderationDefinitions(),
             self::interteamDefinitions(),
             self::cooperationDefinitions(),
             self::documentsDefinitions(),
@@ -47,7 +47,6 @@ final class TenantPermissionCatalog
             self::commsDefinitions(),
             self::mediaDefinitions(),
             self::courrierDefinitions(),
-            self::legacyDefinitions(),
         );
     }
 
@@ -55,26 +54,6 @@ final class TenantPermissionCatalog
     public static function allSlugs(): array
     {
         return array_values(array_unique(array_map(static fn (array $r): string => $r['slug'], self::definitions())));
-    }
-
-    /**
-     * Slugs couverts par l’ancienne permission forum.moderate (hors catégories globales).
-     *
-     * @return list<string>
-     */
-    public static function forumModerateGranularSlugs(): array
-    {
-        return [
-            'forum.private.view',
-            'forum.topic.pin',
-            'forum.topic.lock',
-            'forum.topic.move',
-            'forum.post.edit_any',
-            'forum.post.delete_any',
-            'forum.reports.manage',
-            'forum.tags.manage',
-            'forum.announcements.publish',
-        ];
     }
 
     /**
@@ -270,26 +249,10 @@ final class TenantPermissionCatalog
     /**
      * @return list<array{slug: string, module: string, action: string|null, name: string}>
      */
-    private static function forumDefinitions(): array
+    private static function moderationDefinitions(): array
     {
         return [
-            ['slug' => 'forum.view', 'module' => 'forum', 'action' => 'view', 'name' => 'Voir le forum'],
-            ['slug' => 'forum.create_topic', 'module' => 'forum', 'action' => 'create', 'name' => 'Créer un sujet'],
-            ['slug' => 'forum.reply', 'module' => 'forum', 'action' => 'create', 'name' => 'Répondre'],
-            ['slug' => 'forum.edit_own', 'module' => 'forum', 'action' => 'update', 'name' => 'Modifier ses messages'],
-            ['slug' => 'forum.delete_own', 'module' => 'forum', 'action' => 'delete', 'name' => 'Supprimer ses messages'],
-            ['slug' => 'forum.private.view', 'module' => 'forum', 'action' => 'view', 'name' => 'Voir les sections privées'],
-            ['slug' => 'forum.topic.pin', 'module' => 'forum', 'action' => 'manage', 'name' => 'Épingler un sujet'],
-            ['slug' => 'forum.topic.lock', 'module' => 'forum', 'action' => 'moderate', 'name' => 'Verrouiller / déverrouiller un sujet'],
-            ['slug' => 'forum.topic.move', 'module' => 'forum', 'action' => 'manage', 'name' => 'Déplacer un sujet'],
-            ['slug' => 'forum.post.edit_any', 'module' => 'forum', 'action' => 'update', 'name' => 'Éditer n’importe quel message'],
-            ['slug' => 'forum.post.delete_any', 'module' => 'forum', 'action' => 'delete', 'name' => 'Supprimer n’importe quel message'],
-            ['slug' => 'forum.reports.manage', 'module' => 'forum', 'action' => 'moderate', 'name' => 'Gérer les signalements'],
-            ['slug' => 'forum.tags.manage', 'module' => 'forum', 'action' => 'manage', 'name' => 'Gérer les tags / labels'],
-            ['slug' => 'forum.categories.manage', 'module' => 'forum', 'action' => 'manage', 'name' => 'Gérer les catégories forum'],
-            ['slug' => 'forum.announcements.publish', 'module' => 'forum', 'action' => 'approve', 'name' => 'Publier des annonces globales'],
-            ['slug' => 'forum.moderate', 'module' => 'forum', 'action' => 'moderate', 'name' => 'Modérer le forum (périmètre étendu)'],
-            ['slug' => 'forum.moderate_organization', 'module' => 'forum', 'action' => 'moderate', 'name' => 'Modérer la section forum organisation'],
+            ['slug' => 'moderation.reports.manage', 'module' => 'moderation', 'action' => 'moderate', 'name' => 'Traiter les signalements des membres'],
         ];
     }
 
@@ -446,18 +409,6 @@ final class TenantPermissionCatalog
             ['slug' => 'courrier.create', 'module' => 'courrier', 'action' => 'create', 'name' => 'Créer des documents courrier'],
             ['slug' => 'courrier.validate', 'module' => 'courrier', 'action' => 'approve', 'name' => 'Valider des documents courrier'],
             ['slug' => 'courrier.archive', 'module' => 'courrier', 'action' => 'archive', 'name' => 'Archiver des documents courrier'],
-        ];
-    }
-
-    /**
-     * Anciens identifiants conservés pour compatibilité (doublons sémantiques).
-     *
-     * @return list<array{slug: string, module: string, action: string|null, name: string}>
-     */
-    private static function legacyDefinitions(): array
-    {
-        return [
-            ['slug' => 'forum.manage_categories', 'module' => 'forum', 'action' => 'manage', 'name' => 'Gérer les catégories (identifiant historique)'],
         ];
     }
 }

@@ -641,7 +641,6 @@ final class OrganizationSettingsController
         // sont gérés sur /back-office/community/inscription — on les préserve ici.
 
         $community['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
-        $community['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';
         $community['welcome_text'] = $this->clip((string) $request->input('welcome_text', ''), 500);
         $community['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
         $community['public_hero_subtitle'] = $this->clip((string) $request->input('public_hero_subtitle', ''), 600);
@@ -691,7 +690,6 @@ final class OrganizationSettingsController
 
         $existingModules = is_array($community['public_modules'] ?? null) ? $community['public_modules'] : [];
         $community['public_modules'] = [
-            'forum' => (string) $request->input('public_mod_forum', '0') === '1',
             'documents' => (string) $request->input('public_mod_documents', '0') === '1',
             'events' => (string) $request->input('public_mod_events', '0') === '1',
             'roster' => (string) $request->input('public_mod_roster', '0') === '1',

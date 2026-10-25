@@ -7,7 +7,7 @@ namespace App\Services\Portal;
 use App\Core\Gate;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\EnlistmentRepository;
-use App\Repositories\ForumReportRepository;
+use App\Repositories\ContentReportRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\PersonnelQualificationRepository;
 use App\Repositories\UserRepository;
@@ -20,7 +20,7 @@ final class BackOfficeSidebarBadgeService
 {
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
-        private ForumReportRepository $forumReportRepository,
+        private ContentReportRepository $contentReportRepository,
         private ModerationArtifactRepository $moderationArtifactRepository,
         private UserRepository $userRepository,
         private PersonalMessageUnreadCounter $personalMessageUnreadCounter,
@@ -34,7 +34,7 @@ final class BackOfficeSidebarBadgeService
     /**
      * @return array{
      *   recruitments_submitted: int,
-     *   forum_moderation_total: int,
+     *   reports_moderation_total: int,
      *   personal_inbox: int,
      *   messages_unread: int,
      *   events_rsvp_pending: int,
@@ -57,15 +57,15 @@ final class BackOfficeSidebarBadgeService
             }
         }
 
-        $forumModerationTotal = 0;
-        if ($tenantId > 0 && function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
+        $reportsModerationTotal = 0;
+        if ($tenantId > 0 && function_exists('moderation_user_can_moderate') && moderation_user_can_moderate()) {
             try {
-                $forumModerationTotal = $this->forumReportRepository->countPending($tenantId);
+                $reportsModerationTotal = $this->contentReportRepository->countPending($tenantId);
                 if ($this->moderationArtifactRepository->tableExists()) {
-                    $forumModerationTotal += $this->moderationArtifactRepository->countQueue($tenantId, null);
+                    $reportsModerationTotal += $this->moderationArtifactRepository->countQueue($tenantId, null);
                 }
             } catch (\Throwable) {
-                $forumModerationTotal = 0;
+                $reportsModerationTotal = 0;
             }
         }
 
@@ -121,7 +121,7 @@ final class BackOfficeSidebarBadgeService
 
         return [
             'recruitments_submitted' => max(0, $recruitmentsSubmitted),
-            'forum_moderation_total' => max(0, $forumModerationTotal),
+            'reports_moderation_total' => max(0, $reportsModerationTotal),
             'personal_inbox' => $personalInbox,
             'messages_unread' => max(0, $messagesUnread),
             'events_rsvp_pending' => max(0, $eventsRsvpPending),

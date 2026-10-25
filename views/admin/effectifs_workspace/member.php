@@ -507,7 +507,7 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
                 <button type="button" class="eff-btn eff-btn--ghost eff-btn--sm" data-dialog-open="eff-dlg-jobs">Modifier</button>
             <?php endif; ?>
         </div>
-        <p class="eff-card__lead">La fonction décrit le poste tenu (tireur, médecin, chef de groupe…). Ce n’est ni l’équipe ni un droit d’accès. La fonction principale apparaît sur la fiche, l’organigramme et le forum.</p>
+        <p class="eff-card__lead">La fonction décrit le poste tenu (tireur, médecin, chef de groupe…). Ce n’est ni l’équipe ni un droit d’accès. La fonction principale apparaît sur la fiche et l’organigramme.</p>
         <?php if ($jobRoles !== []): ?>
             <div class="eff-tags">
                 <?php foreach ($jobRoles as $jr): ?>

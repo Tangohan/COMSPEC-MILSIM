@@ -33,7 +33,7 @@ final class CommunityAccessProfilesTest extends TestCase
         foreach (CommunityAccessProfiles::keys() as $key) {
             $slugs = CommunityAccessProfiles::permissionSlugsFor($key);
             self::assertSame($slugs, SystemReservedPermissions::filter($slugs));
-            self::assertContains('forum.view', $slugs);
+            self::assertContains('documents.view', $slugs);
         }
         $member = CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::MEMBER);
         self::assertContains('admin.backoffice.view', $member);

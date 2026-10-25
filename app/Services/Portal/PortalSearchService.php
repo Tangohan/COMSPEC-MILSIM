@@ -7,7 +7,6 @@ namespace App\Services\Portal;
 use App\Core\Gate;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\DocumentRepository;
-use App\Repositories\ForumTopicRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Documents\DocumentAccessService;
@@ -20,7 +19,6 @@ use App\Services\Documents\DocumentAccessService;
  *   query: string,
  *   minLength: int,
  *   documents: list<SearchHit>,
- *   forum: list<SearchHit>,
  *   personnel: list<SearchHit>,
  *   events: list<SearchHit>,
  *   training: list<SearchHit>,
@@ -39,7 +37,6 @@ final class PortalSearchService
     public function __construct(
         private DocumentRepository $documentRepository,
         private DocumentAccessService $documentAccessService,
-        private ForumTopicRepository $forumTopicRepository,
         private UserRepository $userRepository,
         private ?CommunityEventRepository $communityEventRepository = null,
         private ?TrainingCourseRepository $trainingCourseRepository = null,
@@ -48,7 +45,6 @@ final class PortalSearchService
     /**
      * @param array{
      *   documents?: bool,
-     *   forum?: bool,
      *   personnel?: bool,
      *   events?: bool,
      *   training?: bool,
@@ -63,8 +59,6 @@ final class PortalSearchService
         }
 
         $wantDocs = $scopes['documents'] ?? true;
-        $wantForum = ($scopes['forum'] ?? true)
-            && (!function_exists('forum_public_nav_visible') || forum_public_nav_visible());
         $wantPersonnel = $scopes['personnel'] ?? true;
         $wantEvents = $scopes['events'] ?? true;
         $wantTraining = $scopes['training'] ?? true;
@@ -77,7 +71,6 @@ final class PortalSearchService
                 'query' => $raw,
                 'minLength' => self::MIN_QUERY_LEN,
                 'documents' => [],
-                'forum' => [],
                 'personnel' => [],
                 'events' => [],
                 'training' => [],
@@ -122,21 +115,6 @@ final class PortalSearchService
             }
         }
 
-        $forum = [];
-        if ($wantForum) {
-            $topics = $this->forumTopicRepository->search($tenantId, $raw, self::PER_SCOPE);
-            foreach ($topics as $t) {
-                $forum[] = [
-                    'id' => (int) ($t['id'] ?? 0),
-                    'title' => (string) ($t['title'] ?? 'Sujet'),
-                    'category' => (string) ($t['category_name'] ?? ''),
-                    'author' => (string) ($t['author_name'] ?? ''),
-                    'href' => url('forum/topic/' . (int) ($t['id'] ?? 0)),
-                    'updated_at' => $t['updated_at'] ?? null,
-                ];
-            }
-        }
-
         $personnel = [];
         if ($wantPersonnel && $gate->allows('personnel.profile.view')) {
             $users = $this->userRepository->searchForPortal($tenantId, $raw, self::PER_SCOPE);
@@ -173,7 +151,6 @@ final class PortalSearchService
             'query' => $raw,
             'minLength' => self::MIN_QUERY_LEN,
             'documents' => $documents,
-            'forum' => $forum,
             'personnel' => $personnel,
             'events' => $events,
             'training' => $training,
@@ -258,12 +235,6 @@ final class PortalSearchService
             ['title' => 'Manœuvres', 'subtitle' => 'Présences et pointage', 'href' => url('manoeuvres'), 'keywords' => 'manoeuvres manœuvre manoeuvres pointage présence calendrier'],
             ['title' => 'Boîte de réception', 'subtitle' => 'Messages et actions', 'href' => url('boite-reception'), 'keywords' => 'boîte reception inbox messages'],
             ['title' => 'Centre d’actions', 'subtitle' => 'Éléments à traiter', 'href' => url('centre-actions'), 'keywords' => 'actions centre'],
-            (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
-                ? ['title' => 'Nouveau sujet forum', 'subtitle' => 'Démarrer une discussion', 'href' => url('forum/new-topic'), 'keywords' => 'forum sujet nouveau publier']
-                : null,
-            (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
-                ? ['title' => 'Forum', 'subtitle' => 'Briefings et discussions', 'href' => url('forum'), 'keywords' => 'forum briefing']
-                : null,
             ['title' => 'Assistant', 'subtitle' => 'Aide guidée', 'href' => url('assistant'), 'keywords' => 'assistant aide'],
             ['title' => 'Recherche', 'subtitle' => 'Parcourir le portail', 'href' => url('search'), 'keywords' => 'recherche search'],
             ['title' => 'Formations', 'subtitle' => 'Catalogue des parcours', 'href' => url('formations'), 'keywords' => 'formations catalogue'],

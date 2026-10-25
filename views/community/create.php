@@ -321,7 +321,7 @@ $guideUrl = url('communities/create/guide');
                     <aside class="cc-tip" aria-label="Conseils pour cette étape">
                         <p class="cc-tip__title">À retenir</p>
                         <ul>
-                            <li><strong>Complet</strong> convient à la plupart des unités MilSim : forum, formations, recrutement, effectifs, opérations et carte.</li>
+                            <li><strong>Complet</strong> convient à la plupart des unités MilSim : formations, recrutement, effectifs, opérations et carte.</li>
                             <li><strong>Bureau des effectifs</strong> et <strong>Carte ATAK</strong> masquent des modules pour garder une interface simple.</li>
                             <li>Le type se change plus tard : les données déjà saisies ne sont jamais supprimées, seulement masquées.</li>
                             <li>Les membres arrivent au niveau d’accès <strong>Membre</strong> : ils utilisent les outils sans rien administrer. Vous restez <strong>Gestionnaire</strong>.</li>
@@ -366,7 +366,7 @@ $guideUrl = url('communities/create/guide');
                             <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
                                 <li>Vos joueurs créent un compte par invitation pour relier leur téléphone en jeu.</li>
                                 <li><strong>Recrutement uniquement sur Discord</strong> : pas de formulaire de candidature sur le site, le bouton de votre page publique ouvre votre serveur.</li>
-                                <li>Le menu de gestion ne garde que la carte, les terminaux, le matériel, les membres et le forum.</li>
+                                <li>Le menu de gestion ne garde que la carte, les terminaux, le matériel et les membres.</li>
                             </ul>
                         </div>
                     </section>
@@ -391,19 +391,19 @@ $guideUrl = url('communities/create/guide');
 
                     <section class="cc-section">
                         <h2 class="cc-section__title">Rôles et droits</h2>
-                        <p class="cc-section__text">Ces modèles créent les profils de départ de votre organisation (commandement, ressources humaines, instruction, membres, invités et modération du forum). Vous pourrez les ajuster à tout moment après la création.</p>
+                        <p class="cc-section__text">Ces modèles créent les profils de départ de votre organisation (commandement, ressources humaines, instruction, membres, invités et modération). Vous pourrez les ajuster à tout moment après la création.</p>
                         <div class="mt-5 space-y-3">
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_roles_template" value="quick" class="sr-only" checked>
                                 <span class="cc-choice__eyebrow">Recommandé</span>
                                 <span class="cc-choice__title">Démarrage rapide</span>
-                                <span class="cc-choice__text">Convient à la plupart des unités. Les droits sont équilibrés dès le départ&nbsp;: le modérateur du forum peut gérer les échanges courants, sans étendre sa portée à tout l’espace forum de l’organisation.</span>
+                                <span class="cc-choice__text">Convient à la plupart des unités. Les droits sont équilibrés dès le départ.</span>
                             </label>
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_roles_template" value="standard" class="sr-only">
                                 <span class="cc-choice__eyebrow">Alternative</span>
                                 <span class="cc-choice__title">Modération élargie</span>
-                                <span class="cc-choice__text">Même profils de base, avec un droit supplémentaire&nbsp;: le modérateur du forum peut aussi intervenir sur l’espace forum de l’organisation (annonces, sections réservées, supervision plus large).</span>
+                                <span class="cc-choice__text">Même profils de base, avec une modération plus large des signalements des membres.</span>
                             </label>
                         </div>
 
@@ -411,25 +411,24 @@ $guideUrl = url('communities/create/guide');
                             <summary class="cursor-pointer text-sm font-bold text-slate-800">Comparer les rôles inclus</summary>
                             <p class="mt-3 text-xs leading-relaxed text-slate-600">Le compte fondateur reçoit le rôle «&nbsp;Fondateur&nbsp;». Les nouveaux membres reçoivent «&nbsp;Membre&nbsp;» une fois acceptés ; les visiteurs connectés non membres sont «&nbsp;Invités&nbsp;».</p>
                             <p class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs leading-relaxed text-emerald-900 hidden" data-cc-type-note="effectifs"><strong>Bureau des effectifs :</strong> ces rôles ne concernent que les personnes qui se connectent (état-major, RH). Les membres dont vous tenez la fiche sans compte n’ont aucun rôle à gérer, et le recrutement se fait sur Discord, pas sur le site.</p>
-                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Aperçu des accès principaux. La seule différence entre les deux modèles concerne le rôle de modération du forum.</p>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Aperçu des accès principaux. La seule différence entre les deux modèles concerne le rôle de modération.</p>
                             <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
                                 <table class="min-w-full text-left text-xs">
                                     <thead>
                                         <tr class="border-b border-slate-200 bg-slate-50">
                                             <th class="px-3 py-2 font-black text-slate-600">Rôle</th>
-                                            <th class="px-3 py-2 font-black text-slate-600">Forum</th>
                                             <th class="px-3 py-2 font-black text-slate-600">Documents et formation</th>
                                             <th class="px-3 py-2 font-black text-slate-600">Particularité</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 text-slate-700">
-                                        <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Pilotage de l’organisation</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Encadrement</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Ressources humaines</td><td class="px-3 py-2">Lecture et sujets</td><td class="px-3 py-2">Consultation</td><td class="px-3 py-2">Effectifs et recrutement</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Participation</td><td class="px-3 py-2">Gestion des formations</td><td class="px-3 py-2">Instruction</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Participation</td><td class="px-3 py-2">Selon affectation</td><td class="px-3 py-2">Profil de base</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Invité</td><td class="px-3 py-2">Lecture seule</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2">Accès limité</td></tr>
-                                        <tr class="bg-emerald-50/50"><td class="px-3 py-2 font-semibold">Modérateur forum</td><td class="px-3 py-2">Modération des échanges</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2 font-semibold text-emerald-800">Portée élargie avec le modèle «&nbsp;Modération élargie&nbsp;»</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Pilotage de l’organisation</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Encadrement</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Ressources humaines</td><td class="px-3 py-2">Consultation</td><td class="px-3 py-2">Effectifs et recrutement</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Gestion des formations</td><td class="px-3 py-2">Instruction</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Selon affectation</td><td class="px-3 py-2">Profil de base</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Invité</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2">Accès limité</td></tr>
+                                        <tr class="bg-emerald-50/50"><td class="px-3 py-2 font-semibold">Modérateur</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2 font-semibold text-emerald-800">Portée élargie avec le modèle «&nbsp;Modération élargie&nbsp;»</td></tr>
                                     </tbody>
                                 </table>
                             </div>

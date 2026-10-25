@@ -27,7 +27,7 @@ final class TenantBootstrapService
     ) {}
 
     /**
-     * Crée une communauté (tenant), seeds forum/documents, duplique le créateur comme propriétaire communauté (rôle site séparé).
+     * Crée une communauté (tenant), seeds documents, duplique le créateur comme propriétaire communauté (rôle site séparé).
      *
      * @return array{tenant_id: int, user_id: int}
      */
@@ -68,11 +68,9 @@ final class TenantBootstrapService
 
             $gradeId = $this->resolveDefaultGradeIdForNewCommunity($pdo, $tenantId, $gradeSystemCode, $founderGradeId);
 
-            $seedConfig = TenantTypeConfig::getSeedConfig($tenantType);
 
             if ($tenantType === TenantTypeConfig::TYPE_FULL) {
-                TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-                TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+                TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
                 TenantSeedHelper::seedDocumentsEquipment($pdo, $tenantId);
                 TenantSeedHelper::ensureSystemAdminPermissions($pdo, $tenantId);
                 TenantSeedHelper::ensureTenantPermissionCatalog($pdo, $tenantId);
@@ -94,10 +92,7 @@ final class TenantBootstrapService
                 ))->ensureDefaultsForTenant($pdo, $tenantId);
             } else {
                 $this->seedSimplifiedTenant($pdo, $tenantId, $tenantType, $communityOwnerRoleId);
-                if (!empty($seedConfig['seed_forum'])) {
-                    TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-                    TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
-                }
+                TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
             }
 
             $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $communityOwnerRoleId, $gradeId);

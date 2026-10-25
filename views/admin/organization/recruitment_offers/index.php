@@ -163,17 +163,6 @@ require base_path('views/partials/ath_table.php');
         </div>
         <form method="post" action="<?= $h($baseUrl . '/' . $draftId . '/publish') ?>" style="margin-top:12px;">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-            <span class="ath-field__label">Diffusion à la publication</span>
-            <div class="ath-check-grid" style="margin-top:7px;">
-                <label class="ath-check">
-                    <input type="checkbox" name="forum_annonce_generale" value="1">
-                    <span>Annonce dans le forum général — visible par toute la communauté</span>
-                </label>
-                <label class="ath-check">
-                    <input type="checkbox" name="forum_annonce_organisation" value="1">
-                    <span>Annonce dans l’espace de l’organisation — membres et encadrement</span>
-                </label>
-            </div>
             <div class="ath-item__actions">
                 <button type="submit" class="ath-btn ath-btn--solid">Publier l’offre</button>
                 <a href="<?= $h($baseUrl . '/' . $draftId . '/edit') ?>" class="ath-btn">Relire avant publication</a>
