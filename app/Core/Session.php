@@ -8,7 +8,32 @@ class Session
 {
     private static bool $started = false;
 
-    public static function start(): void
+    /**
+     * Routes GET en lecture seule, sondées en tâche de fond : la session y est lue puis
+     * fermée tout de suite. Le gestionnaire « files » pose un verrou
+     * exclusif sur le fichier de session jusqu'à la fin du script ; sans cela, chaque
+     * sondage attendait la fin de la page en cours du même utilisateur (et inversement).
+     * N'ajouter ici que des routes qui n'écrivent jamais en session.
+     *
+     * @var list<string>
+     */
+    private const READ_ONLY_GET_PATHS = [
+        '/api/system/version',
+    ];
+
+    /**
+     * La requête peut-elle se contenter d'une session en lecture seule ?
+     */
+    public static function isReadOnlyRequest(string $method, string $path): bool
+    {
+        return strtoupper($method) === 'GET' && in_array($path, self::READ_ONLY_GET_PATHS, true);
+    }
+
+    /**
+     * @param bool $readOnly lit la session puis libère aussitôt le verrou : les écritures
+     *                       dans `$_SESSION` faites ensuite ne sont pas enregistrées.
+     */
+    public static function start(bool $readOnly = false): void
     {
         if (self::$started) {
             return;
@@ -48,6 +73,11 @@ class Session
             'samesite' => 'Lax',
         ]);
         session_start();
+        if ($readOnly) {
+            // Fermeture immédiate plutôt que `read_and_close` : session_write_close() rafraîchit
+            // la date du fichier (lazy_write), le sondage garde donc la session en vie comme avant.
+            session_write_close();
+        }
         self::$started = true;
     }
 
@@ -152,7 +182,10 @@ class Session
     public static function destroy(): void
     {
         if (self::$started) {
-            session_destroy();
+            // Session ouverte en lecture seule : déjà fermée, rien à détruire côté serveur.
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_destroy();
+            }
             self::$started = false;
         }
     }
