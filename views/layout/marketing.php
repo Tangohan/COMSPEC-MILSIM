@@ -51,6 +51,8 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'sse' => __('site.sse'),
         'atak-natif' => __('site.atak_native'),
         'traduire-atak' => __('site.atakt_crumb'),
+        'contribuer' => __('site.contrib_crumb'),
+        'traduire-site' => __('site.sitetr_crumb'),
         default => __('site.about'),
     };
     $crumbPath = match ($marketingActive) {
@@ -59,6 +61,8 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'sse' => '/sse',
         'atak-natif' => '/atak-natif',
         'traduire-atak' => '/traduire-atak',
+        'contribuer' => '/contribuer',
+        'traduire-site' => '/traduire-site',
         default => '/a-propos',
     };
     $siteRoot = rtrim($base, '/');
@@ -137,6 +141,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
                 <a href="<?= htmlspecialchars(url('atak-natif'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.atak_native'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="<?= htmlspecialchars(url('contribuer'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contrib_crumb'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php
                 $legal_link_class = 'text-white/40 transition hover:text-emerald-400 font-medium';
                 require base_path('views/partials/legal_site_links.php');

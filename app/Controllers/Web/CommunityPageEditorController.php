@@ -109,7 +109,7 @@ final class CommunityPageEditorController
             'pbBlock' => $block,
             'pbEditing' => true,
         ])->body();
-        if (class_exists(\App\Support\HtmlTranslator::class) && function_exists('html_lang') && html_lang() === 'en') {
+        if (class_exists(\App\Support\HtmlTranslator::class) && function_exists('html_lang') && html_lang() !== 'fr') {
             $html = \App\Support\HtmlTranslator::translate($html);
         }
 

@@ -316,7 +316,7 @@ final class SystemStorageController
     {
         $fh = fopen('php://temp', 'w+');
         fwrite($fh, "\xEF\xBB\xBF");
-        fputcsv($fh, array_column($columns, 'name'), ';');
+        fputcsv($fh, array_column($columns, 'name'), ';', '"', '\\');
         foreach ($rows as $r) {
             $line = [];
             foreach ($columns as $c) {
@@ -324,7 +324,7 @@ final class SystemStorageController
                 // Protection tableur : une cellule qui commence par = + - @ n’est pas lue comme une formule.
                 $line[] = preg_match('/^[=+\-@]/', $v) === 1 ? "'" . $v : $v;
             }
-            fputcsv($fh, $line, ';');
+            fputcsv($fh, $line, ';', '"', '\\');
         }
         rewind($fh);
         $body = (string) stream_get_contents($fh);

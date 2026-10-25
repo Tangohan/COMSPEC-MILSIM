@@ -261,7 +261,7 @@ final class AdminAtakOperatorsController
             'Steam',
             'Dernière mise à jour',
             'Carte',
-        ], $sep);
+        ], $sep, '"', '\\');
 
         foreach ($bundle['rows'] as $row) {
             fputcsv($fh, [
@@ -277,7 +277,7 @@ final class AdminAtakOperatorsController
                 (string) ($row['steam_id'] ?? ''),
                 (string) ($row['updated_at_label'] ?? ''),
                 (string) ($row['map_label'] ?? ''),
-            ], $sep);
+            ], $sep, '"', '\\');
         }
         rewind($fh);
         $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');

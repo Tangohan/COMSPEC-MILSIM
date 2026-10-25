@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 // Bandeau « votre formule se termine » pour les gestionnaires de la communauté (propriétaire, fondateurs,
-// administrateurs) : N jours avant la fin d'un essai fondateur ou d'une formule offerte, puis pendant la
-// période de grâce si elle est activée. Textes FR/EN écrits dans App\Support\PlanAccessWindow (translate="no").
+// administrateurs) : N jours avant la fin d'un essai fondateur, d'une formule offerte ou d'une période payée
+// par PayPal, puis pendant la période de grâce si elle est activée, et « formule expirée » après une période payée. Textes FR/EN écrits dans App\Support\PlanAccessWindow (translate="no").
 
 use App\Core\Session;
 use App\Support\PlanAccessWindow;
@@ -50,7 +50,12 @@ if (!is_array($planEndCache) || (int) ($planEndCache['at'] ?? 0) < time() - 600)
 
                     return is_array($f) && !empty($f['atak']);
                 };
-                $planEndSoon = PlanAccessWindow::endingSoon($planEndTenant, $planEndCfg['warning_days']);
+                $planEndPaidDays = PlanAccessWindow::paidReminderDays($planEndCfg['warning_days']);
+                $planEndSoon = PlanAccessWindow::endingSoon($planEndTenant, max($planEndPaidDays, $planEndCfg['warning_days']));
+                if ($planEndSoon !== null
+                    && $planEndSoon['days_left'] > ($planEndSoon['kind'] === 'paid' ? $planEndPaidDays : $planEndCfg['warning_days'])) {
+                    $planEndSoon = null;
+                }
                 if ($planEndSoon !== null) {
                     $planEndCache['banner'] = [
                         'mode' => 'ending',
@@ -59,16 +64,23 @@ if (!is_array($planEndCache) || (int) ($planEndCache['at'] ?? 0) < time() - 600)
                         'kind' => $planEndSoon['kind'],
                         'ends_at' => $planEndSoon['ends_at'],
                         'atak_lost' => $planEndHasAtak($planEndSoon['plan_slug'])
-                            && !$planEndHasAtak((string) ($planEndTenant['plan_slug'] ?? 'free')),
+                            && !$planEndHasAtak($planEndSoon['kind'] === 'paid' ? 'free' : (string) ($planEndTenant['plan_slug'] ?? 'free')),
                         'grace_days' => $planEndGraceDays,
                     ];
                 } else {
                     $planEndGrace = PlanAccessWindow::grace($planEndTenant, $planEndGraceDays);
+                    $planEndExpired = PlanAccessWindow::paidExpired($planEndTenant);
                     if ($planEndGrace !== null) {
                         $planEndCache['banner'] = [
                             'mode' => 'grace',
                             'plan_name' => $planEndName($planEndGrace['plan_slug']),
                             'grace_ends_at' => $planEndGrace['grace_ends_at'],
+                        ];
+                    } elseif ($planEndExpired !== null) {
+                        $planEndCache['banner'] = [
+                            'mode' => 'expired',
+                            'plan_name' => $planEndName($planEndExpired['plan_slug']),
+                            'ended_at' => $planEndExpired['ended_at'],
                         ];
                     }
                 }
@@ -88,6 +100,10 @@ if ($planEndBanner === null) {
 $planEndLang = PlanGift::locale(function_exists('locale') ? (string) locale() : 'fr');
 if ($planEndBanner['mode'] === 'grace') {
     $planEndCopy = PlanAccessWindow::graceCopy($planEndLang, (string) $planEndBanner['plan_name'], (string) $planEndBanner['grace_ends_at']);
+    $planEndText = $planEndCopy['text'];
+    $planEndCta = $planEndCopy['cta'];
+} elseif ($planEndBanner['mode'] === 'expired') {
+    $planEndCopy = PlanAccessWindow::paidExpiredCopy($planEndLang, (string) $planEndBanner['plan_name'], (string) $planEndBanner['ended_at']);
     $planEndText = $planEndCopy['text'];
     $planEndCta = $planEndCopy['cta'];
 } else {

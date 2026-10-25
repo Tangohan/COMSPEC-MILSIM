@@ -22,7 +22,7 @@ final class PlatformAdminSkinAssetTest extends TestCase
         // Chaque page plateforme écrite en utilitaires marque son en-tête pour le bandeau commun.
         // Les pages refondues sur la coque « .pa » (bandeau pa-hero) en sont exemptées : le skin
         // ne s'applique qu'aux enfants :not(.pa).
-        $paShell = ['dashboard', 'discord_showcase', 'mail_traffic', 'name_filter', 'plan_gifts', 'platform_review_index', 'registry_pins', 'tenant_recovery', 'tenant_removal', 'tenants_index', 'tenants_plan_form', 'users', 'ux_feedback_index'];
+        $paShell = ['contributors', 'dashboard', 'discord_showcase', 'mail_traffic', 'name_filter', 'plan_gifts', 'platform_review_index', 'registry_pins', 'tenant_recovery', 'tenant_removal', 'tenants_index', 'tenants_plan_form', 'users', 'ux_feedback_index'];
         foreach (glob($root . '/views/admin/system/*.php') ?: [] as $file) {
             $view = (string) file_get_contents($file);
             if (!str_contains($view, '<h1')) {

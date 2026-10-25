@@ -348,7 +348,19 @@ if (!function_exists('html_lang')) {
     /** Valeur de l’attribut HTML `lang`. */
     function html_lang(): string
     {
-        return locale() === 'en' ? 'en' : 'fr';
+        return locale() === 'en' ? site_lang() : 'fr';
+    }
+}
+
+if (!function_exists('site_lang')) {
+    /**
+     * Langue affichée : fr, en, ou le code d'une langue publiée par la communauté (locale() vaut alors « en »).
+     */
+    function site_lang(): string
+    {
+        $lang = $GLOBALS['__app_site_lang'] ?? null;
+
+        return is_string($lang) && $lang !== '' ? $lang : locale();
     }
 }
 

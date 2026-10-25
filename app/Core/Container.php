@@ -612,6 +612,7 @@ class Container
             ),
             \App\Services\Cron\Jobs\PhotoCompressCronJob::class => new \App\Services\Cron\Jobs\PhotoCompressCronJob(),
             \App\Services\Cron\Jobs\PlanEndWarningCronJob::class => new \App\Services\Cron\Jobs\PlanEndWarningCronJob(),
+            \App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class => new \App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob(),
             \App\Services\Email\MailBudgetGate::class => new \App\Services\Email\MailBudgetGate(
                 self::get(\App\Repositories\EmailDeliveryRepository::class)
             ),
@@ -682,6 +683,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PhotoCompressCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlanEndWarningCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                 ],
@@ -2594,6 +2596,10 @@ class Container
             \App\Services\Alerts\ProbationOverdueAlertsBuilder::class => new \App\Services\Alerts\ProbationOverdueAlertsBuilder(
                 self::get(\App\Repositories\ProbationOversightRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
+            ),
+            \App\Services\Alerts\PlanEndAlertsBuilder::class => new \App\Services\Alerts\PlanEndAlertsBuilder(
+                self::get(\App\Repositories\TenantRepository::class),
+                self::get(\App\Repositories\SubscriptionPlanRepository::class),
             ),
             \App\Services\Alerts\AlertPresentationService::class => new \App\Services\Alerts\AlertPresentationService(
                 self::get(\App\Repositories\PlatformAlertRepository::class),

@@ -89,7 +89,7 @@ class AtakTacticalReportRepository
             'summary' => $data['summary'] ?? null,
             'details' => $data['details'] ?? null,
             'remarks' => $data['remarks'] ?? null,
-            'has_attachments' => $data['has_attachments'] ?? false,
+            'has_attachments' => self::flag($data['has_attachments'] ?? null),
             'status' => $data['status'] ?? 'SUBMITTED',
             'visibility' => $data['visibility'] ?? 'ALL',
             'distributed_to' => isset($data['distributed_to']) ? json_encode($data['distributed_to']) : null,
@@ -101,6 +101,19 @@ class AtakTacticalReportRepository
         }
 
         return (int) $this->db->insert($sql, $params);
+    }
+
+    /**
+     * Colonne TINYINT : PDO envoie `false` sous forme de chaîne vide, que MariaDB strict refuse.
+     * Le mod (2.0.93) peut aussi envoyer "", "true", "0"... On ramène tout à 0 ou 1.
+     */
+    public static function flag(mixed $value): int
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === true || (is_numeric($value) && (int) $value > 0) ? 1 : 0;
     }
 
     /**

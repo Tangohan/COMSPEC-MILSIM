@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Traduction anglaise des pages à l'affichage.
+ * Traduction anglaise des pages à l'affichage (et des langues de la communauté, posées sur l'anglais).
  *
  * Les vues restent écrites en français. Quand la langue du visiteur est l'anglais, Response::view passe la page
  * rendue ici : chaque texte entre balises et les attributs title, placeholder, aria-label, alt, data-confirm et value
@@ -148,6 +148,16 @@ final class HtmlTranslator
                 return $html;
             }
             $src = (function_exists('url') ? url('assets/js/' . $file) : '/assets/js/' . $file) . '?v=' . (int) filemtime($path);
+            if ($file === 'i18n_dom.js') {
+                // Dictionnaire de la langue de la communauté, posé sur l'anglais avant le traducteur (scripts différés :
+                // exécutés dans l'ordre).
+                $lang = function_exists('site_lang') ? site_lang() : 'en';
+                $v = \App\Services\I18n\CommunityLanguages::version($lang);
+                if ($v > 0) {
+                    $dict = (function_exists('url') ? url('traduire-site/dico/' . $lang . '.js') : '/traduire-site/dico/' . $lang . '.js') . '?v=' . $v;
+                    $tags .= '<script src="' . htmlspecialchars($dict, ENT_QUOTES, 'UTF-8') . '" defer></script>';
+                }
+            }
             $tags .= '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" defer></script>';
         }
 
@@ -420,8 +430,18 @@ final class HtmlTranslator
         if (!is_file($path)) {
             return self::useDictionary([]);
         }
-        // Dictionnaire déjà découpé (textes exacts / modèles %1) gardé dans storage/cache : sans lui, chaque page
-        // anglaise relit et retrie les ~40 000 entrées. Reconstruit dès que site_auto.php change.
+        // Langue de la communauté (ou corrections de l'anglais, /traduire-site) : ses textes validés passent avant
+        // l'anglais ; un texte qu'elle n'a pas traduit reste en anglais.
+        $lang = function_exists('site_lang') ? site_lang() : 'en';
+        $over = $lang !== 'fr' ? \App\Services\I18n\CommunityLanguages::dictionary($lang)['t'] : [];
+        if ($over !== []) {
+            /** @var mixed $data */
+            $data = require $path;
+
+            return self::useDictionary($over + (is_array($data) ? $data : []));
+        }
+        // Anglais seul : dictionnaire déjà découpé (textes exacts / modèles %1) gardé dans storage/cache. Sans lui,
+        // chaque page anglaise relit et retrie les ~40 000 entrées. Reconstruit dès que site_auto.php change.
         $stamp = (int) filemtime($path) . ':' . (int) filesize($path);
         $cache = base_path('storage/cache/html_translator_en.php');
         if (is_file($cache)) {

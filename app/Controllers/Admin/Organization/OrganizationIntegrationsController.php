@@ -15,6 +15,7 @@ use App\Services\Auth\AuthService;
 use App\Services\Email\TenantMailSender;
 use App\Services\Integrations\DiscordEventRelayService;
 use App\Services\Integrations\DiscordWebhookService;
+use App\Services\Integrations\DiscordLinkedRoles;
 use App\Services\Platform\PlatformIntegrationSettings;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Sse\SseTransmissionDiscordService;
@@ -71,6 +72,7 @@ final class OrganizationIntegrationsController
             'platform_mail_sender' => $platformAdmin ? $mailer->state(TenantMailSender::PLATFORM) : null,
             'platform_env_mailer' => $platformAdmin ? strtolower(trim((string) \env('MAIL_MAILER', 'file'))) : '',
             'platform_discord' => $platformAdmin ? (new PlatformIntegrationSettings())->state() : [],
+            'platform_linked_roles' => $platformAdmin ? (new DiscordLinkedRoles())->adminState() : null,
         ]);
     }
 
@@ -432,6 +434,22 @@ final class OrganizationIntegrationsController
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(url('back-office/integrations') . '#plateforme');
+    }
+
+    public function savePlatformLinkedRoles(Request $request, array $params = []): Response
+    {
+        $denied = $this->guardPlatform($request);
+        if ($denied !== null) {
+            return $denied;
+        }
+        $result = (new DiscordLinkedRoles())->saveConfig(
+            (string) $request->input('linked_roles_client_id', ''),
+            (string) $request->input('linked_roles_client_secret', ''),
+            (string) $request->input('linked_roles_clear_secret', '') === '1'
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#plateforme-roles-lies');
     }
 
     public function testPlatformDiscord(Request $request, array $params = []): Response

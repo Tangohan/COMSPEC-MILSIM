@@ -11,13 +11,30 @@ final class Translator
 {
     private string $locale = 'fr';
 
+    /** Langue dont le dictionnaire de la communauté passe avant l'anglais (« es », ou « en » : corrections). */
+    private string $overlay = '';
+
     /** @var array<string, array<string, mixed>> */
     private array $loaded = [];
 
     public function setLocale(string $locale): void
     {
-        $this->locale = LocaleService::normalize($locale);
+        [$this->locale, $this->overlay] = self::split(LocaleService::normalize($locale));
         $this->loaded = [];
+    }
+
+    /**
+     * Locale des catalogues et langue de la communauté : fr → [fr, ''], en → [en, en], es → [en, es].
+     *
+     * @return array{0: string, 1: string}
+     */
+    private static function split(string $locale): array
+    {
+        if ($locale === 'fr') {
+            return ['fr', ''];
+        }
+
+        return ['en', $locale];
     }
 
     public function getLocale(): string
@@ -30,7 +47,7 @@ final class Translator
      */
     public function get(string $key, array $replace = [], ?string $locale = null): string
     {
-        $locale = $locale !== null ? LocaleService::normalize($locale) : $this->locale;
+        [$locale, $overlay] = $locale !== null ? self::split(LocaleService::normalize($locale)) : [$this->locale, $this->overlay];
         $dot = strpos($key, '.');
         if ($dot === false) {
             $group = 'common';
@@ -40,7 +57,11 @@ final class Translator
             $item = substr($key, $dot + 1);
         }
 
-        $value = $this->lookup($locale, $group, $item);
+        $value = null;
+        if ($overlay !== '') {
+            $value = CommunityLanguages::dictionary($overlay)['k'][$group . '.' . $item] ?? null;
+        }
+        $value ??= $this->lookup($locale, $group, $item);
         if ($value === null && $locale !== 'fr') {
             $value = $this->lookup('fr', $group, $item);
         }

@@ -16,7 +16,9 @@ Sources/addons/main/i18n/en.txt : un tableau [["français", "anglais"], ...] lu 
                                      localisation/README.md) : lignes ["français", "traduction", "anglais"], traductions
                                      gardées, phrases nouvelles ajoutées vides, phrases disparues retirées ; écrit aussi
                                      localisation/template/xx.txt (et categories.json, tools/i18n_categories.py)
-                                     quand F est omis
+                                     quand F est omis, avec template/stringtable.json (clés des stringtables) ;
+                                     --game Spanish : écrit aussi stringtable.xml à côté de F (noms d'objets et de
+                                     modules Eden/Zeus dans la langue du jeu)
   python3 tools/i18n.py fr           assemble i18n/fr.txt (réglage Français) : textes écrits en anglais dans le code
                                      (tools/i18n_fr_source.tsv, anglais<TAB>français) + anglais -> français des stringtables
                                      (ATAK natif, SSE, Overwatch connect : noms d'objets et textes lus par getText)
@@ -282,6 +284,81 @@ def load_community(path):
     return out
 
 
+# Stringtables des trois addons (noms d'objets, modules Eden/Zeus : langue du jeu, pas fn_tr). Un mod de traduction
+# communautaire peut livrer sa propre stringtable.xml avec ces clés et la colonne de sa langue (community F --game).
+STRINGTABLES = [("atak", os.path.join(ROOT, "Sources", "addons", "main", "stringtable.xml")),
+                ("sse", os.path.join(os.path.dirname(ROOT), "@COMSPEC_SSE", "addons", "main", "stringtable.xml")),
+                ("connect", os.path.join(os.path.dirname(ROOT), "UptoDate", "Sources", "comspec-overwatch-addons", "connect", "stringtable.xml"))]
+# Colonnes de stringtable d'Arma 3 (valeurs de la commande language).
+GAME_COLUMNS = ["English", "French", "German", "Italian", "Spanish", "Czech", "Polish", "Russian", "Portuguese",
+                "Turkish", "Japanese", "Korean", "Chinese", "Chinesesimp"]
+
+
+def stringtable_rows():
+    """[(clé $STR_, texte original, anglais, addon), ...] des trois stringtables."""
+    import html as _h
+    rows = []
+    for pkg, path in STRINGTABLES:
+        if not os.path.exists(path):
+            continue
+        for m in re.finditer(r'<Key ID="([^"]+)">\s*<Original>(.*?)</Original>\s*(?:<English>(.*?)</English>)?', open(path, encoding="utf-8").read(), re.S):
+            orig = _h.unescape(m.group(2))
+            rows.append((m.group(1), orig, _h.unescape(m.group(3)) if m.group(3) else orig, pkg))
+    return rows
+
+
+def community_pairs():
+    """Phrases du modèle communautaire : dictionnaire anglais (textes écrits en français dans le code), puis textes
+    écrits en anglais dans le code (tools/i18n_fr_source.tsv : clé = le texte anglais lui-même, que fn_tr cherche tel
+    quel dans le dictionnaire de la langue), puis textes des stringtables absents du dictionnaire."""
+    pairs = load_dict()
+    seen = {fr for fr, _ in pairs}
+    src = os.path.join(ROOT, "tools", "i18n_fr_source.tsv")
+    for line in open(src, encoding="utf-8"):
+        line = line.rstrip("\n")
+        if line.startswith("#") or "\t" not in line:
+            continue
+        en = line.split("\t", 1)[0]
+        if en.strip() and en not in seen:
+            seen.add(en)
+            pairs.append((en, en))
+    for _, orig, en, _ in stringtable_rows():
+        if WORD.search(orig) and orig not in seen:
+            seen.add(orig)
+            pairs.append((orig, en))
+    return pairs
+
+
+def save_stringtable_keys(path):
+    """localisation/template/stringtable.json : {"version": 1, "keys": [[clé, texte original, anglais, addon], ...]}, lu par le
+    site (/traduire-atak) pour ajouter la stringtable.xml de la langue au mod téléchargé."""
+    rows = [[k, orig, en, pkg] for k, orig, en, pkg in stringtable_rows() if WORD.search(orig)]
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"version": 1, "keys": rows}, f, ensure_ascii=False, separators=(",", ":"))
+        f.write("\n")
+    return len(rows)
+
+
+def write_lang_stringtable(path, code, game, translations):
+    """stringtable.xml d'un mod de traduction : pour chaque clé dont le texte original est traduit, l'anglais d'origine
+    et la colonne de la langue du jeu (Spanish, German…). Chargée après COMSPEC (requiredAddons), elle remplace les
+    noms d'objets et de modules Eden/Zeus quand Arma est dans cette langue."""
+    import html as _h
+    esc = lambda t: _h.escape(t, quote=False)
+    rows = []
+    for k, orig, en, _ in stringtable_rows():
+        tr = translations.get(orig, "")
+        if not tr:
+            continue
+        rows.append(f'        <Key ID="{k}">\n            <Original>{esc(orig)}</Original>\n            <English>{esc(en)}</English>\n'
+                    f'            <{game}>{esc(tr)}</{game}>\n        </Key>')
+    xml = ('<?xml version="1.0" encoding="utf-8"?>\n<Project name="comspec_atak_lang_' + code + '">\n    <Package name="main">\n'
+           + "\n".join(rows) + '\n    </Package>\n</Project>\n')
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(xml)
+    return len(rows)
+
+
 def save_community(path, pairs):
     """Écrit [["français", "traduction", "anglais"], ...] dans l'ordre du dictionnaire anglais ; renvoie (total, traduites)."""
     old = load_community(path)
@@ -469,13 +546,29 @@ def main():
     elif cmd == "fr":
         build_fr()
     elif cmd == "community":
-        pairs = load_dict()
+        game = ""
+        if "--game" in sys.argv:
+            i = sys.argv.index("--game")
+            game = sys.argv[i + 1] if i + 1 < len(sys.argv) else ""
+            del sys.argv[i:i + 2]
+            match = [c for c in GAME_COLUMNS if c.lower() == game.lower()]
+            if not match or match[0] in ("English", "French"):
+                sys.exit("--game : une langue d'Arma parmi " + ", ".join(GAME_COLUMNS[2:]))
+            game = match[0]
+        pairs = community_pairs()
         path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "localisation", "template", "xx.txt")
         if len(sys.argv) <= 2 and os.path.exists(path):
             os.remove(path)
         total, done = save_community(path, pairs)
         print(f"{path} : {done}/{total} phrases traduites ({total - done} restent en anglais)")
+        if game:
+            code = os.path.splitext(os.path.basename(path))[0]
+            st = os.path.join(os.path.dirname(os.path.abspath(path)), "stringtable.xml")
+            n = write_lang_stringtable(st, code, game, load_community(path))
+            print(f"{st} : {n} noms d'objets et de modules ({game})")
         if len(sys.argv) <= 2:
+            st = os.path.join(ROOT, "localisation", "template", "stringtable.json")
+            print(f"{st} : {save_stringtable_keys(st)} clés de stringtable")
             # Catégories des phrases pour l'atelier /traduire-atak du site (template/categories.json).
             import subprocess
             subprocess.run([sys.executable, os.path.join(ROOT, "tools", "i18n_categories.py")], check=False)

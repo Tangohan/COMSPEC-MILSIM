@@ -326,6 +326,23 @@ return function (Router $router) {
     $router->post('/api/traduire-atak/packs/{id}/delete', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'delete']);
     $router->post('/api/traduire-atak/packs/{id}/publish', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'publish']);
     $router->post('/api/traduire-atak/packs/{id}/listing', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'listing']);
+    // Contributeurs (rôles demandés par les membres, validés dans /admin/system/contributeurs) et traduction
+    // communautaire du site (/traduire-site : langues, espace de traduction, API, dictionnaire des scripts).
+    $router->get('/contribuer', [\App\Controllers\Web\ContributorController::class, 'index']);
+    $router->post('/contribuer/demande', [\App\Controllers\Web\ContributorController::class, 'apply'], [AuthMiddleware::class]);
+    $router->post('/contribuer/retirer', [\App\Controllers\Web\ContributorController::class, 'withdraw'], [AuthMiddleware::class]);
+    // Rôles liés de Discord : adresse de vérification déclarée à Discord, retour OAuth, Mon compte.
+    $router->get('/discord/roles-lies', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'start'], [AuthMiddleware::class]);
+    $router->get('/discord/roles-lies/retour', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'callback'], [AuthMiddleware::class]);
+    $router->post('/account/discord/actualiser', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'sync'], [AuthMiddleware::class]);
+    $router->post('/account/discord/delier', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'unlink'], [AuthMiddleware::class]);
+    $router->get('/traduire-site', [\App\Controllers\Web\SiteTranslationController::class, 'hub']);
+    $router->get('/traduire-site/dico/{code}.js', [\App\Controllers\Web\SiteTranslationController::class, 'dictionary']);
+    $router->post('/traduire-site/propositions/{id}', [\App\Controllers\Web\SiteTranslationController::class, 'decide']);
+    $router->get('/traduire-site/{code}', [\App\Controllers\Web\SiteTranslationController::class, 'workspace']);
+    $router->get('/traduire-site/{code}/phrases', [\App\Controllers\Web\SiteTranslationController::class, 'phrases']);
+    $router->post('/traduire-site/{code}/phrases', [\App\Controllers\Web\SiteTranslationController::class, 'save']);
+    $router->post('/traduire-site/{code}/phrases/effacer', [\App\Controllers\Web\SiteTranslationController::class, 'clear']);
     // Workshop des langues : catalogue public des packs publiés, fiche, téléchargement direct, retrait par l'administration.
     $router->get('/traduire-atak/workshop', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'catalog']);
     $router->get('/traduire-atak/workshop/{id}', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'item']);
@@ -1029,6 +1046,9 @@ return function (Router $router) {
     $router->get('/admin/system/annuaire', [\App\Controllers\Admin\System\SystemRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/epingler', [\App\Controllers\Admin\System\SystemRegistryController::class, 'pin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/contributeurs', [\App\Controllers\Admin\System\SystemContributorsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/contributeurs/role', [\App\Controllers\Admin\System\SystemContributorsController::class, 'role'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/contributeurs/langue', [\App\Controllers\Admin\System\SystemContributorsController::class, 'language'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/annuaire/discord', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/discord/valider', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'approve'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/discord/refuser', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'reject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1406,6 +1426,7 @@ return function (Router $router) {
     $router->post('/back-office/integrations/emails/essai', [OrganizationIntegrationsController::class, 'testMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/plateforme/discord', [OrganizationIntegrationsController::class, 'savePlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/plateforme/discord/essai', [OrganizationIntegrationsController::class, 'testPlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/discord-roles-lies', [OrganizationIntegrationsController::class, 'savePlatformLinkedRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/plateforme/emails', [OrganizationIntegrationsController::class, 'savePlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/plateforme/emails/essai', [OrganizationIntegrationsController::class, 'testPlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais', [OrganizationIntegrationsController::class, 'storeSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
