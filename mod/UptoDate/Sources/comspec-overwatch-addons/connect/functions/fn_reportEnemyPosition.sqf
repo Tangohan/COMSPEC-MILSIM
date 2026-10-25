@@ -20,8 +20,39 @@ private _pos = getPosWorld _unit;
 if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith { false };
 
 private _last = _unit getVariable ["COMSPEC_EnemyTrackLastAt", -1e9];
-if ((diag_tickTime - _last) < 3) exitWith { false };
+private _dt = diag_tickTime - _last;
+if (_dt < 3) exitWith { false };
+
+private _veh = vehicle _unit;
+private _inVeh = _veh isNotEqualTo _unit;
+private _heading = getDir (if (_inVeh) then { _veh } else { _unit });
+private _aslZ = (getPosASL (if (_inVeh) then { _veh } else { _unit })) select 2;
+
+private _health = "stable";
+if (!isNil "comspec_overwatch_connect_fnc_getMedicalState") then {
+    private _med = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
+    if (_med isEqualType "" && {_med isNotEqualTo ""}) then {
+        _health = (_med splitString "|") select 0;
+    };
+};
+if (!alive _unit) then { _health = "dead" };
+_health = (_health splitString """" joinString "");
+
+// Au plus toutes les 3 s, et seulement si l'IA a bougé (3 m), tourné (15°), changé de véhicule ou d'état ;
+// sinon battement à 30 s (l'IA en défense est immobile la plupart du temps).
+// Une remise à -1e9 de COMSPEC_EnemyTrackLastAt force toujours l'envoi.
+private _sig = [
+    round ((_pos select 0) / 3),
+    round ((_pos select 1) / 3),
+    round (_aslZ / 3),
+    round (_heading / 15),
+    _veh,
+    _health,
+    missionNamespace getVariable ["COMSPEC_TrackSigEpoch", 0]
+];
+if (_dt < 30 && {_sig isEqualTo (_unit getVariable ["COMSPEC_EnemyTrackSig", []])}) exitWith { false };
 _unit setVariable ["COMSPEC_EnemyTrackLastAt", diag_tickTime, false];
+_unit setVariable ["COMSPEC_EnemyTrackSig", _sig, false];
 
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 private _fnc_readable = {
@@ -63,25 +94,11 @@ if ([_custom] call _fnc_readable) then {
 if (_callSign isEqualTo "") then { _callSign = "Contact ennemi"; };
 private _escCs = (_callSign splitString """" joinString "");
 
-private _veh = vehicle _unit;
-private _inVeh = _veh isNotEqualTo _unit;
-private _heading = getDir (if (_inVeh) then { _veh } else { _unit });
-private _aslZ = (getPosASL (if (_inVeh) then { _veh } else { _unit })) select 2;
-
 private _groupName = trim (groupId (group _unit));
 if (!(_groupName isEqualType "")) then { _groupName = ""; };
 _groupName = (_groupName splitString """" joinString "");
 
 private _role = "Contact ennemi";
-private _health = "stable";
-if (!isNil "comspec_overwatch_connect_fnc_getMedicalState") then {
-    private _med = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
-    if (_med isEqualType "" && {_med isNotEqualTo ""}) then {
-        _health = (_med splitString "|") select 0;
-    };
-};
-if (!alive _unit) then { _health = "dead" };
-_health = (_health splitString """" joinString "");
 
 private _platform = "INFANTRY";
 if (!isNil "comspec_overwatch_connect_fnc_bftPlatform") then {
