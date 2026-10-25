@@ -464,7 +464,7 @@ class EffectifsWorkspaceController
             'Nom affiché', 'Indicatif', 'E-mail', 'Grade', 'Fonction', 'Affectation', 'Statut',
             'Ancienneté', 'Disponibilité (%)', 'Présence (%)', 'Complétion du dossier (%)',
             'platform_number', 'tenant_member_number', 'Langue de jeu', 'Autres langues',
-        ], $sep);
+        ], $sep, '"', '\\');
         foreach ($rows as $r) {
             $rStatus = (string) ($r['status'] ?? '');
             fputcsv($fh, [
@@ -486,7 +486,7 @@ class EffectifsWorkspaceController
                     [CommunityLanguages::class, 'label'],
                     $csvLanguages[(int) ($r['id'] ?? 0)]['others'] ?? []
                 )),
-            ], $sep);
+            ], $sep, '"', '\\');
         }
         rewind($fh);
         $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');
