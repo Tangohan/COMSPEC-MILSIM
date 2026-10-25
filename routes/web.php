@@ -1143,6 +1143,7 @@ return function (Router $router) {
     $router->post('/admin/audit/{id}/rollback', [SystemAuditController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/audit/{id}/alert', [SystemAuditController::class, 'alert'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/create', [SystemMaintenanceController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/maintenance/apercu', [SystemMaintenanceController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance', [SystemMaintenanceController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/{id}/audit', [SystemMaintenanceController::class, 'audit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/{id}/edit', [SystemMaintenanceController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
