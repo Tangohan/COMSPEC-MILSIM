@@ -58,6 +58,16 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertStringContainsString('eq-collection-edit', $hub);
         self::assertStringContainsString('Nouvelle fiche', $hub);
         self::assertStringNotContainsString('eq-hub__cover-ph">Sans photo', $hub);
+        // Export pour l’arsenal ACE (tenue, collection, tout) et en-tête de collection.
+        self::assertStringContainsString("\$router->get('/equipment/ace-export', [ArsenalWardrobeController::class, 'aceExport']", $routes);
+        self::assertLessThan($slugPos, (int) strpos($routes, '/equipment/ace-export'));
+        self::assertStringContainsString('data-eq-ace-export', $hub);
+        self::assertStringContainsString('data-eq-qv-ace-copy', $hub);
+        self::assertStringContainsString('data-eq-coll-head', $hub);
+        self::assertStringContainsString('eq-hub__kit', $hub);
+        self::assertStringContainsString('renderCollectionHead', $js);
+        self::assertStringContainsString('eq-hub__item-ico--ph', $js);
+        self::assertStringContainsString("'ace_export' => \$aceExport", $controller);
         self::assertStringNotContainsString('>Sans photo</span>', $hub);
 
         self::assertStringContainsString('accept="image/jpeg,image/png,image/webp"', $collection);

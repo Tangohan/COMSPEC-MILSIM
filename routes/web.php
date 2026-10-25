@@ -772,6 +772,7 @@ return function (Router $router) {
     $router->get('/equipment/icones/{file}', [GameEquipmentAdminController::class, 'memberIcon'], [AuthMiddleware::class]);
     $router->get('/equipment/covers/{tenantId}/{file}', [ArsenalWardrobeController::class, 'streamCover'], [AuthMiddleware::class]);
     $router->get('/equipment/wardrobes', [ArsenalWardrobeController::class, 'redirectHub'], [AuthMiddleware::class]);
+    $router->get('/equipment/ace-export', [ArsenalWardrobeController::class, 'aceExport'], [AuthMiddleware::class]);
     $router->post('/equipment/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/collections/{id}', [ArsenalWardrobeController::class, 'updateCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
