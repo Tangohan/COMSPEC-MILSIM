@@ -16,6 +16,11 @@ use PDO;
 
 final class AccessControlApiController
 {
+    /** Valeurs reconnues par AccessControlService (cibles, évaluateurs de condition, effets). */
+    private const RULE_TARGET_TYPES = ['ROLE', 'USER'];
+    private const RULE_CONDITION_TYPES = ['STATUS', 'UNIT', 'DAYS_SINCE_CREATION', 'MODULE_VALIDATED', 'MANUAL_APPROVAL'];
+    private const RULE_EFFECTS = ['ALLOW', 'DENY'];
+
     private PDO $pdo;
 
     public function __construct(private AccessControlService $acs, private UserRepository $users)
@@ -142,16 +147,38 @@ final class AccessControlApiController
         if ($denied = $this->denyUnlessTenantAdmin()) {
             return $denied;
         }
+        // Contrôles de saisie avant l’insertion : sans eux, un JSON invalide (colonne json)
+        // ou une valeur trop longue en mode strict donnait une PDOException puis un 500.
+        $name = trim((string) $request->input('name'));
+        $targetType = strtoupper(trim((string) $request->input('target_type', 'ROLE')));
+        $conditionType = strtoupper(trim((string) $request->input('condition_type', 'STATUS')));
+        $conditionValue = (string) $request->input('condition_value', '{}');
+        $effect = strtoupper(trim((string) $request->input('effect', 'ALLOW')));
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Communauté active requise.'], 400);
+        }
+        if ($name === '' || mb_strlen($name) > 190) {
+            return Response::json(['ok' => false, 'error' => 'Nom de règle requis (190 caractères au plus).'], 422);
+        }
+        if (!in_array($targetType, self::RULE_TARGET_TYPES, true)
+            || !in_array($conditionType, self::RULE_CONDITION_TYPES, true)
+            || !in_array($effect, self::RULE_EFFECTS, true)) {
+            return Response::json(['ok' => false, 'error' => 'Cible, condition ou effet non reconnu.'], 422);
+        }
+        if (!is_array(json_decode($conditionValue, true))) {
+            return Response::json(['ok' => false, 'error' => 'condition_value doit être un objet JSON valide.'], 422);
+        }
+
         $st = $this->pdo->prepare('INSERT INTO access_rules (tenant_id, name, description, target_type, target_id, condition_type, condition_value, effect, priority, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
         $st->execute([
             $tenantId,
-            (string) $request->input('name'),
+            $name,
             (string) $request->input('description', ''),
-            strtoupper((string) $request->input('target_type', 'ROLE')),
+            $targetType,
             (int) $request->input('target_id', 0),
-            strtoupper((string) $request->input('condition_type', 'STATUS')),
-            (string) $request->input('condition_value', '{}'),
-            strtoupper((string) $request->input('effect', 'ALLOW')),
+            $conditionType,
+            $conditionValue,
+            $effect,
             (int) $request->input('priority', 100),
             $request->input('is_active') ? 1 : 0,
         ]);
@@ -161,8 +188,14 @@ final class AccessControlApiController
 
     public function scopes(Request $request, array $params = []): Response
     {
+        $tenantId = (int) Session::get('tenant_id');
         if ($request->isGet()) {
             $ruleId = (int) $request->query('rule_id', 0);
+            // La règle doit appartenir à la communauté active : sinon on lirait les
+            // scopes d’une autre communauté en faisant varier rule_id.
+            if (!$this->ruleBelongsToTenant($ruleId, $tenantId)) {
+                return Response::json(['ok' => false, 'error' => 'rule_not_found'], 404);
+            }
             $st = $this->pdo->prepare('SELECT * FROM access_scopes WHERE rule_id = ?');
             $st->execute([$ruleId]);
 
@@ -172,10 +205,32 @@ final class AccessControlApiController
         if ($denied = $this->denyUnlessTenantAdmin()) {
             return $denied;
         }
+        $ruleId = (int) $request->input('rule_id');
+        if (!$this->ruleBelongsToTenant($ruleId, $tenantId)) {
+            return Response::json(['ok' => false, 'error' => 'rule_not_found'], 404);
+        }
+        $scopeType = strtoupper(trim((string) $request->input('scope_type', 'MODULE')));
+        $scopeIdentifier = trim((string) $request->input('scope_identifier'));
+        $action = strtoupper(trim((string) $request->input('action', 'READ')));
+        // Bornes des colonnes access_scopes (varchar 16 / 190 / 16).
+        if ($scopeType === '' || strlen($scopeType) > 16 || $scopeIdentifier === '' || mb_strlen($scopeIdentifier) > 190 || $action === '' || strlen($action) > 16) {
+            return Response::json(['ok' => false, 'error' => 'Portée incomplète ou trop longue.'], 422);
+        }
         $st = $this->pdo->prepare('INSERT INTO access_scopes (rule_id, scope_type, scope_identifier, action) VALUES (?, ?, ?, ?)');
-        $st->execute([(int) $request->input('rule_id'), strtoupper((string) $request->input('scope_type', 'MODULE')), (string) $request->input('scope_identifier'), strtoupper((string) $request->input('action', 'READ'))]);
+        $st->execute([$ruleId, $scopeType, $scopeIdentifier, $action]);
 
         return Response::json(['ok' => true, 'id' => (int) $this->pdo->lastInsertId()]);
+    }
+
+    private function ruleBelongsToTenant(int $ruleId, int $tenantId): bool
+    {
+        if ($ruleId < 1 || $tenantId < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare('SELECT 1 FROM access_rules WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $st->execute([$ruleId, $tenantId]);
+
+        return (bool) $st->fetchColumn();
     }
 
     public function simulation(Request $request, array $params = []): Response
