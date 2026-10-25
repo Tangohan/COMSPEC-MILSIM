@@ -299,7 +299,7 @@ class AtakPoiRepository
      */
     public function getObservations(int $poiId, int $limit = 50): array
     {
-        $sql = "SELECT o.*, u.username as observer_username
+        $sql = "SELECT o.*, COALESCE(NULLIF(u.callsign, ''), u.display_name) AS observer_username
                 FROM atak_poi_observations o
                 LEFT JOIN users u ON o.observer_user_id = u.id
                 WHERE o.poi_id = :poi_id

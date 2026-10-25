@@ -49,11 +49,11 @@ return [
         ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces', 'subtitle' => 'Les bandeaux affichés en haut du portail pour tous les membres connectés.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
             ['label' => 'Nouvelle annonce', 'href' => 'back-office/alerts/create'],
         ]],
-        ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'quick' => [
+        ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'css' => ['back-office-articles.css'], 'quick' => [
             ['label' => 'Liste', 'href' => 'back-office/articles'],
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
-        ['path' => 'back-office/articles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Mini-articles', 'subtitle' => 'De courts textes permanents pour informer les membres : règles, guides, présentations.', 'quick' => [
+        ['path' => 'back-office/articles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Mini-articles', 'subtitle' => 'De courts textes permanents pour informer les membres : règles, guides, présentations.', 'css' => ['back-office-articles.css'], 'quick' => [
             ['label' => 'Nouvel article', 'href' => 'back-office/articles/create'],
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],

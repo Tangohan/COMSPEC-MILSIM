@@ -17,7 +17,7 @@ use App\Support\SecretCipher;
  * Seuls les ports SMTP usuels et les serveurs publics sont acceptés (pas d'adresse du réseau local du serveur).
  *
  * PLATFORM (0) : même compte pour l'envoi commun de la plateforme (e-mails sans communauté, communautés sans compte),
- * réglé par l'administrateur dans Intégrations > Plateforme et rangé dans platform_settings. Une fois actif, il remplace
+ * réglé par l'administrateur dans Administration › Intégrations de la plateforme et rangé dans platform_settings. Une fois actif, il remplace
  * les réglages MAIL_* du .env (email_config()), qui ne servent plus que de secours.
  */
 final class TenantMailSender

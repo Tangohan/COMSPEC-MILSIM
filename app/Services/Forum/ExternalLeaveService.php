@@ -100,6 +100,10 @@ final class ExternalLeaveService
         if ($appHost !== '' && $host === $appHost) {
             return true;
         }
+        // Ancien domaine : liens déjà postés avant la migration vers athena-comspec.eu.
+        if ($host === \App\Support\PortalHost::LEGACY_HOST) {
+            return true;
+        }
         foreach ($extraInternalHosts as $h) {
             $h = strtolower(trim((string) $h));
             if ($h !== '' && $host === $h) {

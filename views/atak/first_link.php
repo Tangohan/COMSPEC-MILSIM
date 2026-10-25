@@ -33,10 +33,11 @@ $versionApiUrl = (string) ($fl['version_api_url'] ?? url('api/atak/version'));
 $atakVersion = (string) ($fl['atak_version'] ?? '');
 $linkVersion = (string) ($fl['link_version'] ?? '');
 
-// Adresse fixe du portail, codée dans le mod : rien à saisir en jeu.
-$portalAddress = 'https://athena.ttrd.fr/public';
+// Adresse du portail (APP_URL), aussi codée dans le mod : rien à saisir en jeu.
+// Les mods publiés avant la migration appellent encore l'ancien domaine (PortalHost::LEGACY_HOST), toujours servi.
+$portalAddress = 'https://' . \App\Support\PortalHost::host() . '/public';
 // Ce que le téléphone affiche (fn_pageAthena : « https:// » et « /public » retirés).
-$phoneAddress = 'athena.ttrd.fr/lier';
+$phoneAddress = \App\Support\PortalHost::label('lier');
 
 $stepsNav = [
     ['id' => 'fl-installer', 'label' => 'Installer le mod', 'done' => false],
@@ -88,7 +89,7 @@ $icon = static function (string $name): string {
                 </li>
                 <li>
                     <span class="fl-facts__label">Portail</span>
-                    <span class="fl-facts__value" translate="no">athena.ttrd.fr</span>
+                    <span class="fl-facts__value" translate="no"><?= $e(\App\Support\PortalHost::host()) ?></span>
                 </li>
             </ul>
             <div class="fl-hero__actions">

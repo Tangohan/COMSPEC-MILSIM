@@ -161,8 +161,8 @@ MD
 
 Raccourcis vers les ressources du module.
 
-- [Ouvrir la carte ATAK](https://athena.ttrd.fr/public/atak)
-- [Soutenir le financement ATAK](https://athena.ttrd.fr/public/soutenir-atak)
+- [Ouvrir la carte ATAK](/atak)
+- [Soutenir le financement ATAK](/soutenir-atak)
 - Configuration et guides : panneau « Configuration pour le jeu » dans ATAK, ou pages d’aide du portail.
 
 Les adresses de téléchargement du pack dépendent de votre communauté : elles apparaissent dans ATAK lorsque le pack est publié par l’administration.
