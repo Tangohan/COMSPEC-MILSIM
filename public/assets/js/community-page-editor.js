@@ -735,6 +735,32 @@
     }
     var gn = group('Menu de l’en-tête');
     gn.appendChild(input('Libellé dans le menu', b.nav_label, function (v) { b.nav_label = v; markDirty(); }, { placeholder: custom ? 'Absent du menu' : 'Libellé par défaut', hint: 'Ajoute un lien vers ce bloc dans l’en-tête. Visible après enregistrement.' }));
+    if (!custom && b.key === 'hero') {
+      // Image du bandeau d’accueil : téléversée, prise dans la médiathèque ou collée en adresse.
+      b.props = b.props || {};
+      var ghi = group('Image du bandeau');
+      var setHeroImage = function (v) {
+        b.props.image = v;
+        markDirty();
+        var media = el && el.querySelector('.cl-hero__media');
+        if (!media) { return; }
+        if (v) {
+          var src = /^https?:/.test(v) ? v : cfg.base.replace(/\/c\/[^/]+$/, '') + '/' + v.replace(/^\//, '');
+          media.innerHTML = '';
+          var img = document.createElement('img');
+          img.src = src;
+          img.alt = '';
+          media.appendChild(img);
+        } else {
+          media.innerHTML = '<div class="cl-hero__fallback"></div>';
+        }
+      };
+      ghi.appendChild(imagePicker('Image de fond', b.props.image, setHeroImage));
+      var hn = document.createElement('p');
+      hn.className = 'pbe-field';
+      hn.innerHTML = '<small>Sans image choisie ici, le bandeau reprend la photo mise en avant dans les Médias, sinon la bannière de la communauté.</small>';
+      ghi.appendChild(hn);
+    }
     if (!custom) {
       var gh = group('Contenu');
       var note = document.createElement('p');

@@ -1520,7 +1520,8 @@ if (!function_exists('portal_nav_href_permission_allowed')) {
 
         if (function_exists('navigation_current_tenant_type')) {
             $tenantType = navigation_current_tenant_type();
-            if (!\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
+            if (!\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)
+                || \App\Services\Community\TenantTypeConfig::backOfficePathHidden($tenantType, $path)) {
                 return false;
             }
         }

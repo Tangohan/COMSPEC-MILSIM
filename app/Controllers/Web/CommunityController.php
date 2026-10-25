@@ -1277,9 +1277,12 @@ class CommunityController
             $referrerUserId = $this->resolveReferrerUserId((int) $user['id']);
             $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType((string) $request->input('tenant_type', 'full'));
             $optionsBase = [
-                'registration_mode' => TenantCommunityProfileService::normalizeRegistrationMode(
-                    $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
-                ),
+                // « Bureau des effectifs » et « Carte ATAK » ne recrutent pas sur le site : Discord uniquement.
+                'registration_mode' => \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly($tenantType)
+                    ? TenantCommunityProfileService::REGISTRATION_MODE_DISCORD
+                    : TenantCommunityProfileService::normalizeRegistrationMode(
+                        $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+                    ),
                 'community_locked' => $request->input('community_locked') ? true : false,
                 'require_ai_ack' => $request->input('require_ai_ack') ? true : false,
                 'refuse_other_community_members' => $request->input('refuse_other_community_members') ? true : false,

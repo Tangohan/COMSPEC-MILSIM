@@ -706,4 +706,8 @@ return [
     'dossiers_et_fichiers_partages_avec_vous' => 'Folders and files shared with you',
     'dossiers_et_fichiers_prives_ouverts_seulement_sur_partage' => 'Private folders and files, opened only when shared',
     'remontees_du_jeu_mods_terminaux_debit_cr_erreurs_et_disponibilite' => 'Game reports: mods, terminals, throughput, reports, errors and availability',
+    'fiche_sans_compte' => 'No-account record',
+    'le_registre_de_l_unite_tenu_comme_un_tableur_fiches_grades_unites_et_orbat_sans_compte_pour_les_membres_recrutement_uniquement_sur_discord' => 'Your unit register kept like a spreadsheet: records, ranks, units and ORBAT, with no account needed for members. Recruitment on Discord only.',
+    'formations_recrutement_sur_le_site_documents_et_messagerie_interne_ne_seront_plus_accessibles_on_vous_rejoint_par_discord_effectifs_avec_fiches_sans_compte_et_import_de_tableur_forum_administration_et_carte_atak_restent_disponibles' => 'Training, on-site recruitment, documents and internal messaging will no longer be available: people join you through Discord. Personnel (with no-account records and spreadsheet import), forum, administration and the ATAK map remain available.',
+    'la_carte_tactique_overwatch_le_materiel_les_relais_le_forum_public_et_la_gestion_des_membres_restent_accessibles_effectifs_formations_et_recrutement_sur_le_site_seront_masques_on_vous_rejoint_par_discord' => 'The tactical map, Overwatch, equipment, relays, the public forum and member management remain available. Personnel, training and on-site recruitment will be hidden: people join you through Discord.',
 ];

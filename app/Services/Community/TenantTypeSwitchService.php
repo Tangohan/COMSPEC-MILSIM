@@ -78,6 +78,17 @@ final class TenantTypeSwitchService
             throw $e;
         }
 
+        if (TenantTypeConfig::recruitsOnDiscordOnly($newType)) {
+            // Sans module recrutement, on rejoint la communauté par Discord : le formulaire du site s’efface.
+            try {
+                $settings = $this->tenantRepository->getSettings($tenantId);
+                $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+                $community['registration_mode'] = TenantCommunityProfileService::REGISTRATION_MODE_DISCORD;
+                $this->tenantRepository->mergeSettings($tenantId, ['community' => $community]);
+            } catch (\Throwable) {
+            }
+        }
+
         return [
             'from' => $from,
             'to' => $newType,
