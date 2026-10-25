@@ -231,7 +231,8 @@ class AtakNotificationRepository
             'show_on_map' => true,
             'map_pos_x' => $vehicleData['pos_x'],
             'map_pos_y' => $vehicleData['pos_y'],
-            'expires_at' => date('Y-m-d H:i:s', strtotime('+30 minutes'))
+            // En UTC : listActive et la purge comparent à NOW() (session +00:00).
+            'expires_at' => gmdate('Y-m-d H:i:s', time() + 1800)
         ]);
     }
 
