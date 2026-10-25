@@ -197,7 +197,7 @@ try {
     }
     if ($boTidSide > 0 && $boUidSide > 0) {
         $uSide = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findById($boUidSide, $boTidSide);
-        if (is_array($uSide) && !empty($uSide['grade_id'])) {
+        if (is_array($uSide) && !empty($uSide['grade_id']) && !\App\Support\TenantGrades::hidden($boTidSide)) {
             $grSide = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
                 ->findById((int) $uSide['grade_id'], $boTidSide);
             if (is_array($grSide)) {
