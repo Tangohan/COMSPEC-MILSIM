@@ -77,7 +77,8 @@ private _ox = _fs1 * 1.1 / _ratio;
 private _oy = _fs1 * 0.9;
 
 // Candidats visibles, triés : sélection, contacts ENI, mon groupe, puis les autres, chacun du plus proche au plus loin.
-private _me = getPosASL player;
+// Distances et azimuts depuis ma position GPS affichée (fn_mapOnDraw), pas la vraie.
+private _me = uiNamespace getVariable ["COMSPEC_ATAK_SelfGpsPos", getPosASL player];
 private _vis = [];
 {
     _x params ["_prio", "_id", "_pos", "_cs", ["_hostile", false], ["_a", 1]];

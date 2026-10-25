@@ -190,6 +190,7 @@ if (_interactive) then {
             ["SIGINT", "map_los", "Goniométrie (émetteurs)"],
             ["SEARCH", "app_osint", "Rechercher (IMEI, numéro, balise)"],
             ["LOS", "map_los", "Ligne de vue"],
+            ["IPTGT", "app_jtac", "JTAC : IP → cible (cap magnétique)"],
             ["CLEAR", "map_clear", "Tout effacer"]
         ];
         // Drone appairé et en état : ses ordres se donnent aussi depuis la carte.
@@ -469,6 +470,7 @@ if (_interactive) then {
         case "HEIGHT": { "HAUTEUR : clic pour relever l'altitude" };
         case "FLAT": { "TERRAIN PLAT : clic pour chercher, clic sur une LZ = marqueur" };
         case "LOS": { "LIGNE DE VUE : clic sur la cible" };
+        case "IPTGT": { ["JTAC : clic sur l'IP", "JTAC : clic sur la cible", "JTAC : clic pour un nouvel IP"] select ((count (_s getOrDefault ["jtacTool", []])) min 2) };
         case "ROUTE": { "GPS : clic sur la destination" };
         // POINTS DE PASSAGE : la fiche d'étape dit elle-même comment poser et se ferme par ✕ (fn_wpCard).
         case "WP": { "" };
@@ -522,6 +524,13 @@ if (_interactive && {(count (_search getOrDefault ["hit", createHashMap])) > 0} 
     ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_mapSearch;
 } else {
     uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", controlNull];
+    // Outil JTAC IP → cible (fn_jtacTool) : fiche du calcul au même endroit que celle de la recherche.
+    if (_interactive && {(count (_s getOrDefault ["jtacTool", []])) >= 2} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
+        private _cw = ((_mw * 0.5) max (_font * 11 / _ratio)) min (_mw - 2 * _pad);
+        private _chh = _fs * 7.6;
+        private _selUp = [0, _fs * 6.2 + _pad * 4] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
+        ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_jtacTool;
+    };
 };
 // Marqueur sélectionné (clic gauche sur une étiquette) : fiche au-dessus du panneau curseur. Liseré et pastille de la
 // couleur du marqueur, titre, nature (alerte, joueur, mission), grille · distance · azimut, note, puis une rangée

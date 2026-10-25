@@ -2,9 +2,11 @@
 """
 QR code de la télécommande drone (page Athena /telecommande-drone, à ouvrir sur son vrai téléphone).
 Écrit data/drone_remote_qr_ca.paa (512x512, modules noirs sur fond blanc), affiché dans l'onglet FLOTTE de l'app Drone.
-Adresse par défaut : celle du site de production ; une autre en premier argument.
+Adresse par défaut : celle du site de production ; une autre en premier argument. Troisième argument : autre image
+(nom sans extension), par exemple le 9-LINE de l'app JTAC :
 
-  python3 tools/gen_remote_qr.py [adresse] [chemin de hemtt]
+  python3 tools/gen_remote_qr.py [adresse] [chemin de hemtt] [nom]
+  python3 tools/gen_remote_qr.py https://athena.ttrd.fr/public/9-line hemtt nineline_qr_ca
 
 Dépend de segno (python3 -m pip install segno) et de « hemtt utils paa convert ».
 """
@@ -20,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
 URL = sys.argv[1] if len(sys.argv) > 1 else "https://athena.ttrd.fr/public/telecommande-drone"
 HEMTT = sys.argv[2] if len(sys.argv) > 2 else "hemtt"
+NAME = sys.argv[3] if len(sys.argv) > 3 else "drone_remote_qr_ca"
 
 
 def main():
@@ -33,9 +36,9 @@ def main():
         img = img.resize((img.width * k, img.height * k), Image.NEAREST)
         canvas = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
         canvas.paste(img, ((512 - img.width) // 2, (512 - img.height) // 2))
-        png = os.path.join(tmp, "drone_remote_qr_ca.png")
+        png = os.path.join(tmp, NAME + ".png")
         canvas.save(png)
-        dst = os.path.join(OUT, "drone_remote_qr_ca.paa")
+        dst = os.path.join(OUT, NAME + ".paa")
         if os.path.exists(dst):
             os.remove(dst)  # « hemtt utils paa convert » n'écrase pas
         subprocess.run([HEMTT, "utils", "paa", "convert", png, dst], check=True)

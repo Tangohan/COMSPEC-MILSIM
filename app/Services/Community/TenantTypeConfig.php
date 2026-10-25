@@ -331,6 +331,7 @@ final class TenantTypeConfig
             'map-data' => 'atak',
             'recon' => 'atak',
             'telecommande-drone' => 'atak',
+            '9-line' => 'atak',
             'operateur/terrain' => 'atak',
             'api/mission-cycle' => 'atak',
             'back-office/ma-situation/liaison-atak' => 'atak',
