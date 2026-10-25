@@ -40,7 +40,7 @@ final class AthenaInspectorMetricsController
     public function metrics(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        $view = (string) $request->query('view', 'overview');
+        $view = $request->queryString('view', 'overview');
         if (!in_array($view, self::VIEWS, true)) {
             return Response::json(['ok' => false, 'error' => 'unknown_view', 'views' => self::VIEWS], 400);
         }
@@ -59,14 +59,14 @@ final class AthenaInspectorMetricsController
         if (!in_array($hours, self::PERIODS, true)) {
             $hours = 24;
         }
-        $q = mb_substr(trim((string) $request->query('q', '')), 0, 80);
+        $q = mb_substr(trim($request->queryString('q', '')), 0, 80);
 
         $data = match ($view) {
             'overview' => $this->repo->overview($scopeId, $hours),
             'pipeline' => ['players' => $this->repo->pipeline($scopeId, $hours, $q)],
             'players' => ['players' => $this->repo->players($scopeId, $hours, $q)],
             'mods' => $this->repo->mods($scopeId, $hours, $q),
-            'mod_players' => ['players' => $this->repo->modPlayers($scopeId, mb_substr((string) $request->query('mod', ''), 0, 160))],
+            'mod_players' => ['players' => $this->repo->modPlayers($scopeId, mb_substr($request->queryString('mod', ''), 0, 160))],
             'terminals' => $this->repo->terminals($scopeId, $q),
             'traffic' => $this->repo->traffic($scopeId, $hours),
             'errors' => $this->repo->errors($scopeId, $hours),

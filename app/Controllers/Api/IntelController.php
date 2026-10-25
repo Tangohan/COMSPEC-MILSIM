@@ -6,8 +6,8 @@ namespace App\Controllers\Api;
 
 use App\Core\Request;
 use App\Core\Response;
-use App\Core\Session;
 use App\Services\Intel\IntelFusionService;
+use App\Support\TacticalMissionScope;
 
 class IntelController
 {
@@ -18,17 +18,23 @@ class IntelController
     ) {
     }
 
-    private function missionId(Request $request, array $body = []): string
+    /**
+     * Bac de mission de la communauté appelante (voir TacticalMissionScope) : un missionId
+     * étranger, vide ou numérique n’est jamais retenu tel quel ; non scalaire → 422.
+     */
+    private function missionId(Request $request, array $body = []): string|Response
     {
-        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
-        if ($missionId !== null && $missionId !== '') {
-            return (string) $missionId;
+        $tenantId = TacticalMissionScope::tenantId();
+        if ($tenantId === null) {
+            return TacticalMissionScope::tenantRequiredResponse();
         }
-        $tenantId = Session::get('tenant_id');
-        $tid = $tenantId !== null && $tenantId !== '' ? (int) $tenantId : 1;
+        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
+        if (!TacticalMissionScope::isAcceptableRaw($missionId)) {
+            return TacticalMissionScope::invalidMissionIdResponse();
+        }
         $mapId = $body['mapId'] ?? $request->query('mapId');
-        $mid = $mapId !== null && $mapId !== '' ? (int) $mapId : self::DEFAULT_MAP_ID;
-        return 'mission_' . $tid . '_map_' . $mid;
+
+        return TacticalMissionScope::resolve($missionId, $mapId, $tenantId, self::DEFAULT_MAP_ID);
     }
 
     private function jsonBody(Request $request): array
@@ -45,10 +51,13 @@ class IntelController
     {
         $body = $this->jsonBody($request);
         $missionIdRaw = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
-        if ($missionIdRaw !== null && (string) $missionIdRaw === '') {
+        if (is_scalar($missionIdRaw) && (string) $missionIdRaw === '') {
             return Response::json(['status' => 'error', 'message' => 'Identifiant de mission manquant.'], 400);
         }
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $report = $this->intelFusion->ingestReport($missionId, $body);
         if (empty($report)) {
             return Response::json([
@@ -65,6 +74,9 @@ class IntelController
     {
         $body = $this->jsonBody($request);
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $status = $request->query('status');
         $list = $this->intelFusion->listFused($missionId, $status !== '' ? $status : null);
         return Response::json($list);
@@ -86,6 +98,9 @@ class IntelController
         }
         $body = $this->jsonBody($request);
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $ok = $this->intelFusion->deleteReport($missionId, $id);
         if (!$ok) {
             return Response::json([
