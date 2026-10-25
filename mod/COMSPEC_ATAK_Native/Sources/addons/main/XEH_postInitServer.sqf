@@ -145,9 +145,14 @@ COMSPEC_ATAK_FtCheck = {
         };
     } forEach COMSPEC_ATAK_SrvRepBy;
     ["comspec_atak_native_syncData", [_log, COMSPEC_ATAK_SrvRoutes getOrDefault [netId group _unit, []]], _unit] call CBA_fnc_targetEvent;
-    // Plan de briefing du camp (fn_planServer) : plus dans la file JIP, envoyé ici à l'arrivant.
-    private _planVar = format ["COMSPEC_ATAK_Plan_%1", side group _unit];
-    if (!local _unit && {!isNil { missionNamespace getVariable _planVar }}) then { (owner _unit) publicVariableClient _planVar; };
+    // Plans de briefing des camps (fn_planServer) : plus dans la file JIP, envoyés ici à l'arrivant (tous, comme la file
+    // JIP le faisait : un joueur qui change de camp retrouve le plan de son nouveau camp).
+    if (!local _unit) then {
+        {
+            private _planVar = format ["COMSPEC_ATAK_Plan_%1", _x];
+            if (!isNil { missionNamespace getVariable _planVar }) then { (owner _unit) publicVariableClient _planVar; };
+        } forEach [west, east, independent, civilian];
+    };
 }] call CBA_fnc_addEventHandler;
 // Temps de jeu et temps par rôle comptés ici pour chaque joueur, quel que soit l'état de son téléphone (fn_playTimeServer).
 // Sonde au démarrage : si la DLL du serveur sait envoyer, les clients ne remontent plus eux-mêmes que l'écran et les apps.

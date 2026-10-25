@@ -23,7 +23,7 @@
       "diff"    [ancienne liste, nouvelle liste]  -> [éléments changés ou retirés (avant), éléments changés ou ajoutés (après)]
       "patchList" [liste, ids à retirer, éléments à remettre]  -> nouvelle liste (aussi pour le brouillon local)
     Écrit [révision, éléments, nom, UID de l'auteur de la modification, créateur (salle)]
-    (salle : publique, retrouvée par les JIP ; plan du camp : envoyé aux seuls joueurs du camp, l'arrivant le reçoit
+    (salle : publique, retrouvée par les JIP ; plan du camp : envoyé aux joueurs connectés hors file JIP, l'arrivant le reçoit
     à sa synchro serveur ; le plan du camp est envoyé au site par fn_planWeb).
     Élément : [id, type, points, texte, couleur, tirets, flèche, épaisseur, numéro, auteur, description]
 */
@@ -193,11 +193,11 @@ switch (_op) do {
 if (!_changed) exitWith { false };
 // 4e champ : UID de l'auteur de la modification, qui l'envoie au site (fn_planWeb).
 if (_room isEqualTo "") then {
-    // Plan du camp : envoyé aux seuls joueurs du camp, hors file JIP (l'arrivant le reçoit par comspec_atak_native_syncReq).
-    // Diffusé en public, il partait aussi au camp adverse et réécrivait une grosse variable JIP à chaque trait.
+    // Plan du camp : envoyé aux joueurs connectés, hors file JIP (l'arrivant le reçoit par comspec_atak_native_syncReq).
+    // Diffusé en public, il réécrivait une grosse variable JIP à chaque trait. Tous les joueurs le reçoivent, comme avant :
+    // un filtre par camp laissait un plan périmé à qui changeait de camp ou était mort au moment du trait.
     missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by, _creator]];
-    private _side = side group _by;
-    { (owner _x) publicVariableClient _var; } forEach (allPlayers select { !local _x && {(side group _x) isEqualTo _side} });
+    { (owner _x) publicVariableClient _var; } forEach (allPlayers select { !local _x });
 } else {
     // Salle : ouverte à tous les camps et sans liste de membres côté serveur, elle reste publique.
     missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by, _creator], true];
