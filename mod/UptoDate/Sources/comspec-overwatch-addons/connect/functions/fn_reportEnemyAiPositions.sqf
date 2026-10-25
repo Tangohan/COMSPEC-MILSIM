@@ -21,13 +21,17 @@ if (_groups isEqualTo []) exitWith { false };
 private _others = allPlayers select { alive _x && {isPlayer _x} && {_x isNotEqualTo player} };
 
 private _sent = 0;
+// Plafond de 24 contacts par passage compté sur les contacts suivis (envoyés ou inchangés), pas sur les envois :
+// sinon les contacts immobiles, sautés par la signature, laissaient la place à d'autres et la carte en montrait plus.
+private _tracked = 0;
 {
-    if (_sent >= 24) then { break };
+    if (_tracked >= 24) then { break };
     private _leader = leader _x;
     if (isNull _leader || {!alive _leader}) then { continue };
     if (isPlayer _leader) then { continue };
     if (!(_leader isKindOf "CAManBase")) then { continue };
     if !([_leader, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
+    _tracked = _tracked + 1;
     if ([_leader] call comspec_overwatch_connect_fnc_reportEnemyPosition) then {
         _sent = _sent + 1;
     };

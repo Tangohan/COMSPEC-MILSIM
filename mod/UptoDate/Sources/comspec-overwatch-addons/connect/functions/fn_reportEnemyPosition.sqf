@@ -38,7 +38,7 @@ if (!isNil "comspec_overwatch_connect_fnc_getMedicalState") then {
 if (!alive _unit) then { _health = "dead" };
 _health = (_health splitString """" joinString "");
 
-// Au plus toutes les 3 s, et seulement si l'IA a bougé (3 m), tourné (15°), changé de véhicule ou d'état ;
+// Au plus toutes les 3 s, et seulement si l'IA a bougé (3 m), tourné (15°), changé de véhicule, d'état ou de nom ;
 // sinon battement à 30 s (l'IA en défense est immobile la plupart du temps).
 // Une remise à -1e9 de COMSPEC_EnemyTrackLastAt force toujours l'envoi.
 private _sig = [
@@ -48,6 +48,8 @@ private _sig = [
     round (_heading / 15),
     _veh,
     _health,
+    groupId (group _unit),
+    _unit getVariable ["COMSPEC_EnemyCallsign", ""],
     missionNamespace getVariable ["COMSPEC_TrackSigEpoch", 0]
 ];
 if (_dt < 30 && {_sig isEqualTo (_unit getVariable ["COMSPEC_EnemyTrackSig", []])}) exitWith { false };
