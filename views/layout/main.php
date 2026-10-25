@@ -75,7 +75,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 ?>
     <link rel="manifest" href="<?= htmlspecialchars($baseUrl) ?>/manifest.webmanifest">
     <meta name="theme-color" content="#0f172a">
-    <link rel="apple-touch-icon" href="<?= htmlspecialchars($baseUrl) ?>/assets/icons/athena-192.png">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($baseUrl) ?>/assets/icons/athena-180.png">
 <?php
     $tenantFaviconUrl = null;
     try {

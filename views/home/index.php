@@ -160,7 +160,7 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
     require base_path('views/partials/seo_meta.php');
 ?>
     <meta name="theme-color" content="#050505">
-    <link rel="apple-touch-icon" href="<?= $e($base) ?>/assets/icons/athena-192.png">
+    <link rel="apple-touch-icon" href="<?= $e($base) ?>/assets/icons/athena-180.png">
     <link rel="icon" type="image/png" sizes="192x192" href="<?= $e($base) ?>/assets/icons/athena-192.png">
     <link rel="preload" as="image" href="<?= $e($heroPosterUrl) ?>" fetchpriority="high">
     <script type="application/ld+json"><?= json_encode([
@@ -226,7 +226,7 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                 </button>
-                <a href="<?= $e($base) ?>/" class="hi-wordmark" aria-label="Athena — <?= $e(__('common.home')) ?>">Athena<span class="hi-wordmark__dot" aria-hidden="true">.</span></a>
+                <a href="<?= $e($base) ?>/" class="hi-wordmark" aria-label="Athena — <?= $e(__('common.home')) ?>"><img src="<?= $e($base) ?>/assets/brand/athena-embleme-blanc.svg" alt="" class="hi-wordmark__emblem" width="30" height="26">Athena<span class="hi-wordmark__dot" aria-hidden="true">.</span></a>
             </div>
             <nav class="hi-topbar__nav" aria-label="<?= $e(__('home.nav_aria')) ?>">
                 <a href="<?= $e(url('communities')) ?>"><?= $e(__('common.communities')) ?></a>
@@ -1014,7 +1014,7 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
     <footer class="hi-footer border-t border-white/10 bg-black py-10 text-white">
         <div class="hi-wrap flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
             <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em]">Athena<span class="text-emerald-400" aria-hidden="true">.</span></p>
+                <img src="<?= $e($base) ?>/assets/brand/athena-logo-blanc.svg" alt="ATHENA" class="h-20 w-auto" width="106" height="80">
                 <p class="hi-body-sm mt-3 max-w-xs text-white/60"><?= $e(__('home.footer_tagline')) ?></p>
             </div>
             <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-1 text-xs" aria-label="<?= $e(__('home.footer_legal_aria')) ?>">

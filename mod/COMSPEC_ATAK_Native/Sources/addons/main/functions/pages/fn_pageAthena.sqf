@@ -21,7 +21,7 @@ private _mode = [] call comspec_atak_native_fnc_athenaMode;
 private _hint = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHint", ["", false, 0]];
 _hint params ["_hText", ["_hWarn", false], ["_hTime", 0]];
 if ((_logged && {!_hWarn}) || {diag_tickTime - _hTime > 30}) then { _hText = ""; };
-private _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa";
+private _logo = "\z\comspec_atak_native\addons\main\data\logo_athena.paa";
 // Une fois connecté, la photo de profil Athena remplace le logo (si le portail en a une).
 if (_logged) then { private _av = [player] call comspec_atak_native_fnc_avatarPath; if (_av isNotEqualTo "") then { _logo = _av; }; };
 

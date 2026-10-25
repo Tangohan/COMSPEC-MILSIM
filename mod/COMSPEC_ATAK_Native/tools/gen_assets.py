@@ -170,6 +170,7 @@ ICONS = {
     "map_los": '<circle cx="5" cy="17" r="2"/><path d="M7 15.5L20 6"/><path d="M14 20l2-4 2 4" /><circle cx="20" cy="6" r="1.5"/>',
     "map_distance": '<path d="M3 12h18M3 8v8M21 8v8"/><path d="M7 10l-2 2 2 2M17 10l2 2-2 2"/>',
     "app_network": '<circle cx="12" cy="18" r="1.6"/><path d="M8.5 14.5a5 5 0 0 1 7 0M5.5 11.5a9 9 0 0 1 13 0M2.5 8.5a13 13 0 0 1 19 0"/>',
+    # app_athena : remplacé par l'emblème ATHENA (athena_brand) juste après cette liste.
     "app_athena": '<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
     "ui_camera": '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6" fill="#fff"/>',
     "ui_link": '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
@@ -321,6 +322,17 @@ def compass_lubber(size=256):
 def icon_png(name, body, size=128):
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{body}</svg>'
     return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size))).convert("RGBA")
+
+
+def athena_brand(svg_name, size, fill):
+    """Logo ATHENA (aigle, vectoriel tools/src/*.svg) centré dans un carré transparent, blanc pour être teinté en jeu."""
+    svg = open(os.path.join(HERE, "src", svg_name), encoding="utf-8").read()
+    inner = int(size * fill)
+    img = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=inner * 2))).convert("RGBA")
+    img.thumbnail((inner, inner), Image.LANCZOS)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    out.alpha_composite(img, ((size - img.width) // 2, (size - img.height) // 2))
+    return out
 
 
 def battery(level, w=128, h=64):
@@ -1926,6 +1938,11 @@ def main():
                 convert(img.convert("RGB"), f"wall_athena_{suffix}", tmp)
                 convert(blurred(img), f"wall_athena_blur_{suffix}", tmp)
             return
+        # « athenalogo » : nouveaux logos ATHENA (icône de l'app Athena et logo de sa carte d'état).
+        if len(sys.argv) > 2 and sys.argv[2] == "athenalogo":
+            convert(athena_brand("athena_embleme.svg", 128, 0.9), "app_athena", tmp)
+            convert(athena_brand("athena_logo.svg", 512, 0.94), "logo_athena", tmp)
+            return
         # « galleryicon » : seulement l'icône de l'app Galerie.
         if len(sys.argv) > 2 and sys.argv[2] == "galleryicon":
             convert(icon_png("app_gallery", ICONS["app_gallery"]), "app_gallery", tmp)
@@ -1978,6 +1995,7 @@ def main():
         if len(sys.argv) > 2 and sys.argv[2] == "icons":
             for name, body in ICONS.items():
                 convert(icon_png(name, body), name, tmp)
+            convert(athena_brand("athena_embleme.svg", 128, 0.9), "app_athena", tmp)
             return
         land = Image.open(PHONE_SRC).convert("RGBA") if os.path.exists(PHONE_SRC) else phone_landscape()
         convert(land, "phone_landscape", tmp)
@@ -1994,6 +2012,8 @@ def main():
         convert(compass_lubber(), "compass_lubber", tmp)
         for name, body in ICONS.items():
             convert(icon_png(name, body), name, tmp)
+        convert(athena_brand("athena_embleme.svg", 128, 0.9), "app_athena", tmp)
+        convert(athena_brand("athena_logo.svg", 512, 0.94), "logo_athena", tmp)
         for lvl in (100, 75, 50, 25, 10):
             convert(battery(lvl), f"bat_{lvl}", tmp)
         for b in range(5):
