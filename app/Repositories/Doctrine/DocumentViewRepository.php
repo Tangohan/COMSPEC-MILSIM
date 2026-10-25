@@ -59,4 +59,20 @@ final class DocumentViewRepository
     {
         return $this->findForUserVersion($tenantId, $userId, $versionId) !== null;
     }
+
+    /**
+     * Versions consultées par un membre (chargement en masse du tableau de bord).
+     *
+     * @return list<int>
+     */
+    public function listViewedVersionIdsForUser(int $tenantId, int $userId): array
+    {
+        if ($tenantId < 1 || $userId < 1 || !$this->tableExists()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT DISTINCT version_id FROM document_views WHERE tenant_id = ? AND user_id = ?');
+        $stmt->execute([$tenantId, $userId]);
+
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    }
 }

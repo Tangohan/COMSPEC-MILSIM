@@ -816,10 +816,10 @@ class HomeController
 
                 if ($gate->allows('documents.view') || $gate->allows('doctrine.view')) {
                     try {
-                        $doctrinePending = \App\Core\Container::get(\App\Services\Doctrine\DocumentComplianceService::class)
-                            ->listPendingActionsForUser($tid, $uid, 6);
+                        // Une seule passe : dashboardSummary() fournit déjà les actions en attente (mêmes 6 éléments).
                         $documentInboxSummary = \App\Core\Container::get(\App\Services\Doctrine\DocumentInboxService::class)
                             ->dashboardSummary($tid, $uid, 6);
+                        $doctrinePending = $documentInboxSummary['items'];
                     } catch (\Throwable) {
                         $doctrinePending = [];
                         $documentInboxSummary = ['mandatory' => 0, 'overdue' => 0, 'to_read' => 0, 'items' => []];

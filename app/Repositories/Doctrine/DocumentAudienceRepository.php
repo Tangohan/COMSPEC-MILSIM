@@ -41,6 +41,34 @@ final class DocumentAudienceRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Audiences de plusieurs documents en une requête.
+     *
+     * @param list<int> $documentIds
+     * @return array<int, list<array<string, mixed>>> documentId => audiences (liste vide si aucune)
+     */
+    public function listForDocuments(array $documentIds, int $tenantId): array
+    {
+        $documentIds = array_values(array_unique(array_filter(array_map('intval', $documentIds), static fn (int $id): bool => $id > 0)));
+        $out = [];
+        foreach ($documentIds as $id) {
+            $out[$id] = [];
+        }
+        if ($documentIds === [] || $tenantId < 1 || !$this->tableExists()) {
+            return $out;
+        }
+        $placeholders = implode(',', array_fill(0, count($documentIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM document_audiences WHERE document_id IN ($placeholders) AND tenant_id = ? ORDER BY id ASC"
+        );
+        $stmt->execute(array_merge($documentIds, [$tenantId]));
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['document_id']][] = $row;
+        }
+
+        return $out;
+    }
+
     public function replaceForDocument(int $documentId, int $tenantId, array $rows): void
     {
         if (!$this->tableExists()) {
