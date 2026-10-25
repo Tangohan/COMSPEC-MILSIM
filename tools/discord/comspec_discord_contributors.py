@@ -15,7 +15,7 @@ Le site propose cinq rôles de contributeur : Translator, Tester, Content creato
     d'une communauté, nombre de communautés, ancienneté), règle l'adresse de vérification de l'application et crée
     le rôle « Athena verified ». Il reste à cocher, dans Paramètres du serveur › Rôles › Athena verified › Liens,
     la condition « Compte Athena » de l'application ; puis à coller l'Application ID et le secret client dans
-    Intégrations › Plateforme sur le site ;
+    Administration › Intégrations de la plateforme sur le site ;
   - avec --give « pseudo=Rôle » (répétable) : donne un rôle à un membre, d'après le pseudo Discord indiqué
     dans la demande sur le site (Administration du site › Contributeurs).
 
@@ -165,7 +165,7 @@ async def setup_linked_roles(client, guild, apply, log):
     from discord.http import Route
 
     app_id = client.application_id
-    log(f"Rôles liés : application {app_id} (Application ID à coller dans Intégrations › Plateforme sur le site).")
+    log(f"Rôles liés : application {app_id} (Application ID à coller dans Administration › Intégrations de la plateforme sur le site).")
     log("Rôles liés : conditions déclarées à Discord : " + ", ".join(m["key"] for m in LINKED_ROLES_METADATA) + ".")
     log(f"Rôles liés : adresse de vérification de l'application = {VERIFICATION_URL}")
     role = next((r for r in guild.roles if r.name == VERIFIED_ROLE[0]), None)
