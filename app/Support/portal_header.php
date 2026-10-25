@@ -8,6 +8,7 @@ use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Alerts\AccountProfileAlertsBuilder;
 use App\Services\Alerts\AlertPresentationService;
+use App\Services\Alerts\PlanEndAlertsBuilder;
 use App\Services\Alerts\ProbationOverdueAlertsBuilder;
 use App\Services\Alerts\RecruitmentRetroAlertsBuilder;
 
@@ -76,6 +77,14 @@ function portal_header_context(): array
             $retroAlerts = Container::get(RecruitmentRetroAlertsBuilder::class)->build($uid, $tid);
             if ($retroAlerts !== []) {
                 $alerts = array_merge($alerts, $retroAlerts);
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
+        try {
+            $planEndAlerts = Container::get(PlanEndAlertsBuilder::class)->build($uid, $tid);
+            if ($planEndAlerts !== []) {
+                $alerts = array_merge($alerts, $planEndAlerts);
             }
         } catch (\Throwable) {
             // ignore
