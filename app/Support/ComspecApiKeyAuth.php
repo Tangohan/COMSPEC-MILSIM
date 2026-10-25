@@ -68,14 +68,8 @@ final class ComspecApiKeyAuth
             return '';
         }
         try {
-            $repo = new TenantAtakConfigRepository();
-            $tenantKey = $repo->getAccessKey($tenantId);
-            if ($tenantKey !== '') {
-                return $tenantKey;
-            }
-            $generated = $repo->generateAccessKey($tenantId);
-
-            return trim((string) ($generated['plain_key'] ?? ''));
+            // Génération conditionnelle : deux liaisons simultanées reçoivent la même clé.
+            return (new TenantAtakConfigRepository())->ensureAccessKey($tenantId);
         } catch (\Throwable) {
             return '';
         }
