@@ -6813,11 +6813,19 @@ class AtakApiController
                     is_array($extra) ? $extra : [],
                     (string) $callSign
                 );
-                if (!$hideEnemyAi) {
+                $clientKeyPos = $this->activityLog->clientKeyFromRequest();
+                // Session déjà à jour (même indicatif, < 20 s) : ni journal ni métadonnées à construire.
+                if (!$hideEnemyAi && !$this->activityLog->positionSessionFresh(
+                    $tenantId,
+                    $mapId,
+                    $clientKeyPos,
+                    (string) $callSign,
+                    !empty($upsert['created'])
+                )) {
                     $this->activityLog->recordFromPosition(
                         $tenantId,
                         $mapId,
-                        $this->activityLog->clientKeyFromRequest(),
+                        $clientKeyPos,
                         (string) $callSign,
                         !empty($upsert['created']),
                         $this->buildActivityMeta(
