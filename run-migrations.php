@@ -4641,6 +4641,12 @@ $migrationRunner->step('personnel_dossier_dedupe', static function () use ($pers
     $personnelDossierDedupe($pdo);
 });
 
+// Dossier médical : taille, intolérances médicamenteuses, allergies (vue « Médical » du tableur des effectifs).
+$personnelMedicalFields = require $root . '/bootstrap/personnel_medical_fields_migration.php';
+$migrationRunner->step('personnel_medical_fields', static function () use ($personnelMedicalFields, $pdo): void {
+    $personnelMedicalFields($pdo);
+});
+
 require_once $root . '/bootstrap/migrations_full_post.php';
 comspec_print_post_migration_report($pdo, $root, $migrationFlush);
 $migrationsOk = $migrationRunner->printReport();
