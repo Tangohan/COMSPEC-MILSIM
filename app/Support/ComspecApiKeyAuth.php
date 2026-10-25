@@ -103,15 +103,24 @@ final class ComspecApiKeyAuth
         $body = self::peekJsonObject();
         $slugs = [$_GET['tenant_slug'] ?? null, $_POST['tenant_slug'] ?? null, $body['tenant_slug'] ?? null];
         foreach ($slugs as $slug) {
-            if (is_scalar($slug) && trim((string) $slug) !== '') {
+            if ($slug === null || $slug === '') {
+                continue;
+            }
+            // Valeur non scalaire (tableau, objet JSON) : communauté choisie par le client, refusée.
+            if (!is_scalar($slug) || trim((string) $slug) !== '') {
                 return false;
             }
         }
         $default = (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID') ?: 0);
         $ids = [$_GET['tenant_id'] ?? null, $_POST['tenant_id'] ?? null, $body['tenant_id'] ?? null];
         foreach ($ids as $id) {
-            if ($id === null || $id === '' || !is_scalar($id)) {
+            if ($id === null || $id === '') {
                 continue;
+            }
+            // tenant_id[]=x ou {"tenant_id":[5]} : les contrôleurs font (int) d'un tableau non vide = 1,
+            // ce qui ouvrirait le tenant 1. Toute valeur non scalaire est refusée.
+            if (!is_scalar($id)) {
+                return false;
             }
             if ((int) $id < 1) {
                 continue;
