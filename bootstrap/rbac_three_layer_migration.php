@@ -90,8 +90,6 @@ function run_rbac_three_layer_migration(PDO $pdo): void
 
     // Backfill scope sur permissions tenant existantes
     $pdo->exec('UPDATE permissions SET scope = \'community\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['admin.organization', 'admin.access']));
-    $pdo->exec('UPDATE permissions SET scope = \'intra\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['forum.view', 'forum.reply', 'forum.create_topic', 'forum.edit_own', 'forum.delete_own']));
-    $pdo->exec('UPDATE permissions SET scope = \'community\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::likeLiteral($pdo, 'slug', 'forum.%') . ' AND scope = \'community\'');
 
     // Couches par slug sur rôles tenant existants
     $pdo->exec('UPDATE roles SET role_layer = \'intra\' WHERE tenant_id IS NOT NULL AND ' . \App\Support\SqlText::inLiterals($pdo, 'slug', ['member', 'officer', 'forum_moderator']));

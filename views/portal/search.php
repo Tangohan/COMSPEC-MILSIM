@@ -10,7 +10,6 @@ $searchApiUrl = url('api/portal/search');
 $q = $query ?? '';
 $canSearchDocuments = $canSearchDocuments ?? true;
 $canSearchPersonnel = $canSearchPersonnel ?? true;
-$canSearchForum = !function_exists('forum_public_nav_visible') || forum_public_nav_visible();
 ?>
 <script>
 window.__portalHubUrl = <?= json_encode(url('hub'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
@@ -39,7 +38,7 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                         Recherche portail
                     </h1>
                     <p class="mt-4 max-w-2xl text-sm leading-6 text-slate-200">
-                        Documents, forum, personnel (y compris par fonction), événements, formations et raccourcis —
+                        Documents, personnel (y compris par fonction), événements, formations et raccourcis —
                         un seul point d’entrée. Les résultats se mettent à jour pendant la saisie (après 2 caractères).
                     </p>
                 </div>
@@ -97,17 +96,6 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
                                     >
                                     <span>Documents</span>
                                 </label>
-                                <?php if ($canSearchForum): ?>
-                                <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50">
-                                    <input
-                                        id="scope-forum"
-                                        type="checkbox"
-                                        checked
-                                        class="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
-                                    >
-                                    <span>Forum</span>
-                                </label>
-                                <?php endif; ?>
                                 <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
                                     <input
                                         id="scope-personnel"

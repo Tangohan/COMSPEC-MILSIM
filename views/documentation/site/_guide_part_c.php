@@ -160,7 +160,7 @@
     <p>
         La <strong>situation tactique ATAK</strong> est la représentation cartographique vivante de ce qui se passe sur le terrain simulé : des
         marqueurs symbolisent les éléments amis, neutres ou hostiles, positionnés sur un fond de carte partagé par tous les participants autorisés.
-        Là où un briefing du <a href="#forum-et-briefings">forum</a> décrit une intention par écrit et où le <a href="#mur-operationnel">mur
+        Là où un briefing décrit une intention par écrit et où le <a href="#mur-operationnel">mur
         opérationnel</a> centralise l’état des fiches, la situation tactique répond à une question plus immédiate : « où sont les uns et les autres,
         et dans quel état, <em>maintenant</em> ? »
     </p>
@@ -792,8 +792,8 @@ this setVariable ["comspec_briefingScreenIndex", 0];
     <h2>Alertes &amp; annonces</h2>
     <p class="site-docs__lead">
         Ce module regroupe les moyens de <strong>diffuser une information descendante</strong> et de la faire remonter à l’attention des membres : la
-        page dédiée <strong>Alertes &amp; annonces</strong>, les <strong>bandeaux</strong> affichés en tête de portail, les <strong>sujets de forum
-        épinglés</strong> et les <strong>messages flash</strong> qui confirment une action. Il distingue soigneusement ce qui relève de la
+        page dédiée <strong>Alertes &amp; annonces</strong>, les <strong>bandeaux</strong> affichés en tête de portail et les <strong>messages
+        flash</strong> qui confirment une action. Il distingue soigneusement ce qui relève de la
         <strong>plateforme</strong> de ce qui relève de votre <strong>communauté</strong>, car ces deux niveaux n’ont ni le même émetteur ni le même
         public.
     </p>
@@ -813,9 +813,8 @@ this setVariable ["comspec_briefingScreenIndex", 0];
     </p>
     <p>
         La <strong>page Alertes &amp; annonces</strong> centralise ces communications pour qu’un membre dispose d’un endroit unique où retrouver ce qui
-        a été diffusé, plutôt que de dépendre d’un affichage fugace vu une seule fois à la connexion. Elle complète, sans les remplacer, le
-        <a href="#forum-et-briefings">forum</a> pour les échanges durables et le <a href="#mur-operationnel">mur opérationnel</a> pour la situation
-        courante.
+        a été diffusé, plutôt que de dépendre d’un affichage fugace vu une seule fois à la connexion. Elle complète, sans le remplacer, le
+        <a href="#mur-operationnel">mur opérationnel</a> pour la situation courante.
     </p>
 
     <h3>Fonctionnement</h3>
@@ -844,11 +843,6 @@ this setVariable ["comspec_briefingScreenIndex", 0];
                     <td>Temporaire, tant que l’information est d’actualité</td>
                 </tr>
                 <tr>
-                    <td>Sujet de forum épinglé</td>
-                    <td>Annonce discutable maintenue en tête de catégorie</td>
-                    <td>Durable, avec possibilité d’échange</td>
-                </tr>
-                <tr>
                     <td>Message flash</td>
                     <td>Confirmation immédiate d’une action réalisée</td>
                     <td>Fugace, disparaît après lecture</td>
@@ -861,12 +855,6 @@ this setVariable ["comspec_briefingScreenIndex", 0];
         conviennent à une information marquante mais temporaire : une échéance qui approche, une consigne exceptionnelle, un rappel avant une activité
         importante. Leur force — être vus par tous — est aussi leur limite : un bandeau qui reste affiché trop longtemps, ou plusieurs bandeaux
         empilés, finissent par ne plus être lus. Un bandeau se retire donc dès qu’il a rempli son office.
-    </p>
-    <p>
-        Les <strong>sujets de forum épinglés</strong> servent les annonces qui gagnent à rester à portée de main dans une catégorie et qui peuvent
-        appeler des questions. Comme décrit au chapitre <a href="#forum-et-briefings">Forum &amp; briefings</a>, l’épinglage maintient un sujet en tête
-        de sa catégorie plutôt que de le laisser descendre dans le flux. C’est la forme adaptée lorsqu’une annonce mérite discussion ou lorsqu’on veut
-        qu’elle reste retrouvable durablement, contrairement à un bandeau voué à disparaître.
     </p>
     <p>
         Les <strong>messages flash</strong> jouent un rôle différent : ils confirment qu’une action vient d’aboutir (« enregistré », « publié »,
@@ -943,7 +931,7 @@ this setVariable ["comspec_briefingScreenIndex", 0];
     <h3>Présentation générale</h3>
     <p>
         Les <strong>indicateurs d’activité</strong> mesurent la vitalité de la communauté : fréquentation des modules, participation aux événements,
-        progression dans les formations, dynamique du forum. Ils répondent à des questions simples mais utiles — l’unité est-elle active ? un module
+        progression dans les formations. Ils répondent à des questions simples mais utiles — l’unité est-elle active ? un module
         est-il réellement utilisé ? une baisse d’engagement se dessine-t-elle ? — auxquelles il est difficile de répondre honnêtement de mémoire, sans
         chiffres pour appuyer l’intuition.
     </p>

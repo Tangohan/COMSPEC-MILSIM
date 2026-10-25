@@ -26,6 +26,12 @@ final class PlanPaymentService
 
     public const HEART_AMOUNT_CENTS = 200;
 
+    /** Réglage plateforme : formules retirées de la vente (liste JSON de slugs). */
+    public const SETTING_PLANS_OFF = 'billing_plans_off';
+
+    /** Relance de l’administration pour un paiement déclaré resté sans décision. */
+    public const ADMIN_REMINDER_HOURS = 24;
+
     public function __construct(
         private PlanPaymentRequestRepository $requests,
         private SubscriptionPlanRepository $plans,
@@ -52,6 +58,34 @@ final class PlanPaymentService
         return ManualBilling::paypalUrl($this->paypalBaseUrl(), (int) ($request['amount_cents'] ?? 0));
     }
 
+    private function settingsRepo(): PlatformSettingsRepository
+    {
+        return $this->settings ??= new PlatformSettingsRepository();
+    }
+
+    /**
+     * Formules payantes retirées de la vente par l’administration (plus de nouvelle souscription).
+     *
+     * @return list<string>
+     */
+    public function disabledPlans(): array
+    {
+        try {
+            $raw = json_decode((string) $this->settingsRepo()->get(self::SETTING_PLANS_OFF, '[]'), true);
+        } catch (\Throwable) {
+            $raw = [];
+        }
+
+        return is_array($raw) ? array_values(array_intersect(self::PAID_PLANS, array_map('strval', $raw))) : [];
+    }
+
+    /** @param list<string> $slugs */
+    public function setDisabledPlans(array $slugs): void
+    {
+        $slugs = array_values(array_intersect(self::PAID_PLANS, array_map('strval', $slugs)));
+        $this->settingsRepo()->setMany([self::SETTING_PLANS_OFF => json_encode($slugs)]);
+    }
+
     /** Prix (centimes) d’une formule pour une période, ou null si non réglé. */
     public function priceCents(array $planRow, string $interval): ?int
     {
@@ -64,10 +98,11 @@ final class PlanPaymentService
     /**
      * Offres payantes affichables : formule, prix mensuel et annuel (null si non réglé).
      *
-     * @return list<array{slug: string, name: string, monthly: ?int, yearly: ?int, available: bool}>
+     * @return list<array{slug: string, name: string, monthly: ?int, yearly: ?int, available: bool, on_sale: bool}>
      */
     public function offers(): array
     {
+        $off = $this->disabledPlans();
         $bySlug = [];
         foreach ($this->plans->tableExists() ? $this->plans->allOrdered() : [] as $row) {
             $bySlug[strtolower(trim((string) ($row['slug'] ?? '')))] = $row;
@@ -85,7 +120,8 @@ final class PlanPaymentService
                 'name' => trim((string) ($row['name'] ?? '')) ?: $slug,
                 'monthly' => $monthly,
                 'yearly' => $yearly,
-                'available' => $this->schemaReady() && ($monthly !== null || $yearly !== null),
+                'on_sale' => !in_array($slug, $off, true),
+                'available' => $this->schemaReady() && ($monthly !== null || $yearly !== null) && !in_array($slug, $off, true),
             ];
         }
 
@@ -105,6 +141,9 @@ final class PlanPaymentService
         $interval = $interval === 'yearly' ? 'yearly' : 'monthly';
         if (!in_array($planSlug, self::PAID_PLANS, true)) {
             throw new \RuntimeException('Formule invalide.');
+        }
+        if (in_array($planSlug, $this->disabledPlans(), true)) {
+            throw new \RuntimeException('Cette formule n’est plus proposée pour le moment. Choisissez-en une autre ou contactez l’équipe Athena.');
         }
         $plan = $this->plans->findBySlug($planSlug);
         $amount = $plan !== null ? $this->priceCents($plan, $interval) : null;
@@ -217,7 +256,7 @@ final class PlanPaymentService
             return ['ok' => false, 'error' => 'La demande a changé entre-temps. Rechargez la page.'];
         }
         $this->auditLog('platform.plan_payment_activated', $tenantId, $adminId, $requestId, (string) $request['reference'], $endsAt);
-        $this->notifyPayer($request, true, $endsAt, $note);
+        $this->notifyPayer($request, 'activated', $endsAt, $note);
 
         return ['ok' => true, 'ends_at' => $endsAt ?? ''];
     }
@@ -233,9 +272,152 @@ final class PlanPaymentService
             return ['ok' => false, 'error' => 'Cette demande est déjà traitée.'];
         }
         $this->auditLog('platform.plan_payment_rejected', (int) ($request['tenant_id'] ?? 0), $adminId, $requestId, (string) $request['reference'], null);
-        $this->notifyPayer($request, false, null, $note);
+        $this->notifyPayer($request, 'rejected', null, $note);
 
         return ['ok' => true];
+    }
+
+    /**
+     * Annulation par l’administration d’une demande pas encore activée (doublon, erreur de formule…).
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function cancelByAdmin(int $requestId, ?int $adminId, string $note): array
+    {
+        $request = $this->requests->findById($requestId);
+        if ($request === null) {
+            return ['ok' => false, 'error' => 'Demande introuvable.'];
+        }
+        if (!$this->requests->cancelByAdmin($requestId, $adminId, $note)) {
+            return ['ok' => false, 'error' => 'Seule une demande pas encore traitée peut être annulée.'];
+        }
+        $this->auditLog('platform.plan_payment_cancelled', (int) ($request['tenant_id'] ?? 0), $adminId, $requestId, (string) $request['reference'], null);
+        if ((string) $request['status'] === PlanPaymentRequestRepository::STATUS_DECLARED) {
+            $this->notifyPayer($request, 'cancelled', null, $note);
+        }
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Paiement activé puis remboursé (le remboursement se fait sur PayPal) : noté « remboursé » et, au choix,
+     * la formule payée par cette demande s’arrête tout de suite.
+     *
+     * @return array{ok: bool, error?: string, plan_ended?: bool}
+     */
+    public function refund(int $requestId, ?int $adminId, string $note, bool $endPlan): array
+    {
+        $request = $this->requests->findById($requestId);
+        if ($request === null) {
+            return ['ok' => false, 'error' => 'Demande introuvable.'];
+        }
+        if (!$this->requests->markRefunded($requestId, $adminId, $note)) {
+            return ['ok' => false, 'error' => 'Seul un paiement activé peut être marqué remboursé.'];
+        }
+        $this->auditLog('platform.plan_payment_refunded', (int) ($request['tenant_id'] ?? 0), $adminId, $requestId, (string) $request['reference'], null);
+        $ended = false;
+        $tenantId = (int) ($request['tenant_id'] ?? 0);
+        if ($endPlan && (string) $request['kind'] === PlanPaymentRequestRepository::KIND_PLAN && $tenantId > 0) {
+            $ended = !empty($this->endPlan($tenantId, $adminId, $note !== '' ? $note : 'Paiement ' . $request['reference'] . ' remboursé.', false)['ok']);
+        }
+        $this->notifyPayer($request, 'refunded', null, $note);
+
+        return ['ok' => true, 'plan_ended' => $ended];
+    }
+
+    /**
+     * Arrête tout de suite la formule payée par PayPal d’une communauté : retour à la formule gratuite.
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function endPlan(int $tenantId, ?int $adminId, string $note, bool $notify = true): array
+    {
+        $tenant = $this->tenants->findById($tenantId);
+        if ($tenant === null) {
+            return ['ok' => false, 'error' => 'Communauté introuvable.'];
+        }
+        $current = ManualBilling::current($tenant);
+        if ($current === null || !ManualBilling::paidActive($tenant)) {
+            return ['ok' => false, 'error' => 'Cette communauté n’a pas de formule payée par PayPal en cours.'];
+        }
+        $now = date('Y-m-d H:i:s');
+        $this->tenants->updateSubscriptionFromPayPal($tenantId, null, null, 'canceled', 'free', null);
+        $this->tenants->mergeSettings($tenantId, [
+            ManualBilling::SETTINGS_KEY => array_merge($current, ['ends_at' => $now, 'ended_by_admin' => true]),
+        ]);
+        $this->auditLog('platform.plan_manual_ended', $tenantId, $adminId, 0, $current['reference'], $now);
+        if ($notify && $current['reference'] !== '') {
+            $request = $this->requests->findByReference($current['reference']);
+            if ($request !== null) {
+                $this->notifyPayer($request, 'ended', null, $note);
+            }
+        }
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Communautés avec une formule payée par PayPal encore en cours (liste de suivi de l’administration).
+     *
+     * @return list<array{tenant_id: int, tenant_name: string, plan_slug: string, plan_name: string, interval: string, ends_at: string, days_left: int, reference: string}>
+     */
+    public function activeManualSubscriptions(?int $now = null): array
+    {
+        $now ??= time();
+        $out = [];
+        foreach ($this->tenants->listOverviewForPlatform() as $row) {
+            $w = is_array($row['plan_window'] ?? null) ? $row['plan_window'] : [];
+            $manual = is_array($w['manual_billing'] ?? null) ? $w['manual_billing'] : null;
+            if ($manual === null) {
+                continue;
+            }
+            $tenant = [
+                'subscription_status' => (string) ($row['subscription_status'] ?? 'none'),
+                'settings' => [ManualBilling::SETTINGS_KEY => $manual],
+            ];
+            $cur = ManualBilling::current($tenant);
+            if ($cur === null || !ManualBilling::paidActive($tenant, $now)) {
+                continue;
+            }
+            $ts = (int) strtotime($cur['ends_at']);
+            $plan = $this->plans->findBySlug($cur['plan_slug']);
+            $out[] = [
+                'tenant_id' => (int) ($row['id'] ?? 0),
+                'tenant_name' => (string) ($row['name'] ?? ''),
+                'plan_slug' => $cur['plan_slug'],
+                'plan_name' => $plan !== null ? (trim((string) ($plan['name'] ?? '')) ?: $cur['plan_slug']) : $cur['plan_slug'],
+                'interval' => $cur['interval'],
+                'ends_at' => $cur['ends_at'],
+                'days_left' => max(0, (int) ceil(($ts - $now) / 86400)),
+                'reference' => $cur['reference'],
+            ];
+        }
+        usort($out, static fn (array $a, array $b): int => strcmp($a['ends_at'], $b['ends_at']));
+
+        return $out;
+    }
+
+    /**
+     * Relance par e-mail de l’administration pour les paiements déclarés depuis plus de 24 h sans décision.
+     *
+     * @return array{requests: int, emails: int}
+     */
+    public function remindAdminsOfPendingDeclarations(?int $now = null): array
+    {
+        if (!$this->schemaReady()) {
+            return ['requests' => 0, 'emails' => 0];
+        }
+        $rows = $this->requests->listDeclaredAwaitingReminder(self::ADMIN_REMINDER_HOURS, $now);
+        if ($rows === []) {
+            return ['requests' => 0, 'emails' => 0];
+        }
+        $emails = 0;
+        foreach ($rows as $row) {
+            $emails += $this->notifyAdmins($row, true);
+        }
+        $this->requests->markAdminReminded(array_map(static fn (array $r): int => (int) $r['id'], $rows));
+
+        return ['requests' => count($rows), 'emails' => $emails];
     }
 
     /** @param array<string, mixed> $request */
@@ -250,8 +432,13 @@ final class PlanPaymentService
         return 'Formule ' . $name . ' — ' . (((string) ($request['billing_interval'] ?? '')) === 'yearly' ? '1 an' : '1 mois');
     }
 
-    /** @param array<string, mixed> $request */
-    private function notifyAdmins(array $request): void
+    /**
+     * E-mail aux administrateurs de la plateforme : paiement déclaré, ou relance s’il attend toujours.
+     *
+     * @param array<string, mixed> $request
+     * @return int e-mails envoyés
+     */
+    private function notifyAdmins(array $request, bool $reminder = false): int
     {
         $tenant = !empty($request['tenant_id']) ? $this->tenants->findById((int) $request['tenant_id']) : null;
         $vars = [
@@ -263,50 +450,70 @@ final class PlanPaymentService
             'payerEmail' => (string) ($request['payer_email'] ?? ''),
             'tenantName' => $tenant !== null ? (string) ($tenant['name'] ?? '') : '—',
             'adminUrl' => url('admin/paiements') . '?ref=' . rawurlencode((string) $request['reference']),
+            'reminder' => $reminder,
+            'declaredAt' => !empty($request['declared_at']) ? date('d/m/Y H:i', (int) strtotime((string) $request['declared_at'])) : '',
         ];
         try {
             $recipients = $this->users->listPlatformAdminEmails();
         } catch (\Throwable) {
             $recipients = [];
         }
+        $sent = 0;
         foreach ($recipients as $to) {
             $to = strtolower(trim((string) $to));
             if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
                 continue;
             }
             try {
-                $this->email()->sendTemplated(
+                if ($this->email()->sendTemplated(
                     \App\Services\Email\EmailEvents::PLAN_PAYMENT_DECLARED,
                     'plan_payment_declared',
                     $to,
-                    'Paiement PayPal à vérifier — ' . $vars['reference'] . ' (' . $vars['amount'] . ')',
+                    ($reminder ? 'Relance : paiement PayPal toujours à vérifier — ' : 'Paiement PayPal à vérifier — ')
+                        . $vars['reference'] . ' (' . $vars['amount'] . ')',
                     $vars,
                     null,
                     $vars['payerEmail'] !== '' ? $vars['payerEmail'] : null,
-                    ['purpose' => 'plan_payment_declared', 'reference' => $vars['reference']],
+                    ['purpose' => $reminder ? 'plan_payment_reminder' : 'plan_payment_declared', 'reference' => $vars['reference']],
                     true
-                );
+                )) {
+                    $sent++;
+                }
             } catch (\Throwable) {
                 // La demande reste visible dans Admin > Paiements.
             }
         }
+
+        return $sent;
     }
 
-    /** @param array<string, mixed> $request */
-    private function notifyPayer(array $request, bool $activated, ?string $endsAt, string $note): void
+    /**
+     * E-mail à la personne qui a payé : activé, refusé, annulé, remboursé ou formule arrêtée.
+     *
+     * @param array<string, mixed> $request
+     */
+    private function notifyPayer(array $request, string $state, ?string $endsAt, string $note): void
     {
         $to = strtolower(trim((string) ($request['payer_email'] ?? '')));
         if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
             return;
         }
+        $subjects = [
+            'activated' => 'Paiement confirmé',
+            'rejected' => 'Paiement non confirmé',
+            'cancelled' => 'Demande de paiement annulée',
+            'refunded' => 'Paiement remboursé',
+            'ended' => 'Formule arrêtée',
+        ];
         try {
             $this->email()->sendTemplated(
                 \App\Services\Email\EmailEvents::PLAN_PAYMENT_DECIDED,
                 'plan_payment_decided',
                 $to,
-                ($activated ? 'Paiement confirmé' : 'Paiement non confirmé') . ' — ' . (string) $request['reference'],
+                ($subjects[$state] ?? 'Paiement') . ' — ' . (string) $request['reference'],
                 [
-                    'activated' => $activated,
+                    'state' => $state,
+                    'activated' => $state === 'activated',
                     'reference' => (string) $request['reference'],
                     'description' => $this->describe($request),
                     'amount' => ManualBilling::formatAmount((int) $request['amount_cents']),
@@ -316,7 +523,7 @@ final class PlanPaymentService
                 ],
                 !empty($request['tenant_id']) ? (int) $request['tenant_id'] : null,
                 null,
-                ['purpose' => 'plan_payment_decided', 'reference' => (string) $request['reference']]
+                ['purpose' => 'plan_payment_' . $state, 'reference' => (string) $request['reference']]
             );
         } catch (\Throwable) {
         }

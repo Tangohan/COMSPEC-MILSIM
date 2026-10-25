@@ -321,7 +321,7 @@ $guideUrl = url('communities/create/guide');
                     <aside class="cc-tip" aria-label="Conseils pour cette étape">
                         <p class="cc-tip__title">À retenir</p>
                         <ul>
-                            <li><strong>Complet</strong> convient à la plupart des unités MilSim : forum, formations, recrutement, effectifs, opérations et carte.</li>
+                            <li><strong>Complet</strong> convient à la plupart des unités MilSim : formations, recrutement, effectifs, opérations et carte.</li>
                             <li><strong>Bureau des effectifs</strong> et <strong>Carte ATAK</strong> masquent des modules pour garder une interface simple.</li>
                             <li>Le type se change plus tard : les données déjà saisies ne sont jamais supprimées, seulement masquées.</li>
                             <li>Les membres arrivent au niveau d’accès <strong>Membre</strong> : ils utilisent les outils sans rien administrer. Vous restez <strong>Gestionnaire</strong>.</li>
@@ -353,6 +353,22 @@ $guideUrl = url('communities/create/guide');
                             </label>
                             <?php endforeach; ?>
                         </div>
+                        <div class="cc-soft mt-5 hidden" data-cc-type-note="effectifs">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900">Bureau des effectifs : comment ça marche</p>
+                            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
+                                <li><strong>Vous tenez le registre comme un tableur.</strong> Vos membres n’ont pas besoin de compte : vous créez leurs fiches, ou vous importez votre fichier Excel (une ligne par membre).</li>
+                                <li><strong>Recrutement uniquement sur Discord.</strong> Pas de formulaire de candidature sur le site : le bouton de votre page publique ouvre votre serveur Discord. Une fois la recrue acceptée, vous ajoutez sa fiche.</li>
+                                <li><strong>Seuls ceux qui tiennent les fiches se connectent</strong> (état-major, RH). Le menu de gestion ne montre que les outils du registre.</li>
+                            </ul>
+                        </div>
+                        <div class="cc-soft cc-soft--muted mt-5 hidden" data-cc-type-note="atak">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Carte ATAK : comment ça marche</p>
+                            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
+                                <li>Vos joueurs créent un compte par invitation pour relier leur téléphone en jeu.</li>
+                                <li><strong>Recrutement uniquement sur Discord</strong> : pas de formulaire de candidature sur le site, le bouton de votre page publique ouvre votre serveur.</li>
+                                <li>Le menu de gestion ne garde que la carte, les terminaux, le matériel et les membres.</li>
+                            </ul>
+                        </div>
                     </section>
                 </div>
 
@@ -375,44 +391,44 @@ $guideUrl = url('communities/create/guide');
 
                     <section class="cc-section">
                         <h2 class="cc-section__title">Rôles et droits</h2>
-                        <p class="cc-section__text">Ces modèles créent les profils de départ de votre organisation (commandement, ressources humaines, instruction, membres, invités et modération du forum). Vous pourrez les ajuster à tout moment après la création.</p>
+                        <p class="cc-section__text">Ces modèles créent les profils de départ de votre organisation (commandement, ressources humaines, instruction, membres, invités et modération). Vous pourrez les ajuster à tout moment après la création.</p>
                         <div class="mt-5 space-y-3">
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_roles_template" value="quick" class="sr-only" checked>
                                 <span class="cc-choice__eyebrow">Recommandé</span>
                                 <span class="cc-choice__title">Démarrage rapide</span>
-                                <span class="cc-choice__text">Convient à la plupart des unités. Les droits sont équilibrés dès le départ&nbsp;: le modérateur du forum peut gérer les échanges courants, sans étendre sa portée à tout l’espace forum de l’organisation.</span>
+                                <span class="cc-choice__text">Convient à la plupart des unités. Les droits sont équilibrés dès le départ.</span>
                             </label>
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_roles_template" value="standard" class="sr-only">
                                 <span class="cc-choice__eyebrow">Alternative</span>
                                 <span class="cc-choice__title">Modération élargie</span>
-                                <span class="cc-choice__text">Même profils de base, avec un droit supplémentaire&nbsp;: le modérateur du forum peut aussi intervenir sur l’espace forum de l’organisation (annonces, sections réservées, supervision plus large).</span>
+                                <span class="cc-choice__text">Même profils de base, avec une modération plus large des signalements des membres.</span>
                             </label>
                         </div>
 
                         <details class="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                             <summary class="cursor-pointer text-sm font-bold text-slate-800">Comparer les rôles inclus</summary>
                             <p class="mt-3 text-xs leading-relaxed text-slate-600">Le compte fondateur reçoit le rôle «&nbsp;Fondateur&nbsp;». Les nouveaux membres reçoivent «&nbsp;Membre&nbsp;» une fois acceptés ; les visiteurs connectés non membres sont «&nbsp;Invités&nbsp;».</p>
-                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Aperçu des accès principaux. La seule différence entre les deux modèles concerne le rôle de modération du forum.</p>
+                            <p class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs leading-relaxed text-emerald-900 hidden" data-cc-type-note="effectifs"><strong>Bureau des effectifs :</strong> ces rôles ne concernent que les personnes qui se connectent (état-major, RH). Les membres dont vous tenez la fiche sans compte n’ont aucun rôle à gérer, et le recrutement se fait sur Discord, pas sur le site.</p>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Aperçu des accès principaux. La seule différence entre les deux modèles concerne le rôle de modération.</p>
                             <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
                                 <table class="min-w-full text-left text-xs">
                                     <thead>
                                         <tr class="border-b border-slate-200 bg-slate-50">
                                             <th class="px-3 py-2 font-black text-slate-600">Rôle</th>
-                                            <th class="px-3 py-2 font-black text-slate-600">Forum</th>
                                             <th class="px-3 py-2 font-black text-slate-600">Documents et formation</th>
                                             <th class="px-3 py-2 font-black text-slate-600">Particularité</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 text-slate-700">
-                                        <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Pilotage de l’organisation</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Encadrement</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Ressources humaines</td><td class="px-3 py-2">Lecture et sujets</td><td class="px-3 py-2">Consultation</td><td class="px-3 py-2">Effectifs et recrutement</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Participation</td><td class="px-3 py-2">Gestion des formations</td><td class="px-3 py-2">Instruction</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Participation</td><td class="px-3 py-2">Selon affectation</td><td class="px-3 py-2">Profil de base</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Invité</td><td class="px-3 py-2">Lecture seule</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2">Accès limité</td></tr>
-                                        <tr class="bg-emerald-50/50"><td class="px-3 py-2 font-semibold">Modérateur forum</td><td class="px-3 py-2">Modération des échanges</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2 font-semibold text-emerald-800">Portée élargie avec le modèle «&nbsp;Modération élargie&nbsp;»</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Pilotage de l’organisation</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Encadrement</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Ressources humaines</td><td class="px-3 py-2">Consultation</td><td class="px-3 py-2">Effectifs et recrutement</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Gestion des formations</td><td class="px-3 py-2">Instruction</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Selon affectation</td><td class="px-3 py-2">Profil de base</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Invité</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2">Accès limité</td></tr>
+                                        <tr class="bg-emerald-50/50"><td class="px-3 py-2 font-semibold">Modérateur</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2 font-semibold text-emerald-800">Portée élargie avec le modèle «&nbsp;Modération élargie&nbsp;»</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -490,7 +506,8 @@ $guideUrl = url('communities/create/guide');
                                 <input type="radio" name="wizard_catalog_kit_code" value="<?= htmlspecialchars((string) ($kit['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="sr-only">
                                 <span class="cc-choice__eyebrow"><?= $kitIsJobCatalog ? 'Catalogue d’emplois' : 'Modèle officiel' ?> · <?= htmlspecialchars($kitGrades, ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="cc-choice__title"><?= htmlspecialchars((string) ($kit['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?>.</span>
+                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="cc-choice__meta"><?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
                             <?php endforeach; ?>
                             <p class="cc-hint hidden" id="cc-kit-empty">Aucun modèle ne correspond. Effacez le filtre pour tout afficher.</p>
@@ -515,11 +532,37 @@ $guideUrl = url('communities/create/guide');
                             <p class="cc-hint mt-0">Choisissez la forme la plus proche de votre communauté : elle remplace l’arborescence ci-dessous, que vous pourrez ensuite renommer, compléter ou élaguer.</p>
                             <div class="cc-preset-grid mt-3" id="cc-orbat-presets" role="list">
                                 <?php foreach ($orbatPresets as $preset): ?>
-                                <button type="button" class="cc-preset" role="listitem" data-orbat-preset="<?= htmlspecialchars((string) $preset['id'], ENT_QUOTES, 'UTF-8') ?>">
-                                    <span class="cc-preset__audience"><?= htmlspecialchars((string) $preset['audience'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php
+                                // Échelons du modèle : nombre d’unités par niveau, dessinés en mini organigramme.
+                                $presetDepth = [];
+                                $presetLevels = [];
+                                foreach ((array) ($preset['units'] ?? []) as $pu) {
+                                    $pk = (string) ($pu['parent_key'] ?? '');
+                                    $lvl = $pk === '' ? 0 : (($presetDepth[$pk] ?? 0) + 1);
+                                    $presetDepth[(string) ($pu['key'] ?? '')] = $lvl;
+                                    $presetLevels[$lvl] = ($presetLevels[$lvl] ?? 0) + 1;
+                                }
+                                ksort($presetLevels);
+                                ?>
+                                <button type="button" class="cc-preset" role="listitem" aria-pressed="false" data-orbat-preset="<?= htmlspecialchars((string) $preset['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <span class="cc-preset__head">
+                                        <span class="cc-preset__audience"><?= htmlspecialchars((string) $preset['audience'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="cc-preset__check" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 10.5l3.2 3.2L15 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                                    </span>
                                     <span class="cc-preset__title"><?= htmlspecialchars((string) $preset['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="cc-preset__tree" aria-hidden="true">
+                                        <?php foreach ($presetLevels as $lvlCount): ?>
+                                        <span class="cc-preset__tier">
+                                            <?php for ($pi = 0; $pi < min(12, $lvlCount); $pi++): ?><i></i><?php endfor; ?>
+                                            <?php if ($lvlCount > 12): ?><em>+<?= (int) ($lvlCount - 12) ?></em><?php endif; ?>
+                                        </span>
+                                        <?php endforeach; ?>
+                                    </span>
                                     <span class="cc-preset__text"><?= htmlspecialchars((string) $preset['description'], ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="cc-preset__meta"><?= (int) $preset['count'] ?> unités</span>
+                                    <span class="cc-preset__meta">
+                                        <span><?= (int) $preset['count'] ?> unités</span>
+                                        <span><?= count($presetLevels) ?> niveaux</span>
+                                    </span>
                                 </button>
                                 <?php endforeach; ?>
                             </div>
@@ -591,9 +634,16 @@ $guideUrl = url('communities/create/guide');
                                 <span class="cc-choice__title">United States</span>
                                 <span class="cc-choice__text">Grades classiques des forces armées américaines.</span>
                             </label>
+                            <label class="cc-choice min-w-[12rem] flex-1">
+                                <input type="radio" name="wizard_grade_system_code" value="NONE" class="sr-only" data-grade-system>
+                                <span class="cc-choice__eyebrow">Sans grades</span>
+                                <span class="cc-choice__title">Aucun</span>
+                                <span class="cc-choice__text">Aucun grade affiché : profils, en-tête et tableau de bord restent sobres. Idéal pour une association ou une communauté de joueurs.</span>
+                            </label>
                         </div>
+                        <p class="cc-hint hidden" id="cc-grades-none-note">Aucun grade ne sera affiché dans la communauté. Vous pourrez en activer un plus tard dans <em>Back-office → Référentiel des grades</em>, sans rien perdre.</p>
 
-                        <div class="mt-6 grid gap-4 md:grid-cols-2">
+                        <div class="mt-6 grid gap-4 md:grid-cols-2" id="cc-grade-previews">
                             <div id="preview-fr" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 max-h-80 overflow-y-auto">
                                 <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu français</p>
                                 <div class="mt-3 space-y-3 text-xs text-slate-700">
@@ -602,8 +652,16 @@ $guideUrl = url('communities/create/guide');
                                         <div>
                                             <p class="font-black text-slate-800"><?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?></p>
                                             <ul class="mt-1 space-y-0.5 pl-2 border-l-2 border-emerald-200">
+                                                <?php $seenGrades = []; ?>
                                                 <?php foreach ($block['grades'] as $g): ?>
-                                                <li><?= htmlspecialchars((string) ($g['label_short'] ?? $g['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) ($g['label_long'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                                                <?php
+                                                $gShort = trim((string) ($g['label_short'] ?? $g['code'] ?? ''));
+                                                $gLong = trim((string) ($g['label_long'] ?? ''));
+                                                $gKey = mb_strtolower($gLong !== '' ? $gLong : $gShort);
+                                                if (isset($seenGrades[$gKey])) { continue; }
+                                                $seenGrades[$gKey] = true;
+                                                ?>
+                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></li>
                                                 <?php endforeach; ?>
                                             </ul>
                                         </div>
@@ -618,8 +676,16 @@ $guideUrl = url('communities/create/guide');
                                         <div>
                                             <p class="font-black text-slate-800"><?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?></p>
                                             <ul class="mt-1 space-y-0.5 pl-2 border-l-2 border-slate-300">
+                                                <?php $seenGrades = []; ?>
                                                 <?php foreach ($block['grades'] as $g): ?>
-                                                <li><?= htmlspecialchars((string) ($g['label_short'] ?? $g['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) ($g['label_long'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                                                <?php
+                                                $gShort = trim((string) ($g['label_short'] ?? $g['code'] ?? ''));
+                                                $gLong = trim((string) ($g['label_long'] ?? ''));
+                                                $gKey = mb_strtolower($gLong !== '' ? $gLong : $gShort);
+                                                if (isset($seenGrades[$gKey])) { continue; }
+                                                $seenGrades[$gKey] = true;
+                                                ?>
+                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></li>
                                                 <?php endforeach; ?>
                                             </ul>
                                         </div>
@@ -628,7 +694,7 @@ $guideUrl = url('communities/create/guide');
                             </div>
                         </div>
 
-                        <div class="mt-6">
+                        <div class="mt-6" id="cc-founder-grade">
                             <label class="cc-label" for="founder-grade-fr">Grade du fondateur</label>
                             <p class="cc-hint mt-0 mb-2">Le grade affiché sur votre propre dossier. Les grades des membres s’attribuent ensuite dans Effectifs.</p>
                             <select name="wizard_founder_grade_id" id="founder-grade-fr" class="cc-select founder-grade-select">
@@ -674,8 +740,12 @@ $guideUrl = url('communities/create/guide');
 
                     <section class="cc-section">
                         <h2 class="cc-section__title">Mode d’inscription</h2>
-                        <p class="cc-section__text">Ce choix définit le parcours candidat sur la page d’enrôlement public. Vous pourrez le modifier ensuite.</p>
-                        <div class="cc-choice-grid cc-choice-grid--3 mt-5">
+                        <p class="cc-section__text" data-cc-reg-full>Ce choix définit le parcours candidat sur la page d’enrôlement public. Vous pourrez le modifier ensuite.</p>
+                        <div class="cc-soft mt-5 hidden" data-cc-reg-discord-only>
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900">Recrutement uniquement sur Discord</p>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-700">Avec le profil choisi, personne ne candidate sur le site. Le bouton de votre page publique devient « Rejoindre sur Discord » et ouvre votre serveur. Pensez à renseigner le lien d’invitation Discord après la création (Paramètres → Inscription). Pour un formulaire de candidature sur le site, choisissez le profil « Complet ».</p>
+                        </div>
+                        <div class="cc-choice-grid cc-choice-grid--3 mt-5" data-cc-reg-full>
                             <label class="cc-choice">
                                 <input type="radio" name="registration_mode" value="milsim" class="sr-only" checked id="registration_mode_milsim">
                                 <span class="cc-choice__eyebrow">Sélection</span>
@@ -1018,6 +1088,30 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
     });
     syncRegistrationModeUi();
 
+    // Profils sans recrutement (Bureau des effectifs, Carte ATAK) : Discord uniquement, expliqué à chaque étape.
+    function syncTenantTypeUi() {
+        var type = (form.querySelector('input[name="tenant_type"]:checked') || {}).value || 'full';
+        var discordOnly = type !== 'full';
+        form.querySelectorAll('[data-cc-type-note]').forEach(function (el) {
+            el.classList.toggle('hidden', el.getAttribute('data-cc-type-note') !== type);
+        });
+        form.querySelectorAll('[data-cc-reg-full]').forEach(function (el) { el.classList.toggle('hidden', discordOnly); });
+        form.querySelectorAll('[data-cc-reg-discord-only]').forEach(function (el) { el.classList.toggle('hidden', !discordOnly); });
+        if (discordOnly) {
+            var d = document.getElementById('registration_mode_discord');
+            if (d) { d.checked = true; }
+            if (detailMilsim) detailMilsim.classList.add('hidden');
+            if (detailSimple) detailSimple.classList.add('hidden');
+            if (detailDiscord) detailDiscord.classList.add('hidden');
+        } else {
+            syncRegistrationModeUi();
+        }
+    }
+    form.querySelectorAll('input[name="tenant_type"]').forEach(function (el) {
+        el.addEventListener('change', syncTenantTypeUi);
+    });
+    syncTenantTypeUi();
+
     function closeMilsimModal() {
         if (milsimModal) milsimModal.classList.add('hidden');
     }
@@ -1098,6 +1192,8 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         }
         var fgText = '';
         var fgSel = form.querySelector('select.founder-grade-select:not(.hidden)');
+        var gsPicked = form.querySelector('input[name="wizard_grade_system_code"]:checked');
+        if (gsPicked && gsPicked.value === 'NONE') fgSel = null;
         if (fgSel && fgSel.selectedIndex >= 0) {
             fgText = fgSel.options[fgSel.selectedIndex].text;
         }
@@ -1144,7 +1240,7 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         } else {
             lines.push('Ancienneté : commence aujourd’hui');
         }
-        lines.push('Grades : ' + (gs === 'US_CLASSIC' ? 'United States' : 'Français'));
+        lines.push('Grades : ' + (gs === 'US_CLASSIC' ? 'United States' : (gs === 'NONE' ? 'aucun' : 'Français')));
         if (fgText) lines.push('Grade fondateur : ' + fgText);
         lines.push('Inscription : ' + regLabel);
         lines.push('Recrutement fermé : ' + (locked ? 'oui' : 'non'));
@@ -1355,8 +1451,15 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
     gradeRadios.forEach(function (r) {
         r.addEventListener('change', function () {
             var us = r.value === 'US_CLASSIC';
+            var none = r.value === 'NONE';
             if (previewFr) previewFr.classList.toggle('opacity-60', us);
             if (previewUs) previewUs.classList.toggle('opacity-60', !us);
+            ['cc-grade-previews', 'cc-founder-grade'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', none);
+            });
+            var noneNote = document.getElementById('cc-grades-none-note');
+            if (noneNote) noneNote.classList.toggle('hidden', !none);
             var frSel = document.getElementById('founder-grade-fr');
             var usSel = document.getElementById('founder-grade-us');
             if (frSel && usSel) {

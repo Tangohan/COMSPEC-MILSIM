@@ -55,7 +55,7 @@ $groups = [
         'label' => 'Espace commun',
         'href' => cooperation_mission_exchange_url($mid),
         'children' => [
-            'exchange' => ['Fil, autorisations & verrou', cooperation_mission_exchange_url($mid), ''],
+            'exchange' => ['Vue d’ensemble', cooperation_mission_exchange_url($mid), ''],
             'consent' => ['Mon autorisation de partage', cooperation_mission_consent_url($mid), $navIsParticipantActive ? '' : 'Réservée aux unités ayant accepté la coopération.'],
         ],
         'disabled' => $navLaunched ? '' : 'L’espace commun s’ouvre au lancement de la coopération.',

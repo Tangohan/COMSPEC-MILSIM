@@ -48,7 +48,7 @@ final class AuditAction
 
     public const MODERATION_ACTION = 'moderation.action_applied';
     public const MODERATION_REVOKED = 'moderation.action_revoked';
-    public const FORUM_MODERATION = 'forum.moderation_action';
+    public const REPORT_MODERATION = 'report.moderation_action';
 
     public const SECURITY_EVENT = 'security.event';
 

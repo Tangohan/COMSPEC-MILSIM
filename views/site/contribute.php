@@ -13,6 +13,8 @@ $mine = is_array($contribMine ?? null) ? $contribMine : [];
 $credits = is_array($contribCredits ?? null) ? $contribCredits : [];
 $want = (string) ($contribWant ?? '');
 $prefLang = (string) ($contribLang ?? '');
+$publicName = (string) ($contribPublicName ?? '');
+$callsign = (string) ($contribCallsign ?? '');
 $roles = [
     'translator' => '<path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6.5 8M11 5c-.6 3.4-3.2 6.6-7 8"/><path d="M13 20l4-9 4 9M14.5 17h5"/>',
     'tester' => '<path d="M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/>',
@@ -115,6 +117,9 @@ $flashErr = Session::getFlash('error');
             <label class="ctb-field ctb-field--wide"><span><?= $t('field_motivation') ?></span>
                 <textarea name="motivation" rows="4" maxlength="1500"></textarea>
                 <small><?= $t('field_motivation_help') ?></small></label>
+            <label class="ctb-field"><span><?= $t('field_public_name') ?></span>
+                <input type="text" name="public_name" maxlength="40" autocomplete="nickname" spellcheck="false" value="<?= $h($publicName) ?>" placeholder="<?= $h($callsign) ?>">
+                <small><?= $t('field_public_name_help') ?></small></label>
             <label class="ctb-check"><input type="checkbox" name="public_credit" value="1" checked> <?= $t('field_credit') ?></label>
             <div class="ctb-actions"><button type="submit" class="ctb-btn ctb-btn--primary"><?= $t('apply_submit') ?></button></div>
         </form>

@@ -25,14 +25,12 @@ final class PortalNextStepsService
             'href' => url('mon-service'),
             'accent' => 'emerald',
         ];
-        if ($gate->allows('forum.view')) {
-            $steps[] = [
-                'label' => 'Consulter votre activité récente',
-                'description' => 'Forum, courrier interne et fils de discussion récents.',
-                'href' => url('activite'),
-                'accent' => 'sky',
-            ];
-        }
+        $steps[] = [
+            'label' => 'Consulter votre activité récente',
+            'description' => 'Notifications, courrier interne et fils de discussion récents.',
+            'href' => url('activite'),
+            'accent' => 'sky',
+        ];
         if (! $gate->deny('documents.view')) {
             $steps[] = [
                 'label' => 'Parcourir les documents publiés',
@@ -96,7 +94,7 @@ final class PortalNextStepsService
         if (! $gate->deny('documents.view')) {
             $steps[] = [
                 'label' => 'Rechercher une ressource',
-                'description' => 'Trouvez rapidement un document, un sujet de forum ou une fiche personnelle autorisée.',
+                'description' => 'Trouvez rapidement un document ou une fiche personnelle autorisée.',
                 'href' => url('search'),
                 'accent' => 'sky',
             ];

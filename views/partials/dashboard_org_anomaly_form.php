@@ -11,7 +11,7 @@ $oaCsrf = \App\Core\Csrf::token();
     data-org-anomaly-csrf="<?= htmlspecialchars($oaCsrf, ENT_QUOTES, 'UTF-8') ?>"
 >
     <p class="dash-rail__anomaly-lead">
-        Décrivez tout dysfonctionnement, erreur ou irrégularité. Le message part vers la gestion de l’organisation, pas vers le forum.
+        Décrivez tout dysfonctionnement, erreur ou irrégularité. Le message part vers la gestion de l’organisation.
     </p>
     <label class="dash-rail__anomaly-label">
         Nature de l’anomalie

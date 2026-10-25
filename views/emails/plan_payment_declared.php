@@ -10,6 +10,8 @@ declare(strict_types=1);
 /** @var string $payerEmail */
 /** @var string $tenantName */
 /** @var string $adminUrl */
+/** @var bool $reminder Relance : déclaré depuis plus de 24 h sans décision */
+/** @var string $declaredAt */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 $rows = [
@@ -30,12 +32,17 @@ foreach ($rows as $label => $value) {
 }
 $table .= '</table>';
 
-$body = '<p>Un paiement PayPal vient d’être déclaré. Vérifiez sa réception sur votre compte PayPal (montant et référence dans la note), puis activez la formule.</p>'
+$isReminder = !empty($reminder);
+$intro = $isReminder
+    ? 'Ce paiement PayPal a été déclaré' . (!empty($declaredAt) ? ' le ' . $declaredAt : '') . ' et n’est toujours pas validé. La personne attend son activation : vérifiez la réception sur PayPal puis activez, refusez ou annulez la demande.'
+    : 'Un paiement PayPal vient d’être déclaré. Vérifiez sa réception sur votre compte PayPal (montant et référence dans la note), puis activez la formule.';
+$heading = $isReminder ? 'Paiement toujours à vérifier' : 'Paiement PayPal à vérifier';
+$body = '<p>' . $escape($intro) . '</p>'
     . $table
     . '<p style="margin-top:20px;"><a href="' . $escape($adminUrl) . '" style="display:inline-block;background:#047857;color:#ffffff;padding:12px 20px;font-weight:700;text-decoration:none;">Ouvrir Admin &gt; Paiements</a></p>';
 
-$html = email_html_layout('Paiement à vérifier — ' . $reference, 'Paiement PayPal à vérifier', $body, ['accent' => 'amber']);
-$text = "Paiement PayPal à vérifier\n\n";
+$html = email_html_layout('Paiement à vérifier — ' . $reference, $heading, $body, ['accent' => $isReminder ? 'rose' : 'amber']);
+$text = $heading . "\n\n" . $intro . "\n\n";
 foreach ($rows as $label => $value) {
     $text .= $label . ' : ' . $value . "\n";
 }

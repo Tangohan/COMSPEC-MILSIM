@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Doctrine;
 
 use App\Repositories\Doctrine\DocumentDoctrineRepository;
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Repositories\DocumentAuditRepository;
 use App\Services\Audit\AuditService;
 
@@ -18,7 +18,7 @@ final class DoctrineNotificationService
         private DocumentAudienceResolver $audienceResolver,
         private DocumentComplianceService $complianceService,
         private DocumentDoctrineRepository $doctrineRepository,
-        private ForumNotificationRepository $forumNotifications,
+        private MemberNotificationRepository $memberNotifications,
         private AuditService $auditService,
         private DocumentAuditRepository $documentAuditRepository,
     ) {}
@@ -61,7 +61,7 @@ final class DoctrineNotificationService
             if ($uid === $actorUserId) {
                 continue;
             }
-            $id = $this->forumNotifications->create($tenantId, $uid, 'document_publication', [
+            $id = $this->memberNotifications->create($tenantId, $uid, 'document_publication', [
                 'headline' => $headline,
                 'body' => $body,
                 'document_id' => $documentId,
@@ -145,7 +145,7 @@ final class DoctrineNotificationService
             if ($note !== '') {
                 $body .= ' · ' . $note;
             }
-            $id = $this->forumNotifications->create($tenantId, $uid, 'document_reminder', [
+            $id = $this->memberNotifications->create($tenantId, $uid, 'document_reminder', [
                 'headline' => $headline,
                 'body' => $body,
                 'document_id' => $documentId,

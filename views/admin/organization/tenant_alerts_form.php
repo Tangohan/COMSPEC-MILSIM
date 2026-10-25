@@ -237,7 +237,7 @@ $currentFeatures = \App\Support\TenantAlertFeatures::decodeJson($row['features_j
                     <label for="ta-title" class="block text-sm font-semibold text-slate-800 mb-1.5">Titre</label>
                     <input id="ta-title" type="text" name="title" required maxlength="255" value="<?= htmlspecialchars((string) ($row['title'] ?? '')) ?>"
                         class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
-                        placeholder="Ex. Maintenance du forum ce week-end">
+                        placeholder="Ex. Maintenance du portail ce week-end">
                 </div>
                 <div>
                     <label for="ta-body" class="block text-sm font-semibold text-slate-800 mb-1.5">Message <span class="font-normal text-slate-500">(facultatif)</span></label>
@@ -292,7 +292,7 @@ $currentFeatures = \App\Support\TenantAlertFeatures::decodeJson($row['features_j
                         <label for="ta-cta-url" class="block text-sm font-semibold text-slate-800 mb-1.5">Adresse du lien</label>
                         <input id="ta-cta-url" type="text" name="cta_url" value="<?= htmlspecialchars((string) ($row['cta_url'] ?? '')) ?>"
                             class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
-                            placeholder="Page du forum, formations…">
+                            placeholder="Page des formations, documents…">
                     </div>
                 </div>
                 <div>

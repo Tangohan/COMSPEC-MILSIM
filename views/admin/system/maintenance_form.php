@@ -87,8 +87,8 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
                 <?php endforeach; ?>
             </div>
             <div class="mt-4 grid gap-3 md:grid-cols-3">
-                <input type="text" id="scope-route-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeRoute, ENT_QUOTES, 'UTF-8') ?>" placeholder="/forum">
-                <input type="text" id="scope-module-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeModule, ENT_QUOTES, 'UTF-8') ?>" placeholder="forum">
+                <input type="text" id="scope-route-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeRoute, ENT_QUOTES, 'UTF-8') ?>" placeholder="/documents">
+                <input type="text" id="scope-module-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeModule, ENT_QUOTES, 'UTF-8') ?>" placeholder="documents">
                 <input type="text" id="scope-custom-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeCustom, ENT_QUOTES, 'UTF-8') ?>" placeholder="scope custom">
             </div>
             <p class="mt-3 rounded-lg bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700">scope: <span id="scope-preview"><?= htmlspecialchars($scopeRaw === '' ? 'global' : $scopeRaw, ENT_QUOTES, 'UTF-8') ?></span></p>

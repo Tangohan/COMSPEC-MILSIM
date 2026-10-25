@@ -958,7 +958,7 @@ class TrainingApiController
     {
         $gate = Gate::getInstance();
 
-        return (function_exists('can') && (can('forum.moderate') || can('forum.moderate_organization')))
+        return (function_exists('can') && can('moderation.reports.manage'))
             || $gate->allows('admin.organization')
             || $gate->allows('admin.access')
             || $gate->allows('admin.system');

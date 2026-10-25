@@ -4,7 +4,7 @@
       <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Aide Athena</p>
       <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Guide du dossier personnel</h1>
       <p class="mt-4 max-w-2xl text-base leading-relaxed text-slate-600">
-        Ce guide vous accompagne pour constituer votre dossier opérationnel&nbsp;: identité de personnage, unité, rôle, équipement suggéré et ce que les autres voient de vous sur le forum. Lisez les sections dans l’ordre si vous démarrez, ou sautez à celle qui correspond à votre question du moment.
+        Ce guide vous accompagne pour constituer votre dossier opérationnel&nbsp;: identité de personnage, unité, rôle, équipement suggéré et ce que les autres voient de vous. Lisez les sections dans l’ordre si vous démarrez, ou sautez à celle qui correspond à votre question du moment.
       </p>
       <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">
         Les liens ci-dessous ouvrent les écrans concernés&nbsp;; revenez ici dès que vous avez besoin de remettre le fil.
@@ -26,11 +26,11 @@
           Votre <strong>compte</strong> permet de vous connecter. Votre <strong>dossier personnel</strong> décrit le personnage ou le profil opérationnel que la communauté voit&nbsp;: nom de mission, unité, fonction, équipement, et préférences d’affichage.
         </p>
         <p class="mt-4 leading-relaxed">
-          Une fois renseigné, ce dossier alimente votre fiche, votre place dans l’organigramme (ORBAT), la carte d’auteur sur le forum de la communauté, et les listes utilisées par l’encadrement (par exemple pour repérer qui n’a pas encore d’unité).
+          Une fois renseigné, ce dossier alimente votre fiche, votre place dans l’organigramme (ORBAT) et les listes utilisées par l’encadrement (par exemple pour repérer qui n’a pas encore d’unité).
         </p>
         <p class="mt-4 mb-0 rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-slate-600">
           <span class="font-semibold text-slate-800">Quand s’en servir&nbsp;?</span>
-          À l’arrivée dans la communauté, après un changement d’affectation, ou dès que votre fiche ou votre carte forum ne reflète plus votre situation réelle.
+          À l’arrivée dans la communauté, après un changement d’affectation, ou dès que votre fiche ne reflète plus votre situation réelle.
         </p>
       </section>
 
@@ -42,7 +42,7 @@
         </p>
         <p class="mt-4 rounded-xl border border-cyan-100/80 bg-white/70 px-4 py-3 text-cyan-950/85">
           <span class="font-semibold text-cyan-950">À quoi ça sert&nbsp;?</span>
-          L’affectation principale vous place dans l’organigramme. L’emploi principal apparaît sur la fiche, l’organigramme et le forum. L’emploi décrit la fonction, pas un droit d’accès.
+          L’affectation principale vous place dans l’organigramme. L’emploi principal apparaît sur la fiche et l’organigramme. L’emploi décrit la fonction, pas un droit d’accès.
         </p>
         <ol class="mt-6 list-decimal space-y-4 pl-5 text-cyan-950/90">
           <li>
@@ -88,24 +88,11 @@
         <p class="text-[10px] font-black uppercase tracking-[0.28em] text-violet-600/80">Visibilité</p>
         <h2 class="mt-2 text-lg font-black tracking-tight text-violet-950">Ce que les autres voient de vous</h2>
         <p class="mt-4 text-base leading-relaxed text-violet-950/80">
-          Selon l’endroit où vous écrivez, la carte d’auteur n’affiche pas les mêmes informations. Votre dossier contrôle surtout ce qui apparaît dans l’espace de votre communauté.
+          La section <em>Affichage de la fiche</em> de votre dossier contrôle ce que les autres membres voient sur votre fiche&nbsp;: matricule en en-tête, présence dans la liste publique des membres, rôle affiché en priorité si votre organisation le permet.
         </p>
-        <p class="mt-4 rounded-xl border border-violet-100/80 bg-white/70 px-4 py-3 text-violet-950/85">
+        <p class="mt-4 mb-0 rounded-xl border border-violet-100/80 bg-white/70 px-4 py-3 text-violet-950/85">
           <span class="font-semibold text-violet-950">Quand s’en servir&nbsp;?</span>
-          Avant de publier sur le forum, ou si vous souhaitez limiter (ou enrichir) ce que vos camarades voient à côté de vos messages.
-        </p>
-        <ul class="mt-6 list-disc space-y-4 pl-5 text-violet-950/90">
-          <li>
-            <span class="font-semibold text-violet-950">Forum de la plateforme (global).</span>
-            La carte d’auteur reste volontairement allégée pour tout le monde&nbsp;: pas de détail d’organigramme sur la carte. Les modérateurs disposent d’un panneau dédié pour l’identité réelle si besoin.
-          </li>
-          <li>
-            <span class="font-semibold text-violet-950">Espace de votre communauté.</span>
-            La carte peut afficher grade, unité et autres éléments selon les cases de la section <em>Forum &amp; fiche</em> de votre dossier. Cochez uniquement ce que vous acceptez de montrer.
-          </li>
-        </ul>
-        <p class="mt-6 mb-0 text-violet-950/80">
-          Depuis un sujet de forum, le raccourci vers le compte et le forum vous ramène aux préférences du compte et au bloc de visibilité du dossier.
+          À l’arrivée dans la communauté, ou si vous souhaitez limiter (ou enrichir) ce que vos camarades voient de vous.
         </p>
       </section>
 
@@ -141,7 +128,7 @@
           </li>
           <li class="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
             <a class="font-semibold text-emerald-800 underline underline-offset-2" href="<?= htmlspecialchars(url('personnel/me/edit')) ?>">Éditer le dossier</a>
-            <p class="mt-1 mb-0 text-slate-600">Section <em>Forum &amp; fiche</em> pour choisir ce qui apparaît à côté de vos messages.</p>
+            <p class="mt-1 mb-0 text-slate-600">Section <em>Affichage de la fiche</em> pour choisir ce que les autres voient.</p>
           </li>
         </ul>
       </section>
@@ -155,7 +142,7 @@
         <ol class="mt-6 mb-0 list-decimal space-y-4 pl-5 text-emerald-950/90">
           <li>Renseignez l’identité de personnage (nom en mission) et le matricule.</li>
           <li>Sélectionnez votre unité dans l’organigramme et complétez votre rôle principal (éventuellement via un modèle).</li>
-          <li>Ajustez les options <em>Forum &amp; fiche</em> selon ce que vous voulez montrer à la communauté.</li>
+          <li>Ajustez les options <em>Affichage de la fiche</em> selon ce que vous voulez montrer à la communauté.</li>
           <li>Complétez les champs de sécurité demandés pour lever les alertes de complétude.</li>
           <li>Enregistrez, puis relisez le résultat sur <a class="font-semibold text-emerald-900 underline underline-offset-2" href="<?= htmlspecialchars(url('personnel/me')) ?>">Ma fiche</a>.</li>
         </ol>

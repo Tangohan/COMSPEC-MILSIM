@@ -18,7 +18,7 @@ if ($modReplyLastCheck > time() - ModReportReplyNotice::CHECK_INTERVAL) {
 }
 $modReplyRows = [];
 try {
-    $modReplyRows = (new \App\Repositories\ForumNotificationRepository())->listUnreadOfTypeForUser(
+    $modReplyRows = (new \App\Repositories\MemberNotificationRepository())->listUnreadOfTypeForUser(
         $modReplyUserId,
         \App\Services\Monitoring\AtakModReportReplyService::NOTIFICATION_TYPE,
         ModReportReplyNotice::MAX_AGE_DAYS,

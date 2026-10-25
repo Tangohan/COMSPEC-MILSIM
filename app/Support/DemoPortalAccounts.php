@@ -42,7 +42,7 @@ final class DemoPortalAccounts
             [
                 'email' => 'operateur@demo.local',
                 'role_label' => 'Opérateur',
-                'hint' => 'Compte membre : forum, documents, formations selon affectation.',
+                'hint' => 'Compte membre : documents, formations selon affectation.',
             ],
         ];
     }

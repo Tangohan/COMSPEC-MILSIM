@@ -111,7 +111,8 @@ final class PlanPaymentController
             return null;
         }
         $row = $this->service()->find($reference);
-        if ($row === null || (string) $row['status'] === PlanPaymentRequestRepository::STATUS_CANCELLED) {
+        // Une demande abandonnée par la personne disparaît ; annulée par l’administration, elle reste lisible.
+        if ($row === null || ((string) $row['status'] === PlanPaymentRequestRepository::STATUS_CANCELLED && empty($row['decided_by']))) {
             return null;
         }
         $uid = (int) (Session::get('user_id') ?? 0);

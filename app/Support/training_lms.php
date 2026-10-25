@@ -837,7 +837,7 @@ function training_lms_generate_enrollment_share_code(): string
  */
 function training_lms_resource_external_href(string $rawUrl): ?string
 {
-    $svc = new \App\Services\Forum\ExternalLeaveService();
+    $svc = new \App\Services\Navigation\ExternalLeaveService();
     $clean = $svc->sanitizeHttpUrl(trim($rawUrl));
     if ($clean === null) {
         return null;

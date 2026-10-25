@@ -1,15 +1,14 @@
 <?php
 $title = $title ?? 'Lien externe';
-$content = $content ?? 'forum.leave';
+$content = $content ?? 'leave.page';
 $baseUrl = url('');
-$forumConfig = $forumConfig ?? config('forum') ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title) ?> — <?= htmlspecialchars($forumConfig['subtitle'] ?? 'Athena') ?></title>
+    <title><?= htmlspecialchars($title) ?> — Athena</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>

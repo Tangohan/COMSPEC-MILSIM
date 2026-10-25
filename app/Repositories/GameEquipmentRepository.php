@@ -67,15 +67,44 @@ final class GameEquipmentRepository
             return;
         }
         $day = substr($now, 0, 10);
-        $catRows = [];
-        $catParams = [];
+        $this->upsertCatalog($tenantId, $items, $now);
         $useRows = [];
         $useParams = [];
         foreach ($items as $it) {
-            $catRows[] = '(?, ?, ?, ?, ?, ?, ?, ?)';
-            array_push($catParams, $tenantId, $it['class'], $it['name'], $it['kind'], $it['mod'], $it['max_ammo'], $now, $now);
             $useRows[] = '(?, ?, ?, ?, ?, 1, ?)';
             array_push($useParams, $tenantId, $steamId, $it['class'], $it['kind'], $day, $now);
+        }
+        $this->pdo()->prepare(
+            'INSERT INTO game_item_usage (tenant_id, steam_id, class_name, kind, usage_day, hits, last_seen)
+             VALUES ' . implode(', ', $useRows) . '
+             ON DUPLICATE KEY UPDATE hits = hits + 1, kind = VALUES(kind), last_seen = VALUES(last_seen)'
+        )->execute($useParams);
+    }
+
+    /**
+     * Noms affichés et mods des objets d’une tenue envoyée depuis l’arsenal (catalogue seul : personne ne les porte
+     * encore, aucun usage n’est compté). Un nom déjà connu n’est jamais effacé par un nom vide.
+     *
+     * @param list<array{class: string, name: string, kind: string, mod: string, max_ammo: int|null}> $items
+     */
+    public function recordCatalog(int $tenantId, array $items, string $now): void
+    {
+        if ($tenantId < 1 || $items === [] || !$this->tablesReady()) {
+            return;
+        }
+        $this->upsertCatalog($tenantId, $items, $now);
+    }
+
+    /**
+     * @param list<array{class: string, name: string, kind: string, mod: string, max_ammo: int|null}> $items
+     */
+    private function upsertCatalog(int $tenantId, array $items, string $now): void
+    {
+        $catRows = [];
+        $catParams = [];
+        foreach ($items as $it) {
+            $catRows[] = '(?, ?, ?, ?, ?, ?, ?, ?)';
+            array_push($catParams, $tenantId, $it['class'], $it['name'], $it['kind'], $it['mod'], $it['max_ammo'], $now, $now);
         }
         $this->pdo()->prepare(
             'INSERT INTO game_item_catalog (tenant_id, class_name, name, kind, mod_name, max_ammo, first_seen, last_seen)
@@ -87,11 +116,6 @@ final class GameEquipmentRepository
                 max_ammo = IF(VALUES(max_ammo) IS NOT NULL AND (max_ammo IS NULL OR VALUES(max_ammo) > max_ammo), VALUES(max_ammo), max_ammo),
                 last_seen = VALUES(last_seen)'
         )->execute($catParams);
-        $this->pdo()->prepare(
-            'INSERT INTO game_item_usage (tenant_id, steam_id, class_name, kind, usage_day, hits, last_seen)
-             VALUES ' . implode(', ', $useRows) . '
-             ON DUPLICATE KEY UPDATE hits = hits + 1, kind = VALUES(kind), last_seen = VALUES(last_seen)'
-        )->execute($useParams);
     }
 
     /**

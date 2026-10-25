@@ -17,6 +17,7 @@ final class PlanPaymentRequestRepository
     public const STATUS_ACTIVATED = 'activated';
     public const STATUS_REJECTED = 'rejected';
     public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_REFUNDED = 'refunded';
 
     public const KIND_PLAN = 'plan';
     public const KIND_HEART = 'heart';
@@ -146,6 +147,135 @@ final class PlanPaymentRequestRepository
         $st->execute([self::STATUS_CANCELLED, $id, self::STATUS_AWAITING]);
 
         return $st->rowCount() === 1;
+    }
+
+    /** Annulation par l’administration d’une demande pas encore traitée (à payer ou déclarée). */
+    public function cancelByAdmin(int $id, ?int $adminId, string $note): bool
+    {
+        $st = $this->pdo()->prepare(
+            'UPDATE plan_payment_requests SET status = ?, admin_note = ?, decided_at = ?, decided_by = ?
+             WHERE id = ? AND status IN (?, ?)'
+        );
+        $st->execute([
+            self::STATUS_CANCELLED,
+            $note !== '' ? mb_substr($note, 0, 500) : null,
+            gmdate('Y-m-d H:i:s'),
+            $adminId,
+            $id,
+            self::STATUS_AWAITING,
+            self::STATUS_DECLARED,
+        ]);
+
+        return $st->rowCount() === 1;
+    }
+
+    /** Paiement activé puis remboursé sur PayPal : noté « remboursé ». */
+    public function markRefunded(int $id, ?int $adminId, string $note): bool
+    {
+        $now = gmdate('Y-m-d H:i:s');
+        $hasCol = $this->hasColumn('refunded_at');
+        $st = $this->pdo()->prepare(
+            'UPDATE plan_payment_requests SET status = ?, admin_note = ?, decided_by = ?' . ($hasCol ? ', refunded_at = ?' : '') . '
+             WHERE id = ? AND status = ?'
+        );
+        $params = [self::STATUS_REFUNDED, $note !== '' ? mb_substr($note, 0, 500) : null, $adminId];
+        if ($hasCol) {
+            $params[] = $now;
+        }
+        $params[] = $id;
+        $params[] = self::STATUS_ACTIVATED;
+        $st->execute($params);
+
+        return $st->rowCount() === 1;
+    }
+
+    /**
+     * Paiements déclarés depuis plus de $hours heures et pas encore relancés auprès de l’administration.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listDeclaredAwaitingReminder(int $hours, ?int $now = null): array
+    {
+        if (!$this->hasColumn('admin_reminded_at')) {
+            return [];
+        }
+        $cutoff = gmdate('Y-m-d H:i:s', ($now ?? time()) - max(1, $hours) * 3600);
+        $st = $this->pdo()->prepare(
+            'SELECT * FROM plan_payment_requests WHERE status = ? AND declared_at IS NOT NULL AND declared_at <= ?
+             AND admin_reminded_at IS NULL ORDER BY declared_at ASC LIMIT 50'
+        );
+        $st->execute([self::STATUS_DECLARED, $cutoff]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @param list<int> $ids */
+    public function markAdminReminded(array $ids): void
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $i): bool => $i > 0));
+        if ($ids === [] || !$this->hasColumn('admin_reminded_at')) {
+            return;
+        }
+        $st = $this->pdo()->prepare(
+            'UPDATE plan_payment_requests SET admin_reminded_at = ? WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')'
+        );
+        $st->execute(array_merge([gmdate('Y-m-d H:i:s')], $ids));
+    }
+
+    /**
+     * Paiements déclarés en attente de vérification : nombre et date du plus ancien.
+     *
+     * @return array{count: int, oldest: ?string}
+     */
+    public function declaredSummary(): array
+    {
+        $row = $this->pdo()->query(
+            "SELECT COUNT(*) AS n, MIN(declared_at) AS oldest FROM plan_payment_requests WHERE status = 'declared'"
+        )?->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return ['count' => (int) ($row['n'] ?? 0), 'oldest' => isset($row['oldest']) && $row['oldest'] !== '' ? (string) $row['oldest'] : null];
+    }
+
+    /** Montant activé (centimes) depuis une date, remboursements exclus. */
+    public function sumActivatedSince(string $since): int
+    {
+        $st = $this->pdo()->prepare(
+            "SELECT COALESCE(SUM(amount_cents), 0) FROM plan_payment_requests WHERE status = 'activated' AND decided_at >= ?"
+        );
+        $st->execute([$since]);
+
+        return (int) $st->fetchColumn();
+    }
+
+    /** Dernière demande d’une communauté créée depuis une date (tous statuts). */
+    public function latestForTenantSince(int $tenantId, string $since): ?array
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT * FROM plan_payment_requests WHERE tenant_id = ? AND created_at >= ? AND kind = ?
+             ORDER BY created_at DESC, id DESC LIMIT 1'
+        );
+        $st->execute([$tenantId, $since, self::KIND_PLAN]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /** @var array<string, bool> */
+    private array $columns = [];
+
+    private function hasColumn(string $column): bool
+    {
+        if (array_key_exists($column, $this->columns)) {
+            return $this->columns[$column];
+        }
+        try {
+            $this->pdo()->query('SELECT ' . $column . ' FROM plan_payment_requests LIMIT 1');
+            $ok = true;
+        } catch (\Throwable) {
+            $ok = false;
+        }
+
+        return $this->columns[$column] = $ok;
     }
 
     /**

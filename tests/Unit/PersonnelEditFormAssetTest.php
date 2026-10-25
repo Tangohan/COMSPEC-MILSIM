@@ -46,8 +46,8 @@ final class PersonnelEditFormAssetTest extends TestCase
         self::assertStringNotContainsString('div:first-child [class*="tracking"]', $css);
         self::assertStringContainsString('p.text-\\[10px\\]', $css);
 
-        self::assertStringContainsString("forum-community-settings", $edit);
-        self::assertStringContainsString('$editDefaultTab = \'forum-community-settings\'', $edit);
+        self::assertStringContainsString("'edit-affichage'", $edit);
+        self::assertStringNotContainsString('forum', $edit);
         self::assertStringContainsString("returnTo === 'edit'", $controller);
     }
 

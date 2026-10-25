@@ -156,6 +156,28 @@ final class CommunityLanguages
         self::$published = $clean;
     }
 
+    /** L’anglais livré avec le site existe et n’est pas une copie du français. */
+    public static function hasShippedEnglish(string $fr, string $en): bool
+    {
+        $en = trim($en);
+
+        return $en !== '' && mb_strtolower($en) !== mb_strtolower(trim($fr));
+    }
+
+    /** Textes du catalogue qui n’ont encore que le français. */
+    public static function missingEnglishCount(?string $root = null): int
+    {
+        $n = 0;
+        foreach (self::catalog($root) as [, $src, $en, $kind]) {
+            $fr = $kind === 'key' ? self::frenchOf($src, $root) : $src;
+            if (!self::hasShippedEnglish($fr, $en)) {
+                $n++;
+            }
+        }
+
+        return $n;
+    }
+
     /**
      * Tous les textes du site à traduire : [empreinte, source, anglais, type] ; type « text » (texte français d'une
      * page, la source est le texte) ou « key » (catalogue à clés, la source est « @groupe.clé » et le français est
