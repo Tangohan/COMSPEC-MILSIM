@@ -1194,6 +1194,18 @@ class AtakApiController
             ], 503);
         }
 
+        $feature = \App\Support\GameFeatureGate::featureFor((string) $request->method(), (string) $request->path());
+        if ($feature !== null && \App\Support\GameFeatureGate::isGameClient()) {
+            try {
+                $denied = \App\Support\GameFeatureGate::denial((new \App\Services\Game\GameOverwatchExperienceService())->get($id), $feature);
+            } catch (\Throwable) {
+                $denied = null;
+            }
+            if ($denied !== null) {
+                return Response::json($denied, 403);
+            }
+        }
+
         if (!AtakPlanAccess::allows($id)) {
             // Liaison de base (formule Gratuit) : positions, comptes rendus et briefing passent quand même.
             $basic = AtakPlanAccess::allowsBasic($id);

@@ -206,6 +206,14 @@ final class AtakGeoNetworkApiController
         if ($tenantId < 1) {
             return $this->tenantRequired();
         }
+        // Module « Planification d'itinéraire » (Configuration ATAK > Modules du pont).
+        if (!(new \App\Services\Tactical\AtakBridgeModulesService())->isEnabled($tenantId, 'route_planning')) {
+            return Response::json([
+                'ok' => false,
+                'error' => 'module_disabled',
+                'message' => 'La planification d’itinéraire est désactivée pour votre communauté.',
+            ], 403);
+        }
 
         $body = $this->body($request);
         $mapId = max(1, (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID));

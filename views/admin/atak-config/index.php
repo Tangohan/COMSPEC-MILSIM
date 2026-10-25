@@ -1,822 +1,589 @@
 <?php
-$config = $config ?? [];
-$atakMaps = $atakMaps ?? [];
-$baseUrl = url('');
-$success = \App\Core\Session::getFlash('success');
-$error = \App\Core\Session::getFlash('error');
-$hostHint = htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'votre-domaine.fr', ENT_QUOTES, 'UTF-8');
-$defaultMapSlug = $config['default_map_slug'] ?? 'altis';
+declare(strict_types=1);
+
+/**
+ * Back-office — Configuration ATAK / Tacmap (/back-office/ressources/atak-config).
+ * Un onglet par thème (ancres conservées : #overwatch-game-experience, #photo-hud, #marker-icons, #bridge-modules).
+ * Interactions : public/assets/js/back-office-atak-config.js · styles : back-office-atak-config.css.
+ */
+$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$ico = require __DIR__ . '/_icons.php';
+$csrf = \App\Core\Csrf::field();
+$base = url('back-office/ressources/atak-config');
+$config = is_array($config ?? null) ? $config : [];
+$atakMaps = is_array($atakMaps ?? null) ? $atakMaps : [];
 $tenantId = (int) ($tenantId ?? 0);
-$platformKeyConfigured = !empty($platformKeyConfigured);
-$accessKeyPrefix = (string) ($accessKeyPrefix ?? '');
-$accessKeyGeneratedAt = $accessKeyGeneratedAt ?? null;
-$hasTenantAccessKey = !empty($hasTenantAccessKey);
-$newAccessKeyPlain = is_string($newAccessKeyPlain ?? null) ? $newAccessKeyPlain : null;
+$hasKey = !empty($hasTenantAccessKey);
+$platformKey = !empty($platformKeyConfigured);
+$keyPrefix = (string) ($accessKeyPrefix ?? '');
+$keyAt = $accessKeyGeneratedAt ?? null;
+$newKey = is_string($newAccessKeyPlain ?? null) ? $newAccessKeyPlain : null;
 $authEvents = is_array($authEvents ?? null) ? $authEvents : [];
-$portalBaseUrl = (string) ($portalBaseUrl ?? rtrim(url(''), '/'));
 $dataSummary = is_array($dataSummary ?? null) ? $dataSummary : [];
-$maintenanceSchemaReady = !empty($maintenanceSchemaReady);
-$maintenanceEnabled = !empty($maintenanceEnabled);
-$maintenanceMessage = (string) ($maintenanceMessage ?? '');
-$purgeConfirmPhrase = (string) ($purgeConfirmPhrase ?? 'EFFACER');
-$activityEventsCount = (int) ($dataSummary['activity_events'] ?? 0);
-$missionRowsCount = 0;
-foreach ($dataSummary as $k => $v) {
-    if ($k === 'activity_events') {
-        continue;
+$maintReady = !empty($maintenanceSchemaReady);
+$maintOn = !empty($maintenanceEnabled);
+$maintMsg = (string) ($maintenanceMessage ?? '');
+$purgeWord = (string) ($purgeConfirmPhrase ?? 'EFFACER');
+$modules = is_array($bridgeModules ?? null) ? $bridgeModules : [];
+$expCatalog = is_array($experienceCatalog ?? null) ? $experienceCatalog : [];
+$expReady = !empty($experienceSchemaReady);
+$ge = is_array($gameExperience ?? null) ? $gameExperience : [];
+$hostHint = (string) ($_SERVER['HTTP_HOST'] ?? 'votre-domaine.fr');
+$fmt = static function (mixed $raw, string $f = 'd/m/Y H:i'): string {
+    $t = is_string($raw) && $raw !== '' ? strtotime($raw) : false;
+
+    return $t ? date($f, $t) : '';
+};
+$section = static function (string $icon, string $title, string $lead) use ($ico, $h): string {
+    return '<header class="bo-ac-sec__head"><span class="bo-ac-sec__ico">' . $ico($icon, 22) . '</span><div><h2 class="bo-ac-sec__t">' . $h($title) . '</h2><p class="bo-ac-sec__lead">' . $h($lead) . '</p></div></header>';
+};
+$howto = static function (string $title, array $steps, string $open = '') use ($h, $ico): string {
+    $out = '<details class="bo-ac-howto"' . $open . '><summary>' . $ico('tip', 16) . ' ' . $h($title) . '</summary><ol>';
+    foreach ($steps as $s) {
+        $out .= '<li>' . $s . '</li>';
     }
-    $missionRowsCount += (int) $v;
+
+    return $out . '</ol></details>';
+};
+$switch = static function (string $name, bool $on, string $title, string $desc = '', string $icon = '', string $extra = '') use ($h, $ico): string {
+    return '<label class="bo-ac-switch"' . $extra . '>'
+        . '<input type="hidden" name="' . $h($name) . '" value="0"><input type="checkbox" name="' . $h($name) . '" value="1"' . ($on ? ' checked' : '') . '>'
+        . '<span class="bo-ac-switch__track" aria-hidden="true"></span>'
+        . ($icon !== '' ? '<span class="bo-ac-switch__ico">' . $ico($icon, 18) . '</span>' : '')
+        . '<span class="bo-ac-switch__txt"><b>' . $h($title) . '</b>' . ($desc !== '' ? '<small>' . $h($desc) . '</small>' : '') . '</span></label>';
+};
+$on = static fn (string $k): bool => !array_key_exists($k, $ge) || !empty($ge[$k]);
+
+// Journal de connexion
+$events = array_values(array_filter($authEvents, static fn ($ev) => in_array((string) ($ev['type'] ?? ''), ['auth', 'phone', 'client_init'], true)));
+$evOk = static function (array $ev): bool {
+    if (($ev['type'] ?? '') !== 'auth') {
+        return true;
+    }
+    if (isset($ev['meta']['ok'])) {
+        return (bool) $ev['meta']['ok'];
+    }
+
+    return !isset($ev['meta']['reason']) || in_array((string) $ev['meta']['reason'], ['ok', 'key_regenerated'], true);
+};
+$failures = count(array_filter($events, static fn ($e) => !$evOk($e)));
+$missionRows = array_sum(array_map('intval', array_diff_key($dataSummary, ['activity_events' => 1])));
+$modsOn = count(array_filter($modules, static fn ($m) => !empty($m['enabled'])));
+$methods = array_filter(['E-mail' => $on('auth_password'), 'Code' => $on('auth_otp'), 'Steam' => $on('auth_steam')]);
+
+$tabs = [
+    'demarrage' => ['start', 'Démarrage'],
+    'acces' => ['key', 'Clé d’accès'],
+    'overwatch-game-experience' => ['game', 'Connexion en jeu'],
+    'experience' => ['mission', 'Expérience en mission'],
+    'bridge-modules' => ['modules', 'Modules du pont'],
+    'marker-icons' => ['map', 'Carte et symboles'],
+    'photo-hud' => ['photo', 'Photos terrain'],
+    'serveur' => ['server', 'Serveur et consignes'],
+    'avance' => ['link', 'Liaison avancée'],
+    'donnees' => ['data', 'Maintenance et données'],
+];
+?>
+<div class="bo-ac" id="bo-ac" data-base="<?= $h(rtrim(url(''), '/')) ?>" data-map-id="<?= (int) ($config['default_map_id'] ?? 1) ?>">
+
+  <?php if ($maintOn): ?>
+    <div class="bo-ac-banner is-warn" role="status"><?= $ico('wrench') ?><div><b>Maintenance en cours.</b> La Tacmap et la connexion en jeu sont fermées aux opérateurs ; les administrateurs gardent l’accès. <a href="#donnees" data-ac-go="donnees">Lever la maintenance</a></div></div>
+  <?php endif; ?>
+  <?php if ($newKey): ?>
+    <div class="bo-ac-banner is-key" role="alert">
+      <?= $ico('key') ?>
+      <div class="bo-ac-banner__body">
+        <b>Nouvelle clé d’accès — copiez-la maintenant.</b> Elle ne sera plus affichée en entier. Les membres n’en ont pas besoin : « Appairer » la transmet seule.
+        <div class="bo-ac-copy"><code id="bo-ac-newkey"><?= $h($newKey) ?></code><button type="button" class="ath-btn ath-btn--solid" data-ac-copy="#bo-ac-newkey">Copier</button></div>
+      </div>
+    </div>
+  <?php endif; ?>
+
+  <div class="ath-kpi-grid bo-ac-kpis">
+    <article class="ath-card ath-kpi<?= $hasKey ? ' is-ok' : ($platformKey ? ' is-warn' : ' is-bad') ?>">
+      <p class="ath-kpi__label">Clé d’accès</p>
+      <p class="ath-kpi__value"><?= $hasKey ? 'Active' : ($platformKey ? 'Plateforme' : 'Aucune') ?></p>
+      <p class="ath-kpi__note"><?= $hasKey ? $h($keyPrefix) . '… · ' . $h($fmt($keyAt, 'd/m/Y')) : ($platformKey ? 'clé commune, isolez la vôtre' : '<a href="#acces" data-ac-go="acces">générer une clé</a>') ?></p>
+    </article>
+    <article class="ath-card ath-kpi">
+      <p class="ath-kpi__label">Opérateurs en liaison</p>
+      <p class="ath-kpi__value" data-live="ops">—</p>
+      <p class="ath-kpi__note">dernière remontée : <span data-live="ago">—</span></p>
+    </article>
+    <article class="ath-card ath-kpi">
+      <p class="ath-kpi__label">Connexion en jeu</p>
+      <p class="ath-kpi__value"><?= count($methods) ?> <small>/ 3</small></p>
+      <p class="ath-kpi__note"><?= $h(implode(' · ', array_keys($methods))) ?> · pack ≥ <?= $h($ge['min_mod_version'] ?? '1.5.0') ?></p>
+    </article>
+    <article class="ath-card ath-kpi">
+      <p class="ath-kpi__label">Modules du pont</p>
+      <p class="ath-kpi__value"><?= $modsOn ?> <small>/ <?= count($modules) ?></small></p>
+      <p class="ath-kpi__note">actifs pour la communauté</p>
+    </article>
+    <article class="ath-card ath-kpi<?= $failures > 0 ? ' is-warn' : '' ?>">
+      <p class="ath-kpi__label">Connexions refusées</p>
+      <p class="ath-kpi__value"><?= $failures ?></p>
+      <p class="ath-kpi__note">sur les <?= count($events) ?> dernières tentatives</p>
+    </article>
+  </div>
+
+  <div class="bo-ac-layout">
+    <nav class="bo-ac-nav" aria-label="Sections">
+      <?php foreach ($tabs as $id => [$icon, $label]): ?>
+        <a href="#<?= $h($id) ?>" class="bo-ac-nav__a" data-ac-tab="<?= $h($id) ?>"><?= $ico($icon, 18) ?><span><?= $h($label) ?></span></a>
+      <?php endforeach; ?>
+      <p class="bo-ac-nav__sep">Pages liées</p>
+      <a class="bo-ac-nav__a bo-ac-nav__a--ext" href="<?= $h(url('back-office/atak/controle-serveur')) ?>"><?= $ico('shield', 18) ?><span>Contrôle serveur</span></a>
+      <a class="bo-ac-nav__a bo-ac-nav__a--ext" href="<?= $h(url('back-office/ressources/atak-mod')) ?>"><?= $ico('download', 18) ?><span>Fichier du mod</span></a>
+      <a class="bo-ac-nav__a bo-ac-nav__a--ext" href="<?= $h(url('atak')) ?>"><?= $ico('external', 18) ?><span>Ouvrir la Tacmap</span></a>
+    </nav>
+
+    <div class="bo-ac-panels">
+
+<!-- =========================================================== DÉMARRAGE -->
+<section class="bo-ac-sec" id="demarrage" data-ac-panel>
+  <?= $section('start', 'Mettre l’ATAK en service', 'La Tacmap (carte web) et le mod Arma 3 COMSPEC Overwatch partagent les mêmes positions, marqueurs, messages et comptes rendus. Quatre étapes suffisent pour une nouvelle communauté.') ?>
+  <ol class="bo-ac-steps">
+    <li class="<?= $hasKey ? 'is-done' : '' ?>">
+      <span class="bo-ac-steps__n"><?= $hasKey ? $ico('check', 16) : '1' ?></span>
+      <div><b>Générer la clé d’accès</b><p>Elle identifie votre communauté auprès du mod. Une seule fois ; à régénérer seulement en cas de fuite.</p><a href="#acces" data-ac-go="acces">Clé d’accès →</a></div>
+    </li>
+    <li>
+      <span class="bo-ac-steps__n">2</span>
+      <div><b>Personnaliser la connexion en jeu</b><p>Nom, image et message de la fenêtre Athena au lancement d’Arma, méthodes de connexion autorisées.</p><a href="#overwatch-game-experience" data-ac-go="overwatch-game-experience">Connexion en jeu →</a></div>
+    </li>
+    <li>
+      <span class="bo-ac-steps__n">3</span>
+      <div><b>Envoyer le parcours aux membres</b><p>Chaque joueur installe le mod puis suit « Première liaison » : carte → Appairer → code collé dans Athena. Aucune clé à recopier.</p>
+        <div class="bo-ac-copy"><code id="bo-ac-firstlink"><?= $h(url('atak/premiere-liaison')) ?></code><button type="button" class="ath-btn" data-ac-copy="#bo-ac-firstlink">Copier le lien</button></div></div>
+    </li>
+    <li>
+      <span class="bo-ac-steps__n">4</span>
+      <div><b>Vérifier la liaison</b><p>Un opérateur connecté apparaît ici dans « Opérateurs en liaison » et sur la Tacmap. En cas d’échec, consultez les tentatives dans « Clé d’accès ».</p><a href="<?= $h(url('atak')) ?>">Ouvrir la Tacmap →</a></div>
+    </li>
+  </ol>
+  <div class="bo-ac-grid bo-ac-grid--3">
+    <a class="ath-panel bo-ac-tile" href="<?= $h(url('atak/setup')) ?>"><?= $ico('download') ?><b>Assistant d’installation</b><small>Pour les joueurs : télécharger et activer le mod.</small></a>
+    <a class="ath-panel bo-ac-tile" href="<?= $h(url('atak/tuto')) ?>"><?= $ico('tip') ?><b>Guide de connexion</b><small>Le pas-à-pas détaillé, captures à l’appui.</small></a>
+    <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/atak/briefing-slides')) ?>"><?= $ico('photo') ?><b>Diapositives de briefing</b><small>Images publiées sur le tableau de briefing en jeu.</small></a>
+    <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/atak/controle-serveur')) ?>"><?= $ico('shield') ?><b>Contrôle serveur</b><small>Règles fines : factions visibles, réseau simulé, ATAK natif.</small></a>
+    <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/ressources/atak-mod-blocks')) ?>"><?= $ico('warn') ?><b>Restrictions d’accès</b><small>Bloquer un joueur, un poste ou un Steam.</small></a>
+    <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/renseignement/acces')) ?>"><?= $ico('intel') ?><b>Renseignement classifié</b><small>Codes d’accès temporaires au portail SSE.</small></a>
+  </div>
+</section>
+
+<!-- =========================================================== CLÉ D’ACCÈS -->
+<section class="bo-ac-sec" id="acces" data-ac-panel>
+  <?= $section('key', 'Clé d’accès de la communauté', 'Le mod présente cette clé à chaque envoi : elle rattache les données à votre communauté. « Appairer » la transmet automatiquement aux joueurs.') ?>
+  <div class="ath-panel bo-ac-card">
+    <div class="bo-ac-keyrow">
+      <div>
+        <p class="bo-ac-label">État</p>
+        <?php if ($hasKey): ?>
+          <p class="bo-ac-big"><span class="ath-tag ath-tag--ok">Clé active</span> <code><?= $h($keyPrefix) ?>…</code></p>
+          <p class="bo-ac-muted">Générée le <?= $h($fmt($keyAt)) ?>. Seul le début est affiché : la clé complète n’est visible qu’à sa création.</p>
+        <?php elseif ($platformKey): ?>
+          <p class="bo-ac-big"><span class="ath-tag ath-tag--warn">Clé plateforme</span></p>
+          <p class="bo-ac-muted">Votre communauté utilise la clé commune de la plateforme. Générez la vôtre pour isoler vos accès.</p>
+        <?php else: ?>
+          <p class="bo-ac-big"><span class="ath-tag ath-tag--bad">Aucune clé</span></p>
+          <p class="bo-ac-muted">Sans clé, ni « Appairer » ni la liaison jeu ne fonctionnent.</p>
+        <?php endif; ?>
+      </div>
+      <form method="post" action="<?= $h($base . '/access-key') ?>" data-ac-confirm="<?= $hasKey ? 'Régénérer la clé ? L’ancienne cessera de fonctionner : chaque joueur devra refaire « Appairer ».' : 'Générer la clé d’accès de la communauté ?' ?>">
+        <?= $csrf ?><button type="submit" class="ath-btn ath-btn--solid"><?= $ico('refresh', 16) ?> <?= $hasKey ? 'Régénérer la clé' : 'Générer une clé d’accès' ?></button>
+      </form>
+    </div>
+    <div class="bo-ac-grid bo-ac-grid--2">
+      <div>
+        <p class="bo-ac-label">Identifiant de communauté</p>
+        <div class="bo-ac-copy"><code id="bo-ac-tenant"><?= $tenantId ?></code><button type="button" class="ath-btn" data-ac-copy="#bo-ac-tenant">Copier</button></div>
+        <p class="bo-ac-muted">Seulement pour le réglage manuel (Options → Extensions) quand plusieurs communautés partagent la même adresse.</p>
+      </div>
+      <div>
+        <p class="bo-ac-label">Adresse à indiquer dans le mod</p>
+        <div class="bo-ac-copy"><code id="bo-ac-url"><?= $h(rtrim((string) ($portalBaseUrl ?? url('')), '/')) ?></code><button type="button" class="ath-btn" data-ac-copy="#bo-ac-url">Copier</button></div>
+        <p class="bo-ac-muted">Réglage manuel uniquement ; « Appairer » la renseigne seul.</p>
+      </div>
+    </div>
+  </div>
+  <?= $howto('Quand régénérer la clé ?', [
+      '<b>En cas de fuite</b> : clé collée sur Discord, capture d’écran partagée, ancien membre qui la connaît.',
+      '<b>Ce qui se passe</b> : l’ancienne clé est refusée immédiatement ; les joueurs voient « clé invalide » et refont « Appairer » (moins d’une minute).',
+      '<b>À ne pas faire</b> : régénérer pour « réparer » un joueur qui n’arrive pas à se connecter. Regardez d’abord ses tentatives ci-dessous.',
+  ]) ?>
+  <div class="ath-table-panel">
+    <div class="ath-table-toolbar">
+      <span class="ath-table-toolbar__title">Tentatives de connexion récentes</span>
+      <span class="ath-table-toolbar__count"><?= count($events) ?></span>
+      <span class="ath-table-toolbar__spacer"></span>
+      <span class="bo-ac-muted">Liaisons en jeu, refus de clé, connexions téléphone. Les secrets ne sont jamais affichés.</span>
+    </div>
+    <?php if ($events === []): ?>
+      <p class="bo-ac-empty">Aucune tentative pour l’instant. Elles apparaissent dès qu’un joueur lance la liaison.</p>
+    <?php else: ?>
+    <div class="ath-table-wrap"><table class="ath-table bo-ac-table">
+      <thead><tr><th>Quand</th><th>Résultat</th><th>Événement</th><th>Opérateur</th></tr></thead>
+      <tbody>
+      <?php foreach ($events as $ev): $ok = $evOk($ev); ?>
+        <tr>
+          <td class="bo-ac-mono"><?= $h($fmt($ev['at'] ?? null, 'd/m H:i') ?: '—') ?></td>
+          <td><span class="ath-tag ath-tag--<?= $ok ? 'ok' : 'bad' ?>"><?= $ok ? 'Accepté' : 'Refusé' ?></span></td>
+          <td><?= $h($ev['label'] ?? '') ?></td>
+          <td><?= $h(($ev['actor'] ?? '') ?: '—') ?></td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table></div>
+    <?php endif; ?>
+  </div>
+</section>
+
+<!-- =========================================================== CONNEXION EN JEU -->
+<?php require __DIR__ . '/_game_experience.php'; ?>
+
+<!-- =========================================================== EXPÉRIENCE EN MISSION -->
+<section class="bo-ac-sec" id="experience" data-ac-panel>
+  <?= $section('mission', 'Expérience en mission', 'Le ton de la tablette Athena pour toute la communauté. Pour chaque réglage, vous pouvez l’imposer ou laisser chaque joueur choisir dans ses options du mod.') ?>
+  <?php if (!$expReady): ?>
+    <div class="bo-ac-banner is-bad"><?= $ico('warn') ?><div><b>Fonction indisponible.</b> La base n’est pas à jour pour l’expérience Overwatch : demandez au support plateforme d’appliquer la mise à jour.</div></div>
+  <?php else:
+      $byId = [];
+      foreach ($expCatalog as $row) {
+          $byId[(string) ($row['id'] ?? '')] = $row;
+      }
+      $mode = !empty($byId['realism']['value']) ? 'realism' : (!empty($byId['troll']['value']) ? 'troll' : 'standard');
+      ?>
+  <form method="post" action="<?= $h($base . '/experience') ?>" class="bo-ac-form" id="bo-ac-exp">
+    <?= $csrf ?>
+    <div class="ath-panel bo-ac-card">
+      <p class="bo-ac-label">Ambiance générale</p>
+      <div class="bo-ac-choice" role="radiogroup" aria-label="Ambiance">
+        <?php foreach ([
+            'standard' => ['mission', 'Standard', 'Tablette complète, aides visuelles et notifications selon les choix des joueurs.'],
+            'realism' => ['shield', 'Réalisme MilSim', 'Interface sobre, sans aide superflue : pour les communautés exigeantes. Désactive le mode détente.'],
+            'troll' => ['chat', 'Détente', 'Effets et messages légers pour les soirées décontractées. Incompatible avec le réalisme.'],
+        ] as $val => [$i, $t, $d]): ?>
+          <label class="bo-ac-opt"><input type="radio" name="_mode" value="<?= $h($val) ?>"<?= $mode === $val ? ' checked' : '' ?> data-ac-mode><span class="bo-ac-opt__ico"><?= $ico($i) ?></span><b><?= $h($t) ?></b><small><?= $h($d) ?></small></label>
+        <?php endforeach; ?>
+      </div>
+      <input type="hidden" name="experience_realism" value="<?= $mode === 'realism' ? '1' : '0' ?>" data-ac-mode-realism>
+      <input type="hidden" name="experience_troll" value="<?= $mode === 'troll' ? '1' : '0' ?>" data-ac-mode-troll>
+    </div>
+
+    <div class="ath-panel bo-ac-card">
+      <p class="bo-ac-label">Réglages imposés ou laissés aux joueurs</p>
+      <div class="bo-ac-tris">
+      <?php foreach ($expCatalog as $row):
+          $id = (string) ($row['id'] ?? '');
+          if ($id === '' || ($row['type'] ?? '') === 'bool') {
+              continue;
+          }
+          $val = (string) ($row['value'] ?? 'player');
+          ?>
+        <div class="bo-ac-tri">
+          <div class="bo-ac-tri__txt"><b><?= $h($row['label'] ?? $id) ?></b><?php if (($row['description'] ?? '') !== ''): ?><small><?= $h($row['description']) ?></small><?php endif; ?></div>
+          <div class="bo-ac-seg" role="radiogroup" aria-label="<?= $h($row['label'] ?? $id) ?>">
+            <?php foreach (($row['choices'] ?? []) as $ch): $cv = (string) ($ch['value'] ?? ''); ?>
+              <label><input type="radio" name="experience_<?= $h($id) ?>" value="<?= $h($cv) ?>"<?= $val === $cv ? ' checked' : '' ?>><span><?= $h(['player' => 'Choix du joueur', 'on' => 'Imposé : oui', 'off' => 'Imposé : non'][$cv] ?? ($ch['label'] ?? $cv)) ?></span></label>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endforeach; ?>
+      </div>
+      <p class="bo-ac-muted">Factions indépendantes et civiles, réseau simulé, ATAK natif, roleplay : <a href="<?= $h(url('back-office/atak/controle-serveur/regles')) ?>">Contrôle serveur → Règles</a>.</p>
+    </div>
+
+    <div class="ath-panel bo-ac-card">
+      <label class="bo-ac-field"><span>Consignes ajoutées au guide en jeu</span>
+        <textarea name="experience_guide_custom" rows="4" maxlength="2000" placeholder="Ex. Fréquences : 1re section 41.0, PC 45.5 — Modpack « Opé 2026.10 » obligatoire — Toute demande d’appui passe par un 9-line."><?= $h($experienceGuideCustom ?? '') ?></textarea>
+        <small>Affiché en mission (journal de bord et aide de la tablette), à la suite du guide standard.</small>
+      </label>
+      <?php if (($experienceGuide ?? '') !== ''): ?>
+        <details class="bo-ac-howto"><summary><?= $ico('eye', 16) ?> Aperçu du guide reçu par les opérateurs</summary><pre class="bo-ac-pre"><?= $h($experienceGuide) ?></pre></details>
+      <?php endif; ?>
+    </div>
+    <div class="bo-ac-save"><span class="bo-ac-muted">Appliqué aux opérateurs en liaison sous une minute.<?= ($experienceUpdatedAt ?? '') !== '' ? ' Dernière modification : ' . $h($fmt($experienceUpdatedAt)) . '.' : '' ?></span><button type="submit" class="ath-btn ath-btn--solid">Enregistrer l’expérience</button></div>
+  </form>
+  <?php endif; ?>
+</section>
+
+<!-- =========================================================== MODULES DU PONT -->
+<?php
+$moduleGroups = [
+    'Carte et navigation' => ['ctab_markers' => 'marker', 'route' => 'route', 'route_planning' => 'route', 'gps_navigation' => 'map', 'geo_places' => 'map', 'geo_roads' => 'route', 'jump' => 'jump'],
+    'Capteurs et images' => ['drone' => 'drone', 'video_feeds' => 'camera', 'iceman_photo' => 'photo', 'ecoti_hud' => 'eye', 'weather' => 'weather'],
+    'Messages et alertes' => ['iceman_alerts' => 'warn', 'iceman_bda' => 'fire', 'iceman_group' => 'chat', 'comspec_mirror' => 'refresh', 'wave_relay' => 'radio'],
+    'Renseignement et rapports' => ['sse_person' => 'intel', 'report_routing' => 'mail', 'jnet_bridge' => 'link'],
+];
+$modById = [];
+foreach ($modules as $m) {
+    $modById[(string) ($m['id'] ?? '')] = $m;
+}
+$placed = array_merge(...array_map('array_keys', array_values($moduleGroups)));
+$others = array_diff(array_keys($modById), $placed);
+if ($others !== []) {
+    $moduleGroups['Autres'] = array_fill_keys($others, 'modules');
 }
 ?>
-<div class="max-w-6xl mx-auto px-6 py-10">
-    <header class="mb-8">
-        <h1 class="text-2xl font-black text-slate-900 tracking-tight">Configuration ATAK / Tacmap</h1>
-        <p class="text-sm text-slate-600 mt-2 max-w-3xl">
-            Réglages de votre communauté pour la carte tactique web, la liaison avec Arma&nbsp;3 (mod COMSPEC Overwatch) et les informations affichées aux opérateurs.
-            Pour les membres&nbsp;: parcours <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="underline font-semibold">Première liaison</a>
-            et <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" class="underline">guide connexion</a>.
-            La clé d’accès se génère ci-dessous&nbsp;; Appairer la transmet automatiquement.
-        </p>
-        <p class="mt-3">
-            <a href="<?= htmlspecialchars(url('back-office/atak/controle-serveur'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-emerald-100">Contrôle de mission — réalisme, fonctions, relais</a>
-        </p>
-    </header>
-
-    <?php if ($success): ?>
-        <p class="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"><?= htmlspecialchars($success) ?></p>
-    <?php endif; ?>
-    <?php if ($error): ?>
-        <p class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"><?= htmlspecialchars($error) ?></p>
-    <?php endif; ?>
-
-    <?php if ($maintenanceEnabled): ?>
-        <div class="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4">
-            <p class="text-sm font-bold text-amber-950">Mode maintenance actif</p>
-            <p class="text-xs text-amber-900 mt-1 leading-relaxed">
-                La carte tactique et la liaison jeu sont indisponibles pour les opérateurs. Vous pouvez toujours gérer cette page.
-            </p>
+<section class="bo-ac-sec" id="bridge-modules" data-ac-panel>
+  <?= $section('modules', 'Modules du pont ATAK Enhanced / cTab', 'Chaque fonction échangée entre Arma et la carte peut être coupée pour la communauté. Les joueurs en liaison récupèrent l’état sous une minute.') ?>
+  <form method="post" action="<?= $h($base . '/modules') ?>" class="bo-ac-form">
+    <?= $csrf ?>
+    <div class="bo-ac-bulk"><button type="button" class="ath-btn" data-ac-all="1">Tout activer</button><button type="button" class="ath-btn" data-ac-all="0">Tout couper</button><span class="bo-ac-muted"><b data-ac-count><?= $modsOn ?></b> / <?= count($modules) ?> actifs</span></div>
+    <?php foreach ($moduleGroups as $group => $ids): $present = array_filter(array_keys($ids), static fn ($id) => isset($modById[$id])); if ($present === []) { continue; } ?>
+      <div class="ath-panel bo-ac-card">
+        <p class="bo-ac-label"><?= $h($group) ?></p>
+        <div class="bo-ac-grid bo-ac-grid--2">
+          <?php foreach ($present as $id): $m = $modById[$id]; ?>
+            <?= $switch('module_' . $id, !empty($m['enabled']), (string) ($m['label'] ?? $id), (string) ($m['description'] ?? ''), $ids[$id], ' data-ac-module') ?>
+          <?php endforeach; ?>
         </div>
+      </div>
+    <?php endforeach; ?>
+    <div class="bo-ac-save"><span class="bo-ac-muted"><?= ($bridgeModulesUpdatedAt ?? '') !== '' ? 'Dernière modification : ' . $h($fmt($bridgeModulesUpdatedAt)) . '. ' : '' ?>Aussi réglable depuis <a href="<?= $h(url('back-office/atak/controle-serveur/fonctions')) ?>">Contrôle serveur → Fonctions</a>.</span><button type="submit" class="ath-btn ath-btn--solid">Enregistrer les modules</button></div>
+  </form>
+</section>
+
+<!-- =========================================================== CARTE ET SYMBOLES -->
+<?php
+$markerIcons = is_array($markerIcons ?? null) ? $markerIcons : ['library' => [], 'assignments' => []];
+$kinds = is_array($markerIconKinds ?? null) ? $markerIconKinds : [];
+$lib = is_array($markerIcons['library'] ?? null) ? $markerIcons['library'] : [];
+$assign = is_array($markerIcons['assignments'] ?? null) ? $markerIcons['assignments'] : [];
+$cdn = function_exists('atak_marker_icons_cdn_base') ? rtrim(atak_marker_icons_cdn_base(), '/') : '';
+$libJson = array_map(static fn ($r) => [
+    'value' => 'upload:' . (string) ($r['id'] ?? ''),
+    'label' => (string) ($r['label'] ?? 'Icône'),
+    'url' => function_exists('user_media_public_url') ? (user_media_public_url((string) ($r['url'] ?? '')) ?? '') : (string) ($r['url'] ?? ''),
+], $lib);
+$kindIcons = ['player' => 'user', 'ai_friend' => 'shield', 'ai_hostile' => 'warn', 'phone' => 'radio', 'vehicle' => 'route', 'air' => 'jump'];
+$defaultMap = (string) ($config['default_map_slug'] ?? 'altis');
+?>
+<section class="bo-ac-sec" id="marker-icons" data-ac-panel>
+  <?= $section('map', 'Carte et symboles', 'La carte ouverte par défaut sur la Tacmap et l’apparence des symboles pour toute la communauté.') ?>
+  <form method="post" action="<?= $h($base) ?>" class="ath-panel bo-ac-card">
+    <?= $csrf ?><input type="hidden" name="_section" value="marker-icons">
+    <p class="bo-ac-label">Carte affichée à l’ouverture</p>
+    <div class="bo-ac-maps" role="radiogroup" aria-label="Carte par défaut">
+      <?php foreach ($atakMaps as $m): $slug = (string) ($m['slug'] ?? ''); ?>
+        <label class="bo-ac-map"><input type="radio" name="default_map_slug" value="<?= $h($slug) ?>"<?= $slug === $defaultMap ? ' checked' : '' ?>><span class="bo-ac-map__ico"><?= $ico('map') ?></span><b><?= $h($m['label'] ?? $slug) ?></b><small><?= $h($slug) ?></small></label>
+      <?php endforeach; ?>
+    </div>
+    <p class="bo-ac-muted">Les opérateurs peuvent toujours changer de carte depuis l’en-tête de la Tacmap.</p>
+    <div class="bo-ac-save bo-ac-save--inline"><button type="submit" class="ath-btn ath-btn--solid">Enregistrer la carte</button></div>
+  </form>
+
+  <form method="post" action="<?= $h($base . '/marker-icons') ?>" class="ath-panel bo-ac-card" id="bo-ac-markers">
+    <?= $csrf ?>
+    <p class="bo-ac-label">Symbole par type de contact</p>
+    <ul class="bo-ac-kinds">
+      <?php foreach ($kinds as $kind => $label): $cur = (string) ($assign[$kind] ?? 'nato'); ?>
+        <li class="bo-ac-kind" data-ac-kind="<?= $h($kind) ?>">
+          <span class="bo-ac-kind__ico"><?= $ico($kindIcons[$kind] ?? 'marker') ?></span>
+          <span class="bo-ac-kind__txt"><b><?= $h($label) ?></b><small data-ac-kind-label><?= $cur === 'nato' ? 'Symbole OTAN prévu' : $h($cur) ?></small></span>
+          <span class="bo-ac-kind__prev" data-ac-kind-prev><?= $cur === 'nato' ? $ico('shield', 26) : '' ?></span>
+          <input type="hidden" name="marker_icon_<?= $h($kind) ?>" value="<?= $h($cur) ?>">
+          <button type="button" class="ath-btn" data-ac-pick>Changer</button>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+    <div class="bo-ac-save bo-ac-save--inline"><span class="bo-ac-muted">Visible après rechargement de la Tacmap.</span><button type="submit" class="ath-btn ath-btn--solid">Enregistrer les symboles</button></div>
+  </form>
+
+  <div class="ath-panel bo-ac-card">
+    <p class="bo-ac-label">Vos icônes</p>
+    <?php if ($lib === []): ?><p class="bo-ac-muted">Aucune icône envoyée. Exemple : l’écusson de votre section pour vos opérateurs.</p><?php else: ?>
+      <ul class="bo-ac-lib">
+        <?php foreach ($libJson as $i => $it): ?>
+          <li><img src="<?= $h($it['url']) ?>" alt=""><span><?= $h($it['label']) ?></span>
+            <form method="post" action="<?= $h($base . '/marker-icons/delete') ?>" data-ac-confirm="Retirer « <?= $h($it['label']) ?> » ? Les types qui l’utilisent reviennent au symbole OTAN."><?= $csrf ?><input type="hidden" name="icon_id" value="<?= $h((string) ($lib[$i]['id'] ?? '')) ?>"><button type="submit" class="bo-ac-x" aria-label="Retirer">×</button></form></li>
+        <?php endforeach; ?>
+      </ul>
     <?php endif; ?>
+    <form method="post" action="<?= $h($base . '/marker-icons/upload') ?>" enctype="multipart/form-data" class="bo-ac-upload">
+      <?= $csrf ?>
+      <label class="bo-ac-field"><span>Nom affiché</span><input type="text" name="marker_icon_label" maxlength="80" placeholder="Ex. Écusson 1re section" required></label>
+      <label class="bo-ac-drop"><input type="file" name="marker_icon_file" accept="image/png,image/jpeg,image/webp" required data-ac-file-preview="#bo-ac-up-prev"><span><?= $ico('download') ?> Choisir une image</span><small>PNG, JPG ou WebP · 2 Mo max. · carré, fond transparent conseillé (64 × 64 px)</small><img id="bo-ac-up-prev" alt="" hidden></label>
+      <button type="submit" class="ath-btn">Ajouter à la bibliothèque</button>
+    </form>
+  </div>
 
-    <?php if ($newAccessKeyPlain): ?>
-        <div class="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4">
-            <p class="text-sm font-bold text-amber-950 mb-1">Nouvelle clé d’accès — à copier immédiatement</p>
-            <p class="text-xs text-amber-900 mb-3 leading-relaxed">
-                Cette valeur ne sera plus affichée en entier après avoir quitté cette page.
-                Les membres n’ont en général <strong>pas</strong> besoin de cette clé : orientez-les vers
-                <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="underline font-semibold">Première liaison</a>
-                (Appairer). Conservez la clé pour le dépannage ou les réglages avancés.
-            </p>
-            <div class="flex flex-wrap items-center gap-2">
-                <code id="atak-new-access-key" class="flex-1 min-w-[12rem] rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 break-all"><?= htmlspecialchars($newAccessKeyPlain) ?></code>
-                <button type="button" class="px-3 py-2 text-sm font-semibold rounded-lg bg-amber-900 text-white hover:bg-amber-800" onclick="navigator.clipboard.writeText(document.getElementById('atak-new-access-key').textContent); this.textContent='Copié';">Copier</button>
-            </div>
+  <dialog class="bo-ac-dialog" id="bo-ac-picker" aria-label="Choisir un symbole">
+    <form method="dialog" class="bo-ac-dialog__head"><b>Choisir un symbole</b><input type="search" placeholder="Rechercher : infanterie, médical, embuscade, b_air…" data-ac-pick-search><button class="bo-ac-x" aria-label="Fermer">×</button></form>
+    <div class="bo-ac-dialog__body" data-ac-pick-grid></div>
+  </dialog>
+  <script type="application/json" id="bo-ac-marker-data"><?= json_encode(['cdn' => $cdn, 'library' => $libJson], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?></script>
+  <script src="<?= $h(asset_url('assets/js/arma-marker-library-index.js')) ?>" defer></script>
+</section>
+
+<!-- =========================================================== PHOTOS TERRAIN -->
+<?php
+$hud = is_array($photoHud ?? null) ? $photoHud : [];
+$hudOn = !array_key_exists('enabled', $hud) || !empty($hud['enabled']);
+$hudFlags = [
+    'show_datetime' => ['clock', 'Date et heure', 'Heure du jeu si disponible, sinon heure UTC du serveur.', !array_key_exists('show_datetime', $hud) || !empty($hud['show_datetime'])],
+    'show_callsign' => ['user', 'Indicatif', 'L’indicatif de l’opérateur qui a pris la photo.', !array_key_exists('show_callsign', $hud) || !empty($hud['show_callsign'])],
+    'show_device' => ['camera', 'Type de caméra', 'Casque, tablette, drone…', !array_key_exists('show_device', $hud) || !empty($hud['show_device'])],
+    'show_grid' => ['map', 'Référence de grille', 'Position MGRS au moment de la capture.', !array_key_exists('show_grid', $hud) || !empty($hud['show_grid'])],
+    'show_heading' => ['route', 'Cap', 'Direction de la prise de vue.', !empty($hud['show_heading'])],
+    'show_altitude' => ['jump', 'Altitude', 'Utile pour les vues de drone.', !empty($hud['show_altitude'])],
+    'show_logo' => ['shield', 'Logo en filigrane', 'Logo de l’unité avec « © unité ».', !array_key_exists('show_logo', $hud) || !empty($hud['show_logo'])],
+];
+?>
+<section class="bo-ac-sec" id="photo-hud" data-ac-panel>
+  <?= $section('photo', 'Bandeau des photos terrain', 'Un bandeau façon caméra-piéton est gravé sur les photos envoyées par les opérateurs (casque, tablette, drone) : unité, indicatif, grille, heure. Les photos déjà archivées ne changent pas.') ?>
+  <form method="post" action="<?= $h($base . '/photo-hud') ?>" class="bo-ac-form bo-ac-hud" id="bo-ac-hud">
+    <?= $csrf ?>
+    <div class="bo-ac-hud__cfg">
+      <div class="ath-panel bo-ac-card">
+        <?= $switch('photo_hud_enabled', $hudOn, 'Graver le bandeau sur les prochaines photos', 'Désactivé : les captures restent brutes, sans identification.', 'photo', ' data-ac-hud="enabled"') ?>
+        <div class="bo-ac-grid bo-ac-grid--2">
+          <label class="bo-ac-field"><span>Unité ou agence</span><input name="photo_hud_agency" maxlength="80" value="<?= $h($hud['agency'] ?? '') ?>" placeholder="Ex. GIGN — Détachement Alpha" data-ac-hud="agency"><small>Vide : le nom de votre communauté.</small></label>
+          <label class="bo-ac-field"><span>Ligne libre</span><input name="photo_hud_custom" maxlength="80" value="<?= $h($hud['custom_line'] ?? '') ?>" placeholder="Ex. OP FORTERESSE" data-ac-hud="custom"><small>Nom d’opération, théâtre, mention d’archivage.</small></label>
         </div>
+        <p class="bo-ac-label">Position</p>
+        <div class="bo-ac-seg bo-ac-seg--wide">
+          <?php foreach (['top' => 'En haut', 'bottom' => 'En bas', 'both' => 'Haut et bas'] as $v => $l): ?><label><input type="radio" name="photo_hud_position" value="<?= $v ?>"<?= ($hud['position'] ?? 'top') === $v ? ' checked' : '' ?> data-ac-hud="position"><span><?= $h($l) ?></span></label><?php endforeach; ?>
+        </div>
+        <p class="bo-ac-label">Apparence</p>
+        <div class="bo-ac-seg bo-ac-seg--wide">
+          <?php foreach (['axon' => 'Caméra-piéton (barre sombre, voyant REC)', 'discreet' => 'Discret (barre fine)'] as $v => $l): ?><label><input type="radio" name="photo_hud_style" value="<?= $v ?>"<?= ($hud['style'] ?? 'axon') === $v ? ' checked' : '' ?> data-ac-hud="style"><span><?= $h($l) ?></span></label><?php endforeach; ?>
+        </div>
+      </div>
+      <div class="ath-panel bo-ac-card">
+        <p class="bo-ac-label">Informations incrustées</p>
+        <div class="bo-ac-grid bo-ac-grid--2">
+          <?php foreach ($hudFlags as $k => [$i, $t, $d, $v]): ?><?= $switch('photo_hud_' . $k, $v, $t, $d, $i, ' data-ac-hud="' . $k . '"') ?><?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+    <div class="bo-ac-hud__prev">
+      <p class="bo-ac-label">Aperçu en direct</p>
+      <div class="bo-ac-shot" data-ac-shot>
+        <div class="bo-ac-shot__bar bo-ac-shot__bar--top" data-ac-bar="top"><span class="bo-ac-shot__rec">● REC</span><span data-ac-line="agency"><?= $h(($hud['agency'] ?? '') ?: 'VOTRE UNITÉ') ?></span><span data-ac-line="meta"></span></div>
+        <div class="bo-ac-shot__logo" data-ac-line="logo">© <?= $h(mb_strtoupper(($hud['agency'] ?? '') ?: 'UNITÉ')) ?></div>
+        <div class="bo-ac-shot__bar bo-ac-shot__bar--bottom" data-ac-bar="bottom"><span data-ac-line="geo"></span><span data-ac-line="custom"></span></div>
+      </div>
+      <p class="bo-ac-muted">Simulation instantanée. Après enregistrement, le rendu réel ci-dessous est recalculé par le serveur.</p>
+      <?php if (($photoHudPreview ?? '') !== ''): ?><img class="bo-ac-real" src="<?= $h($photoHudPreview) ?>" alt="Rendu réel du bandeau enregistré"><?php endif; ?>
+    </div>
+    <div class="bo-ac-save"><span class="bo-ac-muted">S’applique aux photos reçues après l’enregistrement (envois de photos terrain).</span><button type="submit" class="ath-btn ath-btn--solid">Enregistrer le bandeau</button></div>
+  </form>
+</section>
+
+<!-- =========================================================== SERVEUR ET CONSIGNES -->
+<section class="bo-ac-sec" id="serveur" data-ac-panel>
+  <?= $section('server', 'Serveur Arma et consignes', 'Ce que vos membres lisent sur la Tacmap et dans l’assistant d’installation pour rejoindre vos sessions.') ?>
+  <form method="post" action="<?= $h($base) ?>" class="bo-ac-form">
+    <?= $csrf ?><input type="hidden" name="_section" value="serveur">
+    <div class="ath-panel bo-ac-card">
+      <p class="bo-ac-label">Serveur de jeu</p>
+      <div class="bo-ac-grid bo-ac-grid--host">
+        <label class="bo-ac-field"><span>Adresse</span><input name="arma_server_host" maxlength="190" value="<?= $h($config['arma_server_host'] ?? '') ?>" placeholder="Ex. arma.macommunaute.fr ou 51.38.12.40"></label>
+        <label class="bo-ac-field"><span>Port</span><input name="arma_server_port" type="number" min="1" max="65535" value="<?= $h($config['arma_server_port'] ?? '') ?>" placeholder="2302"></label>
+      </div>
+      <p class="bo-ac-muted">Affiché sur la Tacmap et dans le panneau compte. Port par défaut d’Arma 3 : 2302.</p>
+    </div>
+    <div class="ath-panel bo-ac-card">
+      <label class="bo-ac-field"><span>Consignes d’installation du mod</span>
+        <textarea name="arma_mod_credentials" rows="5" placeholder="Ex.&#10;• Modpack : « Opé 2026.10 » (collection Steam épinglée sur Discord)&#10;• Mot de passe serveur : demandé en briefing&#10;• Overwatch : version 1.6 minimum"><?= $h($config['arma_mod_credentials'] ?? '') ?></textarea>
+        <small>Montré sur la Tacmap (configuration jeu) et dans l’assistant d’installation. <b>Jamais de secret ici</b> : la clé d’accès se gère dans son onglet.</small>
+      </label>
+      <label class="bo-ac-field"><span>Instructions d’équipe</span>
+        <textarea name="instructions" rows="5" placeholder="Ex.&#10;• Canaux : 1re section 41.0 — PC 45.5&#10;• Toute demande d’appui feu passe par un 9-line&#10;• Entraînement le mercredi 21 h"><?= $h($config['instructions'] ?? '') ?></textarea>
+        <small>Visible sur la Tacmap par toute l’équipe : procédures, liens utiles, rappels.</small>
+      </label>
+    </div>
+    <div class="bo-ac-save"><span class="bo-ac-muted">Visible immédiatement sur la Tacmap.</span><button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button></div>
+  </form>
+</section>
+
+<!-- =========================================================== LIAISON AVANCÉE -->
+<?php $jwtSet = trim((string) ($config['jwt_secret'] ?? '')) !== ''; ?>
+<section class="bo-ac-sec" id="avance" data-ac-panel>
+  <?= $section('link', 'Liaison avancée', 'Santé de la synchronisation en direct, et deux réglages réservés aux hébergements particuliers. Dans 99 % des cas, ne touchez à rien ici.') ?>
+  <div class="ath-panel bo-ac-card">
+    <p class="bo-ac-label">Santé de la synchronisation <span class="bo-ac-live">en direct · 10 s</span></p>
+    <div class="bo-ac-health">
+      <div><small>Dernière remontée</small><b data-live="ago">—</b></div>
+      <div><small>Débit</small><b data-live="kbps">—</b></div>
+      <div><small>Volume 15 min</small><b data-live="vol">—</b></div>
+      <div><small>Opérateurs</small><b data-live="ops">—</b></div>
+      <div><small>Repères carte</small><b data-live="mk">—</b></div>
+      <div><small>Photos 15 min</small><b data-live="photo">—</b></div>
+    </div>
+  </div>
+  <form method="post" action="<?= $h($base) ?>" class="bo-ac-form">
+    <?= $csrf ?><input type="hidden" name="_section" value="avance">
+    <div class="ath-panel bo-ac-card">
+      <label class="bo-ac-field"><span>Adresse du service de liaison</span>
+        <input type="url" name="node_url" value="<?= $h($config['node_url'] ?? '') ?>" placeholder="Vide : ce site (https://<?= $h($hostHint) ?>)">
+        <small>À renseigner seulement si votre hébergeur impose un domaine ou un port dédié au service temps réel. Exemple : <code>https://live.macommunaute.fr:8443</code>.</small>
+      </label>
+      <label class="bo-ac-field"><span>Secret de signature des jetons Tacmap <?= $jwtSet ? '<span class="ath-tag ath-tag--ok">défini</span>' : '<span class="ath-tag ath-tag--neut">valeur de la plateforme</span>' ?></span>
+        <input type="password" name="jwt_secret" autocomplete="new-password" value="" placeholder="<?= $jwtSet ? 'Laisser vide pour conserver le secret actuel' : 'Vide : secret global de la plateforme' ?>">
+        <small>Signe le jeton remis à la page Tacmap. Utile seulement avec un service de liaison auto-hébergé qui vérifie ce jeton ; le secret n’est jamais réaffiché.</small>
+      </label>
+      <?php if ($jwtSet): ?><label class="bo-ac-check"><input type="checkbox" name="jwt_secret_clear" value="1"> Effacer le secret et revenir à celui de la plateforme</label><?php endif; ?>
+    </div>
+    <div class="bo-ac-save"><span class="bo-ac-muted">Une adresse invalide est refusée à l’enregistrement.</span><button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button></div>
+  </form>
+</section>
+
+<!-- =========================================================== MAINTENANCE ET DONNÉES -->
+<?php
+$tableLabels = [
+    'atak_markers' => 'Marqueurs', 'atak_units' => 'Unités', 'atak_chat_messages' => 'Messages', 'atak_orders' => 'Ordres',
+    'atak_pings' => 'Pings', 'atak_nine_line' => '9-line', 'atak_map_shapes' => 'Tracés', 'atak_poi' => 'Points d’intérêt',
+    'atak_intel_photos' => 'Photos renseignement', 'recon_images' => 'Photos terrain', 'atak_tactical_reports' => 'Comptes rendus tactiques',
+    'atak_vehicle_tracking' => 'Véhicules suivis', 'atak_medevac_requests' => 'MEDEVAC', 'atak_waypoints' => 'Points de passage',
+];
+$rows = $dataSummary;
+unset($rows['activity_events']);
+arsort($rows);
+$rows = array_filter($rows, static fn ($n) => (int) $n > 0);
+?>
+<section class="bo-ac-sec" id="donnees" data-ac-panel>
+  <?= $section('data', 'Maintenance et données', 'Fermer temporairement la carte et la liaison jeu, exporter l’historique, ou repartir de zéro avant une nouvelle campagne.') ?>
+  <div class="ath-panel bo-ac-card<?= $maintOn ? ' is-warn' : '' ?>">
+    <?php if (!$maintReady): ?>
+      <div class="bo-ac-banner is-bad"><?= $ico('warn') ?><div><b>Indisponible.</b> La mise à jour qui active la maintenance n’est pas appliquée sur ce serveur : demandez-la au support plateforme.</div></div>
+    <?php else: ?>
+    <form method="post" action="<?= $h($base . '/maintenance') ?>" class="bo-ac-form">
+      <?= $csrf ?>
+      <?= $switch('maintenance_enabled', $maintOn, 'Mode maintenance', 'Les opérateurs ne peuvent plus ouvrir la Tacmap, envoyer de données ni se connecter en jeu. Les administrateurs gardent l’accès pour tester.', 'wrench') ?>
+      <label class="bo-ac-field"><span>Message affiché aux opérateurs</span>
+        <textarea name="maintenance_message" rows="2" maxlength="500" placeholder="Ex. Mise à jour du serveur jusqu’à 21 h 00 Zulu. Rendez-vous sur Discord pour les nouvelles."><?= $h($maintMsg) ?></textarea></label>
+      <div class="bo-ac-save bo-ac-save--inline"><button type="submit" class="ath-btn ath-btn--solid">Enregistrer la maintenance</button></div>
+    </form>
     <?php endif; ?>
+  </div>
 
-    <a href="<?= htmlspecialchars(url('back-office/atak/briefing-slides'), ENT_QUOTES, 'UTF-8') ?>" class="mb-8 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40">
-        <span>
-            <span class="block text-sm font-bold text-slate-900">Diapositives de briefing tactique</span>
-            <span class="block text-xs text-slate-500">Publier les images du briefing pour Arma (« Tableau de briefing » ou écran Eden) — ordre, aperçu et aides d’intégration.</span>
-        </span>
-        <span class="text-sm font-bold text-emerald-700">Ouvrir →</span>
-    </a>
-
-    <?php
-    $bridgeModules = is_array($bridgeModules ?? null) ? $bridgeModules : [];
-    $bridgeModulesUpdatedAt = (string) ($bridgeModulesUpdatedAt ?? '');
-    $experienceCatalog = is_array($experienceCatalog ?? null) ? $experienceCatalog : [];
-    $experienceGuide = (string) ($experienceGuide ?? '');
-    $experienceGuideCustom = (string) ($experienceGuideCustom ?? '');
-    $experienceUpdatedAt = (string) ($experienceUpdatedAt ?? '');
-    $experienceSchemaReady = !empty($experienceSchemaReady);
-    $photoHud = is_array($photoHud ?? null) ? $photoHud : [];
-    $photoHudPreview = (string) ($photoHudPreview ?? '');
-    ?>
-    <div id="bridge-modules" class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-        <h2 class="text-sm font-bold text-slate-800 mb-1">Modules ATAK Enhanced / cTab</h2>
-        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-            Chaque fonctionnalité partagée entre le jeu et la carte tactique peut être activée ou désactivée pour votre communauté.
-            Les opérateurs en liaison voient l’état des modules et un journal des données dans la tablette Athena et l’application Athena du cTab.
-        </p>
-        <?php if ($bridgeModulesUpdatedAt !== ''): ?>
-            <p class="text-xs text-slate-400 mb-3">Dernière mise à jour : <?= htmlspecialchars($bridgeModulesUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/modules" method="post" class="space-y-3">
-            <?= \App\Core\Csrf::field() ?>
-            <div class="grid sm:grid-cols-2 gap-3">
-                <?php foreach ($bridgeModules as $mod): ?>
-                    <?php
-                    $mid = (string) ($mod['id'] ?? '');
-                    $mlabel = (string) ($mod['label'] ?? $mid);
-                    $mdesc = (string) ($mod['description'] ?? '');
-                    $menabled = !empty($mod['enabled']);
-                    if ($mid === '') {
-                        continue;
-                    }
-                    ?>
-                    <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-3 cursor-pointer hover:border-emerald-300">
-                        <input type="hidden" name="module_<?= htmlspecialchars($mid, ENT_QUOTES, 'UTF-8') ?>" value="0" />
-                        <input type="checkbox" name="module_<?= htmlspecialchars($mid, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-1 rounded border-slate-300" <?= $menabled ? 'checked' : '' ?> />
-                        <span>
-                            <span class="block text-sm font-medium text-slate-800"><?= htmlspecialchars($mlabel, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php if ($mdesc !== ''): ?>
-                                <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= htmlspecialchars($mdesc, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php endif; ?>
-                        </span>
-                    </label>
-                <?php endforeach; ?>
-            </div>
-            <div class="pt-2">
-                <button type="submit" class="inline-flex px-4 py-2 bg-emerald-700 text-white text-sm font-semibold rounded-lg hover:bg-emerald-800">
-                    Enregistrer les modules
-                </button>
-            </div>
-        </form>
-        <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50/70 p-4">
-            <h3 class="text-sm font-bold text-amber-950 mb-1">Portail de renseignement classifié</h3>
-            <p class="text-xs text-amber-900/90 leading-relaxed mb-3">
-                Dossiers d’affaire, personnes, croisements et codes d’accès temporaires.
-                Le commandement entre <strong>sans code</strong> pour délivrer les accès aux opérateurs.
-            </p>
-            <div class="flex flex-wrap gap-2">
-                <a href="<?= htmlspecialchars(url('back-office/renseignement/acces'), ENT_QUOTES, 'UTF-8') ?>"
-                   class="inline-flex px-4 py-2 bg-amber-800 text-white text-sm font-semibold rounded-lg hover:bg-amber-900">
-                    Gérer les codes d’accès
-                </a>
-                <a href="<?= htmlspecialchars(url('atak/sse/commandement'), ENT_QUOTES, 'UTF-8') ?>"
-                   class="inline-flex px-4 py-2 bg-white border border-amber-300 text-amber-950 text-sm font-semibold rounded-lg hover:bg-amber-50">
-                    Ouvrir le portail
-                </a>
-            </div>
-        </div>
+  <div class="ath-panel bo-ac-card">
+    <div class="bo-ac-keyrow">
+      <div><p class="bo-ac-label">Données conservées</p><p class="bo-ac-big"><?= (int) ($dataSummary['activity_events'] ?? 0) ?> <small>entrées de journal</small> · <?= $missionRows ?> <small>enregistrements de mission</small></p></div>
+      <a class="ath-btn" href="<?= $h($base . '/export') ?>"><?= $ico('download', 16) ?> Exporter tout (JSON)</a>
     </div>
+    <?php if ($rows !== []): ?>
+      <ul class="bo-ac-datalist">
+        <?php foreach (array_slice($rows, 0, 12, true) as $t => $n): ?><li><span><?= $h($tableLabels[$t] ?? str_replace(['atak_', '_'], ['', ' '], $t)) ?></span><b><?= (int) $n ?></b></li><?php endforeach; ?>
+      </ul>
+    <?php endif; ?>
+  </div>
 
-    <?php require __DIR__ . '/_game_experience.php'; ?>
+  <form method="post" action="<?= $h($base . '/purge') ?>" class="ath-panel bo-ac-card bo-ac-danger" data-ac-purge="<?= $h($purgeWord) ?>">
+    <?= $csrf ?>
+    <p class="bo-ac-label">Effacer définitivement</p>
+    <p>Journal, unités, messages, ordres, pings, photos, tracés et comptes rendus tactiques de la communauté. <b>Conservés</b> : configuration, clé d’accès, indicatifs liés aux comptes.</p>
+    <ol class="bo-ac-mini-steps"><li>Exportez d’abord (bouton ci-dessus).</li><li>Saisissez <code><?= $h($purgeWord) ?></code>.</li><li>Confirmez.</li></ol>
+    <label class="bo-ac-field"><span>Mot de confirmation</span><input name="confirm_phrase" autocomplete="off" placeholder="<?= $h($purgeWord) ?>" data-ac-purge-input></label>
+    <label class="bo-ac-check"><input type="checkbox" name="unlink_steam" value="1"> Désynchroniser aussi tous les comptes Steam (chaque opérateur devra refaire sa liaison)</label>
+    <button type="submit" class="ath-btn bo-ac-btn-danger" disabled data-ac-purge-btn><?= $ico('trash', 16) ?> Tout effacer</button>
+  </form>
+</section>
 
-    <div class="mb-8 border border-violet-200 rounded-xl p-5 bg-violet-50/30 shadow-sm">
-        <h2 class="text-sm font-bold text-violet-950 mb-1">Expérience en jeu (réalisme, troll, personnalisation)</h2>
-        <p class="text-xs text-violet-900/80 mb-4 leading-relaxed">
-            Définissez le profil d’expérience pour votre communauté. Les opérateurs en liaison reçoivent ces réglages automatiquement
-            (en complément de leurs options personnelles lorsque vous laissez le choix).
-            Un guide de configuration est aussi affiché en mission lors de la première liaison.
-        </p>
-        <?php if ($experienceUpdatedAt !== ''): ?>
-            <p class="text-xs text-slate-400 mb-3">Dernière mise à jour : <?= htmlspecialchars($experienceUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-        <?php if (!$experienceSchemaReady): ?>
-            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-                <p class="text-sm font-semibold text-red-950">Fonction indisponible pour le moment</p>
-                <p class="text-xs text-red-900 mt-1 leading-relaxed">
-                    La base de données n’est pas à jour pour l’expérience Overwatch. Contactez le support plateforme pour appliquer la mise à jour, puis réessayez.
-                </p>
-            </div>
-        <?php else: ?>
-        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/experience" method="post" class="space-y-4" id="atak-experience-form">
-            <?= \App\Core\Csrf::field() ?>
-            <div class="grid sm:grid-cols-2 gap-3">
-                <?php foreach ($experienceCatalog as $exp): ?>
-                    <?php
-                    $eid = (string) ($exp['id'] ?? '');
-                    $elabel = (string) ($exp['label'] ?? $eid);
-                    $edesc = (string) ($exp['description'] ?? '');
-                    $etype = (string) ($exp['type'] ?? 'bool');
-                    $eval = $exp['value'] ?? false;
-                    if ($eid === '') {
-                        continue;
-                    }
-                    ?>
-                    <?php if ($etype === 'tri'): ?>
-                        <div class="rounded-lg border border-slate-200 bg-white px-3 py-3">
-                            <label class="block text-sm font-medium text-slate-800 mb-1"><?= htmlspecialchars($elabel, ENT_QUOTES, 'UTF-8') ?></label>
-                            <?php if ($edesc !== ''): ?>
-                                <p class="text-xs text-slate-500 mb-2 leading-relaxed"><?= htmlspecialchars($edesc, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php endif; ?>
-                            <select name="experience_<?= htmlspecialchars($eid, ENT_QUOTES, 'UTF-8') ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                                <?php foreach (($exp['choices'] ?? []) as $ch): ?>
-                                    <?php $cv = (string) ($ch['value'] ?? ''); ?>
-                                    <option value="<?= htmlspecialchars($cv, ENT_QUOTES, 'UTF-8') ?>" <?= (string) $eval === $cv ? 'selected' : '' ?>><?= htmlspecialchars((string) ($ch['label'] ?? $cv), ENT_QUOTES, 'UTF-8') ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    <?php else: ?>
-                        <?php $echecked = !empty($eval); ?>
-                        <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 cursor-pointer hover:border-violet-300 experience-bool-row" data-exp-id="<?= htmlspecialchars($eid, ENT_QUOTES, 'UTF-8') ?>">
-                            <input type="hidden" name="experience_<?= htmlspecialchars($eid, ENT_QUOTES, 'UTF-8') ?>" value="0" />
-                            <input type="checkbox" name="experience_<?= htmlspecialchars($eid, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-1 rounded border-slate-300 experience-bool-cb" <?= $echecked ? 'checked' : '' ?> />
-                            <span>
-                                <span class="block text-sm font-medium text-slate-800"><?= htmlspecialchars($elabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php if ($edesc !== ''): ?>
-                                    <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= htmlspecialchars($edesc, ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php endif; ?>
-                            </span>
-                        </label>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Consignes supplémentaires pour le guide en jeu (facultatif)</label>
-                <textarea name="experience_guide_custom" rows="4" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Ex. : canaux Teamspeak, version du modpack, rappel procédure 9-line…"><?= htmlspecialchars($experienceGuideCustom) ?></textarea>
-                <p class="text-xs text-slate-500 mt-1.5">Ce texte est ajouté au guide affiché aux opérateurs en mission (journal de bord et panneau d’aide).</p>
-            </div>
-            <div class="pt-1 flex flex-wrap gap-2">
-                <button type="submit" class="inline-flex px-4 py-2 bg-violet-800 text-white text-sm font-semibold rounded-lg hover:bg-violet-900">
-                    Enregistrer l’expérience
-                </button>
-            </div>
-        </form>
-        <script>
-        (function () {
-            var form = document.getElementById('atak-experience-form');
-            if (!form) return;
-            var realism = form.querySelector('.experience-bool-cb[name="experience_realism"]');
-            var troll = form.querySelector('.experience-bool-cb[name="experience_troll"]');
-            if (!realism || !troll) return;
-            function syncExclusive() {
-                if (realism.checked) { troll.checked = false; troll.disabled = true; }
-                else { troll.disabled = false; }
-                if (troll.checked) { realism.checked = false; realism.disabled = true; }
-                else { realism.disabled = false; }
-            }
-            realism.addEventListener('change', syncExclusive);
-            troll.addEventListener('change', syncExclusive);
-            syncExclusive();
-        })();
-        </script>
-        <?php endif; ?>
-
-        <?php if ($experienceGuide !== ''): ?>
-        <details class="mt-5 rounded-lg border border-violet-200 bg-white">
-            <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-violet-950">Aperçu du guide en jeu (copiable)</summary>
-            <div class="px-4 pb-4">
-                <p class="text-xs text-slate-500 mb-2">Texte transmis aux opérateurs lors de la liaison. Vous pouvez le copier pour un briefing écrit.</p>
-                <pre class="text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg p-3 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto"><?= htmlspecialchars($experienceGuide) ?></pre>
-            </div>
-        </details>
-        <?php endif; ?>
     </div>
-
-    <?php
-    $hudEnabled = !array_key_exists('enabled', $photoHud) || !empty($photoHud['enabled']);
-    $hudPos = (string) ($photoHud['position'] ?? 'top');
-    $hudStyle = (string) ($photoHud['style'] ?? 'axon');
-    $hudAgency = (string) ($photoHud['agency'] ?? '');
-    $hudCustom = (string) ($photoHud['custom_line'] ?? '');
-    $hudFlags = [
-        'show_datetime' => ['Date et heure (UTC)', !empty($photoHud['show_datetime']) || !array_key_exists('show_datetime', $photoHud)],
-        'show_callsign' => ['Indicatif', !empty($photoHud['show_callsign']) || !array_key_exists('show_callsign', $photoHud)],
-        'show_device' => ['Type de caméra', !empty($photoHud['show_device']) || !array_key_exists('show_device', $photoHud)],
-        'show_grid' => ['Référence de grille', !empty($photoHud['show_grid']) || !array_key_exists('show_grid', $photoHud)],
-        'show_heading' => ['Cap', !empty($photoHud['show_heading'])],
-        'show_altitude' => ['Altitude', !empty($photoHud['show_altitude'])],
-        'show_logo' => ['Logo de l’unité en filigrane, avec « © unité »', !empty($photoHud['show_logo']) || !array_key_exists('show_logo', $photoHud)],
-    ];
-    ?>
-    <div id="photo-hud" class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-        <h2 class="text-sm font-bold text-slate-800 mb-1">Bandeau d’identification des photos</h2>
-        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-            Un bandeau du type caméra-piéton est gravé sur les photos reçues du terrain (casque, tablette, drone) :
-            unité, indicatif, grille et horodatage. Les photos déjà archivées ne sont pas modifiées.
-        </p>
-        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/photo-hud" method="post" class="space-y-4">
-            <?= \App\Core\Csrf::field() ?>
-            <input type="hidden" name="photo_hud_enabled" value="0" />
-            <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-3 cursor-pointer hover:border-emerald-300">
-                <input type="checkbox" name="photo_hud_enabled" value="1" class="mt-1 rounded border-slate-300" <?= $hudEnabled ? 'checked' : '' ?> />
-                <span>
-                    <span class="block text-sm font-medium text-slate-800">Graver le bandeau sur les prochaines photos</span>
-                    <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed">Si vous décochez, les captures restent brutes, sans identification incrustée.</span>
-                </span>
-            </label>
-            <div class="grid sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1" for="photo_hud_agency">Nom d’unité ou d’agence</label>
-                    <input id="photo_hud_agency" name="photo_hud_agency" type="text" maxlength="80" value="<?= htmlspecialchars($hudAgency, ENT_QUOTES, 'UTF-8') ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Ex. : GIGN — Détachement Alpha" />
-                    <p class="text-xs text-slate-500 mt-1">Affiché en tête du bandeau. Par défaut, le nom de votre communauté.</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1" for="photo_hud_custom">Ligne libre (facultatif)</label>
-                    <input id="photo_hud_custom" name="photo_hud_custom" type="text" maxlength="80" value="<?= htmlspecialchars($hudCustom, ENT_QUOTES, 'UTF-8') ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Ex. : OP FORTERESSE" />
-                    <p class="text-xs text-slate-500 mt-1">Nom d’opération, théâtre, ou tout libellé utile à l’archivage.</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1" for="photo_hud_position">Position du bandeau</label>
-                    <select id="photo_hud_position" name="photo_hud_position" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                        <option value="top" <?= $hudPos === 'top' ? 'selected' : '' ?>>En haut de la photo</option>
-                        <option value="bottom" <?= $hudPos === 'bottom' ? 'selected' : '' ?>>En bas de la photo</option>
-                        <option value="both" <?= $hudPos === 'both' ? 'selected' : '' ?>>Haut et bas</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1" for="photo_hud_style">Apparence</label>
-                    <select id="photo_hud_style" name="photo_hud_style" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                        <option value="axon" <?= $hudStyle === 'axon' ? 'selected' : '' ?>>Caméra-piéton (barre sombre, indicateur d’enregistrement)</option>
-                        <option value="discreet" <?= $hudStyle === 'discreet' ? 'selected' : '' ?>>Discret (barre plus fine)</option>
-                    </select>
-                </div>
-            </div>
-            <fieldset>
-                <legend class="text-sm font-medium text-slate-800 mb-2">Informations à afficher</legend>
-                <div class="grid sm:grid-cols-2 gap-2">
-                    <?php foreach ($hudFlags as $flag => $pair): ?>
-                        <?php [$flabel, $fchecked] = $pair; ?>
-                        <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 cursor-pointer hover:border-emerald-300">
-                            <input type="hidden" name="photo_hud_<?= htmlspecialchars($flag, ENT_QUOTES, 'UTF-8') ?>" value="0" />
-                            <input type="checkbox" name="photo_hud_<?= htmlspecialchars($flag, ENT_QUOTES, 'UTF-8') ?>" value="1" class="rounded border-slate-300" <?= $fchecked ? 'checked' : '' ?> />
-                            <span class="text-sm text-slate-800"><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </fieldset>
-            <?php if ($photoHudPreview !== ''): ?>
-                <div>
-                    <p class="text-sm font-medium text-slate-800 mb-2">Aperçu</p>
-                    <img src="<?= htmlspecialchars($photoHudPreview, ENT_QUOTES, 'UTF-8') ?>" alt="Aperçu du bandeau sur une photo" class="w-full max-w-xl rounded-lg border border-slate-200" />
-                    <p class="text-xs text-slate-500 mt-1.5">L’aperçu reprend les réglages actuellement enregistrés. Enregistrez pour le mettre à jour.</p>
-                </div>
-            <?php endif; ?>
-            <div class="pt-1">
-                <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
-                    Enregistrer le bandeau
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <?php
-    $markerIcons = is_array($markerIcons ?? null) ? $markerIcons : ['library' => [], 'assignments' => []];
-    $markerIconKinds = is_array($markerIconKinds ?? null) ? $markerIconKinds : \App\Services\Tactical\AtakMarkerIconsService::KINDS;
-    $markerLib = is_array($markerIcons['library'] ?? null) ? $markerIcons['library'] : [];
-    $markerAssign = is_array($markerIcons['assignments'] ?? null) ? $markerIcons['assignments'] : [];
-    $cdnBase = function_exists('atak_marker_icons_cdn_base') ? rtrim(atak_marker_icons_cdn_base(), '/') : '';
-    ?>
-    <div id="marker-icons" class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-        <h2 class="text-sm font-bold text-slate-800 mb-1">Apparence des symboles sur la carte</h2>
-        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-            Choisissez le symbole OTAN, une icône déjà présente dans la bibliothèque de la carte, ou envoyez la vôtre.
-            Ces choix s’appliquent à toute la communauté et restent mémorisés.
-        </p>
-        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/marker-icons/upload" method="post" enctype="multipart/form-data" class="mb-6 space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-4">
-            <?= \App\Core\Csrf::field() ?>
-            <p class="text-sm font-medium text-slate-800">Ajouter une icône</p>
-            <div class="grid sm:grid-cols-2 gap-3">
-                <label class="block text-sm text-slate-700">
-                    Nom affiché
-                    <input type="text" name="marker_icon_label" maxlength="80" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Écusson section" />
-                </label>
-                <label class="block text-sm text-slate-700">
-                    Fichier (PNG, JPG ou WebP, 2 Mo max.)
-                    <input type="file" name="marker_icon_file" accept="image/png,image/jpeg,image/webp" class="mt-1 w-full text-sm" />
-                </label>
-            </div>
-            <button type="submit" class="inline-flex px-4 py-2 bg-white border border-slate-300 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-50">
-                Ajouter à la bibliothèque
-            </button>
-        </form>
-        <?php if ($markerLib !== []): ?>
-            <div class="mb-6">
-                <p class="text-sm font-medium text-slate-800 mb-2">Vos icônes</p>
-                <ul class="flex flex-wrap gap-3">
-                    <?php foreach ($markerLib as $iconRow): ?>
-                        <?php
-                        $iconUrl = function_exists('user_media_public_url')
-                            ? (user_media_public_url((string) ($iconRow['url'] ?? '')) ?? '')
-                            : (string) ($iconRow['url'] ?? '');
-                        ?>
-                        <li class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
-                            <?php if ($iconUrl !== ''): ?>
-                                <img src="<?= htmlspecialchars($iconUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-8 w-8 object-contain" />
-                            <?php endif; ?>
-                            <span class="text-xs text-slate-700"><?= htmlspecialchars((string) ($iconRow['label'] ?? 'Icône'), ENT_QUOTES, 'UTF-8') ?></span>
-                            <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/marker-icons/delete" method="post" class="inline">
-                                <?= \App\Core\Csrf::field() ?>
-                                <input type="hidden" name="icon_id" value="<?= htmlspecialchars((string) ($iconRow['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" />
-                                <button type="submit" class="text-xs text-slate-500 hover:text-red-700">Retirer</button>
-                            </form>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-        <?php endif; ?>
-        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/marker-icons" method="post" class="space-y-4" id="atak-marker-assign-form">
-            <?= \App\Core\Csrf::field() ?>
-            <?php foreach ($markerIconKinds as $kind => $kindLabel): ?>
-                <?php $cur = (string) ($markerAssign[$kind] ?? 'nato'); ?>
-                <label class="block text-sm text-slate-700">
-                    <?= htmlspecialchars((string) $kindLabel, ENT_QUOTES, 'UTF-8') ?>
-                    <select name="marker_icon_<?= htmlspecialchars((string) $kind, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm atak-marker-kind-select" data-current="<?= htmlspecialchars($cur, ENT_QUOTES, 'UTF-8') ?>">
-                        <option value="nato" <?= $cur === 'nato' ? 'selected' : '' ?>>Symbole prévu (défaut)</option>
-                        <?php foreach ($markerLib as $iconRow): ?>
-                            <?php $opt = 'upload:' . ($iconRow['id'] ?? ''); ?>
-                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" <?= $cur === $opt ? 'selected' : '' ?>>
-                                <?= htmlspecialchars((string) ($iconRow['label'] ?? 'Icône'), ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-            <?php endforeach; ?>
-            <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
-                Enregistrer l’apparence
-            </button>
-        </form>
-        <script src="<?= htmlspecialchars(asset_url('assets/js/arma-marker-library-index.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
-        <script>
-        (function () {
-          var cdn = <?= json_encode($cdnBase) ?>;
-          var idx = window.ArmaMarkerLibraryIndex;
-          var items = idx && typeof idx.items === 'function' ? idx.items() : (idx && idx.ITEMS ? idx.ITEMS : []);
-          if (!items || !items.length) return;
-          document.querySelectorAll('.atak-marker-kind-select').forEach(function (sel) {
-            var cur = sel.getAttribute('data-current') || 'nato';
-            var grp = document.createElement('optgroup');
-            grp.label = 'Bibliothèque de la carte';
-            items.slice(0, 400).forEach(function (it) {
-              if (!it || !it.png) return;
-              var opt = document.createElement('option');
-              opt.value = 'arma:' + it.png;
-              opt.textContent = it.label || it.key || it.png;
-              if (cur === opt.value) opt.selected = true;
-              grp.appendChild(opt);
-            });
-            sel.appendChild(grp);
-          });
-        })();
-        </script>
-    </div>
-
-    <div class="grid lg:grid-cols-12 gap-8 items-start">
-        <div class="lg:col-span-8 space-y-6">
-            <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                <h2 class="text-sm font-bold text-slate-800 mb-3">Mode maintenance</h2>
-                <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                    Pendant la maintenance, les opérateurs ne peuvent plus ouvrir la carte tactique ni synchroniser le jeu.
-                    Les administrateurs gardent l’accès à la carte et à cette page de configuration.
-                </p>
-                <?php if (!$maintenanceSchemaReady): ?>
-                    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-                        <p class="text-sm font-semibold text-red-950">Fonction indisponible pour le moment</p>
-                        <p class="text-xs text-red-900 mt-1 leading-relaxed">
-                            La mise à jour qui active le mode maintenance de la carte n’a pas encore été appliquée sur ce serveur.
-                            Demandez au support plateforme de lancer la mise à jour de la base, puis réessayez.
-                        </p>
-                    </div>
-                <?php else: ?>
-                <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/maintenance" method="post" class="space-y-4">
-                    <?= \App\Core\Csrf::field() ?>
-                    <label class="flex items-start gap-3 cursor-pointer">
-                        <input type="hidden" name="maintenance_enabled" value="0" />
-                        <input type="checkbox" name="maintenance_enabled" value="1" class="mt-1 rounded border-slate-300" <?= $maintenanceEnabled ? 'checked' : '' ?> />
-                        <span>
-                            <span class="block text-sm font-medium text-slate-800">Mettre la carte tactique en maintenance</span>
-                            <span class="block text-xs text-slate-500 mt-0.5">Les opérateurs verront un message d’indisponibilité. Vous (admin) pourrez toujours ouvrir la carte.</span>
-                        </span>
-                    </label>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Message affiché aux opérateurs (facultatif)</label>
-                        <textarea name="maintenance_message" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Ex. : Intervention prévue jusqu’à 21h00 Zulu. Reprenez contact avec l’état-major si besoin."><?= htmlspecialchars($maintenanceMessage) ?></textarea>
-                    </div>
-                    <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer le mode maintenance</button>
-                </form>
-                <?php endif; ?>
-            </div>
-
-            <div class="border border-red-200 rounded-xl p-5 bg-red-50/40 shadow-sm">
-                <h2 class="text-sm font-bold text-red-950 mb-3">Journal et données de mission</h2>
-                <p class="text-xs text-red-900/80 mb-3 leading-relaxed">
-                    Vous pouvez exporter une copie complète (journal d’activité, unités, messages, ordres, pings, photos, tracés…) puis, si besoin, tout effacer pour repartir à zéro.
-                    La configuration (clé d’accès, serveur, consignes) et les indicatifs liés aux comptes sont conservés.
-                </p>
-                <p class="text-xs text-slate-700 mb-4">
-                    État actuel&nbsp;:
-                    <span class="font-semibold"><?= $activityEventsCount ?></span> entrée(s) de journal,
-                    <span class="font-semibold"><?= $missionRowsCount ?></span> enregistrement(s) de mission.
-                </p>
-                <div class="flex flex-wrap gap-2 mb-5">
-                    <a href="<?= $baseUrl ?>/back-office/ressources/atak-config/export" class="inline-flex px-4 py-2 bg-white border border-slate-200 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-50">
-                        Exporter tout (fichier)
-                    </a>
-                </div>
-                <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/purge" method="post" class="rounded-lg border border-red-200 bg-white p-4 space-y-3" onsubmit="return confirm('Confirmer l’effacement définitif du journal et des données de mission de cette communauté&nbsp;? Cette action est irréversible.');">
-                    <?= \App\Core\Csrf::field() ?>
-                    <p class="text-sm font-medium text-slate-800">Effacer définitivement</p>
-                    <p class="text-xs text-slate-600 leading-relaxed">
-                        Pour confirmer, saisissez <strong class="font-mono tracking-wide"><?= htmlspecialchars($purgeConfirmPhrase) ?></strong> ci-dessous.
-                        Nous recommandons d’exporter avant.
-                    </p>
-                    <input type="text" name="confirm_phrase" autocomplete="off" class="w-full border border-red-200 rounded-lg px-3 py-2.5 text-sm font-mono" placeholder="<?= htmlspecialchars($purgeConfirmPhrase) ?>" />
-                    <label class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 cursor-pointer">
-                        <input type="checkbox" name="unlink_steam" value="1" class="mt-0.5 rounded border-red-300 text-red-700" />
-                        <span>
-                            <span class="block text-sm font-semibold text-red-950">Désynchroniser aussi tous les comptes Steam</span>
-                            <span class="block text-xs text-red-800/80 mt-1 leading-relaxed">Retire les identifiants Steam de tous les membres, ferme leurs sessions de jeu ATAK et révoque les associations de poste. Chaque opérateur devra refaire sa liaison.</span>
-                        </span>
-                    </label>
-                    <button type="submit" class="px-4 py-2 bg-red-800 text-white text-sm font-semibold rounded-lg hover:bg-red-700">
-                        Tout effacer
-                    </button>
-                </form>
-            </div>
-
-            <div class="border border-emerald-200 rounded-xl p-5 bg-emerald-50/40 shadow-sm">
-                <h2 class="text-sm font-bold text-emerald-950 mb-4">Accès mod Overwatch (Arma&nbsp;3)</h2>
-                <p class="text-xs text-emerald-900/80 mb-4 leading-relaxed">
-                    Générez une <strong>clé d’accès</strong> pour votre communauté. Les membres se connectent ensuite avec
-                    <strong>Appairer</strong> (code sur la carte) : la clé est transmise automatiquement.
-                    Ils n’ont en général <em>pas</em> à coller cette clé dans Arma.
-                    Parcours membre&nbsp;: <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="underline font-semibold">Première liaison</a>
-                    · <a href="<?= htmlspecialchars(url('atak/tuto'), ENT_QUOTES, 'UTF-8') ?>" class="underline">Guide connexion</a>.
-                </p>
-                <div class="grid sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Identifiant de communauté</label>
-                        <div class="flex gap-2">
-                            <input type="text" readonly id="atak-tenant-id" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white font-mono" value="<?= (int) $tenantId ?>" />
-                            <button type="button" class="shrink-0 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50" onclick="navigator.clipboard.writeText(document.getElementById('atak-tenant-id').value); this.textContent='OK';">Copier</button>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-1.5">Réglage avancé dans Paramètres Athena / Options Extensions, si plusieurs communautés partagent la même adresse.</p>
-                    </div>
-                </div>
-                <div class="rounded-lg border border-slate-200 bg-white p-4 mb-4">
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <p class="text-sm font-medium text-slate-800">Clé d’accès</p>
-                            <?php if ($hasTenantAccessKey): ?>
-                                <p class="text-xs text-slate-600 mt-1">
-                                    Clé active&nbsp;: <span class="font-mono"><?= htmlspecialchars($accessKeyPrefix !== '' ? $accessKeyPrefix . '…' : '••••••••') ?></span>
-                                    <?php if ($accessKeyGeneratedAt): ?>
-                                        <span class="text-slate-400">— générée le <?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $accessKeyGeneratedAt))) ?></span>
-                                    <?php endif; ?>
-                                </p>
-                            <?php elseif ($platformKeyConfigured): ?>
-                                <p class="text-xs text-slate-600 mt-1">Aucune clé spécifique à votre communauté&nbsp;: la clé plateforme est utilisée pour le moment. Générez une clé dédiée pour isoler l’accès de votre communauté.</p>
-                            <?php else: ?>
-                                <p class="text-xs text-amber-800 mt-1">Aucune clé configurée. Générez-en une pour activer Appairer et la liaison jeu.</p>
-                            <?php endif; ?>
-                        </div>
-                        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/access-key" method="post" onsubmit="return confirm('Générer une nouvelle clé&nbsp;? L’ancienne ne fonctionnera plus tant que les joueurs n’auront pas refait Appairer.');">
-                            <?= \App\Core\Csrf::field() ?>
-                            <button type="submit" class="px-4 py-2 bg-emerald-800 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">
-                                <?= $hasTenantAccessKey ? 'Régénérer la clé' : 'Générer une clé d’accès' ?>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                <ul class="text-xs text-slate-700 space-y-1.5 list-disc list-inside leading-relaxed">
-                    <li><strong>Membres :</strong> carte → <strong>Appairer</strong> → Générer un code → coller dans Athena (téléphone en jeu). Pas de clé à recopier.</li>
-                    <li><strong>Fallback rare :</strong> adresse + clé (+ identifiant) dans Paramètres Athena → Liaison au poste, ou Options → Extensions.</li>
-                    <li>La connexion téléphone (QR) est un autre parcours (terminal), distinct d’Appairer Overwatch.</li>
-                </ul>
-            </div>
-
-            <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                <h2 class="text-sm font-bold text-slate-800 mb-3">Tentatives de connexion récentes</h2>
-                <p class="text-xs text-slate-500 mb-3">Liaisons en jeu, refus de clé, et connexions téléphone. Les secrets ne sont jamais affichés.</p>
-                <?php
-                $shownAuth = 0;
-                foreach ($authEvents as $ev) {
-                    $type = (string) ($ev['type'] ?? '');
-                    if (!in_array($type, ['auth', 'phone', 'client_init'], true)) {
-                        continue;
-                    }
-                    $shownAuth++;
-                }
-                ?>
-                <?php if ($shownAuth === 0): ?>
-                    <p class="text-sm text-slate-500">Aucune tentative enregistrée pour le moment.</p>
-                <?php else: ?>
-                    <ul class="divide-y divide-slate-100 text-sm">
-                        <?php foreach ($authEvents as $ev): ?>
-                            <?php
-                            $type = (string) ($ev['type'] ?? '');
-                            if (!in_array($type, ['auth', 'phone', 'client_init'], true)) {
-                                continue;
-                            }
-                            $ok = true;
-                            if ($type === 'auth') {
-                                if (isset($ev['meta']['ok'])) {
-                                    $ok = (bool) $ev['meta']['ok'];
-                                } elseif (isset($ev['meta']['reason']) && !in_array((string) $ev['meta']['reason'], ['ok', 'key_regenerated'], true)) {
-                                    $ok = false;
-                                }
-                            }
-                            $at = (string) ($ev['at'] ?? '');
-                            $atLabel = $at !== '' ? date('d/m H:i', strtotime($at)) : '—';
-                            ?>
-                            <li class="py-2.5 flex gap-3 items-start">
-                                <span class="mt-0.5 inline-block w-2 h-2 rounded-full shrink-0 <?= $ok ? 'bg-emerald-500' : 'bg-red-500' ?>" aria-hidden="true"></span>
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-slate-800"><?= htmlspecialchars((string) ($ev['label'] ?? '')) ?></p>
-                                    <p class="text-xs text-slate-500 mt-0.5">
-                                        <?= htmlspecialchars($atLabel) ?>
-                                        <?php if (!empty($ev['actor'])): ?>
-                                            — <?= htmlspecialchars((string) $ev['actor']) ?>
-                                        <?php endif; ?>
-                                    </p>
-                                </div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-                <p class="text-xs text-slate-500 mt-3">
-                    Le détail live est aussi visible sur la <a href="<?= $baseUrl ?>/atak" class="underline font-medium text-slate-700">Tacmap</a> (panneau Activité de liaison).
-                </p>
-            </div>
-
-            <form action="<?= $baseUrl ?>/back-office/ressources/atak-config" method="post" class="space-y-6">
-                <?= \App\Core\Csrf::field() ?>
-
-                <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                    <h2 class="text-sm font-bold text-slate-800 mb-4">Carte et contexte mission</h2>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Carte affichée par défaut</label>
-                        <select name="default_map_slug" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-slate-300 focus:border-slate-400">
-                            <?php foreach ($atakMaps as $m): ?>
-                                <option value="<?= htmlspecialchars($m['slug']) ?>" <?= $defaultMapSlug === $m['slug'] ? 'selected' : '' ?>><?= htmlspecialchars($m['label']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="text-xs text-slate-500 mt-1.5">
-                            Carte proposée en premier sur la Tacmap (Altis, Malden, Kimmirut, et les autres théâtres de la liste). Les opérateurs peuvent encore changer de carte ou d’espace mission depuis l’en-tête lorsque plusieurs cartes sont disponibles.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                    <h2 class="text-sm font-bold text-slate-800 mb-4">Liaison temps réel (site ↔ Tacmap ↔ jeu)</h2>
-                    <div id="atak-config-sync-health" class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4" data-map-id="<?= (int) ($config['default_map_id'] ?? 1) ?>">
-                        <p class="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-3">Santé de la synchronisation</p>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                            <div>
-                                <p class="text-[11px] uppercase text-slate-500">Dernière remontée</p>
-                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-ago">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[11px] uppercase text-slate-500">Débit récent</p>
-                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-kbps">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[11px] uppercase text-slate-500">Volume 15 min</p>
-                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-vol">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[11px] uppercase text-slate-500">Opérateurs en liaison</p>
-                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-ops">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[11px] uppercase text-slate-500">Repères carte</p>
-                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-mk">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[11px] uppercase text-slate-500">Dont photos (15 min)</p>
-                                <p class="font-semibold text-slate-900" id="atak-cfg-sync-photo">—</p>
-                            </div>
-                        </div>
-                        <p class="mt-3 text-xs text-slate-500">Mesures live depuis le jeu et le poste. Se rafraîchit toutes les 10 secondes. Aucune action requise ici.</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Adresse de base du service de liaison (facultatif)</label>
-                        <input type="url" name="node_url" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-slate-300 focus:border-slate-400" placeholder="Laisser vide pour utiliser ce site" value="<?= htmlspecialchars((string) ($config['node_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" />
-                        <p class="text-xs text-slate-500 mt-1.5">
-                            En général, laissez ce champ vide&nbsp;: la Tacmap utilise alors le même site que celui que vous consultez. Renseignez une adresse distincte seulement si votre hébergeur impose un domaine ou un port dédié pour le service de liaison utilisé par le mod Arma.
-                        </p>
-                        <div class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 space-y-2">
-                            <p class="font-semibold text-slate-800">Rappels utiles</p>
-                            <ul class="list-disc list-inside space-y-1 leading-relaxed">
-                                <li>La Tacmap regroupe carte, marqueurs, unités, messagerie, demandes CAS (9-line), flux visuels depuis le jeu, pings et suivi des appareils.</li>
-                                <li>Dans le mod, l’adresse à indiquer correspond au site du portail (ex.&nbsp;<strong>https://<?= $hostHint ?></strong>), sauf consigne contraire de votre équipe technique.</li>
-                                <li>Les joueurs disposent d’un <a href="<?= $baseUrl ?>/atak/setup" class="text-emerald-800 underline font-medium">assistant d’installation</a> et d’un <a href="<?= $baseUrl ?>/atak/tuto" class="text-emerald-800 underline font-medium">guide pas à pas</a> pour le mod.</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="mt-5">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Secret de signature des accès (facultatif)</label>
-                        <input type="password" name="jwt_secret" autocomplete="off" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-slate-300 focus:border-slate-400" placeholder="Identique au secret configuré sur le service de liaison" value="<?= htmlspecialchars($config['jwt_secret'] ?? '') ?>" />
-                        <p class="text-xs text-slate-500 mt-1.5">
-                            Si vous le renseignez, les accès sécurisés Tacmap de cette communauté sont signés avec ce secret. Sinon, la valeur globale définie sur la plateforme est utilisée.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                    <h2 class="text-sm font-bold text-slate-800 mb-4">Serveur Arma&nbsp;3 (affichage opérateurs)</h2>
-                    <div class="grid sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Adresse du serveur</label>
-                            <input type="text" name="arma_server_host" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Nom d’hôte ou adresse" value="<?= htmlspecialchars($config['arma_server_host'] ?? '') ?>" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Port</label>
-                            <input type="number" name="arma_server_port" min="1" max="65535" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="2302" value="<?= $config['arma_server_port'] ?? '' ?>" />
-                        </div>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-2">Ces informations sont montrées sur la Tacmap et dans le panneau compte pour orienter les joueurs.</p>
-                </div>
-
-                <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                    <h2 class="text-sm font-bold text-slate-800 mb-4">Texte d’aide pour le mod</h2>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Consignes affichées aux opérateurs</label>
-                        <textarea name="arma_mod_credentials" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Ex.&nbsp;: version du modpack, canaux radio, rappels d’équipe…"><?= htmlspecialchars($config['arma_mod_credentials'] ?? '') ?></textarea>
-                        <p class="text-xs text-slate-500 mt-1.5">Affiché aux membres sur la Tacmap (section configuration jeu). Ne collez pas de secrets ici — utilisez la section «&nbsp;Clé d’accès&nbsp;» ci-dessus.</p>
-                    </div>
-                </div>
-
-                <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                    <h2 class="text-sm font-bold text-slate-800 mb-4">Instructions d’équipe</h2>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Message aux opérateurs (facultatif)</label>
-                        <textarea name="instructions" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Ex.&nbsp;: ordre des canaux, règles d’usage du 9-line, lien vers briefing, horaires d’entraînement…"><?= htmlspecialchars($config['instructions'] ?? '') ?></textarea>
-                        <p class="text-xs text-slate-500 mt-1.5">Texte visible sur la Tacmap pour toute l’équipe (procédures, liens utiles, rappels).</p>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap gap-2 pt-1">
-                    <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer</button>
-                    <a href="<?= $baseUrl ?>/back-office/ressources/atak-mod" class="px-4 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50">Fichier du mod (upload)</a>
-                    <a href="<?= $baseUrl ?>/back-office/ressources/atak-mod-blocks" class="px-4 py-2.5 border border-rose-200 bg-rose-50/70 text-rose-950 text-sm font-medium rounded-lg hover:bg-rose-100">Restrictions d’accès au mod</a>
-                    <a href="<?= $baseUrl ?>/atak" class="px-4 py-2.5 border border-emerald-200 text-emerald-900 text-sm font-medium rounded-lg bg-emerald-50/80 hover:bg-emerald-50">Ouvrir la Tacmap</a>
-                    <a href="<?= $baseUrl ?>/back-office" class="px-4 py-2.5 border border-slate-200 text-slate-600 text-sm rounded-lg hover:bg-slate-50">Retour au back-office</a>
-                </div>
-            </form>
-        </div>
-
-        <aside class="lg:col-span-4 space-y-5 lg:sticky lg:top-6">
-            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/80">
-                <h2 class="text-sm font-bold text-slate-900 mb-3">Ce que couvre la Tacmap aujourd’hui</h2>
-                <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-                    Outre la carte et les marqueurs synchronisés avec le jeu, les membres ont accès aux modules suivants (selon les droits et l’activation de l’offre)&nbsp;:
-                </p>
-                <ul class="text-xs text-slate-700 space-y-2 list-disc list-inside leading-relaxed">
-                    <li><span class="font-medium text-slate-800">Cams &amp; renseignement visuel</span> — photos terrain, aperçus caméra casque et drone depuis Arma.</li>
-                    <li><span class="font-medium text-slate-800">Messagerie tactique</span> — échanges en direct entre opérateurs connectés.</li>
-                    <li><span class="font-medium text-slate-800">Pings</span> — signalements sur la carte.</li>
-                    <li><span class="font-medium text-slate-800">JTAC / 9-line</span> — saisie et suivi des demandes d’appui aérien.</li>
-                    <li><span class="font-medium text-slate-800">Unités et filtres</span> — présence des joueurs et contacts liés aux espaces mission.</li>
-                    <li><span class="font-medium text-slate-800">Appui aérien</span> — manifeste de vol déclaré côté jeu.</li>
-                    <li><span class="font-medium text-slate-800">Liaison Arma</span> — position et événements relayés via le mod COMSPEC Overwatch.</li>
-                    <li><span class="font-medium text-slate-800">Diagnostic</span> — panneau d’état (connexion, base de données, charge utile mod).</li>
-                </ul>
-            </div>
-
-            <div class="border border-emerald-200 rounded-xl p-5 bg-emerald-50/40">
-                <h2 class="text-sm font-bold text-emerald-950 mb-2">Navigation rapide</h2>
-                <ul class="text-sm space-y-2">
-                    <li><a href="<?= $baseUrl ?>/overwatch" class="text-emerald-900 underline font-medium hover:no-underline">Vue C2 Overwatch</a></li>
-                    <li><a href="<?= $baseUrl ?>/back-office/atak/fire-teams" class="text-emerald-900 underline font-medium hover:no-underline">Équipes de feu</a></li>
-                    <li><a href="<?= $baseUrl ?>/back-office/atak/briefing-slides" class="text-emerald-900 underline font-medium hover:no-underline">Diapositives de briefing</a></li>
-                    <li><a href="<?= $baseUrl ?>/atak/setup" class="text-emerald-900 underline font-medium hover:no-underline">Assistant mod Arma</a></li>
-                    <li><a href="<?= $baseUrl ?>/atak/tuto" class="text-emerald-900 underline font-medium hover:no-underline">Tutoriel mod détaillé</a></li>
-                    <li><a href="<?= $baseUrl ?>/dashboard" class="text-emerald-900 underline font-medium hover:no-underline">Tableau de bord</a></li>
-                </ul>
-            </div>
-
-            <div class="border border-slate-200 rounded-xl p-4 bg-white text-xs text-slate-600 leading-relaxed">
-                <p class="font-semibold text-slate-800 mb-1">Fichier du mod</p>
-                <p>Pour proposer un téléchargement direct du mod depuis le portail et le tableau de bord, déposez l’archive sur l’écran <a href="<?= $baseUrl ?>/back-office/ressources/atak-mod" class="text-slate-900 underline">Mod ATAK (upload)</a>.</p>
-            </div>
-        </aside>
-    </div>
+  </div>
 </div>
-<script>
-(function () {
-  var root = document.getElementById('atak-config-sync-health');
-  if (!root) return;
-  var mapId = root.getAttribute('data-map-id') || '1';
-  var base = <?= json_encode(rtrim((string) ($baseUrl ?? ''), '/'), JSON_UNESCAPED_SLASHES) ?>;
-  function fmtMo(bytes) {
-    var n = Number(bytes || 0);
-    if (n < 1024) return n + ' o';
-    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' ko';
-    return (n / (1024 * 1024)).toFixed(2) + ' Mo';
-  }
-  function tick() {
-    fetch(base + '/api/atak/ingest-traffic?mapId=' + encodeURIComponent(mapId), { credentials: 'include' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d) return;
-        var ago = document.getElementById('atak-cfg-sync-ago');
-        var kbps = document.getElementById('atak-cfg-sync-kbps');
-        var vol = document.getElementById('atak-cfg-sync-vol');
-        var ops = document.getElementById('atak-cfg-sync-ops');
-        var mk = document.getElementById('atak-cfg-sync-mk');
-        var ph = document.getElementById('atak-cfg-sync-photo');
-        if (ago) ago.textContent = d.last_sync_ago || 'Aucune remontée';
-        if (kbps) {
-          var k = Number(d.kbps_now || 0);
-          kbps.textContent = k >= 10 ? Math.round(k) + ' ko/s' : (k > 0 ? k.toFixed(1) + ' ko/s' : '0');
-        }
-        if (vol) vol.textContent = fmtMo(d.bytes_15m);
-        if (ph) ph.textContent = fmtMo(d.photo_bytes_15m);
-        var load = d.load || {};
-        if (ops) {
-          var live = Number(load.operators_live || 0);
-          var total = Number(load.operators_total || 0);
-          ops.textContent = live + (total > live ? ' / ' + total : '');
-        }
-        if (mk) mk.textContent = String(Number(load.markers || 0));
-      })
-      .catch(function () {});
-  }
-  tick();
-  window.setInterval(tick, 10000);
-})();
-</script>
+<script src="<?= $h(asset_url('assets/js/back-office-atak-config.js')) ?>" defer></script>

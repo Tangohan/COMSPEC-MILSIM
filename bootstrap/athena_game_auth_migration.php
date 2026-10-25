@@ -174,7 +174,8 @@ return static function (PDO $pdo, ?callable $log = null): void {
             foreach ($rows as $row) {
                 $raw = (string) ($row['overwatch_game_experience'] ?? '');
                 $config = json_decode($raw, true);
-                if (!is_array($config)) {
+                // Un minimum choisi depuis le back-office est respecté.
+                if (!is_array($config) || !empty($config['min_mod_version_admin'])) {
                     continue;
                 }
                 $normalized = \App\Support\OverwatchMinimumVersionOverride::lowerIfAbove($config, '1.5.0');

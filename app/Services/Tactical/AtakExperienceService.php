@@ -587,6 +587,14 @@ final class AtakExperienceService
                 $out[$id] = (string) ($s[$id] ?? $row['default']);
             }
         }
+        // Fréquence d'envoi des positions (Configuration ATAK > Connexion en jeu). Préfixe net_ : la DLL relaie
+        // toutes les clés net_* sans nouvelle version ; le pack l'applique à comspec_overwatch_position_interval.
+        try {
+            $interval = (int) ((new \App\Services\Game\GameOverwatchExperienceService())->get($tenantId)['update_interval'] ?? 0);
+        } catch (\Throwable) {
+            $interval = 0;
+        }
+        $out['net_position_interval'] = $interval >= 2 ? (string) $interval : 'player';
 
         return $out;
     }

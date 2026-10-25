@@ -25,6 +25,23 @@ final class AtakTenantDataService
     ];
 
     private const OPERATIONAL_TABLES = [
+        // Tables dépendantes d'abord (réponses, corrélations, échantillons…) pour ne pas buter sur une clé étrangère.
+        'atak_order_responses',
+        'atak_qrf_coordination',
+        'atak_poi_correlations',
+        'atak_unit_motion_samples',
+        'atak_unit_motion',
+        'atak_unit_intel_events',
+        'atak_zone_events',
+        'atak_casualties',
+        'atak_geoloc_rings',
+        'atak_phone_notifs',
+        'atak_scene_objects',
+        'atak_web_commands',
+        'atak_overwatch_alert_acks',
+        'atak_send_queue_history',
+        'recon_pv_entries',
+        'recon_notes',
         'atak_medical_alert_triage',
         'atak_orders',
         'atak_markers',
@@ -117,9 +134,15 @@ final class AtakTenantDataService
             if (!$this->isTenantScopedTable($table)) {
                 continue;
             }
-            $stmt = $this->pdo->prepare('DELETE FROM `' . $table . '` WHERE tenant_id = ?');
-            $stmt->execute([$tenantId]);
-            $tables[$table] = $stmt->rowCount();
+            try {
+                $stmt = $this->pdo->prepare('DELETE FROM `' . $table . '` WHERE tenant_id = ?');
+                $stmt->execute([$tenantId]);
+                $tables[$table] = $stmt->rowCount();
+            } catch (\Throwable $e) {
+                // Une table bloquée (clé étrangère, verrou) ne doit pas interrompre le reste de l'effacement.
+                error_log('[atak purge] ' . $table . ' : ' . $e->getMessage());
+                $tables[$table] = 0;
+            }
         }
 
         $this->purgeSessionCache($tenantId);
