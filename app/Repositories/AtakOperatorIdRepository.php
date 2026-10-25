@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SchemaPresenceCache;
 
 use PDO;
 
@@ -17,13 +18,20 @@ class AtakOperatorIdRepository
     use LazyDatabaseConnection;
 
 
+    /** PDO injectée (tests) : pas de cache fichier des drapeaux de schéma. */
+    private bool $injectedPdo = false;
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo;
+        $this->injectedPdo = $pdo !== null;
     }
 
     public function tablesReady(): bool
     {
+        if (!$this->injectedPdo) {
+            return SchemaPresenceCache::tableExists($this->pdo(), 'atak_operator_ids');
+        }
         try {
             $st = $this->pdo()->query(
                 "SELECT 1 FROM information_schema.TABLES
@@ -38,6 +46,9 @@ class AtakOperatorIdRepository
 
     public function unitsMilitaryIdColumnReady(): bool
     {
+        if (!$this->injectedPdo) {
+            return SchemaPresenceCache::columnExists($this->pdo(), 'atak_units', 'military_id');
+        }
         try {
             $st = $this->pdo()->prepare(
                 "SELECT 1 FROM information_schema.COLUMNS
@@ -179,8 +190,8 @@ class AtakOperatorIdRepository
         if ($this->unitsMilitaryIdColumnReady() && $unitRowId > 0) {
             try {
                 $this->pdo()->prepare(
-                    'UPDATE atak_units SET military_id = ? WHERE id = ? AND tenant_id = ?'
-                )->execute([$mid, $unitRowId, $tenantId]);
+                    'UPDATE atak_units SET military_id = ? WHERE id = ? AND tenant_id = ? AND NOT (military_id <=> ?)'
+                )->execute([$mid, $unitRowId, $tenantId, $mid]);
             } catch (\Throwable) {
                 // index unique collision rare — ignorer, l’ID opérateur reste la source de vérité
             }

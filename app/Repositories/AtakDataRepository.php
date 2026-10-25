@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SchemaPresenceCache;
 
 use PDO;
 
@@ -37,15 +38,22 @@ class AtakDataRepository
     /** @var array<string, list<array{id: int, call_sign: string}>> */
     private array $pendingStaleDisconnects = [];
 
+    /** PDO injectée (tests) : pas de cache fichier des drapeaux de schéma. */
+    private bool $injectedPdo = false;
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo;
+        $this->injectedPdo = $pdo !== null;
     }
 
     private function hasPosColumns(): bool
     {
         if ($this->hasPosColumns !== null) {
             return $this->hasPosColumns;
+        }
+        if (!$this->injectedPdo) {
+            return $this->hasPosColumns = SchemaPresenceCache::columnExists($this->pdo(), 'atak_units', 'pos_x');
         }
         try {
             $st = $this->pdo()->query(
@@ -64,6 +72,9 @@ class AtakDataRepository
     {
         if ($this->hasGroupNameColumn !== null) {
             return $this->hasGroupNameColumn;
+        }
+        if (!$this->injectedPdo) {
+            return $this->hasGroupNameColumn = SchemaPresenceCache::columnExists($this->pdo(), 'atak_units', 'group_name');
         }
         try {
             $st = $this->pdo()->query(
@@ -1390,11 +1401,22 @@ class AtakDataRepository
         }
         $created = false;
         $unitId = 0;
+        $midSynced = false;
 
         if ($existing) {
             $unitId = (int) $existing['id'];
             // Conserver notes TOC (fréquence / véhicule / note) écrites depuis la Tacmap.
             $mergedExtra = self::mergePreservedTocExtra(self::decodeExtra($existing['extra'] ?? null), $incomingExtra);
+            // ID BFT résolu avant l’UPDATE : écrit dans le même UPDATE (plus de 2e UPDATE de extra).
+            $mid = $this->syncUnitMilitaryIdFromExtra($tenantId, $unitId, $callSign, $mergedExtra);
+            if ($mid !== null) {
+                $midSynced = true;
+                if ($mid !== '') {
+                    $mergedExtra['bft_id'] = $mid;
+                    $mergedExtra['military_id'] = $mid;
+                    $mergedExtra['atak_id'] = $mid;
+                }
+            }
             $extraJson = json_encode($mergedExtra, JSON_UNESCAPED_UNICODE);
             if ($extraJson === false) {
                 $extraJson = '{}';
@@ -1483,29 +1505,12 @@ class AtakDataRepository
         $this->setLastActivity($tenantId, $mapId);
 
         // ID BFT (military_id) lié à l’indicatif — et au compte Steam si connu.
-        if ($unitId > 0) {
+        // Unité existante : déjà fait avant l’UPDATE ; ici seulement pour une unité créée.
+        if ($unitId > 0 && !$midSynced) {
             try {
-                $opIds = new AtakOperatorIdRepository();
-                if ($opIds->tablesReady() && $opIds->unitsMilitaryIdColumnReady()) {
-                    $extraArr = self::decodeExtra($extraJson);
-                    $steam = trim((string) ($extraArr['steam_uid'] ?? $extraArr['steamId'] ?? $extraArr['player_uid'] ?? ''));
-                    $userId = null;
-                    if ($steam !== '') {
-                        try {
-                            $userRepo = new UserRepository();
-                            $user = $userRepo->findBySteamIdForTenant($tenantId, $steam)
-                                ?? $userRepo->findBySteamId($steam);
-                            if (is_array($user)) {
-                                $userId = (int) ($user['id'] ?? 0);
-                                if ($userId < 1) {
-                                    $userId = null;
-                                }
-                            }
-                        } catch (\Throwable) {
-                            $userId = null;
-                        }
-                    }
-                    $mid = $opIds->syncUnitMilitaryId($tenantId, $unitId, $callSign, $userId);
+                $extraArr = self::decodeExtra($extraJson);
+                $mid = $this->syncUnitMilitaryIdFromExtra($tenantId, $unitId, $callSign, $extraArr);
+                if ($mid !== null) {
                     // Miroir dans extra pour BFT / tablette / ATAK (même identité que l’indicatif).
                     if ($mid !== '') {
                         $extraArr['bft_id'] = $mid;
@@ -1540,6 +1545,46 @@ class AtakDataRepository
     }
 
     /**
+     * Synchronise military_id de l’unité (compte Steam si connu, sinon indicatif).
+     * Retourne le MID (éventuellement vide), ou null si les tables ne sont pas prêtes / erreur.
+     *
+     * @param array<string, mixed> $extraArr
+     */
+    private function syncUnitMilitaryIdFromExtra(int $tenantId, int $unitId, string $callSign, array $extraArr): ?string
+    {
+        if ($unitId < 1) {
+            return null;
+        }
+        try {
+            $opIds = new AtakOperatorIdRepository();
+            if (!$opIds->tablesReady() || !$opIds->unitsMilitaryIdColumnReady()) {
+                return null;
+            }
+            $steam = trim((string) ($extraArr['steam_uid'] ?? $extraArr['steamId'] ?? $extraArr['player_uid'] ?? ''));
+            $userId = null;
+            if ($steam !== '') {
+                try {
+                    $userRepo = new UserRepository();
+                    $user = $userRepo->findBySteamIdForTenant($tenantId, $steam)
+                        ?? $userRepo->findBySteamId($steam);
+                    if (is_array($user)) {
+                        $userId = (int) ($user['id'] ?? 0);
+                        if ($userId < 1) {
+                            $userId = null;
+                        }
+                    }
+                } catch (\Throwable) {
+                    $userId = null;
+                }
+            }
+
+            return $opIds->syncUnitMilitaryId($tenantId, $unitId, $callSign, $userId);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Passe hors-ligne les autres lignes atak_units du même Steam (indicatif différent).
      */
     public function retireSteamSiblingUnits(int $tenantId, int $mapId, string $keepCallSign, string $steamUid): int
@@ -1549,10 +1594,13 @@ class AtakDataRepository
         if ($tenantId < 1 || $mapId < 1 || $steamUid === '' || $keepCallSign === '') {
             return 0;
         }
+        // Préfiltre SQL sur le texte de extra (sur-ensemble : le contrôle exact reste en PHP ci-dessous) :
+        // évite de lire et décoder toutes les unités de la carte à chaque position.
+        $like = '%' . addcslashes($steamUid, '%_\\') . '%';
         $stmt = $this->pdo()->prepare(
-            'SELECT id, call_sign, extra, status FROM atak_units WHERE tenant_id = ? AND map_id = ?'
+            'SELECT id, call_sign, extra, status FROM atak_units WHERE tenant_id = ? AND map_id = ? AND extra LIKE ?'
         );
-        $stmt->execute([$tenantId, $mapId]);
+        $stmt->execute([$tenantId, $mapId, $like]);
         $retired = 0;
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $cs = trim((string) ($row['call_sign'] ?? ''));
