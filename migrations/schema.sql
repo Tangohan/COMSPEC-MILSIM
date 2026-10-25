@@ -152,6 +152,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password_hash` varchar(255) NOT NULL,
   `display_name` varchar(100) DEFAULT NULL,
   `callsign` varchar(50) DEFAULT NULL,
+  `public_name` varchar(40) DEFAULT NULL COMMENT 'Pseudo public (pages publiques)',
   `profile_slug` varchar(40) DEFAULT NULL,
   `athena_identifier` char(9) DEFAULT NULL,
   `steam_id` varchar(20) DEFAULT NULL,
