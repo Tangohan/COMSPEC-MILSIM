@@ -1659,16 +1659,25 @@ public static partial class Extension
         try
         {
             // Phase A : lot priorisé d’abord (compte dans le budget HTTP du tick).
-            if (TryDrainTelemetryBatch())
+            // Le lot n'arrête plus le passage : tant que le joueur bouge il n'est jamais vide, et marqueurs,
+            // manifestes et rapports attendaient l'arrêt du joueur (puis partaient en rafale).
+            var telemetrySent = TryDrainTelemetryBatch();
+            if (telemetrySent)
             {
-                PersistQueueToDisk();
                 // Re-jitter périodique pour désynchroniser les clients.
                 try { EnsureDrainTimer(rejitter: true); } catch { /* ignore */ }
-                return;
+                // Athena vient de demander une pause (429/503, réseau) : on s'arrête là, comme avant.
+                if (IsPostPausedNow())
+                {
+                    PersistQueueToDisk();
+                    return;
+                }
             }
 
             const int maxPerTick = 3;
-            var sent = 0;
+            var sent = telemetrySent ? 1 : 0;
+            // Télémétrie active : un seul envoi de la file par passage (prudence, le lot occupe déjà la connexion).
+            var fifoLeft = telemetrySent ? 1 : maxPerTick;
             var networkPause = IsNetworkBackoffNow();
             // Toujours la position coalescée en premier (freshness > ordre FIFO).
             var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
@@ -1684,7 +1693,7 @@ public static partial class Extension
             }
             // Un tour de file au plus : les envois remis en file (adresse en pause) ne sont pas relus.
             var scanLeft = PendingPosts.Count;
-            while (sent < maxPerTick && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
+            while (sent < maxPerTick && fifoLeft > 0 && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
             {
                 if (!TryResolveQueuedUrl(ref item))
                 {
@@ -1715,6 +1724,7 @@ public static partial class Extension
                 if (!TrySendQueuedPost(item))
                     break;
                 sent++;
+                fifoLeft--;
             }
             // Marqueurs coalescés (budget restant).
             if (sent < maxPerTick && !PendingMarkersByName.IsEmpty)
@@ -3022,6 +3032,17 @@ public static partial class Extension
     private const int AsyncMaxParallel = 6;
     private static readonly SemaphoreSlim AsyncGate = new(AsyncMaxParallel, AsyncMaxParallel);
 
+    /// <summary>
+    /// Commandes reçues par « Async » qui ne font que construire un JSON et le mettre en file (EnqueueOrSend) :
+    /// aucune attente réseau, donc pas de passage par AsyncGate. Ne JAMAIS y ajouter une commande qui appelle
+    /// SendGet / SendJsonPost (elle bloquerait le thread du jeu).
+    /// </summary>
+    private static readonly HashSet<string> AsyncLocalCommands = new(StringComparer.Ordinal)
+    {
+        "UpdatePosition", "EmitTelemetry", "SendMarker", "SendFlightManifest", "SendWeather",
+        "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report", "NetConditions.Report",
+    };
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
@@ -3062,6 +3083,22 @@ public static partial class Extension
             var command = args[1]!;
             if (command == "Async") return "ERR|async_nested";
             var rest = args[2..];
+            // Commandes purement locales (mise en file, aucun appel réseau) : exécutées tout de suite, sans attendre
+            // AsyncGate ni Task.Run. Quand Athena ralentissait, 6 appels HTTP lents bloquaient la porte et la position
+            // (une seule en vol côté SQF) était sautée jusqu'à 8 s. Le rappel part quand même : le SQF ne change pas.
+            if (AsyncLocalCommands.Contains(command))
+            {
+                string localResult;
+                try
+                {
+                    var direct = TryGetSyncResponse(command, rest);
+                    if (direct == null) { RvExtensionArgsImpl(command, rest); direct = ""; }
+                    localResult = direct;
+                }
+                catch (Exception ex) { localResult = FormatCaughtError(ex); }
+                InvokeCallback("async:" + ticket, localResult);
+                return "QUEUED|" + ticket;
+            }
             _ = Task.Run(async () =>
             {
                 // Au plus AsyncMaxParallel appels à la fois : quand Athena ralentit, les suivants attendent
@@ -6426,12 +6463,19 @@ public static partial class Extension
         return sb.ToString().TrimEnd();
     }
 
+    private static volatile string? _writableCacheDir;
+
     /// <summary>
     /// Dossier de cache local pour les diapositives téléchargées : à côté de la DLL en priorité
     /// (dossier du mod, généralement accessible en écriture), sinon dossier temporaire système.
     /// </summary>
     private static string? GetWritableCacheDir()
     {
+        // Dossier déjà vérifié : réutilisé tant qu'il existe (un fichier test était écrit puis effacé à chaque
+        // diapositive, avatar ou QR, même déjà en cache).
+        var known = _writableCacheDir;
+        if (known != null && Directory.Exists(known))
+            return known;
         var candidates = new[]
         {
             Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
@@ -6445,6 +6489,7 @@ public static partial class Extension
                 var probe = Path.Combine(dir, ".write_test");
                 File.WriteAllText(probe, "ok");
                 File.Delete(probe);
+                _writableCacheDir = dir;
                 return dir;
             }
             catch
