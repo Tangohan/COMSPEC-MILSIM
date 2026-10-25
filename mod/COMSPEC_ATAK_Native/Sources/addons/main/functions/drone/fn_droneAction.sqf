@@ -1279,7 +1279,7 @@ switch (_act) do {
                 _b ctrlSetFontHeight ((_fs * 0.74) max COMSPEC_ATAK_FontMin);
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-                _b ctrlAddEventHandler ["ButtonClick", compile format ["%1 call comspec_atak_native_fnc_droneAction;", str _a]];
+                [_b, compile format ["%1 call comspec_atak_native_fnc_droneAction;", str _a]] call comspec_atak_native_fnc_clickNext;
             } forEach _row;
             _y = _y + _rh + _pad / 3;
         } forEach _rows;

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.93";
+    private const string ExtensionVersion = "2.0.94";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2206,6 +2206,9 @@ public static partial class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        // Données remontées choisies par la communauté (Extension_DataFlows) : flux coupé, rien en file.
+        if (!DataFlowAllowsUrl(url, jsonBody))
+            return;
         // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
         if (TryOfferBatchablePost(url, jsonBody))
             return;
@@ -4386,6 +4389,12 @@ public static partial class Extension
                     var safe = body.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                     return PollOkClipped(safe);
                 });
+            }
+            // Données remontées choisies par la communauté (positions, véhicules, pertes, miroir, contexte).
+            // Réponse : positions=1\tvehicles=0\t... (Extension_DataFlows).
+            if (function == "GetDataFlows")
+            {
+                return ServeDataFlows();
             }
             // Modules pont ATAK Enhanced / cTab (activables admin).
             // Lignes : id\tenabled(0|1)\tlabel

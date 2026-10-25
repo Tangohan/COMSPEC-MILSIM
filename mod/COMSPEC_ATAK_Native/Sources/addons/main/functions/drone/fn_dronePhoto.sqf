@@ -396,7 +396,7 @@ switch (_act) do {
             _b ctrlSetFontHeight (_fs * 0.95);
             if (_on) then { _b ctrlSetBackgroundColor _onCol; _b ctrlSetTextColor [1, 1, 1, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; };
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
-            _b ctrlAddEventHandler ["ButtonClick", compile format ["['flag', %1] call comspec_atak_native_fnc_dronePhoto;", str _flag]];
+            [_b, compile format ["['flag', %1] call comspec_atak_native_fnc_dronePhoto;", str _flag]] call comspec_atak_native_fnc_clickNext;
         } forEach [
             ["SSE", _sse, "sse", [0.85, 0.55, 0.12, 1], "Exploitation de site : rattache le cliché au dossier SSE actif (app SSE)"],
             ["CONFIDENTIEL", _cf, "conf", [0.78, 0.2, 0.16, 1], "Marqué [CONFIDENTIEL] en tête de la légende sur Athena"]
@@ -419,7 +419,7 @@ switch (_act) do {
             _b ctrlSetFontHeight (_fs * 1.0);
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
             _b ctrlEnable _en;
-            _b ctrlAddEventHandler ["ButtonClick", _code];
+            [_b, _code] call comspec_atak_native_fnc_clickNext;
             if (_forEachIndex isEqualTo 0 && {_delOn}) then { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 1]; };
             _bx = _bx + (_bws select _forEachIndex) + _pad / 2;
         } forEach [

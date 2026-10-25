@@ -9,6 +9,8 @@ if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { f
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith { false };
 private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];
 if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith { false };
+// Aéronefs non remontés par choix de la communauté (fn_pollDataFlows).
+if !((missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["vehicles", true]) exitWith { false };
 
 private _now = diag_tickTime;
 private _sent = 0;

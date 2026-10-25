@@ -20,6 +20,8 @@ params [
 
 // Validation
 if (isNull _vehicle) exitWith {false};
+// Véhicules non remontés par choix de la communauté (fn_pollDataFlows) : rien à calculer.
+if !((missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["vehicles", true]) exitWith {false};
 if (_vehicle isEqualTo player) exitWith {false}; // Pas un véhicule
 if (
     !isNil "comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit"

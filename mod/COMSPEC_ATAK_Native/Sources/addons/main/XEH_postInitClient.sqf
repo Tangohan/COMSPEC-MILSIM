@@ -81,7 +81,17 @@ addMissionEventHandler ["MarkerCreated", {
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
 // Compteur de changements des marqueurs (créé, supprimé, modifié) : la carte du téléphone ne relit les marqueurs de la
 // mission que lorsqu'il bouge (fn_mapGameMarkers, fn_localDataRefresh), au lieu de tout relire chaque seconde.
-{ addMissionEventHandler [_x, { COMSPEC_ATAK_MkRev = (missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]) + 1; }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
+// Noms des marqueurs changés, un carnet par lecteur (fn_mapGameMarkers, fn_localDataRefresh, fn_strokeDraw) : chacun ne
+// relit que ces marqueurs. Plus de 300 changements non lus (téléphone rangé) : clé "" = tout relire.
+{ addMissionEventHandler [_x, {
+    params ["_m"];
+    COMSPEC_ATAK_MkRev = (missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]) + 1;
+    {
+        private _h = missionNamespace getVariable [_x, createHashMap];
+        if ((count _h) < 300) then { _h set [_m, true]; } else { _h set ["", true]; };
+        missionNamespace setVariable [_x, _h];
+    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk"];
+}]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BC", "BL", "TL", "TC", "TR", "MR", "ML"];
@@ -588,7 +598,9 @@ addMissionEventHandler ["EntityKilled", {
     private _lead = leader group _unit;
     private _mine = _unit isEqualTo player
         || {!isPlayer _unit && {_lead isEqualTo player || {!isPlayer _lead && {(player distance2D _unit) < 300}}}};
-    if (_mine && {[] call comspec_atak_native_fnc_bridge} && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])}) then {
+    // Données remontées choisies par la communauté (Athena, COMSPEC_DataFlows tenu par COMSPEC Link) : pertes non envoyées.
+    if (_mine && {[] call comspec_atak_native_fnc_bridge} && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])}
+        && {(missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["combat", true]}) then {
         private _cs = [_unit] call comspec_atak_native_fnc_unitCallsign;
         private _pay = createHashMapFromArray [
             ["t", "combat"], ["kind", "kia"], ["victim", [_cs, name _unit] select (_cs isEqualTo "")], ["name", name _unit],

@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Jeu plus fluide, app Drone réparée, choix des données envoyées à Athena (ATAK natif 2.3.11.AB - Denver, COMSPEC Link 2.0.94)
+
+### Résumé joueur
+Type : performance
+FR : Fini la petite saccade toutes les deux secondes, l'app Drone répond de nouveau
+- Téléphone porté ou carte ouverte : la carte ne relit plus tous les marqueurs de la mission dès que l'un d'eux bouge, ce qui faisait une petite saccade toutes les deux secondes.
+- App Drone : la croix, PLEIN ÉCRAN et les boutons de la barre fonctionnent, et après un appui les autres boutons restent cliquables sans passer le téléphone en petit format.
+- En écrivant dans un champ du téléphone, les touches A et E ne font plus pencher ton personnage.
+- Ta communauté peut choisir sur Athena ce que le jeu envoie (tout, ou seulement les comptes rendus) : moins de données, une liaison plus légère.
+EN : No more small stutter every two seconds, the Drone app responds again
+- Phone worn or map open: the map no longer re-reads every mission marker as soon as one moves, which caused a small stutter every two seconds.
+- Drone app: the cross, FULL SCREEN and the bar buttons work, and after a press the other buttons stay clickable without switching the phone to small size.
+- When typing in a phone field, the A and E keys no longer make your character lean.
+- Your community can choose on Athena what the game sends (everything, or reports only): less data, a lighter link.
+
+### Détail technique
+- Saccade : `fn_mapGameMarkers`, `fn_localDataRefresh` et `fn_strokeDraw` ne relisent que les marqueurs changés (carnets `COMSPEC_ATAK_MkDirtyGm/Ld/Sk` tenus par les EH MarkerCreated / Deleted / Updated, clé "" = tout relire au-delà de 300), relecture complète toutes les 30 s ; doublons Athena / jeu cherchés dans une grille de 15 m (avant : chaque marqueur Athena comparé à chaque marqueur du jeu) ; `fn_storeSet` accepte une signature fournie (unités et marqueurs ne passent plus par `str` de toute la table) ; masquage des zones Overwatch seulement quand un marqueur a changé ; échéances `hasDevice` étalées ; compteur `[PERF]` « unités et marqueurs (carte) ».
+- Clics : `fn_pageClear` masque les anciens contrôles et les supprime à l'image suivante (un bouton n'est plus supprimé pendant son propre ButtonClick, ce qui bloquait tous les clics) ; nouveau `fn_clickNext` (clic différé d'une image) pour l'app Drone, la vue drone de la carte et la fiche photo.
+- Saisie : `fn_keyBlock` regarde aussi la fenêtre qui reçoit la touche et ne dépend plus de l'état « en main ».
+- Données remontées : site `AtakDataFlowsService` (positions, vehicles, combat, phone_mirror, context ; préréglages « tout » / « comptes rendus seulement »), carte « Données remontées du jeu » en tête de Configuration ATAK (badge « À choisir » tant que la communauté n'a pas répondu), `GET /api/atak/data-flows` (liaison de base), lot de télémétrie qui accepte sans traiter un flux coupé et renvoie `flows`. COMSPEC Link 2.0.94 : `GetDataFlows`, flux coupés jamais mis en file (positions coupées : un envoi par minute pour la présence) ; connect `fn_pollDataFlows` (30 s) : véhicules, drones, aéronefs, miroir et pertes ne sont plus calculés quand ils sont coupés.
+- Signalements : `vehicle_exception` du lot : colonnes bornées à leur type SQL (`sanitizeColumns` : texte coupé, entiers, décimaux, booléens), doublon d'équipage (1062) repris en mise à jour, historique non bloquant, cause courte `detail` dans la réponse. `explosive-timers` 400 `steam_required` : miroir des notifications sans Steam ignoré en 200 côté site, pas envoyé en solo côté connect.
+- À rebâtir : main.pbo, comspec_overwatch_connect.pbo, DLL COMSPEC Link 2.0.94. Rien de testé en jeu.
+
 ## Regroupement : marquage depuis le flux d'un drone du camp, GPS sans position périmée, connexion Athena du natif, matériel SSE reconnu, pack photo de la carte (ATAK natif 2.3.6.AB - Denver)
 
 ### Résumé joueur

@@ -91,6 +91,8 @@ public static partial class Extension
         var eventJson = (args[3] ?? "").Trim();
         if (eventJson.Length < 2 || eventJson[0] != '{')
             return "ERR|json";
+        if (!DataFlowAllowsType(type))
+            return "OK|flow_off";
 
         // Garantir "t" dans le JSON.
         if (!eventJson.Contains("\"t\"", StringComparison.Ordinal))
