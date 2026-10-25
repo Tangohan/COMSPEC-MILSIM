@@ -12,6 +12,7 @@ config/cdn_libraries.local.php
 !/storage/cache/.gitkeep
 /storage/sessions/*
 !/storage/sessions/.gitkeep
+/storage/maintenance_session_epoch.json
 /storage/uploads/*
 !/storage/uploads/.gitkeep
 !/storage/uploads/recon/

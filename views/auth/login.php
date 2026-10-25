@@ -48,6 +48,9 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
     <p class="ds-lead"><?= htmlspecialchars(__('auth.intro'), ENT_QUOTES, 'UTF-8') ?></p>
 
     <div class="ds-alert-stack">
+        <?php if (!empty($GLOBALS['__maintenance_admin_login'])): ?>
+            <?php $flash_variant = 'warning'; $flash_message = 'Athena est en maintenance : seuls les administrateurs de la plateforme peuvent se connecter. Les autres comptes sont déconnectés jusqu’à la réouverture.'; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
         <?php if ($error): ?>
             <?php $flash_variant = 'error'; $flash_message = $error; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>

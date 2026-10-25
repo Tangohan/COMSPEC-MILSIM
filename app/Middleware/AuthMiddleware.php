@@ -71,6 +71,18 @@ class AuthMiddleware
         $rbac->setPermissionsForGateFromUserRow($user, $userRepo);
         Session::set('rbac_unit_map', json_encode(\App\Core\Gate::getInstance()->getUnitPermissionMap()) ?: '{}');
 
+        // Maintenance globale : les sessions ouvertes avant son début sont fermées, sauf celles des administrateurs
+        // plateforme (MaintenanceGuard déconnecte celles qui se présentent pendant la maintenance).
+        $maintenanceEpoch = \App\Support\MaintenanceSessionEpoch::epoch();
+        if ($maintenanceEpoch > 0
+            && (int) Session::get('auth_issued_at', 0) < $maintenanceEpoch
+            && !\App\Core\Gate::getInstance()->isPlatformAdmin()) {
+            $this->clearAuthSession();
+            Session::flash('error', 'Une maintenance d’Athena a fermé toutes les sessions. Merci de vous reconnecter.');
+
+            return Response::redirect(url('login'));
+        }
+
         $tenantId = (int) $user['tenant_id'];
         try {
             $resolver = Container::get(\App\Services\Moderation\ModerationRestrictionResolver::class);

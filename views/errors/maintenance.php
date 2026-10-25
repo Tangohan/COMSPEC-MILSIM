@@ -239,6 +239,20 @@ $pageTitle = $useBrandTitle ? 'Maintenance' : $rawTitle;
             color: var(--field);
             transform: translateY(-1px);
         }
+        .notice {
+            margin: 0 0 1.1rem;
+            padding: 0.7rem 0.9rem;
+            border-left: 3px solid #f2c66b;
+            background: rgba(0, 0, 0, 0.35);
+            font-size: 0.92rem;
+            line-height: 1.45;
+        }
+        .admin-link {
+            color: var(--dim);
+            font-size: 0.82rem;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
         .hint {
             margin: 0;
             font-size: 0.9rem;
@@ -267,6 +281,9 @@ $pageTitle = $useBrandTitle ? 'Maintenance' : $rawTitle;
         <div class="panel">
             <div class="sheet">
                 <h1 class="headline"><?= htmlspecialchars($pageHeading, ENT_QUOTES, 'UTF-8') ?></h1>
+                <?php if (!empty($loggedOut)): ?>
+                    <p class="notice" role="status">Vous avez été déconnecté pour la durée de la maintenance. Reconnectez-vous une fois le site rouvert.</p>
+                <?php endif; ?>
                 <div class="copy">
                     <?= $bodyHtml ?>
                     <?php if ($endsLabel !== ''): ?>
@@ -276,6 +293,9 @@ $pageTitle = $useBrandTitle ? 'Maintenance' : $rawTitle;
                 <div class="actions">
                     <a class="cta" href="<?= htmlspecialchars((string) $homeUrl, ENT_QUOTES, 'UTF-8') ?>">Réessayer</a>
                     <p class="hint">Aucune action n’est demandée de votre part.</p>
+                    <?php if (!empty($adminLoginUrl)): ?>
+                        <a class="admin-link" href="<?= htmlspecialchars((string) $adminLoginUrl, ENT_QUOTES, 'UTF-8') ?>">Connexion administrateur</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
