@@ -14,6 +14,7 @@ use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Support\MaintenanceGuard;
+use App\Support\MaintenanceThemes;
 use RuntimeException;
 
 final class SystemMaintenanceController
@@ -57,6 +58,33 @@ final class SystemMaintenanceController
             'maintenanceRule' => null,
             'formAction' => url('admin/maintenance'),
         ]);
+    }
+
+    /**
+     * Aperçu de la page de maintenance telle que les membres la verront, avec le titre, le message et l'apparence
+     * en cours de saisie (formulaire) : rien n'est enregistré, la page n'est pas fermée.
+     */
+    public function preview(Request $request, array $params = []): Response
+    {
+        $title = mb_substr(trim((string) $request->query('title', '')), 0, 255, 'UTF-8');
+        $message = mb_substr((string) $request->query('message', ''), 0, 8000, 'UTF-8');
+        $endsAt = trim((string) $request->query('ends_at', ''));
+        $uiVariant = MaintenanceThemes::normalize($request->query('variant', MaintenanceThemes::DEFAULT));
+        $uiAnimation = (string) $request->query('animation', '1') !== '0';
+        $previewMode = true;
+        $appName = function_exists('config') ? (string) config('app.name', 'Athena') : 'Athena';
+        $endsAt = $endsAt !== '' && strtotime($endsAt) !== false ? $endsAt : null;
+
+        ob_start();
+        require base_path('views/errors/maintenance.php');
+        $html = (string) ob_get_clean();
+
+        $response = new Response();
+        $response->header('Content-Type', 'text/html; charset=utf-8')
+            ->header('X-Robots-Tag', 'noindex, nofollow')
+            ->setBody($html);
+
+        return $response;
     }
 
     public function store(Request $request, array $params = []): Response
@@ -396,13 +424,7 @@ final class SystemMaintenanceController
 
     private function normalizeUiVariant(mixed $value): string
     {
-        $variant = strtolower(trim((string) $value));
-        $allowed = ['military', 'minimal', 'neon', 'status'];
-        if (!in_array($variant, $allowed, true)) {
-            return 'military';
-        }
-
-        return $variant;
+        return MaintenanceThemes::normalize($value);
     }
 
     private function optionalString(mixed $v): ?string

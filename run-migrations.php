@@ -4631,6 +4631,12 @@ $migrationRunner->step('personnel_dossier_dedupe', static function () use ($pers
     $personnelDossierDedupe($pdo);
 });
 
+// Dossier médical : taille, intolérances médicamenteuses, allergies (vue « Médical » du tableur des effectifs).
+$personnelMedicalFields = require $root . '/bootstrap/personnel_medical_fields_migration.php';
+$migrationRunner->step('personnel_medical_fields', static function () use ($personnelMedicalFields, $pdo): void {
+    $personnelMedicalFields($pdo);
+});
+
 // Comptes « Modération automatique » insérés autrefois dans chaque communauté sans servir.
 $systemModeratorCleanup = require $root . '/bootstrap/system_moderator_cleanup_migration.php';
 $migrationRunner->step('system_moderator_cleanup', static function () use ($systemModeratorCleanup, $pdo): void {

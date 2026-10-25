@@ -37,6 +37,27 @@ $currentFeatures = TenantAlertFeatures::decodeJson($row['features_json'] ?? null
 $displayOptions = AlertDisplayStyle::tenantOptionsWithMeta();
 $currentDisplay = AlertDisplayStyle::sanitizeTenant(isset($row['display_style']) ? (string) $row['display_style'] : null);
 
+$mainKinds = array_values(array_filter(['info', 'notice', 'event', 'urgent'], static fn (string $k): bool => isset($kindOptions[$k])));
+if (!in_array($currentKind, $mainKinds, true)) {
+    $mainKinds[] = $currentKind;
+}
+$otherKinds = array_values(array_diff(array_keys($kindOptions), $mainKinds));
+$mainPlacements = array_values(array_filter([AlertDisplayStyle::CLASSIC, AlertDisplayStyle::IMPORTANT, AlertDisplayStyle::POPUP], static fn (string $k): bool => isset($displayOptions[$k])));
+if (!in_array($currentDisplay, $mainPlacements, true) && isset($displayOptions[$currentDisplay])) {
+    $mainPlacements[] = $currentDisplay;
+}
+$otherPlacements = array_values(array_diff(array_keys($displayOptions), $mainPlacements));
+$placementShort = [
+    AlertDisplayStyle::CLASSIC => ['Dans les annonces', 'Une carte sous « Bonjour » sur le tableau de bord. Le bon choix la plupart du temps.'],
+    AlertDisplayStyle::IMPORTANT => ['Barre en haut du site', 'Barre jaune sur toutes les pages, pour ce qui ne peut pas attendre.'],
+    AlertDisplayStyle::POPUP => ['Fenêtre à l’arrivée', 'S’ouvre une fois par membre sur le tableau de bord.'],
+];
+/* Familles de couleur du bandeau du tableau de bord (views/partials/announce_tiles.php). */
+$tileKindMap = ['security' => 'urgent', 'maintenance' => 'notice', 'event' => 'novelty', 'training' => 'novelty', 'recruitment' => 'novelty'];
+$startsValue = $dt(isset($row['starts_at']) ? (string) $row['starts_at'] : null);
+$endsValue = $dt(isset($row['ends_at']) ? (string) $row['ends_at'] : null);
+$hasAdvancedValues = $imageUrl || $bannerUrl || trim((string) ($row['coupon_code'] ?? '')) !== '' || $currentIcon !== 'auto' || (int) ($row['sort_order'] ?? 0) !== 0 || in_array($currentDisplay, $otherPlacements, true);
+
 $previewToneMap = [
     'urgent' => 'error', 'security' => 'error', 'discount' => 'warning', 'maintenance' => 'warning',
     'novelty' => 'info', 'event' => 'info', 'notice' => 'info', 'training' => 'info',
@@ -60,204 +81,287 @@ $iconSvg = [
 ];
 ?>
 
-<div class="bo-ta bo-ta-form ath-rise">
+<div class="bo-ta bo-ta-form bo-ta2 ath-rise">
     <div class="ath-users-filters ath-rise">
         <a href="<?= $h(url('back-office/alerts')) ?>" class="ath-btn">← Liste des annonces</a>
     </div>
 
-    <form method="<?= $h((string) ($formMethod ?? 'post')) ?>" action="<?= $h((string) ($formAction ?? '')) ?>" enctype="multipart/form-data" class="ath-card bo-ta-form__card" id="ta-alert-form">
+    <form method="<?= $h((string) ($formMethod ?? 'post')) ?>" action="<?= $h((string) ($formAction ?? '')) ?>" enctype="multipart/form-data" class="bo-ta2__layout" id="ta-alert-form">
         <?= \App\Core\Csrf::field() ?>
+        <div class="bo-ta2__main">
 
-        <div class="bo-ta-form__section">
-            <h2 class="ath-section-title">Type &amp; apparence</h2>
-            <fieldset class="bo-ta-form__fieldset">
-                <legend class="ath-users-filters__label">Type d’annonce</legend>
-                <div class="bo-ta-form__radio-grid" role="radiogroup" aria-label="Type d’annonce">
-                    <?php foreach ($kindOptions as $value => $meta): ?>
-                    <label class="bo-ta-form__radio-card">
+            <section class="ath-card bo-ta2__step">
+                <h2 class="bo-ta2__step-title"><span class="bo-ta2__num">1</span> Le message</h2>
+                <label class="bo-ta2__field" for="ta-title">
+                    <span class="bo-ta2__label">Titre</span>
+                    <input id="ta-title" type="text" name="title" required maxlength="255" value="<?= $h((string) ($row['title'] ?? '')) ?>" placeholder="Ex. OP Tempête samedi 20 h 30">
+                    <small class="bo-ta2__hint">Court et concret : on le lit en une seconde.</small>
+                </label>
+                <label class="bo-ta2__field" for="ta-body">
+                    <span class="bo-ta2__label">Détails <span class="bo-ta-form__opt">(facultatif)</span></span>
+                    <textarea id="ta-body" name="body" rows="3" placeholder="Briefing à 20 h sur le TeamSpeak, tenue désert."><?= $h((string) ($row['body'] ?? '')) ?></textarea>
+                </label>
+                <div class="bo-ta2__row">
+                    <label class="bo-ta2__field" for="ta-cta-label">
+                        <span class="bo-ta2__label">Texte du bouton <span class="bo-ta-form__opt">(facultatif)</span></span>
+                        <input id="ta-cta-label" type="text" name="cta_label" value="<?= $h((string) ($row['cta_label'] ?? '')) ?>" placeholder="S’inscrire">
+                    </label>
+                    <label class="bo-ta2__field" for="ta-cta-url">
+                        <span class="bo-ta2__label">Lien du bouton</span>
+                        <input id="ta-cta-url" type="text" name="cta_url" value="<?= $h((string) ($row['cta_url'] ?? '')) ?>" placeholder="Page de l’événement, du forum…">
+                    </label>
+                </div>
+            </section>
+
+            <section class="ath-card bo-ta2__step">
+                <h2 class="bo-ta2__step-title"><span class="bo-ta2__num">2</span> Son importance</h2>
+                <div class="bo-ta2__choices" role="radiogroup" aria-label="Type d’annonce">
+                    <?php foreach ($mainKinds as $value): $meta = $kindOptions[$value]; ?>
+                    <label class="bo-ta2__choice bo-ta2__choice--<?= $h($tileKindMap[$value] ?? $value) ?>">
                         <input type="radio" name="kind" value="<?= $h($value) ?>" data-default-color="<?= $h($meta['color']) ?>" <?= $currentKind === $value ? 'checked' : '' ?>>
-                        <span class="bo-ta-form__radio-dot" style="background:<?= $h($meta['color']) ?>"></span>
-                        <span class="bo-ta-form__radio-copy">
-                            <span class="bo-ta-form__radio-title"><?= $h($meta['label']) ?></span>
-                            <span class="bo-ta-form__radio-hint"><?= $h($meta['hint']) ?></span>
-                        </span>
+                        <span class="bo-ta2__choice-title"><?= $h($meta['label']) ?></span>
+                        <span class="bo-ta2__choice-hint"><?= $h($meta['hint']) ?></span>
                     </label>
                     <?php endforeach; ?>
                 </div>
-            </fieldset>
+                <?php if ($otherKinds !== []): ?>
+                <details class="bo-ta2__more"<?= in_array($currentKind, $otherKinds, true) ? ' open' : '' ?>>
+                    <summary>Autres types (<?= count($otherKinds) ?>)</summary>
+                    <div class="bo-ta2__choices bo-ta2__choices--small" role="radiogroup" aria-label="Autres types d’annonce">
+                        <?php foreach ($otherKinds as $value): $meta = $kindOptions[$value]; ?>
+                        <label class="bo-ta2__choice bo-ta2__choice--<?= $h($tileKindMap[$value] ?? $value) ?>">
+                            <input type="radio" name="kind" value="<?= $h($value) ?>" data-default-color="<?= $h($meta['color']) ?>" <?= $currentKind === $value ? 'checked' : '' ?>>
+                            <span class="bo-ta2__choice-title"><?= $h($meta['label']) ?></span>
+                            <span class="bo-ta2__choice-hint"><?= $h($meta['hint']) ?></span>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+                <?php endif; ?>
+            </section>
 
-            <fieldset class="bo-ta-form__fieldset">
-                <legend class="ath-users-filters__label">Emplacement d’affichage</legend>
-                <div class="bo-ta-form__radio-grid bo-ta-form__radio-grid--2" role="radiogroup" aria-label="Emplacement d’affichage">
-                    <?php foreach ($displayOptions as $value => $meta): ?>
-                    <label class="bo-ta-form__radio-card">
+            <section class="ath-card bo-ta2__step">
+                <h2 class="bo-ta2__step-title"><span class="bo-ta2__num">3</span> Où et combien de temps</h2>
+                <div class="bo-ta2__choices bo-ta2__choices--3" role="radiogroup" aria-label="Emplacement d’affichage">
+                    <?php foreach ($mainPlacements as $value): $meta = $displayOptions[$value]; $short = $placementShort[$value] ?? [$meta['label'], $meta['hint']]; ?>
+                    <label class="bo-ta2__choice">
                         <input type="radio" name="display_style" value="<?= $h($value) ?>" <?= $currentDisplay === $value ? 'checked' : '' ?>>
-                        <span class="bo-ta-form__radio-copy">
-                            <span class="bo-ta-form__radio-title"><?= $h($meta['label']) ?></span>
-                            <span class="bo-ta-form__radio-hint"><?= $h($meta['hint']) ?></span>
-                        </span>
+                        <span class="bo-ta2__choice-title"><?= $h($short[0]) ?></span>
+                        <span class="bo-ta2__choice-hint"><?= $h($short[1]) ?></span>
                     </label>
                     <?php endforeach; ?>
                 </div>
-            </fieldset>
-
-            <div class="bo-ta-form__preview-row">
-                <label class="ath-users-filters__label" for="ta-accent">Couleur d’accent
-                    <input id="ta-accent" type="color" name="accent_color" value="<?= $h($currentColor) ?>" class="bo-ta-form__color">
-                </label>
-                <?php
-                $previewKindLabel = $kindOptions[$currentKind]['label'];
-                $previewTitle = (string) ($row['title'] ?? 'Titre de l\'annonce');
-                $previewBody = (string) ($row['body'] ?? '');
-                include __DIR__ . '/bo_ta_preview_dsfr.php';
-                ?>
-            </div>
-
-            <fieldset class="bo-ta-form__fieldset">
-                <legend class="ath-users-filters__label">Icône</legend>
-                <div class="bo-ta-form__icon-grid" role="radiogroup" aria-label="Icône">
-                    <?php foreach ($iconLabels as $ikey => $ilabel): ?>
-                    <label class="bo-ta-form__icon-card">
-                        <input type="radio" name="icon_key" value="<?= $h($ikey) ?>" class="sr-only" <?= $currentIcon === $ikey ? 'checked' : '' ?>>
-                        <span class="bo-ta-form__icon-svg"><?= $iconSvg[$ikey] ?? $iconSvg['info'] ?></span>
-                        <span class="bo-ta-form__icon-label"><?= $h($ilabel) ?></span>
+                <div class="bo-ta2__durations" role="group" aria-label="Durée d’affichage">
+                    <span class="bo-ta2__label">Afficher</span>
+                    <button type="button" class="bo-ta2__pill" data-ta-duration="0">Jusqu’à ce que je la retire</button>
+                    <button type="button" class="bo-ta2__pill" data-ta-duration="24">24 heures</button>
+                    <button type="button" class="bo-ta2__pill" data-ta-duration="72">3 jours</button>
+                    <button type="button" class="bo-ta2__pill" data-ta-duration="168">1 semaine</button>
+                </div>
+                <div class="bo-ta2__row">
+                    <label class="bo-ta2__field" for="ta-starts">
+                        <span class="bo-ta2__label">À partir du <span class="bo-ta-form__opt">(vide = tout de suite)</span></span>
+                        <input id="ta-starts" type="datetime-local" name="starts_at" value="<?= $h($startsValue) ?>">
+                    </label>
+                    <label class="bo-ta2__field" for="ta-ends">
+                        <span class="bo-ta2__label">Jusqu’au <span class="bo-ta-form__opt">(vide = sans fin)</span></span>
+                        <input id="ta-ends" type="datetime-local" name="ends_at" value="<?= $h($endsValue) ?>">
+                    </label>
+                </div>
+                <div class="bo-ta2__toggles">
+                    <label class="bo-ta2__toggle">
+                        <input type="hidden" name="is_active" value="0">
+                        <input type="checkbox" name="is_active" value="1" id="ta_is_active" <?= ($row === null || !empty($row['is_active'])) ? 'checked' : '' ?>>
+                        <span>En ligne</span>
+                    </label>
+                    <?php foreach (TenantAlertFeatures::definitions() as $fkey => $fmeta): ?>
+                    <label class="bo-ta2__toggle" title="<?= $h($fmeta['hint']) ?>">
+                        <input type="hidden" name="feature_<?= $h($fkey) ?>" value="0">
+                        <input type="checkbox" name="feature_<?= $h($fkey) ?>" value="1" <?= !empty($currentFeatures[$fkey]) ? 'checked' : '' ?>>
+                        <span><?= $h($fmeta['label']) ?></span>
                     </label>
                     <?php endforeach; ?>
                 </div>
-            </fieldset>
-        </div>
+            </section>
 
-        <div class="bo-ta-form__section">
-            <h2 class="ath-section-title">Contenu</h2>
-            <label class="ath-users-filters__label" for="ta-title">Titre
-                <input id="ta-title" type="text" name="title" required maxlength="255" value="<?= $h((string) ($row['title'] ?? '')) ?>" placeholder="Ex. Maintenance du forum ce week-end">
-            </label>
-            <label class="ath-users-filters__label" for="ta-body">Message <span class="bo-ta-form__opt">(facultatif)</span>
-                <textarea id="ta-body" name="body" rows="4" placeholder="Précisez le contexte pour vos membres…"><?= $h((string) ($row['body'] ?? '')) ?></textarea>
-            </label>
-        </div>
+            <details class="ath-card bo-ta2__step bo-ta2__advanced"<?= $hasAdvancedValues ? ' open' : '' ?>>
+                <summary class="bo-ta2__step-title">Options avancées <span class="bo-ta-form__opt">(images, icône, couleur, autres emplacements…)</span></summary>
 
-        <div class="bo-ta-form__section">
-            <h2 class="ath-section-title">Images</h2>
-            <p class="ath-body">JPG, PNG ou WebP — 12 Mo max.</p>
-            <div class="bo-ta-form__grid-2">
-                <div>
-                    <label class="ath-users-filters__label" for="ta-image">Image / vignette</label>
-                    <?php if ($imageUrl): ?>
-                    <img src="<?= $h($imageUrl) ?>" alt="" class="bo-ta-form__thumb">
-                    <label class="ath-users-filters__check"><input type="checkbox" name="remove_image" value="1"> Retirer l’image actuelle</label>
-                    <?php endif; ?>
-                    <input id="ta-image" type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+                <?php if ($otherPlacements !== []): ?>
+                <fieldset class="bo-ta-form__fieldset">
+                    <legend class="bo-ta2__label">Autres emplacements</legend>
+                    <div class="bo-ta2__choices bo-ta2__choices--small" role="radiogroup" aria-label="Autres emplacements">
+                        <?php foreach ($otherPlacements as $value): $meta = $displayOptions[$value]; ?>
+                        <label class="bo-ta2__choice">
+                            <input type="radio" name="display_style" value="<?= $h($value) ?>" <?= $currentDisplay === $value ? 'checked' : '' ?>>
+                            <span class="bo-ta2__choice-title"><?= $h($meta['label']) ?></span>
+                            <span class="bo-ta2__choice-hint"><?= $h($meta['hint']) ?></span>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+                <?php endif; ?>
+
+                <fieldset class="bo-ta-form__fieldset">
+                    <legend class="bo-ta2__label">Icône</legend>
+                    <div class="bo-ta-form__icon-grid" role="radiogroup" aria-label="Icône">
+                        <?php foreach ($iconLabels as $ikey => $ilabel): ?>
+                        <label class="bo-ta-form__icon-card">
+                            <input type="radio" name="icon_key" value="<?= $h($ikey) ?>" class="sr-only" <?= $currentIcon === $ikey ? 'checked' : '' ?>>
+                            <span class="bo-ta-form__icon-svg"><?= $iconSvg[$ikey] ?? $iconSvg['info'] ?></span>
+                            <span class="bo-ta-form__icon-label"><?= $h($ilabel) ?></span>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+
+                <div class="bo-ta2__row">
+                    <label class="bo-ta2__field" for="ta-accent">
+                        <span class="bo-ta2__label">Couleur d’accent</span>
+                        <input id="ta-accent" type="color" name="accent_color" value="<?= $h($currentColor) ?>" class="bo-ta-form__color">
+                    </label>
+                    <label class="bo-ta2__field" for="ta-coupon">
+                        <span class="bo-ta2__label">Code avantage</span>
+                        <input id="ta-coupon" type="text" name="coupon_code" maxlength="64" value="<?= $h((string) ($row['coupon_code'] ?? '')) ?>" placeholder="Ex. BIENVENUE2026">
+                    </label>
+                    <label class="bo-ta2__field" for="ta-order">
+                        <span class="bo-ta2__label">Ordre d’affichage</span>
+                        <input id="ta-order" type="number" name="sort_order" value="<?= (int) ($row['sort_order'] ?? 0) ?>" class="bo-ta-form__order">
+                    </label>
                 </div>
-                <div>
-                    <label class="ath-users-filters__label" for="ta-banner">Bannière</label>
-                    <?php if ($bannerUrl): ?>
-                    <img src="<?= $h($bannerUrl) ?>" alt="" class="bo-ta-form__banner-thumb">
-                    <label class="ath-users-filters__check"><input type="checkbox" name="remove_banner" value="1"> Retirer la bannière actuelle</label>
-                    <?php endif; ?>
-                    <input id="ta-banner" type="file" name="banner_file" accept="image/jpeg,image/png,image/webp">
+
+                <p class="bo-ta2__hint">Images : JPG, PNG ou WebP, 12 Mo max.</p>
+                <div class="bo-ta2__row">
+                    <div class="bo-ta2__field">
+                        <label class="bo-ta2__label" for="ta-image">Vignette</label>
+                        <?php if ($imageUrl): ?>
+                        <img src="<?= $h($imageUrl) ?>" alt="" class="bo-ta-form__thumb">
+                        <label class="ath-users-filters__check"><input type="checkbox" name="remove_image" value="1"> Retirer l’image actuelle</label>
+                        <?php endif; ?>
+                        <input id="ta-image" type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+                    </div>
+                    <div class="bo-ta2__field">
+                        <label class="bo-ta2__label" for="ta-banner">Bannière</label>
+                        <?php if ($bannerUrl): ?>
+                        <img src="<?= $h($bannerUrl) ?>" alt="" class="bo-ta-form__banner-thumb">
+                        <label class="ath-users-filters__check"><input type="checkbox" name="remove_banner" value="1"> Retirer la bannière actuelle</label>
+                        <?php endif; ?>
+                        <input id="ta-banner" type="file" name="banner_file" accept="image/jpeg,image/png,image/webp">
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <aside class="bo-ta2__aside" aria-label="Aperçu">
+            <p class="bo-ta2__aside-kicker">Aperçu en direct</p>
+            <p class="bo-ta2__aside-where" id="ta-pv-where">Tableau de bord des membres, sous « Bonjour ».</p>
+
+            <div class="bo-ta2__pv" id="ta-live-preview" aria-live="polite">
+                <div class="bo-ta2__pv-bar" id="ta-pv-bar" hidden>
+                    <strong id="ta-pv-bar-title"></strong> <span id="ta-pv-bar-cta"></span>
+                </div>
+                <div class="bo-ta2__pv-stage" id="ta-pv-stage">
+                    <div class="dash-announce is-open bo-ta2__pv-dash">
+                        <div class="dash-announce__grid" style="grid-template-columns:1fr">
+                            <div class="dash-announce-tile" id="ta-pv-tile">
+                                <span class="dash-announce-tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path id="ta-pv-icon" d="M12 16v-4m0-4h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z"/></svg></span>
+                                <span class="dash-announce-tile__panel">
+                                    <span class="dash-announce-tile__meta"><span class="dash-announce-tile__kind" id="ta-preview-kind"></span></span>
+                                    <span class="dash-announce-tile__title" id="ta-preview-title"></span>
+                                    <span class="dash-announce-tile__body" id="ta-preview-body"></span>
+                                    <span class="dash-announce-tile__cta" id="ta-preview-cta"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+            <p class="bo-ta2__aside-when" id="ta-pv-when"></p>
 
-        <div class="bo-ta-form__section">
-            <h2 class="ath-section-title">Action</h2>
-            <div class="bo-ta-form__grid-2">
-                <label class="ath-users-filters__label" for="ta-cta-label">Libellé du bouton
-                    <input id="ta-cta-label" type="text" name="cta_label" value="<?= $h((string) ($row['cta_label'] ?? '')) ?>" placeholder="Ex. En savoir plus">
-                </label>
-                <label class="ath-users-filters__label" for="ta-cta-url">Adresse du lien
-                    <input id="ta-cta-url" type="text" name="cta_url" value="<?= $h((string) ($row['cta_url'] ?? '')) ?>" placeholder="Page du forum, formations…">
-                </label>
+            <div class="bo-ta2__submit">
+                <button type="submit" class="ath-btn ath-btn--solid"><?= $isEdit ? 'Enregistrer les modifications' : 'Publier l’annonce' ?></button>
+                <a href="<?= $h(url('back-office/alerts')) ?>" class="ath-btn">Annuler</a>
             </div>
-            <label class="ath-users-filters__label" for="ta-coupon">Code avantage <span class="bo-ta-form__opt">(facultatif)</span>
-                <input id="ta-coupon" type="text" name="coupon_code" maxlength="64" value="<?= $h((string) ($row['coupon_code'] ?? '')) ?>" placeholder="Ex. BIENVENUE2026">
-            </label>
-        </div>
-
-        <div class="bo-ta-form__section">
-            <h2 class="ath-section-title">Options</h2>
-            <div class="bo-ta-form__features">
-                <?php foreach (TenantAlertFeatures::definitions() as $fkey => $fmeta): ?>
-                <label class="bo-ta-form__feature">
-                    <input type="hidden" name="feature_<?= $h($fkey) ?>" value="0">
-                    <input type="checkbox" name="feature_<?= $h($fkey) ?>" value="1" <?= !empty($currentFeatures[$fkey]) ? 'checked' : '' ?>>
-                    <span class="bo-ta-form__feature-copy">
-                        <span class="bo-ta-form__feature-title"><?= $h($fmeta['label']) ?></span>
-                        <span class="bo-ta-form__feature-hint"><?= $h($fmeta['hint']) ?></span>
-                    </span>
-                </label>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <div class="bo-ta-form__section">
-            <h2 class="ath-section-title">Diffusion</h2>
-            <div class="bo-ta-form__grid-2">
-                <label class="ath-users-filters__label" for="ta-starts">Début <span class="bo-ta-form__opt">(facultatif)</span>
-                    <input id="ta-starts" type="datetime-local" name="starts_at" value="<?= $h($dt(isset($row['starts_at']) ? (string) $row['starts_at'] : null)) ?>">
-                </label>
-                <label class="ath-users-filters__label" for="ta-ends">Fin <span class="bo-ta-form__opt">(facultatif)</span>
-                    <input id="ta-ends" type="datetime-local" name="ends_at" value="<?= $h($dt(isset($row['ends_at']) ? (string) $row['ends_at'] : null)) ?>">
-                </label>
-            </div>
-            <label class="ath-users-filters__label" for="ta-order">Ordre d’affichage
-                <input id="ta-order" type="number" name="sort_order" value="<?= (int) ($row['sort_order'] ?? 0) ?>" class="bo-ta-form__order">
-            </label>
-            <label class="ath-users-filters__check">
-                <input type="hidden" name="is_active" value="0">
-                <input type="checkbox" name="is_active" value="1" id="ta_is_active" <?= ($row === null || !empty($row['is_active'])) ? 'checked' : '' ?>>
-                Annonce active
-            </label>
-        </div>
-
-        <div class="bo-ta-form__actions">
-            <button type="submit" class="ath-btn ath-btn--solid"><?= $isEdit ? 'Enregistrer les modifications' : 'Créer l’annonce' ?></button>
-            <a href="<?= $h(url('back-office/alerts')) ?>" class="ath-btn">Annuler</a>
-        </div>
+        </aside>
     </form>
 </div>
 <script>
 (function () {
   var form = document.getElementById('ta-alert-form');
   if (!form) return;
-  var title = document.getElementById('ta-title');
-  var body = document.getElementById('ta-body');
-  var previewTitle = document.getElementById('ta-preview-title');
-  var previewKind = document.getElementById('ta-preview-kind');
-  var previewBody = document.getElementById('ta-preview-body');
-  var previewRoot = document.getElementById('ta-live-preview');
+  var $ = function (id) { return document.getElementById(id); };
   var kindLabels = <?= json_encode(array_map(static fn ($m) => $m['label'], $kindOptions), JSON_UNESCAPED_UNICODE) ?>;
-  var kindTones = <?= json_encode($previewToneMap, JSON_UNESCAPED_UNICODE) ?>;
+  var tileKinds = <?= json_encode($tileKindMap, JSON_UNESCAPED_UNICODE) ?>;
+  var icons = {
+    urgent: 'M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
+    notice: 'M12 17v5M9 10.8V4h6v6.8l2.6 3.2H6.4L9 10.8Z',
+    novelty: 'm12 3 2.4 5.6L20 9.3l-4.3 3.9 1.3 5.8L12 16l-5 3 1.3-5.8L4 9.3l5.6-.7L12 3Z',
+    discount: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8ZM7.5 7.5h.01',
+    info: 'M12 16v-4m0-4h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z'
+  };
+  var whereText = {
+    classic: 'Tableau de bord des membres, sous « Bonjour ».',
+    important: 'Barre jaune en haut de toutes les pages du site.',
+    popup: 'Fenêtre ouverte une fois par membre en arrivant sur le tableau de bord.',
+    activity_feed: 'Dans « Mon activité » de chaque membre.',
+    members_only: 'Espace membre uniquement, jamais sur les pages publiques.',
+    back_office: 'Visible seulement des responsables, dans le back-office.'
+  };
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var toLocal = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+  var fmt = function (v) {
+    if (!v) return '';
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + ' à ' + pad(d.getHours()) + ' h ' + pad(d.getMinutes());
+  };
 
-  function syncKind() {
-    var checked = form.querySelector('input[name="kind"]:checked');
-    if (!checked) return;
-    if (previewKind) previewKind.textContent = kindLabels[checked.value] || 'Annonce';
-    if (previewRoot) {
-      var tone = kindTones[checked.value] || 'info';
-      var alertEl = previewRoot.querySelector('.ds-alert');
-      if (alertEl) {
-        alertEl.className = 'ds-alert ds-alert--' + tone;
-      }
-    }
+  function render() {
+    var kindEl = form.querySelector('input[name="kind"]:checked');
+    var kind = kindEl ? kindEl.value : 'info';
+    var tile = tileKinds[kind] || kind;
+    if (!icons[tile]) tile = 'info';
+    var place = (form.querySelector('input[name="display_style"]:checked') || {}).value || 'classic';
+    var title = $('ta-title').value.trim() || 'Titre de l’annonce';
+    var body = $('ta-body').value.trim();
+    var cta = $('ta-cta-label').value.trim();
+    var url = $('ta-cta-url').value.trim();
+
+    $('ta-pv-tile').className = 'dash-announce-tile dash-announce-tile--' + tile;
+    $('ta-pv-icon').setAttribute('d', icons[tile]);
+    $('ta-preview-kind').textContent = kindLabels[kind] || 'Information';
+    $('ta-preview-title').textContent = title;
+    $('ta-preview-body').textContent = body;
+    $('ta-preview-body').hidden = body === '';
+    $('ta-preview-cta').textContent = (cta || (url ? 'Ouvrir' : '')) + ((cta || url) ? ' →' : '');
+    $('ta-preview-cta').hidden = !(cta || url);
+
+    var isBar = place === 'important';
+    $('ta-pv-bar').hidden = !isBar;
+    $('ta-pv-stage').hidden = isBar;
+    $('ta-pv-bar-title').textContent = title;
+    $('ta-pv-bar-cta').textContent = cta ? cta + ' →' : '';
+    $('ta-live-preview').classList.toggle('is-popup', place === 'popup');
+    $('ta-pv-where').textContent = whereText[place] || whereText.classic;
+
+    var s = fmt($('ta-starts').value), e = fmt($('ta-ends').value);
+    var active = $('ta_is_active').checked;
+    $('ta-pv-when').textContent = !active ? 'Hors ligne : personne ne la voit pour l’instant.'
+      : (s ? 'Visible à partir du ' + s : 'Visible dès la publication') + (e ? ', jusqu’au ' + e + '.' : ', sans date de fin.');
   }
-  if (title && previewTitle) {
-    title.addEventListener('input', function () {
-      previewTitle.textContent = title.value.trim() || 'Titre de l\'annonce';
+
+  form.querySelectorAll('[data-ta-duration]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var hours = parseInt(b.getAttribute('data-ta-duration'), 10);
+      if (!hours) { $('ta-ends').value = ''; render(); return; }
+      var start = $('ta-starts').value ? new Date($('ta-starts').value) : new Date();
+      if (isNaN(start.getTime())) start = new Date();
+      $('ta-ends').value = toLocal(new Date(start.getTime() + hours * 3600000));
+      render();
     });
-  }
-  if (body && previewBody) {
-    body.addEventListener('input', function () {
-      var t = body.value.trim();
-      previewBody.textContent = t;
-      previewBody.hidden = !t;
-      previewBody.classList.toggle('hidden', !t);
-    });
-  }
-  form.querySelectorAll('input[name="kind"]').forEach(function (el) {
-    el.addEventListener('change', syncKind);
   });
-  syncKind();
+  form.addEventListener('input', render);
+  form.addEventListener('change', render);
+  render();
 })();
 </script>

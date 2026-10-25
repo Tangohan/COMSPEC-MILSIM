@@ -3194,6 +3194,33 @@ class UserRepository
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
+    /**
+     * Nombre d’affectations en cours par unité, en une seule requête (liste des groupes).
+     *
+     * @param list<int> $unitIds
+     * @return array<int, int> unit_id => nombre de membres
+     */
+    public function countActiveByUnits(array $unitIds): array
+    {
+        $unitIds = array_values(array_unique(array_filter(array_map('intval', $unitIds), static fn (int $v): bool => $v > 0)));
+        if ($unitIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($unitIds), '?'));
+        $stmt = $this->pdo()->prepare(
+            'SELECT unit_id, COUNT(DISTINCT user_id) AS n FROM user_units
+             WHERE unit_id IN (' . $placeholders . ') AND (ended_at IS NULL OR ended_at > NOW())
+             GROUP BY unit_id'
+        );
+        $stmt->execute($unitIds);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['unit_id']] = (int) $row['n'];
+        }
+
+        return $out;
+    }
+
     /** @return list<int> Unit IDs auxquelles l'utilisateur est affecté (user_units, non terminée). */
     public function getUnitIdsForUser(int $userId): array
     {
