@@ -145,6 +145,7 @@ class CfgFunctions {
             class arsenalApplyLoadout {};
             class arsenalPushAll {};
             class arsenalPullAll {};
+            class arsenalSyncAll {};
             class arsenalApplyCloud {};
             class arsenalOverlayShow {};
             class arsenalOverlayBeginLoad {};

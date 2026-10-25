@@ -1,8 +1,10 @@
 /*
     Tire la liste cloud + fusionne dans ace_arsenal_saved_loadouts (profile).
-    params: [applyId optional, onlyIds optional] — onlyIds vide = toutes.
+    params: [applyId optional, onlyIds optional, keepLocal optional] — onlyIds vide = toutes.
+    keepLocal (import groupé, « Tout basculer dans l'arsenal ACE ») : une tenue locale du même nom mais différente
+    n'est jamais remplacée ; la version du site arrive à côté, sous « nom · Athena ». Identique : rien ne change.
 */
-params [["_applyId", "", [""]], ["_onlyIds", [], [[]]]];
+params [["_applyId", "", [""]], ["_onlyIds", [], [[]]], ["_keepLocal", false, [false]]];
 
 if (!hasInterface) exitWith { false };
 
@@ -69,6 +71,7 @@ missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", true, false];
 private _merged = [] call comspec_overwatch_connect_fnc_arsenalLocalLoadouts;
 private _names = _merged apply { toLower (_x select 0) };
 private _pulled = 0;
+private _same = 0;
 private _skippedDense = 0;
 
 {
@@ -82,6 +85,21 @@ private _skippedDense = 0;
     };
 
     private _idx = _names find toLower _name;
+    private _copy = false;
+    if (_idx >= 0 && {_keepLocal}) then {
+        // Même règle que le panneau (arsenalOverlayRefresh) : texte identique, empreinte du site, ou registre.
+        private _localLo = [(_merged select _idx) select 1] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
+        private _localSha = [str _localLo] call comspec_overwatch_connect_fnc_arsenalHash;
+        private _identical = ((str _localLo) isEqualTo (str _loadout))
+            || {_siteSha isNotEqualTo "" && {_localSha isEqualTo _siteSha}}
+            || {_siteSha isNotEqualTo "" && {(["get", _name] call comspec_overwatch_connect_fnc_arsenalLedger) isEqualTo [_siteSha, _localSha]}};
+        if (_identical) then { _idx = -2; } else {
+            _name = _name + " · Athena";
+            _idx = _names find toLower _name;
+            _copy = true;
+        };
+    };
+    if (_idx isEqualTo -2) then { _same = _same + 1; continue; };
     if (_idx >= 0) then {
         _merged set [_idx, [_name, _loadout]];
     } else {
@@ -90,6 +108,8 @@ private _skippedDense = 0;
     };
     _pulled = _pulled + 1;
     // Registre de synchro : la tenue importée est celle du site (sha du site) ; sha local tel qu'il sera relu.
+    // Copie « · Athena » posée à côté de votre tenue : elle ne porte pas ce nom sur le site, pas de registre.
+    if (_copy) then { continue; };
     ["set", _name, _siteSha, [str _loadout] call comspec_overwatch_connect_fnc_arsenalHash] call comspec_overwatch_connect_fnc_arsenalLedger;
 } forEach _meta;
 
@@ -99,10 +119,13 @@ missionNamespace setVariable ["COMSPEC_ArsenalLastPullAt", diag_tickTime, false]
 missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", false, false];
 
 private _msg = format ["%1 tenue(s) de la communauté ajoutée(s) à l’arsenal.", _pulled];
+if (_same > 0) then {
+    _msg = _msg + format [" %1 déjà identique(s).", _same];
+};
 if (_skippedDense > 0) then {
     _msg = _msg + format [" %1 trop dense(s) pour l’import en jeu.", _skippedDense];
 };
-[_msg, "arsenal", if (_pulled > 0) then { "ok" } else { "warn" }, true] call comspec_overwatch_connect_fnc_announce;
+[_msg, "arsenal", if (_pulled > 0 || {_same > 0}) then { "ok" } else { "warn" }, true] call comspec_overwatch_connect_fnc_announce;
 
 if (_applyId != "") then {
     [_applyId] call comspec_overwatch_connect_fnc_arsenalApplyCloud;

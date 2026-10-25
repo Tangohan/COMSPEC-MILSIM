@@ -10,7 +10,8 @@
                  icônes légendées, contenu, actions Enfiler / Envoyer ou Importer / Supprimer)
       sélection  Mes tenues : sélection multiple (cases à cocher), tout cocher (filtre appliqué), supprimer la
                  sélection en une fois, annuler la dernière suppression
-      pied       action groupée (envoyer les tenues pas encore sur le site / importer), enregistrer la tenue portée
+      pied       action groupée (envoyer les tenues pas encore sur le site / importer), tout basculer dans l'arsenal
+                 ACE (arsenalSyncAll), enregistrer la tenue portée
     Champs de saisie : ACE les prend pour sa barre de recherche (ace_arsenal_leftSearchbarFocus) tant qu'ils ont le
     focus, sinon ses raccourcis partaient pendant la frappe (Retour arrière masquait l'interface au lieu d'effacer,
     Ctrl+C / Ctrl+V exportaient ou importaient). Entrée enregistre la tenue (champ du nom) ou relance la recherche.
@@ -293,7 +294,10 @@ _grp setVariable ["COMSPEC_ArsenalDetailBtns", [
 // Pied : action groupée, enregistrement de la tenue portée, aide.
 private _fty = _h - _pad * 0.6 - _footH;
 private _fw = (_w - 2 * _pad - _gap) / 2;
-_grp setVariable ["COMSPEC_ArsenalBulk", [[_pad, _fty, _fw, _rowH], "", "bulk", "COMSPEC_RscButtonAtak", "", _fB] call _btn];
+private _syncW = _fw * 0.46;
+_grp setVariable ["COMSPEC_ArsenalBulk", [[_pad, _fty, _fw - _syncW - _gap, _rowH], "", "bulk", "COMSPEC_RscButtonAtak", "", _fB] call _btn];
+// Tout basculer : toutes les tenues de l'organisation dans l'arsenal ACE, les miennes vers le site, sans rien écraser.
+[[_pad + _fw - _syncW, _fty, _syncW, _rowH], "TOUT BASCULER DANS L'ARSENAL ACE", "syncAll", "COMSPEC_RscButtonAtakPrimary", "Récupère toutes les tenues de l'organisation dans « Mes équipements » d'ACE et envoie au site celles qui n'y sont pas. Rien n'est supprimé ni remplacé.", _fB] call _btn;
 private _sx = _pad + _fw + _gap;
 private _saveW = 0.12 * safezoneW;
 private _editW = _fw - _saveW - _gap;

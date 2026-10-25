@@ -11,6 +11,7 @@
       "remove"                            Communauté : retirer (si c'est la vôtre) · Mes tenues : supprimer
       "bulk"                              Mes tenues : envoyer celles qui ne sont pas à jour sur le site (pas les
                                           autres) · Communauté : importer celles que je n'ai pas (filtre appliqué)
+      "syncAll"                           tout basculer dans l'arsenal ACE (arsenalSyncAll), après confirmation
       "saveCurrent"                       enregistre la tenue du mannequin sous le nom saisi, puis l'envoie
       "markSeen"                          les tenues de la communauté affichées ne sont plus « nouvelles »
       "pick" / "markAll"                  Mes tenues : sélection multiple (un clic coche), tout (dé)cocher l'affiché
@@ -225,9 +226,18 @@ switch (_act) do {
         if ((count _shown) isEqualTo 0) exitWith {};
         [_shown, _isCloud, _d] spawn {
             params ["_shown", "_isCloud", "_d"];
-            private _ok = [format [(["Envoyer au site %1 tenue(s) qui n'y sont pas à jour ? Les autres ne sont pas renvoyées.", "Importer %1 tenue(s) dans votre arsenal ? Une tenue du même nom sera remplacée."] select _isCloud) call comspec_overwatch_connect_fnc_tr, count _shown], ("Tenues Athena") call comspec_overwatch_connect_fnc_tr, true, true, _d] call BIS_fnc_guiMessage;
+            private _ok = [format [(["Envoyer au site %1 tenue(s) qui n'y sont pas à jour ? Les autres ne sont pas renvoyées.", "Importer %1 tenue(s) dans votre arsenal ? Aucune de vos tenues n'est remplacée : une version différente arrive à côté, sous le même nom suivi de « Athena »."] select _isCloud) call comspec_overwatch_connect_fnc_tr, count _shown], ("Tenues Athena") call comspec_overwatch_connect_fnc_tr, true, true, _d] call BIS_fnc_guiMessage;
             if (!_ok) exitWith {};
-            if (_isCloud) then { ["", _shown apply { _x select 0 }] call comspec_overwatch_connect_fnc_arsenalPullAll; } else { [_shown apply { _x select 0 }] call comspec_overwatch_connect_fnc_arsenalPushAll; };
+            if (_isCloud) then { ["", _shown apply { _x select 0 }, true] call comspec_overwatch_connect_fnc_arsenalPullAll; } else { [_shown apply { _x select 0 }] call comspec_overwatch_connect_fnc_arsenalPushAll; };
+            ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+        };
+    };
+    case "syncAll": {
+        [_d] spawn {
+            params ["_d"];
+            private _ok = [("Tout basculer dans l'arsenal ACE ? Toutes les tenues de l'organisation arrivent dans « Mes équipements » d'ACE et vos tenues pas encore sur le site y sont envoyées. Rien n'est supprimé ni remplacé, ici comme sur le site.") call comspec_overwatch_connect_fnc_tr, ("Tenues Athena") call comspec_overwatch_connect_fnc_tr, true, true, _d] call BIS_fnc_guiMessage;
+            if (!_ok) exitWith {};
+            [] call comspec_overwatch_connect_fnc_arsenalSyncAll;
             ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
         };
     };

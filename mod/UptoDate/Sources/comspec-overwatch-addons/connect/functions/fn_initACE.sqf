@@ -62,7 +62,7 @@ private _legacyFlat = [
     "COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork", "COMSPEC_Recon", "COMSPEC_ReconNote",
     "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderMenu", "COMSPEC_OrderCompose",
     "COMSPEC_OrderFrago", "COMSPEC_OrderMove", "COMSPEC_OrderHold", "COMSPEC_OrderRecon",
-    "COMSPEC_OrderQRF", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull",
+    "COMSPEC_OrderQRF", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull", "COMSPEC_WardrobeSyncAll",
     "COMSPEC_Callsign", "COMSPEC_BugReport", "COMSPEC_DisableOwnPhoneGps",
     "COMSPEC_ChargesAtak", "COMSPEC_RepairAtakPower", "COMSPEC_RepairAtakScreen",
     "COMSPEC_DiagnosticAtak"
@@ -399,8 +399,13 @@ private _ord = _sup + ["COMSPEC_OrderMenu"];
     [] spawn { [] call comspec_overwatch_connect_fnc_arsenalPushAll; };
 }, _load] call _fnc_leaf;
 
+// Import sans écraser : une tenue locale différente du même nom reste, la version du site arrive sous « nom · Athena ».
 ["COMSPEC_WardrobePull", "Charger tenues depuis Athena", {
-    [] spawn { [] call comspec_overwatch_connect_fnc_arsenalPullAll; };
+    [] spawn { ["", [], true] call comspec_overwatch_connect_fnc_arsenalPullAll; };
+}, _load] call _fnc_leaf;
+
+["COMSPEC_WardrobeSyncAll", "Tout basculer dans l'arsenal ACE", {
+    [] spawn { [] call comspec_overwatch_connect_fnc_arsenalSyncAll; };
 }, _load] call _fnc_leaf;
 
 ["COMSPEC_Callsign", "Mon indicatif / liaison", {
