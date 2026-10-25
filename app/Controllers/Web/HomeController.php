@@ -322,21 +322,41 @@ class HomeController
                 $enlistRepo = \App\Core\Container::get(\App\Repositories\EnlistmentRepository::class);
                 if ($allowsRecruitment) {
                     $myEnlistmentsPending = $enlistRepo->listPendingSubmittedForSubmitter($tid, $uid, $uemail);
+
+                    // Une seule lecture des candidatures (limite 20) : les 8 premières alimentent le suivi candidat,
+                    // les jetons de suivi sont chargés en une requête et mémoïsés pour les deux blocs.
+                    try {
+                        $myApplicationsRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 20);
+                    } catch (\Throwable) {
+                        $myApplicationsRows = [];
+                    }
+                    try {
+                        $candidatePortalTokens = $enlistRepo->findValidCandidatePortalTokensForEnlistments(array_map(
+                            static fn (array $r): array => [(int) ($r['tenant_id'] ?? 0), (int) ($r['id'] ?? 0)],
+                            $myApplicationsRows
+                        ));
+                    } catch (\Throwable) {
+                        $candidatePortalTokens = [];
+                    }
+                    $candidatePortalHref = static function (int $rowTid, int $rowId) use ($enlistRepo, &$candidatePortalTokens): ?string {
+                        $key = $rowTid . ':' . $rowId;
+                        if (!array_key_exists($key, $candidatePortalTokens)) {
+                            $candidatePortalTokens[$key] = $enlistRepo->ensureCandidatePortalToken($rowTid, $rowId, 24 * 7);
+                        }
+                        $token = $candidatePortalTokens[$key];
+
+                        return $token !== null ? url('enlistment/suivi/' . rawurlencode($token)) : null;
+                    };
+
                     if ($dashboardIsDefaultTenant) {
-                        $candidateRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 8);
+                        $candidateRows = array_slice($myApplicationsRows, 0, 8);
                         foreach ($candidateRows as $row) {
                             $candidateTid = (int) ($row['tenant_id'] ?? 0);
                             $candidateId = (int) ($row['id'] ?? 0);
                             if ($candidateTid < 1 || $candidateId < 1) {
                                 continue;
                             }
-                            $token = $enlistRepo->findValidCandidatePortalTokenForEnlistment($candidateTid, $candidateId);
-                            if ($token === null) {
-                                $token = $enlistRepo->ensureCandidatePortalToken($candidateTid, $candidateId, 24 * 7);
-                            }
-                            $row['candidate_portal_href'] = $token !== null
-                                ? url('enlistment/suivi/' . rawurlencode($token))
-                                : null;
+                            $row['candidate_portal_href'] = $candidatePortalHref($candidateTid, $candidateId);
                             $candidateEnlistmentTracking[] = $row;
                         }
                     }
@@ -345,31 +365,30 @@ class HomeController
                     try {
                         $openingRepoForMine = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
                         $openingsTableReady = $openingRepoForMine->tablesExist();
-                        $myApplicationsRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 20);
+                        $openingTitles = [];
                         foreach ($myApplicationsRows as $row) {
                             $appTid = (int) ($row['tenant_id'] ?? 0);
                             $appId = (int) ($row['id'] ?? 0);
                             if ($appTid < 1 || $appId < 1) {
                                 continue;
                             }
-                            $appToken = $enlistRepo->findValidCandidatePortalTokenForEnlistment($appTid, $appId);
-                            if ($appToken === null) {
-                                $appToken = $enlistRepo->ensureCandidatePortalToken($appTid, $appId, 24 * 7);
-                            }
-                            $row['candidate_portal_href'] = $appToken !== null
-                                ? url('enlistment/suivi/' . rawurlencode($appToken))
-                                : null;
+                            $row['candidate_portal_href'] = $candidatePortalHref($appTid, $appId);
                             $row['opening_title'] = null;
                             $openingId = (int) ($row['recruitment_opening_id'] ?? 0);
                             if ($openingId > 0 && $openingsTableReady) {
-                                try {
-                                    $openingRow = $openingRepoForMine->findByIdForTenant($openingId, $appTid);
-                                    if ($openingRow) {
-                                        $row['opening_title'] = trim((string) ($openingRow['title'] ?? '')) ?: null;
+                                // Ouvertures mémoïsées : plusieurs candidatures pointent souvent la même.
+                                $openingKey = $appTid . ':' . $openingId;
+                                if (!array_key_exists($openingKey, $openingTitles)) {
+                                    try {
+                                        $openingRow = $openingRepoForMine->findByIdForTenant($openingId, $appTid);
+                                        $openingTitles[$openingKey] = $openingRow
+                                            ? (trim((string) ($openingRow['title'] ?? '')) ?: null)
+                                            : null;
+                                    } catch (\Throwable) {
+                                        $openingTitles[$openingKey] = null;
                                     }
-                                } catch (\Throwable) {
-                                    $row['opening_title'] = null;
                                 }
+                                $row['opening_title'] = $openingTitles[$openingKey];
                             }
                             $myApplicationsAll[] = $row;
                         }
