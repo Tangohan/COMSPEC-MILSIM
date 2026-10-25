@@ -26,7 +26,8 @@ final class AtakFirstLinkPageTest extends TestCase
         self::assertStringContainsString('data-version-url', $view);
         self::assertStringContainsString('Envoyer_mes_logs.bat', $view);
         self::assertStringContainsString('Dépannage liaison', $view);
-        self::assertStringContainsString('https://athena.ttrd.fr/public', $view);
+        self::assertStringContainsString('PortalHost::host()', $view);
+        self::assertStringNotContainsString('athena.ttrd.fr', $view);
         self::assertStringNotContainsString('Installer le pack Overwatch', $view);
         self::assertStringNotContainsString('clé d’accès', $view);
         self::assertStringContainsString('fl-game-link-btn', $view);

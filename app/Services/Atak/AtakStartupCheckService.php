@@ -60,8 +60,8 @@ final class AtakStartupCheckService
      */
     public const LINK_FIXES = [
         'STEAM_NOT_LINKED' => [
-            'Ce Steam n\'est relié à aucun compte Athena (un profil Steam privé n\'est pas en cause). Le joueur le relie une fois : téléphone > app Athena > OBTENIR MON CODE, puis il saisit le code sur athena.ttrd.fr/lier, connecté à son compte. Ou sur le site : Mon compte > Préférences > Se connecter avec Steam.',
-            'This Steam account is not linked to any Athena account (a private Steam profile is not the issue). The player links it once: phone > Athena app > GET MY CODE, then enters the code at athena.ttrd.fr/lier while signed in. Or on the site: My account > Preferences > Sign in with Steam.',
+            'Ce Steam n\'est relié à aucun compte Athena (un profil Steam privé n\'est pas en cause). Le joueur le relie une fois : téléphone > app Athena > OBTENIR MON CODE, puis il saisit le code sur %LIER%, connecté à son compte. Ou sur le site : Mon compte > Préférences > Se connecter avec Steam.',
+            'This Steam account is not linked to any Athena account (a private Steam profile is not the issue). The player links it once: phone > Athena app > GET MY CODE, then enters the code at %LIER% while signed in. Or on the site: My account > Preferences > Sign in with Steam.',
         ],
         'NO_TENANT' => [
             'Le compte Athena n\'est membre d\'aucune communauté active : un responsable doit l\'accepter dans sa communauté.',
@@ -360,7 +360,10 @@ final class AtakStartupCheckService
             $detail = strtoupper(str_replace('\\', '', $step['detail']));
             foreach (self::LINK_FIXES as $code => $fix) {
                 if (preg_match('/(?<![A-Z_])(?:C2_)?' . $code . '(?![A-Z_])/', $detail) === 1) {
-                    return $fix;
+                    // %LIER% : adresse /lier du portail (APP_URL), pas de domaine en dur.
+                    $lier = \App\Support\PortalHost::label('lier');
+
+                    return [str_replace('%LIER%', $lier, $fix[0]), str_replace('%LIER%', $lier, $fix[1])];
                 }
             }
         }

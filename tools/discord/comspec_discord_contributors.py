@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rôles de contributeur sur le Discord COMSPEC (miroir de la page athena.ttrd.fr/contribuer).
+Rôles de contributeur sur le Discord COMSPEC (miroir de la page athena-comspec.eu/contribuer).
 
 Le site propose cinq rôles de contributeur : Translator, Tester, Content creator, Dev, Support. Ce script :
   - crée les rôles manquants (Translator, Content creator ; Tester, Dev et Support existent déjà et sont
@@ -35,7 +35,8 @@ import os
 import sys
 from pathlib import Path
 
-SITE = "https://athena.ttrd.fr"
+# Portail (ATHENA_SITE_URL pour un autre domaine ; l’ancien athena.ttrd.fr reste servi).
+SITE = os.environ.get("ATHENA_SITE_URL", "https://athena-comspec.eu").rstrip("/")
 # nom, couleur, anciens noms acceptés (réutilisés tels quels)
 ROLES = [
     ("Translator", 0x2DD4BF, ("Translator", "Traducteur")),

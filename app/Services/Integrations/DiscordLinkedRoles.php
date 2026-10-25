@@ -366,7 +366,7 @@ final class DiscordLinkedRoles
     {
         $http = $this->http ??= static function (string $method, string $url, array $headers, ?string $body): array {
             $ch = curl_init($url);
-            $lines = ['User-Agent: Athena (https://athena.ttrd.fr, 1.0)'];
+            $lines = ['User-Agent: Athena (https://' . \App\Support\PortalHost::host() . ', 1.0)'];
             foreach ($headers as $k => $v) {
                 $lines[] = $k . ': ' . $v;
             }
