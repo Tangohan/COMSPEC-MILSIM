@@ -705,4 +705,5 @@ return [
     'fichiers_partages' => 'Shared files',
     'dossiers_et_fichiers_partages_avec_vous' => 'Folders and files shared with you',
     'dossiers_et_fichiers_prives_ouverts_seulement_sur_partage' => 'Private folders and files, opened only when shared',
+    'remontees_du_jeu_mods_terminaux_debit_cr_erreurs_et_disponibilite' => 'Game reports: mods, terminals, throughput, reports, errors and availability',
 ];
