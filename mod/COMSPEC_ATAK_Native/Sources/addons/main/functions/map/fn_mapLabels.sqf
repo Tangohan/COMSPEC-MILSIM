@@ -77,7 +77,7 @@ private _ox = _fs1 * 1.1 / _ratio;
 private _oy = _fs1 * 0.9;
 
 // Candidats visibles, triés : sélection, contacts ENI, mon groupe, puis les autres, chacun du plus proche au plus loin.
-private _me = getPosASL player;
+private _me = [] call comspec_atak_native_fnc_gpsPos;
 private _vis = [];
 {
     _x params ["_prio", "_id", "_pos", "_cs", ["_hostile", false], ["_a", 1]];

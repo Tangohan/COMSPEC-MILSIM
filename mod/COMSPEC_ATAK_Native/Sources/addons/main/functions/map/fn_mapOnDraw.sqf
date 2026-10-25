@@ -15,7 +15,8 @@ if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapF
     if ((count _fwLast) isEqualTo 2 && {ctrlMapAnimDone _map} && {diag_tickTime - (_map getVariable ["comspec_centerAt", -1]) > 0.6}) then {
         (ctrlPosition _map) params ["_fwX", "_fwY", "_fwW", "_fwH"];
         private _fwVis = _map ctrlMapScreenToWorld [_fwX + _fwW / 2, _fwY + _fwH / 2];
-        private _fwPos = getPosASL (vehicle player);
+        // Position GPS affichée (fn_gpsPos) : la carte suit mon point et ses anneaux, pas ma position exacte.
+        private _fwPos = [] call comspec_atak_native_fnc_gpsPos;
         private _fwDx = (_fwPos select 0) - (_fwVis select 0);
         private _fwDy = (_fwPos select 1) - (_fwVis select 1);
         if ((abs _fwDx) + (abs _fwDy) > 0.25) then {
@@ -403,10 +404,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
 
 // Trait jaune joueur -> curseur (outil Distance, en main)
 if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDistance",true]} && {(count _cursor) >= 2} && {(_state getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER"]}) then {
-    private _me = getPosASL player;
+    private _me = [] call comspec_atak_native_fnc_gpsPos;
     private _c = [_cursor select 0,_cursor select 1,0];
     [[_me select 0,_me select 1,0],_c,_yellow] call _dashed;
-    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (player distance2D _c),round (player getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (_me distance2D _c),round (_me getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
 // Point de pose choisi d'un clic droit en mode MARQUEUR (fn_markerPlace) : aperçu du type choisi dans un anneau qui pulse.

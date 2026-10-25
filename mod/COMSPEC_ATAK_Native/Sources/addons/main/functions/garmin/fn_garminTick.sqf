@@ -7,8 +7,8 @@
       immobile allongé ou assis au calme plus de 2 min).
     Gardé sur ce PC (profileNamespace COMSPEC_ATAK_Garmin), par jour réel : 14 jours et 40 activités ; envoyé au site à chaque
     écriture du profil (toutes les 5 min, Garmin.Report de COMSPEC Link 2.0.87 ; fiche du membre).
-    Montre Garmin (objet COMSPEC_ATAK_GarminWatch, emplacement montre) obligatoire si le réglage serveur
-    comspec_atak_native_garmin_watch est coché (par défaut) : sans elle, aucune mesure.
+    Montre Garmin (objet COMSPEC_ATAK_GarminWatch dans l'emplacement montre, ou COMSPEC_ATAK_GarminWatchItem en objet divers)
+    obligatoire si le réglage serveur comspec_atak_native_garmin_watch est coché (par défaut) : sans elle, aucune mesure.
     Params : [mode : "tick" | "save" (fin de mission : activité en cours close et profil écrit)
               | "push" (app Resynch : profil écrit et renvoyé au site tout de suite, activité en cours gardée ;
                 retour [heure, état] de l'envoi)]
@@ -111,7 +111,8 @@ if (_mode isEqualTo "push") exitWith { [] call _save; _gm getOrDefault ["web", [
 // rien n'est mesuré ni envoyé au site. L'activité en cours est close et le dernier point oublié quand on l'enlève (pas de
 // saut de distance quand elle revient) ; l'app affiche « Aucune montre Garmin ».
 private _worn = !(missionNamespace getVariable ["comspec_atak_native_garmin_watch", true])
-    || {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0};
+    || {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0}
+    || {"COMSPEC_ATAK_GarminWatchItem" in (items player)};
 private _was = _gm getOrDefault ["worn", true];
 _gm set ["worn", _worn];
 if (!_worn) exitWith {

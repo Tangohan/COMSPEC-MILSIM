@@ -439,6 +439,10 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_relay_only", "CHECKBOX",
     ["Réseau uniquement par les relais", "Coché : le réseau ATAK passe uniquement par les relais de la mission (pylônes, module « ATAK · Relais »). Loin de tout relais, ou si la mission n'en a pas, plus de réseau du tout : messages, photos et positions attendent d'être à portée. Décoché : sans relais, le téléphone garde quand même du réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
+// Antennes du jeu converties en relais (fn_relayConvert).
+["comspec_atak_native_relay_convert", "LIST",
+    ["Antennes du jeu = relais ATAK", "Les pylônes, mâts et tours de transmission, antennes omnidirectionnelles et paraboles du jeu deviennent des relais du réseau ATAK (portée et débit selon leur hauteur : tour 6 km, mât 3 à 5 km, antenne 1,5 km, parabole 1 km). Objets de la mission : ceux posés dans Eden ou par le Zeus. Décor de la carte en plus : les antennes de la carte elle-même (60 au plus, les plus hautes) ; une antenne détruite coupe son relais."],
+    _sim, [[0, 1, 2], ["Non", "Objets de la mission (Eden, Zeus)", "Mission et décor de la carte"], 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -462,6 +466,12 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_gps_fix", "CHECKBOX",
     ["Attente des satellites", "Au démarrage du téléphone ou après un changement de batterie, le GPS met de quelques secondes à environ 40 s à trouver les satellites ; en attendant, position approximative par le réseau. Décoché : position tout de suite."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_gps_loss", "LIST",
+    ["Pertes de fix GPS", "Part des satellites masqués (toit, forêt, immeubles, relief) qui compte vraiment. 100 % : comme un vrai téléphone, plus de fix dans un bâtiment ou en sous-sol. 0 % : le fix tient partout, seule la précision baisse. Au-dessus de 100 % : le fix se perd plus vite."],
+    _sim, [[0, 50, 100, 150, 200], ["0 % (fix partout)", "50 %", "100 % (réel)", "150 %", "200 %"], 2], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_gps_rel", "LIST",
+    ["Fiabilité du GPS", "Décrochages du fix (5 à 25 s, dernière position gardée puis position par le réseau) et sauts de position de 15 à 60 m (reflets du signal) qui reviennent en quelques secondes. Parfaite : jamais. Bonne : environ une fois toutes les 20 min. Moyenne : toutes les 6 min. Médiocre : toutes les 2 min, et satellites plus longs à trouver."],
+    _sim, [[0, 1, 2, 3], ["Parfaite", "Bonne (réel)", "Moyenne", "Médiocre"], 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_camera_share", "LIST",
     ["Partage des caméras", "Partage obligatoire (par défaut) : une caméra fixe n'est visible que par celui qui l'a posée, et la caméra d'un téléphone que par son propriétaire, tant qu'ils ne l'ont pas partagée (app Vidéo live > PARTAGER, par NFC, Bluetooth ou relais, à un joueur ou à TOUS). Tout le camp voit tout : chaque ATAK voit toutes les caméras de son camp sans rien faire."],
     _sim, [[0, 1], ["Partage obligatoire", "Tout le camp voit tout"], 0], 1] call comspec_atak_native_fnc_addSetting;
@@ -517,9 +527,10 @@ private _lock = ["COMSPEC", "ATAK · Marquage de cible"];
     ["Portée du marquage à l'appareil photo (m)", "Distance maximale pour marquer et suivre une cible avec l'appareil photo du téléphone. La caméra du drone garde sa propre portée."],
     _lock, [100, 2000, 800, 0], 1] call comspec_atak_native_fnc_addSetting;
 
-// App Garmin : la montre Garmin (objet COMSPEC_ATAK_GarminWatch) portée dans l'emplacement montre.
+// App Garmin : la montre Garmin (objet COMSPEC_ATAK_GarminWatch) portée dans l'emplacement montre, ou en objet divers
+// (COMSPEC_ATAK_GarminWatchItem, dans le sac ou la veste).
 ["comspec_atak_native_garmin_watch", "CHECKBOX",
-    ["Montre Garmin obligatoire", "Coché par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site si le joueur ne porte pas la « Montre Garmin » à la place de la montre. Décochez pour que le téléphone mesure tout seul."],
+    ["Montre Garmin obligatoire", "Coché par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site si le joueur n'a pas la « Montre Garmin » (à la place de la montre, ou la « Montre Garmin (objet divers) » dans son équipement). Décochez pour que le téléphone mesure tout seul."],
     ["COMSPEC", "ATAK · Garmin"], true, 1] call comspec_atak_native_fnc_addSetting;
 
 // Extraction de données au câble DL-7 (app Extraction, modules Zeus / Eden « ATAK · Données »).
