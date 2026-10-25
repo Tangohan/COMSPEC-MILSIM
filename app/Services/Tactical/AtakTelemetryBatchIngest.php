@@ -89,7 +89,9 @@ final class AtakTelemetryBatchIngest
         $accepted = 0;
         $rejected = 0;
         $results = [];
-        $lastId = $this->journal->latestId($tenantId, $mapId);
+        // Entrées du journal collectées puis écrites en une fois en fin de lot (un seul verrou / une écriture).
+        $journalEntries = [];
+        $journalResultIdx = [];
         $batchTs = isset($batch['ts']) && is_numeric($batch['ts']) ? (int) $batch['ts'] : time();
         $seq = isset($batch['seq']) && is_numeric($batch['seq']) ? (int) $batch['seq'] : null;
 
@@ -131,17 +133,15 @@ final class AtakTelemetryBatchIngest
 
             if (!empty($outcome['ok'])) {
                 $accepted++;
-                $jid = $this->journal->append($tenantId, $mapId, $type, [
+                $journalEntries[] = ['type' => $type, 'data' => [
                     'seq' => $seq,
                     'batch_ts' => $batchTs,
                     'event_index' => $idx,
                     'call_sign' => $outcome['call_sign'] ?? ($ev['call_sign'] ?? $ev['cs'] ?? null),
                     'priority' => $ev['p'] ?? $ev['priority'] ?? null,
-                ]);
-                if ($jid > 0) {
-                    $lastId = $jid;
-                }
-                $results[] = ['i' => $idx, 'ok' => true, 't' => $type, 'id' => $jid];
+                ]];
+                $journalResultIdx[] = count($results);
+                $results[] = ['i' => $idx, 'ok' => true, 't' => $type, 'id' => 0];
             } else {
                 $rejected++;
                 $results[] = [
@@ -152,6 +152,21 @@ final class AtakTelemetryBatchIngest
                     'http' => (int) ($outcome['http'] ?? 400),
                 ];
             }
+        }
+
+        $lastId = 0;
+        if ($journalEntries !== []) {
+            $ids = $this->journal->appendMany($tenantId, $mapId, $journalEntries);
+            foreach ($journalResultIdx as $n => $resultIdx) {
+                $jid = (int) ($ids[$n] ?? 0);
+                $results[$resultIdx]['id'] = $jid;
+                if ($jid > 0) {
+                    $lastId = $jid;
+                }
+            }
+        }
+        if ($lastId === 0) {
+            $lastId = $this->journal->latestId($tenantId, $mapId);
         }
 
         return [
