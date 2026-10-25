@@ -719,6 +719,14 @@ final class SseApiController
         }
         $limit = (int) ($request->query('limit') ?? 40);
         $items = (new \App\Services\Sse\SseWantedNoticeService())->forTenant($r, $limit > 0 ? $limit : 40);
+        // COMSPEC Link 2.0.95+ : photo en texture .paa (Arma n'affiche ni PNG ni WebP).
+        if (\App\Support\AtakGameImage::clientAcceptsPaa()) {
+            foreach ($items as $i => $item) {
+                if (($item['photo'] ?? '') !== '') {
+                    $items[$i]['photo'] = \App\Support\AtakGameImage::urlFor((string) $item['photo'], \App\Support\AtakGameImage::FIT_PHOTO) ?? $item['photo'];
+                }
+            }
+        }
 
         return Response::json(['wanted' => $items, 'count' => count($items)]);
     }

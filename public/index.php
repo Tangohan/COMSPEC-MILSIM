@@ -118,6 +118,7 @@ if ($isPublicAsset && !str_contains($requestPath, '..')) {
             'webmanifest' => 'application/manifest+json; charset=utf-8',
             'map' => 'application/json; charset=utf-8',
             'png' => 'image/png',
+            'paa' => 'application/octet-stream',
             'jpg' => 'image/jpeg',
             'jpeg' => 'image/jpeg',
             'gif' => 'image/gif',
