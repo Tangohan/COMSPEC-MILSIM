@@ -159,7 +159,7 @@ class OperationsApiController
         }
 
         $aar = $this->replayService->buildAfterActionReview($missionId, $this->nullableQuery($request, 'from'), $this->nullableQuery($request, 'to'));
-        $title = trim((string) $request->query('title'));
+        $title = trim($request->queryString('title'));
         $pdf = ReplayAarPdfService::response($aar, $title);
         if ($pdf->statusCode() === 503) {
             return $this->error(

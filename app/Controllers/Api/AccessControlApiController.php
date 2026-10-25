@@ -75,8 +75,8 @@ final class AccessControlApiController
         if ($denied = $this->denyUnlessTenantAdmin()) {
             return $denied;
         }
-        $code = (string) $request->input('code');
-        $label = (string) $request->input('label', $code);
+        $code = $request->inputString('code');
+        $label = $request->inputString('label', $code);
         if ($tenantId < 1) {
             return Response::json(['ok' => false, 'error' => 'Communauté active requise.'], 400);
         }
@@ -86,7 +86,7 @@ final class AccessControlApiController
             return Response::json(['ok' => false, 'error' => 'Cette habilitation est réservée à l’administration de la plateforme.'], 403);
         }
         $st = $this->pdo->prepare('INSERT INTO permissions (tenant_id, code, slug, label, name, category, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())');
-        $st->execute([$tenantId, $code, $code, $label, $label, (string) $request->input('category', 'module')]);
+        $st->execute([$tenantId, $code, $code, $label, $label, $request->inputString('category', 'module')]);
 
         return Response::json(['ok' => true, 'id' => (int) $this->pdo->lastInsertId()]);
     }
@@ -149,11 +149,11 @@ final class AccessControlApiController
         }
         // Contrôles de saisie avant l’insertion : sans eux, un JSON invalide (colonne json)
         // ou une valeur trop longue en mode strict donnait une PDOException puis un 500.
-        $name = trim((string) $request->input('name'));
-        $targetType = strtoupper(trim((string) $request->input('target_type', 'ROLE')));
-        $conditionType = strtoupper(trim((string) $request->input('condition_type', 'STATUS')));
-        $conditionValue = (string) $request->input('condition_value', '{}');
-        $effect = strtoupper(trim((string) $request->input('effect', 'ALLOW')));
+        $name = trim($request->inputString('name'));
+        $targetType = strtoupper(trim($request->inputString('target_type', 'ROLE')));
+        $conditionType = strtoupper(trim($request->inputString('condition_type', 'STATUS')));
+        $conditionValue = $request->inputString('condition_value', '{}');
+        $effect = strtoupper(trim($request->inputString('effect', 'ALLOW')));
         if ($tenantId < 1) {
             return Response::json(['ok' => false, 'error' => 'Communauté active requise.'], 400);
         }
@@ -173,7 +173,7 @@ final class AccessControlApiController
         $st->execute([
             $tenantId,
             $name,
-            (string) $request->input('description', ''),
+            $request->inputString('description', ''),
             $targetType,
             (int) $request->input('target_id', 0),
             $conditionType,
@@ -209,9 +209,9 @@ final class AccessControlApiController
         if (!$this->ruleBelongsToTenant($ruleId, $tenantId)) {
             return Response::json(['ok' => false, 'error' => 'rule_not_found'], 404);
         }
-        $scopeType = strtoupper(trim((string) $request->input('scope_type', 'MODULE')));
-        $scopeIdentifier = trim((string) $request->input('scope_identifier'));
-        $action = strtoupper(trim((string) $request->input('action', 'READ')));
+        $scopeType = strtoupper(trim($request->inputString('scope_type', 'MODULE')));
+        $scopeIdentifier = trim($request->inputString('scope_identifier'));
+        $action = strtoupper(trim($request->inputString('action', 'READ')));
         // Bornes des colonnes access_scopes (varchar 16 / 190 / 16).
         if ($scopeType === '' || strlen($scopeType) > 16 || $scopeIdentifier === '' || mb_strlen($scopeIdentifier) > 190 || $action === '' || strlen($action) > 16) {
             return Response::json(['ok' => false, 'error' => 'Portée incomplète ou trop longue.'], 422);
@@ -243,7 +243,7 @@ final class AccessControlApiController
 
         return Response::json([
             'ok' => true,
-            'data' => $this->acs->decision($user, (string) $request->input('resource', 'documents'), strtoupper((string) $request->input('action', 'READ'))),
+            'data' => $this->acs->decision($user, $request->inputString('resource', 'documents'), strtoupper($request->inputString('action', 'READ'))),
         ]);
     }
 }

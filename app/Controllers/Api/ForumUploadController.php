@@ -47,7 +47,7 @@ class ForumUploadController
             return Response::json(['success' => false, 'error' => 'Méthode non autorisée'], 405);
         }
         $csrf = $request->input('_csrf_token') ?? '';
-        if (!Csrf::validate($csrf)) {
+        if (!Csrf::validate(is_string($csrf) ? $csrf : null)) {
             return Response::json(['success' => false, 'error' => 'Jeton CSRF invalide'], 403);
         }
 
