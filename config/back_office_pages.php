@@ -43,10 +43,10 @@ return [
         ['path' => 'back-office/media', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MÉDIAS', 'title' => 'Médias de la communauté', 'subtitle' => 'Les photos et vidéos affichées sur votre page publique.', 'css' => ['back-office-media.css'], 'quick' => [
             ['label' => 'Vitrine publique', 'href' => 'back-office/community/presentation'],
         ]],
-        ['path' => 'back-office/alerts/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ANNONCES', 'title' => 'Nouvelle annonce', 'subtitle' => 'Rédigez le message, choisissez son importance et ses dates d’affichage.', 'css' => ['back-office-alerts.css'], 'quick' => [
+        ['path' => 'back-office/alerts/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ANNONCES', 'title' => 'Nouvelle annonce', 'subtitle' => 'Rédigez le message, choisissez son importance et ses dates d’affichage.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
             ['label' => 'Liste des annonces', 'href' => 'back-office/alerts'],
         ]],
-        ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces', 'subtitle' => 'Les bandeaux affichés en haut du portail pour tous les membres connectés.', 'css' => ['back-office-alerts.css'], 'quick' => [
+        ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces', 'subtitle' => 'Les bandeaux affichés en haut du portail pour tous les membres connectés.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
             ['label' => 'Nouvelle annonce', 'href' => 'back-office/alerts/create'],
         ]],
         ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'quick' => [
