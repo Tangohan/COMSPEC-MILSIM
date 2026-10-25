@@ -22,8 +22,12 @@ Dans la zone DNS de `athena-comspec.eu` :
 |------|-----|--------|-----|
 | A | `@` (racine) | `72.62.22.55` | 3600 |
 | A | `www` | `72.62.22.55` | 3600 |
+| A | `atak` | `72.62.22.55` | 3600 |
+| A | `sse` | `72.62.22.55` | 3600 |
 
 - Supprimer les enregistrements A / AAAA / CNAME « parking » du registrar sur `@` et `www`.
+- `atak.` et `sse.` ne sont que des raccourcis : ils renvoient vers des pages du site principal (une seule
+  session, un seul site à maintenir).
 - Pas d'AAAA tant que l'IPv6 du VPS n'est pas configurée dans Nginx.
 - Propagation : de quelques minutes à quelques heures. Vérifier depuis n'importe où :
   `nslookup athena-comspec.eu` → doit répondre `72.62.22.55`.
@@ -38,17 +42,41 @@ sudo sed -i 's/server_name athena\.ttrd\.fr;/server_name athena.ttrd.fr athena-c
 grep -n server_name /etc/nginx/sites-available/athena.ttrd.fr
 sudo nginx -t && sudo systemctl reload nginx
 
-# 2) Étendre le certificat Let's Encrypt existant aux nouveaux noms
-sudo certbot --nginx --cert-name athena.ttrd.fr --expand \
-  -d athena.ttrd.fr -d athena-comspec.eu -d www.athena-comspec.eu
+# 2) Raccourcis atak. (carte ATAK web) et sse. (portail SSE) : simple renvoi vers le site principal
+sudo tee /etc/nginx/sites-available/athena-comspec-raccourcis >/dev/null <<'NGINX'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name atak.athena-comspec.eu;
+    return 301 https://athena-comspec.eu/atak;
+}
+server {
+    listen 80;
+    listen [::]:80;
+    server_name sse.athena-comspec.eu;
+    return 301 https://athena-comspec.eu/atak/sse;
+}
+NGINX
+sudo ln -sf /etc/nginx/sites-available/athena-comspec-raccourcis /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 
-# 3) Tests (les deux domaines doivent répondre pareil)
+# 3) Étendre le certificat Let's Encrypt existant à tous les nouveaux noms
+sudo certbot --nginx --cert-name athena.ttrd.fr --expand \
+  -d athena.ttrd.fr -d athena-comspec.eu -d www.athena-comspec.eu \
+  -d atak.athena-comspec.eu -d sse.athena-comspec.eu
+sudo nginx -t && sudo systemctl reload nginx
+
+# 4) Tests (les deux domaines doivent répondre pareil)
 curl -sS https://athena-comspec.eu/api/atak/ping
 curl -sS https://athena-comspec.eu/public/api/atak/ping
 curl -sS https://athena.ttrd.fr/public/api/atak/ping
 curl -sI https://www.athena-comspec.eu/ | head -n 3
+curl -sI https://atak.athena-comspec.eu/ | grep -i ^location   # → https://athena-comspec.eu/atak
+curl -sI https://sse.athena-comspec.eu/ | grep -i ^location    # → https://athena-comspec.eu/atak/sse
 ```
+
+Si certbot demande pour les raccourcis « redirect HTTP → HTTPS ? », répondre oui : il ajoute le bloc 443 qui
+reprend le même `return 301`.
 
 Si certbot répond « Could not find a matching certificate » : `sudo certbot certificates` donne le vrai nom du
 certificat, à mettre après `--cert-name`.
