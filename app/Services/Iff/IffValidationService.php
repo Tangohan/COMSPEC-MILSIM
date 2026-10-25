@@ -24,7 +24,8 @@ class IffValidationService
         }
         $validCode = $challenge['code'] ?? '';
         $validUntil = $challenge['valid_until'] ?? '';
-        if (strtotime((string) $validUntil) < time()) {
+        // valid_until est écrit en UTC (gmdate) : relu en UTC.
+        if (UtcDateTime::isPast($validUntil)) {
             $this->assetRepository->setResponse($missionId, $assetId, $responseCode, 'EXPIRED');
             return ['status' => 'EXPIRED', 'message' => 'Challenge expired'];
         }
@@ -43,7 +44,7 @@ class IffValidationService
         $challengeExpired = false;
         $validUntilTs = null;
         if ($challenge) {
-            $validUntilTs = strtotime((string) ($challenge['valid_until'] ?? ''));
+            $validUntilTs = UtcDateTime::timestamp($challenge['valid_until'] ?? null) ?? false;
             if ($validUntilTs !== false && $validUntilTs < time()) {
                 $challengeExpired = true;
             }
@@ -89,7 +90,10 @@ class IffValidationService
             $row['grace_until'] = $graceUntil;
             $row['grace_remaining_sec'] = $graceRemainingSec;
             $row['challenge_remaining_sec'] = $challengeRemainingSec;
-            $row['challenge_valid_until'] = $challenge['valid_until'] ?? null;
+            // Renvoyé en heure locale, comme IffChallengeService::getCurrent().
+            $row['challenge_valid_until'] = ($validUntilTs !== false && $validUntilTs !== null)
+                ? date('Y-m-d H:i:s', $validUntilTs)
+                : null;
             $out[] = $row;
         }
 
