@@ -23,7 +23,8 @@ final class SchemaPresenceCache
     public static function columnExists(PDO $pdo, string $table, string $column): bool
     {
         $key = self::dbName() . ':' . $table . '.' . $column;
-        if (self::has($key)) {
+        $useFile = self::isMysql($pdo);
+        if ($useFile && self::has($key)) {
             return true;
         }
         try {
@@ -36,7 +37,7 @@ final class SchemaPresenceCache
         } catch (Throwable) {
             return false;
         }
-        if ($ok) {
+        if ($ok && $useFile) {
             self::remember($key);
         }
 
@@ -46,7 +47,8 @@ final class SchemaPresenceCache
     public static function tableExists(PDO $pdo, string $table): bool
     {
         $key = self::dbName() . ':' . $table;
-        if (self::has($key)) {
+        $useFile = self::isMysql($pdo);
+        if ($useFile && self::has($key)) {
             return true;
         }
         try {
@@ -59,11 +61,36 @@ final class SchemaPresenceCache
         } catch (Throwable) {
             return false;
         }
-        if ($ok) {
+        if ($ok && $useFile) {
             self::remember($key);
         }
 
         return $ok;
+    }
+
+    /** Colonne déjà vue présente (sans requête) — pour les vérifications qui gardent leur propre repli. */
+    public static function isKnownColumn(string $table, string $column): bool
+    {
+        return self::has(self::dbName() . ':' . $table . '.' . $column);
+    }
+
+    /** Mémorise une colonne constatée présente par l’appelant. */
+    public static function rememberColumn(string $table, string $column): void
+    {
+        $key = self::dbName() . ':' . $table . '.' . $column;
+        if (!self::has($key)) {
+            self::remember($key);
+        }
+    }
+
+    /** Cache fichier réservé à MySQL / MariaDB (SQLite de test : requête directe, échoue → false). */
+    private static function isMysql(PDO $pdo): bool
+    {
+        try {
+            return $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql';
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     private static function dbName(): string
