@@ -122,6 +122,14 @@
 
 .bo-di__notice { margin: 0; }
 .bo-di__notice[hidden] { display: none; }
+.bo-di__notice.is-info {
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  color: var(--ath-ink);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
 
 .bo-di__search {
   display: flex;
@@ -142,6 +150,26 @@
 /* ── Indicateurs ───────────────────────────────────────────────────── */
 
 .bo-di-kpis { margin: 0; }
+.bo-di-kpis.is-quad { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.bo-di-mods { display: flex; flex-direction: column; gap: 22px; }
+.bo-di-chapter { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.bo-di-chapter__head { display: flex; flex-direction: column; gap: 4px; }
+.bo-di-chapter__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath-muted);
+}
+.bo-di-chapter__lead {
+  margin: 0;
+  max-width: 78ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ath-ink);
+}
 
 .bo-di-kpi {
   min-width: 0;
@@ -363,6 +391,7 @@
 
 @media (max-width: 960px) {
   .bo-di-grid2 { grid-template-columns: 1fr; }
+  .bo-di-kpis.is-quad { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 640px) {

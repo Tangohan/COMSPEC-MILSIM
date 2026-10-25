@@ -52,7 +52,7 @@ if ($canPlatform) {
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input type="search" id="adi-q" placeholder="Joueur, indicatif, Steam, mod, terminal…" aria-label="Rechercher">
     </label>
-    <a class="ath-table-toolbar__export" id="adi-csv" href="#" download>Exporter CSV</a>
+    <a class="ath-table-toolbar__export" id="adi-csv" href="#" download>Exporter le tableau</a>
   </div>
 
   <div id="adi-view" class="bo-di__view" aria-live="polite"><p class="bo-di-empty">Chargement des métriques…</p></div>

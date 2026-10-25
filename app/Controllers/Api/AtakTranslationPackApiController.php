@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\Session;
 use App\Repositories\AtakTranslationPackRepository;
 use App\Services\Security\FileRateLimiter;
 use App\Support\AtakReleaseInfo;
@@ -53,6 +55,72 @@ final class AtakTranslationPackApiController
         ]);
 
         return Response::json(['ok' => true] + $created, 201);
+    }
+
+    /** GET /api/traduire-atak/compte : langues enregistrées sur le compte connecté. */
+    public function mine(Request $request, array $params = []): Response
+    {
+        if (($r = $this->guard($request, 'account-read', 600, 600)) !== null) {
+            return $r;
+        }
+        $userId = $this->accountUser();
+        if ($userId instanceof Response) {
+            return $userId;
+        }
+
+        return Response::json(['ok' => true, 'packs' => $this->repo()->listForUser($userId)]);
+    }
+
+    /**
+     * POST /api/traduire-atak/compte : ouvre la langue déjà sur le compte, ou en crée une.
+     * Le pack n'est pas publié. Un autre compte ne le voit pas.
+     */
+    public function saveMine(Request $request, array $params = []): Response
+    {
+        if (($r = $this->guard($request, 'account-create', 30, 3600)) !== null) {
+            return $r;
+        }
+        if (!Csrf::verify($request)) {
+            return self::error('csrf', 419);
+        }
+        $userId = $this->accountUser();
+        if ($userId instanceof Response) {
+            return $userId;
+        }
+        $body = self::body();
+        $code = AtakTranslationPackRepository::validCode($body['code'] ?? null);
+        $name = AtakTranslationPackRepository::cleanLabel($body['name'] ?? '', 40);
+        if ($code === null || $name === '') {
+            return self::error('invalid_meta', 422);
+        }
+        $saved = $this->repo()->createForUser($userId, [
+            'code' => $code,
+            'name' => $name,
+            'game' => self::game($body['game'] ?? ''),
+            'author_label' => AtakTranslationPackRepository::cleanLabel($body['author_label'] ?? '', 60),
+            'review_mode' => 'direct',
+        ]);
+
+        return Response::json(['ok' => true] + $saved, $saved['resumed'] ? 200 : 201);
+    }
+
+    /** POST /api/traduire-atak/packs/{id}/liens : le compte propriétaire redemande les liens de partage. */
+    public function links(Request $request, array $params = []): Response
+    {
+        if (trim((string) $request->header('X-Account-Pack')) !== '1') {
+            return self::error('owner_only', 403);
+        }
+        $opened = $this->openPack($request, $params, true);
+        if ($opened instanceof Response) {
+            return $opened;
+        }
+        $packId = (int) $opened['pack']['id'];
+
+        return Response::json([
+            'ok' => true,
+            'owner_token' => $this->repo()->rotateOwnerToken($packId),
+            'edit_token' => $this->repo()->rotateEditToken($packId),
+        ]);
     }
 
     /** GET /api/traduire-atak/packs/{id}?since=N : réglages, rôle et changements depuis rev N. */
@@ -374,6 +442,20 @@ final class AtakTranslationPackApiController
 
     // ---------- Outils ----------
 
+    /** Compte connecté et colonne de rattachement présente. */
+    private function accountUser(): int|Response
+    {
+        if (!$this->repo()->accountReady()) {
+            return self::error('unavailable', 503);
+        }
+        $userId = (int) Session::get('user_id');
+        if ($userId <= 0) {
+            return self::error('auth', 401);
+        }
+
+        return $userId;
+    }
+
     private function repo(): AtakTranslationPackRepository
     {
         return $this->packs ?? new AtakTranslationPackRepository();
@@ -399,6 +481,21 @@ final class AtakTranslationPackApiController
     private function openPack(Request $request, array $params, bool $ownerOnly = false): array|Response
     {
         $id = AtakTranslationPackRepository::validPublicId($params['id'] ?? null);
+        if (trim((string) $request->header('X-Account-Pack')) === '1') {
+            $userId = $this->accountUser();
+            if ($userId instanceof Response) {
+                return $userId;
+            }
+            if (strtoupper($request->method()) !== 'GET' && !Csrf::verify($request)) {
+                return self::error('csrf', 419);
+            }
+            $pack = $id === null ? null : $this->repo()->ownedBy($id, $userId);
+            if ($pack === null) {
+                return self::error('not_found', 404);
+            }
+
+            return ['pack' => $pack, 'role' => AtakTranslationPackRepository::ROLE_OWNER];
+        }
         $token = trim((string) $request->header('X-Pack-Token'));
         $opened = $id === null ? null : $this->repo()->open($id, $token);
         if ($opened === null) {
