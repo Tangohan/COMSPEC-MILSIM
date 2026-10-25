@@ -273,6 +273,25 @@ class AtakVehicleTrackingRepository
             return;
         }
 
+        // Chaque téléphone d’équipage remonte le même véhicule : pas de nouvelle ligne si le dernier point
+        // a moins de 10 s et que le véhicule a bougé de moins de 15 m (trajet de relecture inchangé à l’œil).
+        try {
+            $last = $this->db->fetchOne(
+                'SELECT pos_x, pos_y, TIMESTAMPDIFF(SECOND, recorded_at, NOW()) AS age_sec
+                 FROM atak_vehicle_position_history
+                 WHERE vehicle_tracking_id = :vehicle_id
+                 ORDER BY id DESC LIMIT 1',
+                ['vehicle_id' => $vehicleId]
+            );
+            if (is_array($last) && $last['age_sec'] !== null && (int) $last['age_sec'] < 10
+                && is_numeric($data['pos_x']) && is_numeric($data['pos_y'])
+                && hypot((float) $data['pos_x'] - (float) $last['pos_x'], (float) $data['pos_y'] - (float) $last['pos_y']) < 15.0
+            ) {
+                return;
+            }
+        } catch (\Throwable) {
+        }
+
         $sql = "INSERT INTO atak_vehicle_position_history (
             vehicle_tracking_id, pos_x, pos_y, pos_z, heading, speed, fuel_percent, ammo_percent
         ) VALUES (
