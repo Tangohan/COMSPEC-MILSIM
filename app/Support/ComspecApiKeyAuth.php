@@ -55,22 +55,27 @@ final class ComspecApiKeyAuth
 
     /**
      * Clé à renvoyer au mod lors d’une liaison réussie pour une communauté.
-     * Préfère la clé générée en admin ; sinon la clé plateforme.
+     * Clé générée en admin ; à défaut, une clé de communauté est générée à la volée.
+     * Jamais la clé plateforme : elle ouvre toutes les communautés (tenant_id lu dans la requête).
+     * Vide si la clé ne peut être ni lue ni générée (l’appelant répond alors 503).
      */
     public static function secretForTenant(int $tenantId): string
     {
-        if ($tenantId > 0) {
-            try {
-                $tenantKey = (new TenantAtakConfigRepository())->getAccessKey($tenantId);
-                if ($tenantKey !== '') {
-                    return $tenantKey;
-                }
-            } catch (\Throwable) {
-                // Fall through to platform secret.
-            }
+        if ($tenantId < 1) {
+            return '';
         }
+        try {
+            $repo = new TenantAtakConfigRepository();
+            $tenantKey = $repo->getAccessKey($tenantId);
+            if ($tenantKey !== '') {
+                return $tenantKey;
+            }
+            $generated = $repo->generateAccessKey($tenantId);
 
-        return self::expectedSecret();
+            return trim((string) ($generated['plain_key'] ?? ''));
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     /** Tenant reconnu via clé de communauté (null si clé plateforme ou échec). */
