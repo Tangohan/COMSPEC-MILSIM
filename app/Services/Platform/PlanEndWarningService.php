@@ -14,7 +14,8 @@ use App\Support\PlanGift;
 
 /**
  * Fins de formule : réglages (grâce, avertissement), liste de suivi pour l'administration de la plateforme
- * et e-mail aux gestionnaires N jours avant la fin d'un essai fondateur ou d'une formule offerte.
+ * et e-mail aux gestionnaires N jours avant la fin d'un essai fondateur, d'une formule offerte ou d'une
+ * période payée par PayPal (rappels toujours envoyés : le renouvellement est manuel).
  */
 final class PlanEndWarningService
 {
@@ -128,6 +129,9 @@ final class PlanEndWarningService
         if (!empty($w['plan_end_warning_sent'])) {
             $settings[PlanAccessWindow::WARNED_KEY] = $w['plan_end_warning_sent'];
         }
+        if (is_array($w['manual_billing'] ?? null)) {
+            $settings[\App\Support\ManualBilling::SETTINGS_KEY] = $w['manual_billing'];
+        }
 
         return [
             'id' => (int) ($row['id'] ?? 0),
@@ -199,8 +203,8 @@ final class PlanEndWarningService
                     'plan' => $planName($soon['plan_slug']),
                     'ends_at' => $soon['ends_at'],
                     'days_left' => $soon['days_left'],
-                    'loses_atak' => $hasAtak($soon['plan_slug']) && !$hasAtak((string) $tenant['plan_slug']),
-                    'warned' => PlanAccessWindow::alreadyWarned($tenant, $soon['kind'], $soon['ends_at']),
+                    'loses_atak' => $hasAtak($soon['plan_slug']) && !$hasAtak($soon['kind'] === 'paid' ? 'free' : (string) $tenant['plan_slug']),
+                    'warned' => PlanAccessWindow::alreadyWarned($tenant, $soon['kind'], $soon['ends_at'], PlanAccessWindow::reminderStage($soon['kind'], $soon['days_left'])),
                 ];
                 continue;
             }
@@ -237,25 +241,36 @@ final class PlanEndWarningService
 
     /**
      * E-mail aux gestionnaires des communautés dont la formule à durée limitée se termine bientôt.
-     * Une seule fois par fin (empreinte dans tenants.settings). Sans effet si l'e-mail est désactivé.
+     * Essai fondateur et formule offerte : une fois par fin, seulement si l'e-mail est activé.
+     * Formule payée par PayPal (renouvellement manuel) : toujours, N jours avant puis la veille.
+     * Empreinte de la dernière annonce dans tenants.settings.
      *
-     * @return array{enabled: bool, tenants: int, emails: int}
+     * @return array{enabled: bool, gift_trial_email: bool, tenants: int, emails: int}
      */
     public function sendWarnings(?int $now = null): array
     {
         $now ??= time();
         $cfg = $this->config();
-        if (!$cfg['warning_email'] || $cfg['warning_days'] < 1) {
-            return ['enabled' => false, 'tenants' => 0, 'emails' => 0];
-        }
+        $giftTrialEmail = $cfg['warning_email'] && $cfg['warning_days'] >= 1;
+        $paidDays = PlanAccessWindow::paidReminderDays($cfg['warning_days']);
         $graceDays = $cfg['grace_enabled'] ? $cfg['grace_days'] : 0;
         $catalog = $this->planCatalog();
         $tenantsWarned = 0;
         $emails = 0;
         foreach ($this->tenantsRepo()->listOverviewForPlatform() as $row) {
             $tenant = self::tenantFromOverview($row);
-            $soon = PlanAccessWindow::endingSoon($tenant, $cfg['warning_days'], $now);
-            if ($soon === null || PlanAccessWindow::alreadyWarned($tenant, $soon['kind'], $soon['ends_at'])) {
+            $soon = PlanAccessWindow::endingSoon($tenant, max($paidDays, $cfg['warning_days']), $now);
+            if ($soon === null) {
+                continue;
+            }
+            if ($soon['kind'] !== 'paid' && (!$giftTrialEmail || $soon['days_left'] > $cfg['warning_days'])) {
+                continue;
+            }
+            if ($soon['kind'] === 'paid' && $soon['days_left'] > $paidDays) {
+                continue;
+            }
+            $stage = PlanAccessWindow::reminderStage($soon['kind'], $soon['days_left']);
+            if (PlanAccessWindow::alreadyWarned($tenant, $soon['kind'], $soon['ends_at'], $stage)) {
                 continue;
             }
             $full = $this->tenantsRepo()->findById($tenant['id']);
@@ -263,8 +278,10 @@ final class PlanEndWarningService
                 continue;
             }
             $planName = $catalog[$soon['plan_slug']]['name'] ?? $soon['plan_slug'];
+            // Une période payée échue revient à la formule gratuite ; un essai ou une offre, à la formule de base.
+            $afterSlug = $soon['kind'] === 'paid' ? 'free' : (string) $tenant['plan_slug'];
             $atakLost = !empty($catalog[$soon['plan_slug']]['features']['atak'])
-                && empty($catalog[(string) $tenant['plan_slug']]['features']['atak']);
+                && empty($catalog[$afterSlug]['features']['atak']);
             $sent = 0;
             foreach ($this->giftService()->recipients($full) as $user) {
                 $to = (string) $user['email'];
@@ -290,12 +307,12 @@ final class PlanEndWarningService
             }
             // Empreinte posée même sans destinataire : pas de nouvel essai à chaque passage.
             $this->tenantsRepo()->mergeSettings($tenant['id'], [
-                PlanAccessWindow::WARNED_KEY => PlanAccessWindow::warningFingerprint($soon['kind'], $soon['ends_at']),
+                PlanAccessWindow::WARNED_KEY => PlanAccessWindow::warningFingerprint($soon['kind'], $soon['ends_at'], $stage),
             ]);
             $tenantsWarned++;
             $emails += $sent;
         }
 
-        return ['enabled' => true, 'tenants' => $tenantsWarned, 'emails' => $emails];
+        return ['enabled' => true, 'gift_trial_email' => $giftTrialEmail, 'tenants' => $tenantsWarned, 'emails' => $emails];
     }
 }
