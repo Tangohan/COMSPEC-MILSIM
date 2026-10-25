@@ -28,7 +28,7 @@ final class CronScheduleAndDatabaseQueryAssetTest extends TestCase
         $now = 1_700_000_000;
         $okRecent = [
             'status' => 'ok',
-            'finished_at' => date('Y-m-d H:i:s', $now - 60),
+            'finished_at' => gmdate('Y-m-d H:i:s', $now - 60),
         ];
         self::assertFalse(CronSchedule::isDue('atak_report_routing_escalations', $okRecent, false, $now));
         self::assertTrue(CronSchedule::isDue('atak_report_routing_escalations', $okRecent, false, $now + 400));
@@ -36,13 +36,13 @@ final class CronScheduleAndDatabaseQueryAssetTest extends TestCase
 
         $failed = [
             'status' => 'error',
-            'finished_at' => date('Y-m-d H:i:s', $now - 10),
+            'finished_at' => gmdate('Y-m-d H:i:s', $now - 10),
         ];
         self::assertTrue(CronSchedule::isDue('sse_analyst_digest', $failed, false, $now));
 
         $stuck = [
             'status' => 'running',
-            'started_at' => date('Y-m-d H:i:s', $now - 40 * 60),
+            'started_at' => gmdate('Y-m-d H:i:s', $now - 40 * 60),
         ];
         self::assertTrue(CronSchedule::isDue('training_expire', $stuck, false, $now));
     }
@@ -52,11 +52,11 @@ final class CronScheduleAndDatabaseQueryAssetTest extends TestCase
         $now = 1_700_000_000;
         $cli = [[
             'trigger_source' => 'cli',
-            'finished_at' => date('Y-m-d H:i:s', $now - 120),
+            'finished_at' => gmdate('Y-m-d H:i:s', $now - 120),
         ]];
         $admin = [[
             'trigger_source' => 'admin',
-            'finished_at' => date('Y-m-d H:i:s', $now - 30),
+            'finished_at' => gmdate('Y-m-d H:i:s', $now - 30),
         ]];
         self::assertTrue(CronSchedule::schedulerLooksActive($cli, 600, $now));
         self::assertFalse(CronSchedule::schedulerLooksActive($admin, 600, $now));

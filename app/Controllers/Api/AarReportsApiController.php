@@ -32,7 +32,7 @@ final class AarReportsApiController
 
         return Response::json([
             'ok' => true,
-            'reports' => $this->reports->listForTenant($tenantId, ['status' => (string) $request->query('status', '')]),
+            'reports' => $this->reports->listForTenant($tenantId, ['status' => $request->queryString('status', '')]),
         ]);
     }
 
@@ -77,7 +77,7 @@ final class AarReportsApiController
         if ($tenantId < 1) {
             return Response::redirect(url('dashboard'));
         }
-        $rows = $this->reports->listForTenant($tenantId, ['status' => (string) $request->query('status', '')]);
+        $rows = $this->reports->listForTenant($tenantId, ['status' => $request->queryString('status', '')]);
         $json = json_encode(['generated_at' => gmdate('c'), 'reports' => $rows], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         $response = new Response();
         $response->setStatusCode(200)

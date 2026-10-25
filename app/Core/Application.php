@@ -27,7 +27,8 @@ class Application
 
     public function run(): void
     {
-        \App\Core\Session::start();
+        // Sondages en lecture seule (ex. /api/system/version) : verrou de session libéré tout de suite.
+        \App\Core\Session::start(\App\Core\Session::isReadOnlyRequest($this->request->method(), $this->request->path()));
         $runner = fn (\App\Core\Request $req): \App\Core\Response => $this->router->dispatch();
         $global = [
             new \App\Middleware\RequestIdMiddleware(),

@@ -8,9 +8,13 @@
 
   function escapeHtml(s) {
     if (s == null) return '';
-    var d = document.createElement('div');
-    d.textContent = String(s);
-    return d.innerHTML;
+    // Guillemets inclus : le résultat est aussi inséré dans des attributs (href, id).
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   function slugifyAnchor(text) {
@@ -230,7 +234,11 @@
     s = s.replace(/_([^_]+)_/g, '<em>$1</em>');
     s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
     s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, label, href) {
-      var safe = escapeHtml(href);
+      // href est déjà échappé (texte entier passé par escapeHtml) : on vérifie seulement le schéma.
+      var safe = String(href).trim();
+      if (!/^(https?:\/\/|\/(?!\/)|#|mailto:)/i.test(safe)) {
+        return label;
+      }
       return (
         '<a href="' +
         safe +
@@ -239,7 +247,7 @@
         '</a>'
       );
     });
-    s = s.replace(/\bhttps?:\/\/[^\s<>"'\[\]]+/gi, function (raw) {
+    s = s.replace(/\bhttps?:\/\/(?:(?!&quot;|&#39;)[^\s<>"'\[\]])+/gi, function (raw) {
       var trail = '';
       var u = raw;
       var pm = raw.match(/([.,;:!?]+)$/);

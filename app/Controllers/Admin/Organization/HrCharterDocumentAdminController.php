@@ -69,7 +69,8 @@ final class HrCharterDocumentAdminController
             return Response::redirect(url(training_lms_admin_path()));
         }
         $title = trim((string) $request->input('title', ''));
-        $body = (string) $request->input('body_html', '');
+        // Corps affiché en HTML à tous les membres : nettoyage DOM (liste blanche) avant enregistrement.
+        $body = \App\Support\SafeHtml::clean((string) $request->input('body_html', ''), \App\Support\SafeHtml::PROFILE_ARTICLE);
         if ($title === '') {
             Session::flash('error', 'Le titre est obligatoire.');
 

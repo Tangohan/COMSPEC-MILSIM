@@ -17,11 +17,17 @@ class ModerationArtifactRepository
         $this->pdo = Database::getPdo();
     }
 
+    /** Mémoïsé pour la durée de la requête (barre latérale et bandeau de modération). */
+    private static ?bool $tableExistsCache = null;
+
     public function tableExists(): bool
     {
-        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_artifacts' LIMIT 1");
+        if (self::$tableExistsCache === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_artifacts' LIMIT 1");
+            self::$tableExistsCache = (bool) $stmt?->fetchColumn();
+        }
 
-        return (bool) $stmt?->fetchColumn();
+        return self::$tableExistsCache;
     }
 
     /**

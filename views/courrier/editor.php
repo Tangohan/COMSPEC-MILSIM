@@ -198,7 +198,7 @@ $hm = $c['header_meta'] ?? ['header_line1' => '', 'header_unit' => '', 'header_s
                     <?php if ($previewHtml): ?>
                     <?= $previewHtml ?>
                     <?php elseif ($doc): ?>
-                    <div class="courrier-preview a4-portrait"><div class="courrier-body"><?= !empty(trim(strip_tags($doc['body_rendered'] ?? ''))) ? $doc['body_rendered'] : '<p class="text-slate-400 text-sm">Le corps du document est vide. Saisissez l\'objet, le destinataire et le corps pour voir l\'aperçu.</p>' ?></div></div>
+                    <div class="courrier-preview a4-portrait"><div class="courrier-body"><?= !empty(trim(strip_tags($doc['body_rendered'] ?? ''))) ? \App\Support\SafeHtml::clean((string) $doc['body_rendered'], \App\Support\SafeHtml::documentProfile()) : '<p class="text-slate-400 text-sm">Le corps du document est vide. Saisissez l\'objet, le destinataire et le corps pour voir l\'aperçu.</p>' ?></div></div>
                     <?php if (!empty($blocking)): ?>
                     <p class="text-amber-600 text-xs mt-3">Complétez les champs signalés en erreur pour un document conforme.</p>
                     <?php endif; ?>

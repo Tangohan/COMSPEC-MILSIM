@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Repositories\AtakModReportRepository;
 use App\Services\Atak\AtakStartupCheckService;
 use App\Services\Security\FileRateLimiter;
+use App\Support\UtcDateTime;
 
 /**
  * Signalements du mod en mode ticket dans Discord : chaque nouveau rapport ouvre un post dans un salon forum
@@ -641,9 +642,10 @@ final class AtakModReportDiscordTicketService
 
     private static function discordTime(string $datetime): string
     {
-        $ts = $datetime !== '' ? strtotime($datetime) : false;
+        // created_at / last_seen viennent de NOW() en session UTC (comme dans quietOver()).
+        $ts = UtcDateTime::timestamp($datetime);
 
-        return $ts !== false ? '<t:' . $ts . ':f>' : '—';
+        return $ts !== null ? '<t:' . $ts . ':f>' : '—';
     }
 
     /**

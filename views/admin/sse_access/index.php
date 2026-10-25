@@ -185,7 +185,7 @@ $clearanceLabel = static function (array $c) use ($classificationLabels): string
                             <td class="px-4 py-3"><?= $h($clearanceLabel($c)) ?></td>
                             <td class="px-4 py-3 font-mono text-xs"><?= $h($c['code_hint'] ?? '') ?></td>
                             <td class="px-4 py-3"><?= (int) ($c['uses_count'] ?? 0) ?> / <?= (int) ($c['max_uses'] ?? 1) ?></td>
-                            <td class="px-4 py-3"><?= $h((string) ($c['expires_at'] ?? '—')) ?></td>
+                            <td class="px-4 py-3"><?php $expTs = \App\Support\UtcDateTime::timestamp($c['expires_at'] ?? null); /* expires_at stocké en UTC : affiché en heure locale */ ?><?= $h($expTs !== null ? date('Y-m-d H:i', $expTs) : '—') ?></td>
                             <td class="px-4 py-3"><?= $h($c['status_label'] ?? '') ?></td>
                             <td class="px-4 py-3 text-right">
                                 <?php if (!empty($c['active'])): ?>

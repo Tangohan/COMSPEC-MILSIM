@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers\Courrier;
 
+use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -208,6 +210,12 @@ class CourrierEditorController
         }
 
         $id = (int) ($request->input('id') ?? 0);
+        if (!Csrf::verify($request)) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+            return $id > 0
+                ? Response::redirect(url('courrier/editor/' . $id))
+                : Response::redirect(url('courrier'));
+        }
         $templateId = $request->input('template_id') ? (int) $request->input('template_id') : null;
         $presetId = $request->input('preset_id') ? (int) $request->input('preset_id') : null;
         $title = $request->input('title') ? trim((string) $request->input('title')) : null;
@@ -264,6 +272,13 @@ class CourrierEditorController
             if (!$document) {
                 Session::flash('error', 'Document introuvable.');
                 return Response::redirect(url('courrier'));
+            }
+            // Réécriture d’un document existant : son auteur, ou un gestionnaire du courrier.
+            $gate = Gate::getInstance();
+            if ((int) ($document['created_by'] ?? 0) !== $userId
+                && !$gate->allows('courrier.validate') && !$gate->allows('admin.organization')) {
+                Session::flash('error', 'Seul l’auteur du document ou un gestionnaire du courrier peut le modifier.');
+                return Response::redirect(url('courrier/editor/' . $id));
             }
             if (!empty($document['signed_at']) || ($document['status'] ?? '') === 'signed') {
                 Session::flash('error', 'Document signé : modification impossible. Utilisez une nouvelle version ou contactez un administrateur.');

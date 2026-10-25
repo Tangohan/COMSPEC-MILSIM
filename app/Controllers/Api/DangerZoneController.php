@@ -6,8 +6,8 @@ namespace App\Controllers\Api;
 
 use App\Core\Request;
 use App\Core\Response;
-use App\Core\Session;
 use App\Services\DangerZone\DangerZoneService;
+use App\Support\TacticalMissionScope;
 
 class DangerZoneController
 {
@@ -18,17 +18,23 @@ class DangerZoneController
     ) {
     }
 
-    private function missionId(Request $request, array $body = []): string
+    /**
+     * Bac de mission de la communauté appelante (voir TacticalMissionScope) : un missionId
+     * étranger, vide ou numérique n’est jamais retenu tel quel ; non scalaire → 422.
+     */
+    private function missionId(Request $request, array $body = []): string|Response
     {
-        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
-        if ($missionId !== null && $missionId !== '') {
-            return (string) $missionId;
+        $tenantId = TacticalMissionScope::tenantId();
+        if ($tenantId === null) {
+            return TacticalMissionScope::tenantRequiredResponse();
         }
-        $tenantId = Session::get('tenant_id');
-        $tid = $tenantId !== null && $tenantId !== '' ? (int) $tenantId : 1;
+        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
+        if (!TacticalMissionScope::isAcceptableRaw($missionId)) {
+            return TacticalMissionScope::invalidMissionIdResponse();
+        }
         $mapId = $body['mapId'] ?? $request->query('mapId');
-        $mid = $mapId !== null && $mapId !== '' ? (int) $mapId : self::DEFAULT_MAP_ID;
-        return 'mission_' . $tid . '_map_' . $mid;
+
+        return TacticalMissionScope::resolve($missionId, $mapId, $tenantId, self::DEFAULT_MAP_ID);
     }
 
     private function jsonBody(Request $request): array
@@ -45,6 +51,9 @@ class DangerZoneController
     {
         $body = $this->jsonBody($request);
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $activeOnly = $request->query('active') !== '0';
         $list = $this->dangerZoneService->listForMission($missionId, $activeOnly);
         return Response::json($list);
@@ -54,6 +63,9 @@ class DangerZoneController
     {
         $body = $this->jsonBody($request);
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $zone = $this->dangerZoneService->create($missionId, $body);
         return Response::json($zone, 201);
     }
@@ -66,6 +78,9 @@ class DangerZoneController
         }
         $body = $this->jsonBody($request);
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $ok = $this->dangerZoneService->update($id, $missionId, $body);
         if (!$ok) {
             return Response::json(['error' => 'Not found or unchanged'], 404);
@@ -81,7 +96,10 @@ class DangerZoneController
             return Response::json(['error' => 'Invalid id'], 400);
         }
         $body = $this->jsonBody($request);
-        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id') ?? $this->missionId($request, $body);
+        $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $ok = $this->dangerZoneService->delete($id, $missionId);
         if (!$ok) {
             return Response::json(['error' => 'Not found'], 404);

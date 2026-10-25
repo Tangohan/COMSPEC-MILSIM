@@ -54,7 +54,7 @@ final class OrbatApiController
         $realCaps = OrgVisibilityCapabilities::fromGate($gate);
         $previewAs = null;
         if ($realCaps->managePersonnelVisibility || $realCaps->bypassAll) {
-            $rawPreview = strtolower(trim((string) $request->query('preview_as', '')));
+            $rawPreview = strtolower(trim($request->queryString('preview_as', '')));
             if (in_array($rawPreview, ['member', 'cadre', 'command'], true)) {
                 $previewAs = $rawPreview;
             }
@@ -63,7 +63,7 @@ final class OrbatApiController
         $canBypass = $caps->bypassAll || $caps->viewHiddenUnits || ($previewAs === null && $gate->allows('organization.orbat.manage'));
 
         $statusFilter = null;
-        $rawFilter = trim((string) $request->query('admin_status', ''));
+        $rawFilter = trim($request->queryString('admin_status', ''));
         if ($rawFilter !== '') {
             $parts = array_filter(array_map('trim', explode(',', $rawFilter)));
             $statusFilter = [];
@@ -208,13 +208,13 @@ final class OrbatApiController
             return Response::json(['success' => false, 'message' => 'Session expirée, rechargez la page'], 403);
         }
 
-        $action = strtolower(trim((string) $request->input('action', '')));
+        $action = strtolower(trim($request->inputString('action', '')));
         if ($action === 'create') {
-            $label = trim((string) $request->input('label', ''));
+            $label = trim($request->inputString('label', ''));
             if ($label === '' || mb_strlen($label) > 120) {
                 return Response::json(['success' => false, 'message' => 'Indiquez un nom lisible pour ce type.'], 400);
             }
-            $slug = trim((string) $request->input('slug', ''));
+            $slug = trim($request->inputString('slug', ''));
             $slug = $slug !== '' ? OrbatChartDisplay::sanitizeSlug($slug) : OrbatChartDisplay::slugFromLabel($label);
             if ($slug === '' || in_array($slug, OrbatChartDisplay::BUILTIN_SLUGS, true)) {
                 return Response::json(['success' => false, 'message' => 'Ce nom produit une référence réservée ou invalide. Choisissez un autre libellé.'], 400);
@@ -232,7 +232,7 @@ final class OrbatApiController
             ]);
         }
         if ($action === 'delete') {
-            $slug = OrbatChartDisplay::sanitizeSlug((string) $request->input('slug', ''));
+            $slug = OrbatChartDisplay::sanitizeSlug($request->inputString('slug', ''));
             if ($slug === '' || in_array($slug, OrbatChartDisplay::BUILTIN_SLUGS, true)) {
                 return Response::json(['success' => false, 'message' => 'Type non supprimable.'], 400);
             }
@@ -287,7 +287,7 @@ final class OrbatApiController
             ], 503);
         }
 
-        $slot = strtolower(trim((string) $request->input('slot', 'icon')));
+        $slot = strtolower(trim($request->inputString('slot', 'icon')));
         if (!in_array($slot, ['icon', 'image'], true)) {
             return Response::json(['success' => false, 'message' => 'Emplacement non reconnu'], 400);
         }
@@ -400,7 +400,7 @@ final class OrbatApiController
             return Response::json(['success' => false, 'message' => 'Session expirée, rechargez la page'], 403);
         }
 
-        $action = strtolower(trim((string) $request->input('action', '')));
+        $action = strtolower(trim($request->inputString('action', '')));
 
         return match ($action) {
             'create' => $this->structureCreate($request, $tenantId),
@@ -425,13 +425,13 @@ final class OrbatApiController
 
     private function structureCreate(Request $request, int $tenantId): Response
     {
-        $name = trim((string) $request->input('name', ''));
+        $name = trim($request->inputString('name', ''));
         if ($name === '' || mb_strlen($name) > 255) {
             return Response::json(['success' => false, 'message' => 'Le nom de l’unité est requis.'], 400);
         }
 
         $defaultType = (string) config('units.default_type', 'unit');
-        $structType = strtolower(trim((string) $request->input('struct_type', $defaultType)));
+        $structType = strtolower(trim($request->inputString('struct_type', $defaultType)));
         $allowedTypes = array_keys(config('units.types', []));
         if ($allowedTypes !== [] && !in_array($structType, $allowedTypes, true)) {
             return Response::json(['success' => false, 'message' => 'Type d’unité non reconnu.'], 400);
@@ -578,11 +578,11 @@ final class OrbatApiController
             return Response::json(['success' => false, 'message' => 'Unité introuvable.'], 404);
         }
 
-        $mode = OrbatMaskMode::normalize((string) $request->input('orbat_mask_mode', ''));
+        $mode = OrbatMaskMode::normalize($request->inputString('orbat_mask_mode', ''));
         $visibility = VisibilityLevel::fromOrbatMaskMode($mode);
         // Accepter aussi visibility_level directement
-        if ($request->input('visibility_level') !== null && trim((string) $request->input('visibility_level')) !== '') {
-            $visibility = VisibilityLevel::normalize((string) $request->input('visibility_level'));
+        if ($request->input('visibility_level') !== null && trim($request->inputString('visibility_level')) !== '') {
+            $visibility = VisibilityLevel::normalize($request->inputString('visibility_level'));
             $mode = VisibilityLevel::toOrbatMaskMode($visibility);
         }
 
@@ -601,7 +601,7 @@ final class OrbatApiController
         $this->unitRepository->update($unitId, $tenantId, $data);
 
         $actorId = (int) Session::get('user_id');
-        $reason = trim((string) $request->input('reason', ''));
+        $reason = trim($request->inputString('reason', ''));
         $this->visibilityHistoryRepository->record(
             $tenantId,
             'unit',
@@ -636,7 +636,7 @@ final class OrbatApiController
             return Response::json(['success' => false, 'message' => 'Unité introuvable.'], 404);
         }
 
-        $visibility = VisibilityLevel::normalize((string) $request->input('visibility_level', VisibilityLevel::NORMAL));
+        $visibility = VisibilityLevel::normalize($request->inputString('visibility_level', VisibilityLevel::NORMAL));
         $mode = VisibilityLevel::toOrbatMaskMode($visibility);
         $oldVis = array_key_exists('visibility_level', $unit)
             ? VisibilityLevel::normalize((string) ($unit['visibility_level'] ?? ''))
@@ -653,12 +653,12 @@ final class OrbatApiController
             $data['visibility_propagate'] = $request->input('visibility_propagate') ? 1 : 0;
         }
         if ($request->input('strength_display_mode') !== null && $this->unitRepository->hasTableColumn('units', 'strength_display_mode')) {
-            $data['strength_display_mode'] = (string) $request->input('strength_display_mode');
+            $data['strength_display_mode'] = $request->inputString('strength_display_mode');
         }
         $this->unitRepository->update($unitId, $tenantId, $data);
 
         $actorId = (int) Session::get('user_id');
-        $reason = trim((string) $request->input('reason', ''));
+        $reason = trim($request->inputString('reason', ''));
         $this->visibilityHistoryRepository->record(
             $tenantId,
             'unit',
@@ -692,11 +692,11 @@ final class OrbatApiController
             return Response::json(['success' => false, 'message' => 'Unité introuvable.'], 404);
         }
 
-        $newStatus = UnitAdminStatus::normalize((string) $request->input('admin_status', ''));
+        $newStatus = UnitAdminStatus::normalize($request->inputString('admin_status', ''));
         $oldStatus = UnitAdminStatus::normalize((string) ($unit['admin_status'] ?? UnitAdminStatus::ACTIVE));
-        $note = trim((string) $request->input('admin_status_note', $request->input('reason', '')));
-        $comment = trim((string) $request->input('comment', ''));
-        $effectiveAt = trim((string) $request->input('effective_at', ''));
+        $note = trim($request->inputString('admin_status_note', $request->input('reason', '')));
+        $comment = trim($request->inputString('comment', ''));
+        $effectiveAt = trim($request->inputString('effective_at', ''));
 
         $data = ['admin_status' => $newStatus];
         if ($this->unitRepository->hasTableColumn('units', 'admin_status_note')) {
@@ -761,7 +761,7 @@ final class OrbatApiController
 
         $oldStatus = UnitAdminStatus::normalize((string) ($unit['admin_status'] ?? UnitAdminStatus::ACTIVE));
         $newStatus = UnitAdminStatus::ARCHIVED;
-        $reason = trim((string) $request->input('reason', 'Archivage depuis l’ORBAT'));
+        $reason = trim($request->inputString('reason', 'Archivage depuis l’ORBAT'));
 
         $data = ['admin_status' => $newStatus];
         if ($this->unitRepository->hasTableColumn('units', 'admin_status_note')) {
@@ -798,17 +798,17 @@ final class OrbatApiController
         $actorId = (int) Session::get('user_id');
         $result = $this->resolveBilletService()->createBillet($tenantId, [
             'unit_id' => (int) $request->input('unit_id', 0),
-            'code' => (string) $request->input('code', ''),
-            'title' => (string) $request->input('title', ''),
+            'code' => $request->inputString('code', ''),
+            'title' => $request->inputString('title', ''),
             'authorized_slots' => (int) $request->input('authorized_slots', 1),
-            'org_callsign' => (string) $request->input('org_callsign', ''),
-            'function_label' => (string) $request->input('function_label', ''),
+            'org_callsign' => $request->inputString('org_callsign', ''),
+            'function_label' => $request->inputString('function_label', ''),
             'is_critical' => (bool) $request->input('is_critical', false),
             'is_key_post' => (bool) $request->input('is_key_post', false),
-            'key_post_kind' => (string) $request->input('key_post_kind', ''),
+            'key_post_kind' => $request->inputString('key_post_kind', ''),
             'required_pack_id' => $request->input('required_pack_id'),
             'job_role_id' => $request->input('job_role_id'),
-            'notes' => (string) $request->input('notes', ''),
+            'notes' => $request->inputString('notes', ''),
             'sort_order' => (int) $request->input('sort_order', 0),
         ], $actorId);
         if (!$result['ok']) {
@@ -866,13 +866,13 @@ final class OrbatApiController
         $actorId = (int) Session::get('user_id');
         $result = $this->resolveBilletService()->occupy($tenantId, (int) $request->input('billet_id', 0), [
             'user_id' => (int) $request->input('user_id', 0),
-            'occupancy_type' => (string) $request->input('occupancy_type', 'primary'),
-            'holder_role' => (string) $request->input('holder_role', 'PRIMARY'),
-            'starts_at' => (string) $request->input('starts_at', date('Y-m-d')),
-            'ends_at' => (string) $request->input('ends_at', ''),
-            'effective_at' => (string) $request->input('effective_at', ''),
-            'movement_reason' => (string) $request->input('movement_reason', ''),
-            'notes' => (string) $request->input('notes', ''),
+            'occupancy_type' => $request->inputString('occupancy_type', 'primary'),
+            'holder_role' => $request->inputString('holder_role', 'PRIMARY'),
+            'starts_at' => $request->inputString('starts_at', date('Y-m-d')),
+            'ends_at' => $request->inputString('ends_at', ''),
+            'effective_at' => $request->inputString('effective_at', ''),
+            'movement_reason' => $request->inputString('movement_reason', ''),
+            'notes' => $request->inputString('notes', ''),
             'keeps_organic_billet' => (bool) $request->input('keeps_organic_billet', false),
             'organic_billet_id' => $request->input('organic_billet_id'),
         ], $actorId);
@@ -904,7 +904,7 @@ final class OrbatApiController
             (int) $request->input('user_id', 0) ?: null,
             (int) $request->input('billet_id', 0) ?: null,
             $actorId,
-            (string) $request->input('movement_reason', '') ?: null
+            $request->inputString('movement_reason', '') ?: null
         );
         if (!$result['ok']) {
             return Response::json(['success' => false, 'message' => $result['message'] ?? 'Erreur'], 400);
@@ -931,7 +931,7 @@ final class OrbatApiController
     private function structureSheet(Request $request, int $tenantId): Response
     {
         $unitId = (int) $request->input('unit_id', 0);
-        $asOf = trim((string) $request->input('as_of', ''));
+        $asOf = trim($request->inputString('as_of', ''));
         $sheet = $this->resolveBilletService()->structureSheet(
             $tenantId,
             $unitId,
@@ -957,11 +957,11 @@ final class OrbatApiController
         $actorId = (int) Session::get('user_id');
         $result = $this->resolveBilletService()->snapshotOrbat(
             $tenantId,
-            (string) $request->input('label', 'Snapshot ORBAT'),
-            (string) $request->input('kind', 'manual'),
-            trim((string) $request->input('effective_at', '')) ?: null,
+            $request->inputString('label', 'Snapshot ORBAT'),
+            $request->inputString('kind', 'manual'),
+            trim($request->inputString('effective_at', '')) ?: null,
             $actorId,
-            trim((string) $request->input('notes', '')) ?: null
+            trim($request->inputString('notes', '')) ?: null
         );
         if (!$result['ok']) {
             return Response::json(['success' => false, 'message' => $result['message'] ?? 'Erreur'], 400);
@@ -1051,7 +1051,7 @@ final class OrbatApiController
 
         $data = [];
         if ($request->input('name') !== null) {
-            $name = trim((string) $request->input('name', ''));
+            $name = trim($request->inputString('name', ''));
             if ($name === '') {
                 return Response::json(['success' => false, 'message' => 'Le nom de l’unité est requis'], 400);
             }
@@ -1062,24 +1062,24 @@ final class OrbatApiController
         }
 
         if ($request->input('code') !== null) {
-            $code = trim((string) $request->input('code', ''));
+            $code = trim($request->inputString('code', ''));
             $data['code'] = $code === '' ? null : mb_substr($code, 0, 20);
         }
 
         if ($request->input('public_blurb') !== null) {
-            $blurb = trim((string) $request->input('public_blurb', ''));
+            $blurb = trim($request->inputString('public_blurb', ''));
             // TEXT : plafond de sécurité large (plus de limite 8000 trop restrictive)
             $data['public_blurb'] = $blurb === '' ? null : mb_substr($blurb, 0, 100000);
         }
 
         if ($request->input('public_founded_on') !== null && $this->unitRepository->hasTableColumn('units', 'public_founded_on')) {
-            $data['public_founded_on'] = trim((string) $request->input('public_founded_on', ''));
+            $data['public_founded_on'] = trim($request->inputString('public_founded_on', ''));
         }
         if ($request->input('public_custom_date') !== null && $this->unitRepository->hasTableColumn('units', 'public_custom_date')) {
-            $data['public_custom_date'] = trim((string) $request->input('public_custom_date', ''));
+            $data['public_custom_date'] = trim($request->inputString('public_custom_date', ''));
         }
         if ($request->input('public_custom_date_label') !== null && $this->unitRepository->hasTableColumn('units', 'public_custom_date_label')) {
-            $label = trim((string) $request->input('public_custom_date_label', ''));
+            $label = trim($request->inputString('public_custom_date_label', ''));
             $data['public_custom_date_label'] = $label === '' ? null : mb_substr($label, 0, 80);
         }
 
@@ -1098,7 +1098,7 @@ final class OrbatApiController
         }
 
         if ($request->input('orbat_type') !== null) {
-            $t = strtolower(trim((string) $request->input('orbat_type', '')));
+            $t = strtolower(trim($request->inputString('orbat_type', '')));
             if (!$this->isAllowedChartDisplaySlug($tenantId, $t)) {
                 return Response::json(['success' => false, 'message' => 'Type d’affichage non reconnu'], 400);
             }
@@ -1112,7 +1112,7 @@ final class OrbatApiController
 
         // Type structurel (groupe, équipe, squad…) — modifiable après création
         if ($request->input('struct_type') !== null) {
-            $structType = strtolower(trim((string) $request->input('struct_type', '')));
+            $structType = strtolower(trim($request->inputString('struct_type', '')));
             $allowedTypes = array_keys(config('units.types', []));
             if ($allowedTypes !== [] && !in_array($structType, $allowedTypes, true)) {
                 return Response::json(['success' => false, 'message' => 'Type d’unité non reconnu.'], 400);
@@ -1121,14 +1121,14 @@ final class OrbatApiController
         }
 
         if ($request->input('admin_status') !== null && $this->unitRepository->hasTableColumn('units', 'admin_status')) {
-            $data['admin_status'] = UnitAdminStatus::normalize((string) $request->input('admin_status'));
+            $data['admin_status'] = UnitAdminStatus::normalize($request->inputString('admin_status'));
         }
         if ($request->input('admin_status_note') !== null && $this->unitRepository->hasTableColumn('units', 'admin_status_note')) {
-            $note = trim((string) $request->input('admin_status_note', ''));
+            $note = trim($request->inputString('admin_status_note', ''));
             $data['admin_status_note'] = $note === '' ? null : mb_substr($note, 0, 500);
         }
         if ($request->input('visibility_level') !== null) {
-            $visibility = VisibilityLevel::normalize((string) $request->input('visibility_level'));
+            $visibility = VisibilityLevel::normalize($request->inputString('visibility_level'));
             if ($this->unitRepository->hasTableColumn('units', 'visibility_level')) {
                 $data['visibility_level'] = $visibility;
             }
@@ -1137,24 +1137,24 @@ final class OrbatApiController
             }
         }
         if ($request->input('strength_display_mode') !== null && $this->unitRepository->hasTableColumn('units', 'strength_display_mode')) {
-            $data['strength_display_mode'] = (string) $request->input('strength_display_mode');
+            $data['strength_display_mode'] = $request->inputString('strength_display_mode');
         }
 
         if ($request->input('orbat_details') !== null && $this->unitRepository->hasTableColumn('units', 'orbat_details')) {
-            $det = trim((string) $request->input('orbat_details', ''));
+            $det = trim($request->inputString('orbat_details', ''));
             // TEXT : plus de troncature agressive — plafond de sécurité très large
             $data['orbat_details'] = $det === '' ? null : mb_substr($det, 0, 100000);
         }
         if ($request->input('motto') !== null && $this->unitRepository->hasTableColumn('units', 'motto')) {
-            $motto = trim((string) $request->input('motto', ''));
+            $motto = trim($request->inputString('motto', ''));
             $data['motto'] = $motto === '' ? null : mb_substr($motto, 0, 255);
         }
         if ($request->input('description_long') !== null && $this->unitRepository->hasTableColumn('units', 'description_long')) {
-            $long = trim((string) $request->input('description_long', ''));
+            $long = trim($request->inputString('description_long', ''));
             $data['description_long'] = $long === '' ? null : mb_substr($long, 0, 100000);
         }
         if ($request->input('accent_color') !== null && $this->unitRepository->hasTableColumn('units', 'accent_color')) {
-            $data['accent_color'] = trim((string) $request->input('accent_color', ''));
+            $data['accent_color'] = trim($request->inputString('accent_color', ''));
         }
         if ($request->input('unit_type_id') !== null && $this->unitRepository->hasTableColumn('units', 'unit_type_id')) {
             $tid = (int) $request->input('unit_type_id', 0);
