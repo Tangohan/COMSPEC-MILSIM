@@ -9,6 +9,8 @@
                           le site depuis la dernière fois, il remplace celui du téléphone ; sinon le choix du téléphone reste
       "rows"            : lignes de formulaire « Mon indicatif » (fn_pageC2, fn_pageGroup)
     Profil : COMSPEC_ATAK_MyCallsign (choisi), COMSPEC_ATAK_MyCallsignWeb (dernier indicatif vu sur Athena).
+    Avec la configuration locale (fn_localCfg, champ callsign de config.json) : l'indicatif y est aussi écrit, et un
+    indicatif modifié à la main dans le fichier est repris à l'arrivée.
 */
 params [["_act", ""], ["_arg", ""]];
 if (!hasInterface) exitWith { false };
@@ -22,6 +24,16 @@ private _publish = {
     params ["_cs"];
     if ((player getVariable ["COMSPEC_ATAK_CsCustom", ""]) isNotEqualTo _cs) then { player setVariable ["COMSPEC_ATAK_CsCustom", _cs, true]; };
 };
+// config.json du mode local (fn_localCfg), seulement quand la fonction existe.
+private _hasCfg = !isNil "comspec_atak_native_fnc_localCfg";
+private _cfgSave = {
+    params ["_cs"];
+    if (!_hasCfg) exitWith {};
+    private _cfg = ["get"] call comspec_atak_native_fnc_localCfg;
+    if ((_cfg getOrDefault ["callsign", ""]) isEqualTo _cs) exitWith {};
+    _cfg set ["callsign", _cs];
+    ["save"] call comspec_atak_native_fnc_localCfg;
+};
 private _rerender = {
     [{
         private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
@@ -30,6 +42,13 @@ private _rerender = {
 };
 switch (_act) do {
     case "init": {
+        if (_hasCfg) then {
+            private _file = [(["get"] call comspec_atak_native_fnc_localCfg) getOrDefault ["callsign", ""]] call _clean;
+            if ((count _file) >= 2 && {_file isNotEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_MyCallsign", ""])}) then {
+                profileNamespace setVariable ["COMSPEC_ATAK_MyCallsign", _file];
+                saveProfileNamespace;
+            };
+        };
         [[profileNamespace getVariable ["COMSPEC_ATAK_MyCallsign", ""]] call _clean] call _publish;
         if !(missionNamespace getVariable ["COMSPEC_ATAK_CsRespawnEh", false]) then {
             missionNamespace setVariable ["COMSPEC_ATAK_CsRespawnEh", true];
@@ -46,6 +65,7 @@ switch (_act) do {
         if ((count _cs) < 2) exitWith { ["WARNING", "Indicatif trop court (2 caractères au moins)", 3, 20] call comspec_atak_native_fnc_notify; false };
         profileNamespace setVariable ["COMSPEC_ATAK_MyCallsign", _cs];
         saveProfileNamespace;
+        [_cs] call _cfgSave;
         [_cs] call _publish;
         [true] call comspec_atak_native_fnc_squadSync;
         ["SUCCESS", format [["Indicatif %1 enregistré (téléphone et hors ligne)", "Indicatif %1 enregistré et envoyé à Athena"] select ([] call comspec_atak_native_fnc_bridge), _cs], 4, 30] call comspec_atak_native_fnc_notify;
@@ -55,6 +75,7 @@ switch (_act) do {
     case "clear": {
         profileNamespace setVariable ["COMSPEC_ATAK_MyCallsign", ""];
         saveProfileNamespace;
+        [""] call _cfgSave;
         [""] call _publish;
         ["INFO", "Indicatif personnalisé retiré : celui d'Athena ou de la mission s'applique", 4, 30] call comspec_atak_native_fnc_notify;
         call _rerender;
@@ -69,6 +90,7 @@ switch (_act) do {
         // Changé sur le site depuis la dernière synchro : la fiche Athena gagne (gardée hors ligne pour la suite).
         if (_web isNotEqualTo _seen && {_seen isNotEqualTo ""} && {_web isNotEqualTo _mine}) then {
             profileNamespace setVariable ["COMSPEC_ATAK_MyCallsign", _web];
+            [_web] call _cfgSave;
             [_web] call _publish;
             ["INFO", format ["Indicatif mis à jour depuis Athena : %1", _web], 4, 30] call comspec_atak_native_fnc_notify;
         };
