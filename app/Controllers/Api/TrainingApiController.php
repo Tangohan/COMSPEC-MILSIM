@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\Api\ApiBusinessError;
 use App\Services\Training\TrainingService;
 use App\Services\Training\TrainingProgressService;
 use App\Services\Training\TrainingQuizService;
@@ -253,6 +254,10 @@ class TrainingApiController
             }
             return Response::json(['enrollment' => $enrollment]);
         } catch (\Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['error' => $e->getMessage()], 400);
         }
     }
@@ -348,6 +353,9 @@ class TrainingApiController
                 Session::flash('error', 'Impossible d’enregistrer la progression. Réessayez dans un instant.');
 
                 return $redirectToCourse();
+            }
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
             }
 
             return Response::json(['error' => $e->getMessage()], 400);
@@ -540,6 +548,10 @@ class TrainingApiController
                 'time_limit_minutes' => $quiz['time_limit_minutes'] ?? null,
             ]);
         } catch (\Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['error' => $e->getMessage()], 400);
         }
     }
@@ -675,6 +687,10 @@ class TrainingApiController
 
             return Response::json($payload);
         } catch (\Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['error' => $e->getMessage()], 400);
         }
     }
@@ -1068,6 +1084,10 @@ class TrainingApiController
             }
             return Response::json(['assigned' => $count]);
         } catch (\Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['error' => $e->getMessage()], 400);
         }
     }

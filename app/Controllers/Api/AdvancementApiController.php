@@ -12,6 +12,7 @@ use App\Core\Session;
 use App\Repositories\AdvancementRepository;
 use App\Services\Advancement\AdvancementWorkflowService;
 use App\Services\Advancement\GradeScaleTemplateService;
+use App\Support\Api\ApiBusinessError;
 use Throwable;
 
 /**
@@ -53,6 +54,10 @@ final class AdvancementApiController
 
             return Response::json(['ok' => true, 'id' => $id], 201);
         } catch (Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
         }
     }
@@ -73,6 +78,10 @@ final class AdvancementApiController
 
             return Response::json(['ok' => true, 'id' => $id]);
         } catch (Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
         }
     }
@@ -114,6 +123,10 @@ final class AdvancementApiController
 
             return Response::json(['ok' => true, 'id' => $id], 201);
         } catch (Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
         }
     }
@@ -159,6 +172,10 @@ final class AdvancementApiController
 
             return Response::json(['ok' => true, 'id' => $id], 201);
         } catch (Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
         }
     }
@@ -181,6 +198,10 @@ final class AdvancementApiController
 
             return Response::json(['ok' => true, 'id' => $id], 201);
         } catch (Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
         }
     }
@@ -203,6 +224,10 @@ final class AdvancementApiController
 
             return Response::json(['ok' => true]);
         } catch (Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
         }
     }
@@ -218,6 +243,10 @@ final class AdvancementApiController
 
             return Response::json(['ok' => true] + $out);
         } catch (Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
         }
     }
@@ -233,6 +262,10 @@ final class AdvancementApiController
 
             return Response::json(['ok' => true, 'updated' => $n]);
         } catch (Throwable $e) {
+            if (!ApiBusinessError::isBusiness($e)) {
+                throw $e;
+            }
+
             return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
         }
     }
