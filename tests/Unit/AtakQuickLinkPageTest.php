@@ -24,6 +24,15 @@ final class AtakQuickLinkPageTest extends TestCase
         self::assertStringContainsString("'verification_uri_complete'", $svc);
         self::assertStringContainsString('approveFromWeb', $ctrl);
         self::assertStringContainsString('Csrf::validate', $ctrl);
-        self::assertFileExists($root . '/views/account/game_link.php');
+        self::assertFileExists($root . '/views/link/lier.php');
+        self::assertStringContainsString("Response::view('link.lier'", $ctrl);
+    }
+
+    public function testRequestSourceTellsPhoneEdenAndOverwatchApart(): void
+    {
+        self::assertSame('eden', \App\Services\Game\GameAtakPairingService::requestSource('sse-eden'));
+        self::assertSame('phone', \App\Services\Game\GameAtakPairingService::requestSource('native'));
+        self::assertSame('phone', \App\Services\Game\GameAtakPairingService::requestSource(''));
+        self::assertSame('overwatch', \App\Services\Game\GameAtakPairingService::requestSource('1.6.16'));
     }
 }
