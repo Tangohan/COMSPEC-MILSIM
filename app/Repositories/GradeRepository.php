@@ -20,10 +20,17 @@ class GradeRepository
         $this->pdo = Database::getPdo();
     }
 
+    /** Mémoïsé pour la durée de la requête (fromClause() l’appelle à chaque lecture). */
+    private static ?string $tableNameCache = null;
+
     private function tableName(): string
     {
-        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'grade_system_id' LIMIT 1");
-        return ($stmt && $stmt->fetch()) ? 'grades' : 'grades_referentiel';
+        if (self::$tableNameCache === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'grade_system_id' LIMIT 1");
+            self::$tableNameCache = ($stmt && $stmt->fetch()) ? 'grades' : 'grades_referentiel';
+        }
+
+        return self::$tableNameCache;
     }
 
     private function selectColumns(): string

@@ -119,6 +119,34 @@ final class ArsenalWardrobeRepository
     }
 
     /**
+     * Plusieurs tenues d’un tenant en une requête (vitrine du tableau de bord).
+     *
+     * @param list<int> $ids
+     * @return array<int, array<string, mixed>> id => tenue (mêmes champs que findWardrobe)
+     */
+    public function findWardrobesByIds(int $tenantId, array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $st = $this->pdo->prepare(
+            "SELECT w.*, c.name AS collection_name, c.slug AS collection_slug
+             FROM arsenal_wardrobes w
+             LEFT JOIN arsenal_equipment_collections c ON c.id = w.collection_id
+             WHERE w.tenant_id = ? AND w.id IN ($placeholders)"
+        );
+        $st->execute(array_merge([$tenantId], $ids));
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['id']] = $this->mapWardrobe($row);
+        }
+
+        return $out;
+    }
+
+    /**
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */

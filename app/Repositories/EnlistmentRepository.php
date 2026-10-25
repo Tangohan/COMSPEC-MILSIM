@@ -935,6 +935,44 @@ class EnlistmentRepository
     }
 
     /**
+     * Jetons de suivi encore valides pour plusieurs dossiers, en une requête (tableau de bord).
+     *
+     * @param list<array{0: int, 1: int}> $pairs liste de [tenant_id, enlistment_id]
+     * @return array<string, string> "tenantId:enlistmentId" => access_token
+     */
+    public function findValidCandidatePortalTokensForEnlistments(array $pairs): array
+    {
+        $wanted = [];
+        foreach ($pairs as [$tid, $eid]) {
+            if ((int) $tid > 0 && (int) $eid > 0) {
+                $wanted[(int) $tid . ':' . (int) $eid] = (int) $eid;
+            }
+        }
+        if ($wanted === [] || !$this->hasCandidatePortalTables()) {
+            return [];
+        }
+        $ids = array_values(array_unique($wanted));
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT tenant_id, enlistment_id, access_token
+             FROM enlistment_candidate_tokens
+             WHERE enlistment_id IN ($placeholders) AND expires_at > NOW()"
+        );
+        $stmt->execute($ids);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $key = (int) ($row['tenant_id'] ?? 0) . ':' . (int) ($row['enlistment_id'] ?? 0);
+            $tok = trim((string) ($row['access_token'] ?? ''));
+            // Même filtre que findActiveCandidatePortalAccessRow() : couple tenant/dossier exact, jeton non vide.
+            if ($tok !== '' && isset($wanted[$key]) && !isset($out[$key])) {
+                $out[$key] = $tok;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Jeton de suivi invité encore valide (même URL que celle reçue par le candidat).
      *
      * @return array{access_token: string, expires_at: string}|null

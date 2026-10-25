@@ -126,6 +126,10 @@ class ForumCoopTopicController
         $postIds = array_values(array_filter(array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $posts), static fn (int $pid): bool => $pid > 0));
         $reactionCountMap = $this->forumPostReactionRepository->countByKeysForPosts($postIds);
         $userReactionMap = $this->forumPostReactionRepository->getUserReactionsForPosts((int) $userId, $postIds);
+        // Votes et pièces jointes chargés en masse, comme les réactions (évite 3 requêtes par message).
+        $voteScoreMap = $this->voteRepository->sumForPosts($postIds);
+        $userVoteMap = $this->voteRepository->getUserVotesForPosts((int) $userId, $postIds);
+        $attachmentMap = $this->forumAttachmentRepository->listForPosts($postIds, $homeTenantId);
         $authorIds = array_values(array_unique(array_filter(array_map(static fn (array $row): int => (int) ($row['user_id'] ?? 0), $posts), static fn (int $uid): bool => $uid > 0)));
         $certTitleMap = $this->trainingCertificateRepository->latestValidCertifiedCourseTitlesForUsers($homeTenantId, $authorIds);
         $coopTenantNames = $this->buildCoopTenantNameMap($posts);
@@ -140,10 +144,10 @@ class ForumCoopTopicController
             if ($ctid > 0 && isset($coopTenantNames[$ctid])) {
                 $p['author_display_resolved'] .= ' — ' . $coopTenantNames[$ctid];
             }
-            $p['vote_score'] = $this->voteRepository->sumForPost((int) $p['id']);
-            $p['vote_user_value'] = $this->voteRepository->getUserVote((int) $p['id'], (int) $userId);
-            $p['attachments'] = $this->forumAttachmentRepository->listForPost((int) $p['id'], $homeTenantId);
             $pid = (int) $p['id'];
+            $p['vote_score'] = $voteScoreMap[$pid] ?? 0;
+            $p['vote_user_value'] = $userVoteMap[$pid] ?? null;
+            $p['attachments'] = $attachmentMap[$pid] ?? [];
             $p['reaction_counts'] = $reactionCountMap[$pid] ?? [];
             $p['user_reaction_key'] = $userReactionMap[$pid] ?? null;
             $au = (int) ($p['user_id'] ?? 0);
