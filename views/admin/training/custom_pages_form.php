@@ -11,7 +11,7 @@ $action = $isEdit ? training_lms_admin_url('pages-html/'.(int)$customPage['id'])
 <section class="tc-panel p-6 md:p-8">
   <h1 class="tc-hero-title"><?= $isEdit ? 'Studio DOC HTML / Manuel' : 'Nouveau DOC HTML' ?></h1>
 </section>
-<form method="post" action="<?= htmlspecialchars($action) ?>" id="cp-main-form" class="space-y-6">
+<form method="post" action="<?= htmlspecialchars($action) ?>" id="cp-main-form" class="space-y-6" data-cp-saved="<?= !empty($customPageJustSaved) ? '1' : '0' ?>" data-cp-updated-at="<?= htmlspecialchars((string) ($customPage['updated_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
   <?= \App\Core\Csrf::field() ?>
   <input type="hidden" name="sections_json" id="cp-sections-json" value="<?= htmlspecialchars((string)$sectionsJsonInitial, ENT_QUOTES, 'UTF-8') ?>">
 

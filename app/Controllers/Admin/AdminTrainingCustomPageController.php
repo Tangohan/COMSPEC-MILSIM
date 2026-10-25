@@ -139,6 +139,8 @@ final class AdminTrainingCustomPageController
         $this->auditService->log('formation_doc_created', $tenantId, $userId ?: null, 'formation_doc', $id, null, (string) $payload['data']['title']);
         $this->tagRepository->setTagsFromCommaText($tenantId, self::TAG_CONTENT_TYPE, $id, (string) $request->input('tags', ''));
         Session::flash('success', 'Documentation créée.');
+        // Signal explicite pour l'éditeur : l'enregistrement a réussi, le brouillon local peut être supprimé.
+        Session::flash('cp_draft_saved', '1');
 
         return Response::redirect(training_lms_admin_url('pages-html/' . $id . '/modifier'));
     }
@@ -162,6 +164,7 @@ final class AdminTrainingCustomPageController
             'trainingAdminNav' => 'custom_pages',
             'activeNav' => 'docs_html',
             'customPage' => $row,
+            'customPageJustSaved' => Session::getFlash('cp_draft_saved') === '1',
             'customPageThemes' => $this->pageRepository->listThemesByTenant($tenantId),
             'customPageTemplates' => $this->pageRepository->listTemplatesByTenant($tenantId),
             'customPageRevisions' => $this->pageRepository->listRevisions($id, $tenantId),
@@ -227,6 +230,7 @@ final class AdminTrainingCustomPageController
         }
         $this->tagRepository->setTagsFromCommaText($tenantId, self::TAG_CONTENT_TYPE, $id, (string) $request->input('tags', ''));
         Session::flash('success', 'Modifications enregistrées.');
+        Session::flash('cp_draft_saved', '1');
 
         return $redirect;
     }
