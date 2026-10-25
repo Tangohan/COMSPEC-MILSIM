@@ -61,7 +61,7 @@ private _tplMatch = {
             if (_pos >= 0) then {
                 private _args = [];
                 { _args set [_x - 1, [(_caps select _forEachIndex), _depth + 1] call _seg]; } forEach _ids;
-                _args = _args apply { [_x, ""] select (isNil "_x") };
+                _args = _args apply { if (isNil "_x") then { "" } else { _x } };
                 _res = format ([_en] + _args);
             };
         };

@@ -27,7 +27,7 @@ if ((_raw select [0, 3]) != "OK|") exitWith {
 
 private _body = _raw select [3];
 private _key = "";
-private _rx = _body regexFind ["\"channel_key\"\\s*:\\s*\"([^\"]+)\""];
+private _rx = _body regexFind ["""channel_key""\s*:\s*""([^""]+)"""];
 if ((count _rx) > 0) then {
     private _m = _rx select 0;
     if ((count _m) > 1) then {

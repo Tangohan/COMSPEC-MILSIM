@@ -298,7 +298,7 @@ if (_interactive) then {
                 };
                 private _n = [profileNamespace, missionNamespace] select (_ns isEqualTo "M");
                 _n setVariable [_var, !(_n getVariable [_var, _def])];
-                if (_ns isEqualTo "P") then { saveProfileNamespace; };
+                if (_ns isEqualTo "P") then { [] call comspec_atak_native_fnc_saveProfile; };
                 // Les filtres d'unités (alliés, ennemis) sont appliqués à la collecte : on la relance.
                 if (_var in ["COMSPEC_ATAK_LayerFriends", "COMSPEC_ATAK_ShowHostile"]) then { [] call comspec_atak_native_fnc_localDataRefresh; };
                 if (_var isEqualTo "COMSPEC_ATAK_SigintLayer") then { [] spawn comspec_atak_native_fnc_sigintPoll; };
@@ -353,7 +353,7 @@ if (_interactive) then {
                 if !(_f isEqualType []) then { _f = []; };
                 if (_k in _f) then { _f = _f - [_k]; } else { _f pushBack _k; };
                 profileNamespace setVariable ["COMSPEC_ATAK_MapPanelFolds", _f];
-                saveProfileNamespace;
+                [] call comspec_atak_native_fnc_saveProfile;
                 ["MAP"] call comspec_atak_native_fnc_pageRender;
             }];
             private _folds = profileNamespace getVariable ["COMSPEC_ATAK_MapPanelFolds", []];

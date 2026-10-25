@@ -49,7 +49,7 @@ private _add = {
 private _set = {
     params ["_var", "_val"];
     profileNamespace setVariable [_var, _val];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_PersoSet", _set];
@@ -78,7 +78,7 @@ private _vestUse = {
     params ["_use"];
     profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinUse", _use];
     if (_use isEqualTo "ours" && {(profileNamespace getVariable ["COMSPEC_ATAK_VestMount", "off"]) isEqualTo "off"}) then { profileNamespace setVariable ["COMSPEC_ATAK_VestMount", "left"]; };
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     ["tick"] call comspec_atak_native_fnc_vestMount;
 };
 missionNamespace setVariable ["COMSPEC_ATAK_VestUse", _vestUse];
@@ -95,7 +95,7 @@ private _vestMark = {
     if (_on) then { _mine pushBack _v; } else { _not pushBack _v; };
     profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinMine", _mine];
     profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinNot", _not];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     ["tick"] call comspec_atak_native_fnc_vestMount;
 };
 missionNamespace setVariable ["COMSPEC_ATAK_VestMark", _vestMark];

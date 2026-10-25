@@ -111,7 +111,7 @@ switch (_act) do {
     };
     case "mapRelays": {
         profileNamespace setVariable ["COMSPEC_ATAK_RelaysLayer", !(profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true])];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         call _render;
     };
 };

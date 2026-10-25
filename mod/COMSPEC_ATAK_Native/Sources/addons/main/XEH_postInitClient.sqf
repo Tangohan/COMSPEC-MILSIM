@@ -18,7 +18,8 @@ if (!isNil "ace_arsenal_fnc_addRightPanelButton") then {
         uiNamespace setVariable ["COMSPEC_ATAK_ArsenalItems", _items];
     };
     if (_items isNotEqualTo []) then {
-        [_items, "COMSPEC", "\z\comspec_atak_native\addons\main\data\arsenal_comspec.paa", "COMSPEC_Arsenal"] call ace_arsenal_fnc_addRightPanelButton;
+        // 4e paramètre d'ACE = numéro de bouton à remplacer (NOMBRE) : un texte y faisait échouer l'appel (erreur dans le RPT, pas de bouton).
+        [_items, "COMSPEC", "\z\comspec_atak_native\addons\main\data\arsenal_comspec.paa"] call ace_arsenal_fnc_addRightPanelButton;
     };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
@@ -88,7 +89,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _cur = _list find toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
     private _next = _list select ((_cur max 0) + 1) mod (count _list);
     profileNamespace setVariable ["COMSPEC_ATAK_MiniAnchor", _next];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     if (!isNull ([] call comspec_atak_native_fnc_display)) then {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         [_s getOrDefault ["activePage", "LAUNCHER"], false] call comspec_atak_native_fnc_navigate;
@@ -938,6 +939,14 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 // Fond PHOTO d'Athena (sans le mod @COMSPEC_ATAK_Photo) : meta demandée à la DLL une fois la liaison faite, pour que
 // PHOTO soit proposé dès la première ouverture de la carte.
 [{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 15] call CBA_fnc_waitAndExecute;
+// Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
+{
+    addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+} forEach ["Ended", "MPEnded"];
+// Quitter la partie (Échap > Quitter) ne déclenche pas Ended : l'écran de jeu qui se ferme vide aussi l'écriture.
+[{ !isNull (findDisplay 46) }, {
+    (findDisplay 46) displayAddEventHandler ["Unload", { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+}] call CBA_fnc_waitUntilAndExecute;
 // Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
 // (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
 [{ time > 0 && {!isNull (findDisplay 46)} }, {

@@ -38,20 +38,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Véhicules : plus d'erreur BIS_fnc_crewCount à bord (ATAK natif : numéro donné au regroupement)
+## Moins de freezes, plus d'erreur BIS_fnc_crewCount en véhicule, fonctions connect réparées (ATAK natif : numéro donné au regroupement)
 
 ### Résumé joueur
-Type : correctif
-FR : Plus de message d'erreur en montant dans un véhicule
+Type : performance
+FR : Moins de freezes et plus d'erreur en véhicule
+- Le jeu ne se fige plus près d'une seconde à intervalles réguliers quand le mod enregistre tes réglages : l'enregistrement est regroupé (une fois par minute au plus, et à la fin de la mission).
 - Le message d'erreur « BIS_fnc_crewCount » qui restait à l'écran tant qu'on était à bord d'un véhicule a disparu.
-- Le nombre de places du véhicule (équipage et passagers) envoyé à Athena est de nouveau juste.
-EN : No more error message when getting into a vehicle
+- Le bouton COMSPEC réapparaît dans l'arsenal ACE, et « Carte Athena » ouvre de nouveau le portail dans le navigateur du PC.
+EN : Fewer freezes and no more error in vehicles
+- The game no longer freezes for almost a second at regular intervals when the mod saves your settings: saving is grouped (at most once a minute, and at the end of the mission).
 - The "BIS_fnc_crewCount" error that stayed on screen while you were inside a vehicle is gone.
-- The vehicle's seat count (crew and passengers) sent to Athena is correct again.
+- The COMSPEC button is back in the ACE arsenal, and "Athena map" opens the portal in your PC browser again.
 
 ### Détail technique
-- `connect/functions/fn_updateVehicleTracking.sqf` (embarqué dans le natif en `comspec_overwatch_connect.pbo`) appelait `[_vehicle, true] call BIS_fnc_crewCount` avec un OBJET, alors que la fonction attend un nom de classe (STRING) : erreur de type affichée à chaque tick du suivi véhicule (toutes les 2,5 s) tant que le joueur était à bord. Remplacé par `fullCrew [_vehicle, "", true]` : `crew_max` = toutes les places (même base que `crew_count` = `count crew`), `passenger_max` = places `cargo`.
-- main.pbo inchangé ; à reconstruire au regroupement : `comspec_overwatch_connect.pbo`.
+- **Freezes** (RPT d'un joueur Linux/Proton, ATAK 2.3.10) : lignes `[PERF] Image figée` de ~800 ms toutes les 2 à 20 s, dont une exactement à chaque étape du dépannage pas à pas (`fn_diagIsolateStart` fait `saveProfileNamespace` à chaque étape). `saveProfileNamespace` réécrit tout le fichier .vars : ~0,8 s sur ce PC. Nouvelles fonctions `comspec_atak_native_fnc_saveProfile` et `comspec_overwatch_connect_fnc_saveProfile` (même clé `COMSPEC_ProfileSavePending`) : une écriture par 60 s au plus via `CBA_fnc_waitAndExecute`, vidée sur `Ended`/`MPEnded` et à la fermeture de l'écran de jeu (display 46 `Unload`) ; `[true] call …` écrit tout de suite. Une écriture de plus de 100 ms est notée `[PERF] Écriture du profil : N ms`. Tous les `saveProfileNamespace;` du natif (sauf `XEH_preStart`) et du connect passent par elles (atak_athena gelé non touché).
+- **BIS_fnc_crewCount** : `connect/functions/fn_updateVehicleTracking.sqf` lui passait un OBJET (la fonction attend un nom de classe) à chaque tick du suivi véhicule (2,5 s). Remplacé par `fullCrew [_vehicle, "", true]` : `crew_max` = toutes les places, `passenger_max` = places `cargo`.
+- **Fonctions connect qui ne compilaient pas** (erreurs au lancement dans le RPT, fonctions vides en jeu) : `fn_intelNoteApplyGeometry` (`ctrlConfig` n'existe pas → `ctrlFontHeight`), `fn_collectBugReportLog` (`isNotEqualType` → `!(… isEqualType …)`), `fn_createChatChannel` (guillemets `\"` dans l'expression régulière → `""`), `fn_webBrowserOpenAthena` / `fn_webBrowserOpenSystem` (`openURL` n'existe pas → `OpenAthenaLink` de COMSPEC Link, portail seulement), `fn_zeusShowPlayerAtak` (`replaceString` → `splitString`/`joinString`).
+- **Arsenal ACE** : `ace_arsenal_fnc_addRightPanelButton` recevait un texte en 4e paramètre (numéro de bouton attendu) : erreur `Params` et pas de bouton COMSPEC.
+- **fn_tr** ligne 64 : `[_x, ""] select (isNil "_x")` plantait sur un argument absent (« Undefined variable _x »).
+- Vérifié avec HEMTT 1.17.2 (`hemtt check` natif : 0 erreur ; connect : les 6 erreurs de syntaxe ont disparu, restent les faux positifs `ctrlWebBrowserAction` inconnus de HEMTT). main.pbo et `comspec_overwatch_connect.pbo` à reconstruire au regroupement.
 
 ## Traduction ouverte aux contributeurs : rôles, traduction du site, kit des mods complété (ATAK natif : numéro donné au regroupement, site)
 

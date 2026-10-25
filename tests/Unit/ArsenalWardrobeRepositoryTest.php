@@ -127,7 +127,7 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalDeleteLocal.sqf'
         );
         self::assertStringContainsString('ace_arsenal_saved_loadouts', $delLocal);
-        self::assertStringContainsString('saveProfileNamespace', $delLocal);
+        self::assertStringContainsString('fnc_saveProfile', $delLocal);
         $delCloud = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalDeleteCloud.sqf'
         );

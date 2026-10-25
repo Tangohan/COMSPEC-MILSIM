@@ -12,4 +12,4 @@ private _all = _seen + (_ids - _seen);
 // Borne : on garde les plus récents.
 if ((count _all) > 2000) then { _all = _all select [(count _all) - 2000]; };
 profileNamespace setVariable ["COMSPEC_ArsenalSeenIds", _all];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;

@@ -67,11 +67,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_intro_enabled", "CHECKBOX",
     ["Intro au lancement du jeu", "Décoché par défaut. Coché : le logo COMSPEC s'affiche sur l'écran de chargement d'Arma. Prend effet au prochain lancement du jeu."],
     ["COMSPEC", "ATAK · Intro"], false, 0,
-    { profileNamespace setVariable ["COMSPEC_ATAK_IntroEnabled", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
+    { profileNamespace setVariable ["COMSPEC_ATAK_IntroEnabled", _this]; [] call comspec_atak_native_fnc_saveProfile; }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_intro_sound", "CHECKBOX",
     ["Son de l'intro", "Petit jingle joué avec le logo COMSPEC au lancement d'Arma (seulement si l'intro est activée). Prend effet au prochain lancement du jeu."],
     ["COMSPEC", "ATAK · Intro"], true, 0,
-    { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
+    { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; [] call comspec_atak_native_fnc_saveProfile; }] call comspec_atak_native_fnc_addSetting;
 
 // Check de démarrage (fn_startupCheck), par joueur : résultat du contrôle du mod posté dans le salon de debug du Discord Athena.
 ["comspec_atak_native_startup_report", "CHECKBOX",
@@ -196,7 +196,7 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
         params ["_v"];
         if (_v isEqualTo "" || {_v isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"])}) exitWith {};
         profileNamespace setVariable ["COMSPEC_ATAK_PhoneModel", _v];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         if (!isNull player && {_v isNotEqualTo "s7"} && {!([_v, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then {
             // Dans le téléphone seulement, rien sur l'écran du jeu.
             ["WARNING", "ATAK : il vous manque l'item demandé pour ce modèle, le Durci S7 reste affiché.", 6, 40] call comspec_atak_native_fnc_notify;

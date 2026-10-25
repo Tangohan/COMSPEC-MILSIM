@@ -20,7 +20,7 @@ switch (_act) do {
     case "pick": {
         if !(_arg isEqualType "") exitWith { false };
         profileNamespace setVariable ["COMSPEC_ATAK_Patch", _arg];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         private _msg = format ["Patch au dos : %1", ["name", _arg] call comspec_atak_native_fnc_patchCatalog];
         uiNamespace setVariable ["COMSPEC_ATAK_PatchMsg", [_msg, diag_tickTime]];
         if (!isNil "comspec_atak_native_fnc_toast") then { [_msg, 2.5] call comspec_atak_native_fnc_toast; } else { ["INFO", _msg, 3, 10] call comspec_atak_native_fnc_notify; };
