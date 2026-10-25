@@ -2597,6 +2597,10 @@ class Container
                 self::get(\App\Repositories\ProbationOversightRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
             ),
+            \App\Services\Alerts\PlanPaymentAlertsBuilder::class => new \App\Services\Alerts\PlanPaymentAlertsBuilder(
+                self::get(\App\Repositories\PlanPaymentRequestRepository::class),
+                self::get(\App\Services\Billing\PlanPaymentService::class),
+            ),
             \App\Services\Alerts\PlanEndAlertsBuilder::class => new \App\Services\Alerts\PlanEndAlertsBuilder(
                 self::get(\App\Repositories\TenantRepository::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),

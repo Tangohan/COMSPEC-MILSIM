@@ -1634,3 +1634,8 @@ html[data-bo-theme="dark"] .ath-main__body .bcs input.bcs-file {
   flex-direction: row;
   align-items: center;
 }
+
+/* Option réservée à certaines formules (mise en avant dans le registre). */
+.bcs-switch--locked { cursor: default; }
+.bcs-switch--locked .bcs-switch__track { opacity: .45; }
+.bcs-plan-badge { display: inline-flex; align-items: center; margin-left: .4rem; padding: .1rem .5rem; border-radius: 999px; background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; vertical-align: middle; }

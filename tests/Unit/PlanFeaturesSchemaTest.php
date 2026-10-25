@@ -56,4 +56,13 @@ final class PlanFeaturesSchemaTest extends TestCase
             self::assertSame('int', $defs[$key]['type']);
         }
     }
+
+    public function testRegistryFeaturedIsAPaidPlanFeature(): void
+    {
+        self::assertContains('registry_featured', SubscriptionPlanFeaturesCatalog::BOOL_FEATURES);
+        self::assertFalse(SubscriptionPlanFeaturesCatalog::defaultsForSlug('free')['registry_featured']);
+        self::assertFalse(SubscriptionPlanFeaturesCatalog::defaultsForSlug('standard')['registry_featured']);
+        self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug('pro')['registry_featured']);
+        self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug('pro_plus')['registry_featured']);
+    }
 }
