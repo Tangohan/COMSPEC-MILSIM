@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Authorization\SystemReservedPermissions;
+use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -22,8 +24,31 @@ final class AccessControlApiController
         $this->pdo = Database::getPdo();
     }
 
+    /**
+     * Ces routes ne portent que AuthMiddleware : sans ce garde, un simple membre pouvait créer
+     * admin.organization et l’accorder à son propre rôle. Réservé aux administrateurs de la
+     * communauté (mêmes droits que les écrans de rôles) ; jeton CSRF exigé sur toute écriture
+     * (/api/ est exempté par CsrfPostMiddleware).
+     */
+    private function denyUnlessManager(Request $request): ?Response
+    {
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.access')
+            && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
+            return Response::json(['ok' => false, 'error' => 'Réservé aux administrateurs de la communauté.'], 403);
+        }
+        if (!$request->isGet() && !Csrf::verify($request)) {
+            return Response::json(['ok' => false, 'error' => 'Jeton CSRF invalide — rechargez la page.'], 403);
+        }
+
+        return null;
+    }
+
     public function roles(Request $request, array $params = []): Response
     {
+        if (($denied = $this->denyUnlessManager($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($request->isGet()) {
             $st = $this->pdo->prepare('SELECT id, name, slug, level, is_system FROM roles WHERE tenant_id = ? ORDER BY name');
@@ -44,6 +69,9 @@ final class AccessControlApiController
 
     public function permissions(Request $request, array $params = []): Response
     {
+        if (($denied = $this->denyUnlessManager($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($request->isGet()) {
             $st = $this->pdo->prepare('SELECT id, code, label, category FROM permissions WHERE tenant_id = ? OR tenant_id IS NULL ORDER BY code');
@@ -70,6 +98,9 @@ final class AccessControlApiController
 
     public function rolePermissions(Request $request, array $params = []): Response
     {
+        if (($denied = $this->denyUnlessManager($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $roleId = (int) $request->input('role_id');
         $permissionId = (int) $request->input('permission_id');
@@ -106,6 +137,9 @@ final class AccessControlApiController
 
     public function rules(Request $request, array $params = []): Response
     {
+        if (($denied = $this->denyUnlessManager($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($request->isGet()) {
             $st = $this->pdo->prepare('SELECT * FROM access_rules WHERE tenant_id = ? ORDER BY priority DESC, id DESC');
@@ -133,8 +167,18 @@ final class AccessControlApiController
 
     public function scopes(Request $request, array $params = []): Response
     {
+        if (($denied = $this->denyUnlessManager($request)) !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $ruleId = $request->isGet() ? (int) $request->query('rule_id', 0) : (int) $request->input('rule_id');
+        // La règle doit appartenir à la communauté active : ni lecture ni ajout de portée ailleurs.
+        $ruleCheck = $this->pdo->prepare('SELECT 1 FROM access_rules WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $ruleCheck->execute([$ruleId, $tenantId]);
+        if ($tenantId < 1 || !$ruleCheck->fetchColumn()) {
+            return Response::json(['ok' => false, 'error' => 'Règle hors du périmètre de votre communauté.'], 403);
+        }
         if ($request->isGet()) {
-            $ruleId = (int) $request->query('rule_id', 0);
             $st = $this->pdo->prepare('SELECT * FROM access_scopes WHERE rule_id = ?');
             $st->execute([$ruleId]);
 
@@ -142,13 +186,16 @@ final class AccessControlApiController
         }
 
         $st = $this->pdo->prepare('INSERT INTO access_scopes (rule_id, scope_type, scope_identifier, action) VALUES (?, ?, ?, ?)');
-        $st->execute([(int) $request->input('rule_id'), strtoupper((string) $request->input('scope_type', 'MODULE')), (string) $request->input('scope_identifier'), strtoupper((string) $request->input('action', 'READ'))]);
+        $st->execute([$ruleId, strtoupper((string) $request->input('scope_type', 'MODULE')), (string) $request->input('scope_identifier'), strtoupper((string) $request->input('action', 'READ'))]);
 
         return Response::json(['ok' => true, 'id' => (int) $this->pdo->lastInsertId()]);
     }
 
     public function simulation(Request $request, array $params = []): Response
     {
+        if (($denied = $this->denyUnlessManager($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $user = $this->users->findById((int) $request->input('user_id', 0), $tenantId);
         if (!$user) {
