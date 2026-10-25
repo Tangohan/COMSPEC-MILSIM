@@ -6861,7 +6861,7 @@ class AtakApiController
         static $lastReplayLog = [];
         $key = $missionId . ':' . $callSign;
         $now = time();
-        if (!isset($lastReplayLog[$key]) || ($now - $lastReplayLog[$key]) >= 2) {
+        if ((!isset($lastReplayLog[$key]) || ($now - $lastReplayLog[$key]) >= 2) && $this->replayStepDue($key, $now)) {
             $lastReplayLog[$key] = $now;
             try {
                 $replay = \App\Core\Container::get(\App\Services\Replay\ReplayService::class);
@@ -6873,6 +6873,26 @@ class AtakApiController
             }
         }
         return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Pas de 2 s du replay par indicatif, entre requêtes : sous PHP-FPM le `static` ne vit que le temps
+     * d’une requête. Fichier témoin par indicatif (mtime) ; en cas d’erreur disque, on journalise comme avant.
+     */
+    private function replayStepDue(string $key, int $now): bool
+    {
+        $dir = base_path('storage/cache/replay-step');
+        $path = $dir . '/' . md5($key) . '.t';
+        $mtime = @filemtime($path);
+        if ($mtime !== false && ($now - $mtime) < 2) {
+            return false;
+        }
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return true;
+        }
+        @touch($path, $now);
+
+        return true;
     }
 
     /**

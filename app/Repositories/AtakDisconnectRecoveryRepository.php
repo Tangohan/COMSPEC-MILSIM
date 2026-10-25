@@ -11,6 +11,12 @@ final class AtakDisconnectRecoveryRepository
 {
     private const TTL_SEC = 86400;
 
+    /**
+     * Snapshot inchangé (indicatif + état de liaison, seuls champs relus par session-restore) :
+     * réécrit au plus toutes les N s au lieu d’une écriture LOCK_EX à chaque position.
+     */
+    private const REFRESH_SEC = 15;
+
     private function path(int $tenantId, string $steamUid): string
     {
         $dir = dirname(__DIR__, 2) . '/storage/cache/atak-recovery';
@@ -30,10 +36,21 @@ final class AtakDisconnectRecoveryRepository
         if ($tenantId < 1 || $steamUid === '') {
             return;
         }
+        $path = $this->path($tenantId, $steamUid);
+        $mtime = @filemtime($path);
+        if ($mtime !== false && (time() - $mtime) < self::REFRESH_SEC) {
+            $raw = @file_get_contents($path);
+            $prev = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+            if (is_array($prev)
+                && (string) ($prev['callsign'] ?? '') === (string) ($snapshot['callsign'] ?? '')
+                && (string) ($prev['link_state'] ?? '') === (string) ($snapshot['link_state'] ?? '')) {
+                return;
+            }
+        }
         $snapshot['saved_at'] = time();
         $snapshot['steam_uid'] = $steamUid;
         @file_put_contents(
-            $this->path($tenantId, $steamUid),
+            $path,
             json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             LOCK_EX
         );
