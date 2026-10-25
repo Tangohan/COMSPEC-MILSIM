@@ -369,7 +369,7 @@ $cpNum = 0;
                         </span>
                         <div class="bcs-media__copy">
                             <label class="bcs-label" for="registry_cover">Image d’en-tête <span class="bcs-opt">(facultatif)</span></label>
-                            <p class="bcs-help">Une photo <em>paysage</em> type bandeau (environ 1600 × 600) donne le meilleur rendu. JPG, PNG ou WebP, 3&nbsp;Mo maximum. Sans image, la carte affiche un fond coloré.</p>
+                            <p class="bcs-help">Une photo paysage type bandeau (environ 1600 × 600) donne le meilleur rendu. JPG, PNG ou WebP, 3&nbsp;Mo maximum. Sans image, la carte affiche un fond coloré.</p>
                             <?php if ($slugHint === ''): ?>
                                 <p class="bcs-notice bcs-notice--info">Définissez d’abord l’adresse publique de votre communauté dans <a class="bcs-link" href="<?= $h($settingsUrl . '?onglet=identite') ?>">Paramètres · Identité</a> pour activer l’envoi.</p>
                             <?php endif; ?>

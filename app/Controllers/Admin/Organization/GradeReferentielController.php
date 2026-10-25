@@ -65,6 +65,7 @@ class GradeReferentielController
             'allGrades' => $allGrades,
             'tenantExtras' => $this->tenantExtras($tenantId, $catalogForExtras),
             'tenantSystemCode' => $systemCode,
+            'gradesHidden' => !empty($settings['grades_hidden']),
             'gradeCategoryFilterId' => $categoryFilter,
             'gradeDisplayService' => $this->gradeDisplayService,
             'backOfficePageCss' => ['back-office-referentiel-grades.css'],
@@ -89,13 +90,33 @@ class GradeReferentielController
 
             return Response::redirect($back);
         }
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $gradesHidden = !empty($settings['grades_hidden']);
+        // « Aucun » : les grades restent attribués en base mais ne s’affichent plus nulle part.
+        if ($code === 'NONE') {
+            if (!$gradesHidden) {
+                $this->tenantRepository->mergeSettings($tenantId, ['grades_hidden' => true]);
+                \App\Support\TenantGrades::forget($tenantId);
+            }
+            Session::flash('success', 'Les grades ne sont plus affichés dans la communauté. Ils restent enregistrés : vous pouvez les réactiver à tout moment.');
+
+            return Response::redirect($back);
+        }
         if (!in_array($code, ['FR_CLASSIC', 'US_CLASSIC'], true)) {
             Session::flash('error', 'Système de grades inconnu.');
 
             return Response::redirect($back);
         }
-        $settings = $this->tenantRepository->getSettings($tenantId);
         $current = strtoupper(trim((string) ($settings['grade_system_code'] ?? ''))) ?: 'FR_CLASSIC';
+        if ($gradesHidden) {
+            $this->tenantRepository->mergeSettings($tenantId, ['grades_hidden' => false, 'grade_system_code' => $code]);
+            \App\Support\TenantGrades::forget($tenantId);
+            Session::flash('success', $code === 'US_CLASSIC'
+                ? 'Les grades américains sont de nouveau affichés dans la communauté.'
+                : 'Les grades français sont de nouveau affichés dans la communauté.');
+
+            return Response::redirect($back);
+        }
         if ($current === $code) {
             Session::flash('info', 'La communauté utilise déjà ce système de grades.');
 

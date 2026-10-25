@@ -88,7 +88,7 @@ $dashSteamId = \App\Support\SteamId::normalize(is_array($cu) ? (string) ($cu['st
 $dashSteamLinked = $dashSteamId !== null;
 $displayName = $cu ? (string) ($cu['display_name'] ?? $cu['email'] ?? 'Opérateur') : 'Opérateur';
 $roleHint = 'Opérateur';
-$gr = $grade ?? null;
+$gr = \App\Support\TenantGrades::hidden() ? null : ($grade ?? null);
 if (is_array($gr)) {
     $roleHint = (string) ($gr['label_short'] ?? $gr['short_name'] ?? $gr['label_long'] ?? $gr['name'] ?? 'Opérateur');
 }
@@ -200,6 +200,10 @@ if ($dashFirstName === '' || str_contains($dashFirstName, '@')) {
 }
 $dashHour = (int) date('G');
 $dashGreeting = ($dashHour >= 18 || $dashHour < 5) ? 'Bonsoir' : 'Bonjour';
+if (function_exists('site_lang') && site_lang() !== 'fr') {
+    // Le prénom rend la phrase unique : on traduit la salutation seule.
+    $dashGreeting = \App\Support\HtmlTranslator::translateText($dashGreeting);
+}
 $heroBriefItems = [];
 if (is_array($mbOp) && !empty($mbOp['title'])) {
     $heroBriefItems[] = [

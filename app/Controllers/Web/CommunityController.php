@@ -1842,6 +1842,11 @@ class CommunityController
         }
 
         $gs = strtoupper(trim((string) $request->input('wizard_grade_system_code', 'FR_CLASSIC')));
+        // « Aucun » : pas de grade affiché ; un référentiel technique (français) reste posé pour les données.
+        $gradesHidden = $gs === 'NONE';
+        if ($gradesHidden) {
+            $gs = 'FR_CLASSIC';
+        }
         if (!in_array($gs, CommunityOnboardingValidationService::GRADE_SYSTEMS, true)) {
             $gs = 'FR_CLASSIC';
         }
@@ -1857,6 +1862,7 @@ class CommunityController
 
         $wizard = [
             'grade_system_code' => $gs,
+            'grades_hidden' => $gradesHidden,
             'timezone' => trim((string) $request->input('wizard_timezone', 'Europe/Paris')),
             'default_locale' => trim((string) $request->input('wizard_default_locale', 'fr')),
             'orbat_visibility' => trim((string) $request->input('wizard_orbat_visibility', 'members')),

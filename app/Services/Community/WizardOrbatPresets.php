@@ -160,8 +160,25 @@ final class WizardOrbatPresets
      */
     public static function forWizard(): array
     {
+        // Visiteur non francophone : les noms d’unités sont injectés tels quels dans les champs du constructeur
+        // (non traduits à l’affichage), on les passe donc en anglais ici, adresses courtes comprises.
+        $translate = function_exists('site_lang') && site_lang() !== 'fr';
         $out = [];
         foreach (self::all() as $preset) {
+            if ($translate) {
+                $preset['label'] = \App\Support\HtmlTranslator::translateText((string) $preset['label']);
+                $usedSlugs = [];
+                foreach ($preset['units'] as $i => $unit) {
+                    $name = \App\Support\HtmlTranslator::translateText((string) $unit['name']);
+                    $slug = self::slugify($name);
+                    if ($slug === '' || isset($usedSlugs[$slug])) {
+                        $slug = self::slugify(($slug === '' ? '' : $slug . ' ') . (string) $unit['key']);
+                    }
+                    $usedSlugs[$slug] = true;
+                    $preset['units'][$i]['name'] = $name;
+                    $preset['units'][$i]['slug'] = $slug;
+                }
+            }
             $preset['count'] = count($preset['units']);
             $out[] = $preset;
         }

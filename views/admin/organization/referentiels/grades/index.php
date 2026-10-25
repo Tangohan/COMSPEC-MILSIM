@@ -110,6 +110,19 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
     $otherSystem = $communitySystem === 'fr' ? 'us' : 'fr';
     $targetSystem = $tab !== $communitySystem ? $tab : $otherSystem;
     ?>
+    <?php if (!empty($gradesHidden)): ?>
+    <div class="grd-ref__system is-none">
+        <p>
+            <strong>Votre communauté n’affiche aucun grade.</strong>
+            Les grades déjà attribués restent enregistrés mais n’apparaissent ni dans l’en-tête, ni sur les fiches, ni sur le tableau de bord.
+        </p>
+        <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="grade_system_code" value="<?= $tab === 'us' ? 'US_CLASSIC' : 'FR_CLASSIC' ?>">
+            <button type="submit" class="grd-ref__switch">Afficher les <?= $h($systemLabels[$tab === 'us' ? 'us' : 'fr']) ?></button>
+        </form>
+    </div>
+    <?php else: ?>
     <div class="grd-ref__system<?= $tab !== $communitySystem ? ' is-other' : '' ?>">
         <p>
             <?php if ($tab === $communitySystem): ?>
@@ -120,12 +133,20 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
                 Votre communauté utilise actuellement les <?= $h($systemLabels[$communitySystem]) ?>.
             <?php endif; ?>
         </p>
-        <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>" onsubmit="return confirm('Passer la communauté aux <?= $h($systemLabels[$targetSystem]) ?> ? Les grades déjà attribués aux membres sont conservés ; les listes proposeront ensuite les <?= $h($systemLabels[$targetSystem]) ?>.');">
-            <?= \App\Core\Csrf::field() ?>
-            <input type="hidden" name="grade_system_code" value="<?= $targetSystem === 'us' ? 'US_CLASSIC' : 'FR_CLASSIC' ?>">
-            <button type="submit" class="grd-ref__switch">Utiliser les <?= $h($systemLabels[$targetSystem]) ?> pour la communauté</button>
-        </form>
+        <div class="grd-ref__system-actions">
+            <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>" onsubmit="return confirm('Passer la communauté aux <?= $h($systemLabels[$targetSystem]) ?> ? Les grades déjà attribués aux membres sont conservés ; les listes proposeront ensuite les <?= $h($systemLabels[$targetSystem]) ?>.');">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="grade_system_code" value="<?= $targetSystem === 'us' ? 'US_CLASSIC' : 'FR_CLASSIC' ?>">
+                <button type="submit" class="grd-ref__switch">Utiliser les <?= $h($systemLabels[$targetSystem]) ?> pour la communauté</button>
+            </form>
+            <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>" onsubmit="return confirm('Ne plus afficher aucun grade dans la communauté ? Rien n’est supprimé : vous pourrez les réafficher ici.');">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="grade_system_code" value="NONE">
+                <button type="submit" class="grd-ref__switch grd-ref__switch--ghost">N’afficher aucun grade</button>
+            </form>
+        </div>
     </div>
+    <?php endif; ?>
 
     <section class="grd-ref__panel">
         <div class="grd-ref__panel-head">
