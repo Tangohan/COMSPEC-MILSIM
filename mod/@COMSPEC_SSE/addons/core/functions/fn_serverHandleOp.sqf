@@ -40,7 +40,7 @@ switch (toLower _op) do {
     case "collect": {
         _args params [["_quality", 50], ["_entry", createHashMap]];
         // Garde serveur : deux joueurs qui collectent en même temps, ou une collecte répétée, ne font qu'une ligne.
-        if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
+        if (([_target] call comspec_sse_fnc_getState) in ["COLLECTED", "TRANSMITTED"]) exitWith {
             [format ["serverOp collect ignorée : %1 déjà collecté", _target], "WARN"] call comspec_sse_fnc_log;
             false
         };

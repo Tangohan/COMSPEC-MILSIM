@@ -66,6 +66,15 @@ params [["_title", "ALERTE"], ["_msg", ""], ["_from", ""], ["_rgba", [0.55, 0.08
 if (!hasInterface) exitWith { false };
 // Événements rejoués par la synchro serveur (arrivée en cours de partie) : pas d'alerte.
 if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith { false };
+// Texte brut (poste Athena, administration) : &, < et > échappés pour le texte structuré ; entités déjà échappées gardées.
+private _esc = {
+    private _s = [str _this, _this] select (_this isEqualType "");
+    _s = _s regexReplace ["&(?!(amp|lt|gt|quot|apos|#[0-9]+);)", "&amp;"];
+    [[_s, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace
+};
+_title = _title call _esc;
+_msg = _msg call _esc;
+_from = _from call _esc;
 uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, [dayTime, "HH:MM"] call BIS_fnc_timeToString, -1]];
 ["draw"] call comspec_atak_native_fnc_fullAlert;
 true

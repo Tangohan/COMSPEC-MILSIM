@@ -81,7 +81,7 @@ switch (_act) do {
             params ["_p", "_t"];
             ["comspec_atak_native_osintPost", [format ["@%1", _p select [0, 20]], _t select [0, 200], [dayTime, "HH:MM"] call BIS_fnc_timeToString]] call CBA_fnc_globalEvent;
         }, [_pseudo, _txt], "Publication", 1] call comspec_atak_native_fnc_netSend;
-        [{ ["OSINT"] call comspec_atak_native_fnc_pageRender; }, [], 1] call CBA_fnc_waitAndExecute;
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "OSINT") then { ["OSINT"] call comspec_atak_native_fnc_pageRender; }; }, [], 1] call CBA_fnc_waitAndExecute;
         true
     };
 };

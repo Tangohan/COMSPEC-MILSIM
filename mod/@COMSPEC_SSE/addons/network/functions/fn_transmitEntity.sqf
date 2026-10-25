@@ -8,9 +8,13 @@ params [
     ["_announce", true, [true]]
 ];
 
+// Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
+// pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
+if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_transmitEntity; true };
+
 if (isNull _entity) exitWith {
     ["TX abandon — aucune cible", "WARN"] call comspec_sse_fnc_log;
-    if (_announce) then { hint (("Aucun sujet à transmettre.") call comspec_sse_fnc_tr); };
+    if (_announce) then { ["Aucun sujet à transmettre.", "WARNING"] call comspec_sse_fnc_notify; };
     false
 };
 
@@ -43,9 +47,9 @@ if (_includeDigital && {!isNil "comspec_sse_fnc_submitDigitalAcquisition"}) then
 
 if (_announce) then {
     if (_okP) then {
-        hint (("Fiche d’identité envoyée au registre.") call comspec_sse_fnc_tr);
+        ["Fiche d’identité envoyée au registre.", "SUCCESS"] call comspec_sse_fnc_notify;
     } else {
-        hint (("La fiche n’est pas encore arrivée au registre. Elle est mise en attente — le détail est dans le journal COMSPEC.") call comspec_sse_fnc_tr);
+        ["La fiche n’est pas encore arrivée au registre. Elle est mise en attente — le détail est dans le journal COMSPEC.", "WARNING"] call comspec_sse_fnc_notify;
     };
 };
 

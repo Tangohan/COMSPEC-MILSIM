@@ -14,7 +14,7 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
 };
 // Une seule collecte par entité (état COLLECTED posé par le serveur) : la collecte se répétait à l'infini, chaque
 // fois avec une ligne de plus dans la chaîne de possession, le journal et le registre.
-if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
+if (([_target] call comspec_sse_fnc_getState) in ["COLLECTED", "TRANSMITTED"]) exitWith {
     // Déjà collectée mais pas encore scellée : le scellé seul reste à faire.
     if (_seal) exitWith { [_target, _player] call comspec_sse_fnc_bagEvidence; };
     ["Pièce déjà collectée : voir le registre des scellés.", "WARNING"] call comspec_sse_fnc_notify;
@@ -28,7 +28,7 @@ if (_seal && {!("COMSPEC_SSE_EvidenceBag" in (items _player))}) exitWith {
     "Collecte SSE...",
     {
         params ["_target", "_player", ["_seal", false]];
-        if (([_target] call comspec_sse_fnc_getState) isEqualTo "COLLECTED") exitWith {
+        if (([_target] call comspec_sse_fnc_getState) in ["COLLECTED", "TRANSMITTED"]) exitWith {
             ["Pièce déjà collectée par un équipier.", "WARNING"] call comspec_sse_fnc_notify;
         };
         [_target] call comspec_sse_fnc_ensureGenerated;

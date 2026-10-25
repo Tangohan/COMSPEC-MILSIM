@@ -7,6 +7,12 @@
 params [["_action", ""]];
 _action = toLower _action;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
+// Connexion par COMSPEC Link (requêtes HTTP bloquantes de la DLL) : relancée dans un spawn pour que extAwait passe
+// en Async, sinon le jeu fige pendant chaque tentative. Le redessin final reste en fin de script.
+if (_bridge && {!canSuspend} && {_action in ["password", "otp_ask", "otp_ok", "pair"]}) exitWith {
+    [_action] spawn comspec_atak_native_fnc_athenaAction;
+    true
+};
 private _ext = { params ["_cmd", ["_args", []]]; if (_bridge) then { private _r = ["COMSPECExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait; if (_r isEqualType []) then { _r select 0 } else { _r } } else { [_cmd, _args] call comspec_atak_native_fnc_extensionCall } };
 private _url = "https://athena.ttrd.fr/public"; // portail Athena fixe
 private _pack = if (_bridge) then { [] call comspec_overwatch_connect_fnc_packVersion } else { "native" };

@@ -1,9 +1,11 @@
 /*
     Pivot : trouve d'autres entités SSE partageant numéro / alias / grid / id.
-    [_entity] call comspec_sse_fnc_pivotSearch
+    [_entity, _emit] call comspec_sse_fnc_pivotSearch
+      _emit : émet SSE_NetworkLinked (défaut true), une seule fois par paire et par machine
 */
 params [
-    ["_entity", objNull, [objNull]]
+    ["_entity", objNull, [objNull]],
+    ["_emit", true, [true]]
 ];
 
 if (isNull _entity) exitWith { [] };
@@ -41,10 +43,18 @@ if (_keys isEqualTo []) exitWith { [] };
 
 private _matches = [];
 // Candidats : entités SSE uniquement, sans doublons (allMissionObjects recoupe allUnits/vehicles).
-private _candidates = (allUnits + vehicles + (allMissionObjects "All")) select {
-    _x getVariable ["comspec_sse_enabled", false]
+// Balayage de la mission mis en cache 10 s : l'onglet graphe rappelle le pivot à chaque rafraîchissement.
+private _cache = missionNamespace getVariable ["comspec_sse_pivotCandidates", [-1, []]];
+private _candidates = _cache select 1;
+if ((_cache select 0) < 0 || {(diag_tickTime - (_cache select 0)) > 10}) then {
+    _candidates = (allUnits + vehicles + (allMissionObjects "All")) select {
+        _x getVariable ["comspec_sse_enabled", false]
+    };
+    _candidates = _candidates arrayIntersect _candidates;
+    missionNamespace setVariable ["comspec_sse_pivotCandidates", [diag_tickTime, _candidates]];
 };
-_candidates = _candidates arrayIntersect _candidates;
+// Liens déjà annoncés (clé « netId source|netId cible ») : un événement réseau par lien nouveau seulement.
+private _emitted = missionNamespace getVariable ["comspec_sse_pivotEmitted", createHashMap];
 
 {
     private _o = _x;
@@ -54,9 +64,14 @@ _candidates = _candidates arrayIntersect _candidates;
         { if ((_blob find _x) >= 0) exitWith { _hit = true; }; } forEach _keys;
         if (_hit) then {
             _matches pushBack _o;
-            ["SSE_NetworkLinked", [netId _entity, netId _o, _keys]] call comspec_sse_fnc_emitEvent;
+            private _key = format ["%1|%2", netId _entity, netId _o];
+            if (_emit && {!(_key in _emitted)}) then {
+                _emitted set [_key, true];
+                ["SSE_NetworkLinked", [netId _entity, netId _o, _keys]] call comspec_sse_fnc_emitEvent;
+            };
         };
     };
 } forEach _candidates;
+missionNamespace setVariable ["comspec_sse_pivotEmitted", _emitted];
 
 _matches

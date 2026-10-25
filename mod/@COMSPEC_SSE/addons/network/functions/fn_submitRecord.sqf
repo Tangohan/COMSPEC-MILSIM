@@ -12,6 +12,10 @@ params [
     ["_data", createHashMap, [createHashMap, []]]
 ];
 
+// Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
+// pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
+if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_submitRecord; true };
+
 private _payload = [_recordId, _category, _sourceType, _collector, _pos, _quality, _data] call comspec_sse_fnc_buildPayload;
 _payload set ["case_reference", [] call comspec_sse_fnc_getCaseReference];
 _payload set ["idempotency_key", [_category, _recordId] call comspec_sse_fnc_makeIdempotencyKey];
@@ -33,16 +37,16 @@ private _envelope = createHashMapFromArray [
 if ([] call comspec_sse_fnc_isOnline) then {
     private _ok = [_envelope] call comspec_sse_fnc_sendViaOverwatch;
     if (_ok) then {
-        hint ((format ["SSE transmis — %1", _recordId]) call comspec_sse_fnc_tr);
+        [format ["SSE transmis — %1", _recordId], "SUCCESS"] call comspec_sse_fnc_notify;
         [_recordId, "transmit", _sourceType, "Transmis Athena", _quality, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
     } else {
         [_envelope] call comspec_sse_fnc_queueOffline;
-        hint ((format ["SSE en file (échec envoi) — %1", _recordId]) call comspec_sse_fnc_tr);
+        [format ["SSE en file (échec envoi) — %1", _recordId], "WARNING"] call comspec_sse_fnc_notify;
         [_recordId, "transmit", _sourceType, "QUEUED (échec)", _quality, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
     };
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
-    hint ((format ["Mode hors-ligne — %1 mis en file QUEUED", _recordId]) call comspec_sse_fnc_tr);
+    [format ["Mode hors-ligne — %1 mis en file QUEUED", _recordId], "WARNING"] call comspec_sse_fnc_notify;
     [_recordId, "transmit", _sourceType, "QUEUED offline", _quality, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 

@@ -18,10 +18,23 @@ private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]
 private _tsz = 0.026 * ((_kRaw max 0.8) min 1.25) * _ts;
 private _gfx = comspec_atak_native_fnc_planGfx;
 private _white = [1, 1, 1, 0.9 * _alpha];
+// Rectangle visible de la carte, avec une marge pour les symboles et étiquettes (tailles en pixels écran).
+(ctrlPosition _map) params ["_vcx", "_vcy", "_vcw", "_vch"];
+private _vtl = _map ctrlMapScreenToWorld [_vcx, _vcy];
+private _vbr = _map ctrlMapScreenToWorld [_vcx + _vcw, _vcy + _vch];
+private _vmg = 320 * _mpx;
+private _vx0 = ((_vtl select 0) min (_vbr select 0)) - _vmg;
+private _vx1 = ((_vtl select 0) max (_vbr select 0)) + _vmg;
+private _vy0 = ((_vtl select 1) min (_vbr select 1)) - _vmg;
+private _vy1 = ((_vtl select 1) max (_vbr select 1)) + _vmg;
 {
     _x params [["_id", ""], ["_kind", ""], ["_pts", []], ["_text", ""], ["_ck", "WHITE"], ["_dashed", false], ["_arrow", false], ["_w", 2], ["_num", 0]];
     private _def = _kinds getOrDefault [_kind, []];
     if ((count _def) isEqualTo 0 || {(count _pts) isEqualTo 0}) then { continue };
+    // Élément entièrement hors de la vue : rien à dessiner (boîte englobante de ses points).
+    private _bx0 = 1e9; private _bx1 = -1e9; private _by0 = 1e9; private _by1 = -1e9;
+    { _bx0 = _bx0 min (_x select 0); _bx1 = _bx1 max (_x select 0); _by0 = _by0 min (_x select 1); _by1 = _by1 max (_x select 1); } forEach _pts;
+    if (_bx1 < _vx0 || {_bx0 > _vx1} || {_by1 < _vy0} || {_by0 > _vy1}) then { continue };
     private _geom = _def select 3;
     private _style = _def select 8;
     private _c = +(_colors getOrDefault [_ck, [1, 1, 1, 1]]);

@@ -56,6 +56,8 @@ switch (toLower _act) do {
     case "hold": {
         _arg params [["_ev", ""], ["_args", []]];
         if (missionNamespace getVariable ["COMSPEC_ATAK_NetReplay", false]) exitWith { false };
+        // Historique rejoué à l'arrivée en partie (syncData, sans alertes) : jamais retenu, sinon il ressortirait plus tard en alertes vives.
+        if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith { false };
         if (["online"] call comspec_atak_native_fnc_offline) exitWith { false };
         private _held = _st get "held";
         _held pushBack [_ev, _args];

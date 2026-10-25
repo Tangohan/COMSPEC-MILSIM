@@ -50,20 +50,33 @@ switch (_mode) do {
         ((([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["visible", [0, 0, 0, 0]])) params ["_px", "_py", "_pw", "_ph"];
         private _skip = allDisplays + (uiNamespace getVariable ["IGUI_displays", []]) + [_d];
         private _want = [];
-        {
-            if ((_x select [0, 12]) isNotEqualTo "comspec_atak") then {
-                private _v = uiNamespace getVariable _x;
-                if (!isNil "_v" && {_v isEqualType displayNull} && {!isNull _v} && {!(_v in _skip)}) then {
-                    _skip pushBack _v;
-                    {
-                        if (isNull (ctrlParentControlsGroup _x)) then {
-                            (ctrlPosition _x) params [["_cx", 0], ["_cy", 0], ["_cw", 0], ["_ch", 0]];
-                            if (_cx < _px + _pw && {_cx + _cw > _px} && {_cy < _py + _ph} && {_cy + _ch > _py}) then { _want pushBack _x; };
-                        };
-                    } forEach (allControls _v);
-                };
+        // uiNamespace garde aussi toutes les fonctions compilées (BIS, CBA, ACE : des milliers d'entrées) : la liste des noms
+        // qui portent un display n'est refaite que si le nombre de variables change, ou toutes les 20 s.
+        private _all = allVariables uiNamespace;
+        private _names = uiNamespace getVariable ["COMSPEC_ATAK_ForeignNames", []];
+        if ((count _all) isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ForeignNamesN", -1]) || {diag_tickTime >= (uiNamespace getVariable ["COMSPEC_ATAK_ForeignNamesAt", 0])}) then {
+            _names = _all select {
+                (_x select [0, 12]) isNotEqualTo "comspec_atak" && {(_x find "_fnc_") < 0} && {
+                    private _v = uiNamespace getVariable _x;
+                    !isNil "_v" && {_v isEqualType displayNull}
+                }
             };
-        } forEach (allVariables uiNamespace);
+            uiNamespace setVariable ["COMSPEC_ATAK_ForeignNames", _names];
+            uiNamespace setVariable ["COMSPEC_ATAK_ForeignNamesN", count _all];
+            uiNamespace setVariable ["COMSPEC_ATAK_ForeignNamesAt", diag_tickTime + 20];
+        };
+        {
+            private _v = uiNamespace getVariable _x;
+            if (!isNil "_v" && {_v isEqualType displayNull} && {!isNull _v} && {!(_v in _skip)}) then {
+                _skip pushBack _v;
+                {
+                    if (isNull (ctrlParentControlsGroup _x)) then {
+                        (ctrlPosition _x) params [["_cx", 0], ["_cy", 0], ["_cw", 0], ["_ch", 0]];
+                        if (_cx < _px + _pw && {_cx + _cw > _px} && {_cy < _py + _ph} && {_cy + _ch > _py}) then { _want pushBack _x; };
+                    };
+                } forEach (allControls _v);
+            };
+        } forEach _names;
         // Plus sous le téléphone (mini déplacé, plein écran réduit) : réaffiché. Un contrôle que son mod a lui-même
         // masqué n'est jamais pris, pour ne pas le réafficher à la fermeture.
         { if (!isNull _x && {!(_x in _want)}) then { _x ctrlShow true; }; } forEach _hidden;

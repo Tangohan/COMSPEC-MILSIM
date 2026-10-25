@@ -10,9 +10,15 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 if (!([player] call comspec_overwatch_connect_fnc_hasTerminal)) exitWith { false };
 
 private _radius = 20;
+// Texte brut : str sur une STRING ajoute des guillemets littéraux, donc on ne convertit que les autres types.
+private _fnc_asText = {
+    if (isNil "_this") exitWith { "" };
+    if (_this isEqualType "") exitWith { _this };
+    str _this
+};
 private _fnc_isPoLabel = {
     params ["_txt"];
-    _txt = toUpper (trim (str _txt));
+    _txt = toUpper (trim (_txt call _fnc_asText));
     if (_txt isEqualTo "") exitWith { false };
     if (_txt isEqualTo "PO") exitWith { true };
     if ((count _txt) < 3) exitWith { false };
@@ -25,10 +31,10 @@ private _fnc_isPoLabel = {
 
 private _fnc_ruleHits = {
     params ["_mode", "_needle", "_text", "_type"];
-    _needle = toLower (trim (str _needle));
+    _needle = toLower (trim (_needle call _fnc_asText));
     if (_needle isEqualTo "") exitWith { false };
-    private _hay = toLower (trim (str _text));
-    private _mkType = toLower (trim (str _type));
+    private _hay = toLower (trim (_text call _fnc_asText));
+    private _mkType = toLower (trim (_type call _fnc_asText));
     if (_mode isEqualTo "label_equals") exitWith { _hay isEqualTo _needle };
     if (_mode isEqualTo "label_contains") exitWith { (_hay find _needle) >= 0 };
     if (_mode isEqualTo "marker_type") exitWith {
@@ -44,19 +50,19 @@ private _fnc_matchDetection = {
     params ["_text", "_name", "_type"];
     private _rules = missionNamespace getVariable ["COMSPEC_MarkerDetectionRules", []];
     if (!(_rules isEqualType [])) exitWith { [] };
-    private _hay = if ((trim (str _text)) isEqualTo "") then { _name } else { _text };
+    private _hay = if ((trim (_text call _fnc_asText)) isEqualTo "") then { _name } else { _text };
     private _hit = [];
     {
         if (!(_x isEqualType []) || {(count _x) < 4}) then { continue };
         if (_hit isNotEqualTo []) then { continue };
-        private _mode = toLower (str (_x select 0));
+        private _mode = toLower ((_x select 0) call _fnc_asText);
         private _needle = _x select 1;
         if ([_mode, _needle, _hay, _type] call _fnc_ruleHits) then {
             private _r = _x select 2;
             if (_r isEqualType "") then { _r = parseNumber _r; };
             if (!(_r isEqualType 0) || {_r < 1}) then { _r = 20; };
             private _c = _x select 3;
-            private _lbl = if ((count _x) > 4 && {(_x select 4) isNotEqualTo ""}) then { str (_x select 4) } else { str _hay };
+            private _lbl = if ((count _x) > 4 && {(_x select 4) isNotEqualTo ""}) then { (_x select 4) call _fnc_asText } else { _hay call _fnc_asText };
             private _confirm = (_c isEqualTo true) || {_c isEqualTo 1} || {_c isEqualTo "1"};
             _hit = [_r, _confirm, _lbl];
         };

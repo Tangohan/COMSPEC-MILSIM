@@ -74,7 +74,8 @@ private _actionDiag = [
             _msg = _msg + "\nATAK irréparable, remplacement nécessaire";
         };
 
-        hint ((_msg) call comspec_overwatch_connect_fnc_tr);
+        // Rendu dans le téléphone (journal Alertes) ; hint écran seulement si les notifications écran sont autorisées.
+        [_msg, "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     },
     { true },
     _noChildren

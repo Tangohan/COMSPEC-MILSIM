@@ -10,6 +10,9 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
+// Requête HTTP synchrone dans la DLL : depuis un contexte non suspendable (bouton, action), on relance en spawn
+// pour passer par extAwait (appel asynchrone) au lieu de figer le jeu le temps de la réponse Athena.
+if (!canSuspend) exitWith { [_vehicle, _serviceType, _priority, _details] spawn comspec_overwatch_connect_fnc_requestVehicleService; true };
 
 if (isNull _vehicle) exitWith {
     ["Aucun véhicule sélectionné.", "system", "warn"] call comspec_overwatch_connect_fnc_announce;
@@ -34,7 +37,7 @@ _serviceData set ["requested_by_callsign", name player];
 
 private _jsonString = [_serviceData] call comspec_overwatch_connect_fnc_hashMapToJson;
 private _parsed = [
-    "COMSPECExtension" callExtension ["RequestVehicleService", [_jsonString]]
+    ["COMSPECExtension", "RequestVehicleService", [_jsonString]] call comspec_overwatch_connect_fnc_extAwait
 ] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
 _parsed params ["_ok", "", "_detail"];
 

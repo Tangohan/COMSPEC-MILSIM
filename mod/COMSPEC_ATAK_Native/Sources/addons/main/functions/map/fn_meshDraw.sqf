@@ -97,8 +97,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             private _q = getPosASLVisual _up;
             private _len = _p distance2D _q;
             private _dir = _p getDir _q;
-            for "_k" from 0 to (floor (_len / (_r * 3))) step 2 do {
-                _map drawLine [_p getPos [_k * _r * 3, _dir], _p getPos [((_k + 1) * _r * 3) min _len, _dir], [0.28, 0.70, 1, 0.7]];
+            // Au plus ~80 traits (tirets allongés au-delà) : le coût ne croît plus avec le zoom.
+            private _dl = (_r * 3) max (_len / 160);
+            for "_k" from 0 to (floor (_len / _dl)) step 2 do {
+                _map drawLine [_p getPos [_k * _dl, _dir], _p getPos [((_k + 1) * _dl) min _len, _dir], [0.28, 0.70, 1, 0.7]];
             };
         };
         // Relais utilisé : pointillé de mon téléphone à son antenne.
@@ -106,8 +108,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             private _me = getPosASLVisual (vehicle player);
             private _len = _me distance2D _p;
             private _dir = _me getDir _p;
-            for "_k" from 0 to (floor (_len / (_r * 2))) step 2 do {
-                _map drawLine [_me getPos [_k * _r * 2, _dir], _me getPos [((_k + 1) * _r * 2) min _len, _dir], [0.36, 0.85, 0.42, 0.75]];
+            private _dl = (_r * 2) max (_len / 160);
+            for "_k" from 0 to (floor (_len / _dl)) step 2 do {
+                _map drawLine [_me getPos [_k * _dl, _dir], _me getPos [((_k + 1) * _dl) min _len, _dir], [0.36, 0.85, 0.42, 0.75]];
             };
         };
         // Pastille : fond sombre, anneau de couleur (double si utilisé), antenne ou symbole OTAN du véhicule / PC.

@@ -239,9 +239,17 @@ public static partial class Extension
         return "";
     }
 
+    // La référence peut venir d'un autre joueur (haut-parleur public) : jamais de chemin absolu, UNC (fuite NTLM via SMB)
+    // ni "..", seulement un morceau du dossier musique, comme BtFileOpen. "" = refusé.
     private static string MusicResolveFile(string reference)
     {
-        return Path.IsPathRooted(reference) ? reference : Path.GetFullPath(Path.Combine(MusicFolder(), reference));
+        if (Path.IsPathRooted(reference) || reference.StartsWith(@"\\", StringComparison.Ordinal) || reference.StartsWith("//", StringComparison.Ordinal)) return "";
+        if (reference.Replace('\\', '/').Split('/').Any(p => p.Trim() == "..")) return "";
+        var dir = MusicFolder();
+        string path;
+        try { path = Path.GetFullPath(Path.Combine(dir, reference)); } catch { return ""; }
+        if (!BtUnder(path, dir) || !MusicExtensions.Contains(Path.GetExtension(path).ToLowerInvariant())) return "";
+        return path;
     }
 
     private static string MusicCommand(string function, string?[] args)
@@ -289,7 +297,7 @@ public static partial class Extension
                 if (kind == "file")
                 {
                     var path = MusicResolveFile(reference);
-                    if (!File.Exists(path)) return "ERR|fichier introuvable";
+                    if (path.Length == 0 || !File.Exists(path)) return "ERR|fichier introuvable";
                     var title = Path.GetFileNameWithoutExtension(path);
                     _musicState = "loading";
                     _musicTitle = title;

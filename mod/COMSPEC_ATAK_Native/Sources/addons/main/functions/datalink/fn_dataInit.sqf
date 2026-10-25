@@ -11,7 +11,8 @@ COMSPEC_ATAK_DataInitDone = true;
 
 ["comspec_atak_native_dataNote", {
     params [["_msg", ""]];
-    systemChat ((format ["[ATAK · Données] %1", _msg]) call comspec_atak_native_fnc_tr);
+    // Rendu dans le téléphone (centre de notifications), jamais par-dessus l'écran du jeu.
+    ["INFO", _msg, 5, 30] call comspec_atak_native_fnc_notify;
     if (!isNull (findDisplay 312)) then { [_msg] call BIS_fnc_showCuratorFeedbackMessage; };
 }] call CBA_fnc_addEventHandler;
 

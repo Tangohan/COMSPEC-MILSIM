@@ -164,13 +164,14 @@ _btnResync ctrlAddEventHandler ["ButtonClick", {
     private _count = 0;
     {
         if (_x getVariable ["COMSPEC_AtakRelayUid", ""] != "") then {
-            [_x, true] call ATHENA_fnc_syncAtakRelay;
+            [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay;
             _x setVariable ["COMSPEC_AtakRelayLastSync", time, true];
             _count = _count + 1;
         };
     } forEach (entities "All");
     
-    hint ((format ["✅ %1 relais resynchronisés", _count]) call comspec_overwatch_connect_fnc_tr);
+    // Alerte rendue dans le téléphone ATAK (journal HTML), jamais par-dessus l'écran de jeu.
+    [(format ["✅ %1 relais resynchronisés", _count]) call comspec_overwatch_connect_fnc_tr, "system", "info"] call comspec_overwatch_connect_fnc_announce;
     
     // Fermer et rouvrir pour refresh
     call (uiNamespace getVariable ["COMSPEC_RelayDashboard_Close", {}]);
@@ -198,10 +199,10 @@ _btnTeleport ctrlAddEventHandler ["ButtonClick", {
         
         if (!isNull _relay) then {
             player setPos ((getPosATL _relay) vectorAdd [0, 5, 0]);
-            hint (("✈️ Téléporté au relais") call comspec_overwatch_connect_fnc_tr);
+            [("✈️ Téléporté au relais") call comspec_overwatch_connect_fnc_tr, "system", "info"] call comspec_overwatch_connect_fnc_announce;
         };
     } else {
-        hint (("⚠️ Sélectionnez un relais dans la liste") call comspec_overwatch_connect_fnc_tr);
+        [("⚠️ Sélectionnez un relais dans la liste") call comspec_overwatch_connect_fnc_tr, "system", "warn"] call comspec_overwatch_connect_fnc_announce;
     };
 }];
 
@@ -266,7 +267,7 @@ _listBox ctrlAddEventHandler ["LBDblClick", {
             round ((damage _relay) * 100)
         ];
         
-        hint ((_detailsText) call comspec_overwatch_connect_fnc_tr);
+        [(_detailsText) call comspec_overwatch_connect_fnc_tr, "system", "info"] call comspec_overwatch_connect_fnc_announce;
     };
 }];
 

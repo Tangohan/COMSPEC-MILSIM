@@ -12,6 +12,9 @@ private _remaining = [];
 private _sent = 0;
 private _dropped = 0;
 private _processed = 0;
+// Parcours d'une copie superficielle (mêmes HashMap) : sendViaOverwatch se suspend (extAwait) et queueOffline peut
+// entre-temps ajouter ou retirer (deleteAt) des entrées ; parcourir le tableau vivant sautait ou écrasait ces entrées.
+private _work = comspec_sse_txQueue apply { _x };
 
 {
     if (_processed >= _batchMax) then {
@@ -33,6 +36,15 @@ private _processed = 0;
                     _sent = _sent + 1;
                     _x set ["txStatus", "TRANSMITTED"];
                     _x set ["txAttempts", _attempts + 1];
+                    // Fiche personne partie depuis la file : même suite que submitPersonRecord (TRANSMITTED, id Athena,
+                    // biométries en attente débloquées).
+                    if ((toUpper (_x getOrDefault ["kind", ""])) isEqualTo "PERSON") then {
+                        private _nid = _x getOrDefault ["entity_netid", ""];
+                        private _ent = if (_nid isEqualType "" && {_nid isNotEqualTo ""}) then { objectFromNetId _nid } else { objNull };
+                        private _rid = _x getOrDefault ["record_id", "?"];
+                        if (!(_rid isEqualType "")) then { _rid = str _rid; };
+                        [_ent, _rid] call comspec_sse_fnc_personTransmitted;
+                    };
                 } else {
                     private _next = _attempts + 1;
                     private _exp = (_next - 1) min 3;
@@ -46,9 +58,14 @@ private _processed = 0;
             };
         };
     };
-} forEach comspec_sse_txQueue;
+} forEach _work;
 
-comspec_sse_txQueue = _remaining;
+// Fusion avec la file vivante : une entrée de _remaining retirée entre-temps par queueOffline (remplacée par un
+// envoi plus récent, ou plafond) reste retirée ; les entrées ajoutées pendant le passage sont gardées à la suite.
+private _live = comspec_sse_txQueue;
+_remaining = _remaining select { private _e = _x; (_live findIf { _x isEqualRef _e }) >= 0 };
+private _fresh = _live select { private _e = _x; (_work findIf { _x isEqualRef _e }) < 0 };
+comspec_sse_txQueue = _remaining + _fresh;
 missionNamespace setVariable ["comspec_sse_txQueue", comspec_sse_txQueue];
 // Profil réécrit dès que la file change, même vide : sinon les envois déjà transmis
 // restaient sur le disque et repartaient à la mission suivante.

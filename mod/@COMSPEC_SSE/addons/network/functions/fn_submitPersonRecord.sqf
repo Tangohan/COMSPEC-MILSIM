@@ -8,6 +8,10 @@ params [
     ["_announce", true, [true]]
 ];
 
+// Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
+// pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
+if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_submitPersonRecord; true };
+
 private _payload = [_entity, _extra] call comspec_sse_fnc_buildAthenaPersonPayload;
 private _uid = _payload getOrDefault ["sse_uid", "?"];
 
@@ -23,6 +27,8 @@ private _envelope = createHashMapFromArray [
     ["command", "SubmitSsePerson"],
     ["payload", _payload],
     ["record_id", _uid],
+    // Retrouver le sujet quand la fiche part plus tard depuis la file offline (fn_flushQueue).
+    ["entity_netid", if (isNull _entity) then { "" } else { netId _entity }],
     ["txStatus", "PENDING"]
 ];
 
@@ -34,49 +40,16 @@ if ([] call comspec_sse_fnc_isOnline) then {
 };
 
 if (_ok) then {
-    [_entity, "TRANSMITTED"] call comspec_sse_fnc_markTransmitted;
-    // Mémoriser l’id Athena (détail OK) pour biométrie / photo.
-    private _raw = missionNamespace getVariable ["comspec_sse_lastExtRaw", ""];
-    if (_raw isEqualType "" && {_raw isNotEqualTo ""}) then {
-        private _parsed = parseSimpleArray _raw;
-        if (_parsed isEqualType [] && {(count _parsed) >= 2}) then {
-            private _detail = _parsed select 1;
-            if (_detail isEqualType "" && {_detail isNotEqualTo ""} && {_detail isNotEqualTo "Success"}) then {
-                private _n = parseNumber _detail;
-                if (_n > 0) then {
-                    private _aid = str (floor _n);
-                    _entity setVariable ["comspec_sse_athenaPersonId", _aid, true];
-                    // File offline : les biométries en attente doivent reprendre avec cet id.
-                    private _q = missionNamespace getVariable ["comspec_sse_txQueue", []];
-                    {
-                        if (_x isEqualType createHashMap) then {
-                            if ((toUpper (_x getOrDefault ["kind", ""])) isEqualTo "BIOMETRICS") then {
-                                private _p = _x getOrDefault ["payload", createHashMap];
-                                if (_p isEqualType createHashMap) then {
-                                    private _u = _p getOrDefault ["sse_uid", ""];
-                                    if (_u isEqualTo _uid || {_u isEqualTo "?"} || {_u isEqualTo "any"} || {_u isEqualTo ""}) then {
-                                        _p set ["athena_person_id", _aid];
-                                        _p set ["person_id", _aid];
-                                        _x set ["payload", _p];
-                                        _x set ["txRetryAfter", 0];
-                                    };
-                                };
-                            };
-                        };
-                    } forEach _q;
-                    missionNamespace setVariable ["comspec_sse_txQueue", _q];
-                };
-            };
-        };
-    };
+    // Post-traitement partagé avec flushQueue (envoi depuis la file offline).
+    [_entity, _uid] call comspec_sse_fnc_personTransmitted;
     if (_announce) then {
-        hint (("Fiche d’identité envoyée au registre.") call comspec_sse_fnc_tr);
+        ["Fiche d’identité envoyée au registre.", "SUCCESS"] call comspec_sse_fnc_notify;
     };
     [_uid, "person", "athena", "Fiche personne", 80, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
     if (_announce) then {
-        hint (("La fiche n’est pas encore arrivée au registre. Elle est mise en attente.") call comspec_sse_fnc_tr);
+        ["La fiche n’est pas encore arrivée au registre. Elle est mise en attente.", "WARNING"] call comspec_sse_fnc_notify;
     };
     [_uid, "person", "athena", "QUEUED", 80, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };

@@ -28,7 +28,12 @@ private _addNode = {
     _nodes set [_id, _n];
     _n
 };
-private _edge = { params ["_a", "_b", "_lbl", "_k"]; _edges pushBack [_a, _b, _lbl, _k]; };
+// Libellé du lien traduit une fois ici (langue du téléphone) : chartDraw le dessine tel quel à chaque image.
+private _edge = {
+    params ["_a", "_b", "_lbl", "_k"];
+    if (_lbl isEqualType "" && {_lbl isNotEqualTo ""}) then { _lbl = _lbl call comspec_sse_fnc_tr; };
+    _edges pushBack [_a, _b, _lbl, _k];
+};
 private _personLabel = {
     params ["_name", "_alias"];
     if (_alias isEqualTo "") then { _name } else { format ["%1 « %2 »", _name, _alias] }

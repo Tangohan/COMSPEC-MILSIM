@@ -1,9 +1,9 @@
 /*
-    Affiche les dernières entrées du journal technique SSE.
+    Affiche les dernières entrées du journal technique SSE (notification du téléphone ATAK : rien par-dessus l'écran).
 */
 private _buf = [] call comspec_sse_fnc_getLog;
 if (count _buf == 0) exitWith {
-    hint (("Journal SSE vide.\nActivez le debug CBA ou reproduisez une action pour journaliser.") call comspec_sse_fnc_tr);
+    ["Journal SSE vide.\nActivez le debug CBA ou reproduisez une action pour journaliser.", "INFO"] call comspec_sse_fnc_notify;
 };
 
 private _lines = ["=== JOURNAL TECHNIQUE SSE ==="];
@@ -17,6 +17,6 @@ private _slice = _buf select [((count _buf) - 20) max 0, 20];
     ];
 } forEach _slice;
 
-hint (((_lines joinString endl)) call comspec_sse_fnc_tr);
+[_lines joinString endl, "INFO"] call comspec_sse_fnc_notify;
 ["showLog: journal affiché"] call comspec_sse_fnc_log;
 true

@@ -268,12 +268,12 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
                 _stale = (diag_tickTime - _lastPos) > 60;
             };
             if (!_stale) exitWith {};
+            // Pause demandée par Athena (429 / Retry-After / SendBackoff) : on la respecte, pas de forçage.
+            if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0])) exitWith {};
             private _lastTry = missionNamespace getVariable ["COMSPEC_PosWatchdogForceAt", -1e9];
             if ((diag_tickTime - _lastTry) < 20) exitWith {};
             missionNamespace setVariable ["COMSPEC_PosWatchdogForceAt", diag_tickTime, false];
-            // Comme Resynch : lever les freins API sinon la force échoue encore.
-            missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
-            missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
+            // Ne pas lever les freins API ici (réservé au Resynch manuel).
             if (!isNil "comspec_overwatch_connect_fnc_updatePosition") then {
                 [player, true] call comspec_overwatch_connect_fnc_updatePosition;
             };

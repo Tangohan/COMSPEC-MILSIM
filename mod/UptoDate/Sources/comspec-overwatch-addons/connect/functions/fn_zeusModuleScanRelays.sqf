@@ -103,7 +103,7 @@ if (count _toUpload > 0) then {
     private _failCount = 0;
     
     {
-        private _success = [_x, true] call ATHENA_fnc_syncAtakRelay;
+        private _success = [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay;
         if (_success) then {
             _uploadCount = _uploadCount + 1;
             _x setVariable ["COMSPEC_AtakRelayLastSync", time, true];

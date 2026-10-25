@@ -25,7 +25,7 @@ if exist "%OUT%\addons\comspec_atak_native_towers.pbo" del /q "%OUT%\addons\coms
 if exist "%OUT%\addons\comspec_atak_native_items.pbo" del /q "%OUT%\addons\comspec_atak_native_items.pbo"
 dotnet publish "%ROOT%COMSPECATAKNativeExtension\COMSPECATAKNativeExtension.csproj" -c Release -r win-x64 --self-contained true
 if errorlevel 1 exit /b 1
-copy /Y "%ROOT%COMSPECATAKNativeExtension\bin\publish\COMSPECATAKNativeExtension_x64.dll" "%OUT%\COMSPECATAKNativeExtension_x64.dll" >nul
+copy /Y "%ROOT%COMSPECATAKNativeExtension\bin\publish\COMSPECATAKNativeExtension_x64.dll" "%OUT%\COMSPECATAKNativeExtension_x64.dll" >nul || (echo [ERREUR] COMSPECATAKNativeExtension_x64.dll non copiee : DLL verrouillee, fermer Arma & exit /b 1)
 :: Empreinte du build (docs\VERSIONING.md) : date UTC et commit dans build_info.hpp le temps d'empaqueter main.pbo.
 :: Le jeu affiche alors "1.94.0 - 2026.10.14 a1b2c3d" (Reglages, Debug, journal). Le fichier est remis a vide ensuite.
 set "BCOMMIT=local"
@@ -54,7 +54,8 @@ dotnet publish "%OW%\COMSPECExtension\COMSPECExtension.csproj" -c Release -r win
 if errorlevel 1 exit /b 1
 set "OWDLL=%OW%\COMSPECExtension\bin\publish\COMSPECExtension_x64.dll"
 if not exist "%OWDLL%" set "OWDLL=%OW%\COMSPECExtension\bin\Release\net8.0\win-x64\publish\COMSPECExtension_x64.dll"
-copy /Y "%OWDLL%" "%OUT%\COMSPECExtension_x64.dll" >nul
+if not exist "%OWDLL%" (echo [ERREUR] COMSPECExtension_x64.dll introuvable apres dotnet publish & exit /b 1)
+copy /Y "%OWDLL%" "%OUT%\COMSPECExtension_x64.dll" >nul || (echo [ERREUR] COMSPECExtension_x64.dll non copiee : DLL verrouillee, fermer Arma & exit /b 1)
 set "OWTMP=%TEMP%\comspec_ow_pack"
 if exist "%OWTMP%" rmdir /s /q "%OWTMP%"
 mkdir "%OWTMP%"

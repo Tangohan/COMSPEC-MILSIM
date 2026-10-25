@@ -14,6 +14,9 @@ switch (_act) do {
     case "filter": { _s set ["wantedFilter", _arg]; _s set ["wantedOpen", ""]; call _render; };
     case "open": { _s set ["wantedOpen", _arg]; call _render; };
     case "load": {
+        // Hors contexte suspendable (CBA_fnc_execNextFrame, clic de formulaire) fn_extAwait appelait la DLL en direct
+        // et figeait le jeu le temps de la requête Athena : relancé dans un spawn pour passer par « Async ».
+        if (!canSuspend) exitWith { [] spawn { ["load"] call comspec_atak_native_fnc_wantedAction; }; };
         private _now = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
         private _raw = [(["COMSPECExtension", "GetWantedNotices", []] call comspec_atak_native_fnc_extAwait)] call _res;
         if !(_raw isEqualType "") then { _raw = str _raw; };

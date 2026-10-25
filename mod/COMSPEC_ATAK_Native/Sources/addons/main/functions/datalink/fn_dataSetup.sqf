@@ -1,7 +1,9 @@
 /*
     Pose des données à extraire au câble DL-7 sur n'importe quel objet (ordinateur, téléphone, clé USB, caisse,
     drone, corps…). Utilisé par les modules Zeus et Eden ; utilisable dans un script ou le champ init d'un objet :
-      [this, [["name", "PC du QG"], ["password", "4471"], ["files", "ordre.txt | texte" + endl + "Repli à 04h00"]]] call comspec_atak_native_fnc_dataSetup;
+      if (isServer) then { [this, [["name", "PC du QG"], ["password", "4471"], ["files", "ordre.txt | texte" + endl + "Repli à 04h00"]]] call comspec_atak_native_fnc_dataSetup; };
+    Champ init sans « isServer » : ignoré sur les clients tant que leur postInit n'est pas passé (le champ init est rejoué
+    sur chaque client JIP et remettrait à zéro verrouillage, effacement et données retirées par Zeus pour tout le monde).
     Params : [objet, réglages (HashMap ou paires [clé, valeur]), fusion]
       fusion = true : garde les réglages déjà posés et ajoute les fichiers (module Zeus « Ajouter un fichier »).
     Clés (absentes = valeur par défaut) :
@@ -21,6 +23,8 @@
 */
 params [["_obj", objNull, [objNull]], ["_cfg", [], [[], createHashMap]], ["_merge", false]];
 if (isNull _obj) exitWith { false };
+// Champ init rejoué sur un client (JIP compris) avant son postInit : le serveur a déjà posé les données.
+if (!isServer && {hasInterface} && {isNil "COMSPEC_ATAK_DataInitDone"}) exitWith { false };
 if (_cfg isEqualType []) then { _cfg = createHashMapFromArray (_cfg select { _x isEqualType [] && {(count _x) isEqualTo 2} }); };
 private _old = createHashMapFromArray (_obj getVariable ["COMSPEC_ATAK_Data", []]);
 private _def = createHashMapFromArray [
