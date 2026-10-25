@@ -26,10 +26,13 @@ $closed = array_values(array_filter($rows, static fn (array $r): bool => in_arra
 $renderRole = static function (array $r) use ($h, $base, $roleNames, $statusPill, $discordRoles): void {
     [$label, $tone] = $statusPill[(string) $r['status']] ?? ['?', 'slate'];
     $role = (string) $r['role'];
-    $name = trim((string) ($r['callsign'] ?? '')) !== '' ? (string) $r['callsign'] : (string) ($r['display_name'] ?? ('Membre #' . $r['user_id']));
+    // Le pseudo public est le nom cité sur le site ; l'indicatif n'apparaît qu'en détail.
+    $pseudo = trim((string) ($r['public_name'] ?? ''));
+    $call = trim((string) ($r['callsign'] ?? ''));
+    $name = $pseudo !== '' ? $pseudo : ($call !== '' ? $call : (string) ($r['display_name'] ?? ('Membre #' . $r['user_id'])));
     ?>
     <article class="pa-card ctba-item" id="r<?= (int) $r['id'] ?>">
-        <p class="pa-name"><?= $h($name) ?> <span class="pa-sub">· <?= $h($r['email'] ?? '') ?></span></p>
+        <p class="pa-name"><?= $h($name) ?> <span class="pa-sub"><?php if ($pseudo === ''): ?>· sans pseudo public <?php elseif ($call !== ''): ?>· indicatif <?= $h($call) ?> <?php endif; ?>· <?= $h($r['email'] ?? '') ?></span></p>
         <p class="pa-sub">
             <span class="pa-pill pa-pill--<?= $h($tone) ?>"><?= $h($label) ?></span>
             <strong><?= $h($roleNames[$role] ?? $role) ?></strong>

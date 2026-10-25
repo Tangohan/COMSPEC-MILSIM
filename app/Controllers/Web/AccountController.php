@@ -425,6 +425,13 @@ class AccountController
 
                     return Response::redirect(url('account/preferences'));
                 }
+                $publicName = \App\Support\UserPublicName::normalize((string) $request->input('public_name', ''));
+                $publicNameError = \App\Support\UserPublicName::validationError($publicName);
+                if ($publicNameError !== null) {
+                    Session::flash('error', __($publicNameError));
+
+                    return Response::redirect(url('account/preferences') . '#section-profil');
+                }
                 $firstName = trim((string) $request->input('first_name'));
                 $lastName = trim((string) $request->input('last_name'));
                 $derivedDisplay = trim($firstName . ' ' . $lastName);
@@ -453,6 +460,10 @@ class AccountController
                     $updateUser['profile_slug'] = $ps;
                 }
                 $this->userRepository->update($uid, $tenantId, $updateUser);
+                try {
+                    \App\Support\UserPublicName::save(\App\Core\Database::getPdo(), $uid, $publicName);
+                } catch (\Throwable) {
+                }
                 $language = strtolower(trim((string) $request->input('language')));
                 if (!\App\Services\I18n\LocaleService::isSupported($language)) {
                     $language = 'fr';
@@ -512,8 +523,15 @@ class AccountController
         }
         $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 
+        try {
+            $publicName = \App\Support\UserPublicName::get(\App\Core\Database::getPdo(), $uid);
+        } catch (\Throwable) {
+            $publicName = '';
+        }
+
         return $this->accountView('account.preferences', 'Préférences', [
             'user' => $user,
+            'publicName' => $publicName,
             'profile' => $profile,
             'uiPrefs' => $uiPrefs,
             'extraCallsigns' => $extraCallsigns,

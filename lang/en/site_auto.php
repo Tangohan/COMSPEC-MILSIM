@@ -603,6 +603,8 @@ return [
     '%4 colonne(s)' => '%4 column(s)',
     '%4 lignes par page' => '%4 rows per page',
     '%4 modèle%5 de cette organisation. Ouvrez le contenu, puis appliquez ce qui manque.' => '%4 template%5 from this organization. Open the content, then apply what is missing.',
+    'Le nom affiché sur les pages publiques du site (contributeurs, propositions de traduction) et en premier dans l’administration, à la place de votre indicatif. Vide : l’indicatif est repris. Vos prénom et nom ne sont jamais affichés en public.' => 'The name shown on the public pages of the site (contributors, translation suggestions) and first in the administration, instead of your callsign. Leave empty to use your callsign. Your first and last names are never shown publicly.',
+    'Pseudo public' => 'Public name',
     '\' : \'\' ?>. Définissez le fuseau horaire de la communauté afin d’uniformiser l’affichage des événements, des échéances, des outils et des journaux temporels.' => '\' : \'\' ?>. Set the community time zone to standardize how events, deadlines, tools, and time logs are displayed.',
     '\' : \'\' ?>. Votre compte Steam est relié en même temps.' => '\' : \'\' ?>. Your Steam account is linked at the same time.',
     '\' ?>. Chaque modification part en validation auprès d’un organisateur : un e-mail récapitulatif est envoyé aux deux parties, et la fiche n’est mise à jour qu’après confirmation.' => '\' ?>. Each change is sent to an organizer for approval: a summary email is sent to both parties, and the record is only updated after confirmation.',

@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SiteContributorRepository;
 use App\Services\Auth\AuthService;
+use App\Support\UserPublicName;
 
 /**
  * Rôles de contributeur (/contribuer) : présentation des rôles (traducteur, testeur, créateur de contenu,
@@ -51,6 +52,13 @@ final class ContributorController
             }
         }
         $want = (string) $request->query('role', '');
+        $publicName = '';
+        if ($user !== null) {
+            try {
+                $publicName = UserPublicName::get(\App\Core\Database::getPdo(), (int) $user['id']);
+            } catch (\Throwable) {
+            }
+        }
 
         return Response::view('layout.marketing', [
             'content' => 'site.contribute',
@@ -59,6 +67,8 @@ final class ContributorController
             'marketingActive' => 'contribuer',
             'marketingStyles' => [asset_url('assets/css/site-contribute.css')],
             'contribUser' => $user,
+            'contribPublicName' => $publicName,
+            'contribCallsign' => trim((string) ($user['callsign'] ?? '')),
             'contribReady' => $ready,
             'contribMine' => $mine,
             'contribCredits' => $credits,
@@ -87,6 +97,18 @@ final class ContributorController
             Session::flash('error', __('site.contrib_flash_languages'));
 
             return Response::redirect(url('contribuer?role=translator') . '#demande');
+        }
+        // Pseudo public : le nom cité dans la liste des contributeurs (à la place de l'indicatif).
+        $publicName = UserPublicName::normalize((string) $request->input('public_name', ''));
+        $nameError = UserPublicName::validationError($publicName);
+        if ($nameError !== null) {
+            Session::flash('error', __($nameError));
+
+            return Response::redirect(url('contribuer?role=' . $role) . '#demande');
+        }
+        try {
+            UserPublicName::save(\App\Core\Database::getPdo(), (int) $user['id'], $publicName);
+        } catch (\Throwable) {
         }
         $discord = trim((string) preg_replace('/[\x00-\x1F]+/', '', (string) $request->input('discord', '')));
         $motivation = trim((string) $request->input('motivation', ''));
