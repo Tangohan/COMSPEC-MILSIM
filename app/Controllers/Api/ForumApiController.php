@@ -69,7 +69,8 @@ class ForumApiController
         $input = $this->getJsonInput($request);
         $action = $input['action'] ?? $request->input('action', '');
         $csrf = $input['csrf_token'] ?? $request->input('_csrf_token', '');
-        if (!Csrf::validate($csrf)) {
+        // strict_types : un jeton JSON numérique ou en tableau lèverait une TypeError (500).
+        if (!Csrf::validate(is_string($csrf) ? $csrf : null)) {
             return Response::json(['success' => false, 'error' => 'Jeton CSRF invalide'], 403);
         }
 

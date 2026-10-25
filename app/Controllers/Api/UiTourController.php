@@ -24,14 +24,14 @@ final class UiTourController
         if ($uid <= 0) {
             return Response::json(['success' => false, 'message' => 'Authentification requise'], 401);
         }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+        if (!Csrf::validate($request->inputString('_csrf_token'))) {
             return Response::json(['success' => false, 'message' => 'Session expirée. Rechargez la page.'], 403);
         }
-        $key = trim((string) $request->input('tour_key', ''));
+        $key = trim($request->inputString('tour_key', ''));
         if ($key !== UserUiTourRepository::KEY_DASHBOARD) {
             return Response::json(['success' => false, 'message' => 'Guide inconnu'], 400);
         }
-        $completed = (string) $request->input('completed', '0') === '1';
+        $completed = $request->inputString('completed', '0') === '1';
         $this->tours->dismiss($uid, $key, $completed);
 
         return Response::json(['success' => true]);

@@ -353,6 +353,22 @@ $guideUrl = url('communities/create/guide');
                             </label>
                             <?php endforeach; ?>
                         </div>
+                        <div class="cc-soft mt-5 hidden" data-cc-type-note="effectifs">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900">Bureau des effectifs : comment ça marche</p>
+                            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
+                                <li><strong>Vous tenez le registre comme un tableur.</strong> Vos membres n’ont pas besoin de compte : vous créez leurs fiches, ou vous importez votre fichier Excel (une ligne par membre).</li>
+                                <li><strong>Recrutement uniquement sur Discord.</strong> Pas de formulaire de candidature sur le site : le bouton de votre page publique ouvre votre serveur Discord. Une fois la recrue acceptée, vous ajoutez sa fiche.</li>
+                                <li><strong>Seuls ceux qui tiennent les fiches se connectent</strong> (état-major, RH). Le menu de gestion ne montre que les outils du registre.</li>
+                            </ul>
+                        </div>
+                        <div class="cc-soft cc-soft--muted mt-5 hidden" data-cc-type-note="atak">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Carte ATAK : comment ça marche</p>
+                            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
+                                <li>Vos joueurs créent un compte par invitation pour relier leur téléphone en jeu.</li>
+                                <li><strong>Recrutement uniquement sur Discord</strong> : pas de formulaire de candidature sur le site, le bouton de votre page publique ouvre votre serveur.</li>
+                                <li>Le menu de gestion ne garde que la carte, les terminaux, le matériel, les membres et le forum.</li>
+                            </ul>
+                        </div>
                     </section>
                 </div>
 
@@ -394,6 +410,7 @@ $guideUrl = url('communities/create/guide');
                         <details class="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                             <summary class="cursor-pointer text-sm font-bold text-slate-800">Comparer les rôles inclus</summary>
                             <p class="mt-3 text-xs leading-relaxed text-slate-600">Le compte fondateur reçoit le rôle «&nbsp;Fondateur&nbsp;». Les nouveaux membres reçoivent «&nbsp;Membre&nbsp;» une fois acceptés ; les visiteurs connectés non membres sont «&nbsp;Invités&nbsp;».</p>
+                            <p class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs leading-relaxed text-emerald-900 hidden" data-cc-type-note="effectifs"><strong>Bureau des effectifs :</strong> ces rôles ne concernent que les personnes qui se connectent (état-major, RH). Les membres dont vous tenez la fiche sans compte n’ont aucun rôle à gérer, et le recrutement se fait sur Discord, pas sur le site.</p>
                             <p class="mt-3 text-xs leading-relaxed text-slate-600">Aperçu des accès principaux. La seule différence entre les deux modèles concerne le rôle de modération du forum.</p>
                             <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
                                 <table class="min-w-full text-left text-xs">
@@ -724,8 +741,12 @@ $guideUrl = url('communities/create/guide');
 
                     <section class="cc-section">
                         <h2 class="cc-section__title">Mode d’inscription</h2>
-                        <p class="cc-section__text">Ce choix définit le parcours candidat sur la page d’enrôlement public. Vous pourrez le modifier ensuite.</p>
-                        <div class="cc-choice-grid cc-choice-grid--3 mt-5">
+                        <p class="cc-section__text" data-cc-reg-full>Ce choix définit le parcours candidat sur la page d’enrôlement public. Vous pourrez le modifier ensuite.</p>
+                        <div class="cc-soft mt-5 hidden" data-cc-reg-discord-only>
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900">Recrutement uniquement sur Discord</p>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-700">Avec le profil choisi, personne ne candidate sur le site. Le bouton de votre page publique devient « Rejoindre sur Discord » et ouvre votre serveur. Pensez à renseigner le lien d’invitation Discord après la création (Paramètres → Inscription). Pour un formulaire de candidature sur le site, choisissez le profil « Complet ».</p>
+                        </div>
+                        <div class="cc-choice-grid cc-choice-grid--3 mt-5" data-cc-reg-full>
                             <label class="cc-choice">
                                 <input type="radio" name="registration_mode" value="milsim" class="sr-only" checked id="registration_mode_milsim">
                                 <span class="cc-choice__eyebrow">Sélection</span>
@@ -1067,6 +1088,30 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         el.addEventListener('change', syncRegistrationModeUi);
     });
     syncRegistrationModeUi();
+
+    // Profils sans recrutement (Bureau des effectifs, Carte ATAK) : Discord uniquement, expliqué à chaque étape.
+    function syncTenantTypeUi() {
+        var type = (form.querySelector('input[name="tenant_type"]:checked') || {}).value || 'full';
+        var discordOnly = type !== 'full';
+        form.querySelectorAll('[data-cc-type-note]').forEach(function (el) {
+            el.classList.toggle('hidden', el.getAttribute('data-cc-type-note') !== type);
+        });
+        form.querySelectorAll('[data-cc-reg-full]').forEach(function (el) { el.classList.toggle('hidden', discordOnly); });
+        form.querySelectorAll('[data-cc-reg-discord-only]').forEach(function (el) { el.classList.toggle('hidden', !discordOnly); });
+        if (discordOnly) {
+            var d = document.getElementById('registration_mode_discord');
+            if (d) { d.checked = true; }
+            if (detailMilsim) detailMilsim.classList.add('hidden');
+            if (detailSimple) detailSimple.classList.add('hidden');
+            if (detailDiscord) detailDiscord.classList.add('hidden');
+        } else {
+            syncRegistrationModeUi();
+        }
+    }
+    form.querySelectorAll('input[name="tenant_type"]').forEach(function (el) {
+        el.addEventListener('change', syncTenantTypeUi);
+    });
+    syncTenantTypeUi();
 
     function closeMilsimModal() {
         if (milsimModal) milsimModal.classList.add('hidden');

@@ -226,7 +226,7 @@ final class SseIntelApiController
         }
         $graph = $this->workspace->buildGraph(
             $r,
-            $request->query('root') ? (string) $request->query('root') : null,
+            $request->query('root') ? $request->queryString('root') : null,
             $request->query('depth') ? (int) $request->query('depth') : 2,
             $request->query('case_id') ? (int) $request->query('case_id') : null
         );

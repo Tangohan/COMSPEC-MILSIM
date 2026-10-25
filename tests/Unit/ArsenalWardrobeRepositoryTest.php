@@ -29,6 +29,24 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertStringContainsString('ArsenalWardrobeController', $routes);
     }
 
+    public function testGameResendNeverWipesSiteFields(): void
+    {
+        $repo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/ArsenalWardrobeRepository.php');
+        // Le mod n’envoie que nom + contenu : collection, note, favori, source restent ceux du site.
+        self::assertStringContainsString('collection_id = COALESCE(?, collection_id)', $repo);
+        self::assertStringContainsString('notes = COALESCE(?, notes)', $repo);
+        self::assertStringContainsString("array_key_exists('is_favorite', \$data)", $repo);
+        self::assertStringContainsString('updated_at = IF(payload_sha256 <=> ?, updated_at, NOW())', $repo);
+        self::assertLessThan(
+            strpos($repo, 'payload_sha256 = ?'),
+            strpos($repo, 'updated_at = IF(payload_sha256 <=> ?'),
+        );
+
+        $api = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakWardrobeApiController.php');
+        self::assertStringContainsString("\$body['item_catalog']", $api);
+        self::assertStringContainsString('recordCatalog(', $api);
+    }
+
     public function testMigrationBootstrapExists(): void
     {
         $path = dirname(__DIR__, 2) . '/bootstrap/arsenal_wardrobe_migration.php';

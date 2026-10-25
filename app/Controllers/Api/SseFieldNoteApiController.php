@@ -72,7 +72,7 @@ final class SseFieldNoteApiController
         $notes = $this->intake()->presentNotes($tenant, $notes, SseCaseRepository::CLASS_INTERNAL, $this->viewerId($tenant, $request));
 
         // Téléphone en jeu : les photos de chaque fiche, pour les afficher sans rouvrir la fiche (pièces floutées exclues).
-        if ((string) $request->query('with_images', '') === '1') {
+        if ($request->queryString('with_images', '') === '1') {
             foreach ($notes as $i => $note) {
                 $images = [];
                 if ((int) ($note['attachment_count'] ?? 0) > 0) {

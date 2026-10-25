@@ -47,6 +47,9 @@ $boHrefAllowed = static function (string $href) use ($tenantType): bool {
             return false;
         }
     }
+    if ($path !== '' && \App\Services\Community\TenantTypeConfig::backOfficePathHidden($tenantType, $path)) {
+        return false;
+    }
 
     // Masquer les entrées sans droit (Gate), pas seulement filtrer par type de communauté.
     if (function_exists('back_office_nav_href_permission_allowed')) {

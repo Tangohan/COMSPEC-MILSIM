@@ -57,8 +57,8 @@ require base_path('views/partials/alert_banners.php');
 <div class="atak-dash">
 <main class="atak-dash">
     <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
-    <?php require base_path('views/partials/simple_account_offer.php'); ?>
     <?php require base_path('views/partials/header_dashboard.php'); ?>
+    <?php require base_path('views/partials/simple_account_offer.php'); ?>
 
     <section class="atak-dash__hero" id="dash-tour-hero" aria-labelledby="atak-dash-title">
         <div class="atak-dash__hero-inner">

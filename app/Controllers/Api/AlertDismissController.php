@@ -27,7 +27,8 @@ final class AlertDismissController
         if ($uid <= 0) {
             return Response::json(['success' => false, 'message' => 'Authentification requise'], 401);
         }
-        if (!Csrf::validate($request->input('_csrf_token'))) {
+        $csrf = $request->input('_csrf_token');
+        if (!Csrf::validate(is_string($csrf) ? $csrf : null)) {
             return Response::json(['success' => false, 'message' => 'Jeton CSRF invalide'], 403);
         }
 

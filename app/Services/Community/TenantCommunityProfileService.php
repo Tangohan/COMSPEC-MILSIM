@@ -522,7 +522,10 @@ final class TenantCommunityProfileService
         $c['public_meta_title'] = $this->clip((string) $request->input('public_meta_title', ''), 120);
         $c['public_meta_description'] = $this->clip((string) $request->input('public_meta_description', ''), 320);
         $c['registry_tagline'] = $this->clip((string) $request->input('registry_tagline', ''), 220);
-        $c['registry_featured'] = (string) $request->input('registry_featured', '0') === '1';
+        // Réglage gardé tel quel si la formule ne l’inclut pas (il reprend effet dès que la formule le permet).
+        if (self::registryFeaturedAllowedForSession()) {
+            $c['registry_featured'] = (string) $request->input('registry_featured', '0') === '1';
+        }
         $c['public_sticky_cta_enabled'] = (string) $request->input('public_sticky_cta_enabled', '1') !== '0';
 
         $hlStyle = strtolower(trim((string) $request->input('public_highlight_style', 'info')));
@@ -1020,6 +1023,22 @@ final class TenantCommunityProfileService
         $fict = trim((string) ($aff['fictional_label'] ?? ''));
 
         return $fict !== '' ? 'Unité fictive : ' . $fict : '';
+    }
+
+    /** La formule de la communauté ouverte inclut-elle la mise en avant dans le registre ? */
+    public static function registryFeaturedAllowedForSession(): bool
+    {
+        $tenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $tenant = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return is_array($tenant) && \App\Support\RegistryFeatured::planAllows($tenant);
     }
 
     private function clip(string $s, int $max): string

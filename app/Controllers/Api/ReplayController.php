@@ -78,7 +78,7 @@ class ReplayController
         $from = $request->query('from');
         $to = $request->query('to');
         $aar = $this->replayService->buildAfterActionReview($missionId, $from ?: null, $to ?: null, $this->missionKey($request));
-        $title = trim((string) $request->query('title'));
+        $title = trim($request->queryString('title'));
 
         return ReplayAarPdfService::response($aar, $title);
     }

@@ -40,10 +40,10 @@ final class ForumRestController
         $categoryId = (int) $request->query('category_id', 0);
         $page = max(1, (int) $request->query('page', 1));
         $perPage = min(50, max(1, (int) $request->query('per_page', 20)));
-        $sort = (string) $request->query('sort', 'activity');
-        $filter = $request->query('filter') !== null ? (string) $request->query('filter') : null;
+        $sort = $request->queryString('sort', 'activity');
+        $filter = $request->query('filter') !== null ? $request->queryString('filter') : null;
         $userId = (int) Session::get('user_id');
-        $q = trim((string) $request->query('q', ''));
+        $q = trim($request->queryString('q', ''));
 
         if ($categoryId > 0) {
             $cat = $this->categoryRepository->findById($categoryId, $tenantId);
@@ -240,7 +240,7 @@ final class ForumRestController
             return $res;
         }
         $tenantId = (int) Session::get('tenant_id');
-        $q = trim((string) $request->query('q', ''));
+        $q = trim($request->queryString('q', ''));
         if (strlen($q) < 2) {
             return Response::json(['success' => true, 'data' => ['topics' => []]]);
         }

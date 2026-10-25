@@ -122,18 +122,24 @@ $membersChildren = array_values(array_filter([
     ['label' => 'Qualifications des membres', 'href' => effectifs_workspace_url('qualifications'), 'active' => $navAt($effPath . '/qualifications')],
     ['label' => 'Départs', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')],
     ['label' => 'Comptes en double', 'href' => effectifs_workspace_url('doublons'), 'active' => $navAt($effPath . '/doublons')],
+    // Profils sans recrutement : les invitations quittent le bloc « Recrutement » (masqué) pour rester sous la main.
+    ($tenantType ?? \App\Services\Community\TenantTypeConfig::TYPE_FULL) !== \App\Services\Community\TenantTypeConfig::TYPE_FULL
+        ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')]
+        : null,
     $canMemberModeration
         ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
         : null,
 ], static fn (?array $row): bool => is_array($row)));
 
-$recruitChildren = [
+$recruitChildren = array_values(array_filter([
     ['label' => 'Candidatures', 'href' => url('back-office/recruitments'), 'active' => $navRecruesActive],
     ['label' => 'Vue d’ensemble', 'href' => url('back-office/ressources/recrutement'), 'active' => $p === 'back-office/ressources/recrutement'],
     ['label' => 'Offres publiées', 'href' => url('back-office/recruitment/offers'), 'active' => $navAt('back-office/recruitment/offers')],
-    ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')],
+    ($tenantType ?? \App\Services\Community\TenantTypeConfig::TYPE_FULL) === \App\Services\Community\TenantTypeConfig::TYPE_FULL
+        ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')]
+        : null,
     ['label' => 'Statistiques', 'href' => url('back-office/ressources/recrutement/analyses'), 'active' => $navAt('back-office/ressources/recrutement/analyses')],
-];
+], static fn (?array $row): bool => is_array($row)));
 
 // Métriques joueurs : ce que le jeu remonte (temps d'écran, distances, heures de vol, montre Garmin).
 $metricsChildren = [

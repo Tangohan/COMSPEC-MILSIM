@@ -53,6 +53,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'traduire-atak' => __('site.atakt_crumb'),
         'contribuer' => __('site.contrib_crumb'),
         'traduire-site' => __('site.sitetr_crumb'),
+        'soutenir' => __('site.support_crumb'),
         default => __('site.about'),
     };
     $crumbPath = match ($marketingActive) {
@@ -63,6 +64,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'traduire-atak' => '/traduire-atak',
         'contribuer' => '/contribuer',
         'traduire-site' => '/traduire-site',
+        'soutenir' => '/soutenir-atak',
         default => '/a-propos',
     };
     $siteRoot = rtrim($base, '/');

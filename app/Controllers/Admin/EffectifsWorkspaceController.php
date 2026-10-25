@@ -501,6 +501,112 @@ class EffectifsWorkspaceController
             ->setBody($csv);
     }
 
+    /**
+     * Bureau des effectifs : importe un tableur (CSV) en fiches sans compte. Les colonnes du fichier
+     * « Exporter » sont reconnues, on peut donc réimporter un export retouché dans Excel.
+     */
+    public function importRoster(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!\App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenant['tenant_type'] ?? 'full'))) {
+            Session::flash('error', 'L’import de tableur est réservé au profil « Bureau des effectifs ».');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
+            Session::flash('error', 'Il faut le droit de modifier les fiches pour importer un tableur.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $file = $_FILES['roster_file'] ?? null;
+        if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            Session::flash('error', 'Choisissez un fichier CSV (dans Excel : Fichier → Enregistrer sous → CSV).');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tmp = (string) ($file['tmp_name'] ?? '');
+        $content = $tmp !== '' && is_readable($tmp) && (int) ($file['size'] ?? 0) <= 2 * 1024 * 1024 ? (string) file_get_contents($tmp) : '';
+        if ($content === '') {
+            Session::flash('error', 'Fichier illisible ou trop lourd (2 Mo au plus).');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $parsed = \App\Services\Effectifs\RosterOnlyMemberService::parseCsv($content);
+        if ($parsed['error'] !== null) {
+            Session::flash('error', $parsed['error']);
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if (!$gate->canAddMember($tenantId)) {
+            Session::flash('error', 'Limite de membres du plan atteinte.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $service = new \App\Services\Effectifs\RosterOnlyMemberService(
+            $this->userRepository,
+            \App\Core\Container::get(\App\Repositories\UserProfileRepository::class),
+            $this->personnelProfileRepository,
+            $this->personnelAssignmentRepository,
+            $this->gradeRepository,
+            $this->unitRepository,
+        );
+        $result = $service->import($tenantId, $actorId, $parsed['rows']);
+
+        $msg = $result['created'] . ' fiche(s) créée(s).';
+        if ($result['skipped'] !== []) {
+            $msg .= ' ' . count($result['skipped']) . ' ligne(s) ignorée(s) : ' . implode(' ', array_slice($result['skipped'], 0, 5));
+            if (count($result['skipped']) > 5) {
+                $msg .= ' …';
+            }
+        }
+        if ($result['unknown_grades'] !== []) {
+            $msg .= ' Grades non reconnus (laissés vides) : ' . implode(', ', array_slice($result['unknown_grades'], 0, 8)) . '.';
+        }
+        if ($result['unknown_units'] !== []) {
+            $msg .= ' Unités inconnues (créez-les dans l’organigramme, puis réimportez ou affectez à la main) : ' . implode(', ', array_slice($result['unknown_units'], 0, 8)) . '.';
+        }
+        Session::flash($result['created'] > 0 ? 'success' : 'error', $msg);
+        try {
+            $this->adminAuditService->logUserUpdated($tenantId, $actorId, $actorId, 'import_tableur', (string) $result['created']);
+        } catch (\Throwable) {
+        }
+
+        return Response::redirect(effectifs_workspace_url());
+    }
+
+    /** Modèle CSV vierge pour l’import du Bureau des effectifs (s’ouvre dans Excel). */
+    public function rosterTemplate(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $fh = fopen('php://temp', 'r+');
+        fputcsv($fh, ['Prénom', 'Nom', 'Indicatif', 'Grade', 'Affectation', 'Steam ID'], ';', '"', '\\');
+        fputcsv($fh, ['Jean', 'Martin', 'Alpha 1-1', 'SGT', '1re Section', ''], ';', '"', '\\');
+        rewind($fh);
+        $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');
+        fclose($fh);
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="modele-effectifs.csv"')
+            ->setBody($csv);
+    }
+
     public function member(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();

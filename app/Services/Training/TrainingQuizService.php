@@ -7,6 +7,7 @@ namespace App\Services\Training;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingModuleRepository;
 use App\Repositories\TrainingQuizRepository;
+use App\Support\UtcDateTime;
 
 class TrainingQuizService
 {
@@ -279,26 +280,13 @@ class TrainingQuizService
     }
 
     /**
-     * Interprète started_at comme heure locale PHP (alignée sur la BDD / serveur) et renvoie l’instant en UTC pour le navigateur.
+     * started_at vaut CURRENT_TIMESTAMP en session UTC : renvoie l’instant en UTC pour le navigateur.
      */
     public function startedAtToRfc3339Utc(?string $naiveDbDatetime): ?string
     {
-        if ($naiveDbDatetime === null || trim($naiveDbDatetime) === '') {
-            return null;
-        }
-        $raw = trim($naiveDbDatetime);
-        try {
-            $tzName = @date_default_timezone_get();
-            $tzLocal = new \DateTimeZone($tzName !== false && $tzName !== '' ? $tzName : 'UTC');
-            $dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $raw, $tzLocal);
-            if ($dt === false) {
-                $dt = new \DateTimeImmutable($raw, $tzLocal);
-            }
+        $ts = UtcDateTime::timestamp($naiveDbDatetime);
 
-            return $dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
-        } catch (\Throwable) {
-            return null;
-        }
+        return $ts === null ? null : gmdate('Y-m-d\\TH:i:s\\Z', $ts);
     }
 
     /**
@@ -311,8 +299,10 @@ class TrainingQuizService
         if ($minutes < 1) {
             return false;
         }
-        $start = strtotime((string) ($attempt['started_at'] ?? ''));
-        if ($start === false) {
+        // started_at est en UTC (CURRENT_TIMESTAMP, session +00:00) : lu à l’heure de Paris,
+        // une tentative toute neuve paraissait commencée 1 à 2 h plus tôt et expirait aussitôt.
+        $start = UtcDateTime::timestamp($attempt['started_at'] ?? null);
+        if ($start === null) {
             return true;
         }
 

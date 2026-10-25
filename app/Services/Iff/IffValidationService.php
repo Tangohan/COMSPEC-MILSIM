@@ -6,6 +6,7 @@ namespace App\Services\Iff;
 
 use App\Repositories\IffAssetStatusRepository;
 use App\Repositories\IffChallengeRepository;
+use App\Support\UtcDateTime;
 
 class IffValidationService
 {
@@ -23,7 +24,8 @@ class IffValidationService
         }
         $validCode = $challenge['code'] ?? '';
         $validUntil = $challenge['valid_until'] ?? '';
-        if (strtotime((string) $validUntil) < time()) {
+        // valid_until est écrit en UTC (gmdate) : relu en UTC.
+        if (UtcDateTime::isPast($validUntil)) {
             $this->assetRepository->setResponse($missionId, $assetId, $responseCode, 'EXPIRED');
             return ['status' => 'EXPIRED', 'message' => 'Challenge expired'];
         }
@@ -42,7 +44,7 @@ class IffValidationService
         $challengeExpired = false;
         $validUntilTs = null;
         if ($challenge) {
-            $validUntilTs = strtotime((string) ($challenge['valid_until'] ?? ''));
+            $validUntilTs = UtcDateTime::timestamp($challenge['valid_until'] ?? null) ?? false;
             if ($validUntilTs !== false && $validUntilTs < time()) {
                 $challengeExpired = true;
             }
@@ -58,7 +60,9 @@ class IffValidationService
             }
             $status = strtoupper(trim((string) ($row['response_status'] ?? 'PENDING')));
             $graceUntil = $row['grace_until'] ?? null;
-            $graceTs = $graceUntil ? strtotime((string) $graceUntil) : false;
+            // grace_until est calculé par DATE_ADD(NOW(), …) en session UTC : relu en UTC,
+            // sinon l'asset PENDING passe UNKNOWN dès sa création.
+            $graceTs = UtcDateTime::timestamp($graceUntil) ?? false;
             $now = time();
 
             if ($status === 'PENDING' && $challengeExpired) {
@@ -86,7 +90,10 @@ class IffValidationService
             $row['grace_until'] = $graceUntil;
             $row['grace_remaining_sec'] = $graceRemainingSec;
             $row['challenge_remaining_sec'] = $challengeRemainingSec;
-            $row['challenge_valid_until'] = $challenge['valid_until'] ?? null;
+            // Renvoyé en heure locale, comme IffChallengeService::getCurrent().
+            $row['challenge_valid_until'] = ($validUntilTs !== false && $validUntilTs !== null)
+                ? date('Y-m-d H:i:s', $validUntilTs)
+                : null;
             $out[] = $row;
         }
 

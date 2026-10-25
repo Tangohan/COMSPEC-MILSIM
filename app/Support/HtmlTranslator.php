@@ -427,20 +427,61 @@ final class HtmlTranslator
             return self::$exact !== [] || self::$templates !== [];
         }
         $path = base_path('lang/en/site_auto.php');
-        /** @var mixed $data */
-        $data = is_file($path) ? require $path : [];
-        $data = is_array($data) ? $data : [];
+        if (!is_file($path)) {
+            return self::useDictionary([]);
+        }
         // Langue de la communauté (ou corrections de l'anglais, /traduire-site) : ses textes validés passent avant
         // l'anglais ; un texte qu'elle n'a pas traduit reste en anglais.
         $lang = function_exists('site_lang') ? site_lang() : 'en';
-        if ($lang !== 'fr') {
-            $over = \App\Services\I18n\CommunityLanguages::dictionary($lang)['t'];
-            if ($over !== []) {
-                $data = $over + $data;
+        $over = $lang !== 'fr' ? \App\Services\I18n\CommunityLanguages::dictionary($lang)['t'] : [];
+        if ($over !== []) {
+            /** @var mixed $data */
+            $data = require $path;
+
+            return self::useDictionary($over + (is_array($data) ? $data : []));
+        }
+        // Anglais seul : dictionnaire déjà découpé (textes exacts / modèles %1) gardé dans storage/cache. Sans lui,
+        // chaque page anglaise relit et retrie les ~40 000 entrées. Reconstruit dès que site_auto.php change.
+        $stamp = (int) filemtime($path) . ':' . (int) filesize($path);
+        $cache = base_path('storage/cache/html_translator_en.php');
+        if (is_file($cache)) {
+            /** @var mixed $c */
+            $c = @include $cache;
+            if (is_array($c) && ($c['stamp'] ?? '') === $stamp && is_array($c['exact'] ?? null) && is_array($c['templates'] ?? null)) {
+                self::$exact = $c['exact'];
+                self::$templates = $c['templates'];
+                self::$memo = [];
+
+                return self::$exact !== [] || self::$templates !== [];
             }
         }
+        /** @var mixed $data */
+        $data = require $path;
+        $ok = self::useDictionary(is_array($data) ? $data : []);
+        self::writeCache($cache, $stamp);
 
-        return self::useDictionary($data);
+        return $ok;
+    }
+
+    private static function writeCache(string $cache, string $stamp): void
+    {
+        $dir = dirname($cache);
+        if (!is_dir($dir) || !is_writable($dir)) {
+            return;
+        }
+        $php = '<?php return ' . var_export(['stamp' => $stamp, 'exact' => self::$exact, 'templates' => self::$templates], true) . ";\n";
+        $tmp = $cache . '.' . getmypid() . '.tmp';
+        if (@file_put_contents($tmp, $php, LOCK_EX) === false) {
+            return;
+        }
+        if (!@rename($tmp, $cache)) {
+            @unlink($tmp);
+
+            return;
+        }
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($cache, true);
+        }
     }
 
     /**
