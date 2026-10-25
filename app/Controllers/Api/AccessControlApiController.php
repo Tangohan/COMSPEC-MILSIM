@@ -6,6 +6,7 @@ namespace App\Controllers\Api;
 
 use App\Authorization\SystemReservedPermissions;
 use App\Core\Database;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -20,6 +21,20 @@ final class AccessControlApiController
     public function __construct(private AccessControlService $acs, private UserRepository $users)
     {
         $this->pdo = Database::getPdo();
+    }
+
+    /**
+     * Écritures d’habilitations : réservées au gestionnaire de la communauté
+     * (mêmes droits que TenantResourceAdminMiddleware), sinon 403 JSON.
+     */
+    private function denyUnlessTenantAdmin(): ?Response
+    {
+        $gate = Gate::getInstance();
+        if ($gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access')) {
+            return null;
+        }
+
+        return Response::json(['ok' => false, 'error' => 'Accès réservé aux administrateurs de la communauté.'], 403);
     }
 
     public function roles(Request $request, array $params = []): Response
@@ -52,6 +67,9 @@ final class AccessControlApiController
             return Response::json(['ok' => true, 'data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
         }
 
+        if ($denied = $this->denyUnlessTenantAdmin()) {
+            return $denied;
+        }
         $code = (string) $request->input('code');
         $label = (string) $request->input('label', $code);
         if ($tenantId < 1) {
@@ -70,6 +88,9 @@ final class AccessControlApiController
 
     public function rolePermissions(Request $request, array $params = []): Response
     {
+        if ($denied = $this->denyUnlessTenantAdmin()) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $roleId = (int) $request->input('role_id');
         $permissionId = (int) $request->input('permission_id');
@@ -99,7 +120,11 @@ final class AccessControlApiController
         }
 
         $this->pdo->prepare('DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?')->execute([$roleId, $permissionId]);
-        $this->pdo->prepare('INSERT INTO role_permissions (role_id, permission_id, allowed) VALUES (?, ?, ?)')->execute([$roleId, $permissionId, $allowed]);
+        // RbacService ne lit pas `allowed` : un refus se traduit par l’absence de ligne,
+        // jamais par une ligne allowed=0 qui accorderait quand même l’habilitation.
+        if ($allowed === 1) {
+            $this->pdo->prepare('INSERT INTO role_permissions (role_id, permission_id, allowed) VALUES (?, ?, ?)')->execute([$roleId, $permissionId, $allowed]);
+        }
 
         return Response::json(['ok' => true]);
     }
@@ -114,6 +139,9 @@ final class AccessControlApiController
             return Response::json(['ok' => true, 'data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
         }
 
+        if ($denied = $this->denyUnlessTenantAdmin()) {
+            return $denied;
+        }
         $st = $this->pdo->prepare('INSERT INTO access_rules (tenant_id, name, description, target_type, target_id, condition_type, condition_value, effect, priority, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
         $st->execute([
             $tenantId,
@@ -141,6 +169,9 @@ final class AccessControlApiController
             return Response::json(['ok' => true, 'data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
         }
 
+        if ($denied = $this->denyUnlessTenantAdmin()) {
+            return $denied;
+        }
         $st = $this->pdo->prepare('INSERT INTO access_scopes (rule_id, scope_type, scope_identifier, action) VALUES (?, ?, ?, ?)');
         $st->execute([(int) $request->input('rule_id'), strtoupper((string) $request->input('scope_type', 'MODULE')), (string) $request->input('scope_identifier'), strtoupper((string) $request->input('action', 'READ'))]);
 
