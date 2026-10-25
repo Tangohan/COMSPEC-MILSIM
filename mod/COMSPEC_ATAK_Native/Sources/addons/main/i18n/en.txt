@@ -14368,5 +14368,12 @@
 ["Indicatif mis à jour depuis Athena : %1", "Callsign updated from Athena: %1"],
 ["Indicatif personnalisé retiré : celui d'Athena ou de la mission s'applique", "Custom callsign removed: the Athena or mission one applies"],
 ["Indicatif trop court (2 caractères au moins)", "Callsign too short (at least 2 characters)"],
-["%1 · %2 · canal %3%4", "%1 · %2 · channel %3%4"]
+["%1 · %2 · canal %3%4", "%1 · %2 · channel %3%4"],
+["NAVIGATION", "NAVIGATION"],
+["MESURER", "MEASURE"],
+["DESSINER", "DRAW"],
+["AFFICHAGE", "DISPLAY"],
+["DRONE", "DRONE"],
+["glisser : déplacer la carte · clic droit : quitter", "drag: move the map · right click: exit"],
+["Quitter l'outil", "Leave the tool"]
 ]
