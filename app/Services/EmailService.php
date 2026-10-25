@@ -291,7 +291,7 @@ final class EmailService
         // Destinataire dont le profil est en anglais : modèle (écrit en français) traduit comme une page du site.
         // $locale donné : le modèle est déjà écrit dans cette langue ; en anglais, seul le gabarit commun
         // (lien de secours, pied de page) reste à traduire.
-        if (($locale !== null ? \App\Services\I18n\LocaleService::normalize($locale) : $this->recipientLocale($to)) === 'en') {
+        if (($locale !== null ? \App\Services\I18n\LocaleService::normalize($locale) : $this->recipientLocale($to)) !== 'fr') {
             try {
                 $subject = HtmlTranslator::translateText($subject);
                 $parts['html'] = HtmlTranslator::translate($parts['html']);

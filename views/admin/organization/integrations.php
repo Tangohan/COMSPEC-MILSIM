@@ -24,6 +24,7 @@ declare(strict_types=1);
  * @var array<string, mixed>|null $platform_mail_sender
  * @var string $platform_env_mailer
  * @var array<string, array{url:string, from_env:bool}> $platform_discord
+ * @var array{client_id:string, has_secret:bool, verification_url:string, redirect_uri:string, linked:int}|null $platform_linked_roles
  */
 
 $keys = is_array($integration_keys ?? null) ? $integration_keys : [];
@@ -731,6 +732,40 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                 <?= \App\Core\Csrf::field() ?>
             </form>
         </div>
+
+        <?php $lr = is_array($platform_linked_roles ?? null) ? $platform_linked_roles : null; ?>
+        <?php if ($lr !== null): ?>
+        <div class="bo-int-card" id="plateforme-roles-lies">
+            <h3 class="bo-int-card__title"><?= $icon('discord') ?> Rôles liés de Discord (comptes du site)</h3>
+            <p class="bo-int-card__desc">Les membres relient leur compte Discord à leur compte Athena (menu « Rôles liés » du serveur Discord, ou Mon compte › Préférences). Le serveur Discord donne alors lui-même les rôles réservés aux comptes Athena et le profil Discord affiche leurs communautés. Le jeton du bot reste sur le PC : il ne sert qu’à déclarer les conditions, avec le script des rôles.</p>
+            <div class="bo-int-status bo-int-status--<?= $lr['client_id'] !== '' && $lr['has_secret'] ? 'ok' : 'off' ?>">
+                <?php if ($lr['client_id'] !== '' && $lr['has_secret']): ?>
+                    <?= $icon('check') ?><span><strong>Actif</strong> : <?= (int) $lr['linked'] ?> compte(s) Discord relié(s).</span>
+                <?php else: ?>
+                    <?= $icon('info') ?><span><strong>Pas encore réglé</strong> : collez l’identifiant et le secret de l’application Discord du bot.</span>
+                <?php endif; ?>
+            </div>
+            <p class="bo-int-card__desc">Dans le portail des développeurs Discord (application du bot) : <strong>General Information › Linked Roles Verification URL</strong> = <code><?= $h($lr['verification_url']) ?></code> ; <strong>OAuth2 › Redirects</strong> = <code><?= $h($lr['redirect_uri']) ?></code>.</p>
+            <form method="post" action="<?= $h(url('back-office/integrations/plateforme/discord-roles-lies')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Identifiant de l’application (Application ID)</span>
+                    <input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" name="linked_roles_client_id" maxlength="20" class="bo-int-input bo-int-mono" value="<?= $h($lr['client_id']) ?>" placeholder="123456789012345678">
+                </label>
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Secret client (OAuth2 › Client Secret)</span>
+                    <input type="password" autocomplete="new-password" spellcheck="false" name="linked_roles_client_secret" maxlength="64" class="bo-int-input bo-int-mono" placeholder="<?= $lr['has_secret'] ? '•••••••• (enregistré, laisser vide pour le garder)' : 'Coller le secret' ?>">
+                    <span class="bo-int-field__help">Chiffré en base, jamais réaffiché.</span>
+                </label>
+                <?php if ($lr['has_secret']): ?>
+                <label class="bo-int-check"><input type="checkbox" name="linked_roles_clear_secret" value="1"><span>Effacer le secret enregistré</span></label>
+                <?php endif; ?>
+                <div class="bo-int-actions">
+                    <button type="submit" class="bo-int-btn bo-int-btn--solid">Enregistrer les rôles liés</button>
+                </div>
+            </form>
+        </div>
+        <?php endif; ?>
 
         <div class="bo-int-card" id="plateforme-emails">
             <h3 class="bo-int-card__title"><?= $icon('mail') ?> Envoi commun de la plateforme</h3>

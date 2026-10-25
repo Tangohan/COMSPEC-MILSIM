@@ -290,7 +290,7 @@ final class SitePagesController
             'meta_description' => __('site.atakt_meta_description'),
             'marketingActive' => 'traduire-atak',
             'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=3'],
-            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=3'],
+            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=4'],
         ]);
     }
 
@@ -310,6 +310,8 @@ final class SitePagesController
             'categories' => $catalog['categories'],
             // [clé, français, anglais, catégorie, fichier source]
             'entries' => $catalog['entries'],
+            // [clé $STR_, texte original, anglais] : noms d'objets et de modules, stringtable.xml du mod de langue
+            'stringtable' => AtakTranslationTemplate::stringtable(),
         ])->header('ETag', $etag)->header('Cache-Control', 'public, max-age=600');
     }
 }

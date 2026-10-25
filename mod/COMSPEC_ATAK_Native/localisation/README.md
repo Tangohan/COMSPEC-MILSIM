@@ -12,9 +12,10 @@ the new language appears in **Settings > Language** on the phone and in **Esc > 
 COMSPEC > Langue / Language**. No change to COMSPEC is needed and you don't have to wait for our releases.
 
 What a translation mod covers: every screen of the ATAK phone, its notifications and messages, the
-COMSPEC addon options, and the screens of the SSE mod and of the Overwatch connection. What it does not
-cover: item names in the arsenal, Eden and Zeus module names (they follow the game language), and the
-terms-of-use and Athena choice windows of the Overwatch connection. These stay in English.
+COMSPEC addon options, the screens of the SSE mod and of the Overwatch connection, the few texts written in
+English in the code, and the names of items (arsenal) and of Eden and Zeus modules of the ATAK, the SSE mod and
+the Overwatch connection. Item and module names follow the **game language**: they show in your language when
+Arma 3 itself runs in it (the mod ships a `stringtable.xml` with your language column, see step 2).
 
 ## 1. Translate the file
 
@@ -25,8 +26,9 @@ terms-of-use and Athena choice windows of the Overwatch connection. These stay i
    ["Batterie faible", "", "Low battery"],
    ```
 
-   The first text is the French original (the key: **never change it**), the second is your translation
-   (empty for now), the third is the English version, for reference only. Fill in the second text:
+   The first text is the text as written in the code, usually French (the key: **never change it**), the
+   second is your translation (empty for now), the third is the English version, for reference only. Fill in
+   the second text:
 
    ```
    ["Batterie faible", "Batería baja", "Low battery"],
@@ -47,7 +49,11 @@ terms-of-use and Athena choice windows of the Overwatch connection. These stay i
 2. In that folder, replace `es`, `Español` and `Spanish` in `config.cpp` and `$PBOPREFIX$` with your
    language (code, name in your language, and the Arma game language name: German, Italian, Polish,
    Portuguese, Russian, Czech, Turkish…). Put your translated file next to `config.cpp`.
-3. Pack the folder into a PBO with Arma 3 Tools > Addon Builder (or any PBO packer), inside a mod folder:
+3. Item and Eden/Zeus module names: run
+   `python3 mod/COMSPEC_ATAK_Native/tools/i18n.py community path/to/es.txt --game Spanish` (the Arma game
+   language name). It writes a `stringtable.xml` next to your file; put it next to `config.cpp` too. The site
+   adds it by itself to the zip when the game language is set. Without it, these names stay in English.
+4. Pack the folder into a PBO with Arma 3 Tools > Addon Builder (or any PBO packer), inside a mod folder:
 
    ```
    @COMSPEC_ATAK_Espanol/
@@ -55,9 +61,9 @@ terms-of-use and Athena choice windows of the Overwatch connection. These stay i
        mod.cpp            (optional: name and picture in the launcher)
    ```
 
-4. Sign the PBO with your own key (DSUtils in Arma 3 Tools) and ship the `.bikey` in a `keys` folder:
+5. Sign the PBO with your own key (DSUtils in Arma 3 Tools) and ship the `.bikey` in a `keys` folder:
    servers that check signatures only accept mods whose key they have. Ask server admins to add it.
-5. Publish with Arma 3 Tools > Publisher and set **COMSPEC ATAK Native** as a required item.
+6. Publish with Arma 3 Tools > Publisher and set **COMSPEC ATAK Native** as a required item.
 
 To test: load COMSPEC ATAK Native and your mod, open the phone, Settings > Language, pick your language.
 
@@ -90,16 +96,20 @@ traducteurs publient sur le Workshop. Le téléphone le détecte tout seul : la 
 Language**, sans modifier COMSPEC.
 
 Couvert : tous les écrans du téléphone, notifications et messages, les options COMSPEC, les écrans SSE et
-de connexion Overwatch. Pas couvert (reste en anglais) : noms d'objets de l'arsenal, modules Eden/Zeus,
-fenêtres d'accord d'utilisation et de choix Athéna de la connexion Overwatch.
+de connexion Overwatch, les quelques textes écrits en anglais dans le code, et les noms d'objets (arsenal) et de
+modules Eden/Zeus de l'ATAK, du SSE et de la connexion Overwatch. Ces noms suivent la **langue du jeu** : ils
+s'affichent dans la langue du mod quand Arma 3 tourne dans cette langue (`stringtable.xml` livrée avec le mod).
 
 1. Copier `template/xx.txt` sous le code de la langue (`es.txt`) et remplir la 2e colonne de chaque ligne
    `["français", "traduction", "anglais"]`. Ne jamais toucher la 1re colonne. Une traduction vide
    s'affiche en anglais. Garder `%1`, `%2`, `%%`, doubler les guillemets (`""`), enregistrer en UTF-8.
 2. Copier `example/comspec_atak_lang_es`, adapter le code, le nom et la langue du jeu dans `config.cpp`
-   et `$PBOPREFIX$`, poser le fichier traduit à côté, empaqueter en PBO (Addon Builder), signer
+   et `$PBOPREFIX$`, poser le fichier traduit à côté (et la `stringtable.xml` écrite par
+   `tools/i18n.py community es.txt --game Spanish` pour les noms d'objets et de modules), empaqueter en PBO (Addon Builder), signer
    (DSUtils, `.bikey` dans `keys/`), publier avec Publisher en dépendance de COMSPEC ATAK Native.
 3. Mise à jour à chaque version : `python3 mod/COMSPEC_ATAK_Native/tools/i18n.py community es.txt`.
 
 Pour l'équipe COMSPEC : après chaque ajout au dictionnaire anglais (`tools/i18n.py merge`), relancer
-`python3 tools/i18n.py community` (sans fichier) pour régénérer `template/xx.txt`.
+`python3 tools/i18n.py community` (sans fichier) pour régénérer `template/xx.txt`, `template/categories.json` et
+`template/stringtable.json` (clés des stringtables de l'ATAK, du SSE et d'Overwatch connect, lues par le site). Pour
+trouver les textes français affichés sans traduction : `python3 tools/i18n.py extract` (et `--sse`, `--connect`).
