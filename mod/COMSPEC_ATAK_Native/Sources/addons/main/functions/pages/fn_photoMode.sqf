@@ -489,6 +489,9 @@ switch (toUpper _mode) do {
             (_meta select 9) append _faces;
             // Débit simulé : sans réseau, la photo reste sur le poste (app Galerie pour la retransmettre).
             private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
+            // ATAK seul (sans COMSPEC Link) : la photo reste aussi sur le poste, rien n'est envoyé.
+            private _noLink = isNil "comspec_overwatch_connect_fnc_captureReconImage";
+            if (_noLink) then { _noNet = true; };
             private _ok = if (_noNet) then {
                 private _shot = format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
                 screenshot _shot;
@@ -499,7 +502,7 @@ switch (toUpper _mode) do {
                     _kept pushBack [toLower _shot, _faces];
                     profileNamespace setVariable ["COMSPEC_ATAK_PhotoFaces", _kept select [((count _kept) - 40) max 0]];
                 };
-                ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", 5, 40] call comspec_atak_native_fnc_notify;
+                [["WARNING", "INFO"] select _noLink, ["Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", "Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)"] select _noLink, 5, 40] call comspec_atak_native_fnc_notify;
                 false
             } else { ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage };
             uiSleep 0.08;

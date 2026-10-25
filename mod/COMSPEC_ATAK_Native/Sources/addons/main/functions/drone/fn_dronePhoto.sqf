@@ -475,7 +475,9 @@ switch (_act) do {
             [_pos, _spPos] select ((count _pos) < 3 && {(count _spPos) >= 3}), _hdg, _extra, _spDir]] select _withMeta;
         [{
             params ["_file", "_caption", "_feed", "_meta"];
-            private _ok = [_file, _caption, "UAV", _feed, true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage;
+            private _ok = if (isNil "comspec_overwatch_connect_fnc_captureReconImage") then { false } else {
+                [_file, _caption, "UAV", _feed, true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage
+            };
             private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
             private _j = _lib findIf { (_x select 0) isEqualTo _file };
             if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select (_ok isEqualTo true)]; saveProfileNamespace; };
