@@ -26,7 +26,9 @@ final class AtakTelemetryBatchIngest
         private ?\App\Repositories\AssetLogisticsRepository $logistics = null,
         private ?\App\Services\Logistics\AssetLogisticsEvaluator $logisticsEval = null,
         private ?TacticalTrackService $trackService = null,
+        private ?AtakDataFlowsService $dataFlows = null,
     ) {
+        $this->dataFlows ??= new AtakDataFlowsService();
         $this->weather ??= new MissionWeatherService();
         $this->vehicles ??= new AtakVehicleTrackingRepository();
         $this->activityLog ??= new AtakActivityLogService();
@@ -59,7 +61,8 @@ final class AtakTelemetryBatchIngest
      *   rejected: int,
      *   last_id: int,
      *   results: list<array<string, mixed>>,
-     *   seq?: int|null
+     *   seq?: int|null,
+     *   flows?: array<string, bool>
      * }
      */
     public function ingest(
@@ -92,12 +95,21 @@ final class AtakTelemetryBatchIngest
         $lastId = $this->journal->latestId($tenantId, $mapId);
         $batchTs = isset($batch['ts']) && is_numeric($batch['ts']) ? (int) $batch['ts'] : time();
         $seq = isset($batch['seq']) && is_numeric($batch['seq']) ? (int) $batch['seq'] : null;
+        // Données remontées choisies par la communauté : un flux coupé est accepté sans être traité (une DLL plus
+        // ancienne l'envoie encore) ; la réponse rappelle les flux pour la DLL.
+        $flows = $this->dataFlows->get($tenantId)['flows'];
 
         foreach ($events as $idx => $ev) {
             $type = strtolower(trim((string) ($ev['t'] ?? $ev['type'] ?? '')));
             if ($type === '') {
                 $rejected++;
                 $results[] = ['i' => $idx, 'ok' => false, 'error' => 'missing_type'];
+                continue;
+            }
+            $flow = AtakDataFlowsService::flowForBatchType($type);
+            if ($flow !== null && empty($flows[$flow])) {
+                $accepted++;
+                $results[] = ['i' => $idx, 'ok' => true, 't' => $type, 'skipped' => 'flow_off'];
                 continue;
             }
 
@@ -150,7 +162,7 @@ final class AtakTelemetryBatchIngest
                     't' => $type,
                     'error' => (string) ($outcome['error'] ?? 'rejected'),
                     'http' => (int) ($outcome['http'] ?? 400),
-                ];
+                ] + (isset($outcome['detail']) ? ['detail' => (string) $outcome['detail']] : []);
             }
         }
 
@@ -161,6 +173,7 @@ final class AtakTelemetryBatchIngest
             'last_id' => $lastId,
             'results' => $results,
             'seq' => $seq,
+            'flows' => $flows,
         ];
     }
 
@@ -244,7 +257,7 @@ final class AtakTelemetryBatchIngest
 
     /**
      * @param array<string, mixed> $ev
-     * @return array{ok:bool, error?:string, http?:int, call_sign?:string}
+     * @return array{ok:bool, error?:string, detail?:string, http?:int, call_sign?:string, skipped?:bool}
      */
     private function handleVehicle(int $tenantId, int $mapId, array $ev): array
     {
@@ -275,7 +288,10 @@ final class AtakTelemetryBatchIngest
             error_log('[atak/telemetry/batch] vehicle_exception '
                 . \App\Repositories\AtakVehicleTrackingRepository::resolveCallsign($payload) . ' : '
                 . mb_substr($e->getMessage(), 0, 300));
-            return ['ok' => false, 'error' => 'vehicle_exception', 'http' => 500];
+            // Cause courte renvoyée au mod (signalements du back-office) : code SQL, jamais le message complet.
+            $detail = $e instanceof \PDOException ? 'sql_' . (string) ($e->errorInfo[1] ?? $e->getCode()) : (new \ReflectionClass($e))->getShortName();
+
+            return ['ok' => false, 'error' => 'vehicle_exception', 'detail' => $detail, 'http' => 500];
         }
     }
 

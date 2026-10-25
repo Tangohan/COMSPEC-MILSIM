@@ -1,4 +1,6 @@
 [
+["Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)", "Photo taken: saved in the Screenshots folder of your Arma profile (sending to Athena needs COMSPEC Link)"],
+["Dossier partagé : COMSPEC Link doit être chargé", "Shared case file: COMSPEC Link must be loaded"],
 ["  COMSPEC ATAK · Conditions réseau du serveur", "  COMSPEC ATAK · Server network conditions"],
 ["  COMSPEC ATAK · Réalisme et réseau du serveur", "  COMSPEC ATAK · Server realism and network"],
 ["  OK   GPS  position locale en direct", "  OK   GPS  local position live"],

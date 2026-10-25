@@ -495,6 +495,7 @@ class CfgFunctions {
             class linkDegradeSimApplySetting {};
             class isLinkDegradeSimActive {};
             class pollModModules {};
+            class pollDataFlows {};
             class pollExperience {};
             class applyTenantExperience {};
             class showExperienceGuide {};

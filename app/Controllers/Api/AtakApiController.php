@@ -7962,6 +7962,20 @@ class AtakApiController
     /**
      * Modules pont ATAK Enhanced / cTab (activables par communauté).
      */
+    /**
+     * GET /api/atak/data-flows : données que le jeu remonte à Athena, choisies par la communauté (COMSPEC Link 2.0.94+,
+     * toutes les 30 s). Réglage : back-office, Configuration ATAK > Données remontées.
+     */
+    public function dataFlows(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+
+        return Response::json((new \App\Services\Tactical\AtakDataFlowsService())->get($r));
+    }
+
     public function modModules(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

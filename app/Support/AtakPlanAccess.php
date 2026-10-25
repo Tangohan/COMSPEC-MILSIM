@@ -29,7 +29,7 @@ final class AtakPlanAccess
         // Connexion et fonctionnement du lien (sans eux, rien ne passe).
         'atak/whoami', 'atak/client-init', 'atak/me-link-status', 'atak/disconnect',
         'atak/game-session/', 'atak/game-link/', 'atak/operator/', 'atak/presence', 'atak/server-presence',
-        'atak/session-restore', 'atak/mod-modules', 'atak/mod-report', 'atak/device-logs', 'atak/device-alerts',
+        'atak/session-restore', 'atak/mod-modules', 'atak/data-flows', 'atak/mod-report', 'atak/device-logs', 'atak/device-alerts',
         'atak/web-log', 'atak/send-queue/report', 'atak/telemetry/', 'atak/notifications', 'atak/stream',
         'atak/playtime', 'atak/screen-time', 'atak/experience', 'atak/beta-register', 'atak/player-profile',
         'atak/phone-pairing', 'atak/mission-settings', 'atak/roleplay-stats',

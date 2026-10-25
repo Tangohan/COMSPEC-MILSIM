@@ -320,10 +320,15 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     {
         if ((count _x) >= 3) then { _map drawPolygon [_x,[0.95,0.67,0.20,0.18]]; };
     } forEach (_data getOrDefault ["zones",[]]);
+    uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", -1];
 } else {
     // Calque masqué : Overwatch recrée ses marqueurs de zone à chaque synchro, on les remasque.
-    if (diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0])) then {
+    // Seulement quand un marqueur a changé (compteur COMSPEC_ATAK_MkRev), au plus toutes les 2 s : avant, tous les
+    // marqueurs étaient parcourus toutes les 2 s même sans aucun changement.
+    private _zRev = missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0];
+    if (diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0]) && {_zRev isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideRev", -1])}) then {
         uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
+        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", _zRev];
         { if ((_x select [0, 11]) isEqualTo "COMSPEC_TZ_" && {(markerAlpha _x) > 0}) then { _x setMarkerAlphaLocal 0; }; } forEach allMapMarkers;
     };
 };

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.93";
+    private const string ExtensionVersion = "2.0.94";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -295,9 +295,13 @@ public static partial class Extension
         public string SseNoteId = "";
         public string SseNoteKind = "capture";
         public int Attempts;
+        /// <summary>Relances différées d'un nom précis pas encore écrit (jeu en pause, alt-tab, disque lent).</summary>
+        public int LateRetries;
     }
 
     private static readonly ConcurrentQueue<ReconPhotoJob> PhotoJobs = new();
+    private const int PhotoLateRetryMax = 4;
+    private const int PhotoLateRetryDelayMs = 15_000;
     private static readonly ConcurrentDictionary<string, long> PhotoDedupTicks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object ScreenshotWatcherLock = new();
     private static int _photoWorkerRunning;
@@ -2206,6 +2210,9 @@ public static partial class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        // Données remontées choisies par la communauté (Extension_DataFlows) : flux coupé, rien en file.
+        if (!DataFlowAllowsUrl(url, jsonBody))
+            return;
         // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
         if (TryOfferBatchablePost(url, jsonBody))
             return;
@@ -4386,6 +4393,12 @@ public static partial class Extension
                     var safe = body.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                     return PollOkClipped(safe);
                 });
+            }
+            // Données remontées choisies par la communauté (positions, véhicules, pertes, miroir, contexte).
+            // Réponse : positions=1\tvehicles=0\t... (Extension_DataFlows).
+            if (function == "GetDataFlows")
+            {
+                return ServeDataFlows();
             }
             // Modules pont ATAK Enhanced / cTab (activables admin).
             // Lignes : id\tenabled(0|1)\tlabel
@@ -9190,6 +9203,8 @@ public static partial class Extension
         // Un nom précis n’est jamais remplacé par une autre photo récente (Quick Picture).
         var specificName = HasSpecificImageFileName(job.RawPath);
         var maxAttempts = specificName ? 50 : 25;
+        // Relance différée : courte attente, la file des autres photos ne reste pas bloquée.
+        if (job.LateRetries > 0) maxAttempts = 5;
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             var fb = newestFallback;
@@ -9234,6 +9249,23 @@ public static partial class Extension
             }
             catch { /* ignore */ }
             await Task.Delay(400).ConfigureAwait(false);
+        }
+
+        if (resolved == null && specificName && job.LateRetries < PhotoLateRetryMax
+            && (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds < 150)
+        {
+            // Arma n'écrit la capture qu'à l'image suivante : jeu en pause, fenêtre réduite ou disque lent, le PNG
+            // arrive après les ~20 s d'attente. Nouvel essai plus tard au lieu d'un file_not_found immédiat.
+            job.LateRetries++;
+            PhotoJournal(job, "queued", "capture pas encore écrite");
+            _ = Task.Run(async () =>
+            {
+                try { await Task.Delay(PhotoLateRetryDelayMs).ConfigureAwait(false); }
+                catch { /* ignore */ }
+                PhotoJobs.Enqueue(job);
+                EnsurePhotoWorker();
+            });
+            return;
         }
 
         if (resolved == null)

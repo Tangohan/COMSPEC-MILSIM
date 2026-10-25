@@ -57,7 +57,8 @@ private _carries = {
     private _k = netId _u;
     if (_k in ["", "0:0"]) then { _k = str _u; };
     private _c = _devCache getOrDefault [_k, [false, -1e9]];
-    if ((diag_tickTime - (_c select 1)) > 10) then { _c = [[_u] call comspec_atak_native_fnc_hasDevice, diag_tickTime]; _devCache set [_k, _c]; };
+    // Échéances étalées (10 à 14 s) : toutes les unités ne sont pas revérifiées dans le même passage.
+    if ((diag_tickTime - (_c select 1)) > 10) then { _c = [[_u] call comspec_atak_native_fnc_hasDevice, diag_tickTime + random 4]; _devCache set [_k, _c]; };
     _c select 0
 };
 private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends", true];
@@ -139,35 +140,69 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
 { if ((_y getOrDefault ["affiliation", ""]) isEqualTo "hostile") then { _units deleteAt _x; }; } forEach +_units;
 // Filtres du BFT (fn_bftFilter : IA, aériens, véhicules, pistes anciennes ou hors ligne, distance) : masquées sur la carte aussi.
 { if !([_y] call comspec_atak_native_fnc_bftFilter) then { _units deleteAt _x; }; } forEach +_units;
-["units",_units] call comspec_atak_native_fnc_storeSet;
+// Signature fournie : la table des unités change à chaque passage (positions), la comparer par « str » ne servait qu'à
+// convertir en texte toutes les unités du camp, une ou quatre fois par seconde.
+["units",_units,-1,str diag_tickTime] call comspec_atak_native_fnc_storeSet;
 
 // Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection
 // et l'inspecteur (local = true) et on n'ajoute que les marqueurs Athena absents du jeu.
-// Relu quand un marqueur change, ou tout de suite si un marqueur apparaît ou disparaît : refaire une table par
-// marqueur quatre fois par seconde coûtait de plus en plus cher à mesure que les dessins s'accumulaient.
-// Compteur des changements de marqueurs (EH MarkerCreated / Deleted / Updated) : rien de changé, rien à refaire
-// (marqueurs Athena reçus, qui bougent sans événement : relus toutes les 2 s ; sans eux, sécurité toutes les 10 s).
-private _mkRemote = count (_data getOrDefault ["remoteMarkers",createHashMap]);
-private _mkSig = [count allMapMarkers, _mkRemote, missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]];
-private _mkPrev = uiNamespace getVariable ["COMSPEC_ATAK_MkRefresh", [[], -1e9]];
-if ((_mkPrev select 0) isEqualTo _mkSig && {diag_tickTime - (_mkPrev select 1) < ([10, 2] select (_mkRemote > 0))}) exitWith {};
-uiNamespace setVariable ["COMSPEC_ATAK_MkRefresh", [_mkSig, diag_tickTime]];
+// Seuls les marqueurs changés sont relus (carnet COMSPEC_ATAK_MkDirtyLd tenu par les EH MarkerCreated / Deleted /
+// Updated, XEH_postInitClient) ; tous au premier passage et toutes les 30 s. Avant, un seul marqueur déplacé (piste
+// Athena redessinée par Overwatch, marqueur suivi) faisait refaire une table par marqueur de la mission, puis comparer
+// chaque marqueur Athena à chaque marqueur du jeu : la saccade régulière, carte ouverte ou téléphone porté.
+private _mkRemote = _data getOrDefault ["remoteMarkers",createHashMap];
+private _remRev = (_data getOrDefault ["revisions",createHashMap]) getOrDefault ["remoteMarkers",0];
+private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyLd", createHashMap];
+private _mk = uiNamespace getVariable ["COMSPEC_ATAK_MkLocal", []];
+private _full = (count _mk) < 4 || {diag_tickTime > (_mk select 0)} || {"" in _dirty};
+if (!_full && {(count _dirty) isEqualTo 0} && {_remRev isEqualTo (_mk select 2)}) exitWith {};
+missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyLd", createHashMap];
+private _entry = {
+    createHashMapFromArray [
+        ["id",_this],["position",getMarkerPos _this],["text",markerText _this],
+        ["type",markerType _this],["color",markerColor _this],["shape",markerShape _this],
+        ["size",markerSize _this],["dir",markerDir _this],["alpha",markerAlpha _this],["local",true]
+    ]
+};
+private _local = createHashMap;
+if (_full) then {
+    { _local set [_x, _x call _entry]; } forEach allMapMarkers;
+    _mk = [diag_tickTime + 30, _local, _remRev, (_mk param [3, 0]) + 1];
+} else {
+    _local = _mk select 1;
+    { if ((markerShape _x) isEqualTo "") then { _local deleteAt _x; } else { _local set [_x, _x call _entry]; }; } forEach (keys _dirty);
+    _mk set [2, _remRev];
+    _mk set [3, (_mk select 3) + 1];
+};
+uiNamespace setVariable ["COMSPEC_ATAK_MkLocal", _mk];
 private _markers = createHashMap;
-{
-    private _name = _x;
-    _markers set [_name,createHashMapFromArray [
-        ["id",_name],["position",getMarkerPos _name],["text",markerText _name],
-        ["type",markerType _name],["color",markerColor _name],["shape",markerShape _name],
-        ["size",markerSize _name],["dir",markerDir _name],["alpha",markerAlpha _name],["local",true]
-    ]];
-} forEach allMapMarkers;
-private _local = values _markers;
-{
-    private _r = _y;
-    private _rp = _r getOrDefault ["position",[0,0,0]];
-    private _rt = toLower (_r getOrDefault ["text",""]);
-    if ((_local findIf { ((_x get "position") distance2D _rp) < 15 && {(toLower (_x get "text")) isEqualTo _rt || {_rt isEqualTo ""}} }) < 0) then {
-        _markers set [_x,_r];
-    };
-} forEach (_data getOrDefault ["remoteMarkers",createHashMap]);
-["markers",_markers] call comspec_atak_native_fnc_storeSet;
+_markers merge _local;
+if ((count _mkRemote) > 0) then {
+    // Doublon Athena / jeu : même texte (ou sans texte) à moins de 15 m. Marqueurs du jeu rangés par cases de 15 m :
+    // chaque marqueur Athena ne regarde que les 9 cases autour de lui, au lieu de tous les marqueurs du jeu.
+    private _cells = createHashMap;
+    {
+        private _p = _y get "position";
+        private _k = [floor ((_p select 0) / 15), floor ((_p select 1) / 15)];
+        private _c = _cells getOrDefault [_k, []];
+        if ((count _c) isEqualTo 0) then { _cells set [_k, _c]; };
+        _c pushBack _y;
+    } forEach _local;
+    {
+        private _r = _y;
+        private _rp = _r getOrDefault ["position",[0,0,0]];
+        private _rt = toLower (_r getOrDefault ["text",""]);
+        private _cx = floor ((_rp select 0) / 15);
+        private _cy = floor ((_rp select 1) / 15);
+        private _dup = false;
+        for "_i" from -1 to 1 do {
+            for "_j" from -1 to 1 do {
+                if (!_dup) then {
+                    _dup = ((_cells getOrDefault [[_cx + _i, _cy + _j], []]) findIf { ((_x get "position") distance2D _rp) < 15 && {(toLower (_x get "text")) isEqualTo _rt || {_rt isEqualTo ""}} }) >= 0;
+                };
+            };
+        };
+        if (!_dup) then { _markers set [_x,_r]; };
+    } forEach _mkRemote;
+};
+["markers",_markers,-1,str (_mk select 3)] call comspec_atak_native_fnc_storeSet;
