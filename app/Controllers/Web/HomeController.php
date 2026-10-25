@@ -1287,9 +1287,15 @@ class HomeController
         }
         $repo = \App\Core\Container::get(\App\Repositories\ArsenalWardrobeRepository::class);
         $kindLabels = \App\Support\ArsenalLoadoutItems::kindLabels();
-        foreach (array_slice(array_keys($kits), 0, 16) as $i) {
+        $keys = array_slice(array_keys($kits), 0, 16);
+        // Tenues chargées en une requête (au lieu d’un findWardrobe par tenue).
+        $wardrobes = $repo->findWardrobesByIds($tenantId, array_map(
+            static fn ($i): int => (int) ($kits[$i]['wardrobe_id'] ?? 0),
+            $keys
+        ));
+        foreach ($keys as $i) {
             $kits[$i] += ['item_count' => 0, 'kinds' => [], 'primary_weapon' => '', 'sections' => []];
-            $row = $repo->findWardrobe($tenantId, (int) ($kits[$i]['wardrobe_id'] ?? 0));
+            $row = $wardrobes[(int) ($kits[$i]['wardrobe_id'] ?? 0)] ?? null;
             if ($row === null) {
                 continue;
             }
