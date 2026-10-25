@@ -292,7 +292,9 @@
   var form = document.getElementById('cp-main-form');
   if(!form){ return; }
   var pageKey = 'cp_draft_' + (window.location.pathname || 'new');
-  var fields = form.querySelectorAll('input[name], textarea[name], select[name]');
+  // Champs cachés exclus : _csrf_token (un jeton périmé ferait rejeter l'envoi) et sections_json (géré par le manuel).
+  var fields = form.querySelectorAll('input[name]:not([type="hidden"]), textarea[name], select[name]');
+  var SUBMIT_KEY = 'cp_draft_submitted';
   var dirty = false;
   var bar = document.createElement('p');
   bar.className = 'text-xs text-slate-500 mt-1';
@@ -316,6 +318,8 @@
       Object.keys(payload).forEach(function(name){
         var list=form.querySelectorAll('[name="'+name+'"]');
         list.forEach(function(f){
+          // Anciens brouillons : ne jamais réécrire un champ caché (jeton CSRF notamment).
+          if(f.type==='hidden'){ return; }
           if(f.type==='checkbox'){ f.checked = payload[name] === '1'; }
           else if(f.type==='radio'){ f.checked = f.value === payload[name]; }
           else { f.value = payload[name]; }
@@ -327,9 +331,35 @@
   function autosave(){
     try{ localStorage.setItem(pageKey, JSON.stringify(serialize())); dirty=false; bar.textContent='État: brouillon local auto-sauvegardé'; }catch(e){}
   }
+  // Après un envoi : le brouillon n'est supprimé que si le formulaire renvoyé par le serveur
+  // contient bien les valeurs envoyées (enregistrement réussi). En cas d'erreur, il reste récupérable.
+  function settlePendingSubmit(){
+    try {
+      var raw = sessionStorage.getItem(SUBMIT_KEY);
+      if(!raw){ return; }
+      sessionStorage.removeItem(SUBMIT_KEY);
+      var info = JSON.parse(raw);
+      if(!info || !info.key || !info.payload){ return; }
+      var cur = serialize();
+      var saved = Object.keys(info.payload).every(function(k){
+        return !(k in cur) || String(cur[k]).trim() === String(info.payload[k]).trim();
+      });
+      if(saved){ localStorage.removeItem(info.key); }
+    } catch(e){}
+  }
+  settlePendingSubmit();
   restore();
   fields.forEach(function(f){ f.addEventListener('input', function(){ dirty=true; bar.textContent='État: modifications non enregistrées'; }); });
   setInterval(function(){ if(dirty){ autosave(); } }, 8000);
-  form.addEventListener('submit', function(){ try{ localStorage.removeItem(pageKey);}catch(e){} bar.textContent='État: envoi en cours…'; });
+  form.addEventListener('submit', function(){
+    // Pas de « Quitter la page ? » pendant l'envoi ; le brouillon à jour est conservé jusqu'au retour serveur.
+    dirty = false;
+    try{
+      var payload = serialize();
+      localStorage.setItem(pageKey, JSON.stringify(payload));
+      sessionStorage.setItem(SUBMIT_KEY, JSON.stringify({ key: pageKey, payload: payload }));
+    }catch(e){}
+    bar.textContent='État: envoi en cours…';
+  });
   window.addEventListener('beforeunload', function(e){ if(!dirty){ return; } e.preventDefault(); e.returnValue=''; });
 })();
