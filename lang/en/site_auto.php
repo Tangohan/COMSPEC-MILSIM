@@ -12879,6 +12879,7 @@ return [
     'Effectifs : unités expliquées, identité claire' => 'Roster: units explained, clear identity',
     'Effectifs détachés' => 'Detached personnel',
     'Effectifs en liaison' => 'Operators on the net',
+    'Effectifs en liaison (%1)' => 'Operators on the net (%1)',
     'Effectifs et formations de base' => 'Headcount and basic training',
     'Effectifs et ORBAT' => 'Roster and ORBAT',
     'Effectifs et Organisation : deux portes, plus de labyrinthe' => 'Roster and Organization: two doors, no more maze',
