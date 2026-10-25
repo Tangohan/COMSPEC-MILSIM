@@ -432,6 +432,11 @@ $effectiveRankDisplay = function_exists('personnel_assigned_grade_label')
         'role_name' => $platformRoleName,
     ], $platformRoleName)
     : ($gradeLabel !== '' ? $gradeLabel : $gradeShortLabel);
+// Communauté sans grades (« Aucun » au référentiel) : ni pastille Grade ni encart Avancement.
+$personnelGradesHidden = \App\Support\TenantGrades::hidden();
+if ($personnelGradesHidden) {
+    $effectiveRankDisplay = '';
+}
 $gradeCodeBeside = $rankOverride !== '' ? $rankOverride : $gradeOtanCode;
 // Libellé de référence (toujours le long si dispo) pour la colonne Détail.
 $gradeReferenceLabel = $gradeLabel !== '' ? $gradeLabel : $gradeShortLabel;
@@ -715,7 +720,9 @@ if ($personnelFileIsRhFull) {
     $personnelFileNoticesIncludeOperatorTabs = false;
     $personnelFileNoticesBare = true;
     require base_path('views/partials/personnel/file_page_notices.php');
-    require base_path('views/partials/personnel/advancement_panel.php');
+    if (!$personnelGradesHidden) {
+        require base_path('views/partials/personnel/advancement_panel.php');
+    }
     ?>
 
     <?php if (!empty($visibilityPreviewAs)): ?>

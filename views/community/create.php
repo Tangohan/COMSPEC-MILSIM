@@ -490,7 +490,8 @@ $guideUrl = url('communities/create/guide');
                                 <input type="radio" name="wizard_catalog_kit_code" value="<?= htmlspecialchars((string) ($kit['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="sr-only">
                                 <span class="cc-choice__eyebrow"><?= $kitIsJobCatalog ? 'Catalogue d’emplois' : 'Modèle officiel' ?> · <?= htmlspecialchars($kitGrades, ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="cc-choice__title"><?= htmlspecialchars((string) ($kit['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?>.</span>
+                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="cc-choice__meta"><?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
                             <?php endforeach; ?>
                             <p class="cc-hint hidden" id="cc-kit-empty">Aucun modèle ne correspond. Effacez le filtre pour tout afficher.</p>
@@ -515,11 +516,37 @@ $guideUrl = url('communities/create/guide');
                             <p class="cc-hint mt-0">Choisissez la forme la plus proche de votre communauté : elle remplace l’arborescence ci-dessous, que vous pourrez ensuite renommer, compléter ou élaguer.</p>
                             <div class="cc-preset-grid mt-3" id="cc-orbat-presets" role="list">
                                 <?php foreach ($orbatPresets as $preset): ?>
-                                <button type="button" class="cc-preset" role="listitem" data-orbat-preset="<?= htmlspecialchars((string) $preset['id'], ENT_QUOTES, 'UTF-8') ?>">
-                                    <span class="cc-preset__audience"><?= htmlspecialchars((string) $preset['audience'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php
+                                // Échelons du modèle : nombre d’unités par niveau, dessinés en mini organigramme.
+                                $presetDepth = [];
+                                $presetLevels = [];
+                                foreach ((array) ($preset['units'] ?? []) as $pu) {
+                                    $pk = (string) ($pu['parent_key'] ?? '');
+                                    $lvl = $pk === '' ? 0 : (($presetDepth[$pk] ?? 0) + 1);
+                                    $presetDepth[(string) ($pu['key'] ?? '')] = $lvl;
+                                    $presetLevels[$lvl] = ($presetLevels[$lvl] ?? 0) + 1;
+                                }
+                                ksort($presetLevels);
+                                ?>
+                                <button type="button" class="cc-preset" role="listitem" aria-pressed="false" data-orbat-preset="<?= htmlspecialchars((string) $preset['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <span class="cc-preset__head">
+                                        <span class="cc-preset__audience"><?= htmlspecialchars((string) $preset['audience'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="cc-preset__check" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 10.5l3.2 3.2L15 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                                    </span>
                                     <span class="cc-preset__title"><?= htmlspecialchars((string) $preset['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="cc-preset__tree" aria-hidden="true">
+                                        <?php foreach ($presetLevels as $lvlCount): ?>
+                                        <span class="cc-preset__tier">
+                                            <?php for ($pi = 0; $pi < min(12, $lvlCount); $pi++): ?><i></i><?php endfor; ?>
+                                            <?php if ($lvlCount > 12): ?><em>+<?= (int) ($lvlCount - 12) ?></em><?php endif; ?>
+                                        </span>
+                                        <?php endforeach; ?>
+                                    </span>
                                     <span class="cc-preset__text"><?= htmlspecialchars((string) $preset['description'], ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="cc-preset__meta"><?= (int) $preset['count'] ?> unités</span>
+                                    <span class="cc-preset__meta">
+                                        <span><?= (int) $preset['count'] ?> unités</span>
+                                        <span><?= count($presetLevels) ?> niveaux</span>
+                                    </span>
                                 </button>
                                 <?php endforeach; ?>
                             </div>
@@ -591,9 +618,16 @@ $guideUrl = url('communities/create/guide');
                                 <span class="cc-choice__title">United States</span>
                                 <span class="cc-choice__text">Grades classiques des forces armées américaines.</span>
                             </label>
+                            <label class="cc-choice min-w-[12rem] flex-1">
+                                <input type="radio" name="wizard_grade_system_code" value="NONE" class="sr-only" data-grade-system>
+                                <span class="cc-choice__eyebrow">Sans grades</span>
+                                <span class="cc-choice__title">Aucun</span>
+                                <span class="cc-choice__text">Aucun grade affiché : profils, en-tête et tableau de bord restent sobres. Idéal pour une association ou une communauté de joueurs.</span>
+                            </label>
                         </div>
+                        <p class="cc-hint hidden" id="cc-grades-none-note">Aucun grade ne sera affiché dans la communauté. Vous pourrez en activer un plus tard dans <em>Back-office → Référentiel des grades</em>, sans rien perdre.</p>
 
-                        <div class="mt-6 grid gap-4 md:grid-cols-2">
+                        <div class="mt-6 grid gap-4 md:grid-cols-2" id="cc-grade-previews">
                             <div id="preview-fr" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 max-h-80 overflow-y-auto">
                                 <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu français</p>
                                 <div class="mt-3 space-y-3 text-xs text-slate-700">
@@ -602,8 +636,16 @@ $guideUrl = url('communities/create/guide');
                                         <div>
                                             <p class="font-black text-slate-800"><?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?></p>
                                             <ul class="mt-1 space-y-0.5 pl-2 border-l-2 border-emerald-200">
+                                                <?php $seenGrades = []; ?>
                                                 <?php foreach ($block['grades'] as $g): ?>
-                                                <li><?= htmlspecialchars((string) ($g['label_short'] ?? $g['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) ($g['label_long'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                                                <?php
+                                                $gShort = trim((string) ($g['label_short'] ?? $g['code'] ?? ''));
+                                                $gLong = trim((string) ($g['label_long'] ?? ''));
+                                                $gKey = mb_strtolower($gLong !== '' ? $gLong : $gShort);
+                                                if (isset($seenGrades[$gKey])) { continue; }
+                                                $seenGrades[$gKey] = true;
+                                                ?>
+                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></li>
                                                 <?php endforeach; ?>
                                             </ul>
                                         </div>
@@ -618,8 +660,16 @@ $guideUrl = url('communities/create/guide');
                                         <div>
                                             <p class="font-black text-slate-800"><?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?></p>
                                             <ul class="mt-1 space-y-0.5 pl-2 border-l-2 border-slate-300">
+                                                <?php $seenGrades = []; ?>
                                                 <?php foreach ($block['grades'] as $g): ?>
-                                                <li><?= htmlspecialchars((string) ($g['label_short'] ?? $g['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) ($g['label_long'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                                                <?php
+                                                $gShort = trim((string) ($g['label_short'] ?? $g['code'] ?? ''));
+                                                $gLong = trim((string) ($g['label_long'] ?? ''));
+                                                $gKey = mb_strtolower($gLong !== '' ? $gLong : $gShort);
+                                                if (isset($seenGrades[$gKey])) { continue; }
+                                                $seenGrades[$gKey] = true;
+                                                ?>
+                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></li>
                                                 <?php endforeach; ?>
                                             </ul>
                                         </div>
@@ -628,7 +678,7 @@ $guideUrl = url('communities/create/guide');
                             </div>
                         </div>
 
-                        <div class="mt-6">
+                        <div class="mt-6" id="cc-founder-grade">
                             <label class="cc-label" for="founder-grade-fr">Grade du fondateur</label>
                             <p class="cc-hint mt-0 mb-2">Le grade affiché sur votre propre dossier. Les grades des membres s’attribuent ensuite dans Effectifs.</p>
                             <select name="wizard_founder_grade_id" id="founder-grade-fr" class="cc-select founder-grade-select">
@@ -1098,6 +1148,8 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         }
         var fgText = '';
         var fgSel = form.querySelector('select.founder-grade-select:not(.hidden)');
+        var gsPicked = form.querySelector('input[name="wizard_grade_system_code"]:checked');
+        if (gsPicked && gsPicked.value === 'NONE') fgSel = null;
         if (fgSel && fgSel.selectedIndex >= 0) {
             fgText = fgSel.options[fgSel.selectedIndex].text;
         }
@@ -1144,7 +1196,7 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         } else {
             lines.push('Ancienneté : commence aujourd’hui');
         }
-        lines.push('Grades : ' + (gs === 'US_CLASSIC' ? 'United States' : 'Français'));
+        lines.push('Grades : ' + (gs === 'US_CLASSIC' ? 'United States' : (gs === 'NONE' ? 'aucun' : 'Français')));
         if (fgText) lines.push('Grade fondateur : ' + fgText);
         lines.push('Inscription : ' + regLabel);
         lines.push('Recrutement fermé : ' + (locked ? 'oui' : 'non'));
@@ -1355,8 +1407,15 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
     gradeRadios.forEach(function (r) {
         r.addEventListener('change', function () {
             var us = r.value === 'US_CLASSIC';
+            var none = r.value === 'NONE';
             if (previewFr) previewFr.classList.toggle('opacity-60', us);
             if (previewUs) previewUs.classList.toggle('opacity-60', !us);
+            ['cc-grade-previews', 'cc-founder-grade'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', none);
+            });
+            var noneNote = document.getElementById('cc-grades-none-note');
+            if (noneNote) noneNote.classList.toggle('hidden', !none);
             var frSel = document.getElementById('founder-grade-fr');
             var usSel = document.getElementById('founder-grade-us');
             if (frSel && usSel) {

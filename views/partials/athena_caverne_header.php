@@ -334,6 +334,14 @@ if (is_array($pp)) {
     }
 }
 
+// Communauté sans grades (« Aucun ») : la fonction, ou « Membre », prend la place du grade.
+$headerGradesHidden = $athenaTenantIdForHeader > 0 && \App\Support\TenantGrades::hidden($athenaTenantIdForHeader);
+if ($headerGradesHidden) {
+    $headerGradeLabel = $fonctionLabel !== null && $fonctionLabel !== '' ? $fonctionLabel : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Membre') : 'Membre');
+    $headerGradeLong = $headerGradeLabel;
+    $headerGradeOtan = null;
+}
+
 $affectationLabel = null;
 if (is_array($pp) && !empty($pp['primary_unit_id']) && $athenaTenantIdForHeader > 0) {
     try {
@@ -411,6 +419,9 @@ $profileFacts = [
     ['label' => 'Statut', 'value' => $statutLabel],
     ['label' => 'Communauté', 'value' => $unitLabel],
 ];
+if ($headerGradesHidden) {
+    array_shift($profileFacts);
+}
 if ($affectationLabel !== null && strcasecmp($affectationLabel, $unitLabel) !== 0) {
     $profileFacts[] = ['label' => 'Affectation', 'value' => $affectationLabel];
 }

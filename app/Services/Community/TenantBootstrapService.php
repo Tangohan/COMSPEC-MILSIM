@@ -180,6 +180,9 @@ final class TenantBootstrapService
             ];
             if ($wizard !== null) {
                 $merge['grade_system_code'] = $gradeSystemCode;
+                if (!empty($wizard['grades_hidden'])) {
+                    $merge['grades_hidden'] = true;
+                }
                 $merge['timezone'] = (string) $wizard['timezone'];
                 $merge['onboarding_wizard_version'] = 3;
                 $merge['onboarding_completed_at'] = date('c');
@@ -351,7 +354,11 @@ final class TenantBootstrapService
 
             return ['tenant_id' => $tenantId, 'user_id' => $newUserId];
         } catch (\Throwable $e) {
-            $pdo->rollBack();
+            // Une erreur après le commit (ou un DDL qui a validé implicitement) ne doit pas masquer la vraie cause
+            // derrière « There is no active transaction ».
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             throw $e;
         }
     }
