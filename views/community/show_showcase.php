@@ -24,6 +24,11 @@ $communityCode = trim((string) ($tenant['community_code'] ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 $recruitmentPublishedOpenings = is_array($recruitmentPublishedOpenings ?? null) ? $recruitmentPublishedOpenings : [];
+/* Profils « Bureau des effectifs » / « Carte ATAK » : on rejoint par Discord, jamais par un formulaire du site. */
+$discordOnlyRecruit = \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly((string) ($tenant['tenant_type'] ?? 'full'));
+if ($discordOnlyRecruit) {
+    $recruitmentPublishedOpenings = [];
+}
 $recruitmentProspectionRef = trim((string) ($recruitmentProspectionRef ?? ''));
 $recruitmentListUpdatedAt = trim((string) ($recruitmentListUpdatedAt ?? ''));
 $publicUpcomingEvents = is_array($publicUpcomingEvents ?? null) ? $publicUpcomingEvents : [];
@@ -323,6 +328,9 @@ if ($foundedLabel !== '') {
 }
 
 $enlistUrl = url('c/' . $slug . '/enlistment');
+if ($discordOnlyRecruit && $discordUrl !== '') {
+    $enlistUrl = $discordUrl;
+}
 $forumUrl = url('c/' . $slug . '/forum');
 $mediasUrl = url('c/' . rawurlencode((string) $slug) . '/medias');
 $reelsUrl = url('c/' . rawurlencode((string) $slug) . '/reels');
@@ -362,7 +370,13 @@ $ctaPrimaryLabel = trim((string) $ctaPrimaryLabel);
 if ($ctaPrimaryLabel === '') {
     $ctaPrimaryLabel = !$isLocked ? 'Rejoindre' : 'En savoir plus';
 }
-$ctaPrimaryHint = match ((string) $primaryCta) {
+if ($discordOnlyRecruit && in_array((string) $primaryCta, ['rejoindre', 'candidater'], true)) {
+    $ctaPrimaryLabel = 'Rejoindre sur Discord';
+}
+$ctaPrimaryHint = $discordOnlyRecruit && in_array((string) $primaryCta, ['rejoindre', 'candidater'], true)
+    ? 'Le recrutement se fait sur notre Discord, pas sur ce site : présentez-vous dans le salon d’accueil.'
+    : null;
+$ctaPrimaryHint ??= match ((string) $primaryCta) {
     'rejoindre' => 'Accès membres : code communauté ou inscription.',
     'candidater' => 'Déposez une candidature pour intégrer l’unité.',
     'contacter' => 'Écrivez à l’état-major sans engagement.',
@@ -657,7 +671,12 @@ unset($pbCssFile, $pbCssName);
     <div class="cl-hero__media" aria-hidden="true">
       <?php
       $heroRendered = false;
-      if (is_array($heroMediaItem)) {
+      $heroSectionImage = trim((string) ($pbSections['hero']['props']['image'] ?? ''));
+      if ($heroSectionImage !== '') {
+          echo '<img src="' . htmlspecialchars(\App\Services\Community\PublicPageBuilder::imageUrl($heroSectionImage), ENT_QUOTES, 'UTF-8') . '" alt="">';
+          $heroRendered = true;
+      }
+      if (!$heroRendered && is_array($heroMediaItem)) {
           $hk = (string) ($heroMediaItem['media_kind'] ?? '');
           $hPath = \App\Support\CommunityMediaDetails::publicUrl(isset($heroMediaItem['storage_path']) ? (string) $heroMediaItem['storage_path'] : null);
           if ($hk === 'image' && $hPath) {
@@ -680,7 +699,9 @@ unset($pbCssFile, $pbCssName);
     <div class="cl-hero__scrim" aria-hidden="true"></div>
     <div class="cl-hero__inner">
       <div class="cl-hero__copy">
-        <?php if ($publicAudience !== 'platform' && !empty($sv['recruitmentBadgeOpen']) && !$isLocked): ?>
+        <?php if ($publicAudience !== 'platform' && $discordOnlyRecruit && !$isLocked): ?>
+        <div class="cl-pill cl-pill--live"><span class="cl-pulse" aria-hidden="true"></span><span>RECRUTEMENT SUR DISCORD</span></div>
+        <?php elseif ($publicAudience !== 'platform' && !empty($sv['recruitmentBadgeOpen']) && !$isLocked): ?>
         <div class="cl-pill cl-pill--live">
           <span class="cl-pulse" aria-hidden="true"></span>
           <span><?= htmlspecialchars(mb_strtoupper($recruitSessionLabel !== '' ? ('Recrutement ouvert · ' . $recruitSessionLabel) : 'Recrutement ouvert')) ?></span>
