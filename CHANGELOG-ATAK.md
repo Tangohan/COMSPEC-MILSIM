@@ -89,6 +89,8 @@ EN : No more small stutter every two seconds, the Drone app responds again
 - Signalements : `vehicle_exception` du lot : colonnes bornées à leur type SQL (`sanitizeColumns` : texte coupé, entiers, décimaux, booléens), doublon d'équipage (1062) repris en mise à jour, historique non bloquant, cause courte `detail` dans la réponse. `explosive-timers` 400 `steam_required` : miroir des notifications sans Steam ignoré en 200 côté site, pas envoyé en solo côté connect.
 - À rebâtir : main.pbo, comspec_overwatch_connect.pbo, DLL COMSPEC Link 2.0.94. Rien de testé en jeu.
 
+---
+
 ## Regroupement : marquage depuis le flux d'un drone du camp, GPS sans position périmée, connexion Athena du natif, matériel SSE reconnu, pack photo de la carte (ATAK natif 2.3.6.AB - Denver)
 
 ### Résumé joueur
