@@ -136,6 +136,11 @@ require base_path('views/partials/account/shell_open.php');
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
                 </div>
+                <div>
+                    <label class="account-hub__label" for="public_name">Pseudo public</label>
+                    <input type="text" name="public_name" id="public_name" value="<?= htmlspecialchars((string) ($publicName ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="40" autocomplete="nickname" placeholder="<?= htmlspecialchars((string) ($user['callsign'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <p class="account-hub__hint">Le nom affiché sur les pages publiques du site (contributeurs, propositions de traduction) et en premier dans l’administration, à la place de votre indicatif. Vide : l’indicatif est repris. Vos prénom et nom ne sont jamais affichés en public.</p>
+                </div>
                 <div class="account-hub__form-grid" style="grid-column:1/-1">
                     <p class="account-hub__label" style="margin-bottom:.35rem">Indicatifs supplémentaires</p>
                     <p class="account-hub__hint" style="margin-bottom:.75rem">Jusqu’à <?= (int) $extraCallsignSlots ?> alias radio (variantes d’unité, callsigns secondaires).</p>

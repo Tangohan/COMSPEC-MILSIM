@@ -33,17 +33,29 @@ final class SystemPlanPaymentsController
     public function index(Request $request, array $params = []): Response
     {
         $status = (string) $request->query('statut', '');
-        if (!in_array($status, ['', 'awaiting', 'declared', 'activated', 'rejected', 'cancelled'], true)) {
+        if (!in_array($status, ['', 'awaiting', 'declared', 'activated', 'rejected', 'cancelled', 'refunded'], true)) {
             $status = '';
         }
         $rows = [];
         $counts = [];
         $error = null;
+        $monthCents = 0;
+        $subscriptions = [];
         if (!$this->service()->schemaReady()) {
             $error = 'Le registre des paiements n’existe pas encore : lancez la mise à jour de la base (run-migrations).';
         } else {
             $rows = $this->repo()->listForAdmin($status !== '' ? $status : null);
             $counts = $this->repo()->countByStatus();
+            try {
+                $monthCents = $this->repo()->sumActivatedSince(gmdate('Y-m-01 00:00:00'));
+            } catch (\Throwable) {
+                $monthCents = 0;
+            }
+        }
+        try {
+            $subscriptions = $this->service()->activeManualSubscriptions();
+        } catch (\Throwable) {
+            $subscriptions = [];
         }
         $service = $this->service();
         foreach ($rows as &$row) {
@@ -63,6 +75,9 @@ final class SystemPlanPaymentsController
             'paymentFocus' => strtoupper(trim((string) $request->query('ref', ''))),
             'paymentError' => $error,
             'paypalBaseUrl' => $service->paypalBaseUrl(),
+            'paymentMonthTotal' => ManualBilling::formatAmount($monthCents),
+            'paymentSubscriptions' => $subscriptions,
+            'paymentOffers' => $service->offers(),
         ]);
     }
 
@@ -74,6 +89,70 @@ final class SystemPlanPaymentsController
     public function reject(Request $request, array $params = []): Response
     {
         return $this->decide($request, $params, false);
+    }
+
+    public function cancel(Request $request, array $params = []): Response
+    {
+        $back = url('admin/paiements');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $actor = (int) (Session::get('user_id') ?? 0);
+        $result = $this->service()->cancelByAdmin((int) ($params['id'] ?? 0), $actor > 0 ? $actor : null, trim((string) $request->input('admin_note', '')));
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Action impossible.'));
+        } else {
+            Session::flash('success', 'Demande annulée.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    public function refund(Request $request, array $params = []): Response
+    {
+        $back = url('admin/paiements');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $actor = (int) (Session::get('user_id') ?? 0);
+        $result = $this->service()->refund(
+            (int) ($params['id'] ?? 0),
+            $actor > 0 ? $actor : null,
+            trim((string) $request->input('admin_note', '')),
+            (string) $request->input('end_plan', '0') === '1'
+        );
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Action impossible.'));
+        } else {
+            Session::flash('success', !empty($result['plan_ended'])
+                ? 'Paiement marqué remboursé et formule arrêtée. La personne est prévenue par e-mail.'
+                : 'Paiement marqué remboursé. La personne est prévenue par e-mail.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    public function endPlan(Request $request, array $params = []): Response
+    {
+        $back = url('admin/paiements') . '#abonnements';
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $actor = (int) (Session::get('user_id') ?? 0);
+        $result = $this->service()->endPlan((int) ($params['tenantId'] ?? 0), $actor > 0 ? $actor : null, trim((string) $request->input('admin_note', '')));
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Action impossible.'));
+        } else {
+            Session::flash('success', 'Formule arrêtée : la communauté revient à la formule gratuite.');
+        }
+
+        return Response::redirect($back);
     }
 
     private function decide(Request $request, array $params, bool $activate): Response
@@ -121,7 +200,10 @@ final class SystemPlanPaymentsController
         }
         try {
             (new PlatformSettingsRepository())->setMany([ManualBilling::SETTING_PAYPAL_URL => $url]);
-            Session::flash('success', $url === '' ? 'Lien PayPal remis par défaut.' : 'Lien PayPal enregistré.');
+            $onSale = $request->input('on_sale', []);
+            $onSale = is_array($onSale) ? array_map('strval', $onSale) : [];
+            $this->service()->setDisabledPlans(array_values(array_diff(PlanPaymentService::PAID_PLANS, $onSale)));
+            Session::flash('success', 'Réglages des paiements enregistrés.');
         } catch (\Throwable) {
             Session::flash('error', 'Le réglage n’a pas pu être enregistré (table platform_settings absente ?).');
         }

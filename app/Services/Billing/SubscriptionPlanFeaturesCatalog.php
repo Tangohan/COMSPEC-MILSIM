@@ -28,6 +28,7 @@ final class SubscriptionPlanFeaturesCatalog
         'analytics',
         'advanced_integrations',
         'community_create',
+        'registry_featured',
     ];
 
     public const INT_FEATURES = [
@@ -126,6 +127,11 @@ final class SubscriptionPlanFeaturesCatalog
                 'help' => 'Autorise la creation d’une nouvelle communauté via ce palier.',
                 'type' => 'bool',
             ],
+            'registry_featured' => [
+                'label' => 'Mise en avant dans le registre',
+                'help' => 'Badge « mise en avant » sur la carte de la communauté et place parmi les premières du registre des unités.',
+                'type' => 'bool',
+            ],
             'max_members' => [
                 'label' => 'Nombre max. de membres',
                 'help' => 'Plafond de comptes dans la communauté (0 = illimite).',
@@ -165,6 +171,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'analytics' => false,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => false,
                 'max_members' => 10,
                 'max_training_courses' => 5,
             ],
@@ -186,6 +193,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'analytics' => false,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => false,
                 'max_members' => 25,
                 'max_training_courses' => 25,
             ],
@@ -207,6 +215,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'analytics' => true,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => true,
                 'max_members' => 50,
                 'max_training_courses' => 100,
             ],
@@ -228,6 +237,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'analytics' => true,
                 'advanced_integrations' => true,
                 'community_create' => true,
+                'registry_featured' => true,
                 'max_members' => 80,
                 'max_training_courses' => 0,
             ],

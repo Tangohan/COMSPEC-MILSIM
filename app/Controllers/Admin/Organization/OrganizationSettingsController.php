@@ -758,19 +758,25 @@ final class OrganizationSettingsController
         $community['contact_intro'] = $this->clip((string) $request->input('contact_intro', ''), 500);
         $community['contact_form_enabled'] = (string) $request->input('contact_form_enabled', '0') === '1';
 
-        $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
-            $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
-        );
         $community['community_locked'] = (string) $request->input('community_locked', '0') === '1';
-        $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
-        $community['refuse_other_community_members'] = (string) $request->input('refuse_other_community_members', '0') === '1';
-        $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
+        $tenantRow = $this->tenantRepository->findById($tenantId);
+        if (\App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly((string) ($tenantRow['tenant_type'] ?? 'full'))) {
+            // Profils sans recrutement : on rejoint par Discord, le formulaire du site n’existe pas.
+            $community['registration_mode'] = TenantCommunityProfileService::REGISTRATION_MODE_DISCORD;
+        } else {
+            $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
+                $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+            );
+            $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
+            $community['refuse_other_community_members'] = (string) $request->input('refuse_other_community_members', '0') === '1';
+            $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
 
-        $existingEm = is_array($community['enlistment_milsim'] ?? null) ? $community['enlistment_milsim'] : [];
-        $community['enlistment_milsim'] = \App\Services\Community\EnlistmentMilsimPackService::mergePartialFromCommunitySettingsRequest(
-            $request,
-            $existingEm
-        );
+            $existingEm = is_array($community['enlistment_milsim'] ?? null) ? $community['enlistment_milsim'] : [];
+            $community['enlistment_milsim'] = \App\Services\Community\EnlistmentMilsimPackService::mergePartialFromCommunitySettingsRequest(
+                $request,
+                $existingEm
+            );
+        }
 
         $guestSlug = trim((string) $request->input('default_guest_role_slug', ''));
         if ($guestSlug !== '') {

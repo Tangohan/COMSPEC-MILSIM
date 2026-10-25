@@ -335,6 +335,17 @@ final class PublicPageBuilder
                     $props[$pk] = $v;
                 }
             }
+            if ($key === 'hero') {
+                // Image du bandeau d’accueil choisie dans l’éditeur (prioritaire sur la médiathèque et la bannière).
+                $img = self::image(is_array($b['props'] ?? null) ? ($b['props']['image'] ?? '') : '');
+                if ($img !== '') {
+                    $props['image'] = $img;
+                    $alt = self::text($b['props']['image_alt'] ?? '', 160);
+                    if ($alt !== '') {
+                        $props['image_alt'] = $alt;
+                    }
+                }
+            }
             $styleKeys = self::styleKeysFor('section', $key);
 
             return [

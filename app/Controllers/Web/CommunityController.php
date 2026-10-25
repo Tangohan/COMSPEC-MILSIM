@@ -1054,13 +1054,16 @@ class CommunityController
             $cents = $interval === 'monthly' ? $offer['monthly'] : ($interval === 'yearly' ? $offer['yearly'] : null);
             $base['value'] = $slug . '|' . ($interval !== '' ? $interval : 'monthly');
             $base['paid'] = true;
-            $base['available'] = $billingConfigured && $cents !== null;
+            $onSale = $offer === null || !empty($offer['on_sale']);
+            $base['available'] = $billingConfigured && $cents !== null && $onSale;
             $base['meta'] = $cents !== null
                 ? \App\Support\ManualBilling::formatAmount((int) $cents) . ($interval === 'yearly' ? ' / an' : ' / mois') . ' · PayPal'
                 : 'Abonnement';
             $base['unavailable_hint'] = !$billingConfigured
                 ? 'Paiement pas encore prêt (mise à jour de la base à lancer).'
-                : 'Prix pas encore réglé pour cette formule (administration plateforme → Formules d’accès).';
+                : (!$onSale
+                    ? 'Formule pas proposée pour le moment.'
+                    : 'Prix pas encore réglé pour cette formule (administration plateforme → Formules d’accès).');
 
             return $base;
         };
@@ -1274,9 +1277,12 @@ class CommunityController
             $referrerUserId = $this->resolveReferrerUserId((int) $user['id']);
             $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType((string) $request->input('tenant_type', 'full'));
             $optionsBase = [
-                'registration_mode' => TenantCommunityProfileService::normalizeRegistrationMode(
-                    $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
-                ),
+                // « Bureau des effectifs » et « Carte ATAK » ne recrutent pas sur le site : Discord uniquement.
+                'registration_mode' => \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly($tenantType)
+                    ? TenantCommunityProfileService::REGISTRATION_MODE_DISCORD
+                    : TenantCommunityProfileService::normalizeRegistrationMode(
+                        $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+                    ),
                 'community_locked' => $request->input('community_locked') ? true : false,
                 'require_ai_ack' => $request->input('require_ai_ack') ? true : false,
                 'refuse_other_community_members' => $request->input('refuse_other_community_members') ? true : false,

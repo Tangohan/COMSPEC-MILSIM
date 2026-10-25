@@ -1172,6 +1172,9 @@ return function (Router $router) {
     $router->post('/admin/paiements/reglages', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/{id}/activer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'activate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/{id}/refuser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'reject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/annuler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'cancel'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'refund'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/communaute/{tenantId}/arreter', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'endPlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/formules-offertes/reglages', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1736,6 +1739,8 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/export', [EffectifsWorkspaceController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/importer', [EffectifsWorkspaceController::class, 'importRoster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/modele-tableur', [EffectifsWorkspaceController::class, 'rosterTemplate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'duplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'saveDuplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

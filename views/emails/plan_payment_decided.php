@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 /** @var bool $activated */
+/** @var string $state activated|rejected|cancelled|refunded|ended (absent : déduit de $activated) */
 /** @var string $reference */
 /** @var string $description */
 /** @var string $amount */
@@ -11,10 +12,15 @@ declare(strict_types=1);
 /** @var string $pageUrl */
 
 $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-$title = $activated ? 'Paiement confirmé' : 'Paiement non confirmé';
-$lead = $activated
-    ? 'Merci ! Votre paiement a bien été reçu et votre achat est actif.'
-    : 'Nous n’avons pas pu rapprocher votre paiement de cette demande. Répondez à ce message ou contactez l’équipe Athena avec votre reçu PayPal.';
+$state = isset($state) && is_string($state) && $state !== '' ? $state : ($activated ? 'activated' : 'rejected');
+[$title, $lead, $accent] = match ($state) {
+    'activated' => ['Paiement confirmé', 'Merci ! Votre paiement a bien été reçu et votre achat est actif.', 'emerald'],
+    'cancelled' => ['Demande de paiement annulée', 'L’équipe Athena a annulé cette demande de paiement. Si vous avez déjà payé, répondez à ce message avec votre reçu PayPal.', 'slate'],
+    'refunded' => ['Paiement remboursé', 'Votre paiement vous a été remboursé sur PayPal. Le remboursement peut mettre quelques jours à apparaître sur votre compte.', 'amber'],
+    'ended' => ['Formule arrêtée', 'L’équipe Athena a arrêté la formule payée de votre communauté : elle revient à la formule gratuite.', 'rose'],
+    default => ['Paiement non confirmé', 'Nous n’avons pas pu rapprocher votre paiement de cette demande. Répondez à ce message ou contactez l’équipe Athena avec votre reçu PayPal.', 'rose'],
+};
+$activated = $state === 'activated';
 
 $body = '<p>' . $escape($lead) . '</p>'
     . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size:15px;margin-top:8px;">'
@@ -26,7 +32,7 @@ $body = '<p>' . $escape($lead) . '</p>'
     . ($adminNote !== '' ? '<p style="margin-top:16px;"><strong>Message de l’équipe :</strong> ' . $escape($adminNote) . '</p>' : '')
     . '<p style="margin-top:20px;"><a href="' . $escape($pageUrl) . '" style="color:#047857;font-weight:700;">Voir la demande de paiement</a></p>';
 
-$html = email_html_layout($title . ' — ' . $reference, $title, $body, ['accent' => $activated ? 'emerald' : 'rose']);
+$html = email_html_layout($title . ' — ' . $reference, $title, $body, ['accent' => $accent]);
 $text = $title . "\n\n" . $lead . "\n\n"
     . 'Référence : ' . $reference . "\n"
     . 'Achat : ' . $description . "\n"

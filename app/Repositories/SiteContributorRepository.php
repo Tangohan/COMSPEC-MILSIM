@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\UserPublicName;
 use PDO;
 
 /**
@@ -116,8 +117,9 @@ final class SiteContributorRepository
      */
     public function allRoles(): array
     {
+        UserPublicName::ensure($this->pdo());
         $st = $this->pdo()->query(
-            'SELECT r.*, u.display_name, u.email, u.callsign
+            'SELECT r.*, u.display_name, u.email, u.callsign, ' . UserPublicName::column('u') . '
                FROM site_contributor_roles r LEFT JOIN users u ON u.id = r.user_id
               ORDER BY (r.status = \'pending\') DESC, r.status, r.created_at'
         );
@@ -132,8 +134,9 @@ final class SiteContributorRepository
      */
     public function publicCredits(): array
     {
+        UserPublicName::ensure($this->pdo());
         $st = $this->pdo()->query(
-            'SELECT r.user_id, r.role, r.languages, COALESCE(NULLIF(u.callsign, \'\'), NULLIF(u.display_name, \'\'), \'?\') AS name
+            'SELECT r.user_id, r.role, r.languages, ' . UserPublicName::sql('u', 'Membre') . ' AS name
                FROM site_contributor_roles r JOIN users u ON u.id = r.user_id
               WHERE r.status = \'active\' AND r.public_credit = 1
               ORDER BY name'
@@ -286,9 +289,10 @@ final class SiteContributorRepository
      */
     public function pendingSuggestions(string $lang): array
     {
+        UserPublicName::ensure($this->pdo());
         $st = $this->pdo()->prepare(
             'SELECT s.id, s.src_hash, s.text, s.user_id, s.created_at,
-                    COALESCE(NULLIF(u.callsign, \'\'), NULLIF(u.display_name, \'\'), \'?\') AS author
+                    ' . UserPublicName::sql('u', '?') . ' AS author
                FROM site_translation_suggestions s LEFT JOIN users u ON u.id = s.user_id
               WHERE s.lang = ? AND s.status = \'pending\' ORDER BY s.created_at'
         );
