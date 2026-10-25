@@ -17,7 +17,7 @@ use App\Support\DiscordWebhookCatalog;
  * Salon : celui que la communauté du joueur a choisi dans Back-office > Intégrations > Relais Discord,
  * « Check de démarrage du mod » (désactivé par défaut). La communauté est reconnue au nom que le jeu envoie une fois
  * le joueur lié (« lié · Nom »), ou au champ « community » ; un nom porté par deux communautés n'est relayé nulle part.
- * Copie plateforme (facultative, Intégrations > Plateforme ; ancien .env DISCORD_DEBUG_WEBHOOK) : copie de tous les checks pour l'équipe de développement de la plateforme,
+ * Copie plateforme (facultative, Administration › Intégrations de la plateforme ; ancien .env DISCORD_DEBUG_WEBHOOK) : copie de tous les checks pour l'équipe de développement de la plateforme,
  * y compris ceux des joueurs non liés. Sans salon, le rapport est accepté et rien n'est posté.
  * Rien n'est enregistré en base. Aucune adresse IP, aucun UID Steam (le mod n'envoie qu'une empreinte), aucun lien :
  * les textes du mod sont nettoyés (liens, adresses IP, dossier utilisateur Windows, mentions) avant Discord.
@@ -210,7 +210,7 @@ final class AtakStartupCheckService
         return mb_strlen($raw) <= 120 ? $raw : '';
     }
 
-    /** Copie plateforme : salon réglé dans Intégrations > Plateforme (ancien .env DISCORD_DEBUG_WEBHOOK en secours). */
+    /** Copie plateforme : salon réglé dans Administration › Intégrations de la plateforme (ancien .env DISCORD_DEBUG_WEBHOOK en secours). */
     public static function configuredWebhook(): string
     {
         return \App\Services\Platform\PlatformIntegrationSettings::webhook(\App\Services\Platform\PlatformIntegrationSettings::STARTUP_CHECK);

@@ -105,7 +105,7 @@ final class QualificationAwardRepository
     public function listHolders(int $tenantId, int $definitionId): array
     {
         $st = $this->pdo->prepare(
-            'SELECT pq.*, u.display_name, u.username, u.email,
+            'SELECT pq.*, u.display_name, u.callsign AS username, u.email,
                     ql.name AS level_name
              FROM personnel_qualifications pq
              JOIN users u ON u.id = pq.user_id
@@ -337,7 +337,7 @@ final class QualificationAwardRepository
         $st = $this->pdo->prepare(
             'SELECT pq.*, d.name AS definition_name, d.code AS definition_code,
                     d.alert_before_expiry_days, d.grace_period_days,
-                    u.display_name, u.username
+                    u.display_name, u.callsign AS username
              FROM personnel_qualifications pq
              JOIN users u ON u.id = pq.user_id
              LEFT JOIN personnel_qualification_definitions d ON d.id = pq.definition_id
@@ -446,7 +446,7 @@ final class QualificationAwardRepository
     {
         try {
             $st = $this->pdo->prepare(
-                'SELECT p.*, u.display_name, u.username
+                'SELECT p.*, u.display_name, u.callsign AS username
                  FROM qualification_award_panels p
                  JOIN users u ON u.id = p.panel_member_user_id
                  WHERE p.personnel_qualification_id = ?'

@@ -34,7 +34,7 @@ $atakVersion = (string) ($fl['atak_version'] ?? '');
 $linkVersion = (string) ($fl['link_version'] ?? '');
 
 // Adresse du portail (APP_URL), aussi codée dans le mod : rien à saisir en jeu.
-// Les mods publiés avant la migration appellent encore https://athena.ttrd.fr/public, toujours servi.
+// Les mods publiés avant la migration appellent encore l'ancien domaine (PortalHost::LEGACY_HOST), toujours servi.
 $portalAddress = 'https://' . \App\Support\PortalHost::host() . '/public';
 // Ce que le téléphone affiche (fn_pageAthena : « https:// » et « /public » retirés).
 $phoneAddress = \App\Support\PortalHost::label('lier');

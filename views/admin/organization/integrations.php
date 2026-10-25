@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Intégrations de la communauté (back-office) : Discord, e-mails, transmissions terrain, jetons d'accès,
- * et, pour l'administrateur de la plateforme, les salons et l'envoi commun de la plateforme (plus rien dans le .env).
+ * Intégrations de la communauté (back-office) : Discord, e-mails, transmissions terrain, jetons d'accès.
+ * Les réglages de la plateforme sont dans l'administration (admin/system/integrations).
  *
  * Sommaire à sections, vue d'ensemble de l'état de chaque connexion, explications pas à pas.
  * Comportements : public/assets/js/back-office-integrations.js. Styles : back-office-integrations.css.
@@ -20,11 +20,6 @@ declare(strict_types=1);
  * @var array<string, mixed> $mail_sender
  * @var array<string, array{label:string, host:string, port:int, encryption:string, username:string}> $mail_providers
  * @var string $admin_email
- * @var bool $platform_admin
- * @var array<string, mixed>|null $platform_mail_sender
- * @var string $platform_env_mailer
- * @var array<string, array{url:string, from_env:bool}> $platform_discord
- * @var array{client_id:string, has_secret:bool, verification_url:string, redirect_uri:string, linked:int}|null $platform_linked_roles
  */
 
 $keys = is_array($integration_keys ?? null) ? $integration_keys : [];
@@ -39,10 +34,6 @@ $communityRelayReady = !empty($community_relay_ready);
 $mailSender = is_array($mail_sender ?? null) ? $mail_sender : [];
 $mailProviders = is_array($mail_providers ?? null) ? $mail_providers : [];
 $adminEmail = (string) ($admin_email ?? '');
-$platformAdmin = !empty($platform_admin);
-$platformMail = is_array($platform_mail_sender ?? null) ? $platform_mail_sender : [];
-$platformEnvMailer = (string) ($platform_env_mailer ?? '');
-$platformDiscord = is_array($platform_discord ?? null) ? $platform_discord : [];
 $discordDefaultUrl = (string) ($discordState['default_url'] ?? '');
 $discordEventState = is_array($discordState['events'] ?? null) ? $discordState['events'] : [];
 
@@ -55,7 +46,6 @@ $icon = static function (string $name): string {
         'mail' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
         'radio' => '<path d="M5 12a7 7 0 0114 0M8 12a4 4 0 018 0"/><circle cx="12" cy="12" r="1.3"/><path d="M12 13.5V21M9 21h6"/>',
         'key' => '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/>',
-        'platform' => '<path d="M12 3l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/>',
         'game' => '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v4M5 13h4M15.5 12.5h.01M18 14h.01"/>',
         'search' => '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
         'chevron' => '<path d="M9 6l6 6-6 6"/>',
@@ -151,25 +141,6 @@ $usageRatio = $quotaTotal > 0 ? (int) round($todayTotal / $quotaTotal * 100) : 0
 
 // Vue d'ensemble : un état par connexion.
 $mailState = !empty($mailSender['ready']) ? 'ok' : (!empty($mailSender['enabled']) ? 'warn' : 'off');
-$platformDiscordSaved = 0;
-$platformFromEnv = false;
-foreach ($platformDiscord as $row) {
-    if ((string) ($row['url'] ?? '') !== '') {
-        $platformDiscordSaved++;
-    }
-    if (!empty($row['from_env'])) {
-        $platformFromEnv = true;
-    }
-}
-$platformMailReady = !empty($platformMail['ready']);
-$platformEnvActive = $platformEnvMailer !== '' && $platformEnvMailer !== 'file';
-if ($platformMailReady) {
-    $platformMailFromEnv = false;
-} else {
-    $platformMailFromEnv = $platformEnvActive;
-}
-$platformState = ($platformFromEnv || $platformMailFromEnv) ? 'warn' : (($platformMailReady || $platformDiscordSaved > 0) ? 'ok' : 'off');
-
 $tiles = [
     [
         'href' => '#relais-discord',
@@ -204,16 +175,6 @@ $tiles = [
         'note' => !$apiKeysAllowed ? 'non inclus dans votre formule' : ($activeCount > 1 ? 'jetons actifs' : 'jeton actif'),
     ],
 ];
-if ($platformAdmin) {
-    $tiles[] = [
-        'href' => '#plateforme',
-        'icon' => 'platform',
-        'title' => 'Plateforme',
-        'state' => $platformState,
-        'value' => $platformState === 'warn' ? 'Ancien .env' : ($platformState === 'ok' ? 'En base' : 'Rien de réglé'),
-        'note' => $platformState === 'warn' ? 'à reprendre ici' : 'salons et envoi commun',
-    ];
-}
 $stateLabel = ['ok' => 'Actif', 'warn' => 'À vérifier', 'off' => 'Coupé', 'lock' => 'Formule'];
 
 $nav = [
@@ -223,9 +184,6 @@ $nav = [
     ['href' => '#relais-transmissions', 'icon' => 'radio', 'label' => 'Transmissions terrain', 'count' => count($sseRelays)],
     ['href' => '#jetons', 'icon' => 'key', 'label' => 'Jetons d’accès', 'count' => $apiKeysAllowed ? $activeCount : null],
 ];
-if ($platformAdmin) {
-    $nav[] = ['href' => '#plateforme', 'icon' => 'platform', 'label' => 'Plateforme'];
-}
 $nav[] = ['href' => '#arma-overwatch', 'icon' => 'game', 'label' => 'Arma 3 / Overwatch'];
 
 $flashError = \App\Core\Session::getFlash('error');
@@ -676,124 +634,6 @@ $flashSuccess = \App\Core\Session::getFlash('success');
             </div>
         <?php endif; ?>
     </section>
-
-    <?php if ($platformAdmin): ?>
-    <!-- ── Plateforme (administrateur seulement) ──────────────────── -->
-    <section id="plateforme" class="bo-int-section bo-int-section--platform" data-int-section>
-        <header class="bo-int-section__head">
-            <span class="bo-int-section__icon bo-int-section__icon--platform"><?= $icon('platform') ?></span>
-            <div>
-                <h2 class="bo-int-section__title">Plateforme <span class="bo-int-badge bo-int-badge--platform">Administrateur seulement</span></h2>
-                <p class="bo-int-section__desc">Réglages communs à toutes les communautés, enregistrés en base : plus aucune clé Discord ni compte e-mail à mettre dans le .env du serveur. Les communautés ne voient pas cette section.</p>
-            </div>
-        </header>
-
-        <div class="bo-int-card">
-            <h3 class="bo-int-card__title"><?= $icon('discord') ?> Salons Discord de l’équipe Athena</h3>
-            <p class="bo-int-card__desc">Pour l’équipe de développement, pas pour les communautés : chaque communauté choisit en plus son propre salon pour « Signalements du mod » et « Check de démarrage du mod » dans sa section Discord.</p>
-            <form method="post" action="<?= $h(url('back-office/integrations/plateforme/discord')) ?>" class="bo-int-platform-discord">
-                <?= \App\Core\Csrf::field() ?>
-                <?php
-                $platformChannels = [
-                    'mod_reports' => [
-                        'field' => 'mod_reports_webhook',
-                        'label' => 'Signalements du mod (tickets)',
-                        'help' => 'Chaque nouveau signalement ouvre un ticket (un fil par problème) et suit son statut. Salon forum de préférence ; un salon texte marche aussi, sans fil.',
-                        'env' => 'DISCORD_MOD_REPORTS_WEBHOOK',
-                    ],
-                    'startup_check' => [
-                        'field' => 'startup_check_webhook',
-                        'label' => 'Checks de démarrage (copie)',
-                        'help' => 'Copie du check de démarrage de tous les joueurs, communautés confondues, y compris les joueurs pas encore liés.',
-                        'env' => 'DISCORD_DEBUG_WEBHOOK',
-                    ],
-                ];
-                ?>
-                <?php foreach ($platformChannels as $channel => $meta): ?>
-                    <?php $row = is_array($platformDiscord[$channel] ?? null) ? $platformDiscord[$channel] : ['url' => '', 'from_env' => false]; ?>
-                    <div class="bo-int-pchan">
-                        <label class="bo-int-field">
-                            <span class="bo-int-field__label"><?= $h($meta['label']) ?></span>
-                            <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="<?= $h($meta['field']) ?>" maxlength="500" class="bo-int-input bo-int-mono" value="<?= $h((string) ($row['url'] ?? '')) ?>" placeholder="https://discord.com/api/webhooks/…" data-webhook-input>
-                            <span class="bo-int-check-msg" data-webhook-msg aria-live="polite"></span>
-                            <span class="bo-int-field__help"><?= $h($meta['help']) ?></span>
-                        </label>
-                        <?php if (!empty($row['from_env'])): ?>
-                            <p class="bo-int-envnote"><?= $icon('warn') ?><span>Actuellement lu dans l’ancien réglage <code><?= $h($meta['env']) ?></code> du .env. Collez le lien ici et enregistrez, puis retirez la ligne du .env.</span></p>
-                        <?php endif; ?>
-                        <button type="submit" form="form-platform-discord-test" name="channel" value="<?= $h($channel) ?>" class="bo-int-btn bo-int-btn--sm"><?= $icon('send') ?><span>Essai</span></button>
-                    </div>
-                <?php endforeach; ?>
-                <div class="bo-int-actions">
-                    <button type="submit" class="bo-int-btn bo-int-btn--solid">Enregistrer les salons de la plateforme</button>
-                </div>
-            </form>
-            <form method="post" action="<?= $h(url('back-office/integrations/plateforme/discord/essai')) ?>" id="form-platform-discord-test" hidden>
-                <?= \App\Core\Csrf::field() ?>
-            </form>
-        </div>
-
-        <?php $lr = is_array($platform_linked_roles ?? null) ? $platform_linked_roles : null; ?>
-        <?php if ($lr !== null): ?>
-        <div class="bo-int-card" id="plateforme-roles-lies">
-            <h3 class="bo-int-card__title"><?= $icon('discord') ?> Rôles liés de Discord (comptes du site)</h3>
-            <p class="bo-int-card__desc">Les membres relient leur compte Discord à leur compte Athena (menu « Rôles liés » du serveur Discord, ou Mon compte › Préférences). Le serveur Discord donne alors lui-même les rôles réservés aux comptes Athena et le profil Discord affiche leurs communautés. Le jeton du bot reste sur le PC : il ne sert qu’à déclarer les conditions, avec le script des rôles.</p>
-            <div class="bo-int-status bo-int-status--<?= $lr['client_id'] !== '' && $lr['has_secret'] ? 'ok' : 'off' ?>">
-                <?php if ($lr['client_id'] !== '' && $lr['has_secret']): ?>
-                    <?= $icon('check') ?><span><strong>Actif</strong> : <?= (int) $lr['linked'] ?> compte(s) Discord relié(s).</span>
-                <?php else: ?>
-                    <?= $icon('info') ?><span><strong>Pas encore réglé</strong> : collez l’identifiant et le secret de l’application Discord du bot.</span>
-                <?php endif; ?>
-            </div>
-            <p class="bo-int-card__desc">Dans le portail des développeurs Discord (application du bot) : <strong>General Information › Linked Roles Verification URL</strong> = <code><?= $h($lr['verification_url']) ?></code> ; <strong>OAuth2 › Redirects</strong> = <code><?= $h($lr['redirect_uri']) ?></code>.</p>
-            <form method="post" action="<?= $h(url('back-office/integrations/plateforme/discord-roles-lies')) ?>">
-                <?= \App\Core\Csrf::field() ?>
-                <label class="bo-int-field">
-                    <span class="bo-int-field__label">Identifiant de l’application (Application ID)</span>
-                    <input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" name="linked_roles_client_id" maxlength="20" class="bo-int-input bo-int-mono" value="<?= $h($lr['client_id']) ?>" placeholder="123456789012345678">
-                </label>
-                <label class="bo-int-field">
-                    <span class="bo-int-field__label">Secret client (OAuth2 › Client Secret)</span>
-                    <input type="password" autocomplete="new-password" spellcheck="false" name="linked_roles_client_secret" maxlength="64" class="bo-int-input bo-int-mono" placeholder="<?= $lr['has_secret'] ? '•••••••• (enregistré, laisser vide pour le garder)' : 'Coller le secret' ?>">
-                    <span class="bo-int-field__help">Chiffré en base, jamais réaffiché.</span>
-                </label>
-                <?php if ($lr['has_secret']): ?>
-                <label class="bo-int-check"><input type="checkbox" name="linked_roles_clear_secret" value="1"><span>Effacer le secret enregistré</span></label>
-                <?php endif; ?>
-                <div class="bo-int-actions">
-                    <button type="submit" class="bo-int-btn bo-int-btn--solid">Enregistrer les rôles liés</button>
-                </div>
-            </form>
-        </div>
-        <?php endif; ?>
-
-        <div class="bo-int-card" id="plateforme-emails">
-            <h3 class="bo-int-card__title"><?= $icon('mail') ?> Envoi commun de la plateforme</h3>
-            <p class="bo-int-card__desc">Sert aux e-mails sans communauté (inscription, mot de passe oublié, alertes) et aux communautés qui n’ont pas leur propre compte. Il compte dans le quota de la plateforme (page Envois d’e-mails).</p>
-            <div class="bo-int-status bo-int-status--<?= $platformMailReady ? 'ok' : ($platformEnvActive ? 'warn' : 'off') ?>">
-                <?php if ($platformMailReady): ?>
-                    <?= $icon('check') ?><span><strong>Actif, réglé ici</strong> : les e-mails communs partent de <?= $h((string) ($platformMail['from_address'] ?? '')) ?>. Les lignes MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD… du .env peuvent être retirées.</span>
-                <?php elseif ($platformEnvActive): ?>
-                    <?= $icon('warn') ?><span><strong>Ancien réglage .env</strong> (MAIL_MAILER=<?= $h($platformEnvMailer) ?>) : il sert tant qu’aucun compte n’est actif ici. Saisissez-le ci-dessous puis retirez-le du .env.</span>
-                <?php else: ?>
-                    <?= $icon('info') ?><span><strong>Aucun envoi commun</strong> : seules les communautés qui ont leur propre compte envoient des e-mails.</span>
-                <?php endif; ?>
-            </div>
-            <?php
-            $mailFormState = $platformMail;
-            $mailFormProviders = $mailProviders;
-            $mailFormAction = url('back-office/integrations/plateforme/emails');
-            $mailFormTestAction = url('back-office/integrations/plateforme/emails/essai');
-            $mailFormId = 'mail-platform';
-            $mailFormWho = 'la plateforme';
-            $mailFormFromPlaceholder = \App\Support\PortalHost::feedbackEmail();
-            $mailFormNamePlaceholder = 'Athena';
-            $mailFormTestTo = $adminEmail;
-            require base_path('views/admin/organization/partials/integrations_mail_form.php');
-            ?>
-        </div>
-    </section>
-    <?php endif; ?>
 
     <!-- ── Arma 3 / Overwatch ─────────────────────────────────────── -->
     <section id="arma-overwatch" class="bo-int-section bo-int-section--compact" data-int-section>

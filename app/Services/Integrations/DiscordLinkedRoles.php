@@ -15,7 +15,7 @@ use App\Support\SecretCipher;
  * remplies (Paramètres du serveur › Rôles › Liens), et le profil Discord du membre affiche « Athena » avec le nom
  * de ses communautés.
  *
- * Réglages (Intégrations › Plateforme, enregistrés en base) : identifiant de l'application Discord et son secret
+ * Réglages (Administration › Intégrations de la plateforme, enregistrés en base) : identifiant de l'application Discord et son secret
  * client (chiffré). Le jeton du bot n'est jamais sur le site : la déclaration des conditions (METADATA) se fait
  * avec le script tools/discord/comspec_discord_contributors.py, sur le PC qui détient le jeton.
  *
