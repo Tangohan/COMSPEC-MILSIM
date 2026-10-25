@@ -149,7 +149,7 @@ return [
             ['label' => 'Offres', 'href' => 'back-office/recruitment/offers'],
         ]],
         ['path' => 'back-office/organisation/indicatifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Indicatifs radio', 'subtitle' => 'Comment les indicatifs sont attribués : séries, numéros réservés et historique.'],
-        ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes', 'subtitle' => 'Regroupez des membres en sous-unités ou en cellules.'],
+        ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes', 'subtitle' => 'Regroupez des membres en sous-unités ou en cellules.', 'css' => ['back-office-groups.css']],
         ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes', 'subtitle' => 'Des équipes formées pour une mission ou un créneau.'],
         ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories du forum', 'subtitle' => 'Les rubriques du forum et l’ordre dans lequel elles apparaissent.'],
         ['path' => 'back-office/referentiels/grades', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Grades', 'subtitle' => 'La liste des grades de votre communauté, dans l’ordre hiérarchique.'],
