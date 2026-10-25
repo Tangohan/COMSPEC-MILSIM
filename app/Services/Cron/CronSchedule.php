@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Cron;
 
+use App\Support\UtcDateTime;
+
 /**
  * Cadence des tâches automatiques : un passage serveur toutes les 5 minutes,
  * chaque job ne se relance que s’il est dû.
@@ -68,8 +70,10 @@ final class CronSchedule
         }
         $status = (string) ($latest['status'] ?? '');
         $anchor = (string) ($latest['finished_at'] ?? $latest['started_at'] ?? '');
-        $at = $anchor !== '' ? strtotime($anchor) : false;
-        if ($at === false) {
+        // started_at / finished_at sont écrits par NOW() en session UTC : relus en UTC,
+        // sinon un passage paraît 1 à 2 h plus ancien et les tâches horaires tournent à chaque tick.
+        $at = UtcDateTime::timestamp($anchor);
+        if ($at === null) {
             return true;
         }
         if ($status === 'running') {
@@ -95,8 +99,8 @@ final class CronSchedule
             if (!in_array($src, ['cli', 'http', 'watchdog'], true)) {
                 continue;
             }
-            $at = strtotime((string) ($run['finished_at'] ?? $run['started_at'] ?? ''));
-            if ($at !== false && $at >= $cutoff) {
+            $at = UtcDateTime::timestamp($run['finished_at'] ?? $run['started_at'] ?? '');
+            if ($at !== null && $at >= $cutoff) {
                 return true;
             }
         }
