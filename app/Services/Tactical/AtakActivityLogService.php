@@ -1346,6 +1346,7 @@ final class AtakActivityLogService
             return;
         }
         @file_put_contents($path, $content, LOCK_EX);
+        \App\Support\StaleFileSweeper::maybe($dir, '*.txt', 86400);
     }
 
     /**

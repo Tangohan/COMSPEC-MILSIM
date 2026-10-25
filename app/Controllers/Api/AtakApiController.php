@@ -6723,7 +6723,12 @@ class AtakApiController
             // Marqueurs lus une seule fois pour les deux contrôles (PO puis points suivis : ensembles disjoints).
             // Position 0,0 / invalide : les services sortent avant toute lecture, ne rien charger.
             $markerRowsPos = null;
-            if (is_finite($posX) && is_finite($posY) && (abs($posX) >= 0.5 || abs($posY) >= 0.5)) {
+            // Contacts IA / relayés : les deux services sortent aussi avant toute lecture.
+            $extraArrPos = is_array($extra) ? $extra : [];
+            if (is_finite($posX) && is_finite($posY) && (abs($posX) >= 0.5 || abs($posY) >= 0.5)
+                && !AtakDataRepository::isProxyContactExtra($extraArrPos)
+                && !AtakDataRepository::callSignLooksLikeProxy($callSign)
+                && !AtakDataRepository::shouldHideEnemyAiContact($extraArrPos, $callSign)) {
                 try {
                     $markerRowsPos = $this->atak->getMarkers($tenantId, $mapId);
                 } catch (\Throwable) {
@@ -6891,6 +6896,7 @@ class AtakApiController
             return true;
         }
         @touch($path, $now);
+        \App\Support\StaleFileSweeper::maybe($dir, '*.t', 86400);
 
         return true;
     }
