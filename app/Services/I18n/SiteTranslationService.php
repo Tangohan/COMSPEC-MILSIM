@@ -1,0 +1,245 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\I18n;
+
+use App\Core\Gate;
+use App\Repositories\SiteContributorRepository;
+
+/**
+ * Traduction communautaire du site (/traduire-site) : qui peut valider, enregistrement (validation directe ou
+ * proposition), pages de textes pour l'espace de traduction, recompilation des dictionnaires (CommunityLanguages).
+ *
+ * Valident directement : l'administration du site et les traducteurs actifs de la langue (rôle de contributeur).
+ * Tout autre membre connecté propose ; un traducteur de la langue accepte ou refuse.
+ */
+final class SiteTranslationService
+{
+    public const PER_PAGE = 40;
+    public const FILTERS = ['all', 'todo', 'done', 'suggested', 'mine'];
+
+    public function __construct(private readonly SiteContributorRepository $repo = new SiteContributorRepository())
+    {
+    }
+
+    public function repo(): SiteContributorRepository
+    {
+        return $this->repo;
+    }
+
+    public static function isPlatformAdmin(): bool
+    {
+        try {
+            return Gate::getInstance()->isPlatformAdmin();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function canReview(int $userId, string $lang): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+
+        return self::isPlatformAdmin() || $this->repo->isTranslatorFor($userId, $lang);
+    }
+
+    /**
+     * Langues ouvertes à la traduction : « en » (corrections de l'anglais) puis les langues créées par
+     * l'administration, avec leur avancement.
+     *
+     * @return list<array{code: string, name: string, status: string, done: int, total: int, pending: int}>
+     */
+    public function languages(): array
+    {
+        $total = count(CommunityLanguages::catalog());
+        $counts = $this->repo->translatedCounts();
+        $pending = $this->repo->pendingCounts();
+        $out = [[
+            'code' => CommunityLanguages::ENGLISH, 'name' => 'English', 'status' => 'corrections',
+            'done' => $counts['en'] ?? 0, 'total' => $total, 'pending' => $pending['en'] ?? 0,
+        ]];
+        foreach ($this->repo->languages() as $row) {
+            $code = (string) $row['code'];
+            if ($code === CommunityLanguages::ENGLISH || !CommunityLanguages::validCode($code)) {
+                continue;
+            }
+            $out[] = [
+                'code' => $code, 'name' => (string) $row['name'], 'status' => (string) $row['status'],
+                'done' => $counts[$code] ?? 0, 'total' => $total, 'pending' => $pending[$code] ?? 0,
+            ];
+        }
+
+        return $out;
+    }
+
+    /** @return array{code: string, name: string, status: string, done: int, total: int, pending: int}|null */
+    public function language(string $code): ?array
+    {
+        foreach ($this->languages() as $l) {
+            if ($l['code'] === $code) {
+                return $l;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Une page de textes de l'espace de traduction.
+     *
+     * @return array{total: int, page: int, pages: int, rows: list<array<string, mixed>>}
+     */
+    public function page(string $lang, string $query, string $filter, int $page, int $userId): array
+    {
+        $done = $this->repo->translations($lang);
+        $sugg = $this->repo->pendingSuggestions($lang);
+        $q = self::fold(trim($query));
+        $filter = in_array($filter, self::FILTERS, true) ? $filter : 'all';
+        $match = [];
+        foreach (CommunityLanguages::catalog() as [$h, $src, $en, $kind]) {
+            $hasTr = isset($done[$h]);
+            $hasSugg = isset($sugg[$h]);
+            $ok = match ($filter) {
+                'todo' => !$hasTr,
+                'done' => $hasTr,
+                'suggested' => $hasSugg,
+                'mine' => $hasSugg && array_filter($sugg[$h], static fn (array $s): bool => $s['user_id'] === $userId) !== [],
+                default => true,
+            };
+            if (!$ok) {
+                continue;
+            }
+            $fr = $kind === 'key' ? CommunityLanguages::frenchOf($src) : $src;
+            if ($q !== '' && !str_contains(self::fold($fr . "\n" . $en . "\n" . ($done[$h] ?? '')), $q) && $q !== $h) {
+                continue;
+            }
+            $match[] = [$h, $fr, $en, $kind, $src];
+        }
+        $total = count($match);
+        $pages = max(1, (int) ceil($total / self::PER_PAGE));
+        $page = max(1, min($page, $pages));
+        $rows = [];
+        foreach (array_slice($match, ($page - 1) * self::PER_PAGE, self::PER_PAGE) as [$h, $fr, $en, $kind, $src]) {
+            $rows[] = [
+                'h' => $h,
+                'fr' => $fr,
+                'en' => $en,
+                'kind' => $kind,
+                'key' => $kind === 'key' ? substr($src, 1) : '',
+                'code' => CommunityLanguages::markup($fr) !== [],
+                'tr' => $done[$h] ?? '',
+                'sugg' => array_map(static fn (array $s): array => [
+                    'id' => $s['id'], 'text' => $s['text'], 'author' => $s['author'], 'mine' => $s['user_id'] === $userId,
+                ], $sugg[$h] ?? []),
+            ];
+        }
+
+        return ['total' => $total, 'page' => $page, 'pages' => $pages, 'rows' => $rows];
+    }
+
+    /**
+     * Enregistre un texte : validé (traducteur, administration) ou proposé (autre membre connecté).
+     *
+     * @return array{ok: bool, mode?: string, errors?: list<string>}
+     */
+    public function save(string $lang, string $hash, string $text, int $userId): array
+    {
+        $src = $this->sourceOf($hash);
+        if ($src === null || $userId < 1) {
+            return ['ok' => false, 'errors' => ['unknown']];
+        }
+        $text = str_replace("\r\n", "\n", $text);
+        $errors = CommunityLanguages::check($src, $text);
+        if ($errors !== []) {
+            return ['ok' => false, 'errors' => $errors];
+        }
+        if ($this->canReview($userId, $lang)) {
+            $this->repo->saveTranslation($lang, $hash, $text, $userId);
+            $this->recompile($lang);
+
+            return ['ok' => true, 'mode' => 'saved'];
+        }
+        $this->repo->suggest($lang, $hash, $text, $userId);
+
+        return ['ok' => true, 'mode' => 'suggested'];
+    }
+
+    /** @return array{ok: bool, errors?: list<string>} */
+    public function clear(string $lang, string $hash, int $userId): array
+    {
+        if (!$this->canReview($userId, $lang) || $this->sourceOf($hash) === null) {
+            return ['ok' => false, 'errors' => ['forbidden']];
+        }
+        $this->repo->deleteTranslation($lang, $hash);
+        $this->recompile($lang);
+
+        return ['ok' => true];
+    }
+
+    /** @return array{ok: bool, errors?: list<string>} */
+    public function decide(int $suggestionId, bool $accept, int $userId): array
+    {
+        $s = $this->repo->suggestion($suggestionId);
+        if ($s === null || (string) $s['status'] !== 'pending') {
+            return ['ok' => false, 'errors' => ['unknown']];
+        }
+        $lang = (string) $s['lang'];
+        if (!$this->canReview($userId, $lang)) {
+            return ['ok' => false, 'errors' => ['forbidden']];
+        }
+        if (!$accept) {
+            $this->repo->rejectSuggestion($suggestionId, $userId);
+
+            return ['ok' => true];
+        }
+        $src = $this->sourceOf((string) $s['src_hash']);
+        if ($src === null || CommunityLanguages::check($src, (string) $s['text']) !== []) {
+            return ['ok' => false, 'errors' => ['invalid']];
+        }
+        // L'auteur de la proposition reste l'auteur de la traduction validée.
+        $this->repo->saveTranslation($lang, (string) $s['src_hash'], (string) $s['text'], (int) $s['user_id']);
+        $this->recompile($lang);
+
+        return ['ok' => true];
+    }
+
+    public function recompile(string $lang): int
+    {
+        try {
+            return CommunityLanguages::compile($lang, $this->repo->translations($lang));
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /** Réécrit la liste des langues publiées lue par le sélecteur de langue. */
+    public function syncPublished(): void
+    {
+        CommunityLanguages::writePublished($this->repo->publishedLanguages());
+    }
+
+    private function sourceOf(string $hash): ?string
+    {
+        if (preg_match('/^[0-9a-f]{16}$/', $hash) !== 1) {
+            return null;
+        }
+        foreach (CommunityLanguages::catalog() as [$h, $src]) {
+            if ($h === $hash) {
+                return $src;
+            }
+        }
+
+        return null;
+    }
+
+    private static function fold(string $s): string
+    {
+        $s = mb_strtolower($s);
+        $t = function_exists('iconv') ? @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s) : false;
+
+        return is_string($t) && $t !== '' ? $t : $s;
+    }
+}

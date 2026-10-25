@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Traduction anglaise des pages à l'affichage.
+ * Traduction anglaise des pages à l'affichage (et des langues de la communauté, posées sur l'anglais).
  *
  * Les vues restent écrites en français. Quand la langue du visiteur est l'anglais, Response::view passe la page
  * rendue ici : chaque texte entre balises et les attributs title, placeholder, aria-label, alt, data-confirm et value
@@ -148,6 +148,16 @@ final class HtmlTranslator
                 return $html;
             }
             $src = (function_exists('url') ? url('assets/js/' . $file) : '/assets/js/' . $file) . '?v=' . (int) filemtime($path);
+            if ($file === 'i18n_dom.js') {
+                // Dictionnaire de la langue de la communauté, posé sur l'anglais avant le traducteur (scripts différés :
+                // exécutés dans l'ordre).
+                $lang = function_exists('site_lang') ? site_lang() : 'en';
+                $v = \App\Services\I18n\CommunityLanguages::version($lang);
+                if ($v > 0) {
+                    $dict = (function_exists('url') ? url('traduire-site/dico/' . $lang . '.js') : '/traduire-site/dico/' . $lang . '.js') . '?v=' . $v;
+                    $tags .= '<script src="' . htmlspecialchars($dict, ENT_QUOTES, 'UTF-8') . '" defer></script>';
+                }
+            }
             $tags .= '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" defer></script>';
         }
 
@@ -419,8 +429,18 @@ final class HtmlTranslator
         $path = base_path('lang/en/site_auto.php');
         /** @var mixed $data */
         $data = is_file($path) ? require $path : [];
+        $data = is_array($data) ? $data : [];
+        // Langue de la communauté (ou corrections de l'anglais, /traduire-site) : ses textes validés passent avant
+        // l'anglais ; un texte qu'elle n'a pas traduit reste en anglais.
+        $lang = function_exists('site_lang') ? site_lang() : 'en';
+        if ($lang !== 'fr') {
+            $over = \App\Services\I18n\CommunityLanguages::dictionary($lang)['t'];
+            if ($over !== []) {
+                $data = $over + $data;
+            }
+        }
 
-        return self::useDictionary(is_array($data) ? $data : []);
+        return self::useDictionary($data);
     }
 
     /**

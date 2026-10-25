@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Traduction ouverte aux contributeurs : rôles, traduction du site, kit des mods complété (ATAK natif : numéro donné au regroupement, site)
+
+### Résumé joueur
+Type : nouveauté
+FR : Athena se traduit avec la communauté
+- Nouvelle page Contribuer : demande un rôle de traducteur, testeur, créateur de contenu, développeur ou support ; l'équipe le valide et te donne le rôle sur le Discord.
+- Nouvel espace Traduire le site : chaque membre connecté propose des traductions, les traducteurs de la langue les valident, et une langue publiée apparaît dans le sélecteur de langue du site (le reste s'affiche en anglais). L'anglais du site peut aussi y être corrigé.
+- Mods : les phrases encore en français dans la version anglaise du téléphone ATAK, du mod SSE et de la connexion Overwatch sont traduites.
+- Les mods de langue faits sur Traduire l'ATAK traduisent aussi les noms d'objets et des modules Eden et Zeus de l'ATAK et du SSE quand Arma 3 est dans cette langue.
+EN : Athena is now translated with the community
+- New Contribute page: apply for a translator, tester, content creator, developer or support role; the team approves it and gives you the role on Discord.
+- New Translate the website space: any signed-in member suggests translations, the language's translators approve them, and a published language shows in the website's language picker (the rest shows in English). The website's English can also be fixed there.
+- Mods: sentences still in French in the English version of the ATAK phone, the SSE mod and the Overwatch connection are now translated.
+- Language mods made with Translate ATAK also translate the names of items and of Eden and Zeus modules of ATAK and SSE when Arma 3 runs in that language.
+
+### Détail technique
+- Mod (`tools/i18n.py`, `en.txt`) : 72 textes français affichés sans traduction ajoutés (capture de la carte, test vidéo PiP, tableau de bord SSE, diagnostics Overwatch connect). Le modèle communautaire `localisation/template/xx.txt` (14 675 phrases) reprend aussi les textes écrits en anglais dans le code (`tools/i18n_fr_source.tsv`, clé = texte anglais, cherché tel quel par `fn_tr`) et les textes des stringtables absents du dictionnaire. Nouveau `localisation/template/stringtable.json` (1 287 clés ATAK, SSE, Overwatch connect) ; `i18n.py community F --game Spanish` écrit la `stringtable.xml` du mod de langue ; catégorie « Objets et modules Eden/Zeus » dans `categories.json`. Aucun SQF modifié : seul `en.txt` change dans main.pbo (à reconstruire au regroupement).
+- Site, atelier `/traduire-atak` : `modele.json` livre les clés de stringtable ; le zip (navigateur et téléchargement du Workshop des langues) ajoute `stringtable.xml` au PBO quand la langue du jeu est choisie (`AtakTranslationModBuilder::buildStringtable`). À vérifier en jeu : une stringtable chargée après COMSPEC (requiredAddons) remplace bien les noms pour cette langue du jeu.
+- Site : `/contribuer` (ContributorController), `/traduire-site` (SiteTranslationController, SiteTranslationService), `/admin/system/contributeurs` (SystemContributorsController). Migration `20261025000001_site_contributors_translation.sql` (run-migrations sur le VPS). Les langues publiées et leurs dictionnaires sont compilés dans `storage/i18n/community/` (CommunityLanguages) : `LocaleService` accepte leurs codes, une langue de la communauté se comporte comme l'anglais (`locale()` = en, `site_lang()` = son code) avec son dictionnaire par-dessus (HtmlTranslator, Translator, dictionnaire JavaScript `/traduire-site/dico/{code}.js`).
+- Discord : script `comspec_discord_contributors.py` (fichiers du projet) pour les rôles Translator / Content creator et les salons translation / contributors, à lancer sur le PC de TTRD.
+
+---
+
 ## Regroupement : marquage depuis le flux d'un drone du camp, GPS sans position périmée, connexion Athena du natif, matériel SSE reconnu, pack photo de la carte (ATAK natif 2.3.6.AB - Denver)
 
 ### Résumé joueur

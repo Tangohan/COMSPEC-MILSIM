@@ -195,6 +195,9 @@ require base_path('views/partials/account/shell_open.php');
                     <select name="language" id="language">
                         <option value="fr" <?= ($profile['language'] ?? '') === 'fr' ? 'selected' : '' ?>><?= htmlspecialchars(__('common.language_fr'), ENT_QUOTES, 'UTF-8') ?></option>
                         <option value="en" <?= ($profile['language'] ?? '') === 'en' ? 'selected' : '' ?>><?= htmlspecialchars(__('common.language_en'), ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php foreach (\App\Services\I18n\CommunityLanguages::published() as $langCode => $langName): ?>
+                        <option value="<?= htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8') ?>" lang="<?= htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8') ?>" <?= ($profile['language'] ?? '') === $langCode ? 'selected' : '' ?>><?= htmlspecialchars($langName, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>

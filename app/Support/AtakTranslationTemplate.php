@@ -17,6 +17,8 @@ final class AtakTranslationTemplate
     public const TEMPLATE = 'mod/COMSPEC_ATAK_Native/localisation/template/xx.txt';
     /** Catégorie et fichier source de chaque phrase (tools/i18n_categories.py) ; facultatif. */
     public const CATEGORIES = 'mod/COMSPEC_ATAK_Native/localisation/template/categories.json';
+    /** Clés des stringtables (noms d'objets, modules Eden/Zeus de l'ATAK, du SSE et d'Overwatch connect) ; facultatif. */
+    public const STRINGTABLE = 'mod/COMSPEC_ATAK_Native/localisation/template/stringtable.json';
 
     /** @var array<string, array<string, true>> clés des phrases par empreinte du modèle */
     private static array $keySets = [];
@@ -95,6 +97,26 @@ final class AtakTranslationTemplate
         return ['entries' => $out, 'categories' => $labels];
     }
 
+    /**
+     * Clés des stringtables : [clé $STR_, texte original (= phrase du modèle), anglais]. Le mod de langue livre sa
+     * propre stringtable.xml avec la colonne de la langue du jeu (AtakTranslationModBuilder::buildStringtable).
+     *
+     * @return list<array{0: string, 1: string, 2: string}>
+     */
+    public static function stringtable(?string $root = null): array
+    {
+        $path = rtrim($root ?? base_path(), '/') . '/' . self::STRINGTABLE;
+        $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+        $out = [];
+        foreach (is_array($data['keys'] ?? null) ? $data['keys'] : [] as $row) {
+            if (is_array($row) && is_string($row[0] ?? null) && is_string($row[1] ?? null) && preg_match('/^[A-Za-z0-9_]+$/', $row[0]) === 1) {
+                $out[] = [$row[0], $row[1], is_string($row[2] ?? null) ? $row[2] : $row[1]];
+            }
+        }
+
+        return $out;
+    }
+
     /** La phrase de clé $h existe-t-elle dans le modèle publié ? (écritures des packs partagés) */
     public static function hasKey(string $h, ?string $root = null): bool
     {
@@ -133,8 +155,9 @@ final class AtakTranslationTemplate
         }
 
         $cat = rtrim($root ?? base_path(), '/') . '/' . self::CATEGORIES;
+        $st = rtrim($root ?? base_path(), '/') . '/' . self::STRINGTABLE;
 
-        return substr(md5((string) md5_file($path) . (is_file($cat) ? (string) md5_file($cat) : '')), 0, 16);
+        return substr(md5((string) md5_file($path) . (is_file($cat) ? (string) md5_file($cat) : '') . (is_file($st) ? (string) md5_file($st) : '')), 0, 16);
     }
 
     /** Configuration du mod qui déclare les langues livrées avec l'ATAK (CfgComspecLanguages). */

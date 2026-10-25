@@ -121,6 +121,31 @@
             + '};\n';
     }
 
+    // Colonnes de stringtable d'Arma 3 qu'un mod de langue peut remplir (valeurs de la commande language).
+    var GAME_COLUMNS = ['German', 'Italian', 'Spanish', 'Czech', 'Polish', 'Russian', 'Portuguese', 'Turkish', 'Japanese', 'Korean', 'Chinese', 'Chinesesimp'];
+
+    function xmlStr(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    // stringtable.xml du mod : noms d'objets et de modules Eden/Zeus (ATAK, SSE, Overwatch connect) dans la colonne
+    // de la langue du jeu ; '' sans langue du jeu reconnue ou sans nom traduit. Même sortie que
+    // AtakTranslationModBuilder::buildStringtable côté serveur.
+    function buildStringtable(keys, byText, code, game) {
+        if (GAME_COLUMNS.indexOf(game) < 0) { return ''; }
+        var rows = [];
+        (keys || []).forEach(function (k) {
+            var t = byText[k[1]] || '';
+            if (!t || !/^[A-Za-z0-9_]+$/.test(k[0]) || check(k[1], t).errors.length) { return; }
+            rows.push('        <Key ID="' + k[0] + '">\n'
+                + '            <Original>' + xmlStr(k[1]) + '</Original>\n'
+                + '            <English>' + xmlStr(k[2] || k[1]) + '</English>\n'
+                + '            <' + game + '>' + xmlStr(t) + '</' + game + '>\n'
+                + '        </Key>');
+        });
+        if (!rows.length) { return ''; }
+        return '<?xml version="1.0" encoding="utf-8"?>\n<Project name="comspec_atak_lang_' + code + '">\n    <Package name="main">\n'
+            + rows.join('\n') + '\n    </Package>\n</Project>\n';
+    }
+
     function buildModCpp(o) {
         return 'name = "COMSPEC ATAK - ' + cfgStr(o.name) + '";\n'
             + 'author = "' + cfgStr(o.author || 'COMSPEC community') + '";\n'
@@ -253,7 +278,7 @@
         });
     }
 
-    var api = { placeholders: placeholders, check: check, parseCommunity: parseCommunity, buildTxt: buildTxt, buildConfig: buildConfig, buildModCpp: buildModCpp, buildVdf: buildVdf, buildPbo: buildPbo, buildZip: buildZip, sha1: sha1, crc32: crc32, renderRich: renderRich };
+    var api = { placeholders: placeholders, check: check, parseCommunity: parseCommunity, buildTxt: buildTxt, buildConfig: buildConfig, buildStringtable: buildStringtable, buildModCpp: buildModCpp, buildVdf: buildVdf, buildPbo: buildPbo, buildZip: buildZip, sha1: sha1, crc32: crc32, renderRich: renderRich };
     if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
     if (typeof document === 'undefined') { return; }
 
@@ -263,7 +288,7 @@
     if (!root) { return; }
     var L = {};
     try { L = JSON.parse(root.getAttribute('data-i18n') || '{}'); } catch (e) { L = {}; }
-    var EN_UI = (document.documentElement.lang || '').slice(0, 2) === 'en';
+    var EN_UI = (document.documentElement.lang || 'fr').slice(0, 2) !== 'fr';
     var API = root.getAttribute('data-api-url');
     var PAGE = root.getAttribute('data-page-url');
     var fmt = new Intl.NumberFormat(document.documentElement.lang || undefined);
@@ -1536,6 +1561,7 @@
 
     function start(data) {
         S.cats = data.categories || {};
+        S.stringtable = Array.isArray(data.stringtable) ? data.stringtable : [];
         S.entries = (data.entries || []).filter(function (e) { return Array.isArray(e) && typeof e[0] === 'string'; }).map(function (e, i) {
             return { i: i, h: e[0], fr: e[1], en: e[2] || '', cat: e[3] || 'other', file: e[4] || '', norm: fold(e[1] + '\n' + (e[2] || '')) };
         });
@@ -1695,7 +1721,12 @@
                 var txtBytes = enc.encode(txt.text);
                 var cfg = enc.encode(buildConfig(o));
                 var prefix = 'comspec_atak_lang_' + o.code;
-                var pbo = buildPbo(prefix, [{ name: 'config.cpp', data: cfg }, { name: o.code + '.txt', data: txtBytes }], Math.floor(Date.now() / 1000));
+                var byText = {};
+                S.entries.forEach(function (e) { if (S.tr[e.h]) { byText[e.fr] = S.tr[e.h]; } });
+                var st = buildStringtable(S.stringtable, byText, o.code, o.game);
+                var pboFiles = [{ name: 'config.cpp', data: cfg }, { name: o.code + '.txt', data: txtBytes }];
+                if (st) { pboFiles.push({ name: 'stringtable.xml', data: enc.encode(st) }); }
+                var pbo = buildPbo(prefix, pboFiles, Math.floor(Date.now() / 1000));
                 preview(o.name).then(function (jpg) {
                     var F = o.folder + '/';
                     var files = [
@@ -1707,8 +1738,9 @@
                         { name: F + 'source/' + prefix + '/config.cpp', data: cfg },
                         { name: F + 'source/' + prefix + '/$PBOPREFIX$', data: enc.encode(prefix + '\n') },
                         { name: F + 'source/' + prefix + '/' + o.code + '.txt', data: txtBytes },
+                    ].concat(st ? [{ name: F + 'source/' + prefix + '/stringtable.xml', data: enc.encode(st) }] : []).concat([
                         { name: F + 'README.txt', data: enc.encode(readme(o)) },
-                    ];
+                    ]);
                     if (jpg) { files.splice(3, 0, { name: F + 'preview.jpg', data: jpg, store: true }); }
                     return buildZip(files);
                 }).then(function (zip) {

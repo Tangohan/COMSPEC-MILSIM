@@ -9,7 +9,7 @@
 (function () {
     'use strict';
     var dict = window.ATHENA_I18N_EN;
-    if (!dict || document.documentElement.lang !== 'en') {
+    if (!dict || !document.documentElement.lang || document.documentElement.lang.slice(0, 2) === 'fr') {
         return;
     }
     var exact = dict.exact || {};
