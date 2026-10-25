@@ -28,7 +28,7 @@
     var tabs = document.getElementById('tw-tabs');
     var pageLabel = document.getElementById('sitetr-page');
     var editor = document.getElementById('tw-editor');
-    var S = { q: '', f: 'todo', p: 1, pages: 1, per: 40, total: 0, rows: [], i: -1, review: root.getAttribute('data-review') === '1', seq: 0, drafts: {} };
+    var S = { q: '', f: root.getAttribute('data-start') || 'todo', p: 1, pages: 1, per: 40, total: 0, rows: [], i: -1, review: root.getAttribute('data-review') === '1', seq: 0, drafts: {} };
 
     // ------------------------------------------------------------------ outils
     function el(tag, cls, text) {
@@ -123,6 +123,7 @@
         var fr = el('span', 'tw-item__fr', row.fr);
         fr.lang = 'fr';
         body.appendChild(fr);
+        if (row.bare && !row.tr) { body.appendChild(el('span', 'ctb-tag', tx('bare'))); }
         var draft = S.drafts[row.h];
         var sub = draft !== undefined && draft !== row.tr ? '✎ ' + draft : (row.tr || (row.sugg.length ? tx('badge_sugg') + ' · ' + row.sugg[0].text : ''));
         if (sub) { body.appendChild(el('span', 'tw-item__tr', sub)); }
@@ -178,6 +179,7 @@
         var head = el('div', 'tw-ed__head');
         head.appendChild(el('span', 'tw-ed__pos', tx('position', { i: globalIndex, n: S.total })));
         head.appendChild(el('span', 'tw-badge is-' + itemState(row), row.tr ? tx('badge_done') : (row.sugg.length ? tx('badge_sugg') : tx('badge_todo'))));
+        if (row.bare && !row.tr) { head.appendChild(el('span', 'ctb-tag', tx('bare'))); }
         if (row.key) { head.appendChild(el('code', 'tw-key', row.key)); }
         if (row.code) { head.appendChild(el('span', 'ctb-tag', tx('code'))); }
         var nav = el('span', 'tw-ed__nav');
@@ -285,7 +287,7 @@
                     post(API + '/effacer', { h: row.h }).then(function (res) {
                         if (res && res.ok) {
                             row.tr = ''; ta.value = ''; delete S.drafts[row.h];
-                            adjustCount('done', -1); adjustCount('todo', 1); bumpProgress(-1);
+                            adjustCount('done', -1); adjustCount('todo', 1); if (row.bare) { adjustCount('blank', 1); } bumpProgress(-1);
                             refreshItem(S.i); live(); state.textContent = tx('cleared'); state.className = 'tw-state';
                         }
                     });
@@ -308,7 +310,7 @@
                 if (res && res.ok) {
                     delete S.drafts[row.h];
                     if (res.mode === 'saved') {
-                        if (!row.tr) { adjustCount('done', 1); adjustCount('todo', -1); bumpProgress(1); }
+                        if (!row.tr) { adjustCount('done', 1); adjustCount('todo', -1); if (row.bare) { adjustCount('blank', -1); } bumpProgress(1); }
                         row.tr = text;
                     } else {
                         if (!row.sugg.some(function (s) { return s.mine; })) { adjustCount('mine', 1); adjustCount('suggested', row.sugg.length ? 0 : 1); }
@@ -346,7 +348,7 @@
                                     row.sugg = row.sugg.filter(function (x) { return x.id !== s.id; });
                                     if (!row.sugg.length) { adjustCount('suggested', -1); }
                                     if (a === 'accept') {
-                                        if (!row.tr) { adjustCount('done', 1); adjustCount('todo', -1); bumpProgress(1); }
+                                        if (!row.tr) { adjustCount('done', 1); adjustCount('todo', -1); if (row.bare) { adjustCount('blank', -1); } bumpProgress(1); }
                                         row.tr = s.text; ta.value = s.text; live();
                                     }
                                     refreshItem(S.i);

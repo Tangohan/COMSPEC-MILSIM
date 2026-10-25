@@ -293,6 +293,24 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(999, '2026-10-25', 'Hub : la fiche d’une communauté se lit comme un portrait', 'Ouvrir une communauté depuis le hub ne montre plus une grille de chiffres identiques. Le nom, le recrutement et les actions (page publique, recommandation, comparaison, coopération) sont regroupés. Chaque indicateur se compare à la médiane du réseau et indique le rang. L’organigramme sépare les volumes par niveau du détail des unités, affiché seulement quand la communauté le publie. Rechargez le portail (Ctrl+F5).', [
+                'Portrait de la communauté : identité, recrutement et actions',
+                'Indicateurs groupés, avec une barre, la médiane et le rang dans le réseau',
+            ], [
+                'Organigramme : volumes par niveau, types d’unités, et noms seulement s’ils sont publics',
+                'Avis des partenaires à part, avec un état clair quand aucun avis n’a encore été laissé',
+            ], [], ['platform'], [
+                'Ouvrez Hub des communautés, puis une fiche. Le portrait est en haut. Les indicateurs suivent, puis la structure et les avis.',
+            ], 'Portail Athena'),
+            $pr(998, '2026-10-25', 'Traduction : d’abord les textes encore seulement en français', 'L’espace de traduction du site et l’atelier du téléphone proposent une file « Seulement en français ». Ce sont les textes qui n’ont pas encore d’anglais, à traiter avant de relire ce qui existe déjà. Les applications du jeu sans anglais, comme le bureau SSE, passent en tête. La page des contributeurs affiche le taux de chaque langue et met en avant les traducteurs qui ont le plus avancé. Rechargez le portail (Ctrl+F5).', [
+                'File « Seulement en français » sur le site et dans l’atelier du téléphone',
+                'Applications du jeu sans anglais signalées et placées en premier',
+                'Classement des traducteurs, avec un taux de complétion',
+            ], [
+                'Page des langues : outils pour le site, le jeu et le rôle de traducteur',
+            ], [], ['platform', 'atak'], [
+                'Ouvrez Traduire le site, puis English : le filtre « Seulement en français » est déjà choisi. Dans Traduire l’ATAK, le même filtre isole les phrases sans anglais, et les applications concernées portent la mention « Sans anglais ».',
+            ], 'Portail Athena'),
             $pr(997, '2026-10-25', 'Fiche personnel : disponibilité, temps de jeu et candidature', 'La fiche d’un membre affiche une disponibilité calculée sur les présences aux opérations des 45 derniers jours. Le temps de jeu a sa propre zone, avec le cumul, les dernières semaines et le détail par rôle. La dernière candidature reprend l’état réel du dossier, chaque information à côté de son intitulé. Rechargez le portail (Ctrl+F5).', [
                 'Disponibilité en pourcentage, avec le nombre de présences et d’opérations sur 45 jours',
             ], [

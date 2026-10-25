@@ -252,6 +252,39 @@ final class SiteContributorRepository
         return $out;
     }
 
+    /**
+     * Classement des auteurs de textes validés.
+     *
+     * @return list<array{user_id: int, name: string, validated: int, public_credit: bool}>
+     */
+    public function translationLeaders(int $limit = 12): array
+    {
+        $limit = max(1, min(30, $limit));
+        $st = $this->pdo()->query(
+            'SELECT t.user_id,
+                    MAX(COALESCE(NULLIF(u.callsign, \'\'), NULLIF(u.display_name, \'\'), \'\')) AS name,
+                    COUNT(*) AS validated,
+                    MAX(CASE WHEN r.public_credit = 1 AND r.status = \'active\' THEN 1 ELSE 0 END) AS public_credit
+               FROM site_translations t
+               LEFT JOIN users u ON u.id = t.user_id
+               LEFT JOIN site_contributor_roles r ON r.user_id = t.user_id
+              GROUP BY t.user_id
+              ORDER BY validated DESC
+              LIMIT ' . $limit
+        );
+        $out = [];
+        foreach ($st !== false ? ($st->fetchAll(\PDO::FETCH_ASSOC) ?: []) : [] as $row) {
+            $out[] = [
+                'user_id' => (int) $row['user_id'],
+                'name' => trim((string) $row['name']) !== '' ? (string) $row['name'] : 'Membre',
+                'validated' => (int) $row['validated'],
+                'public_credit' => (int) $row['public_credit'] === 1,
+            ];
+        }
+
+        return $out;
+    }
+
     public function saveTranslation(string $lang, string $hash, string $text, int $userId): void
     {
         $st = $this->pdo()->prepare(

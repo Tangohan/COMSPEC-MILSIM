@@ -12,6 +12,7 @@ declare(strict_types=1);
 $ready = (bool) ($contribReady ?? false);
 $rows = is_array($contribRows ?? null) ? $contribRows : [];
 $langs = is_array($contribLanguages ?? null) ? $contribLanguages : [];
+$leaders = is_array($contribLeaders ?? null) ? $contribLeaders : [];
 $discordRoles = is_array($contribDiscordRoles ?? null) ? $contribDiscordRoles : [];
 $base = (string) ($contribBase ?? 'admin/system/contributeurs');
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -90,8 +91,31 @@ $renderRole = static function (array $r) use ($h, $base, $roleNames, $statusPill
                 <div class="pa-stat"><dt>Demandes à traiter</dt><dd><?= count($pending) ?></dd></div>
                 <div class="pa-stat"><dt>Contributeurs actifs</dt><dd><?= count(array_unique(array_map(static fn (array $r): int => (int) $r['user_id'], $active))) ?></dd></div>
                 <div class="pa-stat"><dt>Langues</dt><dd><?= count($langs) ?></dd></div>
-                <div class="pa-stat"><dt>Propositions en attente</dt><dd><?= array_sum(array_map(static fn (array $l): int => $l['pending'], $langs)) ?></dd></div>
+                <div class="pa-stat"><dt>Textes seulement en français</dt><dd><?= (int) ($langs[0]['blank'] ?? 0) ?></dd></div>
             </dl>
+
+            <?php $catalogTotal = max(1, (int) ($langs[0]['total'] ?? 1)); $honors = ['Premier traducteur', 'Deuxième', 'Troisième']; ?>
+            <section class="pa-card" aria-labelledby="ctba-leaders">
+                <p class="pa-card__kicker">Traduction</p>
+                <h2 class="pa-card__title" id="ctba-leaders">Meilleurs contributeurs</h2>
+                <p class="pa-card__help">Classement des textes validés sur le site. Le taux est la part du catalogue couverte par cette personne. Les trois premiers sont mis en avant.</p>
+                <?php if ($leaders === []): ?>
+                <p class="pa-sub">Aucun texte validé pour l’instant.</p>
+                <?php else: ?>
+                <ol class="ctba-board">
+                    <?php foreach ($leaders as $i => $leader): ?>
+                    <?php $share = (int) floor((int) $leader['validated'] * 100 / $catalogTotal); ?>
+                    <li class="ctba-board__row<?= $i < 3 ? ' is-top' : '' ?>">
+                        <span class="ctba-board__rank"><?= $i + 1 ?></span>
+                        <strong><?= $h($leader['name']) ?></strong>
+                        <?php if ($i < 3): ?><span class="pa-pill pa-pill--mint"><?= $h($honors[$i]) ?></span><?php endif; ?>
+                        <?php if (empty($leader['public_credit'])): ?><span class="pa-sub">ne veut pas être cité</span><?php endif; ?>
+                        <span class="ctba-board__meta"><?= (int) $leader['validated'] ?> textes · <?= $share ?> %</span>
+                    </li>
+                    <?php endforeach; ?>
+                </ol>
+                <?php endif; ?>
+            </section>
 
             <section class="pa-card" aria-labelledby="ctba-pending">
                 <p class="pa-card__kicker">Demandes</p>
@@ -123,11 +147,15 @@ $renderRole = static function (array $r) use ($h, $base, $roleNames, $statusPill
                         <thead><tr><th>Code</th><th>Nom (dans la langue)</th><th>Avancement</th><th>Propositions</th><th>Publication</th><th></th></tr></thead>
                         <tbody>
                         <?php foreach ($langs as $l): ?>
+                            <?php
+                            $pct = $l['total'] > 0 ? (int) floor($l['done'] * 100 / $l['total']) : 0;
+                            $blank = (int) ($l['blank'] ?? 0);
+                            ?>
                             <tr>
                                 <td><strong><?= $h(strtoupper($l['code'])) ?></strong></td>
                                 <?php if ($l['code'] === 'en'): ?>
                                 <td>English (corrections de l’anglais)</td>
-                                <td><?= (int) $l['done'] ?> corrections</td>
+                                <td><?= $pct ?> % corrigé (<?= (int) $l['done'] ?> / <?= (int) $l['total'] ?>) · <?= $blank ?> seulement en français</td>
                                 <td><?= (int) $l['pending'] ?></td>
                                 <td>Toujours actives</td>
                                 <td>
@@ -139,7 +167,7 @@ $renderRole = static function (array $r) use ($h, $base, $roleNames, $statusPill
                                         <?= \App\Core\Csrf::field() ?>
                                         <input type="hidden" name="code" value="<?= $h($l['code']) ?>">
                                         <input type="text" name="name" value="<?= $h($l['name']) ?>" maxlength="60" aria-label="Nom de la langue">
-                                        <span><?= $l['total'] > 0 ? (int) floor($l['done'] * 100 / $l['total']) : 0 ?> % (<?= (int) $l['done'] ?> / <?= (int) $l['total'] ?>)</span>
+                                        <span><?= $pct ?> % (<?= (int) $l['done'] ?> / <?= (int) $l['total'] ?>)</span>
                                         <span><?= (int) $l['pending'] ?> en attente</span>
                                         <label><input type="checkbox" name="published" value="1"<?= $l['status'] === 'published' ? ' checked' : '' ?>> Publiée</label>
                                         <button type="submit" name="action" value="save" class="pa-btn pa-btn--solid">Enregistrer</button>
@@ -171,4 +199,9 @@ $renderRole = static function (array $r) use ($h, $base, $roleNames, $statusPill
 .ctba-lang { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; }
 .ctba-lang input[type="text"] { min-width: 10rem; }
 .ctba-lang--new { margin-top: 1rem; align-items: flex-end; }
+.ctba-board { margin: 0.75rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.4rem; }
+.ctba-board__row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem; padding: 0.55rem 0.7rem; border: 1px solid var(--pa-line, rgba(15, 23, 19, 0.12)); border-radius: 0.6rem; }
+.ctba-board__row.is-top { background: rgba(16, 185, 129, 0.08); }
+.ctba-board__rank { width: 1.5rem; font-weight: 800; }
+.ctba-board__meta { margin-left: auto; color: var(--pa-muted, #5b6b63); font-size: 0.85rem; }
 </style>

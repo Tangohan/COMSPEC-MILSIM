@@ -17,7 +17,7 @@ use App\Repositories\SiteContributorRepository;
 final class SiteTranslationService
 {
     public const PER_PAGE = 40;
-    public const FILTERS = ['all', 'todo', 'done', 'suggested', 'mine'];
+    public const FILTERS = ['all', 'todo', 'blank', 'done', 'suggested', 'mine'];
 
     public function __construct(private readonly SiteContributorRepository $repo = new SiteContributorRepository())
     {
@@ -50,16 +50,17 @@ final class SiteTranslationService
      * Langues ouvertes à la traduction : « en » (corrections de l'anglais) puis les langues créées par
      * l'administration, avec leur avancement.
      *
-     * @return list<array{code: string, name: string, status: string, done: int, total: int, pending: int}>
+     * @return list<array{code: string, name: string, status: string, done: int, total: int, pending: int, blank: int}>
      */
     public function languages(): array
     {
         $total = count(CommunityLanguages::catalog());
+        $blank = CommunityLanguages::missingEnglishCount();
         $counts = $this->repo->translatedCounts();
         $pending = $this->repo->pendingCounts();
         $out = [[
             'code' => CommunityLanguages::ENGLISH, 'name' => 'English', 'status' => 'corrections',
-            'done' => $counts['en'] ?? 0, 'total' => $total, 'pending' => $pending['en'] ?? 0,
+            'done' => $counts['en'] ?? 0, 'total' => $total, 'pending' => $pending['en'] ?? 0, 'blank' => $blank,
         ]];
         foreach ($this->repo->languages() as $row) {
             $code = (string) $row['code'];
@@ -68,7 +69,7 @@ final class SiteTranslationService
             }
             $out[] = [
                 'code' => $code, 'name' => (string) $row['name'], 'status' => (string) $row['status'],
-                'done' => $counts[$code] ?? 0, 'total' => $total, 'pending' => $pending[$code] ?? 0,
+                'done' => $counts[$code] ?? 0, 'total' => $total, 'pending' => $pending[$code] ?? 0, 'blank' => $blank,
             ];
         }
 
@@ -99,6 +100,7 @@ final class SiteTranslationService
         $q = self::fold(trim($query));
         $filter = in_array($filter, self::FILTERS, true) ? $filter : 'all';
         $match = [];
+        $first = [];
         // Compteurs de chaque filtre (avec la recherche en cours) pour les onglets de l'espace.
         $counts = array_fill_keys(self::FILTERS, 0);
         // Mémoire : même texte français déjà traduit ailleurs dans le site.
@@ -112,34 +114,45 @@ final class SiteTranslationService
             $hasTr = isset($done[$h]);
             $hasSugg = isset($sugg[$h]);
             $fr = $kind === 'key' ? CommunityLanguages::frenchOf($src) : $src;
+            $bare = !CommunityLanguages::hasShippedEnglish($fr, $en);
             if ($q !== '' && !str_contains(self::fold($fr . "\n" . $en . "\n" . ($done[$h] ?? '')), $q) && $q !== $h) {
                 continue;
             }
             $mine = $hasSugg && array_filter($sugg[$h], static fn (array $s): bool => $s['user_id'] === $userId) !== [];
             $counts['all']++;
             $counts[$hasTr ? 'done' : 'todo']++;
+            $counts['blank'] += (!$hasTr && $bare) ? 1 : 0;
             $counts['suggested'] += $hasSugg ? 1 : 0;
             $counts['mine'] += $mine ? 1 : 0;
             $ok = match ($filter) {
                 'todo' => !$hasTr,
+                'blank' => !$hasTr && $bare,
                 'done' => $hasTr,
                 'suggested' => $hasSugg,
                 'mine' => $mine,
                 default => true,
             };
-            if ($ok) {
-                $match[] = [$h, $fr, $en, $kind, $src];
+            if (!$ok) {
+                continue;
+            }
+            $row = [$h, $fr, $en, $kind, $src, $bare];
+            if ($bare && in_array($filter, ['all', 'todo'], true)) {
+                $first[] = $row;
+            } else {
+                $match[] = $row;
             }
         }
+        $match = array_merge($first, $match);
         $total = count($match);
         $pages = max(1, (int) ceil($total / self::PER_PAGE));
         $page = max(1, min($page, $pages));
         $rows = [];
-        foreach (array_slice($match, ($page - 1) * self::PER_PAGE, self::PER_PAGE) as [$h, $fr, $en, $kind, $src]) {
+        foreach (array_slice($match, ($page - 1) * self::PER_PAGE, self::PER_PAGE) as [$h, $fr, $en, $kind, $src, $bare]) {
             $rows[] = [
                 'h' => $h,
                 'fr' => $fr,
                 'en' => $en,
+                'bare' => $bare,
                 'kind' => $kind,
                 'key' => $kind === 'key' ? substr($src, 1) : '',
                 'code' => CommunityLanguages::markup($fr) !== [],
