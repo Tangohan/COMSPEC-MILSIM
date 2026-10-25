@@ -971,9 +971,24 @@ class AtakApiController
     /**
      * Liaison Arma sans code court : le Steam ID du joueur doit déjà être enregistré sur le compte Athena.
      * POST JSON { steam_uid } — même forme de réponse que gameLinkRedeem.
+     *
+     * Sécurité : un SteamID64 est public (profil, liste des joueurs) ; il ne prouve pas la possession
+     * du compte. Renvoyer la clé de communauté sur cette seule base revient à la donner à n’importe qui.
+     * Désactivé par défaut : seul le code de liaison à usage unique (/game-link/redeem) délivre une clé.
+     * ATAK_GAME_LINK_BY_STEAM=1 ne doit être posé que sur un portail privé (réseau de confiance).
      */
     public function gameLinkBySteam(Request $request, array $params = []): Response
     {
+        $bySteamFlag = strtolower(trim((string) (($_ENV['ATAK_GAME_LINK_BY_STEAM'] ?? null) ?: (getenv('ATAK_GAME_LINK_BY_STEAM') ?: ''))));
+        if (!in_array($bySteamFlag, ['1', 'true', 'on', 'yes'], true)) {
+            // « unauthorized » : le mod affiche alors « … ou utilisez un code » (server_outdated).
+            return Response::json([
+                'error' => 'unauthorized',
+                'reason' => 'steam_link_disabled',
+                'message' => 'La liaison par Steam seul est désactivée. Générez un code de connexion en jeu sur Athena.',
+            ], 403);
+        }
+
         $body = $this->jsonBody($request);
         $steamUid = SteamId::normalize((string) ($body['steam_uid'] ?? $body['player_uid'] ?? $body['steam_id'] ?? $request->input('steam_uid') ?? ''));
         if ($steamUid === null) {
