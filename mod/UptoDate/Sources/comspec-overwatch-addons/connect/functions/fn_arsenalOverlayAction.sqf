@@ -1,6 +1,7 @@
 /*
     Actions du panneau Tenues Athena (ACE Arsenal).
-      "toggle" / "close" / "reload"        ouvrir-fermer le panneau, recharger depuis Athena
+      "toggle" / "close" / "reload"        ouvrir-fermer le panneau, recharger la liste depuis Athena (Actualiser)
+      "redrawNow"                          relire Mes tenues avec la liste du site gardée sur ce PC (sans réseau)
       "tabCloud" / "tabLocal" / "filter"   onglet, recherche changés
       "stateFilter" / "sort", k           filtre d'état (liste), tri (coll, name, state, recent)
       "chip", coll / "chipPrev" / "chipNext"  pastille de collection, défilement des pastilles
@@ -51,7 +52,7 @@ private _row = {
     private _i = _g getVariable ["COMSPEC_ArsenalSelected", -1];
     (_g getVariable ["COMSPEC_ArsenalShown", []]) param [_i, []]
 };
-private _reload = { missionNamespace setVariable ["COMSPEC_ArsenalWardrobeAt", -1e9, false]; _d setVariable ["COMSPEC_ArsenalForceList", true]; [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
+private _reload = { _d setVariable ["COMSPEC_ArsenalForceList", true]; [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
 private _metaCloud = { params ["_r"]; format ["%1%2%3", _r select 3, ["", format [" · par %1", _r select 4]] select ((_r select 4) isNotEqualTo ""), ["", format [" · %1", (_r select 5) select [0, 10]]] select ((_r select 5) isNotEqualTo "")] };
 
 switch (_act) do {
@@ -92,6 +93,8 @@ switch (_act) do {
     case "close": { _d setVariable ["COMSPEC_ArsenalOverlayOpen", true]; ["toggle"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     case "reload": { [] spawn { ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }; };
     case "reloadNow": { ["Rechargement depuis Athena…"] call _hint; call _reload; };
+    // Rien n'a changé sur le site (import, suppression sur ce PC) : pas de rechargement de la liste.
+    case "redrawNow": { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
     case "tabCloud";
     case "tabLocal": {
         private _t = ["local", "cloud"] select (_act isEqualTo "tabCloud");
@@ -195,12 +198,13 @@ switch (_act) do {
         };
         [_r, _isCloud, _siteId] spawn {
             params ["_r", "_isCloud", "_siteId"];
+            private _pushed = false;
             switch (true) do {
                 case (_isCloud): { ["", [_r select 0]] call comspec_overwatch_connect_fnc_arsenalPullAll; };
                 case (_siteId isNotEqualTo ""): { ["", [_siteId]] call comspec_overwatch_connect_fnc_arsenalPullAll; };
-                default { [[_r select 0]] call comspec_overwatch_connect_fnc_arsenalPushAll; };
+                default { [[_r select 0]] call comspec_overwatch_connect_fnc_arsenalPushAll; _pushed = true; };
             };
-            ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [["redrawNow", "reloadNow"] select _pushed] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
         };
     };
     case "remove": {
@@ -217,7 +221,7 @@ switch (_act) do {
                 if (_isCloud) then { ["del", _r select 1] call comspec_overwatch_connect_fnc_arsenalLedger; saveProfileNamespace; };
                 [format ["« %1 » retirée.", _label], "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
             };
-            ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [["redrawNow", "reloadNow"] select _isCloud] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
         };
     };
     case "bulk": {
@@ -229,7 +233,7 @@ switch (_act) do {
             private _ok = [format [(["Envoyer au site %1 tenue(s) qui n'y sont pas à jour ? Les autres ne sont pas renvoyées.", "Importer %1 tenue(s) dans votre arsenal ? Aucune de vos tenues n'est remplacée : une version différente arrive à côté, sous le même nom suivi de « Athena »."] select _isCloud) call comspec_overwatch_connect_fnc_tr, count _shown], ("Tenues Athena") call comspec_overwatch_connect_fnc_tr, true, true, _d] call BIS_fnc_guiMessage;
             if (!_ok) exitWith {};
             if (_isCloud) then { ["", _shown apply { _x select 0 }, true] call comspec_overwatch_connect_fnc_arsenalPullAll; } else { [_shown apply { _x select 0 }] call comspec_overwatch_connect_fnc_arsenalPushAll; };
-            ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [["reloadNow", "redrawNow"] select _isCloud] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
         };
     };
     case "syncAll": {
@@ -280,7 +284,7 @@ switch (_act) do {
             private _g = _d getVariable ["COMSPEC_ArsenalOverlay", controlNull];
             if (!isNull _g) then { _g setVariable ["COMSPEC_ArsenalMarked", []]; };
             [format [("%1 tenue(s) supprimée(s) de votre arsenal. ANNULER les remet.") call comspec_overwatch_connect_fnc_tr, count _gone], "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
-            ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            ["redrawNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
         };
     };
     case "undoDelete": {
@@ -295,7 +299,7 @@ switch (_act) do {
         profileNamespace setVariable ["COMSPEC_ArsenalTrash", []];
         saveProfileNamespace;
         [format [("%1 tenue(s) remise(s) dans votre arsenal.") call comspec_overwatch_connect_fnc_tr, count _back], "ok"] call _say;
-        [] spawn { ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+        [] spawn { ["redrawNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     };
     case "saveCurrent": {
         private _name = trim ctrlText (_g getVariable ["COMSPEC_ArsenalSaveName", controlNull]);

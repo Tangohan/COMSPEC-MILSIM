@@ -105,7 +105,7 @@ private _hy = _pad * 0.8;
 private _sq = _rowH * _pxW / _pxH;
 private _refW = 0.085 * safezoneW;
 [[_w - _pad - _sq, _hy, _sq, _rowH], "✕", "close", "COMSPEC_RscButtonAtak", "Fermer"] call _btn;
-[[_w - _pad - _sq - _gap - _refW, _hy, _refW, _rowH], "ACTUALISER", "reload", "COMSPEC_RscButtonAtak", "Recharger les tenues depuis Athena"] call _btn;
+[[_w - _pad - _sq - _gap - _refW, _hy, _refW, _rowH], "ACTUALISER", "reload", "COMSPEC_RscButtonAtak", "Recharger la liste des tenues depuis Athena (sinon, celle gardée sur ce PC)"] call _btn;
 private _status = ["RscStructuredText", [_w * 0.5, _hy + _rowH + 0.002, _w * 0.5 - _pad, _guiH * 1.0]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalStatus", _status];
 private _hb = _hy + _guiH * 2.35;
