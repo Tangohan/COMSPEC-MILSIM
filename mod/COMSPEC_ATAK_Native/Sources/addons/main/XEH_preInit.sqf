@@ -365,6 +365,10 @@ private _cap = ["COMSPEC", "ATAK · Capture par l'ennemi"];
 ["comspec_atak_native_capture_validate", "LIST",
     ["Qui peut déclarer un téléphone volé", "Déclarer le vol (valider la compromission) coupe le téléphone volé du réseau et le bloque sur Athena."],
     _cap, [[0, 1], ["Chefs de groupe, propriétaire et Zeus", "Tout le camp"], 0], 1] call comspec_atak_native_fnc_addSetting;
+// App Admin du téléphone (fn_adminAllowed) : en plus du Zeus et de l'admin connecté, joueurs désignés par le serveur.
+["comspec_atak_native_admin_uids", "EDITBOX",
+    ["Gestionnaires en jeu (UID Steam)", "UID Steam (64 bits) séparés par des virgules : ces joueurs ont l'app Admin du téléphone (ATAK des joueurs, effets Zeus, debug de l'IA) sans être Zeus. Le parc Athena de l'app suit les droits du compte sur le site."],
+    ["COMSPEC", "ATAK · Admin"], "", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_sim", "CHECKBOX",
     ["Batterie réaliste", "La batterie se vide selon l'utilisation (écran, appareil photo, caméra en direct, GPS, envoi de données, recherche de réseau, brouilleur) et se recharge dans un véhicule moteur allumé. À 0 %, le téléphone s'éteint et apparaît hors ligne sur le BFT."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -541,6 +545,11 @@ if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_nat
 ["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
 if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };
 if (hasInterface) then { ["comspec_atak_native_compromise", { params [["_k", ""], ["_v", []]]; if (_k in ["revoke", "ownerReset"]) then { [_k, _v] call comspec_atak_native_fnc_compromise; } else { ["event", [_k, _v]] call comspec_atak_native_fnc_compromise; }; }] call CBA_fnc_addEventHandler; };
+// App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).
+if (hasInterface) then {
+    ["comspec_atak_native_adminReport", { ["report", _this] call comspec_atak_native_fnc_adminClient; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_adminData", { ["data", _this] call comspec_atak_native_fnc_adminClient; }] call CBA_fnc_addEventHandler;
+};
 if (hasInterface) then { ["comspec_atak_native_note", { params [["_t", ""]]; ["INFO", _t, 5, 40] call comspec_atak_native_fnc_notify; }] call CBA_fnc_addEventHandler; };
 
 // Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).

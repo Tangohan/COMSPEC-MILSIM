@@ -835,6 +835,10 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 [{ ["check"] call comspec_atak_native_fnc_serverPresence; }, [], 20] call CBA_fnc_waitAndExecute;
 // Avis de l'administration ATHENA (compromission, annulation, données réinitialisées, certificat, message imposé).
 [{ ["check"] call comspec_atak_native_fnc_adminNotices; }, 30] call COMSPEC_ATAK_PfhSpread;
+// App Admin : droit de gestion lu sur Athena (le lanceur ne la montre qu'à qui y a droit), 90 s après l'arrivée puis
+// toutes les 15 min. Une seule petite requête, rien si le service Athena est coupé.
+[{ ["probe"] call comspec_atak_native_fnc_adminClient; }, 900] call COMSPEC_ATAK_PfhSpread;
+[{ ["probe"] call comspec_atak_native_fnc_adminClient; }, [], 90] call CBA_fnc_waitAndExecute;
 
 // Tinder : un joueur m'a liké (match si c'est réciproque).
 ["comspec_atak_native_rencard", {

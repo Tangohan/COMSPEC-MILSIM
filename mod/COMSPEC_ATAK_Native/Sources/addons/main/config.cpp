@@ -86,6 +86,9 @@ class CfgFunctions {
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
         };
+        class admin { file="z\comspec_atak_native\addons\main\functions\admin";
+            class adminAllowed {}; class adminServer {}; class adminClient {}; class pageAdmin {};
+        };
         class zeus { file="z\comspec_atak_native\addons\main\functions\zeus";
             class zeusFx {}; class zeusJam {}; class zeusServer {}; class zeusClient {}; class zeusOverlay {}; class zeusMenu {}; class moduleZeusControl {}; class moduleZeusJammer {};
         };
@@ -154,6 +157,7 @@ class COMSPEC_ATAK_Apps {
     class Aar         { name="Rejeu"; page="AAR"; section="Mission"; order=215; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_aar.paa"; };
     class Athena      { name="Athena"; page="ATHENA"; section="Système"; order=300; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_athena.paa"; };
     class Discord     { name="Discord"; page="DISCORD"; function="comspec_atak_native_fnc_pageDiscord"; section="Communication"; order=42; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_discord.paa"; };
+    class Admin       { name="Admin"; page="ADMIN"; new=1; function="comspec_atak_native_fnc_pageAdmin"; section="Système"; order=301; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_admin.paa"; };
     class Network     { name="Réseau"; page="NETWORK"; section="Système"; order=302; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_network.paa"; };
     class Bluetooth   { name="Bluetooth"; page="BLUETOOTH"; function="comspec_atak_native_fnc_pageBluetooth"; section="Système"; order=303; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa"; };
     class Resynch     { name="Synchro"; page="RESYNCH"; section="Système"; order=304; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_resynch.paa"; };

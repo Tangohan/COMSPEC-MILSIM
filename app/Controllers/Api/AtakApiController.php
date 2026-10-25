@@ -7320,6 +7320,71 @@ class AtakApiController
     }
 
     /**
+     * App « Admin » de l'ATAK natif (COMSPEC Link « GameAdmin.Fleet ») : parc ATAK de la communauté pour le gestionnaire
+     * connecté en jeu par sa propre session. {q, offset} -> {role, total, rows}. Joueur sans droit : role "none", aucune fiche.
+     */
+    public function gameAdminFleet(Request $request, array $params = []): Response
+    {
+        $ctx = $this->gameAdminCaller($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, , $role] = $ctx;
+        if ($role === null) {
+            return Response::json(['ok' => true, 'role' => 'none', 'total' => 0, 'rows' => []]);
+        }
+        $body = $this->jsonBody($request);
+        $fleet = (new \App\Services\Atak\AtakGameAdminService())->fleet(
+            $tenantId,
+            mb_substr(trim((string) ($body['q'] ?? '')), 0, 80),
+            max(0, (int) ($body['offset'] ?? 0))
+        );
+
+        return Response::json(['ok' => true, 'role' => $role] + $fleet);
+    }
+
+    /** App « Admin » de l'ATAK natif (COMSPEC Link « GameAdmin.Action ») : {action, terminal_id | block_id, ...}. */
+    public function gameAdminAction(Request $request, array $params = []): Response
+    {
+        $ctx = $this->gameAdminCaller($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $user, $role] = $ctx;
+        if ($role === null) {
+            return Response::json(['ok' => false, 'error' => 'forbidden', 'message' => 'Réservé à la gestion de la communauté.'], 403);
+        }
+        $body = $this->jsonBody($request);
+        $name = trim((string) ($user['callsign'] ?? '')) ?: trim((string) ($user['display_name'] ?? '')) ?: 'Gestion';
+        $out = (new \App\Services\Atak\AtakGameAdminService())->act($tenantId, $role, [(int) $user['id'], $name], (string) ($body['action'] ?? ''), $body);
+
+        return Response::json($out, $out['ok'] ? 200 : 422);
+    }
+
+    /**
+     * Gestionnaire qui appelle depuis le jeu : il faut sa session de jeu (la clé du serveur ne dit pas qui joue).
+     *
+     * @return array{0: int, 1: array<string, mixed>, 2: ?string}|Response
+     */
+    private function gameAdminCaller(Request $request): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $userId = ComspecApiKeyAuth::matchedUserId();
+        $user = $userId !== null ? $this->userRepository->findById($userId) : null;
+        if ($user === null) {
+            return Response::json(['ok' => false, 'error' => 'session_required', 'message' => 'Reliez votre compte Athena en jeu.'], 403);
+        }
+
+        return [$r, $user, (new \App\Services\Atak\AtakGameAdminService())->role($r, $userId, $user)];
+    }
+
+    /**
      * Joueur qui appelle : compte de la session de jeu, sinon Steam du corps.
      *
      * @return array{0: int, 1: ?int, 2: ?string}|Response
