@@ -20,6 +20,9 @@ switch (_what) do {
         ["show", true] call comspec_atak_native_fnc_athenaLink;
     };
     default {
+        if (_what isEqualTo "on" && {missionNamespace getVariable ["comspec_atak_native_local_only", false]}) exitWith {
+            ["WARNING", "Mode full local imposé par le serveur : Athéna indisponible sur ce serveur", 4, 30] call comspec_atak_native_fnc_notify;
+        };
         if (!isNil "comspec_overwatch_connect_fnc_athenaApply") then {
             [_what] call comspec_overwatch_connect_fnc_athenaApply;
         } else {

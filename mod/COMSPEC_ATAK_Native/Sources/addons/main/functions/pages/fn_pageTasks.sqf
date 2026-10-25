@@ -37,7 +37,8 @@ if (_s0 getOrDefault ["orderCompose", false]) exitWith { [] call comspec_atak_na
 private _orders = [] call comspec_atak_native_fnc_tasksAll;
 private _open = 0;
 { if !((toUpper (_y getOrDefault ["status", "NEW"])) in ["DONE", "FAILED", "SUCCEEDED", "CANCELED", "CANCELLED"]) then { _open = _open + 1; }; } forEach _orders;
-private _canOrder = ([] call comspec_atak_native_fnc_bridge) && {[] call comspec_overwatch_connect_fnc_canIssueOrder};
+// Avec Athena : chef d'unité (COMSPEC Link) ; sans Athena (ATAK local, poste TOC) : ordres au camp par fn_orderLocal.
+private _canOrder = ["can"] call comspec_atak_native_fnc_orderLocal;
 private _rows = [];
 if (_canOrder) then { _rows pushBack ["buttons", [["NOUVEL ORDRE", { ['open'] call comspec_atak_native_fnc_orderAction; }, true]]]; };
 // Hors connexion (fn_offline) : ordres connus à la perte du signal, les nouveaux arrivent au retour du réseau.
