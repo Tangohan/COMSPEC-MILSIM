@@ -6,6 +6,7 @@ namespace App\Services\Iff;
 
 use App\Repositories\IffAssetStatusRepository;
 use App\Repositories\IffChallengeRepository;
+use App\Support\UtcDateTime;
 
 class IffValidationService
 {
@@ -58,7 +59,9 @@ class IffValidationService
             }
             $status = strtoupper(trim((string) ($row['response_status'] ?? 'PENDING')));
             $graceUntil = $row['grace_until'] ?? null;
-            $graceTs = $graceUntil ? strtotime((string) $graceUntil) : false;
+            // grace_until est calculé par DATE_ADD(NOW(), …) en session UTC : relu en UTC,
+            // sinon l'asset PENDING passe UNKNOWN dès sa création.
+            $graceTs = UtcDateTime::timestamp($graceUntil) ?? false;
             $now = time();
 
             if ($status === 'PENDING' && $challengeExpired) {
