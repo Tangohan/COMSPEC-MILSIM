@@ -8,6 +8,8 @@ require base_path('views/partials/account/shell_open.php');
 
 $deletionRequestedAt = $deletionRequestedAt ?? null;
 $deletionScheduledAt = $deletionScheduledAt ?? null;
+$deletionHandover = is_array($deletionHandover ?? null) ? $deletionHandover : [];
+$ph = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 ?>
 
 <div class="account-hub__stack">
@@ -19,9 +21,9 @@ $deletionScheduledAt = $deletionScheduledAt ?? null;
             <p class="account-hub__panel-desc">
                 Votre compte a été désactivé le
                 <?= htmlspecialchars(date('d/m/Y à H:i', strtotime((string) $deletionRequestedAt)), ENT_QUOTES, 'UTF-8') ?>
-                et sera anonymisé définitivement le
+                et sera supprimé définitivement le
                 <?= $deletionScheduledAt ? htmlspecialchars(date('d/m/Y', strtotime((string) $deletionScheduledAt)), ENT_QUOTES, 'UTF-8') : '—' ?>.
-                Tant que le compte n’est pas anonymisé, vous pouvez annuler la suppression en vous reconnectant.
+                Jusque-là, vous pouvez annuler la suppression en vous reconnectant.
             </p>
         </div>
         <div class="account-hub__panel-body">
@@ -73,12 +75,34 @@ $deletionScheduledAt = $deletionScheduledAt ?? null;
             <p class="account-hub__panel-kicker">Zone sensible</p>
             <h2 id="privacy-delete-heading" class="account-hub__panel-title">Supprimer mon compte</h2>
             <p class="account-hub__panel-desc">
-                Votre compte sera immédiatement désactivé, puis anonymisé définitivement après
-                un délai de rétractation de <?= (int) \App\Services\Account\AccountDeletionService::GRACE_PERIOD_DAYS ?> jours.
-                Vous pouvez annuler à tout moment pendant ce délai en vous reconnectant.
+                Votre compte sera immédiatement désactivé, puis supprimé définitivement après
+                un délai de rétractation de <?= (int) \App\Services\Account\AccountDeletionService::GRACE_PERIOD_DAYS ?> jours :
+                profil, dossier, compte de jeu, appareils ATAK et rôles disparaissent. Ce que vous avez
+                partagé avec d’autres membres (messages, comptes rendus) reste, signé « Ancien membre ».
+                Un nouveau compte ouvert plus tard avec la même adresse repart de zéro.
+                Vous pouvez annuler à tout moment pendant le délai en vous reconnectant.
             </p>
         </div>
         <div class="account-hub__panel-body">
+            <?php if ($deletionHandover !== []): ?>
+            <div class="account-hub__panel-desc" style="margin-bottom:1rem;padding:.75rem 1rem;border-left:3px solid #c0392b;background:rgba(192,57,43,.06)">
+                <strong>Vos communautés</strong>
+                <ul style="margin:.4rem 0 0;padding-left:1.1rem">
+                    <?php foreach ($deletionHandover as $h): ?>
+                    <li>
+                        <?= $ph((string) ($h['tenant_name'] ?? '')) ?> :
+                        <?php if (($h['action'] ?? '') === 'delegate'): ?>
+                            le rôle de propriétaire passera à <strong><?= $ph((string) ($h['successor_name'] ?? '')) ?></strong>.
+                        <?php elseif (($h['action'] ?? '') === 'delete'): ?>
+                            vous en êtes le seul membre, elle sera <strong>supprimée</strong> avec ses données.
+                        <?php else: ?>
+                            un autre propriétaire reste en place.
+                        <?php endif; ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endif; ?>
             <form method="post" action="<?= htmlspecialchars(url('account/donnees/supprimer'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__form-grid" onsubmit="return confirm('Confirmer la suppression de votre compte ?');">
                 <?= \App\Core\Csrf::field() ?>
                 <div>

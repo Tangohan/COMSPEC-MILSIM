@@ -352,6 +352,13 @@ class AuthController
             return Response::redirect(url('login'));
         }
 
+        // Délai de rétractation dépassé : le compte est supprimé, pas rouvert par la connexion.
+        try {
+            \App\Core\Container::get(\App\Services\Account\AccountDeletionService::class)->eraseOverdueForEmail($email);
+        } catch (\Throwable $e) {
+            error_log('[auth.login] suppression en retard : ' . $e->getMessage());
+        }
+
         $candidates = $this->userRepository->listUsersForLoginByEmail($email);
         $matches = [];
         foreach ($candidates as $row) {
