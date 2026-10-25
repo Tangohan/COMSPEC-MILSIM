@@ -14313,5 +14313,18 @@
 ["Fond photo disponible pour %1 (%2) : il se charge à la demande ; Réglages > Carte pour le télécharger en entier", "Photo background available for %1 (%2): it loads on demand; Settings > Map to download it all"],
 ["Carte topo d'Arma, version claire, sombre, bleu nuit, classique (vue satellite du terrain d'Arma), hybride (classique avec routes et pistes), ou satellite (la vraie photo de la carte, capturée par COMSPEC : mod COMSPEC ATAK Photo ou téléchargée depuis Athena)", "Arma topo map, light, dark or night-blue version, classic (Arma terrain satellite view), hybrid (classic with roads and tracks), or satellite (the real photo of the map captured by COMSPEC: COMSPEC ATAK Photo mod or downloaded from Athena)"],
 ["Relief des bâtiments", "Building relief"],
-["Fond SATELLITE : ombre portée et contour de chaque bâtiment aux zooms proches", "SATELLITE background: cast shadow and outline of each building at close zoom"]
+["Fond SATELLITE : ombre portée et contour de chaque bâtiment aux zooms proches", "SATELLITE background: cast shadow and outline of each building at close zoom"],
+["Athena en maintenance", "Athena under maintenance"],
+["Athena est en maintenance.", "Athena is under maintenance."],
+["Connexion internet du jeu coupée, ou pare-feu.", "Game internet connection down, or firewall."],
+["Le site Athena est fermé le temps d'une mise à jour : rien ne part vers le poste ni n'en arrive pour l'instant. Le téléphone reste utilisable en local.", "The Athena site is closed for an update: nothing goes to or comes from the command post for now. The phone stays usable locally."],
+["Le site répond mais refuse les connexions le temps d'une mise à jour.", "The site answers but refuses connections during an update."],
+["Rien à faire : la connexion reprend seule à la réouverture du site.", "Nothing to do: the connection resumes by itself when the site reopens."],
+["Rien à faire : la connexion reprend seule à la réouverture.", "Nothing to do: the connection resumes by itself when it reopens."],
+["en attente de la réouverture", "waiting for reopening"],
+["en maintenance", "under maintenance"],
+["Le site est fermé le temps d'une mise à jour : aucun code ne peut être donné pour l'instant. Gardez l'app ouverte : nouvel essai automatique toutes les minutes.", "The site is closed for an update: no code can be issued for now. Keep the app open: it retries automatically every minute."],
+["Scannez ce QR code : la page Lier le jeu s'ouvre, saisissez-y le code ci-dessus.", "Scan this QR code: the Link the game page opens, enter the code above there."],
+["Sur votre vrai téléphone", "On your real phone"],
+["Le site est fermé le temps d'une mise à jour : aucun code ne peut être donné pour l'instant. Réessayez avec « Nouveau code » à la réouverture.", "The site is closed for an update: no code can be issued for now. Try again with « New code » once it reopens."]
 ]

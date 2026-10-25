@@ -124,7 +124,7 @@ if (_logged) then {
                 // Code à autoriser sur le site, connecté à son compte. Rien d'autre à saisir.
                 (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]) params ["_ls", "_lc", "_lu", "_luri", "", "_ld"];
                 if (_ls isEqualTo "pending" && {diag_tickTime >= _lu}) then { _ls = "expired"; };
-                private _short = (_luri regexReplace ["^https?://", ""]) regexReplace ["/public/", "/"];
+                private _short = [_luri] call comspec_atak_native_fnc_athenaShortUrl;
                 switch (_ls) do {
                     case "pending": {
                         _rows append [
@@ -133,7 +133,12 @@ if (_logged) then {
                             ["buttons", [
                                 ["OUVRIR LA PAGE", { ["open"] call comspec_atak_native_fnc_athenaLink; }, true, true, "Ouvre la page dans votre navigateur, code déjà rempli"],
                                 ["NOUVEAU CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }]
-                            ]]
+                            ]],
+                            // QR code fixe de la page /lier (tools/gen_remote_qr.py) : à scanner avec son vrai téléphone,
+                            // connecté à Athena, quand le PC n'a pas de navigateur sous la main (plein écran, second écran).
+                            ["section", "Sur votre vrai téléphone", "Scannez ce QR code : la page Lier le jeu s'ouvre, saisissez-y le code ci-dessus."],
+                            ["image", "\z\comspec_atak_native\addons\main\data\athena_link_qr_ca.paa"],
+                            ["text", format ["<t size='0.85' align='center' color='#8a9a93'>%1</t>", _short]]
                         ];
                     };
                     case "asking": { _rows pushBack ["text", "<t color='#c9d4cf'>Demande d'un code à Athena…</t>", _card]; };
@@ -146,12 +151,15 @@ if (_logged) then {
                     };
                     case "error": {
                         _rows append [
-                            ["text", if ((_ld find "http_4") isEqualTo 0) then {
+                            ["text", if (_ld isEqualTo "maintenance") then {
+                                // Athena en maintenance (HTTP 503) : nouvel essai automatique toutes les 60 s, app ouverte.
+                                "<t color='#f2c66b' font='COMSPEC_BarlowBold'>Athena est en maintenance.</t><br/><t color='#c9d4cf'>Le site est fermé le temps d'une mise à jour : aucun code ne peut être donné pour l'instant. Gardez l'app ouverte : nouvel essai automatique toutes les minutes.</t>"
+                            } else { if ((_ld find "http_4") isEqualTo 0) then {
                                 // Athena a répondu mais refuse : cause et action lues dans fn_athenaStatus.
                                 format ["<t color='#f2c66b'>%1</t><br/><t color='#c9d4cf'>%2</t>", _st getOrDefault ["text", ""], _st getOrDefault ["action", ""]]
                             } else {
                                 format ["<t color='#f2c66b'>Athena n'a pas donné de code (%1). Vérifiez la connexion internet du jeu.</t>", _ld]
-                            }, _card],
+                            } }, _card],
                             ["buttons", [["RÉESSAYER", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
                         ];
                     };
