@@ -12,6 +12,8 @@ private _units = createHashMap;
         default {"OFFLINE"};
     };
     _remote set ["freshness",_freshness];
+    // Cache de dessin posé par fn_mapOnDraw : retiré pour qu'il n'entre pas dans la signature du magasin « units ».
+    _remote deleteAt "drawCache";
     _units set [_x,_remote];
 } forEach (_data getOrDefault ["remoteUnits",createHashMap]);
 // Filtre des alliés (réglage) : tous, mon groupe, ou mon rattachement ORBAT Athena (repli : groupe).
@@ -46,11 +48,24 @@ private _staleAge = [20, _rate * 4 + 10] select _pli;
 // (résultat gardé 10 s par unité). Les ennemis n'apparaissent (réglage « ennemis ») que repérés par mon camp.
 private _devCache = uiNamespace getVariable ["COMSPEC_ATAK_DevCache", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_DevCache", _devCache];
-// Unités disparues (morts, respawns, IA supprimées) retirées toutes les 30 s : ces deux tables grossissaient toute la partie.
+// Piste Athena voisine d'une unité sans indicatif (IA surtout) : [clé, instant], recherchée au plus toutes les 5 s
+// (la recherche parcourt toutes les pistes Athena pour chaque unité, quatre fois par seconde carte en main).
+private _nearCache = uiNamespace getVariable ["COMSPEC_ATAK_NearCache", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_NearCache", _nearCache];
+// Unités disparues (morts, respawns, IA supprimées) retirées toutes les 30 s : ces tables grossissaient toute la partie.
 if (isMultiplayer && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_BftPruneAt", 0]) > 30}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_BftPruneAt", diag_tickTime];
     { if (isNull (objectFromNetId _x)) then { _devCache deleteAt _x; }; } forEach (keys _devCache);
     { if (isNull (objectFromNetId _x)) then { _last deleteAt _x; }; } forEach (keys _last);
+    { if (isNull (objectFromNetId _x)) then { _nearCache deleteAt _x; }; } forEach (keys _nearCache);
+};
+// Liste des alliés vivants relevée toutes les 2 s (parcours de allUnits, ennemis compris) ; les positions restent
+// relues à chaque passage, et un allié mort entre deux relevés est écarté dans la boucle.
+private _side = side group player;
+private _fl = uiNamespace getVariable ["COMSPEC_ATAK_FriendList", [[], -1e9, sideUnknown, objNull]];
+if (diag_tickTime - (_fl select 1) > 2 || {(_fl select 2) isNotEqualTo _side} || {(_fl select 3) isNotEqualTo player}) then {
+    _fl = [allUnits select { alive _x && {side group _x isEqualTo _side} }, diag_tickTime, _side, player];
+    uiNamespace setVariable ["COMSPEC_ATAK_FriendList", _fl];
 };
 private _carries = {
     params ["_u"];
@@ -64,7 +79,7 @@ private _carries = {
 private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends", true];
 {
     private _obj = _x;
-    if (isNull _obj) then { continue };
+    if (isNull _obj || {!alive _obj}) then { continue };
     if (side group _obj isEqualTo side group player && {_obj isNotEqualTo player} && {!_showFriends || {!([_obj] call _carries)}}) then { continue };
     if (side group _obj isEqualTo side group player && {!([_obj] call _keepFriend)}) then { continue };
     private _id = netId _obj;
@@ -91,12 +106,18 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
     // de plus de 30 m (en véhicule, liaison lente). Sans ça le BFT montrait « Star 4-1 » deux fois.
     if (_callsign isNotEqualTo "" && {("athena:" + toLower _callsign) in _athena}) then { _near = "athena:" + toLower _callsign; };
     // Indicatif déjà trouvé : inutile de parcourir toutes les pistes Athena pour chaque unité amie.
-    if (_near isEqualTo "") then {
-        private _best = 30;
-        {
-            private _d = (_y getOrDefault ["position",[0,0,0]]) distance2D _obj;
-            if (_d < _best) then { _best = _d; _near = _x; };
-        } forEach _athena;
+    if (_near isEqualTo "" && {(count _athena) > 0}) then {
+        private _nc = _nearCache getOrDefault [_id, ["", -1e9]];
+        if (diag_tickTime - (_nc select 1) < 5) then {
+            if ((_nc select 0) in _athena) then { _near = _nc select 0; };
+        } else {
+            private _best = 30;
+            {
+                private _d = (_y getOrDefault ["position",[0,0,0]]) distance2D _obj;
+                if (_d < _best) then { _best = _d; _near = _x; };
+            } forEach _athena;
+            _nearCache set [_id, [_near, diag_tickTime]];
+        };
     };
     if (_near isNotEqualTo "") then {
         if (_callsign isEqualTo "") then { _callsign = (_athena get _near) getOrDefault ["callsign",""]; };
@@ -134,12 +155,15 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
         ["affiliation",_affiliation],["type",_type],["freshness",_fr],["updated",_upd],["acc",_acc],
         ["icon",_obj getVariable ["COMSPEC_ATAK_Icon",""]],["orbat",_obj getVariable ["COMSPEC_ATAK_Orbat",""]]
     ]];
-} forEach (allUnits select { alive _x && {side group _x isEqualTo side group player} });
+} forEach (_fl select 0);
 
 // Aucune IA ennemie sur la carte, même repérée (choix de la communauté) : ni calcul local, ni contact relayé par Athena.
-{ if ((_y getOrDefault ["affiliation", ""]) isEqualTo "hostile") then { _units deleteAt _x; }; } forEach +_units;
 // Filtres du BFT (fn_bftFilter : IA, aériens, véhicules, pistes anciennes ou hors ligne, distance) : masquées sur la carte aussi.
-{ if !([_y] call comspec_atak_native_fnc_bftFilter) then { _units deleteAt _x; }; } forEach +_units;
+// Une seule passe sur les clés (+_units recopiait en profondeur toutes les pistes, deux fois par passage).
+{
+    private _e = _units get _x;
+    if ((_e getOrDefault ["affiliation", ""]) isEqualTo "hostile" || {!([_e] call comspec_atak_native_fnc_bftFilter)}) then { _units deleteAt _x; };
+} forEach (keys _units);
 // Signature fournie : la table des unités change à chaque passage (positions), la comparer par « str » ne servait qu'à
 // convertir en texte toutes les unités du camp, une ou quatre fois par seconde.
 ["units",_units,-1,str diag_tickTime] call comspec_atak_native_fnc_storeSet;

@@ -79,7 +79,8 @@ if (_total < 1 || {_mode isNotEqualTo "flush" && {(_now - (_last select 0)) < 30
 if (_total > 360000) then { _acc = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_ScreenAcc", _acc]; };
 private _keep = {
     profileNamespace setVariable ["COMSPEC_ATAK_ScreenPending", (keys _acc) apply { [_x, (_acc get _x) select 0, (_acc get _x) select 1] }];
-    saveProfileNamespace;
+    // Fin de mission (« flush ») : écrit tout de suite ; passage périodique : profil marqué modifié (fn_profileSave).
+    ([["now"], ["dirty"]] select (_mode isEqualTo "tick")) call comspec_atak_native_fnc_profileSave;
 };
 if !([] call comspec_atak_native_fnc_bridge) exitWith {
     call _keep;

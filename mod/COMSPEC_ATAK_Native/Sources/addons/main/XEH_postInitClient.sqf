@@ -616,6 +616,8 @@ addMissionEventHandler ["EntityKilled", {
 // Hors connexion (fn_offline) : données figées, réceptions retenues, synchro et bilan au retour, sauvegarde du profil.
 [{
     ["tick"] call comspec_atak_native_fnc_offline;
+    // Échéance unique d'écriture du profil (fn_profileSave : sauvegardes périodiques regroupées).
+    ["tick"] call comspec_atak_native_fnc_profileSave;
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
     if ((count _inbox) > 0 && {[] call comspec_atak_native_fnc_p2pReachable}) then {
         missionNamespace setVariable ["COMSPEC_ATAK_P2pInbox", []];
@@ -835,7 +837,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_garminTick; }, 2] call COMSPEC_ATAK_PfhSpread;
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;
-addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; }];
+addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; ["flush"] call comspec_atak_native_fnc_profileSave; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
