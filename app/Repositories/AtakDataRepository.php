@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SchemaReadyCache;
 
 use PDO;
 
@@ -47,15 +48,19 @@ class AtakDataRepository
         if ($this->hasPosColumns !== null) {
             return $this->hasPosColumns;
         }
-        try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'pos_x' LIMIT 1"
-            );
-            $this->hasPosColumns = (bool) ($st && $st->fetchColumn());
-        } catch (\Throwable) {
-            $this->hasPosColumns = false;
-        }
+        // Sondé à chaque position : résultat positif gardé entre requêtes (SchemaReadyCache).
+        $this->hasPosColumns = SchemaReadyCache::remember('atak_units.pos_x', function (): bool {
+            try {
+                $st = $this->pdo()->query(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'pos_x' LIMIT 1"
+                );
+
+                return (bool) ($st && $st->fetchColumn());
+            } catch (\Throwable) {
+                return false;
+            }
+        });
 
         return $this->hasPosColumns;
     }
@@ -65,15 +70,19 @@ class AtakDataRepository
         if ($this->hasGroupNameColumn !== null) {
             return $this->hasGroupNameColumn;
         }
-        try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'group_name' LIMIT 1"
-            );
-            $this->hasGroupNameColumn = (bool) ($st && $st->fetchColumn());
-        } catch (\Throwable) {
-            $this->hasGroupNameColumn = false;
-        }
+        // Sondé à chaque position : résultat positif gardé entre requêtes (SchemaReadyCache).
+        $this->hasGroupNameColumn = SchemaReadyCache::remember('atak_units.group_name', function (): bool {
+            try {
+                $st = $this->pdo()->query(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'group_name' LIMIT 1"
+                );
+
+                return (bool) ($st && $st->fetchColumn());
+            } catch (\Throwable) {
+                return false;
+            }
+        });
 
         return $this->hasGroupNameColumn;
     }
@@ -200,10 +209,11 @@ class AtakDataRepository
         if ($steamUid === '' || $tenantId < 1 || $mapId < 1) {
             return null;
         }
+        [$uidSql, $uidParams] = self::steamUidPrefilter($steamUid);
         $stmt = $this->pdo()->prepare(
-            'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ?'
+            'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ?' . $uidSql
         );
-        $stmt->execute([$tenantId, $mapId]);
+        $stmt->execute(array_merge([$tenantId, $mapId], $uidParams));
         $best = null;
         $bestScore = -999999;
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $unit) {
@@ -1540,6 +1550,22 @@ class AtakDataRepository
     }
 
     /**
+     * Préfiltre SQL d’un Steam UID numérique : condition nécessaire (le texte JSON de extra contient
+     * l’identifiant), le contrôle exact reste fait en PHP. UID non numérique → aucun préfiltre.
+     *
+     * @return array{0: string, 1: list<string>}
+     */
+    private static function steamUidPrefilter(string $steamUid): array
+    {
+        $steamUid = trim($steamUid);
+        if ($steamUid === '' || !ctype_digit($steamUid)) {
+            return ['', []];
+        }
+
+        return [' AND extra LIKE ?', ['%' . $steamUid . '%']];
+    }
+
+    /**
      * Passe hors-ligne les autres lignes atak_units du même Steam (indicatif différent).
      */
     public function retireSteamSiblingUnits(int $tenantId, int $mapId, string $keepCallSign, string $steamUid): int
@@ -1549,10 +1575,14 @@ class AtakDataRepository
         if ($tenantId < 1 || $mapId < 1 || $steamUid === '' || $keepCallSign === '') {
             return 0;
         }
+        // Appelée à chaque position : MySQL écarte déjà les lignes hors ligne et celles dont le JSON ne
+        // contient pas le Steam (au lieu de rapatrier et décoder toutes les unités de la carte en PHP).
+        [$uidSql, $uidParams] = self::steamUidPrefilter($steamUid);
         $stmt = $this->pdo()->prepare(
-            'SELECT id, call_sign, extra, status FROM atak_units WHERE tenant_id = ? AND map_id = ?'
+            "SELECT id, call_sign, extra, status FROM atak_units WHERE tenant_id = ? AND map_id = ?
+               AND (status IS NULL OR status <> 'offline')" . $uidSql
         );
-        $stmt->execute([$tenantId, $mapId]);
+        $stmt->execute(array_merge([$tenantId, $mapId], $uidParams));
         $retired = 0;
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $cs = trim((string) ($row['call_sign'] ?? ''));
@@ -2166,8 +2196,14 @@ class AtakDataRepository
             : $this->getChatMessages($tenantId, $mapId, $scan);
         $out = $this->enrichMedicalRows($rows, $includeExpired);
         // Fallback : si DATE_SUB a tout exclu (décalage horloge), rescanner les N derniers messages.
+        // Seuls ceux que la fenêtre PHP accepte comptent : on les borne côté SQL sur l’horloge PHP.
         if ($out === [] && !$includeExpired) {
-            $fallbackRows = $this->getChatMessages($tenantId, $mapId, $scan);
+            $fallbackRows = $this->getChatMessagesFromPhpClock(
+                $tenantId,
+                $mapId,
+                $scan,
+                time() - ($windowSec + 3 * 3600)
+            );
             $out = $this->enrichMedicalRows($fallbackRows, false);
         }
         if (count($out) > $limit) {
@@ -2205,7 +2241,7 @@ class AtakDataRepository
             $out[] = $enriched;
         }
         if ($out === [] && !$includeExpired) {
-            $fallbackRows = $this->getChatMessages($tenantId, $mapId, $scan);
+            $fallbackRows = $this->getChatMessagesFromPhpClock($tenantId, $mapId, $scan, time() - $windowSec);
             foreach ($fallbackRows as $row) {
                 $enriched = \App\Support\TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
                 if ($enriched === null) {
@@ -2247,6 +2283,28 @@ class AtakDataRepository
         }
 
         return $out;
+    }
+
+    /**
+     * Repli des alertes : les N derniers messages, limités à ceux que la fenêtre active PHP peut encore
+     * accepter (created_at >= $sinceTs, horloge et fuseau PHP comme strtotime dans isWithinActiveWindow).
+     * Même résultat utile que getChatMessages() suivi du filtre PHP, mais en lecture d’index
+     * (tenant_id, map_id, created_at) au lieu d’un tri de tout l’historique du tchat.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function getChatMessagesFromPhpClock(int $tenantId, int $mapId, int $limit, int $sinceTs): array
+    {
+        $limit = max(1, min($limit, 500));
+        $stmt = $this->pdo()->prepare(
+            'SELECT * FROM atak_chat_messages
+             WHERE tenant_id = ? AND map_id = ? AND created_at >= ?
+             ORDER BY created_at DESC
+             LIMIT ' . (int) $limit
+        );
+        $stmt->execute([$tenantId, $mapId, date('Y-m-d H:i:s', $sinceTs)]);
+
+        return $this->withoutProtocolOrderChat(array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC)));
     }
 
     /**

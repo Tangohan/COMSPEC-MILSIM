@@ -29,6 +29,8 @@ final class PlayerDataRetentionCronJob implements CronJobInterface
         ['operator_game_snapshots', 'observed_at < DATE_SUB(NOW(), INTERVAL 180 DAY)', 'Instantanés du registre opérateur de plus de 6 mois'],
         ['atak_ingest_player_daily', 'day < DATE_SUB(CURDATE(), INTERVAL 400 DAY)', 'Débit par joueur de plus de 13 mois'],
         ['atak_ingest_error_daily', 'day < DATE_SUB(CURDATE(), INTERVAL 400 DAY)', 'Rejets d’ingestion de plus de 13 mois'],
+        ['atak_web_commands', "status NOT IN ('pending', 'accepted') AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)", 'Commandes du poste vers les téléphones terminées depuis 30 jours'],
+        ['atak_unit_motion_samples', 'sampled_at < DATE_SUB(NOW(), INTERVAL 1 DAY)', 'Échantillons de mouvement des unités de plus d’un jour'],
     ];
 
     private const BATCH = 5000;
