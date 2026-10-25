@@ -36,6 +36,7 @@ final class SystemContributorsController
             'contribReady' => $ready,
             'contribRows' => $ready ? $this->repo()->allRoles() : [],
             'contribLanguages' => $ready ? $this->service()->languages() : [],
+            'contribLeaders' => $ready ? $this->repo()->translationLeaders(12) : [],
             'contribDiscordRoles' => ContributorController::DISCORD_ROLES,
             'contribBase' => self::BASE,
             'isPlatformAdminShell' => true,

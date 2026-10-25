@@ -398,12 +398,18 @@
         return S.tr[h] ? 'done' : 'todo';
     }
 
+    function hasEnglish(e) {
+        var en = (e.en || '').trim();
+        return en !== '' && fold(en) !== fold(e.fr);
+    }
+
     function counts() {
-        var c = { total: 0, done: 0, todo: 0, error: 0, warn: 0, sugg: 0, conflict: 0, mine: 0, cats: {} };
+        var c = { total: 0, done: 0, todo: 0, blank: 0, error: 0, warn: 0, sugg: 0, conflict: 0, mine: 0, cats: {} };
         S.entries.forEach(function (e) {
             c.total++;
-            var k = c.cats[e.cat] || (c.cats[e.cat] = { total: 0, done: 0 });
+            var k = c.cats[e.cat] || (c.cats[e.cat] = { total: 0, done: 0, shipped: 0 });
             k.total++;
+            if (hasEnglish(e)) { k.shipped++; } else if (!S.tr[e.h]) { c.blank++; }
             if (S.tr[e.h]) { c.done++; k.done++; } else { c.todo++; }
             var st = status(e.h);
             if (st === 'error' || st === 'sugg' || st === 'conflict' || st === 'mine') { c[st]++; }
@@ -417,6 +423,7 @@
         var st = status(e.h);
         switch (S.filter) {
         case 'todo': if (S.tr[e.h]) { return false; } break;
+        case 'blank': if (S.tr[e.h] || hasEnglish(e)) { return false; } break;
         case 'done': if (!S.tr[e.h]) { return false; } break;
         case 'error': if (st !== 'error') { return false; } break;
         case 'warn': if (!S.issues[e.h] || !S.issues[e.h].warnings.length || st === 'error') { return false; } break;
@@ -670,7 +677,7 @@
         txt.appendChild(el('span', '', tx('ring_done', { done: fmt.format(c.done), total: fmt.format(c.total) })));
         rb.appendChild(txt);
 
-        var filters = [['todo', c.todo], ['all', c.total], ['done', c.done]];
+        var filters = [['blank', c.blank], ['todo', c.todo], ['all', c.total], ['done', c.done]];
         if (S.pack) { filters.push(['sugg', isReviewer() ? c.mine : c.sugg]); }
         filters.push(['error', c.error], ['warn', c.warn]);
         if (c.conflict) { filters.push(['conflict', c.conflict]); }
@@ -691,7 +698,15 @@
 
         var cats = $('tw-cats');
         cats.textContent = '';
-        var ids = Object.keys(c.cats).sort(function (a, b) { return c.cats[b].total - c.cats[a].total; });
+        var ids = Object.keys(c.cats).sort(function (a, b) {
+            var ka = c.cats[a], kb = c.cats[b];
+            var aBare = ka.shipped === 0, bBare = kb.shipped === 0;
+            if (aBare !== bBare) { return aBare ? -1 : 1; }
+            var ap = ka.total ? ka.done / ka.total : 0;
+            var bp = kb.total ? kb.done / kb.total : 0;
+            if (ap !== bp) { return ap - bp; }
+            return kb.total - ka.total;
+        });
         var all = el('li');
         var ab = btn('tw-cat', '', function () { S.cat = ''; rebuild(); renderSide(); });
         ab.setAttribute('aria-pressed', S.cat === '' ? 'true' : 'false');
@@ -708,6 +723,7 @@
             b.setAttribute('aria-pressed', S.cat === id ? 'true' : 'false');
             b.appendChild(el('span', 'tw-cat__name', label));
             b.appendChild(el('span', 'tw-cat__n', fmt.format(k.done) + '/' + fmt.format(k.total)));
+            if (k.shipped === 0) { b.appendChild(el('span', 'tw-cat__bare', tx('cat_no_en'))); }
             var bar = el('span', 'tw-cat__bar');
             var fill = el('i');
             fill.style.width = (k.total ? (k.done / k.total) * 100 : 0) + '%';

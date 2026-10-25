@@ -16,12 +16,16 @@ foreach (require base_path('lang/fr/site.php') as $k => $_) {
         $js[substr($k, 10)] = __('site.' . $k);
     }
 }
-foreach (['todo', 'all', 'done', 'suggested', 'mine'] as $f) {
+$start = in_array((string) ($sitetrStart ?? ''), ['all', 'todo', 'blank', 'done', 'suggested', 'mine'], true)
+    ? (string) $sitetrStart
+    : 'todo';
+foreach (['blank', 'todo', 'all', 'done', 'suggested', 'mine'] as $f) {
     $js['filter_' . $f] = __('site.sitetr_filter_' . $f);
 }
 $total = max(0, (int) $lang['total']);
 $done = (int) $lang['done'];
 $pending = (int) $lang['pending'];
+$blank = (int) ($lang['blank'] ?? 0);
 $pct = $total > 0 ? (int) floor($done * 100 / $total) : 0;
 $kbd = static fn (string ...$keys): string => implode('+', array_map(static fn (string $k): string => '<kbd>' . htmlspecialchars($k, ENT_QUOTES, 'UTF-8') . '</kbd>', $keys));
 ?>
@@ -32,6 +36,7 @@ $kbd = static fn (string ...$keys): string => implode('+', array_map(static fn (
     data-logged="<?= $user !== null ? '1' : '0' ?>"
     data-review="<?= $canReview ? '1' : '0' ?>"
     data-lang="<?= $h($lang['code']) ?>"
+    data-start="<?= $h($start) ?>"
     data-total="<?= $total ?>"
     data-i18n="<?= $h((string) json_encode($js, JSON_UNESCAPED_UNICODE)) ?>">
 
@@ -47,6 +52,7 @@ $kbd = static fn (string ...$keys): string => implode('+', array_map(static fn (
             <ul class="tw-progress__stats">
                 <li><i class="tw-dot is-done"></i><span id="tw-done-label"><?= $t('ws_stat_done', ['n' => $done]) ?></span></li>
                 <li><i class="tw-dot"></i><?= $t('ws_stat_todo', ['n' => max(0, $total - $done)]) ?></li>
+                <?php if ($blank > 0): ?><li><?= $t('blank_left', ['n' => $blank]) ?></li><?php endif; ?>
                 <?php if ($pending > 0): ?><li><i class="tw-dot is-sugg"></i><?= $t('ws_stat_pending', ['n' => $pending]) ?></li><?php endif; ?>
             </ul>
         </div>
@@ -67,8 +73,8 @@ $kbd = static fn (string ...$keys): string => implode('+', array_map(static fn (
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
                     <input type="search" name="q" placeholder="<?= $t('search') ?>" autocomplete="off"></label>
                 <div class="tw-tabs" role="tablist" id="tw-tabs">
-                    <?php foreach (['todo', 'suggested', 'done', 'mine', 'all'] as $f): ?>
-                    <button type="button" role="tab" class="tw-tab<?= $f === 'todo' ? ' is-active' : '' ?>" data-f="<?= $f ?>" aria-selected="<?= $f === 'todo' ? 'true' : 'false' ?>"<?= $f === 'mine' && $user === null ? ' hidden' : '' ?>><?= $t('filter_' . $f) ?> <b data-count="<?= $f ?>"></b></button>
+                    <?php foreach (['blank', 'todo', 'suggested', 'done', 'mine', 'all'] as $f): ?>
+                    <button type="button" role="tab" class="tw-tab<?= $f === $start ? ' is-active' : '' ?>" data-f="<?= $f ?>" aria-selected="<?= $f === $start ? 'true' : 'false' ?>"<?= $f === 'mine' && $user === null ? ' hidden' : '' ?>><?= $t('filter_' . $f) ?> <b data-count="<?= $f ?>"></b></button>
                     <?php endforeach; ?>
                 </div>
             </form>
@@ -88,6 +94,10 @@ $kbd = static fn (string ...$keys): string => implode('+', array_map(static fn (
         </section>
 
         <aside class="tw-help">
+            <details class="tw-card" open>
+                <summary><?= $t('tools_title') ?></summary>
+                <p><?= $t('ws_tools') ?> <a class="ctb-link" href="<?= $h(url('traduire-atak')) ?>"><?= $t('ws_tools_cta') ?></a></p>
+            </details>
             <details class="tw-card" open>
                 <summary><?= $t('ws_rules_title') ?></summary>
                 <ul>

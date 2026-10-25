@@ -240,7 +240,9 @@
 .tw-filter:hover, .tw-cat:hover { background: rgba(255, 255, 255, 0.04); color: #fff; }
 .tw-filter[aria-pressed="true"], .tw-cat[aria-pressed="true"] { border-left-color: var(--atakn-ui); background: rgba(92, 199, 107, 0.08); color: #fff; }
 .tw-filter b, .tw-cat__n { color: var(--tw-ink-3); font-size: 0.76rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tw-filter--blank b { color: var(--atakt-warn, #f5b84b); }
 .tw-filter--error b { color: var(--atakt-err); }
+.tw-cat__bare { grid-column: 1 / -1; justify-self: start; padding: 0.05rem 0.35rem; border-radius: 0.3rem; background: rgba(245, 184, 75, 0.16); color: var(--atakt-warn, #f5b84b); font-size: 0.68rem; font-weight: 700; }
 .tw-filter--warn b { color: var(--atakt-warn); }
 .tw-filter--sugg b, .tw-filter--conflict b { color: var(--atakt-blue); }
 .tw-cat__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
