@@ -84,7 +84,7 @@ $statusFr = static function (?string $status): string {
                                                     <a class="text-xs font-semibold uppercase tracking-wide text-slate-700 underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h(url('atak/sse/identites/' . $pid)) ?>">Fiche</a>
                                                 <?php endif; ?>
                                                 <?php if ($canManage && $pid > 0): ?>
-                                                    <form method="post" action="<?= $h(url('back-office/atak/localisation-telephone')) ?>" onsubmit="return confirm('Placer le téléphone de <?= $h($pname) ?> sous localisation ? Le contact apparaîtra sur la carte.');">
+                                                    <form method="post" action="<?= $h(url('back-office/atak/localisation-telephone')) ?>" onsubmit="return confirm(<?= $h((string) json_encode('Placer le téléphone de ' . $pname . ' sous localisation ? Le contact apparaîtra sur la carte.', JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE)) ?>);">
                                                         <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
                                                         <input type="hidden" name="map_id" value="<?= $mapId ?>">
                                                         <input type="hidden" name="source" value="person">
