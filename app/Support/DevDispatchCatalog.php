@@ -293,6 +293,17 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(997, '2026-10-25', 'Fiche personnel : disponibilité, temps de jeu et candidature', 'La fiche d’un membre affiche une disponibilité calculée sur les présences aux opérations des 45 derniers jours. Le temps de jeu a sa propre zone, avec le cumul, les dernières semaines et le détail par rôle. La dernière candidature reprend l’état réel du dossier, chaque information à côté de son intitulé. Rechargez le portail (Ctrl+F5).', [
+                'Disponibilité en pourcentage, avec le nombre de présences et d’opérations sur 45 jours',
+            ], [
+                'Le temps de jeu est regroupé : cumul, 7 et 30 jours, répartition, semaines et rôles',
+                'La dernière candidature aligne chaque intitulé avec sa valeur, et l’état suit le parcours du recrutement',
+            ], [
+                'Le pourcentage de disponibilité ne reprend plus le chiffre posé à l’intégration',
+                'Une candidature déjà rattachée à un compte n’apparaît plus comme « compte à rattacher »',
+            ], ['personnel'], [
+                'Ouvrez une fiche personnel, onglet Portrait. La disponibilité est dans la synthèse. Le temps de jeu est au-dessus. La dernière candidature, quand elle existe, est sous les décorations.',
+            ], 'Portail Athena'),
             $pr(996, '2026-10-19', 'Bureau SSE : fiche de transmission lisible, avec photo et iris', 'La fiche d’une transmission terrain redevient lisible : une seule valeur longue (les échantillons biométriques, par exemple) poussait toutes les autres hors de l’écran. Les champs s’affichent maintenant en liste nom / valeur, et les valeurs très longues se replient. Quand la transmission concerne une identité, sa photo, ses autres clichés et ses relevés biométriques (empreintes, iris, ADN, qualité de capture, terminal) s’affichent à côté, avec un lien vers sa fiche. Les images transmises s’affichent comme images et s’ouvrent dans la galerie 3D. Rechargez le portail (Ctrl+F5).', [
                 'Identité liée sur la fiche de transmission : photo, clichés, empreintes, iris, ADN, qualité, terminal et relevés',
                 'Images transmises affichées en vignettes, ouvertes dans la galerie',

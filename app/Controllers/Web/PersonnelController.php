@@ -71,8 +71,9 @@ class PersonnelController
         return \App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId, $this->tenantRepository);
     }
 
-    /** @return array{eligible: bool, checks: list<array{label: string, ok: bool}>} */
-    private function roleplayFollowupEligibility(array $cfg, int $completenessScore, ?int $readinessScore, array $personnelProfile): array
+    /** @param array{percent:?int,sample:int,checked:int,committed:int,basis:string} $availability
+     * @return array{eligible: bool, checks: list<array{label: string, ok: bool}>} */
+    private function roleplayFollowupEligibility(array $cfg, int $completenessScore, array $availability, array $personnelProfile): array
     {
         $rules = is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [];
         $checks = [];
@@ -80,10 +81,19 @@ class PersonnelController
             'label' => 'Complétude dossier ≥ ' . max(0, min(100, (int) ($rules['min_completeness'] ?? 50))) . '%',
             'ok' => $completenessScore >= max(0, min(100, (int) ($rules['min_completeness'] ?? 50))),
         ];
-        $checks[] = [
-            'label' => 'Disponibilité ≥ ' . max(0, min(100, (int) ($rules['min_readiness'] ?? 30))) . '%',
-            'ok' => ($readinessScore ?? 0) >= max(0, min(100, (int) ($rules['min_readiness'] ?? 30))),
-        ];
+        $minAvailability = max(0, min(100, (int) ($rules['min_readiness'] ?? 30)));
+        $measured = ($availability['basis'] ?? '') === 'operations';
+        if (!$measured) {
+            $checks[] = [
+                'label' => 'Disponibilité : aucune opération sur 45 jours',
+                'ok' => false,
+            ];
+        } else {
+            $checks[] = [
+                'label' => 'Disponibilité ≥ ' . $minAvailability . ' % (' . (int) ($availability['checked'] ?? 0) . ' présences sur ' . (int) ($availability['sample'] ?? 0) . ' opérations)',
+                'ok' => (int) ($availability['percent'] ?? 0) >= $minAvailability,
+            ];
+        }
         if (!empty($rules['require_unit'])) {
             $checks[] = ['label' => 'Affectation unité renseignée', 'ok' => !empty($personnelProfile['primary_unit_id'])];
         }
@@ -102,6 +112,39 @@ class PersonnelController
         }
 
         return ['eligible' => $eligible, 'checks' => $checks];
+    }
+
+    /**
+     * Disponibilité affichée sur la fiche : présences réelles sur 45 jours.
+     * Le chiffre stocké à l’intégration (souvent 1) n’est pas une mesure.
+     *
+     * @return array{percent:?int,sample:int,checked:int,committed:int,basis:string}
+     */
+    private function memberAvailability(int $tenantId, int $userId): array
+    {
+        $empty = ['percent' => null, 'sample' => 0, 'checked' => 0, 'committed' => 0, 'basis' => 'none'];
+        if ($tenantId < 1 || $userId < 1) {
+            return $empty;
+        }
+        try {
+            $pack = $this->unitRepository->readinessByUsersForTenant($tenantId, [$userId])[$userId] ?? null;
+        } catch (\Throwable) {
+            return $empty;
+        }
+        $components = is_array($pack['components'] ?? null) ? $pack['components'] : [];
+        $sample = (int) ($components['presence_sample'] ?? 0);
+        $checked = (int) ($components['presence_checked'] ?? 0);
+        if ($sample < 1) {
+            return $empty;
+        }
+
+        return [
+            'percent' => (int) round(100 * $checked / $sample),
+            'sample' => $sample,
+            'checked' => $checked,
+            'committed' => (int) ($components['presence_committed'] ?? 0),
+            'basis' => 'operations',
+        ];
     }
 
     /** Résout /personnel/{id} (numérique) ou /personnel/{slug} (profile_slug). */
@@ -641,7 +684,15 @@ class PersonnelController
 
             return strcmp((string) ($b['assigned_at'] ?? ''), (string) ($a['assigned_at'] ?? ''));
         });
-        $completeness = $this->completenessService->getScoreWithMissingLabels($uid, $target, $mergedProfileForScore, $extras, (int) $tenantId);
+        $memberAvailability = $this->memberAvailability((int) $tenantId, $uid);
+        $completeness = $this->completenessService->getScoreWithMissingLabels(
+            $uid,
+            $target,
+            $mergedProfileForScore,
+            $extras,
+            (int) $tenantId,
+            (int) ($memberAvailability['sample'] ?? 0)
+        );
         $gradeValidationIssues = [];
         try {
             $gradeValidationIssues = Container::get(\App\Services\GradeValidationService::class)->validateUserProfile($target);
@@ -652,7 +703,7 @@ class PersonnelController
         $roleplayEligibility = $this->roleplayFollowupEligibility(
             $roleplayFollowupConfig,
             (int) ($completeness['score'] ?? 0),
-            isset($personnelProfile['readiness_score']) ? (int) $personnelProfile['readiness_score'] : null,
+            $memberAvailability,
             is_array($personnelProfile) ? $personnelProfile : []
         );
         $rpTutorLabel = null;
@@ -1090,6 +1141,7 @@ class PersonnelController
             'civilIdentity' => $civilIdentity,
             'civilSourceLabel' => $civilSourceLabel,
             'latestEnlistment' => $latestEnlistment,
+            'memberAvailability' => $memberAvailability,
             'primaryUnitFallbackName' => $primaryUnitFallbackName,
             'rpDossierNeedsAttention' => $rpDossierNeedsAttention,
             'grade' => $grade,
@@ -2260,10 +2312,11 @@ class PersonnelController
             } else {
                 $tutorId = null;
             }
+            $eligAvailability = $this->memberAvailability((int) $tenantId, (int) $target['id']);
             $elig = $this->roleplayFollowupEligibility(
                 $roleplayFollowupConfig,
-                (int) ($this->completenessService->getScore((int) $target['id'], $target, $this->userProfileRepository->getByUserId((int) $target['id']) ?? [], $this->personnelExtrasRepository->getByUserId((int) $target['id']) ?? [], $tenantId)['score'] ?? 0),
-                $readinessScore,
+                (int) ($this->completenessService->getScore((int) $target['id'], $target, $this->userProfileRepository->getByUserId((int) $target['id']) ?? [], $this->personnelExtrasRepository->getByUserId((int) $target['id']) ?? [], $tenantId, (int) ($eligAvailability['sample'] ?? 0))['score'] ?? 0),
+                $eligAvailability,
                 ['primary_unit_id' => $primaryUnitId, 'callsign' => trim((string) $request->input('callsign')), 'rp_tutor_user_id' => $tutorId]
             );
             $snap = [
