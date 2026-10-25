@@ -90,7 +90,7 @@ final class SiteTranslationService
     /**
      * Une page de textes de l'espace de traduction.
      *
-     * @return array{total: int, page: int, pages: int, rows: list<array<string, mixed>>}
+     * @return array{total: int, page: int, pages: int, per_page: int, counts: array<string, int>, rows: list<array<string, mixed>>}
      */
     public function page(string $lang, string $query, string $filter, int $page, int $userId): array
     {
@@ -99,24 +99,37 @@ final class SiteTranslationService
         $q = self::fold(trim($query));
         $filter = in_array($filter, self::FILTERS, true) ? $filter : 'all';
         $match = [];
+        // Compteurs de chaque filtre (avec la recherche en cours) pour les onglets de l'espace.
+        $counts = array_fill_keys(self::FILTERS, 0);
+        // Mémoire : même texte français déjà traduit ailleurs dans le site.
+        $memory = [];
+        foreach (CommunityLanguages::catalog() as [$h, $src, , $kind]) {
+            if (isset($done[$h])) {
+                $memory[$kind === 'key' ? CommunityLanguages::frenchOf($src) : $src] ??= (string) $done[$h];
+            }
+        }
         foreach (CommunityLanguages::catalog() as [$h, $src, $en, $kind]) {
             $hasTr = isset($done[$h]);
             $hasSugg = isset($sugg[$h]);
-            $ok = match ($filter) {
-                'todo' => !$hasTr,
-                'done' => $hasTr,
-                'suggested' => $hasSugg,
-                'mine' => $hasSugg && array_filter($sugg[$h], static fn (array $s): bool => $s['user_id'] === $userId) !== [],
-                default => true,
-            };
-            if (!$ok) {
-                continue;
-            }
             $fr = $kind === 'key' ? CommunityLanguages::frenchOf($src) : $src;
             if ($q !== '' && !str_contains(self::fold($fr . "\n" . $en . "\n" . ($done[$h] ?? '')), $q) && $q !== $h) {
                 continue;
             }
-            $match[] = [$h, $fr, $en, $kind, $src];
+            $mine = $hasSugg && array_filter($sugg[$h], static fn (array $s): bool => $s['user_id'] === $userId) !== [];
+            $counts['all']++;
+            $counts[$hasTr ? 'done' : 'todo']++;
+            $counts['suggested'] += $hasSugg ? 1 : 0;
+            $counts['mine'] += $mine ? 1 : 0;
+            $ok = match ($filter) {
+                'todo' => !$hasTr,
+                'done' => $hasTr,
+                'suggested' => $hasSugg,
+                'mine' => $mine,
+                default => true,
+            };
+            if ($ok) {
+                $match[] = [$h, $fr, $en, $kind, $src];
+            }
         }
         $total = count($match);
         $pages = max(1, (int) ceil($total / self::PER_PAGE));
@@ -131,13 +144,14 @@ final class SiteTranslationService
                 'key' => $kind === 'key' ? substr($src, 1) : '',
                 'code' => CommunityLanguages::markup($fr) !== [],
                 'tr' => $done[$h] ?? '',
+                'memory' => !isset($done[$h]) && isset($memory[$fr]) ? $memory[$fr] : '',
                 'sugg' => array_map(static fn (array $s): array => [
                     'id' => $s['id'], 'text' => $s['text'], 'author' => $s['author'], 'mine' => $s['user_id'] === $userId,
                 ], $sugg[$h] ?? []),
             ];
         }
 
-        return ['total' => $total, 'page' => $page, 'pages' => $pages, 'rows' => $rows];
+        return ['total' => $total, 'page' => $page, 'pages' => $pages, 'per_page' => self::PER_PAGE, 'counts' => $counts, 'rows' => $rows];
     }
 
     /**
