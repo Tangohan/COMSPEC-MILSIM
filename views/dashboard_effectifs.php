@@ -61,8 +61,8 @@ require base_path('views/partials/alert_banners.php');
 <div class="min-h-screen bg-[#f8fafc]">
 <main class="min-h-screen bg-[#f8fafc] text-slate-900">
     <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
-    <?php require base_path('views/partials/simple_account_offer.php'); ?>
     <?php require base_path('views/partials/header_dashboard.php'); ?>
+    <?php require base_path('views/partials/simple_account_offer.php'); ?>
 
     <section class="relative overflow-hidden border-b border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-slate-100" id="dash-tour-hero">
         <div class="relative mx-auto max-w-6xl px-6 py-12 md:px-10 md:py-14">

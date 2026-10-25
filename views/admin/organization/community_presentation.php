@@ -323,14 +323,27 @@ $cpNum = 0;
                         'votre carte est visible dans l’annuaire et mène à votre page publique.',
                         'vous n’êtes pas dans l’annuaire. Votre page publique reste accessible à qui possède le lien.'
                     ); ?>
+                    <?php $cpFeaturedAllowed = \App\Services\Community\TenantCommunityProfileService::registryFeaturedAllowedForSession(); ?>
+                    <?php if ($cpFeaturedAllowed): ?>
                     <?php $renderSwitch(
                         'registry_featured',
                         !empty($c['registry_featured']),
                         'Mettre en avant dans le registre',
-                        'Ajoute un badge sur votre carte et la place parmi les premières.',
+                        'Ajoute un badge sur votre carte et la place parmi les premières. Inclus dans votre formule.',
                         'votre carte porte un badge « mise en avant » et remonte dans la liste.',
                         'votre carte est classée normalement.'
                     ); ?>
+                    <?php else: ?>
+                    <div class="bcs-switch bcs-switch--locked" aria-disabled="true">
+                        <input type="checkbox" class="bcs-switch__input" disabled>
+                        <span class="bcs-switch__track" aria-hidden="true"></span>
+                        <span class="bcs-switch__copy">
+                            <span class="bcs-switch__title">Mettre en avant dans le registre <span class="bcs-plan-badge">Formule Pro</span></span>
+                            <span class="bcs-switch__help">Un badge « mise en avant » sur votre carte et une place parmi les premières du registre. Cette option est incluse dans les formules qui la proposent.</span>
+                            <span class="bcs-switch__effect bcs-switch__effect--off"><span>Non incluse dans votre formule actuelle : votre carte est classée normalement.</span> <a class="bcs-link" href="<?= $h(url('platform/upgrade?from=registry_featured')) ?>">Voir les formules</a></span>
+                        </span>
+                    </div>
+                    <?php endif; ?>
                     <?php $renderSwitch(
                         'forum_members_only',
                         !empty($c['forum_members_only']),

@@ -149,7 +149,8 @@ class TenantRepository
             $row['registry_locale_label'] = (string) ($meta['locale_label'] ?? '');
             $row['registry_locked'] = !empty($community['community_locked']);
             $row['registry_simple_reg'] = ($community['registration_mode'] ?? 'milsim') === 'simple';
-            $row['registry_featured'] = !empty($meta['featured']);
+            // Mise en avant : seulement si la formule de la communauté l’inclut.
+            $row['registry_featured'] = !empty($meta['featured']) && \App\Support\RegistryFeatured::planAllows($row);
             $row['registry_recruitment_open'] = !empty($meta['recruitment_open']);
             // Pays de l'unité réelle rattachée (filtre « Pays » de l'annuaire).
             $affiliation = is_array($community['unit_affiliation'] ?? null) ? $community['unit_affiliation'] : [];

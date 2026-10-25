@@ -45,6 +45,8 @@ $showFounderTrial = ! $hasPaidSubscription && is_string($founderTrialEnds) && $f
 $trialEndFormatted = $showFounderTrial ? date('d/m/Y', strtotime((string) $founderTrialEnds)) : '';
 $planLabel = (string) ($planName ?? 'Standard ou Pro');
 $offerCards = is_array($paymentOffers ?? null) ? $paymentOffers : [];
+// Formules retirées de la vente par l’administration : non proposées.
+$offerCards = array_values(array_filter($offerCards, static fn ($o): bool => is_array($o) && ($o['on_sale'] ?? true) !== false));
 $openPayment = is_array($openPayment ?? null) ? $openPayment : null;
 $canBill = !empty($canManageBilling);
 $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());

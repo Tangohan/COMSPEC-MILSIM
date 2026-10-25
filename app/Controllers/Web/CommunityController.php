@@ -1054,13 +1054,16 @@ class CommunityController
             $cents = $interval === 'monthly' ? $offer['monthly'] : ($interval === 'yearly' ? $offer['yearly'] : null);
             $base['value'] = $slug . '|' . ($interval !== '' ? $interval : 'monthly');
             $base['paid'] = true;
-            $base['available'] = $billingConfigured && $cents !== null;
+            $onSale = $offer === null || !empty($offer['on_sale']);
+            $base['available'] = $billingConfigured && $cents !== null && $onSale;
             $base['meta'] = $cents !== null
                 ? \App\Support\ManualBilling::formatAmount((int) $cents) . ($interval === 'yearly' ? ' / an' : ' / mois') . ' · PayPal'
                 : 'Abonnement';
             $base['unavailable_hint'] = !$billingConfigured
                 ? 'Paiement pas encore prêt (mise à jour de la base à lancer).'
-                : 'Prix pas encore réglé pour cette formule (administration plateforme → Formules d’accès).';
+                : (!$onSale
+                    ? 'Formule pas proposée pour le moment.'
+                    : 'Prix pas encore réglé pour cette formule (administration plateforme → Formules d’accès).');
 
             return $base;
         };
