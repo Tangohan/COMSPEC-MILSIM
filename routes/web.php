@@ -331,6 +331,11 @@ return function (Router $router) {
     $router->get('/contribuer', [\App\Controllers\Web\ContributorController::class, 'index']);
     $router->post('/contribuer/demande', [\App\Controllers\Web\ContributorController::class, 'apply'], [AuthMiddleware::class]);
     $router->post('/contribuer/retirer', [\App\Controllers\Web\ContributorController::class, 'withdraw'], [AuthMiddleware::class]);
+    // Rôles liés de Discord : adresse de vérification déclarée à Discord, retour OAuth, Mon compte.
+    $router->get('/discord/roles-lies', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'start'], [AuthMiddleware::class]);
+    $router->get('/discord/roles-lies/retour', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'callback'], [AuthMiddleware::class]);
+    $router->post('/account/discord/actualiser', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'sync'], [AuthMiddleware::class]);
+    $router->post('/account/discord/delier', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'unlink'], [AuthMiddleware::class]);
     $router->get('/traduire-site', [\App\Controllers\Web\SiteTranslationController::class, 'hub']);
     $router->get('/traduire-site/dico/{code}.js', [\App\Controllers\Web\SiteTranslationController::class, 'dictionary']);
     $router->post('/traduire-site/propositions/{id}', [\App\Controllers\Web\SiteTranslationController::class, 'decide']);
@@ -1406,6 +1411,7 @@ return function (Router $router) {
     $router->post('/back-office/integrations/emails/essai', [OrganizationIntegrationsController::class, 'testMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/plateforme/discord', [OrganizationIntegrationsController::class, 'savePlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/plateforme/discord/essai', [OrganizationIntegrationsController::class, 'testPlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/discord-roles-lies', [OrganizationIntegrationsController::class, 'savePlatformLinkedRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/plateforme/emails', [OrganizationIntegrationsController::class, 'savePlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/plateforme/emails/essai', [OrganizationIntegrationsController::class, 'testPlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais', [OrganizationIntegrationsController::class, 'storeSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

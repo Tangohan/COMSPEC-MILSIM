@@ -11,6 +11,11 @@ Le site propose cinq rôles de contributeur : Translator, Tester, Content creato
   - ajoute à l'accueil du serveur (Onboarding, page « Salons et rôles ») une question où chacun choisit
     lui-même ses rôles : Translator, Tester, Content creator. Dev et Support restent donnés par le staff.
     Les questions déjà en place sont gardées telles quelles ;
+  - rôles liés (comptes du site) : déclare à Discord les conditions envoyées par le site (compte Athena, membre
+    d'une communauté, nombre de communautés, ancienneté), règle l'adresse de vérification de l'application et crée
+    le rôle « Athena verified ». Il reste à cocher, dans Paramètres du serveur › Rôles › Athena verified › Liens,
+    la condition « Compte Athena » de l'application ; puis à coller l'Application ID et le secret client dans
+    Intégrations › Plateforme sur le site ;
   - avec --give « pseudo=Rôle » (répétable) : donne un rôle à un membre, d'après le pseudo Discord indiqué
     dans la demande sur le site (Administration du site › Contributeurs).
 
@@ -55,6 +60,20 @@ SELF_ROLES = [
     ("Content creator", "🎬", "I make videos, screenshots or guides about Athena"),
 ]
 PROMPT_TITLE = "How do you want to help Athena? / Comment veux-tu aider Athena ?"
+
+# Rôles liés : mêmes clés que App\Services\Integrations\DiscordLinkedRoles::METADATA (le site envoie ces valeurs).
+VERIFIED_ROLE = ("Athena verified", 0x38BDF8)
+VERIFICATION_URL = SITE + "/discord/roles-lies"
+LINKED_ROLES_METADATA = [
+    {"key": "athena_account", "type": 7, "name": "Athena account", "description": "Has an Athena account linked",
+     "name_localizations": {"fr": "Compte Athena"}, "description_localizations": {"fr": "A relié son compte Athena"}},
+    {"key": "community_member", "type": 7, "name": "Community member", "description": "Member of an Athena community",
+     "name_localizations": {"fr": "Membre d’une communauté"}, "description_localizations": {"fr": "Membre d’une communauté Athena"}},
+    {"key": "communities", "type": 2, "name": "Communities", "description": "Number of Athena communities",
+     "name_localizations": {"fr": "Communautés"}, "description_localizations": {"fr": "Nombre de communautés Athena"}},
+    {"key": "member_since", "type": 5, "name": "Days on Athena", "description": "Days since the Athena account was created",
+     "name_localizations": {"fr": "Jours sur Athena"}, "description_localizations": {"fr": "Jours depuis la création du compte Athena"}},
+]
 
 PUBLIC_TOPIC = (
     "🇬🇧 Translate Athena into your language: website " + SITE + "/traduire-site · ATAK phone and SSE mod "
@@ -141,6 +160,27 @@ async def add_onboarding_prompt(client, guild, roles, apply, log):
                               reason="Rôles de contributeur Athena")
 
 
+async def setup_linked_roles(client, guild, apply, log):
+    import discord
+    from discord.http import Route
+
+    app_id = client.application_id
+    log(f"Rôles liés : application {app_id} (Application ID à coller dans Intégrations › Plateforme sur le site).")
+    log("Rôles liés : conditions déclarées à Discord : " + ", ".join(m["key"] for m in LINKED_ROLES_METADATA) + ".")
+    log(f"Rôles liés : adresse de vérification de l'application = {VERIFICATION_URL}")
+    role = next((r for r in guild.roles if r.name == VERIFIED_ROLE[0]), None)
+    log(("Rôle existant réutilisé : " if role else "Rôle créé : ") + VERIFIED_ROLE[0])
+    if not apply:
+        return
+    await client.http.request(Route("PUT", "/applications/{application_id}/role-connections/metadata",
+                                    application_id=app_id), json=LINKED_ROLES_METADATA)
+    await client.http.request(Route("PATCH", "/applications/@me"),
+                              json={"role_connections_verification_url": VERIFICATION_URL})
+    if role is None:
+        await guild.create_role(name=VERIFIED_ROLE[0], colour=discord.Colour(VERIFIED_ROLE[1]), mentionable=False,
+                                reason="Rôles liés Athena (comptes du site)")
+
+
 def run(guild_id: int, token: str, apply: bool, gives: list) -> int:
     import discord
 
@@ -198,6 +238,11 @@ def run(guild_id: int, token: str, apply: bool, gives: list) -> int:
             await add_onboarding_prompt(client, guild, roles, apply, log)
         except Exception as exc:  # noqa: BLE001
             log(f"Accueil du serveur non modifié ({exc}). Le reste continue.")
+
+        try:
+            await setup_linked_roles(client, guild, apply, log)
+        except Exception as exc:  # noqa: BLE001
+            log(f"Rôles liés non déclarés ({exc}). Le reste continue.")
 
         for give in gives:
             if "=" not in give:

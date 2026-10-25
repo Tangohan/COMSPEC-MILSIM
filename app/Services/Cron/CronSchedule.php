@@ -43,6 +43,8 @@ final class CronSchedule
         'photo_compress' => 60,
         // Fins d'essai fondateur et de formule offerte : e-mail une fois par fin.
         'plan_end_warning' => 360,
+        // Rôles liés Discord : chaque compte relié est renvoyé au plus une fois par 24 h, 50 par passage.
+        'discord_linked_roles_sync' => 60,
         // E-mails reportés par le quota quotidien ou mis en file (MAIL_QUEUE).
         'mail_queue' => 5,
         // Le récapitulatif vérifie sa propre cadence (Administration > Envois d'e-mails).
