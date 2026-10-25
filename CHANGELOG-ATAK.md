@@ -38,6 +38,21 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Véhicules : plus d'erreur BIS_fnc_crewCount à bord (ATAK natif : numéro donné au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Plus de message d'erreur en montant dans un véhicule
+- Le message d'erreur « BIS_fnc_crewCount » qui restait à l'écran tant qu'on était à bord d'un véhicule a disparu.
+- Le nombre de places du véhicule (équipage et passagers) envoyé à Athena est de nouveau juste.
+EN : No more error message when getting into a vehicle
+- The "BIS_fnc_crewCount" error that stayed on screen while you were inside a vehicle is gone.
+- The vehicle's seat count (crew and passengers) sent to Athena is correct again.
+
+### Détail technique
+- `connect/functions/fn_updateVehicleTracking.sqf` (embarqué dans le natif en `comspec_overwatch_connect.pbo`) appelait `[_vehicle, true] call BIS_fnc_crewCount` avec un OBJET, alors que la fonction attend un nom de classe (STRING) : erreur de type affichée à chaque tick du suivi véhicule (toutes les 2,5 s) tant que le joueur était à bord. Remplacé par `fullCrew [_vehicle, "", true]` : `crew_max` = toutes les places (même base que `crew_count` = `count crew`), `passenger_max` = places `cargo`.
+- main.pbo inchangé ; à reconstruire au regroupement : `comspec_overwatch_connect.pbo`.
+
 ## Traduction ouverte aux contributeurs : rôles, traduction du site, kit des mods complété (ATAK natif : numéro donné au regroupement, site)
 
 ### Résumé joueur
