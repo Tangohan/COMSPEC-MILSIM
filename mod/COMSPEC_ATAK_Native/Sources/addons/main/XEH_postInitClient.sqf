@@ -79,6 +79,12 @@ addMissionEventHandler ["MarkerCreated", {
     _meta set [_m, [(([dayTime, "HH:MM:SS"] call BIS_fnc_timeToString) splitString ":") joinString "", [_owner] call comspec_atak_native_fnc_unitCallsign]];
 }];
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
+// Marqueurs « réseau ATAK uniquement » (fn_markerNet) : reçus par le réseau du téléphone, effacés partout quand on les
+// efface ici (téléphone, durée écoulée ou carte d'Arma) ; à l'arrivée, ceux de mes canaux sont redemandés au serveur,
+// avec l'heure et l'auteur des marqueurs posés avant moi.
+["comspec_atak_native_tacMk", { ["recv", _this] call comspec_atak_native_fnc_markerNet; }] call CBA_fnc_addEventHandler;
+addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call comspec_atak_native_fnc_markerNet; }];
+[{ ["comspec_atak_native_tacMkSrv", ["sync", player]] call CBA_fnc_serverEvent; }, [], 8] call CBA_fnc_waitAndExecute;
 // Compteur de changements des marqueurs (créé, supprimé, modifié) : la carte du téléphone ne relit les marqueurs de la
 // mission que lorsqu'il bouge (fn_mapGameMarkers, fn_localDataRefresh), au lieu de tout relire chaque seconde.
 { addMissionEventHandler [_x, { COMSPEC_ATAK_MkRev = (missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]) + 1; }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
@@ -604,6 +610,7 @@ addMissionEventHandler ["EntityKilled", {
 // Hors connexion (fn_offline) : données figées, réceptions retenues, synchro et bilan au retour, sauvegarde du profil.
 [{
     ["tick"] call comspec_atak_native_fnc_offline;
+    ["flush"] call comspec_atak_native_fnc_markerNet;
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
     if ((count _inbox) > 0 && {[] call comspec_atak_native_fnc_p2pReachable}) then {
         missionNamespace setVariable ["COMSPEC_ATAK_P2pInbox", []];

@@ -31,7 +31,8 @@ private _channel = _want;
 {
     _channel = _x;
     // Même schéma de nom que les marqueurs posés à la main : visible sur le canal, supprimable par le joueur.
-    _m = createMarker [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel], _pos, _channel, player];
+    // Mode « réseau ATAK uniquement » (fn_markerNet) : marqueur local, livré par le réseau du téléphone.
+    _m = ["create", [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel], _pos, _channel]] call comspec_atak_native_fnc_markerNet;
     if (_m isNotEqualTo "") exitWith {};
 } forEach ([_want, 1, currentChannel] arrayIntersect [_want, 1, currentChannel]);
 if (_m isEqualTo "") exitWith {

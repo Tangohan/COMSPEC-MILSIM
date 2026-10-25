@@ -98,6 +98,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_map_place_style", "LIST",
     ["Style des noms de lieux", "Présentation des villes, villages et lieux-dits sur la carte du téléphone. Tactique (par défaut) : majuscules en gras avec contour. Étiquette : étiquette sombre avec un losange de couleur. Discret : petit texte clair. Classique : comme la carte d'Arma."],
     ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic"], ["Tactique", "Étiquette", "Discret", "Classique (Arma)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Diffusion des marqueurs posés depuis le téléphone (fn_markerNet) : canaux d'Arma ou réseau ATAK uniquement.
+["comspec_atak_native_marker_net", "LIST",
+    ["Diffusion des marqueurs ATAK", "Carte d'Arma (par défaut) : un marqueur posé sur le téléphone est un marqueur Arma du canal choisi, donc aussi sur la carte d'Arma de tous les joueurs du canal, avec ou sans ATAK, avec ou sans réseau. Réseau ATAK uniquement : il n'apparaît que sur les téléphones des joueurs du canal qui reçoivent le réseau (sans signal, il arrive au retour du réseau), jamais sur la carte d'Arma des autres. Global vaut alors Camp. Les canaux d'Arma peuvent rester fermés aux marqueurs."],
+    ["COMSPEC", "ATAK · Carte"], [["arma", "atak"], ["Carte d'Arma (canaux du jeu)", "Réseau ATAK uniquement"], 0], 1] call comspec_atak_native_fnc_addSetting;
 // Pose des marqueurs (fn_markerPlace) : menu ouvert par « Mettre un marqueur » (clic droit) et le double clic, canal.
 ["comspec_atak_native_marker_menu", "LIST",
     ["Fenêtre de création de marqueur", "Ce qui s'ouvre quand vous faites « Mettre un marqueur » (clic droit) ou un double-clic sur la carte. Palette d'icônes (par défaut) : vous choisissez une icône, sa couleur, sa taille et le canal, puis VALIDER la pose à l'endroit cliqué. Éditeur complet : formulaire avec titre, description, type, couleur, taille, orientation, opacité et canal."],

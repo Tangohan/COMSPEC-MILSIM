@@ -792,6 +792,46 @@
             <English>Frequency</English>
             <French>Fréquence</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_NAME">
+            <Original>Actif seulement si</Original>
+            <English>Active only when</English>
+            <French>Actif seulement si</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_TIP">
+            <Original>Le relais ne porte le réseau ATAK que tant que cette condition est remplie ; sinon il apparaît hors service avec la raison (mât replié, en mouvement...). Mât ou antenne déployé(e) : sources d'animation du véhicule nommées mast, antenna, telescop, aerial, pole ou rod (par exemple le GAZ-66 radio de RHS). Le champ Condition (code) remplace ce choix.</Original>
+            <English>The relay only carries the ATAK network while this condition holds; otherwise it shows as out of service with the reason (mast folded, moving...). Mast or antenna deployed: vehicle animation sources named mast, antenna, telescop, aerial, pole or rod (for example the RHS GAZ-66 radio truck). The Condition (code) field overrides this choice.</English>
+            <French>Le relais ne porte le réseau ATAK que tant que cette condition est remplie ; sinon il apparaît hors service avec la raison (mât replié, en mouvement...). Mât ou antenne déployé(e) : sources d'animation du véhicule nommées mast, antenna, telescop, aerial, pole ou rod (par exemple le GAZ-66 radio de RHS). Le champ Condition (code) remplace ce choix.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_ALWAYS">
+            <Original>Toujours</Original>
+            <English>Always</English>
+            <French>Toujours</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_MAST">
+            <Original>Mât ou antenne déployé(e)</Original>
+            <English>Mast or antenna deployed</English>
+            <French>Mât ou antenne déployé(e)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_STOPPED">
+            <Original>Véhicule à l'arrêt</Original>
+            <English>Vehicle stopped</English>
+            <French>Véhicule à l'arrêt</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_ENGINE">
+            <Original>Moteur coupé</Original>
+            <English>Engine off</English>
+            <French>Moteur coupé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCODE_NAME">
+            <Original>Condition (code)</Original>
+            <English>Condition (code)</English>
+            <French>Condition (code)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCODE_TIP">
+            <Original>Facultatif. Code SQF relu toutes les 2 s, _this = l'objet relais, qui doit rendre vrai pour que le relais marche. Exemple : _this animationSourcePhase &quot;mast_src&quot; &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Remplace le choix Actif seulement si.</Original>
+            <English>Optional. SQF code re-read every 2 s, _this = the relay object, which must return true for the relay to work. Example: _this animationSourcePhase &quot;mast_src&quot; &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Overrides the Active only when choice.</English>
+            <French>Facultatif. Code SQF relu toutes les 2 s, _this = l'objet relais, qui doit rendre vrai pour que le relais marche. Exemple : _this animationSourcePhase &quot;mast_src&quot; &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Remplace le choix Actif seulement si.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_NAME">
             <Original>Réseau exclusivement par relais</Original>
             <English>Network through relays only</English>

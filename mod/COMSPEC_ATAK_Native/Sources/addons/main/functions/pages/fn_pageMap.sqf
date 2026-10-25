@@ -530,12 +530,22 @@ private _sel = _s getOrDefault ["selectedMarker", ""];
 if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo ""} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
     private _note = ((missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap]) getOrDefault [_sel, ["", ""]]) select 0;
     private _kind = [_sel] call comspec_atak_native_fnc_markerDeletable;
+    // Horodatage : heure de pose (heure du jeu), âge et auteur (COMSPEC_ATAK_MarkerMeta : EH MarkerCreated, ou heure de la
+    // pose transmise avec le marqueur en mode réseau ATAK, fn_markerNet). Inconnu pour un marqueur posé avant mon arrivée.
+    private _stamp = "";
+    private _mt = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) getOrDefault [_sel, []];
+    if ((count _mt) > 0 && {(_mt select 0) isEqualType ""} && {(count (_mt select 0)) >= 6}) then {
+        private _h = _mt select 0;
+        private _age = floor (((dayTime * 3600 - ((parseNumber (_h select [0, 2])) * 3600 + (parseNumber (_h select [2, 2])) * 60 + parseNumber (_h select [4, 2]))) + 86400) mod 86400 / 60);
+        _stamp = format [[("Posé à %1:%2 · il y a %3 min") call comspec_atak_native_fnc_tr, ("Posé à %1:%2 · à l'instant") call comspec_atak_native_fnc_tr] select (_age < 1), _h select [0, 2], _h select [2, 2], _age];
+        if ((_mt param [1, ""]) isEqualType "" && {(_mt param [1, ""]) isNotEqualTo ""}) then { _stamp = format ["%1 · %2", _stamp, toUpper (_mt select 1)]; };
+    };
     private _pw = ((_mw * 0.46) max (_font * 12 / _ratio)) min (_mw - 2 * _pad);
     private _px = _bx + (_mw - _pw) / 2;
     private _lineH = _fs * 1.05;
     private _btnH = _fs * 1.5;
     private _in = _pad * 0.8;
-    private _ph = _in + _fs * 1.3 + _lineH + ([0, _lineH] select (_note isNotEqualTo "")) + _in * 0.6 + _btnH + _in;
+    private _ph = _in + _fs * 1.3 + _lineH + ([0, _lineH] select (_stamp isNotEqualTo "")) + ([0, _lineH] select (_note isNotEqualTo "")) + _in * 0.6 + _btnH + _in;
     private _py = _by + _mh - _panH - _pad * 2 - _ph;
     // Couleur du marqueur (CfgMarkerColors), claire par défaut (marqueur sans couleur ou noir sur fond sombre).
     private _rgba = (getArray (configFile >> "CfgMarkerColors" >> (markerColor _sel) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
@@ -570,10 +580,11 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
     private _kindTxt = ["MISSION", "JOUEUR", "ALERTE"] select _kind;
     private _kindCol = ["#8a9a93", "#5cc76b", "#f2a33a"] select _kind;
     private _txX = _tx0 + _tW + _in / _ratio * 0.6;
-    private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _tH + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
-    _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15' color='#e6efe9'>%1</t>  <t size='0.72' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='0.82' color='#8a9a93'>%4 · %5 · %6°</t>%7",
+    private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _tH + ([0, _lineH] select (_stamp isNotEqualTo "")) + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
+    _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15' color='#e6efe9'>%1</t>  <t size='0.72' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='0.82' color='#8a9a93'>%4 · %5 · %6°</t>%7%8",
         ([([markerText _sel] call comspec_atak_native_fnc_markerAutoName), "(sans titre)"] select ((markerText _sel) isEqualTo "")) regexReplace ["[<>&]", ""], _kindCol, _kindTxt,
         [_mp, 8] call comspec_atak_native_fnc_gridRef, [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000), round (player getDir _mp),
+        ["", format ["<br/><t size='0.78' color='#8a9a93'>%1</t>", _stamp regexReplace ["[<>&]", ""]]] select (_stamp isNotEqualTo ""),
         ["", format ["<br/><t size='0.85' color='#c9d3cd'>%1</t>", (_note regexReplace ["[<>&]", ""]) select [0, 90]]] select (_note isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
     _txt ctrlSetFontHeight _fs;
     // Actions : une rangée en bas de la fiche.
