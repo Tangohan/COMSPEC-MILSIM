@@ -54,6 +54,7 @@ use App\Support\AtakPlayNight;
 use App\Support\ReconCapturedAt;
 use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
+use App\Support\GameApiResponseCompactor;
 use App\Support\GroupMessageParser;
 use App\Support\MpMessageParser;
 use App\Support\OperatorTacticalIdentity;
@@ -77,6 +78,9 @@ class AtakApiController
 
     /** @var array<string, mixed>|null Cache php://input (une seule lecture par requête). */
     private ?array $jsonBodyCache = null;
+
+    /** @var array<string, list<array<string, mixed>>> Unités lues pour les alias d’ordres (ordersIndex). */
+    private array $orderAliasUnitsCache = [];
 
     private AtakArmaWriteGuard $armaGuard;
     private RoleplaySimulationService $roleplaySim;
@@ -9475,6 +9479,7 @@ class AtakApiController
      */
     public function ordersIndex(Request $request, array $params = []): Response
     {
+        $this->orderAliasUnitsCache = [];
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
@@ -9598,17 +9603,21 @@ class AtakApiController
         }
 
         $serverTime = date('Y-m-d H:i:s');
-        $cursor = $maxUpdated !== '' ? $maxUpdated : ($isDelta ? $since : $serverTime);
+        // COMSPEC Link (poll jeu toutes les 8 s) : il ne lit ni server_time ni cursor (SimplifyOrdersJson).
+        // Corps stable tant que les ordres ne changent pas → l’ETag de GameApiResponseCompactor peut renvoyer 304.
+        // L’heure serveur passe alors en en-tête X-Server-Time.
+        $stableForGame = $forGame && GameApiResponseCompactor::isGameClient($request->userAgent());
+        $cursor = $maxUpdated !== '' ? $maxUpdated : ($isDelta ? $since : ($stableForGame ? null : $serverTime));
         $orders = $this->applyIntelScramble($request, $r, $mapId, 'order', $orders);
 
-        return Response::json([
+        $payload = [
             'ok' => true,
             'mapId' => $mapId,
             'orders' => $orders,
             'delta' => $isDelta,
             'since' => $isDelta ? $since : null,
             'created_after' => $createdAfter !== '' ? $createdAfter : null,
-            'server_time' => $serverTime,
+            'server_time' => $stableForGame ? null : $serverTime,
             'cursor' => $cursor,
             'counts' => $counts,
             'canIssue' => $this->canIssueOrdersFromWeb(),
@@ -9622,7 +9631,13 @@ class AtakApiController
                 'custom_types' => $this->orderTypeRepository?->tablesReady() ?? false,
             ],
             'intel_view' => $this->resolveIntelView($request, $r, $mapId),
-        ]);
+        ];
+        $response = Response::json($payload);
+        if ($stableForGame) {
+            $response->header('X-Server-Time', $serverTime);
+        }
+
+        return $response;
     }
 
     /**
@@ -10556,7 +10571,7 @@ class AtakApiController
             }
         } elseif ($targetType === 'ally') {
             $found = null;
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 if (!$this->unitIsAllyAi($unit)) {
                     continue;
                 }
@@ -11019,6 +11034,22 @@ class AtakApiController
     }
 
     /**
+     * Unités de la carte pour le calcul des alias d’ordres : lues une seule fois par appel de ordersIndex
+     * (au lieu d’une lecture complète, avec passage hors ligne des obsolètes, pour chaque ordre).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function orderAliasUnits(int $tenantId, int $mapId): array
+    {
+        $key = $tenantId . ':' . $mapId;
+        if (!isset($this->orderAliasUnitsCache[$key])) {
+            $this->orderAliasUnitsCache[$key] = $this->atak->getUnits($tenantId, $mapId);
+        }
+
+        return $this->orderAliasUnitsCache[$key];
+    }
+
+    /**
      * Alias matchables pour un ordre (callsign, MID, steam, user:id, fire team…).
      *
      * @param array<string, mixed> $row
@@ -11067,7 +11098,7 @@ class AtakApiController
         } elseif ($targetType === 'solo') {
             $cs = $targetRef !== '' ? $targetRef : trim((string) ($row['target'] ?? ''));
             $add($cs);
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 if (strcasecmp((string) ($unit['call_sign'] ?? ''), $cs) !== 0) {
                     continue;
                 }
@@ -11169,7 +11200,7 @@ class AtakApiController
             $add('steam:' . $steam);
             $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam)
                 ?? $this->userRepository->findBySteamId($steam);
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 $extra = $this->parseUnitExtra($unit);
                 $unitSteam = SteamId::normalize((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? ''));
                 if ($unitSteam === null || $unitSteam !== $steam) {
