@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Zone compacte alertes & annonces — tuiles sombres dépliables (pattern rail).
+ * Alertes & annonces sous l’en-tête du tableau de bord : une ligne d’en-tête (compteur, tout voir, gérer, replier)
+ * et des cartes lisibles, l’urgent en pleine largeur.
  *
  * @var list<array{scope?:string,kind?:string,category?:string,title?:string,body?:string,cta_label?:?string,cta_url?:?string}> $announce_items
  * @var string|null $announce_manage_url
@@ -39,7 +40,7 @@ $kindLabelFr = static function (string $kind): string {
 
 $announcePriority = static function (array $item): int {
     return match (strtolower(trim((string) ($item['kind'] ?? 'info')))) {
-        'urgent' => 0,
+        'urgent', 'security' => 0,
         'forum_pin' => 1,
         'notice' => 2,
         'novelty' => 3,
@@ -64,131 +65,135 @@ $announceStartOpen = isset($announce_start_open)
     ? (bool) $announce_start_open
     : ($count > 0);
 ?>
+<?php
+$announceIcons = [
+    'urgent' => '<path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>',
+    'notice' => '<path d="M12 17v5M9 10.8V4h6v6.8l2.6 3.2H6.4L9 10.8Z"/>',
+    'novelty' => '<path d="m12 3 2.4 5.6L20 9.3l-4.3 3.9 1.3 5.8L12 16l-5 3 1.3-5.8L4 9.3l5.6-.7L12 3Z"/>',
+    'discount' => '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8ZM7.5 7.5h.01"/>',
+    'info' => '<path d="M12 16v-4m0-4h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z"/>',
+];
+$urgentCount = 0;
+foreach ($announceItems as $it) {
+    if (in_array(strtolower(trim((string) ($it['kind'] ?? ''))), ['urgent', 'security'], true)) {
+        $urgentCount++;
+    }
+}
+$hEsc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+?>
 <section
-    id="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>"
-    class="dash-announce scroll-mt-24<?= $announceStartOpen ? ' is-open' : '' ?><?= $count === 0 ? ' dash-announce--empty' : '' ?>"
-    aria-labelledby="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>"
+    id="<?= $hEsc($announceId) ?>"
+    class="dash-announce scroll-mt-24<?= $announceStartOpen ? ' is-open' : '' ?><?= $count === 0 ? ' dash-announce--empty' : '' ?><?= $urgentCount > 0 ? ' dash-announce--has-urgent' : '' ?>"
+    aria-labelledby="<?= $hEsc($titleId) ?>"
     data-announce-collapse
-    data-announce-persist="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>"
+    data-announce-persist="<?= $hEsc($announceId) ?>"
     data-announce-default="<?= $announceStartOpen ? 'open' : 'closed' ?>"
 >
     <div class="dash-announce__shell">
-    <div class="dash-announce__brief">
-        <div class="dash-announce__brief-main">
-            <?php if ($announceListUrl !== null): ?>
-                <a
-                    href="<?= htmlspecialchars($announceListUrl, ENT_QUOTES, 'UTF-8') ?>"
-                    class="dash-announce__brief-goto"
-                    data-announce-list-link
+        <header class="dash-announce__head">
+            <span class="dash-announce__bell" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+                <?php if ($count > 0): ?><span class="dash-announce__count"><?= $count ?></span><?php endif; ?>
+            </span>
+            <div class="dash-announce__heading">
+                <h2 id="<?= $hEsc($titleId) ?>" class="dash-announce__title"><?= $hEsc($announceHeading) ?></h2>
+                <p class="dash-announce__status"><?= $hEsc($statusLine) ?><?= $urgentCount > 0 ? ' · <strong>' . $urgentCount . ' urgent' . ($urgentCount > 1 ? 's' : '') . '</strong>' : '' ?></p>
+            </div>
+            <div class="dash-announce__actions">
+                <?php if ($announceListUrl !== null): ?>
+                <a href="<?= $hEsc($announceListUrl) ?>" class="dash-announce__link" data-announce-list-link>Tout voir</a>
+                <?php endif; ?>
+                <?php if ($announceManageUrl !== null): ?>
+                <a href="<?= $hEsc($announceManageUrl) ?>" class="dash-announce__link dash-announce__link--ghost">Gérer</a>
+                <?php endif; ?>
+                <button
+                    type="button"
+                    class="dash-announce__toggle"
+                    data-announce-toggle
+                    aria-expanded="<?= $announceStartOpen ? 'true' : 'false' ?>"
+                    aria-controls="<?= $hEsc($panelId) ?>"
+                    aria-label="<?= $announceStartOpen ? 'Replier les messages' : 'Déplier les messages' ?>"
                 >
-                    <span class="dash-announce__brief-label">
-                        <p class="dash-announce__brief-kicker"><?= htmlspecialchars($announceKicker, ENT_QUOTES, 'UTF-8') ?></p>
-                        <h2 id="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-title"><?= htmlspecialchars($announceHeading, ENT_QUOTES, 'UTF-8') ?></h2>
-                    </span>
-                </a>
+                    <svg class="dash-announce__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    <i class="dash-announce__meta" data-announce-meta aria-hidden="true" hidden><?= $announceStartOpen ? '−' : '+' ?></i>
+                </button>
+            </div>
+        </header>
+
+        <div
+            id="<?= $hEsc($panelId) ?>"
+            class="dash-announce__panel"
+            data-announce-panel
+            <?= $announceStartOpen ? '' : 'hidden' ?>
+        >
+            <?php if ($announceItems === []): ?>
+                <p class="dash-announce__empty"><?= $hEsc($announceEmpty) ?></p>
             <?php else: ?>
-                <div class="dash-announce__brief-goto dash-announce__brief-goto--static">
-                    <span class="dash-announce__brief-label">
-                        <p class="dash-announce__brief-kicker"><?= htmlspecialchars($announceKicker, ENT_QUOTES, 'UTF-8') ?></p>
-                        <h2 id="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-title"><?= htmlspecialchars($announceHeading, ENT_QUOTES, 'UTF-8') ?></h2>
-                    </span>
+                <div class="dash-announce__grid">
+                    <?php foreach ($announceItems as $item): ?>
+                        <?php
+                        $kind = strtolower(trim((string) ($item['kind'] ?? 'info')));
+                        $isPinned = in_array($kind, ['forum_pin', 'notice'], true);
+                        if ($kind === 'forum_pin') {
+                            $kind = 'notice';
+                        }
+                        $rawKind = $kind;
+                        /* Types étendus des annonces communauté : même couleur que la famille la plus proche, libellé d’origine. */
+                        $kind = match ($kind) {
+                            'security' => 'urgent',
+                            'maintenance' => 'notice',
+                            'event', 'training', 'recruitment' => 'novelty',
+                            default => $kind,
+                        };
+                        if (!in_array($kind, ['info', 'urgent', 'novelty', 'discount', 'notice'], true)) {
+                            $kind = 'info';
+                        }
+                        $category = trim((string) ($item['category'] ?? ''));
+                        if ($category === '') {
+                            $category = (string) (\App\Support\TenantAlertVisuals::kinds()[$rawKind]['label'] ?? $kindLabelFr($kind));
+                        }
+                        $title = trim((string) ($item['title'] ?? ''));
+                        $body = trim((string) ($item['body'] ?? ''));
+                        $ctaLabel = isset($item['cta_label']) && is_string($item['cta_label']) && $item['cta_label'] !== ''
+                            ? (string) $item['cta_label']
+                            : null;
+                        $ctaUrl = isset($item['cta_url']) && is_string($item['cta_url']) && $item['cta_url'] !== ''
+                            ? (string) $item['cta_url']
+                            : null;
+                        $isPlatform = strtolower(trim((string) ($item['scope'] ?? ''))) === 'platform';
+                        if ($title === '') {
+                            continue;
+                        }
+                        $tag = ($ctaUrl !== null) ? 'a' : 'article';
+                        $hrefAttr = $ctaUrl !== null ? ' href="' . $hEsc($ctaUrl) . '"' : '';
+                        ?>
+                        <<?= $tag ?> class="dash-announce-tile dash-announce-tile--<?= $hEsc($kind) ?><?= $isPlatform ? ' dash-announce-tile--verified' : '' ?>"<?= $hrefAttr ?>>
+                            <span class="dash-announce-tile__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><?= $announceIcons[$kind] ?></svg>
+                            </span>
+                            <span class="dash-announce-tile__panel">
+                                <span class="dash-announce-tile__meta">
+                                    <span class="dash-announce-tile__kind"><?= $isPinned ? 'Épinglé · ' : '' ?><?= $hEsc($category) ?></span>
+                                    <?php if ($isPlatform): ?>
+                                    <span class="dash-announce-tile__verified" title="Annonce officielle du site Athena">
+                                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                        Site Athena
+                                    </span>
+                                    <?php endif; ?>
+                                </span>
+                                <span class="dash-announce-tile__title"><?= $hEsc($title) ?></span>
+                                <?php if ($body !== ''): ?>
+                                    <span class="dash-announce-tile__body"><?= $hEsc($body) ?></span>
+                                <?php endif; ?>
+                                <?php if ($ctaUrl !== null): ?>
+                                    <span class="dash-announce-tile__cta"><?= $hEsc($ctaLabel ?? 'Ouvrir') ?> <span aria-hidden="true">→</span></span>
+                                <?php endif; ?>
+                            </span>
+                        </<?= $tag ?>>
+                    <?php endforeach; ?>
                 </div>
             <?php endif; ?>
-            <div class="dash-announce__brief-aside">
-                <p class="dash-announce__brief-status"><?= htmlspecialchars($statusLine, ENT_QUOTES, 'UTF-8') ?></p>
-                <?php if ($announceManageUrl !== null): ?>
-                    <a href="<?= htmlspecialchars($announceManageUrl, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-link">Gérer →</a>
-                <?php endif; ?>
-            </div>
-            <button
-                type="button"
-                class="dash-announce__toggle"
-                data-announce-toggle
-                aria-expanded="<?= $announceStartOpen ? 'true' : 'false' ?>"
-                aria-controls="<?= htmlspecialchars($panelId, ENT_QUOTES, 'UTF-8') ?>"
-                aria-label="<?= $announceStartOpen ? 'Replier les messages' : 'Déplier les messages' ?>"
-            >
-                <i class="dash-announce__meta" data-announce-meta aria-hidden="true"><?= $announceStartOpen ? '−' : '+' ?></i>
-            </button>
         </div>
-    </div>
-
-    <div
-        id="<?= htmlspecialchars($panelId, ENT_QUOTES, 'UTF-8') ?>"
-        class="dash-announce__panel"
-        data-announce-panel
-        <?= $announceStartOpen ? '' : 'hidden' ?>
-    >
-        <?php if ($announceItems === []): ?>
-            <p class="dash-announce__empty"><?= htmlspecialchars($announceEmpty, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php else: ?>
-            <div class="dash-announce__grid">
-                <?php foreach ($announceItems as $item): ?>
-                    <?php
-                    $kind = strtolower(trim((string) ($item['kind'] ?? 'info')));
-                    $isPinned = in_array($kind, ['forum_pin', 'notice'], true);
-                    if ($kind === 'forum_pin') {
-                        $kind = 'notice';
-                    }
-                    if (!in_array($kind, ['info', 'urgent', 'novelty', 'discount', 'notice'], true)) {
-                        $kind = 'info';
-                    }
-                    $category = trim((string) ($item['category'] ?? ''));
-                    if ($category === '') {
-                        $category = $kindLabelFr($kind);
-                    }
-                    $title = trim((string) ($item['title'] ?? ''));
-                    $body = trim((string) ($item['body'] ?? ''));
-                    $ctaLabel = isset($item['cta_label']) && is_string($item['cta_label']) && $item['cta_label'] !== ''
-                        ? (string) $item['cta_label']
-                        : null;
-                    $ctaUrl = isset($item['cta_url']) && is_string($item['cta_url']) && $item['cta_url'] !== ''
-                        ? (string) $item['cta_url']
-                        : null;
-                    $isPlatform = strtolower(trim((string) ($item['scope'] ?? ''))) === 'platform';
-                    if ($title === '') {
-                        continue;
-                    }
-                    $tag = ($ctaUrl !== null) ? 'a' : 'article';
-                    $hrefAttr = $ctaUrl !== null ? ' href="' . htmlspecialchars($ctaUrl, ENT_QUOTES, 'UTF-8') . '"' : '';
-                    ?>
-                    <<?= $tag ?> class="dash-announce-tile dash-announce-tile--<?= htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') ?><?= $isPlatform ? ' dash-announce-tile--verified' : '' ?>"<?= $hrefAttr ?>>
-                        <div class="dash-announce-tile__visual" aria-hidden="true">
-                            <span class="dash-announce-tile__glyph"></span>
-                            <?php if ($isPlatform): ?>
-                            <span class="dash-announce-tile__verified-mark" title="Annonce officielle du site">
-                                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                            </span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="dash-announce-tile__panel">
-                            <div class="dash-announce-tile__meta">
-                                <p class="dash-announce-tile__kind">
-                                    <?php if ($isPinned): ?><span aria-hidden="true">📌</span> <?php endif; ?>
-                                    <?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>
-                                </p>
-                                <?php if ($isPlatform): ?>
-                                <span class="dash-announce-tile__verified" title="Annonce officielle du site Athena">
-                                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <span>Site vérifié</span>
-                                </span>
-                                <?php endif; ?>
-                            </div>
-                            <p class="dash-announce-tile__title"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php if ($body !== ''): ?>
-                                <p class="dash-announce-tile__body"><?= htmlspecialchars($body, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php endif; ?>
-                            <?php if ($ctaLabel !== null): ?>
-                                <span class="dash-announce-tile__cta"><?= htmlspecialchars(mb_strtoupper($ctaLabel, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?> →</span>
-                            <?php elseif ($ctaUrl !== null): ?>
-                                <span class="dash-announce-tile__cta">OUVRIR →</span>
-                            <?php endif; ?>
-                        </div>
-                    </<?= $tag ?>>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </div>
     </div>
 </section>
 <script>

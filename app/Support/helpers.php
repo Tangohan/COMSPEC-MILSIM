@@ -1654,7 +1654,7 @@ if (!function_exists('is_platform_site_admin_shell_request')) {
             return false;
         }
         $rest = substr($p, strlen('admin/'));
-        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants', 'users', 'atak-beta', 'atak-mod-reports', 'formules-offertes', 'parc-atak'];
+        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants', 'users', 'atak-beta', 'atak-mod-reports', 'formules-offertes', 'paiements', 'parc-atak'];
         foreach ($prefixes as $prefix) {
             if ($rest === $prefix || str_starts_with($rest, $prefix . '/')) {
                 return true;

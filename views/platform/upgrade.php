@@ -5,9 +5,8 @@
 /** @var string|null $quotaContext Message complémentaire (quota, alternative gratuite). */
 /** @var string|null $upgradeCtaPath Route relative pour le CTA (défaut : dashboard). */
 /** @var string|null $upgradeFrom Paramètre d’URL ?from= (ex. quota_events). */
-/** @var list<array<string, mixed>>|null $subscriptionOfferCards */
-/** @var bool|null $billingConfigured */
-/** @var string|null $billingProvider */
+/** @var list<array{slug: string, name: string, monthly: ?int, yearly: ?int, available: bool}>|null $paymentOffers */
+/** @var array<string, mixed>|null $openPayment Demande de paiement encore ouverte pour la communauté */
 /** @var bool|null $canManageBilling */
 /** @var string|null $csrfToken */
 $upgradeFrom = $upgradeFrom ?? '';
@@ -45,11 +44,10 @@ $ctaIsDashboard = $cta === 'dashboard';
 $showFounderTrial = ! $hasPaidSubscription && is_string($founderTrialEnds) && $founderTrialEnds !== '' && strtotime($founderTrialEnds) > time();
 $trialEndFormatted = $showFounderTrial ? date('d/m/Y', strtotime((string) $founderTrialEnds)) : '';
 $planLabel = (string) ($planName ?? 'Standard ou Pro');
-$offerCards = is_array($subscriptionOfferCards ?? null) ? $subscriptionOfferCards : [];
-$billingOk = !empty($billingConfigured);
+$offerCards = is_array($paymentOffers ?? null) ? $paymentOffers : [];
+$openPayment = is_array($openPayment ?? null) ? $openPayment : null;
 $canBill = !empty($canManageBilling);
 $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
-$providerLabel = (($billingProvider ?? '') === 'paypal') ? 'PayPal' : ((($billingProvider ?? '') === 'stripe') ? 'Stripe' : 'paiement sécurisé');
 ?>
 <div class="min-h-[calc(80vh-2rem)] bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100">
     <div class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
@@ -61,7 +59,7 @@ $providerLabel = (($billingProvider ?? '') === 'paypal') ? 'PayPal' : ((($billin
                         <p class="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-400/95">Fonctionnalité premium</p>
                         <h1 class="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Passez à un plan supérieur</h1>
                         <p class="mt-4 text-sm leading-relaxed text-slate-300">
-                            Débloquez les modules avancés de votre communauté. Choisissez une formule et finalisez le paiement sécurisé<?= $billingOk ? ' via ' . htmlspecialchars($providerLabel, ENT_QUOTES, 'UTF-8') : '' ?>.
+                            Débloquez les modules avancés de votre communauté. Choisissez une formule et payez-la par PayPal.
                         </p>
                     </div>
                     <div class="flex shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-sm lg:mt-1">
@@ -139,34 +137,51 @@ $providerLabel = (($billingProvider ?? '') === 'paypal') ? 'PayPal' : ((($billin
                     </div>
                 </div>
 
-                <?php if ($canBill && $billingOk && $offerCards !== []): ?>
+                <?php if ($openPayment !== null): ?>
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-950">
+                    <p>
+                        Une demande de paiement est en cours (référence <strong><?= htmlspecialchars((string) $openPayment['reference'], ENT_QUOTES, 'UTF-8') ?></strong>,
+                        <?= ((string) $openPayment['status']) === 'declared' ? 'paiement déclaré, vérification en cours' : 'en attente de paiement' ?>).
+                        <a class="font-semibold underline" href="<?= htmlspecialchars(url('paiement/' . rawurlencode((string) $openPayment['reference'])), ENT_QUOTES, 'UTF-8') ?>">Ouvrir la page de paiement</a>
+                    </p>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($canBill && $offerCards !== []): ?>
                 <div>
                     <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Souscrire maintenant</p>
+                    <p class="mt-2 text-sm text-slate-600">Paiement par PayPal sur la page de paiement d’Athena. Une référence vous est donnée ; l’équipe Athena active la formule dès réception (un mois ou un an, sans renouvellement automatique).</p>
                     <div class="mt-4 grid gap-3 sm:grid-cols-3">
                         <?php foreach ($offerCards as $card): ?>
                             <?php
                             $cardSlug = (string) ($card['slug'] ?? '');
                             $cardName = (string) ($card['name'] ?? $cardSlug);
-                            $cardInterval = (string) ($card['interval'] ?? 'monthly');
-                            $available = !empty($card['available']);
+                            $prices = array_filter([
+                                'monthly' => $card['monthly'] ?? null,
+                                'yearly' => $card['yearly'] ?? null,
+                            ], static fn ($v): bool => $v !== null);
                             ?>
-                            <form method="post" action="<?= htmlspecialchars(url('platform/upgrade/checkout'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
-                                <input type="hidden" name="plan_slug" value="<?= htmlspecialchars($cardSlug, ENT_QUOTES, 'UTF-8') ?>">
-                                <input type="hidden" name="interval" value="<?= htmlspecialchars($cardInterval, ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                                 <p class="text-lg font-black text-slate-900"><?= htmlspecialchars($cardName, ENT_QUOTES, 'UTF-8') ?></p>
-                                <p class="mt-1 text-xs text-slate-500"><?= $cardInterval === 'yearly' ? 'Facturation annuelle' : 'Facturation mensuelle' ?></p>
-                                <button type="submit" <?= $available ? '' : 'disabled' ?> class="mt-4 inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">
-                                    <?= $available ? 'Payer avec ' . htmlspecialchars($providerLabel, ENT_QUOTES, 'UTF-8') : 'Bientôt disponible' ?>
-                                </button>
-                            </form>
+                                <?php if ($prices === []): ?>
+                                    <p class="mt-1 text-xs text-slate-500">Prix bientôt disponible</p>
+                                    <button type="button" disabled class="mt-4 inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">Bientôt disponible</button>
+                                <?php endif; ?>
+                                <?php foreach ($prices as $interval => $cents): ?>
+                                <form method="post" action="<?= htmlspecialchars(url('platform/upgrade/checkout'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3">
+                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="plan_slug" value="<?= htmlspecialchars($cardSlug, ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="interval" value="<?= htmlspecialchars($interval, ENT_QUOTES, 'UTF-8') ?>">
+                                    <p class="text-xs text-slate-500"><?= $interval === 'yearly' ? '1 an' : '1 mois' ?> · <strong class="text-slate-900"><?= htmlspecialchars(\App\Support\ManualBilling::formatAmount((int) $cents), ENT_QUOTES, 'UTF-8') ?></strong></p>
+                                    <button type="submit" class="mt-2 inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-emerald-600">
+                                        Payer avec PayPal
+                                    </button>
+                                </form>
+                                <?php endforeach; ?>
+                            </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <?php elseif ($canBill && !$billingOk): ?>
-                    <p class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
-                        Le paiement en ligne n’est pas encore configuré sur la plateforme. Contactez l’équipe Athena pour activer votre formule.
-                    </p>
                 <?php elseif (!$canBill): ?>
                     <p class="text-sm text-slate-600">
                         Demandez à un responsable de votre communauté de souscrire à <?= htmlspecialchars($planLabel, ENT_QUOTES, 'UTF-8') ?> depuis cette page.
@@ -175,7 +190,7 @@ $providerLabel = (($billingProvider ?? '') === 'paypal') ? 'PayPal' : ((($billin
 
                 <div class="flex flex-col gap-4 border-t border-slate-200 pt-8 sm:flex-row sm:items-center sm:justify-between">
                     <p class="text-xs text-slate-500">
-                        Les formules débloquent les modules selon le palier choisi. Le paiement est traité de façon sécurisée.
+                        Les formules débloquent les modules selon le palier choisi. Le paiement se fait chez PayPal ; Athena ne voit jamais vos coordonnées bancaires.
                     </p>
                     <a href="<?= url($cta) ?>" class="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-800 hover:bg-slate-50">
                         <?= $ctaIsDashboard ? 'Retour au tableau de bord' : 'Continuer' ?>

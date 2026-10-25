@@ -845,7 +845,7 @@ $guideUrl = url('communities/create/guide');
                             <?php endforeach; ?>
                         </div>
                         <div id="paid-hint" class="cc-soft cc-soft--rose mt-4 hidden">
-                            Après validation, vous serez redirigé vers une page de paiement sécurisée pour finaliser l’abonnement ou le soutien choisi. Les limitations du site restent ensuite alignées sur la formule active.
+                            Votre communauté est créée tout de suite. Vous arrivez ensuite sur la page de paiement d’Athena : payez par PayPal avec la référence affichée, l’équipe Athena active la formule dès réception (en attendant, l’essai fondateur Pro est actif).
                         </div>
                     </section>
 
