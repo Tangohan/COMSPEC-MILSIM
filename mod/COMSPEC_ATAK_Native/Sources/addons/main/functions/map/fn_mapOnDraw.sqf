@@ -214,29 +214,40 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
     private _pos = _entity getOrDefault ["position",[]];
     if ((count _pos) < 2) then { continue };
     if (_compSkip && {!(_entity getOrDefault ["self", false])}) then { continue };
-    ([_entity] call comspec_atak_native_fnc_symbology) params ["_icon","_color"];
+    private _self = _entity getOrDefault ["self",false];
+    // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s dans la piste (« drawCache ») : refaits à
+    // chaque image et pour chaque unité avant, alors qu'ils ne changent qu'avec la table des unités.
+    private _dc = _entity getOrDefault ["drawCache", []];
+    if ((count _dc) < 7 || {diag_tickTime > (_dc select 0)} || {(_dc select 6) isNotEqualTo _nato}) then {
+        ([_entity] call comspec_atak_native_fnc_symbology) params ["_sIcon","_sColor"];
+        private _ci = "";
+        private _custom = _entity getOrDefault ["icon",""];
+        if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
+            _ci = _mkIconCache getOrDefault ["~" + _custom, "§"];
+            if (_ci isEqualTo "§") then { _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon"); _mkIconCache set ["~" + _custom, _ci]; };
+        };
+        private _nt = ""; private _ne = "";
+        if (_nato && {!_self}) then { ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt0", "_ne0"]; _nt = _nt0; _ne = _ne0; };
+        _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _nato];
+        _entity set ["drawCache", _dc];
+    };
+    private _icon = _dc select 1;
+    private _color = +(_dc select 2);
     private _freshness = _entity getOrDefault ["freshness","LIVE"];
     if (_freshness isEqualTo "STALE") then { _color set [3,0.65]; };
     if (_freshness in ["LOST","OFFLINE"]) then { _color set [3,0.3]; };
-    private _self = _entity getOrDefault ["self",false];
     private _size = ([16, 21] select (_x isEqualTo _selected || _self)) * _k * _is;
     if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
     if (_self) then { _color = +_selfRgb; };
     if (_self && {(_ewOff select 0) != 0 || {(_ewOff select 1) != 0}}) then { _pos = [(_pos select 0) + (_ewOff select 0), (_pos select 1) + (_ewOff select 1), 0]; };
     if (_ewBft && {!_self}) then { _color set [3, ((_color select 3) min 0.65) * 0.5]; };
     private _dir = _entity getOrDefault ["heading",0];
-    private _custom = _entity getOrDefault ["icon",""];
-    if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
-        private _ci = _mkIconCache getOrDefault ["~" + _custom, "§"];
-        if (_ci isEqualTo "§") then { _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon"); _mkIconCache set ["~" + _custom, _ci]; };
-        if (_ci isNotEqualTo "") then { _icon = _ci; _dir = 0; };
-    };
+    if ((_dc select 3) isNotEqualTo "") then { _icon = _dc select 3; _dir = 0; };
     // Réglages > Carte « Icônes des unités » OTAN : cadre + modificateur MIL-STD-2525 / APP-6 (moi : inchangé),
     // non orienté, un peu plus grand que le point ; échelon (points d'équipe / groupe) au-dessus pour les chefs.
     private _ech = "";
     if (_nato && {!_self}) then {
-        ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt", "_ne"];
-        _icon = _nt; _ech = _ne; _dir = 0; _size = _size * 1.3;
+        _icon = _dc select 4; _ech = _dc select 5; _dir = 0; _size = _size * 1.3;
     };
     // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
     private _acc = _entity getOrDefault ["acc", 0];
