@@ -87,7 +87,19 @@ class ForumUploadController
             $tmp = $files['tmp_name'][$i] ?? '';
             $error = (int) ($files['error'][$i] ?? 0);
             $size = (int) ($files['size'][$i] ?? 0);
+            // Emplacement vide d’un champ multiple : rien à signaler.
+            if ($error === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            // Échec côté PHP (upload_max_filesize, envoi coupé…) : jamais ignoré en silence,
+            // sinon le message partait sans la pièce jointe avec success:true.
             if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)) {
+                $warnings[] = $name . ': ' . match ($error) {
+                    UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'fichier trop volumineux (' . $maxMo . ' Mo maximum)',
+                    UPLOAD_ERR_PARTIAL => 'envoi interrompu, réessayez',
+                    default => 'envoi impossible',
+                };
+
                 continue;
             }
             if ($size > $maxSize) {
@@ -191,9 +203,11 @@ class ForumUploadController
         if ($warnings !== []) {
             $payload['warnings'] = $warnings;
         }
-        if ($saved === [] && $warnings !== []) {
+        if ($saved === []) {
             $payload['success'] = false;
-            $payload['error'] = 'Aucun fichier accepté. ' . implode(' ', $warnings);
+            $payload['error'] = $warnings !== [] ? 'Aucun fichier accepté. ' . implode(' ', $warnings) : 'Aucun fichier';
+
+            return Response::json($payload, 400);
         }
 
         return Response::json($payload);
