@@ -786,7 +786,7 @@ $flashSuccess = \App\Core\Session::getFlash('success');
             $mailFormTestAction = url('back-office/integrations/plateforme/emails/essai');
             $mailFormId = 'mail-platform';
             $mailFormWho = 'la plateforme';
-            $mailFormFromPlaceholder = 'no-reply@athena.ttrd.fr';
+            $mailFormFromPlaceholder = \App\Support\PortalHost::feedbackEmail();
             $mailFormNamePlaceholder = 'Athena';
             $mailFormTestTo = $adminEmail;
             require base_path('views/admin/organization/partials/integrations_mail_form.php');
