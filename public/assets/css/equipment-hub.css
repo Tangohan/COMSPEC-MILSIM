@@ -921,3 +921,143 @@ a.eq-rolekits__card:hover {
   background: #1d2125;
   box-sizing: border-box;
 }
+
+/* Objet sans icône du jeu : pastille à l’initiale, même gabarit que l’icône. */
+.eq-hub__item-group li:has(> .eq-hub__item-ico--ph) {
+  align-items: center;
+}
+.eq-hub__item-group li > .eq-hub__item-ico--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9fe0b5;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Carte de tenue sans photo : les pièces principales en icônes légendées. */
+.eq-hub__kit {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 1px;
+  background: #2a3036;
+}
+.eq-hub__kit-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.35rem;
+  background: #1d2125;
+  min-width: 0;
+}
+.eq-hub__kit-cell img {
+  width: 70%;
+  max-height: 62%;
+  object-fit: contain;
+}
+.eq-hub__kit-ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: rgba(92, 199, 107, 0.16);
+  color: #9fe0b5;
+  font-weight: 700;
+}
+.eq-hub__kit-cell em {
+  max-width: 100%;
+  font-style: normal;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: #d5dbe0;
+  text-align: center;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.eq-hub__card-items {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--eq-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Collection choisie et export pour l’arsenal ACE. */
+.eq-hub__coll-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.9rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--eq-line);
+  border-radius: 0.6rem;
+  background: var(--eq-card);
+}
+.eq-hub__coll-head h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.eq-hub__coll-head-desc {
+  margin: 0.35rem 0 0;
+  color: var(--eq-muted);
+  max-width: 48rem;
+}
+.eq-hub__coll-head .eq-hub__hint {
+  margin: 0;
+}
+.eq-hub__ace-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  margin: 0 0 1.1rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed rgba(42, 157, 111, 0.45);
+  border-radius: 0.6rem;
+  background: var(--eq-accent-soft);
+}
+.eq-hub__ace-bar > p {
+  flex: 1 1 18rem;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.eq-hub__ace-bar > p strong {
+  margin-right: 0.35rem;
+}
+.eq-hub__ace-help {
+  flex: 1 0 100%;
+  margin: 0.2rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.eq-hub__qv-ace-status {
+  margin: -0.4rem 0 0.9rem;
+  font-size: 0.85rem;
+  color: var(--eq-accent);
+}
+@media (max-width: 640px) {
+  .eq-hub__ace-bar .eq-hub__btn {
+    flex: 1 1 auto;
+  }
+}
+.eq-hub__btn--outline {
+  background: transparent;
+  color: var(--eq-accent);
+  border: 1px solid rgba(42, 157, 111, 0.5);
+}
