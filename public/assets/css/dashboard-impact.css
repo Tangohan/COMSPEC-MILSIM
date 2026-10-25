@@ -4240,3 +4240,35 @@ html.dash-sign-lock { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .dash-sign-modal__panel, .dash-sign-modal__backdrop, .dash-sign__item { transition: none; }
 }
+
+/* Trois façons d'utiliser Athena : rejoindre, créer, ou compte simple (sans organisation). */
+@media (min-width: 1100px) {
+  .dash-start-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.dash-start-card--solo {
+  border-top-color: #737373;
+}
+
+.dash-start-card__actions form {
+  margin: 0;
+}
+
+.dash-start-solo-reset {
+  margin: 1.25rem 0 0;
+}
+
+.dash-start-solo-reset button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #047857;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}

@@ -126,6 +126,20 @@ class SubscriptionPlanRepository
         ]);
     }
 
+    /** Prix PayPal (centimes) ; sans effet tant que la migration des prix n’a pas tourné. */
+    public function updatePrices(int $id, ?int $monthlyCents, ?int $yearlyCents): bool
+    {
+        if ($id < 1) {
+            return false;
+        }
+        try {
+            return $this->pdo->prepare('UPDATE subscription_plans SET price_monthly_cents = ?, price_yearly_cents = ? WHERE id = ?')
+                ->execute([$monthlyCents, $yearlyCents, $id]);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function hasPayPalPlanColumns(): bool
     {
         try {

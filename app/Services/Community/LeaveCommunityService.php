@@ -15,8 +15,8 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 
 /**
- * Départ volontaire d’une communauté : désactive la ligne users du tenant courant
- * (sans supprimer le compte global / les autres communautés), notifie et bascule la session.
+ * Départ volontaire d’une communauté : termine l’appartenance au tenant courant
+ * (le compte global reste actif, les autres communautés aussi), notifie et bascule la session.
  */
 final class LeaveCommunityService
 {
@@ -82,7 +82,7 @@ final class LeaveCommunityService
             $tenantName = 'Communauté';
         }
 
-        $this->userRepository->update($userId, $tenantId, ['status' => 'inactive']);
+        $this->userRepository->leaveCommunity($userId, $tenantId);
 
         try {
             $this->adminAuditService->logUserLeftCommunity($tenantId, $userId, $userId);

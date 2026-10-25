@@ -74,7 +74,10 @@ final class PlanGift
         }
         $base = (string) ($tenant['plan_slug'] ?? 'free');
         $base = $base !== '' ? $base : 'free';
-        if (in_array((string) ($tenant['subscription_status'] ?? 'none'), ['active', 'trialing'], true)) {
+        if (ManualBilling::isExpired($tenant, $now)) {
+            // Période payée par PayPal terminée sans renouvellement : retour à la formule gratuite.
+            $base = 'free';
+        } elseif (in_array((string) ($tenant['subscription_status'] ?? 'none'), ['active', 'trialing'], true)) {
             return $base;
         }
         $settings = $tenant['settings'] ?? null;

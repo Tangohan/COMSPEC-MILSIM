@@ -8,7 +8,6 @@ use App\Core\Database;
 use App\Repositories\TenantGradeOverrideRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
-use App\Services\Moderation\SystemModeratorAccountService;
 use App\Services\Rbac\CommunityAccessCollapseService;
 use App\Support\SqlText;
 use PDO;
@@ -25,7 +24,6 @@ final class TenantBootstrapService
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
         private \App\Repositories\ReferralRepository $referralRepository,
-        private SystemModeratorAccountService $systemModeratorAccountService
     ) {}
 
     /**
@@ -213,11 +211,7 @@ final class TenantBootstrapService
 
             $pdo->commit();
 
-            try {
-                $this->systemModeratorAccountService->ensureForTenant($tenantId);
-            } catch (\Throwable $e) {
-                // Ne pas faire échouer la création communauté si le compte technique est en défaut
-            }
+            // Le compte technique « Modération automatique » est créé à la demande, plus à la création.
 
             try {
                 $realism = new \App\Repositories\AtakRealismRepository();
