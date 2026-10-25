@@ -532,6 +532,13 @@ private _lock = ["COMSPEC", "ATAK · Marquage de cible"];
 ["comspec_atak_native_garmin_watch", "CHECKBOX",
     ["Montre Garmin obligatoire", "Coché par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site si le joueur n'a pas la « Montre Garmin » (à la place de la montre, ou la « Montre Garmin (objet divers) » dans son équipement). Décochez pour que le téléphone mesure tout seul."],
     ["COMSPEC", "ATAK · Garmin"], true, 1] call comspec_atak_native_fnc_addSetting;
+// Montre Garmin au poignet (touche Montre du jeu, O) : taille et place à l'écran (réglages du joueur).
+["comspec_atak_native_watch_size", "LIST",
+    ["Taille de la montre Garmin (touche O)", "Taille de la montre allumée avec la touche Montre du jeu."],
+    ["COMSPEC", "ATAK · Garmin"], [[0, 1, 2], ["Petite", "Moyenne", "Grande"], 1], 0, { if ((uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap]) getOrDefault ["open", false]) then { ["tick"] call comspec_atak_native_fnc_watch; }; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_watch_side", "LIST",
+    ["Place de la montre Garmin (touche O)", "En bas de l'écran : à gauche, au centre ou à droite."],
+    ["COMSPEC", "ATAK · Garmin"], [[0, 1, 2], ["Gauche", "Centre", "Droite"], 0], 0] call comspec_atak_native_fnc_addSetting;
 
 // Extraction de données au câble DL-7 (app Extraction, modules Zeus / Eden « ATAK · Données »).
 private _data = ["COMSPEC", "ATAK · Extraction de données"];
