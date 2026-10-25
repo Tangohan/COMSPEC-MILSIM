@@ -27,7 +27,7 @@ class PersonnelCompletenessService
      *
      * @return array{score: int, sections_critiques: list<string>, details: array<string, bool>}
      */
-    public function getScore(int $userId, array $user, ?array $userProfile, ?array $personnelExtras, ?int $tenantId = null): array
+    public function getScore(int $userId, array $user, ?array $userProfile, ?array $personnelExtras, ?int $tenantId = null, int $presenceSample = 0): array
     {
         $profile = $this->profileRepository->getByUserId($userId) ?? [];
         $assignments = $this->assignmentRepository->listActiveForUserResolved($userId);
@@ -51,9 +51,8 @@ class PersonnelCompletenessService
 
         $hasQualOrCert = count($qualifications) > 0 || count($certs) > 0;
 
-        $readinessScore = (int) ($profile['readiness_score'] ?? 0);
-        $extrasReadiness = isset($personnelExtras['readiness_percent']) ? (int) $personnelExtras['readiness_percent'] : 0;
-        $hasReadiness = $readinessScore > 0 || $extrasReadiness > 0 || count($certs) > 0;
+        // Seules les présences récentes comptent. Le chiffre stocké (souvent 1 à l’intégration) n’est pas une mesure.
+        $hasReadiness = $presenceSample > 0;
 
         $fn = trim((string) ($userProfile['first_name'] ?? ''));
         $ln = trim((string) ($userProfile['last_name'] ?? ''));
@@ -105,9 +104,9 @@ class PersonnelCompletenessService
      *
      * @return array{score: int, sections_critiques: list<string>, details: array<string, bool>, missing_labels: list<string>}
      */
-    public function getScoreWithMissingLabels(int $userId, array $user, ?array $userProfile, ?array $personnelExtras, ?int $tenantId = null): array
+    public function getScoreWithMissingLabels(int $userId, array $user, ?array $userProfile, ?array $personnelExtras, ?int $tenantId = null, int $presenceSample = 0): array
     {
-        $base = $this->getScore($userId, $user, $userProfile, $personnelExtras, $tenantId);
+        $base = $this->getScore($userId, $user, $userProfile, $personnelExtras, $tenantId, $presenceSample);
         $labels = [
             'identity_name' => 'Prénom et nom du personnage',
             'identity_callsign' => 'Indicatif',
@@ -117,7 +116,7 @@ class PersonnelCompletenessService
             'identity_enlistment' => 'Date d’incorporation',
             'assignment_role' => 'Rôle d’affectation (ORBAT ou rôle principal dossier)',
             'qualifications' => 'Qualification OU formation certifiée',
-            'readiness' => 'Disponibilité (score dossier ou formation certifiée)',
+            'readiness' => 'Disponibilité sur les opérations récentes',
             'contact_email' => 'Email de contact',
         ];
         $missingLabels = [];
@@ -156,7 +155,7 @@ class PersonnelCompletenessService
             'identity_enlistment' => 'Date d’incorporation',
             'assignment_role' => 'Rôle d’affectation (ORBAT ou rôle principal dossier)',
             'qualifications' => 'Qualification OU formation certifiée',
-            'readiness' => 'Disponibilité (score dossier ou formation certifiée)',
+            'readiness' => 'Disponibilité sur les opérations récentes',
             'contact_email' => 'Email de contact',
         ];
 
@@ -169,7 +168,7 @@ class PersonnelCompletenessService
             'identity_enlistment' => 'Date d’incorporation',
             'assignment_role' => 'Rôle d’affectation (organigramme ou fiche)',
             'qualifications' => 'Qualification ou parcours de formation certifié',
-            'readiness' => 'Indicateur de disponibilité',
+            'readiness' => 'Disponibilité sur les opérations récentes',
             'contact_email' => 'Email de contact',
         ];
 
