@@ -2270,6 +2270,27 @@ class UserRepository
         return $ok;
     }
 
+    /**
+     * Départ d’une communauté : seule l’appartenance à cette communauté se termine.
+     * Le compte Athena (users.status) reste actif pour les autres communautés et la connexion ;
+     * avant, le statut « inactive » était écrit sur le compte global et bloquait toute reconnexion.
+     */
+    public function leaveCommunity(int $userId, int $tenantId): void
+    {
+        if ($userId < 1 || $tenantId < 1) {
+            return;
+        }
+        if (!$this->hasCommunityMembershipTable()) {
+            // Ancien modèle : une ligne users par communauté, le statut est déjà scopé.
+            $this->update($userId, $tenantId, ['status' => 'inactive']);
+
+            return;
+        }
+        $memberships = $this->communityMemberships();
+        $memberships->leave($userId, $tenantId);
+        $memberships->upsertProfile($userId, $tenantId, ['status' => 'inactive']);
+    }
+
     /** Mot de passe du compte plateforme (toutes communautés), sans filtre de communauté. */
     public function updatePasswordHash(int $userId, string $passwordHash): bool
     {

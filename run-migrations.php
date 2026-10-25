@@ -2887,19 +2887,9 @@ if (is_file($trainingOnboardingBulk)) {
     }
 }
 
-try {
-    $userRepoSeed = new \App\Repositories\UserRepository();
-    $tList = $pdo->query('SELECT id FROM tenants');
-    if ($tList) {
-        while ($tRow = $tList->fetch(PDO::FETCH_ASSOC)) {
-            $userRepoSeed->ensureSystemModeratorUser((int) $tRow['id']);
-        }
-    }
-    echo "Comptes techniques modération (par tenant) OK.\n";
-} catch (Throwable $e) {
-    echo '  [ATTENTION] Compte modération système : ' . $e->getMessage() . "\n";
-    $migrationRunner->warn('Compte modération système', $e);
-}
+// Le compte technique « Modération automatique » (system.moderation@internal.local) n’est plus
+// inséré ici dans chaque communauté : il est créé à la demande, la première fois qu’une action
+// automatique en a besoin (SystemModeratorAccountService, cron de quarantaine).
 
 $msgSql = $root . '/migrations/community_messaging.sql';
 if (is_file($msgSql)) {
@@ -4645,6 +4635,20 @@ $migrationRunner->step('personnel_dossier_dedupe', static function () use ($pers
 $personnelMedicalFields = require $root . '/bootstrap/personnel_medical_fields_migration.php';
 $migrationRunner->step('personnel_medical_fields', static function () use ($personnelMedicalFields, $pdo): void {
     $personnelMedicalFields($pdo);
+});
+
+// Comptes « Modération automatique » insérés autrefois dans chaque communauté sans servir.
+$systemModeratorCleanup = require $root . '/bootstrap/system_moderator_cleanup_migration.php';
+$migrationRunner->step('system_moderator_cleanup', static function () use ($systemModeratorCleanup, $pdo): void {
+    echo "Nettoyage des comptes techniques system.moderation@internal.local inutilisés...\n";
+    $systemModeratorCleanup($pdo);
+});
+
+// Comptes bloqués par l’ancien « Quitter la communauté » (statut global passé à inactive).
+$leftCommunityRepair = require $root . '/bootstrap/left_community_account_repair_migration.php';
+$migrationRunner->step('left_community_account_repair', static function () use ($leftCommunityRepair, $pdo): void {
+    echo "Réparation des comptes bloqués après un départ de communauté...\n";
+    $leftCommunityRepair($pdo);
 });
 
 require_once $root . '/bootstrap/migrations_full_post.php';

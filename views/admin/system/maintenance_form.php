@@ -165,8 +165,9 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
                     <input type="text" name="allowed_user_ids" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars((string) ($row['allowed_user_ids'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="12, 45, 87">
                 </label>
                 <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
-                    <input type="checkbox" name="allow_admin_bypass" value="1" class="rounded border-slate-300 text-emerald-600" <?= ((int) ($row['allow_admin_bypass'] ?? 0)) === 1 ? 'checked' : '' ?>> Laisser les administrateurs plateforme accéder au site pendant la maintenance
+                    <input type="checkbox" name="allow_admin_bypass" value="1" class="rounded border-slate-300 text-emerald-600" <?= ((int) ($row['allow_admin_bypass'] ?? ($r === null ? 1 : 0))) === 1 ? 'checked' : '' ?>> Laisser les administrateurs plateforme accéder au site pendant la maintenance
                 </label>
+                <p class="text-xs text-slate-500 md:col-span-2">Maintenance globale : toutes les autres sessions sont fermées (site et comptes connectés). Les gestionnaires de communauté sont déconnectés comme les membres ; seuls les administrateurs plateforme, les IP, rôles et comptes autorisés ci-dessus restent connectés. Le jeu (app Athena du téléphone, SSE) affiche « Athena en maintenance ».</p>
                 <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
                     <input type="checkbox" name="is_enabled" value="1" class="rounded border-slate-300 text-emerald-600" <?= ($r !== null && !empty($r['is_enabled'])) ? 'checked' : '' ?>> Règle active
                 </label>

@@ -22,7 +22,7 @@ $rows = is_array($subscriptionPlansRows ?? null) ? $subscriptionPlansRows : [];
         <header class="pa-head">
             <h1 class="text-2xl font-black text-slate-900">Formules d’accès (paliers)</h1>
             <p class="mt-2 max-w-3xl text-sm text-slate-600">
-                Libellés, ordre d’affichage, modules inclus, plafonds et identifiants de paiement PayPal (ou Stripe en secours).
+                Libellés, ordre d’affichage, modules inclus, plafonds et prix payés par PayPal (activation dans Admin &gt; Paiements).
                 L’identifiant interne de chaque formule n’est pas modifiable ici, pour ne pas désynchroniser les communautés déjà créées.
             </p>
         </header>

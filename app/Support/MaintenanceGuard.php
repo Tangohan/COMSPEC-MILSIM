@@ -48,6 +48,37 @@ final class MaintenanceGuard
     }
 
     /**
+     * Pages de connexion laissées ouvertes pendant une maintenance qui laisse passer les administrateurs plateforme :
+     * sans elles, un administrateur déconnecté ne pourrait plus rentrer. Un membre qui s'y connecte quand même est
+     * déconnecté dès la page suivante (enforce).
+     */
+    public static function isAdminLoginPath(string $requestPath): bool
+    {
+        $path = '/' . trim($requestPath, '/');
+
+        return in_array($path, [
+            '/login',
+            '/login/otp',
+            '/login/otp/resend',
+            '/login/otp/switch',
+            '/login/select-community',
+            '/logout',
+        ], true);
+    }
+
+    /** Appel d'API (mod, DLL COMSPEC Link, Overwatch web) : réponse JSON lisible par le client, pas la page HTML. */
+    public static function wantsJson(string $requestPath): bool
+    {
+        $path = '/' . ltrim($requestPath, '/');
+        if (str_starts_with($path, '/api/')) {
+            return true;
+        }
+        $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+
+        return str_contains($accept, 'application/json') && !str_contains($accept, 'text/html');
+    }
+
+    /**
      * @param array<string, mixed>|null $userContext role_slug, etc.
      */
     public function enforce(string $requestPath, ?string $module = null, ?array $userContext = null): void
@@ -67,6 +98,28 @@ final class MaintenanceGuard
             return;
         }
 
+        // Maintenance globale : tout le monde est déconnecté, sauf les administrateurs plateforme (passés plus haut).
+        // Les sessions qui ne se présentent qu'après la réouverture sont fermées par AuthMiddleware.
+        $global = (string) ($maintenance['scope'] ?? '') === 'global';
+        $loggedOut = false;
+        if ($global) {
+            MaintenanceSessionEpoch::mark($maintenance);
+            if ((int) ($userContext['user_id'] ?? 0) > 0) {
+                self::closeSession();
+                $loggedOut = true;
+            }
+        }
+        $adminLogin = (int) ($maintenance['allow_admin_bypass'] ?? 0) === 1;
+        if (!$loggedOut && $adminLogin && self::isAdminLoginPath($requestPath) && !self::wantsJson($requestPath)) {
+            // Formulaire de connexion affiché avec un bandeau « réservé aux administrateurs » (views/auth/login.php).
+            $GLOBALS['__maintenance_admin_login'] = [
+                'title' => (string) ($maintenance['title'] ?? ''),
+                'ends_at' => $maintenance['ends_at'] ?? null,
+            ];
+
+            return;
+        }
+
         $status = (int) ($maintenance['http_status'] ?? 503);
         if ($status < 100 || $status > 599) {
             $status = 503;
@@ -81,6 +134,7 @@ final class MaintenanceGuard
 
         http_response_code($status);
         header('Retry-After: ' . self::DEFAULT_RETRY_AFTER);
+        header('X-Athena-Maintenance: 1');
 
         $title = $maintenance['title'] ?: 'Maintenance en cours';
         $message = self::humanMessage($maintenance['message'] ?? null);
@@ -89,6 +143,17 @@ final class MaintenanceGuard
         $appName = function_exists('config') ? (string) config('app.name', 'Athena') : 'Athena';
         $uiVariant = MaintenanceThemes::normalize($maintenance['ui_variant'] ?? null);
         $uiAnimation = (int) ($maintenance['ui_animation'] ?? 1) === 1;
+
+        if (self::wantsJson($requestPath)) {
+            // Le mod et la DLL reconnaissent la maintenance (HTTP 503 + error « maintenance ») au lieu d'un
+            // « serveur injoignable » : l'app Athena du téléphone l'annonce telle quelle.
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+            echo json_encode(self::jsonPayload($maintenance, $message), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+
+        $adminLoginUrl = $adminLogin && function_exists('url') ? url('login') : '';
 
         $viewPath = base_path('views/errors/maintenance.php');
         if (is_file($viewPath)) {
@@ -101,6 +166,50 @@ final class MaintenanceGuard
             echo '</body></html>';
         }
         exit;
+    }
+
+    /**
+     * Corps JSON d'une API en maintenance.
+     *
+     * @param array<string, mixed> $maintenance
+     * @return array<string, mixed>
+     */
+    public static function jsonPayload(array $maintenance, string $message): array
+    {
+        $endsAt = trim((string) ($maintenance['ends_at'] ?? ''));
+        $endsTs = $endsAt !== '' ? strtotime($endsAt) : false;
+
+        return [
+            'ok' => false,
+            'error' => 'maintenance',
+            'code' => 'MAINTENANCE',
+            'maintenance' => true,
+            'title' => (string) ($maintenance['title'] ?: 'Maintenance en cours'),
+            'message' => $message,
+            'ends_at' => $endsTs !== false ? gmdate('c', $endsTs) : null,
+            'retry_after' => self::DEFAULT_RETRY_AFTER,
+        ];
+    }
+
+    /** Ferme la session du visiteur (données et cookie) : il devra se reconnecter après la maintenance. */
+    private static function closeSession(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION = [];
+            if (!headers_sent()) {
+                $params = session_get_cookie_params();
+                setcookie(session_name(), '', [
+                    'expires' => time() - 3600,
+                    'path' => $params['path'] ?: '/',
+                    'domain' => $params['domain'] ?? '',
+                    'secure' => (bool) ($params['secure'] ?? false),
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            }
+        }
+        \App\Core\Session::destroy();
+        $GLOBALS['__maintenance_logged_out'] = true;
     }
 
     private static function humanMessage(mixed $raw): string

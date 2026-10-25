@@ -175,6 +175,18 @@ final class ContainerIntegrations
                 Container::get(\App\Repositories\UserRepository::class),
                 Container::get(\App\Services\Audit\AuditService::class),
             ),
+            \App\Repositories\PlanPaymentRequestRepository::class => new \App\Repositories\PlanPaymentRequestRepository(),
+            \App\Services\Billing\PlanPaymentService::class => new \App\Services\Billing\PlanPaymentService(
+                Container::get(\App\Repositories\PlanPaymentRequestRepository::class),
+                Container::get(\App\Repositories\SubscriptionPlanRepository::class),
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+            ),
+            \App\Services\Account\AccountUsageService::class => new \App\Services\Account\AccountUsageService(
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\RoleRepository::class),
+            ),
             default => null,
         };
     }

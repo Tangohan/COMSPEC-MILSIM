@@ -874,6 +874,23 @@ class HomeController
             );
         }
 
+        // Compte simple : choix « utiliser Athena seul » (sans organisation) et proposition au fondateur resté seul.
+        $accountIsSolo = false;
+        $simpleAccountOffer = null;
+        if ($tenantId && $currentUser) {
+            try {
+                $usage = \App\Core\Container::get(\App\Services\Account\AccountUsageService::class);
+                $usageUid = (int) Session::get('user_id');
+                if ($dashboardIsDefaultTenant) {
+                    $accountIsSolo = $usage->isSolo($usageUid);
+                } else {
+                    $simpleAccountOffer = $usage->singleMemberOffer($usageUid, (int) $tenantId);
+                }
+            } catch (\Throwable) {
+                // Optionnel : colonne users.account_mode absente tant que la migration n’a pas tourné.
+            }
+        }
+
         return Response::view(\App\Services\Community\TenantTypeConfig::dashboardView($dashboardTenantType), [
             'title' => match ($dashboardTenantType) {
                 \App\Services\Community\TenantTypeConfig::TYPE_ATAK => 'Carte ATAK — Athena',
@@ -891,6 +908,8 @@ class HomeController
             'show_founder_trial_banner' => $showFounderTrialBanner,
             'dashboard_tenant_label' => $dashboardTenantLabel,
             'dashboard_is_default_tenant' => $dashboardIsDefaultTenant,
+            'account_is_solo' => $accountIsSolo,
+            'simple_account_offer' => $simpleAccountOffer,
             'dashboard_tenant_type' => $dashboardTenantType,
             'showcase_training_feature' => $showcaseTrainingFeature,
             'showcase_items' => $showcaseItems,
