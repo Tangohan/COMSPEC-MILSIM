@@ -15,6 +15,7 @@ $slug = (string) ($tenant['slug'] ?? '');
 $archivedAt = $archive !== null ? strtotime((string) ($archive['archived_at'] ?? '')) : false;
 $ruleLabels = [
     'CASCADE' => ['Supprimé', 'rose'],
+    'PURGE' => ['Purgé avant suppression (journal des interventions admin)', 'rose'],
     'SET NULL' => ['Détaché, conservé', 'amber'],
     'NONE' => ['Conservé', 'slate'],
     'RESTRICT' => ['Bloque la suppression', 'amber'],

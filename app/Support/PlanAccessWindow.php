@@ -50,8 +50,12 @@ final class PlanAccessWindow
         }
         $base = (string) ($tenant['plan_slug'] ?? 'free');
         $base = $base !== '' ? $base : 'free';
-        if (in_array((string) ($tenant['subscription_status'] ?? 'none'), ['active', 'trialing'], true)) {
-            return ['kind' => 'paid', 'plan_slug' => $base, 'ends_at' => null];
+        if (ManualBilling::isExpired($tenant, $now)) {
+            $base = 'free';
+        } elseif (in_array((string) ($tenant['subscription_status'] ?? 'none'), ['active', 'trialing'], true)) {
+            $manual = ManualBilling::current($tenant);
+
+            return ['kind' => 'paid', 'plan_slug' => $base, 'ends_at' => $manual['ends_at'] ?? null];
         }
         $trialEnd = self::trialEndsAt($tenant);
         if ($trialEnd !== null && ($ts = strtotime($trialEnd)) !== false && $ts > $now) {

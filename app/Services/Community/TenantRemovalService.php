@@ -29,6 +29,17 @@ final class TenantRemovalService
     /** Statuts d’abonnement qui bloquent la suppression (paiement encore en cours). */
     private const BILLING_LIVE_STATUSES = ['active', 'trialing', 'past_due'];
 
+    /**
+     * Journal des interventions de l’administration du site dans la communauté (clés étrangères
+     * RESTRICT) : purgé juste avant la suppression, enfants d’abord. Il figure dans la sauvegarde.
+     */
+    public const INTERVENTION_TABLES = [
+        'platform_admin_tenant_actions',
+        'platform_admin_tenant_errors',
+        'platform_admin_tenant_checkpoints',
+        'platform_admin_tenant_sessions',
+    ];
+
     /** @var array<string, array{deleted: bool, rule: string}>|null */
     private ?array $tenantTables = null;
 
@@ -77,13 +88,15 @@ final class TenantRemovalService
             if ($count < 1) {
                 continue;
             }
-            $tables[] = ['table' => $table, 'rows' => $count, 'deleted' => $meta['deleted'], 'rule' => $meta['rule']];
-            if ($meta['deleted']) {
+            $purged = in_array($table, self::INTERVENTION_TABLES, true);
+            $deleted = $meta['deleted'] || $purged;
+            $tables[] = ['table' => $table, 'rows' => $count, 'deleted' => $deleted, 'rule' => $purged ? 'PURGE' : $meta['rule']];
+            if ($deleted) {
                 $totalDeleted += $count;
             } else {
                 $totalKept += $count;
             }
-            if ($meta['rule'] === 'RESTRICT' || $meta['rule'] === 'NO ACTION') {
+            if (!$purged && ($meta['rule'] === 'RESTRICT' || $meta['rule'] === 'NO ACTION')) {
                 $restrictBlockers[] = $table;
             }
         }
@@ -252,6 +265,7 @@ final class TenantRemovalService
         $pdo = $this->pdo();
         try {
             $pdo->beginTransaction();
+            $this->purgeInterventionLog($tenantId);
             $st = $pdo->prepare('DELETE FROM tenants WHERE id = ?');
             $st->execute([$tenantId]);
             $pdo->commit();
@@ -271,6 +285,23 @@ final class TenantRemovalService
             'tenant' => $tenant,
             'accounts' => $preview['accounts'],
         ];
+    }
+
+    /** Supprime les sessions d’intervention admin (et leurs actions, erreurs, points de reprise). */
+    private function purgeInterventionLog(int $tenantId): void
+    {
+        foreach (self::INTERVENTION_TABLES as $table) {
+            if (!$this->tableExists($table)) {
+                continue;
+            }
+            if ($table !== 'platform_admin_tenant_sessions' && $this->tableExists('platform_admin_tenant_sessions')) {
+                $this->pdo()->prepare(
+                    'DELETE FROM `' . $table . '` WHERE tenant_id = ? OR session_id IN (SELECT id FROM platform_admin_tenant_sessions WHERE tenant_id = ?)'
+                )->execute([$tenantId, $tenantId]);
+                continue;
+            }
+            $this->pdo()->prepare('DELETE FROM `' . $table . '` WHERE tenant_id = ?')->execute([$tenantId]);
+        }
     }
 
     /**
