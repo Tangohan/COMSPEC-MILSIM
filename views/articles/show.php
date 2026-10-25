@@ -8,7 +8,8 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
 $title = (string) ($item['title'] ?? '');
 $excerpt = (string) ($item['excerpt'] ?? '');
-$body = (string) ($item['body_html'] ?? '');
+// Re-nettoyage à l'affichage : articles enregistrés avec l'ancien filtre regex (on*= sans guillemets).
+$body = \App\Support\MiniArticleHtml::sanitize((string) ($item['body_html'] ?? ''));
 $cover = is_string($item['cover_url'] ?? null) ? (string) $item['cover_url'] : '';
 $gallery = is_array($item['gallery'] ?? null) ? $item['gallery'] : [];
 $tags = is_array($item['tags'] ?? null) ? $item['tags'] : [];

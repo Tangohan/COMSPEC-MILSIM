@@ -15,7 +15,8 @@ $redirect = isset($hrCharterRedirect) ? (string) $hrCharterRedirect : '';
 $csrf = (string) ($hrCharterCsrf ?? '');
 $docId = (int) ($doc['id'] ?? 0);
 $titleDoc = trim((string) ($doc['title'] ?? ''));
-$body = (string) ($doc['body_html'] ?? '');
+// Nettoyage aussi à l'affichage (chartes enregistrées avant le filtrage serveur).
+$body = \App\Support\SafeHtml::clean((string) ($doc['body_html'] ?? ''), \App\Support\SafeHtml::PROFILE_ARTICLE);
 $publishedAt = trim((string) ($doc['published_at'] ?? ''));
 $publishedLabel = '';
 if ($publishedAt !== '') {
