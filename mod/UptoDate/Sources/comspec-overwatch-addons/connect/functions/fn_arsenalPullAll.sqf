@@ -72,6 +72,8 @@ private _merged = [] call comspec_overwatch_connect_fnc_arsenalLocalLoadouts;
 private _names = _merged apply { toLower (_x select 0) };
 private _pulled = 0;
 private _same = 0;
+// Tenues réellement importées (clé = nom en minuscules) : seules elles sont écrites dans le profil, à la fin.
+private _writes = createHashMap;
 private _skippedDense = 0;
 
 {
@@ -106,6 +108,7 @@ private _skippedDense = 0;
         _merged pushBack [_name, _loadout];
         _names pushBack toLower _name;
     };
+    _writes set [toLower _name, [_name, _loadout]];
     _pulled = _pulled + 1;
     // Registre de synchro : la tenue importée est celle du site (sha du site) ; sha local tel qu'il sera relu.
     // Copie « · Athena » posée à côté de votre tenue : elle ne porte pas ce nom sur le site, pas de registre.
@@ -113,8 +116,24 @@ private _skippedDense = 0;
     ["set", _name, _siteSha, [str _loadout] call comspec_overwatch_connect_fnc_arsenalHash] call comspec_overwatch_connect_fnc_arsenalLedger;
 } forEach _meta;
 
-profileNamespace setVariable ["ace_arsenal_saved_loadouts", _merged];
-saveProfileNamespace;
+// Le chargement des tenues prend du temps (réseau) : le joueur a pu enregistrer ou supprimer une tenue dans ACE
+// entre-temps. On relit donc la liste du profil maintenant et on n'y pose que les tenues importées, sans toucher
+// au reste (une liste figée au début de l'import effaçait ses nouvelles tenues, et les entrées qu'on ne sait pas
+// lire disparaissaient).
+if (count _writes > 0) then {
+    private _saved = profileNamespace getVariable ["ace_arsenal_saved_loadouts", []];
+    if !(_saved isEqualType []) then { _saved = []; };
+    private _done = createHashMap;
+    {
+        if ((_x isEqualType []) && {(_x param [0, ""]) isEqualType ""}) then {
+            private _k = toLower (_x select 0);
+            if (_k in _writes && {!(_k in _done)}) then { _saved set [_forEachIndex, _writes get _k]; _done set [_k, true]; };
+        };
+    } forEach _saved;
+    { if !(_x in _done) then { _saved pushBack _y; }; } forEach _writes;
+    profileNamespace setVariable ["ace_arsenal_saved_loadouts", _saved];
+    saveProfileNamespace;
+};
 missionNamespace setVariable ["COMSPEC_ArsenalLastPullAt", diag_tickTime, false];
 missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", false, false];
 
