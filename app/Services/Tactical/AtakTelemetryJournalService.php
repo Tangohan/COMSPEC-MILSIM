@@ -25,23 +25,34 @@ final class AtakTelemetryJournalService
      */
     public function append(int $tenantId, int $mapId, string $type, array $data = []): int
     {
-        if ($tenantId < 1 || $mapId < 1) {
-            return 0;
-        }
-        $type = strtolower(trim($type));
-        if ($type === '') {
-            $type = 'unknown';
+        $ids = $this->appendMany($tenantId, $mapId, [['type' => $type, 'data' => $data]]);
+
+        return $ids[0] ?? 0;
+    }
+
+    /**
+     * Ajoute plusieurs entrées sous un seul verrou : une lecture et une écriture du fichier par lot
+     * (au lieu d’un cycle complet par événement).
+     *
+     * @param list<array{type: string, data?: array<string, mixed>}> $entries
+     * @return list<int> identifiants attribués, dans l’ordre des entrées (0 si échec)
+     */
+    public function appendMany(int $tenantId, int $mapId, array $entries): array
+    {
+        $fail = array_fill(0, count($entries), 0);
+        if ($tenantId < 1 || $mapId < 1 || $entries === []) {
+            return $fail;
         }
 
         $path = $this->path($tenantId, $mapId);
         $this->ensureDir();
         $lock = fopen($path . '.lock', 'c+');
         if ($lock === false) {
-            return 0;
+            return $fail;
         }
         try {
             if (!flock($lock, LOCK_EX)) {
-                return 0;
+                return $fail;
             }
             $state = $this->readState($path);
             $nextId = ((int) ($state['next_id'] ?? 1));
@@ -49,22 +60,33 @@ final class AtakTelemetryJournalService
                 $nextId = 1;
             }
             $events = is_array($state['events'] ?? null) ? $state['events'] : [];
-            $events[] = [
-                'id' => $nextId,
-                'ts' => time(),
-                'type' => $type,
-                'data' => $data,
-            ];
+            $now = time();
+            $ids = [];
+            foreach ($entries as $entry) {
+                $type = strtolower(trim((string) ($entry['type'] ?? '')));
+                if ($type === '') {
+                    $type = 'unknown';
+                }
+                $data = is_array($entry['data'] ?? null) ? $entry['data'] : [];
+                $events[] = [
+                    'id' => $nextId,
+                    'ts' => $now,
+                    'type' => $type,
+                    'data' => $data,
+                ];
+                $ids[] = $nextId;
+                $nextId++;
+            }
             if (count($events) > self::MAX_EVENTS) {
                 $events = array_slice($events, -self::MAX_EVENTS);
             }
             $state = [
-                'next_id' => $nextId + 1,
+                'next_id' => $nextId,
                 'events' => array_values($events),
             ];
             $json = json_encode($state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             if (!is_string($json) || $json === '') {
-                return 0;
+                return $fail;
             }
             if (strlen($json) > self::MAX_FILE_BYTES) {
                 $trim = (int) max(500, (int) floor(count($events) * 0.6));
@@ -73,7 +95,7 @@ final class AtakTelemetryJournalService
             }
             file_put_contents($path, $json, LOCK_EX);
 
-            return $nextId;
+            return $ids;
         } finally {
             flock($lock, LOCK_UN);
             fclose($lock);

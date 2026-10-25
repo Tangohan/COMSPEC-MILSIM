@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SchemaPresenceCache;
 use PDO;
 
 /**
@@ -20,11 +21,8 @@ final class PlatformModuleReleaseRepository
     public function schemaReady(): bool
     {
         try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_modules' LIMIT 1"
-            );
-
-            return (bool) $st->fetchColumn();
+            // Présence mémorisée (storage/cache/schema-flags.json) : appelée à chaque requête du jeu via requireTenant.
+            return SchemaPresenceCache::tableExists($this->pdo(), 'platform_modules');
         } catch (\Throwable) {
             return false;
         }

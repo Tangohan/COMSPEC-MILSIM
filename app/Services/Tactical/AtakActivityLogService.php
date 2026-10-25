@@ -30,6 +30,18 @@ final class AtakActivityLogService
     /** Dernière détection mods compagnons (cTab / ATAK Enhanced) — fenêtre « présent ». */
     private const MOD_DETECT_PRESENT_TTL_SEC = 600;
 
+    /**
+     * Rafraîchissement minimal des horodatages mods (bien sous MOD_DETECT_PRESENT_TTL_SEC) :
+     * évite de réécrire le journal entier à chaque position.
+     */
+    private const MOD_DETECT_REFRESH_SEC = 60;
+
+    /**
+     * Session client inchangée (même indicatif) : last_seen_at réécrit au plus toutes les N s.
+     * Seul pruneSessions (TTL 24 h) lit ce champ ; le contrôle passe par un fichier témoin.
+     */
+    private const POSITION_SEEN_REFRESH_SEC = 20;
+
     /** Types internes → libellés métier (FR). */
     public const TYPE_CLIENT_INIT = 'client_init';
     public const TYPE_CALLSIGN_CHANGE = 'callsign_change';
@@ -497,6 +509,9 @@ final class AtakActivityLogService
         if ($tenantId < 1 || $mapId < 1) {
             return $resolved;
         }
+        if ($clientKey !== '') {
+            @unlink($this->witnessPath($tenantId, $mapId, 'pos_' . md5($clientKey)));
+        }
         $now = time();
         $safeMeta = $this->sanitizeMeta($meta);
         $this->mutate($tenantId, $mapId, function (array &$data) use ($clientKey, $call, $now, &$resolved, $safeMeta): void {
@@ -523,6 +538,26 @@ final class AtakActivityLogService
     }
 
     /**
+     * Vrai si recordFromPosition n’aurait rien à journaliser : même client, même indicatif,
+     * unité existante et session rafraîchie il y a moins de POSITION_SEEN_REFRESH_SEC.
+     * Permet à l’appelant de sauter aussi la construction des métadonnées.
+     */
+    public function positionSessionFresh(int $tenantId, int $mapId, string $clientKey, string $callSign, bool $isNewUnit): bool
+    {
+        if ($isNewUnit || $tenantId < 1 || $mapId < 1) {
+            return false;
+        }
+        $clientKey = $this->normalizeKey($clientKey);
+        $callSign = trim($callSign);
+        if ($clientKey === '' || $callSign === '') {
+            return false;
+        }
+        $stored = $this->witnessFresh($this->witnessPath($tenantId, $mapId, 'pos_' . md5($clientKey)), self::POSITION_SEEN_REFRESH_SEC);
+
+        return $stored !== null && $stored === $callSign;
+    }
+
+    /**
      * Position BFT reçue : journalise connexion / changement d’indicatif uniquement.
      * Les sync / heartbeats ne créent plus d’événements « Position envoyée » (spam journal).
      * La carte Effectifs reste à jour via upsertUnitPosition ; la géo des photos reste
@@ -536,6 +571,9 @@ final class AtakActivityLogService
         $callSign = trim($callSign);
         if ($callSign === '') {
             $callSign = 'Inconnu';
+        }
+        if ($this->positionSessionFresh($tenantId, $mapId, $clientKey, $callSign, $isNewUnit)) {
+            return;
         }
         $now = time();
         $safeMeta = $this->sanitizeMeta($meta);
@@ -568,6 +606,9 @@ final class AtakActivityLogService
             }
             $data['sessions'] = $sessions;
         });
+        if ($clientKey !== '') {
+            $this->witnessWrite($this->witnessPath($tenantId, $mapId, 'pos_' . md5($clientKey)), $callSign);
+        }
     }
 
     /**
@@ -1034,6 +1075,12 @@ final class AtakActivityLogService
         if (!$hasAthena && !$hasCtab && !$hasEnhanced) {
             return;
         }
+        // Mêmes drapeaux rafraîchis il y a moins de 60 s : rien à faire (seuil de présence 600 s).
+        $mask = ($hasAthena ? 1 : 0) | ($hasCtab ? 2 : 0) | ($hasEnhanced ? 4 : 0) | ($hasAthenaCtab ? 8 : 0) | ($hasAtakNative ? 16 : 0);
+        $witness = $this->witnessPath($tenantId, $mapId, 'mods' . $mask);
+        if ($this->witnessFresh($witness, self::MOD_DETECT_REFRESH_SEC) !== null) {
+            return;
+        }
         $now = time();
         $this->mutate($tenantId, $mapId, function (array &$data) use ($now, $hasAthena, $hasCtab, $hasEnhanced, $hasAthenaCtab, $hasAtakNative): void {
             $mods = is_array($data['mod_detection'] ?? null) ? $data['mod_detection'] : [];
@@ -1055,6 +1102,7 @@ final class AtakActivityLogService
             }
             $data['mod_detection'] = $mods;
         });
+        $this->witnessWrite($witness, '');
     }
 
     /**
@@ -1237,6 +1285,10 @@ final class AtakActivityLogService
             if ($payload === false) {
                 return;
             }
+            // Rien n’a changé (appel limité, session déjà à jour) : pas de réécriture du fichier.
+            if (is_string($raw) && $raw === $payload) {
+                return;
+            }
             ftruncate($fp, 0);
             rewind($fp);
             fwrite($fp, $payload);
@@ -1267,6 +1319,33 @@ final class AtakActivityLogService
     private function path(int $tenantId, int $mapId): string
     {
         return base_path('storage/cache/atak-activity/t' . $tenantId . '_m' . $mapId . '.json');
+    }
+
+    /** Petit fichier témoin (hors glob t{id}_m*.json du journal) : contrôle par mtime sans ouvrir le journal. */
+    private function witnessPath(int $tenantId, int $mapId, string $name): string
+    {
+        return base_path('storage/cache/atak-activity/witness/t' . $tenantId . '_m' . $mapId . '_' . $name . '.txt');
+    }
+
+    /** Contenu du témoin s’il a moins de $maxAgeSec secondes, sinon null. */
+    private function witnessFresh(string $path, int $maxAgeSec): ?string
+    {
+        $mtime = @filemtime($path);
+        if ($mtime === false || (time() - $mtime) >= $maxAgeSec) {
+            return null;
+        }
+        $raw = @file_get_contents($path);
+
+        return is_string($raw) ? $raw : null;
+    }
+
+    private function witnessWrite(string $path, string $content): void
+    {
+        $dir = dirname($path);
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return;
+        }
+        @file_put_contents($path, $content, LOCK_EX);
     }
 
     /**
@@ -1320,6 +1399,9 @@ final class AtakActivityLogService
             if (is_file($path) && @unlink($path)) {
                 $removed++;
             }
+        }
+        foreach (glob(base_path('storage/cache/atak-activity/witness/t' . $tenantId . '_m*.txt')) ?: [] as $witness) {
+            @unlink((string) $witness);
         }
 
         return $removed;
