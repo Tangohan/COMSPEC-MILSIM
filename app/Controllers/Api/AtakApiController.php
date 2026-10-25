@@ -12002,8 +12002,15 @@ class AtakApiController
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
-        $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION) ?: 'jpg';
-        $filename = date('YmdHis') . '-' . ($_FILES['photo']['name'] ?: 'photo.' . $ext);
+        // Extension tirée du contenu réel (jpg/png/webp) — jamais du nom client (dépôt de .php sous public/).
+        $ext = \App\Support\TerrainUploadedImage::detectExtension((string) ($_FILES['photo']['tmp_name'] ?? ''));
+        if ($ext === null) {
+            return Response::json([
+                'error' => 'invalid_image',
+                'message' => 'Le fichier reçu n’est pas une image (JPEG, PNG ou WebP attendu).',
+            ], 400);
+        }
+        $filename = date('YmdHis') . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
         $path = $dir . '/' . $filename;
         if (!move_uploaded_file($_FILES['photo']['tmp_name'], $path)) {
             return Response::json([
@@ -12687,8 +12694,14 @@ class AtakApiController
                 return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
             }
 
-            $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
-            $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
+            // Extension tirée du contenu réel (jpg/png/webp) — jamais du nom client (dépôt de .php sous public/).
+            $ext = \App\Support\TerrainUploadedImage::detectExtension((string) ($file['tmp_name'] ?? ''));
+            if ($ext === null) {
+                return Response::json([
+                    'error' => 'invalid_image',
+                    'message' => 'Le fichier reçu n’est pas une image (JPEG, PNG ou WebP attendu).',
+                ], 400);
+            }
             // Capture 4K en PNG (~10 Mo) : 1920 px, JPEG 80 avant rangement.
             if (\App\Support\StoredPhotoCompressor::compressUploadToJpeg((string) $file['tmp_name'])) {
                 $ext = 'jpg';
