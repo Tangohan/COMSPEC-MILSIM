@@ -971,9 +971,24 @@ class AtakApiController
     /**
      * Liaison Arma sans code court : le Steam ID du joueur doit déjà être enregistré sur le compte Athena.
      * POST JSON { steam_uid } — même forme de réponse que gameLinkRedeem.
+     *
+     * Sécurité : un SteamID64 est public (profil, liste des joueurs) ; il ne prouve pas la possession
+     * du compte. Renvoyer la clé de communauté sur cette seule base revient à la donner à n’importe qui.
+     * Désactivé par défaut : seul le code de liaison à usage unique (/game-link/redeem) délivre une clé.
+     * ATAK_GAME_LINK_BY_STEAM=1 ne doit être posé que sur un portail privé (réseau de confiance).
      */
     public function gameLinkBySteam(Request $request, array $params = []): Response
     {
+        $bySteamFlag = strtolower(trim((string) (($_ENV['ATAK_GAME_LINK_BY_STEAM'] ?? null) ?: (getenv('ATAK_GAME_LINK_BY_STEAM') ?: ''))));
+        if (!in_array($bySteamFlag, ['1', 'true', 'on', 'yes'], true)) {
+            // « unauthorized » : le mod affiche alors « … ou utilisez un code » (server_outdated).
+            return Response::json([
+                'error' => 'unauthorized',
+                'reason' => 'steam_link_disabled',
+                'message' => 'La liaison par Steam seul est désactivée. Générez un code de connexion en jeu sur Athena.',
+            ], 403);
+        }
+
         $body = $this->jsonBody($request);
         $steamUid = SteamId::normalize((string) ($body['steam_uid'] ?? $body['player_uid'] ?? $body['steam_id'] ?? $request->input('steam_uid') ?? ''));
         if ($steamUid === null) {
@@ -11987,8 +12002,15 @@ class AtakApiController
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
-        $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION) ?: 'jpg';
-        $filename = date('YmdHis') . '-' . ($_FILES['photo']['name'] ?: 'photo.' . $ext);
+        // Extension tirée du contenu réel (jpg/png/webp) — jamais du nom client (dépôt de .php sous public/).
+        $ext = \App\Support\TerrainUploadedImage::detectExtension((string) ($_FILES['photo']['tmp_name'] ?? ''));
+        if ($ext === null) {
+            return Response::json([
+                'error' => 'invalid_image',
+                'message' => 'Le fichier reçu n’est pas une image (JPEG, PNG ou WebP attendu).',
+            ], 400);
+        }
+        $filename = date('YmdHis') . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
         $path = $dir . '/' . $filename;
         if (!move_uploaded_file($_FILES['photo']['tmp_name'], $path)) {
             return Response::json([
@@ -12672,8 +12694,14 @@ class AtakApiController
                 return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
             }
 
-            $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
-            $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
+            // Extension tirée du contenu réel (jpg/png/webp) — jamais du nom client (dépôt de .php sous public/).
+            $ext = \App\Support\TerrainUploadedImage::detectExtension((string) ($file['tmp_name'] ?? ''));
+            if ($ext === null) {
+                return Response::json([
+                    'error' => 'invalid_image',
+                    'message' => 'Le fichier reçu n’est pas une image (JPEG, PNG ou WebP attendu).',
+                ], 400);
+            }
             // Capture 4K en PNG (~10 Mo) : 1920 px, JPEG 80 avant rangement.
             if (\App\Support\StoredPhotoCompressor::compressUploadToJpeg((string) $file['tmp_name'])) {
                 $ext = 'jpg';

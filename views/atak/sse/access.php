@@ -229,7 +229,7 @@ $fmtLogTime = static function (array $row): string {
                         <td><?= $h($c['grant_type_label']) ?></td>
                         <td class="record-id"><?= $h($c['code_hint']) ?></td>
                         <td class="record-id"><?= (int) $c['uses_count'] ?> / <?= (int) $c['max_uses'] ?></td>
-                        <td class="record-id"><?= $h($c['expires_at'] ?? '') ?></td>
+                        <td class="record-id"><?php $expTs = \App\Support\UtcDateTime::timestamp($c['expires_at'] ?? null); /* expires_at stocké en UTC : affiché en heure locale */ ?><?= $h($expTs !== null ? date('Y-m-d H:i', $expTs) : '') ?></td>
                         <td>
                             <span class="badge<?= empty($c['active']) ? ' badge--gray' : '' ?>">
                                 <?= $h($c['status_label']) ?>

@@ -49,14 +49,7 @@ final class PlanPaymentService
 
     public function paypalBaseUrl(): string
     {
-        try {
-            $raw = ($this->settings ?? new PlatformSettingsRepository())->get(ManualBilling::SETTING_PAYPAL_URL, '');
-        } catch (\Throwable) {
-            $raw = '';
-        }
-        $url = \App\Support\PayPalDonation::normalizeUrl($raw);
-
-        return $url ?? ManualBilling::DEFAULT_PAYPAL_URL;
+        return \App\Support\PayPalDonation::accountUrl($this->settings);
     }
 
     /** @param array<string, mixed> $request */

@@ -555,6 +555,43 @@ class TenantAtakConfigRepository
         return ['plain_key' => $plain, 'prefix' => $prefix];
     }
 
+    /**
+     * Génère une clé d’accès seulement si la communauté n’en a pas encore, puis renvoie
+     * la clé réellement stockée. Deux liaisons simultanées obtiennent ainsi la même clé
+     * (aucune n’écrase celle renvoyée à l’autre). Vide en cas d’échec.
+     */
+    public function ensureAccessKey(int $tenantId): string
+    {
+        if ($tenantId < 1 || !$this->hasAccessKeyColumn()) {
+            return '';
+        }
+        $existing = $this->getAccessKey($tenantId);
+        if ($existing !== '') {
+            return $existing;
+        }
+        $plain = 'ow_' . bin2hex(random_bytes(24));
+        $prefix = substr($plain, 0, 10);
+
+        // Ligne absente : INSERT IGNORE (une insertion concurrente l’emporte sans erreur).
+        $ins = $this->pdo()->prepare(
+            'INSERT IGNORE INTO tenant_atak_config
+                (tenant_id, access_key, access_key_prefix, access_key_generated_at, default_map_slug, created_at, updated_at)
+             VALUES (?, ?, ?, NOW(), \'altis\', NOW(), NOW())'
+        );
+        $ins->execute([$tenantId, $plain, $prefix]);
+        if ($ins->rowCount() === 0) {
+            // Ligne présente sans clé : n’écrire que si la clé est toujours vide.
+            $upd = $this->pdo()->prepare(
+                'UPDATE tenant_atak_config
+                 SET access_key = ?, access_key_prefix = ?, access_key_generated_at = NOW(), updated_at = NOW()
+                 WHERE tenant_id = ? AND (access_key IS NULL OR access_key = \'\')'
+            );
+            $upd->execute([$plain, $prefix, $tenantId]);
+        }
+
+        return $this->getAccessKey($tenantId);
+    }
+
     /** Clé d’accès Overwatch de la communauté (vide si non générée). */
     public function getAccessKey(int $tenantId): string
     {
@@ -579,17 +616,26 @@ class TenantAtakConfigRepository
             return null;
         }
         try {
-            $stmt = $this->pdo()->prepare(
-                'SELECT tenant_id, access_key FROM tenant_atak_config
-                 WHERE access_key IS NOT NULL AND access_key != \'\' LIMIT 500'
-            );
-            $stmt->execute();
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $stored = trim((string) ($row['access_key'] ?? ''));
-                if ($stored !== '' && hash_equals($stored, $presented)) {
-                    $tid = (int) ($row['tenant_id'] ?? 0);
+            // Recherche indexée par préfixe (posé par generateAccessKey / ensureAccessKey),
+            // puis lignes anciennes sans préfixe. Aucun plafond de lignes : chaque
+            // communauté reliée reçoit désormais sa clé.
+            $queries = [
+                ['SELECT tenant_id, access_key FROM tenant_atak_config
+                  WHERE access_key_prefix = ? AND access_key IS NOT NULL AND access_key != \'\'', [substr($presented, 0, 10)]],
+                ['SELECT tenant_id, access_key FROM tenant_atak_config
+                  WHERE (access_key_prefix IS NULL OR access_key_prefix = \'\')
+                    AND access_key IS NOT NULL AND access_key != \'\'', []],
+            ];
+            foreach ($queries as [$sql, $args]) {
+                $stmt = $this->pdo()->prepare($sql);
+                $stmt->execute($args);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $stored = trim((string) ($row['access_key'] ?? ''));
+                    if ($stored !== '' && hash_equals($stored, $presented)) {
+                        $tid = (int) ($row['tenant_id'] ?? 0);
 
-                    return $tid > 0 ? $tid : null;
+                        return $tid > 0 ? $tid : null;
+                    }
                 }
             }
         } catch (\Throwable) {

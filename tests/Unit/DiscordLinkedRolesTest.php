@@ -77,9 +77,9 @@ final class DiscordLinkedRolesTest extends TestCase
         $routes = (string) file_get_contents($root . '/routes/web.php');
         self::assertStringContainsString("'/discord/roles-lies', [\\App\\Controllers\\Web\\DiscordLinkedRolesController::class, 'start'], [AuthMiddleware::class]", $routes);
         self::assertStringContainsString("'/discord/roles-lies/retour'", $routes);
-        self::assertStringContainsString("'/back-office/integrations/plateforme/discord-roles-lies'", $routes);
+        self::assertStringContainsString("'/admin/system/integrations/roles-lies'", $routes);
         self::assertStringContainsString('id="section-discord"', (string) file_get_contents($root . '/views/account/preferences.php'));
-        self::assertStringContainsString('id="plateforme-roles-lies"', (string) file_get_contents($root . '/views/admin/organization/integrations.php'));
+        self::assertStringContainsString('id="roles-lies"', (string) file_get_contents($root . '/views/admin/system/platform_integrations.php'));
         self::assertStringContainsString('user_discord_links', (string) file_get_contents($root . '/migrations/20261025000002_user_discord_links.sql'));
         self::assertStringContainsString("'discord_linked_roles_sync' => 60", (string) file_get_contents($root . '/app/Services/Cron/CronSchedule.php'));
     }

@@ -137,7 +137,6 @@ use App\Controllers\Admin\System\SystemAuditController;
 use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
 use App\Controllers\Admin\System\SystemMaintenanceController;
 use App\Controllers\Admin\System\SystemStorageController;
-use App\Controllers\Admin\System\SystemDonationsController;
 use App\Controllers\Admin\System\SystemIndicatorBlocklistController;
 use App\Controllers\Admin\System\SystemMemberSanctionsController;
 use App\Controllers\Admin\System\SystemUsersController;
@@ -1046,6 +1045,13 @@ return function (Router $router) {
     $router->get('/admin/system/annuaire', [\App\Controllers\Admin\System\SystemRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/epingler', [\App\Controllers\Admin\System\SystemRegistryController::class, 'pin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Intégrations de la plateforme (salons Discord de l'équipe, rôles liés de Discord, envoi commun des e-mails).
+    $router->get('/admin/system/integrations', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/discord', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/discord/essai', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/roles-lies', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveLinkedRoles'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/emails', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveMail'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/emails/essai', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'testMail'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/contributeurs', [\App\Controllers\Admin\System\SystemContributorsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/contributeurs/role', [\App\Controllers\Admin\System\SystemContributorsController::class, 'role'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/contributeurs/langue', [\App\Controllers\Admin\System\SystemContributorsController::class, 'language'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1189,8 +1195,8 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/toggle', [SystemMaintenanceController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
-    $router->get('/admin/system/dons', [SystemDonationsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->post('/admin/system/dons', [SystemDonationsController::class, 'save'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Ancienne page « Dons » : le compte PayPal se règle désormais dans Admin > Paiements (un seul réglage).
+    $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '#reglages'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/storage', [SystemStorageController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Explorateur de données (administration du site) : lire, chercher, modifier, supprimer, vider.
@@ -1427,11 +1433,6 @@ return function (Router $router) {
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails', [OrganizationIntegrationsController::class, 'saveMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails/essai', [OrganizationIntegrationsController::class, 'testMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/integrations/plateforme/discord', [OrganizationIntegrationsController::class, 'savePlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/integrations/plateforme/discord/essai', [OrganizationIntegrationsController::class, 'testPlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/integrations/plateforme/discord-roles-lies', [OrganizationIntegrationsController::class, 'savePlatformLinkedRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/integrations/plateforme/emails', [OrganizationIntegrationsController::class, 'savePlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/integrations/plateforme/emails/essai', [OrganizationIntegrationsController::class, 'testPlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais', [OrganizationIntegrationsController::class, 'storeSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais/communaute', [OrganizationIntegrationsController::class, 'saveSseCommunity'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais/{relayId}/supprimer', [OrganizationIntegrationsController::class, 'deleteSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

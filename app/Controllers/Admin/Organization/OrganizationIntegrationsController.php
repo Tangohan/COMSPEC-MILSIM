@@ -15,8 +15,6 @@ use App\Services\Auth\AuthService;
 use App\Services\Email\TenantMailSender;
 use App\Services\Integrations\DiscordEventRelayService;
 use App\Services\Integrations\DiscordWebhookService;
-use App\Services\Integrations\DiscordLinkedRoles;
-use App\Services\Platform\PlatformIntegrationSettings;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Sse\SseTransmissionDiscordService;
 use App\Support\DiscordWebhookCatalog;
@@ -50,7 +48,6 @@ final class OrganizationIntegrationsController
         $flashKey = Session::getFlash('new_integration_key');
         $discord = new DiscordEventRelayService();
         $sse = new SseTransmissionDiscordService();
-        $platformAdmin = $gate->isPlatformAdmin();
         $mailer = new TenantMailSender();
 
         return Response::view('layout.main', [
@@ -68,11 +65,6 @@ final class OrganizationIntegrationsController
             'mail_sender' => $mailer->state($tenantId),
             'mail_providers' => TenantMailSender::PROVIDERS,
             'admin_email' => (string) ($user['email'] ?? ''),
-            'platform_admin' => $platformAdmin,
-            'platform_mail_sender' => $platformAdmin ? $mailer->state(TenantMailSender::PLATFORM) : null,
-            'platform_env_mailer' => $platformAdmin ? strtolower(trim((string) \env('MAIL_MAILER', 'file'))) : '',
-            'platform_discord' => $platformAdmin ? (new PlatformIntegrationSettings())->state() : [],
-            'platform_linked_roles' => $platformAdmin ? (new DiscordLinkedRoles())->adminState() : null,
         ]);
     }
 
@@ -419,110 +411,6 @@ final class OrganizationIntegrationsController
         Session::flash('success', 'Clé tournée avec succès. Mettez à jour vos services immédiatement.');
 
         return Response::redirect(url('back-office/integrations'));
-    }
-
-    public function savePlatformDiscord(Request $request, array $params = []): Response
-    {
-        $denied = $this->guardPlatform($request);
-        if ($denied !== null) {
-            return $denied;
-        }
-        $result = (new PlatformIntegrationSettings())->save([
-            PlatformIntegrationSettings::MOD_REPORTS => (string) $request->input('mod_reports_webhook', ''),
-            PlatformIntegrationSettings::STARTUP_CHECK => (string) $request->input('startup_check_webhook', ''),
-        ]);
-        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
-
-        return Response::redirect(url('back-office/integrations') . '#plateforme');
-    }
-
-    public function savePlatformLinkedRoles(Request $request, array $params = []): Response
-    {
-        $denied = $this->guardPlatform($request);
-        if ($denied !== null) {
-            return $denied;
-        }
-        $result = (new DiscordLinkedRoles())->saveConfig(
-            (string) $request->input('linked_roles_client_id', ''),
-            (string) $request->input('linked_roles_client_secret', ''),
-            (string) $request->input('linked_roles_clear_secret', '') === '1'
-        );
-        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
-
-        return Response::redirect(url('back-office/integrations') . '#plateforme-roles-lies');
-    }
-
-    public function testPlatformDiscord(Request $request, array $params = []): Response
-    {
-        $denied = $this->guardPlatform($request);
-        if ($denied !== null) {
-            return $denied;
-        }
-        $channel = (string) $request->input('channel', '');
-        $labels = [
-            PlatformIntegrationSettings::MOD_REPORTS => 'Signalements du mod (plateforme)',
-            PlatformIntegrationSettings::STARTUP_CHECK => 'Checks de démarrage (plateforme)',
-        ];
-        $url = PlatformIntegrationSettings::webhook($channel);
-        if (!isset($labels[$channel]) || $url === '') {
-            Session::flash('error', 'Aucun salon n’est enregistré pour cet usage. Collez le lien webhook, enregistrez, puis réessayez.');
-
-            return Response::redirect(url('back-office/integrations') . '#plateforme');
-        }
-        $result = (new DiscordWebhookService())->send($url, 'Essai Athena : salon « ' . $labels[$channel] . ' » opérationnel.');
-        Session::flash(
-            !empty($result['ok']) ? 'success' : 'error',
-            !empty($result['ok']) ? 'Un message d’essai a été envoyé dans le salon.' : (string) ($result['error'] ?? 'Discord a refusé le message d’essai.')
-        );
-
-        return Response::redirect(url('back-office/integrations') . '#plateforme');
-    }
-
-    public function savePlatformMail(Request $request, array $params = []): Response
-    {
-        $denied = $this->guardPlatform($request);
-        if ($denied !== null) {
-            return $denied;
-        }
-        $input = [];
-        foreach (['enabled', 'provider', 'host', 'port', 'encryption', 'username', 'password', 'clear_password', 'from_address', 'from_name', 'reply_to'] as $field) {
-            $input[$field] = $request->input($field, '');
-        }
-        $result = (new TenantMailSender())->save(TenantMailSender::PLATFORM, $input);
-        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
-
-        return Response::redirect(url('back-office/integrations') . '#plateforme-emails');
-    }
-
-    public function testPlatformMail(Request $request, array $params = []): Response
-    {
-        $denied = $this->guardPlatform($request);
-        if ($denied !== null) {
-            return $denied;
-        }
-        $user = $this->auth->user() ?? [];
-        $result = (new TenantMailSender())->sendTest(TenantMailSender::PLATFORM, trim((string) ($user['email'] ?? '')), email_brand_name());
-        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
-
-        return Response::redirect(url('back-office/integrations') . '#plateforme-emails');
-    }
-
-    /** Réglages de la plateforme : administrateur de la plateforme seulement. */
-    private function guardPlatform(Request $request): ?Response
-    {
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
-
-            return Response::redirect(url('back-office/integrations'));
-        }
-        if (!$this->auth->user()) {
-            return Response::redirect(url('login'));
-        }
-        if (!Gate::getInstance()->isPlatformAdmin()) {
-            return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
-        }
-
-        return null;
     }
 
     private function guardOrg(): ?Response

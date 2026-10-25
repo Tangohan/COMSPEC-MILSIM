@@ -41,12 +41,36 @@ class TenantRepository
         return $this->hasTenantTypeColumn;
     }
 
+    /**
+     * Cache de requête de findById() (singleton du Container : la même ligne est relue par les middlewares,
+     * l’en-tête, la navigation, les bandeaux…). Vidé par chaque écriture de ce dépôt ; désactivé en CLI
+     * (crons et workers longs).
+     *
+     * @var array<int, array<string, mixed>|null>
+     */
+    private array $findByIdCache = [];
+
     public function findById(int $id): ?array
     {
+        $useCache = PHP_SAPI !== 'cli';
+        if ($useCache && array_key_exists($id, $this->findByIdCache)) {
+            return $this->findByIdCache[$id];
+        }
         $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE id = ? LIMIT 1');
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        $row = $row ?: null;
+        if ($useCache) {
+            $this->findByIdCache[$id] = $row;
+        }
+
+        return $row;
+    }
+
+    /** Vide le cache de findById() (à appeler après une écriture directe sur tenants hors de ce dépôt). */
+    public function forgetCache(): void
+    {
+        $this->findByIdCache = [];
     }
 
     /**
@@ -210,6 +234,7 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET community_code = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$normalized === '' ? null : $normalized, $tenantId]);
+        $this->forgetCache();
     }
 
     public function getDefaultTenant(): ?array
@@ -240,12 +265,14 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET slug = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$slug, $tenantId]);
+        $this->forgetCache();
     }
 
     public function updateName(int $tenantId, string $name): void
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET name = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$name, $tenantId]);
+        $this->forgetCache();
         \App\Services\Moderation\NameModerationService::afterSave('tenant', $tenantId, $tenantId, $name);
     }
 
@@ -267,6 +294,7 @@ class TenantRepository
         $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType($tenantType);
         $stmt = $this->pdo()->prepare('UPDATE tenants SET tenant_type = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$tenantType, $tenantId]);
+        $this->forgetCache();
     }
 
     public function updateLogoUrl(int $tenantId, ?string $url): void
@@ -280,6 +308,7 @@ class TenantRepository
         }
         $stmt = $this->pdo()->prepare('UPDATE tenants SET logo_url = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$url, $tenantId]);
+        $this->forgetCache();
     }
 
     /** Retire explicitement le logo (contrairement à updateLogoUrl(), qui ignore les valeurs vides). */
@@ -287,6 +316,7 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET logo_url = NULL, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$tenantId]);
+        $this->forgetCache();
     }
 
     /** @return int id du tenant créé */
@@ -322,6 +352,7 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET owner_user_id = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$ownerUserId, $tenantId]);
+        $this->forgetCache();
     }
 
     /** @return array<string,mixed> */
@@ -342,10 +373,13 @@ class TenantRepository
     /** @param array<string,mixed> $settings */
     public function updateSettings(int $tenantId, array $settings): void
     {
+        // Lecture fraîche avant fusion (pas de cache de requête pour une lecture-écriture).
+        $this->forgetCache();
         $current = $this->getSettings($tenantId);
         $merged = array_replace_recursive($current, $settings);
         $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $tenantId]);
+        $this->forgetCache();
     }
 
     /**
@@ -357,6 +391,7 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $tenantId]);
+        $this->forgetCache();
     }
 
     public function updateSubscriptionFromStripe(
@@ -386,6 +421,7 @@ class TenantRepository
             $periodEnd ?? $row['subscription_current_period_end'] ?? null,
             $tenantId,
         ]);
+        $this->forgetCache();
     }
 
     public function updateSubscriptionFromPayPal(
@@ -415,6 +451,7 @@ class TenantRepository
                 $periodEnd ?? $row['subscription_current_period_end'] ?? null,
                 $tenantId,
             ]);
+            $this->forgetCache();
 
             return;
         }
@@ -429,6 +466,7 @@ class TenantRepository
             $periodEnd ?? $row['subscription_current_period_end'] ?? null,
             $tenantId,
         ]);
+        $this->forgetCache();
     }
 
     /** @return array<string, mixed>|null */
@@ -461,6 +499,8 @@ class TenantRepository
     /** Fusionne un objet JSON dans tenants.settings. */
     public function mergeSettings(int $tenantId, array $patch): void
     {
+        // Lecture fraîche avant fusion (pas de cache de requête pour une lecture-écriture).
+        $this->forgetCache();
         $row = $this->findById($tenantId);
         if (!$row) {
             return;
@@ -475,6 +515,7 @@ class TenantRepository
         $merged = array_merge($current, $patch);
         $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($merged, JSON_THROW_ON_ERROR), $tenantId]);
+        $this->forgetCache();
     }
 
     /**
@@ -661,6 +702,9 @@ SQL;
             'UPDATE tenants SET plan_slug = ?, subscription_status = ?, updated_at = NOW() WHERE id = ?'
         );
 
-        return $stmt->execute([$planSlug, $subscriptionStatus, $tenantId]);
+        $ok = $stmt->execute([$planSlug, $subscriptionStatus, $tenantId]);
+        $this->forgetCache();
+
+        return $ok;
     }
 }

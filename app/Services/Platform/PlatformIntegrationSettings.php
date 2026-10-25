@@ -8,7 +8,7 @@ use App\Repositories\PlatformSettingsRepository;
 use App\Support\DiscordChannelInput;
 
 /**
- * Salons Discord propres à la plateforme (pas à une communauté), réglés depuis Intégrations > Plateforme
+ * Salons Discord propres à la plateforme (pas à une communauté), réglés depuis Administration › Intégrations de la plateforme
  * par l'administrateur de la plateforme et enregistrés en base (platform_settings) : plus aucune clé à mettre
  * dans le .env du VPS.
  *

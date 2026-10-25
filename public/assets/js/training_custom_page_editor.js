@@ -288,16 +288,27 @@
 
 
 // DOC HTML studio: autosave local + indicateur non sauvegardé.
+// Le brouillon n'est jamais réappliqué automatiquement : le serveur reste la référence.
+// - Après un enregistrement réussi, le serveur rend data-cp-saved="1" et le brouillon est supprimé.
+// - Un brouillon pris sur une autre version de la page (updated_at différent) est ignoré.
+// - Sinon, s'il diffère du contenu serveur, un bouton « Récupérer le brouillon local » est proposé.
 (function(){
   var form = document.getElementById('cp-main-form');
   if(!form){ return; }
   var pageKey = 'cp_draft_' + (window.location.pathname || 'new');
-  var fields = form.querySelectorAll('input[name], textarea[name], select[name]');
+  // Champs cachés exclus : _csrf_token (un jeton périmé ferait rejeter l'envoi) et sections_json (géré par le manuel).
+  var fields = form.querySelectorAll('input[name]:not([type="hidden"]), textarea[name], select[name]');
+  var SUBMIT_KEY = 'cp_draft_submitted';
+  var serverSaved = form.getAttribute('data-cp-saved') === '1';
+  var serverUpdatedAt = form.getAttribute('data-cp-updated-at') || '';
   var dirty = false;
-  var bar = document.createElement('p');
-  bar.className = 'text-xs text-slate-500 mt-1';
-  bar.textContent = 'État: sauvegardé';
+  var bar = document.createElement('div');
+  bar.className = 'text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2';
+  var barText = document.createElement('span');
+  barText.textContent = 'État: sauvegardé';
+  bar.appendChild(barText);
   form.prepend(bar);
+  function setState(t){ barText.textContent = t; }
 
   function serialize(){
     var payload={};
@@ -308,28 +319,99 @@
     });
     return payload;
   }
-  function restore(){
+  function removeDraft(key){ try{ localStorage.removeItem(key); }catch(e){} }
+  function readDraft(){
     try {
       var raw = localStorage.getItem(pageKey);
-      if(!raw){ return; }
-      var payload = JSON.parse(raw);
-      Object.keys(payload).forEach(function(name){
-        var list=form.querySelectorAll('[name="'+name+'"]');
-        list.forEach(function(f){
-          if(f.type==='checkbox'){ f.checked = payload[name] === '1'; }
-          else if(f.type==='radio'){ f.checked = f.value === payload[name]; }
-          else { f.value = payload[name]; }
-        });
+      if(!raw){ return null; }
+      var d = JSON.parse(raw);
+      if(!d || typeof d !== 'object'){ return null; }
+      // Ancien format (valeurs à plat, sans version de base) : proposé sans garantie de version.
+      if(!d.fields){ return { base: null, savedAt: 0, fields: d }; }
+      return d;
+    } catch(e){ return null; }
+  }
+  function applyFields(payload){
+    Object.keys(payload).forEach(function(name){
+      var list=form.querySelectorAll('[name="'+name+'"]');
+      list.forEach(function(f){
+        // Ne jamais réécrire un champ caché (jeton CSRF notamment).
+        if(f.type==='hidden'){ return; }
+        if(f.type==='checkbox'){ f.checked = payload[name] === '1'; }
+        else if(f.type==='radio'){ f.checked = f.value === payload[name]; }
+        else { f.value = payload[name]; }
+        try{ f.dispatchEvent(new Event('input', { bubbles: true })); }catch(e){}
       });
-      bar.textContent = 'État: brouillon local récupéré';
-    } catch(e){}
+    });
+  }
+  function differsFromServer(payload){
+    var cur = serialize();
+    return Object.keys(payload).some(function(k){
+      return (k in cur) && String(cur[k]) !== String(payload[k]);
+    });
+  }
+  function offerRestore(draft){
+    var when = draft.savedAt ? new Date(draft.savedAt).toLocaleString() : '';
+    setState('État: un brouillon local non enregistré existe' + (when ? ' (' + when + ')' : '') + '.');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'underline text-amber-700';
+    btn.textContent = 'Récupérer le brouillon local';
+    var drop = document.createElement('button');
+    drop.type = 'button';
+    drop.className = 'underline';
+    drop.textContent = 'Ignorer';
+    btn.addEventListener('click', function(){
+      applyFields(draft.fields);
+      btn.remove(); drop.remove();
+      dirty = true;
+      setState('État: brouillon local récupéré (non enregistré)');
+    });
+    drop.addEventListener('click', function(){
+      removeDraft(pageKey);
+      btn.remove(); drop.remove();
+      setState('État: sauvegardé');
+    });
+    bar.appendChild(btn);
+    bar.appendChild(drop);
   }
   function autosave(){
-    try{ localStorage.setItem(pageKey, JSON.stringify(serialize())); dirty=false; bar.textContent='État: brouillon local auto-sauvegardé'; }catch(e){}
+    try{
+      localStorage.setItem(pageKey, JSON.stringify({ v: 2, base: serverUpdatedAt, savedAt: Date.now(), fields: serialize() }));
+      dirty=false; setState('État: brouillon local auto-sauvegardé');
+    }catch(e){}
   }
-  restore();
-  fields.forEach(function(f){ f.addEventListener('input', function(){ dirty=true; bar.textContent='État: modifications non enregistrées'; }); });
+  // Retour d'un envoi : seul le signal explicite du serveur vaut confirmation d'enregistrement.
+  function settlePendingSubmit(){
+    var info = null;
+    try {
+      var raw = sessionStorage.getItem(SUBMIT_KEY);
+      if(raw){ sessionStorage.removeItem(SUBMIT_KEY); info = JSON.parse(raw); }
+    } catch(e){}
+    if(serverSaved){
+      removeDraft(pageKey);
+      if(info && info.key){ removeDraft(info.key); }
+    }
+  }
+  function initDraft(){
+    if(serverSaved){ return; }
+    var draft = readDraft();
+    if(!draft || !draft.fields){ return; }
+    // Brouillon pris sur une autre version serveur : la page a changé depuis, on ne le propose pas.
+    if(draft.base !== null && draft.base !== serverUpdatedAt){ removeDraft(pageKey); return; }
+    if(!differsFromServer(draft.fields)){ removeDraft(pageKey); return; }
+    offerRestore(draft);
+  }
+  settlePendingSubmit();
+  initDraft();
+  fields.forEach(function(f){ f.addEventListener('input', function(){ dirty=true; setState('État: modifications non enregistrées'); }); });
   setInterval(function(){ if(dirty){ autosave(); } }, 8000);
-  form.addEventListener('submit', function(){ try{ localStorage.removeItem(pageKey);}catch(e){} bar.textContent='État: envoi en cours…'; });
+  form.addEventListener('submit', function(){
+    // Pas de « Quitter la page ? » pendant l'envoi ; le brouillon à jour est conservé jusqu'au retour serveur.
+    autosave();
+    dirty = false;
+    try{ sessionStorage.setItem(SUBMIT_KEY, JSON.stringify({ key: pageKey })); }catch(e){}
+    setState('État: envoi en cours…');
+  });
   window.addEventListener('beforeunload', function(e){ if(!dirty){ return; } e.preventDefault(); e.returnValue=''; });
 })();

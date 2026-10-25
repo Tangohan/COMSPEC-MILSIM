@@ -291,7 +291,7 @@ $err = \App\Core\Session::getFlash('error');
                         <?php endforeach; ?>
                     </ul>
                     <h2 class="pa-card__title">Compte PayPal qui reçoit les paiements</h2>
-                    <p class="pa-card__help">Lien paypal.me utilisé sur la page de paiement ; le montant y est ajouté automatiquement. Laissez vide pour revenir au compte par défaut (<?= $h(\App\Support\ManualBilling::DEFAULT_PAYPAL_URL) ?>).</p>
+                    <p class="pa-card__help">Lien paypal.me utilisé sur la page de paiement des formules et sur la page de dons publique (<a href="<?= $h(url('soutenir-atak')) ?>" target="_blank" rel="noopener">Soutenir</a>, avec son QR code) ; le montant y est ajouté automatiquement. Laissez vide pour revenir au compte par défaut (<?= $h(\App\Support\ManualBilling::DEFAULT_PAYPAL_URL) ?>).</p>
                     <div class="pa-field">
                         <label for="pp_url">Lien paypal.me</label>
                         <input id="pp_url" name="paypal_url" type="url" maxlength="200" value="<?= $h($paypalBase) ?>" placeholder="https://www.paypal.me/MonCompte">

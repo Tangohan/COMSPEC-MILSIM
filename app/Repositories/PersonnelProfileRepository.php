@@ -113,14 +113,20 @@ class PersonnelProfileRepository
         return $this->withPrimaryJobRoleBridge($row);
     }
 
+    /** Mémoïsé pour la durée de la requête (appelé par l’en-tête de chaque page). */
+    private static ?bool $hasTenantIdColumnCache = null;
+
     private function hasTenantIdColumn(): bool
     {
-        $st = $this->pdo->query(
-            "SELECT 1 FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
-        );
+        if (self::$hasTenantIdColumnCache === null) {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
+            );
+            self::$hasTenantIdColumnCache = $st !== false && (bool) $st->fetchColumn();
+        }
 
-        return $st !== false && (bool) $st->fetchColumn();
+        return self::$hasTenantIdColumnCache;
     }
 
     /**

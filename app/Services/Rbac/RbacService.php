@@ -16,6 +16,9 @@ class RbacService
 
     private static ?bool $permissionsHasRbacScope = null;
 
+    /** Mémoïsé : existence de user_permission_overrides (testé à chaque requête authentifiée). */
+    private static ?bool $hasUserPermissionOverridesTable = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -264,15 +267,28 @@ class RbacService
         $flat = [];
         $unitMap = [];
 
-        $permStmt = $this->pdo->prepare(
-            $this->permissionsTableHasRbacScope()
-                ? 'SELECT p.slug, p.rbac_scope AS rs FROM permissions p
-                   INNER JOIN role_permissions rp ON rp.permission_id = p.id
-                   WHERE rp.role_id = ?'
-                : 'SELECT p.slug, p.scope AS rs FROM permissions p
-                   INNER JOIN role_permissions rp ON rp.permission_id = p.id
-                   WHERE rp.role_id = ?'
-        );
+        // Permissions de tous les rôles en une seule requête (au lieu d’une par ligne tenant_user_roles).
+        $roleIds = array_values(array_unique(array_filter(
+            array_map(static fn (array $r): int => (int) ($r['role_id'] ?? 0), $rows),
+            static fn (int $x): bool => $x > 0
+        )));
+        $permsByRole = [];
+        if ($roleIds !== []) {
+            $placeholders = implode(',', array_fill(0, count($roleIds), '?'));
+            $permStmt = $this->pdo->prepare(
+                $this->permissionsTableHasRbacScope()
+                    ? "SELECT rp.role_id, p.slug, p.rbac_scope AS rs FROM permissions p
+                       INNER JOIN role_permissions rp ON rp.permission_id = p.id
+                       WHERE rp.role_id IN ($placeholders)"
+                    : "SELECT rp.role_id, p.slug, p.scope AS rs FROM permissions p
+                       INNER JOIN role_permissions rp ON rp.permission_id = p.id
+                       WHERE rp.role_id IN ($placeholders)"
+            );
+            $permStmt->execute($roleIds);
+            while ($p = $permStmt->fetch(PDO::FETCH_ASSOC)) {
+                $permsByRole[(int) $p['role_id']][] = $p;
+            }
+        }
 
         foreach ($rows as $row) {
             $roleId = (int) ($row['role_id'] ?? 0);
@@ -282,8 +298,7 @@ class RbacService
             if ($roleId < 1) {
                 continue;
             }
-            $permStmt->execute([$roleId]);
-            while ($p = $permStmt->fetch(PDO::FETCH_ASSOC)) {
+            foreach ($permsByRole[$roleId] ?? [] as $p) {
                 $slug = (string) ($p['slug'] ?? '');
                 if ($slug === '') {
                     continue;
@@ -336,8 +351,11 @@ class RbacService
      */
     private function applyUserPermissionOverrides(int $userId, int $tenantId, array $flat, array $unitMap): array
     {
-        $chk = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_permission_overrides' LIMIT 1");
-        if (!$chk || !$chk->fetchColumn()) {
+        if (self::$hasUserPermissionOverridesTable === null) {
+            $chk = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_permission_overrides' LIMIT 1");
+            self::$hasUserPermissionOverridesTable = $chk && (bool) $chk->fetchColumn();
+        }
+        if (!self::$hasUserPermissionOverridesTable) {
             return [$flat, $unitMap];
         }
         $st = $this->pdo->prepare(
