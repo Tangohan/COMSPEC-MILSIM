@@ -81,7 +81,8 @@ private _save = {
     _out pushBack ["days", (keys _days) apply { private _d = _days get _x; [_x, (keys _d) apply { [_x, _d get _x] }] }];
     _out pushBack ["acts", (_gm get "acts") apply { private _a = _x; (keys _a) apply { [_x, _a get _x] } }];
     profileNamespace setVariable ["COMSPEC_ATAK_Garmin", _out];
-    saveProfileNamespace;
+    // Fin de mission, resynchro : écrit tout de suite ; passage périodique : profil marqué modifié (fn_profileSave).
+    ([["now"], ["dirty"]] select (_mode isEqualTo "tick")) call comspec_atak_native_fnc_profileSave;
     _gm set ["saved", diag_tickTime];
     // Envoi au site (fiche du membre) : la montre en entier, sans les courbes (Garmin.Report de COMSPEC Link 2.0.87).
     if !([] call comspec_atak_native_fnc_bridge) exitWith { _gm set ["web", [diag_tickTime, "SANS LIAISON"]]; };
