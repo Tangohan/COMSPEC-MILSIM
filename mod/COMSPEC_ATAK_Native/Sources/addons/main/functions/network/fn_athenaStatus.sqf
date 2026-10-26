@@ -192,7 +192,7 @@ _steps pushBack (switch (true) do {
     case (_mode isEqualTo "off" || {_dllDown}): { ["Serveur Athena", "off", "pas contacté", ""] };
     case (_maint): { ["Serveur Athena", "warn", "en maintenance", "Le site répond mais refuse les connexions le temps d'une mise à jour."] };
     case (_netKo): { ["Serveur Athena", "ko", "injoignable", "Connexion internet du jeu coupée, ou pare-feu."] };
-    case (_logged || {_refused} || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena.ttrd.fr%1", _latText], ""] };
+    case (_logged || {_refused} || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena-comspec.eu%1", _latText], ""] };
     case (_syncing || {_link isEqualTo "connecting"} || {_ls isEqualTo "asking"}): { ["Serveur Athena", "now", "contact en cours", ""] };
     default { ["Serveur Athena", "todo", "pas encore contacté", ""] };
 });

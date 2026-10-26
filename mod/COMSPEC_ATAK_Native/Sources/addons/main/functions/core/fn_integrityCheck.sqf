@@ -138,7 +138,7 @@ switch (toLower _mode) do {
         if (!canSuspend) exitWith { ["remote", _simulate] spawn comspec_atak_native_fnc_integrityCheck; };
         private _say = { ["INFO", "UPDATE", _this] call comspec_atak_native_fnc_log; };
         private _bridge = [] call comspec_atak_native_fnc_bridge;
-        private _url = "https://athena.ttrd.fr/public";
+        private _url = "https://athena-comspec.eu/public";
         private _ext = ["COMSPECATAKNativeExtension", "COMSPECExtension"] select _bridge;
         private _have = [_code, _simulate] select (_simulate isNotEqualTo "");
         format ["Vérification des mises à jour : demande des dernières versions à Athena (ATAK installé %1%2, DLL %3)",

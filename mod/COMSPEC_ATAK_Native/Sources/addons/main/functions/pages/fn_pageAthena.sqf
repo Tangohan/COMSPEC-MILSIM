@@ -4,7 +4,7 @@
     Erreur avec sa cause et l'action à faire : fn_athenaStatus), le bouton qui règle le problème (RECONNECTER, OUVRIR
     LE CANAL, OBTENIR MON CODE…), puis les étapes de la liaison (module, service, serveur, compte, identité du
     téléphone, canal du poste), dépliées tant que la connexion n'est pas faite.
-    Connecté : fiche opérateur. Sinon : moyens de connexion par onglets, CODE (à autoriser sur athena.ttrd.fr/lier,
+    Connecté : fiche opérateur. Sinon : moyens de connexion par onglets, CODE (à autoriser sur athena-comspec.eu/lier,
     sans clé ni identifiant de communauté, fn_athenaLink), E-MAIL (mot de passe masqué ou code e-mail), STEAM, PORTAIL.
     La page se redessine seule quand l'état change (fn_statusUpdate), en gardant ce qui est saisi.
 */
@@ -184,8 +184,8 @@ if (_logged) then {
     ];
     if (_help) then {
         _rows append [
-            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>1.</t> <t color='#c9d4cf'>Il faut un compte sur <t color='#8fe39b'>athena.ttrd.fr</t> (gratuit), membre de votre communauté.</t>"],
-            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>2.</t> <t color='#c9d4cf'>Onglet CODE : OBTENIR MON CODE. Sur votre PC ou votre téléphone, connecté au site, ouvrez <t color='#8fe39b'>athena.ttrd.fr/lier</t> et saisissez le code.</t>"],
+            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>1.</t> <t color='#c9d4cf'>Il faut un compte sur <t color='#8fe39b'>athena-comspec.eu</t> (gratuit), membre de votre communauté.</t>"],
+            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>2.</t> <t color='#c9d4cf'>Onglet CODE : OBTENIR MON CODE. Sur votre PC ou votre téléphone, connecté au site, ouvrez <t color='#8fe39b'>athena-comspec.eu/lier</t> et saisissez le code.</t>"],
             ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>3.</t> <t color='#c9d4cf'>Autorisez : le téléphone se connecte seul en quelques secondes, et les parties suivantes aussi (Steam associé).</t>"],
             ["text", "<t color='#f2c66b'>Pas de code ?</t> <t color='#c9d4cf'>Vérifiez la connexion internet du jeu et que COMSPEC Link est autorisé (BattlEye, pare-feu). Puis RÉESSAYER.</t>"],
             ["text", "<t color='#f2c66b'>Code expiré ?</t> <t color='#c9d4cf'>Il ne dure que quelques minutes : NOUVEAU CODE.</t>"],

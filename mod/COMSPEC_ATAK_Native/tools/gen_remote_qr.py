@@ -20,7 +20,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
-URL = sys.argv[1] if len(sys.argv) > 1 else "https://athena.ttrd.fr/public/telecommande-drone"
+URL = sys.argv[1] if len(sys.argv) > 1 else "https://athena-comspec.eu/public/telecommande-drone"
 HEMTT = sys.argv[2] if len(sys.argv) > 2 else "hemtt"
 NAME = sys.argv[3] if len(sys.argv) > 3 else "drone_remote_qr_ca"
 

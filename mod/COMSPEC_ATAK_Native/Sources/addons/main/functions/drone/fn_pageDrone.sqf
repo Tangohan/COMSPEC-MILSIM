@@ -942,7 +942,7 @@ switch (_tab) do {
         _rows append [
             ["section", "Télécommande sur votre téléphone", "Scannez avec votre vrai téléphone, connecté à votre compte Athena : boutons du drone, rôles et essaim, ordres transmis par Athena en quelques secondes."],
             ["image", "\z\comspec_atak_native\addons\main\data\drone_remote_qr_ca.paa"],
-            ["text", "<t size='0.85' color='#8a9a93'>https://athena.ttrd.fr/public/telecommande-drone</t>"]
+            ["text", "<t size='0.85' color='#8a9a93'>https://athena-comspec.eu/public/telecommande-drone</t>"]
         ];
         // Ajout d'un drone : posé à moins de 15 m, libre.
         private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {private _ow = _x getVariable ["COMSPEC_DroneOwner", ""]; _ow in ["", getPlayerUID player] || {(allPlayers findIf { (getPlayerUID _x) isEqualTo _ow }) < 0}} };

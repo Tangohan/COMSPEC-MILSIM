@@ -2,7 +2,7 @@
     Connexion Athena depuis l'éditeur Eden (menu COMSPEC SSE, bouton du tableau de bord SSE) et temps passé dans Eden.
 
     Même liaison que le jeu, par la DLL COMSPEC Link : session Athena mémorisée (RestoreSession), sinon un code court
-    à valider sur athena.ttrd.fr/lier, connecté à son compte (PairStart / PairStatus, comme l'app Athena du téléphone
+    à valider sur athena-comspec.eu/lier, connecté à son compte (PairStart / PairStatus, comme l'app Athena du téléphone
     ATAK). Aucune clé ni aucun jeton ne passe par le SQF.
 
     Temps Eden : compté tant que l'éditeur est ouvert, au premier plan et utilisé (souris ou clavier dans les
@@ -22,7 +22,7 @@ params [["_mode", "open", [""]], ["_args", [], [[]]]];
 if (!hasInterface) exitWith {};
 disableSerialization;
 
-private _url = "https://athena.ttrd.fr/public";
+private _url = "https://athena-comspec.eu/public";
 private _call = {
     params ["_cmd", ["_a", []]];
     private _r = "COMSPECExtension" callExtension [_cmd, _a];

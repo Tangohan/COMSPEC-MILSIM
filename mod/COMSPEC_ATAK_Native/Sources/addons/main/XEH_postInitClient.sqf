@@ -32,7 +32,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
     [{ ([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on" }, {
         [] spawn {
             private _t0 = diag_tickTime;
-            private _athenaUrl = "https://athena.ttrd.fr/public";
+            private _athenaUrl = "https://athena-comspec.eu/public";
             private _extInit = ["COMSPECATAKNativeExtension", "Init", [_athenaUrl]] call comspec_atak_native_fnc_extAwait;
             missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
             private _restore = ["COMSPECATAKNativeExtension", "RestoreSession", [_athenaUrl, "1.0.0-native"]] call comspec_atak_native_fnc_extAwait;
