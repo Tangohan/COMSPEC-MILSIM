@@ -728,20 +728,14 @@ public static partial class Extension
         // Appelé en direct depuis le thread du jeu : POST best-effort en tâche de fond avec le jeton actuel,
         // sans rafraîchissement préalable (jusqu'à 2 × SyncTimeoutSeconds de gel avec Athena lente ou absente).
         var logoutToken = _gameAccessToken;
-        if (logoutToken.Length > 0
-            && TryBuildRequestUri(_baseUrl, "/api/game/v1/session/logout", out var logoutUri, out _)
-            && logoutUri is not null)
+        if (logoutToken.Length > 0)
         {
+            // Passe par GamePostJson : même filtre d'hôte SEC-001 que les autres envois du Bearer.
             _ = Task.Run(() =>
             {
                 try
                 {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                    using var content = new StringContent("{}", Encoding.UTF8);
-                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    using var req = new HttpRequestMessage(HttpMethod.Post, logoutUri) { Content = content };
-                    req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + logoutToken);
-                    using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
+                    GamePostJson("/api/game/v1/session/logout", "{}", withBearer: true, bearerToken: logoutToken);
                 }
                 catch
                 {
@@ -1022,9 +1016,10 @@ public static partial class Extension
         return code.Length > 0 ? code : "NETWORK_ERROR";
     }
 
-    private static string GamePostJson(string path, string payload, bool withBearer)
+    // bearerToken : jeton imposé (déconnexion en tâche de fond), sans rafraîchissement préalable.
+    private static string GamePostJson(string path, string payload, bool withBearer, string? bearerToken = null)
     {
-        if (withBearer && !EnsureFreshGameAccessToken())
+        if (withBearer && bearerToken is null && !EnsureFreshGameAccessToken())
             return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
@@ -1037,8 +1032,9 @@ public static partial class Extension
             using var content = new StringContent(payload, Encoding.UTF8);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = content };
-            if (withBearer && _gameAccessToken.Length > 0)
-                req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _gameAccessToken);
+            var bearer = bearerToken ?? _gameAccessToken;
+            if (withBearer && bearer.Length > 0)
+                req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + bearer);
             using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
             var body = ReadContentUtf8(resp, cts.Token);
             if (!resp.IsSuccessStatusCode)
