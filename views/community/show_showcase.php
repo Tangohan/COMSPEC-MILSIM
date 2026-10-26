@@ -587,7 +587,7 @@ $pbPageTheme = (string) ($pageLayout['theme'] ?? 'light');
 ?>
 <div id="top" class="community-public-vitrine community-landing cl-vitrine" data-pb-theme="<?= htmlspecialchars($pbPageTheme, ENT_QUOTES, 'UTF-8') ?>"<?= $pbEditing ? ' data-cl-editing="1"' : '' ?><?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
 <?php
-foreach (['community-page-builder', 'community-orbat-styles'] as $pbCssName) {
+foreach (['community-page-builder', 'community-orbat-styles', 'community-vitrine-day'] as $pbCssName) {
     $pbCssFile = base_path('public/assets/css/' . $pbCssName . '.css');
     if (is_readable($pbCssFile)) {
         echo '<style id="' . $pbCssName . '-css">' . (string) file_get_contents($pbCssFile) . '</style>';
@@ -677,6 +677,12 @@ unset($pbCssFile, $pbCssName);
       ?>
     </div>
     <div class="cl-hero__scrim" aria-hidden="true"></div>
+    <?php if ($pbEditing): ?>
+    <button type="button" class="cl-edit-img" data-cl-img="image" title="Choisir, remplacer ou retirer l’image du bandeau">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
+      <span>Image du bandeau</span>
+    </button>
+    <?php endif; ?>
     <div class="cl-hero__inner">
       <div class="cl-hero__copy">
         <?php if ($publicAudience !== 'platform' && $discordOnlyRecruit && !$isLocked): ?>
@@ -855,7 +861,43 @@ unset($pbCssFile, $pbCssName);
   <?php $pbBuf['stats'] = (string) ob_get_clean(); ?>
 
     <?php ob_start(); ?>
-    <section id="presentation" class="cl-about cl-rise" aria-labelledby="cl-about-title">
+    <?php
+        // Galerie : images choisies dans l’éditeur, sinon médias de la page, sinon photo mise en avant ou bannière.
+        $gal = [];
+        $galFromEditor = is_array($pbSections['about']['props']['gallery'] ?? null) ? $pbSections['about']['props']['gallery'] : [];
+        foreach ($galFromEditor as $gItem) {
+            $gSrc = \App\Services\Community\PublicPageBuilder::imageUrl((string) ($gItem['image'] ?? ''));
+            if ($gSrc !== '') {
+                $gal[] = ['url' => $gSrc, 'title' => trim((string) ($gItem['alt'] ?? '')), 'caption' => trim((string) ($gItem['caption'] ?? ''))];
+            }
+        }
+        if ($gal === []) {
+            foreach (array_slice($galleryImages, 0, 3) as $gItem) {
+                if (!is_array($gItem)) {
+                    continue;
+                }
+                $gUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($gItem['storage_path']) ? (string) $gItem['storage_path'] : null);
+                if (!$gUrl) {
+                    continue;
+                }
+                $gal[] = ['url' => $gUrl, 'title' => trim((string) ($gItem['title'] ?? '')), 'caption' => ''];
+            }
+        }
+        if ($gal === [] && is_array($heroMediaItem) && ($heroMediaItem['media_kind'] ?? '') === 'image') {
+            $gUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($heroMediaItem['storage_path']) ? (string) $heroMediaItem['storage_path'] : null);
+            if ($gUrl) {
+                $gal[] = ['url' => $gUrl, 'title' => trim((string) ($heroMediaItem['title'] ?? '')), 'caption' => ''];
+            }
+        }
+        if ($gal === [] && $brandBanner !== '') {
+            $gal[] = ['url' => $brandBanner, 'title' => 'Bannière de la communauté', 'caption' => ''];
+        }
+        $gal = array_slice($gal, 0, 3);
+        // Hors édition, on n’affiche jamais de case vide : la galerie prend la place disponible ou disparaît.
+        $galSlots = $pbEditing ? 3 : count($gal);
+        $pbAboutNoGallery = $galSlots === 0;
+    ?>
+    <section id="presentation" class="cl-about cl-rise<?= $pbAboutNoGallery ? ' cl-about--solo' : '' ?>" aria-labelledby="cl-about-title">
       <div class="cl-about__text">
         <p class="cl-kicker"<?= $clEs('about', 'kicker') ?>><?= htmlspecialchars($clT('about', 'kicker', 'Qui nous sommes')) ?></p>
         <h2 id="cl-about-title" class="cl-h2"<?= $clF('public_about_title') ?>><?= $pbEditing ? htmlspecialchars($aboutTitle) : name_blur_html($aboutTitle) ?></h2>
@@ -881,41 +923,26 @@ unset($pbCssFile, $pbCssName);
         </div>
         <?php endif; ?>
       </div>
-      <div class="cl-about__gallery">
-        <?php
-        $gal = [];
-        foreach (array_slice($galleryImages, 0, 3) as $gItem) {
-            if (!is_array($gItem)) {
-                continue;
-            }
-            $gUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($gItem['storage_path']) ? (string) $gItem['storage_path'] : null);
-            if (!$gUrl) {
-                continue;
-            }
-            $gal[] = ['url' => $gUrl, 'title' => trim((string) ($gItem['title'] ?? ''))];
-        }
-        if ($gal === [] && is_array($heroMediaItem) && ($heroMediaItem['media_kind'] ?? '') === 'image') {
-            $gUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($heroMediaItem['storage_path']) ? (string) $heroMediaItem['storage_path'] : null);
-            if ($gUrl) {
-                $gal[] = ['url' => $gUrl, 'title' => trim((string) ($heroMediaItem['title'] ?? ''))];
-            }
-        }
-        if ($gal === [] && $brandBanner !== '') {
-            $gal[] = ['url' => $brandBanner, 'title' => 'Bannière de la communauté'];
-        }
-        for ($gi = 0; $gi < 3; $gi++):
+      <?php if ($galSlots > 0): ?>
+      <div class="cl-about__gallery cl-about__gallery--n<?= (int) $galSlots ?>"<?= $clE('data-cl-gallery') ?>>
+        <?php for ($gi = 0; $gi < $galSlots; $gi++):
             $slot = $gal[$gi] ?? null;
             $shotClass = 'cl-about__shot' . ($gi === 0 ? ' cl-about__shot--wide' : '');
         ?>
           <?php if (is_array($slot)): ?>
-          <figure class="<?= htmlspecialchars($shotClass) ?>">
+          <figure class="<?= htmlspecialchars($shotClass) ?>"<?= $clE('data-cl-img="gallery" data-cl-img-index="' . $gi . '" title="Modifier les images de la présentation"') ?>>
             <img src="<?= htmlspecialchars($slot['url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($slot['title'] !== '' ? $slot['title'] : 'Image de la communauté') ?>" loading="lazy">
+            <?php if ($slot['caption'] !== ''): ?><figcaption class="cl-about__caption"><?= htmlspecialchars($slot['caption']) ?></figcaption><?php endif; ?>
           </figure>
           <?php else: ?>
-          <div class="cl-ph <?= htmlspecialchars($shotClass) ?>" aria-hidden="true"><?= $gi === 0 ? 'Galerie' : '—' ?></div>
+          <button type="button" class="cl-about__add <?= htmlspecialchars($shotClass) ?>" data-cl-img="gallery" data-cl-img-index="<?= (int) $gi ?>">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/><path d="M12 2v4M10 4h4" stroke-linecap="round"/></svg>
+            <span>Ajouter une image</span>
+          </button>
           <?php endif; ?>
         <?php endfor; ?>
       </div>
+      <?php endif; ?>
     </section>
 
   <?php $pbBuf['about'] = (string) ob_get_clean(); ob_start(); ?>
@@ -926,10 +953,10 @@ unset($pbCssFile, $pbCssName);
           <p class="cl-kicker"<?= $clEs('mission', 'kicker') ?>><?= htmlspecialchars($clT('mission', 'kicker', 'Identité opérationnelle')) ?></p>
           <h2 id="cl-mission-title" class="cl-h2"<?= $clEs('mission', 'title') ?>><?= htmlspecialchars($clT('mission', 'title', 'Mission & doctrine')) ?></h2>
         </div>
-        <?php if ($publicDoctrine !== ''): ?>
-        <p class="cl-section-aside"><strong>Doctrine :</strong> <span<?= $clF('public_doctrine') ?>><?= htmlspecialchars($publicDoctrine) ?></span></p>
-        <?php endif; ?>
       </div>
+      <?php if ($publicDoctrine !== ''): ?>
+      <p class="cl-doctrine"><strong>Doctrine</strong> <span<?= $clF('public_doctrine') ?>><?= htmlspecialchars($publicDoctrine) ?></span></p>
+      <?php endif; ?>
       <?php if ($publicMission !== ''): ?>
       <p class="cl-prose"<?= $clF('public_mission') ?>><?= nl2br(htmlspecialchars($publicMission)) ?></p>
       <?php endif; ?>

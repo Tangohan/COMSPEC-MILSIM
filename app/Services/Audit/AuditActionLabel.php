@@ -74,6 +74,7 @@ final class AuditActionLabel
         // Plateforme — réglages et déploiement
         'platform.settings_updated' => 'Réglage plateforme (brief) mis à jour',
         'platform.storage_purged' => 'Historique volumineux vidé (administration du site)',
+        'platform.game_client_floor_updated' => 'Version minimale des DLL du jeu modifiée (administration du site)',
         'platform.donations_updated' => 'Réglage des dons PayPal modifié (administration du site)',
         'platform.data_table_emptied' => 'Table vidée depuis l’explorateur de données (administration du site)',
         'platform.data_row_updated' => 'Ligne modifiée depuis l’explorateur de données (administration du site)',

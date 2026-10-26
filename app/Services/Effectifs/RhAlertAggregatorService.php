@@ -229,6 +229,69 @@ final class RhAlertAggregatorService
         }
     }
 
+    /**
+     * Qualifications qui expirent sous $withinDays jours (membre, intitulé, échéance), les plus proches d'abord.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listExpiringQualifications(int $tenantId, int $withinDays = 60, int $limit = 12): array
+    {
+        try {
+            return array_slice($this->qualifications->listExpiringForTenant($tenantId, $withinDays, max(1, $limit)), 0, max(1, $limit));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Postes de l'organigramme sous-pourvus (intitulé, unité, places occupées / prévues).
+     *
+     * @return list<array{id: int, title: string, code: string, unit_id: int, unit_name: string, authorized: int, held: int, critical: bool}>
+     */
+    public function listVacantBillets(int $tenantId, int $limit = 20): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $limit = max(1, min(100, $limit));
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orbat_billets' LIMIT 1"
+            );
+            if (!$st || !$st->fetchColumn()) {
+                return [];
+            }
+            $q = $this->pdo->prepare(
+                "SELECT b.id, b.title, b.code, b.unit_id, b.authorized_slots, b.is_critical, un.name AS unit_name,
+                        (SELECT COUNT(*) FROM orbat_billet_holders h WHERE h.billet_id = b.id AND (h.ends_at IS NULL OR h.ends_at >= CURDATE())) AS held
+                 FROM orbat_billets b
+                 LEFT JOIN units un ON un.id = b.unit_id
+                 WHERE b.tenant_id = ? AND b.is_active = 1
+                 HAVING held < b.authorized_slots
+                 ORDER BY b.is_critical DESC, (b.authorized_slots - held) DESC, b.title ASC
+                 LIMIT {$limit}"
+            );
+            $q->execute([$tenantId]);
+            $out = [];
+            foreach ($q->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                $out[] = [
+                    'id' => (int) $r['id'],
+                    'title' => (string) ($r['title'] ?? ''),
+                    'code' => (string) ($r['code'] ?? ''),
+                    'unit_id' => (int) ($r['unit_id'] ?? 0),
+                    'unit_name' => (string) ($r['unit_name'] ?? ''),
+                    'authorized' => (int) ($r['authorized_slots'] ?? 0),
+                    'held' => (int) ($r['held'] ?? 0),
+                    'critical' => !empty($r['is_critical']),
+                ];
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     public function countVacantBillets(int $tenantId): int
     {
         if ($tenantId < 1) {

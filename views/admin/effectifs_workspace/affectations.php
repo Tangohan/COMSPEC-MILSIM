@@ -44,11 +44,11 @@ $typeLabel = static function (string $typeRaw): string {
     <div class="eff-catalog-filters" style="grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 0; padding-bottom: 0.35rem;">
         <div>
             <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Unités</p>
-            <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= $unitCount ?></p>
+            <p class="eff-stat-value"><?= $unitCount ?></p>
         </div>
         <div>
             <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Sans unité</p>
-            <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= $membersWithoutUnit ?></p>
+            <p class="eff-stat-value"><?= $membersWithoutUnit ?></p>
         </div>
     </div>
 

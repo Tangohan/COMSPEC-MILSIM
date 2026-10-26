@@ -141,7 +141,7 @@ $filterUrl = static function (?string $reason, int $p = 1) {
 
         <div class="eff-catalog-foot">
             <p style="margin:0">
-                <strong style="color:#0f172a"><?= $total ?></strong>
+                <strong class="eff-stat-strong"><?= $total ?></strong>
                 départ<?= $total > 1 ? 's' : '' ?> — page <?= $page ?> / <?= $totalPages ?>
             </p>
             <div class="eff-catalog-foot__links">

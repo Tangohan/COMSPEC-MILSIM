@@ -578,6 +578,11 @@ return function (Router $router) {
     $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
+    // Rétrospective annuelle du joueur (stories, cartes à partager) et bilan de l'unité (formules payantes).
+    $router->get('/retrospective', [\App\Controllers\Web\YearReviewController::class, 'latest'], [AuthMiddleware::class]);
+    $router->get('/retrospective/{year}', [\App\Controllers\Web\YearReviewController::class, 'show'], [AuthMiddleware::class]);
+    $router->get('/retrospective/{year}/unite', [\App\Controllers\Web\YearReviewController::class, 'community'], [AuthMiddleware::class]);
+    $router->post('/retrospective/{year}/vu', [\App\Controllers\Web\YearReviewController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/compte/formule-offerte/{id}/vu', [\App\Controllers\Web\PlanGiftNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/compte/retours-signalement/vu', [\App\Controllers\Web\ModReportReplyNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
@@ -1032,6 +1037,8 @@ return function (Router $router) {
     $router->get('/admin/roles/{id}/edit', [SystemRoleController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/roles/{id}/update', [SystemRoleController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/settings', [SystemSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Plancher de version des DLL du jeu (SEC-001) : réglage, abaissement ou retrait en un clic.
+    $router->post('/admin/settings/version-dll', [SystemSettingsController::class, 'saveGameClientGate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/annuaire', [\App\Controllers\Admin\System\SystemRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/epingler', [\App\Controllers\Admin\System\SystemRegistryController::class, 'pin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1063,6 +1070,9 @@ return function (Router $router) {
     $router->post('/admin/system/demo-nda/add-my-ip', [SystemDemoNdaController::class, 'addMyIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/e-mails', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/retrospective', [\App\Controllers\Admin\System\SystemYearReviewController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/retrospective/reglages', [\App\Controllers\Admin\System\SystemYearReviewController::class, 'save'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/retrospective/recalculer', [\App\Controllers\Admin\System\SystemYearReviewController::class, 'refresh'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/e-mails/reglages', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/e-mails/recapitulatif', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'sendDigestNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Registre des données (tableaux, corrélations, purge des joueurs fantômes).
