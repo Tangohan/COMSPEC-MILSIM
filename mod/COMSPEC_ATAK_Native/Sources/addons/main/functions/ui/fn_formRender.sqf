@@ -97,6 +97,9 @@ private _fit = {
     private _tw = ctrlTextWidth _b;
     if (_tw > _bw * 0.9) then { _b ctrlSetFontHeight ((_fh * _bw * 0.9 / _tw) max COMSPEC_ATAK_FontMin); };
 };
+// Libellés des boutons pleine ligne et des boutons de champ : retour de jeu, ENREGISTRER et QUITTER LE GROUPE
+// paraissaient minuscules et empâtés à côté du texte de la page ; presque la taille du corps, rétrécis par _fit si trop longs.
+private _btnFs = _font * 0.92;
 private _lineIdx = 0; // lignes "line" : fond alterné
 {
     private _row = _x;
@@ -216,7 +219,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         case "memo": {
             _row params ["_kind", "_key", "_label", ["_value", ""], ["_lines", 3]];
             private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], _label] call _mk;
-            _lb ctrlSetFontHeight (_fs * 0.9);
+            _lb ctrlSetFontHeight _fs;
             _y = _y + _fs * 1.2;
             private _h = [_rowH, _font * 1.15 * _lines + _font * 0.3] select (_kind isEqualTo "memo");
             private _e = [["COMSPEC_RscEdit", "COMSPEC_RscEditMulti"] select (_kind isEqualTo "memo"), [_pad, _y, _w, _h], _value] call _mk;
@@ -228,14 +231,15 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             // Champ et bouton sur la même ligne (renommer) : libellé au-dessus, bouton à droite à hauteur du champ.
             _row params ["", "_key", "_label", ["_value", ""], ["_btnLabel", "OK"], ["_code", {}], ["_primary", true]];
             private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], _label] call _mk;
-            _lb ctrlSetFontHeight (_fs * 0.9);
+            _lb ctrlSetFontHeight _fs;
             _y = _y + _fs * 1.2;
             private _bwF = _w * 0.32;
             private _e = ["COMSPEC_RscEdit", [_pad, _y, _w - _bwF - _pad / 2, _rowH], _value] call _mk;
             _e ctrlSetFontHeight _font;
             _fields set [_key, _e];
             private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - _bwF, _y, _bwF, _rowH], _btnLabel] call _mk;
-            _b ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
+            _b ctrlSetFontHeight _btnFs;
+            [_b, _bwF, _btnFs] call _fit;
             if !(_primary) then { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
             [_b, _code] call _click;
             _y = _y + _rowH + _pad / 2;
@@ -243,7 +247,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         case "combo": {
             _row params ["", "_key", "_label", "_items", ["_selData", ""], ["_btn", []]];
             private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], _label] call _mk;
-            _lb ctrlSetFontHeight (_fs * 0.9);
+            _lb ctrlSetFontHeight _fs;
             _y = _y + _fs * 1.2;
             // Bouton intégré (pas d'application au choix : la molette sur une liste fermée en change la ligne).
             private _bwC = [0, _w * 0.32] select ((count _btn) isEqualTo 2);
@@ -262,7 +266,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             if (_bwC > 0) then {
                 _btn params ["_bl", "_bc"];
                 private _b = ["COMSPEC_RscButtonPrimary", [_pad + _w - _bwC, _y, _bwC, _rowH], _bl] call _mk;
-                _b ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
+                _b ctrlSetFontHeight _btnFs;
+                [_b, _bwC, _btnFs] call _fit;
                 _b setVariable ["comspec_combo", [_c, _bc]];
                 [_b, { params ["_b"]; (_b getVariable ["comspec_combo", [controlNull, {}]]) params ["_c", "_bc"]; if (!isNull _c) then { [_c lbData (lbCurSel _c)] call _bc; }; }] call _click;
             };
@@ -822,7 +827,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             // Mot de passe masqué : on garde la vraie valeur à part et on n'affiche que des points.
             _row params ["", "_key", "_label"];
             private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], _label] call _mk;
-            _lb ctrlSetFontHeight (_fs * 0.9);
+            _lb ctrlSetFontHeight _fs;
             _y = _y + _fs * 1.2;
             private _secretVar = format ["COMSPEC_ATAK_Secret_%1", _key];
             private _cur = uiNamespace getVariable [_secretVar, ""];
@@ -859,8 +864,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true], ["_tip", ""]];
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _forEachIndex * (_bw + _pad / 2), _y, _bw, _rowH], _label] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
-                _b ctrlSetFontHeight _fs;
-                [_b, _bw, _fs] call _fit;
+                _b ctrlSetFontHeight _btnFs;
+                [_b, _bw, _btnFs] call _fit;
                 _b ctrlEnable _enabled;
                 [_b, _code] call _click;
             } forEach _btns;
