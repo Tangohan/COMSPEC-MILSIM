@@ -33,7 +33,7 @@ final class AccessDeniedStayMiddlewareTest extends TestCase
     public function testDeniedPageReturnsToPreviousPageWithToast(): void
     {
         $this->bind('GET', '/back-office/effectifs/promotions', 'https://athena-comspec.eu/back-office/effectifs?tab=membres', 'document');
-        $res = $this->run(static fn () => self::deny('Accès réservé aux administrateurs.'));
+        $res = $this->handle(static fn () => self::deny('Accès réservé aux administrateurs.'));
 
         self::assertSame(302, $res->statusCode());
         self::assertSame('/back-office/effectifs?tab=membres', $res->headerValue('Location'));
@@ -44,7 +44,7 @@ final class AccessDeniedStayMiddlewareTest extends TestCase
     public function testDeniedFetchGetsJson403AndNoLeftoverFlash(): void
     {
         $this->bind('POST', '/back-office/effectifs/1/grade', 'https://athena-comspec.eu/back-office/effectifs', 'empty');
-        $res = $this->run(static fn () => self::deny('Vous n’avez pas accès.'));
+        $res = $this->handle(static fn () => self::deny('Vous n’avez pas accès.'));
 
         self::assertSame(403, $res->statusCode());
         self::assertSame('1', $res->headerValue('X-Ath-Access-Denied'));
@@ -55,7 +55,7 @@ final class AccessDeniedStayMiddlewareTest extends TestCase
     public function testNoRefererKeepsOriginalRedirect(): void
     {
         $this->bind('GET', '/back-office/effectifs', null, 'document');
-        $res = $this->run(static fn () => self::deny('Non.'));
+        $res = $this->handle(static fn () => self::deny('Non.'));
 
         self::assertSame(url('dashboard'), $res->headerValue('Location'));
     }
@@ -63,16 +63,16 @@ final class AccessDeniedStayMiddlewareTest extends TestCase
     public function testRefererOnSamePageOrOtherSiteKeepsOriginalRedirect(): void
     {
         $this->bind('GET', '/back-office/effectifs', 'https://athena-comspec.eu/back-office/effectifs', 'document');
-        self::assertSame(url('dashboard'), $this->run(static fn () => self::deny('Non.'))->headerValue('Location'));
+        self::assertSame(url('dashboard'), $this->handle(static fn () => self::deny('Non.'))->headerValue('Location'));
 
         $this->bind('GET', '/back-office/effectifs', 'https://evil.example/page', 'document');
-        self::assertSame(url('dashboard'), $this->run(static fn () => self::deny('Non.'))->headerValue('Location'));
+        self::assertSame(url('dashboard'), $this->handle(static fn () => self::deny('Non.'))->headerValue('Location'));
     }
 
     public function testRedirectWithoutNewErrorIsUntouched(): void
     {
         $this->bind('POST', '/back-office/effectifs/1', 'https://athena-comspec.eu/back-office/effectifs/1', 'document');
-        $res = $this->run(static function (): Response {
+        $res = $this->handle(static function (): Response {
             Session::flash('success', 'Enregistré.');
 
             return Response::redirect(url('dashboard'));
@@ -84,7 +84,7 @@ final class AccessDeniedStayMiddlewareTest extends TestCase
     public function testRedirectToOtherPageIsUntouched(): void
     {
         $this->bind('POST', '/back-office/effectifs/1', 'https://athena-comspec.eu/back-office/effectifs', 'document');
-        $res = $this->run(static function (): Response {
+        $res = $this->handle(static function (): Response {
             Session::flash('error', 'Champ manquant.');
 
             return Response::redirect(url('back-office/effectifs/1/edit'));
@@ -100,7 +100,7 @@ final class AccessDeniedStayMiddlewareTest extends TestCase
         return Response::redirect(url('dashboard'));
     }
 
-    private function run(callable $next): Response
+    private function handle(callable $next): Response
     {
         return (new AccessDeniedStayMiddleware())(new Request(), $next);
     }
