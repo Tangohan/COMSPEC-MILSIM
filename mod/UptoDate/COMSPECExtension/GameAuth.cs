@@ -682,6 +682,7 @@ public static partial class Extension
                 if (access.Length > 0)
                 {
                     _gameAccessToken = access;
+                    ResetPollRefusals();
                     // Clé communauté fournie par le portail (comme Appairer) : la garder
                     // pour les routes ATAK si le Bearer est mal relayé. Sinon ne plus
                     // effacer une clé déjà valide (Redeem / Connect préalable).

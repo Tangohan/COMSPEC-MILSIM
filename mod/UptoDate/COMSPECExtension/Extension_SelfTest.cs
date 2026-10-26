@@ -92,7 +92,7 @@ public static partial class Extension
         // 2. Chaque canal sondé pendant la partie, rejoué une fois.
         var channels = PollGetCache
             .Where(kv => !string.IsNullOrEmpty(kv.Value.Url))
-            .Select(kv => (Key: kv.Key.Split(':')[0], Url: kv.Value.Url))
+            .Select(kv => (Key: kv.Key.Split(':')[0], Url: kv.Value.Url, Slot: kv.Value))
             .GroupBy(c => c.Key, StringComparer.Ordinal)
             .Select(g => g.First())
             .OrderBy(c => c.Key, StringComparer.Ordinal)
@@ -114,8 +114,14 @@ public static partial class Extension
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SelfTestTimeoutSeconds));
                     using var resp = SendGet(c.Url, cts.Token);
                     var code = (int)resp.StatusCode;
+                    var body = ReadContentUtf8(resp, cts.Token);
                     t.Stop();
                     var ms = t.ElapsedMilliseconds;
+                    // Canal arrêté sur un refus définitif et de nouveau accepté : il reprend tout de suite.
+                    if (code is >= 200 and < 400)
+                        NotePollResult(c.Slot, code);
+                    var stopped = c.Slot.RefusedReason;
+                    var why = PermanentRefusalReason(code, body);
                     var (level, hint) = code switch
                     {
                         >= 200 and < 300 or 304 => (ms > SelfTestSlowMs ? "warn" : "ok", ms > SelfTestSlowMs ? "Canal lent : ses données arrivent en retard." : ""),
@@ -125,7 +131,10 @@ public static partial class Extension
                         503 => ("ko", "Maintenance ou surcharge d'Athena."),
                         _ => ("ko", "Erreur d'Athena sur ce canal."),
                     };
-                    results[i] = string.Join('\t', "C", level, SelfTestField(c.Key), SelfTestField("HTTP " + code + " · " + ms + " ms"), SelfTestField(hint));
+                    if (why.Length > 0)
+                        hint = RefusalHint(why) + (stopped.Length > 0 ? " Canal arrêté jusqu'à une nouvelle liaison." : "");
+                    results[i] = string.Join('\t', "C", level, SelfTestField(c.Key),
+                        SelfTestField("HTTP " + code + (why.Length > 0 ? " " + why : "") + " · " + ms + " ms"), SelfTestField(hint));
                 }
                 catch (Exception ex)
                 {
@@ -142,6 +151,10 @@ public static partial class Extension
                 lines.Add(results[i] ?? string.Join('\t', "C", "ko", SelfTestField(channels[i].Key), "délai dépassé", ""));
         }
 
+        // Adresses d'envoi arrêtées sur un refus définitif.
+        foreach (var kv in PermanentPostRefusals)
+            Add("L", "ko", "Envoi arrêté", kv.Key + " : " + kv.Value, RefusalHint(kv.Value) + " Reprise après une nouvelle liaison.");
+
         // 3. État local de la DLL.
         var s = JournalSummarize();
         var pending = s.Queued + s.Retry;
@@ -157,6 +170,18 @@ public static partial class Extension
 
         return "OK|" + string.Join('\n', lines);
     }
+
+    /// <summary>Conseil au joueur selon le motif de refus d'Athena.</summary>
+    private static string RefusalHint(string reason) => reason.ToLowerInvariant() switch
+    {
+        "unauthorized" => "Clé ou session refusée : Lier mon compte (nouveau code sur le site).",
+        "feature_unavailable" => "La formule de la communauté n'inclut pas cette fonction.",
+        "atak_blocked" => "Joueur bloqué par la communauté : contactez un administrateur.",
+        "account_disabled" => "Compte désactivé : contactez un administrateur.",
+        "tenant_context_required" or "no_tenant" => "Jeu rattaché à aucune communauté : Lier mon compte.",
+        "steam_not_linked" => "Steam non lié au compte : Lier mon compte depuis ce jeu.",
+        _ => "Droits insuffisants pour ce canal.",
+    };
 
     private static string SelfTestString(JsonElement e, string name, string fallback) =>
         e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? fallback : fallback;
