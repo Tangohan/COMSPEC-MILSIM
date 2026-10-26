@@ -460,7 +460,9 @@ private _rhh = _f * 4.3;
 _y = _y + (ceil ((count _recs) / _rcols)) * (_rhh + _gy);
 
 // ============ ATHENA ============
-(missionNamespace getVariable ["COMSPEC_ATAK_DistSrv", [true, -1]]) params ["_ok", "_at"];
+// Serveur sans COMSPEC Link relié : ce téléphone compte et envoie lui-même (relais de fn_distanceServer, mode "self").
+private _relay = !(missionNamespace getVariable ["COMSPEC_ATAK_SrvPlayOK", false]);
+(missionNamespace getVariable [["COMSPEC_ATAK_DistSrv", "COMSPEC_ATAK_DistSrvSelf"] select _relay, [true, -1]]) params ["_ok", "_at"];
 private _ah2 = _f * 3.6;
 [_x0, _y + _gy * 0.6, _W, _ah2, _cCard] call _box;
 _y = _y + _gy * 0.6;
@@ -470,7 +472,7 @@ private _st = if (_at < 0) then { "Pas encore envoyé" } else { format [["Envoy�
 private _bwBtn = _fx * 7.5;
 [_x0 + _fx * 1.8, _y + _f * 0.45, _W - _bwBtn - _fx * 3, _f * 3,
     (["ATHENA", 0.72, _hDim, true] call _t) + "<br/>" + ([_st, 0.88, _hText, true] call _t) + "<br/>" +
-    (["Envoyé par le serveur toutes les 10 min. Le cumul de toutes vos missions est sur votre fiche du site.", 0.66, _hDim] call _t)] call _txt;
+    ([["Envoyé par le serveur toutes les 10 min.", "Envoyé par ce téléphone toutes les 10 min (le serveur n'est pas relié à Athena)."] select _relay, 0.66, _hDim] call _t) + " " + (["Le cumul de toutes vos missions est sur votre fiche du site.", 0.66, _hDim] call _t)] call _txt;
 private _btn = [_x0 + _W - _bwBtn - _fx * 0.8, _y + _f * 0.9, _bwBtn, _f * 1.8];
 [_btn select 0, _btn select 1, _btn select 2, _btn select 3, [_accHex, 0.16] call _rgb] call _box;
 [_btn select 0, (_btn select 1) + _f * 0.3, _btn select 2, _f * 1.3, ["ACTUALISER", 0.8, _accHex, true, "center"] call _t] call _txt;

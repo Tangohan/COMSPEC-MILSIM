@@ -7225,7 +7225,8 @@ class AtakApiController
      * Serveur Arma (COMSPEC Link « Distance.Batch », app Distances de l'ATAK natif) : distances parcourues et heures de
      * pilote de tous les joueurs, comptées par le serveur et envoyées toutes les 10 min.
      * Corps : {mission_key, players: [{player_uid, call_sign, steps, foot_m, foot_s, land_m, land_s, sea_m, sea_s, air_m,
-     * air_s, halo_m, halo_s, halo_jumps, pilot: [{class, label, kind: heli|plane, seconds, meters}]}]}.
+     * air_s, halo_m, halo_s, halo_jumps, pilot: [{class, label, kind: heli|plane, seconds, meters}]}], source?}.
+     * source = « client » : envoi du téléphone d'un joueur quand le serveur n'est pas relié à Athena (lui seul est gardé).
      */
     public function distanceBatch(Request $request, array $params = []): Response
     {
@@ -7247,9 +7248,14 @@ class AtakApiController
         }
         $body = $this->jsonBody($request);
         $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+        $batch = \App\Repositories\AtakDistanceRepository::normalizeBatch($body['players'] ?? []);
+        // Relais du téléphone (serveur Arma sans liaison) : le joueur ne compte que pour lui-même.
+        if (($body['source'] ?? '') === 'client') {
+            $batch = \App\Repositories\AtakDistanceRepository::onlyPlayer($batch, is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null);
+        }
         $matched = 0;
         $unmatched = 0;
-        foreach (\App\Repositories\AtakDistanceRepository::normalizeBatch($body['players'] ?? []) as $p) {
+        foreach ($batch as $p) {
             $uid = SteamId::normalize($p['player_uid']);
             $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
             if ($user === null) {
