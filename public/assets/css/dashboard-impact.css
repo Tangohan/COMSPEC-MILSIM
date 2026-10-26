@@ -945,7 +945,9 @@ a.dash-cc-row:hover,
     pointer-events: auto !important;
     transform: none !important;
   }
+}
 
+/* Habillage du rail (vues, tuiles, panneau détail) : toutes largeurs, le tiroir mobile le réutilise. */
   .dash-rail__view--root,
   .dash-rail__view--drill {
     display: flex;
@@ -1501,7 +1503,7 @@ a.dash-cc-row:hover,
     line-height: 1.4;
     color: rgba(255, 255, 255, 0.32);
   }
-}
+/* (fin de l’habillage du rail, toutes largeurs) */
 
 @media (prefers-reduced-motion: reduce) {
   .dash-rail__panel,
@@ -1524,7 +1526,7 @@ a.dash-cc-row:hover,
  * chaque rubrique, chevron d’ouverture, rubrique active marquée d’un filet.
  * Surcharge le bloc ci-dessus (même structure, mêmes hooks JS).
  * -------------------------------------------------------------------------- */
-@media (min-width: 1024px) {
+/* Toutes largeurs : le tiroir mobile reprend le même habillage que le rail desktop. */
   .dash-rail .dash-rail__panel { padding: 1rem 0.75rem 1rem; }
 
   .dash-rail .dash-rail__brand {
@@ -1668,7 +1670,7 @@ a.dash-cc-row:hover,
     background: rgba(5, 150, 105, 0.18); font-size: 0.6875rem; letter-spacing: 0.04em;
   }
   .dash-rail .dash-rail__foot-live::before { content: ''; width: 0.4rem; height: 0.4rem; border-radius: 999px; background: currentColor; }
-}
+/* (fin du bloc refonte, toutes largeurs) */
 
 /* overflow-x:hidden/clip sur body/main clippe le rail fixed — forcer visible */
 body.dashboard-shell,

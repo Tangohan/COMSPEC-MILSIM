@@ -237,6 +237,84 @@
     openFromHash();
     window.addEventListener('hashchange', openFromHash);
 
+    /* Tiroir mobile (< 1024 px) : bouton « Rubriques », voile, Échap, focus rendu. */
+    var mobileOpeners = Array.prototype.slice.call(document.querySelectorAll('[data-dash-rail-mobile-open]'));
+    if (mobileOpeners.length) {
+      var mq = window.matchMedia('(max-width: 1023.98px)');
+      var scrim = document.createElement('div');
+      scrim.className = 'dash-rail-scrim';
+      scrim.setAttribute('aria-hidden', 'true');
+      rail.parentNode.insertBefore(scrim, rail.nextSibling);
+      var mobileOpener = null;
+
+      function isMobileOpen() {
+        return rail.classList.contains('is-mobile-open');
+      }
+
+      function setMobile(on, opener) {
+        rail.classList.toggle('is-mobile-open', on);
+        scrim.classList.toggle('is-on', on);
+        document.documentElement.classList.toggle('dash-rail-locked', on);
+        mobileOpeners.forEach(function (b) { b.setAttribute('aria-expanded', on ? 'true' : 'false'); });
+        if (on) {
+          rail.setAttribute('role', 'dialog');
+          rail.setAttribute('aria-modal', 'true');
+          mobileOpener = opener || mobileOpener;
+          var first = rail.querySelector('[data-dash-rail-mobile-close]');
+          if (first) {
+            window.setTimeout(function () { first.focus({ preventScroll: true }); }, 30);
+          }
+        } else {
+          rail.removeAttribute('role');
+          rail.removeAttribute('aria-modal');
+          if (drillOpenId !== null) {
+            closeDrill({ restoreFocus: false });
+          }
+          if (mobileOpener && typeof mobileOpener.focus === 'function') {
+            mobileOpener.focus({ preventScroll: true });
+          }
+        }
+      }
+
+      mobileOpeners.forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.preventDefault();
+          setMobile(!isMobileOpen(), b);
+        });
+      });
+      rail.querySelectorAll('[data-dash-rail-mobile-close]').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          setMobile(false);
+        });
+      });
+      scrim.addEventListener('click', function () { setMobile(false); });
+      document.addEventListener('keydown', function (e) {
+        // Échap ferme d’abord la rubrique ouverte (géré plus haut), puis le tiroir.
+        if (e.key === 'Escape' && isMobileOpen() && drillOpenId === null && !e.defaultPrevented) {
+          setMobile(false);
+        }
+        if (e.key === 'Tab' && isMobileOpen()) {
+          var f = Array.prototype.filter.call(
+            rail.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+            function (el) { return el.offsetParent !== null; }
+          );
+          if (!f.length) return;
+          if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+          else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+        }
+      });
+      rail.addEventListener('click', function (e) {
+        var a = e.target.closest ? e.target.closest('a[href]') : null;
+        if (a && isMobileOpen()) {
+          setMobile(false);
+        }
+      });
+      var onMq = function () { if (!mq.matches && isMobileOpen()) setMobile(false); };
+      if (mq.addEventListener) mq.addEventListener('change', onMq); else if (mq.addListener) mq.addListener(onMq);
+    }
+
     // Back-office / pages avec data-dash-rail-autoload : ouvrir la rubrique active.
     if (rail.hasAttribute('data-dash-rail-autoload')) {
       var activeBtn = rail.querySelector('[data-dash-rail-open].is-active');
