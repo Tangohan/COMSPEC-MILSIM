@@ -17,7 +17,9 @@ params [["_act", ""], ["_args", []], ["_caller", objNull]];
 // Demande venue d'un client : seul remoteExecutedOwner fait foi. L'unité annoncée dans la demande est écartée (un
 // client y mettait l'unité d'un Zeus ou d'un admin connecté pour obtenir le relevé de la partie, valider une
 // compromission -- donc faire révoquer un certificat chez Athena -- ou reprendre un téléphone).
-// Un appel non distant ne peut venir que du code du serveur (postInit, ré-appel « scan » l. 123) : il garde ce qu'il passe.
+// Un appel non distant ne peut venir que du code du serveur (postInit) : il garde ce qu'il passe. Quand la demande vient
+// d'un client, ce que cette fonction appelle elle-même (ré-appel « scan », fn_captureServer, gestionnaire CBA d'une
+// unité locale) tourne dans la même pile et y voit le même appel distant (voir « recover »).
 private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
 if (_remote) then { _caller = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
 // Hôte d'une partie locale : son propre appel n'est pas distant (son poste EST le serveur, remoteExecutedOwner y
@@ -128,7 +130,18 @@ switch (_act) do {
                 if (!isNull _ai) then {
                     private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
                     {
-                        if ((toLower _x) in _cat) then { ["comspec_atak_native_capLocal", ["strip", _ai, _x], _ai] call CBA_fnc_targetEvent; };
+                        if ((toLower _x) in _cat) then {
+                            // IA locale au serveur : retrait fait ici (même code que la branche « local » de
+                            // fn_captureServer). Par l'événement, CBA appelle le gestionnaire dans cette même pile, que
+                            // fn_captureServer prend pour un appel du client admin : « local » y était refusée et l'IA
+                            // gardait le téléphone, alors que l'app annonçait le contraire. IA locale à une autre
+                            // machine (client sans interface) : l'événement part par le réseau, hors de cette pile.
+                            if (local _ai) then {
+                                if (_x in (assignedItems _ai)) then { _ai unlinkItem _x; } else { _ai removeItem _x; };
+                            } else {
+                                ["comspec_atak_native_capLocal", ["strip", _ai, _x], _ai] call CBA_fnc_targetEvent;
+                            };
+                        };
                     } forEach ((assignedItems _ai) + (items _ai));
                     _ai setVariable ["COMSPEC_ATAK_CapOf", nil, true];
                     _ai setVariable ["COMSPEC_ATAK_Ident", nil, true];

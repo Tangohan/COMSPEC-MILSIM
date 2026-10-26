@@ -21,17 +21,20 @@
       "init" (postInit serveur)   "tick" (3 s)   "exploit" (5 s)   "dropped" [porte-objet]
       "validate" [id, unité]   "dismiss" [id, unité]   "athena" [id, ok, unité]
         Ces trois-là sont appelées par un client (remoteExecCall vers 2, CfgRemoteExec) : l'unité passée y est
-        REMPLACÉE par celle du poste émetteur, retrouvée par remoteExecutedOwner (fn_reqUnit). Un appel local du
-        serveur (fn_adminServer, app Admin) garde l'unité qu'il passe : il a déjà vérifié le droit.
+        REMPLACÉE par celle du poste émetteur, retrouvée par remoteExecutedOwner (fn_reqUnit). Un appel du serveur
+        hors de toute pile distante (hôte, solo) garde l'unité qu'il passe. fn_adminServer (app Admin) tourne dans la
+        pile du remoteExec de l'admin : l'admin y est recalculé à l'identique.
       "local" [mode, objet, valeur] : sur la machine où l'objet est local ("strip" | "give" | "move" | "pick" | "hunt")
     Debug (app Admin, fn_adminServer) : chaque capture garde « targets » (joueurs repérés) et « hunters » (groupes en traque).
 */
 params [["_act", "tick"], ["_arg", []]];
 // Demande venue d'un client : seul remoteExecutedOwner fait foi. L'acteur annoncé dans la demande est écarté (un
-// client passait n'importe quel chef de groupe du camp du téléphone pour faire valider la compromission, l. 270-276,
-// ce qui coupe le téléphone du réseau, impose un nouvel IMEI au propriétaire et demande la révocation du certificat
-// du terminal chez Athena). « isServer » dans le test : la branche « local » tourne aussi chez les clients, elle n'est
-// pas concernée (ses seuls émetteurs sont le serveur).
+// client passait n'importe quel chef de groupe du camp du téléphone pour faire valider la compromission, « validate »
+// plus bas, ce qui coupe le téléphone du réseau, impose un nouvel IMEI au propriétaire et demande la révocation du
+// certificat du terminal chez Athena). « isServer » dans le test : la branche « local » tourne aussi chez les clients
+// (événement capLocal), elle n'y est pas filtrée. Sur le serveur, « local » est refusée dans la pile d'un remoteExec
+// client, même quand c'est le serveur qui lève capLocal dans cette pile : fn_adminServer « recover » retire donc
+// lui-même le téléphone d'une IA locale au serveur.
 private _remote = isServer && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
 private _req = objNull;
 if (_remote) then { _req = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
