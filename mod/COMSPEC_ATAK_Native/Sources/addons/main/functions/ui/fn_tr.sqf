@@ -115,7 +115,8 @@ private _seg = {
     // Lignes et « · » avant « Libellé : valeur » : le dictionnaire est découpé de la même façon (tools/i18n.py), donc
     // « Poste : bâtiments %1 / %2 · forêts %3 / %4 » y est en morceaux ; le libellé seul (« Poste ») gâchait la suite.
     if (_r isEqualTo "" && {(_core find _nl) >= 0}) then {
-        _r = ((_core splitString _nl) apply { [_x, _depth] call _seg }) joinString _nl;
+        // CBA_fnc_split garde les lignes vides (splitString les retirait : « État de l'ATAK :\n\nAlimentation… » perdait son blanc).
+        _r = (([_core, _nl] call CBA_fnc_split) apply { [_x, _depth] call _seg }) joinString _nl;
     };
     if (_r isEqualTo "" && {(_core find " · ") > 0}) then {
         _r = (([_core, " · "] call CBA_fnc_split) apply { [_x, _depth + 1] call _seg }) joinString " · ";
