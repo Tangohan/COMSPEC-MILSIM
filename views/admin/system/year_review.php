@@ -99,6 +99,10 @@ $err = \App\Core\Session::getFlash('error');
                     <p class="pa-hint">Une seule fois par joueur. 0 : jamais d’ouverture automatique, seulement depuis Mon compte.</p>
                     <input id="yr_days" type="number" name="popup_days" min="0" max="366" value="<?= $cal->popupDays() ?>" style="max-width:10rem;box-sizing:border-box">
                 </div>
+                <div class="pa-field">
+                    <label><input type="checkbox" name="email" value="1" <?= $cal->emailEnabled() ? 'checked' : '' ?>> Prévenir les joueurs par e-mail à la publication</label>
+                    <p class="pa-hint">Un seul e-mail par joueur, seulement à ceux qui ont joué dans l’année et ne l’ont pas encore ouverte. Les envois partent pendant <?= YearReviewCalendar::EMAIL_DAYS ?> jours, au rythme du quota d’e-mails journalier. Chaque joueur peut le couper dans ses préférences de notification.</p>
+                </div>
                 <div class="pa-actions" style="margin-top:1rem;">
                     <button type="submit" class="pa-btn pa-btn--ink">Enregistrer</button>
                 </div>

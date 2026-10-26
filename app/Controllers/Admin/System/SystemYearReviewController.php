@@ -70,6 +70,7 @@ final class SystemYearReviewController
                 YearReviewCalendar::SETTING_ENABLED => (string) $request->input('enabled', '0') === '1' ? '1' : '0',
                 YearReviewCalendar::SETTING_PUBLISH_MD => $md,
                 YearReviewCalendar::SETTING_POPUP_DAYS => (string) $days,
+                YearReviewCalendar::SETTING_EMAIL => (string) $request->input('email', '0') === '1' ? '1' : '0',
             ]);
             Session::flash('success', 'Réglages de la rétrospective enregistrés.');
         } catch (\Throwable) {

@@ -21,7 +21,7 @@ final class YearReviewAccess
     {
         try {
             $repo = new PlatformSettingsRepository();
-            $keys = [YearReviewCalendar::SETTING_ENABLED, YearReviewCalendar::SETTING_PUBLISH_MD, YearReviewCalendar::SETTING_POPUP_DAYS];
+            $keys = [YearReviewCalendar::SETTING_ENABLED, YearReviewCalendar::SETTING_PUBLISH_MD, YearReviewCalendar::SETTING_POPUP_DAYS, YearReviewCalendar::SETTING_EMAIL];
             $settings = [];
             foreach ($keys as $k) {
                 $v = $repo->get($k, '');

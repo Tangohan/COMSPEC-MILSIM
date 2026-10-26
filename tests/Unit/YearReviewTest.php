@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Services\Billing\SubscriptionPlanFeaturesCatalog;
+use App\Services\Community\YearReviewMailer;
+use App\Services\Cron\CronSchedule;
+use App\Services\Email\EmailEvents;
 use App\Support\YearReviewCalendar;
 use App\Support\YearReviewStats;
 use App\Support\YearReviewStory;
@@ -147,6 +150,40 @@ final class YearReviewTest extends TestCase
         foreach (['standard', 'pro', 'pro_plus'] as $slug) {
             self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug($slug)['year_review_collective'], $slug);
         }
+    }
+
+    public function testAnnouncementEmailGoesOutForTwoWeeksAfterPublication(): void
+    {
+        $c = new YearReviewCalendar();
+        self::assertTrue($c->emailEnabled());
+        self::assertNull($c->emailYear($this->ts('2026-11-30 12:00')));
+        self::assertSame(2026, $c->emailYear($this->ts('2026-12-01 06:00')));
+        self::assertSame(2026, $c->emailYear($this->ts('2026-12-14 23:00')));
+        self::assertNull($c->emailYear($this->ts('2026-12-15 00:00')), 'pas d’annonce des semaines après');
+        self::assertNull(YearReviewCalendar::fromSettings([YearReviewCalendar::SETTING_EMAIL => '0'])->emailYear($this->ts('2026-12-02')));
+        self::assertSame('year_review_mail_2026', YearReviewCalendar::mailKey(2026));
+    }
+
+    public function testAnnouncementEmailTakesHalfOfWhatIsLeftOfTheDailyQuota(): void
+    {
+        self::assertSame(37, YearReviewMailer::share(90, 15, 0));
+        self::assertSame(1, YearReviewMailer::share(90, 15, 74));
+        self::assertSame(0, YearReviewMailer::share(90, 15, 75));
+    }
+
+    public function testAnnouncementEmailTeasesThreeFigures(): void
+    {
+        $b = YearReviewStats::build($this->sample(), ['u1' => 'Viper 1-1'], 40);
+        $vars = YearReviewMailer::templateVars(2026, $b['players']['u1'], 'Unité', 'https://athena-comspec.eu/retrospective/2026');
+        self::assertSame('Viper 1-1', $vars['displayName']);
+        self::assertSame([['100 h', 'de jeu'], ['32', 'missions'], ['582 km', 'parcourus']], $vars['teasers']);
+
+        $root = dirname(__DIR__, 2);
+        self::assertContains(EmailEvents::YEAR_REVIEW_READY, EmailEvents::EMAIL_EVENTS);
+        self::assertFileExists($root . '/views/emails/year_review_ready.php');
+        self::assertStringContainsString('YearReviewMailCronJob::class', (string) file_get_contents($root . '/app/Core/Container.php'));
+        self::assertSame(1440, CronSchedule::intervalMinutes('year_review_mail'));
+        self::assertStringContainsString('EmailEvents::YEAR_REVIEW_READY', (string) file_get_contents($root . '/app/Controllers/Web/AccountController.php'));
     }
 
     public function testRoutesMenuAndLoginWindowAreWired(): void

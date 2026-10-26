@@ -698,6 +698,12 @@ class AccountController
                 'group' => 'Événements',
             ],
             [
+                'key' => EmailEvents::YEAR_REVIEW_READY,
+                'label' => 'Rétrospective de l’année',
+                'hint' => 'Une fois par an, quand le bilan de votre année de jeu est prêt.',
+                'group' => 'Événements',
+            ],
+            [
                 'key' => EmailEvents::COMMUNITY_REPORT_RECEIPT,
                 'label' => 'Accusé de réception de votre signalement',
                 'hint' => 'Confirmation que votre signalement ou demande a bien été transmis à l’équipe.',
