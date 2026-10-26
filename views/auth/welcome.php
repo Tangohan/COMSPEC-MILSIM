@@ -35,6 +35,9 @@ if ($lockBackgroundIntervalMs < 4000 || $lockBackgroundIntervalMs > 20000) {
     $lockBackgroundIntervalMs = 10000;
 }
 $error = \App\Core\Session::getFlash('error');
+// Connexion faite avec un code de secours : prévenir quand la réserve s'épuise.
+$recoveryLeft = \App\Core\Session::get('recovery_code_used_notice');
+\App\Core\Session::forget('recovery_code_used_notice');
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $title = (string) ($title ?? 'Bienvenue');
 ?>
@@ -367,6 +370,15 @@ $title = (string) ($title ?? 'Bienvenue');
 
     <?php if ($error): ?>
         <div class="flash" role="alert"><?= $h($error) ?></div>
+    <?php endif; ?>
+    <?php if ($recoveryLeft !== null): ?>
+        <div class="flash" role="status">
+            <?php if ((int) $recoveryLeft === 0): ?>
+                Code de secours utilisé : il ne vous en reste plus. Générez-en de nouveaux dans Mon compte › Double vérification.
+            <?php else: ?>
+                Code de secours utilisé. Il vous en reste <?= (int) $recoveryLeft ?>. Vous pouvez en générer de nouveaux dans Mon compte › Double vérification.
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
 
     <div class="clock">

@@ -20,6 +20,9 @@ final class AuditAction
     public const AUTH_TOTP_ENABLED = 'auth.totp_enabled';
     public const AUTH_TOTP_DISABLED = 'auth.totp_disabled';
     public const AUTH_EMAIL_LOGIN_OTP_TOGGLED = 'auth.email_login_otp_toggled';
+    public const AUTH_RECOVERY_CODE_USED = 'auth.recovery_code_used';
+    public const AUTH_RECOVERY_CODES_GENERATED = 'auth.recovery_codes_generated';
+    public const AUTH_TRUSTED_DEVICES_REVOKED = 'auth.trusted_devices_revoked';
     public const AUTH_PORTAL_SELECTED = 'auth.portal_selected';
     public const USER_STEAM_LINKED = 'user.steam_linked';
 
