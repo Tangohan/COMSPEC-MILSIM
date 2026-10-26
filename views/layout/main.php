@@ -445,6 +445,8 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : ((!empty($layoutMainCompact) || !empty($compactPortalMain)) ? 'min-h-0 personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
         <?php if (empty($communityReelsPage) && empty($isBackOfficeShell) && empty($isPlatformAdminShell) && empty($messagesPage)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
+        <?php elseif (empty($communityReelsPage)): ?>
+        <?php require base_path('views/partials/access_denied_toasts.php'); ?>
         <?php endif; ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>
         <div
