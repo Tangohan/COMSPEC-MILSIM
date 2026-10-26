@@ -163,8 +163,17 @@ domaine demande de modifier cette liste et de republier les deux DLL.
 - **Athena local de développement** : la boucle locale (`127.0.0.1`, `localhost`, `::1`) n'est acceptée que si la
   variable d'environnement `COMSPEC_DEV_TRUST_LOOPBACK=1` est posée pour le processus Arma (lue une fois au chargement
   de la DLL). Sans elle, un Athena local répond `ERR|untrusted_host` dès la liaison. Jamais en production.
-- **Avant de publier une DLL 2.4.1 ou plus récente**, vérifier sur les deux domaines qu'aucune route d'API ne redirige,
-  sous l'adresse que la DLL appelle réellement (préfixe `/public` des mods, réécrit en interne par nginx) **et** sans
-  le préfixe : `curl -sI https://athena-comspec.eu/public/api/atak/version`,
-  `curl -sI https://athena.ttrd.fr/public/api/atak/version`, puis les deux mêmes sans `/public` (attendu : `200`,
-  jamais `301`, `302`, `307` ni `308`), et de même pour un fichier sous `/public/map-photo/`.
+- **Avant de publier les DLL 2.0.96 (ATAK natif 2.4.1) ou plus récentes**, vérifier sur les deux domaines qu'aucune
+  route d'API ne redirige, sous l'adresse que la DLL appelle réellement (préfixe `/public` des mods, réécrit en
+  interne par nginx) **et** sans le préfixe. Vérifier en `GET`, pas avec `curl -I` : le routeur d'Athena ne connaît
+  pas `HEAD` et répond `404` à toutes ces adresses, ce qui ne dit rien des redirections.
+
+  ```bash
+  for u in https://athena-comspec.eu/public/api/atak/version https://athena.ttrd.fr/public/api/atak/version \
+           https://athena-comspec.eu/api/atak/version https://athena.ttrd.fr/api/atak/version; do
+    curl -sS -o /dev/null -w "%{http_code} %{redirect_url} $u\n" "$u"
+  done
+  ```
+
+  Attendu sur chaque ligne : `200`, puis rien avant l'adresse testée (aucune redirection) ; jamais `301`, `302`,
+  `307` ni `308`. De même pour un fichier sous `/public/map-photo/`.
