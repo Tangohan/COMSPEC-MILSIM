@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Diapositives visibles sur les écrans COMSPEC et diapositives Google dans le téléphone (prochain regroupement, COMSPEC Link 2.0.98)
+
+### Résumé joueur
+Type : correctif
+FR : Les diapositives s'affichent enfin sur les écrans du jeu
+- Les écrans COMSPEC (TV, écran de projection, ordinateur) montrent maintenant la diapositive diffusée depuis le téléphone, au lieu de rester noirs.
+- Les diapositives Google Slides synchronisées s'affichent aussi dans l'app Briefing et sur les écrans, au lieu d'une zone noire.
+- Si une diapositive ne peut vraiment pas s'afficher, le téléphone dit pourquoi au lieu de montrer un écran noir.
+EN : Slides finally show on in-game screens
+- COMSPEC screens (TV, projector screen, computer) now show the slide broadcast from the phone instead of staying black.
+- Synced Google Slides now also show in the Briefing app and on screens instead of a black area.
+- If a slide really cannot be shown, the phone says why instead of showing a black screen.
+
+### Détail technique
+- Cause (journal de TTRD du 26/10) : Arma refuse toute image hors d'un PBO sans -filePatching (`getTextureInfo` = [-1,-1]). La 2.5.0 avait corrigé l'app Briefing pour les diapositives Athena (copie JPEG en base64 + `CT_WEBBROWSER`), mais `fn_screenCast` posait toujours le fichier du cache sur l'objet (`setObjectTexture`), et les diapositives Google (`COMSPEC_GoogleBriefingPath`, PNG de `comspec_cache/google-deck`) restaient noires partout.
+- `fn_screenCast` "tick" : chemin posé seulement si `fn_texUsable` le lit ; sinon texture UI `#(rgb,1280,720,1)ui("COMSPEC_RscScreenSlideTexture", comspec_atak_scr_<n>)` (une par écran) avec un `COMSPEC_RscWebBrowser` plein cadre ("load" range le display, "web" ouvre la page data:, `displayUpdate` répété 15 s puis toutes les 10 s si l'écran est vu). Un seul écran en attente de display à la fois (4 s), comme les écrans TOC. Diapositives Google : source « local:<chemin> ».
+- `fn_slideWebData` (nouveau) : lecture base64 par `ImageDataChunk` (Athena : .paa remplacé par la copie .jpg ; local : fichier du cache), raisons lisibles.
+- `fn_pageBriefing` : repli navigateur pour la source GOOGLE (cache `COMSPEC_ATAK_GSlideCache`, vidé par ACTUALISER dans `fn_briefingAction`).
+- COMSPEC Link : `ImageDataChunk` accepte « local:<chemin> » limité aux dossiers `comspec_cache` de la DLL (PNG/JPEG, 1,4 Mo au plus) ; `GoogleSlidesDeck` télécharge d'abord l'export JPEG (Arma ne lit pas le PNG, image plus légère pour le navigateur), extension du fichier selon le format reçu. Link 2.0.97 et avant : message « COMSPEC Link 2.0.98 requise » pour Google.
+- Source seulement : version, `main.pbo` et DLL refaits au regroupement.
+
+---
+
 ## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
 
 ### Résumé joueur
