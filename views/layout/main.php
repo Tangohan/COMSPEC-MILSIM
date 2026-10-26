@@ -616,6 +616,9 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php require base_path('views/partials/portal_help_modal.php'); ?>
     <?php require base_path('views/partials/plan_gift_notice_modal.php'); ?>
     <?php require base_path('views/partials/mod_report_reply_modal.php'); ?>
+    <?php if (empty($isFormationWorkspace) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
+        <?php require base_path('views/partials/year_review_modal.php'); ?>
+    <?php endif; ?>
     <?php if (
         !empty(\App\Core\Session::get('user_id'))
         && empty($isBackOfficeShell)

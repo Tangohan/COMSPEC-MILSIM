@@ -125,6 +125,7 @@ class AccountController
         ];
 
         return $this->accountView('account.index', 'Mon compte', [
+            'accountYearReview' => $this->yearReviewCard($tenantId, $uid),
             'accountUser' => $accountUser,
             'accountProfile' => $accountProfile,
             'accountSnapshot' => $accountSnapshot,
@@ -137,6 +138,41 @@ class AccountController
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
+    }
+
+    /**
+     * Carte « Ma rétrospective » : la dernière année publiée (avec ou sans chiffres), sinon la date de la prochaine.
+     *
+     * @return array{year: int, published: bool, has_data: bool, publish_at: int, collective: bool, years: list<int>}|null
+     */
+    private function yearReviewCard(int $tenantId, int $userId): ?array
+    {
+        try {
+            $calendar = \App\Services\Community\YearReviewAccess::calendar();
+            if (!$calendar->enabled() || $tenantId < 1) {
+                return null;
+            }
+            $now = time();
+            $year = $calendar->currentYear($now);
+            if ($year === null) {
+                $year = $calendar->publishesInYear() ? (int) date('Y', $now) : (int) date('Y', $now) - 1;
+                $year = max(\App\Support\YearReviewCalendar::FIRST_YEAR, $year);
+
+                return ['year' => $year, 'published' => false, 'has_data' => false, 'publish_at' => $calendar->publishAt($year), 'collective' => false, 'years' => []];
+            }
+            $player = (new \App\Services\Community\YearReviewService())->forUser($tenantId, $userId, $year, $now);
+
+            return [
+                'year' => $year,
+                'published' => true,
+                'has_data' => $player !== null,
+                'publish_at' => $calendar->publishAt($year),
+                'collective' => \App\Services\Community\YearReviewAccess::collectiveAllowed($tenantId),
+                'years' => $calendar->publishedYears($now),
+            ];
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** Ferme toutes les autres sessions du compte ; celle en cours reste ouverte. */
