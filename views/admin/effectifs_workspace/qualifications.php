@@ -165,9 +165,9 @@ $horizonUrl = static function (int $days): string {
                         </td>
                         <td>
                             <?php if ($isExpired): ?>
-                                <span class="eff-sheets__badge" style="background:#fef2f2;color:#991b1b">Échue</span>
+                                <span class="eff-sheets__badge eff-sheets__badge--bad">Échue</span>
                             <?php else: ?>
-                                <span class="eff-sheets__badge" style="background:#fffbeb;color:#92400e">À renouveler</span>
+                                <span class="eff-sheets__badge eff-sheets__badge--warn">À renouveler</span>
                             <?php endif; ?>
                         </td>
                     </tr>

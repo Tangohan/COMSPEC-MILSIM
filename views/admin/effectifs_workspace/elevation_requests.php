@@ -130,11 +130,11 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
     <div class="eff-catalog-filters" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
         <div>
             <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Demandes listées</p>
-            <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= count($requests) ?></p>
+            <p class="eff-stat-value"><?= count($requests) ?></p>
         </div>
         <div>
             <p class="eff-catalog__kicker" style="letter-spacing:0.14em">À traiter</p>
-            <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= $openCount ?></p>
+            <p class="eff-stat-value"><?= $openCount ?></p>
         </div>
     </div>
 
@@ -227,7 +227,7 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
         <?php if ($showAll && $elevTotalPages > 1): ?>
         <div class="eff-catalog-foot">
             <p style="margin:0">
-                <strong style="color:#0f172a"><?= $elevTotal ?></strong>
+                <strong class="eff-stat-strong"><?= $elevTotal ?></strong>
                 demande<?= $elevTotal > 1 ? 's' : '' ?> — page <?= $elevPage ?> / <?= $elevTotalPages ?>
             </p>
             <div class="eff-catalog-foot__links">
