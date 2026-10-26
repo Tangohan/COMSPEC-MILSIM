@@ -109,7 +109,7 @@ $platformNav = [
         ['path' => 'admin/musique', 'label' => 'Musique', 'icon' => 'music', 'access' => 'system', 'desc' => 'Bibliothèque du site et de l’app Musique de l’ATAK, playlist globale'],
     ]],
     ['key' => 'configuration', 'label' => 'Configuration', 'items' => [
-        ['path' => 'admin/settings', 'label' => 'Paramètres système', 'icon' => 'gear', 'access' => 'system', 'desc' => 'Configuration effective, en lecture seule'],
+        ['path' => 'admin/settings', 'label' => 'Paramètres système', 'icon' => 'gear', 'access' => 'system', 'desc' => 'Configuration effective, version minimale des DLL du jeu'],
         ['path' => 'admin/system/military-referential', 'label' => 'Référentiel militaire', 'icon' => 'orbat', 'access' => 'system', 'desc' => 'Organisations, commandements, unités'],
         ['path' => 'admin/system/integrations', 'label' => 'Intégrations de la plateforme', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Salons Discord de l’équipe, rôles liés de Discord, envoi commun des e-mails'],
         ['path' => 'admin/system/cron', 'label' => 'Tâches automatiques', 'icon' => 'clock', 'access' => 'system', 'desc' => 'Travaux récurrents et leur dernier passage'],

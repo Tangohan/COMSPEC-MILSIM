@@ -106,6 +106,9 @@ final class AuditAction
 
     public const PLATFORM_SETTINGS_UPDATED = 'platform.settings_updated';
 
+    /** Plancher de version des DLL du jeu (réglage game_min_link_version : administration du site ou tools/game-client-gate.php). */
+    public const PLATFORM_GAME_CLIENT_FLOOR_UPDATED = 'platform.game_client_floor_updated';
+
     /** Vidage d’un lot d’historiques volumineux (administration du site). */
     public const PLATFORM_STORAGE_PURGED = 'platform.storage_purged';
     public const PLATFORM_DATA_TABLE_EMPTIED = 'platform.data_table_emptied';
