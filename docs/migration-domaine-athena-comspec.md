@@ -138,3 +138,19 @@ et en tête de `location / {` :
 ```
 
 `/public/api/…` est réécrit en `/api/…` avant d'arriver là : il reste servi. `nginx -t && systemctl reload nginx`.
+
+À exempter aussi, en plus de `/api/` : **`/map-photo/`** (tuiles du fond PHOTO, `meta.json`, `index-jpg.txt`), que la
+DLL télécharge en jeu depuis `_baseUrl` :
+
+```nginx
+    # Ancien domaine : tuiles du fond PHOTO servies telles quelles (fond déjà installé chez les joueurs).
+    location ^~ /map-photo/ {
+        try_files $uri /index.php?$query_string;
+    }
+```
+
+Depuis le correctif SEC-001, la DLL **ne suit plus les redirections sur les requêtes qui portent les secrets** (sinon
+une 3xx d'un hôte Athena vers un tiers emporterait les en-têtes `X-COMSPEC-*`, que .NET conserve) : une 308 sur une
+route d'API renverrait `ERR|http_308` au téléphone au lieu d'être suivie. **L'API ne doit donc jamais rediriger** —
+ni `athena.ttrd.fr` vers `athena-comspec.eu`, ni `/api/x` vers `/api/x/`. Les tuiles `/map-photo/` ne portent aucun
+secret : leur client suit les redirections, mais l'exemption ci-dessus évite un aller-retour par tuile.

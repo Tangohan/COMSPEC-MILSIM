@@ -128,9 +128,16 @@ public static partial class Extension
 
     private static long _lastPostErrorCbTicks;
 
-    private static HttpClient CreateHttpClient(int timeoutSeconds)
+    private static HttpClient CreateHttpClient(int timeoutSeconds, bool followRedirects = false)
     {
-        var client = new HttpClient
+        // SEC-001 : redirections NON suivies automatiquement par défaut. .NET retire bien Authorization lors d'une
+        // redirection inter-hôtes, mais GARDE les en-têtes personnalisés (X-COMSPEC-KEY, X-ATAK-TOKEN,
+        // X-COMSPEC-SESSION, X-COMSPEC-STEAM) : un 302 d'un hôte Athena vers un hôte tiers les ferait fuiter.
+        // L'API Athena ne redirige jamais ses routes (docs/migration-domaine-athena-comspec.md, étape 6). Seul un
+        // client qui n'attache jamais de secret (tuiles publiques : MapPhotoHttp) suit les redirections ; les images
+        // de briefing les suivent à la main, sans secret hors Athena (SendImageGetFollowingRedirects).
+        var handler = new SocketsHttpHandler { AllowAutoRedirect = followRedirects };
+        var client = new HttpClient(handler)
         {
             Timeout = TimeSpan.FromSeconds(timeoutSeconds),
             DefaultRequestVersion = HttpVersion.Version11,
@@ -490,6 +497,8 @@ public static partial class Extension
         var baseUrl = NormalizeBaseUrl(string.IsNullOrWhiteSpace(portal) ? _baseUrl : portal);
         if (!TryBuildRequestUri(baseUrl, "/api/atak/version", out var uri, out var err) || uri is null)
             return "ERR|" + err;
+        // SEC-001 : jamais de requête vers un hôte arbitraire choisi par un script (adresse IP du joueur, réseau local).
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
@@ -516,6 +525,8 @@ public static partial class Extension
         var baseUrl = NormalizeBaseUrl(args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0] : _baseUrl);
         if (!TryBuildRequestUri(baseUrl, "/api/atak/startup-check", out var uri, out var err) || uri is null)
             return "ERR|" + err;
+        // SEC-001 : le check (pseudo, indicatif, mission) ne part que vers Athena, jamais vers un hôte choisi par un script.
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         var json = new StringBuilder("{\"extension_version\":\"").Append(EscapeJson(CurrentExtensionVersion())).Append('"');
         var fields = 0;
         for (var i = 1; i < args.Length && fields < 48; i++)
@@ -1580,6 +1591,22 @@ public static partial class Extension
     /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
     private static bool TrySendQueuedPost((string Url, string Body) item)
     {
+        // SEC-001 : adresse que IsSecretSafeUri refuse, typiquement reprise du disque (queue.jsonl / position.json
+        // écrits par une version détournée, ou fichier modifié) : AddQueueSecrets y mettrait la clé et le jeton de
+        // session. Envoi abandonné et journalisé, jamais renvoyé. Seul envoi de la file : FIFO, marqueurs et
+        // position coalescée (rechargée ou non) passent tous ici.
+        if (!IsSecretSafeUri(item.Url))
+        {
+            // Envoi posé hors liaison (« queued:/api/… », poste encore inconnu) : remis en file comme avant,
+            // il sera résolu sur _baseUrl (déjà contrôlé) par TryResolveQueuedUrl.
+            if (item.Url.StartsWith("queued:", StringComparison.OrdinalIgnoreCase))
+            {
+                EnqueueForRetry(item.Url, item.Body);
+                return true;
+            }
+            JournalTrack(item.Url, item.Body, "failed", "hôte non-Athena");
+            return true;
+        }
         // Adresse absente de l'offre de la communauté : envoi abandonné, pas renvoyé.
         if (IsFeatureLatched(item.Url))
             return true;
@@ -1987,7 +2014,9 @@ public static partial class Extension
                     using var doc = JsonDocument.Parse(File.ReadAllText(pos));
                     var u = doc.RootElement.TryGetProperty("u", out var up) ? up.GetString() ?? "" : "";
                     var b = doc.RootElement.TryGetProperty("b", out var bp) ? bp.GetString() ?? "" : "";
-                    if (u.Length > 0)
+                    // SEC-001 : position (toujours une URL absolue) hors Athena jamais rechargée ; TrySendQueuedPost
+                    // l'abandonnerait de toute façon.
+                    if (u.Length > 0 && IsSecretSafeUri(u))
                     {
                         lock (CoalescedPositionLock)
                             _coalescedPosition ??= (u, b);
@@ -2163,7 +2192,9 @@ public static partial class Extension
             var url = "https://jetelain.github.io/Arma3Map/maps/" + world + "/" + z + "/" + x + "/" + y + ".png";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
-            using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
+            // Tuile publique, sans secret : client des tuiles, qui suit les redirections (le client principal ne
+            // les suit plus depuis SEC-001).
+            using var resp = MapPhotoHttp.Value.SendAsync(req, cts.Token).GetAwaiter().GetResult();
             if (!resp.IsSuccessStatusCode) return;
             var bytes = resp.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
             if (bytes is null || bytes.Length < 32) return;
@@ -2408,6 +2439,38 @@ public static partial class Extension
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
         AttachApiKeyHeader(req);
         return SendTimed(req, token);
+    }
+
+    /// <summary>
+    /// GET d'image qui suit les redirections à la main (5 sauts au plus), puisque AllowAutoRedirect est désactivé
+    /// (SEC-001). Les secrets sont (ré)attachés par AttachApiKeyHeader à CHAQUE saut, donc un hôte non-Athena n'en
+    /// reçoit aucun (une diapositive Google / un CDN continue de marcher, sans secret). Jamais de rétrogradation
+    /// https → http. Utilisé par DownloadBriefingSlideImage (seul chemin avec une URL d'image potentiellement externe).
+    /// </summary>
+    private static HttpResponseMessage SendImageGetFollowingRedirects(string url, CancellationToken token)
+    {
+        var current = url;
+        for (var hop = 0; ; hop++)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, current);
+            AttachApiKeyHeader(req);
+            var resp = SendTimed(req, token);
+            try { req.Dispose(); } catch { /* ignore */ }
+            var code = (int)resp.StatusCode;
+            var loc = resp.Headers.Location;
+            if (hop >= 5 || loc is null
+                || (code != 301 && code != 302 && code != 303 && code != 307 && code != 308))
+                return resp;
+            Uri? next = loc.IsAbsoluteUri ? loc
+                : (Uri.TryCreate(new Uri(current), loc, out var abs) ? abs : null);
+            if (next is null
+                || (next.Scheme != Uri.UriSchemeHttp && next.Scheme != Uri.UriSchemeHttps)
+                || (string.Equals(new Uri(current).Scheme, Uri.UriSchemeHttps, StringComparison.Ordinal)
+                    && next.Scheme == Uri.UriSchemeHttp))
+                return resp; // schéma inattendu ou rétrogradation : on rend la 3xx telle quelle (comme le suivi auto)
+            resp.Dispose();
+            current = next.AbsoluteUri;
+        }
     }
 
     /// <summary>Envoi synchrone mesuré (latence, 429/5xx, délais) pour l'indicateur de surcharge d'Athena.</summary>
@@ -3061,9 +3124,77 @@ public static partial class Extension
         _sessionExpiresAt = DateTimeOffset.MinValue;
     }
 
+    /// <summary>
+    /// Boucle locale (localhost / 127.0.0.1 / ::1) de confiance : réglage de DÉVELOPPEMENT seulement (Athena local,
+    /// banc tools/sec001-bench), variable d'environnement COMSPEC_DEV_TRUST_LOOPBACK=1 lue une fois au chargement
+    /// de la DLL. Absente en production : la boucle locale ne reçoit aucun secret et ne devient jamais _baseUrl.
+    /// </summary>
+    private static readonly bool DevTrustLoopback =
+        Environment.GetEnvironmentVariable("COMSPEC_DEV_TRUST_LOOPBACK") == "1";
+
+    /// <summary>Hôte comparable : minuscules, sans crochets IPv6, sans point final, sans espaces.</summary>
+    private static string PortalHostKey(string? host) =>
+        (host ?? "").Trim().Trim('[', ']').TrimEnd('.').ToLowerInvariant();
+
+    /// <summary>Athena local de développement (jamais en production ; Uri.IsLoopback n'est pas utilisé : il est
+    /// sensible à la casse pour « localhost » et vrai pour tout 127/8, donc 127.0.0.2 compris).</summary>
+    private static bool IsDevLoopbackHost(string? host) =>
+        DevTrustLoopback && PortalHostKey(host) is "localhost" or "127.0.0.1" or "::1";
+
+    /// <summary>
+    /// Hôtes Athena de confiance : eux seuls reçoivent les secrets (clé communauté, Bearer, jeton de session,
+    /// Steam) et peuvent devenir _baseUrl. Seuls les deux portails réellement appelés par la DLL sont listés :
+    /// athena.ttrd.fr (fn_portalUrl de connect, repli de GameAuth Init) et athena-comspec.eu (mod natif depuis
+    /// #1072). Ni *.ttrd.fr (vlm., croc-numerique. n'ont rien à voir avec Athena), ni compsec.ttrd.fr (WebView
+    /// seulement, jamais appelé par la DLL), ni *.athena-comspec.eu (atak. et sse. ne sont que des redirections).
+    /// </summary>
+    private static bool IsTrustedPortalHost(string? host)
+    {
+        if (string.IsNullOrEmpty(host)) return false;
+        if (PortalHostKey(host) is "athena.ttrd.fr" or "athena-comspec.eu")
+            return true;
+        return IsDevLoopbackHost(host);
+    }
+
+    /// <summary>
+    /// Seul prédicat de SEC-001 : destination admise pour un secret (en-tête ou corps) et pour _baseUrl. URL
+    /// absolue sans identifiants (https://x@hôte/ refusé), hôte de confiance, et https ; http seulement vers
+    /// l'Athena local de développement (jamais de jeton en clair sur le réseau).
+    /// </summary>
+    private static bool IsSecretSafeUri(Uri? u) =>
+        u is { IsAbsoluteUri: true } && u.UserInfo.Length == 0 && IsTrustedPortalHost(u.IdnHost)
+        && (u.Scheme == Uri.UriSchemeHttps || (u.Scheme == Uri.UriSchemeHttp && IsDevLoopbackHost(u.IdnHost)));
+
+    private static bool IsSecretSafeUri(string? url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var u) && IsSecretSafeUri(u);
+
+    /// <summary>
+    /// Point de contrôle UNIQUE de l'adresse du portail. Toute valeur venant de SQF (Connect, PairStart, Redeem*,
+    /// LinkBySteam, RegisterBeta, ReportDiag, GameAuth Init/RestoreSession/AuthPassword/RequestOtp/VerifyOtp/AuthSteam)
+    /// ou du magasin local passe ici : _baseUrl n'est posé QUE si IsSecretSafeUri l'admet. C'est le cœur du
+    /// correctif SEC-001 — sans lui, un mod/mission hostile ou une variable publique d'objet pointe _baseUrl vers
+    /// un attaquant et toute la télémétrie (et les secrets des corps) partent là-bas.
+    /// </summary>
+    private static bool TrySetSqfBaseUrl(string? candidate, out string normalized)
+    {
+        normalized = NormalizeBaseUrl(candidate);
+        if (!IsSecretSafeUri(normalized)) return false;
+        _baseUrl = normalized;
+        return true;
+    }
+
     /// <summary>Attache auth (+ session / Steam) sur une requête.</summary>
     private static void AttachApiKeyHeader(HttpRequestMessage req)
     {
+        // Filet anti-exfiltration SEC-001 : jamais de secret vers une destination que IsSecretSafeUri refuse, y
+        // compris après une redirection (req.RequestUri est l'hôte réellement visé à ce saut). Seul l'User-Agent
+        // subsiste.
+        if (!IsSecretSafeUri(req.RequestUri))
+        {
+            req.Headers.Remove("User-Agent");
+            req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
+            return;
+        }
         // Jeton jeu : Bearer prioritaire. Miroir X-ATAK-TOKEN + clé communauté si connue
         // (certains reverse-proxies /public/ ne relaient pas Authorization).
         // Sans attente : appelé aussi sur le thread du jeu (EnqueueOrSend, UpdatePosition). Jeton périmé =
@@ -3423,6 +3554,8 @@ public static partial class Extension
             if (baseUrl.Length == 0) return "ERR|invalid_url";
             if (!TryBuildRequestUri(baseUrl, "/api/atak/whoami", out var ipUri, out var ipErr) || ipUri is null)
                 return "ERR|" + ipErr;
+            // SEC-001 : jamais de requête vers un hôte arbitraire choisi par un script.
+            if (!IsSecretSafeUri(ipUri)) return "ERR|untrusted_host";
             try
             {
                 using var ipCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
@@ -3644,7 +3777,8 @@ public static partial class Extension
             {
                 var baseUrl = NormalizeBaseUrl(args[0] ?? "");
                 if (baseUrl.Length == 0) return "ERR|invalid_url";
-                _baseUrl = baseUrl;
+                // SEC-001 : portail non-Athena refusé avant tout envoi (voir TrySetSqfBaseUrl).
+                if (!TrySetSqfBaseUrl(baseUrl, out baseUrl)) return "ERR|untrusted_host";
                 ResetPollRefusals();
                 var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
@@ -3765,7 +3899,8 @@ public static partial class Extension
                 var steam = args.Length > 2 ? (args[2] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
-                _baseUrl = baseUrl;
+                // SEC-001 : portail non-Athena refusé avant tout envoi (voir TrySetSqfBaseUrl).
+                if (!TrySetSqfBaseUrl(baseUrl, out baseUrl)) return "ERR|untrusted_host";
                 ResetPollRefusals();
                 // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
                 ApplySteamUid(steam);
@@ -4069,7 +4204,10 @@ public static partial class Extension
                 || !Uri.TryCreate(normalized, UriKind.Absolute, out var connectUri)
                 || (connectUri.Scheme != Uri.UriSchemeHttps && connectUri.Scheme != Uri.UriSchemeHttp))
                 return "ERR|invalid_url";
-            _baseUrl = normalized;
+            // SEC-001 : refuser un portail non-Athena (mod/mission hostile) AVANT de poser _baseUrl ou d'envoyer
+            // quoi que ce soit — bloque la fuite des en-têtes/corps et le détournement de toute la télémétrie.
+            if (!TrySetSqfBaseUrl(normalized, out _))
+                return "ERR|untrusted_host";
             if (args.Length > 6)
                 ApplyMapId(args[6]);
             LoadQueueFromDisk();
@@ -4182,6 +4320,8 @@ public static partial class Extension
             var linkCode = (args[1] ?? "").Trim().ToUpperInvariant();
             var steamUid = args.Length > 2 ? (args[2] ?? "").Trim() : "";
             if (baseUrl.Length == 0 || linkCode.Length < 4) return "ERR|invalid";
+            // SEC-001 : le redeem envoie le Steam et reçoit la clé communauté — refuser un hôte non-Athena avant l'envoi.
+            if (!IsSecretSafeUri(baseUrl)) return "ERR|untrusted_host";
             if (!TryNormalizeSteamUid(steamUid, out var steamNorm) && steamUid.Length > 0)
             {
                 // UID présent mais non reconnu : on envoie quand même le trim pour laisser le serveur trancher ;
@@ -4238,8 +4378,9 @@ public static partial class Extension
                     : "";
                 apiKey = SanitizeSecret(apiKey);
                 if (apiKey.Length == 0) return "ERR|http_503";
-                // Toujours l’URL qui a réussi le redeem (évite node_url admin incorrect → 401).
-                _baseUrl = baseUrl;
+                // Toujours l’URL qui a réussi le redeem (évite node_url admin incorrect → 401), via le point de
+                // contrôle SEC-001 (adresse déjà vérifiée en tête).
+                TrySetSqfBaseUrl(baseUrl, out _);
                 ResetPollRefusals();
                 ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
@@ -4270,6 +4411,8 @@ public static partial class Extension
             var steamUid = (args[1] ?? "").Trim();
             // Solo / éditeur : getPlayerUID est souvent vide ou placeholder → message dédié.
             if (baseUrl.Length == 0) return "ERR|invalid_url";
+            // SEC-001 : le by-steam envoie le Steam et reçoit la clé communauté — refuser un hôte non-Athena avant l'envoi.
+            if (!IsSecretSafeUri(baseUrl)) return "ERR|untrusted_host";
             if (!TryNormalizeSteamUid(steamUid, out var steamNorm)) return "ERR|no_steam_uid";
             if (!TryBuildRequestUri(baseUrl, "/api/atak/game-link/by-steam", out var steamUri, out var steamUriErr) || steamUri is null)
                 return "ERR|" + steamUriErr;
@@ -4322,8 +4465,9 @@ public static partial class Extension
                 if (apiUrl.Length == 0) apiUrl = baseUrl;
                 apiKey = SanitizeSecret(apiKey);
                 if (apiKey.Length == 0) return "ERR|http_503";
-                // Toujours l’URL qui a réussi by-steam (évite node_url admin incorrect → 401).
-                _baseUrl = baseUrl;
+                // Toujours l’URL qui a réussi by-steam (évite node_url admin incorrect → 401), via le point de
+                // contrôle SEC-001 (adresse déjà vérifiée en tête).
+                TrySetSqfBaseUrl(baseUrl, out _);
                 ResetPollRefusals();
                 ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
@@ -4351,6 +4495,8 @@ public static partial class Extension
             var betaToken = betaCts.Token;
             var baseUrl = NormalizeBaseUrl(args[0]);
             if (baseUrl.Length == 0) return "ERR|invalid_url";
+            // SEC-001 : l'inscription bêta envoie Steam/pseudo/UID — refuser un hôte non-Athena avant l'envoi.
+            if (!IsSecretSafeUri(baseUrl)) return "ERR|untrusted_host";
             if (!TryBuildRequestUri(baseUrl, "/api/atak/beta-register", out var betaUri, out var betaUriErr) || betaUri is null)
                 return "ERR|" + betaUriErr;
 
@@ -4401,8 +4547,8 @@ public static partial class Extension
                 {
                     return "ERR|invalid_response";
                 }
-                // Mémorise l’URL pour d’éventuels appels suivants (whoami, etc.).
-                _baseUrl = baseUrl;
+                // Mémorise l’URL pour d’éventuels appels suivants (whoami, etc.), via le point de contrôle SEC-001.
+                TrySetSqfBaseUrl(baseUrl, out _);
                 ResetPollRefusals();
                 return "OK|registered";
             }
@@ -4422,6 +4568,8 @@ public static partial class Extension
             var baseUrl = NormalizeBaseUrl(args[0] ?? "");
             if (baseUrl.Length == 0) baseUrl = NormalizeBaseUrl(_baseUrl ?? "");
             if (baseUrl.Length == 0) return "ERR|invalid_url";
+            // SEC-001 : le rapport embarque Steam/pseudo/journal — refuser un hôte non-Athena avant l'envoi.
+            if (!IsSecretSafeUri(baseUrl)) return "ERR|untrusted_host";
             if (!TryBuildRequestUri(baseUrl, "/api/atak/mod-report", out var diagUri, out var diagUriErr) || diagUri is null)
                 return "ERR|" + diagUriErr;
 
@@ -4503,7 +4651,7 @@ public static partial class Extension
                 {
                     return "ERR|invalid_response";
                 }
-                _baseUrl = baseUrl;
+                TrySetSqfBaseUrl(baseUrl, out _); // SEC-001 : point de contrôle (adresse déjà vérifiée en tête)
                 ResetPollRefusals();
                 return "OK|reported";
             }
@@ -6035,7 +6183,9 @@ public static partial class Extension
                 HttpResponseMessage imgResp;
                 try
                 {
-                    imgResp = SendGet(imageUrl, token);
+                    // Images de briefing : URL Athena (relative résolue sur _baseUrl, ou absolue Athena) ou CDN externe.
+                    // Suivi de redirections à la main, sans secret vers un hôte non-Athena (SEC-001).
+                    imgResp = SendImageGetFollowingRedirects(imageUrl, token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -8683,7 +8833,8 @@ public static partial class Extension
                 {
                     var normalized = NormalizeBaseUrl(args[0]);
                     if (normalized.Length == 0) return;
-                    _baseUrl = normalized;
+                    // SEC-001 : même point de contrôle que le Connect synchrone — portail non-Athena ignoré.
+                    if (!TrySetSqfBaseUrl(normalized, out _)) return;
                     EnsureDrainTimer();
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
                     // Ne jamais réinjecter une clé CBA si une session jeu est active.
