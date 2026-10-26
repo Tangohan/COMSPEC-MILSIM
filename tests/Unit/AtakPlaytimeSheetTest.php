@@ -115,7 +115,7 @@ final class AtakPlaytimeSheetTest extends TestCase
         $routes = $read('routes/web.php');
         $nav = $read('config/navigation.php');
         $pages = $read('config/back_office_pages.php');
-        $fiche = $read('views/personnel/file.php');
+        $fiche = $read('views/personnel/file.php') . $read('views/partials/personnel/file_playtime.php');
 
         self::assertStringContainsString('source_mask TINYINT UNSIGNED NOT NULL DEFAULT 0', $mig);
         self::assertStringContainsString('source_mask = source_mask | VALUES(source_mask)', $repo);
@@ -126,9 +126,10 @@ final class AtakPlaytimeSheetTest extends TestCase
         self::assertStringContainsString("'path' => 'back-office/atak/heures'", $pages);
         self::assertFileExists($root . '/public/assets/js/back-office-atak-hours.js');
         self::assertFileExists($root . '/public/assets/css/back-office-atak-hours.css');
-        self::assertStringContainsString('xl:col-span-3', $fiche);
+        // Bloc « Temps de jeu » (partial depuis #1066) : cumul serveur / Zeus / éditeur puis rôles à côté.
+        self::assertStringContainsString("require base_path('views/partials/personnel/file_playtime.php')", $fiche);
+        self::assertStringContainsString('lg:col-span-3', $fiche);
         self::assertStringContainsString('Avant le détail', $fiche);
-        self::assertStringContainsString('Compté par le serveur Arma, ou par le téléphone ATAK quand le serveur ne remonte pas.', $fiche);
         self::assertStringNotContainsString('Relevé par le téléphone ATAK en partie', $fiche);
     }
 }

@@ -53,7 +53,8 @@ final class AtakRoleTimeCorrectionTest extends TestCase
         self::assertStringContainsString("'/personnel/{id}/temps-par-role/{moveId}/annuler'", $routes);
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
         self::assertStringContainsString("return \$this->canStaffEditPersonnel() || Gate::getInstance()->allows('admin.organization');", $ctrl);
-        $view = (string) file_get_contents($root . '/views/personnel/file.php');
+        $view = (string) file_get_contents($root . '/views/personnel/file.php')
+            . (string) file_get_contents($root . '/views/partials/personnel/file_playtime.php');
         self::assertStringContainsString('Annuler cette correction', $view);
         self::assertStringContainsString('if ($canCorrectRoleTime):', $view);
     }
