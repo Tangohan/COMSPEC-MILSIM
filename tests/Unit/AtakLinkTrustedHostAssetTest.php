@@ -332,7 +332,8 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
      * après AttachApiKeyHeader, contournerait le filtre : ce recensement échoue alors. Hors de ces blocs, il
      * refuse aussi les formes qui n'écrivent pas le nom dans l'appel (revue E, itération 3, V3-2) : nom secret
      * écrit ailleurs que dans un Remove (constante, initialiseur), propriété Authorization,
-     * AuthenticationHeaderValue, et Add / TryAddWithoutValidation d'en-têtes au nom non littéral.
+     * AuthenticationHeaderValue, et Add / TryAddWithoutValidation d'en-têtes dont le nom n'est pas une seule
+     * chaîne littérale (constante, variable, concaténation).
      */
     public function testSecretHeadersAreOnlySetBehindTheHostFilter(): void
     {
@@ -357,7 +358,7 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
             'nom d\'en-tête secret écrit hors d\'un Remove' => '/(?<!\.Remove\()' . $secretName . '/i',
             'propriété Authorization' => '/\.Authorization\s*=(?!=)/',
             'AuthenticationHeaderValue' => '/\bAuthenticationHeaderValue\s*\(/',
-            'en-tête au nom non littéral' => '/Headers\.(?:TryAddWithoutValidation|Add)\(\s*+(?!")/',
+            'en-tête au nom non littéral' => '/Headers\.(?:TryAddWithoutValidation|Add)\(\s*+(?!"[^"]*"\s*,)/',
         ];
         // Seul site relu au nom non littéral : recopie des en-têtes de CONTENU d'une réponse décompressée.
         $reviewed = ['Extension_SyncStats.cs' => ['fresh.Headers.TryAddWithoutValidation(h.Key, h.Value);']];
