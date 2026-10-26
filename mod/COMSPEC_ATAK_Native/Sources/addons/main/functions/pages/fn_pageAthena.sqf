@@ -4,7 +4,7 @@
     Erreur avec sa cause et l'action à faire : fn_athenaStatus), le bouton qui règle le problème (RECONNECTER, OUVRIR
     LE CANAL, OBTENIR MON CODE…), puis les étapes de la liaison (module, service, serveur, compte, identité du
     téléphone, canal du poste), dépliées tant que la connexion n'est pas faite.
-    Connecté : fiche opérateur. Sinon : moyens de connexion par onglets, CODE (à autoriser sur athena.ttrd.fr/lier,
+    Connecté : fiche opérateur. Sinon : moyens de connexion par onglets, CODE (à autoriser sur athena-comspec.eu/lier,
     sans clé ni identifiant de communauté, fn_athenaLink), E-MAIL (mot de passe masqué ou code e-mail), STEAM, PORTAIL.
     La page se redessine seule quand l'état change (fn_statusUpdate), en gardant ce qui est saisi.
 */
@@ -21,7 +21,7 @@ private _mode = [] call comspec_atak_native_fnc_athenaMode;
 private _hint = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHint", ["", false, 0]];
 _hint params ["_hText", ["_hWarn", false], ["_hTime", 0]];
 if ((_logged && {!_hWarn}) || {diag_tickTime - _hTime > 30}) then { _hText = ""; };
-private _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa";
+private _logo = "\z\comspec_atak_native\addons\main\data\logo_athena.paa";
 // Une fois connecté, la photo de profil Athena remplace le logo (si le portail en a une).
 if (_logged) then { private _av = [player] call comspec_atak_native_fnc_avatarPath; if (_av isNotEqualTo "") then { _logo = _av; }; };
 
@@ -124,7 +124,7 @@ if (_logged) then {
                 // Code à autoriser sur le site, connecté à son compte. Rien d'autre à saisir.
                 (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]) params ["_ls", "_lc", "_lu", "_luri", "", "_ld"];
                 if (_ls isEqualTo "pending" && {diag_tickTime >= _lu}) then { _ls = "expired"; };
-                private _short = (_luri regexReplace ["^https?://", ""]) regexReplace ["/public/", "/"];
+                private _short = [_luri] call comspec_atak_native_fnc_athenaShortUrl;
                 switch (_ls) do {
                     case "pending": {
                         _rows append [
@@ -133,7 +133,12 @@ if (_logged) then {
                             ["buttons", [
                                 ["OUVRIR LA PAGE", { ["open"] call comspec_atak_native_fnc_athenaLink; }, true, true, "Ouvre la page dans votre navigateur, code déjà rempli"],
                                 ["NOUVEAU CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }]
-                            ]]
+                            ]],
+                            // QR code fixe de la page /lier (tools/gen_remote_qr.py) : à scanner avec son vrai téléphone,
+                            // connecté à Athena, quand le PC n'a pas de navigateur sous la main (plein écran, second écran).
+                            ["section", "Sur votre vrai téléphone", "Scannez ce QR code : la page Lier le jeu s'ouvre, saisissez-y le code ci-dessus."],
+                            ["image", "\z\comspec_atak_native\addons\main\data\athena_link_qr_ca.paa"],
+                            ["text", format ["<t size='0.85' align='center' color='#8a9a93'>%1</t>", _short]]
                         ];
                     };
                     case "asking": { _rows pushBack ["text", "<t color='#c9d4cf'>Demande d'un code à Athena…</t>", _card]; };
@@ -146,12 +151,15 @@ if (_logged) then {
                     };
                     case "error": {
                         _rows append [
-                            ["text", if ((_ld find "http_4") isEqualTo 0) then {
+                            ["text", if (_ld isEqualTo "maintenance") then {
+                                // Athena en maintenance (HTTP 503) : nouvel essai automatique toutes les 60 s, app ouverte.
+                                "<t color='#f2c66b' font='COMSPEC_BarlowBold'>Athena est en maintenance.</t><br/><t color='#c9d4cf'>Le site est fermé le temps d'une mise à jour : aucun code ne peut être donné pour l'instant. Gardez l'app ouverte : nouvel essai automatique toutes les minutes.</t>"
+                            } else { if ((_ld find "http_4") isEqualTo 0) then {
                                 // Athena a répondu mais refuse : cause et action lues dans fn_athenaStatus.
                                 format ["<t color='#f2c66b'>%1</t><br/><t color='#c9d4cf'>%2</t>", _st getOrDefault ["text", ""], _st getOrDefault ["action", ""]]
                             } else {
                                 format ["<t color='#f2c66b'>Athena n'a pas donné de code (%1). Vérifiez la connexion internet du jeu.</t>", _ld]
-                            }, _card],
+                            } }, _card],
                             ["buttons", [["RÉESSAYER", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
                         ];
                     };
@@ -176,8 +184,8 @@ if (_logged) then {
     ];
     if (_help) then {
         _rows append [
-            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>1.</t> <t color='#c9d4cf'>Il faut un compte sur <t color='#8fe39b'>athena.ttrd.fr</t> (gratuit), membre de votre communauté.</t>"],
-            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>2.</t> <t color='#c9d4cf'>Onglet CODE : OBTENIR MON CODE. Sur votre PC ou votre téléphone, connecté au site, ouvrez <t color='#8fe39b'>athena.ttrd.fr/lier</t> et saisissez le code.</t>"],
+            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>1.</t> <t color='#c9d4cf'>Il faut un compte sur <t color='#8fe39b'>athena-comspec.eu</t> (gratuit), membre de votre communauté.</t>"],
+            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>2.</t> <t color='#c9d4cf'>Onglet CODE : OBTENIR MON CODE. Sur votre PC ou votre téléphone, connecté au site, ouvrez <t color='#8fe39b'>athena-comspec.eu/lier</t> et saisissez le code.</t>"],
             ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>3.</t> <t color='#c9d4cf'>Autorisez : le téléphone se connecte seul en quelques secondes, et les parties suivantes aussi (Steam associé).</t>"],
             ["text", "<t color='#f2c66b'>Pas de code ?</t> <t color='#c9d4cf'>Vérifiez la connexion internet du jeu et que COMSPEC Link est autorisé (BattlEye, pare-feu). Puis RÉESSAYER.</t>"],
             ["text", "<t color='#f2c66b'>Code expiré ?</t> <t color='#c9d4cf'>Il ne dure que quelques minutes : NOUVEAU CODE.</t>"],

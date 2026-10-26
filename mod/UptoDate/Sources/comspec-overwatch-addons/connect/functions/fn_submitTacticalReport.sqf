@@ -20,6 +20,9 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
+// Requêtes HTTP synchrones dans la DLL : depuis un raccourci / une action (non suspendable), on relance en spawn
+// pour passer par extAwait au lieu de figer le jeu le temps de la réponse Athena.
+if (!canSuspend) exitWith { [_reportType, _priority, _summary, _details, _structuredData, _position] spawn comspec_overwatch_connect_fnc_submitTacticalReport; true };
 
 if (_reportType isEqualTo "") exitWith {
     ["Indiquez le type de rapport.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
@@ -60,7 +63,7 @@ if (count keys _structuredData > 0) then {
 
 private _jsonString = [_reportData] call comspec_overwatch_connect_fnc_hashMapToJson;
 private _parsed = [
-    "COMSPECExtension" callExtension ["SubmitTacticalReport", [_jsonString]]
+    ["COMSPECExtension", "SubmitTacticalReport", [_jsonString]] call comspec_overwatch_connect_fnc_extAwait
 ] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
 _parsed params ["_ok", "", "_detail"];
 
@@ -100,7 +103,7 @@ if (_ok) then {
             _cs,
             _upper
         ];
-        ["COMSPECExtension" callExtension ["Intel.Report", [_intelPayload]]] call comspec_overwatch_connect_fnc_extResult;
+        [["COMSPECExtension", "Intel.Report", [_intelPayload]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     };
     true
 } else {

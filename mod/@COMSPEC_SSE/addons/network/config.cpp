@@ -40,6 +40,7 @@ class CfgFunctions {
             class transmitEntity {};
             class extensionCall {};
             class markTransmitted {};
+            class personTransmitted {};
         };
     };
 };

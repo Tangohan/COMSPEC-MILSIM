@@ -37,6 +37,14 @@ final class ComspecApiKeyAuth
     /** @var array<string, mixed>|null Config tactique (évite require répété / TypeError si non-array). */
     private static ?array $tacticalConfigCache = null;
 
+    /**
+     * Résultat de requestPresentsValidKey pour la requête en cours (middleware puis authArma) :
+     * empreinte des candidats + état matched* obtenu. Évite de revalider la clé deux fois.
+     *
+     * @var array{key: string, ok: bool, tenant: ?int, steam: ?string, user: ?int, platform: bool}|null
+     */
+    private static ?array $resolvedKeyCache = null;
+
     public static function isAppProduction(): bool
     {
         $e = strtolower(trim((string) (($_ENV['APP_ENV'] ?? getenv('APP_ENV')) ?: '')));
@@ -258,6 +266,7 @@ final class ComspecApiKeyAuth
         self::$rawJsonCache = null;
         self::$jsonObjectCache = null;
         self::$tacticalConfigCache = null;
+        self::$resolvedKeyCache = null;
     }
 
     public static function requestPresentsValidKey(): bool
@@ -272,6 +281,36 @@ final class ComspecApiKeyAuth
         }
 
         $secret = self::expectedSecret();
+        // Mêmes candidats déjà validés dans cette requête : on rend le même résultat sans requête SQL.
+        // Clé plateforme : pas de mémoire (dépend des paramètres tenant_* ; contrôle sans SQL de toute façon).
+        $memoKey = hash('sha256', implode("\n", $candidates) . "\n" . $secret);
+        $memo = self::$resolvedKeyCache;
+        if ($memo !== null && !$memo['platform'] && hash_equals($memo['key'], $memoKey)) {
+            self::$matchedTenantId = $memo['tenant'];
+            self::$matchedSteamId = $memo['steam'];
+            self::$matchedUserId = $memo['user'];
+            self::$matchedPlatformKey = $memo['platform'];
+
+            return $memo['ok'];
+        }
+        $ok = self::resolvePresentedCandidates($candidates, $secret);
+        self::$resolvedKeyCache = [
+            'key' => $memoKey,
+            'ok' => $ok,
+            'tenant' => self::$matchedTenantId,
+            'steam' => self::$matchedSteamId,
+            'user' => self::$matchedUserId,
+            'platform' => self::$matchedPlatformKey,
+        ];
+
+        return $ok;
+    }
+
+    /**
+     * @param list<string> $candidates
+     */
+    private static function resolvePresentedCandidates(array $candidates, string $secret): bool
+    {
         foreach ($candidates as $presented) {
             if ($secret !== '' && hash_equals($secret, $presented)) {
                 // Clé plateforme : la communauté ne doit pas être choisie par le client
@@ -282,6 +321,12 @@ final class ComspecApiKeyAuth
                     return true;
                 }
                 continue;
+            }
+
+            // Jeton jeu (64 hex, cas normal de la DLL) : essayé d’abord, sans balayer les clés communauté.
+            $looksLikeGameToken = preg_match('/^[0-9a-f]{64}$/', $presented) === 1;
+            if ($looksLikeGameToken && self::acceptGameSessionToken($presented)) {
+                return true;
             }
 
             try {
@@ -295,7 +340,7 @@ final class ComspecApiKeyAuth
                 // Ignore DB errors — try next candidate.
             }
 
-            if (self::acceptGameSessionToken($presented)) {
+            if (!$looksLikeGameToken && self::acceptGameSessionToken($presented)) {
                 return true;
             }
         }

@@ -52,7 +52,7 @@ params [
 
         [_uid, "documents", typeOf _target, format ["%1 doc(s)", count _docs], _quality, "LOCAL"] call comspec_sse_fnc_addJournalEntry;
         if (!isNil "comspec_sse_fnc_showResult") then {
-            [_fog] call comspec_sse_fnc_showResult;
+            [_fog, _target] call comspec_sse_fnc_showResult;
         } else {
             [_lines joinString endl, "INFO"] call comspec_sse_fnc_notify;
         };

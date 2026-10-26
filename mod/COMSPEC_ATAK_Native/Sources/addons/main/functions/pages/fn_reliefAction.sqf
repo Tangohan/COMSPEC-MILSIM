@@ -55,6 +55,7 @@ switch (_act) do {
         private _dir = getDirVisual player;
         private _who = "Moi";
         private _ign = vehicle player;
+        private _lost = false;
         switch (true) do {
             case (_k isEqualType [] && {(count _k) >= 2}): {
                 _eye = [_k select 0, _k select 1, ((getTerrainHeightASL _k) max 0) + 1.7 + _hAdd];
@@ -63,7 +64,8 @@ switch (_act) do {
             };
             case (_k isEqualType "" && {_k isNotEqualTo ""}): {
                 private _o = objectFromNetId _k;
-                if (isNull _o) exitWith {};
+                // Unité ou drone disparu : pas de calcul depuis le joueur à sa place.
+                if (isNull _o) exitWith { _lost = true; };
                 _ign = vehicle _o;
                 if (_o isKindOf "CAManBase") then {
                     _eye = (eyePos _o) vectorAdd [0, 0, _hAdd];
@@ -78,6 +80,7 @@ switch (_act) do {
                 };
             };
         };
+        if (_lost) exitWith { ["WARNING", "Appareil introuvable", 3, 20] call comspec_atak_native_fnc_notify; };
         missionNamespace setVariable ["COMSPEC_ATAK_ViewshedBusy", true];
         missionNamespace setVariable ["COMSPEC_ATAK_ViewshedProgress", 0];
         missionNamespace setVariable ["COMSPEC_ATAK_ViewshedShow", true];

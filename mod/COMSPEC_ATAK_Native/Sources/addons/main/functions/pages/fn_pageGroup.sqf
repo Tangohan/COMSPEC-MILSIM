@@ -96,6 +96,8 @@ if (_tab isEqualTo "MINE") then {
         _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Seul le chef peut renommer le groupe, changer son type ou le fermer.</t>"];
     };
 
+    // Mon indicatif (fn_callsignAction), comme dans C2.
+    _rows append (["rows"] call comspec_atak_native_fnc_callsignAction);
     _rows pushBack ["gap"];
     private _alone = (count _units) isEqualTo 1;
     _rows pushBack ["buttons", [["QUITTER LE GROUPE", { ["leave"] call comspec_atak_native_fnc_groupAction; }, false, !_alone, ["Quitter crée un groupe à votre nom", "Vous êtes déjà seul dans votre groupe"] select _alone]]];

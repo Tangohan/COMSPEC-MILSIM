@@ -1,6 +1,7 @@
 /*
     Contrôle Zeus des téléphones ATAK, côté serveur (seul à écrire l'état). Événement CBA serveur comspec_atak_native_zeus :
-      [demandeur, action, arguments]. Accepté d'un Zeus (curateur assigné), de l'hôte ou d'un admin connecté.
+      [demandeur, action, arguments]. Accepté d'un Zeus (curateur assigné), de l'hôte, d'un admin connecté ou d'un
+      gestionnaire désigné (fn_adminAllowed ; l'app Admin du téléphone passe par ici pour les effets par joueur).
     Actions :
       "set"     [joueurs, clé, valeur, durée s (0 = jusqu'à annulation)]   effet durable (fn_zeusFx) ; valeur 0 / false / "" = retiré
       "once"    [joueurs, type, arguments]   effet ponctuel joué chez le joueur (fn_zeusClient "once")
@@ -33,7 +34,8 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusJammersSrv", []];
         ["comspec_atak_native_zeus", {
             params [["_caller", objNull], ["_a", ""], ["_xa", []]];
-            private _ok = !isNull _caller && {!isNull (getAssignedCuratorLogic _caller) || {local _caller} || {(admin (owner _caller)) > 0}};
+            // Zeus, hôte, admin connecté ou gestionnaire désigné par le serveur (fn_adminAllowed, app Admin).
+            private _ok = !isNull _caller && {!isNull (getAssignedCuratorLogic _caller) || {local _caller} || {[_caller] call comspec_atak_native_fnc_adminAllowed}};
             if (!_ok) exitWith { diag_log format ["[COMSPEC ATAK NATIVE][WARN][ZEUS] Demande refusée (pas Zeus) : %1 %2", name _caller, _a]; };
             [_a, _xa, _caller] call comspec_atak_native_fnc_zeusServer;
         }] call CBA_fnc_addEventHandler;
@@ -105,10 +107,13 @@ switch (_act) do {
         } forEach allPlayers;
         private _srv = (missionNamespace getVariable ["COMSPEC_ATAK_ZeusJammersSrv", []]) select { (_x select 4) >= _now };
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusJammersSrv", _srv];
-        private _list = missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []];
+        private _all = missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []];
+        // Brouilleurs Zeus retirés (ou expirés) mais remis par l'écriture d'un client à liste périmée : enlevés à nouveau.
+        private _srvIds = _srv apply { _x select 2 };
+        private _list = _all select { private _id = _x param [2, ""]; !(_id isEqualType "") || {(_id find "zeus:") isNotEqualTo 0} || {_id in _srvIds} };
         private _have = _list apply { _x param [2, ""] };
         private _miss = _srv select { !((_x select 2) in _have) };
-        if (_miss isNotEqualTo []) then { missionNamespace setVariable ["COMSPEC_ATAK_Jammers", _list + _miss, true]; };
+        if (_miss isNotEqualTo [] || {(count _list) isNotEqualTo (count _all)}) then { missionNamespace setVariable ["COMSPEC_ATAK_Jammers", _list + _miss, true]; };
     };
 };
 true

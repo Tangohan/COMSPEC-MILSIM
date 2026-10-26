@@ -20,7 +20,7 @@ switch (_key) do {
     };
     case "CLEAR": {
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
-        { _s set [_x, []]; } forEach ["mapMeasure", "mapHouses", "mapHeights", "mapFlat", "mapLos"];
+        { _s set [_x, []]; } forEach ["mapMeasure", "mapHouses", "mapHeights", "mapFlat", "mapLos", "jtacTool"];
     };
     default {
         private _cur = _s getOrDefault ["mapMode", "SELECT"];

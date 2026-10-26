@@ -28,7 +28,12 @@ private _addNode = {
     _nodes set [_id, _n];
     _n
 };
-private _edge = { params ["_a", "_b", "_lbl", "_k"]; _edges pushBack [_a, _b, _lbl, _k]; };
+// Libellé du lien traduit une fois ici (langue du téléphone) : chartDraw le dessine tel quel à chaque image.
+private _edge = {
+    params ["_a", "_b", "_lbl", "_k"];
+    if (_lbl isEqualType "" && {_lbl isNotEqualTo ""}) then { _lbl = _lbl call comspec_sse_fnc_tr; };
+    _edges pushBack [_a, _b, _lbl, _k];
+};
 private _personLabel = {
     params ["_name", "_alias"];
     if (_alias isEqualTo "") then { _name } else { format ["%1 « %2 »", _name, _alias] }
@@ -64,8 +69,9 @@ private _personIds = createHashMap;
         private _alias = _y getOrDefault ["alias", ""];
         if (_alias isEqualTo "") then { _alias = _lbl select 1; };
         private _id = "P:" + _x;
-        private _sub = ["roleLabel", _y getOrDefault ["role", "membre"]] call comspec_sse_fnc_orgTables;
-        if (!isNull _u && {!alive _u}) then { _sub = _sub + ", décédé"; };
+        // Traduit par morceaux : « membre, décédé » assemblé n'a pas d'entrée au dictionnaire.
+        private _sub = (["roleLabel", _y getOrDefault ["role", "membre"]] call comspec_sse_fnc_orgTables) call comspec_sse_fnc_tr;
+        if (!isNull _u && {!alive _u}) then { _sub = _sub + (", décédé" call comspec_sse_fnc_tr); };
         [_id, "person", [_lbl select 0, _alias] call _personLabel, _sub, _k, _y getOrDefault ["netId", ""], "O:" + (_y getOrDefault ["org", ""])] call _addNode;
         if (!isNull _u) then { _personIds set [netId _u, _id]; };
     };
@@ -210,7 +216,7 @@ if (_linkedCache isEqualTo [] || {time > ((_linkedCache select 0) + 60)}) then {
                             private _name = _x getOrDefault ["name", _x getOrDefault ["title", ""]];
                             if (!(_name isEqualType "")) then { _name = ""; };
                             private _id = "L:" + _g;
-                            ["L:" + _g, "place", ["Lieu " + _g, format ["%1 (%2)", _name, _g]] select (_name isNotEqualTo ""), "Point mentionné", _k] call _addNode;
+                            ["L:" + _g, "place", [(("Lieu") call comspec_sse_fnc_tr) + " " + _g, format ["%1 (%2)", _name, _g]] select (_name isNotEqualTo ""), "Point mentionné", _k] call _addNode;
                             [_from, _id, "mentionne", _k] call _edge;
                         };
                     };

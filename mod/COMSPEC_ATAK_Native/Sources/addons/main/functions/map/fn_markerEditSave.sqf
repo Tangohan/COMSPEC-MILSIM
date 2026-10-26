@@ -21,7 +21,7 @@ if (_name isEqualTo "") then {
     private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
     _name = format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel];
-    _name = createMarker [_name, _e get "pos", _channel, player];
+    _name = ["create", [_name, _e get "pos", _channel]] call comspec_atak_native_fnc_markerNet;
 };
 if (_name isEqualTo "") exitWith { ["WARNING", "Marqueur refusé sur ce canal", 3, 20] call comspec_atak_native_fnc_notify; false };
 if !(_poly) then {

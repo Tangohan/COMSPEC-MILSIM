@@ -70,7 +70,7 @@ params [
                 ["attempt", (_bio getOrDefault ["empreintesAttempt", 0]) + (_bio getOrDefault ["irisAttempt", 0]) + (_bio getOrDefault ["visageAttempt", 0])]
             ];
             if ((_caps get "nfiqs") isEqualTo [] && {(_caps get "eyes") isEqualTo []} && {(_caps get "face") < 0}) exitWith {
-                hint (("Aucun relevé biométrique : prenez empreintes, iris ou photo avant d'identifier.") call comspec_sse_fnc_tr);
+                ["Aucun relevé biométrique : prenez empreintes, iris ou photo avant d'identifier.", "WARNING"] call comspec_sse_fnc_notify;
             };
             [_target, _caps, _name, {
                 params ["_res", "_ctx"];
@@ -101,7 +101,7 @@ params [
                         };
                     };
                 };
-                hint (((_lines joinString endl)) call comspec_sse_fnc_tr);
+                [_lines joinString endl, "INFO"] call comspec_sse_fnc_notify;
                 if (!isNil "comspec_sse_fnc_showResult") then {
                     [createHashMapFromArray [
                         ["title", "SEEK II — IDENTITY QUERY"],
@@ -218,7 +218,7 @@ params [
         if (_note isNotEqualTo "") then {
             _lines pushBack _note;
         };
-        hint (((_lines joinString endl)) call comspec_sse_fnc_tr);
+        [_lines joinString endl, "INFO"] call comspec_sse_fnc_notify;
 
         if (!isNil "comspec_sse_fnc_showResult") then {
             [createHashMapFromArray [

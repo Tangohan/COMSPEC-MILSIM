@@ -13,7 +13,7 @@ $n = static function (string $fr): string {
 <footer class="portal-footer" data-portal-footer>
     <div class="portal-footer__inner">
         <div class="portal-footer__brand">
-            <p class="portal-footer__mark" aria-hidden="true">ATHENA<span class="portal-footer__mark-dot">.</span></p>
+            <p class="portal-footer__mark" role="img" aria-label="ATHENA"><span class="portal-footer__logo"></span></p>
             <p class="portal-footer__lead">
                 <?= $n('Centralisez le recrutement, la présence, les formations et la coordination opérationnelle.') ?>
             </p>

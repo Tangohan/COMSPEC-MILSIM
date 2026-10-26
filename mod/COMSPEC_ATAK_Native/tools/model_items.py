@@ -15,8 +15,9 @@ générique d'Arma (mag_univ.p3d) :
   item3d_whip        antenne fouet longue : ressort de pied, fouet conique, embout
   item3d_patch       antenne patch 9 dBi : radôme khaki, joint caoutchouc, queue de cochon et SMA
   item3d_datacable   câble DL-7 : boîtier adaptateur, câble spiralé, fiche 7 broches, fiche USB-C
-  item3d_garminwatch montre GPS Garmin : boîtier rond 47 mm noir, lunette graduée, 5 poussoirs acier (START cerclé de
-                     rouge), écran MIP (heure, Body Battery, fréquence cardiaque), bracelet 22 mm ouvert à plat (boucle, passants)
+  item3d_garminwatch montre GPS Garmin : boîtier rond 47 mm noir, 5 poussoirs acier (START cerclé de rouge), cadran
+                     Forerunner 570 (lunette anthracite lisse, écran AMOLED de fn_watch : heure, arcs de points Body
+                     Battery et pas, FC), bracelet 22 mm ouvert à plat (boucle, passants)
   item3d_dock        socle CS-10 plié : valise étanche (couvercle nervuré, 4 grenouillères, poignées, roues, valve)
   camera_ip          la caméra posée (COMSPEC_ATAK_CameraObj) : origine au centre du boîtier, base 9,2 cm dessous
 

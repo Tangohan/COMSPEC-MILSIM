@@ -23,7 +23,8 @@
       "diff"    [ancienne liste, nouvelle liste]  -> [éléments changés ou retirés (avant), éléments changés ou ajoutés (après)]
       "patchList" [liste, ids à retirer, éléments à remettre]  -> nouvelle liste (aussi pour le brouillon local)
     Écrit [révision, éléments, nom, UID de l'auteur de la modification, créateur (salle)]
-    (public, retrouvé par les JIP ; le plan du camp est envoyé au site par fn_planWeb).
+    (salle : publique, retrouvée par les JIP ; plan du camp : envoyé aux joueurs connectés hors file JIP, l'arrivant le reçoit
+    à sa synchro serveur ; le plan du camp est envoyé au site par fn_planWeb).
     Élément : [id, type, points, texte, couleur, tirets, flèche, épaisseur, numéro, auteur, description]
 */
 params [["_by", objNull], ["_op", ""], ["_args", []], ["_tag", ""], ["_room", ""]];
@@ -191,7 +192,16 @@ switch (_op) do {
 };
 if (!_changed) exitWith { false };
 // 4e champ : UID de l'auteur de la modification, qui l'envoie au site (fn_planWeb).
-missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by, _creator], true];
+if (_room isEqualTo "") then {
+    // Plan du camp : envoyé aux joueurs connectés, hors file JIP (l'arrivant le reçoit par comspec_atak_native_syncReq).
+    // Diffusé en public, il réécrivait une grosse variable JIP à chaque trait. Tous les joueurs le reçoivent, comme avant :
+    // un filtre par camp laissait un plan périmé à qui changeait de camp ou était mort au moment du trait.
+    missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by, _creator]];
+    { (owner _x) publicVariableClient _var; } forEach (allPlayers select { !local _x });
+} else {
+    // Salle : ouverte à tous les camps et sans liste de membres côté serveur, elle reste publique.
+    missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by, _creator], true];
+};
 // Historique de l'auteur : ce qui a changé, pour ANNULER / RÉTABLIR (rien de lourd si rien n'a bougé).
 ([objNull, "diff", [_old, _items]] call comspec_atak_native_fnc_planServer) params ["_before", "_after"];
 if ((count _before) + (count _after) > 0) then {

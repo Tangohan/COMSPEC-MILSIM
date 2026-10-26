@@ -16,6 +16,13 @@
 */
 params [["_act", "tick"], ["_args", []]];
 if (!hasInterface) exitWith {};
+// uiNamespace survit au changement de mission : état Zeus de la partie précédente (annonces, alarme, écran qui bugue
+// et numéro de sa boucle) oublié au premier appel de la nouvelle mission.
+if (isNil { missionNamespace getVariable "COMSPEC_ATAK_ZeusClientInit" }) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_ZeusClientInit", true];
+    { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_ZeusSeen", "COMSPEC_ATAK_ZeusSig", "COMSPEC_ATAK_ZeusNoise", "COMSPEC_ATAK_ZeusNoiseAt", "COMSPEC_ATAK_ZeusGlitch"];
+    uiNamespace setVariable ["COMSPEC_ATAK_ZeusGlitchPfh", -1];
+};
 private _redraw = {
     uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []];
     uiNamespace setVariable ["COMSPEC_ATAK_EwFx", []];

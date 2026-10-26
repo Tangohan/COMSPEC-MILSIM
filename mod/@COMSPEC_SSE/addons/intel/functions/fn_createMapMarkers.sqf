@@ -12,13 +12,13 @@ params [
 ];
 
 if (!hasInterface) exitWith { [] };
+// Une seule passe (postInit) : plus rien ne pose ces marqueurs.
+if (missionNamespace getVariable ["comspec_sse_legacyMarkersCleaned", false]) exitWith { [] };
+comspec_sse_legacyMarkersCleaned = true;
 
+// Seul le préfixe de nom SSE compte : un marqueur joueur intitulé « SSE … » reste en place.
 {
-    private _txt = markerText _x;
-    if (
-        (_x find "_comspec_sse_") == 0
-        || {(_txt select [0, 4]) isEqualTo "SSE "}
-    ) then {
+    if ((_x find "_comspec_sse_") == 0) then {
         deleteMarkerLocal _x;
     };
 } forEach allMapMarkers;

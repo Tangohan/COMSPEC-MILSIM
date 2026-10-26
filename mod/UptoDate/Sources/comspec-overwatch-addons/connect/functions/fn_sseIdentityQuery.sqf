@@ -23,6 +23,14 @@ private _samples = uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []];
 if (!(_samples isEqualType [])) then { _samples = []; };
 if ((count _samples) == 0) exitWith {
     ["Aucun relevé exploitable — prenez au moins une acquisition avant d’interroger.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+    // Réponse visible sur l'écran du SEEK lui-même (la notification part dans le téléphone, caché derrière).
+    private _ban = _disp displayCtrl 9640;
+    if (!isNull _ban) then { _ban ctrlSetBackgroundColor [0.93, 0.62, 0.04, 1]; };
+    private _banText = _disp displayCtrl 9641;
+    if (!isNull _banText) then {
+        _banText ctrlSetStructuredText parseText (("<t size='0.62' font='TahomaB' color='#14181d'>AUCUN RELEVÉ</t><br/><t size='0.44' color='#14181d'>Prenez au moins une acquisition (doigts, iris ou visage) avant QUERY</t>") call comspec_overwatch_connect_fnc_tr);
+    };
+    playSound "ClickSoft";
 };
 
 private _target = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];

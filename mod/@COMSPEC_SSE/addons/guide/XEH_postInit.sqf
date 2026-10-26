@@ -2,9 +2,8 @@
 /*
     Tutoriels : manuel de terrain (ACE, Zeus), exercice Zeus.
 */
-if (isServer) then {
-    ["comspec_sse_guideExercise", { params ["_pos", ["_req", objNull]]; [_pos, _req] call comspec_sse_fnc_guideExercise; }] call CBA_fnc_addEventHandler;
-};
+// Exercice Zeus : appel distant de comspec_sse_fnc_guideExercise (liste blanche CfgRemoteExec, Zeus ou administrateur
+// seulement). Plus d'événement CBA portant un demandeur choisi par le client.
 if (!hasInterface) exitWith {};
 
 // Steam du joueur gardé dans le profil : la connexion Athena et le temps passé dans Eden (comspec_sse_fnc_athenaEden)

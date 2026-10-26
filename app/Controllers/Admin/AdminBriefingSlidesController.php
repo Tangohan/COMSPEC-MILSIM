@@ -430,6 +430,8 @@ final class AdminBriefingSlidesController
         if (BriefingSlideGameImage::path($destRel) === $destRel) {
             Session::flash('warning', self::gameCopyWarning(BriefingSlideGameImage::$lastError));
         }
+        // Copie .paa (texture Arma) pour COMSPEC Link 2.0.95+, faite dès l'envoi elle aussi.
+        \App\Support\AtakGameImage::prepare($destRel, \App\Support\AtakGameImage::FIT_SLIDE);
 
         return ['path' => $destRel, 'error' => null];
     }

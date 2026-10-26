@@ -4,6 +4,7 @@
     diffusée aux autres machines par COMSPEC_ATAK_IdentDb. Sinon calculée de façon déterministe à partir de l'UID
     du joueur, ou du netId pour une IA. Le numéro suit la carte SIM et ne change jamais ; IMEI et MAC changent avec
     l'appareil (« Changer de téléphone » incrémente COMSPEC_ATAK_PhoneGen).
+    ATAK local (sans Athena) : numéro principal de l'app Numéros (COMSPEC_ATAK_LocalNum, fn_localCfg).
     Surcharge possible par le créateur de mission : this setVariable ["COMSPEC_ATAK_Ident", ["06 12 34 56 78", "", ""], true]
     (un champ vide garde la valeur calculée).
     Params : [unité]   Avec "norm" en 2e paramètre : renvoie les trois valeurs normalisées (chiffres et lettres seuls, majuscules).
@@ -62,6 +63,9 @@ if (_gen isEqualTo 0) then {
     if ((_db param [1, ""]) isNotEqualTo "") then { _ret set [1, _db select 1]; };
     if ((_db param [2, ""]) isNotEqualTo "") then { _ret set [2, _db select 2]; };
 };
+// ATAK local : numéro principal choisi par le joueur (app Numéros, config.json), publié par sa machine (fn_localCfg).
+private _ln = _u getVariable ["COMSPEC_ATAK_LocalNum", ""];
+if (_ln isEqualType "" && {_ln isNotEqualTo ""}) then { _ret set [0, _ln]; };
 private _o = _u getVariable ["COMSPEC_ATAK_Ident", []];
 if (_o isEqualType [] && {(count _o) > 0}) then {
     { if (_x isEqualType "" && {_x isNotEqualTo ""}) then { _ret set [_forEachIndex, _x]; }; } forEach (_o select [0, 3]);

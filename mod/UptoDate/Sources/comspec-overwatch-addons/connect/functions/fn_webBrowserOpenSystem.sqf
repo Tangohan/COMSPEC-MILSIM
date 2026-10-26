@@ -18,7 +18,8 @@ if ((_now - _last) < 3) exitWith {};
 missionNamespace setVariable ["COMSPEC_WebBrowser_SystemOpenAt", _now];
 missionNamespace setVariable ["COMSPEC_WebBrowser_AthenaOpenAt", _now];
 
-openURL _atakUrl;
+// openURL n'existe pas en SQF : COMSPEC Link ouvre le navigateur (adresse du portail seulement).
+"COMSPECExtension" callExtension ["OpenAthenaLink", [_atakUrl]];
 
 private _display = findDisplay 9974;
 if (!isNull _display) then {

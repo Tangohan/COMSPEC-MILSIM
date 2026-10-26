@@ -43,7 +43,7 @@ switch (_tab) do {
             private _d = (leader _g) distance2D player;
             private _btns = [["CARTE", "mapGroup", [netId _g]] call _act];
             if (isPlayer leader _g && {leader _g isNotEqualTo player}) then {
-                _btns pushBack ["SMS", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatPeer', '%1']; (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatView', 'CONV']; ['CHAT'] call comspec_atak_native_fnc_navigate;", name leader _g]];
+                _btns pushBack ["SMS", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatPeer', %1]; (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatView', 'CONV']; ['CHAT'] call comspec_atak_native_fnc_navigate;", str (name leader _g)]];
             };
             _rows pushBack ["person", _t select 2, format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t>%2  <t size='0.8' color='#7fb6e6'>%3</t><br/><t size='0.8' color='#8a9a93'>Chef %4 · %5 membre(s) · %6 BFT en ligne · %7</t>",
                 [groupId _g] call _esc, ["", " <t color='#e8b84a'>● mon groupe</t>"] select (_g isEqualTo _mine), _t select 1,

@@ -84,7 +84,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
         ["section", "Affichage", ""],
         ["switch", "Plan sur la carte principale", profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true], { ["layer"] call comspec_atak_native_fnc_planAction; }, "Plan du camp, salle et brouillon sur l'app Carte, sous les unités"],
         ["switch", "Fond assombri (façon image ISR)", profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true], {
-            profileNamespace setVariable ["COMSPEC_ATAK_PlanDim", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true])]; saveProfileNamespace; ["rerender"] call comspec_atak_native_fnc_planAction;
+            profileNamespace setVariable ["COMSPEC_ATAK_PlanDim", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true])]; [] call comspec_atak_native_fnc_saveProfile; ["rerender"] call comspec_atak_native_fnc_planAction;
         }, "Les couleurs du plan ressortent mieux"],
         ["buttons", [["REVOIR LE TUTORIEL", { ["view", "MAP"] call comspec_atak_native_fnc_planAction; [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.2] call CBA_fnc_waitAndExecute; }]]]
     ];

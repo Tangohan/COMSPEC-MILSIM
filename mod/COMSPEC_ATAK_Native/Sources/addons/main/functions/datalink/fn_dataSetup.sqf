@@ -1,7 +1,9 @@
 /*
     Pose des données à extraire au câble DL-7 sur n'importe quel objet (ordinateur, téléphone, clé USB, caisse,
     drone, corps…). Utilisé par les modules Zeus et Eden ; utilisable dans un script ou le champ init d'un objet :
-      [this, [["name", "PC du QG"], ["password", "4471"], ["files", "ordre.txt | texte" + endl + "Repli à 04h00"]]] call comspec_atak_native_fnc_dataSetup;
+      if (isServer) then { [this, [["name", "PC du QG"], ["password", "4471"], ["files", "ordre.txt | texte" + endl + "Repli à 04h00"]]] call comspec_atak_native_fnc_dataSetup; };
+    Champ init sans « isServer » : ignoré sur les clients tant que leur postInit n'est pas passé (le champ init est rejoué
+    sur chaque client JIP et remettrait à zéro verrouillage, effacement et données retirées par Zeus pour tout le monde).
     Params : [objet, réglages (HashMap ou paires [clé, valeur]), fusion]
       fusion = true : garde les réglages déjà posés et ajoute les fichiers (module Zeus « Ajouter un fichier »).
     Clés (absentes = valeur par défaut) :
@@ -16,11 +18,14 @@
       oneShot    données effacées après le premier téléchargement complet
       files      [[nom, type, contenu, taille Ko]...] ou texte (fn_dataParseFiles)
       code       code SQF exécuté sur le serveur en fin de téléchargement, params ["_object", "_player", "_files"]
-    Variable publique de l'objet : COMSPEC_ATAK_Data (paires). État tenu par le serveur : COMSPEC_ATAK_DataTries,
+    Variable publique de l'objet : COMSPEC_ATAK_Data (paires, sans « code », tenu par le serveur). État tenu par le serveur : COMSPEC_ATAK_DataTries,
     COMSPEC_ATAK_DataLocked, COMSPEC_ATAK_DataWiped, COMSPEC_ATAK_DataTaken.
 */
 params [["_obj", objNull, [objNull]], ["_cfg", [], [[], createHashMap]], ["_merge", false]];
 if (isNull _obj) exitWith { false };
+// Champ init rejoué sur un client (JIP compris) avant son postInit, ou sur un client headless (qui ne pose jamais
+// COMSPEC_ATAK_DataInitDone) : le serveur a déjà posé les données.
+if (!isServer && {!hasInterface || {isNil "COMSPEC_ATAK_DataInitDone"}}) exitWith { false };
 if (_cfg isEqualType []) then { _cfg = createHashMapFromArray (_cfg select { _x isEqualType [] && {(count _x) isEqualTo 2} }); };
 private _old = createHashMapFromArray (_obj getVariable ["COMSPEC_ATAK_Data", []]);
 private _def = createHashMapFromArray [
@@ -62,6 +67,16 @@ if !((_out get "onFail") in ["lock", "wipe", "alarm", "none"]) then { _out set [
 if !((_out get "alarm") in ["none", "connect", "fail", "download"]) then { _out set ["alarm", "none"]; };
 if ((_out get "name") isEqualTo "") then { _out set ["name", getText (configOf _obj >> "displayName")]; };
 if ((_out get "name") isEqualTo "") then { _out set ["name", "Support numérique"]; };
+// Code de fin jamais publié (variable d'objet diffusée et modifiable par tout client) : gardé par le serveur seul
+// (fn_dataServer « code »). Serveur : directement ; client : seulement un Zeus, contrôlé de nouveau au serveur.
+private _code = _out getOrDefault ["code", ""];
+_out deleteAt "code";
+if !(_code isEqualType "") then { _code = ""; };
+if (isServer) then {
+    if (!_merge || {"code" in _cfg}) then { ["code", _obj, objNull, _code] call comspec_atak_native_fnc_dataServer; };
+} else {
+    if ("code" in _cfg && {!isNull (getAssignedCuratorLogic player)}) then { ["code", _obj, player, _code] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2]; };
+};
 _obj setVariable ["COMSPEC_ATAK_Data", (keys _out) apply { [_x, _out get _x] }, true];
 if (!_merge) then {
     _obj setVariable ["COMSPEC_ATAK_DataTries", 0, true];

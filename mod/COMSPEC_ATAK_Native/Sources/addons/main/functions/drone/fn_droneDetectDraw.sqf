@@ -40,7 +40,7 @@ private _now = time;
         _map drawLine [_from getPos [_in, _brg - _err], _from getPos [_in, _brg + _err], _cf];
     };
     _map drawIcon [_none, _c, _from getPos [_len, _brg], 0, 0, 0,
-        format ["DRONE %1 %2° ±%3°%4", ["INCONNU", "AMI"] select _friend, round _brg, round _err, ["", format [" · %1", _rb]] select (_rb isNotEqualTo "")],
+        format ["DRONE %1 %2° ±%3°%4", (["INCONNU", "AMI"] select _friend) call comspec_atak_native_fnc_tr, round _brg, round _err, ["", format [" · %1", _rb]] select (_rb isNotEqualTo "")],
         1, 0.024, (COMSPEC_ATAK_FontSet select 1), "right"];
     _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _c, _from, 8, 8, 0, "", 0];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_DroneDetect", []]);

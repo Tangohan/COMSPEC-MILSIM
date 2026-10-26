@@ -25,7 +25,7 @@ if (!(_queue isEqualType [])) then { _queue = []; };
 if ((toLower _mode) isEqualTo "clear") exitWith {
     private _n = count _queue;
     profileNamespace setVariable ["COMSPEC_Outbox", []];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
     if (_n > 0) then {
         [
             "WARN",

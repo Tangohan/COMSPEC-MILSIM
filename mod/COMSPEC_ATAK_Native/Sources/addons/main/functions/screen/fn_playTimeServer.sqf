@@ -41,7 +41,8 @@ if (_mode isEqualTo "tick") then {
 // Envoi : toutes les 5 min, ou tout de suite (départ d'un joueur, fin de mission).
 private _last = missionNamespace getVariable ["COMSPEC_ATAK_PlaySent", -1e9];
 if (_mode isEqualTo "tick" && {(_now - _last) < 300}) exitWith { true };
-missionNamespace setVariable ["COMSPEC_ATAK_PlaySent", _now];
+// Départ d'un joueur : n'envoie que lui, sans repousser le prochain envoi groupé des autres.
+if (_mode isNotEqualTo "leave") then { missionNamespace setVariable ["COMSPEC_ATAK_PlaySent", _now]; };
 private _uids = if (_mode isEqualTo "leave") then { [_only] select { _x in _db } } else { keys _db };
 if (_uids isEqualTo []) exitWith {
     // Rien en attente et envoi en panne : on redemande à la DLL si elle sait envoyer.

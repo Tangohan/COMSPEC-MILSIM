@@ -67,11 +67,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_intro_enabled", "CHECKBOX",
     ["Intro au lancement du jeu", "Décoché par défaut. Coché : le logo COMSPEC s'affiche sur l'écran de chargement d'Arma. Prend effet au prochain lancement du jeu."],
     ["COMSPEC", "ATAK · Intro"], false, 0,
-    { profileNamespace setVariable ["COMSPEC_ATAK_IntroEnabled", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
+    { profileNamespace setVariable ["COMSPEC_ATAK_IntroEnabled", _this]; [] call comspec_atak_native_fnc_saveProfile; }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_intro_sound", "CHECKBOX",
     ["Son de l'intro", "Petit jingle joué avec le logo COMSPEC au lancement d'Arma (seulement si l'intro est activée). Prend effet au prochain lancement du jeu."],
     ["COMSPEC", "ATAK · Intro"], true, 0,
-    { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
+    { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; [] call comspec_atak_native_fnc_saveProfile; }] call comspec_atak_native_fnc_addSetting;
 
 // Check de démarrage (fn_startupCheck), par joueur : résultat du contrôle du mod posté dans le salon de debug du Discord Athena.
 ["comspec_atak_native_startup_report", "CHECKBOX",
@@ -98,6 +98,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_map_place_style", "LIST",
     ["Style des noms de lieux", "Présentation des villes, villages et lieux-dits sur la carte du téléphone. Tactique (par défaut) : majuscules en gras avec contour. Étiquette : étiquette sombre avec un losange de couleur. Discret : petit texte clair. Classique : comme la carte d'Arma."],
     ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic"], ["Tactique", "Étiquette", "Discret", "Classique (Arma)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Diffusion des marqueurs posés depuis le téléphone (fn_markerNet) : canaux d'Arma ou réseau ATAK uniquement.
+["comspec_atak_native_marker_net", "LIST",
+    ["Diffusion des marqueurs ATAK", "Carte d'Arma (par défaut) : un marqueur posé sur le téléphone est un marqueur Arma du canal choisi, donc aussi sur la carte d'Arma de tous les joueurs du canal, avec ou sans ATAK, avec ou sans réseau. Réseau ATAK uniquement : il n'apparaît que sur les téléphones des joueurs du canal qui reçoivent le réseau (sans signal, il arrive au retour du réseau), jamais sur la carte d'Arma des autres. Global vaut alors Camp. Les canaux d'Arma peuvent rester fermés aux marqueurs."],
+    ["COMSPEC", "ATAK · Carte"], [["arma", "atak"], ["Carte d'Arma (canaux du jeu)", "Réseau ATAK uniquement"], 0], 1] call comspec_atak_native_fnc_addSetting;
 // Pose des marqueurs (fn_markerPlace) : menu ouvert par « Mettre un marqueur » (clic droit) et le double clic, canal.
 ["comspec_atak_native_marker_menu", "LIST",
     ["Fenêtre de création de marqueur", "Ce qui s'ouvre quand vous faites « Mettre un marqueur » (clic droit) ou un double-clic sur la carte. Palette d'icônes (par défaut) : vous choisissez une icône, sa couleur, sa taille et le canal, puis VALIDER la pose à l'endroit cliqué. Éditeur complet : formulaire avec titre, description, type, couleur, taille, orientation, opacité et canal."],
@@ -105,6 +109,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_marker_channel", "LIST",
     ["Canal des marqueurs", "Canal par défaut des marqueurs posés depuis le téléphone (palette, traits, LZ, éditeur), comme les canaux de la carte d'Arma. Global (par défaut) : visibles par tous les joueurs. Modifiable à chaque pose (ligne CANAL de la palette)."],
     ["COMSPEC", "ATAK · Carte"], [[0, 1, 2, 3, 4, 5], ["Global", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Nom et numéro des marqueurs posés depuis le téléphone (fn_markerDrop).
+["comspec_atak_native_marker_name", "EDITBOX",
+    ["Nom des marqueurs posés", "Modèle du nom donné aux marqueurs posés depuis la palette, quand le champ TEXTE de la palette est vide. Vide (par défaut) : camp, type et numéro (« ENI INFANTERIE 3 »). Mots remplacés : {camp} {type} {n} (numéro) {grille} {indicatif} {heure}. Exemple : {indicatif} {type} {n}."],
+    ["COMSPEC", "ATAK · Carte"], "", 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_marker_numbering", "LIST",
+    ["Numérotation des marqueurs", "À la suite (par défaut) : chaque marqueur prend le numéro suivant, même si on en a effacé. Premier numéro libre : un numéro effacé est repris (après 1 et 3, le suivant est 2)."],
+    ["COMSPEC", "ATAK · Carte"], [["next", "fill"], ["À la suite", "Premier numéro libre"], 0], 0] call comspec_atak_native_fnc_addSetting;
 {
     _x params ["_k", "_t", "_h"];
     [_k, "CHECKBOX", [_t, _h], ["COMSPEC", "ATAK · Carte"], true, 0] call comspec_atak_native_fnc_addSetting;
@@ -196,7 +207,7 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
         params ["_v"];
         if (_v isEqualTo "" || {_v isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"])}) exitWith {};
         profileNamespace setVariable ["COMSPEC_ATAK_PhoneModel", _v];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         if (!isNull player && {_v isNotEqualTo "s7"} && {!([_v, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then {
             // Dans le téléphone seulement, rien sur l'écran du jeu.
             ["WARNING", "ATAK : il vous manque l'item demandé pour ce modèle, le Durci S7 reste affiché.", 6, 40] call comspec_atak_native_fnc_notify;
@@ -297,8 +308,14 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
     ["Objets brouilleurs d'autres mods", "Objets ou véhicules qui brouillent l'ATAK tant qu'ils sont intacts, par exemple les brouilleurs d'un mod de guerre électronique. Format : Classe:rayon:force, séparés par des virgules (rayon en mètres, 1000 par défaut ; force 1-100, 80 par défaut). Classes parentes acceptées. Exemple : Land_DataTerminal_01_F:500:90. Vide : aucun."],
     _sim, "", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_lase_link", "CHECKBOX",
-    ["Télémètre vers l'ATAK", "Le point mesuré au télémètre devient un marqueur sur la carte de l'ATAK : mesure ACE Vector 21 (azimut + distance), ou touche « Envoyer le point visé à l'ATAK » dans une optique, des jumelles ou avec un désignateur laser."],
+    ["Télémètre vers l'ATAK", "Le point visé avec un désignateur laser allumé devient un marqueur sur la carte de l'ATAK (touche « Envoyer le point visé à l'ATAK »). Jumelles et optiques : voir « Marquer depuis des jumelles »."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_optic_mark", "CHECKBOX",
+    ["Marquer depuis des jumelles ou une optique", "Décoché par défaut : aucune jumelle ni optique (ACE Vector 21 compris) ne pose de marqueur sur la carte de l'ATAK, il faut reporter l'ennemi à la main. Coché : la mesure du Vector 21 (azimut + distance) ou la touche « Envoyer le point visé à l'ATAK » dans une optique ou des jumelles pose un marqueur."],
+    _sim, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mag_decl", "SLIDER",
+    ["Déclinaison magnétique (°)", "Écart entre le nord vrai de la carte et le nord magnétique, en degrés (positif : déclinaison est). Les cartes Arma n'en ont pas : 0 par défaut. Sert au cap magnétique du 9-LINE de l'app JTAC et de l'outil carte « JTAC : IP → cible »."],
+    _sim, [-30, 30, 0, 1], 1] call comspec_atak_native_fnc_addSetting;
 // Contrôle Zeus des ATAK : le menu clic droit ZEN d'Overwatch (« ATAK — Infos / dégâts / brouillage », état du téléphone
 // d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.
 missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];
@@ -365,6 +382,10 @@ private _cap = ["COMSPEC", "ATAK · Capture par l'ennemi"];
 ["comspec_atak_native_capture_validate", "LIST",
     ["Qui peut déclarer un téléphone volé", "Déclarer le vol (valider la compromission) coupe le téléphone volé du réseau et le bloque sur Athena."],
     _cap, [[0, 1], ["Chefs de groupe, propriétaire et Zeus", "Tout le camp"], 0], 1] call comspec_atak_native_fnc_addSetting;
+// App Admin du téléphone (fn_adminAllowed) : en plus du Zeus et de l'admin connecté, joueurs désignés par le serveur.
+["comspec_atak_native_admin_uids", "EDITBOX",
+    ["Gestionnaires en jeu (UID Steam)", "UID Steam (64 bits) séparés par des virgules : ces joueurs ont l'app Admin du téléphone (ATAK des joueurs, effets Zeus, debug de l'IA) sans être Zeus. Le parc Athena de l'app suit les droits du compte sur le site."],
+    ["COMSPEC", "ATAK · Admin"], "", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_sim", "CHECKBOX",
     ["Batterie réaliste", "La batterie se vide selon l'utilisation (écran, appareil photo, caméra en direct, GPS, envoi de données, recherche de réseau, brouilleur) et se recharge dans un véhicule moteur allumé. À 0 %, le téléphone s'éteint et apparaît hors ligne sur le BFT."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -439,6 +460,10 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_relay_only", "CHECKBOX",
     ["Réseau uniquement par les relais", "Coché : le réseau ATAK passe uniquement par les relais de la mission (pylônes, module « ATAK · Relais »). Loin de tout relais, ou si la mission n'en a pas, plus de réseau du tout : messages, photos et positions attendent d'être à portée. Décoché : sans relais, le téléphone garde quand même du réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
+// Antennes du jeu converties en relais (fn_relayConvert).
+["comspec_atak_native_relay_convert", "LIST",
+    ["Antennes du jeu = relais ATAK", "Les pylônes, mâts et tours de transmission, antennes omnidirectionnelles et paraboles du jeu deviennent des relais du réseau ATAK (portée et débit selon leur hauteur : tour 6 km, mât 3 à 5 km, antenne 1,5 km, parabole 1 km). Objets de la mission : ceux posés dans Eden ou par le Zeus. Décor de la carte en plus : les antennes de la carte elle-même (60 au plus, les plus hautes) ; une antenne détruite coupe son relais."],
+    _sim, [[0, 1, 2], ["Non", "Objets de la mission (Eden, Zeus)", "Mission et décor de la carte"], 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -462,6 +487,12 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_gps_fix", "CHECKBOX",
     ["Attente des satellites", "Au démarrage du téléphone ou après un changement de batterie, le GPS met de quelques secondes à environ 40 s à trouver les satellites ; en attendant, position approximative par le réseau. Décoché : position tout de suite."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_gps_loss", "LIST",
+    ["Pertes de fix GPS", "Part des satellites masqués (toit, forêt, immeubles, relief) qui compte vraiment. 100 % : comme un vrai téléphone, plus de fix dans un bâtiment ou en sous-sol. 0 % : le fix tient partout, seule la précision baisse. Au-dessus de 100 % : le fix se perd plus vite."],
+    _sim, [[0, 50, 100, 150, 200], ["0 % (fix partout)", "50 %", "100 % (réel)", "150 %", "200 %"], 2], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_gps_rel", "LIST",
+    ["Fiabilité du GPS", "Décrochages du fix (5 à 25 s, dernière position gardée puis position par le réseau) et sauts de position de 15 à 60 m (reflets du signal) qui reviennent en quelques secondes. Parfaite : jamais. Bonne : environ une fois toutes les 20 min. Moyenne : toutes les 6 min. Médiocre : toutes les 2 min, et satellites plus longs à trouver."],
+    _sim, [[0, 1, 2, 3], ["Parfaite", "Bonne (réel)", "Moyenne", "Médiocre"], 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_camera_share", "LIST",
     ["Partage des caméras", "Partage obligatoire (par défaut) : une caméra fixe n'est visible que par celui qui l'a posée, et la caméra d'un téléphone que par son propriétaire, tant qu'ils ne l'ont pas partagée (app Vidéo live > PARTAGER, par NFC, Bluetooth ou relais, à un joueur ou à TOUS). Tout le camp voit tout : chaque ATAK voit toutes les caméras de son camp sans rien faire."],
     _sim, [[0, 1], ["Partage obligatoire", "Tout le camp voit tout"], 0], 1] call comspec_atak_native_fnc_addSetting;
@@ -517,10 +548,18 @@ private _lock = ["COMSPEC", "ATAK · Marquage de cible"];
     ["Portée du marquage à l'appareil photo (m)", "Distance maximale pour marquer et suivre une cible avec l'appareil photo du téléphone. La caméra du drone garde sa propre portée."],
     _lock, [100, 2000, 800, 0], 1] call comspec_atak_native_fnc_addSetting;
 
-// App Garmin : la montre Garmin (objet COMSPEC_ATAK_GarminWatch) portée dans l'emplacement montre.
+// App Garmin : la montre Garmin (objet COMSPEC_ATAK_GarminWatch) portée dans l'emplacement montre, ou en objet divers
+// (COMSPEC_ATAK_GarminWatchItem, dans le sac ou la veste).
 ["comspec_atak_native_garmin_watch", "CHECKBOX",
-    ["Montre Garmin obligatoire", "Coché par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site si le joueur ne porte pas la « Montre Garmin » à la place de la montre. Décochez pour que le téléphone mesure tout seul."],
+    ["Montre Garmin obligatoire", "Coché par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site si le joueur n'a pas la « Montre Garmin » (à la place de la montre, ou la « Montre Garmin (objet divers) » dans son équipement). Décochez pour que le téléphone mesure tout seul."],
     ["COMSPEC", "ATAK · Garmin"], true, 1] call comspec_atak_native_fnc_addSetting;
+// Montre Garmin au poignet (touche Montre du jeu, O) : taille et place à l'écran (réglages du joueur).
+["comspec_atak_native_watch_size", "LIST",
+    ["Taille de la montre Garmin (touche O)", "Taille de la montre allumée avec la touche Montre du jeu."],
+    ["COMSPEC", "ATAK · Garmin"], [[0, 1, 2], ["Petite", "Moyenne", "Grande"], 1], 0, { if ((uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap]) getOrDefault ["open", false]) then { ["tick"] call comspec_atak_native_fnc_watch; }; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_watch_side", "LIST",
+    ["Place de la montre Garmin (touche O)", "En bas de l'écran : à gauche, au centre ou à droite."],
+    ["COMSPEC", "ATAK · Garmin"], [[0, 1, 2], ["Gauche", "Centre", "Droite"], 0], 0] call comspec_atak_native_fnc_addSetting;
 
 // Extraction de données au câble DL-7 (app Extraction, modules Zeus / Eden « ATAK · Données »).
 private _data = ["COMSPEC", "ATAK · Extraction de données"];
@@ -534,13 +573,19 @@ private _data = ["COMSPEC", "ATAK · Extraction de données"];
     ["Vitesse des transferts", "Multiplie la vitesse de copie et de déverrouillage prévue par le mission maker (2 = deux fois plus rapide)."],
     _data, [0.25, 4, 1, 2], 1] call comspec_atak_native_fnc_addSetting;
 // Serveur de l'extraction : branché dès le preInit (les modules Eden posent leurs données au démarrage).
-if (isServer) then { ["comspec_atak_native_dataSrv", { _this call comspec_atak_native_fnc_dataServer; }] call CBA_fnc_addEventHandler; };
+// « code » (code de fin exécuté au serveur) refusé ici : il n'arrive que par fn_dataSetup, droits contrôlés.
+if (isServer) then { ["comspec_atak_native_dataSrv", { if ((_this param [0, ""]) isNotEqualTo "code") then { _this call comspec_atak_native_fnc_dataServer; }; }] call CBA_fnc_addEventHandler; };
 // Passerelles de véhicule (fn_vehicleGateway) et messages courts du serveur vers des joueurs.
 if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_native_fnc_vehicleGateway; }] call CBA_fnc_addEventHandler; };
 // Téléphones ramassés par l'IA ennemie : actions là où l'unité est locale, état au serveur, alertes aux clients.
 ["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
 if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };
 if (hasInterface) then { ["comspec_atak_native_compromise", { params [["_k", ""], ["_v", []]]; if (_k in ["revoke", "ownerReset"]) then { [_k, _v] call comspec_atak_native_fnc_compromise; } else { ["event", [_k, _v]] call comspec_atak_native_fnc_compromise; }; }] call CBA_fnc_addEventHandler; };
+// App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).
+if (hasInterface) then {
+    ["comspec_atak_native_adminReport", { ["report", _this] call comspec_atak_native_fnc_adminClient; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_adminData", { ["data", _this] call comspec_atak_native_fnc_adminClient; }] call CBA_fnc_addEventHandler;
+};
 if (hasInterface) then { ["comspec_atak_native_note", { params [["_t", ""]]; ["INFO", _t, 5, 40] call comspec_atak_native_fnc_notify; }] call CBA_fnc_addEventHandler; };
 
 // Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).
@@ -566,6 +611,17 @@ private _dock = ["COMSPEC", "ATAK · Socle de recharge"];
 ["comspec_atak_native_dock_anyone", "CHECKBOX",
     ["Tout le monde peut reprendre n'importe quel téléphone", "Décoché : seul le propriétaire (compte Steam) peut reprendre son téléphone. Zeus et l'admin peuvent toujours."],
     _dock, false, 1] call comspec_atak_native_fnc_addSetting;
+// Mode full local et PC portable de TOC (fn_localCfg, fn_tocPost, fn_orderLocal).
+private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
+["comspec_atak_native_local_only", "CHECKBOX",
+    ["Mode full local (sans Athena)", "Coché : personne ne se connecte à Athena sur ce serveur, la question du service Athéna disparaît. Ordres, messages du poste, comptes rendus, numéros de téléphone et carnet passent en jeu ; chaque joueur garde sa configuration dans Documents\Arma 3\COMSPEC_Local\config.json."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_enabled", "CHECKBOX",
+    ["PC portables de TOC", "Un joueur à côté d'un PC de TOC (objet « PC portable de TOC (ATAK) » d'Eden ou de Zeus) a l'ATAK du poste et l'app Poste TOC : message à tout le camp, ordres aux groupes, situation, comptes rendus. Aussi sans Athena."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_anylaptop", "CHECKBOX",
+    ["Tous les ordinateurs portables servent de PC de TOC", "Coché : les ordinateurs portables et postes informatiques du jeu posés dans la mission deviennent des PC de TOC (pour tous les camps). Décoché : seulement l'objet PC portable de TOC et les objets désignés par la mission (this setVariable [""COMSPEC_ATAK_Toc"", true, true])."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",
     ["ATAK pour les équipages d'hélico et d'avion", "Pilote, copilote et tireurs d'un hélicoptère ou d'un avion ont l'ATAK sur la tablette de bord, même sans téléphone ou avec un téléphone vide ou cassé. Elle se range quand on descend."],

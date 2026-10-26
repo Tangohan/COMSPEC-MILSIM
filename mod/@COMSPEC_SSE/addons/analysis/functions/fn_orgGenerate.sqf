@@ -17,7 +17,15 @@ params [
     ["_known", 0, [0]],
     ["_threat", "moyenne", [""]]
 ];
-if (!isServer) exitWith { ["comspec_sse_orgGenerate", _this] call CBA_fnc_serverEvent; "" };
+if (!isServer) exitWith { [_units, _name, _kind, _seed, _known, _threat] remoteExecCall ["comspec_sse_fnc_orgGenerate", 2]; "" };
+// Demande venue d'un client (appel distant) : Zeus ou administrateur seulement.
+if (isRemoteExecuted && {remoteExecutedOwner != 2} && {
+    private _ro = remoteExecutedOwner;
+    !([(allPlayers select { owner _x == _ro }) param [0, objNull]] call comspec_sse_fnc_isAuthority)
+}) exitWith {
+    diag_log text format ["[COMSPEC SSE] Organisations : génération refusée au poste %1 (ni Zeus ni administrateur).", remoteExecutedOwner];
+    ""
+};
 
 _units = _units select { !isNull _x && {_x isKindOf "CAManBase"} };
 if (_units isEqualTo []) exitWith { "" };

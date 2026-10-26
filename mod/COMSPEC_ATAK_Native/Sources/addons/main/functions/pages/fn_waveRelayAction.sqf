@@ -1,6 +1,6 @@
 /*
     Wave Relay : réseau maillé (MANET) entre les téléphones du camp.
-      "scan"      : recalcule le maillage (cache 3 s, "force" pour ignorer le cache). Renvoie un HashMap :
+      "scan"      : recalcule le maillage (cache 3 s, puis recalcul en arrière-plan jusqu'à 30 s ; "force" pour ignorer le cache). Renvoie un HashMap :
                     nodes [[objet, position antenne ASL, indicatif, type ("me", "node", "gw")]...],
                     links [[index A, index B, qualité %]...], hops [sauts jusqu'à la passerelle, -1 si coupé],
                     me (mon index), gw (index de la passerelle ou -1), gwLabel.
@@ -22,6 +22,18 @@ switch (_act) do {
     case "scan": {
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Mesh", []];
         if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 3} && {_k isNotEqualTo "force"}) exitWith { _cache select 1 };
+        // Hors contexte suspendable (Draw de la carte, rendu de page) : O(n²) appels à fn_radioLink figeaient l'image.
+        // Cache de moins de 30 s : il est rendu tel quel et le recalcul part dans un spawn (un seul à la fois).
+        if (!canSuspend && {(count _cache) isEqualTo 2} && {diag_tickTime - (_cache select 0) < 30} && {_k isNotEqualTo "force"}) exitWith {
+            if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MeshBusy", -100]) > 15) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_MeshBusy", diag_tickTime];
+                [] spawn {
+                    ["scan", "force"] call comspec_atak_native_fnc_waveRelayAction;
+                    uiNamespace setVariable ["COMSPEC_ATAK_MeshBusy", -100];
+                };
+            };
+            _cache select 1
+        };
         private _range = missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000];
         private _side = side group player;
         private _units = (allPlayers select { alive _x && {side group _x isEqualTo _side} && {_x isNotEqualTo player} && {[_x] call comspec_atak_native_fnc_hasDevice} }) select [0, 63];
@@ -111,7 +123,7 @@ switch (_act) do {
     };
     case "mapRelays": {
         profileNamespace setVariable ["COMSPEC_ATAK_RelaysLayer", !(profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true])];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         call _render;
     };
 };

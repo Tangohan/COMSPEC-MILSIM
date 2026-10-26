@@ -113,8 +113,13 @@ final class AtakWebCommandApiController
             );
         }
         if ($hasNotifs) {
+            // Sans Steam (solo, hôte local, ancienne DLL qui ne l'a pas encore appris) : rien à ranger sous un joueur.
+            // Réponse 200 « ignoré » : le 400 steam_required revenait toutes les minutes dans les signalements du mod.
             if ($steam === '') {
-                return Response::json(['ok' => false, 'error' => 'steam_required'], 400);
+                $out['notifs'] = 0;
+                $out['notifs_skipped'] = 'steam_required';
+
+                return Response::json($out);
             }
             $unread = isset($body['atak_notif_unread']) ? (int) $body['atak_notif_unread'] : null;
             $out['notifs'] = $repo->ingestNotifs($tenantId, $steam, array_values($body['atak_notifs']), $unread);

@@ -22,6 +22,10 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_Realism.cs" Link="Extension_Realism.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SendJournal.cs" Link="Extension_SendJournal.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SyncStats.cs" Link="Extension_SyncStats.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_DataFlows.cs" Link="Extension_DataFlows.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_RefusalLatch.cs" Link="Extension_RefusalLatch.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SelfTest.cs" Link="Extension_SelfTest.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_WardrobeCache.cs" Link="Extension_WardrobeCache.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_ItemIcons.cs" Link="Extension_ItemIcons.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapCapture.cs" Link="Extension_MapCapture.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapPhoto.cs" Link="Extension_MapPhoto.cs" />

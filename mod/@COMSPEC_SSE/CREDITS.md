@@ -6,4 +6,4 @@
 - **COMSPEC Overwatch** — liaison Athena (optionnel).
 - **BII Identifi** (S.O.A.R) — passerelle optionnelle si le pack est chargé.
 
-Portail : https://athena.ttrd.fr
+Portail : https://athena-comspec.eu

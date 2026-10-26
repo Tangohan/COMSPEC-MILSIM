@@ -44,6 +44,16 @@
   color: #fff;
 }
 
+/* Logo ATHENA complet (aigle + nom), en masque pour suivre la couleur du pied de page. */
+.portal-footer__logo {
+  display: block;
+  width: clamp(8.5rem, 22vw, 11.5rem);
+  aspect-ratio: 1.33;
+  background: currentColor;
+  -webkit-mask: url("../brand/athena-logo-noir.svg") left center / contain no-repeat;
+  mask: url("../brand/athena-logo-noir.svg") left center / contain no-repeat;
+}
+
 .portal-footer__mark-dot {
   color: #4ade80; /* point marque ATHENA. */
 }
