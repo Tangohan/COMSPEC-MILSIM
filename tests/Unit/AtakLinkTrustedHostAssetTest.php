@@ -242,10 +242,18 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
         self::assertLessThan((int) strpos($send, 'AddQueueSecrets('), (int) strpos($send, $guard),
             'Le contrôle doit précéder l\'ajout des secrets au corps');
 
-        // Position coalescée reprise du disque : contrôlée dès le rechargement.
+        // Position coalescée reprise du disque : contrôlée dès le rechargement, et comptée si elle est écartée.
         $load = self::blockAfter($ext, 'private static void LoadQueueFromDisk()');
         self::assertStringContainsString('IsSecretSafeUri(u)', $load,
             'La position reprise de position.json doit être contrôlée au rechargement');
+        self::assertStringContainsString('Interlocked.Increment(ref _untrustedQueueDropped)', $load,
+            'La position écartée au rechargement doit être comptée avec les autres abandons');
+
+        // Signalement : libellé fixe dans le 2ᵉ champ, que fn_extensionCallback.sqf lit (« terrain » y arrête le
+        // relevé, « weather » renvoie la météo, « video-feeds » suspend les flux) ; le chemin passe dans le détail.
+        $note = self::blockAfter($ext, 'private static void NoteUntrustedQueueDrop(string url)');
+        self::assertStringContainsString('InvokeCallback("PostError", "0|file-hors-athena|0|"', $note,
+            'Abandon de file : le 2ᵉ champ du rappel PostError doit rester un libellé fixe');
     }
 
     public function testSecretBearingClientsDoNotFollowRedirectsAutomatically(): void
@@ -321,7 +329,10 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
     /**
      * Seuls AttachApiKeyHeader et les deux sites de GameAuth (Bearer du compte) posent un en-tête porteur de
      * secret, et ces deux sites refusent d'abord un hôte non sûr. Un en-tête secret ajouté ailleurs, même juste
-     * après AttachApiKeyHeader, contournerait le filtre : ce recensement échoue alors.
+     * après AttachApiKeyHeader, contournerait le filtre : ce recensement échoue alors. Hors de ces blocs, il
+     * refuse aussi les formes qui n'écrivent pas le nom dans l'appel (revue E, itération 3, V3-2) : nom secret
+     * écrit ailleurs que dans un Remove (constante, initialiseur), propriété Authorization,
+     * AuthenticationHeaderValue, et Add / TryAddWithoutValidation d'en-têtes au nom non littéral.
      */
     public function testSecretHeadersAreOnlySetBehindTheHostFilter(): void
     {
@@ -340,26 +351,46 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
             $guarded[] = [$gameAuthFile, $block];
         }
 
-        $pattern = '/\.(?:TryAddWithoutValidation|Add)\(\s*"(?:Authorization|X-ATAK-TOKEN|X-COMSPEC-KEY|X-COMSPEC-SESSION|X-COMSPEC-STEAM)"/i';
+        $secretName = '"(?:Authorization|X-ATAK-TOKEN|X-COMSPEC-KEY|X-COMSPEC-SESSION|X-COMSPEC-STEAM)"';
+        $rules = [
+            'en-tête secret posé' => '/\.(?:TryAddWithoutValidation|Add)\(\s*' . $secretName . '/i',
+            'nom d\'en-tête secret écrit hors d\'un Remove' => '/(?<!\.Remove\()' . $secretName . '/i',
+            'propriété Authorization' => '/\.Authorization\s*=(?!=)/',
+            'AuthenticationHeaderValue' => '/\bAuthenticationHeaderValue\s*\(/',
+            'en-tête au nom non littéral' => '/Headers\.(?:TryAddWithoutValidation|Add)\(\s*+(?!")/',
+        ];
+        // Seul site relu au nom non littéral : recopie des en-têtes de CONTENU d'une réponse décompressée.
+        $reviewed = ['Extension_SyncStats.cs' => ['fresh.Headers.TryAddWithoutValidation(h.Key, h.Value);']];
         $sites = 0;
         foreach ($this->dllSourceFiles() as $file) {
             $src = $this->read($file);
-            if (preg_match_all($pattern, $src, $m, PREG_OFFSET_CAPTURE) < 1) {
-                continue;
-            }
-            foreach ($m[0] as [$text, $offset]) {
-                $sites++;
-                $inside = false;
-                foreach ($guarded as [$guardedFile, $block]) {
-                    $start = $guardedFile === $file ? strpos($src, $block) : false;
-                    if ($start !== false && $offset >= $start && $offset < $start + strlen($block)) {
-                        $inside = true;
-                        break;
-                    }
+            foreach ($rules as $rule => $pattern) {
+                if (preg_match_all($pattern, $src, $m, PREG_OFFSET_CAPTURE) < 1) {
+                    continue;
                 }
-                $line = substr_count(substr($src, 0, $offset), "\n") + 1;
-                self::assertTrue($inside, 'En-tête secret posé hors du filtre d\'hôte : '
-                    . basename($file) . ':' . $line . ' ' . $text);
+                foreach ($m[0] as [$text, $offset]) {
+                    if ($rule === 'en-tête secret posé') {
+                        $sites++;
+                    }
+                    $inside = false;
+                    foreach ($guarded as [$guardedFile, $block]) {
+                        $start = $guardedFile === $file ? strpos($src, $block) : false;
+                        if ($start !== false && $offset >= $start && $offset < $start + strlen($block)) {
+                            $inside = true;
+                            break;
+                        }
+                    }
+                    $lineStart = strrpos(substr($src, 0, $offset), "\n");
+                    $lineEnd = strpos($src, "\n", $offset);
+                    $lineText = trim(substr($src, $lineStart === false ? 0 : $lineStart + 1,
+                        ($lineEnd === false ? strlen($src) : $lineEnd) - ($lineStart === false ? 0 : $lineStart + 1)));
+                    if (in_array($lineText, $reviewed[basename($file)] ?? [], true)) {
+                        continue;
+                    }
+                    $line = substr_count(substr($src, 0, $offset), "\n") + 1;
+                    self::assertTrue($inside, ucfirst($rule) . ' hors du filtre d\'hôte : '
+                        . basename($file) . ':' . $line . ' ' . $lineText);
+                }
             }
         }
         self::assertGreaterThanOrEqual(5, $sites, 'Recensement des en-têtes secrets vide : motif à revoir');
