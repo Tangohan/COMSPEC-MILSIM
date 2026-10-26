@@ -57,8 +57,8 @@ $lead = match ($active) {
             <?php if (!$isMember): ?><p><?= htmlspecialchars($lead, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
         </div>
         <p class="bo-eff-head__meta" aria-label="État des effectifs">
-            <span><strong><?= $activeCount ?></strong> actifs</span>
-            <span><strong><?= $total ?></strong> dossiers</span>
+            <span><strong><?= $activeCount ?></strong> <?= locale() === 'en' ? 'active' : 'actifs' ?></span>
+            <span><strong><?= $total ?></strong> <?= locale() === 'en' ? 'records' : 'dossiers' ?></span>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $attentionCount > 0 ? 'is-alert' : '' ?>">
                 <strong><?= $attentionCount ?></strong> à traiter
             </a>
