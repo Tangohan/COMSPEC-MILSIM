@@ -242,7 +242,9 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
 if (isNil "COMSPEC_CbaSettingsEhArmed") then {
 // Bloc de démarrage gardé dans une variable : fn_athenaApply le rejoue (COMSPEC_CbaSettingsBootReplay)
 // quand le joueur passe Athéna à « Oui » en mission alors qu'il était coupé au démarrage.
-COMSPEC_CbaSettingsBootCode = {
+// En localNamespace (jamais synchronisé) et non en variable globale : un client pouvait sinon la remplacer par
+// publicVariable, et fn_athenaApply / fn_connect l'exécutaient chez le joueur visé.
+localNamespace setVariable ["COMSPEC_CbaSettingsBootCode", {
     if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false]) exitWith {};
     missionNamespace setVariable ["COMSPEC_CbaSettingsBootFired", true, false];
 
@@ -715,8 +717,8 @@ COMSPEC_CbaSettingsBootCode = {
             }];
         };
     };
-};
-COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", COMSPEC_CbaSettingsBootCode] call CBA_fnc_addEventHandler;
+}];
+COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", (localNamespace getVariable ["COMSPEC_CbaSettingsBootCode", {}])] call CBA_fnc_addEventHandler;
 };
 
 // Sync multi-clients du briefing Google Slides (URL + index).

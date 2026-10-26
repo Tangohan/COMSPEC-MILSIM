@@ -9,11 +9,11 @@ if (
     && {!isNull findDisplay 46}
     && {missionNamespace getVariable ["COMSPEC_CbaSettingsBootFired", false]}
     && {!(missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false])}
-    && {!isNil "COMSPEC_CbaSettingsBootCode"}
+    && {!isNil {localNamespace getVariable "COMSPEC_CbaSettingsBootCode"}}
 ) then {
     ["INFO", "Boot", "Overwatch rallumé en mission — initialisation différée du démarrage"] call comspec_overwatch_connect_fnc_log;
     missionNamespace setVariable ["COMSPEC_CbaSettingsBootReplay", true, false];
-    [] call COMSPEC_CbaSettingsBootCode;
+    [] call (localNamespace getVariable ["COMSPEC_CbaSettingsBootCode", {}]);
     missionNamespace setVariable ["COMSPEC_CbaSettingsBootReplay", false, false];
 };
 

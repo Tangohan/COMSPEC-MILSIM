@@ -113,7 +113,7 @@ private _fold = {
 };
 // Modèles du téléphone : seuls ceux dont l'objet exigé est porté sont proposés (Options des addons > ATAK · Objets par interface).
 private _models = [["DURCI S7", "s7"], ["SAMSUNG S23", "s23"], ["IPHONE 17 PRO", "ip17"], ["V2 ENHANCED", "iphone"], ["XIAOMI X3D", "rugged"], ["SONIM XP8", "sonim"], ["TABLETTE", "keys"]];
-private _modelOk = missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }];
+private _modelOk = uiNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }];
 private _okModels = _models select { (_x select 1) isEqualTo "s7" || {[_x select 1, player] call _modelOk} };
 private _noModels = (_models - _okModels) apply { _x select 0 };
 private _modelHelp = "La couleur de la coque ne change que sur le S7. TABLETTE : tablette durcie.";

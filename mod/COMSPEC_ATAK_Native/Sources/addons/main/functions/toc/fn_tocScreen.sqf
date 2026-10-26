@@ -585,7 +585,10 @@ switch (_mode) do {
             };
             _o setVariable ["COMSPEC_ATAK_TocAt", -10];
         };
-        missionNamespace setVariable ["COMSPEC_ATAK_TocDo", _do];
+        // uiNamespace (local à la machine, jamais synchronisé) : les actions ci-dessous (ACE et addAction) sont posées et
+        // déclenchées sur cette même machine. En variable globale, un client pouvait réécrire COMSPEC_ATAK_TocDo par
+        // publicVariable et faire exécuter n'importe quel code à quiconque utilise l'action de l'écran TOC.
+        uiNamespace setVariable ["COMSPEC_ATAK_TocDo", _do];
         private _cond = "private _o = _target; private _c = _o getVariable ['COMSPEC_ATAK_TocScr', []]; (count _c) >= 8 && {(_c select 1) isEqualTo '' || {(_c select 1) isEqualTo str side group player}}";
         if (!isNil "ace_interact_menu_fnc_createAction") then {
             private _icon = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
@@ -593,7 +596,7 @@ switch (_mode) do {
                 private _out = [];
                 {
                     _x params ["_id", "_lbl", "_k"];
-                    _out pushBack [[_id, _lbl, "", compile format ["[_target, %1] call COMSPEC_ATAK_TocDo;", str _k], { true }] call comspec_atak_native_fnc_aceAction, [], _target];
+                    _out pushBack [[_id, _lbl, "", compile format ["[_target, %1] call (uiNamespace getVariable ['COMSPEC_ATAK_TocDo', {}]);", str _k], { true }] call comspec_atak_native_fnc_aceAction, [], _target];
                 } forEach [
                     ["COMSPEC_ATAK_TocCycle", "Changer d'affichage (carte et flux, carte, flux, PIP du poste)", "cycle"],
                     ["COMSPEC_ATAK_TocIn", "Zoomer", "in"],
@@ -602,7 +605,7 @@ switch (_mode) do {
                     ["COMSPEC_ATAK_TocAuto", "Cadrer tout le réseau", "auto"]
                 ];
                 if (_target getVariable ["COMSPEC_ATAK_Toc", false]) then {
-                    _out pushBack [["COMSPEC_ATAK_TocBig", "Ouvrir le PC du poste (carte en grand)", "", { [_target, "big"] call COMSPEC_ATAK_TocDo; }, { isNull objectParent _player }] call comspec_atak_native_fnc_aceAction, [], _target];
+                    _out pushBack [["COMSPEC_ATAK_TocBig", "Ouvrir le PC du poste (carte en grand)", "", { [_target, "big"] call (uiNamespace getVariable ["COMSPEC_ATAK_TocDo", {}]); }, { isNull objectParent _player }] call comspec_atak_native_fnc_aceAction, [], _target];
                 };
                 _out
             }, [], [0, 0, 0], 5] call comspec_atak_native_fnc_aceAction;
@@ -610,7 +613,7 @@ switch (_mode) do {
         } else {
             {
                 _x params ["_lbl", "_k", "_prio"];
-                _o addAction [format ["<t color='#7fd0b0'>%1</t>", _lbl call comspec_atak_native_fnc_tr], { [_this select 0, _this select 3] call COMSPEC_ATAK_TocDo; }, _k, _prio, false, true, "",
+                _o addAction [format ["<t color='#7fd0b0'>%1</t>", _lbl call comspec_atak_native_fnc_tr], { [_this select 0, _this select 3] call (uiNamespace getVariable ["COMSPEC_ATAK_TocDo", {}]); }, _k, _prio, false, true, "",
                     _cond + ([" ", " && {_o getVariable ['COMSPEC_ATAK_Toc', false]}"] select (_k isEqualTo "big")), 5];
             } forEach [
                 ["Écran TOC : changer d'affichage", "cycle", 1.45], ["Écran TOC : zoomer", "in", 1.44], ["Écran TOC : dézoomer", "out", 1.43],

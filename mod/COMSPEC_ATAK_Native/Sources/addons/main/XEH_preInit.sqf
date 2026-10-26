@@ -202,7 +202,7 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
         if (_v isEqualTo "" || {_v isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"])}) exitWith {};
         profileNamespace setVariable ["COMSPEC_ATAK_PhoneModel", _v];
         [] call comspec_atak_native_fnc_saveProfile;
-        if (!isNull player && {_v isNotEqualTo "s7"} && {!([_v, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then {
+        if (!isNull player && {_v isNotEqualTo "s7"} && {!([_v, player] call (uiNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then {
             // Dans le téléphone seulement, rien sur l'écran du jeu.
             ["WARNING", "ATAK : il vous manque l'item demandé pour ce modèle, le Durci S7 reste affiché.", 6, 40] call comspec_atak_native_fnc_notify;
         };
@@ -215,16 +215,16 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
     _x params ["_k", "_name", "_def"];
     [format ["comspec_atak_native_ui_items_%1", _k], "EDITBOX",
         [format ["Item requis : %1", _name], format ["Item à avoir sur soi pour utiliser le modèle %1 : noms de classe ou mots-clés, séparés par des virgules. Vide : n'importe quel téléphone ATAK suffit. Ce réglage ne change pas le modèle affiché : choisissez-le dans « Modèle du téléphone » ci-dessus ou dans le téléphone (Réglages > Personnaliser).", _name]],
-        _uiCat, _def, 1, { missionNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap]; }] call comspec_atak_native_fnc_addSetting;
+        _uiCat, _def, 1, { uiNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap]; }] call comspec_atak_native_fnc_addSetting;
 } forEach [
     ["s7", "Durci S7", ""], ["s23", "Samsung S23", ""], ["ip17", "iPhone 17 Pro", ""], ["iphone", "V2 Enhanced", ""], ["rugged", "Xiaomi X3D", ""], ["sonim", "Sonim XP8", ""],
     ["keys", "Tablette", "tablet,tablette,ctab"]
 ];
 // [modèle, unité] -> l'unité porte-t-elle l'objet exigé pour ce modèle ? (cache 2 s : fn_layoutGet l'appelle souvent).
-missionNamespace setVariable ["COMSPEC_ATAK_ModelOk", {
+uiNamespace setVariable ["COMSPEC_ATAK_ModelOk", {
     params [["_model", "s7"], ["_unit", player]];
-    private _cache = missionNamespace getVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap];
-    missionNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", _cache];
+    private _cache = uiNamespace getVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", _cache];
     (_cache getOrDefault [_model, [-10, true]]) params ["_t", "_ok"];
     if (diag_tickTime - _t < 2) exitWith { _ok };
     private _want = ((toLower (missionNamespace getVariable [format ["comspec_atak_native_ui_items_%1", _model], ""])) splitString ",; ") apply { trim _x } select { _x isNotEqualTo "" };

@@ -46,7 +46,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 // Raccourcis (Options > Contrôles > Configurer les addons > COMSPEC ATAK), sur le modèle des interfaces principale / secondaire / tertiaire.
 // Les identifiants PhoneHold, PhoneCarry, PhoneZoomIn et PhoneZoomOut sont relus par fn_displayLoad (téléphone en main) ;
 // PhoneMain, PhoneOrient et PhonePosition par le gestionnaire de touches ajouté dans fn_open.
-["COMSPEC ATAK", "PhoneMain", ["Prendre en main / interagir avec l'ATAK (principal)", "Miniature ou rangé : le téléphone passe en grand (souris). En grand : il redevient la miniature."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); true }, "", [0x16, [false, false, true]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneMain", ["Prendre en main / interagir avec l'ATAK (principal)", "Miniature ou rangé : le téléphone passe en grand (souris). En grand : il redevient la miniature."], { [] call (uiNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); true }, "", [0x16, [false, false, true]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneCarry", ["Porter l'ATAK en miniature (secondaire)", "Affiche ou range la miniature dans un coin de l'écran (on continue à jouer). En grand : réduit en miniature."], { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneJpc", ["Tablette sur le JPC (ouvrir / rabattre)", "Relève la tablette durcie du porte-plaques et affiche l'ATAK sur son écran 3D : on baisse les yeux pour lire, vue libre, déplacement et arme disponibles. Choisit aussi le style « porté » JPC."], { if (["wip"] call comspec_atak_native_fnc_jpcScreen) exitWith { false }; ["toggle"] call comspec_atak_native_fnc_jpcScreen; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneHold", ["Prendre en main / interagir (touche alternative)", "Même effet que la touche principale : miniature -> grand, grand -> miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
@@ -55,20 +55,20 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 ["COMSPEC ATAK", "PhoneZoomIn", ["Zoomer (carte du téléphone)", "Zoom avant sur la carte, aussi téléphone porté en marchant ou en conduisant."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xC9, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneZoomOut", ["Dézoomer (carte du téléphone)", "Zoom arrière sur la carte, aussi téléphone porté."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [1 / 0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xD1, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneOrient", ["Permuter l'orientation (vertical / horizontal)", "Téléphone en miniature : vertical ou horizontal."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [] call comspec_atak_native_fnc_orientationToggle; true }, "", [0x16, [false, true, true]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "PhonePosition", ["Permuter la position de l'interface", "Déplace la miniature : bas droit, bas gauche, haut gauche, haut droit, milieu droit, milieu gauche."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); true }, "", [0x16, [true, false, true]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhonePosition", ["Permuter la position de l'interface", "Déplace la miniature : bas droit, bas gauche, haut gauche, haut droit, milieu droit, milieu gauche."], { [] call (uiNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); true }, "", [0x16, [true, false, true]]] call CBA_fnc_addKeybind;
 // Principal = interagir (comme le mod d'origine) : miniature ou rangé -> grand ; grand -> miniature (fn_interactToggle).
 // Ranger complètement : touche « porter » depuis la miniature.
-missionNamespace setVariable ["COMSPEC_ATAK_KeyMain", { [] call comspec_atak_native_fnc_interactToggle; }];
+uiNamespace setVariable ["COMSPEC_ATAK_KeyMain", { [] call comspec_atak_native_fnc_interactToggle; }];
 // Mort ou inconscient : le téléphone se range tout de suite (miniature et grand) et ne revient pas en miniature.
 // fn_canUse renvoie aussi "down" : fn_schedulerTick le range au plus tard en une seconde (inconscience sans ACE).
-missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
+uiNamespace setVariable ["COMSPEC_ATAK_StowDown", {
     uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_close; };
 }];
 // Mesure ACE Vector 21 transmise (azimut + distance) : marqueur sur la carte de l'ATAK (fn_lasePoint).
 ["ace_vector_rangefinderData", { params [["_d", 0], ["_az", 0], ["_inc", 0]]; ["vector", [_d, _az, _inc]] call comspec_atak_native_fnc_lasePoint; }] call CBA_fnc_addEventHandler;
-["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
-addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
+["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (uiNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
+addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (uiNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
 // Cartouches ENI de la carte (fn_mapLabels) : heure de pose et auteur de chaque marqueur, notés à sa création
 // (aucun envoi réseau : chaque client voit l'événement). Table locale bornée, nettoyée à la suppression.
 addMissionEventHandler ["MarkerCreated", {
@@ -100,7 +100,7 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call c
     } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk"];
 }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
-missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
+uiNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BC", "BL", "TL", "TC", "TR", "MR", "ML"];
     private _cur = _list find toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
     private _next = _list select ((_cur max 0) + 1) mod (count _list);
@@ -114,7 +114,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
 // Menu d'actions d'Arma masqué pendant que le téléphone est affiché (réglage « Masquer le menu d'actions ») :
 // molette (PrevAction / NextAction) bloquée ; validation (Action) bloquée seulement téléphone en main.
 // Téléphone rangé, ou porté en véhicule : le gestionnaire renvoie false, le jeu (et ACE) se comporte normalement. Réinstallé à chaque ouverture (fn_open).
-missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
+uiNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     params [["_activate", false]];
     private _mode = missionNamespace getVariable ["comspec_atak_native_action_menu", 1];
     if (_mode isEqualTo 0 || {isNull ([] call comspec_atak_native_fnc_display)}) exitWith { false };
@@ -693,7 +693,7 @@ addMissionEventHandler ["EntityKilled", {
 // la munition et ce que le gilet arrête ; éclats et souffle des explosions, chutes, accidents, eau.
 // Les parties touchées d'un même coup sont regroupées et traitées à l'image suivante (un seul tirage par coup).
 missionNamespace setVariable ["COMSPEC_ATAK_HitQueue", []];
-missionNamespace setVariable ["COMSPEC_ATAK_HitPush", {
+uiNamespace setVariable ["COMSPEC_ATAK_HitPush", {
     params ["_part", "_dmg", "_raw", "_ammo"];
     private _q = missionNamespace getVariable ["COMSPEC_ATAK_HitQueue", []];
     if ((count _q) isEqualTo 0) then {
@@ -719,7 +719,7 @@ if (isClass (configFile >> "CfgPatches" >> "ace_medical_engine")) then {
         {
             _x params [["_d", 0], ["_part", ""], ["_raw", -1]];
             if (_raw < 0) then { _raw = _d; };
-            if ((_d max _raw) > 0.02) then { [_part, _d, _raw, _ammo] call (missionNamespace getVariable ["COMSPEC_ATAK_HitPush", {}]); };
+            if ((_d max _raw) > 0.02) then { [_part, _d, _raw, _ammo] call (uiNamespace getVariable ["COMSPEC_ATAK_HitPush", {}]); };
         } forEach _damages;
     }] call CBA_fnc_addEventHandler;
 } else {
@@ -739,7 +739,7 @@ if (isClass (configFile >> "CfgPatches" >> "ace_medical_engine")) then {
             default { "body" };
         };
         if !(_proj isEqualType "") then { _proj = ""; };
-        [_part, _d, _d, _proj] call (missionNamespace getVariable ["COMSPEC_ATAK_HitPush", {}]);
+        [_part, _d, _d, _proj] call (uiNamespace getVariable ["COMSPEC_ATAK_HitPush", {}]);
     }];
     player addEventHandler ["HandleHeal", { missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; }];
 };

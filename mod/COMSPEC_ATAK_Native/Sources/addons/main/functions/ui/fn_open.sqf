@@ -13,9 +13,9 @@ _s set ["suppressHudRestore", true];
 _s set ["suppressHudRestore", false];
 // Menu d'actions d'Arma masqué tant que le téléphone est affiché (COMSPEC_ATAK_ActionBlock, XEH_postInitClient).
 // Réinstallé à chaque ouverture : une mission ou un autre mod a pu le remplacer.
-inGameUISetEventHandler ["PrevAction", "[false] call (missionNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
-inGameUISetEventHandler ["NextAction", "[false] call (missionNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
-inGameUISetEventHandler ["Action", "[true] call (missionNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
+inGameUISetEventHandler ["PrevAction", "[false] call (uiNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
+inGameUISetEventHandler ["NextAction", "[false] call (uiNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
+inGameUISetEventHandler ["Action", "[true] call (uiNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
 if (_interactive) exitWith {
     private _parent = findDisplay 46;
     if (isNull _parent) then { _parent = findDisplay 12; };
@@ -35,9 +35,9 @@ if (_interactive) exitWith {
                 _bind params [["_k", -1], ["_mods", [false, false, false]]];
                 _k > 0 && {_k isEqualTo _key} && {_mods isEqualTo [_shift, _ctrl, _alt]}
             };
-            if (["PhoneMain", [0x16, [false, false, true]]] call _hit) exitWith { [{ [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); }] call CBA_fnc_execNextFrame; true };
+            if (["PhoneMain", [0x16, [false, false, true]]] call _hit) exitWith { [{ [] call (uiNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); }] call CBA_fnc_execNextFrame; true };
             if (["PhoneOrient", [0x16, [false, true, true]]] call _hit) exitWith { [{ [] call comspec_atak_native_fnc_orientationToggle; }] call CBA_fnc_execNextFrame; true };
-            if (["PhonePosition", [0x16, [true, false, true]]] call _hit) exitWith { [{ [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); }] call CBA_fnc_execNextFrame; true };
+            if (["PhonePosition", [0x16, [true, false, true]]] call _hit) exitWith { [{ [] call (uiNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); }] call CBA_fnc_execNextFrame; true };
             // Saisie dans un champ du téléphone : la touche ne part pas au jeu (fn_keyBlock).
             _this call comspec_atak_native_fnc_keyBlock
         }];

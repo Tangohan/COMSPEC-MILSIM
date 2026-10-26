@@ -43,7 +43,7 @@ if (!_allowed) then { _style = "hud"; };
 // Modèle du profil (la tablette de bord des véhicules n'est pas portable : S7) ; S7 : teinte de la coque.
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 if !(_model in (_phones + ["keys"])) then { _model = "s7"; };
-if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
+if (_model isNotEqualTo "s7" && {!([_model, player] call (uiNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 private _cls = ["COMSPEC_ATAK_JpcPhone_" + _model, "COMSPEC_ATAK_JpcTablet"] select (_model isEqualTo "keys");
 private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
 private _skin = ["", format ["%1jpc_s7_%2_ca.paa", _d, _tint]] select (_model isEqualTo "s7" && {_tint in ["od", "black"]});
