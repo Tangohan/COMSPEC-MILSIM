@@ -556,6 +556,7 @@ return function (Router $router) {
     $router->get('/manoeuvres', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/boite-reception', [InboxController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/boite-reception/lu', [InboxController::class, 'markRead'], [AuthMiddleware::class]);
+    $router->post('/boite-reception/supprimer', [InboxController::class, 'delete'], [AuthMiddleware::class]);
     $router->get('/onboarding', [OnboardingController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/onboarding/persona', [OnboardingController::class, 'choosePersona'], [AuthMiddleware::class]);
     $router->post('/onboarding/step', [OnboardingController::class, 'toggleStep'], [AuthMiddleware::class]);
