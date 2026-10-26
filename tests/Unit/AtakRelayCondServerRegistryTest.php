@@ -231,7 +231,7 @@ final class AtakRelayCondServerRegistryTest extends TestCase
             self::assertStringContainsString($line, $cond, $line);
         }
         self::assertStringContainsString(
-            '[{ ["srv"] call comspec_atak_native_fnc_relayCond; }, 2] call COMSPEC_ATAK_PfhSpread;',
+            '[{ ["srv"] call comspec_atak_native_fnc_relayCond; }, 2] call comspec_atak_native_fnc_pfhSpread;',
             $this->read(self::MAIN . '/XEH_postInitServer.sqf')
         );
         self::assertSame(2, substr_count($this->read(self::MAIN . '/functions/network/fn_relayNet.sqf'), 'call comspec_atak_native_fnc_relayCond;'));

@@ -14,8 +14,8 @@ missionNamespace setVariable ["COMSPEC_ServerHubActive", true, true];
 missionNamespace setVariable ["COMSPEC_ServerQueue", createHashMap, false];
 
 // Même filtre de marqueurs « déjà nôtres » que le client (évite boucles).
-if (isNil "COMSPEC_fnc_isOwnedMapMarker") then {
-    missionNamespace setVariable ["COMSPEC_fnc_isOwnedMapMarker", {
+if (isNil {localNamespace getVariable "COMSPEC_fnc_isOwnedMapMarker"}) then {
+    localNamespace setVariable ["COMSPEC_fnc_isOwnedMapMarker", {
         params ["_n"];
         if (!(_n isEqualType "") || {_n isEqualTo ""}) exitWith { false };
         private _ul = toLower _n;
@@ -41,7 +41,7 @@ if (isNil "COMSPEC_ServerMarkerEHs") then {
         params ["_marker", ["_deleted", false]];
         if (_marker isEqualTo "") exitWith {};
         if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
-        if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+        if ([_marker] call (localNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         [
             format ["mk_%1_%2", _marker, if (_deleted) then {"d"} else {"u"}],

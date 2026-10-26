@@ -58,7 +58,9 @@ if (missionNamespace getVariable ["comspec_overwatch_log_to_file", true]) then {
 };
 
 // Repères déjà nôtres (poste → jeu) : ne pas les renvoyer, ni relancer le pont cTab.
-missionNamespace setVariable ["COMSPEC_fnc_isOwnedMapMarker", {
+// Prédicat gardé en localNamespace (jamais synchronisé) : les boucles de synchro du serveur (fn_startSyncLoops,
+// fn_initServerHub) l'exécutent ; en missionNamespace, un client pouvait le remplacer par publicVariable.
+localNamespace setVariable ["COMSPEC_fnc_isOwnedMapMarker", {
     params ["_n"];
     if (!(_n isEqualType "") || {_n isEqualTo ""}) exitWith { false };
     private _ul = toLower _n;
@@ -82,7 +84,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
         private _resyncSoon = {
             params ["_marker"];
             if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
-            if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+            if ([_marker] call (localNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
             private _forceNow = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
@@ -90,7 +92,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
             [{
                 params ["_m"];
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
-                if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+                if ([_m] call (localNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
                 if ((getMarkerColor _m) isEqualTo "") exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
@@ -131,7 +133,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 private _local = (_this select {_x isEqualType true}) param [0, true];
                 if (!_local && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
-                if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+                if ([_marker] call (localNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
                 private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
@@ -143,7 +145,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 private _local = (_this select {_x isEqualType true}) param [0, true];
                 if (!_local && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
-                if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
+                if ([_marker] call (localNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
                 private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;

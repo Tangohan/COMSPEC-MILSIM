@@ -33,21 +33,21 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
 ["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.
-[{ ["sweep"] call comspec_atak_native_fnc_vestMount; ["sweep"] call comspec_atak_native_fnc_jpcScreen; }, 30] call COMSPEC_ATAK_PfhSpread;
+[{ ["sweep"] call comspec_atak_native_fnc_vestMount; ["sweep"] call comspec_atak_native_fnc_jpcScreen; }, 30] call comspec_atak_native_fnc_pfhSpread;
 // Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).
-[{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call COMSPEC_ATAK_PfhSpread;
+[{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call comspec_atak_native_fnc_pfhSpread;
 // Pylônes relais 3D posés dans Eden dont l'init étendue n'aurait pas tourné : enregistrés comme relais (fn_relayTower).
 [{ ["sweep"] call comspec_atak_native_fnc_relayTower; }, [], 2] call CBA_fnc_waitAndExecute;
 // Antennes du jeu (pylônes, mâts, antennes omnidirectionnelles, paraboles ; décor de la carte en option) converties en
 // relais ATAK (fn_relayConvert) : au début, puis toutes les 60 s pour les objets posés par le Zeus ; antennes du décor
 // détruites vérifiées toutes les 15 s.
 [{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, [], 4] call CBA_fnc_waitAndExecute;
-[{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, 60] call COMSPEC_ATAK_PfhSpread;
-[{ ["check"] call comspec_atak_native_fnc_relayConvert; }, 15] call COMSPEC_ATAK_PfhSpread;
+[{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, 60] call comspec_atak_native_fnc_pfhSpread;
+[{ ["check"] call comspec_atak_native_fnc_relayConvert; }, 15] call comspec_atak_native_fnc_pfhSpread;
 // Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
-[{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call COMSPEC_ATAK_PfhSpread;
+[{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call comspec_atak_native_fnc_pfhSpread;
 // Conditions d'activation en code des relais et passerelles : évaluées ici seulement, résultat publié (fn_relayCond "srv").
-[{ ["srv"] call comspec_atak_native_fnc_relayCond; }, 2] call COMSPEC_ATAK_PfhSpread;
+[{ ["srv"] call comspec_atak_native_fnc_relayCond; }, 2] call comspec_atak_native_fnc_pfhSpread;
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)
 COMSPEC_ATAK_SrvRoutes = createHashMap;   // netId du groupe -> [points, auteur]
 // Accusés LU/ACK des comptes rendus : envoyés au seul auteur et gardés à part, un par lecteur (le dernier l'emporte),
@@ -77,30 +77,32 @@ private _keep = {
     };
     COMSPEC_ATAK_SrvLog set [_side, _l];
 };
-missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
+// Tenu en localNamespace (jamais synchronisé) et non en missionNamespace : un client pouvait sinon le remplacer par
+// publicVariable, et le serveur l'exécutait à chaque compte rendu, MEDEVAC, BDA, demande logistique ou message du poste.
+localNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
 // Marqueurs « réseau ATAK uniquement » (fn_markerNet) : mémoire du serveur et remise aux joueurs du canal.
 ["comspec_atak_native_tacMkSrv", { ["srv", _this] call comspec_atak_native_fnc_markerNet; }] call CBA_fnc_addEventHandler;
 // Heure et auteur des marqueurs Arma (carte d'Arma ou téléphone), redonnés aux joueurs qui rejoignent (fiche du marqueur).
 addMissionEventHandler ["MarkerCreated", { params ["_m", "", ["_owner", objNull]]; if (!isNull _owner) then { ["srvMeta", [_m, _owner]] call comspec_atak_native_fnc_markerNet; }; }];
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNull]] call comspec_atak_native_fnc_markerNet; }];
-["comspec_atak_native_logi", { [_this param [1, ""], "comspec_atak_native_logi", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_medevac", { [_this param [1, ""], "comspec_atak_native_medevac", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_bda", { [_this param [1, ""], "comspec_atak_native_bda", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_report", { [_this param [1, ""], "comspec_atak_native_report", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_medevacStatus", { [_this param [3, ""], "comspec_atak_native_medevacStatus", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_logi", { [_this param [1, ""], "comspec_atak_native_logi", _this] call (localNamespace getVariable ["COMSPEC_ATAK_SrvKeep", {}]); }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_medevac", { [_this param [1, ""], "comspec_atak_native_medevac", _this] call (localNamespace getVariable ["COMSPEC_ATAK_SrvKeep", {}]); }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_bda", { [_this param [1, ""], "comspec_atak_native_bda", _this] call (localNamespace getVariable ["COMSPEC_ATAK_SrvKeep", {}]); }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_report", { [_this param [1, ""], "comspec_atak_native_report", _this] call (localNamespace getVariable ["COMSPEC_ATAK_SrvKeep", {}]); }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_medevacStatus", { [_this param [3, ""], "comspec_atak_native_medevacStatus", _this] call (localNamespace getVariable ["COMSPEC_ATAK_SrvKeep", {}]); }] call CBA_fnc_addEventHandler;
 // Réponses aux ordres (qui a vu, reçu, exécute) : rejouées aux arrivants comme les comptes rendus.
 // Les « VU » vont dans leur propre file : ils remplissaient le journal à raison d'un par joueur et par ordre.
 ["comspec_atak_native_orderAck", {
     private _side = _this param [2, ""];
-    if ((toUpper (_this param [1, ""])) isNotEqualTo "SEEN") exitWith { [_side, "comspec_atak_native_orderAck", _this] call COMSPEC_ATAK_SrvKeep; };
+    if ((toUpper (_this param [1, ""])) isNotEqualTo "SEEN") exitWith { [_side, "comspec_atak_native_orderAck", _this] call (localNamespace getVariable ["COMSPEC_ATAK_SrvKeep", {}]); };
     private _l = COMSPEC_ATAK_SrvSeen getOrDefault [_side, []];
     _l pushBack ["comspec_atak_native_orderAck", _this];
     if ((count _l) > 300) then { _l deleteAt 0; };
     COMSPEC_ATAK_SrvSeen set [_side, _l];
 }] call CBA_fnc_addEventHandler;
 // Mode local et poste TOC : messages du poste et ordres émis sans Athena, rejoués aux arrivants.
-["comspec_atak_native_tocMsg", { [_this param [4, ""], "comspec_atak_native_tocMsg", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_localOrder", { [_this param [1, ""], "comspec_atak_native_localOrder", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_tocMsg", { [_this param [4, ""], "comspec_atak_native_tocMsg", _this] call (localNamespace getVariable ["COMSPEC_ATAK_SrvKeep", {}]); }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_localOrder", { [_this param [1, ""], "comspec_atak_native_localOrder", _this] call (localNamespace getVariable ["COMSPEC_ATAK_SrvKeep", {}]); }] call CBA_fnc_addEventHandler;
 // Événements de camp (logistique, MEDEVAC, BDA, comptes rendus, alertes) : relayés par le serveur aux seuls joueurs du camp.
 // CBA_fnc_globalEvent les envoyait aussi au camp adverse, qui les jetait. Le serveur les reçoit comme avant (journal ci-dessus).
 ["comspec_atak_native_sideEvent", {
@@ -148,7 +150,9 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
 missionNamespace setVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2#%3", missionName, worldName, ((systemTimeUTC select [0, 5]) apply { [str _x, "0" + str _x] select (_x < 10) }) joinString ""], true];
 // Contrôle de cohérence : unités dont l'équipe n'existe plus dans leur groupe (changement de groupe hors téléphone,
 // équipe dissoute) remises sans équipe. Toutes les 10 s, et à la demande (Inter-team > RESYNCHRONISER, arrivée d'un joueur).
-COMSPEC_ATAK_FtCheck = {
+// Code serveur gardé en localNamespace (jamais synchronisé) et non plus dans une variable globale, qu'un client
+// pouvait remplacer par publicVariable puis faire exécuter par le serveur (boucle 10 s et événement ftCheck).
+localNamespace setVariable ["COMSPEC_ATAK_FtCheck", {
     params [["_by", objNull]];
     private _fixed = 0;
     {
@@ -166,9 +170,9 @@ COMSPEC_ATAK_FtCheck = {
     // sont redessinées dans tous les cas. RESYNCHRONISER confirme déjà la demande côté client (fn_interTeamAction).
     if (!isNull _by) then { ["comspec_atak_native_ftChanged", [group _by, ["", format ["Synchronisation : %1 correction(s), révision %2", _fixed, missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0]]] select (_fixed > 0)], _by] call CBA_fnc_targetEvent; };
     _fixed
-};
-["comspec_atak_native_ftCheck", { _this call COMSPEC_ATAK_FtCheck; }] call CBA_fnc_addEventHandler;
-[{ [] call COMSPEC_ATAK_FtCheck; }, 10] call COMSPEC_ATAK_PfhSpread;
+}];
+["comspec_atak_native_ftCheck", { _this call (localNamespace getVariable ["COMSPEC_ATAK_FtCheck", {}]); }] call CBA_fnc_addEventHandler;
+[{ [] call (localNamespace getVariable ["COMSPEC_ATAK_FtCheck", {}]); }, 10] call comspec_atak_native_fnc_pfhSpread;
 ["comspec_atak_native_syncReq", {
     params ["_unit"];
     if (isNull _unit) exitWith {};
@@ -193,7 +197,7 @@ COMSPEC_ATAK_FtCheck = {
 }] call CBA_fnc_addEventHandler;
 // Temps de jeu et temps par rôle comptés ici pour chaque joueur, quel que soit l'état de son téléphone (fn_playTimeServer).
 // Sonde au démarrage : si la DLL du serveur sait envoyer, les clients ne remontent plus eux-mêmes que l'écran et les apps.
-[{ ["tick"] call comspec_atak_native_fnc_playTimeServer; }, 10] call COMSPEC_ATAK_PfhSpread;
+[{ ["tick"] call comspec_atak_native_fnc_playTimeServer; }, 10] call comspec_atak_native_fnc_pfhSpread;
 [{
     private _r = "COMSPECExtension" callExtension ["ScreenTime.Batch", ["probe"]];
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
@@ -201,7 +205,7 @@ COMSPEC_ATAK_FtCheck = {
     ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
 }, [], 15] call CBA_fnc_waitAndExecute;
 // Distances parcourues et heures de pilote de chaque joueur (app Distances), envoyées à Athena toutes les 10 min (fn_distanceServer).
-[{ ["tick"] call comspec_atak_native_fnc_distanceServer; }, 3] call COMSPEC_ATAK_PfhSpread;
+[{ ["tick"] call comspec_atak_native_fnc_distanceServer; }, 3] call comspec_atak_native_fnc_pfhSpread;
 // Ménage différé demandé par un client (caisses larguées...) : fait ici pour survivre à son départ.
 ["comspec_atak_native_deleteLater", {
     params [["_objs", []], ["_delay", 1800]];

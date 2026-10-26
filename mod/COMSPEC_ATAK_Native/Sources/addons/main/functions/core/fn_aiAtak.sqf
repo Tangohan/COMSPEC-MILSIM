@@ -21,7 +21,7 @@ switch (_mode) do {
     case "init": {
         COMSPEC_ATAK_AiState = createHashMap;   // netId -> [prochain point, dernière position, décalage GPS, facteur]
         ["comspec_atak_native_aiAtak", { ["set", _this] call comspec_atak_native_fnc_aiAtak; }] call CBA_fnc_addEventHandler;
-        [{ ["tick"] call comspec_atak_native_fnc_aiAtak; }, 1] call COMSPEC_ATAK_PfhSpread;
+        [{ ["tick"] call comspec_atak_native_fnc_aiAtak; }, 1] call comspec_atak_native_fnc_pfhSpread;
         true
     };
     case "set": {

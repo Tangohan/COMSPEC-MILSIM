@@ -70,7 +70,7 @@ switch (_mode) do {
             ["push", [_side, [_o getOrDefault ["time", ""], "ORDRE", _o getOrDefault ["priority", ""], _o getOrDefault ["issuer", ""], [[[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef, ""] select ((count _p) < 2),
                 format ["%1 → %2 : %3", _lbl, ["tout le camp", _tgt] select (_tgt isNotEqualTo ""), (_o getOrDefault ["payload", ""]) select [0, 160]], [[], [_p select 0, _p select 1]] select ((count _p) >= 2)]]] call comspec_atak_native_fnc_tocFeed;
         }] call CBA_fnc_addEventHandler;
-        [{ ["tick"] call comspec_atak_native_fnc_tocFeed; }, 3] call COMSPEC_ATAK_PfhSpread;
+        [{ ["tick"] call comspec_atak_native_fnc_tocFeed; }, 3] call comspec_atak_native_fnc_pfhSpread;
     };
     case "push": {
         _a params [["_side", ""], ["_e", []]];
