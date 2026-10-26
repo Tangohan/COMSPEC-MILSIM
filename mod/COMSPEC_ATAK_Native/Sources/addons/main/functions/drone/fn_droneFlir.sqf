@@ -157,6 +157,9 @@ switch (_act) do {
         };
         _f2 set ["boxes", _boxes];
         _f2 set ["px", [_px, _py]];
+        // Suffixes des cadres de verrouillage (suivi, perdu, neutralisé) traduits une fois ici, et non par fn_tr à chaque
+        // image pour chaque cadre : un changement de langue reconstruit la page, donc cette vue (fn_langApply, navigate).
+        _f2 set ["lockSfx", ["", " PERDU", " NEUTR."] apply { _x call comspec_atak_native_fnc_tr }];
         uiNamespace setVariable ["COMSPEC_ATAK_Flir", _f2];
         if ((missionNamespace getVariable ["COMSPEC_ATAK_FlirPfh", -1]) < 0) then {
             missionNamespace setVariable ["COMSPEC_ATAK_FlirPfh", [{ private _t = diag_tickTime; ["frame"] call comspec_atak_native_fnc_droneFlir; ["cadres caméra (image)", _t] call comspec_atak_native_fnc_perfAcc; }, 0] call CBA_fnc_addPerFrameHandler];
@@ -241,7 +244,7 @@ switch (_act) do {
                 if (_fr isEqualTo [] || {(_fr select 0) < -0.05} || {(_fr select 0) > 1.05} || {(_fr select 1) < -0.05} || {(_fr select 1) > 1.05}) then { continue };
                 private _c = switch (_state) do { case "TRACK": { [0.95, 0.25, 0.2, 0.95] }; case "DOWN": { [0.36, 0.78, 0.42, 0.9] }; default { [0.7, 0.72, 0.7, 0.6] }; };
                 [_boxes select _used, _fr select 0, _fr select 1, _fr select 2, _fr select 3, _c,
-                    format ["LOCK_%1 %2m%3", [_e get "num", 3] call CBA_fnc_formatNumber, round (_eye distance _p), (["", " PERDU", " NEUTR."] select ((["TRACK", "LOST", "DOWN"] find _state) max 0)) call comspec_atak_native_fnc_tr]] call _show;
+                    format ["LOCK_%1 %2m%3", [_e get "num", 3] call CBA_fnc_formatNumber, round (_eye distance _p), (_f getOrDefault ["lockSfx", ["", " PERDU", " NEUTR."]]) select ((["TRACK", "LOST", "DOWN"] find _state) max 0)]] call _show;
                 _used = _used + 1;
             } forEach (_f getOrDefault ["locks", []]);
             // Cible sous le réticule (pas encore marquée) : cadre jaune, relevé quatre fois par seconde.

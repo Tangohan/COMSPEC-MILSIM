@@ -14,7 +14,8 @@ use PHPUnit\Framework\TestCase;
  *
  * Test statique (lecture de i18n/en.txt et des .sqf). Il échoue si une des quatre clés disparaît ou change, si
  * le texte du code ne correspond plus à sa clé, si le suffixe FLIR n'est plus traduit à part (comme dans
- * fn_lockAction), ou si une des quatre clés n'est plus à la place où l'écrit tools/i18n.py (clé en minuscules).
+ * fn_lockAction ; dans la vue FLIR, une fois à sa construction et non à chaque image), ou si une des quatre clés
+ * n'est plus à la place où l'écrit tools/i18n.py (clé en minuscules).
  */
 final class AtakI18nDroneEwRepairKeysAssetTest extends TestCase
 {
@@ -100,8 +101,16 @@ final class AtakI18nDroneEwRepairKeysAssetTest extends TestCase
     public function testLockSuffixIsTranslatedApartInFlirAndLockViews(): void
     {
         $suffix = '(["", " PERDU", " NEUTR."] select ((["TRACK", "LOST", "DOWN"] find _state) max 0)) call comspec_atak_native_fnc_tr';
-        foreach (['functions/drone/fn_droneFlir.sqf', 'functions/drone/fn_lockAction.sqf'] as $f) {
-            self::assertStringContainsString($suffix, $this->read($f), $f . ' : suffixe du cadre de verrouillage non traduit à part');
-        }
+        self::assertStringContainsString($suffix, $this->read('functions/drone/fn_lockAction.sqf'), 'fn_lockAction : suffixe du cadre de verrouillage non traduit à part');
+        // Vue FLIR, mise à jour à chaque image : les trois suffixes sont traduits une fois, à la construction de la vue
+        // (refaite au changement de langue), puis seulement choisis pour chaque cadre (plus de fn_tr par cadre et par image).
+        $flir = $this->read('functions/drone/fn_droneFlir.sqf');
+        $build = strpos($flir, '_f2 set ["lockSfx", ["", " PERDU", " NEUTR."] apply { _x call comspec_atak_native_fnc_tr }];');
+        $store = strpos($flir, 'uiNamespace setVariable ["COMSPEC_ATAK_Flir", _f2];');
+        self::assertNotFalse($build, 'fn_droneFlir : suffixes plus traduits à la construction de la vue');
+        self::assertNotFalse($store);
+        self::assertLessThan($store, $build, 'fn_droneFlir : suffixes traduits après l\'enregistrement de la vue');
+        self::assertStringContainsString('round (_eye distance _p), (_f getOrDefault ["lockSfx", ["", " PERDU", " NEUTR."]]) select ((["TRACK", "LOST", "DOWN"] find _state) max 0)]] call _show;', $flir, 'fn_droneFlir : suffixe du cadre plus pris dans la liste traduite');
+        self::assertSame(0, preg_match('~" NEUTR\."\]\s*select\s*\(\(\["TRACK", "LOST", "DOWN"\] find _state\) max 0\)\)\s*call~', $flir), 'fn_droneFlir : traduction du suffixe revenue dans la mise à jour par image');
     }
 }
