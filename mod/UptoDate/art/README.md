@@ -37,4 +37,5 @@ vers `Sources/comspec-overwatch-addons/connect/<même chemin>` suivi d'un rebuil
   2.0.1, probablement aussi 1.97.0) sans qu'aucune régression de texture soit notée au
   CHANGELOG ; rien dans le dépôt ne documente en revanche ce que fait le moteur sans ce
   fichier. **À remettre dans l'addon (`git mv`) ou à régénérer avec Binarize** si un essai en
-  jeu montre une régression d'affichage sur la tablette connect.
+  jeu montre une texture de l'addon connect manquante ou mal affichée : tablette, téléphone,
+  overlays, icônes, écran « seek », HUD ECOTI ou logo du menu principal.
