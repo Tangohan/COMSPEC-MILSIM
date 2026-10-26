@@ -129,7 +129,8 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
     if (_obj isNotEqualTo player && {_affiliation isEqualTo "friend"}) then {
         private _on = !isPlayer _obj || {_obj getVariable ["COMSPEC_ATAK_Beacon", true]};
         if (_pli) then {
-            if (isPlayer _obj) then {
+            // IA équipée (fn_aiAtak) : ses points viennent du serveur, comme ceux d'un joueur, identiques pour tous.
+            if (isPlayer _obj || {(_obj getVariable ["COMSPEC_ATAK_Pli", []]) isNotEqualTo []}) then {
                 // Pas encore de point reçu (arrivée en cours de partie) : position en direct en attendant.
                 private _p = _obj getVariable ["COMSPEC_ATAK_Pli", []];
                 if (_p isEqualType [] && {(count _p) >= 3}) then {

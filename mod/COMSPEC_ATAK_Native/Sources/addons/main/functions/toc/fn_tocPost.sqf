@@ -29,14 +29,15 @@ switch (_act) do {
     case "isToc": { [_arg] call _isToc };
     case "near": {
         private _o = missionNamespace getVariable ["COMSPEC_ATAK_TocNear", objNull];
-        [objNull, _o] select (!isNull _o && {alive player} && {isNull objectParent player} && {(player distance _o) < 3.5})
+        [objNull, _o] select (!isNull _o && {alive player} && {isNull objectParent player} && {(player distance _o) < ([3.5, 5.5] select !isNil { _o getVariable "COMSPEC_ATAK_TocScr" })})
     };
     case "callsign": { ((["get"] call comspec_atak_native_fnc_localCfg) get "toc") get "callsign" };
     case "tick": {
         if (!hasInterface || {isNull player}) exitWith {};
         private _near = objNull;
         if (alive player && {isNull objectParent player} && {missionNamespace getVariable ["comspec_atak_native_toc_enabled", true]}) then {
-            private _cands = (nearestObjects [player, [], 2.5, true]) select { [_x] call _isToc };
+            // Écran TOC (fn_tocScreen) : grand objet, poste à 4,5 m de son centre ; PC portable à 2,5 m.
+            private _cands = (nearestObjects [player, [], 4.5, true]) select { (player distance _x) < ([2.5, 4.5] select !isNil { _x getVariable "COMSPEC_ATAK_TocScr" }) && {[_x] call _isToc} };
             if (_cands isNotEqualTo []) then { _near = _cands select 0; };
         };
         private _was = missionNamespace getVariable ["COMSPEC_ATAK_TocNear", objNull];

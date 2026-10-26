@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Écrans TOC persistants en jeu et IA équipées d'un ATAK (ATAK natif, prochain regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Des écrans TOC en jeu et des IA vraiment reliées au réseau ATAK
+- Nouveau module Écran TOC (Eden et Zeus) : une TV ou un grand écran du jeu affiche en direct le réseau ATAK de ton camp, avec la carte, les positions des équipiers, les marqueurs et les derniers comptes rendus et messages.
+- Devant l'écran, ACE ou la molette : carte et flux, carte seule ou flux seul, zoom, et « Carte en grand » qui ouvre la carte complète dans l'ATAK du poste.
+- Les écrans TOC sont gardés d'une partie à l'autre sur le même serveur.
+- Les missions peuvent obliger les IA à porter un ATAK : elles apparaissent sur le BFT comme un joueur, avec une position qui se met à jour au rythme du réseau, une erreur GPS réaliste, et se perdent près d'un brouilleur.
+EN : In-game TOC screens and AI really linked to the ATAK network
+- New TOC screen module (Eden and Zeus): a TV or large in-game screen shows your side's ATAK network live, with the map, teammates' positions, markers and the latest reports and messages.
+- In front of the screen, with ACE or the scroll wheel: map and feed, map only or feed only, zoom, and "Large map" which opens the full map in the post's ATAK.
+- TOC screens are kept from one session to the next on the same server.
+- Missions can force AI to carry an ATAK: they show on the BFT like a player, with a position updated at the network rate, a realistic GPS error, and they drop out near a jammer.
+
+### Détail technique
+- `functions/toc/fn_tocScreen.sqf` : registre serveur `COMSPEC_ATAK_TocScreens`, état public `COMSPEC_ATAK_TocScr` par objet, texture UI `#(rgb,1600,900,1)ui("COMSPEC_RscTocScreenTexture", …)` posée en local et rafraîchie toutes les 2 s (écran proche et visible). Fond : tuiles du mod @COMSPEC_ATAK_Photo (`fn_photoMap` "info"), sinon `pictureMap` du terrain ; quadrillage, marqueurs ICON, C.R. géolocalisés (20 min), nœuds en symboles OTAN. Actions ACE / molette ; « Carte en grand » = `fn_tocPost` "open" puis page MAP (rien par-dessus l'écran du jeu).
+- `fn_tocFeed.sqf` (serveur, 3 s) : `COMSPEC_ATAK_TocFeed_<camp>` = [serverTime, nœuds, flux, état], seulement pour les camps qui ont un écran. Nœuds = porteurs d'un ATAK (`fn_hasDevice`), point PLI et fraîcheur comme `fn_localDataRefresh`, équipage d'un véhicule regroupé. Flux = C.R., alertes, MEDEVAC, BDA, messages du poste TOC (30 par camp).
+- `fn_tocPersist.sqf` : profil du serveur, clé `COMSPEC_ATAK_TocSave_<carte>_<mission>`, reprise 3 s après le départ, écriture regroupée (`fn_saveProfile`) ; réglage CBA `comspec_atak_native_toc_persist`.
+- `fn_moduleTocScreen.sqf` + module `COMSPEC_ATAK_Module_TocScreen` (objets synchronisés, ou pose d'un écran du jeu). `fn_tocPost` : un écran TOC sert de PC de TOC à 4,5 m.
+- `functions/core/fn_aiAtak.sqf` : réglages `comspec_atak_native_ai_atak` (off / leaders / all), `comspec_atak_native_ai_realism` (défaut vrai), `comspec_atak_native_ai_atak_item` ; variable `COMSPEC_ATAK_AiAtak` (vrai / faux) ; PLI des IA envoyé par le serveur (`COMSPEC_ATAK_Pli`, dérive GPS par IA, toit / forêt, brouilleurs comme `fn_ewEffects`). `fn_hasDevice` : variable IA prioritaire, IA réalistes = objet requis. `fn_localDataRefresh` : point serveur des IA utilisé comme celui d'un joueur. Module `COMSPEC_ATAK_Module_AiAtak`.
+- Traductions : 82 phrases dans `i18n/en.txt`, clés `STR_COMSPEC_ATAK_CFG_TOCSCR_*` / `AIATAK_*`, gabarits de traduction régénérés (`tools/i18n.py community`, `fr`).
+- Non testé en jeu.
+
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur

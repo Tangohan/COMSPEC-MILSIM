@@ -58,6 +58,13 @@ class COMSPEC_RscATAKTexture: COMSPEC_RscDisplayATAK {
     onLoad="[_this select 0, false, true] call comspec_atak_native_fnc_displayLoad";
 };
 
+// Écran TOC (fn_tocScreen) : texture UI 1600 x 900 posée sur un écran du jeu, contrôles créés par le code.
+class COMSPEC_RscTocScreenTexture {
+    idd=-1; movingEnable=0;
+    onLoad="['load', _this select 0] call comspec_atak_native_fnc_tocScreen";
+    class controls {};
+};
+
 class RscTitles {
     // Terminal porté (HUD) : visible pendant que l'on joue, sans souris ni clavier.
     class COMSPEC_RscTitleATAK: COMSPEC_RscDisplayATAK {

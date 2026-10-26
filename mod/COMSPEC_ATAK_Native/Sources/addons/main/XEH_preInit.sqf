@@ -622,6 +622,20 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_anylaptop", "CHECKBOX",
     ["Tous les ordinateurs portables servent de PC de TOC", "Coché : les ordinateurs portables et postes informatiques du jeu posés dans la mission deviennent des PC de TOC (pour tous les camps). Décoché : seulement l'objet PC portable de TOC et les objets désignés par la mission (this setVariable [""COMSPEC_ATAK_Toc"", true, true])."],
     _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_persist", "CHECKBOX",
+    ["Garder les écrans TOC", "Les écrans TOC (module Écran TOC) sont gardés par le serveur d'une partie à l'autre sur la même mission : écrans posés au Zeus recréés à leur place, affichage et cadrage des écrans de la mission remis, flux des comptes rendus repris."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+// IA et ATAK (fn_aiAtak).
+private _ai = ["COMSPEC", "ATAK · IA"];
+["comspec_atak_native_ai_atak", "LIST",
+    ["IA équipées d'un ATAK", "Le serveur donne un téléphone ATAK aux IA : aucune (la mission décide, module IA équipées), les chefs de groupe, ou toutes. Une IA équipée apparaît sur le BFT et les écrans TOC comme un nœud du réseau."],
+    _ai, [["off", "leaders", "all"], ["Aucune (la mission décide)", "Chefs de groupe", "Toutes les IA"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ai_realism", "CHECKBOX",
+    ["IA réalistes sur le réseau", "Une IA n'apparaît sur le BFT que si elle porte vraiment un ATAK (même quand les joueurs n'en ont pas besoin) ; ses positions sont envoyées par le serveur au rythme du réseau (PLI), avec une erreur GPS propre à chaque IA, identiques pour tous, et se perdent près d'un brouilleur."],
+    _ai, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ai_atak_item", "EDITBOX",
+    ["Objet donné aux IA", "Classe de l'objet ATAK mis dans l'inventaire des IA équipées (COMSPEC_ATAK_Phone par défaut)."],
+    _ai, "COMSPEC_ATAK_Phone", 1] call comspec_atak_native_fnc_addSetting;
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",
     ["ATAK pour les équipages d'hélico et d'avion", "Pilote, copilote et tireurs d'un hélicoptère ou d'un avion ont l'ATAK sur la tablette de bord, même sans téléphone ou avec un téléphone vide ou cassé. Elle se range quand on descend."],

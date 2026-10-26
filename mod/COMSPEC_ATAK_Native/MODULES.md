@@ -141,3 +141,54 @@ if (isServer) then { ["add", [this, "Salle de briefing", 30]] call comspec_atak_
 **English.** The "ATAK · COMSPEC screen" Eden/Zeus module (or `["add", [object, name, range, side, textureIndex, ace]]
 call comspec_atak_native_fnc_screenCast`) turns TVs, screens and projectors into screens the Briefing app can cast its
 slides to (SCREENS tab), then controlled from the phone or with ACE on the screen.
+
+## 7. Écrans TOC : le réseau ATAK du camp sur un grand écran du jeu
+
+Le module Eden / Zeus « ATAK · Écran TOC » (catégorie réseau) affiche en direct, sur une TV ou un écran du jeu, le
+réseau ATAK d'un camp tel que le serveur de la mission le voit : carte avec les nœuds (joueurs et IA équipées, à leur
+dernier point PLI, en direct / ancien / perdu / hors ligne), marqueurs de la mission, comptes rendus et alertes
+géolocalisés, et un panneau réseau (nœuds, groupes, flux des comptes rendus, MEDEVAC, BDA, messages du poste TOC).
+Synchronisé avec des objets, il les désigne ; sans objet, il pose lui-même l'écran choisi (grand écran sur trépied,
+TV, écran de projection, poste informatique). ACE (ou la molette) sur l'écran : changer d'affichage (carte et flux,
+carte seule, flux seul), zoomer, dézoomer, centrer, cadrer tout le réseau, et « Carte en grand », qui ouvre la carte
+complète dans l'ATAK du poste (l'écran sert aussi de PC de TOC, `fn_tocPost`). Camp vide : chaque joueur voit le
+réseau de son propre camp sur le même écran. Les écrans sont gardés d'une partie à l'autre (réglage « Garder les
+écrans TOC ») : posés au Zeus, ils sont recréés à leur place ; ceux de la mission retrouvent affichage et cadrage.
+
+Fond de carte : la photo de la carte si le mod @COMSPEC_ATAK_Photo est chargé, sinon la carte d'ensemble du terrain
+(une carte Arma ne se dessine pas dans une texture UI). Image noire ou décalée sur un objet : changer l'index de texture.
+
+```sqf
+// Serveur (l'init d'un objet dans Eden tourne aussi sur le serveur). Ailleurs, la demande part au serveur.
+// [objet, nom, camp ("" = celui de chaque joueur), index de texture, "SPLIT" | "MAP" | "FEED", sert de poste TOC]
+if (isServer) then { ["add", [this, "TOC Bravo", "WEST", 0, "SPLIT", true]] call comspec_atak_native_fnc_tocScreen; };
+["remove", objet] call comspec_atak_native_fnc_tocScreen;
+// Pose d'un écran du jeu : [position ATL, direction, classe, nom, camp, affichage, poste TOC]
+["spawn", [getPosATL player, getDir player, "Land_TripodScreen_01_large_F", "TOC", "WEST"]] call comspec_atak_native_fnc_tocScreen;
+```
+
+**English.** The "ATAK · TOC screen" Eden/Zeus module shows a side's live ATAK network, as computed by the mission
+server (`fn_tocFeed`), on a game TV or screen: map with nodes, mission markers, geolocated reports, network panel and
+feed. ACE/scroll actions change the display, zoom and open the full map in the post's ATAK. Screens persist across
+sessions (`fn_tocPersist`, setting "Keep TOC screens").
+
+## 8. IA équipées d'un ATAK
+
+Réglage serveur « IA équipées d'un ATAK » (aucune, chefs de groupe, toutes), module « ATAK · IA équipées » (unités
+synchronisées et leurs groupes ; Zeus : le groupe de l'unité visée), ou par script. Le serveur leur donne un vrai
+téléphone (réglage « Objet donné aux IA ») et un indicatif propre. Avec « IA réalistes sur le réseau » (coché par
+défaut), une IA n'apparaît sur le BFT que si elle porte vraiment un ATAK, et ses points PLI sont envoyés par le serveur
+au rythme du réseau, avec une erreur GPS propre à chaque IA (toit, forêt), identiques pour tous les joueurs et perdus
+ou dégradés près d'un brouilleur.
+
+```sqf
+// Imposer ou interdire l'ATAK à une IA (n'importe où : la variable est publique).
+_unit setVariable ["COMSPEC_ATAK_AiAtak", true, true];   // false : jamais d'ATAK, même avec le réglage serveur
+// Serveur : équiper tout de suite (sinon au prochain passage, 10 s).
+if (isServer) then { ["set", [units group _unit, true]] call comspec_atak_native_fnc_aiAtak; };
+```
+
+**English.** Server setting "AI with an ATAK" (none, leaders, all), the "ATAK · AI with ATAK" module, or
+`_unit setVariable ["COMSPEC_ATAK_AiAtak", true, true]`. With "Realistic AI on the network" (default on), AI only show
+on the BFT if they really carry an ATAK, and the server sends their PLI points at the network rate with a per-AI GPS
+error, the same for every player, lost or degraded near jammers.

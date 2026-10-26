@@ -1132,5 +1132,155 @@
             <English>Sync this module with TVs, screens or projectors: the phone's Briefing app detects them in range and casts its slides to them, controlled from the phone, ACE or the scroll wheel.</English>
             <French>Synchronisez ce module avec des TV, écrans ou projecteurs : l'app Briefing du téléphone les détecte à portée et y diffuse ses diapositives, pilotées depuis le téléphone, ACE ou la molette.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_NAME">
+            <Original>ATAK · Écran TOC</Original>
+            <English>ATAK · TOC screen</English>
+            <French>ATAK · Écran TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_N_TIP">
+            <Original>Nom affiché en tête de l'écran (TOC, PC Bravo…).</Original>
+            <English>Name shown at the top of the screen (TOC, Bravo CP…).</English>
+            <French>Nom affiché en tête de l'écran (TOC, PC Bravo…).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_S_NAME">
+            <Original>Camp affiché</Original>
+            <English>Side shown</English>
+            <French>Camp affiché</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_S_TIP">
+            <Original>Réseau ATAK affiché. Celui de chaque joueur : chacun voit le réseau de son propre camp sur le même écran.</Original>
+            <English>ATAK network shown. Each player's own: everyone sees their own side's network on the same screen.</English>
+            <French>Réseau ATAK affiché. Celui de chaque joueur : chacun voit le réseau de son propre camp sur le même écran.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_S_ALL">
+            <Original>Celui de chaque joueur</Original>
+            <English>Each player's own</English>
+            <French>Celui de chaque joueur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_NAME">
+            <Original>Affichage</Original>
+            <English>Display</English>
+            <French>Affichage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_TIP">
+            <Original>Carte et flux, carte seule (carte en grand) ou flux seul. Modifiable en jeu (ACE ou molette).</Original>
+            <English>Map and feed, map only (large map) or feed only. Can be changed in game (ACE or scroll wheel).</English>
+            <French>Carte et flux, carte seule (carte en grand) ou flux seul. Modifiable en jeu (ACE ou molette).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_SPLIT">
+            <Original>Carte et flux</Original>
+            <English>Map and feed</English>
+            <French>Carte et flux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_MAP">
+            <Original>Carte seule (carte en grand)</Original>
+            <English>Map only (large map)</English>
+            <French>Carte seule (carte en grand)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_FEED">
+            <Original>Flux seul</Original>
+            <English>Feed only</English>
+            <French>Flux seul</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_T_NAME">
+            <Original>Sert aussi de poste TOC</Original>
+            <English>Also a TOC post</English>
+            <French>Sert aussi de poste TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_T_TIP">
+            <Original>Un joueur devant l'écran a l'ATAK du poste (app Poste TOC) et l'action « Carte en grand », qui ouvre la carte complète dans la tablette du poste.</Original>
+            <English>A player in front of the screen gets the post's ATAK (TOC Post app) and the "Large map" action, which opens the full map in the post's tablet.</English>
+            <French>Un joueur devant l'écran a l'ATAK du poste (app Poste TOC) et l'action « Carte en grand », qui ouvre la carte complète dans la tablette du poste.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_NAME">
+            <Original>Écran posé</Original>
+            <English>Screen placed</English>
+            <French>Écran posé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_TIP">
+            <Original>Sans objet synchronisé, le module pose cet écran du jeu à sa place, tourné comme lui.</Original>
+            <English>With no synced object, the module places this game screen at its position, facing the same way.</English>
+            <French>Sans objet synchronisé, le module pose cet écran du jeu à sa place, tourné comme lui.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGE">
+            <Original>Grand écran sur trépied</Original>
+            <English>Large tripod screen</English>
+            <French>Grand écran sur trépied</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGEB">
+            <Original>Grand écran sur trépied (noir)</Original>
+            <English>Large tripod screen (black)</English>
+            <French>Grand écran sur trépied (noir)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_DUAL">
+            <Original>Double écran sur trépied</Original>
+            <English>Dual tripod screen</English>
+            <French>Double écran sur trépied</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_TV">
+            <Original>TV à écran plat</Original>
+            <English>Flat TV</English>
+            <French>TV à écran plat</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_PROJ">
+            <Original>Écran de projection</Original>
+            <English>Projector screen</English>
+            <French>Écran de projection</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_PC">
+            <Original>Poste informatique</Original>
+            <English>Computer set</English>
+            <French>Poste informatique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_DESC">
+            <Original>Synchronisez ce module avec des TV ou écrans du jeu (ou laissez-le poser un écran) : ils affichent en direct le réseau ATAK du camp tel que le serveur le voit (carte avec les nœuds, marqueurs, comptes rendus, messages), et sont gardés d'une partie à l'autre.</Original>
+            <English>Sync this module with game TVs or screens (or let it place one): they show the side's ATAK network live, as the server sees it (map with nodes, markers, reports, messages), and are kept from one session to the next.</English>
+            <French>Synchronisez ce module avec des TV ou écrans du jeu (ou laissez-le poser un écran) : ils affichent en direct le réseau ATAK du camp tel que le serveur le voit (carte avec les nœuds, marqueurs, comptes rendus, messages), et sont gardés d'une partie à l'autre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_NAME">
+            <Original>ATAK · IA équipées</Original>
+            <English>ATAK · AI with ATAK</English>
+            <French>ATAK · IA équipées</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_NAME">
+            <Original>Qui</Original>
+            <English>Who</English>
+            <French>Qui</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_TIP">
+            <Original>IA qui reçoivent un ATAK : tout le groupe, les chefs de groupe, ou aucune (l'ATAK leur est interdit, même avec le réglage serveur).</Original>
+            <English>AI that receive an ATAK: the whole group, group leaders only, or none (ATAK forbidden, even with the server setting).</English>
+            <French>IA qui reçoivent un ATAK : tout le groupe, les chefs de groupe, ou aucune (l'ATAK leur est interdit, même avec le réglage serveur).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_ALL">
+            <Original>Tout le groupe</Original>
+            <English>Whole group</English>
+            <French>Tout le groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_LEAD">
+            <Original>Chefs de groupe</Original>
+            <English>Group leaders</English>
+            <French>Chefs de groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_NONE">
+            <Original>Aucune (interdire l'ATAK)</Original>
+            <English>None (forbid ATAK)</English>
+            <French>Aucune (interdire l'ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_S_NAME">
+            <Original>Camp (sans synchronisation)</Original>
+            <English>Side (when nothing is synced)</English>
+            <French>Camp (sans synchronisation)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_S_TIP">
+            <Original>Sans unité synchronisée, le module s'applique à toutes les IA de ce camp présentes au départ.</Original>
+            <English>With no synced unit, the module applies to every AI of this side present at start.</English>
+            <French>Sans unité synchronisée, le module s'applique à toutes les IA de ce camp présentes au départ.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_DESC">
+            <Original>Synchronisez ce module avec des unités IA : leurs groupes portent un ATAK et apparaissent sur le BFT et les écrans TOC comme des nœuds du réseau (points PLI envoyés par le serveur, erreur GPS réaliste, perdus près d'un brouilleur).</Original>
+            <English>Sync this module with AI units: their groups carry an ATAK and appear on the BFT and TOC screens as network nodes (PLI points sent by the server, realistic GPS error, lost near a jammer).</English>
+            <French>Synchronisez ce module avec des unités IA : leurs groupes portent un ATAK et apparaissent sur le BFT et les écrans TOC comme des nœuds du réseau (points PLI envoyés par le serveur, erreur GPS réaliste, perdus près d'un brouilleur).</French>
+        </Key>
     </Package>
 </Project>
