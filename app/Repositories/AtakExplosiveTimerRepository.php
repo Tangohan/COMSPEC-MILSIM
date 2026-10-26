@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SchemaReadyCache;
 use PDO;
 
 /**
@@ -32,15 +33,19 @@ class AtakExplosiveTimerRepository
         if ($this->tablesReady !== null) {
             return $this->tablesReady;
         }
-        try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.TABLES
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_explosive_timers' LIMIT 1"
-            );
-            $this->tablesReady = (bool) ($st && $st->fetchColumn());
-        } catch (\Throwable) {
-            $this->tablesReady = false;
-        }
+        // Résultat positif gardé entre requêtes (sondage du jeu toutes les 4 s par joueur).
+        $this->tablesReady = SchemaReadyCache::remember('atak_explosive_timers', function (): bool {
+            try {
+                $st = $this->pdo()->query(
+                    "SELECT 1 FROM information_schema.TABLES
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_explosive_timers' LIMIT 1"
+                );
+
+                return (bool) ($st && $st->fetchColumn());
+            } catch (\Throwable) {
+                return false;
+            }
+        });
 
         return $this->tablesReady;
     }
@@ -55,17 +60,20 @@ class AtakExplosiveTimerRepository
 
             return false;
         }
-        try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE()
-                   AND TABLE_NAME = 'atak_explosive_timers'
-                   AND COLUMN_NAME = 'detonate_requested_at' LIMIT 1"
-            );
-            $this->commandColumnsReady = (bool) ($st && $st->fetchColumn());
-        } catch (\Throwable) {
-            $this->commandColumnsReady = false;
-        }
+        $this->commandColumnsReady = SchemaReadyCache::remember('atak_explosive_timers.detonate_requested_at', function (): bool {
+            try {
+                $st = $this->pdo()->query(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE()
+                       AND TABLE_NAME = 'atak_explosive_timers'
+                       AND COLUMN_NAME = 'detonate_requested_at' LIMIT 1"
+                );
+
+                return (bool) ($st && $st->fetchColumn());
+            } catch (\Throwable) {
+                return false;
+            }
+        });
 
         return $this->commandColumnsReady;
     }

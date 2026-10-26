@@ -167,9 +167,8 @@ switch (toLower _act) do {
             (keys _tasks) select { (_tasks get _x) isEqualType createHashMap } apply { [_x, [_tasks get _x] call _flat] },
             _alerts
         ]];
-        // Écrit sur le disque toutes les 2 min seulement (survit à un crash du jeu sans saccade à chaque sauvegarde).
-        private _n = (_st getOrDefault ["saveN", 0]) + 1;
-        _st set ["saveN", _n];
-        if ((_n mod 4) isEqualTo 1) then { saveProfileNamespace; };
+        // Écrit sur le disque au plus toutes les 2 min (fn_profileSave : échéance commune aux sauvegardes périodiques) :
+        // survit à un crash du jeu sans saccade à chaque sauvegarde.
+        ["dirty"] call comspec_atak_native_fnc_profileSave;
     };
 };

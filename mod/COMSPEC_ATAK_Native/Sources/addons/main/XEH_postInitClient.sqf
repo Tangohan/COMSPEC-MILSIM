@@ -81,7 +81,17 @@ addMissionEventHandler ["MarkerCreated", {
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
 // Compteur de changements des marqueurs (créé, supprimé, modifié) : la carte du téléphone ne relit les marqueurs de la
 // mission que lorsqu'il bouge (fn_mapGameMarkers, fn_localDataRefresh), au lieu de tout relire chaque seconde.
-{ addMissionEventHandler [_x, { COMSPEC_ATAK_MkRev = (missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]) + 1; }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
+// Noms des marqueurs changés, un carnet par lecteur (fn_mapGameMarkers, fn_localDataRefresh, fn_strokeDraw) : chacun ne
+// relit que ces marqueurs. Plus de 300 changements non lus (téléphone rangé) : clé "" = tout relire.
+{ addMissionEventHandler [_x, {
+    params ["_m"];
+    COMSPEC_ATAK_MkRev = (missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]) + 1;
+    {
+        private _h = missionNamespace getVariable [_x, createHashMap];
+        if ((count _h) < 300) then { _h set [_m, true]; } else { _h set ["", true]; };
+        missionNamespace setVariable [_x, _h];
+    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk"];
+}]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BC", "BL", "TL", "TC", "TR", "MR", "ML"];
@@ -588,7 +598,9 @@ addMissionEventHandler ["EntityKilled", {
     private _lead = leader group _unit;
     private _mine = _unit isEqualTo player
         || {!isPlayer _unit && {_lead isEqualTo player || {!isPlayer _lead && {(player distance2D _unit) < 300}}}};
-    if (_mine && {[] call comspec_atak_native_fnc_bridge} && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])}) then {
+    // Données remontées choisies par la communauté (Athena, COMSPEC_DataFlows tenu par COMSPEC Link) : pertes non envoyées.
+    if (_mine && {[] call comspec_atak_native_fnc_bridge} && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])}
+        && {(missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["combat", true]}) then {
         private _cs = [_unit] call comspec_atak_native_fnc_unitCallsign;
         private _pay = createHashMapFromArray [
             ["t", "combat"], ["kind", "kia"], ["victim", [_cs, name _unit] select (_cs isEqualTo "")], ["name", name _unit],
@@ -604,6 +616,8 @@ addMissionEventHandler ["EntityKilled", {
 // Hors connexion (fn_offline) : données figées, réceptions retenues, synchro et bilan au retour, sauvegarde du profil.
 [{
     ["tick"] call comspec_atak_native_fnc_offline;
+    // Échéance unique d'écriture du profil (fn_profileSave : sauvegardes périodiques regroupées).
+    ["tick"] call comspec_atak_native_fnc_profileSave;
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
     if ((count _inbox) > 0 && {[] call comspec_atak_native_fnc_p2pReachable}) then {
         missionNamespace setVariable ["COMSPEC_ATAK_P2pInbox", []];
@@ -823,7 +837,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_garminTick; }, 2] call COMSPEC_ATAK_PfhSpread;
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;
-addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; }];
+addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; ["flush"] call comspec_atak_native_fnc_profileSave; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).

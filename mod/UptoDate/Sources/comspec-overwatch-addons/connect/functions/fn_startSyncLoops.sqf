@@ -65,6 +65,11 @@ COMSPEC_SyncLoopsInstalled = true;
 }, [], 5] call CBA_fnc_waitAndExecute;
 [] call comspec_overwatch_connect_fnc_pollModModules;
 [] call comspec_overwatch_connect_fnc_pollExperience;
+[] call comspec_overwatch_connect_fnc_pollDataFlows;
+// Données remontées choisies par la communauté : relues toutes les 30 s (elle peut changer d'avis en cours de partie).
+if (isNil "COMSPEC_DataFlowsPfh") then {
+    COMSPEC_DataFlowsPfh = [{ [] call comspec_overwatch_connect_fnc_pollDataFlows; }, 30] call CBA_fnc_addPerFrameHandler;
+};
 // Les GET d’Athena sont asynchrones (cache) : relancer vite après le premier tick vide.
 0 spawn {
     private _i = 0;
@@ -74,6 +79,7 @@ COMSPEC_SyncLoopsInstalled = true;
         [] call comspec_overwatch_connect_fnc_pollModModules;
         [] call comspec_overwatch_connect_fnc_pollExperience;
         [] call comspec_overwatch_connect_fnc_pollRoleplayConfig;
+        [] call comspec_overwatch_connect_fnc_pollDataFlows;
     };
 };
 0 spawn {

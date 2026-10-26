@@ -112,6 +112,7 @@ class CfgFunctions {
             class diagIsolateStop {};
             class diagIsolateOnLoad {};
             class diagChecks {};
+            class diagSelfTest {};
             class diagAction {};
             class collectBugReportLog {};
             class disconnect {};
@@ -495,6 +496,7 @@ class CfgFunctions {
             class linkDegradeSimApplySetting {};
             class isLinkDegradeSimActive {};
             class pollModModules {};
+            class pollDataFlows {};
             class pollExperience {};
             class applyTenantExperience {};
             class showExperienceGuide {};

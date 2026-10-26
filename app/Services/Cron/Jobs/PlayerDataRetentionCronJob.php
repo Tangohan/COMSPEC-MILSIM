@@ -29,6 +29,11 @@ final class PlayerDataRetentionCronJob implements CronJobInterface
         ['operator_game_snapshots', 'observed_at < DATE_SUB(NOW(), INTERVAL 180 DAY)', 'Instantanés du registre opérateur de plus de 6 mois'],
         ['atak_ingest_player_daily', 'day < DATE_SUB(CURDATE(), INTERVAL 400 DAY)', 'Débit par joueur de plus de 13 mois'],
         ['atak_ingest_error_daily', 'day < DATE_SUB(CURDATE(), INTERVAL 400 DAY)', 'Rejets d’ingestion de plus de 13 mois'],
+        ['atak_web_commands', "status NOT IN ('pending', 'accepted') AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)", 'Commandes du poste vers les téléphones terminées depuis 30 jours'],
+        ['atak_unit_motion_samples', 'sampled_at < DATE_SUB(NOW(), INTERVAL 1 DAY)', 'Échantillons de mouvement des unités de plus d’un jour'],
+        ['atak_unit_motion', 'computed_at < DATE_SUB(NOW(), INTERVAL 7 DAY)', 'État de mouvement des unités non recalculé depuis 7 jours'],
+        ['atak_vehicle_position_history', 'recorded_at < DATE_SUB(NOW(), INTERVAL 365 DAY)', 'Historique de positions des véhicules de plus d’un an'],
+        ['atak_chat_messages', 'created_at < DATE_SUB(NOW(), INTERVAL 365 DAY)', 'Messages du tchat ATAK de plus d’un an'],
     ];
 
     private const BATCH = 5000;

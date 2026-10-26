@@ -13,7 +13,7 @@ private _data = createHashMapFromArray [
 // précédente empêchait de relancer l'animation (ou en retirait une autre). Remis à zéro à chaque mission.
 uiNamespace setVariable ["COMSPEC_ATAK_PhotoMode", false];
 { uiNamespace setVariable [_x, -1]; } forEach ["COMSPEC_ATAK_AarPfh", "COMSPEC_ATAK_DronePfh", "COMSPEC_ATAK_SpecPfh", "COMSPEC_ATAK_EcgPfh", "COMSPEC_ATAK_PlayerVizPfh", "COMSPEC_ATAK_PhotoPFH", "COMSPEC_ATAK_Vibrating"];
-{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_BftLast", "COMSPEC_ATAK_DevCache", "COMSPEC_ATAK_Flir", "COMSPEC_ATAK_MarkerTagPool", "COMSPEC_ATAK_HeightCache"];
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_BftLast", "COMSPEC_ATAK_DevCache", "COMSPEC_ATAK_Flir", "COMSPEC_ATAK_MarkerTagPool", "COMSPEC_ATAK_HeightCache", "COMSPEC_ATAK_FriendList", "COMSPEC_ATAK_NearCache", "COMSPEC_ATAK_ForeignNames"];
 // Tables d'objets et de marqueurs de la partie précédente : le relais web (MkSnap) supprimait côté Athena les marqueurs
 // de l'ancienne mission, la liaison allié (LinkAlly) se coupait au démarrage sur un porteur disparu.
 { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_MkSnap", "COMSPEC_ATAK_GlowLights", "COMSPEC_ATAK_LinkAlly", "COMSPEC_ATAK_DroneAlerted", "COMSPEC_ATAK_MapSearchKnown", "COMSPEC_ATAK_MapSearch", "COMSPEC_ATAK_DroneStatic"];

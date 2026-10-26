@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.93";
+    private const string ExtensionVersion = "2.0.94";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -295,9 +295,13 @@ public static partial class Extension
         public string SseNoteId = "";
         public string SseNoteKind = "capture";
         public int Attempts;
+        /// <summary>Relances différées d'un nom précis pas encore écrit (jeu en pause, alt-tab, disque lent).</summary>
+        public int LateRetries;
     }
 
     private static readonly ConcurrentQueue<ReconPhotoJob> PhotoJobs = new();
+    private const int PhotoLateRetryMax = 4;
+    private const int PhotoLateRetryDelayMs = 15_000;
     private static readonly ConcurrentDictionary<string, long> PhotoDedupTicks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object ScreenshotWatcherLock = new();
     private static int _photoWorkerRunning;
@@ -1655,16 +1659,25 @@ public static partial class Extension
         try
         {
             // Phase A : lot priorisé d’abord (compte dans le budget HTTP du tick).
-            if (TryDrainTelemetryBatch())
+            // Le lot n'arrête plus le passage : tant que le joueur bouge il n'est jamais vide, et marqueurs,
+            // manifestes et rapports attendaient l'arrêt du joueur (puis partaient en rafale).
+            var telemetrySent = TryDrainTelemetryBatch();
+            if (telemetrySent)
             {
-                PersistQueueToDisk();
                 // Re-jitter périodique pour désynchroniser les clients.
                 try { EnsureDrainTimer(rejitter: true); } catch { /* ignore */ }
-                return;
+                // Athena vient de demander une pause (429/503, réseau) : on s'arrête là, comme avant.
+                if (IsPostPausedNow())
+                {
+                    PersistQueueToDisk();
+                    return;
+                }
             }
 
             const int maxPerTick = 3;
-            var sent = 0;
+            var sent = telemetrySent ? 1 : 0;
+            // Télémétrie active : un seul envoi de la file par passage (prudence, le lot occupe déjà la connexion).
+            var fifoLeft = telemetrySent ? 1 : maxPerTick;
             var networkPause = IsNetworkBackoffNow();
             // Toujours la position coalescée en premier (freshness > ordre FIFO).
             var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
@@ -1680,7 +1693,7 @@ public static partial class Extension
             }
             // Un tour de file au plus : les envois remis en file (adresse en pause) ne sont pas relus.
             var scanLeft = PendingPosts.Count;
-            while (sent < maxPerTick && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
+            while (sent < maxPerTick && fifoLeft > 0 && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
             {
                 if (!TryResolveQueuedUrl(ref item))
                 {
@@ -1711,6 +1724,7 @@ public static partial class Extension
                 if (!TrySendQueuedPost(item))
                     break;
                 sent++;
+                fifoLeft--;
             }
             // Marqueurs coalescés (budget restant).
             if (sent < maxPerTick && !PendingMarkersByName.IsEmpty)
@@ -2206,6 +2220,9 @@ public static partial class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        // Données remontées choisies par la communauté (Extension_DataFlows) : flux coupé, rien en file.
+        if (!DataFlowAllowsUrl(url, jsonBody))
+            return;
         // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
         if (TryOfferBatchablePost(url, jsonBody))
             return;
@@ -2333,6 +2350,9 @@ public static partial class Extension
         public volatile string Result = "OK|";
         public long FetchedAtMs;
         public int InFlight;
+        // Dernière adresse sondée et dernier code HTTP (-1 : erreur réseau) : rejoués par Link.SelfTest.
+        public volatile string Url = "";
+        public int LastCode;
     }
 
     private static readonly ConcurrentDictionary<string, PollGetSlot> PollGetCache = new();
@@ -2348,6 +2368,7 @@ public static partial class Extension
             return "ERR|invalid_url";
 
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
+        slot.Url = url;
         var now = Environment.TickCount64;
         const int minRefreshMs = 1200;
         var stale = slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs;
@@ -2360,6 +2381,7 @@ public static partial class Extension
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
                     using var resp = SendGet(url, cts.Token);
                     var body = ReadContentUtf8(resp, cts.Token);
+                    slot.LastCode = (int)resp.StatusCode;
                     var formatted = format(body, (int)resp.StatusCode);
                     if (formatted.StartsWith("OK|", StringComparison.Ordinal) || slot.FetchedAtMs == 0)
                         slot.Result = formatted;
@@ -2367,6 +2389,7 @@ public static partial class Extension
                 }
                 catch
                 {
+                    slot.LastCode = -1;
                     if (slot.FetchedAtMs == 0)
                         slot.Result = "ERR|network";
                     slot.FetchedAtMs = Environment.TickCount64;
@@ -3015,6 +3038,17 @@ public static partial class Extension
     private const int AsyncMaxParallel = 6;
     private static readonly SemaphoreSlim AsyncGate = new(AsyncMaxParallel, AsyncMaxParallel);
 
+    /// <summary>
+    /// Commandes reçues par « Async » qui ne font que construire un JSON et le mettre en file (EnqueueOrSend) :
+    /// aucune attente réseau, donc pas de passage par AsyncGate. Ne JAMAIS y ajouter une commande qui appelle
+    /// SendGet / SendJsonPost (elle bloquerait le thread du jeu).
+    /// </summary>
+    private static readonly HashSet<string> AsyncLocalCommands = new(StringComparer.Ordinal)
+    {
+        "UpdatePosition", "EmitTelemetry", "SendMarker", "SendFlightManifest", "SendWeather",
+        "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report", "NetConditions.Report",
+    };
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
@@ -3036,6 +3070,12 @@ public static partial class Extension
         {
             return LatestVersions(args.Length > 0 ? args[0] : null);
         }
+        // Dépannage liaison : auto-test complet (contrôles serveur, chaque canal sondé rejoué, file d'envoi).
+        // ["Link.SelfTest", [mapId]] -> « OK|lignes » (voir Extension_SelfTest.cs). Réseau : toujours via Async.
+        if (function == "Link.SelfTest")
+        {
+            return LinkSelfTest(args.Length > 0 ? args[0] : null);
+        }
         // Check de démarrage du mod (fn_startupCheck) : POST /api/atak/startup-check, public, sans session ni clé.
         // ["StartupCheck", [adresse du portail, "clé=valeur", ...]] -> « OK|posted », « OK|duplicate », « OK|no_channel »… ou « ERR|… ».
         if (function == "StartupCheck")
@@ -3055,6 +3095,22 @@ public static partial class Extension
             var command = args[1]!;
             if (command == "Async") return "ERR|async_nested";
             var rest = args[2..];
+            // Commandes purement locales (mise en file, aucun appel réseau) : exécutées tout de suite, sans attendre
+            // AsyncGate ni Task.Run. Quand Athena ralentissait, 6 appels HTTP lents bloquaient la porte et la position
+            // (une seule en vol côté SQF) était sautée jusqu'à 8 s. Le rappel part quand même : le SQF ne change pas.
+            if (AsyncLocalCommands.Contains(command))
+            {
+                string localResult;
+                try
+                {
+                    var direct = TryGetSyncResponse(command, rest);
+                    if (direct == null) { RvExtensionArgsImpl(command, rest); direct = ""; }
+                    localResult = direct;
+                }
+                catch (Exception ex) { localResult = FormatCaughtError(ex); }
+                InvokeCallback("async:" + ticket, localResult);
+                return "QUEUED|" + ticket;
+            }
             _ = Task.Run(async () =>
             {
                 // Au plus AsyncMaxParallel appels à la fois : quand Athena ralentit, les suivants attendent
@@ -4386,6 +4442,12 @@ public static partial class Extension
                     var safe = body.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                     return PollOkClipped(safe);
                 });
+            }
+            // Données remontées choisies par la communauté (positions, véhicules, pertes, miroir, contexte).
+            // Réponse : positions=1\tvehicles=0\t... (Extension_DataFlows).
+            if (function == "GetDataFlows")
+            {
+                return ServeDataFlows();
             }
             // Modules pont ATAK Enhanced / cTab (activables admin).
             // Lignes : id\tenabled(0|1)\tlabel
@@ -6413,12 +6475,19 @@ public static partial class Extension
         return sb.ToString().TrimEnd();
     }
 
+    private static volatile string? _writableCacheDir;
+
     /// <summary>
     /// Dossier de cache local pour les diapositives téléchargées : à côté de la DLL en priorité
     /// (dossier du mod, généralement accessible en écriture), sinon dossier temporaire système.
     /// </summary>
     private static string? GetWritableCacheDir()
     {
+        // Dossier déjà vérifié : réutilisé tant qu'il existe (un fichier test était écrit puis effacé à chaque
+        // diapositive, avatar ou QR, même déjà en cache).
+        var known = _writableCacheDir;
+        if (known != null && Directory.Exists(known))
+            return known;
         var candidates = new[]
         {
             Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
@@ -6432,6 +6501,7 @@ public static partial class Extension
                 var probe = Path.Combine(dir, ".write_test");
                 File.WriteAllText(probe, "ok");
                 File.Delete(probe);
+                _writableCacheDir = dir;
                 return dir;
             }
             catch
@@ -9190,6 +9260,8 @@ public static partial class Extension
         // Un nom précis n’est jamais remplacé par une autre photo récente (Quick Picture).
         var specificName = HasSpecificImageFileName(job.RawPath);
         var maxAttempts = specificName ? 50 : 25;
+        // Relance différée : courte attente, la file des autres photos ne reste pas bloquée.
+        if (job.LateRetries > 0) maxAttempts = 5;
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             var fb = newestFallback;
@@ -9234,6 +9306,23 @@ public static partial class Extension
             }
             catch { /* ignore */ }
             await Task.Delay(400).ConfigureAwait(false);
+        }
+
+        if (resolved == null && specificName && job.LateRetries < PhotoLateRetryMax
+            && (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds < 150)
+        {
+            // Arma n'écrit la capture qu'à l'image suivante : jeu en pause, fenêtre réduite ou disque lent, le PNG
+            // arrive après les ~20 s d'attente. Nouvel essai plus tard au lieu d'un file_not_found immédiat.
+            job.LateRetries++;
+            PhotoJournal(job, "queued", "capture pas encore écrite");
+            _ = Task.Run(async () =>
+            {
+                try { await Task.Delay(PhotoLateRetryDelayMs).ConfigureAwait(false); }
+                catch { /* ignore */ }
+                PhotoJobs.Enqueue(job);
+                EnsurePhotoWorker();
+            });
+            return;
         }
 
         if (resolved == null)

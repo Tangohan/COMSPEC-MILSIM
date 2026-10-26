@@ -1905,6 +1905,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/maintenance', [AdminAtakConfigController::class, 'setMaintenance'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/modules', [AdminAtakConfigController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/data-flows', [AdminAtakConfigController::class, 'storeDataFlows'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/game-experience', [AdminAtakConfigController::class, 'storeGameExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/photo-hud', [AdminAtakConfigController::class, 'storePhotoHud'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2449,6 +2450,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
+    // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.
+    $router->get('/api/atak/diag/selftest', [\App\Controllers\Api\AtakLinkSelfTestController::class, 'selfTest']);
     // App Musique de l'ATAK natif (COMSPEC Link AthenaMusic) ; flux audio par URL signée, sans en-tête Athena.
     $router->get('/api/atak/music', [MusicLibraryApiController::class, 'index']);
     $router->get('/api/music/stream/{file}', [MusicLibraryApiController::class, 'stream']);
@@ -2593,6 +2596,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/weather', [AtakApiController::class, 'weather']);
     $router->get('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
     $router->post('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
+    $router->get('/api/atak/data-flows', [AtakApiController::class, 'dataFlows']);
     $router->get('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);

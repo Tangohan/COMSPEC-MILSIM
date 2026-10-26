@@ -47,6 +47,7 @@ return static function (PDO $pdo): void {
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY idx_web_cmd_pending (tenant_id, map_id, status, created_at),
+            KEY idx_web_cmd_status_created (tenant_id, status, created_at),
             KEY idx_web_cmd_target (tenant_id, target_uid, kind, status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         'atak_phone_notifs' => "CREATE TABLE atak_phone_notifs (
