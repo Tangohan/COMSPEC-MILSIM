@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * NET-006, client web Overwatch : après une courte panne d'Athena, la pause du poste était réappliquée à chaque
  * succès (deux succès par palier, paliers de 45 s à 10 min, sans gigue), et la page /atak ne relit rien pendant une
- * pause (atakPoll) : carte figée jusqu'à 150 s après le retour d'Athena. Le comportement est mesuré par
- * tools/web-backoff-check/check.js (script chargé dans Node avec une horloge et un fetch simulés) ; ce test garde la
- * forme du correctif.
+ * pause (atakPoll) : carte figée jusqu'à 150 s après le retour d'Athena. Le frein demandé par Athena (429, 403) reste
+ * exactement comme avant. Le comportement est mesuré par tools/web-backoff-check/check.js (script chargé dans Node avec
+ * une horloge et un fetch simulés) ; ce test garde la forme du correctif.
  */
 final class AtakWebBackoffRecoveryTest extends TestCase
 {
@@ -66,11 +66,12 @@ final class AtakWebBackoffRecoveryTest extends TestCase
         self::assertStringContainsString('pauseUntil = 0;', $ok);
     }
 
-    public function testPausesAreJitteredButNeverShorterThanAsked(): void
+    public function testOutagePausesAreJitteredAndThrottlesKeepExactDelays(): void
     {
         $pause = self::body(self::socket(), 'function applyPause(sec, jitterMaxSec)');
 
+        // Jamais plus courte que demandé ; gigue seulement hors frein (429, 403 : délai exact, comme avant).
         self::assertStringContainsString('pauseUntil = Date.now() + n * 1000 + Math.floor(Math.random() * (jitterSec * 1000 + 1));', $pause);
-        self::assertStringContainsString('var jitterSec = jitterMaxSec == null ? n * 0.2 : Math.max(0, Number(jitterMaxSec) || 0);', $pause);
+        self::assertStringContainsString('var jitterSec = throttled ? 0 : jitterMaxSec == null ? n * 0.2 : Math.max(0, Number(jitterMaxSec) || 0);', $pause);
     }
 }

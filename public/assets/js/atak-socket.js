@@ -119,11 +119,12 @@ window.ATAKSocket = (function () {
     });
   }
 
-  /* Pause allongée d'une gigue tirée entre 0 et jitterMaxSec (par défaut 20 % du délai), jamais plus courte que
-     demandé : après une panne commune, les postes ne redemandent plus tous à la même seconde. */
+  /* Panne : pause allongée d'une gigue tirée entre 0 et jitterMaxSec (par défaut 20 % du délai), jamais plus courte
+     que demandé : après une panne commune, les postes ne redemandent plus tous à la même seconde. Frein (429, 403) :
+     délai exact, sans gigue, comme avant (Athena limite chaque compte ou chaque adresse à part). */
   function applyPause(sec, jitterMaxSec) {
     var n = Math.max(1, Number(sec) || 8);
-    var jitterSec = jitterMaxSec == null ? n * 0.2 : Math.max(0, Number(jitterMaxSec) || 0);
+    var jitterSec = throttled ? 0 : jitterMaxSec == null ? n * 0.2 : Math.max(0, Number(jitterMaxSec) || 0);
     pauseUntil = Date.now() + n * 1000 + Math.floor(Math.random() * (jitterSec * 1000 + 1));
     unavailableListeners.forEach(function (fn) {
       try { fn(n); } catch (e) {}
@@ -151,8 +152,8 @@ window.ATAKSocket = (function () {
       var asked = hinted > sec;
       if (asked) sec = Math.min(600, hinted);
       /* Gigue : palier de panne → jusqu'à la moitié du palier (3 à 15 s) ; délai demandé par Athena (maintenance,
-         déjà étalée par le site) → 20 %, 15 s au plus ; frein (429, 403) → 20 %. */
-      if (!throttled) jitterSec = asked ? Math.min(15, sec / 5) : Math.min(15, Math.max(3, sec / 2));
+         déjà étalée par le site) → 20 %, 15 s au plus ; frein (429, 403) → aucune (applyPause). */
+      jitterSec = asked ? Math.min(15, sec / 5) : Math.min(15, Math.max(3, sec / 2));
     } else {
       sec = kind === 'forbidden' ? Math.max(15, Number(retrySec) || 20) : Math.max(8, Number(retrySec) || 10);
       sec = Math.min(sec, 30);

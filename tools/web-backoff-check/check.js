@@ -5,7 +5,8 @@
 // maintenance 503 avec Retry-After, frein 429, 403. Aucune requête réseau, aucune dépendance.
 //   node tools/web-backoff-check/check.js [chemin de atak-socket.js]
 // Sortie : lignes PASS/FAIL ; code de sortie 0 si tout passe, 1 sinon. Sur le script d'avant le correctif, les
-// contrôles A, B2, B3, E, G et I échouent (c'est le défaut corrigé) ; U, B1, C, D, F, H et M passent sur les deux.
+// contrôles A, B2, B3, E, G et I échouent (c'est le défaut corrigé) ; U, B1, C, D, F, H, T et M passent sur les deux
+// (le frein 429 / 403 doit rester exactement comme avant).
 'use strict';
 
 const fs = require('fs');
@@ -118,24 +119,24 @@ async function main() {
   check('B3 maintenance : gigue du Retry-After bornée à 15 s', Math.min(...bs) >= 119.9 && Math.max(...bs) <= 135.1 && Math.max(...bs) - Math.min(...bs) >= 2,
     '100 tirages : de ' + fmt(Math.min(...bs)) + ' à ' + fmt(Math.max(...bs)) + ' s (attendu 120 à 135 s, écart ≥ 2 s)');
 
-  // [C] Frein 429 + Retry-After 60 : au moins 60 s, puis un palier de moins tous les deux succès.
+  // [C] Frein 429 + Retry-After 60 : 60 s exactement, puis un palier de moins tous les deux succès.
   p = page();
   for (let i = 0; i < 3; i++) { await p.send(ROSTER, 'GET', { status: 429, retryAfter: 60 }); if (i < 2) p.wait(); }
   const c1 = p.pause();
   await p.send(PING, 'GET', ok);
   const c2 = p.pause();
   await p.send(PING, 'GET', ok);
-  check('C  429 : au moins 60 s, deux succès pour sortir', c1 >= 59.9 && c1 <= 72.1 && c2 >= 44.9 && !p.api.isApiPaused(),
+  check('C  429 : 60 s exactement, deux succès pour sortir', c1 >= 59.9 && c1 <= 60.1 && c2 >= 44.9 && c2 <= 45.1 && !p.api.isApiPaused(),
     'pause ' + fmt(c1) + ' s, après 1 succès ' + fmt(c2) + ' s, après 2 : ' + fmt(p.pause()) + ' s');
 
-  // [D] 403 : échelle longue (45 s), deux succès pour sortir.
+  // [D] 403 : échelle longue (45 s exactement), deux succès pour sortir.
   p = page();
   for (let i = 0; i < 3; i++) { await p.send(CHAT, 'POST', { status: 403 }); if (i < 2) p.wait(); }
   const d1 = p.pause();
   await p.send(PING, 'GET', ok);
   const dStill = p.api.isApiPaused();
   await p.send(PING, 'GET', ok);
-  check('D  403 : échelle longue (45 s), deux succès pour sortir', d1 >= 44.9 && d1 <= 54.1 && dStill && !p.api.isApiPaused(),
+  check('D  403 : échelle longue (45 s exactement), deux succès pour sortir', d1 >= 44.9 && d1 <= 45.1 && dStill && !p.api.isApiPaused(),
     'pause ' + fmt(d1) + ' s, encore en pause après 1 succès : ' + dStill);
 
   // [E] Panne longue : paliers 10, 20, 30, 45 s, jamais plus de 60 s de pause avec la gigue ; sortie au 1er succès.
@@ -173,6 +174,27 @@ async function main() {
   while (p.api.isApiPaused() && hOk < 20) { await p.send(PING, 'GET', ok); hOk += 1; }
   check('H  panne puis 429 : échelle longue, deux succès par palier', hRung === 75 && hOk === 4,
     'palier ' + hRung + ' s, succès pour sortir : ' + hOk);
+
+  // [T] Frein (429, 403) : délais exacts, sans gigue, comme avant (Athena limite chaque compte ou chaque adresse à part).
+  const t429 = [];
+  const t403 = [];
+  const tLadder = [];
+  for (let n = 0; n < 30; n++) {
+    let q = page();
+    await q.send(ROSTER, 'GET', { status: 429, retryAfter: 20 });
+    t429.push(q.pause());
+    q = page();
+    await q.send(CHAT, 'POST', { status: 403 });
+    t403.push(q.pause());
+    q = page();
+    for (let i = 0; i < 3; i++) { await q.send(ROSTER, 'GET', { status: 429, retryAfter: 60 }); if (i < 2) q.wait(); }
+    tLadder.push(q.pause());
+  }
+  const exact = (l, v) => Math.min(...l) >= v - 0.1 && Math.max(...l) <= v + 0.1;
+  check('T  frein sans gigue', exact(t429, 20) && exact(t403, 20) && exact(tLadder, 60),
+    '30 tirages : 429 isolé ' + fmt(Math.min(...t429)) + ' à ' + fmt(Math.max(...t429)) + ' s, 403 isolé ' + fmt(Math.min(...t403))
+    + ' à ' + fmt(Math.max(...t403)) + ' s, 429 au 3e échec ' + fmt(Math.min(...tLadder)) + ' à ' + fmt(Math.max(...tLadder))
+    + ' s (attendu 20, 20 et 60 s)');
 
   // [I] Un frein terminé est oublié : une panne qui suit, sans succès entre les deux, repart sur l'échelle courte.
   p = page();
