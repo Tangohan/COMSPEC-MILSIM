@@ -27,7 +27,17 @@ private _type = [_entity] call comspec_sse_fnc_resolveEntityType;
 private _existing = [_entity] call comspec_sse_fnc_getData;
 private _seed = if (isNil "_existing" || {!(_existing isEqualType [])}) then { -1 } else { [_existing, "seed", -1] call comspec_sse_fnc_getPair };
 if !(_seed isEqualType 0) then { _seed = -1; };
-if (_seed < 0) then { _seed = [_entity] call comspec_sse_fnc_entitySeed; };
+if (_seed < 0) then {
+    // Graine saisie sur l'objet (attribut Eden / dataset) : remplace la graine de mission pour cette entité.
+    private _objSeed = _entity getVariable ["comspec_sse_missionSeed", ""];
+    if (_objSeed isEqualType 0) then { _objSeed = str _objSeed; };
+    if (_objSeed isEqualType "" && {_objSeed isNotEqualTo ""}) then {
+        private _p = getPosASL _entity;
+        _seed = [[0, _objSeed] call comspec_sse_fnc_hash, format ["%1|%2|%3|", typeOf _entity, round ((_p select 0) * 10), round ((_p select 1) * 10)]] call comspec_sse_fnc_hash;
+    } else {
+        _seed = [_entity] call comspec_sse_fnc_entitySeed;
+    };
+};
 _profile = [_profile, _seed] call comspec_sse_fnc_resolveProfile;
 
 private _data = if (isNil "_existing" || {!(_existing isEqualType [])}) then {

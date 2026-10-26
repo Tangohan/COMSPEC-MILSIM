@@ -70,9 +70,17 @@ if (!_run) exitWith { true };
     };
     private _me = if (isNull player) then { "?" } else { getPlayerUID player };
     if (_me isEqualTo "") then { _me = name player; };
+    // Une variable par candidat : deux candidats simultanés s'écrasaient COMSPEC_GeoNetworkRunner mutuellement
+    // (chacun recevait la valeur de l'autre) et sortaient tous les deux. Élection : plus petit UID candidat.
+    missionNamespace setVariable [format ["COMSPEC_GeoNetworkClaim_%1", _me], true, true];
     missionNamespace setVariable ["COMSPEC_GeoNetworkRunner", _me, true];
     uiSleep (1 + random 2);
-    if ((missionNamespace getVariable ["COMSPEC_GeoNetworkRunner", ""]) isNotEqualTo _me) exitWith {};
+    private _claimants = ((allPlayers apply { getPlayerUID _x }) + [_me]) select {
+        _x isNotEqualTo "" && {missionNamespace getVariable [format ["COMSPEC_GeoNetworkClaim_%1", _x], false]}
+    };
+    _claimants = _claimants arrayIntersect _claimants;
+    _claimants sort true;
+    if ((_claimants param [0, _me]) isNotEqualTo _me) exitWith {};
 
     ["INFO", "Geo", format ["Relevé routes et villes au début de la mission (renvoi : %1)", _resend]] call comspec_overwatch_connect_fnc_log;
     [0, _resend] call comspec_overwatch_connect_fnc_sampleGeoNetwork;

@@ -185,7 +185,7 @@ if (_interactive) then {
             ["HEIGHT", "map_height", "Hauteur"],
             ["LOS", "map_los", "Ligne de vue"],
             ["FLAT", "map_flat", "Terrain plat"],
-            ["IPTGT", "app_jtac", "JTAC : IP → cible (cap magnétique)"],
+            ["IPTGT", "app_jtac", "JTAC : IP » cible (cap magnétique)"],
             ["#", "", "DESSINER"],
             ["LINE", "map_measure", "Tracer un trait"],
             ["DRAW", "map_labels", "Dessin libre"],
@@ -573,7 +573,7 @@ if (_interactive && {(count (_search getOrDefault ["hit", createHashMap])) > 0} 
     // Outil JTAC IP → cible (fn_jtacTool) : fiche du calcul au même endroit que celle de la recherche.
     if (_interactive && {(count (_s getOrDefault ["jtacTool", []])) >= 2} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
         private _cw = ((_mw * 0.5) max (_font * 11 / _ratio)) min (_mw - 2 * _pad);
-        private _chh = _fs * 7.6;
+        private _chh = ["cardH"] call comspec_atak_native_fnc_jtacTool;
         private _selUp = [0, _fs * 6.2 + _pad * 4] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
         ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_jtacTool;
     };
@@ -753,14 +753,14 @@ if (_dv isNotEqualTo "OFF") then {
                 ["MARQUER LA CIBLE", ["lock"] call _act, "red", "Marque la cible sous le réticule (touche « Marquer la cible ») : LOCK suivi sur la carte. Clic sur l'image : la caméra vise ce point", 1.4],
                 ["OUBLIER LES CIBLES", { ["release", ""] call comspec_atak_native_fnc_lockAction; }, "", "Retire le marquage de toutes les cibles marquées (LOCK)", 1.4],
                 ["|"],
-                [format ["VISION : %1", ["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0])], ["vision"] call _act, "", "Change le mode de la caméra : jour → nuit (intensification de lumière) → thermique", 1.3],
+                [format ["VISION : %1", ["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0])], ["vision"] call _act, "", "Change le mode de la caméra : jour » nuit (intensification de lumière) » thermique", 1.3],
                 ["ZOOM x1", ["zoom", 1] call _act, ["", "on"] select (_zoom isEqualTo 1), "Zoom de la caméra : x1 (champ large)", 0.8],
                 ["x2", ["zoom", 2] call _act, ["", "on"] select (_zoom isEqualTo 2), "Zoom de la caméra : x2", 0.5],
                 ["x4", ["zoom", 4] call _act, ["", "on"] select (_zoom isEqualTo 4), "Zoom de la caméra : x4", 0.5],
                 ["CAMÉRA DEVANT", ["camAim", ""] call _act, "", "Remet la caméra du drone droit devant", 1.2],
                 ["|"],
                 // Vidéo affichée : drone → caméra du téléphone → caméra casque (ici seulement : l'app Drone montre toujours le drone).
-                [["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE", "VIDÉO DU CASQUE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0), ["feedSrc", ["PHONE", "HELMET", "DRONE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0)] call _act, ["on", ""] select (_fsrc isEqualTo "DRONE"), "Choisit la vidéo affichée : drone → caméra du téléphone (devant vous) → caméra casque", 1.5]
+                [["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE", "VIDÉO DU CASQUE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0), ["feedSrc", ["PHONE", "HELMET", "DRONE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0)] call _act, ["on", ""] select (_fsrc isEqualTo "DRONE"), "Choisit la vidéo affichée : drone » caméra du téléphone (devant vous) » caméra casque", 1.5]
             ] + ([[], [
                 [format ["CASQUE DE %1", [name _fu, "MOI"] select (_fu isEqualTo player)], compile format ["['feedUnit', %1] call comspec_atak_native_fnc_droneAction;", str ([netId _fn, getPlayerUID _fn] select (isPlayer _fn))], "", "Porteur de la caméra casque : vous, puis les équipiers du groupe à moins de 3 km (appui suivant)", 1.4]
             ]] select (_fsrc isEqualTo "HELMET")) + [
@@ -886,7 +886,7 @@ if (_camId isNotEqualTo "") then {
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
                 _s set ["livecamMode", ((_s getOrDefault ["livecamMode", 0]) + 1) mod 3];
                 [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
-            }, "Change le mode de la caméra : jour → vision nocturne → thermique"],
+            }, "Change le mode de la caméra : jour » vision nocturne » thermique"],
             ["GRAND", {
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
                 _s set ["livecamTarget", _s getOrDefault ["mapCam", ""]];

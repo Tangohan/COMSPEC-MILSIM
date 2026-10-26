@@ -272,7 +272,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_FeedDrop", _drop];
 // Bandeau de liaison : palier, débit, pertes, relais de la source et du téléphone.
 (_link get "up") params ["", "", "_upRelay"];
 (_link get "down") params ["", "", "_downRelay"];
-private _path = (([_upRelay, _downRelay] select { _x isNotEqualTo "" }) arrayIntersect ([_upRelay, _downRelay] select { _x isNotEqualTo "" })) joinString " → ";
+private _path = (([_upRelay, _downRelay] select { _x isNotEqualTo "" }) arrayIntersect ([_upRelay, _downRelay] select { _x isNotEqualTo "" })) joinString " » ";
 private _tierCol = createHashMapFromArray [["HD", "#5bc76b"], ["SD", "#c9d4cf"], ["BAS", "#f2ab33"], ["MINIMAL", "#e5483a"]];
 private _netBar = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _vh - _rowH * 1.1, _vw - _pad, _rowH]] call comspec_atak_native_fnc_pageCtrl;
 _netBar ctrlSetFontHeight (_fs * 0.85);

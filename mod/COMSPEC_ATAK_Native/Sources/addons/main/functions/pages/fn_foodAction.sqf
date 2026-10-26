@@ -84,8 +84,9 @@ switch (_act) do {
         private _o = missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
         if ((_o getOrDefault ["step", ""]) isNotEqualTo "FLIGHT") exitWith {};
         // Point de largage : à côté du joueur, sur un sol dégagé.
-        private _pos = [getPosATL player, 15, 40, 3, 0, 0.4, 0, [], [getPosATL player, getPosATL player]] call BIS_fnc_findSafePos;
-        if ((count _pos) < 2) then { _pos = player getRelPos [20, random 360]; };
+        private _pos = [getPosATL player, 15, 40, 3, 0, 0.4, 0, [], [[0, 0, 0], [0, 0, 0]]] call BIS_fnc_findSafePos;
+        // Aucun point dégagé trouvé (défaut [0,0,0] renvoyé) : largage à 20 m, jamais sur le joueur.
+        if ((count _pos) < 2 || {(_pos distance2D player) < 10}) then { _pos = player getRelPos [20, random 360]; };
         _pos = [_pos select 0, _pos select 1, 0];
         private _box = createVehicle ["Box_NATO_Support_F", [_pos select 0, _pos select 1, 120], [], 0, "CAN_COLLIDE"];
         clearItemCargoGlobal _box; clearMagazineCargoGlobal _box; clearWeaponCargoGlobal _box; clearBackpackCargoGlobal _box;

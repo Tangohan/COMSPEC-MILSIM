@@ -80,8 +80,8 @@ final class AtakRealismGpsScreenTest extends TestCase
     {
         $cfg = $this->read('config.cpp');
         self::assertMatchesRegularExpression('/class COMSPEC_ATAK_GarminWatchItem: ItemCore \{[^}]*type=4096;/s', $cfg);
-        self::assertStringContainsString('"COMSPEC_ATAK_GarminWatchItem" in (items player)', $this->read('functions/garmin/fn_garminTick.sqf'));
-        self::assertStringContainsString('"COMSPEC_ATAK_GarminWatchItem" in (items player)', $this->read('functions/pages/fn_resynchRun.sqf'));
+        self::assertStringContainsString('_x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"]', $this->read('functions/garmin/fn_garminTick.sqf'));
+        self::assertStringContainsString('_x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"]', $this->read('functions/pages/fn_resynchRun.sqf'));
         self::assertStringContainsString('STR_COMSPEC_ATAK_CFG_FF273F9B2F', $this->read('stringtable.xml'));
     }
 

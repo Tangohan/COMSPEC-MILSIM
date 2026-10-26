@@ -238,12 +238,22 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
 };
 
 if (isNil "COMSPEC_CbaSettingsEhArmed") then {
-COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
+// Bloc de démarrage gardé dans une variable : fn_athenaApply le rejoue (COMSPEC_CbaSettingsBootReplay)
+// quand le joueur passe Athéna à « Oui » en mission alors qu'il était coupé au démarrage.
+COMSPEC_CbaSettingsBootCode = {
     if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false]) exitWith {};
-    missionNamespace setVariable ["COMSPEC_CbaSettingsBootArmed", true, false];
+    missionNamespace setVariable ["COMSPEC_CbaSettingsBootFired", true, false];
 
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
         ["WARN", "Boot", "Overwatch désactivé — pas de sync / ACE"] call comspec_overwatch_connect_fnc_log;
+    };
+    // Armé seulement une fois Overwatch actif : sinon un « Non » au démarrage empêchait tout rejeu.
+    missionNamespace setVariable ["COMSPEC_CbaSettingsBootArmed", true, false];
+    // Rejeu en cours de mission : fn_athenaApply mène lui-même le handshake et les boucles de sync.
+    private _bootReplay = missionNamespace getVariable ["COMSPEC_CbaSettingsBootReplay", false];
+    if (_bootReplay) then {
+        COMSPEC_BootHandshakeSpawn = true;
+        missionNamespace setVariable ["COMSPEC_BootHandshakeDone", true, false];
     };
     [] call comspec_overwatch_connect_fnc_applyNetworkProfile;
 
@@ -668,6 +678,8 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).
     // Si le client crash ou quitte sans Unload : le portail expire la liaison (TTL heartbeat).
+    // Rejeu en cours de mission (fn_athenaApply) : ne pas écraser l'état déjà en place.
+    if (!_bootReplay) then {
     missionNamespace setVariable ["COMSPEC_DisconnectSent", false, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];
@@ -684,6 +696,7 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     missionNamespace setVariable ["COMSPEC_VehicleTrackingInited", false, false];
     missionNamespace setVariable ["COMSPEC_VehTrackPlayer", objNull, false];
     missionNamespace setVariable ["COMSPEC_VehicleTrackingBootMsg", false, false];
+    };
     if (isNil "COMSPEC_DisconnectEHs") then {
         COMSPEC_DisconnectEHs = true;
         addMissionEventHandler ["Ended", {
@@ -700,7 +713,8 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
             }];
         };
     };
-}] call CBA_fnc_addEventHandler;
+};
+COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", COMSPEC_CbaSettingsBootCode] call CBA_fnc_addEventHandler;
 };
 
 // Sync multi-clients du briefing Google Slides (URL + index).

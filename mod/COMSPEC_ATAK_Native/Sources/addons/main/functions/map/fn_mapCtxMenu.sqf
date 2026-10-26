@@ -1,6 +1,7 @@
 /*
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
-    POINT DE PASSAGE (fiche de pose de l'étape au point, fn_wpAction "open"), CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
+    POINT DE PASSAGE (fiche de pose de l'étape au point, fn_wpAction "open"), ENVOYER À LA MONTRE (montre Garmin portée :
+    boussole de la montre, fn_watch "send"), CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
     et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
     sous le clic), RETIRER TOUTES LES ZONES (camp), MODIFIER LE MARQUEUR (marqueur joueur pointé, éditeur), SUPPRIMER (marqueur joueur ou alerte pointés), EFFACER LES ALERTES (repères
     d'alerte reçus). MARQUEUR ouvre la palette au point (fn_markerPlace) ou l'éditeur complet (réglage d'addon). Drone appairé et en vie : ORDRE AU DRONE
@@ -114,11 +115,25 @@ switch (_mode) do {
             case "WPGO": { ["goto", _c getOrDefault ["wp", -1]] call comspec_atak_native_fnc_wpAction; };
             case "WPDEL": { ["del", _c getOrDefault ["wp", -1]] call comspec_atak_native_fnc_wpAction; };
             case "ROUTE": { [_pos, "Point de la carte"] spawn comspec_atak_native_fnc_routeCompute; };
+            case "WATCH": {
+                private _lbl = if (_m isNotEqualTo "" && {(markerText _m) isNotEqualTo ""}) then { markerText _m } else { mapGridPosition _pos };
+                ["send", [_pos, _lbl select [0, 14]]] call comspec_atak_native_fnc_watch;
+            };
             case "CENTER": { _s set ["mapFollow", false]; [_pos] call comspec_atak_native_fnc_mapCenter; };
             case "COPY": {
                 private _g = [_pos, 10] call comspec_atak_native_fnc_gridRef;
                 ["clip", _g] call comspec_atak_native_fnc_planAction;
                 [format ["Grille %1 copiée", _g], 2] call comspec_atak_native_fnc_toast;
+            };
+            case "COPYMK": {
+                // Marqueur en texte (nom, grille 10 chiffres, altitude) : presse-papiers et brouillon du chat, prêt à coller.
+                if (_m isEqualTo "") exitWith {};
+                private _mp = getMarkerPos _m;
+                private _name = [markerText _m, [markerText _m] call comspec_atak_native_fnc_markerAutoName] select ((markerText _m) isEqualTo "");
+                private _txt = format ["%1 : %2 (%3 m)", [_name, "Marqueur"] select (_name isEqualTo ""), [_mp, 10] call comspec_atak_native_fnc_gridRef, round (getTerrainHeightASL _mp)];
+                ["clip", _txt] call comspec_atak_native_fnc_planAction;
+                uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", _txt];
+                [format ["Copié : %1", _txt], 3] call comspec_atak_native_fnc_toast;
             };
             case "DELETE": { if (_m isNotEqualTo "") then { [_m] call comspec_atak_native_fnc_markerDelete; }; };
             // Marqueur de joueur pointé : éditeur (titre, description, type, couleur, taille, orientation, opacité).
@@ -143,6 +158,11 @@ switch (_mode) do {
             case "LOSDEL": {
                 ["losClear"] call comspec_atak_native_fnc_reliefAction;
                 ["INFO", "Ligne de vue effacée", 2, 20] call comspec_atak_native_fnc_notify;
+            };
+            case "V3D": {
+                private _p = AGLToASL [_pos select 0, _pos select 1, 0];
+                _s set ["v3d", [_p, player getDir _p, 300, 120]];
+                ["VIEW3D"] call comspec_atak_native_fnc_navigate;
             };
             case "VIEW": { ["compute", [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_reliefAction; };
             case "VIEWU": { ["compute", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_reliefAction; };
@@ -206,8 +226,14 @@ switch (_mode) do {
             ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
             ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]],
             ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
+            ["V3D", "Vue 3D ici", "orbite autour du point", _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]],
             ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]]
         ];
+        // Montre Garmin portée : le point (ou le marqueur pointé) part sur la boussole de la montre (fn_watch "send").
+        if (((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0
+            || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0}) then {
+            _rows insert [4, [["WATCH", "Envoyer à la montre", "boussole de la montre", _dir + "app_garmin.paa", [0.36, 0.78, 0.42, 1]]]];
+        };
         // Étape pointée : ses lignes en tête (la liste a pu changer depuis l'ouverture : index revérifié).
         private _wpPts = (missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []];
         private _wpi = _c getOrDefault ["wp", -1];
@@ -272,6 +298,7 @@ switch (_mode) do {
             _rows pushBack ["MKEDIT", "Modifier le marqueur", "texte, type, couleur, taille", _dir + "map_marker.paa", _acc];
         };
         if (_m isNotEqualTo "") then {
+            _rows pushBack ["COPYMK", "Copier le marqueur", "texte : nom, grille, altitude", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]];
             _rows pushBack ["DELETE", ["Supprimer le marqueur", "Effacer cette alerte"] select (([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 2), [([markerText _m] call comspec_atak_native_fnc_markerAutoName), ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
         // Repères d'alerte reçus (CONTACT, WIA, SALUTE, PANIQUE…, locaux à ce téléphone) : tous d'un coup.

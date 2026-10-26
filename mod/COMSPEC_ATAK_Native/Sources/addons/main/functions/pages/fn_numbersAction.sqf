@@ -22,7 +22,7 @@ private _arm = {
     params ["_k"];
     if ((_s getOrDefault ["numDelArm", ""]) isEqualTo _k) exitWith { _s set ["numDelArm", ""]; true };
     _s set ["numDelArm", _k];
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["numDelArm", ""]) isEqualTo _this) then { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["numDelArm", ""]; ["NUMBERS"] call comspec_atak_native_fnc_pageRender; }; }, _k, 4] call CBA_fnc_waitAndExecute;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["numDelArm", ""]) isEqualTo _this) then { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["numDelArm", ""]; if ((_st getOrDefault ["activePage", ""]) isEqualTo "NUMBERS") then { ["NUMBERS"] call comspec_atak_native_fnc_pageRender; }; }; }, _k, 4] call CBA_fnc_waitAndExecute;
     false
 };
 switch (_a) do {

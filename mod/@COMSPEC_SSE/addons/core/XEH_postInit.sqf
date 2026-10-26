@@ -26,16 +26,29 @@ if (hasInterface) then {
     }] call CBA_fnc_addEventHandler;
 
     // Arrivée en cours de partie : les fiches sont déjà là (JIP), mais aucun événement n'est rejoué.
+    // Parcours étalé (200 objets par image, doublons de vehicles retirés) : une seule boucle figeait l'image
+    // à chaque arrivée sur une mission chargée en compositions (milliers d'objets).
     [{
-        {
-            if (
-                _x getVariable ["comspec_sse_enabled", false]
-                && {!(_x isKindOf "CAManBase")}
-                && {!(_x getVariable ["comspec_sse_aceMenusInstalled", false])}
-            ) then {
-                ["comspec_sse_entityEnabled", [_x]] call CBA_fnc_localEvent;
+        private _list = (allMissionObjects "All") + vehicles;
+        _list = _list arrayIntersect _list;
+        [{
+            params ["_args", "_pfh"];
+            _args params ["_list", "_i"];
+            private _end = (_i + 200) min (count _list);
+            for "_j" from _i to (_end - 1) do {
+                private _o = _list select _j;
+                if (
+                    !isNull _o
+                    && {_o getVariable ["comspec_sse_enabled", false]}
+                    && {!(_o isKindOf "CAManBase")}
+                    && {!(_o getVariable ["comspec_sse_aceMenusInstalled", false])}
+                ) then {
+                    ["comspec_sse_entityEnabled", [_o]] call CBA_fnc_localEvent;
+                };
             };
-        } forEach ((allMissionObjects "All") + vehicles);
+            _args set [1, _end];
+            if (_end >= (count _list)) then { [_pfh] call CBA_fnc_removePerFrameHandler; };
+        }, 0, [_list, 0]] call CBA_fnc_addPerFrameHandler;
     }, [], 5] call CBA_fnc_waitAndExecute;
 };
 

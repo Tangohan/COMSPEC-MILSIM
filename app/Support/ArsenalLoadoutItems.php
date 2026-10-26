@@ -129,6 +129,24 @@ final class ArsenalLoadoutItems
     public static function decode(string $payload): ?array
     {
         $payload = trim($payload);
+        $value = self::decodeText($payload);
+        if ($value !== null || !str_contains($payload, '""')) {
+            return $value;
+        }
+        // Texte passé par callExtension (COMSPEC Link → SyncWardrobe) : Arma refait un str de l’argument, donc
+        // chaque guillemet du str du loadout arrive doublé ([[""arifle_MX_F"",""""…). On défait ce second niveau.
+        if (strlen($payload) >= 2 && $payload[0] === '"' && $payload[strlen($payload) - 1] === '"') {
+            $payload = substr($payload, 1, -1);
+        }
+
+        return self::decodeText(str_replace('""', '"', $payload));
+    }
+
+    /**
+     * @return array<int|string, mixed>|null
+     */
+    private static function decodeText(string $payload): ?array
+    {
         if ($payload === '' || $payload[0] !== '[') {
             return null;
         }

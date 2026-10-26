@@ -53,4 +53,25 @@ final class AtakMedicalRosterTest extends TestCase
         self::assertStringContainsString('$gate->setFullRbacState($before[0], $before[1]);', $service);
         self::assertStringNotContainsString('->update(', $service);
     }
+
+    public function testPhoneReadsRecordsThroughLinkAndKeepsThemOnThePc(): void
+    {
+        $ext = $this->read('mod/UptoDate/COMSPECExtension/Extension.cs');
+        self::assertStringContainsString('if (function == "MedicalRoster" || function == "MedicalRosterInfo") return MedicalRosterCommand(function, args, token);', $ext);
+        self::assertStringContainsString(',MedicalRoster";', $ext);
+        $cache = $this->read('mod/UptoDate/COMSPECExtension/Extension_MedicalRoster.cs');
+        self::assertStringContainsString('"medical_roster.json"', $cache);
+        self::assertStringContainsString('/api/atak/medical-roster', $cache);
+        // Droit retiré sur le site : la copie du PC est effacée.
+        self::assertMatchesRegularExpression('/forbidden.*?MedicalRosterForget\(\)/s', $cache);
+        // La DLL de l'ATAK natif compile le fichier aussi (Extension.cs y appelle MedicalRosterCommand).
+        self::assertStringContainsString('Extension_MedicalRoster.cs', $this->read('mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/COMSPECATAKNativeExtension.csproj'));
+        $main = 'mod/COMSPEC_ATAK_Native/Sources/addons/main/';
+        self::assertStringContainsString('class medRoster {};', $this->read($main . 'config.cpp'));
+        $page = $this->read($main . 'functions/pages/fn_pageMedical.sqf');
+        self::assertStringContainsString('["DOSSIERS", "RECORDS"] call _tabBtn', $page);
+        self::assertStringContainsString('["load", true] call comspec_atak_native_fnc_medRoster;', $page);
+        self::assertStringContainsString('["find", _uid] call comspec_atak_native_fnc_medRoster;', $page);
+        self::assertStringContainsString('"MedicalRoster", [str _start, _mode]', $this->read($main . 'functions/pages/fn_medRoster.sqf'));
+    }
 }

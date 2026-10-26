@@ -9,7 +9,9 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 
-private _raw = ["COMSPECExtension" callExtension ["GetMedicalAlerts", ["1", "25"]]] call comspec_overwatch_connect_fnc_extResult;
+private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
+private _raw = ["COMSPECExtension" callExtension ["GetMedicalAlerts", [_mapId, "25"]]] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 private _parts = _raw splitString "|";
 private _prefix = if ((count _parts) >= 1) then { _parts select 0 } else { "" };
@@ -63,7 +65,16 @@ if (!_bootstrapped) then {
         private _id = _x getOrDefault ["id", ""];
         if (!(_id isEqualTo "") && {!(_id in _seen)}) then { _seen pushBack _id; };
     } forEach _alerts;
-    missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", true, false];
+    // La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+    // silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+    private _t0 = missionNamespace getVariable ["COMSPEC_MedicalAlertsFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_MedicalAlertsFirstOkAt", _t0, false];
+    };
+    if (({ _x isNotEqualTo "" } count _lines) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", true, false];
+    };
 } else {
     {
         private _a = _x;

@@ -8,7 +8,11 @@ if (isNull _d) exitWith { false };
 // Disposition déjà calculée par l'appelant (glisser du téléphone, fn_phoneDrag) : pas de second calcul.
 private _l = param [0, createHashMap, [createHashMap]];
 if ((count _l) isEqualTo 0) then { _l = [] call comspec_atak_native_fnc_layoutGet; };
+// Calques hors zone de contenu recréés à la nouvelle place (faux : fn_pageRender, qui les recrée lui-même après la page).
+private _overlays = param [1, true, [true]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Glisser de la coque en cours (fn_phoneDrag MOVE, à chaque image) : contrôles existants déplacés, pas recréés.
+private _dragging = (count (_s getOrDefault ["drag", []])) > 0;
 private _page = _s getOrDefault ["activePage", "LAUNCHER"];
 private _interactive = _l get "interactive";
 private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
@@ -30,6 +34,7 @@ private _pad = _l get "pad";
 private _font = _l get "font";
 private _fontS = _l get "fontSmall";
 
+private _devOld = ctrlPosition (_d displayCtrl 88510);
 [88510, _l get "device"] call _set;
 [88511, _l get "status"] call _set;
 
@@ -172,11 +177,90 @@ _wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in _walls});
 // Texte SITUATION : il vit désormais dans le volet défilant de la carte (fn_pageMap, fn_inspectorUpdate).
 (_d displayCtrl 88541) ctrlShow false;
 
-[] call comspec_atak_native_fnc_dockRender;
+// Contrôles d'une liste (listes imbriquées comprises) posés directement sur l'écran du téléphone.
+private _collect = {
+    private _out = [];
+    {
+        if (_x isEqualType controlNull) then {
+            if (!isNull _x && {isNull (ctrlParentControlsGroup _x)}) then { _out pushBack _x; };
+        } else {
+            if (_x isEqualType []) then { _out append (_x call _collect); };
+        };
+    } forEach _this;
+    _out
+};
+if (_dragging) then {
+    // Glisser : tuiles du dock / rail, effets d'écran, toasts, volet, écran de verrouillage et alertes décalés comme la
+    // coque (UP redessine la page et recrée tout).
+    private _ddx = _dx - (_devOld param [0, _dx]);
+    private _ddy = _dy - (_devOld param [1, _dy]);
+    private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+    private _sfx = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []];
+    private _all = ([
+        uiNamespace getVariable ["COMSPEC_ATAK_DockControls", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []],
+        _surf apply { _x param [1, controlNull] },
+        _sfx apply { _x param [1, controlNull] },
+        uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_ToastControls", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_ToastPill", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_LockCtrls", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_ShadeCtrls", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_FullAlertCtrls", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_BuzzCtrls", []],
+        // Contrôles de l'app posés hors du groupe de contenu (boussole, bandeau de position, barre de données de la
+        // carte…) et animation d'allumage : suivent la coque (le filtre ctrlParentControlsGroup écarte le contenu).
+        uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_PowerFxCtrls", []]
+    ] call _collect);
+    _all = _all arrayIntersect _all;
+    if ((abs _ddx) > 0.000001 || {(abs _ddy) > 0.000001}) then {
+        {
+            private _p = ctrlPosition _x;
+            _x ctrlSetPosition [(_p select 0) + _ddx, (_p select 1) + _ddy, _p select 2, _p select 3];
+            _x ctrlCommit 0;
+        } forEach _all;
+    };
+} else {
+    [] call comspec_atak_native_fnc_dockRender;
+};
 // Câble DL-7 branché (app Extraction) : suit la coque.
 [] call comspec_atak_native_fnc_dataOverlay;
 // Antenne d'extension vissée sur le port SMA (fn_antenna).
 ["overlay"] call comspec_atak_native_fnc_antenna;
 // Volet rapide : zone cliquable de la barre d'état et poignée (fn_quickSettings).
 ["handle"] call comspec_atak_native_fnc_quickSettings;
+// Mise en page seule (terminal de bord, taille CBA, antenne, menu ACE, touches) : les calques posés hors de la zone de
+// contenu (filtre de nuit, luminosité, fêlures, écran éteint et son bouton bloquant, toasts, verrouillage, volet,
+// alertes) restaient à l'ancienne place, en partie hors du téléphone. Ils sont recréés comme après un rendu de page.
+if (_overlays && {!_dragging}) then {
+    private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+    private _sfx = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []];
+    { ctrlDelete _x; } forEach ([
+        uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []],
+        _surf apply { _x param [1, controlNull] },
+        _sfx apply { _x param [1, controlNull] },
+        uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]
+    ] call _collect);
+    uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
+    uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
+    uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
+    uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
+    [] call comspec_atak_native_fnc_deviceOverlay;
+    uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+    uiNamespace setVariable ["COMSPEC_ATAK_ToastSig", []];
+    [] call comspec_atak_native_fnc_notificationsRender;
+    ["raise"] call comspec_atak_native_fnc_fx;
+    // Contrôles de l'app posés hors du groupe de contenu (boussole, bandeau de position, recherche de la carte, palette,
+    // Garmin, Plan, JTAC…) : coordonnées absolues, restés à l'ancien cadre. Page redessinée à l'image suivante, sauf si
+    // l'appelant l'a déjà redessinée entre-temps (fn_pageSettings, XEH_preInit : mise en page puis rendu).
+    [{
+        params ["_seq"];
+        if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) isNotEqualTo _seq) exitWith {};
+        private _s2 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        if ((count (_s2 getOrDefault ["drag", []])) > 0) exitWith {};
+        [_s2 getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender;
+    }, [uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]] call CBA_fnc_execNextFrame;
+};
 true

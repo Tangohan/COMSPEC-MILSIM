@@ -36,6 +36,18 @@ public static partial class Extension
     {
         var dir = Path.Combine(Path.GetTempPath(), "COMSPEC_BT");
         Directory.CreateDirectory(dir);
+        // Réceptions abandonnées (jeu fermé pendant un transfert, erreur) : fichiers .part préalloués (jusqu'à 30 Mo)
+        // de plus d'une heure supprimés, sauf ceux d'une réception en cours.
+        try
+        {
+            var active = BtRecvs.Values.Select(v => v.Temp).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var f in Directory.EnumerateFiles(dir, "*.part"))
+            {
+                if (active.Contains(f)) continue;
+                try { if (DateTime.UtcNow - File.GetLastWriteTimeUtc(f) > TimeSpan.FromHours(1)) File.Delete(f); } catch { /* ignoré */ }
+            }
+        }
+        catch { /* nettoyage facultatif */ }
         return dir;
     }
 
@@ -182,22 +194,36 @@ public static partial class Extension
                     if (!BtRecvs.TryRemove(id, out var r)) return "ERR|réception inconnue";
                     if (r.Got < r.Size)
                     {
-                        try { File.Delete(r.Temp); } catch { /* fichier encore ouvert : nettoyé au prochain envoi */ }
+                        try { File.Delete(r.Temp); } catch { /* fichier encore ouvert : supprimé par BtTempFolder après une heure */ }
                         return "ERR|fichier incomplet";
                     }
                     string dir;
                     if (r.Kind == "photo")
                     {
                         dir = ComspecCaptureDir() ?? "";
-                        if (dir.Length == 0) return "ERR|dossier des captures introuvable";
+                        if (dir.Length == 0)
+                        {
+                            try { File.Delete(r.Temp); } catch { /* ignoré */ }
+                            return "ERR|dossier des captures introuvable";
+                        }
                     }
                     else
                     {
                         dir = Path.Combine(MusicFolder(), "Bluetooth");
-                        Directory.CreateDirectory(dir);
+                        try { Directory.CreateDirectory(dir); }
+                        catch
+                        {
+                            try { File.Delete(r.Temp); } catch { /* ignoré */ }
+                            throw;
+                        }
                     }
                     var final = BtUnique(dir, r.Name);
-                    File.Move(r.Temp, final);
+                    try { File.Move(r.Temp, final); }
+                    catch
+                    {
+                        try { File.Delete(r.Temp); } catch { /* ignoré */ }
+                        throw;
+                    }
                     var shown = r.Kind == "music" ? Path.GetRelativePath(MusicFolder(), final) : Path.GetFileName(final);
                     return "OK|" + final.Replace('\\', '/') + "|" + shown.Replace("|", "_");
                 }

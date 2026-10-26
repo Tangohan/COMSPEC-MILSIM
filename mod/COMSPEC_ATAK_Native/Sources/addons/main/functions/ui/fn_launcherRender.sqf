@@ -62,10 +62,29 @@ if (_searchOn) then {
         // Entrée : ouvre la première app trouvée.
         if (_key in [0x1C, 0x9C]) exitWith {
             private _f = toLower trim (ctrlText _e);
-            private _hit = (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible && {(toLower (_x get "name")) find _f >= 0} }) param [0, createHashMap];
-            if ((count _hit) > 0 && {_f isNotEqualTo ""}) then {
+            // Premier résultat affiché pour ce texte (relevé au rendu), sinon même recherche que la liste : nom source,
+            // section ou nom traduit (en anglais, « settings » ne trouvait rien : seul le nom français était testé).
+            (uiNamespace getVariable ["COMSPEC_ATAK_LauncherFirst", ["", ""]]) params [["_ff", ""], ["_fp", ""]];
+            private _hitPage = if ((toLower trim _ff) isEqualTo _f && {_fp isNotEqualTo ""}) then { _fp } else {
+                // Même base que le rendu : puce ÉPINGLÉES ou section choisie (Entrée avant le redessin différé).
+                private _all = ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible };
+                private _sec = uiNamespace getVariable ["COMSPEC_ATAK_LauncherSection", ""];
+                private _base = _all;
+                if (_sec isEqualTo "*PIN") then {
+                    private _pins = profileNamespace getVariable ["COMSPEC_ATAK_PinnedApps", []];
+                    if !(_pins isEqualType []) then { _pins = []; };
+                    _base = _pins apply { private _p = _x; (_all select { (_x get "page") isEqualTo _p }) param [0, createHashMap] };
+                    _base = _base select { (count _x) > 0 };
+                } else {
+                    if (_sec isNotEqualTo "") then { _base = _all select { (_x get "section") isEqualTo _sec }; };
+                };
+                // Puce obsolète (aucune app) : le rendu repasse sur TOUT.
+                if ((count _base) isEqualTo 0) then { _base = _all; };
+                ((_base select { ((toLower (_x get "name")) find _f) >= 0 || {((toLower (_x get "section")) find _f) >= 0} || {((toLower ((_x get "name") call comspec_atak_native_fnc_tr)) find _f) >= 0} }) param [0, createHashMap]) getOrDefault ["page", ""]
+            };
+            if (_hitPage isNotEqualTo "" && {_f isNotEqualTo ""}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_LauncherFilter", ""];
-                [{ [_this] call comspec_atak_native_fnc_navigate; }, _hit get "page"] call CBA_fnc_execNextFrame;
+                [{ [_this] call comspec_atak_native_fnc_navigate; }, _hitPage] call CBA_fnc_execNextFrame;
             };
         };
         private _tok = diag_tickTime;
@@ -152,6 +171,8 @@ switch (true) do {
         private _base = [_apps, _pinApps] select (_secSel isEqualTo "*PIN");
         if (_secSel isNotEqualTo "" && {_secSel isNotEqualTo "*PIN"}) then { _base = _apps select { (_x get "section") isEqualTo _secSel }; };
         _groups pushBack ["", format ["Résultats pour « %1 »", _filter], _base select { ((toLower (_x get "name")) find _f) >= 0 || {((toLower (_x get "section")) find _f) >= 0} || {((toLower ((_x get "name") call comspec_atak_native_fnc_tr)) find _f) >= 0} }];
+        // Entrée dans la recherche : ouvre ce premier résultat affiché.
+        uiNamespace setVariable ["COMSPEC_ATAK_LauncherFirst", [_filter, ((((_groups select 0) select 2) param [0, createHashMap]) getOrDefault ["page", ""])]];
     };
     case (_secSel isEqualTo "*PIN"): { _groups pushBack ["", "Épinglées", _pinApps]; };
     case (_secSel isNotEqualTo ""): { _groups pushBack ["", _secSel, _apps select { (_x get "section") isEqualTo _secSel }]; };

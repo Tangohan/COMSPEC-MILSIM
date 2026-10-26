@@ -18,12 +18,18 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_dockServer;
 // Contrôle Zeus des ATAK : effets par joueur, brouilleurs de zone, report à la réapparition (fn_zeusServer).
 ["init"] call comspec_atak_native_fnc_zeusServer;
+// CR de fin d'opération imposé en jeu : droits, envoi aux joueurs visés, suivi (fn_debriefServer).
+["init"] call comspec_atak_native_fnc_debriefServer;
 // App Admin du téléphone : relevé de la partie et debug de l'IA à la demande d'un Zeus ou d'un gestionnaire (fn_adminServer).
 ["init"] call comspec_atak_native_fnc_adminServer;
 // API brouilleurs pour les missions et les autres mods, objets brouilleurs d'autres mods (fn_jammer).
 ["init"] call comspec_atak_native_fnc_jammer;
 // Écrans COMSPEC : registre des écrans où l'app Briefing diffuse ses diapositives (fn_screenCast).
 ["initServer"] call comspec_atak_native_fnc_screenCast;
+// Écrans TOC : registre, données du réseau calculées ici pour tous (fn_tocFeed), écrans gardés d'une partie à l'autre.
+["initServer"] call comspec_atak_native_fnc_tocScreen;
+// IA et ATAK : IA équipées par le réglage ou la mission, leurs points PLI envoyés par le serveur (fn_aiAtak).
+["init"] call comspec_atak_native_fnc_aiAtak;
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
 ["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.

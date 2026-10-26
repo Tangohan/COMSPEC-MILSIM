@@ -25,6 +25,8 @@ if (!(_inbox isEqualType [])) then { _inbox = []; };
 
 private _seen = missionNamespace getVariable ["COMSPEC_Athena_RemoteAlertIds", []];
 if (!(_seen isEqualType [])) then { _seen = []; };
+// Premier passage de la session : peuplement silencieux (pas de replay des 40 alertes passées au join / JIP).
+private _bootTa = missionNamespace getVariable ["COMSPEC_TacticalAlertsBootstrapped", false];
 
 private _myCs = "";
 if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
@@ -91,7 +93,7 @@ private _playUnconscious = false;
     _added = _added + 1;
 
     private _fromMe = (toLower _from) isEqualTo (toLower _myCs) || {(toLower _from) isEqualTo (toLower (name player))};
-    if (!_fromMe) then {
+    if (!_fromMe && {_bootTa}) then {
         _notifyTitles pushBack format ["%1 — %2", _kindLabel, if (_from isEqualTo "") then { "Athena" } else { _from }];
         if (_kindKey isEqualTo "EAGLE_DOWN") then { _playUnconscious = true; };
         private _detail = format [
@@ -118,6 +120,18 @@ while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
 
 missionNamespace setVariable ["COMSPEC_Athena_RemoteAlertIds", _seen, false];
 missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
+// La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+// silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+if (!_bootTa) then {
+    private _t0 = missionNamespace getVariable ["COMSPEC_TacticalAlertsFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_TacticalAlertsFirstOkAt", _t0, false];
+    };
+    if (({ _x isNotEqualTo "" } count _lines) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_TacticalAlertsBootstrapped", true, false];
+    };
+};
 
 if (_added > 0) then {
     ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;

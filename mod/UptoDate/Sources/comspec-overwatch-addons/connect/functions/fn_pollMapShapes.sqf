@@ -11,7 +11,9 @@ if (
 private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
 
-private _raw = ["COMSPECExtension" callExtension ["GetMapShapes", ["1", ""]]] call comspec_overwatch_connect_fnc_extResult;
+private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
+private _raw = ["COMSPECExtension" callExtension ["GetMapShapes", [_mapId, ""]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {
     ["formes", 0, " (vide ou erreur)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 };

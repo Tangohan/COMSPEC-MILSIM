@@ -23,7 +23,7 @@ private _style = toUpper (missionNamespace getVariable ["comspec_atak_native_map
 private _now = diag_tickTime;
 
 // Candidats (repères ponctuels titrés et visibles), refaits une fois par seconde depuis le magasin des marqueurs.
-private _cand = uiNamespace getVariable ["COMSPEC_ATAK_MkTextCand", [-1, []]];
+private _cand = missionNamespace getVariable ["COMSPEC_ATAK_MkTextCand", [-1, []]];
 if (_now > (_cand select 0)) then {
     private _colCache = uiNamespace getVariable "COMSPEC_ATAK_MkColorCache";
     if (isNil "_colCache") then { _colCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MkColorCache", _colCache]; };
@@ -75,7 +75,7 @@ if (_now > (_cand select 0)) then {
     // LOCK d'abord (jamais masqués par un autre nom), puis l'ordre des marqueurs.
     _list = (_list select { (count (_x select 6)) > 0 }) + (_list select { (count (_x select 6)) isEqualTo 0 });
     _cand = [_now + 1, _list];
-    uiNamespace setVariable ["COMSPEC_ATAK_MkTextCand", _cand];
+    missionNamespace setVariable ["COMSPEC_ATAK_MkTextCand", _cand];
 };
 if ((count (_cand select 1)) isEqualTo 0) exitWith {};
 
@@ -84,6 +84,12 @@ private _o0 = _map ctrlMapScreenToWorld [_mx, _my];
 private _mpx = (((_map ctrlMapScreenToWorld [_mx + 0.1, _my]) select 0) - (_o0 select 0)) / 0.1;
 private _mpy = ((_o0 select 1) - ((_map ctrlMapScreenToWorld [_mx, _my + 0.1]) select 1)) / 0.1;
 if (_mpx <= 0 || {_mpy <= 0}) exitWith {};
+// Vue en coordonnées du monde (+ marge : une cible suivie bouge entre deux relectures du magasin) : les repères hors vue
+// sont écartés sur leur position du magasin, avant les lectures en direct (getMarkerPos, markerAlpha) et la projection.
+private _o1 = _map ctrlMapScreenToWorld [_mx + _mw, _my + _mh];
+private _mg = ((abs ((_o1 select 0) - (_o0 select 0))) * 0.25) max 50;
+private _vx0 = ((_o0 select 0) min (_o1 select 0)) - _mg; private _vx1 = ((_o0 select 0) max (_o1 select 0)) + _mg;
+private _vy0 = ((_o0 select 1) min (_o1 select 1)) - _mg; private _vy1 = ((_o0 select 1) max (_o1 select 1)) + _mg;
 private _far = _scale >= 0.3;
 private _close = _scale < 0.08;
 private _sel = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""];
@@ -125,6 +131,10 @@ private _n = 0;
     if (_eni && {_boxOn}) then { continue };
     private _isLock = (count _lock) > 0;
     if (_far && {!_isLock} && {_id isNotEqualTo _sel}) then { continue };
+    if (!_isLock && {_id isNotEqualTo _sel} && {
+        private _wx = _pos param [0, 0]; private _wy = _pos param [1, 0];
+        _wx < _vx0 || {_wx > _vx1} || {_wy < _vy0} || {_wy > _vy1}
+    }) then { continue };
     // Repère du jeu : position et titre lus en direct (une cible suivie bouge entre deux relectures du magasin).
     if (_local) then {
         _pos = getMarkerPos _id;
@@ -166,7 +176,7 @@ private _n = 0;
                     private _dc = _distCache getOrDefault ["mk:" + _id, []];
                     if ((count _dc) < 2 || {_now > (_dc select 0)}) then {
                         private _d = player distance2D _pos;
-                        _dc = [_now + 0.5, format ["%1 · %2°", [format ["%1 m", round _d], format ["%1 km", ((_d / 1000) toFixed 1) splitString "." joinString ","]] select (_d >= 1000), (round (player getDir _pos)) mod 360]];
+                        _dc = [_now + 0.5, format ["%1 · %2°", [format ["%1 m", round _d], format ["%1 km", [(_d / 1000) toFixed 1, ((_d / 1000) toFixed 1) splitString "." joinString ","] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")]] select (_d >= 1000), (round (player getDir _pos)) mod 360]];
                         _distCache set ["mk:" + _id, _dc];
                     };
                     _t2 = _dc select 1;
