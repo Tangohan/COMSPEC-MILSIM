@@ -14,6 +14,13 @@ if (_drawnPage isNotEqualTo "") then {
 if (_state getOrDefault ["texture", false]) then { ["close"] call comspec_atak_native_fnc_jpcMap; };
 private _wasInteractive = _state getOrDefault ["interactive", false];
 [] call comspec_atak_native_fnc_schedulerStop;
+// Menu d'actions (fn_open) : gestionnaires inGameUI retirés une fois le téléphone rangé, sauf s'il a été rouvert entre-temps
+// (bascule HUD / en main : fn_open les a déjà réinstallés).
+[{
+    if ((uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]) isNotEqualTo _this) exitWith {};
+    if (!isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+    { inGameUISetEventHandler [_x, ""]; } forEach ["PrevAction", "NextAction", "Action"];
+}, uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]] call CBA_fnc_execNextFrame;
 ["stop"] call comspec_atak_native_fnc_foreignHud;
 _state set ["display", displayNull];
 private _chat = uiNamespace getVariable ["COMSPEC_ATAK_ChatEdit", controlNull];

@@ -14869,7 +14869,7 @@
 ["Versions publiées", "", "Published versions"],
 ["Vert", "", "Green"],
 ["Vert : vu", "", "Green: seen"],
-["vert > 75 %, orange 50 à 75 %, rouge 25 à 50 %, noir < 25 %", "", "green > 75%, orange 50 to 75%, red 25 to 50%, black < 25%"],
+["vert plus de 75 %, orange 50 à 75 %, rouge 25 à 50 %, noir moins de 25 %", "", "green over 75%, orange 50 to 75%, red 25 to 50%, black under 25%"],
 ["Vert lime", "", "Lime green"],
 ["VERT OD", "", "GREEN R"],
 ["Vert OD", "", "OD Green"],

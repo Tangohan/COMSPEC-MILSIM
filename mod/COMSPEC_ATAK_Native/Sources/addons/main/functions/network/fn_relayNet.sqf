@@ -359,8 +359,14 @@ switch (_act) do {
             private _aut = _x getVariable ["COMSPEC_AtakRelayAutonomy", 0];
             private _bt = _x getVariable ["COMSPEC_AtakRelayBatt", -1];
             if (!(_aut isEqualType 0) || {_aut <= 0} || {!(_bt isEqualType 0)} || {_bt <= 0}) then { continue };
-            private _nb = (_bt - 50 / _aut) max 0;
-            _x setVariable ["COMSPEC_AtakRelayBatt", [_nb, 0] select (_nb < 0.5), true];
+            // Valeur précise gardée sur le serveur (locale) ; la valeur publique, arrondie au %, n'est diffusée que si elle change.
+            // Écart > 0,5 avec la valeur publique : batterie changée ou réglée ailleurs (Zeus, module), on repart de celle-ci.
+            private _pr = _x getVariable ["COMSPEC_AtakRelayBattPrec", _bt];
+            if (!(_pr isEqualType 0) || {abs (_pr - _bt) > 0.5}) then { _pr = _bt; };
+            private _nb = (_pr - 50 / _aut) max 0;
+            _x setVariable ["COMSPEC_AtakRelayBattPrec", _nb];
+            private _pub = [round _nb, 0] select (_nb < 0.5);
+            if (_pub isNotEqualTo _bt) then { _x setVariable ["COMSPEC_AtakRelayBatt", _pub, true]; };
         } forEach (missionNamespace getVariable ["COMSPEC_AtakRelays", []]);
     };
     case "link": {

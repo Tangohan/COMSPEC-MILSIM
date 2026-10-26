@@ -23,7 +23,8 @@
 private _ic = { "\a3\ui_f\data\igui\cfg\simpletasks\types\" + _this + "_ca.paa" };
 private _dir = ["N", "NE", "E", "SE", "S", "SO", "O", "NO", "STATIQUE", "INCONNUE"];
 private _lvl = ["VERT", "ORANGE", "ROUGE", "NOIR"];
-private _lvlHelp = "vert > 75 %, orange 50 à 75 %, rouge 25 à 50 %, noir < 25 %";
+// Sans « < » ni « > » nus : le texte passe dans du texte structuré (parseText).
+private _lvlHelp = "vert plus de 75 %, orange 50 à 75 %, rouge 25 à 50 %, noir moins de 25 %";
 private _meta = {
     params ["_tag", "_icon", ["_color", "#5cc76b"], ["_extra", []]];
     private _m = createHashMapFromArray [["tag", _tag], ["icon", _icon call _ic], ["color", _color], ["banner", ""], ["prio", "ROUTINE"],

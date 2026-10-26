@@ -406,7 +406,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _m = createMarkerLocal [format ["COMSPEC_PANIC_%1_%2", _who, round diag_tickTime], _pos];
     _m setMarkerTypeLocal "mil_warning";
     _m setMarkerColorLocal "ColorRed";
-    _m setMarkerTextLocal format ["PANIQUE %1", _who];
+    _m setMarkerTextLocal format [("PANIQUE %1" call comspec_atak_native_fnc_tr), _who];
     [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
     ["PANIC", _who, _pos, _grid, "En détresse"] call comspec_atak_native_fnc_alertsLog;
 }] call CBA_fnc_addEventHandler;
@@ -424,7 +424,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _m = createMarkerLocal [format ["COMSPEC_ALERT_%1_%2", _type, round (diag_tickTime * 10)], _pos];
     _m setMarkerTypeLocal (createHashMapFromArray [["TIC", "mil_warning"], ["TIC_CLEAR", "mil_flag"], ["EAGLE_DOWN", "mil_destroy"]] getOrDefault [_type, "mil_unknown"]);
     _m setMarkerColorLocal (createHashMapFromArray [["TIC", "ColorOrange"], ["TIC_CLEAR", "ColorGreen"], ["EAGLE_DOWN", "ColorRed"]] getOrDefault [_type, "ColorYellow"]);
-    _m setMarkerTextLocal format ["%1 %2", _label, _who];
+    _m setMarkerTextLocal format ["%1 %2", _label call comspec_atak_native_fnc_tr, _who];
     [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
     [_type, _who, _pos, _grid, _text] call comspec_atak_native_fnc_alertsLog;
 }] call CBA_fnc_addEventHandler;
@@ -477,7 +477,7 @@ player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_l
 if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {
         if (isNil "ace_common_fnc_progressBar") exitWith { [] call comspec_atak_native_fnc_batterySwap; };
-        [5, [], { [] call comspec_atak_native_fnc_batterySwap; }, {}, "Changement de la batterie…"] call ace_common_fnc_progressBar;
+        [5, [], { [] call comspec_atak_native_fnc_batterySwap; }, {}, ("Changement de la batterie…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
     }, {
         [player] call comspec_atak_native_fnc_hasDevice && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) < 95}
         && {([player] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ""}
@@ -488,7 +488,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     // Les actions ne suivent pas le joueur à la réapparition : remise sur la nouvelle unité.
     private _add = {
         params ["_u"];
-        _u addAction ["<t color='#7fd0b0'>Changer la batterie ATAK</t>", { [] call comspec_atak_native_fnc_batterySwap; }, nil, 1, false, true, "",
+        _u addAction [format ["<t color='#7fd0b0'>%1</t>", "Changer la batterie ATAK" call comspec_atak_native_fnc_tr], { [] call comspec_atak_native_fnc_batterySwap; }, nil, 1, false, true, "",
             "_this isEqualTo _target && {[_this] call comspec_atak_native_fnc_hasDevice} && {(missionNamespace getVariable ['COMSPEC_ATAK_Battery', 100]) < 95} && {([_this] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ''}"];
     };
     missionNamespace setVariable ["COMSPEC_ATAK_BatterySwapAction", _add];
@@ -797,7 +797,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         private _go = { params ["_t"]; [_t, "measure"] call comspec_atak_native_fnc_medVitals;
             ["SUCCESS", format ["Tension et SpO2 mesurées : %1", [_t, true] call comspec_atak_native_fnc_unitCallsign], 4, 30] call comspec_atak_native_fnc_notify; };
         if (isNil "ace_common_fnc_progressBar") exitWith { [_target] call _go; };
-        [8, [_target, _go], { (_this select 0) params ["_t", "_go"]; [_t] call _go; }, {}, "Brassard et oxymètre…",
+        [8, [_target, _go], { (_this select 0) params ["_t", "_go"]; [_t] call _go; }, {}, ("Brassard et oxymètre…" call comspec_atak_native_fnc_tr),
             { (_this select 0) params ["_t"]; alive _t && {(player distance _t) < 3} }] call ace_common_fnc_progressBar;
         player playActionNow "Medic";
     };
@@ -843,7 +843,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _con = ["COMSPEC_ATAK_DronePair", "Connecter l'ATAK au drone", "", {
         params ["_t"];
         if (isNil "ace_common_fnc_progressBar") exitWith { ["pair", _t] call comspec_atak_native_fnc_droneAction; };
-        [4, [_t], { ["pair", (_this select 0) select 0] call comspec_atak_native_fnc_droneAction; }, {}, "Appairage du drone…"] call ace_common_fnc_progressBar;
+        [4, [_t], { ["pair", (_this select 0) select 0] call comspec_atak_native_fnc_droneAction; }, {}, ("Appairage du drone…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
     }, { [_target] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneCan", { false }]) }] call comspec_atak_native_fnc_aceAction;
     ["Air", 0, ["ACE_MainActions"], _con, true] call ace_interact_menu_fnc_addActionToClass;
     private _dis = ["COMSPEC_ATAK_DroneUnpair", "Déconnecter l'ATAK du drone", "", { ["unpair"] call comspec_atak_native_fnc_droneAction; },
@@ -856,9 +856,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     {
         if (unitIsUAV _x && {!(_x getVariable ["COMSPEC_ATAK_DroneActs", false])}) then {
             _x setVariable ["COMSPEC_ATAK_DroneActs", true];
-            _x addAction ["<t color='#7fd0b0'>Connecter l'ATAK au drone</t>", { ["pair", _this select 0] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
+            _x addAction [format ["<t color='#7fd0b0'>%1</t>", "Connecter l'ATAK au drone" call comspec_atak_native_fnc_tr], { ["pair", _this select 0] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
                 "[_target] call (missionNamespace getVariable ['COMSPEC_ATAK_DroneCan', { false }])", 4];
-            _x addAction ["<t color='#e0a050'>Déconnecter l'ATAK du drone</t>", { ["unpair"] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
+            _x addAction [format ["<t color='#e0a050'>%1</t>", "Déconnecter l'ATAK du drone" call comspec_atak_native_fnc_tr], { ["unpair"] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
                 "[_target] call (missionNamespace getVariable ['COMSPEC_ATAK_DroneIsMine', { false }])", 4];
         };
     } forEach (player nearEntities [["Air", "LandVehicle"], 15]);

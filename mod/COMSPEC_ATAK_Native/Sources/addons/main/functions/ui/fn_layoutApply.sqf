@@ -230,6 +230,26 @@ if (_dragging) then {
 ["overlay"] call comspec_atak_native_fnc_antenna;
 // Volet rapide : zone cliquable de la barre d'état et poignée (fn_quickSettings).
 ["handle"] call comspec_atak_native_fnc_quickSettings;
+// Animation d'alimentation en cours (fn_powerFx) : aussi après un rendu de page (fn_pageRender appelle sans calques :
+// bascule portrait/paysage, mini/plein écran), sinon voile et bouton bloquant restaient à l'ancien cadre.
+if (!_dragging) then {
+    // Voile, bouton bloquant, icône et texte au nouveau cadre.
+    // Le trait blanc (_crt), déjà en train de se refermer, est replacé par l'étape suivante (cadre relu).
+    (uiNamespace getVariable ["COMSPEC_ATAK_PowerFxCtrls", []]) params [["_pfB", controlNull], ["_pfD", controlNull], ["_pfI", controlNull], ["_pfT", controlNull], ["_pfC", controlNull]];
+    if (!isNull _pfB) then {
+        private _pih = _dh * ([0.2, 0.3] select (_l getOrDefault ["landscape", false]));
+        {
+            _x params ["_c", "_p"];
+            if (!isNull _c) then { _c ctrlSetPosition _p; _c ctrlCommit 0; };
+        } forEach [
+            [_pfB, [_dx, _dy, _dw, _dh]],
+            [_pfD, [_dx, _dy, _dw, _dh]],
+            [_pfI, [_dx + (_dw - _pih / _ratio) / 2, _dy + _dh * 0.5 - _pih * 0.75, _pih / _ratio, _pih]],
+            [_pfT, [_dx, _dy + _dh * 0.5 + _pih * 0.3, _dw, _font * 3]],
+            [[_pfC, controlNull] select (!isNull _pfC && {ctrlShown _pfC}), [_dx, _dy, _dw, _dh]]
+        ];
+    };
+};
 // Mise en page seule (terminal de bord, taille CBA, antenne, menu ACE, touches) : les calques posés hors de la zone de
 // contenu (filtre de nuit, luminosité, fêlures, écran éteint et son bouton bloquant, toasts, verrouillage, volet,
 // alertes) restaient à l'ancienne place, en partie hors du téléphone. Ils sont recréés comme après un rendu de page.

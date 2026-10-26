@@ -495,6 +495,9 @@ def stringtable():
         print("  " + fr)
 
 
+FR_AMBIGUOUS = {"Dock", "Support"}
+
+
 def build_fr():
     """i18n/fr.txt : [["texte anglais", "français"], ...], chargé par fn_langApply quand la langue est le français."""
     import html as _h
@@ -518,6 +521,10 @@ def build_fr():
         en, fr = line.split("\t", 1)
         if en != fr:
             pairs[en] = fr
+    # Mots anglais à double sens : fn_tr traduit chaque texte affiché, donc « Dock » (repère de carte) renommerait le
+    # pli « Dock » des réglages en « Quai », et « Support » (nom par défaut d'un appareil DL-7) deviendrait « Soutien ».
+    for en in FR_AMBIGUOUS:
+        pairs.pop(en, None)
     out = os.path.join(ROOT, "Sources", "addons", "main", "i18n", "fr.txt")
     esc = lambda t: t.replace('"', '""')
     with open(out, "w", encoding="utf-8", newline="\n") as f:

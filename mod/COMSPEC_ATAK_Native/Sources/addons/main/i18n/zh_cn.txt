@@ -11999,7 +11999,7 @@
 ["Versions et simulations", "版本和模拟"],
 ["Vert", "绿色"],
 ["Vert : vu", "绿色：可见"],
-["vert > 75 %, orange 50 à 75 %, rouge 25 à 50 %, noir < 25 %", "绿色 > 75%，橙色 50–75%，红色 25–50%，黑色 < 25%"],
+["vert plus de 75 %, orange 50 à 75 %, rouge 25 à 50 %, noir moins de 25 %", "绿色 75% 以上，橙色 50–75%，红色 25–50%，黑色 25% 以下"],
 ["Vert lime", "青柠绿"],
 ["VERT OD", "绿色 OD"],
 ["Vert OD", "OD 军绿色"],

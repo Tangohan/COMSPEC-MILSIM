@@ -70,7 +70,8 @@ private _ok = true;
 [{
     params ["_id", "_author", "_message"];
     private _raw = ["SendChat", [_author, _message]] call comspec_atak_native_fnc_extensionCall;
-    private _ok = (_raw find "OK|") isEqualTo 0;
+    // SendChat part en file dans la DLL et répond "" : seul un retour ERR est un échec.
+    private _ok = (toUpper (_raw select [0, 3])) isNotEqualTo "ERR";
     private _outbox = +((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["outbox", []]);
     { if ((_x getOrDefault ["id", ""]) isEqualTo _id) then { _x set ["status", ["FAILED", "SENT"] select _ok]; }; } forEach _outbox;
     ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
