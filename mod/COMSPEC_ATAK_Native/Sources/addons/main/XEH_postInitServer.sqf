@@ -50,6 +50,11 @@ private _keep = {
     COMSPEC_ATAK_SrvLog set [_side, _l];
 };
 missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
+// Marqueurs « réseau ATAK uniquement » (fn_markerNet) : mémoire du serveur et remise aux joueurs du canal.
+["comspec_atak_native_tacMkSrv", { ["srv", _this] call comspec_atak_native_fnc_markerNet; }] call CBA_fnc_addEventHandler;
+// Heure et auteur des marqueurs Arma (carte d'Arma ou téléphone), redonnés aux joueurs qui rejoignent (fiche du marqueur).
+addMissionEventHandler ["MarkerCreated", { params ["_m", "", ["_owner", objNull]]; if (!isNull _owner) then { ["srvMeta", [_m, _owner]] call comspec_atak_native_fnc_markerNet; }; }];
+addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNull]] call comspec_atak_native_fnc_markerNet; }];
 ["comspec_atak_native_logi", { [_this param [1, ""], "comspec_atak_native_logi", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_medevac", { [_this param [1, ""], "comspec_atak_native_medevac", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_bda", { [_this param [1, ""], "comspec_atak_native_bda", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;

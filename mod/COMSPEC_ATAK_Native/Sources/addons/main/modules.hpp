@@ -461,6 +461,30 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
             defaultValue = "false";
             typeName = "BOOL";
         };
+        class Cond {
+            displayName = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_TIP";
+            property = "COMSPEC_ATAK_Module_Relay_Cond";
+            control = "Combo";
+            expression = "_this setVariable ['Cond',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_ALWAYS"; value = ""; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_MAST"; value = "mast"; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_STOPPED"; value = "stopped"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_ENGINE"; value = "engineoff"; };
+            };
+        };
+        class CondCode {
+            displayName = "$STR_COMSPEC_ATAK_CFG_RELAYCODE_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_RELAYCODE_TIP";
+            property = "COMSPEC_ATAK_Module_Relay_CondCode";
+            control = "EditCodeMulti3";
+            expression = "_this setVariable ['CondCode',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
     };
     class ModuleDescription {
         description = "$STR_COMSPEC_ATAK_CFG_22558DD904";
