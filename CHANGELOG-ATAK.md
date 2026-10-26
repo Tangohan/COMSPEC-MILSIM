@@ -38,6 +38,34 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Correctif de sécurité : liaison Athena, relais ATAK, Windows en français (ATAK natif 2.4.1.AB - Denver, COMSPEC Link 2.0.96)
+
+### Résumé joueur
+Type : correctif
+FR : Mise à jour de sécurité obligatoire
+- Deux failles corrigées (liaison Athena et relais ATAK).
+- Météo radio et relèvements SIGINT réparés sous Windows en français.
+- Un refus d'Athena sur une seule app ne coupe plus toute la liaison.
+- Athena refusera bientôt les versions précédentes du mod.
+EN : Mandatory security update
+- Two security holes fixed (Athena link and ATAK relays).
+- Radio weather and SIGINT bearings fixed on Windows set to French.
+- If Athena refuses one app, the rest of the link keeps working.
+- Athena will soon refuse older versions of the mod.
+
+### Détail technique
+Correctif seul de la 2.4.0 publiée (audit d'ingénierie, SEC-001, DLL-003, DLL-007 ; revue du mod, tour 4, pour les relais). Versions : ATAK natif 2.4.1, COMSPEC Link 2.0.96, Overwatch connect 1.6.19 (la 1.6.18, écusson Donateur, déjà sur main, sort avec cette version).
+
+- SEC-001 (DLL Link, critique) : `AttachApiKeyHeader` attachait la clé de la communauté, le jeton de session et le SteamID à toute adresse fournie par le SQF (`Connect`, `PairStart`, `RedeemGameLink`, `LinkBySteam`…, URL absolue de `DownloadBriefingSlideImage`, variable publique `COMSPEC_ATAK_ScreenCast`), redirections comprises. Désormais aucun secret ne part hors des hôtes Athena de confiance, en HTTPS seulement ; les redirections et la file d'envoi disque ne transportent plus de secrets vers un autre hôte. `fn_connect` refuse une adresse hors Athena.
+- Relais (exécution de code à distance) : `fn_relayCond` compilait sur chaque poste la variable publique `COMSPEC_AtakRelayCond`, que tout client peut écrire. La condition en code n'est plus évaluée que par le serveur, depuis sa copie locale `COMSPEC_AtakRelayCondSrv`, et le résultat est publié dans `COMSPEC_AtakRelayCondOk`. **Rupture pour les missions** : une condition en code posée par script s'écrit maintenant côté serveur dans `COMSPEC_AtakRelayCondSrv` ; les préréglages (`mast`, `stopped`, `engineoff`) et le module « ATAK · Relais » posé dans Eden ne changent pas.
+- DLL-003 : nombres lus et écrits en culture invariante (`NumberStyles.Float`, `CultureInfo.InvariantCulture`) : sur un Windows en français, la météo radio échouait ou rendait « 0,89 » et le gisement SIGINT était perdu.
+- DLL-007 (régression 2.4.0) : un 403 « règle » sur une seule route coupait toute la liaison. Il ne verrouille plus que cette route (30 min), après vérification de `client-init` ; le verrou global ne tombe que si `client-init` refuse aussi.
+- Côté site (PR séparée) : Athena peut refuser les DLL Link antérieures à 2.0.96 (`MOD_OUTDATED`, « mettez le mod à jour »). Le plancher reste inactif jusqu'à la publication Steam de cette version.
+- Sortie : recompiler les deux DLL sous Windows (`build_mod.bat`) et les committer (les copies du dépôt sont périmées), reconstruire main.pbo et le PBO connect, mettre à jour le pack S.O.A.R.
+- Connu, hors de ce correctif (lot séparé) : la clé de la communauté reste rangée dans le profil Arma, lisible par une mission (SEC-009).
+
+---
+
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
