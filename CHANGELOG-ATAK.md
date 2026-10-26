@@ -44,21 +44,21 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 Type : nouveauté
 FR : Diapositives sur les écrans, textes plus lisibles et 131 correctifs
 - Les écrans du jeu (TV, projection, ordinateur) affichent enfin la diapositive diffusée depuis le téléphone, Google Slides compris, et l'app Briefing lit les présentations du mod Live Presentation de FENRIR.
-- Le texte du téléphone suit sa taille et le réglage Taille du texte : plus de texte coupé ni de sous-menus assombris, bandeau GPS lisible.
+- Le texte du téléphone suit sa taille et le réglage Taille du texte : plus de texte coupé ni de sous-menus assombris, bandeau GPS lisible, et les filtres d'apps passent en deux rangées de puces plus grandes.
 - Les infos tactiques dans les JVN marchent sans Athena et ont leur interrupteur dans Réglages › Accessoires ; les visages sont enfin floutés sur les photos, selfies compris.
 - Sans compte relié, la première sortie du téléphone propose le code Athena (désactivable dans les options), l'app Musique dit clairement quand son lecteur manque, et 131 correctifs de stabilité.
 EN : Slides on screens, clearer text and 131 fixes
 - In-game screens (TV, projector, computer) now show the slide broadcast from the phone, Google Slides included, and the Briefing app reads presentations from FENRIR's Live Presentation mod.
-- Phone text follows the phone size and the Text size setting: no more cut-off text or dimmed sub-menus, and a readable GPS banner.
+- Phone text follows the phone size and the Text size setting: no more cut-off text or dimmed sub-menus, a readable GPS banner, and the app filters now sit in two rows of bigger chips.
 - The NVG situation display works without Athena and has its switch in Settings › Accessories; faces are now blurred on photos, selfies included.
 - Without a linked account, the first time you take out the phone it offers the Athena code (can be turned off in the options), the Music app says clearly when its player is missing, and 131 stability fixes.
 
 ### Détail technique
-- 8 PR natives réunies : #1145 (JVN hors ligne), #1146 (revue du mod tours 6 et 7, 131 corrections : ATAK natif, Link, connect, SSE), #1147 (Live Presentation FENRIR), #1152 (diapositives écrans et Google Slides, demande Link 2.0.98), #1153 (textes du téléphone ; sa version provisoire 2.5.1 n'est pas sortie), #1154 (floutage des visages), #1161 (proposition de liaison Athena à la première sortie, réglage CBA, coché par défaut), #1162 (message joueur quand le lecteur audio manque, même chose pour le Bluetooth).
+- 9 PR natives réunies : #1164 (filtres d'apps du lanceur en grille de 2 rangées, puces et texte plus grands, « I » qui disparaissaient), #1145 (JVN hors ligne), #1146 (revue du mod tours 6 et 7, 131 corrections : ATAK natif, Link, connect, SSE), #1147 (Live Presentation FENRIR), #1152 (diapositives écrans et Google Slides, demande Link 2.0.98), #1153 (textes du téléphone ; sa version provisoire 2.5.1 n'est pas sortie), #1154 (floutage des visages), #1161 (proposition de liaison Athena à la première sortie, réglage CBA, coché par défaut), #1162 (message joueur quand le lecteur audio manque, même chose pour le Bluetooth).
 - Versions : ATAK natif 2.6.0.AB - Denver, COMSPEC Link 2.0.98 (DLL Link et DLL native `2.0.98-native`), connect 1.6.21. Sources SSE modifiées par #1146 : SSE à reconstruire et republier.
 - Fusions : `CfgFunctions` (pages) garde `fenrir` (#1147) et `slideWebData` (#1152) ; `i18n/en.txt` réunit les lignes des trois PR.
 - Le détail de chaque PR suit dans les entrées « partie du regroupement 2.6.0 » ci-dessous.
-- À tester en jeu : diapositive diffusée sur TV/projecteur/ordinateur et Google Slides (DLL 2.0.98 obligatoire) ; présentation FENRIR avec et sans le mod ; JVN avec service Athéna « Non », mode local, puis Athena relié ; selfie et photo de groupe floutés ; textes en petit et plein écran ; première sortie du téléphone sans compte relié ; app Musique avec une DLL absente.
+- À tester en jeu : diapositive diffusée sur TV/projecteur/ordinateur et Google Slides (DLL 2.0.98 obligatoire) ; présentation FENRIR avec et sans le mod ; JVN avec service Athéna « Non », mode local, puis Athena relié ; selfie et photo de groupe floutés ; textes en petit et plein écran ; première sortie du téléphone sans compte relié ; app Musique avec une DLL absente ; filtres du lanceur en paysage, portrait et sans app épinglée.
 
 ## Diapositives visibles sur les écrans COMSPEC et diapositives Google dans le téléphone (partie du regroupement 2.6.0)
 
