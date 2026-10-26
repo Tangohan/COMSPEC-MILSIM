@@ -211,7 +211,7 @@ private _chev = "\z\comspec_atak_native\addons\main\data\%1.paa";
             _f = +_f;
             if (_k in _f) then { _f = _f - [_k]; } else { _f pushBack _k; };
             profileNamespace setVariable ["COMSPEC_ATAK_LauncherFolded", _f];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
             [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         }];
     };
@@ -250,7 +250,7 @@ private _chev = "\z\comspec_atak_native\addons\main\data\%1.paa";
                     ["Épinglée en tête des applications", 2] call comspec_atak_native_fnc_toast;
                 };
                 profileNamespace setVariable ["COMSPEC_ATAK_PinnedApps", _l];
-                saveProfileNamespace;
+                [] call comspec_atak_native_fnc_saveProfile;
                 [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
             }];
             if (_fadeIn) then {

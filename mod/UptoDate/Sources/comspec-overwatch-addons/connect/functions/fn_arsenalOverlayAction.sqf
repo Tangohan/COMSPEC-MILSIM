@@ -213,7 +213,7 @@ switch (_act) do {
             private _done = if (_isCloud) then { [_r select 0] call comspec_overwatch_connect_fnc_arsenalDeleteCloud } else { [_r select 0] call comspec_overwatch_connect_fnc_arsenalDeleteLocal };
             if (_done) then {
                 // Retirée du site par vous : plus « retirée du site » à signaler côté Mes tenues.
-                if (_isCloud) then { ["del", _r select 1] call comspec_overwatch_connect_fnc_arsenalLedger; saveProfileNamespace; };
+                if (_isCloud) then { ["del", _r select 1] call comspec_overwatch_connect_fnc_arsenalLedger; [] call comspec_overwatch_connect_fnc_saveProfile; };
                 [format ["« %1 » retirée.", _label], "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
             };
             ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
@@ -266,7 +266,7 @@ switch (_act) do {
             private _gone = _saved select { (_x isEqualType []) && {(_x param [0, ""]) isEqualType ""} && {(toLower (_x param [0, ""])) in _marked} };
             profileNamespace setVariable ["ace_arsenal_saved_loadouts", _saved select { !((_x isEqualType []) && {(_x param [0, ""]) isEqualType ""} && {(toLower (_x param [0, ""])) in _marked}) }];
             profileNamespace setVariable ["COMSPEC_ArsenalTrash", _gone];
-            saveProfileNamespace;
+            [] call comspec_overwatch_connect_fnc_saveProfile;
             private _g = _d getVariable ["COMSPEC_ArsenalOverlay", controlNull];
             if (!isNull _g) then { _g setVariable ["COMSPEC_ArsenalMarked", []]; };
             [format [("%1 tenue(s) supprimée(s) de votre arsenal. ANNULER les remet.") call comspec_overwatch_connect_fnc_tr, count _gone], "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
@@ -283,7 +283,7 @@ switch (_act) do {
         private _back = _trash select { !((toLower (_x param [0, ""])) in _have) };
         profileNamespace setVariable ["ace_arsenal_saved_loadouts", _saved + _back];
         profileNamespace setVariable ["COMSPEC_ArsenalTrash", []];
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
         [format [("%1 tenue(s) remise(s) dans votre arsenal.") call comspec_overwatch_connect_fnc_tr, count _back], "ok"] call _say;
         [] spawn { ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     };
@@ -299,7 +299,7 @@ switch (_act) do {
         if (_i >= 0) then { _saved set [_i, [_name, _lo]]; } else { _saved pushBack [_name, _lo]; };
         profileNamespace setVariable ["ace_arsenal_saved_loadouts", _saved];
         profileNamespace setVariable ["COMSPEC_ArsenalLastSaveName", _name];
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
         [format ["« %1 » enregistrée dans votre arsenal, partage en cours…", _name], "ok"] call _say;
         [_name] spawn { params ["_n"]; [[_n]] call comspec_overwatch_connect_fnc_arsenalPushAll; ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     };

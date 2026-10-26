@@ -90,7 +90,7 @@ switch (_action) do {
                 };
             } forEach _dl;
             profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _keep];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
             (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["dronePhEdit", -1];
         };
         private _done = 0;

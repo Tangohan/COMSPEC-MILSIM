@@ -24,7 +24,7 @@ _layer cutText ["", "PLAIN"];
 uiNamespace setVariable ["COMSPEC_DiagIsolateHudDisp", displayNull];
 
 profileNamespace setVariable ["COMSPEC_DiagIsolateLast", nil];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 
 ["INFO", "Diag", "Pas à pas arrêté"] call comspec_overwatch_connect_fnc_log;
 if (!_silent) then {

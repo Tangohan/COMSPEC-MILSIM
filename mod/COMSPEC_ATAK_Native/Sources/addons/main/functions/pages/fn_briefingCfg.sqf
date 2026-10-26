@@ -38,7 +38,7 @@ private _checked = {
 private _save = {
     params ["_url"];
     profileNamespace setVariable ["COMSPEC_ATAK_BriefGoogleUrl", _url];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
 };
 
 switch (_action) do {
@@ -58,7 +58,7 @@ switch (_action) do {
     case "source": {
         call _keepDraft;
         profileNamespace setVariable ["COMSPEC_ATAK_BriefSource", _arg];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         uiNamespace setVariable ["COMSPEC_ATAK_BriefAutoTried", ""];
         if (_arg isEqualTo "GOOGLE" && {(profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""]) isEqualTo ""}) then {
             ["warn", "Source Google Slides : enregistrez d'abord un lien ci-dessous."] call _setTest;
@@ -88,7 +88,7 @@ switch (_action) do {
     case "auto": {
         call _keepDraft;
         profileNamespace setVariable ["COMSPEC_ATAK_BriefAuto", !(profileNamespace getVariable ["COMSPEC_ATAK_BriefAuto", false])];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         call _rerender;
     };
     case "test";

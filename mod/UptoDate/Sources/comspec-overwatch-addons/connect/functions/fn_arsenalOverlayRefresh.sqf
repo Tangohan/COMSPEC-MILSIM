@@ -139,5 +139,5 @@ _grp setVariable ["COMSPEC_ArsenalCloudMeta", _cloud apply { [_x select 0, _x se
 _grp setVariable ["COMSPEC_ArsenalOffline", _offline];
 _grp setVariable ["COMSPEC_ArsenalHasHash", _hasMine && {!(uiNamespace getVariable ["COMSPEC_ArsenalHashOff", false])}];
 _grp setVariable ["COMSPEC_ArsenalLoadedAt", [dayTime, "HH:MM"] call BIS_fnc_timeToString];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 [_display] call comspec_overwatch_connect_fnc_arsenalOverlayFill;

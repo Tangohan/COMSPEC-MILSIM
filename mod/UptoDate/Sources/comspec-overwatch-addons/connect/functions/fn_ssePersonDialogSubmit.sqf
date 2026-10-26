@@ -180,7 +180,7 @@ if (_caseCode isEqualTo "") then {
 };
 if (_caseCode isNotEqualTo "") then {
     profileNamespace setVariable ["COMSPEC_SseLastCaseCode", _caseCode];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 private _sig = uiNamespace getVariable ["COMSPEC_SsePerson_Signature", []];

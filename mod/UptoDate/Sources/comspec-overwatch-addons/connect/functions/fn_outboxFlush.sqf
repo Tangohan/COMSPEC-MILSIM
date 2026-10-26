@@ -141,7 +141,7 @@ if (!(_queueNow isEqualType [])) then { _queueNow = []; };
 profileNamespace setVariable ["COMSPEC_Outbox", _remaining];
 // Écriture disque seulement si la file a changé (saveProfileNamespace est coûteux).
 if (_sent > 0 || {_failed > 0} || {_expired > 0} || {(count _remaining) != _countIn}) then {
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 // Attente croissante tant qu'il reste des échecs (les entrées pas encore tentées partent au tick suivant).

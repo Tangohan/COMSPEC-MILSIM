@@ -164,7 +164,7 @@ switch (_act) do {
             if (_used || {_keep && {(count (_rec select 1)) > 0}}) then { _out pushBack [_x, _rec select 0, _rec select 1, _rec select 2]; };
         } forEach _db;
         profileNamespace setVariable ["COMSPEC_ATAK_DockDb_v1", _out];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
     };
     case "put": {
         _a params [["_dock", objNull], ["_unit", objNull], ["_slot", -1], ["_item", ""], ["_level", 100], ["_device", []], ["_tint", "coyote"]];

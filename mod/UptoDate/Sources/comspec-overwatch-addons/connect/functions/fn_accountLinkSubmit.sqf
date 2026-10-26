@@ -353,7 +353,7 @@ if (!(_steamUid isEqualTo "")) then {
 
 };
 
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 
 
 

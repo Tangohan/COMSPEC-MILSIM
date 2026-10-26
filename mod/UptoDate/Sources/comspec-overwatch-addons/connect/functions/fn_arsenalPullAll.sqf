@@ -94,7 +94,7 @@ private _skippedDense = 0;
 } forEach _meta;
 
 profileNamespace setVariable ["ace_arsenal_saved_loadouts", _merged];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 missionNamespace setVariable ["COMSPEC_ArsenalLastPullAt", diag_tickTime, false];
 missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", false, false];
 

@@ -110,7 +110,7 @@ if (!(_serial isEqualType "") || {_serial isEqualTo ""} || {[_serial] call _isBa
 
     profileNamespace setVariable [_serialKey, _serial];
 
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 
 };
 

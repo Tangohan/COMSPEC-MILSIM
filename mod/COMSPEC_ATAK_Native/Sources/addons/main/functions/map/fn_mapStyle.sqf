@@ -12,7 +12,7 @@ params [["_set", ""]];
 if (_set isNotEqualTo "") exitWith {
     profileNamespace setVariable ["COMSPEC_ATAK_MapStyle", _set];
     profileNamespace setVariable ["COMSPEC_ATAK_LayerNight", nil];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     _set
 };
 private _v = profileNamespace getVariable ["COMSPEC_ATAK_MapStyle", ""];
