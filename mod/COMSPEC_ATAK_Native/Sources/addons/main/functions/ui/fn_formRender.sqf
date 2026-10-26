@@ -743,13 +743,23 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         };
         case "gap": { _y = _y + _pad; };
         case "person": {
-            _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]]];
+            // 6e paramètre : lettre montrée dans une pastille teintée (_picColor) quand il n'y a pas d'image (_pic "") :
+            // joueur sans photo lisible par Arma.
+            _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]], ["_ini", ""]];
             private _ih = _font * 2.2;
             private _iw = _ih * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _bg = ["COMSPEC_RscText", [_pad, _y, _w, _ih + _pad / 2]] call _mk;
             _bg ctrlSetBackgroundColor [0.06, 0.075, 0.07, 1];
-            private _p = ["COMSPEC_RscPicture", [_pad * 1.3, _y + _pad / 4, _iw, _ih], _pic] call _mk;
-            _p ctrlSetTextColor _picColor;
+            if (_pic isEqualTo "" && {_ini isNotEqualTo ""}) then {
+                private _pc = ["COMSPEC_RscTextCenter", [_pad * 1.3, _y + _pad / 4, _iw, _ih], ""] call _mk;
+                _pc ctrlSetBackgroundColor [(_picColor select 0) * 0.28, (_picColor select 1) * 0.28, (_picColor select 2) * 0.28, 1];
+                _pc ctrlSetTextColor _picColor;
+                _pc ctrlSetFontHeight (_ih * 0.6);
+                _pc ctrlSetText _ini; // i18n:brut
+            } else {
+                private _p = ["COMSPEC_RscPicture", [_pad * 1.3, _y + _pad / 4, _iw, _ih], _pic] call _mk;
+                _p ctrlSetTextColor _picColor;
+            };
             private _nb = count _btns;
             // Trois boutons ou plus (DÉTAILS, ENVOYER, SUPPRIMER) : plus étroits pour laisser de la place au texte.
             private _bwid = _w * ([0.2, 0.14] select (_nb >= 3));

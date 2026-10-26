@@ -121,7 +121,7 @@ switch (_act) do {
             case "reset": { ["reset", [_units]] call _send; };
         };
         private _label = ((["catalog"] call comspec_atak_native_fnc_zeusMenu) select { (_x select 0) isEqualTo _id }) param [0, ["", "", _id]];
-        ["feedback", [format ["ATAK → %1 : %2", (_units apply { name _x }) joinString ", ", ((_label select 2) call comspec_atak_native_fnc_tr)]]] call comspec_atak_native_fnc_zeusMenu;
+        ["feedback", [format ["ATAK » %1 : %2", (_units apply { name _x }) joinString ", ", ((_label select 2) call comspec_atak_native_fnc_tr)]]] call comspec_atak_native_fnc_zeusMenu;
     };
     case "register": {
         if (!hasInterface || {isNil "zen_context_menu_fnc_addAction"} || {missionNamespace getVariable ["COMSPEC_ATAK_ZeusMenuOn", false]}) exitWith {};

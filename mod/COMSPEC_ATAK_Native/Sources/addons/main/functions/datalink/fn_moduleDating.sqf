@@ -22,7 +22,7 @@ private _apply = {
         _x setVariable ["COMSPEC_ATAK_TinderBio", trim _bio, true];
         _x setVariable ["COMSPEC_ATAK_TinderChance", (_chance / 100) max 0 min 1, true];
     } forEach _targets;
-    ["comspec_atak_native_dataNote", [format ["Tinder : %1 IA → %2.", count _targets,
+    ["comspec_atak_native_dataNote", [format ["Tinder : %1 IA » %2.", count _targets,
         createHashMapFromArray [["HVT", "profil HVT"], ["SSE", "profil SSE"], ["OFF", "retirée de Tinder"], ["", "automatique"]] getOrDefault [_kind, _kind]]]] call CBA_fnc_localEvent;
 };
 private _u = _targets select 0;

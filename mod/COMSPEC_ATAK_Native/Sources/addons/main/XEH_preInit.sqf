@@ -314,7 +314,7 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
     ["Marquer depuis des jumelles ou une optique", "Décoché par défaut : aucune jumelle ni optique (ACE Vector 21 compris) ne pose de marqueur sur la carte de l'ATAK, il faut reporter l'ennemi à la main. Coché : la mesure du Vector 21 (azimut + distance) ou la touche « Envoyer le point visé à l'ATAK » dans une optique ou des jumelles pose un marqueur."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mag_decl", "SLIDER",
-    ["Déclinaison magnétique (°)", "Écart entre le nord vrai de la carte et le nord magnétique, en degrés (positif : déclinaison est). Les cartes Arma n'en ont pas : 0 par défaut. Sert au cap magnétique du 9-LINE de l'app JTAC et de l'outil carte « JTAC : IP → cible »."],
+    ["Déclinaison magnétique (°)", "Écart entre le nord vrai de la carte et le nord magnétique, en degrés (positif : déclinaison est). Les cartes Arma n'en ont pas : 0 par défaut. Sert au cap magnétique du 9-LINE de l'app JTAC et de l'outil carte « JTAC : IP » cible »."],
     _sim, [-30, 30, 0, 1], 1] call comspec_atak_native_fnc_addSetting;
 // Contrôle Zeus des ATAK : le menu clic droit ZEN d'Overwatch (« ATAK — Infos / dégâts / brouillage », état du téléphone
 // d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.

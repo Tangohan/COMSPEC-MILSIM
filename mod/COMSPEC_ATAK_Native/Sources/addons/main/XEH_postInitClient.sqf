@@ -1096,6 +1096,23 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
     // Bilan des boucles du téléphone (drone, marquage, carte, pages) et des images lentes, toutes les 30 s.
     [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread;
 }] call CBA_fnc_waitUntilAndExecute;
+// Canaux de la messagerie : liste complète d'Athena (canaux web compris) relue dès la liaison prête, sans attendre la
+// première ouverture de Messages (qui n'affichait d'abord que les canaux par défaut, les autres 20 s plus tard).
+// Nouvel essai toutes les 3 s tant qu'Athena n'a rien rendu, puis relecture toutes les 60 s.
+[{ (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} }, {
+    [] spawn {
+        private _ok = false;
+        for "_i" from 1 to 40 do {
+            if ([] call comspec_overwatch_connect_fnc_pollChatChannels) exitWith { _ok = true; };
+            sleep 3;
+        };
+        diag_log format ["[COMSPEC ATAK NATIVE][CHAT] Canaux Athena : %1", [count (missionNamespace getVariable ["COMSPEC_Comms_Channels", []]), "non reçus"] select !_ok];
+        uiNamespace setVariable ["COMSPEC_ATAK_ChatChannelsAt", diag_tickTime];
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then {
+            [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
+    };
+}] call CBA_fnc_waitUntilAndExecute;
 // Arsenal ACE ouvert : repère dans le journal (l'ouverture elle-même apparaît en « Image figée … arsenal ouvert »).
 // Touches COMSPEC traduites une fois toutes déclarées (ATAK natif ici, Overwatch et SSE dans leurs propres init) :
 // image suivante, puis 5 s plus tard pour les addons déclarés après.

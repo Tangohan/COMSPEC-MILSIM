@@ -202,7 +202,7 @@ if (_view isNotEqualTo "") then {
     private _bShot = ["PHOTO", { ["view"] call comspec_atak_native_fnc_dronePhoto; }, "", "Ouvre le viseur photo : cadrer (glisser sur l'image), zoomer (molette, + / -), marquer une cible, surligner un cadre ou un cercle, puis PRENDRE LA PHOTO"];
     private _bZoomOut = ["ZOOM -", [1 / 1.5] call _zoomBy, "", "Dézoomer (molette vers vous, touche -) ; zoom actuel affiché sur l'image", _zoom > 1];
     private _bZoomIn = ["ZOOM +", [1.5] call _zoomBy, "", "Zoomer jusqu'à x8 (molette vers l'avant, touche +)", _zoom < 8];
-    private _bVis = [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _vis, ["vision"] call _act, ["", "on"] select (_vis > 0), "Change le mode de la caméra : jour → nuit (intensification de lumière) → thermique"];
+    private _bVis = [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _vis, ["vision"] call _act, ["", "on"] select (_vis > 0), "Change le mode de la caméra : jour » nuit (intensification de lumière) » thermique"];
     // Rangée des modes de vision, comme l'app Vidéo Live : JOUR, VISION NOCTURNE, THERMIQUE (le mode actif en vert).
     private _visRow = [["JOUR", 0], ["VISION NOCTURNE", 1], ["THERMIQUE", 2]] apply { [_x select 0, ["visionSet", _x select 1] call _act, ["", "on"] select (_vis isEqualTo (_x select 1)), "Mode de la caméra du drone"] };
     private _bNadir = [["CAMÉRA VERS LE SOL", "CAMÉRA DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, "", ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select (_aim isEqualTo "NADIR"), _src isEqualTo "DRONE"];

@@ -47,8 +47,10 @@ private _cBlue = [0.10, 0.42, 0.82, 1];
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
 private _accDark = [(_acc select 0) * 0.30, (_acc select 1) * 0.30, (_acc select 2) * 0.30, 1];
 
-// Canaux web : COMSPEC Link ne les relit qu'à la création ou suppression, on les rafraîchit ici (toutes les 20 s).
-if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {diag_tickTime - (_s getOrDefault ["chatChannelsPoll", -100]) > 20}) then {
+// Canaux web : COMSPEC Link ne les relit qu'à la création ou suppression, on les rafraîchit ici (toutes les 20 s, toutes
+// les 3 s tant que la liste d'Athena n'est pas arrivée ; le postInit client la demande déjà dès la liaison prête).
+private _chLoaded = (missionNamespace getVariable ["COMSPEC_Comms_Channels", []]) isNotEqualTo [];
+if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {diag_tickTime - (_s getOrDefault ["chatChannelsPoll", -100]) > ([3, 20] select _chLoaded)}) then {
     _s set ["chatChannelsPoll", diag_tickTime];
     [] spawn {
         private _before = +(missionNamespace getVariable ["COMSPEC_Comms_Channels", []]);
@@ -165,12 +167,10 @@ private _unitFor = {
 };
 // Initiales d'un nom ou indicatif (« HAWK 6 » → H6, « Tango-2 » → T2).
 private _initials = {
+    // Sans photo lisible : la première lettre du nom (retour de TTRD), « # » pour un nom sans lettre ni chiffre.
     params ["_n"];
-    private _w = (_n splitString " -_.:") select { _x isNotEqualTo "" };
-    // Un seul mot : ses deux premières lettres. (L'ancienne version lisait le 2e mot même absent : erreur de script
-    // qui interrompait l'en-tête de la conversation, d'où le volet vide et les clics « sans effet ».)
-    if ((count _w) < 2) exitWith { toUpper ((_w param [0, _n]) select [0, 2]) };
-    toUpper (((_w select 0) select [0, 1]) + ((_w select 1) select [0, 1]))
+    private _w = (_n splitString " -_.:[]()|") select { _x isNotEqualTo "" };
+    toUpper ((_w param [0, "#"]) select [0, 1])
 };
 // Vignette d'une conversation ou d'un auteur : photo de l'opérateur si connue, sinon initiales (personne)
 // ou icône (canal, TOC) sur une tuile teintée.
@@ -182,7 +182,7 @@ private _avatar = {
     };
     [_rect, [(_tint select 0) * 0.28, (_tint select 1) * 0.28, (_tint select 2) * 0.28, 1], _grp] call _box;
     if (_ini isNotEqualTo "") exitWith {
-        private _c = ["COMSPEC_RscTextCenter", _rect, "", (_rect select 3) * 0.42, _tint, true, _grp] call _lbl;
+        private _c = ["COMSPEC_RscTextCenter", _rect, "", (_rect select 3) * 0.6, _tint, true, _grp] call _lbl;
         _c ctrlSetText _ini; // i18n:brut
         _c
     };
