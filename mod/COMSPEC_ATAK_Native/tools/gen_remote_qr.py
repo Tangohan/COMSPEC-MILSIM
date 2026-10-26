@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-QR code de la télécommande drone (page Athena /telecommande-drone, à ouvrir sur son vrai téléphone).
-Écrit data/drone_remote_qr_ca.paa (512x512, modules noirs sur fond blanc), affiché dans l'onglet FLOTTE de l'app Drone.
-Adresse par défaut : celle du site de production ; une autre en premier argument. Troisième argument : autre image
-(nom sans extension), par exemple le 9-LINE de l'app JTAC :
+QR codes fixes à scanner avec son vrai téléphone (512x512, modules noirs sur fond blanc) :
+  data/drone_remote_qr_ca.paa  page /telecommande-drone, onglet FLOTTE de l'app Drone (par défaut)
+  data/athena_link_qr_ca.paa   page /lier, onglet CODE de l'app Athena :
+                               python3 tools/gen_remote_qr.py https://athena-comspec.eu/lier hemtt athena_link_qr_ca
+  data/nineline_qr_ca.paa      9-LINE de l'app JTAC :
+                               python3 tools/gen_remote_qr.py https://athena-comspec.eu/public/9-line hemtt nineline_qr_ca
+Adresse par défaut : celle du site de production ; une autre en premier argument.
 
-  python3 tools/gen_remote_qr.py [adresse] [chemin de hemtt] [nom]
-  python3 tools/gen_remote_qr.py https://athena.ttrd.fr/public/9-line hemtt nineline_qr_ca
+  python3 tools/gen_remote_qr.py [adresse] [chemin de hemtt] [nom du fichier sans extension]
 
 Dépend de segno (python3 -m pip install segno) et de « hemtt utils paa convert ».
 """

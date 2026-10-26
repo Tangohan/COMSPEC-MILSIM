@@ -16,7 +16,8 @@
                          « Lier le jeu à Athena » et « Connexion Athena » de COMSPEC Overwatch). Dans les
                          90 premières secondes de la mission, rien ne s'ouvre : juste le code et la notification.
     État : uiNamespace « COMSPEC_ATAK_AthenaLink » = [état, code, échéance diag_tickTime, adresse, adresse complète, détail]
-      état : "" (aucun), "asking", "pending", "approved", "expired", "error".
+      état : "" (aucun), "asking", "pending", "approved", "expired", "error" ; détail "maintenance" quand Athena
+      répond HTTP 503 (site en maintenance) : nouvel essai automatique toutes les 60 s tant que l'app Athena est à l'écran.
 */
 params [["_action", "start"], ["_open", false], ["_auto", false]];
 _action = toLower _action;
@@ -87,8 +88,8 @@ switch (_action) do {
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaLinkToken", _token];
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", ["asking", "", 0, "", "", ""]];
         call _redraw;
-        [_token, _bridge, _redraw] spawn {
-            params ["_token", "_bridge", "_redraw"];
+        [_token, _bridge, _redraw, _auto] spawn {
+            params ["_token", "_bridge", "_redraw", "_auto"];
             private _ext = {
                 params ["_cmd", ["_args", []]];
                 private _r = if (_bridge) then { ["COMSPECExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait } else { [_cmd, _args] call comspec_atak_native_fnc_extensionCall };
@@ -107,9 +108,28 @@ switch (_action) do {
             if ((_cells param [0, ""]) isNotEqualTo "OK") exitWith {
                 private _why = _cells param [1, "sans réponse"];
                 if ((count _cells) > 2) then { ["WARN", "ATHENA", format ["PairStart %1 sur %2 : %3", _why, _url, ((_cells select [2]) joinString "|")]] call comspec_atak_native_fnc_log; };
+                // HTTP 503 : Athena est en maintenance (le site répond « maintenance » à toute l'API), pas une panne réseau.
+                private _maint = (toLower _why) in ["http_503", "maintenance"];
+                if (_maint) then { _why = "maintenance"; };
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", ["error", "", 0, "", "", _why]];
-                ["WARN", "ATHENA", format ["Code de connexion impossible : %1", _why]] call comspec_atak_native_fnc_log;
+                ["WARN", "ATHENA", [format ["Code de connexion impossible : %1", _why], "Athena en maintenance : pas de code pour l'instant"] select _maint] call comspec_atak_native_fnc_log;
                 call _redraw;
+                // App Athena à l'écran : nouvel essai toutes les 60 s pendant la maintenance (15 fois au plus), le code
+                // arrive tout seul à la réouverture.
+                if (_maint) then {
+                    private _tries = uiNamespace getVariable ["COMSPEC_ATAK_AthenaMaintTries", 0];
+                    if (!_auto) then { _tries = 0; };
+                    if (_tries >= 15) exitWith {};
+                    uiNamespace setVariable ["COMSPEC_ATAK_AthenaMaintTries", _tries + 1];
+                    [_token] spawn {
+                        params ["_token"];
+                        sleep 60;
+                        if ((uiNamespace getVariable ["COMSPEC_ATAK_AthenaLinkToken", -1]) isNotEqualTo _token) exitWith {};
+                        private _onScreen = !isNull ([] call comspec_atak_native_fnc_display)
+                            && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ATHENA"};
+                        if (_onScreen) then { ["start", false, true] call comspec_atak_native_fnc_athenaLink; };
+                    };
+                };
             };
             private _code = _cells param [1, ""];
             private _ttl = (parseNumber (_cells param [2, "600"])) max 30;
@@ -123,8 +143,7 @@ switch (_action) do {
             ["INFO", "ATHENA", format ["Code de connexion %1 (valable %2 s)", _code, round _ttl]] call comspec_atak_native_fnc_log;
             call _redraw;
             // Adresse courte affichée sans « https:// » ni « /public » : plus simple à taper sur un autre appareil.
-            private _short = _uri regexReplace ["^https?://", ""];
-            _short = _short regexReplace ["/public/", "/"];
+            private _short = [_uri] call comspec_atak_native_fnc_athenaShortUrl;
             if (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLinkNotify", false]) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaLinkNotify", false];
                 ["INFO", format ["Connexion Athena : sur %1, saisissez le code %2", _short, _code], 12, 40] call comspec_atak_native_fnc_notify;
@@ -143,6 +162,8 @@ switch (_action) do {
                 switch (true) do {
                     case (_r isEqualTo "OK|approved"): { _result = "approved"; };
                     case ((_r find "ERR|expired") isEqualTo 0 || {(_r find "ERR|no_pairing") isEqualTo 0}): { _result = "expired"; };
+                    // Maintenance ouverte pendant le suivi du code : on s'arrête, l'app l'annonce.
+                    case ((_r find "ERR|http_503") isEqualTo 0): { _result = "error"; _fail = "maintenance"; };
                     case ((_r find "ERR|http_4") isEqualTo 0): {
                         _result = "error";
                         _fail = (_r splitString "|") param [1, "http_4xx"];
