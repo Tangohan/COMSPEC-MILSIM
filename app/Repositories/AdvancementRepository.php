@@ -232,6 +232,51 @@ final class AdvancementRepository
         $st->execute([$id, $tenantId]);
     }
 
+    public function updateGradeMinMonths(int $id, int $tenantId, int $months): void
+    {
+        $st = $this->pdo->prepare(
+            'UPDATE grade_definitions SET min_time_in_previous_grade_months = ? WHERE id = ? AND tenant_id = ?'
+        );
+        $st->execute([$months, $id, $tenantId]);
+    }
+
+    /**
+     * Archive les grades venus d’un autre référentiel (ex. grades US/FR d’avant le passage à des grades personnalisés).
+     * Les grades créés à la main (code absent de tout référentiel) restent.
+     *
+     * @param list<string> $keepCodes codes du référentiel actuel
+     * @return int nombre de grades archivés
+     */
+    public function archiveOtherCatalogGrades(int $tenantId, array $keepCodes): int
+    {
+        $keep = array_flip(array_map(static fn ($c): string => strtoupper(trim((string) $c)), $keepCodes));
+        $catalogCodes = [];
+        foreach (['grades', 'grades_referentiel'] as $table) {
+            try {
+                $st = $this->pdo->query('SELECT UPPER(code) FROM ' . $table);
+                foreach ($st ? ($st->fetchAll(PDO::FETCH_COLUMN) ?: []) : [] as $code) {
+                    $catalogCodes[(string) $code] = true;
+                }
+                break;
+            } catch (Throwable) {
+            }
+        }
+        if ($catalogCodes === [] || $keep === []) {
+            return 0;
+        }
+        $archived = 0;
+        foreach ($this->listGrades($tenantId, false) as $grade) {
+            $code = strtoupper(trim((string) ($grade['code'] ?? '')));
+            if ($code === '' || isset($keep[$code]) || !isset($catalogCodes[$code])) {
+                continue;
+            }
+            $this->archiveGrade((int) $grade['id'], $tenantId);
+            $archived++;
+        }
+
+        return $archived;
+    }
+
     public function restoreGrade(int $id, int $tenantId): void
     {
         $st = $this->pdo->prepare(
@@ -300,7 +345,7 @@ final class AdvancementRepository
     public function historyFor(int $tenantId, int $personnelId): array
     {
         $st = $this->pdo->prepare(
-            'SELECT h.*, g.label, g.short_label, g.code, g.rank_order
+            'SELECT h.*, g.label, g.short_label, g.code, g.rank_order, g.archived_at AS grade_archived_at
              FROM personnel_grade_history h
              INNER JOIN grade_definitions g ON g.id = h.grade_id AND g.tenant_id = ?
              WHERE h.personnel_id = ?
