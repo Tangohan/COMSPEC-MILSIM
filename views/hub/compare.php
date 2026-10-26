@@ -8,7 +8,8 @@ $hubMetrics = is_array($hubMetrics ?? null) ? $hubMetrics : [];
 $hubMedians = is_array($hubMedians ?? null) ? $hubMedians : [];
 $structures = ['a' => is_array($hubStructureA ?? null) ? $hubStructureA : null, 'b' => is_array($hubStructureB ?? null) ? $hubStructureB : null];
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-$num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, ',', "\u{202F}");
+$numEn = locale() === 'en';
+$num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, $numEn ? '.' : ',', $numEn ? ',' : "\u{202F}");
 $fmt = static function (string $metric, $value) use ($num): string {
     if ($value === null) {
         return '—';
