@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Infos tactiques dans les JVN : marchent sans Athena et se règlent dans le téléphone (ATAK natif, version fixée au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Les infos tactiques dans les JVN s'affichent enfin
+- Cocher « Infos tactiques dans les JVN » dans les options du mod suffit : alliés, repères et véhicules apparaissent dans ta vue dès que tes JVN sont allumées.
+- Ça marche aussi sans Athena : hors ligne, en mode local avec un poste TOC, ou si tu as répondu « Non » au service Athéna. Avant, rien ne s'affichait dans ces cas-là.
+- Le même interrupteur est maintenant dans le téléphone : Réglages, rubrique Accessoires. La case des options et celle du téléphone restent synchronisées.
+EN : NVG situation display now actually shows up
+- Ticking "Situation display (NVG)" in the mod options is enough: allies, markers and vehicles appear in your view as soon as your NVGs are on.
+- It also works without Athena: offline, in local mode with a TOC laptop, or if you answered "No" to the Athena service. Before, nothing showed up in those cases.
+- The same switch is now in the phone: Settings, Accessories section. The options box and the phone switch stay in sync.
+
+### Détail technique
+- Cause : l'affichage (Draw3D + PFH, `fn_ecotiInit`) n'était enregistré que dans le bloc de démarrage Athena de `XEH_postInit`, qui sort dès que `comspec_overwatch_enabled` est faux ; or le service Athéna « Non » et `comspec_atak_native_local_only` (mode full local / TOC) forcent ce drapeau à faux. `fn_ecotiIsAvailable` refusait aussi pour la même raison. Résultat : jamais d'affichage hors Athena, quelle que soit la case CBA.
+- Correctif : démarrage ECOTI dans son propre `CBA_settingsInitialized` (garde `COMSPEC_EcotiBootDone`), indépendant de la liaison ; gate `comspec_overwatch_enabled` retirée de `fn_ecotiIsAvailable` (le module Athena `ecoti_hud` reste respecté quand le catalogue est reçu, F-PANO reste exclusif). Tout le rendu est local (unités, repères, véhicules).
+- Le réglage CBA `comspec_overwatch_ecoti_hud` recopie sa valeur dans le profil (`COMSPEC_EcotiHudEnabled`) : un ancien « non » resté dans le profil ne décoche plus la case à chaque mission. Aide du réglage réécrite (elle laissait croire qu'il fallait aussi l'activer dans le téléphone).
+- ATAK natif : interrupteur « Infos tactiques dans les JVN » dans Réglages › Accessoires (`fn_ecotiApplyHudSetting`), traduction EN ajoutée.
+- À tester en jeu : service Athéna « Non », mode local avec TOC, puis Athena relié ; JVN vanilla, ACE, CUP ; case CBA seule, puis interrupteur du téléphone.
+
 ## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
 
 ### Résumé joueur
