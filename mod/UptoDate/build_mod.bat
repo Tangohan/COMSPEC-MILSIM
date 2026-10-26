@@ -51,6 +51,11 @@ if not "%DOTNET_ERR%"=="0" (
 if not exist "%OUTPUT_DIR%\addons" mkdir "%OUTPUT_DIR%\addons"
 
 :: 3. Compilation des PBO
+:: AddonBuilder copie chaque addon dans %TEMP%\<nom du dossier> sans jamais le vider : sans -clear, le PBO connect
+:: reprenait les fichiers retires des sources (39 entrees orphelines dans le connect 1.6.15). Meme reglage que le
+:: build natif (mod\COMSPEC_ATAK_Native\build_mod.bat) : un dossier temporaire par addon, vide a chaque build.
+set "ABTMP=%TEMP%\comspec_overwatch_ab"
+if exist "%ABTMP%" rmdir /s /q "%ABTMP%"
 echo [BUILD] Compilation de comspec_overwatch_main... >> "%BUILD_LOG%"
 echo [BUILD] Compilation de comspec_overwatch_main...
 if not exist "%SOURCES_DIR%\main" (
@@ -58,7 +63,7 @@ if not exist "%SOURCES_DIR%\main" (
     echo [ERREUR] Sources manquantes: %SOURCES_DIR%\main
     goto :build_fail
 )
-"%BUILDER_PATH%" "%SOURCES_DIR%\main" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\main -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1
+"%BUILDER_PATH%" "%SOURCES_DIR%\main" "%OUTPUT_DIR%\addons" -packonly -clear -temp="%ABTMP%\ow_main" -prefix=z\comspec_overwatch\addons\main -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] AddonBuilder main a echoue. >> "%BUILD_LOG%"
     echo [ERREUR] AddonBuilder main a echoue.
@@ -72,7 +77,7 @@ if not exist "%SOURCES_DIR%\connect" (
     echo [ERREUR] Sources manquantes: %SOURCES_DIR%\connect
     goto :build_fail
 )
-"%BUILDER_PATH%" "%SOURCES_DIR%\connect" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\connect -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1
+"%BUILDER_PATH%" "%SOURCES_DIR%\connect" "%OUTPUT_DIR%\addons" -packonly -clear -temp="%ABTMP%\ow_connect" -prefix=z\comspec_overwatch\addons\connect -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] AddonBuilder connect a echoue. >> "%BUILD_LOG%"
     echo [ERREUR] AddonBuilder connect a echoue.
