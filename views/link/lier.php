@@ -16,6 +16,11 @@ $watch = (int) ($watch ?? 0);
 $steamMoved = (int) ($steamMoved ?? 0);
 $account = (string) ($account ?? '');
 $community = (string) ($community ?? '');
+// Première connexion d'un nouveau membre : le site reste fermé tant que le jeu n'est pas relié.
+$required = !$guest && (bool) ($required ?? false);
+$continueUrl = (string) ($continueUrl ?? '');
+$modUrl = (string) ($modUrl ?? url('atak/mod'));
+$guideUrl = (string) ($guideUrl ?? url('atak/premiere-liaison'));
 $base = url('');
 $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
 $css = function_exists('asset_url') ? asset_url('assets/css/link-lier.css') : ($base . '/assets/css/link-lier.css');
@@ -53,9 +58,15 @@ if ($linked) {
 } elseif ($gameRequest !== null) {
     $title = 'Ce code n’est plus valable';
     $lead = 'Demandez un nouveau code dans Arma, puis saisissez-le ici. Rien n’est autorisé tant que vous n’avez pas confirmé la demande.';
+} elseif ($required) {
+    $title = 'Dernière étape : reliez votre jeu';
+    $lead = 'Votre communauté demande de relier Arma à votre compte avant d’ouvrir le site. Dans le jeu, sortez le téléphone ATAK et ouvrez l’app Athena : un code de huit caractères s’affiche. Saisissez-le ici.';
 } else {
     $title = 'Saisissez le code du jeu';
     $lead = 'Huit caractères, par exemple ABCD-2345. Vous verrez la demande avant de l’autoriser.';
+}
+if ($linked && $continueUrl !== '') {
+    $lead = 'Votre jeu est relié et l’accès au site est ouvert. Dans Arma, le téléphone reprend votre profil et votre communauté tout seul.';
 }
 ?>
 <!DOCTYPE html>
@@ -98,7 +109,7 @@ if ($linked) {
     <p class="ll-step-caption"><?= $h($steps[$step][1]) ?></p>
 
     <article class="ll-panel">
-        <p class="ll-kicker">Liaison du jeu</p>
+        <p class="ll-kicker"><?= ($required || $continueUrl !== '') ? 'Première connexion' : 'Liaison du jeu' ?></p>
         <?php if ($linked): ?><div class="ll-mark" aria-hidden="true">✓</div><?php endif; ?>
         <h1><?= $h($title) ?></h1>
         <p class="ll-lead"><?= $h($lead) ?></p>
@@ -143,6 +154,9 @@ if ($linked) {
                 <p class="ll-alert warn">Ce compte Steam était aussi rattaché à un autre compte de votre communauté. Il ne mène plus qu’à celui-ci, pour que la connexion automatique ouvre toujours le bon compte.</p>
             <?php endif; ?>
             <div class="ll-actions">
+                <?php if ($continueUrl !== ''): ?>
+                    <a class="ll-btn main" href="<?= $h($continueUrl) ?>">Accéder au site</a>
+                <?php endif; ?>
                 <a class="ll-btn" href="<?= $h(url('account/security/devices')) ?>">Voir mes appareils liés</a>
                 <a class="ll-btn" href="<?= $h(url('lier')) ?>">Lier un autre jeu</a>
             </div>
@@ -212,7 +226,21 @@ if ($linked) {
                     <button type="submit" class="ll-btn main">Vérifier ce code</button>
                 </div>
             </form>
-            <p class="ll-quiet"><a href="<?= $h(url('account/security/devices')) ?>">Mes appareils liés</a></p>
+            <?php if ($required): ?>
+                <div class="ll-first" role="note">
+                    <b>Pas encore le mod ?</b>
+                    <p>Abonnez-vous au mod COMSPEC ATAK sur le Steam Workshop, lancez Arma avec le mod, puis revenez sur cette page avec le code.</p>
+                    <p class="ll-first-links"><a href="<?= $h($modUrl) ?>">Installer le mod</a> · <a href="<?= $h($guideUrl) ?>">Guide de première liaison</a></p>
+                </div>
+            <?php else: ?>
+                <p class="ll-quiet"><a href="<?= $h(url('account/security/devices')) ?>">Mes appareils liés</a></p>
+            <?php endif; ?>
+        <?php endif; ?>
+        <?php if ($required): ?>
+            <form class="ll-quiet" method="post" action="<?= $h(url('logout')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="ll-link">Se déconnecter</button>
+            </form>
         <?php endif; ?>
     </article>
 
