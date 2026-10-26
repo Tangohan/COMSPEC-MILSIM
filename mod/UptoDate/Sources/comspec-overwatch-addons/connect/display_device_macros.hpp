@@ -16,8 +16,9 @@
 #define COMSPEC_IMG_ICON_SIGNAL "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_signal_ca.paa"
 #define COMSPEC_IMG_ICON_TABLET "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_tablet.paa"
 
-// Retirés le 26/10/2026 (audit DEAD-021) : 17 macros jamais développées, dont 15
-// nommaient des images sorties du PBO vers mod/UptoDate/art/connect/ (DEAD-007).
+// Retirés le 26/10/2026 (audit DEAD-021) : 17 macros jamais développées. 9 nommaient une
+// image sortie du PBO (8 déplacées vers mod/UptoDate/art/connect/, 1 doublon supprimé,
+// DEAD-007), 4 une image restée dans l'addon, 4 aucune image (cadre d'écran).
 // COMSPEC_PHONE_SCR_X/Y/W/H, COMSPEC_IMG_TABLET_BG, COMSPEC_IMG_ICON_PHONE,
 // COMSPEC_IMG_ICON_MAIL, COMSPEC_IMG_OVERLAY_SCREEN_CRACKED / SCREEN_OFF /
 // STATIC / NO_SIGNAL / LOW_SIGNAL, COMSPEC_IMG_ICON_JAMMER / NO_COVERAGE /

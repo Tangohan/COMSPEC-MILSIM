@@ -96,15 +96,10 @@ mod/COMSPEC_ATAK_Native/tools/__pycache__/
 __pycache__/
 *.pyc
 
-# --- Sorties de build du mod Arma : régénérées, jamais suivies (audit DEAD-001..004, DEAD-010) ---
-# Dossier de sortie de mod/UptoDate/build_mod.bat (OUTPUT_DIR). Règles fichier par
-# fichier : meta.cpp (publishedid Workshop), CHANGELOG.md et DOCS.md restent suivis,
-# car build_mod.bat ne les régénère pas.
-mod/UptoDate/@COMSPECOverwatch/addons/
-mod/UptoDate/@COMSPECOverwatch/COMSPECExtension_x64.dll
-mod/UptoDate/@COMSPECOverwatch/mod.cpp
-mod/UptoDate/@COMSPECOverwatch/logo.paa
-mod/UptoDate/@COMSPECOverwatch/logoSmall.paa
+# --- Sorties de build du mod Arma jamais suivies (audit DEAD-001..004, DEAD-010) ---
+# mod/UptoDate/@COMSPECOverwatch/ (PBO, DLL, logos, mod.cpp) RESTE suivi : la procédure de sortie
+# recompile puis committe ces fichiers, et un « git rm --cached » ferait refuser le prochain
+# « git pull » d'un poste qui vient de les reconstruire (revue E du lot nettoyage).
 
 # Instantanés et packs d'archive : à publier en release GitHub, pas dans l'arbre
 mod/UptoDate/StableBeta/
@@ -114,13 +109,17 @@ mod/UptoDate/@COMSPECOverwatch.zip
 # Dossier de sonde / exploration de mods tiers
 mod/UptoDate/_tmp_marker_probe/
 
-# Sorties dotnet des projets d'extension (limité à mod/ : server/node_modules/*/bin
-# contient des fichiers suivis qu'un « bin/ » global masquerait)
-mod/**/bin/
-mod/**/obj/
+# Sorties dotnet des deux projets d'extension, et d'eux seuls : un « bin/ » plus large
+# masquerait sans prévenir un futur dossier d'outils ou d'assets (server/node_modules/*/bin
+# contient déjà des fichiers suivis)
+mod/UptoDate/COMSPECExtension/bin/
+mod/UptoDate/COMSPECExtension/obj/
+mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/bin/
+mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/obj/
 
 # Journaux de compilation et comptes rendus d'outils
-mod/UptoDate/build_*.txt
+mod/UptoDate/build_log.txt
+mod/UptoDate/build_tmp_out.txt
 mod/UptoDate/build_*.log
 *.log.err
 mod/UptoDate/tools/metis-paa-to-png-last-run.txt

@@ -30,6 +30,9 @@ vers `Sources/comspec-overwatch-addons/connect/<même chemin>` suivi d'un rebuil
 - `sounds/` — `roger_prio.ogg` et `roger_simple.ogg`, remplacés par des carillons
   le 24/08/2026 (`docs/bugs/2026-08-24-atak-pack-sons.md`) et absents de
   `CfgSounds`.
-- `texHeaders.bin` — index de textures produit par Binarize, périmé : il décrit
-  37 textures dont la plupart sont ci-dessus. **À régénérer avec Binarize** si un
-  essai en jeu montre une régression d'affichage sur la tablette connect.
+- `texHeaders.bin` — index de textures produit par Binarize. Exact mais incomplet : ses
+  37 entrées décrivent bien les fichiers, mais 31 visent des textures sorties de l'addon
+  (ci-dessus), 6 des textures encore affichées, et 24 textures affichées n'y ont jamais
+  figuré. Le `main.pbo` natif est livré sans ce fichier depuis la 1.95.0. **À remettre
+  dans l'addon (`git mv`) ou à régénérer avec Binarize** si un essai en jeu montre une
+  régression d'affichage sur la tablette connect.
