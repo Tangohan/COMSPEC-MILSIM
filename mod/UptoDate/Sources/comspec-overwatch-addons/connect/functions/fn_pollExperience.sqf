@@ -32,6 +32,7 @@ private _map = createHashMap;
 
 missionNamespace setVariable ["COMSPEC_TenantExperience", _map, false];
 [] call comspec_overwatch_connect_fnc_applyTenantExperience;
+[player] call comspec_overwatch_connect_fnc_applyDonorPerk;
 
 if (_map getOrDefault ["guide", ""] isNotEqualTo "") then {
     [] spawn comspec_overwatch_connect_fnc_showExperienceGuide;

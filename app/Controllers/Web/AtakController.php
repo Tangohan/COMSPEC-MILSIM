@@ -147,6 +147,8 @@ class AtakController
                         'url' => $personnelUrl,
                         'avatarUrl' => $avatar !== '' ? $avatar : null,
                         'displayName' => trim((string) ($u['display_name'] ?? '')),
+                        // Palier « Donateur Athena » seulement (jamais de montant) : anneau et cœur sur la Tacmap.
+                        'donorTier' => \App\Support\DonorGamePerk::payload($userId)['donor_tier'] ?: null,
                     ];
                 }
             }
