@@ -9,8 +9,8 @@ use PDO;
 
 /**
  * Marques « équipe Athena » sur tout le site : les administrateurs de la plateforme (users.is_platform_admin)
- * ont une pastille rouge à l'aigle et leur nom en rouge, le support (rôle contributeur « support » validé
- * dans Admin > Contributeurs) une pastille verte au casque et leur nom en vert.
+ * ont un aigle rouge et leur nom en rouge, le support (rôle contributeur « support » validé dans
+ * Admin > Contributeurs) un casque vert et leur nom en vert.
  *
  * Une personne est reconnue par son e-mail : toutes ses lignes users (une par communauté) portent la marque.
  * Le résultat est gardé dans storage/cache/staff-marks.json (10 minutes, vidé à chaque changement d'accès ou
@@ -52,8 +52,8 @@ final class StaffMarkService
     }
 
     /**
-     * Pastille ronde (aigle blanc sur rouge pour l'administration, casque blanc sur vert pour le support) à placer
-     * juste après un nom ; $large pour un titre (fiche, en-tête de profil).
+     * Icône (aigle rouge pour l'administration, casque vert pour le support) à placer juste après un nom ;
+     * $large pour un titre (fiche, en-tête de profil).
      */
     public static function mark(int $userId, bool $large = false): string
     {

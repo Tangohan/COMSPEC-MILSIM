@@ -1990,8 +1990,8 @@ if (!function_exists('can')) {
 
 if (!function_exists('staff_name')) {
     /**
-     * Nom d'un membre (échappé) avec la marque « équipe Athena » : pastille à l'aigle et nom rouge pour
-     * l'administration de la plateforme, pastille au casque et nom vert pour le support. Sans marque, renvoie seulement le nom échappé.
+     * Nom d'un membre (échappé) avec la marque « équipe Athena » : aigle et nom rouge pour
+     * l'administration de la plateforme, casque et nom vert pour le support. Sans marque, renvoie seulement le nom échappé.
      */
     function staff_name(string $name, int $userId, bool $large = false): string
     {
@@ -2000,7 +2000,7 @@ if (!function_exists('staff_name')) {
 }
 
 if (!function_exists('staff_mark')) {
-    /** Pastille seule (à placer après un nom déjà affiché), ou chaîne vide ; $large pour un titre. */
+    /** Icône seule (à placer après un nom déjà affiché), ou chaîne vide ; $large pour un titre. */
     function staff_mark(int $userId, bool $large = false): string
     {
         return \App\Services\Platform\StaffMarkService::mark($userId, $large);

@@ -1,23 +1,18 @@
-/* Marques « équipe Athena » (StaffMarkService / staff-marks.js) : pastille rouge à l'aigle pour l'administration,
-   pastille verte au casque pour le support, nom de la même couleur. */
-.ath-staff-mark { --ath-staff-ring: #fff; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 16px; height: 16px; margin-left: 5px; vertical-align: -.15em; border-radius: 50%; color: #fff; box-shadow: 0 0 0 2px var(--ath-staff-ring); cursor: help; }
-.ath-staff-mark svg { display: block; width: 12px; height: 12px; }
-.ath-staff-mark--admin { background: linear-gradient(145deg, #ef4444, #b91c1c); }
-.ath-staff-mark--support { background: linear-gradient(145deg, #22c55e, #15803d); }
-.ath-staff-mark--lg, .personnel-file-hero__name .ath-staff-mark { width: 22px; height: 22px; margin-left: 8px; }
-.ath-staff-mark--lg svg, .personnel-file-hero__name .ath-staff-mark svg { width: 17px; height: 17px; }
-.is-staff--admin, a.is-staff--admin, a.is-staff--admin:visited { color: #c81e1e !important; }
-.is-staff--support, a.is-staff--support, a.is-staff--support:visited { color: #15803d !important; }
+/* Marques « équipe Athena » (StaffMarkService / staff-marks.js) : aigle rouge pour l'administration, casque vert
+   pour le support, juste après le nom écrit de la même couleur. */
+.ath-staff-mark { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; margin-left: 4px; vertical-align: -.18em; line-height: 0; cursor: help; }
+.ath-staff-mark svg { display: block; width: 1.05em; height: 1.05em; min-width: 13px; min-height: 13px; }
+.ath-staff-mark--admin, .is-staff--admin, a.is-staff--admin, a.is-staff--admin:visited { color: #c81e1e !important; }
+.ath-staff-mark--support, .is-staff--support, a.is-staff--support, a.is-staff--support:visited { color: #15803d !important; }
+.ath-staff-mark--lg, .personnel-file-hero__name .ath-staff-mark { margin-left: 8px; }
+.ath-staff-mark--lg svg, .personnel-file-hero__name .ath-staff-mark svg { width: .9em; height: .9em; }
 .ath-staff-ring--admin img { outline: 2px solid #dc2626; outline-offset: 1px; }
 .ath-staff-ring--support img { outline: 2px solid #16a34a; outline-offset: 1px; }
 
-/* Thème sombre (back-office et site) */
-html[data-bo-theme="dark"] .ath-staff-mark, html.dark .ath-staff-mark, [data-theme="dark"] .ath-staff-mark { --ath-staff-ring: rgba(0, 0, 0, .35); }
-html[data-bo-theme="dark"] .is-staff--admin, html.dark .is-staff--admin, [data-theme="dark"] .is-staff--admin { color: #ff6b6b !important; }
-html[data-bo-theme="dark"] .is-staff--support, html.dark .is-staff--support, [data-theme="dark"] .is-staff--support { color: #4ade80 !important; }
-/* La barre latérale back-office est sombre en permanence */
-.ath-sidebar .ath-staff-mark { --ath-staff-ring: rgba(0, 0, 0, .35); width: 14px; height: 14px; }
-.ath-sidebar .ath-staff-mark svg { width: 10px; height: 10px; }
-.ath-sidebar .is-staff--admin { color: #ff6b6b !important; }
-.ath-sidebar .is-staff--support { color: #4ade80 !important; }
-@media (forced-colors: active) { .ath-staff-mark { forced-color-adjust: none; border: 1px solid CanvasText; } }
+/* Thème sombre (back-office et site) et barre latérale back-office, sombre en permanence */
+html[data-bo-theme="dark"] .ath-staff-mark--admin, html.dark .ath-staff-mark--admin, [data-theme="dark"] .ath-staff-mark--admin,
+html[data-bo-theme="dark"] .is-staff--admin, html.dark .is-staff--admin, [data-theme="dark"] .is-staff--admin,
+.ath-sidebar .ath-staff-mark--admin, .ath-sidebar .is-staff--admin { color: #ff6b6b !important; }
+html[data-bo-theme="dark"] .ath-staff-mark--support, html.dark .ath-staff-mark--support, [data-theme="dark"] .ath-staff-mark--support,
+html[data-bo-theme="dark"] .is-staff--support, html.dark .is-staff--support, [data-theme="dark"] .is-staff--support,
+.ath-sidebar .ath-staff-mark--support, .ath-sidebar .is-staff--support { color: #4ade80 !important; }
