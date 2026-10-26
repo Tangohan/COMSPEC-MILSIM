@@ -85,6 +85,7 @@ final class RosterOnlyMemberService
         } catch (\Throwable) {
         }
         $this->userRepository->syncOrganizationRoles($userId, $tenantId, [], $actorUserId > 0 ? $actorUserId : null);
+        \App\Services\Personnel\NewMemberNumbers::assign($userId, $tenantId);
         $steam = preg_replace('/\D+/', '', (string) ($row['steam_id'] ?? '')) ?? '';
         if (preg_match('/^7656119\d{10}$/', $steam) === 1) {
             $this->userRepository->update($userId, $tenantId, ['steam_id' => $steam]);

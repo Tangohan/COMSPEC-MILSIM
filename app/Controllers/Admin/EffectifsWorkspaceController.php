@@ -160,6 +160,8 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
+        // Comptes créés sur le site avant l’attribution automatique : ils reçoivent leur matricule ici.
+        \App\Services\Personnel\NewMemberNumbers::assignMissing($tenantId);
 
         $search = trim((string) $request->query('q', ''));
         $status = trim((string) $request->query('status', ''));
