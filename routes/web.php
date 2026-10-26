@@ -2008,6 +2008,13 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/reseaux-chiffrement', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeCryptoDomain'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats/{id}/revoquer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'revokeCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats/{id}/supprimer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'deleteCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // CR de fin d'opération imposé sur les téléphones ATAK : suivi par joueur, envoi, relance, réglages du jeu.
+    $router->get('/back-office/atak/suivi-cr', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/imposer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'force'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/reglages', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'settings'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/suivi-cr/{id}/export.csv', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/relancer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'remind'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/cloturer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/export.csv', [\App\Controllers\Admin\AdminAarReportsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

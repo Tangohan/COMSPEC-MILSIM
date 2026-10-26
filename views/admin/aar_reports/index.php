@@ -84,6 +84,7 @@ $filtersOn = ($f['q'] ?? '') !== '' || ($f['status'] ?? '') !== '' || ($f['autho
       <a href="<?= $h($base . ($key === 'rapports' ? '' : '?vue=' . $key)) ?>" class="bo-aar-tabs__tab<?= $tab === $key ? ' is-active' : '' ?>"<?= $tab === $key ? ' aria-current="page"' : '' ?>><?= $h($label) ?> <span class="bo-aar-tabs__n"><?= (int) $n ?></span></a>
     <?php endforeach; ?>
     <span class="bo-aar-tabs__spacer"></span>
+    <a class="ath-btn" href="<?= $h(url('back-office/atak/suivi-cr')) ?>">CR des joueurs (fin d’op)</a>
     <?php if ($canManage): ?>
       <a class="ath-btn" href="<?= $h($base . '/modeles') ?>">Modèles<?= (int) ($aarTemplateCount ?? 0) > 0 ? ' · ' . (int) $aarTemplateCount : '' ?></a>
       <a class="ath-btn ath-btn--solid" href="<?= $h($base . '/nouveau') ?>">+ Nouveau compte rendu</a>
