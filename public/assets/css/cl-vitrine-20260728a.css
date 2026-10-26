@@ -2846,3 +2846,6 @@ html.community-landing--lightbox-open {
   }
 }
 
+
+/* Communauté qui soutient Athena (DonorService::tenantSupport) */
+.cl-pill--supporter { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; color: #fff; background: linear-gradient(135deg, #d9467a, #7c3aed); border-color: transparent; text-decoration: none; }

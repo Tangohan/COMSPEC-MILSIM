@@ -30,7 +30,7 @@ final class UnitJobRoleSyncServiceTest extends TestCase
         $sync = (string) file_get_contents($root . '/app/Services/Rbac/MilitaryRoleCatalogSyncService.php');
         $boot = (string) file_get_contents($root . '/app/Services/Personnel/PersonnelJobRoleBootstrapService.php');
         $migrate = (string) file_get_contents($root . '/bootstrap/personnel_job_roles_migration.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
 
         self::assertStringNotContainsString('INSERT INTO personnel_job_roles', $sync);
         self::assertStringContainsString('UnitJobRoleSyncService', $boot);

@@ -55,7 +55,7 @@ final class MusicLibraryTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
-        $migrations = (string) file_get_contents($root . '/run-migrations.php');
+        $migrations = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $nav = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
         $dll = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
 

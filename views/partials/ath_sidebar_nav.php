@@ -256,8 +256,7 @@ $materielChildren = [
 
 $atakResChildren = [
     ['label' => 'Configuration ATAK', 'href' => url('back-office/ressources/atak-config'), 'active' => $navAt('back-office/ressources/atak-config')],
-    ['label' => 'Mod ATAK', 'href' => url('back-office/ressources/atak-mod'), 'active' => $navAt('back-office/ressources/atak-mod')],
-    ['label' => 'Modpacks', 'href' => url('back-office/ressources/modpacks'), 'active' => $navAt('back-office/ressources/modpacks')],
+    ['label' => 'Mods (Steam Workshop)', 'href' => url('back-office/ressources/atak-mod'), 'active' => $navAt('back-office/ressources/atak-mod')],
     ['label' => 'Réglages réalisme', 'href' => url('back-office/ressources/atak-realism/config'), 'active' => $navAt('back-office/ressources/atak-realism')],
     ['label' => 'Serveurs de jeu', 'href' => url('back-office/ressources/serveurs-de-jeu'), 'active' => $navAt('back-office/ressources/serveurs-de-jeu')],
     ['label' => 'Restrictions d’accès au mod', 'href' => url('back-office/ressources/atak-mod-blocks'), 'active' => $navAt('back-office/ressources/atak-mod-blocks')],
@@ -531,7 +530,16 @@ if ($isOperatorBoNav) {
                 ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'cal', 'active' => $boNavPlanning],
                 ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => $boNavMissionsPortal],
                 ['label' => 'Carte tactique', 'href' => url('back-office/operations/carte-tactique'), 'icon' => 'ops', 'active' => $navTacticalMapActive],
-                ['label' => 'Comptes rendus', 'href' => url('back-office/atak/comptes-rendus'), 'icon' => 'aar', 'active' => $boNavAar],
+                [
+                    'label' => 'Comptes rendus',
+                    'href' => url('back-office/atak/comptes-rendus'),
+                    'icon' => 'aar',
+                    'active' => $boNavAar || !empty($boNavDebrief),
+                    'children' => [
+                        ['label' => 'Comptes rendus post-op', 'href' => url('back-office/atak/comptes-rendus'), 'active' => $boNavAar],
+                        ['label' => 'CR des joueurs (fin d’op)', 'href' => url('back-office/atak/suivi-cr'), 'active' => !empty($boNavDebrief)],
+                    ],
+                ],
                 [
                     'label' => 'Coopérations inter-unités',
                     'href' => cooperation_mission_index_url(),

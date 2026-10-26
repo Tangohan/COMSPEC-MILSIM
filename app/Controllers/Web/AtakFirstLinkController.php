@@ -46,8 +46,8 @@ final class AtakFirstLinkController
         $hasSteam = $steamId !== '';
         $hasIdentity = $callsign !== '' || $displayName !== '';
 
-        $modPath = dirname(__DIR__, 3) . '/storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
-        $hasMod = is_file($modPath) && is_readable($modPath);
+        // Le mod est distribué par le Steam Workshop : toujours disponible.
+        $hasMod = true;
 
         /** @var TenantAtakConfigRepository $atakConfigRepo */
         $atakConfigRepo = Container::get(TenantAtakConfigRepository::class);
@@ -91,7 +91,7 @@ final class AtakFirstLinkController
                 'has_mod' => $hasMod,
                 'has_access_key' => $hasAccessKey,
                 'mod_page_url' => url('atak/mod'),
-                'mod_download_url' => $hasMod ? url('atak/mod/download') : null,
+                'mod_download_url' => \App\Support\SteamWorkshop::clientUrl(\App\Support\SteamWorkshop::items()[0]['id']),
                 'tuto_url' => url('atak/tuto'),
                 'guide_url' => url('atak/mod/guide'),
                 'account_url' => url('account/preferences'),

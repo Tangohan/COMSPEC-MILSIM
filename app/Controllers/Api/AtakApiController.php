@@ -7382,6 +7382,18 @@ class AtakApiController
                 'meta' => $meta,
             ];
         }
+        // CR de fin d'opération : fiche dans le texte de l'avis et réglages de la communauté, pour un ATAK qui sait les lire.
+        $caps = (string) ($this->jsonBody($request)['caps'] ?? '');
+        try {
+            $messages = (new \App\Services\Atak\AtakDebriefService(null, $fleet))->decoratePoll(
+                $tenantId,
+                $userId,
+                $steam,
+                $messages,
+                in_array(\App\Services\Atak\AtakDebriefService::CAPABILITY, explode(',', $caps), true)
+            );
+        } catch (\Throwable) {
+        }
 
         return Response::json(['ok' => true, 'messages' => $messages]);
     }
@@ -7398,6 +7410,10 @@ class AtakApiController
         $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 50) : [];
         $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
         $n = (new \App\Repositories\AtakAdminControlRepository())->markMessagesForPlayer($tenantId, $userId, $steam, array_map('intval', $ids), $state);
+        if ($n > 0) {
+            // CR de fin d'opération : affiché, ou lu pour une demande « à lire ».
+            (new \App\Repositories\AtakDebriefRepository())->markMessages(array_map('intval', $ids), $state);
+        }
 
         return Response::json(['ok' => true, 'updated' => $n]);
     }
@@ -7442,6 +7458,37 @@ class AtakApiController
         $out = (new \App\Services\Atak\AtakGameAdminService())->act($tenantId, $role, [(int) $user['id'], $name], (string) ($body['action'] ?? ''), $body);
 
         return Response::json($out, $out['ok'] ? 200 : 422);
+    }
+
+    /**
+     * App Médical de l'ATAK natif (COMSPEC Link « MedicalRoster ») : fiches médicales des membres de la communauté
+     * (groupe sanguin, poids, taille, intolérances, allergies), pour le joueur connecté en jeu par sa propre session
+     * qui est gestionnaire, au pilotage des effectifs ou titulaire d'une fonction médicale.
+     * -> {ok, role, generated_at, count, rows}. Joueur sans droit : 403 « forbidden ».
+     */
+    public function medicalRoster(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        // La clé d'accès commune du serveur ne dit pas qui joue : la session de jeu du joueur est exigée.
+        $userId = ComspecApiKeyAuth::matchedUserId();
+        $user = $userId !== null ? $this->userRepository->findById($userId) : null;
+        if ($user === null) {
+            return Response::json(['ok' => false, 'error' => 'session_required', 'message' => 'Reliez votre compte Athena en jeu.'], 403);
+        }
+        $service = new \App\Services\Atak\AtakMedicalRosterService($this->userRepository);
+        $role = $service->role($r, $userId, $user);
+        if ($role === null) {
+            return Response::json(['ok' => false, 'error' => 'forbidden', 'message' => 'Fiches médicales réservées aux médecins, à la gestion et au pilotage des effectifs.'], 403);
+        }
+        $rows = $service->rows($r);
+
+        return Response::json(['ok' => true, 'role' => $role, 'generated_at' => gmdate('Y-m-d H:i:s'), 'count' => count($rows), 'rows' => $rows]);
     }
 
     /**
@@ -8198,6 +8245,13 @@ class AtakApiController
         }
 
         $payload = $svc->payloadForGame($tenantId);
+        // Palier « Donateur Athena » du joueur de la session jeu (écusson en jeu, overlay ATAK).
+        $gameUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($gameUserId === null && ($steam = ComspecApiKeyAuth::matchedSteamId()) !== null) {
+            $row = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $gameUserId = $row !== null ? (int) $row['id'] : null;
+        }
+        $payload += \App\Support\DonorGamePerk::payload($gameUserId);
 
         return Response::json($payload);
     }
@@ -13715,6 +13769,17 @@ class AtakApiController
             }
         }
         $knownTypes = \App\Support\AtakIcemanReportCatalog::knownTypeCodes();
+        // CR de fin d'opération imposé (app CR de fin d'op du téléphone) : seules les réponses deviennent une remontée.
+        $debriefSvc = null;
+        if ($rawType === 'DEBRIEF') {
+            $debriefSvc = new \App\Services\Atak\AtakDebriefService();
+            $event = strtolower((string) (($body['structured_data'] ?? [])['debrief_event'] ?? 'submitted'));
+            if ($event !== 'submitted') {
+                $done = $debriefSvc->handleGameReport($tenantId, $body, is_array($actor) ? $actor : null);
+
+                return Response::json(['success' => true, 'debrief' => $done['debrief_id'], 'handled' => $done['handled']]);
+            }
+        }
         $summary = trim((string) ($body['summary'] ?? ''));
         $details = trim((string) ($body['details'] ?? ''));
         $hasStructured = is_array($body['structured_data'] ?? null) && $body['structured_data'] !== [];
@@ -13796,6 +13861,13 @@ class AtakApiController
         $reportMissionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
         if ($reportMissionKey !== '' && $reportId > 0) {
             $repo->setMissionKey($reportId, $reportMissionKey);
+        }
+        if ($debriefSvc !== null) {
+            try {
+                $debriefSvc->handleGameReport($tenantId, $body, is_array($actor) ? $actor : null, $reportId > 0 ? $reportId : null);
+            } catch (\Throwable $e) {
+                error_log('[atak_debrief] tenant=' . $tenantId . ' ' . $e->getMessage());
+            }
         }
         $routing = [
             'enabled' => false,

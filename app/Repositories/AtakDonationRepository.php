@@ -71,7 +71,7 @@ final class AtakDonationRepository
              SET status = \'paid\',
                  stripe_payment_intent_id = COALESCE(?, stripe_payment_intent_id),
                  paid_at = COALESCE(paid_at, NOW())
-             WHERE id = ? AND status <> \'paid\''
+             WHERE id = ? AND status IN (\'pending\', \'cancelled\', \'rejected\')'
         );
         $stmt->execute([$paymentIntentId, $id]);
     }

@@ -149,7 +149,7 @@ final class PlatformStorageCatalog
             ['path' => 'storage/logs', 'label' => 'Journaux serveur', 'purgeable' => true],
             ['path' => 'storage/cache', 'label' => 'Cache', 'purgeable' => true],
             ['path' => 'storage/updates', 'label' => 'Paquets de mise à jour', 'purgeable' => false],
-            ['path' => 'storage/atak-mod', 'label' => 'Packs jeu des communautés', 'purgeable' => false],
+            ['path' => 'storage/atak-mod', 'label' => 'Anciennes archives du mod (avant Steam)', 'purgeable' => false],
         ];
     }
 }

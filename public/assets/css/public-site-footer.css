@@ -22,14 +22,14 @@
   gap: 2.25rem 3rem;
   max-width: 100rem;
   margin: 0 auto;
-  padding: 3.25rem 1.35rem calc(clamp(4.25rem, 14vw, 11rem) + 2.75rem);
+  padding: 3.25rem 1.35rem calc(17.5vw + 2.75rem);
 }
 
 @media (min-width: 860px) {
   .psf__sheet {
     grid-template-columns: minmax(13.5rem, 18rem) minmax(0, 1fr);
     align-items: start;
-    padding: 3.75rem 2.5rem calc(clamp(4.25rem, 14vw, 11rem) + 2.75rem);
+    padding: 3.75rem 2.5rem calc(17.5vw + 2.75rem);
   }
 }
 
@@ -212,10 +212,17 @@
 @media (max-width: 639px) {
   .psf__sheet {
     padding-top: 2.5rem;
-    padding-bottom: calc(clamp(3.25rem, 20vw, 5rem) + 2rem);
+    padding-bottom: calc(17.5vw + 2rem);
   }
 
   .psf__giant {
     height: clamp(3.25rem, 20vw, 5rem);
   }
+}
+
+/* Le mot ATHENA tient toujours en entier dans la largeur du pied de page (unités de conteneur). */
+.psf__giant { container-type: inline-size; height: auto; text-align: center; }
+.psf__giant span { display: inline-block; font-size: 23cqw; line-height: 0.74; padding: 0.04em 0.15rem 0; }
+@supports not (font-size: 1cqw) {
+  .psf__giant span { font-size: 22vw; }
 }

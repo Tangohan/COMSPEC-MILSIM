@@ -12,7 +12,7 @@ final class AdvancementSystemAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $migration = (string) file_get_contents($root . '/bootstrap/advancement_grade_migration.php');
-        $runner = (string) file_get_contents($root . '/run-migrations.php');
+        $runner = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $container = (string) file_get_contents($root . '/app/Core/Container.php');
         $bootstrap = (string) file_get_contents($root . '/app/Services/Community/TenantBootstrapService.php');

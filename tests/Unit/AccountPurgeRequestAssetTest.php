@@ -48,7 +48,7 @@ final class AccountPurgeRequestAssetTest extends TestCase
         self::assertFileExists($root . '/bootstrap/account_purge_requests_migration.php');
         self::assertFileExists($root . '/migrations/20260829180000_account_purge_requests.sql');
 
-        $migration = (string) file_get_contents($root . '/run-migrations.php');
+        $migration = (string) \Tests\Support\MigrationPipelineSource::read($root);
         self::assertStringContainsString('account_purge_requests_migration.php', $migration);
 
         $orgCtrl = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/UserAdminController.php');

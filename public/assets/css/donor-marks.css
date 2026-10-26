@@ -1,0 +1,35 @@
+/* Marques « donateur Athena » partagées par le site et le back-office (DonorService::mark / nameClass). */
+.ath-donor-mark { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 1px 6px 1px 5px; vertical-align: middle; font-size: 10.5px; font-weight: 700; line-height: 16px; letter-spacing: .04em; text-transform: uppercase; color: #c2185b; background: rgba(217, 70, 122, .12); border: 1px solid rgba(217, 70, 122, .35); white-space: nowrap; }
+.ath-donor-mark svg { flex: 0 0 auto; }
+.ath-donor-mark__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ath-donor-mark:not(:has(span:not(.ath-donor-mark__sr))) { padding: 2px; }
+.ath-donor-mark--allie { color: #6d28d9; background: rgba(109, 40, 217, .1); border-color: rgba(109, 40, 217, .35); }
+.ath-donor-mark--pilier { color: #8a5a00; background: linear-gradient(135deg, rgba(245, 196, 66, .28), rgba(217, 70, 122, .16)); border-color: rgba(201, 145, 20, .55); }
+.is-donor { text-decoration: none; background-image: linear-gradient(90deg, #d9467a, #d9467a); background-repeat: no-repeat; background-size: 100% 2px; background-position: 0 100%; padding-bottom: 1px; }
+.is-donor--allie { background-image: linear-gradient(90deg, #7c3aed, #d9467a); }
+.is-donor--pilier { background-image: linear-gradient(90deg, #f5b301, #d9467a 60%, #7c3aed); }
+/* Thème sombre (back-office et site) */
+html[data-bo-theme="dark"] .ath-donor-mark, html.dark .ath-donor-mark, [data-theme="dark"] .ath-donor-mark { color: #ff8fb7; background: rgba(255, 143, 183, .12); border-color: rgba(255, 143, 183, .35); }
+html[data-bo-theme="dark"] .ath-donor-mark--allie, html.dark .ath-donor-mark--allie, [data-theme="dark"] .ath-donor-mark--allie { color: #c4b5fd; background: rgba(196, 181, 253, .12); border-color: rgba(196, 181, 253, .35); }
+html[data-bo-theme="dark"] .ath-donor-mark--pilier, html.dark .ath-donor-mark--pilier, [data-theme="dark"] .ath-donor-mark--pilier { color: #ffd66b; background: linear-gradient(135deg, rgba(255, 214, 107, .18), rgba(255, 143, 183, .12)); border-color: rgba(255, 214, 107, .45); }
+/* La barre latérale back-office est sombre en permanence */
+.ath-sidebar .ath-donor-mark { color: #ff8fb7; background: rgba(255, 143, 183, .14); border-color: rgba(255, 143, 183, .35); padding: 1px 3px; margin-left: 5px; }
+.ath-sidebar .ath-donor-mark--pilier { color: #ffd66b; border-color: rgba(255, 214, 107, .45); }
+@media (prefers-reduced-motion: no-preference) {
+  .ath-donor-mark--pilier svg { animation: ath-donor-beat 2.4s ease-in-out infinite; }
+}
+@keyframes ath-donor-beat { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.22); } 90% { transform: scale(.96); } }
+
+/* Décoration automatique (donor-marks.js) */
+.ath-donor-ring img { outline: 2px solid #d9467a; outline-offset: 1px; }
+.ath-donor-ring--allie img { outline-color: #7c3aed; }
+.ath-donor-ring--pilier img { outline-color: #f5b301; box-shadow: 0 0 0 4px rgba(245, 179, 1, .18); }
+.ath-donor-card { box-shadow: inset 3px 0 0 #d9467a; }
+.ath-donor-card--allie { box-shadow: inset 3px 0 0 #7c3aed; }
+.ath-donor-card--pilier { box-shadow: inset 3px 0 0 #f5b301; }
+.ath-supporter-mark { display: inline-flex; align-items: center; margin-left: 5px; vertical-align: middle; color: #d9467a; }
+.ath-supporter-card { box-shadow: inset 0 3px 0 #d9467a; }
+html[data-bo-theme="dark"] .ath-supporter-mark, html.dark .ath-supporter-mark, [data-theme="dark"] .ath-supporter-mark { color: #ff8fb7; }
+.personnel-file-hero__name .ath-donor-mark { font-size: 12px; line-height: 18px; padding: 2px 8px; }
+.personnel-file-hero__donor { margin: 4px 0 0; font-size: 13px; opacity: .9; }
+.personnel-file-hero__donor a { color: #ff8fb7; font-weight: 700; text-decoration: none; }

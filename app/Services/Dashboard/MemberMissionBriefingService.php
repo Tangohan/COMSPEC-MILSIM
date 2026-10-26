@@ -13,7 +13,7 @@ use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingService;
 
 /**
- * Synthèse « mission du jour » pour le tableau de bord membre (OP, formations, modpack, consignes courtes).
+ * Synthèse « mission du jour » pour le tableau de bord membre (OP, formations, mods Steam, consignes courtes).
  */
 final class MemberMissionBriefingService
 {
@@ -107,26 +107,12 @@ final class MemberMissionBriefingService
             }
         }
 
-        $modpackBlock = null;
-        if ($modpack && !empty($modpack['id'])) {
-            $slug = trim((string) ($modpack['slug'] ?? ''));
-            $detailHref = $slug !== '' ? url('modpacks/' . rawurlencode($slug)) : url('modpacks');
-            $mtitle = trim((string) ($modpack['name'] ?? $modpack['title'] ?? ''));
-            if ($mtitle === '') {
-                $mtitle = 'Modpack';
-            }
-            $modpackBlock = [
-                'title' => $mtitle,
-                'detail_href' => $detailHref,
-                'has_pack' => true,
-            ];
-        } else {
-            $modpackBlock = [
-                'title' => 'Modpack communautaire',
-                'detail_href' => url('modpacks'),
-                'has_pack' => false,
-            ];
-        }
+        // Mods servis par le Steam Workshop (SteamWorkshop::modset) : la fiche renvoie au guide d'installation.
+        $modpackBlock = [
+            'title' => trim((string) ($modpack['title'] ?? '')) !== '' ? (string) $modpack['title'] : 'Mods de la communauté',
+            'detail_href' => url('atak/mod'),
+            'has_pack' => !empty($modpack['has_collection']),
+        ];
 
         $consigneExcerpt = null;
         foreach ($dashboardPins as $pin) {

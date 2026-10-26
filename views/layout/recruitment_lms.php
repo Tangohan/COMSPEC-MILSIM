@@ -44,5 +44,6 @@ $headHtml = ob_get_clean();
     $lmsModuleEntryAuto = 'recrutement';
     require base_path('views/partials/lms_module_entry_modal.php');
     ?>
+<?php require base_path('views/partials/donor_marks_assets.php'); ?>
 </body>
 </html>

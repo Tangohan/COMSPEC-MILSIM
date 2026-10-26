@@ -1765,13 +1765,8 @@ class Container
                 self::get(\App\Services\Alerts\AlertPresentationService::class),
             ),
             \App\Controllers\Web\DocumentationController::class => new \App\Controllers\Web\DocumentationController(),
-            \App\Repositories\ModpackRepository::class => new \App\Repositories\ModpackRepository(),
-            \App\Controllers\Web\ModpackController::class => new \App\Controllers\Web\ModpackController(
-                self::get(\App\Repositories\ModpackRepository::class)
-            ),
             \App\Controllers\Web\OperateurTerrainController::class => new \App\Controllers\Web\OperateurTerrainController(
                 self::get(AuthService::class),
-                self::get(\App\Repositories\ModpackRepository::class),
                 self::get(\App\Services\Dashboard\TenantDashboardPinService::class),
             ),
             \App\Repositories\TrainingRepository::class => new \App\Repositories\TrainingRepository(),
@@ -2117,9 +2112,6 @@ class Container
             \App\Controllers\Admin\AdminUnitsController::class => new \App\Controllers\Admin\AdminUnitsController(
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class)
-            ),
-            \App\Controllers\Admin\AdminModpackController::class => new \App\Controllers\Admin\AdminModpackController(
-                self::get(\App\Repositories\ModpackRepository::class)
             ),
             \App\Controllers\Admin\AdminAtakConfigController::class => new \App\Controllers\Admin\AdminAtakConfigController(
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),

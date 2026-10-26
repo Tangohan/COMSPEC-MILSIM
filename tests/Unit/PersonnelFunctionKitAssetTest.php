@@ -29,7 +29,7 @@ final class PersonnelFunctionKitAssetTest extends TestCase
         self::assertFileExists($root . '/bootstrap/personnel_function_kits_migration.php');
         $sql = (string) file_get_contents($root . '/migrations/20260902000001_personnel_function_kits.sql');
         self::assertStringContainsString('tenant_function_kit_state', $sql);
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         self::assertStringContainsString('run_personnel_function_kits_migration', $run);
     }
 

@@ -170,10 +170,50 @@ $tierIcons = [
             <div>
                 <p class="don-kicker">Merci en retour</p>
                 <h2 id="don-badge-title" class="don-h2">Le badge Donateur ATAK</h2>
-                <p class="don-sub">Après votre don, envoyez-nous la référence de la transaction PayPal par la page Contact : nous ajoutons le badge Donateur ATAK à votre profil. Il s’affiche sur votre fiche et dans l’annuaire de vos communautés.</p>
-                <a href="<?= $e(url('contact')) ?>" class="don-link">Demander mon badge →</a>
+                <p class="don-sub">Dès que votre don est validé, le badge « Donateur Athena » apparaît sur votre fiche dans chacune de vos communautés, et votre nom porte une marque de couleur partout sur le site : <b class="don-tier-word don-tier-word--soutien">Soutien</b> dès le premier euro, <b class="don-tier-word don-tier-word--allie">Allié</b> à partir de 20 € au total, <b class="don-tier-word don-tier-word--pilier">Pilier</b> à partir de 100 €. Un don par PayPal ? Envoyez-nous la référence de la transaction par la page Contact pour qu’on le rattache à votre compte.</p>
+                <a href="<?= $e(url('contact')) ?>" class="don-link">Rattacher un don PayPal →</a>
             </div>
         </div>
+    </section>
+
+    <!-- Mur des donateurs -->
+    <?php
+    $board = is_array($donorBoard ?? null) ? $donorBoard : [];
+    $tierNames = ['pilier' => 'Piliers', 'allie' => 'Alliés', 'soutien' => 'Soutiens'];
+    $byTier = [];
+    foreach ($board as $row) { $byTier[$row['tier']][] = $row; }
+    ?>
+    <section id="donateurs" class="don-wrap don-section" aria-labelledby="don-wall-title">
+        <div class="don-head don-reveal">
+            <p class="don-kicker">Merci</p>
+            <h2 id="don-wall-title" class="don-h2">Ils font tourner Athena</h2>
+            <p class="don-sub"><?= count($board) > 0 ? count($board) . ' donateur' . (count($board) > 1 ? 's' : '') . ' et ' . (int) ($supporterCount ?? 0) . ' communauté' . ((int) ($supporterCount ?? 0) > 1 ? 's' : '') . ' soutiennent le projet.' : 'Le mur est encore vide : votre nom peut être le premier.' ?> Les montants ne sont jamais affichés.</p>
+        </div>
+        <?php if ($board !== []): ?>
+        <div class="don-wall don-reveal">
+            <?php foreach ($tierNames as $tier => $label): if (empty($byTier[$tier])) { continue; } ?>
+            <div class="don-wall__tier don-wall__tier--<?= $e($tier) ?>">
+                <h3 class="don-wall__title"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z" fill="currentColor"/></svg><?= $e($label) ?> <span><?= count($byTier[$tier]) ?></span></h3>
+                <ul class="don-wall__list">
+                    <?php foreach ($byTier[$tier] as $row): $since = !empty($row['since']) ? strtotime((string) $row['since'] . ' UTC') : false; ?>
+                    <li class="don-wall__item">
+                        <span class="don-wall__avatar" aria-hidden="true"><?= $e(mb_strtoupper(mb_substr((string) $row['name'], 0, 1))) ?></span>
+                        <span class="don-wall__who"><b><?= $e($row['name']) ?></b><small><?= $row['community'] !== '' ? $e($row['community']) : 'Donateur indépendant' ?><?= $since ? ' · depuis ' . $e(date('m/Y', $since)) : '' ?></small></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($myDonorTier)): ?>
+        <form method="post" action="<?= $e(url('soutenir-atak/mur')) ?>" class="don-wall__me don-reveal">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="visible" value="<?= !empty($myDonorHidden) ? '1' : '0' ?>">
+            <p>Merci ! Vous êtes <b class="don-tier-word don-tier-word--<?= $e($myDonorTier) ?>"><?= $e(['soutien' => 'Soutien', 'allie' => 'Allié', 'pilier' => 'Pilier'][$myDonorTier] ?? '') ?></b>. <?= !empty($myDonorHidden) ? 'Votre nom est masqué sur ce mur.' : 'Votre nom public apparaît sur ce mur.' ?></p>
+            <button type="submit" class="don-btn don-btn--ghost"><?= !empty($myDonorHidden) ? 'Apparaître sur le mur' : 'Masquer mon nom' ?></button>
+        </form>
+        <?php endif; ?>
     </section>
 
     <!-- Questions -->

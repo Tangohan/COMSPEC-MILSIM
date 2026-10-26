@@ -25,7 +25,7 @@ final class DashboardUiTourAssetTest extends TestCase
         $home = (string) file_get_contents($root . '/app/Controllers/Web/HomeController.php');
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $mig = (string) file_get_contents($root . '/bootstrap/user_ui_tours_migration.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Api/UiTourController.php');
 
         self::assertStringContainsString('Masquer le guide', $js);
