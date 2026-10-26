@@ -61,7 +61,7 @@ for "_i" from 0 to (_count - 1) do {
 };
 { _x addCuratorEditableObjects [_objects, true]; } forEach allCurators;
 
-private _men = ((nearestObjects [_centerATL, ["CAManBase"], _radius]) select { alive _x && {!isPlayer _x} }) select [0, 6];
+private _men = ((nearestObjects [_centerATL, ["CAManBase"], _radius]) select { alive _x && {!isPlayer _x} && {!(_x in playableUnits)} }) select [0, 6];
 private _profile = _opt getOrDefault ["profile", "INSURGENT"];
 private _complexity = _opt getOrDefault ["complexity", "STANDARD"];
 private _cluster = [_seed, _profile, _complexity, _opt getOrDefault ["region", missionNamespace getVariable ["comspec_sse_region", "IRAQ"]]] call comspec_sse_fnc_generateCluster;

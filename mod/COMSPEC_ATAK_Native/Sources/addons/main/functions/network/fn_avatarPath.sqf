@@ -25,13 +25,15 @@ if !(_uid in _cache) then {
     _cache set [_uid, [if (_i < 0) then { "" } else { (_disk select _i) param [2, ""] }, -1e9]];
 };
 (_cache get _uid) params ["_path", "_triedAt"];
-if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { _path };
+// Chemin rendu aux pages seulement si Arma peut lire l'image (fn_texUsable) : sinon "" et la page montre l'initiale.
+private _show = [_path] call comspec_atak_native_fnc_texUsable;
+if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { _show };
 // Déjà vérifié auprès du site pendant cette session : rien à redemander.
-if (_path isNotEqualTo "" && {_uid in (uiNamespace getVariable ["COMSPEC_ATAK_AvatarChecked", []])}) exitWith { _path };
-if (diag_tickTime - _triedAt < 120) exitWith { _path };
+if (_path isNotEqualTo "" && {_uid in (uiNamespace getVariable ["COMSPEC_ATAK_AvatarChecked", []])}) exitWith { _show };
+if (diag_tickTime - _triedAt < 120) exitWith { _show };
 // Un seul téléchargement à la fois : les appels à la DLL bloquent le jeu le temps de la requête (même en spawn),
 // et une page de groupe lançait un appel par joueur à chaque rendu.
-if (missionNamespace getVariable ["COMSPEC_ATAK_AvatarBusy", false]) exitWith { _path };
+if (missionNamespace getVariable ["COMSPEC_ATAK_AvatarBusy", false]) exitWith { _show };
 missionNamespace setVariable ["COMSPEC_ATAK_AvatarBusy", true];
 _cache set [_uid, [_path, diag_tickTime]];
 [_uid] spawn {
@@ -160,4 +162,4 @@ _cache set [_uid, [_path, diag_tickTime]];
     };
     missionNamespace setVariable ["COMSPEC_ATAK_AvatarBusy", false];
 };
-_path
+_show

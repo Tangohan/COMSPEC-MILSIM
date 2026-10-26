@@ -74,6 +74,8 @@ switch (_act) do {
     };
     case "rip": { [format ["%1 : câble arraché pendant le transfert (%2)", _label, _whoName]] call _note; };
     case "done": {
+        // Données retirées par Zeus pendant le transfert : rien n'a été téléchargé.
+        if (isNil { _obj getVariable "COMSPEC_ATAK_Data" }) exitWith {};
         _arg params [["_names", []], ["_full", false]];
         private _taken = _obj getVariable ["COMSPEC_ATAK_DataTaken", []];
         _taken pushBackUnique _whoName;

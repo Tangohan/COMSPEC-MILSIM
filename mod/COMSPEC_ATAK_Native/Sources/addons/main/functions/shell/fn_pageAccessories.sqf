@@ -47,12 +47,12 @@ for "_i" from 1 to (floor (_bh / (_gy max 0.001))) do { [0, _gy * _i, _bw, _gy *
 // En-tête et aide.
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
-private _s7 = !(_model in ["rugged", "iphone", "sonim", "s23"]);
+private _s7 = !(_model in ["rugged", "iphone", "sonim", "s23", "ip17"]);
 private _nMounted = { _x get "mounted" } count _slots;
 private _headH = _fs * 1.9;
 [[_pad, _pad * 0.5, _bw - 2 * _pad, _headH], format ["<t size='%1' font='COMSPEC_BarlowBold' color='#e8eadf'>ÉTABLI</t><t size='%2' color='#8a9a93'>  ·  %3</t><t align='right' size='%2' color='%4'>%5 / %6 fixés</t>",
     _k * 1.15, _k * 0.85,
-    [createHashMapFromArray [["rugged", "XIAOMI X3D"], ["iphone", "V2 Enhanced"], ["sonim", "SONIM XP8 + goTenna Pro"], ["s23", "Samsung S23 durci"], ["keys", "Tablette durcie"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
+    [createHashMapFromArray [["rugged", "XIAOMI X3D"], ["iphone", "V2 Enhanced"], ["sonim", "SONIM XP8 + goTenna Pro"], ["s23", "Samsung S23 durci"], ["ip17", "iPhone 17 Pro durci"], ["keys", "Tablette durcie"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
     _accHex, _nMounted, count _slots]] call _txt;
 private _hintH = _fs * 1.5;
 [[_pad, _bh - _hintH, _bw - 2 * _pad, _hintH], format ["<t align='center' size='%1' color='#6d7a74'>Touchez un emplacement pour fixer ou retirer un accessoire</t>", _k * 0.75]] call _txt;

@@ -30,12 +30,12 @@ if (_model in ["plate", "flip", "ribbed"]) then { _model = "s7"; profileNamespac
 if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 // La tablette du véhicule est commune, pour qui n'a pas son ATAK : avec son téléphone, on garde son téléphone.
 if (_term in ["vehicle", "cp", "toc"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
-// iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), s23 (SAMSUNG S23), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
+// iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), s23 (SAMSUNG S23), ip17 (IPHONE 17 PRO), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
 // gardent leurs proportions ; leur écran (paysage) est donc propre à chacune, mesuré sur l'ouverture de la photo.
 private _visLand = (createHashMapFromArray [
     ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1802, 0.3521, 0.8013, 0.7329]], ["iphone", [0.1035, 0.3071, 0.9580, 0.8042]], ["tablet", [0.1655, 0.3237, 0.8105, 0.6772]],
     ["keys", [0.1655, 0.3237, 0.8105, 0.6772]], ["sonim", [0.1089, 0.2456, 0.8613, 0.7031]],
-    ["s23", [0.1392, 0.2983, 0.8330, 0.7036]]
+    ["s23", [0.1392, 0.2983, 0.8330, 0.7036]], ["ip17", [0.1167, 0.3154, 0.8755, 0.7866]]
 ]) getOrDefault [_model, []];
 if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
 // Vertical : texture tournée d'un quart de tour horaire.
@@ -44,7 +44,9 @@ private _vis = [[1 - _ly1, _lx0, 1 - _ly0, _lx1], _visLand] select _land;
 private _scrLand = (createHashMapFromArray [
     ["rugged", [0.2218, 0.4003, 0.7550, 0.6002]], ["iphone", [0.2220, 0.3709, 0.7552, 0.6299]],
     ["keys", [0.2217, 0.3666, 0.7549, 0.6336]], ["tablet", [0.2217, 0.3666, 0.7549, 0.6336]], ["sonim", [0.2220, 0.3477, 0.7552, 0.6528]],
-    ["s23", [0.2221, 0.3449, 0.7553, 0.6553]]
+    ["s23", [0.2221, 0.3449, 0.7553, 0.6553]],
+    // iPhone 17 Pro : l'écran commence après la Dynamic Island (zone sûre d'iOS en paysage), l'île reste sur la coque.
+    ["ip17", [0.2221, 0.3801, 0.7553, 0.6201]]
 ]) getOrDefault [_model, [0.2222, 0.3496, 0.7549, 0.6509]];
 _scrLand params ["_sx0", "_sy0", "_sx1", "_sy1"];
 private _scr = [[1 - _sy1, _sx0, 1 - _sy0, _sx1], _scrLand] select _land;

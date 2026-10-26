@@ -17,7 +17,13 @@ if (_kind isEqualTo 2) then {
     [_name, true] call comspec_atak_native_fnc_markerWeb;
 };
 private _notes = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
-if (_name in _notes) then { _notes deleteAt _name; missionNamespace setVariable ["COMSPEC_ATAK_MarkerNotes", _notes, true]; };
+// Retirée ici tout de suite ; le serveur seul édite et diffuse la table publique (fn_markerNet "note").
+if (_name in _notes) then {
+    _notes = +_notes;
+    _notes deleteAt _name;
+    missionNamespace setVariable ["COMSPEC_ATAK_MarkerNotes", _notes];
+    ["comspec_atak_native_tacMkSrv", ["note", _name, []]] call CBA_fnc_serverEvent;
+};
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 _s set ["selectedMarker", ""];
 _s set ["markerEdit", createHashMap];

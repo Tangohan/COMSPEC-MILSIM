@@ -96,9 +96,17 @@ switch (toLower _act) do {
                 private _newAlr = 0 max ((count (missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []])) - (count (_snap getOrDefault ["COMSPEC_Athena_AlertInbox", []])));
                 private _held = _st get "held";
                 _st set ["held", []];
-                missionNamespace setVariable ["COMSPEC_ATAK_NetReplay", true];
-                { _x params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; } forEach _held;
-                missionNamespace setVariable ["COMSPEC_ATAK_NetReplay", false];
+                // Rejoués par paquets de 10 par image (150 au plus d'un coup figeaient l'image) ; NetReplay posé pour chaque
+                // paquet, sinon les événements rejoués seraient retenus de nouveau.
+                private _drain = {
+                    params ["_q", "_drain"];
+                    missionNamespace setVariable ["COMSPEC_ATAK_NetReplay", true];
+                    { _x params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; } forEach (_q select [0, 10]);
+                    missionNamespace setVariable ["COMSPEC_ATAK_NetReplay", false];
+                    _q deleteRange [0, 10];
+                    if (_q isNotEqualTo []) then { [_drain, [_q, _drain]] call CBA_fnc_execNextFrame; };
+                };
+                [+_held, _drain] call _drain;
                 // Débit recalculé et données relues maintenant.
                 uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []];
                 [] call comspec_atak_native_fnc_importLegacyData;

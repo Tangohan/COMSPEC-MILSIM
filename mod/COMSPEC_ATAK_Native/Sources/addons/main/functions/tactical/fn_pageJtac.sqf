@@ -282,7 +282,7 @@ switch (_tab) do {
         // Athena /9-line (QR code fixe de l'adresse de production, tools/gen_remote_qr.py), sur le vrai téléphone ou dans
         // une seconde fenêtre du PC.
         _rows pushBack ["buttons", [
-            ["OUTIL CARTE IP → CIBLE", { ["MAP"] call comspec_atak_native_fnc_navigate; [{ ["IPTGT"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, false, true, "Clic sur l'IP puis sur la cible : cap magnétique, distance, altitude, repris ici"],
+            ["OUTIL CARTE IP » CIBLE", { ["MAP"] call comspec_atak_native_fnc_navigate; [{ ["IPTGT"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, false, true, "Clic sur l'IP puis sur la cible : cap magnétique, distance, altitude, repris ici"],
             ["OUVRIR LA PAGE 9-LINE", {
                 private _url = "https://athena-comspec.eu/public/9-line";
                 private _r = (["COMSPECATAKNativeExtension", "COMSPECExtension"] select ([] call comspec_atak_native_fnc_bridge)) callExtension ["OpenAthenaLink", [_url]];
@@ -291,7 +291,7 @@ switch (_tab) do {
             }, false, true, "Ouvre le 9-LINE dans votre navigateur (seconde fenêtre, second écran)"]
         ]];
         _rows append [
-            ["section", "9-LINE sur un autre écran", "Scannez avec votre vrai téléphone, connecté à votre compte Athena : le dernier 9-LINE transmis s'affiche en grand, avec un calculateur IP → cible."],
+            ["section", "9-LINE sur un autre écran", "Scannez avec votre vrai téléphone, connecté à votre compte Athena : le dernier 9-LINE transmis s'affiche en grand, avec un calculateur IP » cible."],
             ["image", "\z\comspec_atak_native\addons\main\data\nineline_qr_ca.paa"],
             ["text", "<t size='0.85' color='#8a9a93'>https://athena-comspec.eu/public/9-line</t>"]
         ];

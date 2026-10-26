@@ -50,7 +50,23 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 [
     "comspec_overwatch_enabled", "CHECKBOX",
     ["Activer la liaison Athena", "Échanges avec Athena et le poste de commandement (positions, messages, ordres). Décochez pour tout couper : le téléphone reste utilisable hors ligne. Une session déjà ouverte reste affichée jusqu’à ce que vous quittiez Arma."],
-    ["COMSPEC", "Overwatch"], true
+    ["COMSPEC", "Overwatch"], true, false,
+    {
+        params ["_v"];
+        // Recoché en mission alors qu'il était décoché au démarrage : fn_connect rejoue le bloc de démarrage.
+        if (_v isEqualTo true && {hasInterface} && {!isNull findDisplay 46}
+            && {missionNamespace getVariable ["COMSPEC_CbaSettingsBootFired", false]}
+            && {!(missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false])}
+            && {!isNil "comspec_overwatch_connect_fnc_connect"}) then {
+            // Délai + recontrôle : le panneau Échap relance déjà fn_connect (0,2 s) après son propre réglage CBA.
+            [] spawn {
+                uiSleep 0.6;
+                if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false]) exitWith {};
+                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                [] call comspec_overwatch_connect_fnc_connect;
+            };
+        };
+    }
 ] call comspec_overwatch_connect_fnc_addSetting;
 
 [

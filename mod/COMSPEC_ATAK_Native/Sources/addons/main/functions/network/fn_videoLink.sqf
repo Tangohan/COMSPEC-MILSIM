@@ -116,7 +116,7 @@ switch (_act) do {
         if (_new isNotEqualTo _cur) then {
             _pend = -1;
             if (_cur >= 0) then {
-                _txt = format ["Flux vidéo %1 → %2 : %3%4", (["tier", _cur] call comspec_atak_native_fnc_videoLink) select 0, (["tier", _new] call comspec_atak_native_fnc_videoLink) select 0,
+                _txt = format ["Flux vidéo %1 » %2 : %3%4", (["tier", _cur] call comspec_atak_native_fnc_videoLink) select 0, (["tier", _new] call comspec_atak_native_fnc_videoLink) select 0,
                     _p getOrDefault ["why", ""], ["", format [" (%1 Mbit/s)", (_p getOrDefault ["mbps", 0]) toFixed 1]] select (_new > 0)];
             };
         };

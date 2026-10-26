@@ -25,9 +25,10 @@ if (isNull _rec) then {
     private _journal = if (!isNil "comspec_sse_fnc_getJournal") then { [] call comspec_sse_fnc_getJournal } else { [] };
     {
         if (_x isEqualType createHashMap) then {
-            _entries pushBack format ["%1 | %2", _x getOrDefault ["action", "?"], _x getOrDefault ["detail", ""]];
+            // Clés écrites par fn_addJournalEntry (clock, type, summary) ; les 20 entrées les plus récentes.
+            _entries pushBack format ["%1 | %2 | %3", _x getOrDefault ["clock", ""], _x getOrDefault ["type", "?"], _x getOrDefault ["summary", ""]];
         };
-    } forEach (_journal select [0, (count _journal) min 20]);
+    } forEach (_journal select [((count _journal) - 20) max 0, 20]);
     _detail = format ["<t color='#8f8'>Journal local</t><br/>%1 entrée(s)", count _journal];
     if (_isSeek) then {
         // Écran du SEEK : trois lignes au plus, police réduite — le texte complet était tronqué.

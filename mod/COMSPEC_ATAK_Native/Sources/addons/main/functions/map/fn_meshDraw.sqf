@@ -75,6 +75,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
     private _below = { params ["_p", "_k"]; _map ctrlMapScreenToWorld ((_map ctrlMapWorldToScreen _p) vectorAdd [0, 0.024 * _ts * _k]) };
     {
         _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up", "_fq", "", "_loss", "", "_hl", "", "_co"];
+        // Relais effacé pendant les 2 s de cache de la liste (Zeus, nettoyage) : position [0,0,0], dessiné à l'origine.
+        if (isNull _o) then { continue };
         private _p = getPosASLVisual _o;
         private _use = _ok && {_o isEqualTo _mine};
         private _sat = _sl > 0 && {_u > _sl};

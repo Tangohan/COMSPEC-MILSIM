@@ -186,6 +186,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_lockAction; ["marquage suivi", _t] call comspec_atak_native_fnc_perfAcc; }, 0.5] call COMSPEC_ATAK_PfhSpread;
 // Contrôle Zeus des ATAK : effets reçus du serveur (fn_zeusClient), boucle d'une seconde, menu clic droit ZEN du Zeus.
 ["comspec_atak_native_zeusFx", { _this call comspec_atak_native_fnc_zeusClient; }] call CBA_fnc_addEventHandler;
+// App Store : apps imposées ou interdites changées par la mission ou le Zeus (fn_appInstall), ou par les réglages CBA du
+// serveur : l'app ouverte se ferme si elle devient interdite, l'écran d'accueil et le dock se redessinent.
+["comspec_atak_native_appPolicy", { ["applied"] call comspec_atak_native_fnc_appInstall; }] call CBA_fnc_addEventHandler;
+["CBA_SettingChanged", { params [["_k", ""]]; if (_k in ["comspec_atak_native_apps_required", "comspec_atak_native_apps_forbidden"]) then { ["applied"] call comspec_atak_native_fnc_appInstall; }; }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_zeusClient; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Positions BFT par points (fn_pli) : un point de position envoyé aux alliés à l'intervalle choisi (10 s en Milsim).
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
@@ -535,6 +539,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_briefingLive; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Écrans COMSPEC proches : diapositive diffusée affichée sur l'objet, actions ACE ou molette (fn_screenCast).
 [{ ["tick"] call comspec_atak_native_fnc_screenCast; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Écrans TOC proches : réseau ATAK du camp affiché sur l'objet (texture UI), actions ACE ou molette (fn_tocScreen).
+[{ ["tick"] call comspec_atak_native_fnc_tocScreen; }, 1] call COMSPEC_ATAK_PfhSpread;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
 [{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call COMSPEC_ATAK_PfhSpread;
@@ -897,11 +903,37 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         ["up"] call comspec_atak_native_fnc_watch
     }];
 }] call CBA_fnc_waitUntilAndExecute;
-["COMSPEC ATAK", "GarminPrev", ["Montre Garmin : écran précédent", "Montre allumée (touche Montre du jeu, O) : revient à l'écran précédent."], { ["prev"] call comspec_atak_native_fnc_watch }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "GarminClose", ["Montre Garmin : éteindre", "Éteint la montre Garmin (sinon : appui long sur la touche Montre du jeu, O)."], { ["close"] call comspec_atak_native_fnc_watch }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+// Boutons de la montre et actions directes (touches CBA, modifiables aussi dans Réglages > Accès et touches du téléphone ;
+// fn_keybinds). Chaque touche n'est prise que si le joueur porte la montre Garmin (sinon elle garde son effet).
+{
+    _x params ["_id", "_title", "_help", "_down", "_up", "_def"];
+    ["COMSPEC ATAK", _id, [_title, _help], _down, _up, _def, false] call CBA_fnc_addKeybind;
+} forEach [
+    ["GarminLight", "Montre Garmin : LIGHT", "Appui court : luminosité. Appui long : menu des commandes (vue agrandie, mode nuit, ne pas déranger, point, téléphone).", { ["lightDown"] call comspec_atak_native_fnc_watch }, { ["lightUp"] call comspec_atak_native_fnc_watch }, [0x18, [false, true, true]]],
+    ["GarminPrev", "Montre Garmin : UP (écran précédent)", "Écran précédent ; dans un menu : remonter ; minuteur en réglage : +1 min.", { ["prev"] call comspec_atak_native_fnc_watch }, {}, [0x18, [false, true, false]]],
+    ["GarminNext", "Montre Garmin : DOWN (écran suivant)", "Écran suivant ; dans un menu : descendre ; minuteur en réglage : -1 min. La touche Montre du jeu (O) fait la même chose.", { ["next"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminStart", "Montre Garmin : START·STOP", "Action de l'écran : chrono, minuteur, marquer la position, zoom de la carte, étalonner l'altimètre, faire sonner le téléphone ; dans un menu : valider.", { ["start"] call comspec_atak_native_fnc_watch }, {}, [0x18, [true, false, false]]],
+    ["GarminBack", "Montre Garmin : BACK·LAP", "Retour au cadran, tour du chrono, remise à zéro ; dans un menu : fermer ; sur le cadran : éteindre.", { ["back"] call comspec_atak_native_fnc_watch }, {}, [0x18, [false, false, true]]],
+    ["GarminBig", "Montre Garmin : vue agrandie", "Affiche la montre en grand au milieu de l'écran, ou la remet au poignet.", { ["big"] call comspec_atak_native_fnc_watch }, {}, [0x18, [true, true, false]]],
+    ["GarminToggle", "Montre Garmin : allumer / éteindre", "Allume la montre sur le cadran, ou l'éteint.", { ["toggle"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminClose", "Montre Garmin : éteindre", "Éteint la montre Garmin (sinon : appui long sur la touche Montre du jeu, O).", { ["close"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminMenu", "Montre Garmin : menu des commandes", "Ouvre ou ferme le menu des commandes (comme l'appui long sur LIGHT).", { ["menu"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminChrono", "Montre Garmin : chrono départ / arrêt", "Lance ou arrête le chronomètre, montre allumée sur le chrono.", { ["chrono"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminLap", "Montre Garmin : tour du chrono", "Enregistre un tour, chrono lancé.", { ["lap"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminTimer", "Montre Garmin : minuteur", "Règle puis lance le minuteur, le met en pause ou le reprend.", { ["timer"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminMark", "Montre Garmin : marquer ma position", "Garde ma position GPS : la boussole et la carte de la montre montrent ensuite sa direction et sa distance.", { ["mark"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminNight", "Montre Garmin : mode nuit", "Écran de la montre en rouge, pour garder la vision de nuit.", { ["night"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminDnd", "Montre Garmin : ne pas déranger", "Plus de bandeau ni de vibration à l'arrivée des notifications du téléphone.", { ["dnd"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminFind", "Montre Garmin : trouver mon téléphone", "Fait sonner et vibrer le téléphone ATAK relié en Bluetooth.", { ["find"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminHHour", "Montre Garmin : heure H au groupe", "Chef de groupe : lance (ou annule) un compte à rebours de la durée du minuteur sur les montres de tout le groupe, qui vibrent ensemble au top.", { ["hhour"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminJump", "Montre Garmin : Jumpmaster", "Écran de saut (HALO / HAHO) : règle l'altitude d'ouverture et arme les alertes, ou les désarme.", { ["jump"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminStealth", "Montre Garmin : mode furtif", "Coupe le Bluetooth de la montre et met l'écran au minimum.", { ["stealth"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]]
+];
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;
-addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; ["flush"] call comspec_atak_native_fnc_profileSave; }];
+// Distances et heures de vol : relais du joueur quand le serveur n'arrive pas à envoyer à Athena (COMSPEC_ATAK_SrvPlayOK faux).
+[{ ["self"] call comspec_atak_native_fnc_distanceServer; }, 3] call COMSPEC_ATAK_PfhSpread;
+addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; ["flush"] call comspec_atak_native_fnc_profileSave; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
@@ -915,6 +947,21 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 [{ ["check"] call comspec_atak_native_fnc_serverPresence; }, [], 20] call CBA_fnc_waitAndExecute;
 // Avis de l'administration ATHENA (compromission, annulation, données réinitialisées, certificat, message imposé).
 [{ ["check"] call comspec_atak_native_fnc_adminNotices; }, 30] call COMSPEC_ATAK_PfhSpread;
+// CR de fin d'opération imposé (fn_debrief) : demandes du jeu, suivi du commandement, fiche ramenée toutes les 2 min tant
+// qu'elle n'est pas remise ; à l'arrivée en cours de partie, le serveur renvoie les demandes qui visent le joueur.
+["comspec_atak_native_debriefRecv", { ["recv", _this select 0] call comspec_atak_native_fnc_debrief; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_debriefData", {
+    params [["_kind", ""], ["_data", []]];
+    switch (_kind) do {
+        case "track": { ["track", _data] call comspec_atak_native_fnc_debrief; };
+        case "forced": { ["forced", _data] call comspec_atak_native_fnc_debrief; };
+        case "lift": { ["lift", _data] call comspec_atak_native_fnc_debrief; };
+        case "none": { ["Aucun joueur visé.", 3] call comspec_atak_native_fnc_toast; };
+        case "denied": { ["Vous ne pouvez pas imposer le CR.", 3] call comspec_atak_native_fnc_toast; };
+    };
+}] call CBA_fnc_addEventHandler;
+[{ ["tick"] call comspec_atak_native_fnc_debrief; }, 30] call COMSPEC_ATAK_PfhSpread;
+[{ if (!isNull player) then { ["comspec_atak_native_debrief", [player, "hello", []]] call CBA_fnc_serverEvent; }; }, [], 15] call CBA_fnc_waitAndExecute;
 // App Admin : droit de gestion lu sur Athena (le lanceur ne la montre qu'à qui y a droit), 90 s après l'arrivée puis
 // toutes les 15 min. Une seule petite requête, rien si le service Athena est coupé.
 [{ ["probe"] call comspec_atak_native_fnc_adminClient; }, 900] call COMSPEC_ATAK_PfhSpread;
@@ -942,6 +989,10 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
     };
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;
+
+// Tinder · chasse aux HVT : tuyaux des informateurs et JACKPOT (toutes les 60 s), tuyaux partagés par un équipier.
+[{ ["tick"] call comspec_atak_native_fnc_hvtIntel; }, 60] call COMSPEC_ATAK_PfhSpread;
+["comspec_atak_native_hvtTip", { ["recv", _this] call comspec_atak_native_fnc_hvtIntel; }] call CBA_fnc_addEventHandler;
 
 // Logistique : demandes et statuts du camp ; guerre électronique : brouilleurs partagés.
 ["comspec_atak_native_logi", { if (["hold", ["comspec_atak_native_logi", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_logisticsAction; }] call CBA_fnc_addEventHandler;
@@ -983,12 +1034,22 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 ["comspec_atak_native_syncData", {
     params [["_log", []], ["_route", []]];
     missionNamespace setVariable ["COMSPEC_ATAK_Replaying", true];
-    { _x params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; } forEach _log;
-    if ((count _route) >= 2 && {(count (_route select 0)) > 0} && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
-        ["receive", [_route select 0, _route select 1, false]] call comspec_atak_native_fnc_wpAction;
+    // Rejoué par paquets de 10 par image (jusqu'à plusieurs centaines d'événements : pas de saccade à l'arrivée) ;
+    // itinéraire et fin du rejeu après le dernier paquet.
+    private _step = {
+        params ["_log", "_route", "_i", "_step"];
+        missionNamespace setVariable ["COMSPEC_ATAK_Replaying", true];
+        private _n = count _log;
+        private _end = (_i + 10) min _n;
+        for "_k" from _i to (_end - 1) do { (_log select _k) params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; };
+        if (_end < _n) exitWith { [_step, [_log, _route, _end, _step]] call CBA_fnc_execNextFrame; };
+        if ((count _route) >= 2 && {(count (_route select 0)) > 0} && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
+            ["receive", [_route select 0, _route select 1, false]] call comspec_atak_native_fnc_wpAction;
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_Replaying", false];
+        ["INFO", "SYNC", format ["Synchro serveur : %1 événement(s) rejoué(s)", _n]] call comspec_atak_native_fnc_log;
     };
-    missionNamespace setVariable ["COMSPEC_ATAK_Replaying", false];
-    ["INFO", "SYNC", format ["Synchro serveur : %1 événement(s) rejoué(s)", count _log]] call comspec_atak_native_fnc_log;
+    [_log, _route, 0, _step] call _step;
 }] call CBA_fnc_addEventHandler;
 [{ ["comspec_atak_native_syncReq", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 [{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call COMSPEC_ATAK_PfhSpread;
@@ -1026,9 +1087,15 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 {
     addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
 } forEach ["Ended", "MPEnded"];
-// Quitter la partie (Échap > Quitter) ne déclenche pas Ended : l'écran de jeu qui se ferme vide aussi l'écriture.
+// Relais des distances : fin de mission côté serveur seulement (MPEnded), sinon perdu jusqu'à 10 min de compteurs.
+addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; }];
+// Quitter la partie (Échap > Quitter) ne déclenche pas Ended : l'écran de jeu qui se ferme vide aussi l'écriture
+// (profil et relais des distances, l'équivalent du départ d'un joueur côté serveur).
 [{ !isNull (findDisplay 46) }, {
-    (findDisplay 46) displayAddEventHandler ["Unload", { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+    (findDisplay 46) displayAddEventHandler ["Unload", {
+        ["selfFlush"] call comspec_atak_native_fnc_distanceServer;
+        if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; };
+    }];
 }] call CBA_fnc_waitUntilAndExecute;
 // Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
 // (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
@@ -1049,6 +1116,23 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
     }, 0] call COMSPEC_ATAK_PfhSpread;
     // Bilan des boucles du téléphone (drone, marquage, carte, pages) et des images lentes, toutes les 30 s.
     [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread;
+}] call CBA_fnc_waitUntilAndExecute;
+// Canaux de la messagerie : liste complète d'Athena (canaux web compris) relue dès la liaison prête, sans attendre la
+// première ouverture de Messages (qui n'affichait d'abord que les canaux par défaut, les autres 20 s plus tard).
+// Nouvel essai toutes les 3 s tant qu'Athena n'a rien rendu, puis relecture toutes les 60 s.
+[{ (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} }, {
+    [] spawn {
+        private _ok = false;
+        for "_i" from 1 to 40 do {
+            if ([] call comspec_overwatch_connect_fnc_pollChatChannels) exitWith { _ok = true; };
+            sleep 3;
+        };
+        diag_log format ["[COMSPEC ATAK NATIVE][CHAT] Canaux Athena : %1", [count (missionNamespace getVariable ["COMSPEC_Comms_Channels", []]), "non reçus"] select !_ok];
+        uiNamespace setVariable ["COMSPEC_ATAK_ChatChannelsAt", diag_tickTime];
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then {
+            [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
+    };
 }] call CBA_fnc_waitUntilAndExecute;
 // Arsenal ACE ouvert : repère dans le journal (l'ouverture elle-même apparaît en « Image figée … arsenal ouvert »).
 // Touches COMSPEC traduites une fois toutes déclarées (ATAK natif ici, Overwatch et SSE dans leurs propres init) :

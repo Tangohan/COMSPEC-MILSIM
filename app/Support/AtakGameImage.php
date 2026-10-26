@@ -15,7 +15,9 @@ namespace App\Support;
  * les dépôts qui enregistrent ces images) et, pour les images envoyées avant, à la première demande du jeu.
  *
  * Rangement : à côté de l'envoi, uploads/<dossier>/atak/<nom>.paa, dans public/ sinon storage/ (servi à la même
- * adresse par le repli de public/index.php), une seule fois : chaque nouvel envoi porte un nouveau nom.
+ * adresse par le repli de public/index.php), une seule fois : chaque nouvel envoi porte un nouveau nom. Une copie
+ * JPEG légère <nom>.jpg l'accompagne (webRel) : le téléphone l'affiche dans son navigateur intégré quand Arma
+ * refuse la texture téléchargée.
  *
  * Le .paa n'est servi qu'à COMSPEC Link 2.0.95+, qui l'annonce par l'en-tête « X-COMSPEC-Image: paa » : les DLL plus
  * anciennes refusent tout ce qui n'est pas JPEG ou PNG et gardent les adresses JPEG d'avant.
@@ -125,16 +127,34 @@ final class AtakGameImage
         return $root === '' ? [] : [$root . '/public', $root . '/storage'];
     }
 
+    /**
+     * Copie JPEG légère rangée à côté du .paa (même nom, .jpg) : le téléphone en jeu l'affiche dans un navigateur
+     * intégré quand Arma refuse la texture téléchargée (hors d'un PBO, sans -filePatching), d'où les diapositives noires.
+     */
+    public static function webRel(string $paaRel): string
+    {
+        return substr($paaRel, 0, -4) . '.jpg';
+    }
+
     private static function ensure(string $rel, string $fit, bool $budgeted): ?string
     {
         self::$lastError = '';
         $bases = self::bases();
         $paaRel = self::paaRel($rel);
-        foreach ($bases as $base) {
-            // Une copie vide (écriture interrompue) est refaite.
-            if (is_file($base . '/' . $paaRel) && (int) @filesize($base . '/' . $paaRel) > 0) {
-                return $paaRel;
+        $webRel = self::webRel($paaRel);
+        $has = static function (string $r) use ($bases): bool {
+            foreach ($bases as $base) {
+                // Une copie vide (écriture interrompue) est refaite.
+                if (is_file($base . '/' . $r) && (int) @filesize($base . '/' . $r) > 0) {
+                    return true;
+                }
             }
+
+            return false;
+        };
+        $paaOk = $has($paaRel);
+        if ($paaOk && $has($webRel)) {
+            return $paaRel;
         }
         $src = null;
         foreach ($bases as $base) {
@@ -146,31 +166,37 @@ final class AtakGameImage
         if ($src === null) {
             self::$lastError = 'source_missing';
 
-            return null;
+            return $paaOk ? $paaRel : null;
         }
         if ($budgeted && self::$spent >= self::REQUEST_BUDGET_SECONDS) {
-            return null;
+            return $paaOk ? $paaRel : null;
         }
         $t = microtime(true);
-        $paa = self::convert($src, $fit);
+        $fitted = self::render($src, $fit);
+        $paa = null;
+        $jpg = null;
+        if ($fitted !== null) {
+            try {
+                $paa = $paaOk ? null : PaaEncoder::encode($fitted);
+                $jpg = self::webJpeg($fitted);
+            } finally {
+                imagedestroy($fitted);
+            }
+        }
         self::$spent += microtime(true) - $t;
+        if ($jpg !== null) {
+            self::write($bases, $webRel, $jpg);
+        }
+        if ($paaOk) {
+            return $paaRel;
+        }
         if ($paa === null) {
             error_log('[atak/paa] copie .paa impossible (' . self::$lastError . ') : ' . $rel);
 
             return null;
         }
-        foreach ($bases as $base) {
-            $dest = $base . '/' . $paaRel;
-            $dir = dirname($dest);
-            if (!is_dir($dir)) {
-                @mkdir($dir, 0755, true);
-            }
-            // Écriture à côté puis renommage : le jeu ne lit jamais un fichier à moitié écrit.
-            $tmp = $dest . '.part';
-            if (is_dir($dir) && is_writable($dir) && @file_put_contents($tmp, $paa) === strlen($paa) && @rename($tmp, $dest)) {
-                return $paaRel;
-            }
-            @unlink($tmp);
+        if (self::write($bases, $paaRel, $paa)) {
+            return $paaRel;
         }
         self::$lastError = 'write_failed';
         error_log('[atak/paa] copie .paa impossible à écrire : ' . $paaRel);
@@ -178,8 +204,47 @@ final class AtakGameImage
         return null;
     }
 
-    /** Fichier image (JPEG, PNG, WebP, GIF…) vers octets .paa, au cadrage $fit. */
-    public static function convert(string $src, string $fit): ?string
+    /** Écrit $bytes sous le premier dossier inscriptible (à côté puis renommage : jamais de fichier à moitié écrit). */
+    private static function write(array $bases, string $rel, string $bytes): bool
+    {
+        foreach ($bases as $base) {
+            $dest = $base . '/' . $rel;
+            $dir = dirname($dest);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            $tmp = $dest . '.part';
+            if (is_dir($dir) && is_writable($dir) && @file_put_contents($tmp, $bytes) === strlen($bytes) && @rename($tmp, $dest)) {
+                return true;
+            }
+            @unlink($tmp);
+        }
+
+        return false;
+    }
+
+    /** Image du jeu en JPEG léger pour le navigateur intégré : 1600 px de large au plus, fond noir sous la transparence. */
+    public static function webJpeg(\GdImage $fitted): ?string
+    {
+        $w = imagesx($fitted);
+        $h = imagesy($fitted);
+        $scale = min(1.0, 1600 / max($w, 1));
+        $tw = max(1, (int) round($w * $scale));
+        $th = max(1, (int) round($h * $scale));
+        $out = imagecreatetruecolor($tw, $th);
+        imagefill($out, 0, 0, imagecolorallocate($out, 0, 0, 0));
+        imagealphablending($out, true);
+        imagecopyresampled($out, $fitted, 0, 0, 0, 0, $tw, $th, $w, $h);
+        ob_start();
+        $ok = imagejpeg($out, null, 82);
+        $bytes = (string) ob_get_clean();
+        imagedestroy($out);
+
+        return $ok && $bytes !== '' ? $bytes : null;
+    }
+
+    /** Fichier image vers image GD au cadrage $fit (null si illisible, raison dans $lastError). */
+    private static function render(string $src, string $fit): ?\GdImage
     {
         if (!function_exists('imagecreatefromstring')) {
             self::$lastError = 'no_gd';
@@ -196,6 +261,17 @@ final class AtakGameImage
         }
         $out = self::fit($im, $fit);
         imagedestroy($im);
+
+        return $out;
+    }
+
+    /** Fichier image (JPEG, PNG, WebP, GIF…) vers octets .paa, au cadrage $fit. */
+    public static function convert(string $src, string $fit): ?string
+    {
+        $out = self::render($src, $fit);
+        if ($out === null) {
+            return null;
+        }
         try {
             return PaaEncoder::encode($out);
         } finally {
