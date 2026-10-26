@@ -59,6 +59,10 @@ void ResetSecrets()
 // Un secret factice OU un en-tête porteur de secret, quelle que soit sa valeur (un correctif qui laisserait
 // partir un autre secret, ou le SteamID seul, ne passe plus).
 bool Leaks(string raw) => Capture.Needles.Any(nd => raw.Contains(nd, StringComparison.Ordinal)) || Capture.HasSecretHeader(raw);
+// Détail affiché : les en-têtes réellement posés (relevés, pas supposés), ou la fuite.
+string Shown(string raw) => Leaks(raw) ? "FUITE : " + raw.Replace("\n", " ")
+    : "en-têtes posés : " + (raw.Length == 0 ? "aucun"
+        : string.Join(", ", raw.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.Split(':')[0])));
 
 Capture.Needles = new[] { KEY, SESSION, STEAM, GAMETOK };
 
@@ -96,7 +100,7 @@ if (prodMode)
     Console.WriteLine("[PROD] Sans COMSPEC_DEV_TRUST_LOOPBACK : la boucle locale ne doit rien recevoir");
     var loop = Attach("http://127.0.0.1:9/x");
     Check("127.0.0.1 → aucun secret (réglage de développement absent)", !Leaks(loop),
-        Leaks(loop) ? "FUITE : " + loop.Replace("\n", " ") : "seul User-Agent");
+        Shown(loop));
     var local = new Capture("prod-local", "127.0.0.1");
     ResetSecrets();
     SetF("_baseUrl", "");
@@ -120,18 +124,18 @@ var aLoop = Attach("http://127.0.0.1:8/x");                   // boucle locale (
 var aClear = Attach("http://athena.ttrd.fr/api/atak/x");      // bon hôte, http en clair
 var aUser = Attach("https://attaquant@athena.ttrd.fr/api/atak/x"); // identifiants dans l'URL
 Check("hôte non fiable (127.0.0.2) → aucun secret", !Leaks(aEvil),
-    Leaks(aEvil) ? "FUITE : " + aEvil.Replace("\n", " ") : "seul User-Agent");
+    Shown(aEvil));
 Check("athena.ttrd.fr (https) → secrets présents (pas de régression)", Leaks(aAthena));
 Check("athena-comspec.eu (https) → secrets présents (portail du mod natif)", Leaks(aEu));
 Check("127.0.0.1 → secrets présents (banc de développement)", Leaks(aLoop));
 if (isFixed)
 {
     Check("http:// en clair vers athena.ttrd.fr → aucun secret", !Leaks(aClear),
-        Leaks(aClear) ? "FUITE : " + aClear.Replace("\n", " ") : "seul User-Agent");
+        Shown(aClear));
     Check("URL avec identifiants (x@athena.ttrd.fr) → aucun secret", !Leaks(aUser),
-        Leaks(aUser) ? "FUITE : " + aUser.Replace("\n", " ") : "seul User-Agent");
+        Shown(aUser));
     Check("sous-domaine atak.athena-comspec.eu → aucun secret (hors liste)", !Leaks(aSub),
-        Leaks(aSub) ? "FUITE" : "seul User-Agent");
+        Shown(aSub));
 }
 
 // ----- B : Connect vers un hôte hostile (en-têtes ET corps) -------------------------------------------
@@ -207,6 +211,19 @@ else
     ResetSecrets();
     SetF("_baseUrl", $"http://127.0.0.1:{qAthena.Port}/public");   // liaison Athena (simulée) active
     SetF("_diskQueueLoaded", 0);
+    // Rappels vers le SQF captés (InvokeCallback appelle _callback, nul hors du jeu).
+    var cbField = ext.GetField("_callback", F);
+    var callbacks = new List<(string Fn, string Data)>();
+    if (cbField != null)
+    {
+        Hook.Sink = (fn, data) => { lock (callbacks) callbacks.Add((fn, data)); };
+        cbField.SetValue(null, Delegate.CreateDelegate(cbField.FieldType, typeof(Hook).GetMethod(nameof(Hook.On))!));
+    }
+    if (Has("NoteUntrustedQueueDrop"))
+    {
+        SetF("_untrustedQueueDropped", 0L);
+        SetF("_lastUntrustedDropCbTicks", 0L);
+    }
     Call("LoadQueueFromDisk", Type.EmptyTypes);
     for (var i = 0; i < 4; i++)
     {
@@ -223,8 +240,19 @@ else
     if (Has("NoteUntrustedQueueDrop"))
     {
         var dropped = (long)(GetF("_untrustedQueueDropped") ?? 0L);
-        Check("file disque : abandon compté (signalé au journal de liaison)", dropped >= 1, dropped + " abandon(s)");
+        Check("file disque : les deux abandons comptés (queue.jsonl et position.json)", dropped == 2, dropped + " abandon(s)");
+        List<string> notes;
+        lock (callbacks) notes = callbacks.Where(cb => cb.Fn == "PostError").Select(cb => cb.Data).ToList();
+        // Lecture du SQF (fn_extensionCallback.sqf) : splitString "|" écarte les champs vides, et le 2ᵉ champ
+        // déclenche des réactions (« terrain » arrête le relevé, « weather », « video-feeds »).
+        var parts = notes.Count == 1 ? notes[0].Split('|', StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>();
+        Check("file disque : un seul signalement, libellé fixe au 2ᵉ champ", cbField != null && parts.Length == 4
+            && parts[0] == "0" && parts[1] == "file-hors-athena" && parts[2] == "0",
+            notes.Count == 1 ? notes[0] : notes.Count + " rappel(s) PostError");
+        Check("file disque : signalement sans hôte ni secret", notes.All(n => !n.Contains("127.0.0.2", StringComparison.Ordinal)
+            && !Capture.Needles.Any(nd => n.Contains(nd, StringComparison.Ordinal))), string.Join(" ; ", notes));
     }
+    cbField?.SetValue(null, null);
     try { File.Delete(Path.Combine(dir, "queue.jsonl")); File.Delete(Path.Combine(dir, "position.json")); } catch { }
 }
 
@@ -343,8 +371,32 @@ if (isFixed)
         "https://аthena.ttrd.fr/public", "https://ａthena.ttrd.fr/public", "https://athena.ttrd.fr。evil.example/",
         "https://evil。athena-comspec.eu/", "https://athena.ttrd.fr\t@evil.example/",
         " \"https://evil.example/public\" ", "//evil.example/public", "https://athena.ttrd.fr:8443/public?x=#y",
-        "ftp://athena.ttrd.fr/public", "file:///etc/passwd",
+        "ftp://athena.ttrd.fr/public", "file:///etc/passwd", "https://attaquantathena.ttrd.fr/public",
+        "https://x.athena.ttrd.fr.attaquant.tld/public",
     };
+    // Oracle indépendant de la DLL : les seules acceptations attendues (candidat → hôte:port visé), relues à la
+    // main. Toute autre acceptation, tout refus d'une entrée ou toute cible différente est un échec. Le verdict
+    // d'IsSecretSafeUri de la DLL testée n'est plus qu'un contrôle de cohérence : un joker ajouté au filtre
+    // d'hôte serait aussi ajouté à lui, il ne peut pas servir d'oracle (revue E, itération 3, V3-1).
+    var expected = new Dictionary<string, string>
+    {
+        ["https://athena.ttrd.fr/public"] = "athena.ttrd.fr:443",
+        ["https://ATHENA.TTRD.FR/public"] = "athena.ttrd.fr:443",
+        ["https://athena.ttrd.fr./public"] = "athena.ttrd.fr.:443",
+        ["athena.ttrd.fr/public"] = "athena.ttrd.fr:443",
+        ["https://athena-comspec.eu/public"] = "athena-comspec.eu:443",
+        ["https://athena.ttrd.fr:8443/public?x=#y"] = "athena.ttrd.fr:8443",
+        // Boucle locale : réglage de développement posé par le banc (COMSPEC_DEV_TRUST_LOOPBACK=1).
+        ["http://2130706433/"] = "127.0.0.1:80",
+        ["http://0x7f000001/"] = "127.0.0.1:80",
+        ["http://127.1/"] = "127.0.0.1:80",
+        ["http://017700000001/"] = "127.0.0.1:80",
+        ["http://[::1]:8080/"] = "::1:8080",
+        ["http://[0:0:0:0:0:0:0:1]/"] = "::1:80",
+        ["http://localhost./"] = "localhost.:80",
+        ["http://LocalHost/"] = "localhost:80",
+    };
+    var differ = new List<string>();
     var trySet = M("TrySetSqfBaseUrl", typeof(string), typeof(string).MakeByRefType());
     var build = M("TryBuildRequestUri", typeof(string), typeof(string), typeof(Uri).MakeByRefType(), typeof(string).MakeByRefType());
     var safe = M("IsSecretSafeUri", typeof(Uri));
@@ -366,14 +418,31 @@ if (isFixed)
             verdict = good ? "oui" : "NON";
             if (!good) bad++;
         }
+        var want = expected.TryGetValue(c, out var exp) ? exp : null;
+        if ((ok ? target : null) != want)
+            differ.Add(c.Replace("\t", "\\t") + " → " + (ok ? target : "refusé") + " (attendu : " + (want ?? "refusé") + ")");
         Console.WriteLine($"      {c.Replace("\t", "\\t"),-50} accepté={(ok ? "OUI" : "non"),-3} cible={target,-28} sûre={verdict}");
     }
-    Check("aucun candidat accepté ne mène à une destination non sûre", bad == 0,
+    Check("acceptations identiques à la table de référence (oracle indépendant de la DLL)", differ.Count == 0,
+        differ.Count == 0 ? accepted + " accepté(s) sur " + cands.Length + ", tous attendus" : string.Join(" ; ", differ));
+    Check("cohérence : IsSecretSafeUri de la DLL accepte chaque cible acceptée", bad == 0,
         accepted + " accepté(s), " + bad + " non sûr(s)");
 }
 
 Console.WriteLine($"\n=== BILAN : {(failures == 0 ? "aucun échec" : failures + " ÉCHEC(S)")} ===");
 Environment.Exit(failures == 0 ? 0 : 1);
+
+// --- Rappel de la DLL vers le SQF, capté dans le banc (même signature qu'ExtensionCallback). ----------
+static class Hook
+{
+    public static Action<string, string> Sink = (_, _) => { };
+    public static int On(nint name, nint function, nint data)
+    {
+        Sink(System.Runtime.InteropServices.Marshal.PtrToStringUTF8(function) ?? "",
+            System.Runtime.InteropServices.Marshal.PtrToStringUTF8(data) ?? "");
+        return 0;
+    }
+}
 
 // --- Serveur de capture local : enregistre chaque requête reçue (en-têtes + corps). -------------------
 sealed class Capture
