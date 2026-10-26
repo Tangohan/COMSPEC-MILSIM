@@ -892,12 +892,10 @@ class AtakApiController
                 'expired' => 'Liaison en jeu refusée — code expiré',
                 default => 'Liaison en jeu refusée — code inconnu',
             };
-            if ($failTenant > 0) {
-                $this->activityLog?->recordAuthAttempt($failTenant, false, $failLabel, [
-                    'reason' => $reason !== '' ? $reason : 'unknown_code',
-                    'method' => 'code',
-                ]);
-            }
+            $this->logUnverifiedLinkRefusal($failTenant, $failLabel, [
+                'reason' => $reason !== '' ? $reason : 'unknown_code',
+                'method' => 'code',
+            ]);
             if ($reason === 'already_used') {
                 return Response::json([
                     'error' => 'code_already_used',
@@ -1011,12 +1009,10 @@ class AtakApiController
         $user = $this->userRepository->findBySteamId($steamUid);
         if ($user === null) {
             $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
-            if ($failTenant > 0) {
-                $this->activityLog?->recordAuthAttempt($failTenant, false, 'Liaison en jeu refusée — Steam non reconnu', [
-                    'reason' => 'steam_not_linked',
-                    'method' => 'steam',
-                ]);
-            }
+            $this->logUnverifiedLinkRefusal($failTenant, 'Liaison en jeu refusée — Steam non reconnu', [
+                'reason' => 'steam_not_linked',
+                'method' => 'steam',
+            ]);
 
             return Response::json([
                 'error' => 'steam_not_linked',
@@ -1142,6 +1138,29 @@ class AtakApiController
 
             return null;
         }
+    }
+
+    /**
+     * Liaison refusée avant toute preuve (code inconnu, Steam non reconnu) : la communauté vient souvent de
+     * la requête elle-même (tenant_id de l’URL ou du corps). Journalisé seulement si elle existe, et au plus
+     * une fois par minute pour un même refus (AtakActivityLogService::recordUnverifiedAuthFailure).
+     *
+     * @param array<string, mixed> $meta
+     */
+    private function logUnverifiedLinkRefusal(int $tenantId, string $label, array $meta): void
+    {
+        $log = $this->activityLog;
+        if ($tenantId < 1 || $log === null) {
+            return;
+        }
+        try {
+            if ($this->tenantRepository->findById($tenantId) === null) {
+                return;
+            }
+        } catch (\Throwable) {
+            return;
+        }
+        $log->recordUnverifiedAuthFailure($tenantId, $label, $meta);
     }
 
     /**

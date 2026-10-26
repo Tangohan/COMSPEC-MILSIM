@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAtakConfigRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Tactical\AtakActivityLogService;
 
 /**
@@ -563,9 +564,9 @@ final class ComspecApiKeyAuth
                     ? 'Tentative de connexion refusée — clé d’accès manquante'
                     : 'Tentative de connexion refusée — clé d’accès incorrecte';
             }
-            (new AtakActivityLogService())->recordAuthAttempt(
+            // Ni clé valide ni session : la communauté n’est pas prouvée, le refus est limité à une entrée par minute.
+            (new AtakActivityLogService())->recordUnverifiedAuthFailure(
                 $tenantId,
-                false,
                 $label,
                 [
                     'reason' => $reason,
@@ -589,8 +590,10 @@ final class ComspecApiKeyAuth
         if ($sid !== null && $sid !== '' && (int) $sid > 0) {
             return (int) $sid;
         }
+        // tenant_id de l’URL : choisi par le client. Seulement une communauté qui existe, sinon chaque requête
+        // anonyme créait un journal (t{N}_m1.json) pour un identifiant inventé, jamais purgé.
         $q = $_GET['tenant_id'] ?? null;
-        if ($q !== null && $q !== '' && (int) $q > 0) {
+        if (is_string($q) && ctype_digit($q) && (int) $q > 0 && self::tenantExistsForLog((int) $q)) {
             return (int) $q;
         }
         $env = getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID');
@@ -599,6 +602,16 @@ final class ComspecApiKeyAuth
         }
 
         return 0;
+    }
+
+    /** Communauté connue ; base injoignable : non (le journal des refus est best-effort). */
+    private static function tenantExistsForLog(int $tenantId): bool
+    {
+        try {
+            return (new TenantRepository())->findById($tenantId) !== null;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private static function pathHintForLog(string $path): string
