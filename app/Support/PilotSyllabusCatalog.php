@@ -61,7 +61,7 @@ final class PilotSyllabusCatalog
      * proposé puis validé par un instructeur), palier qui valide, et la référence réelle par filière.
      *
      * @return array<string, array{
-     *     label: string, short: string, per: string, min_scope_hours: float, min_track_hours: float,
+     *     label: string, short: string, per: string, min_scope_hours: float, min_track_hours: float, cond: ?string, min_cond_hours: float,
      *     prereq: ?string, mode: string, validator: ?string, currency_days: ?int, summary: string,
      *     real: array<string, string>, data_note: string
      * }>
@@ -75,6 +75,8 @@ final class PilotSyllabusCatalog
                 'per' => self::PER_TRACK,
                 'min_scope_hours' => 2.0,
                 'min_track_hours' => 0.0,
+                'cond' => null,
+                'min_cond_hours' => 0.0,
                 'prereq' => null,
                 'mode' => self::MODE_PROPOSE,
                 'validator' => 'ip',
@@ -92,6 +94,8 @@ final class PilotSyllabusCatalog
                 'per' => self::PER_FAMILY,
                 'min_scope_hours' => 3.0,
                 'min_track_hours' => 0.0,
+                'cond' => null,
+                'min_cond_hours' => 0.0,
                 'prereq' => 'solo',
                 'mode' => self::MODE_PROPOSE,
                 'validator' => 'ip',
@@ -109,6 +113,8 @@ final class PilotSyllabusCatalog
                 'per' => self::PER_FAMILY,
                 'min_scope_hours' => 10.0,
                 'min_track_hours' => 0.0,
+                'cond' => null,
+                'min_cond_hours' => 0.0,
                 'prereq' => 'type',
                 'mode' => self::MODE_DIRECT,
                 'validator' => null,
@@ -126,6 +132,8 @@ final class PilotSyllabusCatalog
                 'per' => self::PER_FAMILY,
                 'min_scope_hours' => 20.0,
                 'min_track_hours' => 30.0,
+                'cond' => null,
+                'min_cond_hours' => 0.0,
                 'prereq' => 'rl1',
                 'mode' => self::MODE_PROPOSE,
                 'validator' => null,
@@ -143,6 +151,8 @@ final class PilotSyllabusCatalog
                 'per' => self::PER_FAMILY,
                 'min_scope_hours' => 40.0,
                 'min_track_hours' => 60.0,
+                'cond' => null,
+                'min_cond_hours' => 0.0,
                 'prereq' => 'pc',
                 'mode' => self::MODE_PROPOSE,
                 'validator' => 'ip',
@@ -160,6 +170,8 @@ final class PilotSyllabusCatalog
                 'per' => self::PER_TRACK,
                 'min_scope_hours' => 5.0,
                 'min_track_hours' => 0.0,
+                'cond' => 'night',
+                'min_cond_hours' => 1.0,
                 'prereq' => 'solo',
                 'mode' => self::MODE_PROPOSE,
                 'validator' => 'ip',
@@ -169,7 +181,7 @@ final class PilotSyllabusCatalog
                     self::TRACK_HELI => 'FAA (14 CFR 61.109(c)) : 3 h de nuit dont 10 décollages et atterrissages ; jumelles de vision nocturne : formation au sol et en vol (61.31(k)). Maintien : 3 atterrissages de nuit en 90 jours (61.57(b)).',
                     self::TRACK_PLANE => 'FAA (14 CFR 61.109(a)) : 3 h de nuit dont 10 décollages et atterrissages. Maintien : 3 atterrissages complets de nuit en 90 jours (61.57(b)).',
                 ],
-                'data_note' => 'Le mod ne distingue pas encore les heures de nuit : le seuil porte sur toutes les heures de la filière, l’instructeur vérifie le vol de nuit.',
+                'data_note' => 'Les heures de nuit viennent du carnet de vol : le pilote les note sur ses vols, un instructeur les contresigne.',
             ],
             'ifr' => [
                 'label' => 'Vol aux instruments (IFR)',
@@ -177,6 +189,8 @@ final class PilotSyllabusCatalog
                 'per' => self::PER_TRACK,
                 'min_scope_hours' => 15.0,
                 'min_track_hours' => 0.0,
+                'cond' => 'ifr',
+                'min_cond_hours' => 2.0,
                 'prereq' => 'solo',
                 'mode' => self::MODE_PROPOSE,
                 'validator' => 'ip',
@@ -186,7 +200,7 @@ final class PilotSyllabusCatalog
                     self::TRACK_HELI => 'FAA (14 CFR 61.65(e)) : 40 h de vol aux instruments (réels ou simulés) et 50 h de navigation comme commandant de bord. Maintien : 6 approches en 6 mois (61.57(c)).',
                     self::TRACK_PLANE => 'FAA (14 CFR 61.65(d)) : 40 h de vol aux instruments (réels ou simulés) et 50 h de navigation comme commandant de bord. Maintien : 6 approches en 6 mois (61.57(c)).',
                 ],
-                'data_note' => 'Le mod ne distingue pas encore le vol aux instruments : l’instructeur le vérifie en vol.',
+                'data_note' => 'Les heures aux instruments viennent du carnet de vol : le pilote les note sur ses vols, un instructeur les contresigne.',
             ],
             'form' => [
                 'label' => 'Vol en patrouille',
@@ -194,6 +208,8 @@ final class PilotSyllabusCatalog
                 'per' => self::PER_TRACK,
                 'min_scope_hours' => 8.0,
                 'min_track_hours' => 0.0,
+                'cond' => 'formation',
+                'min_cond_hours' => 1.0,
                 'prereq' => 'solo',
                 'mode' => self::MODE_PROPOSE,
                 'validator' => 'ip',
@@ -203,8 +219,33 @@ final class PilotSyllabusCatalog
                     self::TRACK_HELI => 'Tâche militaire évaluée en vol par un instructeur (programme d’entraînement de l’unité, TC 3-04.11) ; pas de minimum horaire civil.',
                     self::TRACK_PLANE => 'Tâche militaire évaluée en vol par un instructeur ; pas de minimum horaire civil.',
                 ],
-                'data_note' => 'Le mod ne distingue pas encore le vol en patrouille : l’instructeur le vérifie en vol.',
+                'data_note' => 'Les heures en patrouille viennent du carnet de vol : le pilote les note sur ses vols, un instructeur les contresigne.',
             ],
+        ];
+    }
+
+    /**
+     * Conditions de vol notées au carnet (heures de nuit, aux instruments, en patrouille) : clé => libellé.
+     *
+     * @return array<string, string>
+     */
+    public static function conditions(): array
+    {
+        return ['night' => 'de nuit', 'ifr' => 'aux instruments', 'formation' => 'en patrouille'];
+    }
+
+    /**
+     * Fonctions à bord notées au carnet : clé => libellé.
+     *
+     * @return array<string, string>
+     */
+    public static function crewRoles(): array
+    {
+        return [
+            'pic' => 'Commandant de bord',
+            'copilot' => 'Copilote',
+            'student' => 'Élève (double commande)',
+            'instructor' => 'Instructeur',
         ];
     }
 

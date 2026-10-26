@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Services\Personnel\PilotLogbookService;
 use App\Services\Personnel\PilotQualificationService;
 use App\Services\Platform\FeatureGateService;
 use App\Support\PilotSyllabusCatalog;
@@ -24,6 +25,7 @@ final class PilotSyllabusController
     public function __construct(
         private PilotQualificationService $service,
         private FeatureGateService $features,
+        private ?PilotLogbookService $logbook = null,
     ) {
     }
 
@@ -53,6 +55,11 @@ final class PilotSyllabusController
                 PilotSyllabusCatalog::TRACK_PLANE => PilotSyllabusCatalog::knownFamilies(PilotSyllabusCatalog::TRACK_PLANE),
             ],
             'actorId' => (int) Session::get('user_id'),
+            'declaredFlights' => $this->logbook !== null && $this->logbook->schemaReady() ? $this->logbook->declared($tenantId) : [],
+            'canReviewTrack' => $this->logbook === null ? [] : [
+                PilotSyllabusCatalog::TRACK_HELI => $this->logbook->canReview($tenantId, PilotSyllabusCatalog::TRACK_HELI, (int) Session::get('user_id')) || is_platform_admin(),
+                PilotSyllabusCatalog::TRACK_PLANE => $this->logbook->canReview($tenantId, PilotSyllabusCatalog::TRACK_PLANE, (int) Session::get('user_id')) || is_platform_admin(),
+            ],
         ]);
     }
 
@@ -89,7 +96,8 @@ final class PilotSyllabusController
                 self::hours($request->input('min_scope_hours', '0')),
                 self::hours($request->input('min_track_hours', '0')),
                 (string) $request->input('award_mode', PilotSyllabusCatalog::MODE_PROPOSE),
-                (string) $request->input('is_enabled', '') === '1'
+                (string) $request->input('is_enabled', '') === '1',
+                $request->input('min_cond_hours', null) !== null ? self::hours($request->input('min_cond_hours', '0')) : null
             );
             Session::flash('success', 'Palier mis à jour.');
 

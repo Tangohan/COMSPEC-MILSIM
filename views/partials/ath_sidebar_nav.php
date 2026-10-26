@@ -333,6 +333,7 @@ if ($isOperatorBoNav) {
                     'warn' => $opQualifBadge !== null,
                     'notif' => $opQualifBadge !== null,
                 ],
+                ['label' => 'Mon carnet de vol', 'href' => url('back-office/ma-situation/carnet-de-vol'), 'icon' => 'path', 'active' => str_starts_with($p, 'back-office/ma-situation/carnet-de-vol')],
                 [
                     'label' => 'Mon avancement',
                     'href' => url('back-office/ma-situation/avancement'),
