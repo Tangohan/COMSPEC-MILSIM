@@ -421,6 +421,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ui_confirm_modal.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ath-toast.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ath-modal-frame.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/ath-quiet-form.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal_command_palette.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/app-version-check.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
