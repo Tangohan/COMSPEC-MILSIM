@@ -34,6 +34,9 @@ final class AtakDebriefRepository
 
     private ?bool $ready = null;
 
+    /** @var array{0: int, 1: array<string, array{label: string, hidden: bool}>}|null */
+    private ?array $opCache = null;
+
     public function __construct(private ?PDO $pdo = null)
     {
     }
@@ -243,6 +246,117 @@ final class AtakDebriefRepository
         return true;
     }
 
+    /** Renomme une demande (titre affiché ici ; le téléphone garde le titre reçu). */
+    public function renameDebrief(int $tenantId, int $id, string $label): bool
+    {
+        $label = mb_substr(trim($label), 0, 200);
+        if ($label === '' || !$this->ready() || $this->find($tenantId, $id) === null) {
+            return false;
+        }
+        $this->exec('UPDATE atak_debriefs SET label = ? WHERE id = ? AND tenant_id = ?', [$label, $id, $tenantId]);
+
+        return true;
+    }
+
+    /**
+     * Supprime une demande et le suivi de ses joueurs. Les avis pas encore validés quittent les téléphones ; les réponses
+     * déjà remontées restent dans les remontées (type « Fin d'opération »).
+     */
+    public function deleteDebrief(int $tenantId, int $id): bool
+    {
+        if (!$this->ready() || $this->find($tenantId, $id) === null) {
+            return false;
+        }
+        $this->close($tenantId, $id);
+        $this->exec('DELETE FROM atak_debrief_recipients WHERE debrief_id = ? AND tenant_id = ?', [$id, $tenantId]);
+        $this->exec('DELETE FROM atak_debriefs WHERE id = ? AND tenant_id = ?', [$id, $tenantId]);
+
+        return true;
+    }
+
+    // ── Sessions jouées : nom donné après coup, retrait de la liste ─────────
+
+    /** @return array<string, array{label: string, hidden: bool}> clé de mission → réglage */
+    public function opSettings(int $tenantId): array
+    {
+        if ($this->opCache !== null && $this->opCache[0] === $tenantId) {
+            return $this->opCache[1];
+        }
+        $out = [];
+        foreach ($this->ready() ? $this->rows('SELECT mission_key, label, hidden_at FROM atak_debrief_ops WHERE tenant_id = ?', [$tenantId]) : [] as $r) {
+            $out[(string) $r['mission_key']] = ['label' => trim((string) ($r['label'] ?? '')), 'hidden' => !empty($r['hidden_at'])];
+        }
+        $this->opCache = [$tenantId, $out];
+
+        return $out;
+    }
+
+    /** Nom d'une session : celui donné par la communauté, sinon « mission (carte) ». */
+    public function opLabel(int $tenantId, string $missionKey): string
+    {
+        $custom = $this->opSettings($tenantId)[$missionKey]['label'] ?? '';
+
+        return $custom !== '' ? $custom : AtakMissionKey::label($missionKey);
+    }
+
+    /** Nom donné à une session (vide : revient au nom de la mission). */
+    public function renameOp(int $tenantId, string $missionKey, string $label, ?int $actorId): bool
+    {
+        $missionKey = AtakMissionKey::normalize($missionKey);
+        if ($missionKey === '' || !$this->ready()) {
+            return false;
+        }
+        $label = mb_substr(trim($label), 0, 200);
+        $this->exec(
+            'INSERT INTO atak_debrief_ops (tenant_id, mission_key, label, updated_by_user_id) VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE label = VALUES(label), updated_by_user_id = VALUES(updated_by_user_id)',
+            [$tenantId, $missionKey, $label !== '' ? $label : null, $actorId]
+        );
+        $this->opCache = null;
+
+        return true;
+    }
+
+    /** Retire des sessions de la liste du suivi (les données de jeu, temps d'écran et remontées, ne sont pas touchées). */
+    public function hideOps(int $tenantId, array $missionKeys, ?int $actorId): int
+    {
+        if (!$this->ready()) {
+            return 0;
+        }
+        $n = 0;
+        foreach (array_unique(array_filter(array_map([AtakMissionKey::class, 'normalize'], $missionKeys))) as $key) {
+            $this->exec(
+                'INSERT INTO atak_debrief_ops (tenant_id, mission_key, hidden_at, updated_by_user_id) VALUES (?, ?, UTC_TIMESTAMP(), ?)
+                 ON DUPLICATE KEY UPDATE hidden_at = UTC_TIMESTAMP(), updated_by_user_id = VALUES(updated_by_user_id)',
+                [$tenantId, $key, $actorId]
+            );
+            $n++;
+        }
+        $this->opCache = null;
+
+        return $n;
+    }
+
+    /**
+     * Efface l'historique du suivi : toutes les demandes de CR (avis en attente retirés des téléphones) et toutes les
+     * sessions de la liste. Remontées, temps d'écran et comptes rendus post-op restent.
+     *
+     * @return array{debriefs: int, sessions: int}
+     */
+    public function clearHistory(int $tenantId, ?int $actorId): array
+    {
+        if (!$this->ready()) {
+            return ['debriefs' => 0, 'sessions' => 0];
+        }
+        $n = 0;
+        foreach ($this->rows('SELECT id FROM atak_debriefs WHERE tenant_id = ?', [$tenantId]) as $r) {
+            $n += $this->deleteDebrief($tenantId, (int) $r['id']) ? 1 : 0;
+        }
+        $keys = array_column($this->recentOperations($tenantId, 100), 'mission_key');
+
+        return ['debriefs' => $n, 'sessions' => $this->hideOps($tenantId, $keys, $actorId)];
+    }
+
     // ── Joueurs visés ───────────────────────────────────────────────────────
 
     public function addRecipient(int $debriefId, int $tenantId, ?int $userId, ?string $steam, string $callsign, ?int $messageId = null): int
@@ -414,6 +528,15 @@ final class AtakDebriefRepository
             $out[(string) $r['mission_key']] ??= ['mission_key' => (string) $r['mission_key'], 'label' => AtakMissionKey::label((string) $r['mission_key']), 'day' => (string) $r['day'], 'players' => (int) $r['players']];
         }
         uasort($out, static fn (array $a, array $b): int => strcmp(self::keyStamp($b['mission_key']) ?: $b['day'], self::keyStamp($a['mission_key']) ?: $a['day']));
+        // Sessions retirées de la liste, et nom donné après coup.
+        $ops = $this->opSettings($tenantId);
+        $out = array_filter($out, static fn (array $o): bool => empty($ops[$o['mission_key']]['hidden']));
+        foreach ($out as &$o) {
+            $o['custom'] = ($ops[$o['mission_key']]['label'] ?? '') !== '';
+            $o['label'] = $o['custom'] ? $ops[$o['mission_key']]['label'] : $o['label'];
+            $o['started_at'] = self::keyStamp($o['mission_key']);
+        }
+        unset($o);
 
         return array_values(array_slice($out, 0, $limit));
     }
@@ -577,7 +700,7 @@ final class AtakDebriefRepository
         $q = is_string($row['questions_json'] ?? null) ? json_decode((string) $row['questions_json'], true) : [];
         $row['questions'] = AarCustomForm::normalizeFields(is_array($q) ? $q : []);
         $row['id'] = (int) $row['id'];
-        $row['mission_label'] = (string) ($row['mission_key'] ?? '') !== '' ? AtakMissionKey::label((string) $row['mission_key']) : '';
+        $row['mission_label'] = (string) ($row['mission_key'] ?? '') !== '' ? $this->opLabel((int) ($row['tenant_id'] ?? 0), (string) $row['mission_key']) : '';
         foreach (['n_total', 'n_submitted', 'n_read', 'n_delivered'] as $k) {
             if (array_key_exists($k, $row)) {
                 $row[$k] = (int) $row[$k];

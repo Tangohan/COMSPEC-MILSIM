@@ -147,3 +147,10 @@
     .bo-dbf-grid__title small { display: block; margin: 2px 0 0; }
     .bo-dbf-pick__select { flex: 1 1 100%; }
 }
+
+/* Renommer une demande ou une session (en-tête) */
+.bo-dbf-head .bo-dbf-rename { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; padding-top: 10px; border-top: 1px solid var(--ath-line-soft); }
+.bo-dbf-head .bo-dbf-rename[hidden] { display: none; }
+.bo-dbf-rename label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 800; color: var(--ath-muted); flex: 1 1 260px; min-width: 0; }
+.bo-dbf-rename input[type="text"] { width: 100%; padding: 6px 8px; font: inherit; font-size: 13px; color: var(--ath-ink); background: var(--ath-surface); border: 1px solid var(--ath-line); }
+.bo-dbf-opinfo code { font-size: 11.5px; overflow-wrap: anywhere; }
