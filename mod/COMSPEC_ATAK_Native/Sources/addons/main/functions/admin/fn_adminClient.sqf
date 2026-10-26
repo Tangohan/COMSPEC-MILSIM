@@ -132,9 +132,10 @@ switch (_act) do {
         if (_i < 0) exitWith { ["WARNING", "Joueur introuvable (parti ?).", 4, 40, "ADMIN"] call comspec_atak_native_fnc_notify; };
         private _u = allPlayers select _i;
         switch (_k) do {
-            case "reset": { ["comspec_atak_native_zeus", [player, "reset", [[_u]]]] call CBA_fnc_serverEvent; };
-            case "once": { ["comspec_atak_native_zeus", [player, "once", [[_u], _v param [0, ""], _v param [1, []]]]] call CBA_fnc_serverEvent; };
-            default { ["comspec_atak_native_zeus", [player, "set", [[_u], _k, _v, 0]]] call CBA_fnc_serverEvent; };
+            // remoteExecCall : le serveur retrouve le demandeur par remoteExecutedOwner (fn_zeusServer).
+            case "reset": { ["reset", [[_u]]] remoteExecCall ["comspec_atak_native_fnc_zeusServer", 2]; };
+            case "once": { ["once", [[_u], _v param [0, ""], _v param [1, []]]] remoteExecCall ["comspec_atak_native_fnc_zeusServer", 2]; };
+            default { ["set", [[_u], _k, _v, 0]] remoteExecCall ["comspec_atak_native_fnc_zeusServer", 2]; };
         };
         ["INFO", format ["%1 : demande envoyée au serveur", name _u], 3, 30, "ADMIN"] call comspec_atak_native_fnc_notify;
         // Effet visible au prochain relevé (variable publique du joueur).

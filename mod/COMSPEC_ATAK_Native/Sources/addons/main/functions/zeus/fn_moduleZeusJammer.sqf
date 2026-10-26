@@ -20,15 +20,15 @@ if !(_ctx get "zeus") exitWith { true };
     _vals params ["_act", "_rad", "_str", "_min", "_spare"];
     switch (_act) do {
         case "add": {
-            ["comspec_atak_native_zeus", [player, "jamArea", [_pos, _rad, _str, _min * 60, _spare]]] call CBA_fnc_serverEvent;
+            ["jamArea", [_pos, _rad, _str, _min * 60, _spare]] remoteExecCall ["comspec_atak_native_fnc_zeusServer", 2];
             ["feedback", [format ["ATAK : brouilleur posé (%1 m, %2 %%)", _rad, _str]]] call comspec_atak_native_fnc_zeusMenu;
         };
         case "clearNear": {
-            ["comspec_atak_native_zeus", [player, "jamClear", [_pos, _rad]]] call CBA_fnc_serverEvent;
+            ["jamClear", [_pos, _rad]] remoteExecCall ["comspec_atak_native_fnc_zeusServer", 2];
             ["feedback", ["ATAK : brouilleurs Zeus du rayon retirés"]] call comspec_atak_native_fnc_zeusMenu;
         };
         default {
-            ["comspec_atak_native_zeus", [player, "jamClear", [_pos, 0]]] call CBA_fnc_serverEvent;
+            ["jamClear", [_pos, 0]] remoteExecCall ["comspec_atak_native_fnc_zeusServer", 2];
             ["feedback", ["ATAK : tous les brouilleurs Zeus retirés"]] call comspec_atak_native_fnc_zeusMenu;
         };
     };

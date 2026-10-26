@@ -82,7 +82,9 @@ switch (_act) do {
         };
         _msg = _msg trim [" ", 0];
         private _i = [_int, 50] select (_int < 0);
-        private _send = { params ["_a", "_x"]; ["comspec_atak_native_zeus", [player, _a, _x]] call CBA_fnc_serverEvent; };
+        // remoteExecCall (et non l'événement CBA) : le serveur retrouve le demandeur par remoteExecutedOwner,
+        // il n'a plus à croire une unité envoyée dans la demande (fn_zeusServer).
+        private _send = { params ["_a", "_x"]; [_a, _x] remoteExecCall ["comspec_atak_native_fnc_zeusServer", 2]; };
         private _set = { params ["_k", "_v"]; ["set", [_units, _k, _v, _dur]] call _send; };
         private _once = { params ["_k", ["_v", []]]; ["once", [_units, _k, _v]] call _send; };
         switch (_id) do {

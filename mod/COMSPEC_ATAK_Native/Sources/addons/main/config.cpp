@@ -35,7 +35,7 @@ class CfgFunctions {
             class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {}; class planUi {}; class planHelp {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
-            class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayConvert {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
+            class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayConvert {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {}; class reqUnit {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
             class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class netCond {}; class netWeather {}; class netLoad {}; class netConfig {}; class offline {}; class relayNet {}; class relayCond {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaShortUrl {}; class athenaStatus {}; class feedLink {}; class extVersion {}; class mpu5 {}; class jammer {};
         };
@@ -587,6 +587,29 @@ class Cfg3DEN {
             onMissionNew = "['watch'] call comspec_atak_native_fnc_relayEden";
             onTerrainNew = "['watch'] call comspec_atak_native_fnc_relayEden";
         };
+    };
+};
+
+// Fonctions serveur appelées par un client (remoteExecCall vers 2). Chacune retrouve elle-même son demandeur par
+// remoteExecutedOwner (fn_reqUnit) et refuse ce qu'il n'a pas le droit de demander : la liste blanche dit seulement
+// « cette fonction peut être appelée », jamais « cet appel est autorisé ».
+// Pas de « mode » ni de « jip » au niveau de l'addon : ils s'imposeraient à TOUTES les missions du jeu, Zeus et
+// vanilla compris. Ces classes ne servent donc que lorsqu'une mission active la liste blanche
+// (description.ext : class CfgRemoteExec { class Functions { mode = 1; }; };), même règle que
+// mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp.
+// comspec_atak_native_fnc_notify n'est pas déclarée ici : mod/@COMSPEC_SSE/addons/compat_atak/config.cpp:71 la
+// déclare déjà (allowedTargets = 1) et la priorité entre deux addons qui déclarent la même classe n'est pas établie.
+class CfgRemoteExec {
+    class Functions {
+        class comspec_atak_native_fnc_zeusServer { allowedTargets = 2; };
+        class comspec_atak_native_fnc_adminServer { allowedTargets = 2; };
+        class comspec_atak_native_fnc_ftServer { allowedTargets = 2; };
+        class comspec_atak_native_fnc_planServer { allowedTargets = 2; };
+        class comspec_atak_native_fnc_captureServer { allowedTargets = 2; };
+        class comspec_atak_native_fnc_dataServer { allowedTargets = 2; };
+        // Serveur -> client : relevé de l'app Admin demandé au joueur (fn_adminServer « scan »). La fonction refuse
+        // tout appel distant qui ne vient pas du serveur, donc la déclarer ne permet rien de client à client.
+        class comspec_atak_native_fnc_adminClient { allowedTargets = 1; };
     };
 };
 

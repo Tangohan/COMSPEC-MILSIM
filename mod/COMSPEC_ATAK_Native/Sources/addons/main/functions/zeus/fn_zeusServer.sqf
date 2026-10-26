@@ -1,7 +1,10 @@
 /*
-    Contrôle Zeus des téléphones ATAK, côté serveur (seul à écrire l'état). Événement CBA serveur comspec_atak_native_zeus :
-      [demandeur, action, arguments]. Accepté d'un Zeus (curateur assigné), de l'hôte, d'un admin connecté ou d'un
+    Contrôle Zeus des téléphones ATAK, côté serveur (seul à écrire l'état). Appelé par un client avec
+      [action, arguments] remoteExecCall ["comspec_atak_native_fnc_zeusServer", 2] (CfgRemoteExec).
+      Accepté d'un Zeus (curateur assigné), de l'hôte, d'un admin connecté ou d'un
       gestionnaire désigné (fn_adminAllowed ; l'app Admin du téléphone passe par ici pour les effets par joueur).
+      Le demandeur n'est JAMAIS celui qu'annonce la demande : il est retrouvé par remoteExecutedOwner (fn_reqUnit).
+      Plus d'événement CBA comspec_atak_native_zeus : un événement CBA ne porte pas l'identité du poste émetteur.
     Actions :
       "set"     [joueurs, clé, valeur, durée s (0 = jusqu'à annulation)]   effet durable (fn_zeusFx) ; valeur 0 / false / "" = retiré
       "once"    [joueurs, type, arguments]   effet ponctuel joué chez le joueur (fn_zeusClient "once")
@@ -14,6 +17,29 @@
 */
 if (!isServer) exitWith {};
 params [["_act", ""], ["_args", []], ["_caller", objNull]];
+// Demande venue d'un client : seul remoteExecutedOwner fait foi. L'unité annoncée dans la demande est écartée (un
+// client y mettait l'unité d'un Zeus, d'un admin, ou n'importe quelle IA locale au serveur : l'ancienne clause
+// « local _caller » était vraie pour tout objet du serveur). Un appel non distant ne peut venir que du code du
+// serveur (postInit, boucle de 5 s, réapparition, script de mission) : il garde ce qu'il passe.
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+if (_remote) then { _caller = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
+// Hôte d'une partie locale : son propre appel n'est pas distant (son poste EST le serveur, remoteExecutedOwner y
+// vaut 2 ou rien). Il reste le demandeur, sans quoi la réponse et le journal partiraient vers objNull.
+if (!_remote && {isNull _caller} && {hasInterface}) then { _caller = player; };
+// Actions internes : jamais acceptées d'un client (elles ne sont pas des demandes mais le fonctionnement du serveur).
+if (_remote && {!(_act in ["set", "once", "reset", "jamArea", "jamClear"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][ZEUS] Action « %1 » refusée au poste %2 (réservée au serveur)", _act, remoteExecutedOwner];
+    false
+};
+if (_remote && {isNull _caller}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][ZEUS] Demande « %1 » refusée au poste %2 (demandeur introuvable)", _act, remoteExecutedOwner];
+    false
+};
+if (_remote && {!([_caller] call comspec_atak_native_fnc_adminAllowed)}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][ZEUS] Demande « %1 » refusée à %2 (ni Zeus ni admin)", _act, name _caller];
+    ["comspec_atak_native_note", ["Refusé par le serveur : les effets Zeus sur les ATAK sont réservés à Zeus et aux admins."], _caller] call CBA_fnc_targetEvent;
+    false
+};
 private _now = [time, serverTime] select isMultiplayer;
 private _pub = {
     params ["_u", "_list"];
@@ -32,13 +58,8 @@ private _players = {
 switch (_act) do {
     case "init": {
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusJammersSrv", []];
-        ["comspec_atak_native_zeus", {
-            params [["_caller", objNull], ["_a", ""], ["_xa", []]];
-            // Zeus, hôte, admin connecté ou gestionnaire désigné par le serveur (fn_adminAllowed, app Admin).
-            private _ok = !isNull _caller && {!isNull (getAssignedCuratorLogic _caller) || {local _caller} || {[_caller] call comspec_atak_native_fnc_adminAllowed}};
-            if (!_ok) exitWith { diag_log format ["[COMSPEC ATAK NATIVE][WARN][ZEUS] Demande refusée (pas Zeus) : %1 %2", name _caller, _a]; };
-            [_a, _xa, _caller] call comspec_atak_native_fnc_zeusServer;
-        }] call CBA_fnc_addEventHandler;
+        // Pas de gestionnaire d'événement CBA : les demandes des clients arrivent par remoteExecCall vers 2, seule
+        // voie qui laisse le serveur reconnaître le poste émetteur (contrôle en tête de cette fonction).
         [{ ["tick"] call comspec_atak_native_fnc_zeusServer; }, 5] call CBA_fnc_addPerFrameHandler;
         addMissionEventHandler ["EntityRespawned", { params ["_new", "_old"]; ["respawn", [_new, _old]] call comspec_atak_native_fnc_zeusServer; }];
     };
