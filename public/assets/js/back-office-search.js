@@ -311,6 +311,13 @@
         }
       });
     }
+    // Bouton loupe de la barre mobile (la recherche de la topbar y est masquée).
+    document.querySelectorAll('[data-ath-search-open]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        openDlg('');
+      });
+    });
     if (lmsSearch) {
       lmsSearch.addEventListener('click', function (e) {
         e.preventDefault();
