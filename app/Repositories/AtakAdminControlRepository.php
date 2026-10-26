@@ -60,6 +60,7 @@ final class AtakAdminControlRepository
         'web' => 'Poste de commandement',
         'admin' => 'Administration du site',
         'gestion' => 'Gestion de la communauté',
+        'ingame' => 'Gestion, depuis le jeu (app Admin de l’ATAK)',
     ];
 
     /** Avis automatiques que l'ATAK du joueur met en forme et affiche en alerte (genre => niveau). */

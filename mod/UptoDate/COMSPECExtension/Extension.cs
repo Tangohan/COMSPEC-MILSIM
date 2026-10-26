@@ -3327,6 +3327,65 @@ public static partial class Extension
             return "OK|queued";
         }
 
+        // App « Admin » de l'ATAK natif : parc ATAK de la communauté pour le gestionnaire connecté en jeu (site :
+        // /back-office/atak/parc-atak, mêmes règles). args: [json {q, offset}]
+        // → OK|droit\ttotal puis une ligne par ATAK : id\tindicatif\tsteam\tterminal\tcompte\tcompromission\tblocage\tportée du
+        // blocage\tmotif\tmessages en attente\tvu il y a (s, -1 jamais)\theures de jeu\tversion du mod\tversion de Link
+        // (droit : platform | manager | none ; champ vide écrit « - »). 2.0.94.
+        if (function == "GameAdmin.Fleet" || function == "GameAdmin.Action")
+        {
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            var gaFleet = function == "GameAdmin.Fleet";
+            if (!TryBuildRequestUri(_baseUrl, gaFleet ? "/api/atak/game-admin/fleet" : "/api/atak/game-admin/action", out var gaUri, out var gaErr) || gaUri is null)
+                return "ERR|" + gaErr;
+            try
+            {
+                using var gaCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                var resp = SendJsonPost(gaUri.AbsoluteUri, EnrichAtakPayload(NormalizeArmaJson(args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0] : "{}")), gaCts.Token);
+                var body = ReadContentUtf8(resp, gaCts.Token);
+                JsonDocument? doc = null;
+                try { doc = JsonDocument.Parse(body); } catch (JsonException) { }
+                using (doc)
+                {
+                    string Clean(JsonElement m, string k)
+                    {
+                        if (m.ValueKind != JsonValueKind.Object || !m.TryGetProperty(k, out var v)) return "";
+                        var t = v.ValueKind switch
+                        {
+                            JsonValueKind.String => v.GetString() ?? "",
+                            JsonValueKind.Number => v.GetRawText(),
+                            JsonValueKind.True => "1",
+                            JsonValueKind.False => "0",
+                            _ => "",
+                        };
+                        return t.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+                    }
+                    var root = doc?.RootElement ?? default;
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var why = Clean(root, "message");
+                        if (why.Length == 0) why = Clean(root, "error");
+                        return "ERR|" + (why.Length > 0 ? why : "http_" + (int)resp.StatusCode);
+                    }
+                    if (!gaFleet) return "OK|" + Clean(root, "message");
+                    var sb = new StringBuilder();
+                    sb.Append(Clean(root, "role")).Append('\t').Append(Clean(root, "total"));
+                    if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("rows", out var rows) && rows.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var r in rows.EnumerateArray().Take(40))
+                        {
+                            sb.Append('\n');
+                            sb.Append(string.Join("\t", new[] { "id", "label", "steam", "terminal", "account", "compromise", "block_id", "block_scope",
+                                "block_reason", "pending", "seen_ago", "play_h", "mod", "link" }.Select(k => Clean(r, k) is { Length: > 0 } c ? c : "-")));
+                        }
+                    }
+                    return "OK|" + sb;
+                }
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
         if (function == "SetMapId")
         {
             ApplyMapId(args.Length > 0 ? args[0] : "");

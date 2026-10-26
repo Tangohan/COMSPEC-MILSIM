@@ -21,6 +21,7 @@
       "init" (postInit serveur)   "tick" (3 s)   "exploit" (5 s)   "dropped" [porte-objet]
       "validate" [id, unité]   "dismiss" [id, unité]   "athena" [id, ok, unité]
       "local" [mode, objet, valeur] : sur la machine où l'objet est local ("strip" | "give" | "move" | "pick" | "hunt")
+    Debug (app Admin, fn_adminServer) : chaque capture garde « targets » (joueurs repérés) et « hunters » (groupes en traque).
 */
 params [["_act", "tick"], ["_arg", []]];
 private _now = [time, serverTime] select isMultiplayer;
@@ -239,6 +240,8 @@ switch (_act) do {
                 alive _x && {(str side group _x) isEqualTo _side} && {_x getVariable ["COMSPEC_ATAK_Beacon", false]}
                 && {(_x distance2D _ai) < _huntR} && {[_x] call comspec_atak_native_fnc_hasDevice}
             }) apply { [_x, getPosATL _x] };
+            // Vu par l'app Admin (debug) : joueurs repérés et groupes lancés à leur poursuite.
+            _c set ["targets", count _targets];
             if (_targets isEqualTo []) then { continue };
             private _grps = [group _ai];
             if (_share > 0) then {
@@ -250,6 +253,7 @@ switch (_act) do {
                 _grps append ((_near select [0, 3]) apply { _x select 1 });
             };
             { ["comspec_atak_native_capLocal", ["hunt", leader _x, [_targets, _hunt]], leader _x] call CBA_fnc_targetEvent; } forEach _grps;
+            _c set ["hunters", [[], _grps select { !(_x getVariable ["COMSPEC_ATAK_NoHunt", false]) }] select _hunt];
         } forEach _caps;
         if (_changed) then { call _publish; };
     };
@@ -259,7 +263,8 @@ switch (_act) do {
         private _c = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_id, createHashMap];
         if ((count _c) isEqualTo 0 || {isNull _by}) exitWith {};
         private _side = (_c get "tag") param [1, ""];
-        if ((str side group _by) isNotEqualTo _side && {isNull (getAssignedCuratorLogic _by)}) exitWith {};
+        // Camp du téléphone, Zeus, ou gestionnaire passé par l'app Admin (fn_adminServer, droit déjà vérifié).
+        if ((str side group _by) isNotEqualTo _side && {isNull (getAssignedCuratorLogic _by)} && {!(_by getVariable ["COMSPEC_ATAK_AdminOk", false])}) exitWith {};
         if ((_c get "state") isEqualTo "validated") exitWith {};
         private _who = [_by] call comspec_atak_native_fnc_unitCallsign;
         _c set ["by", _who];

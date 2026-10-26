@@ -1,6 +1,7 @@
 /*
     Contrôle Zeus des téléphones ATAK, côté serveur (seul à écrire l'état). Événement CBA serveur comspec_atak_native_zeus :
-      [demandeur, action, arguments]. Accepté d'un Zeus (curateur assigné), de l'hôte ou d'un admin connecté.
+      [demandeur, action, arguments]. Accepté d'un Zeus (curateur assigné), de l'hôte, d'un admin connecté ou d'un
+      gestionnaire désigné (fn_adminAllowed ; l'app Admin du téléphone passe par ici pour les effets par joueur).
     Actions :
       "set"     [joueurs, clé, valeur, durée s (0 = jusqu'à annulation)]   effet durable (fn_zeusFx) ; valeur 0 / false / "" = retiré
       "once"    [joueurs, type, arguments]   effet ponctuel joué chez le joueur (fn_zeusClient "once")
@@ -33,7 +34,8 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusJammersSrv", []];
         ["comspec_atak_native_zeus", {
             params [["_caller", objNull], ["_a", ""], ["_xa", []]];
-            private _ok = !isNull _caller && {!isNull (getAssignedCuratorLogic _caller) || {local _caller} || {(admin (owner _caller)) > 0}};
+            // Zeus, hôte, admin connecté ou gestionnaire désigné par le serveur (fn_adminAllowed, app Admin).
+            private _ok = !isNull _caller && {!isNull (getAssignedCuratorLogic _caller) || {local _caller} || {[_caller] call comspec_atak_native_fnc_adminAllowed}};
             if (!_ok) exitWith { diag_log format ["[COMSPEC ATAK NATIVE][WARN][ZEUS] Demande refusée (pas Zeus) : %1 %2", name _caller, _a]; };
             [_a, _xa, _caller] call comspec_atak_native_fnc_zeusServer;
         }] call CBA_fnc_addEventHandler;
