@@ -99,6 +99,16 @@ body.layout-light .athena-header,
   transition: transform 0.2s ease;
 }
 
+/* Emblème ATHENA (aigle) : masque SVG, prend la couleur du texte du carré. */
+.athena-header__brand-emblem {
+  display: block;
+  width: 84%;
+  height: 84%;
+  background: currentColor;
+  -webkit-mask: url("../brand/athena-embleme-noir.svg") center / contain no-repeat;
+  mask: url("../brand/athena-embleme-noir.svg") center / contain no-repeat;
+}
+
 .athena-header__brand:hover .athena-header__brand-mark,
 .athena-header__brand:focus-visible .athena-header__brand-mark {
   transform: rotate(-2deg);

@@ -85,6 +85,23 @@ EN : New Admin app for community managers and Zeus
 - Boutons à conséquence en deux temps (CONFIRMER). `i18n/en.txt` : 143 textes.
 - Version 2.3.11, COMSPEC Link 2.0.94 (DLL à recompiler). main.pbo non reconstruit dans cette PR (regroupement).
 - À tester en jeu : app visible en Zeus et invisible pour un joueur ; relevé EN JEU avec plusieurs joueurs ; effets Zeus depuis l'app ; parc ATHENA avec un compte gestionnaire relié (bloquer puis lever, message reçu, compromission puis levée) ; DEBUG IA après qu'une IA ennemie a ramassé un téléphone (traque visible, ARRÊTER LA TRAQUE, REPRENDRE LE TÉLÉPHONE).
+## Nouveaux logos ATHENA sur le site et dans le téléphone (ATAK natif 2.3.11.AB - Denver)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouvelle identité ATHENA : l'aigle
+- Le site Athena adopte le nouveau logo : l'aigle remplace le « A » en haut de chaque page et dans le tableau de bord, le logo complet ATHENA est en pied de page, et l'icône de l'onglet, des favoris et de l'appli installée sur téléphone change aussi.
+- Dans le téléphone ATAK, l'app Athena prend l'icône de l'aigle et sa carte d'état affiche le nouveau logo ATHENA.
+- Les logos ont été redessinés en vectoriel : nets à toutes les tailles, sans le trait blanc qui bordait l'ancienne image.
+EN : New ATHENA identity: the eagle
+- The Athena website takes on the new logo: the eagle replaces the "A" at the top of every page and in the dashboard, the full ATHENA logo sits in the footer, and the icon for the browser tab, bookmarks and the app installed on a phone changes too.
+- In the ATAK phone, the Athena app gets the eagle icon and its status card shows the new ATHENA logo.
+- The logos were redrawn as vectors: sharp at every size, without the white line that edged the old picture.
+
+### Détail technique
+- Logos vectorisés (potrace, tracé à 6x avec lissage) à partir des PNG fournis ; colonne blanche des 3 premiers pixels du logo complet retirée. Sources : `public/assets/brand/*.svg` (blanc / noir), `mod/COMSPEC_ATAK_Native/tools/src/athena_logo.svg` et `athena_embleme.svg`.
+- Site : `athena-header__brand-mark`, `dash-rail__brand-mark` et le pied de page portail utilisent l'emblème / le logo en masque CSS (couleur du thème) ; en-tête d'accès public et accueil (`hi-wordmark`, pied) en `<img>` ; `athena-192/512.png` carrés (étaient 520x240 et 1200x480), nouveaux `athena-180/32.png`, `athena-maskable-512.png`, `favicon.ico` ; manifeste PWA et cache `sw.js` (v11) à jour ; `atak-eagle-logo.png` (ATAK web, porte SSE) remplacé par l'emblème.
+- Mod : `gen_assets.py <hemtt> athenalogo` régénère `app_athena.paa` (emblème) et le nouveau `logo_athena.paa` (logo complet) ; `fn_pageAthena` et le repli de la ligne « status » de `fn_formRender` l'utilisent. Version 2.3.11, main.pbo reconstruit (HEMTT), verify_build OK. Link inchangé (2.0.93).
 
 ---
 
