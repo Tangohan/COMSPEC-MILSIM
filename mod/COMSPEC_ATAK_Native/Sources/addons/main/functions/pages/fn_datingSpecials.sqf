@@ -7,12 +7,14 @@
     Un match ouvre une conversation qui livre des indices (lieu-dit le plus proche, carroyage approximatif, heure).
     Params :
       ["pool"]              → IA éligibles, les plus proches d'abord
+      ["hvts"]              → HVT vivants de toute la carte (chasse : tuyaux des informateurs, fn_hvtIntel)
       ["kind", unité]       → "HVT", "SSE" ou ""
       ["key", unité]        → identifiant du profil ("ai:" + netId)
       ["unit", clé]         → unité de ce profil (objNull si disparue)
       ["profile", unité]    → HashMap name, age, bio, tags, kind, dist
       ["roll"]              → profil particulier à montrer au prochain tour, tiré selon le réglage (objNull sinon)
-      ["clue", unité]       → [message d'indice, position floue]
+      ["clue", unité]       → [message d'indice, position floue, vrai] ; un HVT ment une fois sur quatre (rendez-vous
+                               piège à 1 ou 2 km de lui) : l'indice entre dans son dossier comme tuyau « contact direct »
       ["chance", unité]     → probabilité de match (0 à 1)
 */
 params [["_act", "pool"], ["_arg", objNull]];
@@ -39,6 +41,10 @@ switch (_act) do {
             !isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"} && {(player distance2D _x) < 5000} && {([_x] call _kindOf) isNotEqualTo ""}
         };
         [_list, [], { player distance2D _x }, "ASCEND"] call BIS_fnc_sortBy
+    };
+    case "hvts": {
+        if ((missionNamespace getVariable ["comspec_atak_native_hvt_tips", 2]) <= 0) exitWith { [] };
+        allUnits select { !isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"} && {([_x] call _kindOf) isEqualTo "HVT"} }
     };
     case "roll": {
         private _p = [0, 0.1, 0.25, 0.5] select ((missionNamespace getVariable ["comspec_atak_native_dating_specials", 1]) max 0 min 3);
@@ -92,11 +98,12 @@ switch (_act) do {
     };
     case "clue": {
         private _u = _arg;
-        if (isNull _u || {!alive _u}) exitWith { ["Ce profil n'existe plus.", []] };
+        if (isNull _u || {!alive _u}) exitWith { ["Ce profil n'existe plus.", [], false] };
         private _hvt = ([_u] call _kindOf) isEqualTo "HVT";
-        // Position floue : 300 m pour un HVT (prudent), 150 m sinon.
+        // Position floue : 300 m pour un HVT (prudent), 150 m sinon. Un HVT méfiant donne parfois un faux rendez-vous.
         private _r = [150, 300] select _hvt;
-        private _p = (getPosATL _u) getPos [random _r, random 360];
+        private _true = !_hvt || {random 1 >= 0.25};
+        private _p = if (_true) then { (getPosATL _u) getPos [random _r, random 360] } else { (getPosATL _u) getPos [1000 + random 1500, random 360] };
         private _locs = nearestLocations [_p, ["NameCityCapital", "NameCity", "NameVillage", "NameLocal", "Hill", "NameMarine"], 2500];
         private _loc = if (_locs isEqualTo []) then { "" } else { text (_locs select 0) };
         private _grid = [_p, 6] call comspec_atak_native_fnc_gridRef;
@@ -110,7 +117,7 @@ switch (_act) do {
              format ["Je finis vers %1. Passe vers %2 si tu veux.", _hour, _grid],
              format ["Je suis encore vers %1. Tu viens ?", _grid]]
         };
-        [selectRandom _lines, _p]
+        [selectRandom _lines, _p, _true]
     };
     default { [] };
 };

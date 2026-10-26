@@ -1,12 +1,18 @@
 /*
-    Tinder, façon vraie app de rencontre.
-      DÉCOUVRIR : une carte par profil, grande photo (vrai visage de la personne rendu en direct, fn_datingCam) avec trois
-                  photos (portrait, buste, en pied : toucher la gauche ou la droite de l'image), prénom, âge, distance,
-                  bio, centres d'intérêt, compatibilité ; PASSER, SUPER LIKE (1 / 10 min), J'AIME.
-                  De temps en temps, un profil tiré des IA de la carte : HVT ou personne SSE (fn_datingSpecials), selon
-                  le Zeus et le réglage de mission. Rien ne le signale : à vous de reconnaître le visage.
-      MATCHS    : joueurs (SMS) et profils IA (conversation : indices de position, marquage sur la carte).
-      MON PROFIL: aperçu de sa propre carte, bio, visibilité, likes reçus.
+    Tinder, façon vraie app de rencontre, et derrière : la chasse aux HVT (fn_hvtIntel). Barre du bas comme l'app :
+      SWIPE    : une carte par profil, grande photo (vrai visage de la personne rendu en direct, fn_datingCam) avec trois
+                 photos (portrait, buste, en pied : toucher la gauche ou la droite de l'image), prénom, âge, distance,
+                 bio, centres d'intérêt, compatibilité ; PASSER, SUPER LIKE (1 / 10 min), J'AIME.
+                 De temps en temps, un profil tiré des IA de la carte : HVT ou personne SSE (fn_datingSpecials), selon
+                 le Zeus et le réglage de mission. Rien ne le signale : à vous de reconnaître le visage.
+      LIKES    : les tuyaux des informateurs sur les HVT de la carte, en grille floue ; ouvrir un like = le tuyau, sa
+                 cotation OTAN (source A-F, crédibilité 1-6) et sa zone : REJETER ou CONFIRMER, comme un swipe.
+      DOSSIERS : une fiche par cible : étapes FIND, FIX, FINISH, EXPLOIT, position estimée et incertitude, confiance,
+                 tuyaux contradictoires, activité du téléphone ; MARQUER, PARTAGER au groupe, SALUTE prérempli ; JACKPOT
+                 (cible tuée ou capturée) : vérité de chaque tuyau.
+      MESSAGES : nouveaux matchs (dont la case LIKES), puis conversations : sources (relance), profils IA (indices de
+                 position), joueurs (SMS) ; « À TON TOUR » quand l'autre a écrit en dernier.
+      PROFIL   : aperçu de sa propre carte, bio, visibilité, likes reçus, bilan de la chasse.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -19,7 +25,7 @@ private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]
 private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _tab = _s getOrDefault ["rcTab", "FIND"];
-if !(_tab in ["FIND", "MATCH", "ME"]) then { _tab = "FIND"; };
+if !(_tab in ["FIND", "TIPS", "FILES", "MATCH", "ME"]) then { _tab = "FIND"; };
 private _shot = _s getOrDefault ["rcShot", 0];
 private _icon = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
@@ -90,19 +96,93 @@ private _aiProfile = {
     ]
 };
 
-// Onglets.
-private _tabH = _font * 1.3;
-private _tabs = [["DÉCOUVRIR", "FIND"], [format ["MATCHS (%1)", (count _matches) + (count _aiMatches)], "MATCH"], ["MON PROFIL", "ME"]];
-private _tw = (_bw - _pad * 2) / 3;
+
+// Chasse aux HVT (fn_hvtIntel) : tuyaux non lus, conversations où c'est à vous de répondre.
+private _unread = ["unread"] call comspec_atak_native_fnc_hvtIntel;
+private _chat = missionNamespace getVariable ["COMSPEC_ATAK_RencardAiChat", createHashMap];
+private _read = missionNamespace getVariable ["COMSPEC_ATAK_RencardRead", createHashMap];
+missionNamespace setVariable ["COMSPEC_ATAK_RencardRead", _read];
+private _yourTurn = {
+    params ["_k"];
+    private _c = _chat getOrDefault [_k, []];
+    _c isNotEqualTo [] && {!((_c select -1) select 0)} && {(count _c) > (_read getOrDefault [_k, 0])}
+};
+private _newMsg = { [_x] call _yourTurn } count (keys _chat);
+private _grey = "#8a9a93";
+private _green = "#5fd38a";
+
+// Barre du bas, comme l'app : SWIPE, LIKES (tuyaux), DOSSIERS, MESSAGES, PROFIL ; pastille rouge = à traiter.
+private _navH = _font * 1.9;
+private _ny = _bh - _navH - _pad / 4;
+private _nbg = ["COMSPEC_RscText", [0, _ny - _pad / 4, _bw, _navH + _pad / 2]] call _mk;
+_nbg ctrlSetBackgroundColor [0.045, 0.045, 0.05, 1];
+private _nw = (_bw - _pad * 2) / 5;
 {
-    _x params ["_txt", "_k"];
-    private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _tw, _pad / 2, _tw - _pad / 4, _tabH], _txt] call _mk;
-    _b ctrlSetFontHeight (_fs * 0.95);
-    if (_k isEqualTo _tab) then { _b ctrlSetBackgroundColor [1, 0.36, 0.5, 0.9]; _b ctrlSetTextColor [1, 1, 1, 1]; };
+    _x params ["_txt", "_k", "_n", "_tip"];
+    private _bx = _pad + _forEachIndex * _nw;
+    private _b = ["COMSPEC_RscButton", [_bx, _ny, _nw - _pad / 4, _navH], _txt] call _mk;
+    _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+    _b ctrlSetBackgroundColor ([[0.07, 0.07, 0.075, 1], [0.17, 0.17, 0.18, 1]] select (_k isEqualTo _tab));
+    _b ctrlSetTextColor ([[0.75, 0.78, 0.77, 1], [1, 0.36, 0.5, 1]] select (_k isEqualTo _tab));
+    _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
     _b ctrlAddEventHandler ["ButtonClick", compile format ["['tab', '%1'] call comspec_atak_native_fnc_datingAction;", _k]];
-} forEach _tabs;
-private _cy = _pad / 2 + _tabH + _pad / 2;
-private _ch = _bh - _cy - _pad / 2;
+    if (_n > 0) then {
+        private _bs = _fs * 1.05;
+        private _bd = ["COMSPEC_RscTextCenter", [_bx + _nw - _pad / 4 - _bs * _ratio, _ny - _bs * 0.25, _bs * _ratio, _bs], str (_n min 99)] call _mk;
+        _bd ctrlSetBackgroundColor [0.85, 0.16, 0.16, 1];
+        _bd ctrlSetTextColor [1, 1, 1, 1];
+        _bd ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
+        _bd ctrlEnable false;
+    };
+} forEach [
+    ["SWIPE", "FIND", 0, "Profils autour de vous"],
+    ["LIKES", "TIPS", _unread, "Tuyaux des informateurs : confirmer ou rejeter"],
+    ["DOSSIERS", "FILES", 0, "Dossiers des cibles (HVT) : position estimée, étape FIND, FIX, FINISH"],
+    ["MESSAGES", "MATCH", _newMsg, "Matchs, sources et cibles"],
+    ["PROFIL", "ME", 0, "Ma carte et mon bilan"]
+];
+private _cy = _pad / 2;
+private _ch = _ny - _pad * 0.75 - _cy;
+
+// Lignes d'une conversation (match IA ou source) ; la conversation ouverte est marquée lue.
+private _chatRows = {
+    params ["_k", "_who"];
+    private _rows = [];
+    private _c = _chat getOrDefault [_k, []];
+    {
+        _x params ["_mine", "_txt", "_at"];
+        _rows pushBack ["text", format ["<t align='%1' size='0.8' color='%2'>%3 · %4</t><br/><t align='%1' color='%5'>%6</t>",
+            ["left", "right"] select _mine, _grey, [[_who] call _esc, "Moi"] select _mine, _at, ["#e8eee9", _pink] select _mine, [_txt] call _esc]];
+    } forEach _c;
+    _read set [_k, count _c];
+    _rows
+};
+// Aperçu du dernier message (« ↩ » quand c'est le mien), traduit avant d'être coupé.
+private _preview = {
+    params ["_k"];
+    private _c = _chat getOrDefault [_k, []];
+    if (_c isEqualTo []) exitWith { "" };
+    (_c select -1) params ["_mine", "_txt"];
+    private _t = (_txt) call comspec_atak_native_fnc_tr;
+    if ((count _t) > 58) then { _t = (_t select [0, 56]) + "…"; };
+    format ["%1%2", ["", "↩ "] select _mine, [_t] call _esc]
+};
+private _gradeTxt = createHashMapFromArray [["A", "source totalement fiable"], ["B", "source généralement fiable"], ["C", "source assez fiable"],
+    ["D", "source peu fiable"], ["E", "source non fiable"], ["F", "source impossible à juger"]];
+private _credTxt = ["", "recoupé par une autre source", "probablement vrai", "possiblement vrai", "douteux", "improbable", "impossible à juger"];
+private _srcName = { params ["_c"]; ["Contact direct", _c] select (_c isNotEqualTo "DIRECT") };
+// Image d'une cible (aperçu du personnage) sous un voile sombre : un like reste flou tant qu'on ne l'a pas traité.
+private _veiled = {
+    params ["_key", "_rect", "_alpha"];
+    private _bg = ["COMSPEC_RscText", _rect] call _mk;
+    _bg ctrlSetBackgroundColor [0.09, 0.09, 0.1, 1];
+    private _u = ["unit", _key] call comspec_atak_native_fnc_datingSpecials;
+    ["COMSPEC_RscSlide", _rect, if (isNull _u) then { _icon } else { [_u] call _figure }] call _mk;
+    private _v = ["COMSPEC_RscText", _rect] call _mk;
+    _v ctrlSetBackgroundColor [0.05, 0.05, 0.06, _alpha];
+    _v ctrlEnable false;
+};
+
 
 // Carte de profil : 1re photo = portrait opérateur Athena s'il existe (sinon visage en direct), puis buste et en pied en
 // direct ; sous la vue en direct, l'image fixe (portrait ou rendu du personnage) ; repères des 3 photos, bandeau du bas.
@@ -160,6 +240,7 @@ private _details = {
     ]) call comspec_atak_native_fnc_tr);
 };
 
+
 switch (_tab) do {
     case "FIND": {
         // Profil affiché : particulier tiré au tour précédent, sinon le joueur suivant, sinon un particulier restant.
@@ -208,6 +289,313 @@ switch (_tab) do {
             ["J'AIME", "like", [1, 0.36, 0.5, 1], [1, 1, 1, 1], "Match si c'est réciproque"]
         ];
     };
+    case "TIPS": {
+        private _openTip = _s getOrDefault ["rcTip", ""];
+        private _t = if (_openTip isEqualTo "") then { [] } else { ["get", _openTip] call comspec_atak_native_fnc_hvtIntel };
+        ["stop"] call comspec_atak_native_fnc_datingCam;
+        if (_t isNotEqualTo []) exitWith {
+            // Un like ouvert : le tuyau, sa cotation, sa zone ; REJETER, SUR LA CARTE, CONFIRMER (le swipe).
+            _t params ["_id", "_key", "_code", "_tpos", "", "_at", "_st", "_txt", "", "_from", "_name"];
+            private _src = ["source", _code] call comspec_atak_native_fnc_hvtIntel;
+            private _grade = ["grade", _code] call comspec_atak_native_fnc_hvtIntel;
+            private _cred = ["cred", _t] call comspec_atak_native_fnc_hvtIntel;
+            private _r = ["radius", _t] call comspec_atak_native_fnc_hvtIntel;
+            private _age = floor ((CBA_missionTime - _at) / 60);
+            private _ph = if (_land) then { _ch } else { _ch * 0.3 };
+            private _pw = if (_land) then { (_bw - _pad * 3) * 0.36 } else { _bw - _pad * 2 };
+            [_key, [_pad, _cy, _pw, _ph], [0.72, 0.35] select (_st isEqualTo "OK")] call _veiled;
+            private _ov = ["COMSPEC_RscStructuredText", [_pad * 1.5, _cy + _ph - _font * 2.9, _pw - _pad, _font * 2.8]] call _mk;
+            _ov ctrlEnable false;
+            _ov ctrlSetStructuredText parseText ((format [
+                "<t size='1.4' font='COMSPEC_BarlowBold' color='#ffffff' shadow='2'>%1</t><t size='1.15' color='%2' shadow='2'>  %3-%4</t><br/><t size='0.8' color='#e8eee9' shadow='2'>%5</t>",
+                [[_code] call _srcName] call _esc, _pink, _grade, _cred,
+                if (_src isEqualTo []) then { ["Informateur d'un équipier", "La cible elle-même, en conversation"] select (_code isEqualTo "DIRECT") } else { format ["%1, %2 ans · informateur", _src select 0, _src select 1] }
+            ]) call comspec_atak_native_fnc_tr);
+            private _rows = [
+                ["text", format ["<t color='#e8eee9'>« %1 »</t>", [_txt] call _esc], [0.07, 0.07, 0.075, 1]],
+                ["info", "Cible", [_name] call _esc],
+                ["info", "Cotation", format ["%1-%2 · %3, %4", _grade, _cred, _gradeTxt getOrDefault [_grade, ""], _credTxt select _cred]],
+                ["info", "Zone", format ["%1 · ± %2 m", [_tpos, 6] call comspec_atak_native_fnc_gridRef, _r]],
+                ["info", "Reçu", format ["il y a %1 min", _age]]
+            ];
+            if (_from isNotEqualTo "") then { _rows pushBack ["info", "Partagé par", [_from] call _esc]; };
+            if (_age >= 45) then { _rows pushBack ["text", "<t size='0.85' color='#f2ab33'>Tuyau périmé (plus de 45 min) : il n'entre plus dans l'estimation.</t>"]; };
+            _rows append [
+                ["buttons", [
+                    ["REJETER", compile format ["['review', [%1, 'NO']] call comspec_atak_native_fnc_datingAction;", str _id]],
+                    ["SUR LA CARTE", compile format ["['markTip', %1] call comspec_atak_native_fnc_datingAction;", str _id]],
+                    ["CONFIRMER", compile format ["['review', [%1, 'OK']] call comspec_atak_native_fnc_datingAction;", str _id], true]
+                ]],
+                ["buttons", [
+                    ["DOSSIER", compile format ["['tab', 'FILES'] call comspec_atak_native_fnc_datingAction; ['file', %1] call comspec_atak_native_fnc_datingAction;", str _key]],
+                    ["RETOUR", { ['tipOpen', ''] call comspec_atak_native_fnc_datingAction; }]
+                ]],
+                ["text", format ["<t size='0.8' color='%1'>%2</t>", _grey, ["Confirmez seulement ce qui vous semble crédible : deux sources différentes qui se recoupent font un MATCH. Un faux tuyau confirmé fausse la position estimée.", "Statut : confirmé."] select (_st isEqualTo "OK")]]
+            ];
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["DATING", { ['tipOpen', ''] call comspec_atak_native_fnc_datingAction; }]];
+            private _fr = if (_land) then { [_pad * 2 + _pw, _cy, _bw - _pw - _pad * 2, _ch] } else { [0, _cy + _ph + _pad / 2, _bw, _ch - _ph - _pad / 2] };
+            [_rows, _fr] call comspec_atak_native_fnc_formRender;
+        };
+        // Grille des likes : plus récents d'abord, flous tant qu'ils ne sont pas traités.
+        private _all = +(missionNamespace getVariable ["COMSPEC_ATAK_HvtTips", []]);
+        reverse _all;
+        private _filter = _s getOrDefault ["rcTipFilter", "NEW"];
+        private _list = if (_filter isEqualTo "NEW") then { _all select { (_x select 6) isEqualTo "NEW" } } else { _all };
+        private _hh = _font * 1.7;
+        private _hd = ["COMSPEC_RscStructuredText", [_pad, _cy, _bw - _pad * 2, _hh]] call _mk;
+        _hd ctrlSetStructuredText parseText ((format ["<t size='1.6' font='COMSPEC_BarlowBold' color='#ffffff'>Likes</t><t size='1.1' color='%1'>  %2</t><t size='0.8' color='%3'>   tuyaux des informateurs</t>", _pink, _unread, _grey]) call comspec_atak_native_fnc_tr);
+        private _chipY = _cy + _hh;
+        private _chipH = _font * 1.25;
+        {
+            _x params ["_txt", "_k"];
+            private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_bw * 0.3 + _pad / 2), _chipY, _bw * 0.3, _chipH], _txt] call _mk;
+            _b ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
+            if (_k isEqualTo _filter) then { _b ctrlSetBackgroundColor [0.95, 0.95, 0.95, 1]; _b ctrlSetTextColor [0.07, 0.07, 0.07, 1]; } else { _b ctrlSetBackgroundColor [0.15, 0.15, 0.16, 1]; _b ctrlSetTextColor [0.9, 0.9, 0.9, 1]; };
+            _b ctrlAddEventHandler ["ButtonClick", compile format ["['tipFilter', '%1'] call comspec_atak_native_fnc_datingAction;", _k]];
+        } forEach [["NOUVEAUX", "NEW"], ["TOUS", "ALL"]];
+        private _gy = _chipY + _chipH + _pad / 2;
+        private _gh = _cy + _ch - _gy;
+        if (_list isEqualTo []) exitWith {
+            [[["hero", _icon, ["<t size='1.1' font='COMSPEC_BarlowBold'>Aucun nouveau like</t><br/><t color='#8a9a93'>Les informateurs likent quand ils ont quelque chose sur une cible. Plus il y a de civils autour de vous, plus ils parlent. Profils HVT matchés : leurs rendez-vous arrivent ici aussi.</t>",
+                "<t size='1.1' font='COMSPEC_BarlowBold'>Aucun like pour l'instant</t><br/><t color='#8a9a93'>Aucun HVT désigné sur la carte, ou aucun informateur n'a encore parlé.</t>"] select (_filter isEqualTo "ALL")]], [0, _gy, _bw, _gh]] call comspec_atak_native_fnc_formRender;
+        };
+        private _cols = [2, 3] select _land;
+        private _tw = (_bw - _pad * (_cols + 1)) / _cols;
+        private _th = ((_tw / _ratio) * 1.3) min _gh;
+        private _nr = (floor ((_gh + _pad / 2) / (_th + _pad / 2))) max 1;
+        private _max = _nr * _cols;
+        {
+            if (_forEachIndex >= _max) exitWith {};
+            _x params ["_id", "_key", "_code", "", "", "_at", "_st", "", "", "", "_name"];
+            private _x0 = _pad + (_forEachIndex mod _cols) * (_tw + _pad);
+            private _y0 = _gy + (floor (_forEachIndex / _cols)) * (_th + _pad / 2);
+            [_key, [_x0, _y0, _tw, _th], [0.8, 0.45] select (_st isNotEqualTo "NEW")] call _veiled;
+            private _age = floor ((CBA_missionTime - _at) / 60);
+            private _lh = _font * 3.4;
+            private _tt = ["COMSPEC_RscStructuredText", [_x0 + _pad / 3, _y0 + _th - _lh, _tw - _pad * 2 / 3, _lh]] call _mk;
+            _tt ctrlEnable false;
+            _tt ctrlSetStructuredText parseText ((format [
+                "%1<br/><t size='1.05' font='COMSPEC_BarlowBold' color='#ffffff' shadow='2'>%2</t><t size='0.95' color='%3' shadow='2'>  %4-%5</t><br/><t size='0.8' color='%6'>●</t><t size='0.8' color='#e8eee9' shadow='2'> %7 · %8</t>",
+                switch (_st) do {
+                    case "OK": { "<t size='0.75' color='#5fd38a'>CONFIRMÉ</t>" };
+                    case "NO": { "<t size='0.75' color='#e5483a'>REJETÉ</t>" };
+                    default { format ["<t size='0.75' color='%1'>NOUVEAU</t>", _pink] };
+                },
+                [[_code] call _srcName] call _esc, _pink, ["grade", _code] call comspec_atak_native_fnc_hvtIntel, ["cred", _x] call comspec_atak_native_fnc_hvtIntel,
+                [_green, _grey] select (_age > 10), format ["il y a %1 min", _age], [_name] call _esc
+            ]) call comspec_atak_native_fnc_tr);
+            private _hit = ["COMSPEC_RscButtonInvisible", [_x0, _y0, _tw, _th]] call _mk;
+            _hit ctrlSetTooltip (("Ouvrir le tuyau") call comspec_atak_native_fnc_tr);
+            _hit ctrlAddEventHandler ["ButtonClick", compile format ["['tipOpen', %1] call comspec_atak_native_fnc_datingAction;", str _id]];
+        } forEach _list;
+        if ((count _list) > _max) then {
+            private _more = ["COMSPEC_RscStructuredText", [_pad, _cy + _font * 0.3, _bw - _pad * 2, _font * 1.2]] call _mk;
+            _more ctrlSetStructuredText parseText ((format ["<t align='right' size='0.8' color='%1'>+%2 autres</t>", _grey, (count _list) - _max]) call comspec_atak_native_fnc_tr);
+        };
+    };
+    case "FILES": {
+        private _openFile = _s getOrDefault ["rcFile", ""];
+        if (_openFile isNotEqualTo "") exitWith {
+            // Dossier d'une cible : photo, étapes F3EA, estimation, actions, tuyaux.
+            private _d = ["dossier", _openFile] call comspec_atak_native_fnc_hvtIntel;
+            private _u = ["unit", _openFile] call comspec_atak_native_fnc_datingSpecials;
+            private _name = ["name", _openFile] call comspec_atak_native_fnc_hvtIntel;
+            private _st = _d get "stage";
+            private _jp = _d get "jackpot";
+            private _ph = if (_land) then { _ch } else { _ch * 0.3 };
+            private _pw = if (_land) then { (_bw - _pad * 3) * 0.36 } else { _bw - _pad * 2 };
+            if (isNull _u) then {
+                ["stop"] call comspec_atak_native_fnc_datingCam;
+                [_openFile, [_pad, _cy, _pw, _ph], 0.6] call _veiled;
+            } else {
+                [[_u] call _aiProfile, [_pad, _cy, _pw, _ph]] call _card;
+            };
+            private _rows = [
+                ["steps", switch (_st) do {
+                    case "JACKPOT": { [["FIND", "done"], ["FIX", "done"], ["FINISH", "done"], ["EXPLOIT", "now"]] };
+                    case "FIX": { [["FIND", "done"], ["FIX", "done"], ["FINISH", "hot"], ["EXPLOIT", "todo"]] };
+                    default { [["FIND", "now"], ["FIX", "todo"], ["FINISH", "todo"], ["EXPLOIT", "todo"]] };
+                }]
+            ];
+            if (_st isEqualTo "JACKPOT") then {
+                _jp params ["", "_how", "_nT", "_nF", "_good", "_rev"];
+                _rows append [
+                    ["banner", format ["<t color='#5fd38a'>JACKPOT</t> · %1", _how], [0.06, 0.16, 0.09, 1]],
+                    ["info", "Tuyaux vrais", format ["%1 sur %2", _nT, _nT + _nF]],
+                    ["info", "Vos décisions justes", format ["%1 sur %2", _good, _rev]],
+                    ["text", format ["<t size='0.85' color='%1'>La vérité de chaque tuyau est révélée ci-dessous ; les sources sont recotées. Exploitez maintenant : fouille SSE, téléphone, documents.</t>", _grey]]
+                ];
+            } else {
+                private _pos = _d get "pos";
+                private _act = _d get "activity";
+                _rows append [
+                    ["info", "Position estimée", if (_pos isEqualTo []) then { "<t color='#f2ab33'>inconnue (aucun tuyau confirmé et frais)</t>" } else { format ["<t font='EtelkaMonospaceProBold'>%1</t> · à %2 m", [_pos, 8] call comspec_atak_native_fnc_gridRef, round (player distance2D _pos)] }],
+                    ["info", "Incertitude", [format ["± %1 m", _d get "radius"], "—"] select (_pos isEqualTo [])],
+                    ["info", "Confiance", format ["%1 %%", _d get "conf"]],
+                    ["info", "Sources qui se recoupent", str (_d get "srcs")],
+                    ["info", "Tuyaux contradictoires", [str (_d get "contra"), format ["<t color='#f2ab33'>%1</t>", _d get "contra"]] select ((_d get "contra") > 0)],
+                    ["info", "Activité du téléphone", if (_act < 0) then { "inconnue" } else { format ["<t color='%1'>●</t> il y a %2 min", [_grey, _green] select (_act <= 10), _act] }]
+                ];
+            };
+            _rows append [
+                ["buttons", [
+                    ["MARQUER", compile format ["['fileMark', %1] call comspec_atak_native_fnc_datingAction;", str _openFile], true, _st isNotEqualTo "JACKPOT"],
+                    ["PARTAGER", compile format ["['fileShare', %1] call comspec_atak_native_fnc_datingAction;", str _openFile], false, _st isNotEqualTo "JACKPOT", "Envoyer les tuyaux confirmés à mon groupe"],
+                    ["SALUTE", compile format ["['fileSalute', %1] call comspec_atak_native_fnc_datingAction;", str _openFile], false, true, "Compte rendu SALUTE prérempli"]
+                ]],
+                ["buttons", [
+                    ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }],
+                    ["RETOUR", { ['file', ''] call comspec_atak_native_fnc_datingAction; }]
+                ]],
+                ["section", "Tuyaux", format ["%1 reçu(s), %2 confirmé(s) et frais", count (_d get "tips"), _d get "confirmed"]]
+            ];
+            private _ts = [_d get "tips", [], { _x select 5 }, "DESCEND"] call BIS_fnc_sortBy;
+            {
+                if (_forEachIndex >= 8) exitWith {};
+                _x params ["_id", "", "_code", "", "", "_at", "_tst", "_txt", "_true"];
+                private _verdict = if (_st isEqualTo "JACKPOT") then { ["  <t color='#e5483a'>FAUX</t>", "  <t color='#5fd38a'>VRAI</t>"] select _true } else { "" };
+                _rows pushBack ["text", format ["<t size='0.8' color='%1'>%2 · %3-%4 · %5 · %6</t>%7<br/><t size='0.9' color='#e8eee9'>%8</t>",
+                    _grey, [[_code] call _srcName] call _esc, ["grade", _code] call comspec_atak_native_fnc_hvtIntel, ["cred", _x] call comspec_atak_native_fnc_hvtIntel,
+                    createHashMapFromArray [["NEW", "à traiter"], ["OK", "confirmé"], ["NO", "rejeté"]] getOrDefault [_tst, ""],
+                    format ["il y a %1 min", floor ((CBA_missionTime - _at) / 60)], _verdict, [_txt] call _esc], [0.06, 0.065, 0.07, 1]];
+            } forEach _ts;
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["DATING", { ['file', ''] call comspec_atak_native_fnc_datingAction; }]];
+            private _fr = if (_land) then { [_pad * 2 + _pw, _cy, _bw - _pw - _pad * 2, _ch] } else { [0, _cy + _ph + _pad / 2, _bw, _ch - _ph - _pad / 2] };
+            [_rows, _fr] call comspec_atak_native_fnc_formRender;
+        };
+        ["stop"] call comspec_atak_native_fnc_datingCam;
+        private _keys = ["keys"] call comspec_atak_native_fnc_hvtIntel;
+        private _rows = [["section", "Dossiers HVT", "Position estimée d'après les tuyaux que vous avez confirmés"]];
+        {
+            private _k = _x;
+            private _d = ["dossier", _k] call comspec_atak_native_fnc_hvtIntel;
+            private _u = ["unit", _k] call comspec_atak_native_fnc_datingSpecials;
+            private _st = _d get "stage";
+            private _line = switch (_st) do {
+                case "JACKPOT": { format ["%1 · %2 tuyaux vrais sur %3", (_d get "jackpot") select 1, (_d get "jackpot") select 2, ((_d get "jackpot") select 2) + ((_d get "jackpot") select 3)] };
+                case "FIX": { format ["confiance %1 %% · ± %2 m · %3 sources", _d get "conf", _d get "radius", _d get "srcs"] };
+                default { if ((_d get "confirmed") > 0) then { format ["%1 tuyau(x) confirmé(s), pas encore recoupé", _d get "confirmed"] } else { "aucun tuyau confirmé" } };
+            };
+            private _act = _d get "activity";
+            _rows pushBack ["person", if (isNull _u) then { _icon } else { [_u] call _thumb }, format ["<t font='COMSPEC_BarlowBold'>%1</t>%2  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='%5'>%6</t>",
+                [["name", _k] call comspec_atak_native_fnc_hvtIntel] call _esc, ["", format [" <t color='%1'>●</t>", _green]] select (_act >= 0 && {_act <= 10} && {_st isNotEqualTo "JACKPOT"}),
+                createHashMapFromArray [["FIND", "#f2ab33"], ["FIX", "#e5483a"], ["JACKPOT", _green]] getOrDefault [_st, _grey], _st, _grey, _line],
+                [["OUVRIR", compile format ["['file', %1] call comspec_atak_native_fnc_datingAction;", str _k], true]]];
+        } forEach _keys;
+        if (_keys isEqualTo []) then {
+            _rows pushBack ["hero", _icon, "<t font='COMSPEC_BarlowBold'>Aucun dossier</t><br/><t color='#8a9a93'>Confirmez des likes (tuyaux des informateurs) ou matchez un profil HVT pour ouvrir un dossier.</t>"];
+        };
+        _rows pushBack ["text", format ["<t size='0.8' color='%1'>FIND, FIX, FINISH, EXPLOIT. Deux sources différentes qui se recoupent font un MATCH (FIX). Un tuyau est périmé après 45 min et sa zone grossit avec le temps : la cible bouge.</t>", _grey]];
+        [_rows, [0, _cy, _bw, _ch]] call comspec_atak_native_fnc_formRender;
+    };
+    case "MATCH": {
+        private _open = _s getOrDefault ["rcOpen", ""];
+        private _ou = if (_open isEqualTo "" || {(_open select [0, 3]) isNotEqualTo "ai:"}) then { objNull } else { ["unit", _open] call comspec_atak_native_fnc_datingSpecials };
+        if ((_open select [0, 4]) isEqualTo "src:") exitWith {
+            // Fil d'une source : ses tuyaux, et la relancer.
+            ["stop"] call comspec_atak_native_fnc_datingCam;
+            private _code = _open select [4];
+            private _src = ["source", _code] call comspec_atak_native_fnc_hvtIntel;
+            private _rows = [["hero", _icon, format ["<t size='1.2' font='COMSPEC_BarlowBold'>%1</t><t color='%2'>  %3</t><br/><t color='%4'>%5</t>",
+                [_code] call _esc, _pink, ["grade", _code] call comspec_atak_native_fnc_hvtIntel, _grey,
+                if (_src isEqualTo []) then { "Informateur" } else { format ["%1, %2 ans · informateur", _src select 0, _src select 1] }]]];
+            _rows append ([_open, _code] call _chatRows);
+            _rows append [
+                ["buttons", [
+                    ["PLUS DE DÉTAILS ?", compile format ["['followup', %1] call comspec_atak_native_fnc_datingAction;", str _code], true, true, "Une relance toutes les 5 minutes"],
+                    ["LIKES", { ['tab', 'TIPS'] call comspec_atak_native_fnc_datingAction; }]
+                ]],
+                ["buttons", [["RETOUR", { ['open', ''] call comspec_atak_native_fnc_datingAction; }]]]
+            ];
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["DATING", { ['open', ''] call comspec_atak_native_fnc_datingAction; }]];
+            [_rows, [0, _cy, _bw, _ch]] call comspec_atak_native_fnc_formRender;
+        };
+        if (!isNull _ou) exitWith {
+            // Conversation avec un profil IA : photo, messages, demander où il est, marquer sur la carte.
+            private _p = [_ou] call _aiProfile;
+            private _ph = if (_land) then { _ch } else { _ch * 0.34 };
+            private _pw = if (_land) then { (_bw - _pad * 3) * 0.36 } else { _bw - _pad * 2 };
+            [_p, [_pad, _cy, _pw, _ph]] call _card;
+            private _rows = [_open, _p get "name"] call _chatRows;
+            _rows pushBack ["buttons", [
+                ["OÙ ES-TU ?", compile format ["['ask', %1] call comspec_atak_native_fnc_datingAction;", str _open], true],
+                ["MARQUER SUR LA CARTE", compile format ["['mark', %1] call comspec_atak_native_fnc_datingAction;", str _open]]
+            ]];
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["DATING", { ['open', ''] call comspec_atak_native_fnc_datingAction; }]];
+            private _hvt = (["kind", _ou] call comspec_atak_native_fnc_datingSpecials) isEqualTo "HVT";
+            _rows pushBack ["buttons", [
+                if (_hvt) then { ["DOSSIER", compile format ["['tab', 'FILES'] call comspec_atak_native_fnc_datingAction; ['file', %1] call comspec_atak_native_fnc_datingAction;", str _open]] } else { ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }] },
+                ["RETOUR", { ['open', ''] call comspec_atak_native_fnc_datingAction; }]
+            ]];
+            if (_hvt) then { _rows pushBack ["text", format ["<t size='0.8' color='%1'>Un HVT méfiant donne parfois un faux rendez-vous : ses réponses entrent dans son dossier comme tuyaux « contact direct », à recouper.</t>", _grey]]; };
+            private _fr = if (_land) then { [_pad * 2 + _pw, _cy, _bw - _pw - _pad * 2, _ch] } else { [0, _cy + _ph + _pad / 2, _bw, _ch - _ph - _pad / 2] };
+            [_rows, _fr] call comspec_atak_native_fnc_formRender;
+        };
+        ["stop"] call comspec_atak_native_fnc_datingCam;
+        // Nouveaux matchs : la case LIKES (floue, nombre de tuyaux à traiter), puis les derniers matchs.
+        private _hh = _font * 1.7;
+        private _hd = ["COMSPEC_RscStructuredText", [_pad, _cy, _bw - _pad * 2, _hh]] call _mk;
+        _hd ctrlSetStructuredText parseText (("<t size='1.6' font='COMSPEC_BarlowBold' color='#ffffff'>Messages</t>") call comspec_atak_native_fnc_tr);
+        private _aiRecent = +_aiMatches;
+        reverse _aiRecent;
+        private _strip = [["LIKES", "", "['tab', 'TIPS'] call comspec_atak_native_fnc_datingAction;"]];
+        { _strip pushBack [name _x, [_x] call _thumb, format ["['sms', %1] call comspec_atak_native_fnc_datingAction;", str name _x]]; } forEach _matches;
+        {
+            private _u = ["unit", _x] call comspec_atak_native_fnc_datingSpecials;
+            _strip pushBack [(["profile", _u] call comspec_atak_native_fnc_datingSpecials) get "name", [_u] call _figure, format ["['open', %1] call comspec_atak_native_fnc_datingAction;", str _x]];
+        } forEach _aiRecent;
+        private _sw = (_bw - _pad * 5) / 4;
+        private _sh = (_sw / _ratio) * 1.15;
+        private _sy = _cy + _hh;
+        {
+            if (_forEachIndex >= 4) exitWith {};
+            _x params ["_lbl", "_pic", "_code"];
+            private _x0 = _pad + _forEachIndex * (_sw + _pad);
+            private _fr = ["COMSPEC_RscText", [_x0 - pixelW * 2, _sy - pixelH * 2, _sw + pixelW * 4, _sh + pixelH * 4]] call _mk;
+            _fr ctrlSetBackgroundColor ([[0.2, 0.2, 0.21, 1], [0.93, 0.74, 0.2, 1]] select (_forEachIndex isEqualTo 0));
+            private _bg = ["COMSPEC_RscText", [_x0, _sy, _sw, _sh]] call _mk;
+            _bg ctrlSetBackgroundColor [0.1, 0.1, 0.11, 1];
+            if (_forEachIndex isEqualTo 0) then {
+                // Case LIKES : floue, avec le nombre de tuyaux à traiter dans une pastille dorée.
+                private _n = ["COMSPEC_RscStructuredText", [_x0, _sy + _sh * 0.32, _sw, _sh * 0.4]] call _mk;
+                _n ctrlSetStructuredText parseText (((format ["<t align='center' size='1.6' font='COMSPEC_BarlowBold' color='#edbd33'>%1</t>", _unread])) call comspec_atak_native_fnc_tr);
+                _n ctrlEnable false;
+            } else {
+                ["COMSPEC_RscSlide", [_x0, _sy, _sw, _sh], _pic] call _mk;
+            };
+            private _l = ["COMSPEC_RscStructuredText", [_x0 - _pad / 2, _sy + _sh + pixelH * 4, _sw + _pad, _font * 1.1]] call _mk;
+            _l ctrlSetStructuredText parseText ((format ["<t align='center' size='0.85' font='COMSPEC_BarlowBold' color='#ffffff'>%1</t>", [(_lbl splitString " ") param [0, _lbl]] call _esc]) call comspec_atak_native_fnc_tr);
+            private _hit = ["COMSPEC_RscButtonInvisible", [_x0, _sy, _sw, _sh]] call _mk;
+            _hit ctrlAddEventHandler ["ButtonClick", compile _code];
+        } forEach _strip;
+        private _ly = _sy + _sh + _font * 1.3 + _pad / 2;
+        // Conversations : à vous de répondre d'abord.
+        private _rows = [["section", "Conversations", "Sources, cibles et joueurs matchés"]];
+        private _conv = (keys _chat) select { (count (_chat get _x)) > 0 && {((_x select [0, 4]) isEqualTo "src:") || {_x in _aiMatches}} };
+        _conv = [_conv, [], { [0, 1] select ([_x] call _yourTurn) }, "DESCEND"] call BIS_fnc_sortBy;
+        {
+            private _k = _x;
+            private _turn = ["", "  <t size='0.75' font='COMSPEC_BarlowBold' color='#ffffff'>[ À TON TOUR ]</t>"] select ([_k] call _yourTurn);
+            if ((_k select [0, 4]) isEqualTo "src:") then {
+                private _code = _k select [4];
+                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><t size='0.8' color='%2'>  %3</t>%4<br/><t size='0.8' color='%5'>%6</t>",
+                    [_code] call _esc, _pink, ["grade", _code] call comspec_atak_native_fnc_hvtIntel, _turn, _grey, [_k] call _preview],
+                    [["OUVRIR", compile format ["['open', %1] call comspec_atak_native_fnc_datingAction;", str _k], true]], [1, 0.36, 0.5, 0.7]];
+            } else {
+                private _u = ["unit", _k] call comspec_atak_native_fnc_datingSpecials;
+                private _p = ["profile", _u] call comspec_atak_native_fnc_datingSpecials;
+                _rows pushBack ["person", [_u] call _thumb, format ["<t font='COMSPEC_BarlowBold'>%1, %2</t>%3%4<br/><t size='0.8' color='%5'>%6</t>",
+                    [_p get "name"] call _esc, _p get "age", _turn, ["", " · <t color='#e5483a'>profil supprimé</t>"] select (!alive _u), _grey, [_k] call _preview],
+                    [["OUVRIR", compile format ["['open', %1] call comspec_atak_native_fnc_datingAction;", str _k], true]]];
+            };
+        } forEach _conv;
+        {
+            _rows pushBack ["person", [_x] call _thumb, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='%2'>Match · %3</t>", [name _x] call _esc, _pink, [groupId group _x] call _esc],
+                [["SMS", compile format ["['sms', %1] call comspec_atak_native_fnc_datingAction;", str name _x], true]]];
+        } forEach _matches;
+        if ((count _rows) isEqualTo 1) then { _rows pushBack ["hero", _icon, "<t font='COMSPEC_BarlowBold'>Pas encore de conversation</t><br/><t color='#8a9a93'>Likez des profils, ou attendez qu'un informateur vous écrive.</t>"]; };
+        [_rows, [0, _ly, _bw, _cy + _ch - _ly]] call comspec_atak_native_fnc_formRender;
+    };
     case "ME": {
         private _p = [player] call _playerProfile;
         private _cardH = if (_land) then { _ch } else { _ch * 0.52 };
@@ -221,53 +609,17 @@ switch (_tab) do {
             ["info", "Likes reçus", str (count _likedBy)],
             ["info", "Matchs", str ((count _matches) + (count _aiMatches))]
         ];
+        private _hs = ["stats"] call comspec_atak_native_fnc_hvtIntel;
+        _rows append [
+            ["section", "Chasse aux HVT", "Votre bilan de renseignement"],
+            ["info", "Tuyaux reçus", str (_hs get "tips")],
+            ["info", "Tuyaux confirmés", str (_hs get "ok")],
+            ["info", "Informateurs", str (_hs get "sources")],
+            ["info", "Jackpots", str (_hs get "jackpots")],
+            ["info", "Décisions justes", if ((_hs get "judged") > 0) then { format ["%1 sur %2", _hs get "good", _hs get "judged"] } else { "—" }]
+        ];
         private _fr = if (_land) then { [_pad * 2 + _cardW, _cy, _bw - _cardW - _pad * 2, _ch] } else { [0, _cy + _cardH + _pad / 2, _bw, _ch - _cardH - _pad / 2] };
         [_rows, _fr] call comspec_atak_native_fnc_formRender;
-    };
-    case "MATCH": {
-        private _open = _s getOrDefault ["rcOpen", ""];
-        private _ou = if (_open isEqualTo "") then { objNull } else { ["unit", _open] call comspec_atak_native_fnc_datingSpecials };
-        if (!isNull _ou) then {
-            // Conversation avec un profil IA : photo, messages, demander où il est, marquer sur la carte.
-            private _p = [_ou] call _aiProfile;
-            private _ph = if (_land) then { _ch } else { _ch * 0.34 };
-            private _pw = if (_land) then { (_bw - _pad * 3) * 0.36 } else { _bw - _pad * 2 };
-            [_p, [_pad, _cy, _pw, _ph]] call _card;
-            private _rows = [];
-            {
-                _x params ["_mine", "_txt", "_at"];
-                _rows pushBack ["text", format ["<t align='%1' size='0.8' color='#8a9a93'>%2 · %3</t><br/><t align='%1' color='%4'>%5</t>",
-                    ["left", "right"] select _mine, [[_p get "name"] call _esc, "Moi"] select _mine, _at, ["#e8eee9", _pink] select _mine, [_txt] call _esc]];
-            } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_RencardAiChat", createHashMap]) getOrDefault [_open, []]);
-            _rows pushBack ["buttons", [
-                ["OÙ ES-TU ?", compile format ["['ask', %1] call comspec_atak_native_fnc_datingAction;", str _open], true],
-                ["MARQUER SUR LA CARTE", compile format ["['mark', %1] call comspec_atak_native_fnc_datingAction;", str _open]]
-            ]];
-            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["DATING", { ['open', ''] call comspec_atak_native_fnc_datingAction; }]];
-            _rows pushBack ["buttons", [
-                ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }],
-                ["RETOUR", { ['open', ''] call comspec_atak_native_fnc_datingAction; }]
-            ]];
-            private _fr = if (_land) then { [_pad * 2 + _pw, _cy, _bw - _pw - _pad * 2, _ch] } else { [0, _cy + _ph + _pad / 2, _bw, _ch - _ph - _pad / 2] };
-            [_rows, _fr] call comspec_atak_native_fnc_formRender;
-        } else {
-            ["stop"] call comspec_atak_native_fnc_datingCam;
-            private _rows = [];
-            {
-                _rows pushBack ["person", [_x] call _thumb, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='%2'>Match · %3</t>", [name _x] call _esc, _pink, [groupId group _x] call _esc],
-                    [["SMS", compile format ["['sms', %1] call comspec_atak_native_fnc_datingAction;", str name _x], true]]];
-            } forEach _matches;
-            {
-                private _u = ["unit", _x] call comspec_atak_native_fnc_datingSpecials;
-                private _p = ["profile", _u] call comspec_atak_native_fnc_datingSpecials;
-                private _n = count ((missionNamespace getVariable ["COMSPEC_ATAK_RencardAiChat", createHashMap]) getOrDefault [_x, []]);
-                _rows pushBack ["person", [_u] call _thumb, format ["<t font='COMSPEC_BarlowBold'>%1, %2</t><br/><t size='0.8' color='%3'>Match · %4 message(s)%5</t>",
-                    [_p get "name"] call _esc, _p get "age", _pink, _n, ["", " · <t color='#e5483a'>profil supprimé</t>"] select (!alive _u)],
-                    [["MESSAGES", compile format ["['open', %1] call comspec_atak_native_fnc_datingAction;", str _x], true]]];
-            } forEach _aiMatches;
-            if (_rows isEqualTo []) then { _rows pushBack ["hero", _icon, "<t font='COMSPEC_BarlowBold'>Pas encore de match</t><br/><t color='#8a9a93'>Likez, et attendez qu'on vous like en retour.</t>"]; };
-            [_rows, [0, _cy, _bw, _ch]] call comspec_atak_native_fnc_formRender;
-        };
     };
 };
 true

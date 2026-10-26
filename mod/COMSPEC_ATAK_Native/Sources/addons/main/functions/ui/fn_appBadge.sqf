@@ -10,5 +10,7 @@ switch (_page) do {
         private _done = ["ACK", "EXEC", "FAILED", "DONE", "COMPLETED", "CANCELLED", "CANCELED"];
         {!((toUpper (_x getOrDefault ["status", ""])) in _done)} count (values ([] call comspec_atak_native_fnc_tasksAll))
     };
+    // Tinder : likes (tuyaux des informateurs) pas encore traités.
+    case "DATING": { ["unread"] call comspec_atak_native_fnc_hvtIntel };
     default { 0 };
 }

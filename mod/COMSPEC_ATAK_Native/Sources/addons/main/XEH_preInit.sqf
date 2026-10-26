@@ -523,6 +523,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_dating_specials", "LIST",
     ["Tinder : profils HVT et SSE", "À quelle fréquence Tinder glisse, entre deux joueurs, un profil d'IA de la carte (HVT ou personne SSE à moins de 5 km). Zeus peut aussi désigner une IA avec le module « Tinder : profil HVT / SSE »."],
     _sim, [[0, 1, 2, 3], ["Jamais", "Rarement (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_hvt_tips", "LIST",
+    ["Tinder : tuyaux sur les HVT", "Chasse aux HVT dans Tinder : à quelle fréquence les informateurs likent (envoient un tuyau, vrai ou faux) sur les HVT de la carte. Plus de civils autour du joueur, plus de tuyaux. Jamais = pas de tuyaux ni de dossiers."],
+    _sim, [[0, 1, 2, 3], ["Jamais", "Rarement", "Normal", "Souvent"], 2], 1] call comspec_atak_native_fnc_addSetting;
 
 // Marquage au viseur (caméra du drone, appareil photo du téléphone) et cibles perdues.
 private _lock = ["COMSPEC", "ATAK · Marquage de cible"];

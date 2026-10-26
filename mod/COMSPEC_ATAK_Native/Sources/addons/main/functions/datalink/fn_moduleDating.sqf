@@ -32,7 +32,7 @@ if (_ctx get "zeus") then {
         ["EDIT", "Prénom ou surnom (vide = son nom)", _u getVariable ["COMSPEC_ATAK_TinderName", ""]],
         ["MEMO", "Bio (vide = bio tirée au sort)", _u getVariable ["COMSPEC_ATAK_TinderBio", ""], 3],
         ["SLIDER", "Chance de match (%)", [0, 100, 50]]
-    ], _apply, _targets, "La fréquence d'apparition suit le réglage de mission « Tinder : profils HVT et SSE » (CBA)."] call comspec_atak_native_fnc_zeusForm;
+    ], _apply, _targets, "La fréquence d'apparition suit le réglage de mission « Tinder : profils HVT et SSE » (CBA). Un HVT est aussi chassé : les informateurs envoient des tuyaux sur lui (réglage « Tinder : tuyaux sur les HVT »)."] call comspec_atak_native_fnc_zeusForm;
 } else {
     [["HVT", "", "", 50], _targets] call _apply;
 };
