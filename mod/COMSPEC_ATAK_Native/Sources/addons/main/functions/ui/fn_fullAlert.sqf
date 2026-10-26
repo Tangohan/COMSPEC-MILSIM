@@ -1,10 +1,11 @@
 /*
     Alerte du téléphone (poste de commandement, commandement Zeus, compromission, administration ATHENA, top de brèche) :
     grand bandeau de couleur DANS l'écran du téléphone, jamais sur l'écran de jeu. Titre, message, auteur et heure,
-    barre de durée et bouton OK ; vibration. Téléphone rangé : l'alerte attend deux minutes et s'affiche à la
-    prochaine ouverture, puis pendant sa durée. Redessinée devant après chaque rendu de page (fn_fx « raise »).
+    barre de durée et bouton OK ; vibration. Téléphone rangé : l'alerte attend deux minutes (ou l'attente donnée) et
+    s'affiche à la prochaine ouverture, puis pendant sa durée. Redessinée devant après chaque rendu de page (fn_fx « raise »).
     Params :
       [titre, message, auteur, couleur RGBA, durée s]   nouvelle alerte (remplace la précédente)
+        6e paramètre facultatif : attente s (120 par défaut) au-delà de laquelle une alerte jamais vue est abandonnée
       ["draw"]                                          redessine l'alerte en cours (sinon rien)
       ["close"]                                         bouton OK
 */
@@ -15,9 +16,9 @@ if (_this isEqualTo ["draw"]) exitWith {
     call _clear;
     private _cur = uiNamespace getVariable ["COMSPEC_ATAK_FullAlert", []];
     if ((count _cur) < 8) exitWith { false };
-    _cur params ["_title", "_msg", "_from", "_rgba", "_dur", "_at", "_hh", "_shown"];
-    // Jamais vue (téléphone rangé) depuis deux minutes, ou affichée pendant toute sa durée : terminée.
-    if ((_shown < 0 && {(diag_tickTime - _at) > 120}) || {_shown >= 0 && {(diag_tickTime - _shown) > _dur}}) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", []]; false };
+    _cur params ["_title", "_msg", "_from", "_rgba", "_dur", "_at", "_hh", "_shown", ["_wait", 120]];
+    // Jamais vue (téléphone rangé) pendant l'attente (deux minutes par défaut), ou affichée pendant toute sa durée : terminée.
+    if ((_shown < 0 && {(diag_tickTime - _at) > _wait}) || {_shown >= 0 && {(diag_tickTime - _shown) > _dur}}) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", []]; false };
     private _d = [] call comspec_atak_native_fnc_display;
     if (isNull _d) exitWith { false };
     if ((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"]) exitWith { false };
@@ -62,7 +63,7 @@ if (_this isEqualTo ["draw"]) exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_FullAlertCtrls", _ctrls];
     true
 };
-params [["_title", "ALERTE"], ["_msg", ""], ["_from", ""], ["_rgba", [0.55, 0.08, 0.06, 0.92]], ["_dur", 10]];
+params [["_title", "ALERTE"], ["_msg", ""], ["_from", ""], ["_rgba", [0.55, 0.08, 0.06, 0.92]], ["_dur", 10], ["_wait", 120]];
 if (!hasInterface) exitWith { false };
 // Événements rejoués par la synchro serveur (arrivée en cours de partie) : pas d'alerte.
 if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith { false };
@@ -75,6 +76,6 @@ private _esc = {
 _title = _title call _esc;
 _msg = _msg call _esc;
 _from = _from call _esc;
-uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, [dayTime, "HH:MM"] call BIS_fnc_timeToString, -1]];
+uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, [dayTime, "HH:MM"] call BIS_fnc_timeToString, -1, _wait]];
 ["draw"] call comspec_atak_native_fnc_fullAlert;
 true

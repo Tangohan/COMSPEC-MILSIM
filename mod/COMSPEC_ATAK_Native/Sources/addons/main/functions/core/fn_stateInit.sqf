@@ -36,4 +36,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ZeusGlitchPfh", -1];
 uiNamespace setVariable ["COMSPEC_ATAK_State",_state];
 uiNamespace setVariable ["COMSPEC_ATAK_Data",_data];
 missionNamespace setVariable ["COMSPEC_ATAK_MapTool","SELECT",false];
+// Alerte du téléphone jamais vue de la partie précédente (fn_fullAlert peut attendre jusqu'à 30 min) : elle ne doit
+// pas s'afficher dans la mission suivante.
+uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", nil];
 true

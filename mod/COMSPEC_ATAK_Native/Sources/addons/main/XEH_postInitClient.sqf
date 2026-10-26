@@ -261,7 +261,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if (_ko > _ko0) then {
         private _last = missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []];
         // Refus de la formule (403 feature_unavailable) : une alerte claire DANS le téléphone (fn_fullAlert, attend la
-        // prochaine ouverture), une fois par session, au lieu d'une simple notification. Jamais de fenêtre sur l'écran de jeu.
+        // prochaine ouverture jusqu'à 30 min, au lieu de 2), une fois par mission, au lieu d'une simple notification.
+        // Jamais de fenêtre sur l'écran de jeu.
         if (((_last param [2, ""]) find "feature_unavailable") >= 0) then {
             if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanModalShown", false]) then {
                 missionNamespace setVariable ["COMSPEC_ATAK_PlanModalShown", true];
@@ -269,7 +270,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
                     "Ta photo n'a pas été envoyée à Athena." call comspec_atak_native_fnc_tr,
                     "La formule de ta communauté n'inclut pas la carte et les liaisons Athena, donc Athena refuse les envois du jeu." call comspec_atak_native_fnc_tr,
                     "Préviens l'administrateur de ta communauté sur Athena. Ce n'est pas un bug, inutile de le signaler." call comspec_atak_native_fnc_tr];
-                ["Carte Athena non incluse" call comspec_atak_native_fnc_tr, _msg, "Athena", [0.55, 0.36, 0.06, 0.94], 30] call comspec_atak_native_fnc_fullAlert;
+                ["Carte Athena non incluse" call comspec_atak_native_fnc_tr, _msg, "Athena", [0.55, 0.36, 0.06, 0.94], 30, 1800] call comspec_atak_native_fnc_fullAlert;
                 ["WARNING", "Ta photo n'a pas été envoyée à Athena.", 6, 40] call comspec_atak_native_fnc_notify;
             };
         } else {
