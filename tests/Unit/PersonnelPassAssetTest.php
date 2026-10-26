@@ -18,7 +18,7 @@ final class PersonnelPassAssetTest extends TestCase
         $root = $this->root();
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $migration = (string) file_get_contents($root . '/bootstrap/personnel_pass_migration.php');
-        $runner = (string) file_get_contents($root . '/run-migrations.php');
+        $runner = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $nav = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
         $index = (string) file_get_contents($root . '/views/admin/organization/passes_index.php');
         $form = (string) file_get_contents($root . '/views/admin/organization/passes_form.php');

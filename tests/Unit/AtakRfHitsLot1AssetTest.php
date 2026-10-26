@@ -15,7 +15,7 @@ final class AtakRfHitsLot1AssetTest extends TestCase
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
         $repo = (string) file_get_contents($root . '/app/Repositories/AtakDataRepository.php');
         $mig = (string) file_get_contents($root . '/bootstrap/atak_rf_hits_lot1_migration.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $ops = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-ops.js');
         $beta = (string) file_get_contents($root . '/views/atak-overwatch-beta.php');
         $atak = (string) file_get_contents($root . '/views/atak.php');

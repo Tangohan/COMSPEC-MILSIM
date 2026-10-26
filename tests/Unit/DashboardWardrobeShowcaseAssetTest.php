@@ -31,7 +31,7 @@ final class DashboardWardrobeShowcaseAssetTest extends TestCase
         self::assertFileExists($root . '/bootstrap/dashboard_wardrobe_pins_migration.php');
         $sql = (string) file_get_contents($root . '/migrations/20260902000002_dashboard_wardrobe_pins.sql');
         self::assertStringContainsString('tenant_dashboard_wardrobe_pins', $sql);
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         self::assertStringContainsString('dashboard_wardrobe_pins_migration', $run);
         $catalog = (string) file_get_contents($root . '/views/partials/dashboard_catalog_showcase.php');
         $catalogCss = (string) file_get_contents($root . '/public/assets/css/dashboard-catalog.css');

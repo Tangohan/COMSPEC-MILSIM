@@ -89,7 +89,7 @@ final class ReconConfidentialStorageAssetTest extends TestCase
         self::assertStringContainsString('/storage/private/recon', $mig);
         self::assertStringContainsString("NOT LIKE 'recon-private/%'", $mig);
         self::assertStringContainsString('bin2hex(random_bytes(16))', $mig);
-        self::assertStringContainsString("'atak_recon_images_confidential_storage_migration.php'", $this->read('run-migrations.php'));
+        self::assertStringContainsString("'atak_recon_images_confidential_storage_migration.php'", \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2)));
     }
 
     public function testFeedsDoNotRebuildUploadsUrlForPrivatePaths(): void

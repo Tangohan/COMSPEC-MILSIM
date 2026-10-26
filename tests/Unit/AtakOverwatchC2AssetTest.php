@@ -18,7 +18,7 @@ final class AtakOverwatchC2AssetTest extends TestCase
         $css = (string) file_get_contents($root . '/public/assets/css/atak-overwatch-beta.css');
         $catalog = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');
         $seed = (string) file_get_contents($root . '/bootstrap/configuration_updates_migration.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $orders = (string) file_get_contents($root . '/app/Repositories/AtakOrderRepository.php');
 
         self::assertStringContainsString('atak-overwatch-c2.js', $view);

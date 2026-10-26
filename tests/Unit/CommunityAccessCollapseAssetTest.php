@@ -14,7 +14,7 @@ final class CommunityAccessCollapseAssetTest extends TestCase
         $collapse = (string) file_get_contents($root . '/app/Services/Rbac/CommunityAccessCollapseService.php');
         $bootstrap = (string) file_get_contents($root . '/app/Services/Community/TenantBootstrapService.php');
         $jobs = (string) file_get_contents($root . '/app/Repositories/PersonnelJobRoleRepository.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
 
         self::assertStringContainsString('DELETE FROM roles WHERE tenant_id = ? AND id IN', $collapse);
         self::assertStringContainsString('personnel_job_role_permissions', $collapse);

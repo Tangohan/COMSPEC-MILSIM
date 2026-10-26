@@ -12,7 +12,7 @@ final class MiniArticlesModuleAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $form = (string) file_get_contents($root . '/views/admin/organization/mini_articles_form.php');
         $quick = (string) file_get_contents($root . '/views/partials/dashboard_quick_articles.php');
         $launcher = (string) file_get_contents($root . '/app/Controllers/Web/PublicationLauncherController.php');

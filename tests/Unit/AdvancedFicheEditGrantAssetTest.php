@@ -12,7 +12,7 @@ final class AdvancedFicheEditGrantAssetTest extends TestCase
     {
         $migration = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/user_advanced_edit_grants_migration.php');
         $repo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserAdvancedEditGrantRepository.php');
-        $runner = (string) file_get_contents(dirname(__DIR__, 2) . '/run-migrations.php');
+        $runner = (string) \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
 
         self::assertStringContainsString('user_advanced_edit_grants', $migration);
         self::assertStringContainsString('run_user_advanced_edit_grants_migration', $migration);

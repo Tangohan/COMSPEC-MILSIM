@@ -43,7 +43,7 @@ final class AtakMissionDataQuickWinsAssetTest extends TestCase
         $replay = $this->read('app/Repositories/ReplayRepository.php');
         $screen = $this->read('app/Repositories/AtakScreenTimeRepository.php');
         $mig = $this->read('bootstrap/atak_mission_key_migration.php');
-        $run = $this->read('run-migrations.php');
+        $run = \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
 
         self::assertStringContainsString('COMSPEC_ATAK_MissionKey', $pos);
         self::assertStringContainsString('""mission_key""', $pos);

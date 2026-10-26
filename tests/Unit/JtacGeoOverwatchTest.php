@@ -58,7 +58,7 @@ final class JtacGeoOverwatchTest extends TestCase
         $mod = $root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions';
         self::assertStringContainsString('_f set ["geo"', (string) file_get_contents($mod . '/tactical/fn_jtacAction.sqf'));
         self::assertStringContainsString('"geo":%1', (string) file_get_contents($mod . '/pages/fn_firesAction.sqf'));
-        self::assertStringContainsString('atak_nine_line_geo_migration.php', (string) file_get_contents($root . '/run-migrations.php'));
+        self::assertStringContainsString('atak_nine_line_geo_migration.php', (string) \Tests\Support\MigrationPipelineSource::read($root));
         self::assertStringContainsString('`geo_json`', (string) file_get_contents($root . '/migrations/schema.sql'));
         self::assertStringContainsString('function renderJtacGeoOnMap', (string) file_get_contents($root . '/public/assets/js/atak-overwatch-beta.js'));
         self::assertStringContainsString('data-ow-layer="jtac"', (string) file_get_contents($root . '/views/atak-overwatch-beta.php'));
