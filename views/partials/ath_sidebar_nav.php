@@ -726,7 +726,7 @@ $renderAthNavItem = static function (array $item) use ($h, $athIco): void {
                 <?php endif; ?>
             </a>
             <?php if ($children !== []): ?>
-            <button type="button" class="ath-sidebar__kids-toggle" data-ath-kids-toggle aria-controls="<?= $h($kidsId) ?>" aria-expanded="<?= $showKids ? 'true' : 'false' ?>" aria-label="<?= $h('Afficher les pages de ' . (string) $item['label']) ?>">
+            <button type="button" class="ath-sidebar__kids-toggle" data-ath-kids-toggle aria-controls="<?= $h($kidsId) ?>" aria-expanded="<?= $showKids ? 'true' : 'false' ?>" aria-label="<?= $h(locale() === 'en' ? 'Show the pages of ' . \App\Support\HtmlTranslator::translateText((string) $item['label']) : 'Afficher les pages de ' . (string) $item['label']) ?>">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
             </button>
             <?php endif; ?>

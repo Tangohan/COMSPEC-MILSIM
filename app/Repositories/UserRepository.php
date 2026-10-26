@@ -11,6 +11,7 @@ use App\Support\SqlText;
 use App\Repositories\RoleAssignmentLogRepository;
 use App\Services\Identity\UserIdentityMergeRules;
 use App\Services\Rbac\RoleCoherenceValidator;
+use App\Services\Rbac\CommunityAccessProfiles;
 use App\Services\User\UserProfileSlugService;
 use InvalidArgumentException;
 use PDO;
@@ -823,14 +824,18 @@ class UserRepository
                 throw new InvalidArgumentException($err);
             }
         }
-        $beforeIds = $this->listOrganizationRoleIdsForUser($userId);
+        $beforeIds = $this->listOrganizationRoleIdsForUser($userId, $tenantId);
         if (!$this->hasUserRolesTable()) {
             $primary = $roleIds[0] ?? null;
             $this->pdo()->prepare('UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')->execute([$primary, $userId, $tenantId]);
 
             return;
         }
-        $this->pdo()->prepare('DELETE FROM user_roles WHERE user_id = ?')->execute([$userId]);
+        // user_roles n’a pas de colonne tenant : ne retirer que les rôles de cette communauté,
+        // sinon un compte membre de plusieurs communautés perdait ses rôles ailleurs.
+        $this->pdo()->prepare(
+            'DELETE FROM user_roles WHERE user_id = ? AND role_id IN (SELECT id FROM roles WHERE tenant_id = ?)'
+        )->execute([$userId, $tenantId]);
         $valid = [];
         if ($roleIds !== []) {
             $ph = implode(',', array_fill(0, count($roleIds), '?'));
@@ -986,9 +991,11 @@ class UserRepository
         if ($rows === []) {
             return null;
         }
-        foreach (['community_owner', 'hr', 'member'] as $slug) {
+        // Un niveau d’accès personnalisé passe avant Membre, que tout le monde porte.
+        foreach (['community_owner', 'hr', CommunityAccessProfiles::CUSTOM_PREFIX, 'member'] as $slug) {
             foreach ($rows as $r) {
-                if (($r['slug'] ?? '') === $slug) {
+                $rowSlug = (string) ($r['slug'] ?? '');
+                if ($rowSlug === $slug || ($slug === CommunityAccessProfiles::CUSTOM_PREFIX && CommunityAccessProfiles::isCustomAccessSlug($rowSlug))) {
                     return (int) $r['id'];
                 }
             }
@@ -2184,19 +2191,27 @@ class UserRepository
                 'r3.slug',
                 \App\Services\Personnel\PersonnelDutyPositionService::SLUG_ACTIVE
             );
+            // Rôles de la communauté listée, pas de la communauté d’origine du compte : un membre venu
+            // d’une autre communauté (compte unique) a ses rôles d’ici dans tenant_user_roles.
+            $tid = (int) $tenantId;
+            $heldRoles = 'SELECT ur.user_id, ur.role_id FROM user_roles ur';
+            if ($this->hasTenantUserRolesTable()) {
+                $heldRoles .= ' UNION SELECT tur.user_id, tur.role_id FROM tenant_user_roles tur
+                    WHERE tur.tenant_id = ' . $tid . ' AND tur.org_unit_id IS NULL';
+            }
             $extra = ', (SELECT r3.name
-                 FROM user_roles ur3
-                 INNER JOIN roles r3 ON r3.id = ur3.role_id AND r3.tenant_id = u.tenant_id
+                 FROM (' . $heldRoles . ') ur3
+                 INNER JOIN roles r3 ON r3.id = ur3.role_id AND r3.tenant_id = ' . $tid . '
                  WHERE ur3.user_id = u.id AND ' . $dutySlugs . '
                  ORDER BY CASE WHEN ' . $activeFirst . ' THEN 0 ELSE 1 END, r3.name ASC
                  LIMIT 1) AS duty_position, (
                 SELECT GROUP_CONCAT(DISTINCT r2.name ORDER BY r2.role_layer DESC, r2.name SEPARATOR \', \')
-                 FROM user_roles ur
-                 INNER JOIN roles r2 ON r2.id = ur.role_id AND r2.tenant_id = u.tenant_id
+                 FROM (' . $heldRoles . ') ur
+                 INNER JOIN roles r2 ON r2.id = ur.role_id AND r2.tenant_id = ' . $tid . '
                  WHERE ur.user_id = u.id AND NOT (' . $functionSlugs . ')
             ) AS roles_display';
         }
-        $sql = 'SELECT u.*, r.name as role_name' . $extra . ' FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql;
+        $sql = 'SELECT u.*, r.name as role_name' . $extra . ' FROM users u LEFT JOIN roles r ON r.id = u.role_id AND r.tenant_id = ' . (int) $tenantId . ' WHERE ' . $whereSql;
 
         return [$sql, $params];
     }

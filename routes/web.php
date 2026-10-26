@@ -1789,6 +1789,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/roles/nouveau', [EffectifsWorkspaceController::class, 'createAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/retablir', [EffectifsWorkspaceController::class, 'restoreAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/supprimer', [EffectifsWorkspaceController::class, 'deleteAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/reafficher', [EffectifsWorkspaceController::class, 'showAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'saveJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
