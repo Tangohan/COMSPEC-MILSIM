@@ -87,7 +87,7 @@ switch (_act) do {
             case (_hops isEqualTo 1): { format ["via %1 à %2 m de la source", _via, round (((_rs select 1)) distance _src)] };
             default { format ["via %1 puis %2, par le réseau", _via, _viaMe] };
         };
-        if (_ok && {_hops > 0} && {(_mm min _meCap) < _ms * 0.6}) then { _why = _why + ", réception du téléphone faible"; };
+        if (_ok && {_hops > 0} && {(_mm min _meCap) < _ms * 0.6}) then { _why = format ["%1, réception du téléphone faible", _why]; };
         private _r = createHashMapFromArray [["active", true], ["ok", _ok], ["q", [0, (_q max 0.02) min 1] select _ok], ["mbps", [0, _mb] select _ok], ["lat", _lat],
             ["loss", [100, round ((1 - _q) * 30)] select _ok], ["hops", _hops], ["via", _via], ["viaMe", _viaMe], ["target", _target], ["why", _why]];
         _cache set [_key, [diag_tickTime, _r]];

@@ -115,7 +115,7 @@ switch (_tab) do {
             ["info", "Révision serveur", str (missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0])],
             ["info", "Révision de mon groupe", str (_mine getVariable ["COMSPEC_FTRev", 0])],
             ["info", "Escouades / équipes", format ["%1 / %2", count _groups, _nTeams]],
-            ["info", "Joueurs en équipe", format ["%1 sur %2", _inTeam, _total]],
+            ["info", "Joueurs en équipe", format ["%1 / %2", _inTeam, _total]],
             ["info", "Pistes BFT", format ["%1 directes · %2 anciennes · %3 perdues", _fresh select 0, _fresh select 1, _fresh select 2]],
             ["section", "Athena", "Escouades et équipes visibles sur le site (back-office, Escouades en jeu)"],
             ["info", "Envoi par", [format ["%1 (chef ou premier joueur du groupe)", name _reporter], "moi"] select (_reporter isEqualTo player)],
