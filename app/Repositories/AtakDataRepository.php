@@ -2393,11 +2393,12 @@ class AtakDataRepository
     /**
      * Unités dont l’état santé (extra.health) est critique / blessé.
      *
+     * @param list<array<string, mixed>>|null $units unités déjà lues par l’appelant (évite un second SELECT)
      * @return list<array<string, mixed>>
      */
-    public function getUnitsWithCriticalHealth(int $tenantId, int $mapId): array
+    public function getUnitsWithCriticalHealth(int $tenantId, int $mapId, ?array $units = null): array
     {
-        $units = $this->getUnits($tenantId, $mapId);
+        $units ??= $this->getUnits($tenantId, $mapId);
         // Index Steam → indicatifs BFT « réels » (hors source alerte seule).
         $steamToBft = [];
         foreach ($units as $unit) {

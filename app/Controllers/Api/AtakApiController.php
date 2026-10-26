@@ -7706,9 +7706,11 @@ class AtakApiController
         } catch (\Throwable) {
         }
         $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
-        $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts);
+        // Une seule lecture des unités pour la réconciliation et les blessés (sondé toutes les 8 s par joueur).
+        $mapUnits = $this->atak->getUnits($tenantId, $mapId);
+        $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts, $mapUnits);
         $alerts = MedicalAlertParser::collapseToHighestSeverityPerCallSign($alerts);
-        $criticalUnits = $this->atak->getUnitsWithCriticalHealth($tenantId, $mapId);
+        $criticalUnits = $this->atak->getUnitsWithCriticalHealth($tenantId, $mapId, $mapUnits);
         $emergencyCount = 0;
         foreach ($alerts as $a) {
             if (($a['severity'] ?? '') === 'critical' && empty($a['triage']['is_resolved'])) {
@@ -8367,13 +8369,13 @@ class AtakApiController
      * @param list<array<string, mixed>> $alerts
      * @return list<array<string, mixed>>
      */
-    private function reconcileMedicalAlertsWithUnitHealth(int $tenantId, int $mapId, array $alerts): array
+    private function reconcileMedicalAlertsWithUnitHealth(int $tenantId, int $mapId, array $alerts, ?array $units = null): array
     {
         if ($alerts === []) {
             return $alerts;
         }
 
-        $unitsByCallSign = $this->buildUnitHealthByCallSign($tenantId, $mapId);
+        $unitsByCallSign = $this->buildUnitHealthByCallSign($tenantId, $mapId, $units);
         if ($unitsByCallSign === []) {
             return $alerts;
         }
@@ -8550,10 +8552,10 @@ class AtakApiController
     /**
      * @return array<string, array{health: string, status: string}>
      */
-    private function buildUnitHealthByCallSign(int $tenantId, int $mapId): array
+    private function buildUnitHealthByCallSign(int $tenantId, int $mapId, ?array $units = null): array
     {
         $out = [];
-        foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+        foreach ($units ?? $this->atak->getUnits($tenantId, $mapId) as $unit) {
             if (!is_array($unit)) {
                 continue;
             }
