@@ -383,7 +383,7 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
         profileNamespace setVariable [_storeKey, _tileArr];
         private _lastSave = missionNamespace getVariable ["COMSPEC_SceneTilesSavedAt", -1e9];
         if ((diag_tickTime - _lastSave) > 20) then {
-            saveProfileNamespace;
+            [] call comspec_overwatch_connect_fnc_saveProfile;
             missionNamespace setVariable ["COMSPEC_SceneTilesSavedAt", diag_tickTime, false];
         };
     };

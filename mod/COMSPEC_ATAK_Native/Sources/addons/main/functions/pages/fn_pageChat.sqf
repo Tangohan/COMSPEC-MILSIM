@@ -313,7 +313,7 @@ private _drawList = {
                     _s set ["chatPeer", "CH:" + (missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"])];
                     _s set ["chatView", "CONV"];
                 };
-                [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
             };
         }];
         private _no = ["COMSPEC_RscButton", [_lx + _lw - _cw - _pad * 0.5, _y0 + _pad / 2, _cw, _rowH], "ANNULER"] call _mk;
@@ -457,7 +457,7 @@ private _drawConv = {
             "Vider l'affichage de cette conversation (sur ce téléphone seulement)", _cText, [1, 1, 1, 0.05], true];
         if (_manage && {_isChannel} && {_peer isNotEqualTo "ATHENA"}) then {
             private _armed = (_s getOrDefault ["chatDelArm", ""]) isEqualTo _curKey;
-            _btns pushBack [_dir + "ui_trash.paa", "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; private _key = (_s getOrDefault ['chatPeer', '']) select [3]; if ((_s getOrDefault ['chatDelArm', '']) isNotEqualTo _key) exitWith { _s set ['chatDelArm', _key]; " + _rr + " }; _s set ['chatDelArm', '']; [_key] spawn { params ['_key']; if ([_key] call comspec_overwatch_connect_fnc_deleteChatChannel) then { private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', 'CH:general']; _s set ['chatView', 'LIST']; }; [{ ['CHAT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };",
+            _btns pushBack [_dir + "ui_trash.paa", "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; private _key = (_s getOrDefault ['chatPeer', '']) select [3]; if ((_s getOrDefault ['chatDelArm', '']) isNotEqualTo _key) exitWith { _s set ['chatDelArm', _key]; " + _rr + " }; _s set ['chatDelArm', '']; [_key] spawn { params ['_key']; if ([_key] call comspec_overwatch_connect_fnc_deleteChatChannel) then { private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', 'CH:general']; _s set ['chatView', 'LIST']; }; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'CHAT') then { ['CHAT'] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };",
                 [["Seuls les canaux créés depuis le web ou le terminal se suppriment", "Supprimer ce canal pour tout le monde"] select _custom, "Cliquer encore pour supprimer ce canal pour tout le monde"] select _armed,
                 [_cRed, [1, 1, 1, 1]] select _armed, [[1, 1, 1, 0.05], _cRed] select _armed, _custom];
         };

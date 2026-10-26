@@ -18,8 +18,10 @@ private _raw = [["COMSPECExtension", "GetBriefingSlides", [_tenantId]] call coms
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 
+// Échec (timeout, joueur non lié, coupure) : rien n'est diffusé. Vider la liste publique ici effaçait les
+// diapositives de tous les joueurs (et des arrivants) dès qu'un seul spectateur échouait sa relecture.
 if (_prefix != "OK") exitWith {
-    if ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) isNotEqualTo []) then { missionNamespace setVariable ["COMSPEC_BriefingSlides", [], true]; };
+    ["WARN", "Briefing", format ["GetBriefingSlides échoué (%1) — liste partagée conservée", _prefix]] call comspec_overwatch_connect_fnc_log;
     []
 };
 

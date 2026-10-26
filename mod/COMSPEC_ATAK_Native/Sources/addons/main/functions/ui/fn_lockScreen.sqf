@@ -145,9 +145,16 @@ switch (_act) do {
         private _wd = (_yk + floor (_yk / 4) - floor (_yk / 100) + floor (_yk / 400) + ([0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4] select (_mo - 1)) + _dd) mod 7;
         private _world = getText (configFile >> "CfgWorlds" >> worldName >> "description");
         if (_world isEqualTo "") then { _world = worldName; };
-        private _dateTxt = toUpper format ["%1 %2 %3",
-            ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"] select _wd, _dd,
-            ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"] select (_mo - 1)];
+        // Date dans la langue du téléphone : « SAMEDI 24 FÉVRIER » en français, « SATURDAY, FEBRUARY 24 » sinon.
+        private _dateTxt = if ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr") then {
+            toUpper format ["%1 %2 %3",
+                ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"] select _wd, _dd,
+                ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"] select (_mo - 1)]
+        } else {
+            toUpper format ["%1, %3 %2",
+                ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] select _wd, _dd,
+                ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] select (_mo - 1)]
+        };
         private _date = ["COMSPEC_RscTextCenter", [0, _y, _dw, _font * 1.2], _dateTxt] call _mk;
         _date ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _date ctrlSetFontHeight (_fs * 0.95);

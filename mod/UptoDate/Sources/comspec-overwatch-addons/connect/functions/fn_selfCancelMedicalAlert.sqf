@@ -76,7 +76,9 @@ if (_prefix != "OK") exitWith {
 
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    if ((str (_x getOrDefault ["id", ""])) isEqualTo _alertId) then {
+    private _aid = _x getOrDefault ["id", ""];
+    if (!(_aid isEqualType "")) then { _aid = str _aid; };
+    if (_aid isEqualTo _alertId) then {
         _x set ["triage_status", "annule"];
         _x set ["triage_label", "Cancelled"];
     };

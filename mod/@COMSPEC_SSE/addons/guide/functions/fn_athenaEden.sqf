@@ -2,7 +2,7 @@
     Connexion Athena depuis l'éditeur Eden (menu COMSPEC SSE, bouton du tableau de bord SSE) et temps passé dans Eden.
 
     Même liaison que le jeu, par la DLL COMSPEC Link : session Athena mémorisée (RestoreSession), sinon un code court
-    à valider sur athena.ttrd.fr/lier, connecté à son compte (PairStart / PairStatus, comme l'app Athena du téléphone
+    à valider sur athena-comspec.eu/lier, connecté à son compte (PairStart / PairStatus, comme l'app Athena du téléphone
     ATAK). Aucune clé ni aucun jeton ne passe par le SQF.
 
     Temps Eden : compté tant que l'éditeur est ouvert, au premier plan et utilisé (souris ou clavier dans les
@@ -22,7 +22,7 @@ params [["_mode", "open", [""]], ["_args", [], [[]]]];
 if (!hasInterface) exitWith {};
 disableSerialization;
 
-private _url = "https://athena.ttrd.fr/public";
+private _url = "https://athena-comspec.eu/public";
 private _call = {
     params ["_cmd", ["_a", []]];
     private _r = "COMSPECExtension" callExtension [_cmd, _a];
@@ -55,6 +55,17 @@ private _status = {
     private _cell = { private _v = trim (_cells param [_this, ""]); ["", _v] select (_v isNotEqualTo "-") };
     private _ok = (_cells param [1, ""]) isEqualTo "READY" || {uiNamespace getVariable ["comspec_sse_athenaPaired", false]};
     [_ok, 5 call _cell, 6 call _cell, 7 call _cell, true]
+};
+// Adresse courte à taper (« athena-comspec.eu/lier ») : sans regexReplace, qui lit le dernier « / » du motif comme
+// le début des options et affichait « //lier ».
+private _shortUrl = {
+    params [["_u", "", [""]]];
+    private _s = trim _u;
+    { if (((toLower _s) find _x) isEqualTo 0) exitWith { _s = _s select [count _x]; }; } forEach ["https://", "http://"];
+    private _p = (toLower _s) find "/public/";
+    if (_p >= 0) then { _s = (_s select [0, _p]) + (_s select [_p + 7]); };
+    while { (_s find "//") >= 0 } do { private _i = _s find "//"; _s = (_s select [0, _i]) + (_s select [_i + 1]); };
+    _s
 };
 private _esc = { params ["_s"]; ((_s regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]) regexReplace [">", "&gt;"] };
 private _st = uiNamespace getVariable ["comspec_sse_athenaEden", createHashMap];
@@ -151,6 +162,8 @@ switch (_mode) do {
         if (_r isEqualTo "") exitWith { _st set ["phase", "nodll"]; ["render"] call comspec_sse_fnc_athenaEden; };
         private _cells = _r splitString "|";
         if ((_cells param [0, ""]) isNotEqualTo "OK") exitWith {
+            // HTTP 503 : Athena est en maintenance, pas une panne réseau.
+            if ((toLower (_cells param [1, ""])) in ["http_503", "maintenance"]) exitWith { _st set ["phase", "maintenance"]; ["render"] call comspec_sse_fnc_athenaEden; };
             _st set ["phase", "error"];
             _st set ["detail", _cells param [1, "sans réponse"]];
             ["render"] call comspec_sse_fnc_athenaEden;
@@ -177,6 +190,7 @@ switch (_mode) do {
             switch (true) do {
                 case (_p isEqualTo "OK|approved"): { _result = "approved"; };
                 case ((_p find "ERR|expired") isEqualTo 0 || {(_p find "ERR|no_pairing") isEqualTo 0}): { _result = "expired"; };
+                case ((_p find "ERR|http_503") isEqualTo 0): { _result = "maintenance"; };
                 case ((_p find "ERR|http_4") isEqualTo 0): { _result = "error"; _st set ["detail", _p select [4]]; };
                 default { ["render"] call comspec_sse_fnc_athenaEden; };
             };
@@ -223,12 +237,16 @@ switch (_mode) do {
                 _lines pushBack ("Le tableau de bord SSE lit maintenant les campagnes et les avis de recherche de votre communauté." call _tr);
             };
             case "code": {
-                private _short = ((_st getOrDefault ["uri", ""]) regexReplace ["^https?://", ""]) regexReplace ["/public/", "/"];
+                private _short = [_st getOrDefault ["uri", ""]] call _shortUrl;
                 private _left = ceil (((_st getOrDefault ["until", 0]) - diag_tickTime) / 60) max 1;
                 _lines pushBack (format ["Sur %1, connecté à votre compte Athena, saisissez ce code :" call _tr, format ["<t color='#9fd3ff'>%1</t>", [_short] call _esc]]);
                 _lines pushBack format ["<t size='2.4' align='center' font='EtelkaMonospacePro'>%1</t>", [_st getOrDefault ["code", ""]] call _esc];
                 _lines pushBack format ["<t color='#8a96a3'>%1</t>", format ["« Ouvrir la page » l'ouvre dans le navigateur avec le code déjà rempli. Code valable %1 min ; la fenêtre se met à jour dès qu'il est validé." call _tr, _left]];
                 if (_st getOrDefault ["noBrowser", false]) then { _lines pushBack format ["<t color='#e0b050'>%1</t>", "Votre version de COMSPEC Link ne sait pas ouvrir le navigateur : tapez l'adresse vous-même." call _tr]; };
+            };
+            case "maintenance": {
+                _lines pushBack format ["<t size='1.15' color='#e0b050'>%1</t>", "Athena est en maintenance." call _tr];
+                _lines pushBack ("Le site est fermé le temps d'une mise à jour : aucun code ne peut être donné pour l'instant. Réessayez avec « Nouveau code » à la réouverture." call _tr);
             };
             case "expired": { _lines pushBack format ["<t color='#e0b050'>%1</t>", "Code expiré : cliquez sur « Obtenir un code »." call _tr]; };
             case "error": { _lines pushBack format ["<t color='#e06060'>%1</t>", format ["Code de connexion impossible : %1" call _tr, [_st getOrDefault ["detail", ""]] call _esc]]; };
@@ -242,7 +260,7 @@ switch (_mode) do {
             _lines pushBack format ["<t color='#8a96a3'>%1</t>", "Le temps passé dans Eden est compté et part sur votre fiche Athena dès que le compte est relié." call _tr];
         };
         (_dlg getVariable ["comspec_sse_body", controlNull]) ctrlSetStructuredText parseText (_lines joinString "<br/>");
-        (_dlg getVariable ["comspec_sse_bCode", controlNull]) ctrlSetText ((["Obtenir un code", "Nouveau code"] select (_phase in ["code", "expired"])) call _tr);
+        (_dlg getVariable ["comspec_sse_bCode", controlNull]) ctrlSetText ((["Obtenir un code", "Nouveau code"] select (_phase in ["code", "expired", "maintenance"])) call _tr);
         (_dlg getVariable ["comspec_sse_bOpen", controlNull]) ctrlEnable (_phase isEqualTo "code");
     };
 

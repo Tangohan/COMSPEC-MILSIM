@@ -48,9 +48,8 @@ private _raise = {
     if ((_key + "|" + _text) in _seen) exitWith {};
     _seen pushBack (_key + "|" + _text);
     uiNamespace setVariable ["COMSPEC_ATAK_IntegritySeen", _seen];
+    // Rien sur l'écran de jeu : journal (RPT) ci-dessus et notification dans le téléphone.
     [_level, _text, 12, 60] call comspec_atak_native_fnc_notify;
-    // Téléphone fermé ou cassé par le PBO périmé lui-même : la ligne reste visible dans le chat.
-    if (_level isEqualTo "ERROR") then { systemChat format ["[COMSPEC ATAK] %1", _text call comspec_atak_native_fnc_tr]; }; // i18n:brut (déjà traduit)
 };
 // Version de la DLL chargée, "" si elle ne répond pas. « OK|COMSPECExtension 2.0.78 ».
 // Version de la DLL chargée, "" si elle ne répond pas (fn_extVersion, relue à chaque contrôle).
@@ -139,7 +138,7 @@ switch (toLower _mode) do {
         if (!canSuspend) exitWith { ["remote", _simulate] spawn comspec_atak_native_fnc_integrityCheck; };
         private _say = { ["INFO", "UPDATE", _this] call comspec_atak_native_fnc_log; };
         private _bridge = [] call comspec_atak_native_fnc_bridge;
-        private _url = "https://athena.ttrd.fr/public";
+        private _url = "https://athena-comspec.eu/public";
         private _ext = ["COMSPECATAKNativeExtension", "COMSPECExtension"] select _bridge;
         private _have = [_code, _simulate] select (_simulate isNotEqualTo "");
         format ["Vérification des mises à jour : demande des dernières versions à Athena (ATAK installé %1%2, DLL %3)",
@@ -180,7 +179,7 @@ switch (toLower _mode) do {
                 _notified pushBackUnique _what;
                 while { (count _notified) > 20 } do { _notified deleteAt 0; };
                 profileNamespace setVariable ["COMSPEC_ATAK_UpdateNotified", _notified];
-                saveProfileNamespace;
+                [] call comspec_atak_native_fnc_saveProfile;
             };
         };
         private _clear = {

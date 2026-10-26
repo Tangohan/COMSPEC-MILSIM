@@ -1,7 +1,10 @@
 /*
     Liste paginée des tenues communauté (évite la troncature 8 Ko de ListWardrobes).
     Retour : tableau de lignes brutes "id\tname\t…" (sans en-tête OK|).
+    Mode "cache" (défaut) : la liste gardée sur ce PC (Sync\wardrobes.json), le site seulement si elle est vide.
+    Mode "refresh" : rechargée depuis le site (bouton Actualiser, après un envoi, Tout basculer).
 */
+params [["_mode", "cache", [""]]];
 private _lines = [];
 private _start = 0;
 private _guard = 0;
@@ -9,7 +12,7 @@ private _guard = 0;
 while {_guard < 64} do {
     _guard = _guard + 1;
     // extAwait : lancé depuis un spawn (fn_arsenalOverlayRefresh), la page arrive sans figer l'arsenal.
-    private _raw = [["COMSPECExtension", "ListWardrobes", [str _start]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+    private _raw = [["COMSPECExtension", "ListWardrobes", [str _start, _mode]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     if (!(_raw isEqualType "") || {_raw find "OK|" != 0}) exitWith {};
     private _body = _raw select [3];
     private _nl = _body find toString [10];

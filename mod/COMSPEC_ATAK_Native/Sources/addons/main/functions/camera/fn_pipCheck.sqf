@@ -12,7 +12,7 @@
       ["state", [source, caméra, porteur]]   ligne d'état RPT d'un flux à l'écran (drone, toutes les 15 s) ;
       ["rebind", [image, texture]]   pose de nouveau la texture sur l'image (si elle est toujours là).
       ["test"]                TEST VIDÉO (apps Drone et Photo) : une grille de 9 images, lettres A à I, pendant 30 s, dans une
-                                fenêtre ouverte par-dessus le téléphone. A reprend le premier test (qui s'affiche chez TTRD,
+                                fenêtre tracée dans l'écran du téléphone (rien par-dessus l'écran du jeu). A reprend le premier test (qui s'affiche chez TTRD,
                                 13/10 21:20), chaque autre lettre ajoute une seule différence avec les vues Photo et Drone
                                 (noires) : texture 1024, image 16/9, caméra déplacée comme l'app Photo, déplacée par
                                 position seule, accrochée comme le drone, posée 30 m plus haut, caméra de test accrochée au
@@ -27,8 +27,9 @@ switch (_act) do {
         private _old = missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []];
         if ((count _old) > 0) exitWith { ["testEnd"] call comspec_atak_native_fnc_pipCheck; };
         private _phone = [] call comspec_atak_native_fnc_display;
-        private _parent = [findDisplay 46, _phone] select (!isNull _phone);
-        if (isNull _parent) exitWith {};
+        // Test tracé dans l'écran du téléphone seul, jamais par-dessus l'écran du jeu.
+        if (isNull _phone) exitWith {};
+        private _parent = _phone;
         // Pose de départ : yeux du joueur, direction de sa vue.
         private _eye = eyePos player;
         private _dir = getCameraViewDirection player;
@@ -53,16 +54,20 @@ switch (_act) do {
         ];
         private _top = _parent createDisplay "RscDisplayEmpty";
         if (isNull _top) exitWith { ["WARNING", "TEST VIDÉO : fenêtre de test impossible à ouvrir"] call _say; };
-        private _cellW = 0.30 * safeZoneW;
-        private _cellH = 0.27 * safeZoneH;
+        (([] call comspec_atak_native_fnc_layoutGet) get "device") params ["_rx", "_ry", "_rw", "_rh"];
+        private _gx = 0.02 * _rw;
+        private _gy = 0.02 * _rh;
+        private _cellW = (_rw - 4 * _gx) / 3;
+        private _cellH = (_rh - 0.04 * _rh - 4 * _gy) / 3;
+        private _lbH = 0.22 * _cellH;
         private _cams = [];
         private _ctrls = [];
         {
             _x params ["_k", "_what", "_size", "_aspect", "_mode"];
             private _col = _forEachIndex mod 3;
             private _row = floor (_forEachIndex / 3);
-            private _cx = safeZoneX + 0.04 * safeZoneW + _col * (_cellW + 0.01 * safeZoneW);
-            private _cy = safeZoneY + 0.08 * safeZoneH + _row * (_cellH + 0.02 * safeZoneH);
+            private _cx = _rx + _gx + _col * (_cellW + _gx);
+            private _cy = _ry + 0.04 * _rh + _gy + _row * (_cellH + _gy);
             private _name = "comspecpiptest" + toLower _k;
             private _tex = "";
             private _cam = objNull;
@@ -115,7 +120,7 @@ switch (_act) do {
                 _tex = format ["#(argb,%1,%1,1)r2t(%2,%3)", _size, _name, _aspect];
             };
             // Image aux proportions de la texture (pixels carrés), la plus grande qui tient dans la case.
-            private _ph = _cellH - 0.05 * safeZoneH;
+            private _ph = _cellH - _lbH;
             private _pw = (_ph / pixelH) * _aspect * pixelW;
             if (_pw > _cellW) then { _pw = _cellW; _ph = (_pw / pixelW) / _aspect * pixelH; };
             private _bg = _top ctrlCreate ["RscText", -1];
@@ -123,13 +128,13 @@ switch (_act) do {
             _bg ctrlSetBackgroundColor [0.15, 0.02, 0.02, 1];
             _bg ctrlCommit 0;
             private _pic = _top ctrlCreate ["RscPicture", -1];
-            _pic ctrlSetPosition [_cx + (_cellW - _pw) / 2, _cy + 0.05 * safeZoneH, _pw, _ph];
+            _pic ctrlSetPosition [_cx + (_cellW - _pw) / 2, _cy + _lbH, _pw, _ph];
             if (_tex isNotEqualTo "") then { _pic ctrlSetText _tex; }; // i18n:brut
             _pic ctrlCommit 0;
             private _lb = _top ctrlCreate ["RscStructuredText", -1];
-            _lb ctrlSetPosition [_cx, _cy, _cellW, 0.05 * safeZoneH];
+            _lb ctrlSetPosition [_cx, _cy, _cellW, _lbH];
             _lb ctrlSetBackgroundColor [0, 0, 0, 0.85];
-            _lb ctrlSetStructuredText parseText (((format ["<t size='1.3' color='#ffd400' font='PuristaBold'>%1</t> <t size='0.9' color='#ffffff'>%2%3</t>", _k, _what call comspec_atak_native_fnc_tr, ["", " : " + (_note call comspec_atak_native_fnc_tr)] select (_note isNotEqualTo "")])) call comspec_atak_native_fnc_tr);
+            _lb ctrlSetStructuredText parseText (((format ["<t size='1' color='#ffd400' font='PuristaBold'>%1</t> <t size='0.7' color='#ffffff'>%2%3</t>", _k, _what call comspec_atak_native_fnc_tr, ["", " : " + (_note call comspec_atak_native_fnc_tr)] select (_note isNotEqualTo "")])) call comspec_atak_native_fnc_tr);
             _lb ctrlCommit 0;
             _ctrls append [_bg, _pic, _lb];
             if (!isNull _cam && {_mode isNotEqualTo "drone"}) then { _cams pushBack _cam; };

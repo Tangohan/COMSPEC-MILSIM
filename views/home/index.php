@@ -159,7 +159,7 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
     require base_path('views/partials/seo_meta.php');
 ?>
     <meta name="theme-color" content="#050505">
-    <link rel="apple-touch-icon" href="<?= $e($base) ?>/assets/icons/athena-192.png">
+    <link rel="apple-touch-icon" href="<?= $e($base) ?>/assets/icons/athena-180.png">
     <link rel="icon" type="image/png" sizes="192x192" href="<?= $e($base) ?>/assets/icons/athena-192.png">
     <link rel="preload" as="image" href="<?= $e($heroPosterUrl) ?>" fetchpriority="high">
     <script type="application/ld+json"><?= json_encode([
@@ -226,7 +226,7 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                 </button>
-                <a href="<?= $e($base) ?>/" class="hi-wordmark" aria-label="Athena — <?= $e(__('common.home')) ?>">Athena<span class="hi-wordmark__dot" aria-hidden="true">.</span></a>
+                <a href="<?= $e($base) ?>/" class="hi-wordmark" aria-label="Athena — <?= $e(__('common.home')) ?>"><img src="<?= $e($base) ?>/assets/brand/athena-embleme-blanc.svg" alt="" class="hi-wordmark__emblem" width="30" height="26">Athena<span class="hi-wordmark__dot" aria-hidden="true">.</span></a>
             </div>
             <nav class="hi-topbar__nav" aria-label="<?= $e(__('home.nav_aria')) ?>">
                 <a href="<?= $e(url('communities')) ?>"><?= $e(__('common.communities')) ?></a>

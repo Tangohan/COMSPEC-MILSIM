@@ -32,6 +32,7 @@ private _fnc_send = {
     private _kept = profileNamespace getVariable ["COMSPEC_ATAK_PhotoFaces", []];
     private _i = if (_kept isEqualType []) then { _kept findIf { (_x param [0, ""]) isEqualTo (toLower _name) } } else { -1 };
     private _meta = if (_i >= 0) then { ["", "", false, "", false, "phone", "", [], -1, (_kept select _i) param [1, []]] } else { [] };
+    if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith { false };
     [_path, _caption, "CTAB", "", true, false, false, _meta] call comspec_overwatch_connect_fnc_captureReconImage
 };
 switch (_action) do {
@@ -41,7 +42,16 @@ switch (_action) do {
         private _out = (_raw select { _x isEqualType [] && {(count _x) >= 2} }) apply { [_x select 0, _x select 1] };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLib", _out];
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLibAt", diag_tickTime];
-        ["check"] call comspec_atak_native_fnc_photoLibrary;
+        // Requête Athena hors du dessin (spawn) : appelée depuis un rendu ou un clic, extAwait figeait le jeu. Une à la fois
+        // (repère daté, périmé après 30 s), puis la page est redessinée.
+        if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCheckBusy", -100]) > 30) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_PhotoCheckBusy", diag_tickTime];
+            [] spawn {
+                ["check"] call comspec_atak_native_fnc_photoLibrary;
+                uiNamespace setVariable ["COMSPEC_ATAK_PhotoCheckBusy", -100];
+                [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            };
+        };
         _out
     };
     case "check": {
@@ -89,7 +99,7 @@ switch (_action) do {
                 };
             } forEach _dl;
             profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _keep];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
             (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["dronePhEdit", -1];
         };
         private _done = 0;

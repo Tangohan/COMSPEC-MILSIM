@@ -16,6 +16,10 @@ private _target = {
 };
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "SSE") then { ["SSE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 if (_act isEqualTo "") exitWith { call _target };
+// Dossier partagé : tenu par COMSPEC Link (addon connect). ATAK seul : message au lieu d'une erreur de script.
+if (_act in ["case", "clear"] && {isNil "comspec_overwatch_connect_fnc_sseActiveCase"}) exitWith {
+    ["WARNING", "Dossier partagé : COMSPEC Link doit être chargé", 3, 20] call comspec_atak_native_fnc_notify;
+};
 switch (_act) do {
     case "case": {
         private _ref = trim (["sseCase", ""] call comspec_atak_native_fnc_formValue);

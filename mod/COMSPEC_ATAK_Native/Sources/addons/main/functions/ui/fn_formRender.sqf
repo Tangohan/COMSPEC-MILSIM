@@ -685,7 +685,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _bar ctrlSetBackgroundColor _col;
             // Photo Athena téléchargée : logo dessous, comme la ligne "hero", si le fichier ne se charge pas.
             if (_pic isNotEqualTo "" && {(_pic select [0, 1]) isNotEqualTo "\"}) then {
-                ["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], "\z\comspec_atak_native\addons\main\data\logo_atak.paa"] call _mk;
+                ["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], "\z\comspec_atak_native\addons\main\data\logo_athena.paa"] call _mk;
             };
             if (_pic isNotEqualTo "") then { (["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], _pic] call _mk) ctrlSetTextColor [1, 1, 1, 1]; };
             private _hex = (_col select [0, 3]) apply { private _v = round ((_x max 0 min 1) * 255); (["0123456789abcdef" select [floor (_v / 16), 1], "0123456789abcdef" select [_v mod 16, 1]]) joinString "" };

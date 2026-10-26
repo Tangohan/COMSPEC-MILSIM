@@ -5,11 +5,14 @@
  * Une liste par système (France, États-Unis), groupée par catégorie et classée du grade le plus élevé au plus bas.
  * Les grades du catalogue partagé se masquent / se réaffichent (rien n'est supprimé) ; les grades créés par la
  * communauté appartiennent au système d'avancement et ont leur propre onglet (?tab=perso).
+ * Les systèmes entièrement sur mesure (SCP, Star Wars…) ont l’onglet ?tab=custom (partial _custom.php).
  */
 
 use App\Support\GradeSelectOptions;
 
-$tab = in_array($tab ?? 'fr', ['us', 'perso'], true) ? $tab : 'fr';
+$tab = in_array($tab ?? 'fr', ['us', 'perso', 'custom'], true) ? $tab : 'fr';
+$customSystems = is_array($customSystems ?? null) ? $customSystems : [];
+$customCurrent = is_array($customCurrent ?? null) ? $customCurrent : null;
 $gradesFr = is_array($gradesFr ?? null) ? $gradesFr : [];
 $gradesUs = is_array($gradesUs ?? null) ? $gradesUs : [];
 $tenantExtras = is_array($tenantExtras ?? null) ? $tenantExtras : [];
@@ -23,7 +26,7 @@ $visible = array_values(array_filter($rows, static fn (array $g): bool => !empty
 $hidden = GradeSelectOptions::sorted(array_values(array_filter($rows, static fn (array $g): bool => empty($g['is_enabled']))));
 $groups = GradeSelectOptions::groups($visible, $tab === 'us' ? 'US' : 'FR');
 $systemName = $tab === 'us' ? 'américains' : 'français';
-$communitySystem = str_starts_with($tenantSystemCode, 'US') ? 'us' : 'fr';
+$communitySystem = $customCurrent !== null ? 'custom' : (str_starts_with($tenantSystemCode, 'US') ? 'us' : 'fr');
 $renamed = static function (array $g): bool {
     return trim((string) ($g['label_long'] ?? '')) !== trim((string) ($g['catalog_label_long'] ?? $g['label_long'] ?? ''))
         || trim((string) ($g['label_short'] ?? '')) !== trim((string) ($g['catalog_label_short'] ?? $g['label_short'] ?? ''));
@@ -32,7 +35,7 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
 ?>
 <div class="bo-legacy bo-legacy--5xl grd-ref">
     <header class="grd-ref__head">
-        <p class="grd-ref__lead">Les grades proposés dans les fiches membres viennent d’un catalogue commun à toutes les communautés. Ici, vous choisissez lesquels afficher et vous pouvez renommer un grade : les autres communautés ne sont pas touchées.</p>
+        <p class="grd-ref__lead">Les grades proposés dans les fiches membres viennent d’un catalogue commun à toutes les communautés. Ici, vous choisissez lesquels afficher et vous pouvez renommer un grade : les autres communautés ne sont pas touchées. Pour un univers à part (SCP, Star Wars, Warhammer 40k…), créez vos propres grades dans l’onglet « Sur mesure ».</p>
         <nav class="grd-ref__links" aria-label="Pages liées">
             <a href="<?= $h(url('back-office/organisation/grades')) ?>">Règles d’avancement</a>
             <a href="<?= $h(url('back-office/referentiels/grades/catalogue')) ?>">Catalogue OTAN et audit</a>
@@ -40,21 +43,23 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
     </header>
 
     <nav class="grd-ref__tabs" aria-label="Systèmes de grades">
-        <?php foreach (['fr' => ['Grades français', count($gradesFr)], 'us' => ['Grades américains', count($gradesUs)], 'perso' => ['Grades personnalisés', count($extrasActive)]] as $key => [$label, $count]): ?>
+        <?php foreach (['fr' => ['Grades français', count($gradesFr)], 'us' => ['Grades américains', count($gradesUs)], 'custom' => ['Sur mesure', count($customSystems)], 'perso' => ['Grades d’avancement', count($extrasActive)]] as $key => [$label, $count]): ?>
             <a href="<?= $h($tabUrl($key)) ?>" class="<?= $tab === $key ? 'is-active' : '' ?>" <?= $tab === $key ? 'aria-current="page"' : '' ?>>
                 <?= $h($label) ?>
-                <?php if ($key === 'perso'): ?><span class="grd-ref__count"><?= (int) $count ?></span><?php endif; ?>
+                <?php if ($key === 'perso' || ($key === 'custom' && $count > 0)): ?><span class="grd-ref__count"><?= (int) $count ?></span><?php endif; ?>
                 <?php if ($communitySystem === $key): ?><span class="grd-ref__badge grd-ref__badge--accent">Système de la communauté</span><?php endif; ?>
             </a>
         <?php endforeach; ?>
     </nav>
 
-    <?php if ($tab === 'perso'): ?>
+    <?php if ($tab === 'custom'): ?>
+    <?php require __DIR__ . '/_custom.php'; ?>
+    <?php elseif ($tab === 'perso'): ?>
     <section class="grd-ref__panel grd-ref__panel--extras">
         <div class="grd-ref__panel-head grd-ref__panel-head--row">
             <div>
                 <h2>Grades d’avancement créés par la communauté</h2>
-                <p>Ces grades n’existent pas dans le catalogue. Ils servent aux règles d’avancement et aux campagnes (paliers, conditions, historique). Ils ne remplacent pas les grades français ou américains : pour changer le nom d’un grade affiché sur les fiches, utilisez « Renommer » dans ces onglets.</p>
+                <p>Ces grades n’existent pas dans le catalogue. Ils servent aux règles d’avancement et aux campagnes (paliers, conditions, historique). Ils ne remplacent pas les grades affichés sur les fiches : pour renommer un grade, utilisez « Renommer » dans les onglets français ou américain ; pour une échelle entièrement à vous (SCP, Star Wars…), utilisez l’onglet « Sur mesure ».</p>
             </div>
             <a class="grd-ref__btn" href="<?= $h(url('back-office/referentiels/grades/create') . '?tab=perso') ?>">Créer un grade d’avancement</a>
         </div>
@@ -106,7 +111,7 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
     <?php else: ?>
 
     <?php
-    $systemLabels = ['fr' => 'grades français', 'us' => 'grades américains'];
+    $systemLabels = ['fr' => 'grades français', 'us' => 'grades américains', 'custom' => 'grades sur mesure « ' . (string) ($customCurrent['label'] ?? '') . ' »'];
     $otherSystem = $communitySystem === 'fr' ? 'us' : 'fr';
     $targetSystem = $tab !== $communitySystem ? $tab : $otherSystem;
     ?>

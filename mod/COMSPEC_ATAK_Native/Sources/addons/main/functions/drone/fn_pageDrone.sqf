@@ -71,7 +71,7 @@ if ((_l get "landscape") && {!_mini}) then {
         if (_x isEqualTo _d) then { _list lbSetCurSel _i; };
     } forEach _fleet;
     if ((count _fleet) isEqualTo 0) then { private _i = _list lbAdd (("Aucun drone appairé") call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
-    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {private _ow = _x getVariable ["COMSPEC_DroneOwner", ""]; _ow in ["", getPlayerUID player] || {(allPlayers findIf { (getPlayerUID _x) isEqualTo _ow }) < 0}} };
     private _hdr2 = _list lbAdd (("À PORTÉE (MOINS DE 15 M)") call comspec_atak_native_fnc_tr);
     _list lbSetColor [_hdr2, [0.36, 0.78, 0.42, 1]];
     {
@@ -109,7 +109,7 @@ if ((_l get "landscape") && {!_mini}) then {
 
 if (isNull _d) exitWith {
     // Drones à portée de main : posés au sol à moins de 15 m, sans pilote humain.
-    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {private _ow = _x getVariable ["COMSPEC_DroneOwner", ""]; _ow in ["", getPlayerUID player] || {(allPlayers findIf { (getPlayerUID _x) isEqualTo _ow }) < 0}} };
     _rows append [
         ["title", "Drone"],
         ["text", "<t color='#8a9a93'>Posez le drone à vos pieds (depuis le sac à dos : Assembler), puis appairez-le au téléphone. La liaison porte à quelques kilomètres, beaucoup moins derrière le relief. Si elle est perdue, le drone rentre seul à son point de décollage.</t>"]
@@ -500,7 +500,7 @@ if (_view isNotEqualTo "") then {
     _bx ctrlSetBackgroundColor [0.85, 0.16, 0.14, 0.95];
     _bx ctrlSetTextColor [1, 1, 1, 1];
     _bx ctrlSetTooltip ("Fermer la caméra (le drone continue ce qu'il fait)" call comspec_atak_native_fnc_tr);
-    _bx ctrlAddEventHandler ["ButtonClick", ["cam"] call _act];
+    [_bx, ["cam"] call _act] call comspec_atak_native_fnc_clickNext;
     // PLEIN ÉCRAN sur l'image, comme dans l'app Photo (retour de TTRD, 14/10 : « la vue complète du drone via un bouton,
     // comme pour l'appareil photo ») : bord droit, à mi-hauteur (les incrustations occupent les coins). La vue du jeu
     // passe sur la caméra du drone (fn_droneAction "direct"), Échap revient au téléphone.
@@ -512,7 +512,7 @@ if (_view isNotEqualTo "") then {
         _fb ctrlSetBackgroundColor [0, 0, 0, 0.6];
         _fb ctrlSetTextColor [1, 1, 1, 1];
         _fb ctrlSetTooltip ("Vue complète de la caméra du drone en plein écran. Échap pour revenir au téléphone" call comspec_atak_native_fnc_tr);
-        _fb ctrlAddEventHandler ["ButtonClick", ["direct"] call _act];
+        [_fb, ["direct"] call _act] call comspec_atak_native_fnc_clickNext;
     };
     // Clavier sur l'image : un gestionnaire par écran du téléphone (retiré avec lui). Pas proportionnel au champ :
     // un appui tourne d'environ un huitième de l'image, quel que soit le zoom (Maj : un quart de ce pas).
@@ -582,7 +582,8 @@ if (_view isNotEqualTo "") then {
                 };
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlEnable _en;
-                _b ctrlAddEventHandler ["ButtonClick", _code];
+                // Clic différé (fn_clickNext) : la plupart de ces actions redessinent la page.
+                [_b, _code] call comspec_atak_native_fnc_clickNext;
                 _bx = _bx + _bwid;
             } forEach _btns;
             _x0 = _x0 + _span + _gw;
@@ -597,7 +598,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_DroneMenusShown", true];
 if (_leftMenus && {!_camOn}) then {
     private _ob = ["COMSPEC_RscButtonPrimary", [_ox + _bw * 0.2, _top + (_bh - _top) * 0.4, _bw * 0.6, _fs * 2.2], "OUVRIR LA CAMÉRA"] call comspec_atak_native_fnc_pageCtrl;
     _ob ctrlSetFontHeight _fs;
-    _ob ctrlAddEventHandler ["ButtonClick", ["cam"] call _act];
+    [_ob, ["cam"] call _act] call comspec_atak_native_fnc_clickNext;
 };
 
 // Onglets : libellé court et rappel de ce qu'on y trouve.
@@ -941,10 +942,10 @@ switch (_tab) do {
         _rows append [
             ["section", "Télécommande sur votre téléphone", "Scannez avec votre vrai téléphone, connecté à votre compte Athena : boutons du drone, rôles et essaim, ordres transmis par Athena en quelques secondes."],
             ["image", "\z\comspec_atak_native\addons\main\data\drone_remote_qr_ca.paa"],
-            ["text", "<t size='0.85' color='#8a9a93'>https://athena.ttrd.fr/public/telecommande-drone</t>"]
+            ["text", "<t size='0.85' color='#8a9a93'>https://athena-comspec.eu/public/telecommande-drone</t>"]
         ];
         // Ajout d'un drone : posé à moins de 15 m, libre.
-        private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+        private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {private _ow = _x getVariable ["COMSPEC_DroneOwner", ""]; _ow in ["", getPlayerUID player] || {(allPlayers findIf { (getPlayerUID _x) isEqualTo _ow }) < 0}} };
         _rows pushBack ["section", "Ajouter un drone", ["Posez un autre drone à vos pieds : le drone piloté continue seul, le nouveau est pris en main.", "Flotte complète (4 drones)."] select ((count _fleet) >= 4)];
         if ((count _near) isEqualTo 0 && {(count _fleet) < 4}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun drone libre à moins de 15 m.</t>"]; };
         if ((count _fleet) < 4) then {

@@ -671,7 +671,7 @@ private _fnc_applyNet = {
 private _hubOverwrite = !(profileNamespace getVariable ["COMSPEC_KeybindHubKFreed_v1", false]);
 if (_hubOverwrite) then {
     profileNamespace setVariable ["COMSPEC_KeybindHubKFreed_v1", true];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 [
     "COMSPEC Overwatch", "comspec_menu_hub",

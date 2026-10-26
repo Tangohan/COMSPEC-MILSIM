@@ -60,7 +60,7 @@ if (_prefix isEqualTo "OK") then {
         profileNamespace setVariable ["comspec_overwatch_saved_steam_uid", _steamUid];
         profileNamespace setVariable ["comspec_overwatch_beta_has_steam", true];
     };
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
     true
 } else {
     false

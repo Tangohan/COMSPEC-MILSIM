@@ -12,6 +12,12 @@ if (isNil "comspec_atak_native_fnc_notify") exitWith { 0 };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { 0 };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { 0 };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { 0 };
+// Miroir non voulu par la communauté (fn_pollDataFlows).
+if !((missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["phone_mirror", true]) exitWith { 0 };
+// Sans identifiant Steam (solo, hôte local _SP_PLAYER_) : Athena ne peut pas ranger les notifications sous un joueur et
+// répondait 400 steam_required toutes les 60 s (signalements automatiques du mod).
+private _uid = getPlayerUID player;
+if (_uid isEqualTo "" || {_uid isEqualTo "_SP_PLAYER_"}) exitWith { 0 };
 
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _hist = _s getOrDefault ["notifHistory", []];

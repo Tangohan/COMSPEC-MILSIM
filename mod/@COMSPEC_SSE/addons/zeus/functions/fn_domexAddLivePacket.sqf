@@ -18,7 +18,8 @@ _seq = _seq + 1;
 _entity setVariable ["comspec_sse_domex_liveSeq", _seq, true];
 
 if ((_packet getOrDefault ["packet_uid", ""]) isEqualTo "") then {
-    _packet set ["packet_uid", format ["%1-L%2", _nodeId, _seq]];
+    // Poste Zeus : le numéro de poste distingue deux curateurs qui tireraient le même numéro au même moment.
+    _packet set ["packet_uid", [format ["%1-L%2-C%3", _nodeId, _seq, clientOwner], format ["%1-L%2", _nodeId, _seq]] select isServer];
 };
 if ((_packet getOrDefault ["origin", ""]) isEqualTo "") then {
     _packet set ["origin", "zeus_live"];
@@ -31,10 +32,15 @@ if ((_packet getOrDefault ["reveal", ""]) isEqualTo "" && {(_packet getOrDefault
     _packet set ["reveal_after", "immediat"];
 };
 
-private _live = _entity getVariable ["comspec_sse_domex_livePackets", []];
-if !(_live isEqualType []) then { _live = []; };
-_live pushBack _packet;
-_entity setVariable ["comspec_sse_domex_livePackets", _live, true];
+// Ajout fait par le serveur (zeus/XEH_postInit) : deux curateurs n'écrasent plus la liste l'un de l'autre.
+// Copie locale tout de suite (non diffusée) pour l'envoi au laboratoire ci-dessous ; le serveur rediffuse la liste.
+if (!isServer) then {
+    private _live = +(_entity getVariable ["comspec_sse_domex_livePackets", []]);
+    if !(_live isEqualType []) then { _live = []; };
+    _live pushBack _packet;
+    _entity setVariable ["comspec_sse_domex_livePackets", _live];
+};
+["comspec_sse_domexLiveAppend", [_entity, _packet]] call CBA_fnc_serverEvent;
 
 private _env = createHashMapFromArray [
     ["event_type", "DOMEX_PACKET"],

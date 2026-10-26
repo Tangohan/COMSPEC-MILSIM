@@ -50,6 +50,9 @@ _rows pushBack ["section", "Mon groupe", format ["%1 membre(s)", count units _gr
     _rows pushBack ["info", format ["%1%2", name _x, ["", " ★"] select (leader _grp isEqualTo _x)], format ["%1  <t color='%2'>%3</t>", _life, _grey, _where]];
 } forEach ((units _grp) select [0, 12]);
 
+// Mon indicatif (fn_callsignAction) : choisi ici, gardé hors ligne, envoyé à Athena.
+_rows append (["rows"] call comspec_atak_native_fnc_callsignAction);
+
 // Contacts les plus proches.
 private _near = (_hostiles apply { private _p = _x call _posOf; [if ((count _p) >= 2) then { player distance2D _p } else { 1e9 }, _x] }) select { (_x select 0) < 1e9 };
 _near sort true;
