@@ -74,11 +74,14 @@ missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
     if ((count _l) > 300) then { _l deleteAt 0; };
     COMSPEC_ATAK_SrvSeen set [_side, _l];
 }] call CBA_fnc_addEventHandler;
+// Mode local et poste TOC : messages du poste et ordres émis sans Athena, rejoués aux arrivants.
+["comspec_atak_native_tocMsg", { [_this param [4, ""], "comspec_atak_native_tocMsg", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_localOrder", { [_this param [1, ""], "comspec_atak_native_localOrder", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 // Événements de camp (logistique, MEDEVAC, BDA, comptes rendus, alertes) : relayés par le serveur aux seuls joueurs du camp.
 // CBA_fnc_globalEvent les envoyait aussi au camp adverse, qui les jetait. Le serveur les reçoit comme avant (journal ci-dessus).
 ["comspec_atak_native_sideEvent", {
     params [["_ev", ""], ["_args", []], ["_side", ""]];
-    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert", "comspec_atak_native_orderAck", "comspec_atak_native_reportRcpt"]) exitWith {};
+    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert", "comspec_atak_native_orderAck", "comspec_atak_native_reportRcpt", "comspec_atak_native_tocMsg", "comspec_atak_native_localOrder"]) exitWith {};
     [_ev, _args] call CBA_fnc_localEvent;
     private _to = allPlayers select { !local _x && {(str side group _x) isEqualTo _side} };
     // Compte rendu : auteur retenu pour ses accusés ; « MON GROUPE » ne part qu'aux joueurs du groupe (le client filtre aussi).

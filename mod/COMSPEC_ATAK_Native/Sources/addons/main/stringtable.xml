@@ -1002,5 +1002,20 @@
             <English>Run on the server when a download finishes. params ["_object", "_player", "_files"]. Also: CBA event comspec_atak_native_dataDownloaded.</English>
             <French>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCLAPTOP">
+            <Original>PC portable de TOC (ATAK)</Original>
+            <English>TOC laptop (ATAK)</English>
+            <French>PC portable de TOC (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE">
+            <Original>Camp du poste TOC</Original>
+            <English>TOC post side</English>
+            <French>Camp du poste TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE_TIP">
+            <Original>WEST, EAST, GUER ou CIV : seul ce camp peut utiliser ce PC. Vide : tous les camps.</Original>
+            <English>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</English>
+            <French>WEST, EAST, GUER ou CIV : seul ce camp peut utiliser ce PC. Vide : tous les camps.</French>
+        </Key>
     </Package>
 </Project>

@@ -47,6 +47,26 @@ Identités livrées :
 - Logique : `functions/dock` (`fn_dockServer` état, recharge et mémoire serveur ; `fn_dockVisual` textures ; `fn_dockClient` et `fn_dockMenu` actions). Mémoire : `profileNamespace` du serveur, `COMSPEC_ATAK_DockDb_v1`.
 - Modèle `data/charging_dock.p3d` : `tools/model_charging_dock.py` (Blender, Arma 3 Object Builder ; reprend le maillage du téléphone du gilet), images 2D par `tools/gen_dock_assets.py`. Sélections `phone1..10`, `screen1..10`, `led1..10`.
 
+## Mode full local et PC portable de TOC
+
+- **Mode full local** : réglage serveur **COMSPEC > ATAK · Mode local et poste TOC > Mode full local (sans Athena)**. Personne ne se connecte à Athena, la question du service Athéna disparaît (`fn_athenaMode` natif et connect renvoient `off`). Sans ce réglage, un joueur qui répond Non au service Athéna est dans le même cas, pour lui seul.
+- **Configuration locale** (`fn_localCfg`) : `Documents\Arma 3\COMSPEC_Local\config.json`, créé au premier lancement, modifiable à la main (commentaires `//` acceptés), copie dans le profil Arma (sans la DLL native à jour, ou si le fichier est illisible). DLL native : commandes `LocalBegin / LocalAppend / LocalCommit / LocalGet / LocalFolder / LocalOpenFolder` (`COMSPECATAKNativeExtension/LocalConfig.cs`), ancien fichier gardé en `config.json.bak`.
+  ```json
+  {
+    "callsign": "Viper 2-1",
+    "phone": { "plan": "FR", "numbers": [
+      { "number": "06 12 34 56 78", "type": "mobile", "label": "Perso", "primary": true, "shared": true },
+      { "number": "+8816 1234 5678", "type": "satellite", "label": "Iridium", "primary": false, "shared": false }
+    ] },
+    "contacts": [ { "name": "TOC Alpha", "number": "01 45 67 89 10", "type": "landline", "note": "FOB nord" } ],
+    "toc": { "name": "TOC", "callsign": "OVERWATCH" }
+  }
+  ```
+  Types : `mobile`, `satellite`, `landline`, `radio_ip`, `secure`, `pager`, `emergency`. Plans (format des numéros générés) : `FR`, `US`, `UK`, `DE`, `BE`, `RU`, `ES`. Au plus 8 numéros et 100 contacts.
+- **App Numéros** (`fn_pageNumbers`) : mes numéros et leurs types (principal, visible ou privé, GÉNÉRER au format du plan), annuaire des joueurs du camp (SMS, + CARNET), carnet, onglet FICHIER (ouvrir le dossier, recharger, enregistrer). En ATAK local, le numéro principal remplace le numéro calculé (`fn_phoneIdent`, variable publique `COMSPEC_ATAK_LocalNum`) ; les numéros visibles sont publiés dans `COMSPEC_ATAK_Numbers` `[[numéro, type, libellé]...]`.
+- **PC portable de TOC** (`functions/toc`) : objet `COMSPEC_ATAK_TocLaptop` (Eden > Objets > Électronique, Zeus), attribut Eden « Camp du poste TOC » (vide = tous). Tout objet peut servir de poste : `this setVariable ["COMSPEC_ATAK_Toc", true, true];` (camp : `this setVariable ["COMSPEC_ATAK_TocSide", "WEST", true];`). Réglage « Tous les ordinateurs portables servent de PC de TOC » pour les ordinateurs du jeu. À moins de 2,5 m, à pied : ATAK du poste sur la tablette (sans téléphone), action ACE / molette **Poste TOC (ATAK)**, app **Poste TOC** : message à tout le camp (ROUTINE / URGENT / FLASH, dans Messages en « TOC · indicatif », les réponses arrivent à l'opérateur assis au poste), ordres aux groupes, situation des groupes, ordres émis et leurs réponses, derniers comptes rendus.
+- **Ordres sans Athena** (`fn_orderLocal`) : sans COMSPEC Link, en ATAK local ou au poste TOC, NOUVEL ORDRE (app Tâches) envoie l'ordre au camp par le serveur (rejoué aux arrivants) ; REÇU / EN COURS / TERMINÉ comme avant (`fn_orderAck`). Chef de groupe, joueur seul, rôle chef / commandant ou opérateur du poste.
+
 ## Données à extraire (mission makers)
 
 - **Eden** : module **COMSPEC — ATAK · Données > Données à extraire (câble ATAK)** synchronisé à un ou plusieurs objets (sans objet : le support choisi est créé à l'emplacement du module). **Ajouter un fichier** pour compléter.
