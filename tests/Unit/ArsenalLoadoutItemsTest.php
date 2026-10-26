@@ -69,6 +69,22 @@ final class ArsenalLoadoutItemsTest extends TestCase
         self::assertContains('Tenue', array_column(ArsenalLoadoutItems::grouped('["Kit A",' . $inner . ']'), 'title'));
     }
 
+    public function testPayloadWithQuotesDoubledByCallExtensionIsRead(): void
+    {
+        // SyncWardrobe : Arma passe l’argument en str, chaque guillemet du str du loadout arrive doublé.
+        $inner = '[["arifle_MX_F","","","",["30Rnd_65x39_caseless_mag",30],[],""],[],[],["U_B_CombatUniform_mcam",[]],[],[],"H_HelmetB","",[],["ItemMap","","","","",""]]';
+        $sent = '[' . $inner . ',[["ace_insignia","Say ""hi"""]]]';
+        $stored = str_replace('"', '""', $sent);
+
+        $titles = array_column(ArsenalLoadoutItems::grouped($stored), 'title');
+        self::assertContains('Arme', $titles);
+        self::assertContains('Casque', $titles);
+        self::assertContains('helmet', ArsenalLoadoutItems::presentKinds($stored));
+        self::assertSame($inner, ArsenalLoadoutItems::aceExport($stored));
+        self::assertSame($inner, ArsenalLoadoutItems::aceExport('"' . $stored . '"'));
+        self::assertSame(['Say "hi"'], array_slice(ArsenalLoadoutItems::decode($stored)[1][0] ?? [], 1));
+    }
+
     public function testUnknownShapeStillListsItems(): void
     {
         $sections = ArsenalLoadoutItems::grouped('[["arifle_MX_F","H_HelmetB"]]');
