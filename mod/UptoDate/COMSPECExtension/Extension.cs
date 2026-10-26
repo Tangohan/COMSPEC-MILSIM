@@ -1594,7 +1594,9 @@ public static partial class Extension
     /// <summary>
     /// SEC-001 : envoi de file abandonné parce que son hôte n'est pas Athena. Compté, et signalé au journal de
     /// liaison du téléphone (rappel PostError, code 0 = avertissement) au plus une fois par 30 s, avec le chemin
-    /// seul : jamais l'hôte refusé ni le corps.
+    /// seul : jamais l'hôte refusé ni le corps. Le 2ᵉ champ est un libellé fixe et le chemin passe dans le détail :
+    /// fn_extensionCallback.sqf réagit au 2ᵉ champ (« terrain » arrête le relevé, « weather » renvoie la météo,
+    /// « video-feeds » suspend les flux), ce qu'un abandon ne doit jamais déclencher.
     /// </summary>
     private static void NoteUntrustedQueueDrop(string url)
     {
@@ -1612,7 +1614,8 @@ public static partial class Extension
             if (safe.Length >= 80) break;
             if (char.IsAsciiLetterOrDigit(ch) || ch is '/' or '-' or '_' or '.') safe.Append(ch);
         }
-        InvokeCallback("PostError", "0|" + safe + "|0|hôte non-Athena, envoi abandonné ("
+        InvokeCallback("PostError", "0|file-hors-athena|0|" + (safe.Length > 0 ? safe + " : " : "")
+            + "hôte non-Athena, envoi abandonné ("
             + total.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")");
     }
 
@@ -2046,11 +2049,16 @@ public static partial class Extension
                     var u = doc.RootElement.TryGetProperty("u", out var up) ? up.GetString() ?? "" : "";
                     var b = doc.RootElement.TryGetProperty("b", out var bp) ? bp.GetString() ?? "" : "";
                     // SEC-001 : position (toujours une URL absolue) hors Athena jamais rechargée ; TrySendQueuedPost
-                    // l'abandonnerait de toute façon.
+                    // l'abandonnerait de toute façon. Comptée avec les autres abandons (signalés au premier envoi
+                    // de file abandonné : aucun rappel ici, le SQF n'est peut-être pas encore prêt).
                     if (u.Length > 0 && IsSecretSafeUri(u))
                     {
                         lock (CoalescedPositionLock)
                             _coalescedPosition ??= (u, b);
+                    }
+                    else if (u.Length > 0)
+                    {
+                        System.Threading.Interlocked.Increment(ref _untrustedQueueDropped);
                     }
                 }
                 catch { /* position illisible */ }
