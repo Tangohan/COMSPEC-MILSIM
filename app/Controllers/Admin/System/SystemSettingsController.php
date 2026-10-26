@@ -4,15 +4,24 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\System;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\Session;
 use App\Repositories\PlatformSettingsRepository;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 use App\Services\Moderation\ContentModerationConfig;
+use App\Support\GameClientVersionGate;
+use App\Support\MaintenanceGuard;
 
 class SystemSettingsController
 {
     /** @var array<string, string> */
-    private const PLATFORM_SETTING_LABELS = [];
+    private const PLATFORM_SETTING_LABELS = [
+        GameClientVersionGate::SETTING_MIN_LINK_VERSION => 'Version minimale des DLL du jeu (COMSPEC Link / ATAK natif)',
+        GameClientVersionGate::SETTING_MIN_ATAK_VERSION => 'Version COMSPEC ATAK citée aux joueurs refusés',
+    ];
 
     public function __construct(
         private PlatformSettingsRepository $platformSettingsRepository
@@ -29,7 +38,101 @@ class SystemSettingsController
             'adminSettingsEnvLabel' => app_environment_label_fr($appEnvRaw),
             'adminSettingsSections' => $this->buildSections(),
             'adminSettingsPlatformRows' => $this->buildPlatformRows(),
+            'adminGameClientGate' => $this->gameClientGateState(),
         ]);
+    }
+
+    /**
+     * Plancher de version des DLL du jeu (SEC-001) : réglage, abaissement ou retrait en un clic (bouton « clear »).
+     * Même effet que tools/game-client-gate.php : réglages plateforme, cache du site retiré, journal d'audit.
+     */
+    public function saveGameClientGate(Request $request, array $params = []): Response
+    {
+        $back = url('admin/settings') . '#version-dll';
+        if (!Csrf::validate($request->inputString('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $clear = $request->inputString('clear') === '1';
+        $link = $clear ? '' : GameClientVersionGate::normalizeFloor($request->inputString('min_link_version'));
+        $atak = $clear ? '' : GameClientVersionGate::normalizeFloor($request->inputString('min_atak_version'));
+        if ($link === null || $atak === null) {
+            Session::flash('error', 'Version illisible : saisissez un numéro comme 2.0.96 (DLL) ou 2.4.1 (COMSPEC ATAK), ou laissez le champ vide.');
+
+            return Response::redirect($back);
+        }
+
+        $repo = $this->platformSettingsRepository;
+        $before = [
+            GameClientVersionGate::SETTING_MIN_LINK_VERSION => $repo->get(GameClientVersionGate::SETTING_MIN_LINK_VERSION, ''),
+            GameClientVersionGate::SETTING_MIN_ATAK_VERSION => $repo->get(GameClientVersionGate::SETTING_MIN_ATAK_VERSION, ''),
+        ];
+        $after = [
+            GameClientVersionGate::SETTING_MIN_LINK_VERSION => $link,
+            GameClientVersionGate::SETTING_MIN_ATAK_VERSION => $atak,
+        ];
+        try {
+            if (!$repo->tableExists()) {
+                throw new \RuntimeException('platform_settings absente');
+            }
+            $repo->setMany($after);
+        } catch (\Throwable) {
+            Session::flash('error', 'Le réglage n’a pas pu être enregistré (table platform_settings absente ?).');
+
+            return Response::redirect($back);
+        }
+        foreach ($after as $key => $value) {
+            if ($repo->get($key, "\0") !== $value) {
+                Session::flash('error', 'Le réglage n’a pas été relu à l’identique en base : vérifiez avec tools/game-client-gate.php status.');
+
+                return Response::redirect($back);
+            }
+        }
+        GameClientVersionGate::forgetCache();
+
+        try {
+            (new AuditService())->log(
+                AuditAction::PLATFORM_GAME_CLIENT_FLOOR_UPDATED,
+                null,
+                Session::get('user_id') ? (int) Session::get('user_id') : null,
+                'platform_setting',
+                null,
+                (string) json_encode($before, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                (string) json_encode($after, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                MaintenanceGuard::resolveClientIp()
+            );
+        } catch (\Throwable) {
+        }
+
+        Session::flash(
+            'success',
+            $link === ''
+                ? 'Blocage des anciennes DLL désactivé : toutes les versions du mod sont acceptées (effet en 30 s au plus).'
+                : 'Version minimale enregistrée : les DLL antérieures à ' . $link . ' sont refusées et invitées à se mettre à jour (effet en 30 s au plus).'
+        );
+
+        return Response::redirect($back);
+    }
+
+    /**
+     * @return array{link: string, atak: string, link_raw: string, atak_raw: string, active: bool, message: string}
+     */
+    private function gameClientGateState(): array
+    {
+        $linkRaw = $this->platformSettingsRepository->get(GameClientVersionGate::SETTING_MIN_LINK_VERSION, '');
+        $atakRaw = $this->platformSettingsRepository->get(GameClientVersionGate::SETTING_MIN_ATAK_VERSION, '');
+        $link = GameClientVersionGate::normalizeFloor($linkRaw) ?? '';
+        $atak = GameClientVersionGate::normalizeFloor($atakRaw) ?? '';
+
+        return [
+            'link' => $link,
+            'atak' => $atak,
+            'link_raw' => $linkRaw,
+            'atak_raw' => $atakRaw,
+            'active' => $link !== '',
+            'message' => $link !== '' ? GameClientVersionGate::messages($link, $atak)['en'] : '',
+        ];
     }
 
     /**

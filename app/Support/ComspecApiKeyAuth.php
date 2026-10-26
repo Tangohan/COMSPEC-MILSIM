@@ -28,6 +28,14 @@ final class ComspecApiKeyAuth
     /** @var bool Clé plateforme acceptée pour la requête en cours. */
     private static bool $matchedPlatformKey = false;
 
+    /**
+     * Vérification de la clé impossible pour la requête en cours (base indisponible) : la clé n’a pas pu
+     * être comparée, ce n’est pas une clé fausse. enforceForTacticalPath répond alors 503
+     * database_unavailable (passager pour la DLL) au lieu du 401 « unauthorized » qu’elle prend pour un
+     * refus définitif (NET-001).
+     */
+    private static bool $verificationUnavailable = false;
+
     /** @var string|null php://input lu une fois (middleware + contrôleurs). */
     private static ?string $rawJsonCache = null;
 
@@ -41,7 +49,7 @@ final class ComspecApiKeyAuth
      * Résultat de requestPresentsValidKey pour la requête en cours (middleware puis authArma) :
      * empreinte des candidats + état matched* obtenu. Évite de revalider la clé deux fois.
      *
-     * @var array{key: string, ok: bool, tenant: ?int, steam: ?string, user: ?int, platform: bool}|null
+     * @var array{key: string, ok: bool, unavailable: bool, tenant: ?int, steam: ?string, user: ?int, platform: bool}|null
      */
     private static ?array $resolvedKeyCache = null;
 
@@ -93,6 +101,12 @@ final class ComspecApiKeyAuth
     public static function matchedPlatformKey(): bool
     {
         return self::$matchedPlatformKey;
+    }
+
+    /** Dernière vérification refusée faute de base (clé non comparée), et non pour une clé fausse. */
+    public static function verificationUnavailable(): bool
+    {
+        return self::$verificationUnavailable;
     }
 
     /**
@@ -263,6 +277,7 @@ final class ComspecApiKeyAuth
         self::$matchedSteamId = null;
         self::$matchedUserId = null;
         self::$matchedPlatformKey = false;
+        self::$verificationUnavailable = false;
         self::$rawJsonCache = null;
         self::$jsonObjectCache = null;
         self::$tacticalConfigCache = null;
@@ -275,6 +290,7 @@ final class ComspecApiKeyAuth
         self::$matchedSteamId = null;
         self::$matchedUserId = null;
         self::$matchedPlatformKey = false;
+        self::$verificationUnavailable = false;
         $candidates = self::presentedAuthCandidates();
         if ($candidates === []) {
             return false;
@@ -290,13 +306,19 @@ final class ComspecApiKeyAuth
             self::$matchedSteamId = $memo['steam'];
             self::$matchedUserId = $memo['user'];
             self::$matchedPlatformKey = $memo['platform'];
+            self::$verificationUnavailable = $memo['unavailable'];
 
             return $memo['ok'];
         }
         $ok = self::resolvePresentedCandidates($candidates, $secret);
+        // Clé acceptée par un autre candidat : une erreur de base sur les précédents ne compte plus.
+        if ($ok) {
+            self::$verificationUnavailable = false;
+        }
         self::$resolvedKeyCache = [
             'key' => $memoKey,
             'ok' => $ok,
+            'unavailable' => self::$verificationUnavailable,
             'tenant' => self::$matchedTenantId,
             'steam' => self::$matchedSteamId,
             'user' => self::$matchedUserId,
@@ -337,7 +359,9 @@ final class ComspecApiKeyAuth
                     return true;
                 }
             } catch (\Throwable) {
-                // Ignore DB errors — try next candidate.
+                // Base indisponible : clé non vérifiée, ce n’est pas une clé fausse. On essaie les autres
+                // candidats ; si aucun n’est accepté, la garde répond 503 et non 401 (NET-001).
+                self::$verificationUnavailable = true;
             }
 
             if (!$looksLikeGameToken && self::acceptGameSessionToken($presented)) {
@@ -395,6 +419,12 @@ final class ComspecApiKeyAuth
         // Dev local : pas de clé plateforme et rien présenté → ouvert.
         if (!$strict && $platform === '' && $presented === '') {
             return null;
+        }
+
+        // Base indisponible pendant la vérification : réponse passagère (503 + Retry-After), sans journal de
+        // refus ni écriture en base. Une clé absente ou fausse garde le 401 ci-dessous (NET-001).
+        if (self::$verificationUnavailable) {
+            return self::json503DatabaseUnavailable();
         }
 
         self::logAuthFailure($path, $presented !== '' ? 'invalid_key' : 'missing_key');
@@ -472,6 +502,9 @@ final class ComspecApiKeyAuth
         try {
             $row = (new \App\Repositories\AthenaAccountRepository())->findSessionByAccessHash(hash('sha256', $presented));
         } catch (\Throwable) {
+            // Base indisponible : jeton non vérifié (voir $verificationUnavailable).
+            self::$verificationUnavailable = true;
+
             return false;
         }
         if ($row === null) {
@@ -499,6 +532,18 @@ final class ComspecApiKeyAuth
             'error' => 'unauthorized',
             'message' => 'Clé d’accès refusée. Vérifiez la clé fournie par votre administrateur (configuration ATAK).',
         ], 401);
+    }
+
+    /**
+     * Même contrat que les autres réponses « base indisponible » du site (TenantTypeModuleAccessMiddleware).
+     * Le message évite les mots que la DLL lit comme un refus (« unauthorized », « maintenance »…).
+     */
+    private static function json503DatabaseUnavailable(): Response
+    {
+        return Response::json([
+            'error' => 'database_unavailable',
+            'message' => 'Vérification de la clé d’accès momentanément impossible. Réessayez dans quelques secondes.',
+        ], 503)->header('Retry-After', '30');
     }
 
     private static function logAuthFailure(string $path, string $reason): void

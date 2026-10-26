@@ -1037,6 +1037,8 @@ return function (Router $router) {
     $router->get('/admin/roles/{id}/edit', [SystemRoleController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/roles/{id}/update', [SystemRoleController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/settings', [SystemSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Plancher de version des DLL du jeu (SEC-001) : réglage, abaissement ou retrait en un clic.
+    $router->post('/admin/settings/version-dll', [SystemSettingsController::class, 'saveGameClientGate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/annuaire', [\App\Controllers\Admin\System\SystemRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/epingler', [\App\Controllers\Admin\System\SystemRegistryController::class, 'pin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
