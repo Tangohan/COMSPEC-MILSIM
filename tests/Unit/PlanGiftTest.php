@@ -128,6 +128,6 @@ final class PlanGiftTest extends TestCase
         self::assertStringContainsString("'/compte/formule-offerte/{id}/vu'", $routes);
         self::assertStringContainsString("'admin/formules-offertes'", (string) file_get_contents($root . '/views/partials/platform_admin_sidebar.php'));
         self::assertStringContainsString('plan_gift_notice_modal.php', (string) file_get_contents($root . '/views/layout/main.php'));
-        self::assertStringContainsString('plan_gift_migration.php', (string) file_get_contents($root . '/run-migrations.php'));
+        self::assertStringContainsString('plan_gift_migration.php', (string) \Tests\Support\MigrationPipelineSource::read($root));
     }
 }

@@ -653,6 +653,12 @@ final class ComspecMigrationRunner
         return $ok;
     }
 
+    /** Nombre d’échecs notés jusqu’ici (étapes PHP et fichiers SQL) : sert au suivi par étape. */
+    public function failureCount(): int
+    {
+        return count($this->phpFailures) + count($this->sql['failed']);
+    }
+
     public function hasFailures(): bool
     {
         return $this->sql['failed'] !== [] || $this->phpFailures !== [];

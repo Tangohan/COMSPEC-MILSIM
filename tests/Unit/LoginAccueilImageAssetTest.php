@@ -64,7 +64,7 @@ final class LoginAccueilImageAssetTest extends TestCase
         $probe = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateProbes.php');
         $seed = (string) file_get_contents($root . '/bootstrap/configuration_updates_migration.php');
         $bootstrap = (string) file_get_contents($root . '/app/Services/Community/TenantBootstrapService.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         self::assertStringContainsString('LOGIN_ACCUEIL_IMAGES_V1', $catalog);
         self::assertStringContainsString('hasLoginAccueilImage', $probe);
         self::assertStringContainsString('LOGIN_ACCUEIL_IMAGES_V1', $seed);

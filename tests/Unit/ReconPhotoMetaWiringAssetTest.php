@@ -53,7 +53,7 @@ final class ReconPhotoMetaWiringAssetTest extends TestCase
         foreach (['title', 'description', 'is_sse', 'sse_case_ref', 'is_confidential', 'photo_source', 'drone_name'] as $col) {
             self::assertStringContainsString("'{$col}' =>", $mig);
         }
-        self::assertStringContainsString("'atak_recon_images_photo_meta_migration.php'", $this->read('run-migrations.php'));
+        self::assertStringContainsString("'atak_recon_images_photo_meta_migration.php'", \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2)));
         self::assertStringContainsString('atak_recon_images_photo_meta_migration.php', $this->read('app/Repositories/ReconImageRepository.php'));
 
         $ctrl = $this->read('app/Controllers/Api/AtakApiController.php');

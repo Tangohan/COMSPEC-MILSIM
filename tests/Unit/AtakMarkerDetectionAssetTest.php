@@ -32,7 +32,7 @@ final class AtakMarkerDetectionAssetTest extends TestCase
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         $catalog = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');
         $seed = (string) file_get_contents($root . '/bootstrap/configuration_updates_migration.php');
-        $migrate = (string) file_get_contents($root . '/run-migrations.php');
+        $migrate = (string) \Tests\Support\MigrationPipelineSource::read($root);
 
         self::assertStringContainsString("back-office/atak/detection-marqueurs", $routes);
         self::assertStringContainsString('AtakMarkerDetectionAdminController', $routes);
