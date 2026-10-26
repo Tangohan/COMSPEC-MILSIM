@@ -41,7 +41,10 @@ private _hubOwns = isMultiplayer && {missionNamespace getVariable ["COMSPEC_Serv
     // Le renvoyer depuis chaque client donnait N+1 envois attribués au mauvais joueur (comme les EH Marker*).
     private _foreign = false;
     if (isMultiplayer) then {
-        private _hasLocalMeta = !isNil { missionNamespace getVariable (format ["COMSPEC_UserMkMeta_%1", _name]) };
+        // Seule la fiche posée par l'EH MarkerCreated local compte : userMapMarkerMeta en écrit une (5e champ true)
+        // pour tout repère envoyé, ce qui faisait passer un repère Zeus / mission pour local.
+        private _mkMeta = missionNamespace getVariable [format ["COMSPEC_UserMkMeta_%1", _name], []];
+        private _hasLocalMeta = (_mkMeta isEqualType []) && {(count _mkMeta) >= 1} && {!((_mkMeta param [4, false]) isEqualTo true)};
         if (((_name find "#") >= 0 || {(_name find "__H__") >= 0}) && {!isNil "comspec_overwatch_connect_fnc_userMapMarkerMeta"}) then {
             private _ownId = ([_name] call comspec_overwatch_connect_fnc_userMapMarkerMeta) getOrDefault ["owner_id", -1];
             if (_ownId isEqualType 0 && {_ownId >= 0} && {_ownId isNotEqualTo clientOwner}) then { _foreign = true; };

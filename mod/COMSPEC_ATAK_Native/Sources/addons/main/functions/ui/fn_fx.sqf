@@ -136,13 +136,24 @@ switch (_act) do {
         true
     };
     case "front": {
-        // Effets d'écran (fêlures, filtre de nuit, écran éteint) recréés pour repasser devant les calques ajoutés.
-        {
-            if (_x isEqualType controlNull) then { ctrlDelete _x; } else {
-                if (_x isEqualType []) then { { if (_x isEqualType controlNull) then { ctrlDelete _x; }; } forEach _x; };
-            };
-        } forEach (uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]);
+        // Effets d'écran (fêlures, filtre de nuit, écran éteint), surface du verre, parasites et calque Zeus (verrou à
+        // distance et son bouton bloquant) recréés pour repasser devant les calques ajoutés (volet, verrouillage) :
+        // même liste que fn_overlayRaise, sinon les tuiles du volet restaient cliquables sur le verrou Zeus.
+        private _kill = {
+            {
+                if (_x isEqualType controlNull) then { ctrlDelete _x; } else {
+                    if (_x isEqualType []) then { _x call _kill; };
+                };
+            } forEach _this;
+        };
+        (uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _kill;
+        (((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _kill;
+        (((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _kill;
+        (uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _kill;
         uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
+        uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
+        uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
+        uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
         [] call comspec_atak_native_fnc_deviceOverlay;
         true
     };

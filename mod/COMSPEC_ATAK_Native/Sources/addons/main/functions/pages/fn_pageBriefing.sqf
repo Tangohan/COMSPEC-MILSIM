@@ -315,6 +315,8 @@ if (_total < 1 || {_path isEqualTo ""}) then {
 };
 
 // Titre, source et position
+// Titre de diapositive, présentateur et présents passent par parseText : échappés (« <CS> Bob »).
+private _escTxt = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _title = if (_total > 0) then { _titles param [_idx, ""] } else { "" };
 private _srcLabel = createHashMapFromArray [["GOOGLE", "Google Slides · synchronisé"], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
 // Opération Athena rattachée à la diapositive (vide : commune à toutes les opérations).
@@ -324,7 +326,7 @@ if (_op isNotEqualTo "") then {
     _srcLabel = format ["<t color='#7fb6e6'>Op. %1</t>", _op];
 };
 private _info = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2, _vw, _fs * 1.6]] call comspec_atak_native_fnc_pageCtrl;
-_info ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", _title, _srcLabel, [_idx + 1, 0] select (_total < 1), _total]) call comspec_atak_native_fnc_tr);
+_info ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", [_title] call _escTxt, _srcLabel, [_idx + 1, 0] select (_total < 1), _total]) call comspec_atak_native_fnc_tr);
 
 // Notes de la diapositive (texte saisi sur Athena).
 if (_notesH > 0) then {
@@ -337,8 +339,8 @@ if (_notesH > 0) then {
 if (_liveH > 0) then {
     private _ly = _bh - _btnH - _pad - _liveH;
     private _txt = switch (true) do {
-        case (_iPresent): { private _a = ["attendees"] call comspec_atak_native_fnc_briefingLive; format ["<t color='#5cc76b' font='COMSPEC_BarlowBold'>● VOUS PRÉSENTEZ</t>  <t size='0.85' color='#8a9a93'>%1 présent(s)%2</t>", count _a, ["", format [" : %1", ((_a select [0, 6]) apply { name _x }) joinString ", "]] select ((count _a) > 0)] };
-        case ((count _live) > 0): { format ["<t color='#f2ab33' font='COMSPEC_BarlowBold'>● %1 présente</t>  <t size='0.85' color='#8a9a93'>%2</t>", _live select 1, ["lecture libre", "vous suivez"] select _follow] };
+        case (_iPresent): { private _a = ["attendees"] call comspec_atak_native_fnc_briefingLive; format ["<t color='#5cc76b' font='COMSPEC_BarlowBold'>● VOUS PRÉSENTEZ</t>  <t size='0.85' color='#8a9a93'>%1 présent(s)%2</t>", count _a, ["", format [" : %1", ((_a select [0, 6]) apply { [name _x] call _escTxt }) joinString ", "]] select ((count _a) > 0)] };
+        case ((count _live) > 0): { format ["<t color='#f2ab33' font='COMSPEC_BarlowBold'>● %1 présente</t>  <t size='0.85' color='#8a9a93'>%2</t>", [_live select 1] call _escTxt, ["lecture libre", "vous suivez"] select _follow] };
         default { "<t size='0.85' color='#8a9a93'>Personne ne présente. PRÉSENTER fait suivre vos diapositives aux téléphones de votre camp.</t>" };
     };
     private _lt = ["COMSPEC_RscStructuredText", [_vx, _ly, _vw * 0.66, _liveH]] call comspec_atak_native_fnc_pageCtrl;

@@ -474,8 +474,14 @@ private _fnc_addPoll = {
     _seen = _seen apply { [_x] call _fnc_oidText };
     // Ordres écartés par receiveOrder (pas pour ce joueur, émis par lui) : sans cette liste, le même ordre
     // était repris toutes les 5 s et bloquait ceux placés derrière lui.
-    private _skip = missionNamespace getVariable ["COMSPEC_OrdersFallbackSkip", []];
-    if (!(_skip isEqualType [])) then { _skip = []; };
+    // id -> diag_tickTime : un ordre écarté est repris après 45 s (PHONE_GEOLOC en échec, ordre qui concerne
+    // le joueur une fois l'indicatif / le groupe synchronisé) au lieu d'être écarté pour toute la partie.
+    private _skip = missionNamespace getVariable ["COMSPEC_OrdersFallbackSkip", createHashMap];
+    if (!(_skip isEqualType createHashMap)) then { _skip = createHashMap; };
+    private _nowSkip = diag_tickTime;
+    {
+        if ((_nowSkip - (_skip get _x)) >= 45) then { _skip deleteAt _x; };
+    } forEach (keys _skip);
     private _pending = _orders select {
         (_x isEqualType createHashMap)
         && {
@@ -489,10 +495,9 @@ private _fnc_addPoll = {
     [_next] call comspec_overwatch_connect_fnc_receiveOrder;
     private _seenAfter = (missionNamespace getVariable ["COMSPEC_OrdersSeen", []]) apply { [_x] call _fnc_oidText };
     if (!(_nextId in _seenAfter)) then {
-        _skip pushBack _nextId;
-        if ((count _skip) > 80) then { _skip deleteRange [0, (count _skip) - 80]; };
-        missionNamespace setVariable ["COMSPEC_OrdersFallbackSkip", _skip, false];
+        _skip set [_nextId, _nowSkip];
     };
+    missionNamespace setVariable ["COMSPEC_OrdersFallbackSkip", _skip, false];
 }, 5, []] call CBA_fnc_addPerFrameHandler;
 
 [{

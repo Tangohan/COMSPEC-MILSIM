@@ -20,8 +20,10 @@ if (isNull _relay || {!alive _relay} || {!isPlayer _relay} || {(side group _rela
 if (_relay isNotEqualTo player) exitWith {};
 // Aucun marqueur créé, modifié ou supprimé depuis le dernier passage complet (compteur COMSPEC_ATAK_MkRev) : rien à
 // comparer (avant, chaque marqueur de la carte était relu et sérialisé toutes les 15 s).
+// Passage mémorisé dans missionNamespace comme MkRev (uiNamespace survivait à la mission : après un redémarrage, MkRev
+// repartait à 0, égal au passage gardé, et plus aucun marqueur de la mission n'était envoyé tant que rien ne changeait).
 private _rev = missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0];
-if ((uiNamespace getVariable ["COMSPEC_ATAK_MkSweepRev", -1]) isEqualTo _rev) exitWith {};
+if ((missionNamespace getVariable ["COMSPEC_ATAK_MkSweepRev", -1]) isEqualTo _rev) exitWith {};
 private _skip = ["poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_", "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
     "comspec_relay_", "comspec_recon_", "_comspec_po_ring_", "_comspec_det_ring_", "comspec_gps_", "ctab_u_"];
 private _prev = uiNamespace getVariable ["COMSPEC_ATAK_MkSnap", createHashMap];
@@ -52,4 +54,4 @@ private _alive = createHashMapFromArray (allMapMarkers apply { [_x, true] });
 } forEach _prev;
 uiNamespace setVariable ["COMSPEC_ATAK_MkSnap", _next];
 // Passage complet (budget non épuisé) : le prochain n'a lieu qu'après un changement de marqueur.
-uiNamespace setVariable ["COMSPEC_ATAK_MkSweepRev", [-1, _rev] select (_budget > 0)];
+missionNamespace setVariable ["COMSPEC_ATAK_MkSweepRev", [-1, _rev] select (_budget > 0)];

@@ -1,12 +1,13 @@
 /*
     Applique un dataset sur les unités dans un rayon.
-    [_datasetId, _center, _radius, _level] call comspec_sse_fnc_applyDataset
+    [_datasetId, _center, _radius, _level, _notify] call comspec_sse_fnc_applyDataset
 */
 params [
     ["_datasetId", "falcon", [""]],
     ["_center", objNull, [objNull, []]],
     ["_radius", 50, [0]],
-    ["_level", -1, [0]]
+    ["_level", -1, [0]],
+    ["_notify", true, [true]]
 ];
 
 private _ds = [_datasetId] call comspec_sse_fnc_loadDataset;
@@ -66,14 +67,14 @@ if (!isNil "comspec_sse_fnc_addLogicalEntity") then {
 };
 
 private _lvlMeta = (_ds getOrDefault ["levels", createHashMap]) getOrDefault [str _level, createHashMap];
-[format [
+if (_notify) then { [format [
     "%1\nGraine : %2\nNiveau : %3 — %4\n%5 rôle(s)",
     _ds getOrDefault ["name", "Dataset"],
     _ds getOrDefault ["seed", ""],
     _level,
     _lvlMeta getOrDefault ["label", ""],
     count _created
-], "INFO"] call comspec_sse_fnc_notify;
+], "INFO"] call comspec_sse_fnc_notify; };
 
 [format ["applyDataset %1 level=%2 n=%3", _ds getOrDefault ["id", "?"], _level, count _created], "WARN"] call comspec_sse_fnc_log;
 _created

@@ -30,6 +30,18 @@ if (
 
 // Éviter la récursion avec le wrap ensureGenerated → import → ensureGenerated
 private _data0 = [_entity] call comspec_sse_fnc_getData;
+
+// ensureGenerated relance le pont à chaque rafraîchissement d'UI : sans changement des BII_Identifi_* (ni de fiche),
+// on ne réimporte pas (sinon commit public de toute la fiche + variables de pont rediffusées à chaque passage).
+private _sig = [
+    if (isNil "_data0" || {!(_data0 isEqualType [])}) then { "" } else { [_data0, "uid", ""] call comspec_sse_fnc_getPair },
+    _name, _alias, _nat, _org, _threat, _family, _associates, _leads, _notes, _bioKey, _watchlist
+];
+if (
+    _entity getVariable ["comspec_sse_biiImported", false]
+    && {(_entity getVariable ["comspec_sse_biiImportSig", []]) isEqualTo _sig}
+) exitWith { false };
+
 if (isNil "_data0") then {
     [_entity, "PERSON"] call comspec_sse_fnc_makeSearchable;
 };
@@ -97,5 +109,9 @@ if (_pairs isNotEqualTo []) then {
     if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then { [_entity, true] call comspec_sse_fnc_syncIdentityBridgeVars; };
 };
 
-_entity setVariable ["comspec_sse_biiImported", true, true];
+// Signature locale (non diffusée) : uid de la fiche telle qu'elle existe après l'import.
+private _dataS = [_entity] call comspec_sse_fnc_getData;
+_sig set [0, if (isNil "_dataS" || {!(_dataS isEqualType [])}) then { "" } else { [_dataS, "uid", ""] call comspec_sse_fnc_getPair }];
+_entity setVariable ["comspec_sse_biiImportSig", _sig];
+if !(_entity getVariable ["comspec_sse_biiImported", false]) then { _entity setVariable ["comspec_sse_biiImported", true, true]; };
 true

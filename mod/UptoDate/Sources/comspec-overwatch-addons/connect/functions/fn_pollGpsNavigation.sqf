@@ -80,6 +80,15 @@ private _unblank = {
     if (_s isEqualTo "-") then { "" } else { _s };
 };
 
+// Points marqués atteints ici (POST réussi) : la lecture en cache date du cycle précédent et les montrait encore
+// non atteints (second POST, seconde annonce, marqueur repassé en jaune). Gardés 5 min.
+private _reachedLocal = missionNamespace getVariable ["COMSPEC_GpsReachedLocal", createHashMap];
+if (!(_reachedLocal isEqualType createHashMap)) then { _reachedLocal = createHashMap; };
+{
+    if ((diag_tickTime - (_reachedLocal get _x)) > 300) then { _reachedLocal deleteAt _x; };
+} forEach (keys _reachedLocal);
+missionNamespace setVariable ["COMSPEC_GpsReachedLocal", _reachedLocal, false];
+
 private _byRoute = createHashMap;
 private _recvIdx = 0;
 {
@@ -98,7 +107,7 @@ private _recvIdx = 0;
     private _radius = parseNumber (_cols select 5);
     if (_radius < 8) then { _radius = 25; };
     private _reachedRaw = [_cols select 6] call _unblank;
-    private _isReached = _reachedRaw in ["1", "true", "TRUE"];
+    private _isReached = (_reachedRaw in ["1", "true", "TRUE"]) || {_id in _reachedLocal};
     private _seq = _recvIdx;
     if ((count _cols) >= 8) then {
         private _seqRaw = [_cols select 7] call _unblank;
@@ -284,9 +293,12 @@ if (_dist <= _radius && {(missionNamespace getVariable ["COMSPEC_GpsMarkPending"
     [_wpId, _cs, _label] spawn {
         params ["_wpId", "_cs", "_label"];
         private _mark = [["COMSPECExtension", "MarkWaypointReached", [_wpId, _cs, "1"]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
-        missionNamespace setVariable ["COMSPEC_GpsMarkPending", "", false];
         private _parsed = [_mark] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
         if ((_parsed isEqualType []) && {(count _parsed) > 0} && {_parsed select 0}) then {
+            private _rl = missionNamespace getVariable ["COMSPEC_GpsReachedLocal", createHashMap];
+            if (!(_rl isEqualType createHashMap)) then { _rl = createHashMap; };
+            _rl set [_wpId, diag_tickTime];
+            missionNamespace setVariable ["COMSPEC_GpsReachedLocal", _rl, false];
             ["Point GPS atteint" + (if (_label isEqualTo "") then { "" } else { " — " + _label }), "gps", "info"] call comspec_overwatch_connect_fnc_announce;
             private _hitName = format ["COMSPEC_GPS_WP_%1", _wpId];
             if ((getMarkerColor _hitName) isNotEqualTo "") then {
@@ -294,6 +306,8 @@ if (_dist <= _radius && {(missionNamespace getVariable ["COMSPEC_GpsMarkPending"
                 _hitName setMarkerAlphaLocal 0.45;
             };
         };
+        // Libéré après l'inscription dans COMSPEC_GpsReachedLocal : pas de fenêtre pour un second POST.
+        missionNamespace setVariable ["COMSPEC_GpsMarkPending", "", false];
     };
 };
 

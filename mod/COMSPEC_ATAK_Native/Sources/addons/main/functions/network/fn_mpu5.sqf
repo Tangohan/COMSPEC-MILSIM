@@ -176,12 +176,15 @@ switch (_act) do {
             _pub = [parseNumber (_mb toFixed 1), _hops];
         };
         // Débit qui varie seul (évanouissement autour d'un palier de modulation) : diffusé s'il tient deux tours de suite
-        // (comme fn_feedLink) ; changement de sauts, coupure ou retour du réseau : tout de suite.
+        // (comme fn_feedLink) ; changement de sauts, coupure ou retour du réseau : tout de suite. Débit qui change à chaque
+        // tour (porteur en mouvement, mode simplifié où le débit suit la distance) : diffusé quand même au 3e tour en attente,
+        // pour ne pas laisser l'équipe sur un débit périmé.
         private _mOld = player getVariable ["COMSPEC_ATAK_Mpu5", []];
         if (_pub isEqualTo _mOld) then { uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", []]; } else {
             private _soft = (count _mOld) isEqualTo 2 && {(count _pub) isEqualTo 2} && {(_mOld select 1) isEqualTo (_pub select 1)} && {(_mOld select 0) > 0} && {(_pub select 0) > 0};
-            if (_soft && {_pub isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Pend", []])}) then {
-                uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", _pub];
+            (uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Pend", []]) params [["_pend", []], ["_pendN", 0]];
+            if (_soft && {_pub isNotEqualTo _pend} && {_pendN < 2}) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", [_pub, _pendN + 1]];
             } else {
                 uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", []];
                 player setVariable ["COMSPEC_ATAK_Mpu5", _pub, true];

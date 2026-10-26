@@ -187,7 +187,7 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
 private _mkRemote = _data getOrDefault ["remoteMarkers",createHashMap];
 private _remRev = (_data getOrDefault ["revisions",createHashMap]) getOrDefault ["remoteMarkers",0];
 private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyLd", createHashMap];
-private _mk = uiNamespace getVariable ["COMSPEC_ATAK_MkLocal", []];
+private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MkLocal", []];
 private _full = (count _mk) < 4 || {diag_tickTime > (_mk select 0)} || {"" in _dirty};
 if (!_full && {(count _dirty) isEqualTo 0} && {_remRev isEqualTo (_mk select 2)}) exitWith {};
 missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyLd", createHashMap];
@@ -208,7 +208,7 @@ if (_full) then {
     _mk set [2, _remRev];
     _mk set [3, (_mk select 3) + 1];
 };
-uiNamespace setVariable ["COMSPEC_ATAK_MkLocal", _mk];
+missionNamespace setVariable ["COMSPEC_ATAK_MkLocal", _mk];
 private _markers = createHashMap;
 _markers merge _local;
 if ((count _mkRemote) > 0) then {

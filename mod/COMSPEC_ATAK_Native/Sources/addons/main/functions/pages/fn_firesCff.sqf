@@ -107,6 +107,8 @@ private _guns = [] call comspec_atak_native_fnc_firesGuns;
 private _gunId = ["gun", if ((count _guns) > 0) then { netId (_guns select 0) } else { "MAN" }] call _v;
 // Pièce absente de la liste (supprimée ou détruite : firesGuns ne garde que les vivantes) : retour à MAN, gardé dans l'état.
 if (_gunId isNotEqualTo "MAN" && {(_guns findIf { netId _x isEqualTo _gunId }) < 0}) then { _gunId = "MAN"; _f set ["gun", _gunId]; _f deleteAt "solution"; };
+// Pièce par défaut (première de la liste) gardée dans l'état : CALCULER et TIR lisent "gun", la liste ne déclenche pas LBSelChanged ici.
+if !("gun" in _f) then { _f set ["gun", _gunId]; };
 private _gunName = { params ["_g", "_i"]; _g getVariable ["COMSPEC_ATAK_GunName", format [("PIÈCE %1") call comspec_atak_native_fnc_tr, _i + 1]] };
 private _gunLabel = if (_gunId isEqualTo "MAN") then { "MAN" } else { [objectFromNetId _gunId, _guns findIf { netId _x isEqualTo _gunId }] call _gunName };
 private _mode = ["mode", "POLAR"] call _v;
@@ -115,6 +117,8 @@ private _ammo = ["ammo", "HE"] call _v;
 private _sheaf = ["sheaf", false] call _v;
 private _sol = _f getOrDefault ["solution", createHashMap];
 private _tgtGrid = _sol getOrDefault ["grid", ["tgtGrid", ""] call _v];
+// Mission en cours : la solution peut avoir été effacée (pièce, munition, origine changées), la cible reste activeGrid.
+private _stGrid = if (_f getOrDefault ["active", false]) then { _f getOrDefault ["activeGrid", _tgtGrid] } else { _tgtGrid };
 
 // ---------- POSITION DE TIR ----------
 private _drawFiring = {
@@ -242,8 +246,8 @@ private _drawStatus = {
     params ["_px", "_py", "_pw"];
     private _lines = [
         _gunLabel,
-        if (_gunId isEqualTo "MAN") then { format [("MANUEL %1") call comspec_atak_native_fnc_tr, [_tgtGrid, "—"] select (_tgtGrid isEqualTo "")] } else { format [("CIBLE %1") call comspec_atak_native_fnc_tr, [_tgtGrid, "—"] select (_tgtGrid isEqualTo "")] },
-        [("NON PROGRAMMÉE") call comspec_atak_native_fnc_tr, [("PROGRAMMÉE") call comspec_atak_native_fnc_tr, ("EN COURS") call comspec_atak_native_fnc_tr] select (_f getOrDefault ["active", false])] select ((count _sol) > 0),
+        if (_gunId isEqualTo "MAN") then { format [("MANUEL %1") call comspec_atak_native_fnc_tr, [_stGrid, "—"] select (_stGrid isEqualTo "")] } else { format [("CIBLE %1") call comspec_atak_native_fnc_tr, [_stGrid, "—"] select (_stGrid isEqualTo "")] },
+        if (_f getOrDefault ["active", false]) then { ("EN COURS") call comspec_atak_native_fnc_tr } else { [("NON PROGRAMMÉE") call comspec_atak_native_fnc_tr, ("PROGRAMMÉE") call comspec_atak_native_fnc_tr] select ((count _sol) > 0) },
         format [("%1 COUPS %2") call comspec_atak_native_fnc_tr, ["rounds", "3"] call _v, ["HE", "ILM", "FUM"] select ((["HE", "ILLUM", "SMOKE"] find _ammo) max 0)] + (["", (" · GERBE") call comspec_atak_native_fnc_tr] select _sheaf),
         ([] call comspec_atak_native_fnc_firesWind) select 0
     ];
@@ -313,7 +317,7 @@ private _bw = _rw * ([0.16, 0.25] select !_land);
 ];
 private _hint = _f getOrDefault ["hint", ["", false]];
 private _state = if ((_hint select 0) isNotEqualTo "") then { (_hint select 0) call comspec_atak_native_fnc_tr } else {
-    if (_f getOrDefault ["active", false]) then { format [("%1 EN TIR · CIBLE %2") call comspec_atak_native_fnc_tr, _gunLabel, _tgtGrid] } else { "" }
+    if (_f getOrDefault ["active", false]) then { format [("%1 EN TIR · CIBLE %2") call comspec_atak_native_fnc_tr, _gunLabel, _stGrid] } else { "" }
 };
 if (_state isNotEqualTo "") then {
     private _st = ["COMSPEC_RscTextRight", [_rx + _pad * 4 + 3 * (_bw + _pad), _by, _rw - _pad * 5 - 3 * (_bw + _pad), _barH], "", [], [_cHead, [0.95, 0.42, 0.36, 1]] select (_hint select 1), _fs * 0.95, _d displayCtrl 88531] call _mk;

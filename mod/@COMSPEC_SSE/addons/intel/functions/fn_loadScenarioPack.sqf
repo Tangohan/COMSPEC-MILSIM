@@ -1,11 +1,13 @@
 /*
     Charge un pack scénario prédéfini.
-    [_packId, _center, _radius] call comspec_sse_fnc_loadScenarioPack
+    [_packId, _center, _radius, _notify] call comspec_sse_fnc_loadScenarioPack
+    _notify (défaut true) : transmis à generateFromBrief / applyDataset.
 */
 params [
     ["_packId", "INSURGENT_CELL", [""]],
     ["_center", objNull, [objNull, []]],
-    ["_radius", 40, [0]]
+    ["_radius", 40, [0]],
+    ["_notify", true, [true]]
 ];
 
 private _packs = createHashMapFromArray [
@@ -23,9 +25,9 @@ private _id = toUpper _packId;
 // Dataset FALCON (LOT 8) — rôles + graine stables
 if (_id in ["FALCON", "FALCON_IRAQ", "FALCON_IQ_2012", "DATASET_FALCON"]) exitWith {
     private _level = missionNamespace getVariable ["comspec_sse_scenarioLevel", 1];
-    [_packId, _center, _radius, _level] call comspec_sse_fnc_applyDataset
+    [_packId, _center, _radius, _level, _notify] call comspec_sse_fnc_applyDataset
 };
 
 private _pack = _packs getOrDefault [_id, _packs get "INSURGENT_CELL"];
 private _brief = format ["Cellule %1 — %2 personnes", _packId, _pack get "count"];
-[_brief, _center, _radius, _pack] call comspec_sse_fnc_generateFromBrief
+[_brief, _center, _radius, _pack, _notify] call comspec_sse_fnc_generateFromBrief

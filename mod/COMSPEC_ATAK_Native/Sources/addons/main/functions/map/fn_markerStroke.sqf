@@ -40,7 +40,7 @@ private _commit = {
     private _list = missionNamespace getVariable ["COMSPEC_ATAK_StrokeMine", []];
     _list pushBack _m;
     missionNamespace setVariable ["COMSPEC_ATAK_StrokeMine", _list select [((count _list) - 50) max 0]];
-    uiNamespace setVariable ["COMSPEC_ATAK_SkScan", -1];
+    missionNamespace setVariable ["COMSPEC_ATAK_SkScan", -1];
     [_m] call comspec_atak_native_fnc_markerWeb;
     _m
 };

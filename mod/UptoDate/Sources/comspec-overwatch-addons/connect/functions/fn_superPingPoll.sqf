@@ -49,5 +49,16 @@ private _newSeen = [];
 } forEach (_payload splitString toString [10]);
 
 missionNamespace setVariable ["COMSPEC_SuperPingSeen", _newSeen, false];
-missionNamespace setVariable ["COMSPEC_SuperPingPrimed", true, false];
+// La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+// silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+if (!_primed) then {
+    private _t0 = missionNamespace getVariable ["COMSPEC_SuperPingFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_SuperPingFirstOkAt", _t0, false];
+    };
+    if ((count _newSeen) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_SuperPingPrimed", true, false];
+    };
+};
 missionNamespace setVariable ["COMSPEC_SuperPingPulses", _pulses, false];

@@ -73,6 +73,29 @@ switch (_act) do {
         _l pushBackUnique _h;
         missionNamespace setVariable ["COMSPEC_ATAK_CapHolders", _l select { !isNull _x }];
     };
+    case "giveFail": {
+        // « give » sans place chez l'IA : le téléphone a été posé au sol (porte-objet _gh). La capture déjà ouverte passe
+        // sur ce porte-objet (même id, reprise possible par une autre IA) et l'IA n'en est plus le porteur.
+        if (!isServer) exitWith {};
+        _arg params [["_ai", objNull], ["_gh", objNull], ["_later", false]];
+        if (isNull _ai || {isNull _gh}) exitWith {};
+        // IA locale au serveur : l'événement arrive avant l'ouverture de la capture (même image) ; traité à l'image suivante
+        // (le contenu du porte-objet créé par une machine distante a aussi eu le temps d'arriver).
+        if !(_later) exitWith { [{ ["giveFail", _this] call comspec_atak_native_fnc_captureServer; }, [_ai, _gh, true]] call CBA_fnc_execNextFrame; };
+        if (((_gh distance _ai) > 10) || {([_gh, "holder"] call _items) isEqualTo []}) exitWith {};
+        private _caps = missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap];
+        private _cid = _ai getVariable ["COMSPEC_ATAK_CapOf", ""];
+        if !(_cid isEqualType "" && {_cid in _caps}) exitWith {};
+        private _c = _caps get _cid;
+        _gh setVariable ["COMSPEC_ATAK_PhoneTag", _c get "tag", true];
+        _gh setVariable ["COMSPEC_ATAK_CapOf", _cid, true];
+        ["dropped", [_gh]] call comspec_atak_native_fnc_captureServer;
+        if ((_c get "carrier") isEqualTo _ai) then { _c set ["carrier", objNull]; };
+        _ai setVariable ["COMSPEC_ATAK_CapOf", nil, true];
+        _ai setVariable ["COMSPEC_ATAK_Ident", nil, true];
+        call _publish;
+        ["INFO", "CAPTURE", format ["%1 : inventaire de %2 plein, téléphone posé au sol (%3)", _cid, typeOf _ai, [getPosATL _gh, 8] call comspec_atak_native_fnc_gridRef]] call comspec_atak_native_fnc_log;
+    };
     case "local": {
         _arg params [["_mode", ""], ["_o", objNull], ["_v", ""]];
         if (isNull _o || {!local _o}) exitWith {};
@@ -82,10 +105,12 @@ switch (_act) do {
             };
             case "give": {
                 // Plus de place (inventaire changé depuis la vérification du serveur) : le téléphone est posé au sol à
-                // côté de l'IA plutôt que perdu.
+                // côté de l'IA plutôt que perdu ; le serveur y reporte la capture (« giveFail ») pour qu'il reste ramassable
+                // et que l'IA sans téléphone ne l'exploite plus.
                 if (_o canAdd _v) then { _o addItem _v; } else {
                     private _gh = createVehicle ["GroundWeaponHolder", getPosATL _o, [], 0.5, "CAN_COLLIDE"];
                     _gh addItemCargoGlobal [_v, 1];
+                    ["comspec_atak_native_captureSrv", ["giveFail", [_o, _gh]]] call CBA_fnc_serverEvent;
                 };
                 _o playActionNow "PutDown";
                 _o doFollow (leader group _o);
@@ -142,7 +167,10 @@ switch (_act) do {
             private _own = _x getVariable ["COMSPEC_ATAK_PhoneOwner", objNull];
             private _tag = _x getVariable ["COMSPEC_ATAK_PhoneTag", []];
             if (_tag isEqualTo [] && {!isNull _own}) then { _tag = _own getVariable ["COMSPEC_ATAK_PhoneTag", []]; };
-            if (_tag isNotEqualTo []) then { _src pushBack [_x, "holder", _tag, ""]; };
+            // Porte-objet d'un téléphone déjà capturé (« giveFail ») : la reprise garde la même capture.
+            private _hc = _x getVariable ["COMSPEC_ATAK_CapOf", ""];
+            if !(_hc isEqualType "" && {_hc in _caps}) then { _hc = ""; };
+            if (_tag isNotEqualTo []) then { _src pushBack [_x, "holder", _tag, _hc]; };
         } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_CapHolders", []]) select { !isNull _x });
         {
             _x params ["_o", "_kind", "_tag", "_cid"];
@@ -186,6 +214,8 @@ switch (_act) do {
             if (_kind isEqualTo "holder") then {
                 // Sans vider les uniformes et gilets posés dans le même porte-objet (fn_droppedPhone "remove").
                 ["remove", [_o, _cls]] call comspec_atak_native_fnc_droppedPhone;
+                // Porte-objet d'un « giveFail » : la capture repart avec l'IA, le porte-objet ne la porte plus.
+                if (_cid isNotEqualTo "") then { _o setVariable ["COMSPEC_ATAK_CapOf", nil, true]; _o setVariable ["COMSPEC_ATAK_PhoneTag", nil, true]; };
             } else {
                 ["comspec_atak_native_capLocal", ["strip", _o, _cls], _o] call CBA_fnc_targetEvent;
                 // Le corps n'a plus de téléphone à donner.

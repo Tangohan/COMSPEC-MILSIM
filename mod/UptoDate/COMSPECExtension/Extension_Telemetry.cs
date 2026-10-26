@@ -18,6 +18,8 @@ public static partial class Extension
     private const int TelemetryMaxBatchEvents = 24;
     private const int TelemetryP3Max = 64;
     private const int TelemetryP0Max = 128;
+    // P1/P2 : clés coalescées (pos/veh/météo) mais aussi clés uniques (sigint:<guid>, kia:…) → plafond.
+    private const int TelemetryP12Max = 256;
 
     private static volatile bool _telemetryBatchEnabled = true;
     private static long _telemetrySeq;
@@ -78,6 +80,9 @@ public static partial class Extension
             return "ERR|legacy_mode";
         if (string.IsNullOrEmpty(_baseUrl))
             return "ERR|no_base";
+        // Clé refusée ou lot refusé par l'offre : rien ne serait collecté, l'événement resterait en mémoire.
+        if (IsRefusalLatched(_baseUrl.TrimEnd('/') + "/api/atak/telemetry/batch"))
+            return "OK|latched";
 
         byte priority = 1;
         if (byte.TryParse((args[0] ?? "1").Trim(), out var p))
@@ -319,9 +324,11 @@ public static partial class Extension
                 TelemetryP0.Enqueue(item);
                 break;
             case 1:
+                EvictOldestIfFull(TelemetryP1, coalesceKey);
                 TelemetryP1[coalesceKey] = item;
                 break;
             case 2:
+                EvictOldestIfFull(TelemetryP2, coalesceKey);
                 TelemetryP2[coalesceKey] = item;
                 break;
             default:
@@ -334,6 +341,25 @@ public static partial class Extension
                 break;
         }
         EnsureDrainTimer();
+    }
+
+    /// <summary>File P1/P2 pleine (lot bloqué, clés uniques) : l'événement le plus ancien est abandonné.</summary>
+    private static void EvictOldestIfFull(ConcurrentDictionary<string, TelemetryItem> map, string incomingKey)
+    {
+        if (map.Count < TelemetryP12Max || map.ContainsKey(incomingKey))
+            return;
+        string? oldestKey = null;
+        var oldestMs = long.MaxValue;
+        foreach (var kv in map)
+        {
+            if (kv.Value.EnqueuedAtMs < oldestMs)
+            {
+                oldestMs = kv.Value.EnqueuedAtMs;
+                oldestKey = kv.Key;
+            }
+        }
+        if (oldestKey is not null && map.TryRemove(oldestKey, out _))
+            Interlocked.Increment(ref _telemetryDropped);
     }
 
     private static void NoteOldestEnqueue(long ms)
@@ -561,9 +587,16 @@ public static partial class Extension
                 NoteAccessDenied(response, url);
                 var refusalBody = RefusalBody(response);
                 NoteRefusal(url, 403, refusalBody);
-                // Fonction absente de l'offre : les événements sont abandonnés (le verrou coupe le lot 30 min).
+                // Lot absent de l'offre de la communauté : bascule legacy pour cette session (comme 404/405/501),
+                // ce lot et ce qui attend dans P0-P3 partent par les routes unitaires (sinon plus rien ne partait
+                // et P1/P2 grossissaient pendant tout le verrou).
                 if (RefusalErrorCode(refusalBody) == "feature_unavailable")
-                    Interlocked.Add(ref _telemetryDropped, items.Count);
+                {
+                    _telemetryBatchEnabled = false;
+                    Interlocked.Increment(ref _telemetryFallbackStreak);
+                    FallbackTelemetryUnitary(items);
+                    FlushTelemetryQueuesUnitary();
+                }
                 else
                     RequeueTelemetryItems(items);
                 Interlocked.Increment(ref _telemetryBatchFail);
@@ -680,6 +713,30 @@ public static partial class Extension
             }
         }
         EnsureDrainTimer();
+    }
+
+    /// <summary>Après bascule legacy : vide P0-P3 vers les routes unitaires (les événements sans route unitaire sont abandonnés).</summary>
+    private static void FlushTelemetryQueuesUnitary()
+    {
+        var rest = new List<TelemetryItem>();
+        lock (TelemetryDrainLock)
+        {
+            while (TelemetryP0.TryDequeue(out var p0)) rest.Add(p0);
+            foreach (var key in TelemetryP1.Keys)
+                if (TelemetryP1.TryRemove(key, out var p1)) rest.Add(p1);
+            foreach (var key in TelemetryP2.Keys)
+                if (TelemetryP2.TryRemove(key, out var p2)) rest.Add(p2);
+            while (TelemetryP3.TryDequeue(out var p3)) rest.Add(p3);
+        }
+        Interlocked.Exchange(ref _telemetryOldestEnqueueMs, 0);
+        var now = Environment.TickCount64;
+        rest.RemoveAll(it =>
+        {
+            if (it.Priority != 0 && now - it.EnqueuedAtMs > 120_000) { Interlocked.Increment(ref _telemetryDropped); return true; }
+            if (string.IsNullOrEmpty(it.FallbackUrl) || string.IsNullOrEmpty(it.FallbackBody)) { Interlocked.Increment(ref _telemetryDropped); return true; }
+            return false;
+        });
+        FallbackTelemetryUnitary(rest);
     }
 
     private static void FallbackTelemetryUnitary(List<TelemetryItem> items)

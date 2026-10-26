@@ -122,7 +122,18 @@ switch (_act) do {
         _arg params [["_m", ""], ["_owner", objNull]];
         private _mm = missionNamespace getVariable "COMSPEC_ATAK_MkMetaSrv";
         if (isNil "_mm") then { _mm = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MkMetaSrv", _mm]; };
-        if (isNull _owner) exitWith { _mm deleteAt _m; };
+        // Marqueur effacé vu par le serveur : sa note pourra être retirée (op "note").
+        if (isNull _owner) exitWith {
+            _mm deleteAt _m;
+            private _gone = missionNamespace getVariable "COMSPEC_ATAK_MkGoneSrv";
+            if (isNil "_gone") then { _gone = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MkGoneSrv", _gone]; };
+            // Seuls comptent les marqueurs qui ont une note (pas de table sans fin sur une mission qui efface beaucoup).
+            if ((count _gone) > 1000) then {
+                private _nt = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
+                { if !(_x in _nt) then { _gone deleteAt _x; }; } forEach (keys _gone);
+            };
+            _gone set [_m, true];
+        };
         if ((count _mm) > 600) then { { if ((markerShape _x) isEqualTo "") then { _mm deleteAt _x; }; } forEach (keys _mm); };
         _mm set [_m, [call _hms, [_owner] call comspec_atak_native_fnc_unitCallsign]];
     };
@@ -131,6 +142,9 @@ switch (_act) do {
         _arg params [["_op", ""], ["_m", ""], ["_st", []], ["_scope", []], ["_author", ""], ["_at", ""]];
         private _srv = missionNamespace getVariable "COMSPEC_ATAK_TacMkSrv";
         if (isNil "_srv") then { _srv = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_TacMkSrv", _srv]; };
+        // Marqueurs que le serveur a vus effacés (EH MarkerDeleted, op "del") depuis la dernière note.
+        private _gone = missionNamespace getVariable "COMSPEC_ATAK_MkGoneSrv";
+        if (isNil "_gone") then { _gone = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MkGoneSrv", _gone]; };
         // Joueur dans une portée [camp, canal, groupe, véhicule, position ASL] de l'auteur au moment de la pose.
         private _inScope = {
             params ["_sc", "_u"];
@@ -158,6 +172,7 @@ switch (_act) do {
                 if (_list isNotEqualTo []) then { ["comspec_atak_native_tacMk", ["bulk", _list], _m] call CBA_fnc_targetEvent; };
             };
             case "del": {
+                _gone set [_m, true];
                 private _e = _srv deleteAt _m;
                 if (isNil "_e") exitWith {};
                 // À tout le camp : un joueur qui a changé de groupe garde sinon un marqueur effacé.
@@ -167,12 +182,14 @@ switch (_act) do {
             case "note": {
                 // Description d'un marqueur (fn_markerEditSave, fn_markerDelete) : une clé à la fois, la table publique
                 // (COMSPEC_ATAK_MarkerNotes, JIP) n'est éditée et diffusée que par le serveur (pas de copies concurrentes).
-                // _st = [texte, auteur], [] = note retirée. Notes des marqueurs disparus retirées (marqueurs du réseau ATAK :
-                // locaux aux clients, gardés tant que le serveur les connaît).
+                // _st = [texte, auteur], [] = note retirée. Seules les notes des marqueurs que le serveur a vus effacés sont
+                // retirées : un marqueur du réseau ATAK (local aux clients) posé sans signal n'est pas encore connu du serveur
+                // (fn_netSend attend le réseau) alors que sa note arrive tout de suite, elle était perdue.
                 if (_m isEqualTo "" || {!(_st isEqualTo [] || {_st isEqualTypeArray ["", ""]})}) exitWith {};
                 private _old = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
                 private _notes = +_old;
-                { if (_x isNotEqualTo _m && {(markerShape _x) isEqualTo ""} && {!(_x in _srv)}) then { _notes deleteAt _x; }; } forEach (keys _notes);
+                { if (_x isNotEqualTo _m && {_x in _gone} && {(markerShape _x) isEqualTo ""} && {!(_x in _srv)}) then { _notes deleteAt _x; }; } forEach (keys _notes);
+                missionNamespace setVariable ["COMSPEC_ATAK_MkGoneSrv", createHashMap];
                 if (_st isEqualTo []) then { _notes deleteAt _m; } else { _notes set [_m, _st]; };
                 // Toujours diffusée : sur un serveur joueur, la copie locale du poste hôte est déjà à jour (événement
                 // serveur exécuté sur place), une comparaison avec elle n'enverrait jamais la note aux autres.
@@ -184,6 +201,7 @@ switch (_act) do {
                 if (_e isNotEqualTo []) then { _scope = _e select 1; _author = _e select 2; _at = _e select 3; };
                 if ((count _srv) >= 500 && {_e isEqualTo []}) exitWith {};
                 _srv set [_m, [_st, _scope, _author, _at]];
+                _gone deleteAt _m;
                 ["comspec_atak_native_tacMk", ["set", _m, _st, _author, _at], [_scope] call _who] call CBA_fnc_targetEvent;
             };
         };

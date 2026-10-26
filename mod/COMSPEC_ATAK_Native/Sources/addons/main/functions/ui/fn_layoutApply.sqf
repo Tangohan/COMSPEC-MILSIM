@@ -207,7 +207,11 @@ if (_dragging) then {
         uiNamespace getVariable ["COMSPEC_ATAK_LockCtrls", []],
         uiNamespace getVariable ["COMSPEC_ATAK_ShadeCtrls", []],
         uiNamespace getVariable ["COMSPEC_ATAK_FullAlertCtrls", []],
-        uiNamespace getVariable ["COMSPEC_ATAK_BuzzCtrls", []]
+        uiNamespace getVariable ["COMSPEC_ATAK_BuzzCtrls", []],
+        // Contrôles de l'app posés hors du groupe de contenu (boussole, bandeau de position, barre de données de la
+        // carte…) et animation d'allumage : suivent la coque (le filtre ctrlParentControlsGroup écarte le contenu).
+        uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []],
+        uiNamespace getVariable ["COMSPEC_ATAK_PowerFxCtrls", []]
     ] call _collect);
     _all = _all arrayIntersect _all;
     if ((abs _ddx) > 0.000001 || {(abs _ddy) > 0.000001}) then {
@@ -247,5 +251,16 @@ if (_overlays && {!_dragging}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_ToastSig", []];
     [] call comspec_atak_native_fnc_notificationsRender;
     ["raise"] call comspec_atak_native_fnc_fx;
+    // Contrôles de l'app posés hors du groupe de contenu (boussole, bandeau de position, recherche de la carte, palette,
+    // Garmin, Plan, JTAC…) : coordonnées absolues, restés à l'ancien cadre. Page redessinée à l'image suivante, sauf si
+    // l'appelant l'a déjà redessinée entre-temps (fn_pageSettings, XEH_preInit : mise en page puis rendu).
+    [{
+        params ["_seq"];
+        if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) isNotEqualTo _seq) exitWith {};
+        private _s2 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        if ((count (_s2 getOrDefault ["drag", []])) > 0) exitWith {};
+        [_s2 getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender;
+    }, [uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]] call CBA_fnc_execNextFrame;
 };
 true

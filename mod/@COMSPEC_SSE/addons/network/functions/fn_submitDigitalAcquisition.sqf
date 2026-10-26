@@ -28,6 +28,25 @@ if (!canSuspend) exitWith {
     true
 };
 
+// Fog vide : les derniers résultats affichés sont globaux (n'importe quel sujet). On ne les reprend que s'ils
+// portent l'uid d'un support de CE sujet ; sinon fog propre au sujet (record_id / lignes / idempotence corrects).
+if (count _fog == 0 && {!isNull _entity}) then {
+    private _devs = [_entity, "digitalDevices"] call comspec_sse_fnc_getSection;
+    private _uids = [];
+    if (!isNil "_devs" && {_devs isEqualType []}) then {
+        _uids = (_devs select {_x isEqualType createHashMap}) apply {_x getOrDefault ["uid", ""]};
+    };
+    _uids = _uids - ["", "?"];
+    {
+        private _cand = missionNamespace getVariable [_x, createHashMap];
+        if (count _fog == 0 && {_cand isEqualType createHashMap} && {(_cand getOrDefault ["uid", ""]) in _uids}) then {
+            _fog = _cand;
+        };
+    } forEach ["comspec_sse_lastDigitalResult", "comspec_sse_lastResult"];
+    if (count _fog == 0) then {
+        _fog = [_entity, "identify"] call comspec_sse_fnc_revealDigitalFog;
+    };
+};
 if (count _fog == 0) then {
     _fog = missionNamespace getVariable ["comspec_sse_lastDigitalResult", createHashMap];
 };

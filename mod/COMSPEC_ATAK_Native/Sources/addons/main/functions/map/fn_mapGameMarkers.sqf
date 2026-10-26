@@ -14,7 +14,9 @@
 params ["_map", "_mk"];
 private _now = diag_tickTime;
 // Cache : [prochaine relecture complète, entrées dans l'ordre des marqueurs, index nom -> rang].
-private _cache = uiNamespace getVariable ["COMSPEC_ATAK_GmList", [-1, [], createHashMap]];
+// Caches des marqueurs dans missionNamespace (uiNamespace survit à la mission : marqueurs de la partie précédente
+// dessinés jusqu'à 30 s après un redémarrage, les icônes à l'origine de la carte).
+private _cache = missionNamespace getVariable ["COMSPEC_ATAK_GmList", [-1, [], createHashMap]];
 if ((count _cache) < 3 || {!((_cache select 2) isEqualType createHashMap)}) then { _cache = [-1, [], createHashMap]; };
 // Marqueurs changés depuis la dernière image (EH MarkerCreated / Deleted / Updated, XEH_postInitClient) : seuls eux sont
 // relus. Avant, un seul marqueur déplacé (piste Athena, marqueur suivi d'une mission) faisait relire toutes les propriétés
@@ -118,7 +120,7 @@ if (_full || {(count _dirty) > 0}) then {
             };
         } forEach (keys _dirty);
     };
-    uiNamespace setVariable ["COMSPEC_ATAK_GmList", _cache];
+    missionNamespace setVariable ["COMSPEC_ATAK_GmList", _cache];
 };
 
 (ctrlPosition _map) params ["_mx", "_my", "_mw", "_mh"];

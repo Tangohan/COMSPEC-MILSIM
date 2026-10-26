@@ -19,6 +19,17 @@ params [
     ["_condition", { true }, [{}]]
 ];
 
+// Usage de kit différé (optionnel, à usage unique) : [_unit, _class, _perKit] posé par l'appelant juste avant un
+// appel indirect (ex. kitActions → bioCaptureLatentAction). Consommé seulement au succès, jamais sur annulation.
+private _kitCost = missionNamespace getVariable ["comspec_sse_progressKitCost", []];
+missionNamespace setVariable ["comspec_sse_progressKitCost", nil];
+if !(_kitCost isEqualType []) then { _kitCost = []; };
+private _consume = {
+    params [["_kit", []]];
+    if (_kit isEqualTo []) exitWith { true };
+    (_kit call comspec_sse_fnc_kitUse) > 0
+};
+
 if (_target isEqualType 0) then {
     private _a0 = _args param [0, objNull];
     _target = [objNull, _a0] select (_a0 isEqualType objNull);
@@ -74,8 +85,8 @@ missionNamespace setVariable ["comspec_sse_progressBusy", true];
 
 // Sans ACE : boucle de contrôle, interrompue dès qu'une condition tombe.
 if (isNil "ace_common_fnc_progressBar") exitWith {
-    [_time, _onSuccess, _args, _ctx, _check, _stop] spawn {
-        params ["_t", "_code", "_a", "_ctx", "_check", "_stop"];
+    [_time, _onSuccess, _args, _ctx, _check, _stop, _kitCost, _consume] spawn {
+        params ["_t", "_code", "_a", "_ctx", "_check", "_stop", "_kitCost", "_consume"];
         private _end = time + _t;
         private _why = "";
         waitUntil {
@@ -84,19 +95,19 @@ if (isNil "ace_common_fnc_progressBar") exitWith {
             _why isNotEqualTo "" || {time >= _end}
         };
         [_why, _ctx, _t] call _stop;
-        if (_why isEqualTo "") then { _a call _code; };
+        if (_why isEqualTo "" && {[_kitCost] call _consume}) then { _a call _code; };
     };
     true
 };
 
 [
     _time,
-    [_onSuccess, _args, _ctx, _check, _stop, _time],
+    [_onSuccess, _args, _ctx, _check, _stop, _time, _kitCost, _consume],
     {
         params ["_params"];
-        _params params ["_code", "_a", "_ctx", "", "_stop", "_t"];
+        _params params ["_code", "_a", "_ctx", "", "_stop", "_t", "_kitCost", "_consume"];
         ["", _ctx, _t] call _stop;
-        _a call _code;
+        if ([_kitCost] call _consume) then { _a call _code; };
     },
     {
         params ["_params"];

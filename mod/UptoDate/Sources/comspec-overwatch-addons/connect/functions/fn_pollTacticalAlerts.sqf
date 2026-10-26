@@ -120,7 +120,18 @@ while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
 
 missionNamespace setVariable ["COMSPEC_Athena_RemoteAlertIds", _seen, false];
 missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
-missionNamespace setVariable ["COMSPEC_TacticalAlertsBootstrapped", true, false];
+// La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+// silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+if (!_bootTa) then {
+    private _t0 = missionNamespace getVariable ["COMSPEC_TacticalAlertsFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_TacticalAlertsFirstOkAt", _t0, false];
+    };
+    if (({ _x isNotEqualTo "" } count _lines) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_TacticalAlertsBootstrapped", true, false];
+    };
+};
 
 if (_added > 0) then {
     ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;

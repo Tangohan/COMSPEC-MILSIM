@@ -65,7 +65,16 @@ if (!_bootstrapped) then {
         private _id = _x getOrDefault ["id", ""];
         if (!(_id isEqualTo "") && {!(_id in _seen)}) then { _seen pushBack _id; };
     } forEach _alerts;
-    missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", true, false];
+    // La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+    // silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+    private _t0 = missionNamespace getVariable ["COMSPEC_MedicalAlertsFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_MedicalAlertsFirstOkAt", _t0, false];
+    };
+    if (({ _x isNotEqualTo "" } count _lines) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", true, false];
+    };
 } else {
     {
         private _a = _x;

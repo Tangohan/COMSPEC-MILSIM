@@ -66,7 +66,21 @@ if (_searchOn) then {
             // section ou nom traduit (en anglais, « settings » ne trouvait rien : seul le nom français était testé).
             (uiNamespace getVariable ["COMSPEC_ATAK_LauncherFirst", ["", ""]]) params [["_ff", ""], ["_fp", ""]];
             private _hitPage = if ((toLower trim _ff) isEqualTo _f && {_fp isNotEqualTo ""}) then { _fp } else {
-                ((([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible && {((toLower (_x get "name")) find _f) >= 0 || {((toLower (_x get "section")) find _f) >= 0} || {((toLower ((_x get "name") call comspec_atak_native_fnc_tr)) find _f) >= 0}} }) param [0, createHashMap]) getOrDefault ["page", ""]
+                // Même base que le rendu : puce ÉPINGLÉES ou section choisie (Entrée avant le redessin différé).
+                private _all = ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible };
+                private _sec = uiNamespace getVariable ["COMSPEC_ATAK_LauncherSection", ""];
+                private _base = _all;
+                if (_sec isEqualTo "*PIN") then {
+                    private _pins = profileNamespace getVariable ["COMSPEC_ATAK_PinnedApps", []];
+                    if !(_pins isEqualType []) then { _pins = []; };
+                    _base = _pins apply { private _p = _x; (_all select { (_x get "page") isEqualTo _p }) param [0, createHashMap] };
+                    _base = _base select { (count _x) > 0 };
+                } else {
+                    if (_sec isNotEqualTo "") then { _base = _all select { (_x get "section") isEqualTo _sec }; };
+                };
+                // Puce obsolète (aucune app) : le rendu repasse sur TOUT.
+                if ((count _base) isEqualTo 0) then { _base = _all; };
+                ((_base select { ((toLower (_x get "name")) find _f) >= 0 || {((toLower (_x get "section")) find _f) >= 0} || {((toLower ((_x get "name") call comspec_atak_native_fnc_tr)) find _f) >= 0} }) param [0, createHashMap]) getOrDefault ["page", ""]
             };
             if (_hitPage isNotEqualTo "" && {_f isNotEqualTo ""}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_LauncherFilter", ""];

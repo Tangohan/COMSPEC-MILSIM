@@ -549,7 +549,15 @@ public static partial class Extension
 
         // Rotation des jetons seule : pas de nouveau passage par les états de connexion (READY gardé),
         // ni bootstrap, ni client-init. Une erreur réseau ne remplace plus READY par NETWORK_ERROR.
-        var ok = ApplyRefreshTokens(json) && _gameAccessToken.Length > 0;
+        // Verrou partagé avec GameLogout (qui y incrémente la génération) : la génération est revérifiée
+        // juste avant d'écrire les jetons, une déconnexion ne peut plus se glisser entre le test et l'écriture.
+        bool ok;
+        lock (DpapiGameStore.Sync)
+        {
+            if (gen != System.Threading.Volatile.Read(ref _gameSessionGen))
+                return false;
+            ok = ApplyRefreshTokens(json) && _gameAccessToken.Length > 0;
+        }
         if (!ok) System.Threading.Interlocked.Exchange(ref _gameRefreshFailTicks, DateTime.UtcNow.Ticks);
         return ok;
     }
@@ -716,8 +724,10 @@ public static partial class Extension
 
     private static string GameLogout()
     {
-        // Un rafraîchissement en cours ne doit plus réinstaller la session (voir RefreshGameAccessTokenNow).
-        System.Threading.Interlocked.Increment(ref _gameSessionGen);
+        // Un rafraîchissement en cours ne doit plus réinstaller la session (voir RefreshGameAccessTokenNow) :
+        // incrément sous le même verrou que l'écriture des jetons rafraîchis.
+        lock (DpapiGameStore.Sync)
+            System.Threading.Interlocked.Increment(ref _gameSessionGen);
         // Appelé en direct depuis le thread du jeu : POST best-effort en tâche de fond avec le jeton actuel,
         // sans rafraîchissement préalable (jusqu'à 2 × SyncTimeoutSeconds de gel avec Athena lente ou absente).
         var logoutToken = _gameAccessToken;

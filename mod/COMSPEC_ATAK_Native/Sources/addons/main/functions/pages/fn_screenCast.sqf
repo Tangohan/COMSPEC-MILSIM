@@ -53,8 +53,10 @@ switch (_mode) do {
         if (!isServer) exitWith { ["comspec_atak_native_screen", ["add", _a]] call CBA_fnc_serverEvent; true };
         if (_name isEqualTo "") then { _name = getText (configOf _o >> "displayName"); };
         if (_name isEqualTo "") then { _name = "Écran"; };
-        _o setVariable ["COMSPEC_ATAK_Screen", [_name, (_range max 3) min 500, _side, _sel max 0, _ace], true];
         private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x };
+        // Écran (re)désigné : une diffusion restée sur l'objet retiré ne reprend pas toute seule.
+        if !(_o in _list) then { _o setVariable ["COMSPEC_ATAK_ScreenCast", [], true]; };
+        _o setVariable ["COMSPEC_ATAK_Screen", [_name, (_range max 3) min 500, _side, _sel max 0, _ace], true];
         _list pushBackUnique _o;
         missionNamespace setVariable ["COMSPEC_ATAK_Screens", _list, true];
         private _off = missionNamespace getVariable ["COMSPEC_ATAK_ScreensOff", []];
@@ -84,6 +86,7 @@ switch (_mode) do {
     };
     case "cast": {
         if (isNull _a) exitWith { false };
+        if ((count (_a getVariable ["COMSPEC_ATAK_Screen", []])) < 5) exitWith { false };
         private _d = call _myDeck;
         if ((count _d) isEqualTo 0) exitWith {
             ["WARNING", "Aucune diapositive à diffuser : ouvrez une présentation dans l'onglet DIAPOSITIVES", 4, 20] call comspec_atak_native_fnc_notify;
@@ -204,7 +207,7 @@ switch (_mode) do {
         private _cond = { private _c = _target getVariable ["COMSPEC_ATAK_ScreenCast", []]; private _s = (_target getVariable ["COMSPEC_ATAK_Screen", []]) param [2, ""]; (count _c) >= 5 && {_s isEqualTo "" || {_s isEqualTo str side group _player}} };
         if (!isNil "ace_interact_menu_fnc_createAction") then {
             private _icon = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
-            private _root = ["COMSPEC_ATAK_Screen", "Écran COMSPEC", _icon, {}, { true }, {
+            private _root = ["COMSPEC_ATAK_Screen", "Écran COMSPEC", _icon, {}, { (count (_target getVariable ["COMSPEC_ATAK_Screen", []])) >= 5 }, {
                 private _out = [];
                 private _c = _target getVariable ["COMSPEC_ATAK_ScreenCast", []];
                 private _s = (_target getVariable ["COMSPEC_ATAK_Screen", []]) param [2, ""];

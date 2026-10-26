@@ -158,7 +158,16 @@ if (!_bootstrapped) exitWith {
     } forEach _lines;
     while { (count _seen) > 200 } do { _seen deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_ChatSeenIds", _seen, false];
-    missionNamespace setVariable ["COMSPEC_ChatPollBootstrapped", true, false];
+    // La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+    // silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+    private _t0 = missionNamespace getVariable ["COMSPEC_ChatPollFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_ChatPollFirstOkAt", _t0, false];
+    };
+    if (({ _x isNotEqualTo "" } count _lines) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_ChatPollBootstrapped", true, false];
+    };
     false
 };
 

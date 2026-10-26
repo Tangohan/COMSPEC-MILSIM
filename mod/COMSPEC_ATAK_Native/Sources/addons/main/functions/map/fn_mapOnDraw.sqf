@@ -313,7 +313,7 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
 // sa révision change (au plus 4 fois par seconde) et toutes les 2 s par sécurité : avant, deux passes complètes sur tous
 // les marqueurs (mission comprise) à chaque image.
 private _mkRev = (_data getOrDefault ["revisions",createHashMap]) getOrDefault ["markers",-1];
-private _mkLists = uiNamespace getVariable ["COMSPEC_ATAK_DrawMkLists", []];
+private _mkLists = missionNamespace getVariable ["COMSPEC_ATAK_DrawMkLists", []];
 if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_tickTime > (_mkLists select 1)}) then {
     private _rem = [];
     private _tag = [];
@@ -323,7 +323,7 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
         if ((_y getOrDefault ["text",""]) isNotEqualTo "" && {!_lc || {((_y getOrDefault ["id",_x]) find "_USER_DEFINED") >= 0}} && {!((toUpper (_y getOrDefault ["shape","ICON"])) in ["POLYLINE","RECTANGLE","ELLIPSE"])}) then { _tag pushBack [_x,_y]; };
     } forEach (_data getOrDefault ["markers",createHashMap]);
     _mkLists = [_mkRev, diag_tickTime + 2, _rem, _tag];
-    uiNamespace setVariable ["COMSPEC_ATAK_DrawMkLists", _mkLists];
+    missionNamespace setVariable ["COMSPEC_ATAK_DrawMkLists", _mkLists];
 };
 {
     private _marker = _x select 1;
@@ -366,15 +366,15 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     {
         if ((count _x) >= 3) then { _map drawPolygon [_x,[0.95,0.67,0.20,0.18]]; };
     } forEach (_data getOrDefault ["zones",[]]);
-    uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", -1];
+    missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", -1];
 } else {
     // Calque masqué : Overwatch recrée ses marqueurs de zone à chaque synchro, on les remasque.
     // Seulement quand un marqueur a changé (compteur COMSPEC_ATAK_MkRev), au plus toutes les 2 s : avant, tous les
     // marqueurs étaient parcourus toutes les 2 s même sans aucun changement.
     private _zRev = missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0];
-    if (diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0]) && {_zRev isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideRev", -1])}) then {
-        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
-        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", _zRev];
+    if (diag_tickTime > (missionNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0]) && {_zRev isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_ZonesHideRev", -1])}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", _zRev];
         { if ((_x select [0, 11]) isEqualTo "COMSPEC_TZ_" && {(markerAlpha _x) > 0}) then { _x setMarkerAlphaLocal 0; }; } forEach allMapMarkers;
     };
 };

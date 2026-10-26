@@ -114,7 +114,11 @@ switch (_action) do {
         };
         private _net = missionNamespace getVariable ["COMSPEC_NetworkDisconnectState", createHashMap];
         _net set ["is_disconnected", true];
-        _net set ["disconnect_until", time + _durationSec];
+        private _jamUntil = time + _durationSec;
+        _net set ["disconnect_until", _jamUntil];
+        // Jeton du brouillage en cours : la fin ne dépend plus de is_disconnected, que fn_isNetworkDisconnected
+        // remet à faux dès l'échéance (avant ce rappel), ce qui sautait toute la remise en état.
+        missionNamespace setVariable ["COMSPEC_ZeusJamUntil", _jamUntil, false];
         _net set ["disconnect_count", (_net getOrDefault ["disconnect_count", 0]) + 1];
         missionNamespace setVariable ["COMSPEC_NetworkDisconnectState", _net, false];
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
@@ -136,14 +140,21 @@ switch (_action) do {
         call _fnc_refreshUi;
 
         [{
+            params ["_jamUntil"];
+            // Un brouillage plus récent a pris le relais : c'est son propre rappel qui fera la fin.
+            if ((missionNamespace getVariable ["COMSPEC_ZeusJamUntil", -1]) isNotEqualTo _jamUntil) exitWith {};
             private _net = missionNamespace getVariable ["COMSPEC_NetworkDisconnectState", createHashMap];
-            if (!(_net getOrDefault ["is_disconnected", false])) exitWith {};
             if (time < (_net getOrDefault ["disconnect_until", -1])) exitWith {};
+            missionNamespace setVariable ["COMSPEC_ZeusJamUntil", nil, false];
             _net set ["is_disconnected", false];
             _net set ["disconnect_until", -1];
             missionNamespace setVariable ["COMSPEC_NetworkDisconnectState", _net, false];
-            missionNamespace setVariable ["COMSPEC_ZoneEffects", nil, false];
-            missionNamespace setVariable ["COMSPEC_InRoleplayZone", false, false];
+            // Ne retirer que nos effets : une vraie zone (brouilleur de mission) a pu les remplacer entre-temps.
+            private _fx = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
+            if (isNil "_fx" || {_fx isEqualType createHashMap && {(_fx getOrDefault ["name", ""]) isEqualTo "Brouillage Zeus"}}) then {
+                missionNamespace setVariable ["COMSPEC_ZoneEffects", nil, false];
+                missionNamespace setVariable ["COMSPEC_InRoleplayZone", false, false];
+            };
             [0, 0, true] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
             [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
             [] call comspec_overwatch_connect_fnc_refreshLinkState;
@@ -151,7 +162,7 @@ switch (_action) do {
             ["reconnect"] call comspec_overwatch_connect_fnc_playRoleplaySound;
             ["INFO", "Zeus", "Fin du brouillage — liaison rétablie", "system"] call comspec_overwatch_connect_fnc_logAtakEvent;
             [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
-        }, [], _durationSec + 0.5] call CBA_fnc_waitAndExecute;
+        }, [_jamUntil], _durationSec + 0.5] call CBA_fnc_waitAndExecute;
     };
 
     case "capture";

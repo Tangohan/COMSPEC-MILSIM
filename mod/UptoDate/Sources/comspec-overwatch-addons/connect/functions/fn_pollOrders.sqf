@@ -268,12 +268,19 @@ if (!_primed) then {
     if (!_canPush) then {
         [_newOnes] call _fnc_markSeen;
     } else {
-        if ((count _newOnes) > 0) then {
-            [_newOnes select 0] call comspec_overwatch_connect_fnc_receiveOrder;
-            if ((count _newOnes) > 1) then {
-                [_newOnes select [1, (count _newOnes) - 1]] call _fnc_markSeen;
-            };
-        };
+        // Les ordres web reviennent à chaque lecture : ne garder que ceux pas encore vus, en livrer un,
+        // laisser les suivants au PFH de secours (startSyncLoops, un toutes les 5 s) au lieu de les marquer vus sans notif.
+        private _seenNow = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
+        if (!(_seenNow isEqualType [])) then { _seenNow = []; };
+        _seenNow = _seenNow apply { [_x] call _fnc_idText };
+        private _unseen = _newOnes select { !(([_x getOrDefault ["id", ""]] call _fnc_idText) in _seenNow) };
+        // Un ordre écarté par receiveOrder (pas pour ce joueur, émis par lui) ne doit pas bloquer celui de derrière.
+        {
+            private _uid = [_x getOrDefault ["id", ""]] call _fnc_idText;
+            [_x] call comspec_overwatch_connect_fnc_receiveOrder;
+            private _seenAfter = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
+            if (_seenAfter isEqualType [] && {(_seenAfter findIf { ([_x] call _fnc_idText) isEqualTo _uid }) >= 0}) exitWith {};
+        } forEach _unseen;
     };
 
     if (

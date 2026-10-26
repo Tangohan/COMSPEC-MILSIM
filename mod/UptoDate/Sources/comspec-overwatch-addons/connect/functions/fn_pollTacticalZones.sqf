@@ -160,24 +160,59 @@ if (!(_prev isEqualType [])) then { _prev = []; };
 missionNamespace setVariable ["COMSPEC_TacticalZoneIds", _seen, false];
 missionNamespace setVariable ["COMSPEC_TacticalZoneSigs", _nextSigs, false];
 
-private _hit = [player] call comspec_overwatch_connect_fnc_checkPlayerInDangerZone;
+// Toutes les zones qui contiennent le joueur (checkPlayerInDangerZone ne rend que la première : un OBJECTIF / LZ
+// listé avant une DANGER_ZONE superposée masquait l'alerte, et A puis A+B puis A réalertait A).
+// Même test de contenance que checkPlayerInDangerZone.
+private _hits = [];
+if (!isNull player && {alive player}) then {
+    private _ppos = getPos player;
+    private _px = _ppos select 0;
+    private _py = _ppos select 1;
+    {
+        private _zoneId = _x param [0, ""];
+        private _geomType = toUpper (_x param [1, "CIRCLE"]);
+        private _centerOrPoints = _x param [2, []];
+        private _radius = _x param [3, 0];
+        private _inside = false;
+        if (_geomType in ["POLYGON", "POLYLINE", "PATH"] && {(count _centerOrPoints) >= 3}) then {
+            private _poly = [];
+            {
+                if (_x isEqualType [] && {(count _x) >= 2}) then {
+                    _poly pushBack [_x select 0, _x select 1, 0];
+                };
+            } forEach _centerOrPoints;
+            if ((count _poly) >= 3) then {
+                _inside = [_px, _py, 0] inPolygon _poly;
+            };
+        };
+        if (!_inside && {_geomType in ["CIRCLE", "ELLIPSE", "RECTANGLE", ""] || {(count _centerOrPoints) < 3}}) then {
+            if ((count _centerOrPoints) >= 2) then {
+                private _cx = _centerOrPoints select 0;
+                private _cy = _centerOrPoints select 1;
+                if (_cx isEqualType 0 && {_cy isEqualType 0}) then {
+                    private _r = if (_radius isEqualType 0 && {_radius > 0}) then { _radius } else { 25 };
+                    _inside = (sqrt ((_px - _cx)^2 + (_py - _cy)^2)) <= _r;
+                };
+            };
+        };
+        if (_inside && {_zoneId isNotEqualTo ""}) then {
+            _hits pushBack [_zoneId, _x param [4, "RESTRICTED_AREA"], _x param [5, "MEDIUM"], _x param [6, ""], _x param [7, 0]];
+        };
+    } forEach _zones;
+};
 // Zones quittées : retirées de la liste « déjà entrée » pour réalerter à la prochaine entrée.
-private _hitId = if ((count _hit) >= 2) then { _hit select 0 } else { "" };
+private _hitIds = _hits apply { _x select 0 };
 private _entered = missionNamespace getVariable ["COMSPEC_EnteredZones", []];
 if (!(_entered isEqualType [])) then { _entered = []; };
-missionNamespace setVariable ["COMSPEC_EnteredZones", _entered select { _x isEqualTo _hitId }, false];
-if ((count _hit) >= 2) then {
-    private _zid = _hit select 0;
-    private _ztype = _hit select 1;
-    private _threat = _hit param [2, "MEDIUM"];
-    private _zlabel = _hit param [3, ""];
-    private _alertFlag = _hit param [4, 0];
+missionNamespace setVariable ["COMSPEC_EnteredZones", _entered select { _x in _hitIds }, false];
+{
+    _x params ["_zid", "_ztype", "_threat", "_zlabel", "_alertFlag"];
     private _shouldWarn = (_alertFlag isEqualTo 1)
         || {_alertFlag isEqualTo true}
         || {_ztype in ["DANGER_ZONE", "NO_GO_AREA", "RESTRICTED_AREA"]};
     if (_shouldWarn) then {
         [_zid, _ztype, _threat, _zlabel] call comspec_overwatch_connect_fnc_warnDangerZoneEntry;
     };
-};
+} forEach _hits;
 
 true
