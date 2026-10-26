@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Nouveau téléphone : iPhone 17 Pro en coque durcie olive (ATAK natif 2.4.2.AB - Denver)
+
+### Résumé joueur
+Type : nouveauté
+FR : Un iPhone 17 Pro rejoint les téléphones ATAK
+- Nouveau modèle dans Réglages > Personnaliser : iPhone 17 Pro en coque durcie olive, sur support de gilet.
+- L'ATAK ne passe jamais sous la Dynamic Island.
+- Le dos et le téléphone porté sur le gilet suivent le modèle.
+- Le Durci S7 reste le défaut.
+EN : An iPhone 17 Pro joins the ATAK phones
+- New model in Settings > Customize: iPhone 17 Pro in an olive rugged case, on a vest mount.
+- The ATAK never sits under the Dynamic Island.
+- The back and the phone worn on the vest follow the model.
+- The Rugged S7 stays the default.
+
+### Détail technique
+Version provisoire : le lot natif suivant la renumérote (STOP MERGE, regroupée avec les autres PR natives).
+
+- Modèle `ip17` (profil `COMSPEC_ATAK_PhoneModel`), image fournie par TTRD le 2026-10-26 (`tools/src/ip17_photo.png`). `tools/cut_ip17.py` la détoure (fond noir relié aux bords, seuil bas pour garder le support JPC noir), ouvre l'écran à droite de la Dynamic Island (zone sûre d'iOS en paysage : l'île et le verre qui l'entoure restent sur la coque) et dessine le dos (miroir de la face, dos moulé olive, fenêtre sur le plateau photo bleu intense : trois objectifs en triangle, flash, LiDAR ; aucun logo).
+- `frame_photos.py` (FRAMES, BACKS) : écran paysage `[0.2221, 0.3801, 0.7553, 0.6201]`, boîte visible `[0.1167, 0.3154, 0.8755, 0.7866]` dans `fn_layoutGet`. Coques jour/nuit, portrait/paysage, dos (`gen_assets.py <hemtt> ip17`), poussière de coque (`gen_dirt.py <hemtt> case ip17`).
+- Téléphone porté ouvert sur le JPC et selfie : `COMSPEC_ATAK_JpcPhone_ip17` reprend `jpc_iphone.p3d` (même coque et même support que le V2 Enhanced) avec l'atlas `jpc_ip17_ca`, recalé pour que l'ouverture de l'écran tombe sur l'écran du modèle prêté (`gen_assets.JPC_SHARED`, étiré de 8 % en hauteur) ; texture d'écran 1024 x 496 comme le V2.
+- Listes des modèles : Réglages > Personnaliser (`fn_pageSettings`), réglage CBA « Modèle du téléphone » et « Item requis : iPhone 17 Pro » (`XEH_preInit`), dos et Accessoires (`fn_backView`, `fn_pageAccessories` ; le dos du S23 affiche aussi son nom, il était vide), antenne SMA décalée sur le bord de la coque (`fn_antenna`), JPC (`fn_jpcScreen`), selfie (`fn_gestureSelfie`). Libellé anglais « Rugged iPhone 17 Pro ».
+- Site : la carte Discord des photos rapides nomme aussi les modèles `s23` et `ip17`.
+- `tools/paa_dxt.py` : mipmaps compressés en LZO1X comme HEMTT quand le module python-lzo est présent (2048 x 2048 : 5,6 Mo → 0,2 à 1 Mo). Les PAA de ce modèle en viennent (HEMTT non lancé dans ce fil).
+- main.pbo **pas reconstruit** dans cette PR : il le sera au lot natif (HEMTT ou `build_mod.bat`). Test PHP : les PAA de l'iPhone 17 Pro (coques, dos) existent.
+
 ## Correctif de sécurité : liaison Athena, relais ATAK, Windows en français (ATAK natif 2.4.1.AB - Denver, COMSPEC Link 2.0.96)
 
 ### Résumé joueur

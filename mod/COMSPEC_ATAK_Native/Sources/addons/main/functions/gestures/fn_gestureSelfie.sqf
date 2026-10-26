@@ -49,7 +49,7 @@ switch (_mode) do {
         if (isNull _phone || {(attachedTo _phone) isNotEqualTo _unit}) then {
             call _drop;
             private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
-            if !(_model in ["s7", "s23", "rugged", "iphone", "sonim"]) then { _model = "s7"; };
+            if !(_model in ["s7", "s23", "rugged", "iphone", "sonim", "ip17"]) then { _model = "s7"; };
             _phone = createSimpleObject ["COMSPEC_ATAK_JpcPhone_" + _model, getPosASL _unit, false];
             private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
             if (_model isEqualTo "s7" && {_tint in ["od", "black"]}) then {

@@ -322,6 +322,7 @@ CASE_SRC = {
     "sonim": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_sonim_front.png"),
     "keys": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_keys_front.png"),
     "s23": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_s23_front.png"),
+    "ip17": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_ip17_front.png"),
 }
 
 

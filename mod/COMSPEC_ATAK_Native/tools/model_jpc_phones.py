@@ -34,6 +34,7 @@ PHONES = {
     "sonim": ((236, 617, 1760, 1433), (223, 503, 1764, 1440), 50),
 }
 # Le S23 n'a pas de modèle propre : COMSPEC_ATAK_JpcPhone_s23 reprend jpc_s7.p3d avec l'atlas jpc_s23_ca (même recadrage).
+# L'iPhone 17 Pro non plus : COMSPEC_ATAK_JpcPhone_ip17 reprend jpc_iphone.p3d, atlas recalé (gen_assets.JPC_SHARED).
 M_PER_PX = 0.113 / (HOLE[2] - HOLE[0])  # écran 5,1 pouces 16:9 : 11,3 cm de large
 DEPTH = 0.016
 

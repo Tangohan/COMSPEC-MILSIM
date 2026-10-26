@@ -374,6 +374,11 @@ class CfgVehicles {
     class COMSPEC_ATAK_JpcPhone_s23: COMSPEC_ATAK_JpcPhone_s7 {
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_s23_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
+    // iPhone 17 Pro : même coque et même support que le V2 Enhanced, modèle jpc_iphone.p3d ; atlas recalé sur son écran
+    // (gen_assets.py ip17, JPC_SHARED).
+    class COMSPEC_ATAK_JpcPhone_ip17: COMSPEC_ATAK_JpcPhone_iphone {
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_ip17_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_9E4D5298F6";

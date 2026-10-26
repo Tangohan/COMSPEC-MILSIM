@@ -108,13 +108,13 @@ final class AtakAccessoriesVehicleTest extends TestCase
         self::assertStringContainsString('_model = "tablet";', $lay);
         self::assertStringNotContainsString('VIS_', $lay);
         $data = dirname(__DIR__, 2) . '/' . self::MAIN . '/data/';
-        foreach (['rugged', 'iphone', 'tablet'] as $m) {
+        foreach (['rugged', 'iphone', 'tablet', 'ip17'] as $m) {
             foreach (['landscape', 'portrait'] as $o) {
                 self::assertFileExists($data . 'phone_' . $o . '_' . $m . '.paa');
                 self::assertFileExists($data . 'phone_' . $o . '_' . $m . '_night.paa');
             }
         }
-        foreach (['rugged', 'iphone'] as $m) {
+        foreach (['rugged', 'iphone', 'ip17'] as $m) {
             self::assertFileExists($data . 'phone_back_' . $m . '.paa');
         }
         self::assertStringContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf'));
