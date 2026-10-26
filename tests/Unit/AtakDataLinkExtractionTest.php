@@ -44,8 +44,13 @@ final class AtakDataLinkExtractionTest extends TestCase
         foreach (['cable', 'length', 'speed'] as $k) {
             self::assertStringContainsString('"comspec_atak_native_data_' . $k . '"', $pre, $k);
         }
-        // L'événement CBA relaie toutes les actions sauf « code » (code de fin, posé seulement par fn_dataSetup).
-        self::assertStringContainsString('["comspec_atak_native_dataSrv", { if ((_this param [0, ""]) isNotEqualTo "code") then { _this call comspec_atak_native_fnc_dataServer; }; }]', $pre);
+        // Plus d'événement CBA : il ne portait pas l'identité du poste émetteur et n'écartait que « code », donc
+        // « done », « unlock », « cracked », « reset » et « remove » passaient sans aucun contrôle. Chaque demande
+        // arrive par remoteExecCall vers le serveur, qui retrouve le demandeur par remoteExecutedOwner.
+        self::assertStringNotContainsString('["comspec_atak_native_dataSrv", {', $pre);
+        self::assertStringContainsString('class comspec_atak_native_fnc_dataServer { allowedTargets = 2; };', $this->read(self::MAIN . '/config.cpp'));
+        self::assertStringContainsString('remoteExecCall ["comspec_atak_native_fnc_dataServer", 2]', $this->read(self::MAIN . '/functions/datalink/fn_dataAction.sqf'));
+        self::assertStringContainsString('[remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit', $this->read(self::MAIN . '/functions/datalink/fn_dataServer.sqf'));
         foreach (['app_datalink', 'item_datacable', 'datalink_land_up', 'datalink_land_down', 'datalink_port_left', 'datalink_port_right'] as $paa) {
             self::assertFileExists(dirname(__DIR__, 2) . '/' . self::MAIN . '/data/' . $paa . '.paa');
         }
