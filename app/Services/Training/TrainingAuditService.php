@@ -27,7 +27,7 @@ class TrainingAuditService
         ?string $ip = null,
         ?string $userAgent = null
     ): void {
-        $ip = $ip ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null);
+        $ip = $ip ?? (\App\Support\ClientIp::resolve() ?: null);
         $userAgent = $userAgent ?? ($_SERVER['HTTP_USER_AGENT'] ?? null);
         if (is_string($ip) && strpos($ip, ',') !== false) {
             $ip = trim(explode(',', $ip)[0]);
