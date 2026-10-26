@@ -1,6 +1,6 @@
 /*
     Actions de l'app Briefing.
-    ["tab", "SLIDES"|"MISSION"]  change d'onglet
+    ["tab", "SLIDES"|"MISSION"|"SCREENS"]  change d'onglet (SCREENS : écrans COMSPEC à portée, fn_screenCast)
     ["step", delta]              diapositive précédente / suivante
     ["goto", index]              saute à une diapositive
     ["refresh"]                  relit les diapositives publiées sur Athena (ou recharge le lien Google enregistré,
@@ -43,6 +43,8 @@ switch (_action) do {
                 };
                 missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", _target];
                 if ((_live param [0, objNull]) isEqualTo player) then { ["publish"] call comspec_atak_native_fnc_briefingLive; };
+                // Écrans COMSPEC que je diffuse : ils suivent ma diapositive (fn_screenCast).
+                ["sync"] call comspec_atak_native_fnc_screenCast;
                 call _rerender;
             };
             default { [_target - _idx] call comspec_atak_native_fnc_briefingStep; };

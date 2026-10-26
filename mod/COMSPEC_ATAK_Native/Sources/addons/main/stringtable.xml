@@ -1017,5 +1017,80 @@
             <English>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</English>
             <French>WEST, EAST, GUER ou CIV : seul ce camp peut utiliser ce PC. Vide : tous les camps.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_NAME">
+            <Original>ATAK · Écran COMSPEC</Original>
+            <English>ATAK · COMSPEC screen</English>
+            <French>ATAK · Écran COMSPEC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_N_NAME">
+            <Original>Nom de l'écran</Original>
+            <English>Screen name</English>
+            <French>Nom de l'écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_N_TIP">
+            <Original>Nom montré dans l'app Briefing (onglet ÉCRANS). Vide : nom de l'objet.</Original>
+            <English>Name shown in the Briefing app (SCREENS tab). Empty: the object's name.</English>
+            <French>Nom montré dans l'app Briefing (onglet ÉCRANS). Vide : nom de l'objet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_R_NAME">
+            <Original>Portée de détection (m)</Original>
+            <English>Detection range (m)</English>
+            <French>Portée de détection (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_R_TIP">
+            <Original>Distance à laquelle un téléphone voit l'écran et peut y diffuser ses diapositives.</Original>
+            <English>Distance at which a phone sees the screen and can cast its slides to it.</English>
+            <French>Distance à laquelle un téléphone voit l'écran et peut y diffuser ses diapositives.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_NAME">
+            <Original>Camp qui le pilote</Original>
+            <English>Side that controls it</English>
+            <French>Camp qui le pilote</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_TIP">
+            <Original>Seul ce camp voit l'écran dans son téléphone et le pilote. L'image reste visible de tous.</Original>
+            <English>Only this side sees the screen on its phones and controls it. The image stays visible to everyone.</English>
+            <French>Seul ce camp voit l'écran dans son téléphone et le pilote. L'image reste visible de tous.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_ALL">
+            <Original>Tous les camps</Original>
+            <English>All sides</English>
+            <French>Tous les camps</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER">
+            <Original>Indépendants</Original>
+            <English>Independent</English>
+            <French>Indépendants</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_CIV">
+            <Original>Civils</Original>
+            <English>Civilians</English>
+            <French>Civils</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_I_NAME">
+            <Original>Texture (index de sélection)</Original>
+            <English>Texture (selection index)</English>
+            <French>Texture (index de sélection)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_I_TIP">
+            <Original>Sélection de l'objet qui reçoit l'image : 0 sur la plupart des TV, écrans et projecteurs. Essayez 1 si l'image tombe sur le cadre.</Original>
+            <English>Object selection that receives the image: 0 on most TVs, screens and projectors. Try 1 if the image lands on the frame.</English>
+            <French>Sélection de l'objet qui reçoit l'image : 0 sur la plupart des TV, écrans et projecteurs. Essayez 1 si l'image tombe sur le cadre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_A_NAME">
+            <Original>Contrôle par ACE / molette</Original>
+            <English>Control with ACE / scroll wheel</English>
+            <French>Contrôle par ACE / molette</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_A_TIP">
+            <Original>Diapositive suivante, précédente et arrêt directement sur l'écran.</Original>
+            <English>Next slide, previous slide and stop directly at the screen.</English>
+            <French>Diapositive suivante, précédente et arrêt directement sur l'écran.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_DESC">
+            <Original>Synchronisez ce module avec des TV, écrans ou projecteurs : l'app Briefing du téléphone les détecte à portée et y diffuse ses diapositives, pilotées depuis le téléphone, ACE ou la molette.</Original>
+            <English>Sync this module with TVs, screens or projectors: the phone's Briefing app detects them in range and casts its slides to them, controlled from the phone, ACE or the scroll wheel.</English>
+            <French>Synchronisez ce module avec des TV, écrans ou projecteurs : l'app Briefing du téléphone les détecte à portée et y diffuse ses diapositives, pilotées depuis le téléphone, ACE ou la molette.</French>
+        </Key>
     </Package>
 </Project>
