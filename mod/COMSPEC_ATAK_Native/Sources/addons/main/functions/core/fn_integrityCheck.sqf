@@ -180,7 +180,7 @@ switch (toLower _mode) do {
                 _notified pushBackUnique _what;
                 while { (count _notified) > 20 } do { _notified deleteAt 0; };
                 profileNamespace setVariable ["COMSPEC_ATAK_UpdateNotified", _notified];
-                saveProfileNamespace;
+                [] call comspec_atak_native_fnc_saveProfile;
             };
         };
         private _clear = {

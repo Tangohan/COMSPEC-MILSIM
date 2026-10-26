@@ -118,7 +118,7 @@ _vb ctrlSetFontHeight (_fs * 0.9);
 _vb ctrlSetTooltip (("Basculer entre le tableau des pistes et l'arbre ORBAT (formation, groupe, équipe)") call comspec_atak_native_fnc_tr);
 _vb ctrlAddEventHandler ["ButtonClick", {
     profileNamespace setVariable ["COMSPEC_ATAK_BftView", ["ORBAT", "LIST"] select ((profileNamespace getVariable ["COMSPEC_ATAK_BftView", "LIST"]) isEqualTo "ORBAT")];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bftFiltersOpen", false];
     [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
@@ -170,7 +170,7 @@ if (_filtersOpen) then {
     uiNamespace setVariable ["COMSPEC_ATAK_BftFilterSet", {
         params ["_var", "_val"];
         profileNamespace setVariable [_var, _val];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         [] call comspec_atak_native_fnc_localDataRefresh;
         [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }];

@@ -27,7 +27,7 @@ switch (_what) do {
             [_what] call comspec_overwatch_connect_fnc_athenaApply;
         } else {
             profileNamespace setVariable ["COMSPEC_AthenaMode", _what];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
         };
         ["INFO", ["Service Athéna désactivé : ATAK local", "Service Athéna activé"] select (_what isEqualTo "on"), 3, 20] call comspec_atak_native_fnc_notify;
     };

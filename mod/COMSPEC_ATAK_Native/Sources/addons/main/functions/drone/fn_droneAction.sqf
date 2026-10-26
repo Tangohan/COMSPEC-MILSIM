@@ -1083,7 +1083,7 @@ switch (_act) do {
     };
     case "quality": {
         profileNamespace setVariable ["COMSPEC_ATAK_DroneQuality", ((_arg max 0) min 1)];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         ["INFO", format ["Flux du drone : qualité %1", ["basse (512 px, plus fluide)", "haute (1024 px, plus lourde)"] select ((_arg max 0) min 1)]] call _say;
         call _render;
     };

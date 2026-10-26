@@ -199,6 +199,7 @@ class CfgFunctions {
             class callExtLogged {};
             class outboxPush {};
             class outboxFlush {};
+            class saveProfile {};
             class outboxState {};
             class wallClockSeconds {};
             class openTabletView {};

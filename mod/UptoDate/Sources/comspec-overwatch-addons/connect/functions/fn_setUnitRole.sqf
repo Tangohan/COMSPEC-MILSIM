@@ -18,7 +18,7 @@ player setVariable ["COMSPEC_Role", _role, true];
 // Écriture disque seulement si le rôle du profil change (saveProfileNamespace est coûteux).
 if (_persistProfile && {(profileNamespace getVariable ["COMSPEC_Role", ""]) isNotEqualTo _role}) then {
     profileNamespace setVariable ["COMSPEC_Role", _role];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 missionNamespace setVariable ["COMSPEC_lastRole", "", false]; // force renvoi position

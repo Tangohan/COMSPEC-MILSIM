@@ -9,6 +9,15 @@ if (isServer) then {
     [] call comspec_overwatch_connect_fnc_initProxyTrackServer;
     [] call comspec_overwatch_connect_fnc_initServerHub;
 };
+// Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
+{
+    addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_overwatch_connect_fnc_saveProfile; }; }];
+} forEach ["Ended", "MPEnded"];
+if (hasInterface) then {
+    [{ !isNull (findDisplay 46) }, {
+        (findDisplay 46) displayAddEventHandler ["Unload", { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_overwatch_connect_fnc_saveProfile; }; }];
+    }] call CBA_fnc_waitUntilAndExecute;
+};
 if (!hasInterface) exitWith {};
 
 ["INFO", "Boot", "PostInit client — warmup extension"] call comspec_overwatch_connect_fnc_log;
@@ -306,7 +315,7 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         if (_cut isEqualType true) then {
             [_cut, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
             profileNamespace setVariable ["COMSPEC_EcotiCutawayEnabled", nil];
-            saveProfileNamespace;
+            [] call comspec_overwatch_connect_fnc_saveProfile;
         };
         private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
         if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
@@ -571,7 +580,7 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         };
         if ((count _outboxKeep) isNotEqualTo (count _outboxNow)) then {
             profileNamespace setVariable ["COMSPEC_Outbox", _outboxKeep];
-            saveProfileNamespace;
+            [] call comspec_overwatch_connect_fnc_saveProfile;
         };
     };
     if (isNil "COMSPEC_OutboxFlushPFH") then {

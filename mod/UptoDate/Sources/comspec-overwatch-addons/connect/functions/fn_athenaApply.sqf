@@ -12,7 +12,7 @@ if !(_mode in ["on", "off"]) exitWith { false };
 
 private _prev = [] call comspec_overwatch_connect_fnc_athenaMode;
 profileNamespace setVariable ["COMSPEC_AthenaMode", _mode];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 ["INFO", "Athena", format ["Service Athéna : %1 (avant : %2)", _mode, [_prev, "aucun"] select (_prev isEqualTo "")]] call comspec_overwatch_connect_fnc_log;
 
 if (_mode isEqualTo "off") then {

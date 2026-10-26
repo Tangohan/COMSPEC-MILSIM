@@ -1,4 +1,8 @@
 private _perfT0 = diag_tickTime;
+// Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
+{
+    addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+} forEach ["Ended", "MPEnded"];
 /*
     Mémoire serveur de l'état partagé du téléphone, pour les joueurs qui rejoignent en cours de partie :
     demandes logistiques, MEDEVAC et comptes rendus (journal des événements par camp, rejoué chez le nouveau venu)

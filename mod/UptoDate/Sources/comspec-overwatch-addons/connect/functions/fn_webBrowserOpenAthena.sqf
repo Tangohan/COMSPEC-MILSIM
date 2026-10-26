@@ -51,7 +51,8 @@ if ((count _atakUrl) < 16) exitWith {
 missionNamespace setVariable ["COMSPEC_WebBrowser_SystemOpenAt", _now];
 
 // Priorite 1 : navigateur systeme (Windows)
-openURL _atakUrl;
+// openURL n'existe pas en SQF : COMSPEC Link ouvre le navigateur (adresse du portail seulement).
+"COMSPECExtension" callExtension ["OpenAthenaLink", [_atakUrl]];
 
 // Sur Stable, l’embarqué ne charge pas /atak : rester en mode local (radar tablette).
 private _branch = "";

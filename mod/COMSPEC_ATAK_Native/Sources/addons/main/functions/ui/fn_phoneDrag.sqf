@@ -26,7 +26,7 @@ switch (_event) do {
         // Le mode disposition règle le mini : le plein écran repasse en mini, en main.
         if ((toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"])) isNotEqualTo "MINI") then {
             profileNamespace setVariable ["COMSPEC_ATAK_Mode", "MINI"];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
             [_s getOrDefault ["activePage", "LAUNCHER"], false] call comspec_atak_native_fnc_navigate;
         };
         ["ARRANGE_DRAW"] call comspec_atak_native_fnc_phoneDrag;
@@ -36,7 +36,7 @@ switch (_event) do {
         uiNamespace setVariable ["COMSPEC_ATAK_Arrange", false];
         _s set ["drag", []];
         call _wipe;
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         ["Position du téléphone enregistrée", 2] call comspec_atak_native_fnc_toast;
         true
     };
@@ -120,7 +120,7 @@ switch (_event) do {
     case "UP": {
         if ((count (_s getOrDefault ["drag", []])) isEqualTo 0) exitWith { false };
         _s set ["drag", []];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         [_s getOrDefault ["activePage", "MAP"]] call comspec_atak_native_fnc_pageRender;
         // La page redessinée passe devant : le voile du mode disposition revient par-dessus.
         if (_arrange) then { ["ARRANGE_DRAW"] call comspec_atak_native_fnc_phoneDrag; };

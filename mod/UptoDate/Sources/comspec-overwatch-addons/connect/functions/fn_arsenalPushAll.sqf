@@ -72,7 +72,7 @@ private _fail = 0;
 } forEach _entries;
 
 missionNamespace setVariable ["COMSPEC_ArsenalPushBusy", false, false];
-if (_ok > 0) then { saveProfileNamespace; };
+if (_ok > 0) then { [] call comspec_overwatch_connect_fnc_saveProfile; };
 if (_sendingAll) then {
     missionNamespace setVariable ["COMSPEC_ArsenalLastPushAt", diag_tickTime, false];
 };

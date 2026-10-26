@@ -150,7 +150,7 @@ copyToClipboard _info;
 hint ((parseText format [
     "<t size='1.05' color='#e8f4f0'>ATAK — %1</t><br/><t align='left' size='0.85'>%2</t><br/><t size='0.75' color='#8aa0b4'>Identifiants copiés.</t>",
     _name,
-    _info replaceString [toString [10], "<br/>"]
+    (_info splitString toString [10]) joinString "<br/>"
 ]) call comspec_overwatch_connect_fnc_tr);
 
 private _okJam = ["Brouiller ce joueur 45 s ? (Annuler = infos seulement)", "COMSPEC ATAK", true, true, findDisplay 312] call BIS_fnc_guiMessage;

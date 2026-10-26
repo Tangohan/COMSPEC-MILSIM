@@ -92,7 +92,7 @@ switch (_act) do {
         // Chef d'équipe : dépend de l'équipe, jamais mémorisé.
         if (_k isEqualTo "CDE") exitWith {};
         profileNamespace setVariable ["COMSPEC_ATAK_MyRole", [_k, "NONE"] select (_k isEqualTo "")];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         player setVariable ["COMSPEC_FTRolePref", _k, true];
     };
     case "respawn": {

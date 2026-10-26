@@ -170,6 +170,6 @@ switch (toLower _act) do {
         // Écrit sur le disque toutes les 2 min seulement (survit à un crash du jeu sans saccade à chaque sauvegarde).
         private _n = (_st getOrDefault ["saveN", 0]) + 1;
         _st set ["saveN", _n];
-        if ((_n mod 4) isEqualTo 1) then { saveProfileNamespace; };
+        if ((_n mod 4) isEqualTo 1) then { [] call comspec_atak_native_fnc_saveProfile; };
     };
 };

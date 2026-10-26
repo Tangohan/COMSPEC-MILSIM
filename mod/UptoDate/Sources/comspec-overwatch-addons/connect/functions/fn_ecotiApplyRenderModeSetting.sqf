@@ -13,7 +13,7 @@ missionNamespace setVariable ["comspec_overwatch_ecoti_render_mode", _mode, fals
 
 if (_persist) then {
     profileNamespace setVariable ["COMSPEC_EcotiRenderMode", _mode];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 if (!isNil "cba_settings_fnc_set") then {
