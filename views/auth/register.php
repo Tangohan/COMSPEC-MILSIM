@@ -68,9 +68,10 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
     <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/dsfr-service.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/auth-register.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/auth-pages.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php $GLOBALS['__dsfr_service_css'] = true; ?>
 </head>
-<body class="ds-page ds-page--split ds-page--register">
+<body class="ds-page ds-page--split ds-page--register ds-page--auth">
 <a class="ds-skip" href="#contenu"><?= htmlspecialchars(__('common.skip_to_content'), ENT_QUOTES, 'UTF-8') ?></a>
 <?php require base_path('views/partials/athena_header_guest.php'); ?>
 

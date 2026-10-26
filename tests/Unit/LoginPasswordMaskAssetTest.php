@@ -11,10 +11,16 @@ final class LoginPasswordMaskAssetTest extends TestCase
     public function testLoginPasswordFieldIsMaskedWithoutWaitingForAlpine(): void
     {
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/auth/login.php');
+        $field = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/auth/password_input.php');
 
-        self::assertStringContainsString('type="password" name="password" id="password"', $view);
+        // Champ commun des pages d'accès : type password natif, bouton œil, alerte Verr. Maj.
+        self::assertStringContainsString('<input type="password" name="', $field);
+        self::assertStringContainsString('data-password-toggle="<?= $pwIdSafe ?>"', $field);
+        self::assertStringContainsString('aria-pressed="false"', $field);
+        self::assertStringContainsString('data-caps-watch', $field);
+        self::assertStringContainsString("\$pwId = 'password'; \$pwName = 'password'; \$pwAutocomplete = 'current-password'", $view);
+        self::assertStringContainsString("views/partials/auth/password_input.php", $view);
         self::assertStringNotContainsString(':type="showPassword', $view);
-        self::assertStringContainsString('data-password-toggle="password"', $view);
         self::assertStringContainsString("url('forgot-password')", $view);
         self::assertStringContainsString('assets/js/auth_forms.js', $view);
         self::assertStringNotContainsString('alpinejs', $view);
@@ -27,7 +33,8 @@ final class LoginPasswordMaskAssetTest extends TestCase
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/auth/forgot-password.php');
         self::assertStringContainsString("url('forgot-password')", $view);
         self::assertStringContainsString('name="email"', $view);
-        self::assertStringContainsString('dsfr-service.css', $view);
+        self::assertStringContainsString("views/partials/auth/head.php", $view);
+        self::assertStringContainsString('dsfr-service.css', (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/auth/head.php'));
         self::assertStringContainsString('athena_header_guest.php', $view);
         self::assertStringContainsString('auth.forgot_lead', $view);
         self::assertStringContainsString('assets/js/auth_forms.js', $view);
@@ -39,13 +46,13 @@ final class LoginPasswordMaskAssetTest extends TestCase
     public function testResetPasswordPageUsesMaskedFieldsAndConfirm(): void
     {
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/auth/reset-password.php');
-        self::assertStringContainsString('type="password" name="password" id="password"', $view);
-        self::assertStringContainsString('type="password" name="password_confirmation" id="password_confirmation"', $view);
-        self::assertStringContainsString('data-password-toggle="password"', $view);
+        self::assertStringContainsString("\$pwId = 'password'; \$pwName = 'password'; \$pwAutocomplete = 'new-password'", $view);
+        self::assertStringContainsString("\$pwId = 'password_confirmation'; \$pwName = 'password_confirmation'", $view);
         self::assertStringContainsString('data-password-confirm-of="password"', $view);
+        self::assertStringContainsString('data-strength-meter', $view);
         self::assertStringContainsString("url('reset-password')", $view);
         self::assertStringContainsString('name="token"', $view);
-        self::assertStringContainsString('dsfr-service.css', $view);
+        self::assertStringContainsString("views/partials/auth/head.php", $view);
         self::assertStringContainsString('assets/js/auth_forms.js', $view);
         self::assertStringNotContainsString('alpinejs', $view);
     }

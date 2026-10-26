@@ -20,6 +20,9 @@ final class AuditAction
     public const AUTH_TOTP_ENABLED = 'auth.totp_enabled';
     public const AUTH_TOTP_DISABLED = 'auth.totp_disabled';
     public const AUTH_EMAIL_LOGIN_OTP_TOGGLED = 'auth.email_login_otp_toggled';
+    public const AUTH_RECOVERY_CODE_USED = 'auth.recovery_code_used';
+    public const AUTH_RECOVERY_CODES_GENERATED = 'auth.recovery_codes_generated';
+    public const AUTH_TRUSTED_DEVICES_REVOKED = 'auth.trusted_devices_revoked';
     public const AUTH_PORTAL_SELECTED = 'auth.portal_selected';
     public const USER_STEAM_LINKED = 'user.steam_linked';
 
@@ -105,6 +108,9 @@ final class AuditAction
     public const PERMISSION_SCOPE_MIGRATION = 'permission.scope_migration';
 
     public const PLATFORM_SETTINGS_UPDATED = 'platform.settings_updated';
+
+    /** Plancher de version des DLL du jeu (réglage game_min_link_version : administration du site ou tools/game-client-gate.php). */
+    public const PLATFORM_GAME_CLIENT_FLOOR_UPDATED = 'platform.game_client_floor_updated';
 
     /** Vidage d’un lot d’historiques volumineux (administration du site). */
     public const PLATFORM_STORAGE_PURGED = 'platform.storage_purged';

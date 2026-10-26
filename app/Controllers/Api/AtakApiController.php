@@ -892,12 +892,10 @@ class AtakApiController
                 'expired' => 'Liaison en jeu refusée — code expiré',
                 default => 'Liaison en jeu refusée — code inconnu',
             };
-            if ($failTenant > 0) {
-                $this->activityLog?->recordAuthAttempt($failTenant, false, $failLabel, [
-                    'reason' => $reason !== '' ? $reason : 'unknown_code',
-                    'method' => 'code',
-                ]);
-            }
+            $this->logUnverifiedLinkRefusal($failTenant, $failLabel, [
+                'reason' => $reason !== '' ? $reason : 'unknown_code',
+                'method' => 'code',
+            ]);
             if ($reason === 'already_used') {
                 return Response::json([
                     'error' => 'code_already_used',
@@ -1011,12 +1009,10 @@ class AtakApiController
         $user = $this->userRepository->findBySteamId($steamUid);
         if ($user === null) {
             $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
-            if ($failTenant > 0) {
-                $this->activityLog?->recordAuthAttempt($failTenant, false, 'Liaison en jeu refusée — Steam non reconnu', [
-                    'reason' => 'steam_not_linked',
-                    'method' => 'steam',
-                ]);
-            }
+            $this->logUnverifiedLinkRefusal($failTenant, 'Liaison en jeu refusée — Steam non reconnu', [
+                'reason' => 'steam_not_linked',
+                'method' => 'steam',
+            ]);
 
             return Response::json([
                 'error' => 'steam_not_linked',
@@ -1142,6 +1138,29 @@ class AtakApiController
 
             return null;
         }
+    }
+
+    /**
+     * Liaison refusée avant toute preuve (code inconnu, Steam non reconnu) : la communauté vient souvent de
+     * la requête elle-même (tenant_id de l’URL ou du corps). Journalisé seulement si elle existe, et au plus
+     * une fois par minute pour un même refus (AtakActivityLogService::recordUnverifiedAuthFailure).
+     *
+     * @param array<string, mixed> $meta
+     */
+    private function logUnverifiedLinkRefusal(int $tenantId, string $label, array $meta): void
+    {
+        $log = $this->activityLog;
+        if ($tenantId < 1 || $log === null) {
+            return;
+        }
+        try {
+            if ($this->tenantRepository->findById($tenantId) === null) {
+                return;
+            }
+        } catch (\Throwable) {
+            return;
+        }
+        $log->recordUnverifiedAuthFailure($tenantId, $label, $meta);
     }
 
     /**
@@ -7676,6 +7695,95 @@ class AtakApiController
         return Response::json(['ok' => true]);
     }
 
+    /** Fenêtre lue en base par relève de tchat avec curseur (le dépôt borne de son côté à 200). */
+    private const CHAT_FETCH_MAX = 200;
+
+    /** Fenêtres enchaînées au plus par relève : traverse un bloc de messages cachés sans bloquer le curseur. */
+    private const CHAT_SCAN_MAX_PASSES = 4;
+
+    /**
+     * Messages à montrer : sans le bruit technique déjà en base, et sans les MP qui ne concernent pas l'indicatif.
+     *
+     * @param list<mixed> $raw
+     * @return list<array<string, mixed>>
+     */
+    private static function visibleChatRows(array $raw, string $mpCallsign): array
+    {
+        $out = [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $body = (string) ($row['body'] ?? '');
+            $author = (string) ($row['author'] ?? '');
+            // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
+            if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
+                continue;
+            }
+            if (
+                mb_strtoupper(trim($author)) === 'REGLAGES'
+                && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
+            ) {
+                continue;
+            }
+            if ($mpCallsign !== '') {
+                $mp = MpMessageParser::parse(isset($row['body']) ? (string) $row['body'] : null);
+                if ($mp !== null && !MpMessageParser::concernsCallSign($mp, $mpCallsign)) {
+                    continue;
+                }
+            }
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Relève de tchat avec curseur : les messages visibles les PLUS ANCIENS après $afterId, $limit au plus.
+     *
+     * Le client (COMSPEC Link, ATAK natif) avance son curseur au plus grand id REÇU. Renvoyer les plus récents
+     * d'une rafale faisait donc sauter définitivement les plus anciens (TEST-006). On enchaîne jusqu'à
+     * CHAT_SCAN_MAX_PASSES fenêtres pour qu'un bloc de messages cachés, ou de MP qui ne concernent pas cet
+     * indicatif, ne laisse pas le curseur sur une réponse vide, ce qui aurait figé la relève.
+     *
+     * @param callable(int, int): mixed $fetch (curseur, taille de fenêtre) → lignes brutes, ordre id croissant
+     * @return list<array<string, mixed>>
+     */
+    private static function scanChatAfter(
+        callable $fetch,
+        int $afterId,
+        int $limit,
+        int $fetchLimit,
+        string $mpCallsign
+    ): array {
+        $limit = max(1, $limit);
+        $fetchLimit = max(1, $fetchLimit);
+        $cursor = max(0, $afterId);
+        $rows = [];
+        for ($pass = 0; $pass < self::CHAT_SCAN_MAX_PASSES; $pass++) {
+            $raw = $fetch($cursor, $fetchLimit);
+            $raw = is_array($raw) ? array_values($raw) : [];
+            if ($raw === []) {
+                break;
+            }
+            $maxId = 0;
+            foreach ($raw as $rawRow) {
+                if (is_array($rawRow)) {
+                    $maxId = max($maxId, (int) ($rawRow['id'] ?? 0));
+                }
+            }
+            foreach (self::visibleChatRows($raw, $mpCallsign) as $visibleRow) {
+                $rows[] = $visibleRow;
+            }
+            if (count($rows) >= $limit || count($raw) < $fetchLimit || $maxId <= $cursor) {
+                break;
+            }
+            $cursor = $maxId;
+        }
+
+        return count($rows) > $limit ? array_slice($rows, 0, $limit) : $rows;
+    }
+
     public function chatIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -7696,57 +7804,40 @@ class AtakApiController
         $afterId = ($afterRaw !== null && $afterRaw !== '') ? (int) $afterRaw : 0;
         $channelRaw = trim((string) ($request->query('channel') ?? $request->query('channel_key') ?? ''));
         $channelKey = $channelRaw !== '' ? \App\Support\AtakChatChannel::normalizeKey($channelRaw) : null;
-        // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
-        $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
-        try {
-            if ($afterId > 0) {
-                $rows = $this->atak->getChatMessagesAfter($tenantId, $mapId, $afterId, $fetchLimit, $channelKey);
-            } else {
-                $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit, $channelKey);
-            }
-        } catch (\Throwable) {
-            return Response::json([]);
-        }
-        $rows = array_values(array_filter(
-            is_array($rows) ? $rows : [],
-            static function ($row): bool {
-                if (!is_array($row)) {
-                    return false;
-                }
-                $body = (string) ($row['body'] ?? '');
-                $author = (string) ($row['author'] ?? '');
-                // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
-                if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
-                    return false;
-                }
-                if (
-                    mb_strtoupper(trim($author)) === 'REGLAGES'
-                    && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
-                ) {
-                    return false;
-                }
-
-                return true;
-            }
-        ));
-
-        // Filtrage MP P2P : TOC voit tout ; ?callsign= ne remonte que les fils où l’indicatif est partie.
+        // Filtrage MP P2P : TOC voit tout ; ?callsign= ne remonte que les fils où l'indicatif est partie.
         $mpCallsign = trim((string) ($request->query('callsign') ?? $request->query('for_callsign') ?? ''));
-        if ($mpCallsign !== '') {
-            $rows = array_values(array_filter(
-                $rows,
-                static function ($row) use ($mpCallsign): bool {
-                    if (!is_array($row)) {
-                        return false;
-                    }
-                    $mp = MpMessageParser::parse(isset($row['body']) ? (string) $row['body'] : null);
-                    if ($mp === null) {
-                        return true;
-                    }
-
-                    return MpMessageParser::concernsCallSign($mp, $mpCallsign);
-                }
-            ));
+        // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
+        if ($afterId > 0) {
+            // Relève du jeu : on renvoie les messages les PLUS ANCIENS après le curseur, pas les plus récents.
+            // Le client avance « after » au plus grand id reçu : garder les plus récents d'une rafale faisait
+            // sauter définitivement les plus anciens (TEST-006). Il récupère la suite à la relève suivante.
+            // Plusieurs fenêtres : un bloc de messages cachés, ou qui ne concernent pas cet indicatif, ne doit
+            // pas immobiliser le curseur sur une réponse vide.
+            $fetchLimit = min(max((int) ($limit * 2), $limit), self::CHAT_FETCH_MAX);
+            try {
+                $rows = self::scanChatAfter(
+                    fn (int $cursor, int $window): array
+                        => $this->atak->getChatMessagesAfter($tenantId, $mapId, $cursor, $window, $channelKey),
+                    $afterId,
+                    $limit,
+                    $fetchLimit,
+                    $mpCallsign
+                );
+            } catch (\Throwable) {
+                return Response::json([]);
+            }
+        } else {
+            // Premier instantané, sans curseur : les plus RÉCENTS, c'est ce que le joueur veut voir à l'ouverture.
+            $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
+            try {
+                $raw = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit, $channelKey);
+            } catch (\Throwable) {
+                return Response::json([]);
+            }
+            $rows = self::visibleChatRows(is_array($raw) ? array_values($raw) : [], $mpCallsign);
+            if (count($rows) > $limit) {
+                $rows = array_slice($rows, -$limit);
+            }
         }
 
         // Enrichissement léger pour l’UI (groupe / MP / tactique déjà parsé côté JS aussi).
@@ -7777,10 +7868,6 @@ class AtakApiController
             $chatRow['channel_label'] = \App\Support\AtakChatChannel::labelFor($ck);
         }
         unset($chatRow);
-
-        if (count($rows) > $limit) {
-            $rows = array_slice($rows, -$limit);
-        }
 
         try {
             $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'chat', $rows);

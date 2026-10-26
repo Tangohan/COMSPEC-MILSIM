@@ -327,4 +327,5 @@ return [
     ['id' => 'custom_grade_systems', 'label' => 'Grades sur mesure : systèmes, catégories et grades créés par une communauté (SCP, Star Wars…)', 'group' => 'migrations', 'file' => '3090_custom_grade_systems.php', 'rerun' => true],
     ['id' => 'pilot_qualification_rules', 'label' => 'Cursus pilote : qualifications de pilote attribuées d’après les heures de vol (règles par palier)', 'group' => 'migrations', 'file' => '3100_pilot_qualification_rules.php', 'rerun' => true],
     ['id' => 'pilot_logbook', 'label' => 'Carnet de vol des pilotes (vols relevés en jeu et saisis par le pilote, contresignés par un instructeur)', 'group' => 'migrations', 'file' => '3110_pilot_logbook.php', 'rerun' => true],
+    ['id' => 'auth_recovery_trusted_devices', 'label' => 'Double vérification : codes de secours et appareils de confiance (« Se souvenir de cet appareil »)', 'group' => 'migrations', 'file' => '3120_auth_recovery_trusted_devices.php', 'rerun' => true],
 ];

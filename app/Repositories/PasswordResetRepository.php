@@ -21,7 +21,7 @@ class PasswordResetRepository
         $this->pdo->prepare('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, ?)')->execute([
             $userId,
             $tokenHash,
-            $expiresAt->format('Y-m-d H:i:s'),
+            \App\Support\DbTime::utc($expiresAt),
         ]);
     }
 

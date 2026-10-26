@@ -28,6 +28,7 @@ final class SubscriptionPlanFeaturesCatalog
         'advanced_integrations',
         'community_create',
         'registry_featured',
+        'year_review_collective',
         'pilot_qualifications',
     ];
 
@@ -127,6 +128,11 @@ final class SubscriptionPlanFeaturesCatalog
                 'help' => 'Badge « mise en avant » sur la carte de la communauté et place parmi les premières du registre des unités.',
                 'type' => 'bool',
             ],
+            'year_review_collective' => [
+                'label' => 'Rétrospective annuelle de l’unité',
+                'help' => 'Bilan de l’année de toute la communauté (heures, kilomètres, SSE, tableau d’honneur) dans la rétrospective des joueurs. La rétrospective individuelle reste gratuite.',
+                'type' => 'bool',
+            ],
             'pilot_qualifications' => [
                 'label' => 'Cursus pilote automatique',
                 'help' => 'Qualifications de pilote attribuées ou proposées aux instructeurs d’après les heures de vol relevées en jeu.',
@@ -171,6 +177,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => false,
+                'year_review_collective' => false,
                 'pilot_qualifications' => false,
                 'max_members' => 10,
                 'max_training_courses' => 5,
@@ -193,6 +200,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => false,
+                'year_review_collective' => true,
                 'pilot_qualifications' => true,
                 'max_members' => 25,
                 'max_training_courses' => 25,
@@ -215,6 +223,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => true,
+                'year_review_collective' => true,
                 'pilot_qualifications' => true,
                 'max_members' => 50,
                 'max_training_courses' => 100,
@@ -237,6 +246,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => true,
                 'community_create' => true,
                 'registry_featured' => true,
+                'year_review_collective' => true,
                 'pilot_qualifications' => true,
                 'max_members' => 80,
                 'max_training_courses' => 0,

@@ -77,6 +77,18 @@ final class BackOfficeSearchService
         'parametre' => ['reglage', 'configuration'],
         'reglage' => ['parametre', 'configuration'],
         'vitrine' => ['page publique', 'presentation'],
+        'cr' => ['compte rendu', 'remontees', 'rapport'],
+        'rapport' => ['compte rendu', 'cr'],
+        'aar' => ['compte rendu'],
+        'debrief' => ['compte rendu', 'fin'],
+        'spotrep' => ['remontees'],
+        'ovl' => ['overwatch', 'heures', 'temps'],
+        'overwatch' => ['ovl', 'heures', 'mod'],
+        'heure' => ['heures', 'temps', 'ovl'],
+        'playtime' => ['heures', 'temps'],
+        'carnet' => ['logbook', 'vol'],
+        'logbook' => ['carnet'],
+        'pilote' => ['carnet', 'cursus'],
     ];
 
     public function __construct(
@@ -277,6 +289,13 @@ final class BackOfficeSearchService
     {
         $org = $gate->allows('admin.organization') || $gate->allows('admin.access');
         $eff = EffectifsLmsAccess::allows($gate);
+        // Même règle que TenantResourceAdminMiddleware (ATAK, ressources tactiques, musique…).
+        $res = $org || $gate->allows('admin.system');
+        // Même règle que AdminIntelIntakeController::allowed() (remontées).
+        $intel = $res || $gate->allows('atak.sse.case.manage') || $gate->allows('atak.sse.grant');
+        $training = class_exists(\App\Support\TrainingLmsStaffAccess::class) && \App\Support\TrainingLmsStaffAccess::allows($gate);
+        $recruit = $org || $gate->allows('organization.recruitment.manage');
+        $moderation = function_exists('moderation_user_can_moderate') && moderation_user_can_moderate();
         $all = [
             ['title' => 'Tableau de bord', 'subtitle' => 'Aperçu de la communauté', 'href' => url('back-office'), 'keywords' => 'accueil synthèse aperçu', 'ok' => true],
             ['title' => 'Tableau opérationnel', 'subtitle' => 'Événements, articles, ATAK et mur de consignes', 'href' => url('back-office/tableau-operationnel'), 'keywords' => 'mur opérationnel tableau événements articles atak', 'ok' => $org],
@@ -379,11 +398,65 @@ final class BackOfficeSearchService
             ['title' => 'Serveurs de jeu', 'subtitle' => 'Adresses et accès des serveurs', 'href' => url('back-office/ressources/serveurs-de-jeu'), 'keywords' => 'serveurs jeu arma adresse ip connexion', 'ok' => $org],
             ['title' => 'Configuration ATAK', 'subtitle' => 'Réglages de la carte tactique', 'href' => url('back-office/ressources/atak-config'), 'keywords' => 'atak tacmap configuration carte', 'ok' => $org],
             ['title' => 'Escouades en jeu', 'subtitle' => 'Groupes affichés dans ATAK', 'href' => url('back-office/atak/escouades'), 'keywords' => 'escouades atak jeu groupes', 'ok' => $org],
+            // —— Comptes rendus et remontées du terrain
+            ['title' => 'Nouveau compte rendu', 'subtitle' => 'Rédiger un CR après action (AAR)', 'href' => url('back-office/atak/comptes-rendus/nouveau'), 'keywords' => 'cr compte rendu aar après-action debriefing rédiger nouveau rapport', 'ok' => $res],
+            ['title' => 'Modèles de comptes rendus', 'subtitle' => 'Formulaires de CR de la communauté', 'href' => url('back-office/atak/comptes-rendus/modeles'), 'keywords' => 'cr compte rendu modèles formulaire aar gabarit', 'ok' => $res],
+            ['title' => 'CR des joueurs (fin d’op)', 'subtitle' => 'CR imposé sur les ATAK : reçu, remis, lu', 'href' => url('back-office/atak/suivi-cr'), 'keywords' => 'cr compte rendu fin opération op debrief suivi imposer relancer joueurs atak', 'ok' => $res],
+            ['title' => 'Remontées du terrain', 'subtitle' => 'CR, SPOTREP, MEDEVAC et fiches de renseignement à traiter', 'href' => url('back-office/remontees'), 'keywords' => 'remontées cr compte rendu spotrep salute medevac 9-line sitrep fiches renseignement terrain photos', 'ok' => $intel],
+            ['title' => 'Remontées par joueur', 'subtitle' => 'Ce que chaque joueur a envoyé', 'href' => url('back-office/remontees/joueurs'), 'keywords' => 'remontées joueurs cr spotrep photos par joueur', 'ok' => $intel],
+            ['title' => 'Diffusion des rapports', 'subtitle' => 'Qui reçoit quel CR, et où (Discord, e-mail)', 'href' => url('back-office/ressources/atak-diffusion-rapports'), 'keywords' => 'diffusion routage rapports cr discord e-mail règles', 'ok' => $res],
+            // —— Temps de jeu Overwatch (OVL) et carnets
+            ['title' => 'Heures de jeu (tableur)', 'subtitle' => 'Heures Overwatch par joueur, exportables', 'href' => url('back-office/atak/heures'), 'keywords' => 'heures ovl overwatch temps de jeu heures de vol playtime tableur export présence', 'ok' => $res],
+            ['title' => 'Temps d’écran et rôles', 'subtitle' => 'Temps passé par rôle et par joueur', 'href' => url('back-office/atak/temps-ecran'), 'keywords' => 'temps écran ovl overwatch rôles heures jeu', 'ok' => $res],
+            ['title' => 'Métriques joueurs', 'subtitle' => 'Activité en jeu de la communauté', 'href' => url('back-office/metriques-joueurs'), 'keywords' => 'métriques statistiques joueurs ovl overwatch temps de jeu activité', 'ok' => $res],
+            ['title' => 'Mon carnet de vol', 'subtitle' => 'Vols, heures et contreseing instructeur', 'href' => url('back-office/ma-situation/carnet-de-vol'), 'keywords' => 'carnet vol logbook pilote heures de vol aviation hélicoptère', 'ok' => true],
+            ['title' => 'Cursus pilote', 'subtitle' => 'Progression et carnets des pilotes', 'href' => url('back-office/referentiels/qualifications/cursus-pilote'), 'keywords' => 'cursus pilote carnet vol logbook instructeur contreseing aviation', 'ok' => $org],
+            // —— ATAK et Overwatch
+            ['title' => 'Data Inspector', 'subtitle' => 'Ce que le mod envoie à Athena', 'href' => url('back-office/atak/data-inspector'), 'keywords' => 'data inspector données mod overwatch ovl flux debug', 'ok' => $res],
+            ['title' => 'Cycle de mission', 'subtitle' => 'Avant, pendant et après l’opération', 'href' => url('back-office/atak/cycle-mission'), 'keywords' => 'cycle mission opération briefing debriefing atak', 'ok' => $res],
+            ['title' => 'Contrôle de mission', 'subtitle' => 'Pilotage du serveur en session', 'href' => url('back-office/atak/controle-serveur'), 'keywords' => 'contrôle mission serveur session overwatch pilotage', 'ok' => $res],
+            ['title' => 'Carte tactique', 'subtitle' => 'Carte des opérations', 'href' => url('back-office/operations/carte-tactique'), 'keywords' => 'carte tactique tacmap opérations', 'ok' => $res],
+            ['title' => 'Parc ATAK des membres', 'subtitle' => 'Téléphones et tablettes des joueurs', 'href' => url('back-office/atak/parc-atak'), 'keywords' => 'parc atak téléphones tablettes appareils', 'ok' => $res],
+            ['title' => 'Réseau de relais', 'subtitle' => 'Relais radio et portée', 'href' => url('back-office/atak/relays-network'), 'keywords' => 'réseau relais radio portée réalisme', 'ok' => $res],
+            ['title' => 'Fire teams', 'subtitle' => 'Binômes et équipes de feu', 'href' => url('back-office/atak/fire-teams'), 'keywords' => 'fire teams équipes feu binômes escouades', 'ok' => $res],
+            ['title' => 'Files d’envoi Athena', 'subtitle' => 'Messages en attente vers le jeu', 'href' => url('back-office/atak/files-envoi'), 'keywords' => 'files envoi file attente messages synchronisation', 'ok' => $res],
+            ['title' => 'Détection des marqueurs', 'subtitle' => 'Marqueurs de carte reconnus', 'href' => url('back-office/atak/detection-marqueurs'), 'keywords' => 'détection marqueurs carte symboles', 'ok' => $org],
+            ['title' => 'Mode roleplay ATAK', 'subtitle' => 'Brouillage, intox et scénarios', 'href' => url('back-office/atak/roleplay'), 'keywords' => 'roleplay atak brouillage intox scénario', 'ok' => $res],
+            ['title' => 'Réglages réalisme', 'subtitle' => 'Relais, météo, certificats et contraintes', 'href' => url('back-office/ressources/atak-realism/config'), 'keywords' => 'réalisme réglages relais météo certificats profils', 'ok' => $res],
+            ['title' => 'Restrictions d’accès au mod', 'subtitle' => 'Bloquer un joueur, un poste ou un Steam', 'href' => url('back-office/ressources/atak-mod-blocks'), 'keywords' => 'restrictions blocage mod steam bannir accès', 'ok' => $res],
+            // —— Formation et recrutement
+            ['title' => 'Gestion des formations', 'subtitle' => 'Espace des formateurs', 'href' => url('formation'), 'keywords' => 'formations gestion lms cours parcours formateurs', 'ok' => $training],
+            ['title' => 'Inscriptions aux formations', 'subtitle' => 'Qui suit quel parcours', 'href' => url('formation/enrollments'), 'keywords' => 'inscriptions formations élèves stagiaires', 'ok' => $training],
+            ['title' => 'Rapports de formation', 'subtitle' => 'Progression et résultats', 'href' => url('formation/reports'), 'keywords' => 'rapports formation progression résultats statistiques', 'ok' => $training],
+            ['title' => 'Studio de formation', 'subtitle' => 'Créer et modifier les cours', 'href' => url('formation/studio'), 'keywords' => 'studio formation créer cours leçons', 'ok' => $training],
+            ['title' => 'Certificats de formation', 'subtitle' => 'Attestations délivrées', 'href' => url('formation/certificates'), 'keywords' => 'certificats attestations formation diplômes', 'ok' => $training],
+            ['title' => 'Bureau du recrutement', 'subtitle' => 'Vue d’ensemble des candidatures', 'href' => url('back-office/ressources/recrutement'), 'keywords' => 'recrutement bureau candidatures vue ensemble', 'ok' => $recruit],
+            // —— Ma situation (espace personnel du back-office)
+            ['title' => 'Ma fiche', 'subtitle' => 'Mon dossier dans la communauté', 'href' => url('back-office/ma-situation/ma-fiche'), 'keywords' => 'ma fiche mon dossier profil personnel', 'ok' => true],
+            ['title' => 'Mes qualifications', 'subtitle' => 'Brevets et habilitations obtenus', 'href' => url('back-office/ma-situation/qualifications'), 'keywords' => 'mes qualifications brevets habilitations', 'ok' => true],
+            ['title' => 'Mes décorations', 'subtitle' => 'Médailles et distinctions reçues', 'href' => url('back-office/ma-situation/decorations'), 'keywords' => 'mes décorations médailles rubans', 'ok' => true],
+            ['title' => 'Mon avancement', 'subtitle' => 'Grade et prochaine promotion', 'href' => url('back-office/ma-situation/avancement'), 'keywords' => 'mon avancement grade promotion', 'ok' => true],
+            ['title' => 'Mes démarches', 'subtitle' => 'Demandes en cours', 'href' => url('back-office/ma-situation/mes-demarches'), 'keywords' => 'mes démarches demandes', 'ok' => true],
+            // —— Autres pages d’administration
+            ['title' => 'Fichiers en quarantaine', 'subtitle' => 'Fichiers déposés à vérifier', 'href' => url('back-office/content-moderation'), 'keywords' => 'modération fichiers quarantaine pièces jointes', 'ok' => $moderation],
+            ['title' => 'Musique', 'subtitle' => 'Morceaux et playlists de la communauté', 'href' => url('back-office/ressources/musique'), 'keywords' => 'musique playlists morceaux radio', 'ok' => $res],
+            ['title' => 'Unités', 'subtitle' => 'Liste des unités', 'href' => url('back-office/units'), 'keywords' => 'unités sections pelotons', 'ok' => $org],
+            ['title' => 'Postes', 'subtitle' => 'Postes de l’organigramme', 'href' => url('back-office/positions'), 'keywords' => 'postes organigramme chef adjoint', 'ok' => $org],
+            ['title' => 'Historique des e-mails', 'subtitle' => 'Envois passés aux membres', 'href' => url('back-office/communications/history'), 'keywords' => 'historique e-mails envois communications', 'ok' => $org],
+            ['title' => 'Listes de diffusion', 'subtitle' => 'Groupes de destinataires', 'href' => url('back-office/communications/groups'), 'keywords' => 'listes diffusion groupes destinataires e-mail', 'ok' => $org],
+            ['title' => 'Annoncer sur Discord', 'subtitle' => 'Publier dans les salons de la communauté', 'href' => url('back-office/community/discord'), 'keywords' => 'discord annonce publier salon', 'ok' => $org],
+            ['title' => 'Fichiers partagés', 'subtitle' => 'Partage de fichiers', 'href' => url('back-office/partage'), 'keywords' => 'partage fichiers téléchargement', 'ok' => $org],
+            ['title' => 'Conformité des documents', 'subtitle' => 'Lectures obligatoires', 'href' => url('back-office/documents/compliance'), 'keywords' => 'conformité documents lecture obligatoire', 'ok' => $org],
+            ['title' => 'Nomenclature des documents', 'subtitle' => 'Références et numérotation', 'href' => url('back-office/documents/nomenclature'), 'keywords' => 'nomenclature documents références', 'ok' => $org],
             ['title' => 'Diapositives de briefing', 'subtitle' => 'Présentations tactiques', 'href' => url('back-office/atak/briefing-slides'), 'keywords' => 'diapositives briefing présentation eden', 'ok' => $org],
         ];
         $out = [];
         foreach ($all as $row) {
             if (empty($row['ok'])) {
+                continue;
+            }
+            // Même filtre que le menu latéral : type de communauté et règles de navigation.
+            if (function_exists('portal_nav_href_permission_allowed') && !portal_nav_href_permission_allowed((string) $row['href'])) {
                 continue;
             }
             unset($row['ok']);
