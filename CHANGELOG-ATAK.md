@@ -59,6 +59,29 @@ EN : Fewer freezes and no more error in vehicles
 - **fn_tr** ligne 64 : `[_x, ""] select (isNil "_x")` plantait sur un argument absent (« Undefined variable _x »).
 - Vérifié avec HEMTT 1.17.2 (`hemtt check` natif : 0 erreur ; connect : les 6 erreurs de syntaxe ont disparu, restent les faux positifs `ctrlWebBrowserAction` inconnus de HEMTT). main.pbo et `comspec_overwatch_connect.pbo` à reconstruire au regroupement.
 
+## Marqueurs par le seul réseau ATAK, heure de pose sur chaque marqueur, relais actif seulement mât déployé (ATAK natif : numéro donné au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Marqueurs ATAK confidentiels et relais radio conditionnels
+- Nouveau réglage serveur « Diffusion des marqueurs ATAK » : en « Réseau ATAK uniquement », un marqueur posé sur le téléphone n'apparaît plus sur la carte d'Arma des autres joueurs. Il n'arrive que sur les téléphones des joueurs du canal qui ont du réseau ; sans signal, il arrive quand le réseau revient.
+- La fiche d'un marqueur (clic sur le marqueur dans l'app Carte) affiche l'heure de pose, depuis combien de temps il est posé et qui l'a posé, même pour les marqueurs posés avant ton arrivée sur le serveur.
+- Module « ATAK · Relais » : nouveau choix « Actif seulement si » (mât ou antenne déployé, véhicule à l'arrêt, moteur coupé, ou condition écrite par le créateur de mission). Exemple : un camion radio ne relaie le réseau ATAK que mât dressé.
+EN : Confidential ATAK markers and conditional radio relays
+- New server setting "ATAK marker distribution": with "ATAK network only", a marker placed on the phone no longer shows on other players' Arma map. It only reaches the phones of players on that channel who have network; without signal, it arrives when the network returns.
+- A marker's card (click the marker in the Map app) shows when it was placed, how long ago and who placed it, even for markers placed before you joined the server.
+- "ATAK · Relay" module: new "Active only when" choice (mast or antenna deployed, vehicle stopped, engine off, or a condition written by the mission maker). Example: a radio truck only relays the ATAK network with its mast up.
+
+### Détail technique
+- Question d'un joueur (marqueurs ATAK visibles sur la carte vanilla par tout le canal, même sans ATAK ni réseau). Avant : les marqueurs du téléphone sont des marqueurs Arma `createMarker` sur le canal choisi (Global par défaut), donc visibles sur la carte d'Arma de tout le canal, sans condition de réseau.
+- `fn_markerNet` (nouveau) : réglage serveur `comspec_atak_native_marker_net` (`arma` par défaut, `atak`). En `atak` : `createMarkerLocal` (même nom `_USER_DEFINED #…` : modifiable et effaçable comme avant), état envoyé par `fn_netSend` (file sans signal) à l'événement serveur `comspec_atak_native_tacMkSrv`, gardé par le serveur (500 au plus) et remis par `comspec_atak_native_tacMk` aux joueurs du canal (Global/Camp = camp, Commandement = chefs de groupe, Groupe, Véhicule = équipage, Direct = 50 m) ; réception retenue tant que `fn_p2pReachable` est faux, livrée au retour du signal (boucle de 2 s). Modifications via le crochet de `fn_markerWeb` (`touch`), suppressions via l'EH `MarkerDeleted` ; signature de l'état pour éviter les boucles. Les 4 poses (palette `fn_markerDrop`, trait `fn_markerStroke`, LZ `fn_mapToolRun`, éditeur `fn_markerEditSave`) passent par `["create", …]`. Synchro à l'arrivée (`sync`).
+- Horodatage : la fiche du marqueur (`fn_pageMap`) affiche « Posé à HH:MM · il y a N min · INDICATIF » depuis `COMSPEC_ATAK_MarkerMeta` ; le serveur note heure et auteur des marqueurs Arma (EH `MarkerCreated`) et les renvoie aux joueurs qui rejoignent ; en mode réseau ATAK, heure et auteur de la pose voyagent avec le marqueur.
+- `fn_relayCond` (nouveau) : `COMSPEC_AtakRelayCond` sur un relais ou une passerelle de véhicule (`mast` : sources d'animation dont le nom contient mast/antenna/antena/telescop/aerial/pole/rod au-delà de 90 % ; `stopped` ; `engineoff` ; ou code SQF, `_this` = l'objet). `fn_relayNet` liste le relais hors service avec la raison (« mât replié »…). Module « ATAK · Relais » : attributs Eden `Cond` + `CondCode`, liste « Actif seulement si » dans le formulaire Zeus.
+- À tester en jeu : noms des sources d'animation du mât du GAZ-66 R-142 de RHS reconnus par `mast` (sinon condition en code) ; `createMarkerLocal` + `setMarkerText` global sur un marqueur local (doit rester local) ; marqueurs reçus hors réseau puis au retour du signal ; JIP.
+- Réglage `comspec_atak_native_marker_channel` inchangé (Global par défaut) : en mode carte d'Arma, Global reste visible par tous les camps.
+
+---
+
 ## Traduction ouverte aux contributeurs : rôles, traduction du site, kit des mods complété (ATAK natif : numéro donné au regroupement, site)
 
 ### Résumé joueur
