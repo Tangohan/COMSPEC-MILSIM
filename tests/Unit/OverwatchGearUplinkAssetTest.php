@@ -71,7 +71,9 @@ final class OverwatchGearUplinkAssetTest extends TestCase
         ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfgC));
         ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($cfgA));
         self::assertStringContainsString('_fnc_markSeen', $orders);
-        self::assertStringContainsString('_newOnes select 0', $orders);
+        // Un seul ordre livré par lecture (le premier non vu que receiveOrder accepte), les suivants au PFH de secours.
+        self::assertStringContainsString('_newOnes select { !(([_x getOrDefault ["id", ""]] call _fnc_idText) in _seenNow) }', $orders);
+        self::assertStringContainsString('} forEach _unseen;', $orders);
         self::assertStringContainsString('isEqualTo "web") then { continue }', $orders);
         self::assertStringContainsString('photo de la dernière lecture', $orders);
 
