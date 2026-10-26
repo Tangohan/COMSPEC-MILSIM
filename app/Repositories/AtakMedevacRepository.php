@@ -160,12 +160,12 @@ class AtakMedevacRepository
     }
 
     /**
-     * Récupère une demande par ID
+     * Récupère une demande par ID, dans la communauté donnée : celle d'une autre communauté reste introuvable.
      */
-    public function findById(int $id): ?array
+    public function findById(int $id, int $tenantId): ?array
     {
-        $sql = "SELECT * FROM v_atak_active_medevac WHERE id = :id";
-        $medevac = $this->db->fetchOne($sql, ['id' => $id]);
+        $sql = "SELECT * FROM v_atak_active_medevac WHERE id = :id AND tenant_id = :tenant_id";
+        $medevac = $this->db->fetchOne($sql, ['id' => $id, 'tenant_id' => $tenantId]);
 
         if ($medevac) {
             if (!empty($medevac['equipment_needed'])) {
@@ -177,9 +177,9 @@ class AtakMedevacRepository
     }
 
     /**
-     * Met à jour le statut d'une demande
+     * Met à jour le statut d'une demande de la communauté donnée (false si absente ou d'une autre communauté)
      */
-    public function updateStatus(int $id, string $newStatus, ?string $updateMessage = null): bool
+    public function updateStatus(int $id, int $tenantId, string $newStatus, ?string $updateMessage = null): bool
     {
         $timestampFields = [
             'ACKNOWLEDGED' => 'acknowledged_at',
@@ -189,41 +189,52 @@ class AtakMedevacRepository
         ];
 
         $updates = ['status = :status'];
-        $params = ['id' => $id, 'status' => $newStatus];
+        $params = ['id' => $id, 'tenant_id' => $tenantId, 'status' => $newStatus];
 
         if (isset($timestampFields[$newStatus])) {
             $field = $timestampFields[$newStatus];
             $updates[] = "{$field} = NOW()";
         }
 
-        $sql = "UPDATE atak_medevac_requests SET " . implode(', ', $updates) . " WHERE id = :id";
+        $sql = "UPDATE atak_medevac_requests SET " . implode(', ', $updates) . " WHERE id = :id AND tenant_id = :tenant_id";
         return $this->db->execute($sql, $params) > 0;
     }
 
     /**
-     * Assigne un asset à une demande MEDEVAC
+     * Assigne un asset à une demande MEDEVAC de la communauté donnée
      */
-    public function assignAsset(int $id, string $assetCallsign, ?int $pilotUserId = null): bool
+    public function assignAsset(int $id, int $tenantId, string $assetCallsign, ?int $pilotUserId = null): bool
     {
         $sql = "UPDATE atak_medevac_requests 
                 SET assigned_asset_callsign = :asset_callsign,
                     assigned_pilot_user_id = :pilot_user_id,
                     assigned_at = NOW(),
                     status = CASE WHEN status = 'REQUESTED' THEN 'ASSIGNED' ELSE status END
-                WHERE id = :id";
+                WHERE id = :id AND tenant_id = :tenant_id";
 
         return $this->db->execute($sql, [
             'id' => $id,
+            'tenant_id' => $tenantId,
             'asset_callsign' => $assetCallsign,
             'pilot_user_id' => $pilotUserId
         ]) > 0;
     }
 
     /**
-     * Ajoute un patient à une demande MEDEVAC
+     * Ajoute un patient à une demande MEDEVAC de la communauté donnée.
+     * atak_medevac_patients n'a pas de tenant_id : 0 si la demande est absente ou d'une autre
+     * communauté, et rien n'est écrit.
      */
-    public function addPatient(int $medevacId, array $patientData): int
+    public function addPatient(int $medevacId, int $tenantId, array $patientData): int
     {
+        $parent = $this->db->fetchOne(
+            "SELECT id FROM atak_medevac_requests WHERE id = :id AND tenant_id = :tenant_id",
+            ['id' => $medevacId, 'tenant_id' => $tenantId]
+        );
+        if ($parent === null) {
+            return 0;
+        }
+
         $sql = "INSERT INTO atak_medevac_patients (
             medevac_request_id, patient_name, patient_callsign, patient_unit, patient_steam_id,
             triage_category, triaged_by_callsign,
@@ -262,12 +273,16 @@ class AtakMedevacRepository
     }
 
     /**
-     * Récupère les patients d'une demande MEDEVAC
+     * Récupère les patients d'une demande MEDEVAC de la communauté donnée (jointure sur la demande,
+     * la table des patients n'ayant pas de tenant_id).
      */
-    public function getPatients(int $medevacId): array
+    public function getPatients(int $medevacId, int $tenantId): array
     {
-        $sql = "SELECT * FROM atak_medevac_patients WHERE medevac_request_id = :medevac_id ORDER BY triage_category ASC";
-        $patients = $this->db->fetchAll($sql, ['medevac_id' => $medevacId]);
+        $sql = "SELECT p.* FROM atak_medevac_patients p
+                INNER JOIN atak_medevac_requests m ON m.id = p.medevac_request_id
+                WHERE p.medevac_request_id = :medevac_id AND m.tenant_id = :tenant_id
+                ORDER BY p.triage_category ASC";
+        $patients = $this->db->fetchAll($sql, ['medevac_id' => $medevacId, 'tenant_id' => $tenantId]);
 
         foreach ($patients as &$patient) {
             if (!empty($patient['injuries'])) {

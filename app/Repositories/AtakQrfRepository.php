@@ -248,9 +248,9 @@ class AtakQrfRepository
     }
 
     /**
-     * Assigne une QRF à une demande
+     * Assigne une QRF à une demande de la communauté donnée (false si absente ou d'une autre communauté)
      */
-    public function assignQrf(int $id, string $qrfUnit, string $qrfCallsign, ?int $leaderUserId = null): bool
+    public function assignQrf(int $id, int $tenantId, string $qrfUnit, string $qrfCallsign, ?int $leaderUserId = null): bool
     {
         $sql = "UPDATE atak_qrf_requests 
                 SET assigned_qrf_unit = :qrf_unit,
@@ -258,10 +258,11 @@ class AtakQrfRepository
                     assigned_qrf_leader_user_id = :leader_user_id,
                     assigned_at = NOW(),
                     status = CASE WHEN status = 'REQUESTED' THEN 'QRF_ASSIGNED' ELSE status END
-                WHERE id = :id";
+                WHERE id = :id AND tenant_id = :tenant_id";
 
         return $this->db->execute($sql, [
             'id' => $id,
+            'tenant_id' => $tenantId,
             'qrf_unit' => $qrfUnit,
             'qrf_callsign' => $qrfCallsign,
             'leader_user_id' => $leaderUserId
@@ -269,22 +270,22 @@ class AtakQrfRepository
     }
 
     /**
-     * Met à jour la position de la QRF
+     * Met à jour la position de la QRF d'une demande de la communauté donnée
      */
-    public function updateQrfPosition(int $id, float $posX, float $posY, ?string $eta = null): bool
+    public function updateQrfPosition(int $id, int $tenantId, float $posX, float $posY, ?string $eta = null): bool
     {
         $sql = "UPDATE atak_qrf_requests 
                 SET qrf_current_pos_x = :pos_x,
                     qrf_current_pos_y = :pos_y";
 
-        $params = ['id' => $id, 'pos_x' => $posX, 'pos_y' => $posY];
+        $params = ['id' => $id, 'tenant_id' => $tenantId, 'pos_x' => $posX, 'pos_y' => $posY];
 
         if ($eta !== null) {
             $sql .= ", qrf_eta = :eta";
             $params['eta'] = $eta;
         }
 
-        $sql .= " WHERE id = :id";
+        $sql .= " WHERE id = :id AND tenant_id = :tenant_id";
 
         return $this->db->execute($sql, $params) > 0;
     }
@@ -316,10 +317,20 @@ class AtakQrfRepository
     }
 
     /**
-     * Ajoute une mise à jour SITREP
+     * Ajoute une mise à jour SITREP à une demande de la communauté donnée.
+     * atak_qrf_sitrep_updates n'a pas de tenant_id : 0 si la demande est absente ou d'une autre
+     * communauté, et rien n'est écrit.
      */
-    public function addSitrepUpdate(int $qrfId, array $updateData): int
+    public function addSitrepUpdate(int $qrfId, int $tenantId, array $updateData): int
     {
+        $parent = $this->db->fetchOne(
+            "SELECT id FROM atak_qrf_requests WHERE id = :id AND tenant_id = :tenant_id",
+            ['id' => $qrfId, 'tenant_id' => $tenantId]
+        );
+        if ($parent === null) {
+            return 0;
+        }
+
         $sql = "INSERT INTO atak_qrf_sitrep_updates (
             qrf_request_id, update_type, update_message,
             pos_x, pos_y, updated_by_callsign, updated_by_user_id, is_from_qrf
