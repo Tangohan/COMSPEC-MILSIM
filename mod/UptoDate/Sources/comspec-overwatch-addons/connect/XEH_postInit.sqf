@@ -46,8 +46,14 @@ if (!hasInterface) exitWith {};
     };
 } forEach allMapMarkers;
 
-// Warmup extension (charge la DLL)
-"COMSPECExtension" callExtension "Warmup";
+// Warmup extension : relit la file d'envoi et ouvre à l'avance une connexion TLS vers Athena (HEAD), donc seulement
+// avec le service Athéna (« on »). En « off » (ATAK local) ou en mode full local imposé par le serveur, fn_athenaMode
+// promet « aucune connexion » ; la DLL se charge quand même à son premier appel (par défaut le journal de session,
+// juste après), sans réseau.
+// Choix pas encore fait (premier lancement) : fn_initAuth préchauffe lui-même avant Init si le joueur répond « Oui ».
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "on") then {
+    "COMSPECExtension" callExtension "Warmup";
+};
 
 // Nouveau journal fichier pour cette session Arma (purge des anciens)
 if (missionNamespace getVariable ["comspec_overwatch_log_to_file", true]) then {
