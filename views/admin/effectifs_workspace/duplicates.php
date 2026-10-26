@@ -124,6 +124,7 @@ $iconDup = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="
                         <p class="eff-rh-dup-group__meta">
                             <?= $h((string) ($g['field_label'] ?? '')) ?>
                             <span>« <?= $h((string) ($g['value'] ?? '')) ?> »</span>
+                            <b><?= count($members) ?> fiches</b>
                         </p>
                         <ul class="eff-rh-dup-group__people">
                             <?php foreach ($members as $m): ?>
@@ -134,13 +135,21 @@ $iconDup = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="
                                 $mid = (int) ($m['id'] ?? 0);
                                 $mName = trim((string) ($m['display_name'] ?? '')) ?: 'Membre';
                                 $mCall = trim((string) ($m['callsign'] ?? ''));
+                                $mMat = trim((string) ($m['matricule'] ?? ''));
+                                $mMail = trim((string) ($m['email'] ?? ''));
+                                $mInfo = array_values(array_filter([
+                                    $mCall !== '' && strcasecmp($mCall, $mName) !== 0 ? $mCall : '',
+                                    $mMat !== '' ? 'Matricule ' . $mMat : '',
+                                ], static fn (string $v): bool => $v !== ''));
                                 ?>
                                 <li>
                                     <a href="<?= $h(effectifs_workspace_url('membres/' . $mid)) ?>">
                                         <?= $h($mName) ?>
-                                        <?php if ($mCall !== '' && strcasecmp($mCall, $mName) !== 0): ?>
-                                            <span><?= $h($mCall) ?></span>
+                                        <?php if ($mInfo !== []): ?>
+                                            <span><?= $h(implode(' · ', $mInfo)) ?></span>
                                         <?php endif; ?>
+                                        <?php if ($mMail !== ''): ?><small><?= $h($mMail) ?></small><?php endif; ?>
+                                        <em>Fiche n° <?= $mid ?> · ouvrir →</em>
                                     </a>
                                 </li>
                             <?php endforeach; ?>

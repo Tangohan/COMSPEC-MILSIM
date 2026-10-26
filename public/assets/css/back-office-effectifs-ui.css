@@ -1,0 +1,517 @@
+/*
+ * Effectifs — harmonisation 2026-10-26 des sous-modules (À traiter, Affectations, Chaîne, Qualifications,
+ * Élévations, Alertes, Intégration, Fiches jumelles, Documents, Mobilité, Vivier, Roleplay, Anciens, Réglages).
+ *
+ * effectifs_lms.css vient du bureau LMS sombre : ses panneaux en dégradé et son texte clair
+ * débordaient dans le back-office en mode clair (textes gris sur gris, coins arrondis).
+ * Cette feuille, chargée en dernier, ramène tout aux jetons --ath-* : le mode nuit suit seul.
+ * Sélecteurs préfixés par .ath-shell .bo-eff-workspace pour passer devant les deux thèmes.
+ */
+
+.ath-shell .bo-eff-workspace {
+  --eff-ink: var(--ath-ink, #0c1116);
+  --eff-muted: var(--ath-muted, #6d7a80);
+  --eff-line: var(--ath-line, #e3e8ea);
+  --eff-line2: var(--ath-line, #e3e8ea);
+  --eff-accent: var(--ath-accent, #0b8a5c);
+  --eff-accent2: var(--ath-ink, #0c1116);
+  --eff-primary: var(--ath-ink, #0c1116);
+  --bo-eff-tone-warn: var(--ath-warn, #b45309);
+  --bo-eff-tone-info: var(--ath-info, #1d5a99);
+  --bo-eff-tone-ok: var(--ath-accent, #0b8a5c);
+  --bo-eff-tone-bad: var(--ath-danger, #b91c1c);
+  color: var(--ath-ink, #0c1116);
+}
+
+/* ——— Onglets : plus de barre de défilement verticale parasite au bord droit ——— */
+.ath-shell .bo-eff-workspace--v2 .bo-eff-tabs {
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.ath-shell .bo-eff-workspace--v2 .bo-eff-tabs::-webkit-scrollbar { height: 0; width: 0; }
+.ath-shell .bo-eff-workspace--v2 .bo-eff-tabs:has(.bo-eff-tabs__more[open]) { overflow: visible; }
+
+/* ——— En-tête de page ——— */
+.ath-shell .bo-eff-workspace .eff-page-head,
+.ath-shell .bo-eff-workspace .eff-rh-hero { margin: 0 0 1rem; padding: 0; background: none; border: 0; }
+.ath-shell .bo-eff-workspace .eff-page-kicker {
+  margin: 0 0 0.25rem;
+  color: var(--ath-accent, #0b8a5c);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.ath-shell .bo-eff-workspace .eff-page-title {
+  margin: 0;
+  color: var(--ath-ink, #0c1116);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.ath-shell .bo-eff-workspace .eff-page-lead {
+  margin: 0.35rem 0 0;
+  max-width: 46rem;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+/* ——— Bandeau d'indicateurs : une seule forme pour toutes les pages ——— */
+.ath-shell .bo-eff-workspace .eff-metrics,
+.ath-shell .bo-eff-workspace .eff-rh-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0 1.1rem;
+  max-width: none;
+}
+.ath-shell .bo-eff-workspace .eff-metric,
+.ath-shell .bo-eff-workspace .eff-rh-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0.8rem 0.95rem 0.85rem 1.05rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-surface, #fff);
+  box-shadow: none;
+  color: var(--ath-ink, #0c1116);
+}
+.ath-shell .bo-eff-workspace .eff-metric::before,
+.ath-shell .bo-eff-workspace .eff-rh-tile::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  bottom: -1px;
+  width: 3px;
+  background: var(--ath-line, #e3e8ea);
+}
+.ath-shell .bo-eff-workspace .eff-rh-tile--warn::before { background: var(--bo-eff-tone-warn); }
+.ath-shell .bo-eff-workspace .eff-rh-tile--info::before { background: var(--bo-eff-tone-info); }
+.ath-shell .bo-eff-workspace .eff-rh-tile--ok::before { background: var(--bo-eff-tone-ok); }
+.ath-shell .bo-eff-workspace .eff-rh-tile--warn,
+.ath-shell .bo-eff-workspace .eff-rh-tile--info,
+.ath-shell .bo-eff-workspace .eff-rh-tile--ok { background: var(--ath-surface, #fff); border-color: var(--ath-line, #e3e8ea); }
+.ath-shell .bo-eff-workspace .eff-metric__k,
+.ath-shell .bo-eff-workspace .eff-rh-tile__kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.ath-shell .bo-eff-workspace .eff-metric__v,
+.ath-shell .bo-eff-workspace .eff-rh-tile__value {
+  margin: 0;
+  color: var(--ath-ink, #0c1116);
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.ath-shell .bo-eff-workspace .eff-rh-tile--warn .eff-rh-tile__value { color: var(--bo-eff-tone-warn); }
+.ath-shell .bo-eff-workspace .eff-rh-tile__label {
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.ath-shell .bo-eff-workspace .eff-rh-tile__tone {
+  margin-top: auto;
+  padding-top: 0.35rem;
+  color: var(--ath-subtle, #8c979b);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ath-shell .bo-eff-workspace .eff-rh-tile--warn .eff-rh-tile__tone { color: var(--bo-eff-tone-warn); }
+.ath-shell .bo-eff-workspace .eff-rh-tile__hit { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; color: inherit; text-decoration: none; }
+.ath-shell .bo-eff-workspace .eff-rh-tile:has(.eff-rh-tile__hit:hover) { border-color: var(--ath-accent, #0b8a5c); }
+.ath-shell .bo-eff-workspace .eff-rh-tile__hit:focus-visible { outline: 2px solid var(--ath-accent, #0b8a5c); outline-offset: 3px; }
+
+/* ——— Panneaux : surface simple, coins carrés, texte lisible dans les deux thèmes ——— */
+.ath-shell .bo-eff-workspace .eff-dup__panel,
+.ath-shell .bo-eff-workspace .eff-dup__panel--ok,
+.ath-shell .bo-eff-workspace .eff-dup__panel--warn,
+.ath-shell .bo-eff-workspace .eff-rh-list-card,
+.ath-shell .bo-eff-workspace .eff-catalog,
+.ath-shell .bo-eff-workspace .eff-panel {
+  padding: 1rem 1.15rem 1.1rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-surface, #fff);
+  box-shadow: none;
+  color: var(--ath-ink, #0c1116);
+}
+.ath-shell .bo-eff-workspace .eff-dup__panel--warn { border-top: 3px solid var(--bo-eff-tone-warn); }
+.ath-shell .bo-eff-workspace .eff-dup__panel--ok { border-top: 3px solid var(--bo-eff-tone-ok); }
+.ath-shell .bo-eff-workspace .eff-dup { gap: 1rem; min-height: 0; }
+.ath-shell .bo-eff-workspace .eff-dup__head,
+.ath-shell .bo-eff-workspace .eff-rh-list-card__head,
+.ath-shell .bo-eff-workspace .eff-catalog__head {
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--ath-line-soft, #eef2f0);
+}
+.ath-shell .bo-eff-workspace .eff-rh-list-card__head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; padding-bottom: 0; border-bottom: 0; }
+.ath-shell .bo-eff-workspace .eff-dup__title,
+.ath-shell .bo-eff-workspace .eff-rh-list-card__title,
+.ath-shell .bo-eff-workspace .eff-catalog__title {
+  margin: 0;
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.ath-shell .bo-eff-workspace .eff-catalog__kicker { margin: 0 0 0.2rem; color: var(--ath-accent, #0b8a5c); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.ath-shell .bo-eff-workspace .eff-dup__sub,
+.ath-shell .bo-eff-workspace .eff-rh-list-card__lead,
+.ath-shell .bo-eff-workspace .eff-catalog__lead { margin: 0.25rem 0 0; color: var(--ath-muted, #6d7a80); font-size: 0.8125rem; line-height: 1.5; }
+.ath-shell .bo-eff-workspace .eff-rh-list-card__empty,
+.ath-shell .bo-eff-workspace .eff-catalog__empty {
+  margin: 0.75rem 0 0;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--ath-line, #e3e8ea);
+  background: transparent;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.8125rem;
+}
+.ath-shell .bo-eff-workspace .eff-catalog__empty strong { color: var(--ath-ink, #0c1116); }
+.ath-shell .bo-eff-workspace .eff-rh-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* ——— Listes de personnes ——— */
+.ath-shell .bo-eff-workspace .eff-rh-people { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0; }
+.ath-shell .bo-eff-workspace .eff-rh-people li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  flex-wrap: wrap;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--ath-line-soft, #eef2f0);
+  color: var(--ath-ink, #0c1116);
+}
+.ath-shell .bo-eff-workspace .eff-rh-people li:first-child { border-top: 0; }
+.ath-shell .bo-eff-workspace .eff-rh-people a { color: var(--ath-ink, #0c1116); font-weight: 700; text-decoration: none; font-size: 0.875rem; }
+.ath-shell .bo-eff-workspace .eff-rh-people a:hover { color: var(--ath-accent, #0b8a5c); text-decoration: underline; }
+.ath-shell .bo-eff-workspace .eff-rh-people span { color: var(--ath-muted, #6d7a80); font-size: 0.78rem; }
+.ath-shell .bo-eff-workspace .eff-rh-people small { display: block; color: var(--ath-subtle, #8c979b); font-size: 0.75rem; }
+.ath-shell .bo-eff-workspace .eff-rh-people .is-late { color: var(--bo-eff-tone-bad); font-weight: 700; }
+.ath-shell .bo-eff-workspace .eff-rh-people .is-soon { color: var(--bo-eff-tone-warn); font-weight: 700; }
+.ath-shell .bo-eff-workspace .eff-rh-list-card__more { margin: 0.5rem 0 0; font-size: 0.8rem; }
+.ath-shell .bo-eff-workspace .eff-rh-list-card__more a { color: var(--ath-accent, #0b8a5c); font-weight: 700; text-decoration: none; }
+
+/* ——— Fiches jumelles ——— */
+.ath-shell .bo-eff-workspace .eff-dup-switch {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-bg, #f6f8f9);
+  color: var(--ath-ink, #0c1116);
+}
+.ath-shell .bo-eff-workspace .eff-dup-switch strong,
+.ath-shell .bo-eff-workspace .eff-dup-chip strong { color: var(--ath-ink, #0c1116); font-size: 0.875rem; }
+.ath-shell .bo-eff-workspace .eff-dup-switch em,
+.ath-shell .bo-eff-workspace .eff-dup-chip em { display: block; margin-top: 0.15rem; color: var(--ath-muted, #6d7a80); font-size: 0.75rem; font-style: normal; line-height: 1.4; }
+.ath-shell .bo-eff-workspace .eff-dup-fields__label { margin: 1rem 0 0.5rem; color: var(--ath-muted, #6d7a80); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.ath-shell .bo-eff-workspace .eff-dup-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.5rem; }
+.ath-shell .bo-eff-workspace .eff-dup-chip {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-surface, #fff);
+  cursor: pointer;
+}
+.ath-shell .bo-eff-workspace .eff-dup-chip.is-on,
+.ath-shell .bo-eff-workspace .eff-dup-chip:has(input:checked) { border-color: var(--ath-accent, #0b8a5c); background: var(--ath-row-hover, #f2fbf7); box-shadow: inset 3px 0 0 var(--ath-accent, #0b8a5c); }
+.ath-shell .bo-eff-workspace .eff-dup-chip input,
+.ath-shell .bo-eff-workspace .eff-dup-switch input { margin-top: 0.15rem; accent-color: var(--ath-accent, #0b8a5c); }
+.ath-shell .bo-eff-workspace .eff-dup-form__actions { margin-top: 1rem; }
+.ath-shell .bo-eff-workspace .eff-rh-dup-groups { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.ath-shell .bo-eff-workspace .eff-rh-dup-group {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--ath-warn-bd, #f1d9a6);
+  border-radius: 0;
+  background: var(--ath-warn-bg, #fdf6e7);
+  box-shadow: inset 3px 0 0 var(--bo-eff-tone-warn);
+}
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0 0 0.55rem;
+  color: var(--bo-eff-tone-warn);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__meta span { color: var(--ath-ink, #0c1116); font-family: var(--ath-mono, monospace); font-size: 12px; letter-spacing: 0; text-transform: none; }
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__meta b { margin-left: auto; color: var(--ath-muted, #6d7a80); font-size: 10px; letter-spacing: 0.08em; }
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__people { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: 0.4rem; }
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__people li { margin: 0; }
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__people a {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-surface, #fff);
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__people a:hover { border-color: var(--ath-accent, #0b8a5c); }
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__people a span,
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__people a small { color: var(--ath-muted, #6d7a80); font-size: 0.75rem; font-weight: 500; overflow-wrap: anywhere; }
+.ath-shell .bo-eff-workspace .eff-rh-dup-group__people a em { color: var(--ath-accent, #0b8a5c); font-size: 0.72rem; font-style: normal; font-weight: 700; }
+
+/* ——— États vides ——— */
+.ath-shell .bo-eff-workspace .eff-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 12rem;
+  padding: 1.5rem 1rem;
+  border: 1px dashed var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
+}
+.ath-shell .bo-eff-workspace .eff-empty__icon { display: grid; place-items: center; width: 3rem; height: 3rem; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 0; background: var(--ath-bg, #f6f8f9); color: var(--ath-muted, #6d7a80); }
+.ath-shell .bo-eff-workspace .eff-empty__title { margin: 0.35rem 0 0; color: var(--ath-ink, #0c1116); font-size: 0.95rem; font-weight: 800; }
+.ath-shell .bo-eff-workspace .eff-empty__text { margin: 0; max-width: 30rem; color: var(--ath-muted, #6d7a80); font-size: 0.8125rem; }
+
+/* ——— Boutons hérités du bureau LMS ——— */
+.ath-shell .bo-eff-workspace .eff-btn,
+.ath-shell .bo-eff-workspace .eff-rh-btn,
+.ath-shell .bo-eff-workspace .eff-catalog__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0 0.95rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-surface, #fff);
+  color: var(--ath-ink, #0c1116);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ath-shell .bo-eff-workspace .eff-btn:hover,
+.ath-shell .bo-eff-workspace .eff-rh-btn:hover,
+.ath-shell .bo-eff-workspace .eff-catalog__btn:hover { border-color: var(--ath-accent, #0b8a5c); color: var(--ath-accent, #0b8a5c); }
+.ath-shell .bo-eff-workspace .eff-btn--primary,
+.ath-shell .bo-eff-workspace .eff-rh-btn--primary,
+.ath-shell .bo-eff-workspace .eff-catalog__btn--primary { border-color: var(--ath-ink, #0c1116); background: var(--ath-ink, #0c1116); color: var(--ath-surface, #fff); }
+.ath-shell .bo-eff-workspace .eff-btn--primary:hover,
+.ath-shell .bo-eff-workspace .eff-rh-btn--primary:hover,
+.ath-shell .bo-eff-workspace .eff-catalog__btn--primary:hover { border-color: var(--ath-accent, #0b8a5c); background: var(--ath-accent, #0b8a5c); color: #fff; }
+.ath-shell .bo-eff-workspace .eff-rh-btn--danger { color: var(--bo-eff-tone-bad); }
+.ath-shell .bo-eff-workspace .eff-rh-btn--ok { color: var(--bo-eff-tone-ok); }
+
+/* ——— Tableaux : actions sur une ligne, cellules qui respirent ——— */
+.ath-shell .bo-eff-workspace .eff-sheets { border: 1px solid var(--ath-line, #e3e8ea); border-radius: 0; background: var(--ath-surface, #fff); overflow-x: auto; }
+.ath-shell .bo-eff-workspace .eff-catalog .eff-sheets { margin: 0 -1.15rem -1.1rem; border-width: 1px 0 0; }
+.ath-shell .bo-eff-workspace .eff-sheets__table { width: 100%; border-collapse: collapse; }
+.ath-shell .bo-eff-workspace .eff-sheets__table th {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--ath-line, #e3e8ea);
+  background: var(--ath-table-head, var(--ath-bg, #f6f8f9));
+  color: var(--ath-muted, #6d7a80);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ath-shell .bo-eff-workspace .eff-sheets__table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--ath-line-soft, #eef2f0);
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.8125rem;
+  vertical-align: middle;
+}
+.ath-shell .bo-eff-workspace .eff-sheets__table tbody tr:hover td { background: var(--ath-row-hover, #f2fbf7); }
+.ath-shell .bo-eff-workspace .eff-sheets__table td small { display: block; margin-top: 0.1rem; color: var(--ath-muted, #6d7a80); font-size: 0.75rem; }
+.ath-shell .bo-eff-workspace .eff-sheets__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+.ath-shell .bo-eff-workspace .eff-sheets__actions a,
+.ath-shell .bo-eff-workspace .eff-sheets__actions button {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-surface, #fff);
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ath-shell .bo-eff-workspace .eff-sheets__actions a.is-primary { border-color: var(--ath-ink, #0c1116); background: var(--ath-ink, #0c1116); color: var(--ath-surface, #fff); }
+.ath-shell .bo-eff-workspace .eff-sheets__actions a:hover { border-color: var(--ath-accent, #0b8a5c); }
+.ath-shell .bo-eff-workspace .eff-progress { display: flex; align-items: center; gap: 0.5rem; min-width: 7rem; }
+.ath-shell .bo-eff-workspace .eff-progress__bar { flex: 1; height: 6px; background: var(--ath-line-soft, #eef2f0); }
+.ath-shell .bo-eff-workspace .eff-progress__bar i { display: block; height: 100%; background: var(--ath-accent, #0b8a5c); }
+.ath-shell .bo-eff-workspace .eff-progress__val { color: var(--ath-muted, #6d7a80); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+
+/* ——— Pastilles ——— */
+.ath-shell .bo-eff-workspace .eff-rh-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-bg, #f6f8f9);
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ath-shell .bo-eff-workspace .eff-rh-chip--warn { border-color: var(--ath-warn-bd, #f1d9a6); background: var(--ath-warn-bg, #fdf6e7); color: var(--bo-eff-tone-warn); }
+.ath-shell .bo-eff-workspace .eff-rh-chip--info { border-color: var(--ath-line, #e3e8ea); background: var(--ath-info-bg, #e3eefb); color: var(--bo-eff-tone-info); }
+.ath-shell .bo-eff-workspace .eff-rh-chip--ok { background: var(--ath-row-hover, #f2fbf7); color: var(--bo-eff-tone-ok); }
+.ath-shell .bo-eff-workspace .eff-rh-chip--bad { border-color: var(--ath-danger, #b91c1c); background: var(--ath-danger-bg, #fde8ea); color: var(--bo-eff-tone-bad); }
+
+/* ——— Liens « Aller plus loin » ——— */
+.ath-shell .bo-eff-workspace .bo-eff-jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.1rem;
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-surface, #fff);
+  font-size: 0.8125rem;
+}
+.ath-shell .bo-eff-workspace .bo-eff-jump strong { color: var(--ath-muted, #6d7a80); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.ath-shell .bo-eff-workspace .bo-eff-jump a { color: var(--ath-ink, #0c1116); font-weight: 700; text-decoration: none; }
+.ath-shell .bo-eff-workspace .bo-eff-jump a:hover { color: var(--ath-accent, #0b8a5c); text-decoration: underline; }
+
+/* ——— Formulaires : listes déroulantes sans motif répété, champs carrés ——— */
+.ath-shell .bo-eff-workspace select {
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 0.75rem auto;
+}
+.ath-shell .bo-eff-workspace .bo-eff-settings select,
+.ath-shell .bo-eff-workspace .eff-rh-field select,
+.ath-shell .bo-eff-workspace .eff-rh-field input:not([type=checkbox]):not([type=radio]):not([type=file]),
+.ath-shell .bo-eff-workspace .eff-rh-field textarea,
+.ath-shell .bo-eff-workspace .bo-eff-settings input:not([type=checkbox]):not([type=radio]) {
+  border-radius: 0;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background-color: var(--ath-surface, #fff);
+  color: var(--ath-ink, #0c1116);
+}
+.ath-shell .bo-eff-workspace .bo-eff-settings__block {
+  border-radius: 0;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: var(--ath-surface, #fff);
+}
+
+/* ——— Raccourcis RH en bas de page ——— */
+.ath-shell .bo-eff-workspace .eff-rh-shortcuts { border-radius: 0; }
+.ath-shell .bo-eff-workspace .eff-rh-shortcuts__item { border-radius: 0; }
+
+/* ——— Mobile ——— */
+@media (max-width: 720px) {
+  .ath-shell .bo-eff-workspace .eff-metrics,
+  .ath-shell .bo-eff-workspace .eff-rh-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ath-shell .bo-eff-workspace .eff-metric__v,
+  .ath-shell .bo-eff-workspace .eff-rh-tile__value { font-size: 1.3rem; }
+  .ath-shell .bo-eff-workspace .eff-dup { grid-template-columns: minmax(0, 1fr); }
+  .ath-shell .bo-eff-workspace .eff-dup-fields { grid-template-columns: minmax(0, 1fr); }
+  .ath-shell .bo-eff-workspace .eff-sheets__actions { flex-wrap: wrap; justify-content: flex-start; }
+}
+.ath-shell .bo-eff-workspace .eff-sheets__table td .eff-rh-late { color: var(--bo-eff-tone-bad); font-weight: 700; }
+
+/* Infobulles : retirées du rendu tant qu'elles sont fermées (elles élargissaient la page sur mobile). */
+.ath-shell .bo-eff-workspace .eff-rh-tip__btn { border-radius: 999px; border-color: var(--ath-line, #e3e8ea); background: var(--ath-surface, #fff); color: var(--ath-muted, #6d7a80); }
+.ath-shell .bo-eff-workspace .eff-rh-tip__pop {
+  display: none;
+  width: min(17.5rem, calc(100vw - 2rem));
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0;
+  background: var(--ath-surface, #fff);
+  color: var(--ath-ink, #0c1116);
+  box-shadow: 0 12px 32px rgba(12, 17, 22, 0.18);
+}
+.ath-shell .bo-eff-workspace .eff-rh-tip:hover .eff-rh-tip__pop,
+.ath-shell .bo-eff-workspace .eff-rh-tip:focus-within .eff-rh-tip__pop { display: block; }
+/* Infobulle placée au bord droit d'un en-tête : elle s'ouvre vers la gauche. */
+.ath-shell .bo-eff-workspace .eff-dup__head > .eff-rh-tip .eff-rh-tip__pop { left: auto; right: 0; transform: none; }
+
+/* Alertes : deux colonnes de listes, lisibles sur grand écran. */
+.ath-shell .bo-eff-workspace .eff-rh-split { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
+/* Fiches jumelles : les cases suivent la grille (le bureau LMS leur imposait 11rem fixes). */
+.ath-shell .bo-eff-workspace .eff-dup-fields > .eff-dup-chip { flex: initial; width: auto; max-width: none; }
+
+/* Tableaux hors tableur principal : largeur de la page, texte qui revient à la ligne, actions côte à côte. */
+.ath-shell .bo-eff-workspace .eff-sheets:not(.eff-sheets--das) .eff-sheets__table { width: 100%; min-width: 0; table-layout: auto; border-collapse: collapse; }
+.ath-shell .bo-eff-workspace .eff-sheets:not(.eff-sheets--das) .eff-sheets__table td { white-space: normal; overflow-wrap: anywhere; }
+.ath-shell .bo-eff-workspace .eff-sheets:not(.eff-sheets--das) .eff-sheets__table th,
+.ath-shell .bo-eff-workspace .eff-sheets:not(.eff-sheets--das) .eff-sheets__table td { border-right: 0; }
+.ath-shell .bo-eff-workspace .eff-sheets:not(.eff-sheets--das) .eff-sheets__table td:last-child { width: 1%; white-space: nowrap; }
+.ath-shell .bo-eff-workspace .eff-sheets:not(.eff-sheets--das) .eff-sheets__actions { flex-direction: row; align-items: center; }
+.ath-shell .bo-eff-workspace .eff-sheets:not(.eff-sheets--das) .eff-sheets__actions > * { flex: 0 0 auto; }
+
+/* Bloc catalogue : un seul cadre, en-tête sans second encadré. */
+.ath-shell .bo-eff-workspace .eff-catalog { padding: 0; overflow: hidden; }
+.ath-shell .bo-eff-workspace .eff-catalog__head { margin: 0; padding: 0.9rem 1.15rem; background: transparent; border-bottom: 1px solid var(--ath-line, #e3e8ea); }
+.ath-shell .bo-eff-workspace .eff-catalog .eff-sheets { margin: 0; border: 0; }
+.ath-shell .bo-eff-workspace .eff-catalog__empty { margin: 1rem 1.15rem 1.15rem; }
+.ath-shell .bo-eff-workspace .eff-catalog-foot { border-top: 1px solid var(--ath-line, #e3e8ea); background: transparent; color: var(--ath-muted, #6d7a80); }
+
+/* Chiffres et pastilles autrefois en couleur fixe (illisibles en mode nuit). */
+.ath-shell .bo-eff-workspace .eff-stat-value { margin: 0.15rem 0 0; color: var(--ath-ink, #0c1116); font-size: 1.35rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.ath-shell .bo-eff-workspace .eff-stat-strong { color: var(--ath-ink, #0c1116); }
+.ath-shell .bo-eff-workspace .eff-sheets__badge--bad { border-color: var(--ath-danger, #b91c1c); background: var(--ath-danger-bg, #fde8ea); color: var(--bo-eff-tone-bad); }
+.ath-shell .bo-eff-workspace .eff-sheets__badge--warn { border-color: var(--ath-warn-bd, #f1d9a6); background: var(--ath-warn-bg, #fdf6e7); color: var(--bo-eff-tone-warn); }

@@ -79,6 +79,8 @@ foreach ($rows as $row) {
                 <thead>
                     <tr>
                         <th>Membre</th>
+                        <th>Arrivée</th>
+                        <th>Référent</th>
                         <th>État</th>
                         <th>Étape en cours</th>
                         <th>Avancement</th>
@@ -94,16 +96,40 @@ foreach ($rows as $row) {
                     $late = (int) ($row['overdue_count'] ?? 0) > 0;
                     $name = trim((string) ($row['display_name'] ?? $row['user_display_name'] ?? ''))
                         ?: (string) ($row['email'] ?? 'Membre');
+                    $overdueCount = (int) ($row['overdue_count'] ?? 0);
+                    $progress = max(0, min(100, (int) ($row['progress_percent'] ?? 0)));
+                    $startedRaw = trim((string) ($row['created_at'] ?? $row['user_created_at'] ?? ''));
+                    $startedTs = $startedRaw !== '' ? strtotime($startedRaw) : false;
+                    $sinceDays = $startedTs ? max(0, (int) floor((time() - $startedTs) / 86400)) : null;
+                    $referent = trim((string) ($row['referent_display_name'] ?? '')) ?: trim((string) ($row['referent_callsign'] ?? ''));
+                    $sub = array_values(array_filter([
+                        trim((string) ($row['callsign'] ?? '')),
+                        trim((string) ($row['unit_name'] ?? '')),
+                        trim((string) ($row['template_name'] ?? '')),
+                    ], static fn (string $v): bool => $v !== ''));
+                    $terminal = \App\Support\MemberIntegrationCatalog::isTerminalStatus($st);
                     ?>
                     <tr>
-                        <td><strong class="eff-sheets__name"><?= $h($name) ?></strong></td>
                         <td>
-                            <span class="eff-rh-chip <?= $late ? 'eff-rh-chip--warn' : '' ?>">
+                            <strong class="eff-sheets__name"><?= $h($name) ?></strong>
+                            <?php if ($sub !== []): ?><small><?= $h(implode(' · ', $sub)) ?></small><?php endif; ?>
+                        </td>
+                        <td>
+                            <?= $startedTs ? $h(date('d/m/Y', $startedTs)) : '—' ?>
+                            <?php if ($sinceDays !== null && !$terminal): ?><small>il y a <?= $sinceDays ?> j</small><?php endif; ?>
+                        </td>
+                        <td><?= $referent !== '' ? $h($referent) : '<span class="eff-rh-chip eff-rh-chip--warn">À désigner</span>' ?></td>
+                        <td>
+                            <span class="eff-rh-chip <?= $late ? 'eff-rh-chip--warn' : ($st === \App\Support\MemberIntegrationCatalog::STATUS_COMPLETED ? 'eff-rh-chip--ok' : '') ?>">
                                 <?= $h((string) ($statusLabels[$st] ?? $st)) ?>
                             </span>
+                            <?php if ($overdueCount > 0): ?><small class="eff-rh-late"><?= $overdueCount ?> étape<?= $overdueCount > 1 ? 's' : '' ?> en retard</small><?php endif; ?>
+                            <?php if (isset($row['dossier_complete']) && !$terminal && (int) $row['dossier_complete'] === 0): ?><small>Dossier incomplet</small><?php endif; ?>
                         </td>
                         <td><?= $h(trim((string) ($row['current_step_title'] ?? '')) ?: '—') ?></td>
-                        <td><?= (int) ($row['progress_percent'] ?? 0) ?> %</td>
+                        <td>
+                            <span class="eff-progress" title="<?= $progress ?> %"><span class="eff-progress__bar"><i style="width: <?= $progress ?>%"></i></span><span class="eff-progress__val"><?= $progress ?> %</span></span>
+                        </td>
                         <td>
                             <div class="eff-sheets__actions">
                                 <?php if ($id > 0): ?>
