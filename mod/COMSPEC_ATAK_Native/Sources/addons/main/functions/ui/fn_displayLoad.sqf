@@ -127,8 +127,9 @@ if (_interactive) then {
 private _page = profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"];
 // Première sortie en main de la mission, jeu pas encore relié à un compte Athena (service Athena « Oui ») :
 // le téléphone s'ouvre sur l'app Athena, onglet COMPTE, avec un code déjà demandé, à saisir sur le site (/lier).
+// Réglage CBA « Proposer la liaison Athena à la sortie du téléphone » (comspec_atak_native_link_offer) pour s'en passer.
 // Rien en mode local (service « Non », comspec_atak_native_local_only) ni quand BattlEye bloque la DLL.
-if (_interactive && {!(missionNamespace getVariable ["COMSPEC_ATAK_LinkOffered", false])}) then {
+if (_interactive && {missionNamespace getVariable ["comspec_atak_native_link_offer", true]} && {!(missionNamespace getVariable ["COMSPEC_ATAK_LinkOffered", false])}) then {
     missionNamespace setVariable ["COMSPEC_ATAK_LinkOffered", true];
     private _st = [] call comspec_atak_native_fnc_athenaStatus;
     if (!(_st get "logged") && {(_st get "key") in ["disconnected", "unlinked", "code", "error"]}) then {

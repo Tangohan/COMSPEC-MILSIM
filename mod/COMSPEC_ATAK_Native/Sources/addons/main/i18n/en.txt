@@ -15927,5 +15927,7 @@
 ["❌ Échec de resynchronisation de %1", "❌ Failed to resync %1"],
 ["📍 TÉLÉPORTER", "📍 TELEPORT"],
 ["📡 Tableau de bord relais ATAK", "📡 ATAK relay dashboard"],
-["🔄 RESYNC TOUS", "🔄 RESYNC ALL"]
+["🔄 RESYNC TOUS", "🔄 RESYNC ALL"],
+["Proposer la liaison Athena à la sortie du téléphone", "Offer the Athena link when taking out the phone"],
+["Coché par défaut. Tant que votre jeu n'est pas relié à un compte Athena, la première sortie du téléphone de chaque mission ouvre l'app Athena avec un code à saisir sur le site. Décochez pour garder votre dernière app à l'ouverture.", "Checked by default. While your game is not linked to an Athena account, the first time you take out the phone in each mission it opens the Athena app with a code to enter on the site. Uncheck to keep your last app on opening."]
 ]
