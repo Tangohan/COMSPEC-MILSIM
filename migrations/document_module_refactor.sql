@@ -35,8 +35,9 @@ ALTER TABLE documents
   ADD INDEX idx_documents_visibility (visibility_scope);
 
 -- Migrer created_by vers owner_user_id / author_user_id pour lignes existantes
-UPDATE documents SET owner_user_id = created_by WHERE owner_user_id IS NULL AND created_by IS NOT NULL;
-UPDATE documents SET author_user_id = created_by WHERE author_user_id IS NULL AND created_by IS NOT NULL;
+-- (uniquement si l'utilisateur existe encore : un compte effacé laisse la colonne à NULL, sinon la FK users(id) échoue)
+UPDATE documents SET owner_user_id = created_by WHERE owner_user_id IS NULL AND created_by IS NOT NULL AND EXISTS (SELECT 1 FROM users u WHERE u.id = documents.created_by);
+UPDATE documents SET author_user_id = created_by WHERE author_user_id IS NULL AND created_by IS NOT NULL AND EXISTS (SELECT 1 FROM users u WHERE u.id = documents.created_by);
 
 -- Remplir uuid pour les lignes existantes
 UPDATE documents SET uuid = LOWER(UUID()) WHERE uuid IS NULL;
