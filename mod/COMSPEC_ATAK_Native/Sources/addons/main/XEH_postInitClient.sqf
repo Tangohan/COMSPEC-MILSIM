@@ -897,8 +897,29 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         ["up"] call comspec_atak_native_fnc_watch
     }];
 }] call CBA_fnc_waitUntilAndExecute;
-["COMSPEC ATAK", "GarminPrev", ["Montre Garmin : écran précédent", "Montre allumée (touche Montre du jeu, O) : revient à l'écran précédent."], { ["prev"] call comspec_atak_native_fnc_watch }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "GarminClose", ["Montre Garmin : éteindre", "Éteint la montre Garmin (sinon : appui long sur la touche Montre du jeu, O)."], { ["close"] call comspec_atak_native_fnc_watch }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+// Boutons de la montre et actions directes (touches CBA, modifiables aussi dans Réglages > Accès et touches du téléphone ;
+// fn_keybinds). Chaque touche n'est prise que si le joueur porte la montre Garmin (sinon elle garde son effet).
+{
+    _x params ["_id", "_title", "_help", "_down", "_up", "_def"];
+    ["COMSPEC ATAK", _id, [_title, _help], _down, _up, _def, false] call CBA_fnc_addKeybind;
+} forEach [
+    ["GarminLight", "Montre Garmin : LIGHT", "Appui court : luminosité. Appui long : menu des commandes (vue agrandie, mode nuit, ne pas déranger, point, téléphone).", { ["lightDown"] call comspec_atak_native_fnc_watch }, { ["lightUp"] call comspec_atak_native_fnc_watch }, [0x18, [false, true, true]]],
+    ["GarminPrev", "Montre Garmin : UP (écran précédent)", "Écran précédent ; dans un menu : remonter ; minuteur en réglage : +1 min.", { ["prev"] call comspec_atak_native_fnc_watch }, {}, [0x18, [false, true, false]]],
+    ["GarminNext", "Montre Garmin : DOWN (écran suivant)", "Écran suivant ; dans un menu : descendre ; minuteur en réglage : -1 min. La touche Montre du jeu (O) fait la même chose.", { ["next"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminStart", "Montre Garmin : START·STOP", "Action de l'écran : chrono, minuteur, marquer la position, zoom de la carte, étalonner l'altimètre, faire sonner le téléphone ; dans un menu : valider.", { ["start"] call comspec_atak_native_fnc_watch }, {}, [0x18, [true, false, false]]],
+    ["GarminBack", "Montre Garmin : BACK·LAP", "Retour au cadran, tour du chrono, remise à zéro ; dans un menu : fermer ; sur le cadran : éteindre.", { ["back"] call comspec_atak_native_fnc_watch }, {}, [0x18, [false, false, true]]],
+    ["GarminBig", "Montre Garmin : vue agrandie", "Affiche la montre en grand au milieu de l'écran, ou la remet au poignet.", { ["big"] call comspec_atak_native_fnc_watch }, {}, [0x18, [true, true, false]]],
+    ["GarminToggle", "Montre Garmin : allumer / éteindre", "Allume la montre sur le cadran, ou l'éteint.", { ["toggle"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminClose", "Montre Garmin : éteindre", "Éteint la montre Garmin (sinon : appui long sur la touche Montre du jeu, O).", { ["close"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminMenu", "Montre Garmin : menu des commandes", "Ouvre ou ferme le menu des commandes (comme l'appui long sur LIGHT).", { ["menu"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminChrono", "Montre Garmin : chrono départ / arrêt", "Lance ou arrête le chronomètre, montre allumée sur le chrono.", { ["chrono"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminLap", "Montre Garmin : tour du chrono", "Enregistre un tour, chrono lancé.", { ["lap"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminTimer", "Montre Garmin : minuteur", "Règle puis lance le minuteur, le met en pause ou le reprend.", { ["timer"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminMark", "Montre Garmin : marquer ma position", "Garde ma position GPS : la boussole et la carte de la montre montrent ensuite sa direction et sa distance.", { ["mark"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminNight", "Montre Garmin : mode nuit", "Écran de la montre en rouge, pour garder la vision de nuit.", { ["night"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminDnd", "Montre Garmin : ne pas déranger", "Plus de bandeau ni de vibration à l'arrivée des notifications du téléphone.", { ["dnd"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminFind", "Montre Garmin : trouver mon téléphone", "Fait sonner et vibrer le téléphone ATAK relié en Bluetooth.", { ["find"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]]
+];
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;
 addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; ["flush"] call comspec_atak_native_fnc_profileSave; }];
