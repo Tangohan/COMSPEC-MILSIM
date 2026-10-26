@@ -15,6 +15,12 @@ private _data = createHashMapFromArray [
 uiNamespace setVariable ["COMSPEC_ATAK_PhotoMode", false];
 { uiNamespace setVariable [_x, -1]; } forEach ["COMSPEC_ATAK_AarPfh", "COMSPEC_ATAK_DronePfh", "COMSPEC_ATAK_SpecPfh", "COMSPEC_ATAK_EcgPfh", "COMSPEC_ATAK_PlayerVizPfh", "COMSPEC_ATAK_PhotoPFH", "COMSPEC_ATAK_Vibrating", "COMSPEC_ATAK_BtPump"];
 { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_BftLast", "COMSPEC_ATAK_DevCache", "COMSPEC_ATAK_Flir", "COMSPEC_ATAK_MarkerTagPool", "COMSPEC_ATAK_HeightCache", "COMSPEC_ATAK_FriendList", "COMSPEC_ATAK_NearCache", "COMSPEC_ATAK_ForeignNames"];
+// État Zeus de la partie précédente (annonces, alarme, écran qui bugue et numéro de sa boucle) : remis à zéro ici, au
+// preInit, et non plus au premier appel de fn_zeusClient (jusqu'à 2 s après l'arrivée). Entre-temps, fn_zeusOverlay
+// pouvait reprendre l'écran qui bugue de l'ancienne mission, ou lancer une seconde boucle si sa poignée était effacée
+// après coup par cette remise tardive.
+uiNamespace setVariable ["COMSPEC_ATAK_ZeusGlitchPfh", -1];
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_ZeusSeen", "COMSPEC_ATAK_ZeusSig", "COMSPEC_ATAK_ZeusNoise", "COMSPEC_ATAK_ZeusNoiseAt", "COMSPEC_ATAK_ZeusGlitch"];
 // Tables d'objets et de marqueurs de la partie précédente : le relais web (MkSnap) supprimait côté Athena les marqueurs
 // de l'ancienne mission, la liaison allié (LinkAlly) se coupait au démarrage sur un porteur disparu.
 { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_MkSnap", "COMSPEC_ATAK_GlowLights", "COMSPEC_ATAK_LinkAlly", "COMSPEC_ATAK_DroneAlerted", "COMSPEC_ATAK_MapSearchKnown", "COMSPEC_ATAK_MapSearch", "COMSPEC_ATAK_DroneStatic"];
