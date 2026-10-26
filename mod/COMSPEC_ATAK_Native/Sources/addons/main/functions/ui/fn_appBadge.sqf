@@ -12,5 +12,7 @@ switch (_page) do {
     };
     // Tinder : likes (tuyaux des informateurs) pas encore traités.
     case "DATING": { ["unread"] call comspec_atak_native_fnc_hvtIntel };
+    // CR de fin d'opération pas encore remis.
+    case "DEBRIEF": { { (_x get "state") isNotEqualTo "done" } count (values (missionNamespace getVariable ["COMSPEC_ATAK_Dbf", createHashMap])) };
     default { 0 };
 }

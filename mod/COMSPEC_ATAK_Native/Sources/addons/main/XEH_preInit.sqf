@@ -386,6 +386,10 @@ private _cap = ["COMSPEC", "ATAK · Capture par l'ennemi"];
 ["comspec_atak_native_admin_uids", "EDITBOX",
     ["Gestionnaires en jeu (UID Steam)", "UID Steam (64 bits) séparés par des virgules : ces joueurs ont l'app Admin du téléphone (ATAK des joueurs, effets Zeus, debug de l'IA) sans être Zeus. Le parc Athena de l'app suit les droits du compte sur le site."],
     ["COMSPEC", "ATAK · Admin"], "", 1] call comspec_atak_native_fnc_addSetting;
+// CR de fin d'opération imposé en jeu (fn_debriefServer) : hôte, admin, gestionnaires ci-dessus et Athena toujours ; Zeus selon ce réglage.
+["comspec_atak_native_debrief_zeus", "CHECKBOX",
+    ["Zeus peut imposer le CR de fin d'opération", "Un Zeus peut ouvrir le compte rendu de fin d'opération (à remplir ou à lire) dans le téléphone des joueurs, depuis l'app CR fin d'op ou le menu Zeus. L'hôte, l'admin connecté, les gestionnaires en jeu et les gestionnaires désignés sur Athena le peuvent toujours."],
+    ["COMSPEC", "ATAK · Admin"], true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_sim", "CHECKBOX",
     ["Batterie réaliste", "La batterie se vide selon l'utilisation (écran, appareil photo, caméra en direct, GPS, envoi de données, recherche de réseau, brouilleur) et se recharge dans un véhicule moteur allumé. À 0 %, le téléphone s'éteint et apparaît hors ligne sur le BFT."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
