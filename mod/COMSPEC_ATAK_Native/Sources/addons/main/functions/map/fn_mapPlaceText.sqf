@@ -4,7 +4,7 @@
     Réglages > Carte ou menu CBA « ATAK · Carte ») :
       villes      NameCityCapital, NameCity ;
       villages    NameVillage ;
-      lieux-dits  NameLocal, NameMarine ;
+      lieux-dits  NameLocal (NameMarine reste écrit par la carte Arma) ;
       sites       Airport, et lieux-dits au nom militaire (base, camp, caserne, armée, aérodrome...).
     Style (réglage CBA comspec_atak_native_map_place_style) :
       TACTICAL  capitales grasses détourées, taille selon le type (par défaut) ;
@@ -29,7 +29,9 @@ private _maxCat = [[0, 1] select (_scale < 0.25), 3] select (_scale < 0.08);
 // Liste des lieux de la carte, faite une fois par carte : [position, texte, catégorie 0..3, couleur Arma].
 private _all = missionNamespace getVariable ["COMSPEC_ATAK_PlaceList", []];
 if ((_all param [0, ""]) isNotEqualTo worldName) then {
-    private _cats = createHashMapFromArray [["NameCityCapital", 0], ["NameCity", 0], ["NameVillage", 1], ["NameLocal", 2], ["NameMarine", 2], ["Airport", 3]];
+    // NameMarine (baies, lagunes) absent : la carte Arma l'écrit elle-même (taille propre au type de lieu, que
+    // sizeExNames ne réduit pas) ; retour de jeu, « Baie de Tonos » apparaissait deux fois, l'un sur l'autre.
+    private _cats = createHashMapFromArray [["NameCityCapital", 0], ["NameCity", 0], ["NameVillage", 1], ["NameLocal", 2], ["Airport", 3]];
     private _mil = ["base", "camp", "military", "militaire", "armée", "armee", "caserne", "airfield", "aérodrome", "aerodrome", "airbase", "fob", "outpost", "checkpoint", "barracks", "army"];
     private _list = [];
     {

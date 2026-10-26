@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Textes du téléphone : plus de texte coupé, sous-menus et boutons lisibles (ATAK natif 2.5.1.AB - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Textes du téléphone plus lisibles
+- Le texte des apps suit enfin la taille du téléphone (petit, plein écran) et le réglage Taille du texte : il ne déborde plus de ses cadres.
+- Le bandeau GPS de la carte montre la manœuvre, puis le temps, la distance et l'heure d'arrivée sur une ligne entière, sans passer sous ARRÊTER.
+- Les sous-menus repliables (comme PERSONNALISER LE GROUPE) et les lignes de réglage ne sont plus assombris.
+- Les boutons (ENREGISTRER, QUITTER LE GROUPE…) ont un libellé plus grand et net ; les noms de baies ne s'écrivent plus deux fois sur la carte.
+EN : Clearer phone text
+- App text now follows the phone size (small, full screen) and the Text size setting: it no longer spills out of its boxes.
+- The map GPS banner shows the turn, then time, distance and arrival time on a full line, no longer hidden under STOP.
+- Collapsible sub-menus (such as CUSTOMISE THE GROUP) and settings rows are no longer dimmed.
+- Buttons (SAVE, LEAVE GROUP…) have larger, sharper labels; bay names are no longer written twice on the map.
+
+### Détail technique
+- `fn_fontApply` : les classes de texte structuré créées par `fn_pageCtrl` et `fn_formRender` (`COMSPEC_RscStructuredText`, `RscMapPanel`, `RscCard`, `RscBubbleIn/Out`) prennent `COMSPEC_ATAK_FontBody` (= `font` × 1,15, posé par `fn_layoutGet`, clé `fontBody`) au lieu de la taille fixe de la classe (0.024 × safeZoneH). Écran texture (JPC) : inchangé.
+- `controls.hpp` : `colorBackground2` à 0 sur `COMSPEC_RscButtonOverlay` (et `Invisible`), à la couleur du fond sur `RscButton` / `RscButtonPrimary` : un bouton transparent posé sur une ligne (sous-menu, interrupteur) assombrissait tout le dessous (mesuré à 40 % sur la capture).
+- `fn_formRender` : libellés de boutons « buttons », « field », « combo » à `font` × 0,92 avec `_fit` ; libellés de champ à `fontSmall`.
+- Bandeau GPS (`fn_pageMap`, `fn_routeBanner`) : hauteurs tirées de la taille du texte, ligne du bas séparée du bouton ARRÊTER, nom de destination raccourci à 16 caractères.
+- `fn_mapPlaceText` : `NameMarine` n'est plus redessiné (la carte Arma l'écrit déjà).
+- `main.pbo` : entrées modifiées remplacées dans le PBO Windows de 2.5.0 (fichiers texte en CRLF), version 2.5.1.
+
 ## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
 
 ### Résumé joueur
