@@ -54,8 +54,8 @@ switch (_mode) do {
         // fonctions BIS/CBA/ACE…). On ne garde que ceux qui contiennent un display (même fermé, pour qu'un calque rouvert
         // sous le même nom soit repris) ; le contrôle de chaque seconde ne relit plus que cette courte liste.
         // Les deux tests de chaîne passent AVANT getVariable : l'immense majorité des noms sont des fonctions compilées
-        // (« ..._fnc_... »), et un getVariable par nom coûte bien plus cher qu'un find. Ce filtre existait, il a été
-        // perdu en combinant deux branches qui avaient écrit la même optimisation chacune de son côté.
+        // (« ..._fnc_... ») et le find leur évite le getVariable et le test de type (gain non mesuré en jeu). Ce filtre,
+        // écrit dans la branche de la revue #1069, a été perdu quand cette branche a été fusionnée dans le regroupement.
         private _names = uiNamespace getVariable ["COMSPEC_ATAK_ForeignNames", []];
         if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_ForeignNamesNext", 0])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_ForeignNamesNext", diag_tickTime + 10];
