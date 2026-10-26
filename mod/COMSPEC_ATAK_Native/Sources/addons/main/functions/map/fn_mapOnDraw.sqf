@@ -207,6 +207,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
 
 // Guerre électronique et GPS naturel (fn_gpsFix) : position affichée avec l'erreur GPS, pistes BFT dégradées.
 ([] call comspec_atak_native_fnc_ewEffects) params ["", "_ewBft", "", "", "", "_ewOff"];
+private _selfGps = (getPosASLVisual player) vectorAdd [_ewOff select 0, _ewOff select 1, 0];
+_selfGps set [2, 0];
+uiNamespace setVariable ["COMSPEC_ATAK_SelfGpsPos", _selfGps];
 private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
 // Terminal compromis (fn_compromiseView) : flux BFT coupé, seule ma position GPS reste en direct (pistes figées dessinées à la fin).
 private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
@@ -240,7 +243,9 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
     private _size = ([16, 21] select (_x isEqualTo _selected || _self)) * _k * _is;
     if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
     if (_self) then { _color = +_selfRgb; };
-    if (_self && {(_ewOff select 0) != 0 || {(_ewOff select 1) != 0}}) then { _pos = [(_pos select 0) + (_ewOff select 0), (_pos select 1) + (_ewOff select 1), 0]; };
+    // Moi : position GPS affichée (vraie position à l'image près + erreur GPS simulée), la même pour l'icône, les anneaux
+    // d'équipe et de sélection, le cartouche et le trait de distance (avant : anneaux et trait restaient sur la vraie position).
+    if (_self) then { _pos = _selfGps; };
     if (_ewBft && {!_self}) then { _color set [3, ((_color select 3) min 0.65) * 0.5]; };
     private _dir = _entity getOrDefault ["heading",0];
     if ((_dc select 3) isNotEqualTo "") then { _icon = _dc select 3; _dir = 0; };
@@ -420,7 +425,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
 
 // Trait jaune joueur -> curseur (outil Distance, en main)
 if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDistance",true]} && {(count _cursor) >= 2} && {(_state getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER"]}) then {
-    private _me = [] call comspec_atak_native_fnc_gpsPos;
+    private _me = _selfGps;
     private _c = [_cursor select 0,_cursor select 1,0];
     [[_me select 0,_me select 1,0],_c,_yellow] call _dashed;
     _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (_me distance2D _c),round (_me getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
@@ -589,6 +594,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerLogi", true]) then { [_map] call comspec_atak_native_fnc_logisticsDraw; };
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerEw", true]) then { [_map] call comspec_atak_native_fnc_ewDraw; };
+// Outil JTAC IP → cible (fn_jtacTool).
+if ((count (_state getOrDefault ["jtacTool", []])) > 0) then { ["draw", _map] call comspec_atak_native_fnc_jtacTool; };
 // Résultat du bouton RECHERCHER (fn_mapSearch) : cercle de précision et anneau pulsant, seulement s'il y en a un.
 if ((count ((uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) getOrDefault ["hit", createHashMap])) > 0) then { ["draw", _map] call comspec_atak_native_fnc_mapSearch; };
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerDrone", true]) then { [_map] call comspec_atak_native_fnc_droneDetectDraw; };

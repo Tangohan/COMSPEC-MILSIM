@@ -105,6 +105,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_marker_channel", "LIST",
     ["Canal des marqueurs", "Canal par défaut des marqueurs posés depuis le téléphone (palette, traits, LZ, éditeur), comme les canaux de la carte d'Arma. Global (par défaut) : visibles par tous les joueurs. Modifiable à chaque pose (ligne CANAL de la palette)."],
     ["COMSPEC", "ATAK · Carte"], [[0, 1, 2, 3, 4, 5], ["Global", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Nom et numéro des marqueurs posés depuis le téléphone (fn_markerDrop).
+["comspec_atak_native_marker_name", "EDITBOX",
+    ["Nom des marqueurs posés", "Modèle du nom donné aux marqueurs posés depuis la palette, quand le champ TEXTE de la palette est vide. Vide (par défaut) : camp, type et numéro (« ENI INFANTERIE 3 »). Mots remplacés : {camp} {type} {n} (numéro) {grille} {indicatif} {heure}. Exemple : {indicatif} {type} {n}."],
+    ["COMSPEC", "ATAK · Carte"], "", 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_marker_numbering", "LIST",
+    ["Numérotation des marqueurs", "À la suite (par défaut) : chaque marqueur prend le numéro suivant, même si on en a effacé. Premier numéro libre : un numéro effacé est repris (après 1 et 3, le suivant est 2)."],
+    ["COMSPEC", "ATAK · Carte"], [["next", "fill"], ["À la suite", "Premier numéro libre"], 0], 0] call comspec_atak_native_fnc_addSetting;
 {
     _x params ["_k", "_t", "_h"];
     [_k, "CHECKBOX", [_t, _h], ["COMSPEC", "ATAK · Carte"], true, 0] call comspec_atak_native_fnc_addSetting;
@@ -297,8 +304,14 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
     ["Objets brouilleurs d'autres mods", "Objets ou véhicules qui brouillent l'ATAK tant qu'ils sont intacts, par exemple les brouilleurs d'un mod de guerre électronique. Format : Classe:rayon:force, séparés par des virgules (rayon en mètres, 1000 par défaut ; force 1-100, 80 par défaut). Classes parentes acceptées. Exemple : Land_DataTerminal_01_F:500:90. Vide : aucun."],
     _sim, "", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_lase_link", "CHECKBOX",
-    ["Télémètre vers l'ATAK", "Le point mesuré au télémètre devient un marqueur sur la carte de l'ATAK : mesure ACE Vector 21 (azimut + distance), ou touche « Envoyer le point visé à l'ATAK » dans une optique, des jumelles ou avec un désignateur laser."],
+    ["Télémètre vers l'ATAK", "Le point visé avec un désignateur laser allumé devient un marqueur sur la carte de l'ATAK (touche « Envoyer le point visé à l'ATAK »). Jumelles et optiques : voir « Marquer depuis des jumelles »."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_optic_mark", "CHECKBOX",
+    ["Marquer depuis des jumelles ou une optique", "Décoché par défaut : aucune jumelle ni optique (ACE Vector 21 compris) ne pose de marqueur sur la carte de l'ATAK, il faut reporter l'ennemi à la main. Coché : la mesure du Vector 21 (azimut + distance) ou la touche « Envoyer le point visé à l'ATAK » dans une optique ou des jumelles pose un marqueur."],
+    _sim, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mag_decl", "SLIDER",
+    ["Déclinaison magnétique (°)", "Écart entre le nord vrai de la carte et le nord magnétique, en degrés (positif : déclinaison est). Les cartes Arma n'en ont pas : 0 par défaut. Sert au cap magnétique du 9-LINE de l'app JTAC et de l'outil carte « JTAC : IP → cible »."],
+    _sim, [-30, 30, 0, 1], 1] call comspec_atak_native_fnc_addSetting;
 // Contrôle Zeus des ATAK : le menu clic droit ZEN d'Overwatch (« ATAK — Infos / dégâts / brouillage », état du téléphone
 // d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.
 missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];

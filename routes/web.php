@@ -609,6 +609,10 @@ return function (Router $router) {
     // Télécommande drone sur le vrai téléphone (QR code de l'app Drone en jeu ou du panneau Drones d'Overwatch).
     $router->get('/telecommande-drone', [\App\Controllers\Web\AtakDroneRemoteController::class, 'show']);
     $router->get('/telecommande-drone/qr.png', [\App\Controllers\Web\AtakDroneRemoteController::class, 'qr']);
+    // 9-LINE du JTAC sur un autre écran (QR code et bouton de l'app JTAC de l'ATAK natif).
+    $router->get('/9-line', [\App\Controllers\Web\AtakNineLineViewController::class, 'show']);
+    $router->get('/9-line/feed', [\App\Controllers\Web\AtakNineLineViewController::class, 'feed'], [AuthMiddleware::class]);
+    $router->get('/9-line/qr.png', [\App\Controllers\Web\AtakNineLineViewController::class, 'qr']);
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);

@@ -1461,13 +1461,14 @@ switch (_act) do {
         if ((count _tr) isEqualTo 0) exitWith {};
         _tr params ["_o", "_name", "_pos", "", "_clock", "_tag", "", "_num"];
         // Marqueur ordinaire du téléphone (palette réglée le temps de la pose) : camp vu, infanterie ou véhicule.
-        private _keys = ["markerAff", "markerType", "markerColor", "markerEditAfter"];
+        private _keys = ["markerAff", "markerType", "markerColor", "markerEditAfter", "markerText"];
         private _old = _keys apply { _s getOrDefault [_x, "§"] };
         private _aff = ["u", "o", "b"] select (["INCONNU", "ENNEMI", "AMI"] find _tag);
         _s set ["markerAff", _aff];
         _s set ["markerType", format ["%1_%2", _aff, ["motor_inf", "inf"] select (_o isKindOf "CAManBase")]];
         _s set ["markerColor", "AUTO"];
         _s set ["markerEditAfter", false];
+        _s set ["markerText", ""];
         private _m = [_pos] call comspec_atak_native_fnc_markerDrop;
         { if ((_old select _forEachIndex) isEqualTo "§") then { _s deleteAt _x; } else { _s set [_x, _old select _forEachIndex]; }; } forEach _keys;
         if (_m isNotEqualTo "") then {

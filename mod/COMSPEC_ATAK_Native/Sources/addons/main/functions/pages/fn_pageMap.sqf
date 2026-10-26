@@ -174,27 +174,33 @@ if (_interactive) then {
 
     // Menu des outils carte, au-dessus du bouton
     if (_s getOrDefault ["mapToolsOpen", false]) then {
+        // Outils rangés par usage ; une ligne « # » est un titre de section.
         private _items = [
+            ["#", "", "NAVIGATION"],
             ["ROUTE", "map_route", "GPS : itinéraire"],
             ["WP", "app_waypoints", "Points de passage"],
+            ["SEARCH", "app_osint", "Rechercher (IMEI, numéro, balise)"],
+            ["#", "", "MESURER"],
+            ["MEASURE", "map_measure", "Mesure A-B"],
+            ["HEIGHT", "map_height", "Hauteur"],
+            ["LOS", "map_los", "Ligne de vue"],
+            ["FLAT", "map_flat", "Terrain plat"],
+            ["IPTGT", "app_jtac", "JTAC : IP → cible (cap magnétique)"],
+            ["#", "", "DESSINER"],
             ["LINE", "map_measure", "Tracer un trait"],
             ["DRAW", "map_labels", "Dessin libre"],
-            ["DISTANCE", "map_distance", "Distance"],
-            ["MEASURE", "map_measure", "Mesure A-B"],
             ["HOUSES", "map_house", "Marquer bâtiments"],
-            ["HEIGHT", "map_height", "Hauteur"],
+            ["#", "", "AFFICHAGE"],
+            ["DISTANCE", "map_distance", "Distance"],
             ["COMPASS", "map_compass", "Boussole"],
             ["GRID", "map_grid", format ["Grille %1 chiffres", profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]]],
-            ["FLAT", "map_flat", "Terrain plat"],
             ["ZONES", "map_grid", "Zones tactiques"],
             ["SIGINT", "map_los", "Goniométrie (émetteurs)"],
-            ["SEARCH", "app_osint", "Rechercher (IMEI, numéro, balise)"],
-            ["LOS", "map_los", "Ligne de vue"],
             ["CLEAR", "map_clear", "Tout effacer"]
         ];
         // Drone appairé et en état : ses ordres se donnent aussi depuis la carte.
         private _drn = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
-        if (!isNull _drn && {alive _drn}) then { _items insert [0, [["DRONE", "app_drone", "Drone : ordres sur la carte"]]]; };
+        if (!isNull _drn && {alive _drn}) then { _items insert [0, [["#", "", "DRONE"], ["DRONE", "app_drone", "Drone : ordres sur la carte"]]]; };
         private _rh = _fs * 1.55;
         private _mwid = _panW;
         // Autant de lignes que la hauteur le permet, puis une seconde colonne.
@@ -211,6 +217,16 @@ if (_interactive) then {
             private _col = floor (_forEachIndex / _rows);
             private _y0 = _my0 + (_forEachIndex mod _rows) * _rh;
             private _bx = _bx + _col * (_mwid + _pad / 2);
+            if (_key isEqualTo "#") then {
+                // Titre de section
+                private _h = ["COMSPEC_RscText", [_bx + _pad * 1.5, _y0 + _rh * 0.25, _mwid - _pad * 2, _rh * 0.75], _label] call _mk;
+                _h ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
+                _h ctrlSetFontHeight (_fs * 0.78);
+                _h ctrlSetTextColor [0.54, 0.60, 0.58, 1];
+                private _ln = ["COMSPEC_RscText", [_bx + _pad * 1.5, _y0 + _rh - pixelH, _mwid - _pad * 2, pixelH]] call _mk;
+                _ln ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.25];
+                continue;
+            };
             private _active = switch (_key) do {
                 case "DISTANCE": { _s getOrDefault ["mapDistance", true] };
                 case "COMPASS": { (["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0 };
@@ -218,6 +234,10 @@ if (_interactive) then {
                 case "ZONES": { profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true] };
                 case "SIGINT": { profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true] };
                 default { _mode isEqualTo _key };
+            };
+            if (_active && {_key isEqualTo _mode}) then {
+                private _hl = ["COMSPEC_RscText", [_bx + _pad, _y0, _mwid, _rh]] call _mk;
+                _hl ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.16];
             };
             private _ic = ["COMSPEC_RscIcon", [_bx + _pad * 1.5, _y0 + _rh * 0.15, _rh * 0.7 / _ratio, _rh * 0.7], _dir + _icon + ".paa"] call _mk;
             _ic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _active);
@@ -469,6 +489,7 @@ if (_interactive) then {
         case "HEIGHT": { "HAUTEUR : clic pour relever l'altitude" };
         case "FLAT": { "TERRAIN PLAT : clic pour chercher, clic sur une LZ = marqueur" };
         case "LOS": { "LIGNE DE VUE : clic sur la cible" };
+        case "IPTGT": { ["JTAC : clic sur l'IP", "JTAC : clic sur la cible", "JTAC : clic pour un nouvel IP"] select ((count (_s getOrDefault ["jtacTool", []])) min 2) };
         case "ROUTE": { "GPS : clic sur la destination" };
         // POINTS DE PASSAGE : la fiche d'étape dit elle-même comment poser et se ferme par ✕ (fn_wpCard).
         case "WP": { "" };
@@ -483,9 +504,36 @@ if (_interactive) then {
     };
     if ((count (_s getOrDefault ["markerEdit", createHashMap])) > 0) then { _hintText = ""; };
     if (_hintText isNotEqualTo "") then {
+        // Bandeau de l'outil actif : icône, nom et consigne, rappel que le glisser déplace la carte, bouton ✕ pour quitter.
         private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
-        private _hint = ["COMSPEC_RscChip", [_hx, _by + _pad, (_tx - _hx - _pad) max 0, _fs * 1.5], _hintText + " · clic droit : quitter"] call _mk;
-        _hint ctrlSetFontHeight _fs;
+        private _hw = (_tx - _hx - _pad) max 0;
+        private _hh = _fs * 1.5;
+        private _icon = ["map_tools", "map_measure", "map_house", "map_height", "map_flat", "map_los", "app_jtac", "map_route", "map_measure", "map_labels", "app_drone"]
+            select ((["MEASURE", "HOUSES", "HEIGHT", "FLAT", "LOS", "IPTGT", "ROUTE", "LINE", "DRAW", "DRONE"] find _mode) + 1);
+        // Consigne traduite entière (« MESURE : clic A puis B » / « MEASURE: click A then B ») puis coupée au premier « : ».
+        private _parts = (_hintText call comspec_atak_native_fnc_tr) splitString ":";
+        private _name = trim (_parts select 0);
+        private _what = trim ((_parts select [1]) joinString ":");
+        private _bg = ["COMSPEC_RscMapPanel", [_hx, _by + _pad, _hw, _hh]] call _mk;
+        _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.94];
+        private _edge = ["COMSPEC_RscText", [_hx, _by + _pad, pixelW * 3, _hh]] call _mk;
+        _edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 1];
+        private _ic = ["COMSPEC_RscIcon", [_hx + pixelW * 6, _by + _pad + _hh * 0.15, _hh * 0.7 / _ratio, _hh * 0.7], _dir + _icon + ".paa"] call _mk;
+        _ic ctrlSetTextColor [0.36, 0.78, 0.42, 1];
+        private _xw = _hh / _ratio;
+        private _tx0 = _hx + pixelW * 10 + _hh * 0.7 / _ratio;
+        private _txt = ["COMSPEC_RscStructuredText", [_tx0, _by + _pad + _hh * 0.12, (_hw - (_tx0 - _hx) - _xw) max 0, _hh * 0.88]] call _mk;
+        _txt ctrlSetFontHeight (_fs * 0.92);
+        _txt ctrlSetStructuredText parseText format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#e6efe9'>%2</t>  <t size='0.85' color='#8a9a93'>%3</t>",
+            _name, _what, "glisser : déplacer la carte · clic droit : quitter" call comspec_atak_native_fnc_tr];
+        private _xb = ["COMSPEC_RscButton", [_hx + _hw - _xw, _by + _pad, _xw, _hh], "✕"] call _mk;
+        _xb ctrlSetFontHeight _fs;
+        _xb ctrlSetTooltip (("Quitter l'outil") call comspec_atak_native_fnc_tr);
+        _xb ctrlAddEventHandler ["ButtonClick", {
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["drawStroke", []];
+            ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        }];
     };
     if (_mode in ["LINE", "DRAW"]) then {
         // Couleur, épaisseur, flèche, forme fermée, défaire (fn_strokeBar).
@@ -522,6 +570,13 @@ if (_interactive && {(count (_search getOrDefault ["hit", createHashMap])) > 0} 
     ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_mapSearch;
 } else {
     uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", controlNull];
+    // Outil JTAC IP → cible (fn_jtacTool) : fiche du calcul au même endroit que celle de la recherche.
+    if (_interactive && {(count (_s getOrDefault ["jtacTool", []])) >= 2} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
+        private _cw = ((_mw * 0.5) max (_font * 11 / _ratio)) min (_mw - 2 * _pad);
+        private _chh = _fs * 7.6;
+        private _selUp = [0, _fs * 6.2 + _pad * 4] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
+        ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_jtacTool;
+    };
 };
 // Marqueur sélectionné (clic gauche sur une étiquette) : fiche au-dessus du panneau curseur. Liseré et pastille de la
 // couleur du marqueur, titre, nature (alerte, joueur, mission), grille · distance · azimut, note, puis une rangée

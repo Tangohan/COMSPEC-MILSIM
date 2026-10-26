@@ -68,6 +68,8 @@ final class SquadSyncService
 
             return [
                 'callsign' => $callsign !== '' ? $callsign : $label,
+                // Indicatif choisi par le joueur dans le téléphone (apps C2 / Groupe) : appliqué à sa fiche (AtakRoleService).
+                'callsign_custom' => !empty($m['callsign_custom']) && $callsign !== '',
                 'name' => $label,
                 'uid' => SteamId::normalize((string) ($m['uid'] ?? '')),
                 'role' => strtoupper(self::str($m['role'] ?? '', 16)),

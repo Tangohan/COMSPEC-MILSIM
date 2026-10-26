@@ -1,6 +1,6 @@
 /*
     9-LINE du JTAC calculé depuis l'état de l'app (cible, IP, appareil, armement, marquage, saisie).
-      1 IP/BP (nom)                    2 cap IP → cible (degrés ; magnétique = vrai sur les cartes Arma)
+      1 IP/BP (nom)                    2 cap magnétique IP → cible (fn_magBearing : déclinaison du réglage serveur, 0 par défaut)
       3 distance IP → cible (NM)       4 altitude de la cible (ft MSL)
       5 description (saisie)           6 position (grille 10 chiffres)
       7 marquage (LASER + code, IR, fumigène, aucun)
@@ -157,7 +157,8 @@ private _l1 = ["jIp"] call _val;
 private _l2 = "";
 private _l3 = "";
 if ((count _ip) >= 2 && _hasT) then {
-    _l2 = format ["%1°", [round (_ip getDir _tgt), 3] call CBA_fnc_formatNumber];
+    // Cap magnétique (déclinaison du réglage serveur, fn_magBearing).
+    _l2 = format ["%1° M", [([_ip, _tgt] call comspec_atak_native_fnc_magBearing) select 1, 3] call CBA_fnc_formatNumber];
     _l3 = format ["%1 NM", ((_ip distance2D _tgt) / 1852) toFixed 1];
 };
 private _l4 = if (_hasT) then { format ["%1 ft MSL", round ((getTerrainHeightASL _tgt) * 3.28084)] } else { "" };

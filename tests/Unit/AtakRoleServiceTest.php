@@ -87,4 +87,27 @@ final class AtakRoleServiceTest extends TestCase
         self::assertSame(['PREF', 'JOB'], array_column($pref['members'], 'callsign'));
         self::assertSame('A12', $pref['members'][1]['role']);
     }
+    public function testGameCallsignIsExtractedOnlyWhenChosenInPhone(): void
+    {
+        $snap = SquadSyncService::normalizePayload([
+            'mission_key' => 'm', 'squad' => ['key' => 'A#WEST', 'name' => 'A'],
+            'teams' => [['key' => 'FT1', 'name' => 'Alpha', 'members' => [
+                ['callsign' => 'Viper 1', 'uid' => '76561198000000001', 'callsign_custom' => true],
+                ['callsign' => 'Alpha 1-2', 'uid' => '76561198000000002'],
+                ['callsign' => 'Bot', 'callsign_custom' => true],
+            ]]],
+            'unassigned' => [['callsign' => '<|>X', 'uid' => '76561198000000004', 'callsign_custom' => true]],
+        ]);
+        self::assertNotNull($snap);
+        $cs = AtakRoleService::extractCallsigns($snap);
+        self::assertSame(['76561198000000001' => 'Viper 1'], $cs, 'indicatif de mission et IA ignorés, indicatif trop court rejeté');
+        self::assertSame('Ghost 2-1', AtakRoleService::cleanCallsign("  Ghost\t 2-1|"));
+    }
+
+    public function testCatalogPayloadCarriesWebCallsign(): void
+    {
+        $p = AtakRoleService::catalogPayload([], null, null, 'Raven 6');
+        self::assertSame([['callsign' => 'CS', 'role' => 'Raven 6', 'display_name' => 'ATHENA']], $p['fire_teams'][1]['members']);
+        self::assertSame([], AtakRoleService::catalogPayload([], null, null, '')['fire_teams'][1]['members']);
+    }
 }

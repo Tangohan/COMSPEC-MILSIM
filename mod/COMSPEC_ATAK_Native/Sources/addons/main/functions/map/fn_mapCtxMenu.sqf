@@ -2,7 +2,7 @@
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
     POINT DE PASSAGE (fiche de pose de l'étape au point, fn_wpAction "open"), CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
     et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
-    sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur ou alerte pointés), EFFACER LES ALERTES (repères
+    sous le clic), RETIRER TOUTES LES ZONES (camp), MODIFIER LE MARQUEUR (marqueur joueur pointé, éditeur), SUPPRIMER (marqueur joueur ou alerte pointés), EFFACER LES ALERTES (repères
     d'alerte reçus). MARQUEUR ouvre la palette au point (fn_markerPlace) ou l'éditeur complet (réglage d'addon). Drone appairé et en vie : ORDRE AU DRONE
     ouvre un sous-menu ALLER, RECHERCHER, STATIONNAIRE, ATTERRIR au point cliqué (fn_droneAction "mapOrder"), et RETOUR. Équipier pointé : aussi CHAMP DE VISION de l'équipier
     et LOCALISER PAR RELAIS (triangulation de 6 à 10 s, fn_relayNet). EFFACER LES LOCALISATIONS quand il y en a une
@@ -121,6 +121,8 @@ switch (_mode) do {
                 [format ["Grille %1 copiée", _g], 2] call comspec_atak_native_fnc_toast;
             };
             case "DELETE": { if (_m isNotEqualTo "") then { [_m] call comspec_atak_native_fnc_markerDelete; }; };
+            // Marqueur de joueur pointé : éditeur (titre, description, type, couleur, taille, orientation, opacité).
+            case "MKEDIT": { if (_m isNotEqualTo "" && {(markerShape _m) isNotEqualTo ""}) then { [_m] call comspec_atak_native_fnc_markerEditOpen; }; };
             case "ALERTSDEL": {
                 private _n = 0;
                 { if ((_x find "COMSPEC_ALERT_") isEqualTo 0 || {(_x find "COMSPEC_PANIC_") isEqualTo 0}) then { deleteMarkerLocal _x; _n = _n + 1; }; } forEach allMapMarkers;
@@ -265,6 +267,9 @@ switch (_mode) do {
         };
         if (_nf > 1 || {_nf > 0 && {!_inNf}}) then {
             _rows pushBack ["NOFLYALL", "Retirer toutes les zones", format ["%1 zones, tout le camp", _nf], _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
+        };
+        if (_m isNotEqualTo "" && {([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 1}) then {
+            _rows pushBack ["MKEDIT", "Modifier le marqueur", "texte, type, couleur, taille", _dir + "map_marker.paa", _acc];
         };
         if (_m isNotEqualTo "") then {
             _rows pushBack ["DELETE", ["Supprimer le marqueur", "Effacer cette alerte"] select (([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 2), [([markerText _m] call comspec_atak_native_fnc_markerAutoName), ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
