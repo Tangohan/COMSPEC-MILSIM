@@ -50,7 +50,8 @@ private _side = str side group player;
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
 ([] call comspec_atak_native_fnc_ewEffects) params ["", "", "", "", "_gpsErr", "_off", "_gpsSt"];
 if (_gpsErr > 0) then {
-    private _p = (getPosATL player) vectorAdd _off;
+    // Même point que mon icône (fn_mapOnDraw, position lissée de l'image) : le cercle reste centré sur le point affiché.
+    private _p = uiNamespace getVariable ["COMSPEC_ATAK_SelfGpsPos", (getPosATL player) vectorAdd _off];
     // Erreur de quelques mètres : pas de cercle (plus petit que l'icône).
     if (_gpsErr >= 8 || {_gpsSt isNotEqualTo "FIX"}) then {
         _map drawEllipse [[_p select 0, _p select 1, 0], _gpsErr, _gpsErr, 0, [[0.95, 0.67, 0.20, 0.8], [0.62, 0.66, 0.64, 0.8]] select (_gpsSt isNotEqualTo "FIX"), ""];

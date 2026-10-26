@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## GPS en bâtiment moins imprécis (ATAK natif, prochaine version)
+
+### Résumé joueur
+Type : correctif
+FR : Le GPS reste précis à l'intérieur des bâtiments
+- Dans un bâtiment, ton point sur la carte reste à quelques mètres de ta vraie position (avant : jusqu'à 40 m et plus).
+- Ta vraie position est toujours dans le cercle de précision dessiné autour de ton point.
+- Sans satellites (sous-sol), la position par le réseau est plus proche : 15 à 60 m selon le signal.
+- Les sauts de position du GPS sont plus courts.
+EN : GPS stays accurate inside buildings
+- Inside a building, your dot on the map stays a few metres from your real position (before: 40 m or more).
+- Your real position is always inside the accuracy circle drawn around your dot.
+- Without satellites (basement), the network position is closer: 15 to 60 m depending on signal.
+- GPS position jumps are shorter.
+
+### Détail technique
+- `fn_gpsFix` : bâtiment = 5 à 8 satellites (fix gardé) au lieu de 2 à 6, reflets 3 à 10 au lieu de 12 à 35 ; erreurs de base resserrées (7+ satellites 4-6 m, 5-6 : 6-9 m, 4 : 9-13 m). Le test « rue étroite » (8 rayons à 60 m) et la forêt ne s'appliquent plus à l'intérieur : mes propres murs le déclenchaient (−5 satellites, +32 m), d'où la perte du fix et le point à ~40 m. Dérive du point bornée à 0,5 × rayon annoncé (0,8 avant). Position réseau : 60 → 15 m (1 à 4 barres), décalage 0,35 × rayon (0,6). Sauts multitrajets 6-20 m (15-60).
+- `fn_ewDraw` : le cercle de précision est centré sur la position de mon icône de la même image (`COMSPEC_ATAK_SelfGpsPos`).
+
 ## Correctif de sécurité : liaison Athena, relais ATAK, Windows en français (ATAK natif 2.4.1.AB - Denver, COMSPEC Link 2.0.96)
 
 ### Résumé joueur
