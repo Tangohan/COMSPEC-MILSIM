@@ -48,6 +48,8 @@ class Application
             new \App\Middleware\SecurityHeadersMiddleware(),
             new \App\Middleware\RateLimitMiddleware(),
             new \App\Middleware\CsrfPostMiddleware(),
+            // Accès refusé : retour à la page précédente avec un toast, plutôt que vers le tableau de bord.
+            new \App\Middleware\AccessDeniedStayMiddleware(),
             // Lazy : ne pas Container::get(DemoNda…) au boot — sinon DemoNdaVisitRepository
             // ouvre PDO sur *chaque* requête (y compris /api/atak/* exemptés), et une panne
             // BDD se présente comme une erreur Demo NDA hors sujet.

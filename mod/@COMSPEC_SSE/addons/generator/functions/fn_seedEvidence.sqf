@@ -33,8 +33,22 @@ private _pool = [
 ];
 
 // Emplacements : positions des bâtiments du rayon, dans un ordre tiré de la graine.
+// Borné : on choisit d'abord quelques bâtiments (ordre de graine), puis leurs positions,
+// pour ne pas hacher des milliers de positions en ville (rayon 300 m, serveur non planifié).
+// Bâtiments habitables seulement (cabanes, conteneurs, ruines : aucune position intérieure).
+private _houses = (nearestObjects [_centerATL, ["House"], _radius]) select { alive _x && {(_x buildingPos 0) isNotEqualTo [0, 0, 0]} };
+// Clé [hash, index] : sort n'accepte pas d'objet dans les sous-tableaux (égalité de hash).
+private _hKeyed = [];
+{
+    private _hp = getPosATL _x;
+    _hKeyed pushBack [[_seed, format ["b%1_%2", round (_hp select 0), round (_hp select 1)]] call comspec_sse_fnc_hash, _forEachIndex];
+} forEach _houses;
+_hKeyed sort true;
 private _spots = [];
-{ _spots append (_x buildingPos -1); } forEach ((nearestObjects [_centerATL, ["House"], _radius]) select { alive _x });
+{
+    _spots append ((_houses select (_x select 1)) buildingPos -1);
+    if (count _spots >= _count * 4) exitWith {};
+} forEach _hKeyed;
 private _keyed = _spots apply { [[_seed, str _x] call comspec_sse_fnc_hash, _x] };
 _keyed sort true;
 _spots = _keyed apply { _x select 1 };

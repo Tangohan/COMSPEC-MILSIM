@@ -12,7 +12,9 @@ _s set ["suppressHudRestore", true];
 [] call comspec_atak_native_fnc_close;
 _s set ["suppressHudRestore", false];
 // Menu d'actions d'Arma masqué tant que le téléphone est affiché (COMSPEC_ATAK_ActionBlock, XEH_postInitClient).
-// Réinstallé à chaque ouverture : une mission ou un autre mod a pu le remplacer.
+// Réinstallé à chaque ouverture : une mission ou un autre mod a pu le remplacer. Remis à vide à la fermeture
+// (fn_displayUnload) : téléphone rangé, le gestionnaire d'une mission ou d'un autre mod n'est plus écrasé pour la session.
+uiNamespace setVariable ["COMSPEC_ATAK_OpenSeq", (uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]) + 1];
 inGameUISetEventHandler ["PrevAction", "[false] call (uiNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
 inGameUISetEventHandler ["NextAction", "[false] call (uiNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
 inGameUISetEventHandler ["Action", "[true] call (uiNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];

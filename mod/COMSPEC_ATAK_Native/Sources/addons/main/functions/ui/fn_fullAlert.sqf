@@ -21,6 +21,8 @@ if (_this isEqualTo ["draw"]) exitWith {
     private _d = [] call comspec_atak_native_fnc_display;
     if (isNull _d) exitWith { false };
     if ((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"]) exitWith { false };
+    // Verrou à distance du Zeus (écran rouge, clics bloqués) : l'alerte attend, comme téléphone rangé.
+    if ((["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo "") exitWith { false };
     if (_shown < 0) then {
         _shown = diag_tickTime;
         _cur set [7, _shown];
@@ -60,6 +62,8 @@ if (_this isEqualTo ["draw"]) exitWith {
     _bar ctrlSetPosition [_ax, _y, 0, _pad * 0.5];
     _bar ctrlCommit _left;
     uiNamespace setVariable ["COMSPEC_ATAK_FullAlertCtrls", _ctrls];
+    // Bandeau sous les bris d'écran et les effets (fn_overlayRaise, à l'image suivante).
+    [] call comspec_atak_native_fnc_overlayRaise;
     true
 };
 params [["_title", "ALERTE"], ["_msg", ""], ["_from", ""], ["_rgba", [0.55, 0.08, 0.06, 0.92]], ["_dur", 10]];

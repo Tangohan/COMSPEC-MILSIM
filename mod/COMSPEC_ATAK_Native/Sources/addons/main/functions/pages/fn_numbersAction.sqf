@@ -25,6 +25,8 @@ private _arm = {
     [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["numDelArm", ""]) isEqualTo _this) then { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["numDelArm", ""]; if ((_st getOrDefault ["activePage", ""]) isEqualTo "NUMBERS") then { ["NUMBERS"] call comspec_atak_native_fnc_pageRender; }; }; }, _k, 4] call CBA_fnc_waitAndExecute;
     false
 };
+// Un autre formulaire ouvert désarme la suppression : le redessin différé de _arm effacerait la saisie.
+if (_a in ["tab", "edit", "cancel", "ctEdit", "ctCancel", "ctFrom"]) then { _s set ["numDelArm", ""]; };
 switch (_a) do {
     case "tab": { _s set ["numTab", _v]; { _draft deleteAt _x; } forEach (keys _draft); };
     case "edit": { { _draft deleteAt _x; } forEach (keys _draft); _draft set ["num", _v]; };

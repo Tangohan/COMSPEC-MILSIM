@@ -239,6 +239,43 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     ["DEBUG", "Boot", "ExtensionCallback EH enregistré"] call comspec_overwatch_connect_fnc_log;
 };
 
+// Affichage situation JVN (Draw3D) — OFF par défaut ; profil ATAK si présent ; pas de conflit F-PANO.
+// Hors du bloc de démarrage Athena : celui-ci sort tout de suite quand Overwatch est coupé (service Athéna
+// « Non », mode full local / TOC), et l'affichage, entièrement local, ne s'enregistrait alors jamais.
+if (isNil "COMSPEC_EcotiBootEh") then {
+COMSPEC_EcotiBootEh = ["CBA_settingsInitialized", {
+    if (missionNamespace getVariable ["COMSPEC_EcotiBootDone", false]) exitWith {};
+    missionNamespace setVariable ["COMSPEC_EcotiBootDone", true, false];
+    [{
+        private _raw = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
+        if (_raw isEqualType true) then {
+            [_raw, false] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
+        };
+        private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
+        if (_cut isEqualType true) then {
+            [_cut, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
+            profileNamespace setVariable ["COMSPEC_EcotiCutawayEnabled", nil];
+            [] call comspec_overwatch_connect_fnc_saveProfile;
+        };
+        private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
+        if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
+            [_theme, false] call comspec_overwatch_connect_fnc_ecotiApplyThemeSetting;
+        };
+        private _render = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
+        if (_render isEqualType "" && {_render isNotEqualTo "UNSET"}) then {
+            [_render, false] call comspec_overwatch_connect_fnc_ecotiApplyRenderModeSetting;
+        };
+        private _tubeInfo = profileNamespace getVariable ["COMSPEC_EcotiTubeInfo", "UNSET"];
+        if (_tubeInfo isEqualType "" && {_tubeInfo isNotEqualTo "UNSET"}) then {
+            [_tubeInfo, false] call comspec_overwatch_connect_fnc_ecotiApplyTubeInfoSetting;
+        };
+        if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
+            [] call comspec_overwatch_connect_fnc_ecotiInit;
+        };
+    }, [], 3] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
+};
+
 if (isNil "COMSPEC_CbaSettingsEhArmed") then {
 // Bloc de démarrage gardé dans une variable : fn_athenaApply le rejoue (COMSPEC_CbaSettingsBootReplay)
 // quand le joueur passe Athéna à « Oui » en mission alors qu'il était coupé au démarrage.
@@ -351,37 +388,13 @@ localNamespace setVariable ["COMSPEC_CbaSettingsBootCode", {
         [] call comspec_overwatch_connect_fnc_initATAKMenu;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
-    // Affichage situation JVN (Draw3D) — OFF par défaut ; profil ATAK si présent ; pas de conflit F-PANO.
+    // Liaison (bandeau, simulation de dégradation). L'affichage situation JVN a son propre démarrage
+    // plus haut (COMSPEC_EcotiBootEh) : il doit aussi marcher sans Athena.
     [{
-        private _raw = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
-        if (_raw isEqualType true) then {
-            [_raw, false] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
-        };
-        private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
-        if (_cut isEqualType true) then {
-            [_cut, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
-            profileNamespace setVariable ["COMSPEC_EcotiCutawayEnabled", nil];
-            [] call comspec_overwatch_connect_fnc_saveProfile;
-        };
-        private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
-        if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
-            [_theme, false] call comspec_overwatch_connect_fnc_ecotiApplyThemeSetting;
-        };
-        private _render = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
-        if (_render isEqualType "" && {_render isNotEqualTo "UNSET"}) then {
-            [_render, false] call comspec_overwatch_connect_fnc_ecotiApplyRenderModeSetting;
-        };
-        private _tubeInfo = profileNamespace getVariable ["COMSPEC_EcotiTubeInfo", "UNSET"];
-        if (_tubeInfo isEqualType "" && {_tubeInfo isNotEqualTo "UNSET"}) then {
-            [_tubeInfo, false] call comspec_overwatch_connect_fnc_ecotiApplyTubeInfoSetting;
-        };
         [false, true] call comspec_overwatch_connect_fnc_linkStripApplySetting;
         private _linkSim = profileNamespace getVariable ["COMSPEC_LinkDegradeSimEnabled", "UNSET"];
         if (_linkSim isEqualType true) then {
             [_linkSim, false] call comspec_overwatch_connect_fnc_linkDegradeSimApplySetting;
-        };
-        if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
-            [] call comspec_overwatch_connect_fnc_ecotiInit;
         };
     }, [], 3] call CBA_fnc_waitAndExecute;
 

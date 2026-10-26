@@ -457,7 +457,8 @@ class OperationsApiController
 
     private function nullableQuery(Request $request, string $key): ?string
     {
-        $v = trim((string) ($request->query($key) ?? ''));
+        // queryString : une valeur en tableau (?from[]=x) vaut '' au lieu de « Array to string conversion » (500).
+        $v = trim($request->queryString($key));
         return $v === '' ? null : $v;
     }
 

@@ -701,20 +701,26 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
     private _gw = (_mw * 0.62) max (_font * 9 / _ratio) min (_mw - 2 * _pad);
     private _gx = _bx + (_mw - _gw) / 2;
     private _gy = _by + _pad + ([0, _fs * 1.8] select ((_s getOrDefault ["mapMode", "SELECT"]) isNotEqualTo "SELECT"));
-    private _gh = _font * 2.6;
-    private _gbg = ["COMSPEC_RscMapPanel", [_gx, _gy, _gw, _gh * 0.62]] call _mk;
+    // Hauteurs tirées de la taille du texte (fn_routeBanner : distance en 1.25 + manœuvre en 1.0, puis une ligne en
+    // 0.85). Retour de jeu : la ligne « 28 min · 1.1 km · arrivée » était coupée par le haut et passait sous ARRÊTER,
+    // la manœuvre n'apparaissait pas. La ligne du bas laisse la place du bouton.
+    private _tb = (missionNamespace getVariable ["COMSPEC_ATAK_FontBody", 0]) max _font;
+    private _h1 = _tb * 2.75;
+    private _h2 = (_tb * 1.25) max (_fs * 1.5);
+    private _gbg = ["COMSPEC_RscMapPanel", [_gx, _gy, _gw, _h1]] call _mk;
     _gbg ctrlSetBackgroundColor [0.10, 0.45, 0.25, 0.95];
-    private _gi = _gh * 0.52;
-    private _g3 = ["COMSPEC_RscIcon", [_gx + _pad / 2, _gy + _gh * 0.05, _gi / _ratio, _gi], ""] call _mk;
+    private _gi = _h1 * 0.7;
+    private _g3 = ["COMSPEC_RscIcon", [_gx + _pad / 2, _gy + (_h1 - _gi) / 2, _gi / _ratio, _gi], ""] call _mk;
     _g3 ctrlSetTextColor [1, 1, 1, 1];
-    private _g1 = ["COMSPEC_RscStructuredText", [_gx + _pad + _gi / _ratio, _gy + _gh * 0.03, _gw - _pad * 1.5 - _gi / _ratio, _gh * 0.6]] call _mk;
-    private _g2 = ["COMSPEC_RscMapPanel", [_gx, _gy + _gh * 0.62, _gw, _gh * 0.38]] call _mk;
-    _g2 ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.92];
+    private _g1 = ["COMSPEC_RscStructuredText", [_gx + _pad + _gi / _ratio, _gy + _tb * 0.1, _gw - _pad * 1.5 - _gi / _ratio, _h1 - _tb * 0.1]] call _mk;
+    private _g2bg = ["COMSPEC_RscMapPanel", [_gx, _gy + _h1, _gw, _h2]] call _mk;
+    _g2bg ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.92];
+    private _sw = [0, (_fs * 5.5 / _ratio * 0.6) min (_gw * 0.3)] select _interactive;
+    private _g2 = ["COMSPEC_RscStructuredText", [_gx + _pad / 2, _gy + _h1 + (_h2 - _tb * 1.1) / 2, _gw - _sw - _pad * 1.5, _tb * 1.1]] call _mk;
     private _stop = controlNull;
     if (_interactive) then {
-        private _sw = _fs * 5.5 / _ratio * 0.6;
-        _stop = ["COMSPEC_RscButton", [_gx + _gw - _sw - _pad / 2, _gy + _gh * 0.62 + _gh * 0.04, _sw, _gh * 0.3], "ARRÊTER"] call _mk;
-        _stop ctrlSetFontHeight (((_fs * 0.8) min (_gh * 0.26)) max COMSPEC_ATAK_FontMin);
+        _stop = ["COMSPEC_RscButton", [_gx + _gw - _sw - _pad / 2, _gy + _h1 + _h2 * 0.12, _sw, _h2 * 0.76], "ARRÊTER"] call _mk;
+        _stop ctrlSetFontHeight (((_fs * 0.85) min (_h2 * 0.6)) max COMSPEC_ATAK_FontMin);
         _stop ctrlSetBackgroundColor [0.75, 0.18, 0.15, 1];
         _stop ctrlAddEventHandler ["ButtonClick", { missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
     };

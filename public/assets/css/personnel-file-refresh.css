@@ -115,7 +115,9 @@
 /* ——— En-tête ——— */
 .personnel-file-hero {
   border-radius: 16px;
-  overflow: hidden;
+  /* Pas de overflow: hidden : il coupait le menu « Signaler un problème » qui déborde sous l’en-tête. */
+  position: relative;
+  z-index: 5;
   background-image:
     radial-gradient(120% 140% at 100% 0%, rgba(18, 209, 142, 0.18) 0%, rgba(18, 209, 142, 0) 55%),
     linear-gradient(135deg, #0b0f12 0%, #131b20 60%, #0f1f1a 100%);

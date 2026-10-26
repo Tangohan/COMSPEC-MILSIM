@@ -125,6 +125,9 @@ private _font = (((_sh * ([[[0.040, 0.060] select _land, 0.036] select !_mini, 0
 private _fontSmall = (_font * 0.82) max (_px * 15);
 private _fontCaption = (_font * 0.68) max (_px * 13);
 COMSPEC_ATAK_FontMin = [_fontCaption, 0] select _texture; // texture : coordonnées propres, pas de plancher
+// Taille de base du texte structuré des pages (fn_fontApply) : un peu au-dessus du corps des champs, pour que
+// <t size='0.8'> (aides, sous-titres) reste au niveau des légendes. Texture (JPC) : taille de la classe, inchangée.
+COMSPEC_ATAK_FontBody = [_font * 1.15, 0] select _texture;
 private _statusH = _font * 1.45;
 private _appH = _font * 1.9;
 private _dock = !_land;
@@ -157,6 +160,7 @@ createHashMapFromArray [
     ["inspW", _inspW],
     ["font", _font],
     ["fontSmall", _fontSmall],
+    ["fontBody", _font * 1.15],
     ["fontCaption", _fontCaption],
     ["fontTitle", _font * 1.2],
     ["fontDisplay", _font * 1.9],

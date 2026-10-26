@@ -59,6 +59,140 @@ EN : ATAK relay security fix
 
 ---
 
+## Regroupement : diapositives sur les écrans, Live Presentation (FENRIR), JVN hors ligne, floutage des visages, textes lisibles, 131 correctifs (ATAK natif 2.6.0.AB - Denver, COMSPEC Link 2.0.98)
+
+### Résumé joueur
+Type : nouveauté
+FR : Diapositives sur les écrans, textes plus lisibles et 131 correctifs
+- Les écrans du jeu (TV, projection, ordinateur) affichent enfin la diapositive diffusée depuis le téléphone, Google Slides compris, et l'app Briefing lit les présentations du mod Live Presentation de FENRIR.
+- Le texte du téléphone suit sa taille et le réglage Taille du texte : plus de texte coupé ni de sous-menus assombris, bandeau GPS lisible, et les filtres d'apps passent en deux rangées de puces plus grandes.
+- Les infos tactiques dans les JVN marchent sans Athena et ont leur interrupteur dans Réglages › Accessoires ; les visages sont enfin floutés sur les photos, selfies compris.
+- Sans compte relié, la première sortie du téléphone propose le code Athena (désactivable dans les options), l'app Musique dit clairement quand son lecteur manque, les dernières notifications restées en français passent en anglais, et 131 correctifs de stabilité.
+EN : Slides on screens, clearer text and 131 fixes
+- In-game screens (TV, projector, computer) now show the slide broadcast from the phone, Google Slides included, and the Briefing app reads presentations from FENRIR's Live Presentation mod.
+- Phone text follows the phone size and the Text size setting: no more cut-off text or dimmed sub-menus, a readable GPS banner, and the app filters now sit in two rows of bigger chips.
+- The NVG situation display works without Athena and has its switch in Settings › Accessories; faces are now blurred on photos, selfies included.
+- Without a linked account, the first time you take out the phone it offers the Athena code (can be turned off in the options), the Music app says clearly when its player is missing, the last notifications still in French are now in English, and 131 stability fixes.
+
+### Détail technique
+- 10 PR natives réunies : #1166 (traducteur `fn_tr` : modèles complets trouvés avant la découpe « Libellé : valeur », valeurs collées, +94 phrases en.txt ; notifications sync, Resynch, App Store en anglais), #1164 (filtres d'apps du lanceur en grille de 2 rangées, puces et texte plus grands, « I » qui disparaissaient), #1145 (JVN hors ligne), #1146 (revue du mod tours 6 et 7, 131 corrections : ATAK natif, Link, connect, SSE), #1147 (Live Presentation FENRIR), #1152 (diapositives écrans et Google Slides, demande Link 2.0.98), #1153 (textes du téléphone ; sa version provisoire 2.5.1 n'est pas sortie), #1154 (floutage des visages), #1161 (proposition de liaison Athena à la première sortie, réglage CBA, coché par défaut), #1162 (message joueur quand le lecteur audio manque, même chose pour le Bluetooth).
+- Versions : ATAK natif 2.6.0.AB - Denver, COMSPEC Link 2.0.98 (DLL Link et DLL native `2.0.98-native`), connect 1.6.21. Sources SSE modifiées par #1146 : SSE à reconstruire et republier.
+- Fusions : `CfgFunctions` (pages) garde `fenrir` (#1147) et `slideWebData` (#1152) ; `i18n/en.txt` réunit les lignes des trois PR.
+- Le détail de chaque PR suit dans les entrées « partie du regroupement 2.6.0 » ci-dessous.
+- À tester en jeu : diapositive diffusée sur TV/projecteur/ordinateur et Google Slides (DLL 2.0.98 obligatoire) ; présentation FENRIR avec et sans le mod ; JVN avec service Athéna « Non », mode local, puis Athena relié ; selfie et photo de groupe floutés ; textes en petit et plein écran ; première sortie du téléphone sans compte relié ; app Musique avec une DLL absente ; filtres du lanceur en paysage, portrait et sans app épinglée ; en anglais, notification de synchro après coupure, compte rendu du Resynch, liaison Athena par code et App Store sur une app absente.
+
+## Diapositives visibles sur les écrans COMSPEC et diapositives Google dans le téléphone (partie du regroupement 2.6.0)
+
+### Résumé joueur
+Type : correctif
+FR : Les diapositives s'affichent enfin sur les écrans du jeu
+- Les écrans COMSPEC (TV, écran de projection, ordinateur) montrent maintenant la diapositive diffusée depuis le téléphone, au lieu de rester noirs.
+- Les diapositives Google Slides synchronisées s'affichent aussi dans l'app Briefing et sur les écrans, au lieu d'une zone noire.
+- Si une diapositive ne peut vraiment pas s'afficher, le téléphone dit pourquoi au lieu de montrer un écran noir.
+EN : Slides finally show on in-game screens
+- COMSPEC screens (TV, projector screen, computer) now show the slide broadcast from the phone instead of staying black.
+- Synced Google Slides now also show in the Briefing app and on screens instead of a black area.
+- If a slide really cannot be shown, the phone says why instead of showing a black screen.
+
+### Détail technique
+- Cause (journal de TTRD du 26/10) : Arma refuse toute image hors d'un PBO sans -filePatching (`getTextureInfo` = [-1,-1]). La 2.5.0 avait corrigé l'app Briefing pour les diapositives Athena (copie JPEG en base64 + `CT_WEBBROWSER`), mais `fn_screenCast` posait toujours le fichier du cache sur l'objet (`setObjectTexture`), et les diapositives Google (`COMSPEC_GoogleBriefingPath`, PNG de `comspec_cache/google-deck`) restaient noires partout.
+- `fn_screenCast` "tick" : chemin posé seulement si `fn_texUsable` le lit ; sinon texture UI `#(rgb,1280,720,1)ui("COMSPEC_RscScreenSlideTexture", comspec_atak_scr_<n>)` (une par écran) avec un `COMSPEC_RscWebBrowser` plein cadre ("load" range le display, "web" ouvre la page data:, `displayUpdate` répété 15 s puis toutes les 10 s si l'écran est vu). Un seul écran en attente de display à la fois (4 s), comme les écrans TOC. Diapositives Google : source « local:<chemin> ».
+- `fn_slideWebData` (nouveau) : lecture base64 par `ImageDataChunk` (Athena : .paa remplacé par la copie .jpg ; local : fichier du cache), raisons lisibles.
+- `fn_pageBriefing` : repli navigateur pour la source GOOGLE (cache `COMSPEC_ATAK_GSlideCache`, vidé par ACTUALISER dans `fn_briefingAction`).
+- COMSPEC Link : `ImageDataChunk` accepte « local:<chemin> » limité aux dossiers `comspec_cache` de la DLL (PNG/JPEG, 1,4 Mo au plus) ; `GoogleSlidesDeck` télécharge d'abord l'export JPEG (Arma ne lit pas le PNG, image plus légère pour le navigateur), extension du fichier selon le format reçu. Link 2.0.97 et avant : message « COMSPEC Link 2.0.98 requise » pour Google.
+- Source seulement : version, `main.pbo` et DLL refaits au regroupement.
+
+---
+
+## Compatibilité avec le mod Live Presentation de FENRIR dans l'app Briefing (partie du regroupement 2.6.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app Briefing sait lire les présentations du mod Live Presentation (FENRIR)
+- Si la mission utilise le mod Live Presentation de FENRIR, ses présentations proches apparaissent dans l'onglet ÉCRANS de l'app Briefing.
+- VOIR affiche la présentation dans DIAPOSITIVES, avec le titre et les notes de chaque diapositive ; MES DIAPOS te ramène aux tiennes.
+- Si le module FENRIR te laisse piloter, tu changes de diapositive depuis le téléphone et tu peux y envoyer ton Google Slides.
+- Sans ce mod, rien ne change : il reste facultatif et aucune de ses images ni de son code n'est inclus dans le nôtre.
+EN : The Briefing app can read presentations from FENRIR's Live Presentation mod
+- If the mission uses FENRIR's Live Presentation mod, its nearby presentations show up in the SCREENS tab of the Briefing app.
+- VIEW shows the presentation in SLIDES, with each slide's title and notes; MY SLIDES takes you back to your own.
+- If the FENRIR module lets you drive it, you change slides from the phone and can send it your Google Slides.
+- Without that mod nothing changes: it stays optional and none of its images or code are included in ours.
+
+### Détail technique
+- Nouvelle `fn_fenrir` (aucune dépendance : pas de `requiredAddons`, détection en jeu par `LPRES_fnc_request` + `CfgPatches >> lpres_main`). Lit l'état public répliqué `lpres_s_<id>` (ids `p1`, `p2`… suivis jusqu'à trois trous), liste les présentations dont un écran ou un contrôleur est à moins de 100 m, et passe les commandes par `[id, action, arg] remoteExecCall ["LPRES_fnc_request", 2]` : le serveur FENRIR vérifie lui-même les droits (« Qui peut piloter »), `LPRES_fnc_canControl` ne sert qu'à griser l'interface.
+- Images : JPEG base64 de `LPRES_cache` (demandées par `LPRES_fnc_requestImage`), affichées par le navigateur intégré comme le repli des diapositives Athena (`COMSPEC_ATAK_SlideWeb`).
+- `fn_briefingSignature` : source `FENRIR` quand une présentation est regardée (chemin = hash, suivi de `?` tant que l'image n'est pas arrivée, pour redessiner à son arrivée). `fn_briefingAction` : précédente / suivante / sommaire → `goto`, ACTUALISER → `refresh` FENRIR. PFH du briefing : révisions FENRIR ajoutées à l'empreinte.
+- `fn_pageBriefing` : onglet ÉCRANS affiché aussi pour les seules présentations FENRIR (section « Présentations FENRIR » : VOIR / MES DIAPOS, « », MON GOOGLE SLIDES = `load` du lien Google synchronisé ou enregistré) ; bandeau FENRIR (pilotage ou lecture seule, heure de mise à jour) dans DIAPOSITIVES. Pas de diffusion sur les écrans COMSPEC d'une présentation FENRIR regardée.
+- Licence : FENRIR demande d'être contacté avant tout réempaquetage ; rien de son mod n'est copié, seule son interface publique est appelée. Étude faite sur la version Workshop 1.1.2.
+- Traductions EN ajoutées dans `i18n/en.txt`.
+
+## Textes du téléphone : plus de texte coupé, sous-menus et boutons lisibles (partie du regroupement 2.6.0)
+
+### Résumé joueur
+Type : correctif
+FR : Textes du téléphone plus lisibles
+- Le texte des apps suit enfin la taille du téléphone (petit, plein écran) et le réglage Taille du texte : il ne déborde plus de ses cadres.
+- Le bandeau GPS de la carte montre la manœuvre, puis le temps, la distance et l'heure d'arrivée sur une ligne entière, sans passer sous ARRÊTER.
+- Les sous-menus repliables (comme PERSONNALISER LE GROUPE) et les lignes de réglage ne sont plus assombris.
+- Les boutons (ENREGISTRER, QUITTER LE GROUPE…) ont un libellé plus grand et net ; les noms de baies ne s'écrivent plus deux fois sur la carte.
+EN : Clearer phone text
+- App text now follows the phone size (small, full screen) and the Text size setting: it no longer spills out of its boxes.
+- The map GPS banner shows the turn, then time, distance and arrival time on a full line, no longer hidden under STOP.
+- Collapsible sub-menus (such as CUSTOMISE THE GROUP) and settings rows are no longer dimmed.
+- Buttons (SAVE, LEAVE GROUP…) have larger, sharper labels; bay names are no longer written twice on the map.
+
+### Détail technique
+- `fn_fontApply` : les classes de texte structuré créées par `fn_pageCtrl` et `fn_formRender` (`COMSPEC_RscStructuredText`, `RscMapPanel`, `RscCard`, `RscBubbleIn/Out`) prennent `COMSPEC_ATAK_FontBody` (= `font` × 1,15, posé par `fn_layoutGet`, clé `fontBody`) au lieu de la taille fixe de la classe (0.024 × safeZoneH). Écran texture (JPC) : inchangé.
+- `controls.hpp` : `colorBackground2` à 0 sur `COMSPEC_RscButtonOverlay` (et `Invisible`), à la couleur du fond sur `RscButton` / `RscButtonPrimary` : un bouton transparent posé sur une ligne (sous-menu, interrupteur) assombrissait tout le dessous (mesuré à 40 % sur la capture).
+- `fn_formRender` : libellés de boutons « buttons », « field », « combo » à `font` × 0,92 avec `_fit` ; libellés de champ à `fontSmall`.
+- Bandeau GPS (`fn_pageMap`, `fn_routeBanner`) : hauteurs tirées de la taille du texte, ligne du bas séparée du bouton ARRÊTER, nom de destination raccourci à 16 caractères.
+- `fn_mapPlaceText` : `NameMarine` n'est plus redessiné (la carte Arma l'écrit déjà).
+- `main.pbo` : entrées modifiées remplacées dans le PBO Windows de 2.5.0 (fichiers texte en CRLF), version 2.5.1.
+
+## Infos tactiques dans les JVN : marchent sans Athena et se règlent dans le téléphone (partie du regroupement 2.6.0)
+
+### Résumé joueur
+Type : correctif
+FR : Les infos tactiques dans les JVN s'affichent enfin
+- Cocher « Infos tactiques dans les JVN » dans les options du mod suffit : alliés, repères et véhicules apparaissent dans ta vue dès que tes JVN sont allumées.
+- Ça marche aussi sans Athena : hors ligne, en mode local avec un poste TOC, ou si tu as répondu « Non » au service Athéna. Avant, rien ne s'affichait dans ces cas-là.
+- Le même interrupteur est maintenant dans le téléphone : Réglages, rubrique Accessoires. La case des options et celle du téléphone restent synchronisées.
+EN : NVG situation display now actually shows up
+- Ticking "Situation display (NVG)" in the mod options is enough: allies, markers and vehicles appear in your view as soon as your NVGs are on.
+- It also works without Athena: offline, in local mode with a TOC laptop, or if you answered "No" to the Athena service. Before, nothing showed up in those cases.
+- The same switch is now in the phone: Settings, Accessories section. The options box and the phone switch stay in sync.
+
+### Détail technique
+- Cause : l'affichage (Draw3D + PFH, `fn_ecotiInit`) n'était enregistré que dans le bloc de démarrage Athena de `XEH_postInit`, qui sort dès que `comspec_overwatch_enabled` est faux ; or le service Athéna « Non » et `comspec_atak_native_local_only` (mode full local / TOC) forcent ce drapeau à faux. `fn_ecotiIsAvailable` refusait aussi pour la même raison. Résultat : jamais d'affichage hors Athena, quelle que soit la case CBA.
+- Correctif : démarrage ECOTI dans son propre `CBA_settingsInitialized` (garde `COMSPEC_EcotiBootDone`), indépendant de la liaison ; gate `comspec_overwatch_enabled` retirée de `fn_ecotiIsAvailable` (le module Athena `ecoti_hud` reste respecté quand le catalogue est reçu, F-PANO reste exclusif). Tout le rendu est local (unités, repères, véhicules).
+- Le réglage CBA `comspec_overwatch_ecoti_hud` recopie sa valeur dans le profil (`COMSPEC_EcotiHudEnabled`) : un ancien « non » resté dans le profil ne décoche plus la case à chaque mission. Aide du réglage réécrite (elle laissait croire qu'il fallait aussi l'activer dans le téléphone).
+- ATAK natif : interrupteur « Infos tactiques dans les JVN » dans Réglages › Accessoires (`fn_ecotiApplyHudSetting`), traduction EN ajoutée.
+- À tester en jeu : service Athéna « Non », mode local avec TOC, puis Athena relié ; JVN vanilla, ACE, CUP ; case CBA seule, puis interrupteur du téléphone.
+
+## Floutage des visages : les photos du téléphone partent enfin floutées (partie du regroupement 2.6.0)
+
+### Résumé joueur
+Type : correctif
+FR : Les visages sont enfin floutés sur les photos du téléphone
+- En selfie, ton visage est toujours flouté sur la photo envoyée à Athena, comme prévu par le réglage « Floutage automatique des visages ».
+- Les visages des autres joueurs ne sont plus oubliés quand le téléphone, ta main ou ton équipement sont devant l'objectif.
+- Un visage coupé par le bord de la photo est flouté lui aussi.
+- Rappel : par défaut seuls les alliés sont floutés ; choisis « Tout le monde » dans les options pour flouter aussi les ennemis et les civils.
+EN : Faces are finally blurred on phone photos
+- In a selfie, your face is now always blurred on the photo sent to Athena, as set by the "Automatic face blur" option.
+- Other players' faces are no longer missed when the phone, your hand or your gear is in front of the lens.
+- A face cut by the edge of the photo is blurred too.
+- Reminder: by default only allies are blurred; pick "Everyone" in the options to blur enemies and civilians as well.
+
+### Détail technique
+- Constat (RPT et capture de TTRD, 26/10, ATAK 2.4.1 / Link 2.0.96) : selfie plein écran envoyé et reçu par Athena sans visage flouté. Le floutage côté site (`PhotoFaceBlur`) marche sur cette même capture dès qu'il reçoit un cadre : c'est le jeu qui n'envoyait aucun cadre.
+- `fn_photoFaces` : le test `checkVisibility` depuis l'objectif (téléphone tenu en main, au ras de la main, du casque et des lunettes) est remplacé. Selfie : le visage du joueur n'est jamais tenu pour caché. Autres têtes : `lineIntersectsSurfaces` partant 30 cm devant l'objectif, seuls le terrain et les objets du décor cachent une tête (soldats, équipement attaché, téléphone en main et véhicule de la cible ignorés).
+- Bord du cadre hors image : pris symétrique de l'autre autour du centre de la tête (avant, la tête était ignorée).
+- Une ligne de journal par prise (`[PHOTO] Floutage (type, cible) : N visage(s) envoyé(s), cachés, hors cadre, ennemis laissés nets`), aussi dans le journal de session COMSPEC : le prochain essai dit tout de suite ce que le jeu a envoyé.
+- Rien à changer côté site ni dans COMSPEC Link.
+- À tester en jeu : selfie (app Photo et plein écran), photo d'un allié à 5-20 m, d'un allié derrière un mur (doit rester net), d'un allié dans un véhicule, d'une tête au bord de l'image ; réglage « Tout le monde » avec un ennemi ; vérifier sur Athena (Remontées / Overwatch web) et dans le RPT la ligne « Floutage ».
+
 ## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
 
 ### Résumé joueur

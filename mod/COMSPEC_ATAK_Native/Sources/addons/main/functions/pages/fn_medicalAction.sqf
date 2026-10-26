@@ -30,7 +30,7 @@ private _lzMarker = {
     createMarkerLocal [_mk, _r get "pos"];
     _mk setMarkerTypeLocal "mil_pickup";
     _mk setMarkerColorLocal "ColorRed";
-    _mk setMarkerTextLocal format ["MEDEVAC %1 · %2", _r get "from", _steps select (_r get "status")];
+    _mk setMarkerTextLocal format ["MEDEVAC %1 · %2", _r get "from", (_steps select (_r get "status")) call comspec_atak_native_fnc_tr];
 };
 private _save = {
     private _m = uiNamespace getVariable ["COMSPEC_ATAK_Medevac", createHashMap];
