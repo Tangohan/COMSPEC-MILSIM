@@ -4917,6 +4917,36 @@ html[data-bo-theme="dark"] .grd-ref__foot {
   color: var(--ath-muted, #aebdb6);
 }
 
+html[data-bo-theme="dark"] .grd-cus__notice {
+  border-color: #4a3a1c;
+  background: #1f1a10;
+  color: #f0c46c;
+}
+html[data-bo-theme="dark"] .grd-cus__systems a, html[data-bo-theme="dark"] .grd-cus__cat, html[data-bo-theme="dark"] .grd-cus__add--cat, html[data-bo-theme="dark"] .grd-cus__tpl, html[data-bo-theme="dark"] .grd-cus__field input, html[data-bo-theme="dark"] .grd-cus__field select, html[data-bo-theme="dark"] .grd-cus__inline[open] > .grd-cus__form {
+  border-color: var(--ath-line, #2b3530);
+  background: #111513;
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .grd-cus__arrow {
+  border-color: var(--ath-line, #2b3530) !important;
+  background: #111513 !important;
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .grd-cus__systems a.is-active, html[data-bo-theme="dark"] .grd-cus__tpl:has(input:checked) {
+  border-color: var(--ath-ink, #e0e6e3);
+  box-shadow: inset 0 -2px 0 var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .grd-cus__create {
+  border-color: var(--ath-line, #2b3530);
+  background: #141816;
+}
+html[data-bo-theme="dark"] .grd-cus__systems a small, html[data-bo-theme="dark"] .grd-cus__summary, html[data-bo-theme="dark"] .grd-cus__tools button, html[data-bo-theme="dark"] .grd-cus__tools summary, html[data-bo-theme="dark"] .grd-cus__field, html[data-bo-theme="dark"] .grd-cus__create > p, html[data-bo-theme="dark"] .grd-cus__tpl-body small {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .grd-cus .grd-cus__danger {
+  color: #ff8a80;
+}
+
 /* ——— back-office-refresh.css ——— */
 html[data-bo-theme="dark"] .ath-shell, html[data-bo-theme="dark"] .bo-shell {
   --ath-bg: #161b19;
