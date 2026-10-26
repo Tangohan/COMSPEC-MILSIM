@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Floutage des visages : les photos du téléphone partent enfin floutées (ATAK natif, version fixée au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Les visages sont enfin floutés sur les photos du téléphone
+- En selfie, ton visage est toujours flouté sur la photo envoyée à Athena, comme prévu par le réglage « Floutage automatique des visages ».
+- Les visages des autres joueurs ne sont plus oubliés quand le téléphone, ta main ou ton équipement sont devant l'objectif.
+- Un visage coupé par le bord de la photo est flouté lui aussi.
+- Rappel : par défaut seuls les alliés sont floutés ; choisis « Tout le monde » dans les options pour flouter aussi les ennemis et les civils.
+EN : Faces are finally blurred on phone photos
+- In a selfie, your face is now always blurred on the photo sent to Athena, as set by the "Automatic face blur" option.
+- Other players' faces are no longer missed when the phone, your hand or your gear is in front of the lens.
+- A face cut by the edge of the photo is blurred too.
+- Reminder: by default only allies are blurred; pick "Everyone" in the options to blur enemies and civilians as well.
+
+### Détail technique
+- Constat (RPT et capture de TTRD, 26/10, ATAK 2.4.1 / Link 2.0.96) : selfie plein écran envoyé et reçu par Athena sans visage flouté. Le floutage côté site (`PhotoFaceBlur`) marche sur cette même capture dès qu'il reçoit un cadre : c'est le jeu qui n'envoyait aucun cadre.
+- `fn_photoFaces` : le test `checkVisibility` depuis l'objectif (téléphone tenu en main, au ras de la main, du casque et des lunettes) est remplacé. Selfie : le visage du joueur n'est jamais tenu pour caché. Autres têtes : `lineIntersectsSurfaces` partant 30 cm devant l'objectif, seuls le terrain et les objets du décor cachent une tête (soldats, équipement attaché, téléphone en main et véhicule de la cible ignorés).
+- Bord du cadre hors image : pris symétrique de l'autre autour du centre de la tête (avant, la tête était ignorée).
+- Une ligne de journal par prise (`[PHOTO] Floutage (type, cible) : N visage(s) envoyé(s), cachés, hors cadre, ennemis laissés nets`), aussi dans le journal de session COMSPEC : le prochain essai dit tout de suite ce que le jeu a envoyé.
+- Rien à changer côté site ni dans COMSPEC Link.
+- À tester en jeu : selfie (app Photo et plein écran), photo d'un allié à 5-20 m, d'un allié derrière un mur (doit rester net), d'un allié dans un véhicule, d'une tête au bord de l'image ; réglage « Tout le monde » avec un ennemi ; vérifier sur Athena (Remontées / Overwatch web) et dans le RPT la ligne « Floutage ».
+
 ## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
 
 ### Résumé joueur
