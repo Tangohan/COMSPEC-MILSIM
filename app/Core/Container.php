@@ -1114,7 +1114,18 @@ class Container
                 self::get(\App\Repositories\QualificationReferentielRepository::class),
                 self::get(\App\Repositories\QualificationAwardRepository::class),
                 self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
-                self::get(\App\Services\Personnel\QualificationCurrencyService::class)
+                self::get(\App\Services\Personnel\QualificationCurrencyService::class),
+                self::get(\App\Repositories\PilotLogbookRepository::class)
+            ),
+            \App\Repositories\PilotLogbookRepository::class => new \App\Repositories\PilotLogbookRepository(),
+            \App\Services\Personnel\PilotLogbookService::class => new \App\Services\Personnel\PilotLogbookService(
+                self::get(\App\Repositories\PilotLogbookRepository::class),
+                self::get(\App\Services\Personnel\PilotQualificationService::class)
+            ),
+            \App\Controllers\Admin\Organization\PilotLogbookController::class => new \App\Controllers\Admin\Organization\PilotLogbookController(
+                self::get(\App\Services\Personnel\PilotLogbookService::class),
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
             ),
             \App\Services\Cron\Jobs\PilotQualificationsCronJob::class => new \App\Services\Cron\Jobs\PilotQualificationsCronJob(
                 self::get(\App\Repositories\PilotQualificationRuleRepository::class),
@@ -1123,7 +1134,8 @@ class Container
             ),
             \App\Controllers\Admin\Organization\PilotSyllabusController::class => new \App\Controllers\Admin\Organization\PilotSyllabusController(
                 self::get(\App\Services\Personnel\PilotQualificationService::class),
-                self::get(\App\Services\Platform\FeatureGateService::class)
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\Personnel\PilotLogbookService::class)
             ),
             \App\Controllers\Admin\Organization\QualificationReferentielController::class => new \App\Controllers\Admin\Organization\QualificationReferentielController(
                 self::get(\App\Repositories\QualificationDefinitionRepository::class),

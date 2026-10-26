@@ -14,6 +14,8 @@ use App\Support\PilotSyllabusCatalog as Cat;
  * @var array<string, array{label: string, short: string, noun: string}> $tracks
  * @var array<string, array<string, string>> $knownFamilies
  * @var int $actorId
+ * @var list<array<string, mixed>> $declaredFlights
+ * @var array<string, bool> $canReviewTrack
  */
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $base = 'back-office/referentiels/qualifications/cursus-pilote';
@@ -34,6 +36,10 @@ $target = static function (array $r) use ($hours): string {
     $t = $hours((float) $r['min_scope_hours']) . ' sur ' . ((string) ($r['scope_label'] ?? '') ?: Cat::trackLabel((string) $r['track']));
     if ((float) $r['min_track_hours'] > 0) {
         $t .= ' et ' . $hours((float) $r['min_track_hours']) . ' en ' . mb_strtolower(Cat::trackLabel((string) $r['track']));
+    }
+    $cond = Cat::tier((string) $r['tier'])['cond'] ?? null;
+    if ($cond !== null && (float) ($r['min_cond_hours'] ?? 0) > 0) {
+        $t .= ', dont ' . $hours((float) $r['min_cond_hours']) . ' ' . (Cat::conditions()[$cond] ?? '') . ' contresignées au carnet';
     }
 
     return $t;
@@ -62,6 +68,9 @@ foreach ($byTrack as $t => $rows) {
     uksort($rows, static fn (string $a, string $b): int => ($a === 'common' ? 0 : 1) <=> ($b === 'common' ? 0 : 1) ?: strcmp($a, $b));
     $byTrack[$t] = $rows;
 }
+$declaredFlights = is_array($declaredFlights ?? null) ? $declaredFlights : [];
+$canReviewTrack = is_array($canReviewTrack ?? null) ? $canReviewTrack : [];
+$logbookUrl = static fn (int $uid): string => url($base . '/carnet/' . $uid);
 $heldTotal = array_sum(array_map(static fn (array $r): int => count($r['groups'][Eng::HELD]), $rules));
 
 $athKpis = [
@@ -108,6 +117,7 @@ $athKpis = [
             <li><b>Les heures se comptent toutes seules.</b> Le mod relève le temps aux commandes de chaque appareil (toutes les 10 minutes en jeu), par type : UH-60, AH-64, C-130…</li>
             <li><b>Un palier atteint est attribué ou proposé.</b> Toutes les heures, chaque membre qui a les heures et le palier précédent reçoit la qualification (palier « automatique ») ou une proposition « en évaluation ».</li>
             <li><b>Un instructeur valide, comme dans la vraie vie.</b> Le lâché solo, la qualification de type ou le vol de nuit se valident après un vol avec un instructeur de la filière. On ne se valide pas soi-même.</li>
+            <li><b>Le carnet de vol complète, comme dans la vraie vie.</b> Chaque pilote note ses vols et ses heures de nuit, aux instruments ou en patrouille dans « Mon carnet de vol » ; un instructeur contresigne, puis elles comptent.</li>
             <li><b>Le maintien de qualification suit le dernier vol.</b> Un pilote qui n’a pas volé sur le type depuis 90 jours n’est plus « à jour » ; il le redevient dès son prochain vol.</li>
         </ol>
     </section>
@@ -129,7 +139,7 @@ $athKpis = [
             <li class="pcs-pending__row">
                 <span class="pcs-pending__badge"><?= $h((string) ($tiers[$r['tier']]['short'] ?? '')) ?></span>
                 <span class="pcs-pending__main">
-                    <a class="pcs-pending__who" href="<?= $h(url('back-office/ressources/effectifs/membres/' . (int) $it['user_id'])) ?>#qualifications"><?= $h($who((int) $it['user_id'])) ?></a>
+                    <a class="pcs-pending__who" href="<?= $h($logbookUrl((int) $it['user_id'])) ?>" title="Ouvrir son carnet de vol"><?= $h($who((int) $it['user_id'])) ?></a>
                     <span class="pcs-pending__what"><?= $h((string) $r['definition_name']) ?> · <?= $h($hours((float) $it['scope_hours'])) ?> de vol pour <?= $h($hours((float) $it['target_scope'])) ?> demandées</span>
                     <?php if ($mine): ?>
                     <span class="pcs-pending__hint">Votre propre proposition : un autre instructeur doit la valider.</span>
@@ -144,6 +154,50 @@ $athKpis = [
                     <?= \App\Core\Csrf::field() ?>
                     <button type="submit" name="decision" value="valider" class="ath-btn ath-btn--solid">Valider</button>
                     <button type="submit" name="decision" value="ajourner" class="ath-btn">Ajourner</button>
+                </form>
+                <?php endif; ?>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($declaredFlights !== []): ?>
+    <section class="pcs-pending pcs-flights ath-card" aria-labelledby="pcs-flights-title">
+        <header class="pcs-sec__head">
+            <h2 id="pcs-flights-title">Vols à contresigner <span class="rql__count"><?= count($declaredFlights) ?></span></h2>
+            <p>Vols saisis ou annotés par les pilotes dans leur carnet. Une fois contresignés, leurs heures (et les heures de nuit, aux instruments ou en patrouille) comptent pour le cursus.</p>
+        </header>
+        <ul class="pcs-pending__list">
+            <?php foreach ($declaredFlights as $f):
+                $fUid = (int) $f['user_id'];
+                $fKind = (string) $f['vehicle_kind'];
+                $mineFlight = $fUid === $actorId;
+                $canSign = !$mineFlight && !empty($canReviewTrack[$fKind]);
+                $fName = isset($members[$fUid]) ? $who($fUid) : (trim((string) ($f['display_name'] ?? '')) ?: (trim((string) ($f['callsign'] ?? '')) ?: 'Membre #' . $fUid));
+                $conds = [];
+                foreach (['night' => 'night_seconds', 'ifr' => 'ifr_seconds', 'formation' => 'formation_seconds'] as $ck => $col) {
+                    if ((int) ($f[$col] ?? 0) > 0) {
+                        $conds[] = $hours((int) $f[$col] / 3600) . ' ' . (Cat::conditions()[$ck] ?? '');
+                    }
+                }
+                ?>
+            <li class="pcs-pending__row">
+                <span class="pcs-pending__badge"><?= ($f['source'] ?? '') === 'mod' ? 'JEU' : 'SAISI' ?></span>
+                <span class="pcs-pending__main">
+                    <a class="pcs-pending__who" href="<?= $h($logbookUrl($fUid)) ?>"><?= $h($fName) ?></a>
+                    <span class="pcs-pending__what"><?= $h(date('d/m/Y', strtotime((string) $f['flown_on']) ?: time())) ?> · <?= $h((string) ($f['vehicle_label'] ?: $f['vehicle_class'])) ?> · <?= $h($hours((int) $f['seconds'] / 3600)) ?><?= $conds !== [] ? ' · dont ' . $h(implode(', ', $conds)) : '' ?><?= (int) ($f['landings'] ?? 0) > 0 ? ' · ' . (int) $f['landings'] . ' atterrissage(s)' : '' ?></span>
+                    <?php if (trim((string) ($f['remarks'] ?? '')) !== ''): ?><span class="pcs-pending__what">« <?= $h((string) $f['remarks']) ?> »</span><?php endif; ?>
+                    <?php if ($mineFlight): ?><span class="pcs-pending__hint">Votre propre vol : un autre instructeur doit le contresigner.</span>
+                    <?php elseif (!$canSign): ?><span class="pcs-pending__hint">Réservé aux instructeurs <?= $h(mb_strtolower(Cat::trackLabel($fKind))) ?> de la communauté.</span><?php endif; ?>
+                </span>
+                <?php if ($canSign && $allowed): ?>
+                <form method="post" action="<?= $h(url($base . '/carnet/vols/' . (int) $f['id'])) ?>" class="pcs-pending__actions pcs-flights__form">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="retour" value="<?= $h($base) ?>">
+                    <input type="text" name="note" maxlength="255" placeholder="Motif (obligatoire pour refuser)" aria-label="Motif">
+                    <button type="submit" name="decision" value="contresigner" class="ath-btn ath-btn--solid">Contresigner</button>
+                    <button type="submit" name="decision" value="refuser" class="ath-btn">Refuser</button>
                 </form>
                 <?php endif; ?>
             </li>
@@ -184,7 +238,7 @@ $athKpis = [
                     <ul class="pcs-step__near" aria-label="Les plus proches du palier">
                         <?php foreach ($near as $it): ?>
                         <li>
-                            <span class="pcs-step__who"><?= $h($who((int) $it['user_id'])) ?></span>
+                            <a class="pcs-step__who" href="<?= $h($logbookUrl((int) $it['user_id'])) ?>"><?= $h($who((int) $it['user_id'])) ?></a>
                             <span class="pcs-bar" role="img" aria-label="<?= (int) $it['pct'] ?> %"><span style="width:<?= (int) $it['pct'] ?>%"></span></span>
                             <span class="pcs-step__h"><?= $h($hours((float) $it['scope_hours'])) ?><?= !$it['prereq_ok'] ? ' · palier précédent manquant' : '' ?></span>
                         </li>
@@ -201,6 +255,11 @@ $athKpis = [
                             <label>Heures en <?= $h(mb_strtolower(Cat::trackLabel((string) $r['track']))) ?> (tous appareils)
                                 <input type="number" name="min_track_hours" min="0" max="9999" step="0.5" value="<?= $h(rtrim(rtrim(number_format((float) $r['min_track_hours'], 2, '.', ''), '0'), '.')) ?>">
                             </label>
+                            <?php $rc = Cat::tier((string) $r['tier'])['cond'] ?? null; if ($rc !== null): ?>
+                            <label>Heures <?= $h(Cat::conditions()[$rc] ?? '') ?> contresignées au carnet
+                                <input type="number" name="min_cond_hours" min="0" max="9999" step="0.5" value="<?= $h(rtrim(rtrim(number_format((float) ($r['min_cond_hours'] ?? 0), 2, '.', ''), '0'), '.')) ?>">
+                            </label>
+                            <?php endif; ?>
                             <label>Attribution
                                 <select name="award_mode">
                                     <option value="propose"<?= !$direct ? ' selected' : '' ?>>Proposée, validée par un instructeur</option>
@@ -262,7 +321,7 @@ $athKpis = [
                             <input type="checkbox" name="tiers[]" value="<?= $h($tKey) ?>" checked>
                             <span class="pcs-tier__body">
                                 <span class="pcs-tier__name"><b><?= $h($t['short']) ?></b> <?= $h($t['label']) ?> <em><?= $t['mode'] === Cat::MODE_DIRECT ? 'automatique' : 'instructeur' ?></em></span>
-                                <span class="pcs-tier__game">Jeu : <?= $h($hours((float) $t['min_scope_hours'])) ?> <?= $t['per'] === Cat::PER_FAMILY ? 'sur le type' : 'en ' . $h($trackInfo['noun']) ?><?= (float) $t['min_track_hours'] > 0 ? ', ' . $h($hours((float) $t['min_track_hours'])) . ' en ' . $h($trackInfo['noun']) : '' ?><?= $t['currency_days'] ? ' · à jour ' . (int) $t['currency_days'] . ' jours après le dernier vol' : '' ?></span>
+                                <span class="pcs-tier__game">Jeu : <?= $h($hours((float) $t['min_scope_hours'])) ?> <?= $t['per'] === Cat::PER_FAMILY ? 'sur le type' : 'en ' . $h($trackInfo['noun']) ?><?= (float) $t['min_track_hours'] > 0 ? ', ' . $h($hours((float) $t['min_track_hours'])) . ' en ' . $h($trackInfo['noun']) : '' ?><?= $t['cond'] !== null ? ', dont ' . $h($hours((float) $t['min_cond_hours'])) . ' ' . $h(Cat::conditions()[$t['cond']] ?? '') . ' au carnet' : '' ?><?= $t['currency_days'] ? ' · à jour ' . (int) $t['currency_days'] . ' jours après le dernier vol' : '' ?></span>
                                 <span class="pcs-tier__real">Vraie vie : <?= $h((string) ($t['real'][$trackKey] ?? '')) ?></span>
                                 <?php if ($t['data_note'] !== ''): ?><span class="pcs-tier__note"><?= $h($t['data_note']) ?></span><?php endif; ?>
                             </span>

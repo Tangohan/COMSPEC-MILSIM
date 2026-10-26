@@ -204,6 +204,11 @@ class AtakDistanceRepository
                 $pst->execute([$tenantId, $userId, $it['class'], $it['label'], $it['kind'], $it['seconds'], $it['meters']]);
             }
         }
+        // Carnet de vol : la même heure de vol, rangée par mission, jour et appareil.
+        try {
+            (new PilotLogbookRepository($this->pdo()))->recordModFlights($tenantId, $userId, $hash, $missionKey, $day, $pilot);
+        } catch (\Throwable) {
+        }
 
         return true;
     }

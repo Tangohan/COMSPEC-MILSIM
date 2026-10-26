@@ -91,6 +91,23 @@ final class PilotQualificationRuleRepository
         return $row ?: null;
     }
 
+    private ?bool $condColumn = null;
+
+    /** Colonne min_cond_hours (ajoutée par la migration du carnet de vol). */
+    public function hasCondColumn(): bool
+    {
+        if ($this->condColumn === null) {
+            try {
+                $st = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pilot_qualification_rules' AND COLUMN_NAME = 'min_cond_hours' LIMIT 1");
+                $this->condColumn = $st !== false && (bool) $st->fetchColumn();
+            } catch (Throwable) {
+                $this->condColumn = false;
+            }
+        }
+
+        return $this->condColumn;
+    }
+
     /**
      * @param array<string, mixed> $data
      */
@@ -117,18 +134,24 @@ final class PilotQualificationRuleRepository
             (int) ($data['sort_order'] ?? 0),
         ]);
 
-        return (int) $this->pdo()->lastInsertId();
+        $id = (int) $this->pdo()->lastInsertId();
+        if ((float) ($data['min_cond_hours'] ?? 0) > 0 && $this->hasCondColumn()) {
+            $this->pdo()->prepare('UPDATE pilot_qualification_rules SET min_cond_hours = ? WHERE id = ?')->execute([(float) $data['min_cond_hours'], $id]);
+        }
+
+        return $id;
     }
 
-    public function updateSettings(int $tenantId, int $id, float $minScope, float $minTrack, string $mode, bool $enabled): bool
+    public function updateSettings(int $tenantId, int $id, float $minScope, float $minTrack, string $mode, bool $enabled, ?float $minCond = null): bool
     {
+        $cond = $minCond !== null && $this->hasCondColumn();
         $st = $this->pdo()->prepare(
             'UPDATE pilot_qualification_rules
-             SET min_scope_hours = ?, min_track_hours = ?, award_mode = ?, is_enabled = ?, updated_at = NOW()
+             SET min_scope_hours = ?, min_track_hours = ?, ' . ($cond ? 'min_cond_hours = ?, ' : '') . 'award_mode = ?, is_enabled = ?, updated_at = NOW()
              WHERE tenant_id = ? AND id = ?'
         );
 
-        return $st->execute([$minScope, $minTrack, $mode, $enabled ? 1 : 0, $tenantId, $id]);
+        return $st->execute(array_merge([$minScope, $minTrack], $cond ? [$minCond] : [], [$mode, $enabled ? 1 : 0, $tenantId, $id]));
     }
 
     /**

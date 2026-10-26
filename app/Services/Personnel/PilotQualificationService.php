@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Personnel;
 
 use App\Repositories\AtakDistanceRepository;
+use App\Repositories\PilotLogbookRepository;
 use App\Repositories\PilotQualificationRuleRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationDefinitionRepository;
@@ -32,6 +33,7 @@ final class PilotQualificationService
         private QualificationAwardRepository $awards,
         private QualificationStatusTransitionService $transitions,
         private ?QualificationCurrencyService $currency = null,
+        private ?PilotLogbookRepository $logbook = null,
     ) {
     }
 
@@ -54,7 +56,8 @@ final class PilotQualificationService
             array_map(static fn (array $r): int => (int) $r['definition_id'], $rules),
             array_map(static fn (array $r): int => (int) ($r['prereq_definition_id'] ?? 0), $rules)
         ));
-        $members = $this->rules->memberNames($tenantId, array_merge(array_keys($rowsByUser), array_keys($awardsByUser)));
+        $logByUser = $this->logbookByUser($tenantId);
+        $members = $this->rules->memberNames($tenantId, array_merge(array_keys($rowsByUser), array_keys($awardsByUser), array_keys($logByUser)));
 
         $out = [];
         $pending = 0;
@@ -62,7 +65,7 @@ final class PilotQualificationService
         foreach ($rules as $rule) {
             $groups = [PilotQualificationEngine::ELIGIBLE => [], PilotQualificationEngine::PENDING => [], PilotQualificationEngine::HELD => [], PilotQualificationEngine::PROGRESS => [], PilotQualificationEngine::BLOCKED => []];
             foreach ($members as $uid => $_m) {
-                $totals = PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? []);
+                $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? []), $logByUser[$uid] ?? []);
                 $awards = PilotQualificationEngine::awardsByDefinition($awardsByUser[$uid] ?? []);
                 $ev = PilotQualificationEngine::evaluate($rule, $totals, $awards);
                 if ($ev['state'] === PilotQualificationEngine::PROGRESS && $ev['scope_hours'] <= 0) {
@@ -105,7 +108,7 @@ final class PilotQualificationService
             array_map(static fn (array $r): int => (int) $r['definition_id'], $rules),
             array_map(static fn (array $r): int => (int) ($r['prereq_definition_id'] ?? 0), $rules)
         ))[$userId] ?? [];
-        $totals = PilotQualificationEngine::scopeTotals($rows);
+        $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rows), $this->logbookByUser($tenantId)[$userId] ?? []);
         $awards = PilotQualificationEngine::awardsByDefinition($awardRows);
         $out = [];
         foreach ($rules as $rule) {
@@ -242,6 +245,7 @@ final class PilotQualificationService
                 'scope_label' => $familyLabel ?? PilotSyllabusCatalog::trackLabel($track),
                 'min_scope_hours' => $tier['min_scope_hours'] ?? 0,
                 'min_track_hours' => $tier['min_track_hours'] ?? 0,
+                'min_cond_hours' => $tier['min_cond_hours'] ?? 0,
                 'prereq_definition_id' => $prereqId,
                 'award_mode' => $tier['mode'] ?? PilotSyllabusCatalog::MODE_PROPOSE,
                 'validator_tier' => $tier['validator'] ?? null,
@@ -267,13 +271,13 @@ final class PilotQualificationService
         }
     }
 
-    public function updateRule(int $tenantId, int $ruleId, float $minScope, float $minTrack, string $mode, bool $enabled): void
+    public function updateRule(int $tenantId, int $ruleId, float $minScope, float $minTrack, string $mode, bool $enabled, ?float $minCond = null): void
     {
         if ($this->rules->find($tenantId, $ruleId) === null) {
             throw new RuntimeException('Palier introuvable.');
         }
         $mode = $mode === PilotSyllabusCatalog::MODE_DIRECT ? PilotSyllabusCatalog::MODE_DIRECT : PilotSyllabusCatalog::MODE_PROPOSE;
-        $this->rules->updateSettings($tenantId, $ruleId, max(0.0, min(9999.0, $minScope)), max(0.0, min(9999.0, $minTrack)), $mode, $enabled);
+        $this->rules->updateSettings($tenantId, $ruleId, max(0.0, min(9999.0, $minScope)), max(0.0, min(9999.0, $minTrack)), $mode, $enabled, $minCond !== null ? max(0.0, min(9999.0, $minCond)) : null);
     }
 
     /**
@@ -290,7 +294,8 @@ final class PilotQualificationService
             return $stats;
         }
         $rowsByUser = $this->rules->pilotRowsByUser($tenantId);
-        if ($rowsByUser === []) {
+        $logByUser = $this->logbookByUser($tenantId);
+        if ($rowsByUser === [] && $logByUser === []) {
             return $stats;
         }
         $defIds = array_merge(
@@ -298,10 +303,10 @@ final class PilotQualificationService
             array_map(static fn (array $r): int => (int) ($r['prereq_definition_id'] ?? 0), $rules)
         );
         $awardsByUser = $this->rules->awardsByUser($tenantId, $defIds);
-        $members = $this->rules->memberNames($tenantId, array_keys($rowsByUser));
+        $members = $this->rules->memberNames($tenantId, array_merge(array_keys($rowsByUser), array_keys($logByUser)));
 
         foreach (array_keys($members) as $uid) {
-            $totals = PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? []);
+            $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? []), $logByUser[$uid] ?? []);
             $awards = PilotQualificationEngine::awardsByDefinition($awardsByUser[$uid] ?? []);
             // Les paliers sont dans l'ordre du cursus : un palier obtenu dans ce passage débloque le suivant au passage d'après.
             foreach ($rules as $rule) {
@@ -403,6 +408,33 @@ final class PilotQualificationService
      *
      * @param array<string, mixed> $rule
      */
+    /** @return array<int, list<array<string, mixed>>> */
+    private function logbookByUser(int $tenantId): array
+    {
+        try {
+            return $this->logbook?->countersignedByUser($tenantId) ?? [];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Instructeurs d'une filière (titulaires d'un palier « Instructeur » de cette filière) ; null tant qu'il n'y en a
+     * aucun (un gestionnaire contresigne alors).
+     *
+     * @return list<int>|null
+     */
+    public function instructorIds(int $tenantId, string $track): ?array
+    {
+        $rules = $this->rules->listForTenant($tenantId);
+
+        return $this->validatorIds(
+            ['validator_tier' => 'ip', 'track' => PilotSyllabusCatalog::normalizeTrack($track)],
+            $rules,
+            $this->rules->awardsByUser($tenantId, array_map(static fn (array $r): int => (int) $r['definition_id'], $rules))
+        );
+    }
+
     public function canValidate(int $tenantId, array $rule, int $actorId): bool
     {
         $rules = $this->rules->listForTenant($tenantId);
