@@ -80,7 +80,7 @@ $interval = (int) ($ge['update_interval'] ?? 0);
 
       <div class="ath-panel bo-ac-card">
         <div class="bo-ac-grid bo-ac-grid--2">
-          <label class="bo-ac-field"><span>Version minimale du pack Overwatch</span><input name="game_min_mod_version" value="<?= $h($ge['min_mod_version'] ?? '1.5.0') ?>" pattern="\d+\.\d+(\.\d+)?" placeholder="1.5.0" inputmode="decimal"><small>Un pack plus ancien est refusé à la connexion, avec la version installée et celle demandée. Format : 1.6.0.</small></label>
+          <label class="bo-ac-field"><span>Pack Overwatch minimal (version)</span><input name="game_min_mod_version" value="<?= $h($ge['min_mod_version'] ?? '1.5.0') ?>" pattern="\d+\.\d+(\.\d+)?" placeholder="1.5.0" inputmode="decimal"><small>Un pack plus ancien est refusé à la connexion, avec la version installée et celle demandée. Format : 1.6.0.</small></label>
           <label class="bo-ac-field"><span>Fréquence d’envoi des positions</span>
             <select name="game_update_interval">
               <option value="0"<?= $interval === 0 ? ' selected' : '' ?>>Réglage du pack (3 s)</option>
