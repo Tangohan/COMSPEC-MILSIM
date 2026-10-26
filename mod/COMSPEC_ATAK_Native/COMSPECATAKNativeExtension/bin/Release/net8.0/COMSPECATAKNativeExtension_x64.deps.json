@@ -1,0 +1,43 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "COMSPECATAKNativeExtension_x64/1.0.0": {
+        "dependencies": {
+          "Microsoft.DotNet.ILCompiler": "8.0.32",
+          "Microsoft.NET.ILLink.Tasks": "8.0.32"
+        },
+        "runtime": {
+          "COMSPECATAKNativeExtension_x64.dll": {}
+        }
+      },
+      "Microsoft.DotNet.ILCompiler/8.0.32": {},
+      "Microsoft.NET.ILLink.Tasks/8.0.32": {}
+    }
+  },
+  "libraries": {
+    "COMSPECATAKNativeExtension_x64/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.DotNet.ILCompiler/8.0.32": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pKhdv8nH5Fouqyv/9fAUFdzkCnJqlxzwcD0gy4fS6GoIjHlRyRUNrYAUOvtDWp8AHIUXEu/ImDiJBT2kN40K/A==",
+      "path": "microsoft.dotnet.ilcompiler/8.0.32",
+      "hashPath": "microsoft.dotnet.ilcompiler.8.0.32.nupkg.sha512"
+    },
+    "Microsoft.NET.ILLink.Tasks/8.0.32": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-FQXkG87JK9+SEbF6vRcWmevk0Pjqgehhz+9e1hHATDh7U8EvgmVQQcEUJTXj1IKi8VqLrdi/c1QHOpVjZcd9ng==",
+      "path": "microsoft.net.illink.tasks/8.0.32",
+      "hashPath": "microsoft.net.illink.tasks.8.0.32.nupkg.sha512"
+    }
+  }
+}

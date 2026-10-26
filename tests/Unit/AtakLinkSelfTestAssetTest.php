@@ -71,4 +71,14 @@ final class AtakLinkSelfTestAssetTest extends TestCase
         self::assertStringContainsString('[] spawn', $self);
         self::assertStringContainsString('class diagSelfTest {};', $cfg);
     }
+
+    public function testNativeExtensionCompilesEveryLinkSource(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $csproj = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/COMSPECATAKNativeExtension.csproj');
+        foreach (glob($root . '/mod/UptoDate/COMSPECExtension/*.cs') ?: [] as $file) {
+            $name = basename($file);
+            self::assertStringContainsString('\\COMSPECExtension\\' . $name . '"', $csproj, $name . ' absent du projet de la DLL de l\'ATAK natif');
+        }
+    }
 }

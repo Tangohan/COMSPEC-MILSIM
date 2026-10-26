@@ -29,5 +29,8 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\GameAuth.cs" Link="GameAuth.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\GoogleSlidesDeck.cs" Link="GoogleSlidesDeck.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\BetaNoticeWindow.cs" Link="BetaNoticeWindow.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_DataFlows.cs" Link="Extension_DataFlows.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SelfTest.cs" Link="Extension_SelfTest.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_RefusalLatch.cs" Link="Extension_RefusalLatch.cs" />
   </ItemGroup>
 </Project>
