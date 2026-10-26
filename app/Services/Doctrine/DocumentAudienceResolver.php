@@ -25,6 +25,41 @@ final class DocumentAudienceResolver
     ) {}
 
     /**
+     * Audiences préchargées (primeAudiences) : documentId => audiences, pour un tenant donné.
+     *
+     * @var array{tenant_id: int, by_document: array<int, list<array<string, mixed>>>}|null
+     */
+    private ?array $primedAudiences = null;
+
+    /** @var array<string, list<int>> unités résolues pendant une passe préchargée (vidé par releasePrimedAudiences) */
+    private array $primedUnitCache = [];
+
+    /**
+     * Précharge en une requête les audiences d’une liste de documents (tableau de bord).
+     * À libérer avec releasePrimedAudiences() une fois la passe terminée.
+     *
+     * @param list<int> $documentIds
+     */
+    public function primeAudiences(int $tenantId, array $documentIds): void
+    {
+        if ($tenantId < 1 || !$this->audienceRepository->tableExists()) {
+            $this->primedAudiences = null;
+
+            return;
+        }
+        $this->primedAudiences = [
+            'tenant_id' => $tenantId,
+            'by_document' => $this->audienceRepository->listForDocuments($documentIds, $tenantId),
+        ];
+    }
+
+    public function releasePrimedAudiences(): void
+    {
+        $this->primedAudiences = null;
+        $this->primedUnitCache = [];
+    }
+
+    /**
      * @param array<string, mixed> $doctrineRow Ligne document_doctrines + document
      */
     public function isUserInAudience(int $tenantId, int $userId, int $documentId, array $doctrineRow = []): bool
@@ -33,11 +68,15 @@ final class DocumentAudienceResolver
             return false;
         }
 
-        if (!$this->audienceRepository->tableExists()) {
-            return true;
+        $primed = $this->primedAudiences;
+        if ($primed !== null && $primed['tenant_id'] === $tenantId && array_key_exists($documentId, $primed['by_document'])) {
+            $audiences = $primed['by_document'][$documentId];
+        } else {
+            if (!$this->audienceRepository->tableExists()) {
+                return true;
+            }
+            $audiences = $this->audienceRepository->listForDocument($documentId, $tenantId);
         }
-
-        $audiences = $this->audienceRepository->listForDocument($documentId, $tenantId);
         if ($audiences === []) {
             return ($doctrineRow['requirement_level'] ?? 'informative') === 'informative';
         }
@@ -126,9 +165,9 @@ final class DocumentAudienceResolver
             if ($unitId < 1) {
                 return false;
             }
-            $userUnits = $this->unitRepository->unitIdsForUser($tenantId, $userId);
+            $userUnits = $this->primedUnits('user:' . $tenantId . ':' . $userId, fn (): array => $this->unitRepository->unitIdsForUser($tenantId, $userId));
             if ($includeChildren) {
-                $targetUnits = $this->unitRepository->expandUnitIdsWithDescendants($tenantId, [$unitId]);
+                $targetUnits = $this->primedUnits('tree:' . $tenantId . ':' . $unitId, fn (): array => $this->unitRepository->expandUnitIdsWithDescendants($tenantId, [$unitId]));
                 foreach ($userUnits as $uu) {
                     if (in_array($uu, $targetUnits, true)) {
                         return true;
@@ -154,6 +193,24 @@ final class DocumentAudienceResolver
         }
 
         return false;
+    }
+
+    /**
+     * Mémoïse une résolution d’unités pendant une passe préchargée uniquement (hors passe : appel direct).
+     *
+     * @param callable(): list<int> $load
+     * @return list<int>
+     */
+    private function primedUnits(string $key, callable $load): array
+    {
+        if ($this->primedAudiences === null) {
+            return $load();
+        }
+        if (!array_key_exists($key, $this->primedUnitCache)) {
+            $this->primedUnitCache[$key] = $load();
+        }
+
+        return $this->primedUnitCache[$key];
     }
 
     /** @return list<int> */

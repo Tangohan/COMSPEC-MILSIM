@@ -29,7 +29,7 @@ if (_model in ["plate", "flip", "ribbed"]) then { _model = "s7"; profileNamespac
 // Objet exigé pour ce modèle (réglages addon « ATAK · Objets par interface ») absent : le S7 reprend.
 if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 // La tablette du véhicule est commune, pour qui n'a pas son ATAK : avec son téléphone, on garde son téléphone.
-if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
+if (_term in ["vehicle", "cp", "toc"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
 // iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), s23 (SAMSUNG S23), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
 // gardent leurs proportions ; leur écran (paysage) est donc propre à chacune, mesuré sur l'ouverture de la photo.
 private _visLand = (createHashMapFromArray [

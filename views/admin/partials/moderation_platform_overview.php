@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
-$forumErr = $adminForumModerationSnapshotError ?? null;
+$reportsErr = $adminReportsSnapshotError ?? null;
 $queueErr = $adminContentQueueSnapshotError ?? null;
-$forumTotal = (int) ($adminForumPendingTotal ?? 0);
+$reportsTotal = (int) ($adminReportsPendingTotal ?? 0);
 $queueTotal = (int) ($adminContentQueueTotal ?? 0);
-$forumByT = $adminForumPendingByTenant ?? [];
+$reportsByT = $adminReportsPendingByTenant ?? [];
 $queueByT = $adminContentQueueByTenant ?? [];
-$boForumMod = url('back-office/forum-moderation');
+$reportsConsole = url('back-office/signalements');
 $contentMod = url('back-office/content-moderation');
 $gateMod = \App\Core\Gate::getInstance();
 $canSystemModerationTools = $gateMod->allows('admin.system');
-$canOpenForumModConsole = $canSystemModerationTools
-    || (function_exists('forum_user_can_moderate') && forum_user_can_moderate());
+$canOpenReportsConsole = $canSystemModerationTools
+    || (function_exists('moderation_user_can_moderate') && moderation_user_can_moderate());
 $hm = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
 /**
@@ -38,8 +38,8 @@ $tenantLabel = static function (array $row): string {
 
     <dl class="pa-mini-stats">
         <div>
-            <dt>Signalements forum</dt>
-            <dd><?= $forumErr ? '—' : $forumTotal ?></dd>
+            <dt>Signalements membres</dt>
+            <dd><?= $reportsErr ? '—' : $reportsTotal ?></dd>
         </div>
         <div>
             <dt>Fichiers en attente</dt>
@@ -47,11 +47,11 @@ $tenantLabel = static function (array $row): string {
         </div>
     </dl>
 
-    <?php if ($forumErr): ?><p class="pa-flash pa-flash--err" style="margin:10px 0 0;"><?= $hm((string) $forumErr) ?></p><?php endif; ?>
+    <?php if ($reportsErr): ?><p class="pa-flash pa-flash--err" style="margin:10px 0 0;"><?= $hm((string) $reportsErr) ?></p><?php endif; ?>
     <?php if ($queueErr): ?><p class="pa-flash pa-flash--err" style="margin:10px 0 0;"><?= $hm((string) $queueErr) ?></p><?php endif; ?>
 
     <?php $byTenant = []; ?>
-    <?php if (!$forumErr && $forumTotal > 0) { foreach ($forumByT as $r) { $byTenant[] = [$tenantLabel($r), (int) ($r['pending'] ?? 0), 'signalement(s)']; } } ?>
+    <?php if (!$reportsErr && $reportsTotal > 0) { foreach ($reportsByT as $r) { $byTenant[] = [$tenantLabel($r), (int) ($r['pending'] ?? 0), 'signalement(s)']; } } ?>
     <?php if (!$queueErr && $queueTotal > 0) { foreach ($queueByT as $r) { $byTenant[] = [$tenantLabel($r), (int) ($r['pending'] ?? 0), 'fichier(s)']; } } ?>
     <div style="margin-top:12px;">
         <?php if ($byTenant === []): ?>
@@ -66,8 +66,8 @@ $tenantLabel = static function (array $row): string {
     </div>
 
     <ul class="pa-links" style="margin-top:14px;">
-        <?php if ($canOpenForumModConsole): ?>
-        <li><a class="pa-links__a" href="<?= $hm($boForumMod) ?>">Console modération forum</a></li>
+        <?php if ($canOpenReportsConsole): ?>
+        <li><a class="pa-links__a" href="<?= $hm($reportsConsole) ?>">Console des signalements</a></li>
         <li><a class="pa-links__a" href="<?= $hm($contentMod) ?>">File de validation</a></li>
         <?php endif; ?>
         <?php if ($canSystemModerationTools): ?>

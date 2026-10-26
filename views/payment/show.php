@@ -18,6 +18,8 @@ $statusLabels = [
     'declared' => ['Paiement déclaré, vérification en cours', 'pay-badge--info'],
     'activated' => ['Paiement confirmé', 'pay-badge--ok'],
     'rejected' => ['Paiement non confirmé', 'pay-badge--ko'],
+    'refunded' => ['Paiement remboursé', 'pay-badge--info'],
+    'cancelled' => ['Demande annulée', 'pay-badge--ko'],
 ];
 [$statusText, $statusClass] = $statusLabels[$status] ?? ['—', 'pay-badge--wait'];
 $periodEnds = trim((string) ($payment['period_ends_at'] ?? ''));
@@ -76,6 +78,13 @@ $periodEnds = trim((string) ($payment['period_ends_at'] ?? ''));
             <section class="pay-done">
                 <p>Merci ! Votre paiement a été reçu<?= $periodEnds !== '' ? ' et votre formule est active jusqu’au <strong>' . $h(date('d/m/Y', (int) strtotime($periodEnds))) . '</strong>' : '' ?>.</p>
                 <a class="pay-btn pay-btn--dark" href="<?= $h(url('dashboard')) ?>">Retour au tableau de bord</a>
+            </section>
+        <?php elseif ($status === 'refunded' || $status === 'cancelled'): ?>
+            <section class="pay-done pay-done--ko">
+                <p><?= $status === 'refunded'
+                    ? 'Ce paiement vous a été remboursé sur PayPal.'
+                    : 'L’équipe Athena a annulé cette demande de paiement.' ?><?= trim((string) ($payment['admin_note'] ?? '')) !== '' ? ' Message de l’équipe : ' . $h((string) $payment['admin_note']) : '' ?></p>
+                <a class="pay-btn pay-btn--dark" href="<?= $h(url('platform/upgrade')) ?>">Voir les formules</a>
             </section>
         <?php elseif ($status === 'rejected'): ?>
             <section class="pay-done pay-done--ko">

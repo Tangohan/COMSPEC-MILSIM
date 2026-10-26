@@ -165,7 +165,7 @@ class TrainingCertificateRepository
     }
 
     /**
-     * Dernière formation certifiante attestée (titre court) pour affichage forum.
+     * Dernière formation certifiante attestée (titre court) pour affichage sur la fiche.
      *
      * @param list<int> $userIds
      * @return array<int, string> user_id => course title

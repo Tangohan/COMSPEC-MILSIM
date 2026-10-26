@@ -79,7 +79,7 @@ final class PersonnelFunctionKitCatalogTest extends TestCase
     public function testMultiSelectUnionsPermissions(): void
     {
         $slugs = PersonnelFunctionKitCatalog::permissionSlugsForKitIds(['lecture', 'recrutement_lecture']);
-        self::assertContains('forum.view', $slugs);
+        self::assertContains('documents.view', $slugs);
         self::assertContains('admin.members.view', $slugs);
         self::assertNotContains('organization.recruitment.manage', $slugs);
     }

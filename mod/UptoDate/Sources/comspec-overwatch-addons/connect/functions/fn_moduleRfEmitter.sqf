@@ -9,12 +9,25 @@ if (_a0 isEqualType objNull) then {
     _logic = _a0;
     _activated = _args param [2, true];
 } else {
-    if (_a0 isEqualType "" && {(_args param [1, objNull]) isEqualType objNull}) then {
-        _logic = _args param [1, objNull];
-        _activated = _args param [3, true];
+    if (_a0 isEqualType "") then {
+        private _a1 = _args param [1, objNull];
+        if (_a1 isEqualType objNull) then {
+            _logic = _a1;
+            _activated = _args param [3, true];
+        } else {
+            // is3DEN = 1 : BI appelle [mode, [logic, activated, curatorPlaced]], mission comprise ; on n'agit que sur "init".
+            if (_a1 isEqualType [] && {(toLower _a0) isEqualTo "init"}) then {
+                _logic = _a1 param [0, objNull, [objNull]];
+                _activated = _a1 param [1, true, [true]];
+            };
+        };
     };
 };
+if (is3DEN) exitWith { true };
 if (isNull _logic) exitWith { false };
+// isGlobal = 1 : la fonction tourne sur chaque machine ; seul le serveur pose l'objet (sinon un doublon par client/JIP).
+if (!isServer) exitWith { true };
+if (!(_activated isEqualType true)) then { _activated = true; };
 if (!_activated) exitWith { true };
 
 private _pos = getPosATL _logic;

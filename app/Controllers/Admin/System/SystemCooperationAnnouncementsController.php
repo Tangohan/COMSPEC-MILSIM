@@ -89,17 +89,9 @@ final class SystemCooperationAnnouncementsController
 
             return Response::redirect(url('admin/system/cooperation/announcements/edit?event=' . rawurlencode($eventKey) . '&channel=' . rawurlencode($channel)));
         }
-        $forumJson = null;
-        if ($channel === 'forum') {
-            $forumJson = json_encode([
-                'topic_id' => max(0, (int) $request->input('forum_topic_id', 0)),
-                'as_draft' => (bool) $request->input('forum_as_draft'),
-            ], JSON_UNESCAPED_UNICODE);
-        }
         $this->templates->upsert(0, $eventKey, $channel, [
             'subject' => $channel === 'email' ? $subject : ($subject !== '' ? $subject : null),
             'body' => $body,
-            'forum_settings_json' => $forumJson,
             'min_interval_hours' => max(0, min(168, (int) $request->input('min_interval_hours', 24))),
             'is_active' => $request->input('is_active') ? 1 : 0,
         ]);

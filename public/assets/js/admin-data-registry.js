@@ -154,7 +154,13 @@
   }
 
   async function post(body) {
-    const r = await fetch(actionUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(body) });
+    let r;
+    try {
+      r = await fetch(actionUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(body) });
+    } catch (e) {
+      // Coupure réseau : on renvoie un échec lisible plutôt qu'une promesse rejetée (bouton bloqué, pas de toast).
+      return { ok: false, message: 'Erreur réseau : action non confirmée, rechargez la liste pour vérifier.' };
+    }
     const j = await r.json().catch(() => ({ ok: false, message: 'Réponse illisible.' }));
     return j;
   }

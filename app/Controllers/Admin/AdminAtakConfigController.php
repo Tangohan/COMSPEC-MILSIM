@@ -13,6 +13,7 @@ use App\Repositories\TenantAtakConfigRepository;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Tactical\AtakTenantDataService;
 use App\Services\Tactical\AtakBridgeModulesService;
+use App\Services\Tactical\AtakDataFlowsService;
 use App\Services\Tactical\AtakExperienceService;
 use App\Support\ComspecApiKeyAuth;
 
@@ -53,6 +54,7 @@ class AdminAtakConfigController
         $maintenanceMessage = ($maintenanceSchemaReady && is_array($config))
             ? trim((string) ($config['maintenance_message'] ?? ''))
             : '';
+        $dataFlowsSvc = new AtakDataFlowsService();
         $modulesSvc = new AtakBridgeModulesService();
         $bridgeModules = $modulesSvc->catalogWithState($tenantId);
         $bridgeModulesUpdatedAt = $modulesSvc->get($tenantId)['updated_at'] ?? '';
@@ -88,6 +90,8 @@ class AdminAtakConfigController
             'maintenanceEnabled' => $maintenanceEnabled,
             'maintenanceMessage' => $maintenanceMessage,
             'purgeConfirmPhrase' => self::PURGE_CONFIRM_PHRASE,
+            'dataFlows' => $dataFlowsSvc->get($tenantId),
+            'dataFlowsCatalog' => $dataFlowsSvc->catalog(),
             'bridgeModules' => $bridgeModules,
             'bridgeModulesUpdatedAt' => $bridgeModulesUpdatedAt,
             'experienceCatalog' => $experienceCatalog,
@@ -218,6 +222,37 @@ class AdminAtakConfigController
         Session::flash('success', 'Modules ATAK Enhanced / cTab enregistrés. Les joueurs en liaison récupèrent le réglage sous environ une minute.');
 
         return Response::redirect(url('back-office/ressources/atak-config'));
+    }
+
+    /**
+     * Données remontées du jeu (positions en direct, véhicules, pertes, miroir du téléphone, contexte) : préréglage
+     * « tout » ou « comptes rendus seulement », ou cases cochées une à une. Modifiable à tout moment.
+     */
+    public function storeDataFlows(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('back-office/ressources/atak-config'));
+        }
+
+        $preset = (string) $request->input('preset', 'custom');
+        if (isset(AtakDataFlowsService::PRESETS[$preset])) {
+            $flows = AtakDataFlowsService::PRESETS[$preset];
+        } else {
+            $flows = [];
+            foreach (AtakDataFlowsService::FLOWS as $id) {
+                $flows[$id] = (string) $request->input('flow_' . $id, '0') === '1';
+            }
+        }
+        (new AtakDataFlowsService())->put((int) $tenantId, $flows);
+        Session::flash('success', 'Données remontées enregistrées. Les joueurs en liaison appliquent le choix sous une minute environ, sans relancer la partie.');
+
+        return Response::redirect(url('back-office/ressources/atak-config') . '#data-flows');
     }
 
     /** Réglages d’expérience Overwatch (réalisme, troll, personnalisation). */

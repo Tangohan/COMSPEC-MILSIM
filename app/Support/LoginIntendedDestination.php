@@ -75,6 +75,42 @@ final class LoginIntendedDestination
         return url($suffix);
     }
 
+    /**
+     * Paramètre « redirect » d'un lien vers la connexion : chemin interne seulement
+     * (traduire-atak, /traduire-atak, ou la même adresse complète).
+     */
+    public static function suffixFromRedirect(string $raw): ?string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $raw) === 1) {
+            $path = parse_url($raw, PHP_URL_PATH);
+            $raw = is_string($path) ? $path : '';
+        }
+        $query = strpos($raw, '?');
+        if ($query !== false) {
+            $raw = substr($raw, 0, $query);
+        }
+
+        return self::pathToSafeSuffix('/' . ltrim($raw, '/'));
+    }
+
+    /** Mémorise le retour sans message : le visiteur a choisi de se connecter. */
+    public static function rememberSuffix(string $suffix): void
+    {
+        $safe = self::pathToSafeSuffix('/' . ltrim($suffix, '/'));
+        if ($safe === null) {
+            return;
+        }
+        Session::start();
+        Session::set(self::SESSION_KEY, [
+            'suffix' => $safe,
+            'expires_at' => time() + self::TTL_SEC,
+        ]);
+    }
+
     private static function pathToSafeSuffix(string $path): ?string
     {
         $suffix = ltrim(trim($path), '/');

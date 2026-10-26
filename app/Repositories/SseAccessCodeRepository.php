@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\SilentSchemaMigration;
+use App\Support\UtcDateTime;
 
 final class SseAccessCodeRepository
 {
@@ -108,7 +109,7 @@ final class SseAccessCodeRepository
         $out = [];
         foreach ($rows as $row) {
             $revoked = !empty($row['revoked_at']);
-            $expired = strtotime((string) ($row['expires_at'] ?? '')) < time();
+            $expired = UtcDateTime::isPast($row['expires_at'] ?? null);
             $exhausted = (int) ($row['uses_count'] ?? 0) >= (int) ($row['max_uses'] ?? 1);
             $out[] = [
                 'id' => (int) $row['id'],

@@ -12,14 +12,26 @@ use App\Repositories\AtakDonationRepository;
 use App\Services\Billing\AtakDonationFulfillmentService;
 use App\Services\Billing\StripeCheckoutService;
 use App\Repositories\UserRepository;
+use App\Support\PayPalDonation;
 
 /**
- * Page publique de soutien au financement ATAK (montant au choix + badge donateur).
+ * Page publique de dons (PayPal, même compte que les paiements de formules).
+ * Le paiement par carte via Stripe (checkout, merci) reste en sommeil : la page ne le propose plus.
  */
 final class AtakSupportController
 {
     /** Montants proposés en euros. */
     public const PRESETS_EUR = [5, 10, 25, 50, 100];
+
+    /** Paliers de la page de dons (montant en euros => nom et effet). Textes en français, traduits à l’affichage. */
+    public const TIERS = [
+        5 => ['name' => 'Ration de combat', 'line' => 'Un café pour les nuits de développement.'],
+        10 => ['name' => 'Soirée d’opé', 'line' => 'Garde les serveurs allumés pendant vos missions.'],
+        25 => ['name' => 'Équipe de feu', 'line' => 'Fait avancer une nouvelle app du téléphone.'],
+        50 => ['name' => 'Section complète', 'line' => 'Un vrai coup d’accélérateur sur la feuille de route.'],
+    ];
+
+    public const DEFAULT_EUR = 10;
 
     public const MIN_EUR = 3;
 
@@ -35,29 +47,32 @@ final class AtakSupportController
     public function index(Request $request, array $params = []): Response
     {
         $userId = (int) (Session::get('user_id') ?? 0);
-        $isLoggedIn = $userId > 0;
         $alreadyDonor = false;
-        if ($isLoggedIn && $this->donations->schemaReady()) {
+        if ($userId > 0 && $this->donations->schemaReady()) {
             $alreadyDonor = $this->donations->hasPaidDonationForUser($userId);
         }
 
-        $flashError = Session::getFlash('atak_support_error');
-        $flashInfo = Session::getFlash('atak_support_info');
+        // Même compte PayPal que la page de paiement des formules (Admin > Paiements).
+        $paypalBase = PayPalDonation::accountUrl();
+        $tiers = [];
+        foreach (self::TIERS as $eur => $tier) {
+            $tiers[] = $tier + ['eur' => $eur, 'url' => PayPalDonation::amountUrl($paypalBase, $eur * 100)];
+        }
 
-        return Response::view('layout.main', [
-            'title' => 'Soutenir ATAK',
+        return Response::view('layout.marketing', [
             'content' => 'atak.support',
-            'presets' => self::PRESETS_EUR,
+            'title' => __('site.support_meta_title'),
+            'meta_description' => __('site.support_meta_description'),
+            'marketingActive' => 'soutenir',
+            'marketingStyles' => [asset_url('assets/css/site-support.css') . '?v=1'],
+            'tiers' => $tiers,
+            'defaultEur' => self::DEFAULT_EUR,
             'minEur' => self::MIN_EUR,
             'maxEur' => self::MAX_EUR,
-            'isLoggedIn' => $isLoggedIn,
+            'paypalBase' => $paypalBase,
+            'paypalAmountable' => PayPalDonation::acceptsAmount($paypalBase),
             'alreadyDonor' => $alreadyDonor,
-            'csrfToken' => Csrf::token(),
-            'flashError' => is_string($flashError) ? $flashError : null,
-            'flashInfo' => is_string($flashInfo) ? $flashInfo : null,
-            'stripeReady' => (getenv('STRIPE_SECRET_KEY') ?: '') !== '',
-            'schemaReady' => $this->donations->schemaReady(),
-            'paypalUrl' => \App\Support\PayPalDonation::publicUrl(),
+            'isLoggedIn' => $userId > 0,
         ]);
     }
 
@@ -220,20 +235,10 @@ final class AtakSupportController
         return $value;
     }
 
-    /**
-     * QR code du lien de don PayPal (généré par Athena, mis en cache une heure).
-     * ?apercu=1 : aperçu pour l’administration, même si les dons PayPal sont masqués au public.
-     */
+    /** QR code du compte PayPal du site (généré par Athena, mis en cache une heure). */
     public function paypalQr(Request $request, array $params = []): Response
     {
-        $url = \App\Support\PayPalDonation::publicUrl();
-        if ($url === null && $request->query('apercu') === '1' && \App\Core\Gate::getInstance()->isPlatformAdmin()) {
-            $url = \App\Support\PayPalDonation::configuredUrl();
-        }
-        if ($url === null) {
-            return (new Response())->setStatusCode(404)->setBody('');
-        }
-        $qr = (new \App\Services\Qr\QrPngGenerator())->png($url, 420, 16);
+        $qr = (new \App\Services\Qr\QrPngGenerator())->png(PayPalDonation::accountUrl(), 420, 16);
         if ($qr === null) {
             return (new Response())->setStatusCode(503)->setBody('');
         }

@@ -90,7 +90,10 @@
       body.style.height = Math.min(body.scrollHeight, 220) + 'px';
     }
     function update() {
-      if (counter) counter.textContent = String(body.value.length);
+      if (counter) {
+        counter.textContent = String(body.value.length);
+        counter.classList.toggle('is-limit', body.value.length >= 3800);
+      }
       autosize();
     }
 
@@ -139,20 +142,34 @@
     update();
   });
 
-  /* ---- Fil : aller au premier message non lu, sinon au dernier ---- */
-  var stream = root.querySelector('[data-msg-stream]');
-  if (stream) {
+  /* ---- Fil : rester dans la colonne, jamais jusqu’au pied de page ---- */
+  function scrollThread() {
+    var stream = root.querySelector('[data-msg-stream]');
+    if (!stream) return;
     var unread = stream.querySelector('[data-msg-unread]');
-    var scrollsInside = stream.scrollHeight > stream.clientHeight + 1 && window.getComputedStyle(stream).overflowY !== 'visible';
-    if (scrollsInside) {
-      stream.scrollTop = unread
-        ? Math.max(0, unread.getBoundingClientRect().top - stream.getBoundingClientRect().top + stream.scrollTop - 24)
-        : stream.scrollHeight;
-    } else if (unread) {
-      unread.scrollIntoView({ block: 'center' });
-    } else {
-      window.scrollTo(0, document.documentElement.scrollHeight);
+    if (unread) {
+      stream.scrollTop += unread.getBoundingClientRect().top - stream.getBoundingClientRect().top - 28;
+      return;
     }
+    stream.scrollTop = stream.scrollHeight;
+  }
+  if (root.querySelector('[data-msg-stream]')) {
+    scrollThread();
+    window.requestAnimationFrame(scrollThread);
+  }
+
+  var list = root.querySelector('.msgx-list');
+  var active = list && list.querySelector('.msgx-item.is-active');
+  if (list && active && list.scrollHeight > list.clientHeight + 1) {
+    var delta = active.getBoundingClientRect().top - list.getBoundingClientRect().top;
+    if (delta < 8 || delta > list.clientHeight - 48) {
+      list.scrollTop += delta - 12;
+    }
+  }
+
+  var replyBody = root.querySelector('#msg-reply-body');
+  if (replyBody && window.matchMedia('(min-width: 761px)').matches && !root.querySelector('[data-msg-unread]')) {
+    try { replyBody.focus({ preventScroll: true }); } catch (e) { replyBody.focus(); }
   }
 
   /* ---- Nouveau message : focus direct sur l’objet ---- */

@@ -282,12 +282,11 @@ final class DocumentManuscript
 
     public static function sanitizeHtml(string $html): string
     {
-        $html = preg_replace('#<(script|iframe|object|embed|style)\b[^>]*>.*?</\1>#is', '', $html) ?? $html;
-        $html = preg_replace('/\bon\w+\s*=\s*(["\']).*?\1/iu', '', $html) ?? $html;
-        $html = strip_tags($html, '<p><br><strong><b><em><i><u><ul><ol><li><h2><h3><h4><blockquote>');
         if (strlen($html) > self::MAX_BODY) {
             $html = substr($html, 0, self::MAX_BODY);
         }
+        // Parcours DOM : les balises autorisées n'ont besoin d'aucun attribut (on*= sans guillemets, style…).
+        $html = SafeHtml::clean($html, SafeHtml::PROFILE_TEXT);
 
         return $html;
     }

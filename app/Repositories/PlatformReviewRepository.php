@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\PlatformReviewCatalog;
+use App\Support\UserPublicName;
 use DateTimeImmutable;
 use PDO;
 use PDOException;
@@ -210,7 +211,8 @@ final class PlatformReviewRepository
             return [];
         }
         $limit = max(1, min(200, $limit));
-        $sql = 'SELECT r.*, u.display_name, u.callsign, u.email, t.name AS tenant_name
+        UserPublicName::ensure($this->pdo);
+        $sql = 'SELECT r.*, u.display_name, u.callsign, ' . UserPublicName::column('u') . ', u.email, t.name AS tenant_name
                 FROM platform_reviews r
                 LEFT JOIN users u ON u.id = r.user_id
                 LEFT JOIN tenants t ON t.id = r.tenant_id
@@ -327,7 +329,8 @@ final class PlatformReviewRepository
             $where .= ' AND s.status = ?';
             $params[] = PlatformReviewCatalog::normalizeStatus($status);
         }
-        $sql = 'SELECT s.*, u.display_name, u.callsign, u.email, t.name AS tenant_name
+        UserPublicName::ensure($this->pdo);
+        $sql = 'SELECT s.*, u.display_name, u.callsign, ' . UserPublicName::column('u') . ', u.email, t.name AS tenant_name
                 FROM translation_suggestions s
                 LEFT JOIN users u ON u.id = s.user_id
                 LEFT JOIN tenants t ON t.id = s.tenant_id

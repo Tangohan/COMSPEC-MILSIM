@@ -3,7 +3,7 @@
     Une seule lecture des variables d'Overwatch connect (ou de la DLL native sans Overwatch), traduite en un état clair,
     sa cause et l'action à faire, plus les étapes de la liaison, de la DLL jusqu'au canal du poste.
     Retour : HashMap
-      key     "battleye" | "off" | "unset" | "disconnected" | "connecting" | "code" | "syncing" | "unlinked" | "error"
+      key     "battleye" | "off" | "unset" | "maintenance" | "disconnected" | "connecting" | "code" | "syncing" | "unlinked" | "error"
               | "connected" | "degraded" | "channel"
       logged  session ouverte (compte connecté)
       title   état en toutes lettres (« Connecté en tant que TA1 »)
@@ -99,7 +99,8 @@ private _code = toUpper ([_err, _state] select (_err isEqualTo "" && {!(_state i
 private _why = switch (true) do {
     case (_code isEqualTo ""): { [] };
     case (_code in ["INVALID_CREDENTIALS"]): { ["E-mail ou mot de passe incorrect.", "Vérifiez vos identifiants, ou recevez un code par e-mail (onglet E-MAIL)."] };
-    case (_code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_503", "HTTP_502", "HTTP_504"]): { ["Le serveur Athena ne répond pas.", "Vérifiez la connexion internet du jeu, puis RECONNECTER."] };
+    case (_code in ["HTTP_503", "MAINTENANCE"]): { ["Athena est en maintenance.", "Rien à faire : la connexion reprend seule à la réouverture du site."] };
+    case (_code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_502", "HTTP_504"]): { ["Le serveur Athena ne répond pas.", "Vérifiez la connexion internet du jeu, puis RECONNECTER."] };
     case (_code in ["SESSION_EXPIRED", "SESSION_REVOKED", "TOKEN_REVOKED", "REFRESH_REVOKED", "INVALID_REFRESH", "UNAUTHORIZED", "C2_UNAUTHORIZED", "HTTP_401"]): { ["Votre session a expiré.", "Reconnectez-vous : OBTENIR MON CODE, ou e-mail et mot de passe."] };
     case (_code in ["STEAM_NOT_LINKED", "C2_STEAM_NOT_LINKED"]): { ["Ce compte Steam n'est relié à aucun compte Athena.", "Reliez-le une fois : OBTENIR MON CODE et autorisez-le sur le site."] };
     case (_code in ["C2_STEAM_REQUIRED", "C2_INVALID_STEAM", "STEAM_REQUIRED"]): { ["Identité Steam introuvable.", "Lancez Arma depuis Steam, ou connectez-vous par code ou e-mail."] };
@@ -111,6 +112,9 @@ private _why = switch (true) do {
     case (_code in ["C2_DEGRADED"]): { ["Liaison avec le poste instable.", "Elle se rétablit seule en général ; sinon RECONNECTER."] };
     default { [format ["Erreur inattendue (%1).", _err], "Essayez RECONNECTER ; si cela continue, prévenez votre staff avec ce message."] };
 };
+
+// Athena en maintenance : le site répond HTTP 503 à toute l'API (session ouverte ou demande de code).
+private _maint = _code in ["HTTP_503", "MAINTENANCE"] || {_ls isEqualTo "error" && {_ld isEqualTo "maintenance"}};
 
 private _green = [0.36, 0.78, 0.42, 1];
 private _amber = [0.95, 0.67, 0.2, 1];
@@ -130,6 +134,9 @@ switch (true) do {
     };
     case (_mode isEqualTo "" && {!_logged}): {
         ["unset", "Non connecté : service Athena pas encore choisi", "La liaison attend votre réponse : votre unité utilise-t-elle Athena ?", "Répondez avec CHOISIR.", _amber, "choose"] call _set;
+    };
+    case (_maint): {
+        ["maintenance", "Athena en maintenance", "Le site Athena est fermé le temps d'une mise à jour : rien ne part vers le poste ni n'en arrive pour l'instant. Le téléphone reste utilisable en local.", "Rien à faire : la connexion reprend seule à la réouverture.", _amber, ""] call _set;
     };
     case (_logged && {_link isEqualTo "degraded"}): {
         ["degraded", format ["Connecté en tant que %1, liaison instable", _who], [_detail, "Les échanges passent mal (réseau saturé, brouillage ou relais trop loin)."] select (_detail isEqualTo ""), "Elle se rétablit seule en général ; sinon RECONNECTER.", _amber, "reconnect"] call _set;
@@ -180,15 +187,17 @@ _steps pushBack (switch (_mode) do {
     case "off": { ["Service Athena", "off", "désactivé (ATAK local)", ""] };
     default { ["Service Athena", "warn", "pas encore choisi", ""] };
 });
-private _netKo = _code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_503", "HTTP_502", "HTTP_504"] || {_ls isEqualTo "error" && {!_refused}};
+private _netKo = !_maint && {_code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_502", "HTTP_504"] || {_ls isEqualTo "error" && {!_refused}}};
 _steps pushBack (switch (true) do {
     case (_mode isEqualTo "off" || {_dllDown}): { ["Serveur Athena", "off", "pas contacté", ""] };
-    case (_netKo): { ["Serveur Athena", "ko", "injoignable", "Connexion internet du jeu coupée, pare-feu, ou site Athena en maintenance."] };
-    case (_logged || {_refused} || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena.ttrd.fr%1", _latText], ""] };
+    case (_maint): { ["Serveur Athena", "warn", "en maintenance", "Le site répond mais refuse les connexions le temps d'une mise à jour."] };
+    case (_netKo): { ["Serveur Athena", "ko", "injoignable", "Connexion internet du jeu coupée, ou pare-feu."] };
+    case (_logged || {_refused} || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena-comspec.eu%1", _latText], ""] };
     case (_syncing || {_link isEqualTo "connecting"} || {_ls isEqualTo "asking"}): { ["Serveur Athena", "now", "contact en cours", ""] };
     default { ["Serveur Athena", "todo", "pas encore contacté", ""] };
 });
 _steps pushBack (switch (true) do {
+    case (_maint): { ["Compte Athena", "off", "en attente de la réouverture", ""] };
     case (_logged): { ["Compte Athena", "ok", _who, [_tenant, ""] select (_tenant in ["", "—"])] };
     case (_mode isEqualTo "off" || {_dllDown}): { ["Compte Athena", "off", "non connecté", ""] };
     case (_ls isEqualTo "pending"): { ["Compte Athena", "now", format ["code %1 en attente", _lc], "À autoriser sur le site Athena."] };

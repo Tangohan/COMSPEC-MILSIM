@@ -45,16 +45,6 @@ final class ModerationRestrictionResolver
         return $this->getActiveSet($tenantId, $userId)->accountLocked;
     }
 
-    public function canReadForum(int $tenantId, int $userId): bool
-    {
-        return $this->getActiveSet($tenantId, $userId)->canReadForum();
-    }
-
-    public function canWriteForum(int $tenantId, int $userId): bool
-    {
-        return $this->getActiveSet($tenantId, $userId)->canWriteForum();
-    }
-
     public function canSendMessages(int $tenantId, int $userId): bool
     {
         return $this->getActiveSet($tenantId, $userId)->canSendMessages();

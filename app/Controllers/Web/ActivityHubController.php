@@ -10,7 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Repositories\TenantMessageRepository;
 use App\Services\Alerts\AlertPresentationService;
 use App\Services\Notifications\ActivityHubPresentationService;
@@ -20,7 +20,7 @@ final class ActivityHubController
     private AlertPresentationService $alertPresentation;
 
     public function __construct(
-        private ForumNotificationRepository $forumNotifications,
+        private MemberNotificationRepository $memberNotifications,
         private CourrierDocumentNotificationRepository $courrierNotifications,
         private TenantMessageRepository $tenantMessages,
         private ActivityHubPresentationService $presentation,
@@ -37,24 +37,6 @@ final class ActivityHubController
      */
     public function index(Request $request, array $params = []): Response
     {
-        return Response::redirect(url('boite-reception'));
-    }
-
-    public function markForumRead(Request $request, array $params = []): Response
-    {
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
-
-            return Response::redirect(url('boite-reception'));
-        }
-        $tenantId = (int) (Session::get('tenant_id') ?? 0);
-        $userId = (int) (Session::get('user_id') ?? 0);
-        if ($tenantId < 1 || $userId < 1) {
-            return Response::redirect(url('login'));
-        }
-        $this->forumNotifications->markAllRead($tenantId, $userId);
-        Session::flash('success', 'Notifications du forum marquées comme lues.');
-
         return Response::redirect(url('boite-reception'));
     }
 

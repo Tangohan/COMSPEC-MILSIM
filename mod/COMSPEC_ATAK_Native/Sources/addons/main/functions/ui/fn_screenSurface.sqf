@@ -120,12 +120,13 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         _x params ["_kind", "_var", "_sx", "_sy", "_size", "_ang"];
         private _h = _rh * _size;
         private _w = _h / _ratio;
+        // Textures en couleur (tools/gen_screen_fx.py) : film mince rouge vif et translucide, cœur bordeaux, bord séché,
+        // reflets humides ; teintées en blanc quand le sang est frais, puis vers le brun en séchant (plus bas).
         private _t = switch (_kind) do {
-            case "print": { _w = _w * 0.5; format ["dirt_print_%1", _var mod 4] };
-            case "smear": { _w = _w * 2; format ["dirt_smear_%1", _var mod 3] };
-            case "splat": { ["dirt_splat", format ["blood_splat_%1", _var]] select (_var < 2) };
-            case "drip": { _w = _w * 0.5; format ["blood_drip_%1", _var mod 2] };
-            default { format ["blood_%1_%2", _kind, _var mod 2] };
+            case "print": { _w = _w * 0.5; format ["bloodc_print_%1", _var mod 4] };
+            case "smear": { _w = _w * 2; format ["bloodc_smear_%1", _var mod 3] };
+            case "drip": { _w = _w * 0.5; format ["bloodc_drip_%1", _var mod 2] };
+            default { format ["bloodc_%1_%2", _kind, _var mod 2] };
         };
         // Centre gardé dans l'écran (une grande tache ne déborde pas sur le décor).
         private _cx = (_rx + _rw * _sx) max (_rx + (_w min _rw) / 2) min (_rx + _rw - (_w min _rw) / 2);
@@ -144,7 +145,7 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         // Côtés gauche et droit : traînée verticale (image tournée de 90°, cadre carré de la longueur de la traînée).
         private _fx = [_rx - _bx - _w / 2, _rx + _rw + _bx - _w / 2, _rx + (_rw - _w) * (call _rnd), _rx + (_rw - _w) * (call _rnd)] select _side;
         private _fy = [_ry + (_rh - _h) * (call _rnd), _ry + (_rh - _h) * (call _rnd), _ry - _by - _h / 2, _ry + _rh + _by - _h / 2] select _side;
-        ["frame", format ["dirt_smear_%1", floor ((call _rnd) * 3)] call _tex, _fx, _fy, _w, _h, [90, 90, 0, 0] select _side] call _pic;
+        ["frame", format ["bloodc_smear_%1", floor ((call _rnd) * 3)] call _tex, _fx, _fy, _w, _h, [90, 90, 0, 0] select _side] call _pic;
     };
     for "_i" from 1 to _cDrops do {
         [7, _i] call _from;
@@ -165,15 +166,17 @@ private _style = (missionNamespace getVariable ["comspec_atak_native_blood_style
         case "dust": { _c ctrlSetTextColor [0.62, 0.56, 0.44, (0.04 + 0.4 * _dust) min 0.42]; };
         case "caseDust": { _c ctrlSetTextColor [0.58, 0.51, 0.39, (0.05 + 0.5 * _dust) min 0.55]; };
         case "prints": { _c ctrlSetTextColor [0.82, 0.82, 0.76, 0.06 + 0.18 * _prints]; };
-        case "frame": { _c ctrlSetTextColor [0.33, 0.02, 0.02, 0.55 + 0.4 * _frame]; };
+        case "frame": { _c ctrlSetTextColor [0.8, 0.7, 0.68, 0.55 + 0.4 * _frame]; };
         case "drops": { _c ctrlSetTextColor [0.85, 0.92, 1, 0.35 + 0.3 * _drops]; };
         default {
             // Tache de sang : opacité propre (elle pâlit au nettoyage, à la pluie) ; style discret plus léger.
+            // Le sang sèche : rouge vif les premières minutes, puis plus sombre et brun (10 min environ), plus mat.
             if ((_kind select [0, 5]) isEqualTo "stain") then {
                 private _st = _stains param [parseNumber (_kind select [5]), []];
                 if (_st isNotEqualTo []) then {
                     private _a = (_st select 6) * ([0.7, 0.92, 1] select _style);
-                    _c ctrlSetTextColor ([[0.42, 0.025, 0.02, _a], [0.36, 0.02, 0.02, _a]] select ((_st select 0) isEqualTo "print"));
+                    private _dry = (((time - (_st param [7, time - 600])) - 60) / 540) max 0 min 1;
+                    _c ctrlSetTextColor [1 - 0.36 * _dry, 1 - 0.52 * _dry, 1 - 0.6 * _dry, _a * (1 - 0.15 * _dry)];
                 };
             };
         };

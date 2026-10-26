@@ -111,6 +111,24 @@ final class DocumentAcknowledgmentRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Tous les accusés d’un membre, du plus récent au plus ancien (chargement en masse du tableau de bord).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForUser(int $tenantId, int $userId): array
+    {
+        if ($tenantId < 1 || $userId < 1 || !$this->tableExists()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM document_acknowledgments WHERE tenant_id = ? AND user_id = ? ORDER BY signed_at DESC'
+        );
+        $stmt->execute([$tenantId, $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function countForDocumentVersion(int $tenantId, int $documentId, int $versionId): int
     {
         if (!$this->tableExists()) {

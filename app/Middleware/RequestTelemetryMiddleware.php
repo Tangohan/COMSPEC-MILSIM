@@ -31,6 +31,8 @@ final class RequestTelemetryMiddleware
         $start = microtime(true);
         $response = $next($request);
         $elapsedMs = (int) round((microtime(true) - $start) * 1000);
+        // Temps serveur lisible dans l’onglet Réseau du navigateur (Timing) : sépare la lenteur PHP / base du réseau.
+        $response->header('Server-Timing', 'app;dur=' . $elapsedMs);
 
         try {
             $path = $request->path();

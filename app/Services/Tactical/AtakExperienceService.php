@@ -369,6 +369,14 @@ final class AtakExperienceService
             $row('net_gps', 'GPS réaliste', 'Précision selon le ciel visible : quelques mètres à découvert, plus en forêt, rue étroite ou vallée, beaucoup plus dans un bâtiment, aucun fix en sous-sol.', $onOff('Toujours simuler le GPS', 'GPS exact')),
             $row('net_gps_k', 'Force des erreurs GPS', '100 % : erreurs réalistes d’un téléphone. 50 % : moitié moins.', $nums([50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
             $row('net_gps_fix', 'Attente des satellites', 'Au démarrage du téléphone, le GPS cherche les satellites de quelques secondes à environ 40 s.', $onOff('Toujours attendre les satellites', 'Position tout de suite')),
+            $row('net_gps_loss', 'Pertes de fix GPS', 'Part des satellites masqués (toit, forêt, immeubles, relief) qui compte vraiment. 100 % : plus de fix dans un bâtiment ou en sous-sol, comme un vrai téléphone. 0 % : le fix tient partout, seule la précision baisse.', $nums([0 => '0 % (fix partout)', 50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
+            $row('net_gps_rel', 'Fiabilité du GPS', 'Décrochages du fix de quelques secondes et sauts de position de 15 à 60 m (reflets du signal). Bonne : environ une fois toutes les 20 min ; Médiocre : toutes les 2 min.', [
+                $server,
+                ['value' => '0', 'label' => 'Parfaite'],
+                ['value' => '1', 'label' => 'Bonne (réel)'],
+                ['value' => '2', 'label' => 'Moyenne'],
+                ['value' => '3', 'label' => 'Médiocre'],
+            ]),
             $row('net_battery', 'Batterie réaliste', 'La batterie se vide selon l’usage et se recharge en véhicule ; à 0 % le téléphone s’éteint.', $onOff('Toujours simuler la batterie', 'Batterie infinie')),
         ];
     }

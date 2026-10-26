@@ -74,9 +74,12 @@ switch (_mode) do {
                     if (isNull objectParent _u && {!surfaceIsWater _p}) then { [_u, ATLToASL [_p select 0, _p select 1, 0], "drop"] call _add; };
                 };
             } forEach (allUnits select { _x isKindOf "CAManBase" });
-            // Publication groupée (pas une diffusion réseau par goutte).
-            if (missionNamespace getVariable ["COMSPEC_SSE_BloodDirty", false]) then {
+            // Publication groupée (pas une diffusion réseau par goutte) et au plus toutes les 12 s : la liste entière
+            // (150 traces) repartait vers chaque client toutes les 3 s tant qu'un blessé se déplaçait.
+            if ((missionNamespace getVariable ["COMSPEC_SSE_BloodDirty", false])
+                && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_SSE_BloodPubAt", -100]) + 12}) then {
                 missionNamespace setVariable ["COMSPEC_SSE_BloodDirty", false];
+                missionNamespace setVariable ["COMSPEC_SSE_BloodPubAt", diag_tickTime];
                 publicVariable "COMSPEC_SSE_BloodTraces";
             };
         }, 3] call CBA_fnc_addPerFrameHandler;

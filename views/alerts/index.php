@@ -22,7 +22,6 @@ $kindLabelFr = static function (string $kind): string {
         'novelty' => 'Nouveau',
         'discount' => 'Promotion',
         'notice' => 'Annonce',
-        'forum_pin' => 'Message épinglé',
         default => 'Information',
     };
 };
@@ -34,7 +33,7 @@ $filterKeyForKind = static function (string $kind): string {
         'urgent' => 'urgent',
         'novelty' => 'novelty',
         'discount' => 'discount',
-        'notice', 'forum_pin' => 'notice',
+        'notice' => 'notice',
         default => 'info',
     };
 };
@@ -61,7 +60,7 @@ foreach ($alertsActive as $row) {
     if ($k === 'urgent') {
         $urgentCount++;
     }
-    if (!empty($row['pinned']) || in_array($k, ['forum_pin', 'notice'], true)) {
+    if (!empty($row['pinned']) || $k === 'notice') {
         $pinnedCount++;
     }
     $filterKeysPresent[$filterKeyForKind($k)] = true;
@@ -118,7 +117,7 @@ $renderCard = static function (array $item, string $mode = 'active') use ($kindL
         && (!array_key_exists('dismissible', $item) || (bool) $item['dismissible']);
     $isPinned = !$archived && !$upcoming && (
         !empty($item['pinned'])
-        || in_array($rawKind, ['forum_pin', 'notice'], true)
+        || $rawKind === 'notice'
     );
     $endedLabel = $archived ? $formatEndedAt(isset($item['ended_at']) ? (string) $item['ended_at'] : null) : null;
     $startsAtLabel = $upcoming ? $formatEndedAt(isset($item['starts_at']) ? (string) $item['starts_at'] : null) : null;

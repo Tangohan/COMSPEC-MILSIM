@@ -17,6 +17,8 @@ if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", 
 private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];
 if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith { 0 };
 if (isNull player) exitWith { 0 };
+// Drones non remontés par choix de la communauté (fn_pollDataFlows).
+if !((missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["vehicles", true]) exitWith { 0 };
 
 private _uid = getPlayerUID player;
 private _now = diag_tickTime;
@@ -79,7 +81,8 @@ private _fnc_send = {
     private _json = [_data] call comspec_overwatch_connect_fnc_hashMapToJson;
     if (!(_json isEqualType "") || {_json isEqualTo ""}) exitWith { false };
     private _r = "COMSPECExtension" callExtension ["UpdateVehicleTracking", [_json]];
-    (_r isEqualType []) && {(_r param [0, ""]) isEqualTo "OK"}
+    // La DLL renvoie ["OK","queued"] dans _r select 0 : passer par le parseur commun.
+    (_r isEqualType []) && {(([_r] call comspec_overwatch_connect_fnc_parseAtakExtResponse) param [0, false]) isEqualTo true}
 };
 
 private _sent = 0;

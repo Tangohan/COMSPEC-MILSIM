@@ -41,6 +41,7 @@ final class SiteTranslationController
             'marketingStyles' => [asset_url('assets/css/site-contribute.css')],
             'sitetrReady' => $ready,
             'sitetrLanguages' => $ready ? $this->safe(fn (): array => $this->service()->languages(), []) : [],
+            'sitetrLeaders' => $ready ? $this->safe(fn (): array => $this->service()->repo()->translationLeaders(8), []) : [],
             'sitetrUser' => ContributorController::user(),
         ]);
     }
@@ -54,6 +55,10 @@ final class SiteTranslationController
         }
         $user = ContributorController::user();
         $uid = (int) ($user['id'] ?? 0);
+        $asked = (string) $request->query('f', '');
+        $start = in_array($asked, SiteTranslationService::FILTERS, true)
+            ? $asked
+            : ($code === 'en' ? 'blank' : 'todo');
 
         return Response::view('layout.marketing', [
             'content' => 'site.site_translate_workspace',
@@ -65,6 +70,7 @@ final class SiteTranslationController
             'sitetrLang' => $lang,
             'sitetrUser' => $user,
             'sitetrCanReview' => $this->safe(fn (): bool => $this->service()->canReview($uid, $code), false),
+            'sitetrStart' => $start,
         ]);
     }
 
@@ -76,6 +82,20 @@ final class SiteTranslationController
             return Response::json(['ok' => false, 'error' => 'unknown_language'], 404);
         }
         $uid = (int) (ContributorController::user()['id'] ?? 0);
+        if ((string) $request->query('jump', '') === 'next-bare') {
+            $loc = $this->service()->nextBare($code, (string) $request->query('h', ''));
+            if ($loc === null) {
+                return Response::json(['ok' => true, 'jump' => null])->header('Cache-Control', 'no-store');
+            }
+            $page = $this->service()->page($code, '', 'blank', $loc['page'], $uid);
+
+            return Response::json([
+                'ok' => true,
+                'can_review' => $this->service()->canReview($uid, $code),
+                'focus' => $loc['h'],
+                'filter' => 'blank',
+            ] + $page)->header('Cache-Control', 'no-store');
+        }
         $page = $this->service()->page(
             $code,
             mb_substr((string) $request->query('q', ''), 0, 200),

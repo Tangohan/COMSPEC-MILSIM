@@ -42,10 +42,10 @@ final class EventRsvpNominativeApiController
         }
 
         $filters = [
-            'q' => trim((string) $request->query('q', '')),
-            'response' => trim((string) $request->query('response', '')),
-            'section' => trim((string) $request->query('section', '')),
-            'atak' => trim((string) $request->query('atak', '')),
+            'q' => trim($request->queryString('q', '')),
+            'response' => trim($request->queryString('response', '')),
+            'section' => trim($request->queryString('section', '')),
+            'atak' => trim($request->queryString('atak', '')),
         ];
         $data = $this->service->listForEvent($tenantId, $eventId, $filters);
 
@@ -75,10 +75,10 @@ final class EventRsvpNominativeApiController
         }
 
         $filters = [
-            'q' => trim((string) $request->query('q', '')),
-            'response' => trim((string) $request->query('response', '')),
-            'section' => trim((string) $request->query('section', '')),
-            'atak' => trim((string) $request->query('atak', '')),
+            'q' => trim($request->queryString('q', '')),
+            'response' => trim($request->queryString('response', '')),
+            'section' => trim($request->queryString('section', '')),
+            'atak' => trim($request->queryString('atak', '')),
         ];
         $data = $this->service->listForEvent($tenantId, $eventId, $filters);
 

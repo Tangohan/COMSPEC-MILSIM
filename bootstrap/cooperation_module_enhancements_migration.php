@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Extensions module coopération inter-unités : snapshots, gouvernance, consentement renforcé,
- * journal notifications, forum coop enrichi, clôture structurée, réunions, ORBAT/ATAK.
+ * journal notifications, clôture structurée, réunions, ORBAT/ATAK.
  * Idempotent — invoqué depuis run-migrations.php.
  */
 return function (PDO $pdo): void {
@@ -144,19 +144,5 @@ return function (PDO $pdo): void {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
         echo "Table cooperation_mission_templates créée.\n";
-    }
-
-    if ($col($pdo, 'forum_posts', 'id')) {
-        $fpAdds = [
-            'coop_official_kind' => 'VARCHAR(32) DEFAULT NULL',
-            'is_draft' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
-            'coop_mission_role' => 'VARCHAR(48) DEFAULT NULL',
-        ];
-        foreach ($fpAdds as $c => $def) {
-            if (!$col($pdo, 'forum_posts', $c)) {
-                $pdo->exec("ALTER TABLE forum_posts ADD COLUMN `{$c}` {$def}");
-                echo "forum_posts.{$c} ajouté.\n";
-            }
-        }
     }
 };

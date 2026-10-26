@@ -20,7 +20,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     require base_path('views/partials/seo_meta.php');
 ?>
     <meta name="theme-color" content="#050505">
-    <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-180.png">
     <link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,6 +32,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/styles.css" rel="stylesheet">
     <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/home-impact.css?v=hero-av-5" rel="stylesheet">
     <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/site-marketing.css?v=2" rel="stylesheet">
+    <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/public-site-footer.css?v=2" rel="stylesheet">
 <?php
     $marketingStyles = is_array($marketingStyles ?? null) ? $marketingStyles : [];
     foreach ($marketingStyles as $href):
@@ -53,6 +54,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'traduire-atak' => __('site.atakt_crumb'),
         'contribuer' => __('site.contrib_crumb'),
         'traduire-site' => __('site.sitetr_crumb'),
+        'soutenir' => __('site.support_crumb'),
         default => __('site.about'),
     };
     $crumbPath = match ($marketingActive) {
@@ -63,6 +65,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'traduire-atak' => '/traduire-atak',
         'contribuer' => '/contribuer',
         'traduire-site' => '/traduire-site',
+        'soutenir' => '/soutenir-atak',
         default => '/a-propos',
     };
     $siteRoot = rtrim($base, '/');
@@ -129,26 +132,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         <?php require base_path('views/' . str_replace('.', '/', (string) $content) . '.php'); ?>
     </main>
 
-    <footer class="border-t border-white/10 bg-black py-10 text-white">
-        <div class="mx-auto flex max-w-[100rem] flex-col gap-8 px-5 md:flex-row md:items-start md:justify-between md:px-8">
-            <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em]">Athena</p>
-                <p class="hi-body-sm mt-3 max-w-xs text-white/45"><?= htmlspecialchars(__('home.footer_tagline'), ENT_QUOTES, 'UTF-8') ?></p>
-            </div>
-            <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="<?= htmlspecialchars(__('home.footer_legal_aria'), ENT_QUOTES, 'UTF-8') ?>">
-                <a href="<?= htmlspecialchars(url('a-propos'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.about'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= htmlspecialchars(url('sse'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.sse'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= htmlspecialchars(url('atak-natif'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.atak_native'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= htmlspecialchars(url('contribuer'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contrib_crumb'), ENT_QUOTES, 'UTF-8') ?></a>
-                <?php
-                $legal_link_class = 'text-white/40 transition hover:text-emerald-400 font-medium';
-                require base_path('views/partials/legal_site_links.php');
-                ?>
-            </nav>
-        </div>
-    </footer>
+    <?php require base_path('views/partials/public_site_footer.php'); ?>
 
     <?php require base_path('views/partials/cookie_banner.php'); ?>
     <?php if (!empty(\App\Core\Session::get('user_id'))): ?>

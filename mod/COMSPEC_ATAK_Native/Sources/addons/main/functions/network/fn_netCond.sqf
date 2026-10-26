@@ -38,6 +38,8 @@ if (isNil "_defs") then {
         ["gps", "comspec_atak_native_gps_sim", "net_gps", "bool", true, [], []],
         ["gpsK", "comspec_atak_native_gps_k", "net_gps_k", "num", 100, [50, 100, 150, 200], ["50 %", "100 % (réel)", "150 %", "200 %"]],
         ["gpsFix", "comspec_atak_native_gps_fix", "net_gps_fix", "bool", true, [], []],
+        ["gpsLoss", "comspec_atak_native_gps_loss", "net_gps_loss", "num", 100, [0, 50, 100, 150, 200], ["0 % (fix partout)", "50 %", "100 % (réel)", "150 %", "200 %"]],
+        ["gpsRel", "comspec_atak_native_gps_rel", "net_gps_rel", "num", 1, [0, 1, 2, 3], ["Parfaite", "Bonne (réel)", "Moyenne", "Médiocre"]],
         ["battery", "comspec_atak_native_battery_sim", "net_battery", "bool", true, [], []]
     ];
     missionNamespace setVariable ["COMSPEC_ATAK_NetDefs", _defs];
@@ -47,8 +49,8 @@ if (_k isEqualTo "defs") exitWith { _defs };
 // gardent leur réglage CBA. Milsim = toutes les simulations à leur valeur réelle.
 private _profiles = missionNamespace getVariable "COMSPEC_ATAK_NetProfiles";
 if (isNil "_profiles") then { _profiles = [
-    [3, "Milsim", [["sim", true], ["realism", 1], ["weather", true], ["weatherK", 100], ["congestion", true], ["bgLoad", 10], ["loss", true], ["lossFloor", 0], ["latencyAdd", 0], ["offlineHold", true], ["videoRelays", true], ["pli", true], ["pliRate", 10], ["gps", true], ["gpsK", 100], ["gpsFix", true], ["battery", true]]],
-    [2, "Standard", [["sim", true], ["realism", 1], ["weather", true], ["weatherK", 50], ["congestion", true], ["bgLoad", 0], ["loss", true], ["lossFloor", 0], ["latencyAdd", 0], ["offlineHold", true], ["videoRelays", true], ["pli", true], ["pliRate", 5], ["gps", true], ["gpsK", 50], ["gpsFix", false], ["battery", true]]],
+    [3, "Milsim", [["sim", true], ["realism", 1], ["weather", true], ["weatherK", 100], ["congestion", true], ["bgLoad", 10], ["loss", true], ["lossFloor", 0], ["latencyAdd", 0], ["offlineHold", true], ["videoRelays", true], ["pli", true], ["pliRate", 10], ["gps", true], ["gpsK", 100], ["gpsFix", true], ["gpsLoss", 100], ["gpsRel", 1], ["battery", true]]],
+    [2, "Standard", [["sim", true], ["realism", 1], ["weather", true], ["weatherK", 50], ["congestion", true], ["bgLoad", 0], ["loss", true], ["lossFloor", 0], ["latencyAdd", 0], ["offlineHold", true], ["videoRelays", true], ["pli", true], ["pliRate", 5], ["gps", true], ["gpsK", 50], ["gpsFix", false], ["gpsLoss", 50], ["gpsRel", 0], ["battery", true]]],
     [1, "Arcade", [["sim", false], ["weather", false], ["congestion", false], ["loss", false], ["offlineHold", false], ["videoRelays", false], ["pli", false], ["gps", false], ["gpsFix", false], ["battery", false]]],
     [0, "Personnalisé", []]
 ]; missionNamespace setVariable ["COMSPEC_ATAK_NetProfiles", _profiles]; };

@@ -18,14 +18,28 @@ if !([_vehicle, "COMSPEC_GpsBeacon"] call comspec_overwatch_connect_fnc_isObject
 private _pos = getPosWorld _vehicle;
 if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith { false };
 
+private _heading = getDir _vehicle;
+private _aslZ = (getPosASL _vehicle) select 2;
+
+// Au plus toutes les 3 s, et seulement si le véhicule a bougé (3 m) ou tourné (15°) ; sinon battement à 30 s.
+// Une remise à -1e9 de COMSPEC_GpsBeaconLastAt (réglage Zeus) force toujours l'envoi.
 private _last = _vehicle getVariable ["COMSPEC_GpsBeaconLastAt", -1e9];
-if ((diag_tickTime - _last) < 3) exitWith { false };
+private _dt = diag_tickTime - _last;
+if (_dt < 3) exitWith { false };
+private _sig = [
+    round ((_pos select 0) / 3),
+    round ((_pos select 1) / 3),
+    round (_aslZ / 3),
+    round (_heading / 15),
+    alive _vehicle,
+    missionNamespace getVariable ["COMSPEC_TrackSigEpoch", 0]
+];
+if (_dt < 30 && {_sig isEqualTo (_vehicle getVariable ["COMSPEC_GpsBeaconSig", []])}) exitWith { false };
 _vehicle setVariable ["COMSPEC_GpsBeaconLastAt", diag_tickTime, false];
+_vehicle setVariable ["COMSPEC_GpsBeaconSig", _sig, false];
 
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 private _callSign = [_vehicle] call comspec_overwatch_connect_fnc_vehicleTrackCallsign;
-private _heading = getDir _vehicle;
-private _aslZ = (getPosASL _vehicle) select 2;
 private _pretty = getText (configOf _vehicle >> "displayName");
 if (_pretty isEqualTo "") then { _pretty = typeOf _vehicle };
 if (_pretty isEqualTo "") then { _pretty = "Véhicule" };

@@ -32,7 +32,7 @@ final class AnalyticsPageAssetTest extends TestCase
 
         foreach ([
             'members_active_total', 'members_registered_in_period', 'audit_actions_in_period',
-            'enlistments_created_in_period', 'forum_topics_in_period', 'forum_posts_in_period',
+            'enlistments_created_in_period',
             'training_enrollments_assigned_in_period', 'training_completions_in_period',
             'total_events', 'distinct_actors', 'events_with_duration', 'avg_duration_seconds',
             'public_views', 'public_duration_avg', 'enlistment_opens', 'enlistment_submits', 'cta_clicks',

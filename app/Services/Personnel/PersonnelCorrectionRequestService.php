@@ -755,7 +755,7 @@ final class PersonnelCorrectionRequestService
                 'type' => 'job_roles',
                 'group' => 'assignment',
                 'span' => 2,
-                'help' => 'Jusqu’à quatre fonctions. Cochez l’emploi principal : il apparaît sur la fiche, l’organigramme et le forum. L’emploi décrit ce que la personne fait, pas un droit d’accès.',
+                'help' => 'Jusqu’à quatre fonctions. Cochez l’emploi principal : il apparaît sur la fiche et l’organigramme. L’emploi décrit ce que la personne fait, pas un droit d’accès.',
             ],
             'weapon_specialty' => ['type' => 'text', 'group' => 'equipment', 'span' => 2],
             'service_branch' => ['type' => 'text', 'group' => 'details'],

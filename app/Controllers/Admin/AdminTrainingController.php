@@ -141,7 +141,35 @@ class AdminTrainingController
             'trainingCanExportFull' => $this->userCanExportFullCourse(),
             'trainingCanDeleteCourse' => $this->userCanDeleteTrainingCourse(),
             'trainingCanEditShowcaseOrCatalog' => $this->userCanManageTrainingCourseEditorially(),
+            'platformCourses' => $this->courseRepository->listPublishedPlatform(),
+            'hiddenPlatformSlugs' => TrainingCourseRepository::hiddenPlatformSlugs($tenantId),
         ]);
+    }
+
+    /** Masque ou réaffiche, pour cette communauté, un parcours fourni par la plateforme. */
+    public function coursePlatformVisibility(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        if (!$this->userCanManageTrainingCourseEditorially()) {
+            throw new \RuntimeException('Accès refusé.', 403);
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $slug = trim((string) $request->input('slug', ''));
+        $hide = (string) $request->input('hidden', '1') === '1';
+        if ($slug === '' || !$this->courseRepository->platformSlugExists($slug)) {
+            Session::flash('error', 'Parcours introuvable.');
+
+            return Response::redirect(training_lms_admin_url('courses'));
+        }
+        TrainingCourseRepository::setPlatformSlugHidden($tenantId, $slug, $hide);
+        Session::flash('success', $hide ? 'Parcours masqué du catalogue et du tableau de bord.' : 'Parcours réaffiché dans le catalogue.');
+
+        return Response::redirect(training_lms_admin_url('courses'));
     }
 
     /** Retrait du catalogue public : passage en visibilité « privé » (le contenu reste dans le studio). */
@@ -219,6 +247,13 @@ class AdminTrainingController
             return Response::redirect(training_lms_admin_url('courses'));
         }
         $this->auditService->logCourseDeleted($tenantId, $userId, $courseId, $snapshot);
+        // Copie d'un parcours plateforme : sans ce masquage, le modèle plateforme reprenait sa place
+        // dans le catalogue et le tableau de bord, comme si la suppression n'avait pas eu lieu.
+        $deletedSlug = (string) ($course['slug'] ?? '');
+        if ($deletedSlug !== '' && (string) ($course['lms_scope'] ?? 'tenant') !== TrainingCourseRepository::LMS_SCOPE_PLATFORM
+            && $this->courseRepository->platformSlugExists($deletedSlug)) {
+            TrainingCourseRepository::setPlatformSlugHidden($tenantId, $deletedSlug, true);
+        }
         Session::flash('success', 'La formation et les données liées (inscriptions, contenu) ont été supprimées.');
 
         return Response::redirect(training_lms_admin_url('courses'));

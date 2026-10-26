@@ -33,12 +33,12 @@ class CfgVehicles {
             class COMSPEC_TowerName {
                 displayName="$STR_COMSPEC_ATAK_CFG_ACB975B116"; tooltip="$STR_COMSPEC_ATAK_CFG_2669F78090";
                 property="COMSPEC_TowerName"; control="Edit"; typeName="STRING"; defaultValue="''";
-                expression="_this setVariable ['COMSPEC_TowerName', _value, true];";
+                expression="_this setVariable ['COMSPEC_TowerName', _value];";
             };
             class COMSPEC_TowerSide {
                 displayName="$STR_COMSPEC_ATAK_CFG_7AB7D995F3"; tooltip="$STR_COMSPEC_ATAK_CFG_357E475CDC";
                 property="COMSPEC_TowerSide"; control="Combo"; typeName="STRING"; defaultValue="''";
-                expression="_this setVariable ['COMSPEC_TowerSide', _value, true];";
+                expression="_this setVariable ['COMSPEC_TowerSide', _value];";
                 class values {
                     class V0 { name="$STR_COMSPEC_ATAK_CFG_A79E887C37"; value=""; default=1; };
                     class V1 { name="BLUFOR"; value="WEST"; };
@@ -50,7 +50,7 @@ class CfgVehicles {
             class COMSPEC_TowerUplink {
                 displayName="$STR_COMSPEC_ATAK_CFG_30DE5E847C"; tooltip="$STR_COMSPEC_ATAK_CFG_DF1600163F";
                 property="COMSPEC_TowerUplink"; control="Combo"; typeName="STRING"; defaultValue="'root'";
-                expression="_this setVariable ['COMSPEC_TowerUplink', _value, true];";
+                expression="_this setVariable ['COMSPEC_TowerUplink', _value];";
                 class values {
                     class V0 { name="$STR_COMSPEC_ATAK_CFG_0167FC858D"; value="root"; default=1; };
                     class V1 { name="$STR_COMSPEC_ATAK_CFG_92D4E717EB"; value="repeater"; };
@@ -61,7 +61,7 @@ class CfgVehicles {
             class COMSPEC_TowerFreq {
                 displayName="$STR_COMSPEC_ATAK_CFG_FREQ_NAME"; tooltip="$STR_COMSPEC_ATAK_CFG_FREQ_TIP";
                 property="COMSPEC_TowerFreq"; control="Combo"; typeName="NUMBER"; defaultValue="0";
-                expression="_this setVariable ['COMSPEC_TowerFreq', _value, true];";
+                expression="_this setVariable ['COMSPEC_TowerFreq', _value];";
                 class values {
                     class V0 { name="$STR_COMSPEC_ATAK_CFG_FREQ_AUTO"; value=0; default=1; };
                     class V1 { name="UHF 400 MHz"; value=400; };
@@ -73,12 +73,12 @@ class CfgVehicles {
             class COMSPEC_TowerOn {
                 displayName="$STR_COMSPEC_ATAK_CFG_A54A861193"; tooltip="$STR_COMSPEC_ATAK_CFG_3C55341417";
                 property="COMSPEC_TowerOn"; control="Checkbox"; typeName="BOOL"; defaultValue="true";
-                expression="_this setVariable ['COMSPEC_TowerOn', _value, true];";
+                expression="_this setVariable ['COMSPEC_TowerOn', _value];";
             };
             class COMSPEC_TowerIndestructible {
                 displayName="$STR_COMSPEC_ATAK_CFG_29CF136691"; tooltip="$STR_COMSPEC_ATAK_CFG_5EE2379472";
                 property="COMSPEC_TowerIndestructible"; control="Checkbox"; typeName="BOOL"; defaultValue="false";
-                expression="_this setVariable ['COMSPEC_TowerIndestructible', _value, true];";
+                expression="_this setVariable ['COMSPEC_TowerIndestructible', _value];";
             };
         };
     };

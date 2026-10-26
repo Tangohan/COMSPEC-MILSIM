@@ -29,13 +29,16 @@ final class ModuleValidatedConditionEvaluator implements ConditionEvaluatorInter
             return false;
         }
 
-        $hasProgress = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'training_progress' LIMIT 1");
-        if (!$hasProgress || !$hasProgress->fetchColumn()) {
+        // « Parcours validé » : le numéro saisi (clé module_id historique) désigne un parcours
+        // (training_courses). Depuis le LMS, training_progress n'a plus ni user_id ni module_id :
+        // on lit l'inscription terminée, comme TrainingEnrollmentRepository::userHasCompletedCourse.
+        // Une erreur SQL refuse la condition au lieu de renvoyer une 500 sur la ressource protégée.
+        try {
+            $stmt = $this->pdo->prepare('SELECT 1 FROM training_enrollments WHERE user_id = ? AND course_id = ? AND status = \'completed\' LIMIT 1');
+            $stmt->execute([$userId, $moduleId]);
+        } catch (\PDOException) {
             return false;
         }
-
-        $stmt = $this->pdo->prepare('SELECT 1 FROM training_progress WHERE user_id = ? AND module_id = ? AND status IN (\'validated\',\'completed\') LIMIT 1');
-        $stmt->execute([$userId, $moduleId]);
 
         return (bool) $stmt->fetchColumn();
     }

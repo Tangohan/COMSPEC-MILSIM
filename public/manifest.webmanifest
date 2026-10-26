@@ -9,15 +9,27 @@
   "lang": "fr",
   "icons": [
     {
-      "src": "assets/images/logo.png",
+      "src": "assets/icons/athena-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/images/logo.png",
+      "src": "assets/icons/athena-512.png",
       "sizes": "512x512",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/athena-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/brand/athena-embleme-blanc.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ]

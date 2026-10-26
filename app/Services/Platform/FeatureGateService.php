@@ -44,12 +44,12 @@ final class FeatureGateService
             return false;
         }
         if ($this->isPastDueWithoutGift($tenant)) {
-            return $feature === 'forum' || $feature === 'documents';
+            return $feature === 'documents';
         }
         $planSlug = $this->effectivePlanSlug($tenant);
         $plan = $this->planRepository->findBySlug($planSlug);
         if (!$plan) {
-            return $feature === 'forum';
+            return false;
         }
         $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
         if (!is_array($features)) {
@@ -73,12 +73,12 @@ final class FeatureGateService
             return false;
         }
         if ($this->isPastDueWithoutGift($tenant)) {
-            return $feature === 'forum' || $feature === 'documents';
+            return $feature === 'documents';
         }
         $planSlug = $this->effectivePlanSlug($tenant);
         $plan = $this->planRepository->findBySlug($planSlug);
         if (!$plan) {
-            return $feature === 'forum';
+            return false;
         }
         $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
         if (!is_array($features)) {
@@ -237,6 +237,10 @@ final class FeatureGateService
             return;
         }
         Session::start();
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            // Session en lecture seule (sondage du jeu) : le dédoublonnage ne serait pas enregistré.
+            return;
+        }
         $dedup = 'quota_soft_block_' . $tenantId . '_' . $feature . '_' . ($status['period_start'] ?? '');
         if (Session::get($dedup)) {
             return;

@@ -41,7 +41,7 @@ final class CommunityOnboardingValidationService
     {
         $moduleLabels = [
             'admin' => 'Administration',
-            'forum' => 'Forum',
+            'moderation' => 'Modération',
             'documents' => 'Documents',
             'training' => 'Formations',
             'personnel' => 'Membres / RH',
@@ -171,6 +171,7 @@ final class CommunityOnboardingValidationService
 
         $normalized = [
             'grade_system_code' => $code,
+            'grades_hidden' => !empty($wizard['grades_hidden']),
             'timezone' => $tz,
             'default_locale' => $locale,
             'orbat_visibility' => $orbat,

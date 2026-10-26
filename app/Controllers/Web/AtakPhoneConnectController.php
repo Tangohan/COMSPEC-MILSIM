@@ -234,7 +234,7 @@ final class AtakPhoneConnectController
         }
         $host = parse_url($raw, PHP_URL_HOST);
         if (!is_string($host) || $host === '') {
-            return 'athena.ttrd.fr/connect';
+            return \App\Support\PortalHost::label('connect');
         }
         $path = (string) (parse_url($raw, PHP_URL_PATH) ?: '/connect');
         $path = rtrim($path, '/');

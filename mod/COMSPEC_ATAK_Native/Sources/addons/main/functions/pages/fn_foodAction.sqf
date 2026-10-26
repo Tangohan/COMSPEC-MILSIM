@@ -46,15 +46,22 @@ switch (_act) do {
     case "order": {
         if ((count _cart) isEqualTo 0) exitWith {};
         private _o = missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
-        if ((_o getOrDefault ["step", ""]) in ["PREP", "FLIGHT"]) exitWith { ["WARNING", "Une commande est déjà en cours", 3, 20] call comspec_atak_native_fnc_notify; };
+        // QUEUED : commande en attente de réseau ; elle ne bloque que pendant le délai de 10 min (pas de verrou éternel sans signal).
+        private _st = _o getOrDefault ["step", ""];
+        if (_st in ["PREP", "FLIGHT"] || {_st isEqualTo "QUEUED" && {time < (missionNamespace getVariable ["COMSPEC_ATAK_FoodNextAt", 0])}}) exitWith { ["WARNING", "Une commande est déjà en cours", 3, 20] call comspec_atak_native_fnc_notify; };
         private _next = missionNamespace getVariable ["COMSPEC_ATAK_FoodNextAt", 0];
         if (time < _next) exitWith { ["WARNING", format ["Prochaine commande possible dans %1 min", ceil ((_next - time) / 60)], 3, 20] call comspec_atak_native_fnc_notify; };
         if ((vehicle player) isNotEqualTo player) exitWith { ["WARNING", "Descendez du véhicule : le drone livre au sol", 3, 20] call comspec_atak_native_fnc_notify; };
         private _items = []; { for "_i" from 1 to _y do { _items pushBack _x; }; } forEach _cart;
         _s set ["foodCart", createHashMap];
         // La commande part par le réseau simulé : sans signal, elle attend.
+        // Verrous posés tout de suite : une commande en attente de réseau en bloque une autre.
+        missionNamespace setVariable ["COMSPEC_ATAK_FoodOrder", createHashMapFromArray [["step", "QUEUED"], ["items", _items]]];
+        missionNamespace setVariable ["COMSPEC_ATAK_FoodNextAt", time + 600];
         [{
             params ["_items"];
+            // Commande en attente remplacée ou déjà lancée entre-temps : ce renvoi tardif ne l'écrase pas.
+            if (((missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap]) getOrDefault ["step", ""]) isNotEqualTo "QUEUED") exitWith {};
             private _prep = 30 + random 30;
             private _fly = 60 + random 90;
             missionNamespace setVariable ["COMSPEC_ATAK_FoodOrder", createHashMapFromArray [["step", "PREP"], ["items", _items], ["eta", time + _prep + _fly], ["launch", time + _prep], ["ref", format ["RX-%1", 1000 + floor random 9000]]]];

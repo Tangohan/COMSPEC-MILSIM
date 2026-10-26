@@ -25,7 +25,7 @@ $kpiMap = [
     'active_30d' => ['label' => 'PRÉSENCE MOY. 30 J', 'tone' => '#0b8a5c'],
     'invites_pending' => ['label' => 'INVITATIONS', 'tone' => '#c98a12'],
     'profiles_incomplete' => ['label' => 'PROFILS À COMPLÉTER', 'tone' => '#c98a12'],
-    'moderation_open' => ['label' => 'INCIDENTS FORUM', 'tone' => '#c72e2e'],
+    'moderation_open' => ['label' => 'SIGNALEMENTS', 'tone' => '#c72e2e'],
 ];
 $seen = 0;
 foreach ($kpisRaw as $kpi) {

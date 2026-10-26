@@ -25,6 +25,9 @@ final class ComspecApiKeyAuth
     /** @var int|null Utilisateur lié à la session jeu acceptée. */
     private static ?int $matchedUserId = null;
 
+    /** @var bool Clé plateforme acceptée pour la requête en cours. */
+    private static bool $matchedPlatformKey = false;
+
     /** @var string|null php://input lu une fois (middleware + contrôleurs). */
     private static ?string $rawJsonCache = null;
 
@@ -33,6 +36,14 @@ final class ComspecApiKeyAuth
 
     /** @var array<string, mixed>|null Config tactique (évite require répété / TypeError si non-array). */
     private static ?array $tacticalConfigCache = null;
+
+    /**
+     * Résultat de requestPresentsValidKey pour la requête en cours (middleware puis authArma) :
+     * empreinte des candidats + état matched* obtenu. Évite de revalider la clé deux fois.
+     *
+     * @var array{key: string, ok: bool, tenant: ?int, steam: ?string, user: ?int, platform: bool}|null
+     */
+    private static ?array $resolvedKeyCache = null;
 
     public static function isAppProduction(): bool
     {
@@ -55,28 +66,79 @@ final class ComspecApiKeyAuth
 
     /**
      * Clé à renvoyer au mod lors d’une liaison réussie pour une communauté.
-     * Préfère la clé générée en admin ; sinon la clé plateforme.
+     * Clé générée en admin ; à défaut, une clé de communauté est générée à la volée.
+     * Jamais la clé plateforme : elle ouvre toutes les communautés (tenant_id lu dans la requête).
+     * Vide si la clé ne peut être ni lue ni générée (l’appelant répond alors 503).
      */
     public static function secretForTenant(int $tenantId): string
     {
-        if ($tenantId > 0) {
-            try {
-                $tenantKey = (new TenantAtakConfigRepository())->getAccessKey($tenantId);
-                if ($tenantKey !== '') {
-                    return $tenantKey;
-                }
-            } catch (\Throwable) {
-                // Fall through to platform secret.
-            }
+        if ($tenantId < 1) {
+            return '';
         }
-
-        return self::expectedSecret();
+        try {
+            // Génération conditionnelle : deux liaisons simultanées reçoivent la même clé.
+            return (new TenantAtakConfigRepository())->ensureAccessKey($tenantId);
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     /** Tenant reconnu via clé de communauté (null si clé plateforme ou échec). */
     public static function matchedTenantId(): ?int
     {
         return self::$matchedTenantId;
+    }
+
+    /** Requête authentifiée par la clé plateforme (X_COMSPEC_KEY / ATAK_INTEL_SECRET). */
+    public static function matchedPlatformKey(): bool
+    {
+        return self::$matchedPlatformKey;
+    }
+
+    /**
+     * Clé plateforme + tenant_id / tenant_slug fournis par le client : refusé par défaut,
+     * sauf si le tenant demandé est ATAK_DEFAULT_TENANT_ID (mono-communauté) ou si
+     * l’exploitant l’autorise explicitement (X_COMSPEC_KEY_ALLOW_TENANT_PARAM=true,
+     * intégrations serveur de confiance uniquement). Sans paramètre de communauté,
+     * la clé plateforme reste acceptée (outils d’exploitation, communauté par défaut).
+     */
+    private static function platformKeyMayUseRequestTenant(): bool
+    {
+        $raw = (string) (($_ENV['X_COMSPEC_KEY_ALLOW_TENANT_PARAM'] ?? null) ?: (getenv('X_COMSPEC_KEY_ALLOW_TENANT_PARAM') ?: ''));
+        if (filter_var($raw, FILTER_VALIDATE_BOOLEAN)) {
+            return true;
+        }
+        $body = self::peekJsonObject();
+        $slugs = [$_GET['tenant_slug'] ?? null, $_POST['tenant_slug'] ?? null, $body['tenant_slug'] ?? null];
+        foreach ($slugs as $slug) {
+            if ($slug === null || $slug === '') {
+                continue;
+            }
+            // Valeur non scalaire (tableau, objet JSON) : communauté choisie par le client, refusée.
+            if (!is_scalar($slug) || trim((string) $slug) !== '') {
+                return false;
+            }
+        }
+        $default = (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID') ?: 0);
+        $ids = [$_GET['tenant_id'] ?? null, $_POST['tenant_id'] ?? null, $body['tenant_id'] ?? null];
+        foreach ($ids as $id) {
+            if ($id === null || $id === '') {
+                continue;
+            }
+            // tenant_id[]=x ou {"tenant_id":[5]} : les contrôleurs font (int) d'un tableau non vide = 1,
+            // ce qui ouvrirait le tenant 1. Toute valeur non scalaire est refusée.
+            if (!is_scalar($id)) {
+                return false;
+            }
+            if ((int) $id < 1) {
+                continue;
+            }
+            if ($default < 1 || (int) $id !== $default) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** Steam porté par la session jeu validée (null si auth hors session jeu ou Steam absent). */
@@ -200,9 +262,11 @@ final class ComspecApiKeyAuth
         self::$matchedTenantId = null;
         self::$matchedSteamId = null;
         self::$matchedUserId = null;
+        self::$matchedPlatformKey = false;
         self::$rawJsonCache = null;
         self::$jsonObjectCache = null;
         self::$tacticalConfigCache = null;
+        self::$resolvedKeyCache = null;
     }
 
     public static function requestPresentsValidKey(): bool
@@ -210,14 +274,58 @@ final class ComspecApiKeyAuth
         self::$matchedTenantId = null;
         self::$matchedSteamId = null;
         self::$matchedUserId = null;
+        self::$matchedPlatformKey = false;
         $candidates = self::presentedAuthCandidates();
         if ($candidates === []) {
             return false;
         }
 
         $secret = self::expectedSecret();
+        // Mêmes candidats déjà validés dans cette requête : on rend le même résultat sans requête SQL.
+        // Clé plateforme : pas de mémoire (dépend des paramètres tenant_* ; contrôle sans SQL de toute façon).
+        $memoKey = hash('sha256', implode("\n", $candidates) . "\n" . $secret);
+        $memo = self::$resolvedKeyCache;
+        if ($memo !== null && !$memo['platform'] && hash_equals($memo['key'], $memoKey)) {
+            self::$matchedTenantId = $memo['tenant'];
+            self::$matchedSteamId = $memo['steam'];
+            self::$matchedUserId = $memo['user'];
+            self::$matchedPlatformKey = $memo['platform'];
+
+            return $memo['ok'];
+        }
+        $ok = self::resolvePresentedCandidates($candidates, $secret);
+        self::$resolvedKeyCache = [
+            'key' => $memoKey,
+            'ok' => $ok,
+            'tenant' => self::$matchedTenantId,
+            'steam' => self::$matchedSteamId,
+            'user' => self::$matchedUserId,
+            'platform' => self::$matchedPlatformKey,
+        ];
+
+        return $ok;
+    }
+
+    /**
+     * @param list<string> $candidates
+     */
+    private static function resolvePresentedCandidates(array $candidates, string $secret): bool
+    {
         foreach ($candidates as $presented) {
             if ($secret !== '' && hash_equals($secret, $presented)) {
+                // Clé plateforme : la communauté ne doit pas être choisie par le client
+                // (elle a été distribuée aux joueurs des communautés sans clé dédiée).
+                if (self::platformKeyMayUseRequestTenant()) {
+                    self::$matchedPlatformKey = true;
+
+                    return true;
+                }
+                continue;
+            }
+
+            // Jeton jeu (64 hex, cas normal de la DLL) : essayé d’abord, sans balayer les clés communauté.
+            $looksLikeGameToken = preg_match('/^[0-9a-f]{64}$/', $presented) === 1;
+            if ($looksLikeGameToken && self::acceptGameSessionToken($presented)) {
                 return true;
             }
 
@@ -232,7 +340,7 @@ final class ComspecApiKeyAuth
                 // Ignore DB errors — try next candidate.
             }
 
-            if (self::acceptGameSessionToken($presented)) {
+            if (!$looksLikeGameToken && self::acceptGameSessionToken($presented)) {
                 return true;
             }
         }

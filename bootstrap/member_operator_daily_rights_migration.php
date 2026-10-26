@@ -7,7 +7,7 @@ use App\Services\Rbac\RolePermissionMatrixCatalog;
 use App\Support\SqlText;
 
 /**
- * Pack Membre / Opérateur : vie courante (forum, opérations en lecture, ATAK personnel, back-office personnel).
+ * Pack Membre / Opérateur : vie courante (opérations en lecture, ATAK personnel, back-office personnel).
  * N’ouvre ni les finances, ni l’administration, ni le renseignement interpersonnel.
  */
 return static function (PDO $pdo): void {

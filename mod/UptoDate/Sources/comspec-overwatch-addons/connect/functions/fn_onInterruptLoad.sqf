@@ -20,7 +20,9 @@ private _H = safezoneH;
 private _h = 0.034 * _H;
 private _y = safezoneY + 0.02 * _H;
 private _right = safezoneX + _W - 0.012 * _W;
-private _fontH = (((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.85);
+// Police tirée de la hauteur de la barre (et non des unités d'interface) : avec la taille d'interface NORMALE ou plus
+// grande, l'ancienne police débordait de la barre (« Liaison OK » coupé, boutons écrasés).
+private _fontH = _h * 0.6;
 
 private _wChip = 0.092 * _W;
 private _wDiag = 0.125 * _W;
@@ -71,6 +73,7 @@ _chip ctrlSetStructuredText parseText ((format [
     [_col] call _hex,
     (_label call comspec_overwatch_connect_fnc_tr)
 ]) call comspec_overwatch_connect_fnc_tr);
+_chip ctrlSetFontHeight (_h * 0.5);
 _chip ctrlSetPosition [_x0 + _pad + 0.003 * _W + _gap, _y - 0.002 * _H, _wChip, _h + 0.004 * _H];
 _chip ctrlCommit 0;
 _chip ctrlSetTooltip ((format ["Liaison Athena : %1", _link]) call comspec_overwatch_connect_fnc_tr);

@@ -20,17 +20,61 @@ class GradeRepository
         $this->pdo = Database::getPdo();
     }
 
+    /** Mémoïsé pour la durée de la requête (fromClause() l’appelle à chaque lecture). */
+    private static ?string $tableNameCache = null;
+
     private function tableName(): string
     {
-        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'grade_system_id' LIMIT 1");
-        return ($stmt && $stmt->fetch()) ? 'grades' : 'grades_referentiel';
+        if (self::$tableNameCache === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME = 'grade_system_id' LIMIT 1");
+            self::$tableNameCache = ($stmt && $stmt->fetch()) ? 'grades' : 'grades_referentiel';
+        }
+
+        return self::$tableNameCache;
+    }
+
+    /** Table réelle du référentiel (grades après bascule, grades_referentiel avant). */
+    public function table(): string
+    {
+        return $this->tableName();
+    }
+
+    private static ?bool $ownerColumnCache = null;
+
+    /** Colonne des grades sur mesure (migration custom_grade_systems) présente ? */
+    public function supportsCustomSystems(): bool
+    {
+        if (self::$ownerColumnCache === null) {
+            try {
+                $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grade_systems' AND COLUMN_NAME = 'owner_tenant_id' LIMIT 1");
+                self::$ownerColumnCache = (bool) ($stmt && $stmt->fetch());
+            } catch (\Throwable) {
+                self::$ownerColumnCache = false;
+            }
+        }
+
+        return self::$ownerColumnCache;
     }
 
     private function selectColumns(): string
     {
+        $owner = $this->supportsCustomSystems() ? 'gs.owner_tenant_id AS system_owner_tenant_id' : 'NULL AS system_owner_tenant_id';
+
         return 'g.id, g.grade_system_id, g.grade_category_id, g.code, g.label_short, g.label_long, g.label_otan, g.sort_order, g.is_commissioned, g.is_active,
-            gs.code AS system_code, gs.country_code, gs.format_type AS system_format_type,
-            gc.code AS category_code, gc.label AS category_label';
+            gs.code AS system_code, gs.label AS system_label, gs.country_code, gs.format_type AS system_format_type, ' . $owner . ',
+            gc.code AS category_code, gc.label AS category_label, gc.sort_order AS category_sort';
+    }
+
+    /** Filtre SQL : catalogue partagé seul, ou catalogue + systèmes sur mesure d’une communauté. */
+    private function sharedOrOwnedClause(int $tenantId = 0): string
+    {
+        if (!$this->supportsCustomSystems()) {
+            return '';
+        }
+
+        return $tenantId > 0
+            ? ' AND (gs.owner_tenant_id IS NULL OR gs.owner_tenant_id = ' . $tenantId . ')'
+            : ' AND gs.owner_tenant_id IS NULL';
     }
 
     private function fromClause(): string
@@ -44,10 +88,11 @@ class GradeRepository
      * Liste tous les grades actifs (tous systèmes), pour compatibilité avec listForTenant.
      * @return list<array<string, mixed>>
      */
-    public function listActive(): array
+    public function listActive(int $tenantId = 0): array
     {
+        // Les systèmes sur mesure d’une communauté ne sortent jamais chez une autre.
         $stmt = $this->pdo->query(
-            'SELECT ' . $this->selectColumns() . ' FROM ' . $this->fromClause() . ' WHERE g.is_active = 1 ORDER BY gs.country_code ASC, g.sort_order ASC, g.id ASC'
+            'SELECT ' . $this->selectColumns() . ' FROM ' . $this->fromClause() . ' WHERE g.is_active = 1' . $this->sharedOrOwnedClause($tenantId) . ' ORDER BY gs.country_code ASC, g.sort_order ASC, g.id ASC'
         );
         if ($stmt === false) {
             return [];
@@ -110,6 +155,10 @@ class GradeRepository
         $settings = $tenantRepo->getSettings($tenantId);
         $code = isset($settings['grade_system_code']) ? trim((string) $settings['grade_system_code']) : '';
         $rows = $code === '' ? $this->listActive() : $this->listBySystemCode($code);
+        // Système sur mesure d’une autre communauté (réglage recopié, communauté dupliquée…) : jamais affiché ici.
+        if ($rows !== [] && ($owner = (int) ($rows[0]['system_owner_tenant_id'] ?? 0)) > 0 && $owner !== $tenantId) {
+            $rows = $this->listActive();
+        }
 
         return $this->applyTenantOverrides($tenantId, $rows);
     }
@@ -134,7 +183,7 @@ class GradeRepository
      */
     public function listActiveForDoctrinePicker(int $tenantId = 0): array
     {
-        $rows = $this->listActive();
+        $rows = $this->listActive($tenantId);
         if ($tenantId < 1) {
             return $rows;
         }

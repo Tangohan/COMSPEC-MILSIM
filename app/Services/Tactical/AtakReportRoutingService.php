@@ -163,8 +163,8 @@ final class AtakReportRoutingService
                 'map_pos_x' => $report['pos_x'] ?? null,
                 'map_pos_y' => $report['pos_y'] ?? null,
                 // Une alerte de diffusion qui reste affichée une semaine devient un
-                // décor : elle expire avec la pertinence du compte rendu.
-                'expires_at' => date('Y-m-d H:i:s', time() + 7200),
+                // décor : elle expire avec la pertinence du compte rendu (en UTC, comparé à NOW()).
+                'expires_at' => gmdate('Y-m-d H:i:s', time() + 7200),
             ]);
 
             $this->routing->markNotified($reportId);

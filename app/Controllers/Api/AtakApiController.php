@@ -20,6 +20,7 @@ use App\Repositories\FireTeamRepository;
 use App\Support\AtakPlanAccess;
 use App\Support\OperatorPortraits;
 use App\Support\BriefingSlideGameImage;
+use App\Support\AtakGameImage;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
@@ -54,6 +55,7 @@ use App\Support\AtakPlayNight;
 use App\Support\ReconCapturedAt;
 use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
+use App\Support\GameApiResponseCompactor;
 use App\Support\GroupMessageParser;
 use App\Support\MpMessageParser;
 use App\Support\OperatorTacticalIdentity;
@@ -77,6 +79,9 @@ class AtakApiController
 
     /** @var array<string, mixed>|null Cache php://input (une seule lecture par requête). */
     private ?array $jsonBodyCache = null;
+
+    /** @var array<string, list<array<string, mixed>>> Unités lues pour les alias d’ordres (ordersIndex). */
+    private array $orderAliasUnitsCache = [];
 
     private AtakArmaWriteGuard $armaGuard;
     private RoleplaySimulationService $roleplaySim;
@@ -340,6 +345,8 @@ class AtakApiController
         }
         $tenantId = $r;
         $rows = $this->briefingSlideRepository->listActiveForTenant($tenantId);
+        // COMSPEC Link 2.0.95+ : copie .paa (texture Arma) à la place de la copie JPEG.
+        $paa = AtakGameImage::clientAcceptsPaa();
         $out = [];
         foreach ($rows as $row) {
             $imagePath = trim((string) ($row['image_path'] ?? ''));
@@ -358,7 +365,8 @@ class AtakApiController
                 'title' => trim((string) ($row['title'] ?? '')),
                 'detail' => trim((string) ($row['detail_text'] ?? '')),
                 'sort_order' => (int) ($row['sort_order'] ?? 0),
-                'image_url' => url(BriefingSlideGameImage::path($imagePath)),
+                'image_url' => ($paa ? AtakGameImage::urlFor(url(ltrim($imagePath, '/')), AtakGameImage::FIT_SLIDE) : null)
+                    ?? url(BriefingSlideGameImage::path($imagePath)),
                 'updated_at' => (string) ($row['updated_at'] ?? $row['created_at'] ?? ''),
                 'operation' => $operation,
             ];
@@ -631,7 +639,9 @@ class AtakApiController
 
         // Portrait opérateur seulement (règle du site), en vignette JPEG carrée lisible par Arma.
         // Sans image, la raison part au jeu (avatar_status) et dans le journal du serveur.
-        $portrait = OperatorPortraits::gameThumbnail($tenantId, $userId);
+        $portrait = AtakGameImage::clientAcceptsPaa()
+            ? OperatorPortraits::gamePaa($tenantId, $userId)
+            : OperatorPortraits::gameThumbnail($tenantId, $userId);
         if (!in_array($portrait['status'], ['ok', 'no_portrait'], true)) {
             error_log(sprintf('[atak/player-profile] portrait opérateur indisponible pour le jeu (user=%d, tenant=%d) : %s', $userId, $tenantId, $portrait['status']));
         }
@@ -971,9 +981,24 @@ class AtakApiController
     /**
      * Liaison Arma sans code court : le Steam ID du joueur doit déjà être enregistré sur le compte Athena.
      * POST JSON { steam_uid } — même forme de réponse que gameLinkRedeem.
+     *
+     * Sécurité : un SteamID64 est public (profil, liste des joueurs) ; il ne prouve pas la possession
+     * du compte. Renvoyer la clé de communauté sur cette seule base revient à la donner à n’importe qui.
+     * Désactivé par défaut : seul le code de liaison à usage unique (/game-link/redeem) délivre une clé.
+     * ATAK_GAME_LINK_BY_STEAM=1 ne doit être posé que sur un portail privé (réseau de confiance).
      */
     public function gameLinkBySteam(Request $request, array $params = []): Response
     {
+        $bySteamFlag = strtolower(trim((string) (($_ENV['ATAK_GAME_LINK_BY_STEAM'] ?? null) ?: (getenv('ATAK_GAME_LINK_BY_STEAM') ?: ''))));
+        if (!in_array($bySteamFlag, ['1', 'true', 'on', 'yes'], true)) {
+            // « unauthorized » : le mod affiche alors « … ou utilisez un code » (server_outdated).
+            return Response::json([
+                'error' => 'unauthorized',
+                'reason' => 'steam_link_disabled',
+                'message' => 'La liaison par Steam seul est désactivée. Générez un code de connexion en jeu sur Athena.',
+            ], 403);
+        }
+
         $body = $this->jsonBody($request);
         $steamUid = SteamId::normalize((string) ($body['steam_uid'] ?? $body['player_uid'] ?? $body['steam_id'] ?? $request->input('steam_uid') ?? ''));
         if ($steamUid === null) {
@@ -6713,6 +6738,21 @@ class AtakApiController
         }
         $upsert = $this->atak->upsertUnitPosition($tenantId, $mapId, $callSign, $posX, $posY, $heading, $role, json_encode($extra));
         if (!$isProxyTerrain) {
+            // Marqueurs lus une seule fois pour les deux contrôles (PO puis points suivis : ensembles disjoints).
+            // Position 0,0 / invalide : les services sortent avant toute lecture, ne rien charger.
+            $markerRowsPos = null;
+            // Contacts IA / relayés : les deux services sortent aussi avant toute lecture.
+            $extraArrPos = is_array($extra) ? $extra : [];
+            if (is_finite($posX) && is_finite($posY) && (abs($posX) >= 0.5 || abs($posY) >= 0.5)
+                && !AtakDataRepository::isProxyContactExtra($extraArrPos)
+                && !AtakDataRepository::callSignLooksLikeProxy($callSign)
+                && !AtakDataRepository::shouldHideEnemyAiContact($extraArrPos, $callSign)) {
+                try {
+                    $markerRowsPos = $this->atak->getMarkers($tenantId, $mapId);
+                } catch (\Throwable) {
+                    $markerRowsPos = null;
+                }
+            }
             try {
                 $this->poArrivalService()->confirmFromOperatorPosition(
                     $tenantId,
@@ -6720,7 +6760,8 @@ class AtakApiController
                     $callSign,
                     $posX,
                     $posY,
-                    is_array($extra) ? $extra : []
+                    is_array($extra) ? $extra : [],
+                    $markerRowsPos
                 );
                 try {
                     $this->markerDetectionService()->confirmFromOperatorPosition(
@@ -6729,7 +6770,8 @@ class AtakApiController
                         $callSign,
                         $posX,
                         $posY,
-                        is_array($extra) ? $extra : []
+                        is_array($extra) ? $extra : [],
+                        $markerRowsPos
                     );
                 } catch (\Throwable) {
                 }
@@ -6810,11 +6852,19 @@ class AtakApiController
                     is_array($extra) ? $extra : [],
                     (string) $callSign
                 );
-                if (!$hideEnemyAi) {
+                $clientKeyPos = $this->activityLog->clientKeyFromRequest();
+                // Session déjà à jour (même indicatif, < 20 s) : ni journal ni métadonnées à construire.
+                if (!$hideEnemyAi && !$this->activityLog->positionSessionFresh(
+                    $tenantId,
+                    $mapId,
+                    $clientKeyPos,
+                    (string) $callSign,
+                    !empty($upsert['created'])
+                )) {
                     $this->activityLog->recordFromPosition(
                         $tenantId,
                         $mapId,
-                        $this->activityLog->clientKeyFromRequest(),
+                        $clientKeyPos,
                         (string) $callSign,
                         !empty($upsert['created']),
                         $this->buildActivityMeta(
@@ -6834,7 +6884,7 @@ class AtakApiController
         static $lastReplayLog = [];
         $key = $missionId . ':' . $callSign;
         $now = time();
-        if (!isset($lastReplayLog[$key]) || ($now - $lastReplayLog[$key]) >= 2) {
+        if ((!isset($lastReplayLog[$key]) || ($now - $lastReplayLog[$key]) >= 2) && $this->replayStepDue($key, $now)) {
             $lastReplayLog[$key] = $now;
             try {
                 $replay = \App\Core\Container::get(\App\Services\Replay\ReplayService::class);
@@ -6846,6 +6896,27 @@ class AtakApiController
             }
         }
         return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Pas de 2 s du replay par indicatif, entre requêtes : sous PHP-FPM le `static` ne vit que le temps
+     * d’une requête. Fichier témoin par indicatif (mtime) ; en cas d’erreur disque, on journalise comme avant.
+     */
+    private function replayStepDue(string $key, int $now): bool
+    {
+        $dir = base_path('storage/cache/replay-step');
+        $path = $dir . '/' . md5($key) . '.t';
+        $mtime = @filemtime($path);
+        if ($mtime !== false && ($now - $mtime) < 2) {
+            return false;
+        }
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return true;
+        }
+        @touch($path, $now);
+        \App\Support\StaleFileSweeper::maybe($dir, '*.t', 86400);
+
+        return true;
     }
 
     /**
@@ -7332,6 +7403,71 @@ class AtakApiController
     }
 
     /**
+     * App « Admin » de l'ATAK natif (COMSPEC Link « GameAdmin.Fleet ») : parc ATAK de la communauté pour le gestionnaire
+     * connecté en jeu par sa propre session. {q, offset} -> {role, total, rows}. Joueur sans droit : role "none", aucune fiche.
+     */
+    public function gameAdminFleet(Request $request, array $params = []): Response
+    {
+        $ctx = $this->gameAdminCaller($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, , $role] = $ctx;
+        if ($role === null) {
+            return Response::json(['ok' => true, 'role' => 'none', 'total' => 0, 'rows' => []]);
+        }
+        $body = $this->jsonBody($request);
+        $fleet = (new \App\Services\Atak\AtakGameAdminService())->fleet(
+            $tenantId,
+            mb_substr(trim((string) ($body['q'] ?? '')), 0, 80),
+            max(0, (int) ($body['offset'] ?? 0))
+        );
+
+        return Response::json(['ok' => true, 'role' => $role] + $fleet);
+    }
+
+    /** App « Admin » de l'ATAK natif (COMSPEC Link « GameAdmin.Action ») : {action, terminal_id | block_id, ...}. */
+    public function gameAdminAction(Request $request, array $params = []): Response
+    {
+        $ctx = $this->gameAdminCaller($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $user, $role] = $ctx;
+        if ($role === null) {
+            return Response::json(['ok' => false, 'error' => 'forbidden', 'message' => 'Réservé à la gestion de la communauté.'], 403);
+        }
+        $body = $this->jsonBody($request);
+        $name = trim((string) ($user['callsign'] ?? '')) ?: trim((string) ($user['display_name'] ?? '')) ?: 'Gestion';
+        $out = (new \App\Services\Atak\AtakGameAdminService())->act($tenantId, $role, [(int) $user['id'], $name], (string) ($body['action'] ?? ''), $body);
+
+        return Response::json($out, $out['ok'] ? 200 : 422);
+    }
+
+    /**
+     * Gestionnaire qui appelle depuis le jeu : il faut sa session de jeu (la clé du serveur ne dit pas qui joue).
+     *
+     * @return array{0: int, 1: array<string, mixed>, 2: ?string}|Response
+     */
+    private function gameAdminCaller(Request $request): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $userId = ComspecApiKeyAuth::matchedUserId();
+        $user = $userId !== null ? $this->userRepository->findById($userId) : null;
+        if ($user === null) {
+            return Response::json(['ok' => false, 'error' => 'session_required', 'message' => 'Reliez votre compte Athena en jeu.'], 403);
+        }
+
+        return [$r, $user, (new \App\Services\Atak\AtakGameAdminService())->role($r, $userId, $user)];
+    }
+
+    /**
      * Joueur qui appelle : compte de la session de jeu, sinon Steam du corps.
      *
      * @return array{0: int, 1: ?int, 2: ?string}|Response
@@ -7653,9 +7789,11 @@ class AtakApiController
         } catch (\Throwable) {
         }
         $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
-        $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts);
+        // Une seule lecture des unités pour la réconciliation et les blessés (sondé toutes les 8 s par joueur).
+        $mapUnits = $this->atak->getUnits($tenantId, $mapId);
+        $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts, $mapUnits);
         $alerts = MedicalAlertParser::collapseToHighestSeverityPerCallSign($alerts);
-        $criticalUnits = $this->atak->getUnitsWithCriticalHealth($tenantId, $mapId);
+        $criticalUnits = $this->atak->getUnitsWithCriticalHealth($tenantId, $mapId, $mapUnits);
         $emergencyCount = 0;
         foreach ($alerts as $a) {
             if (($a['severity'] ?? '') === 'critical' && empty($a['triage']['is_resolved'])) {
@@ -7959,6 +8097,20 @@ class AtakApiController
     /**
      * Modules pont ATAK Enhanced / cTab (activables par communauté).
      */
+    /**
+     * GET /api/atak/data-flows : données que le jeu remonte à Athena, choisies par la communauté (COMSPEC Link 2.0.94+,
+     * toutes les 30 s). Réglage : back-office, Configuration ATAK > Données remontées.
+     */
+    public function dataFlows(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+
+        return Response::json((new \App\Services\Tactical\AtakDataFlowsService())->get($r));
+    }
+
     public function modModules(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -8300,13 +8452,13 @@ class AtakApiController
      * @param list<array<string, mixed>> $alerts
      * @return list<array<string, mixed>>
      */
-    private function reconcileMedicalAlertsWithUnitHealth(int $tenantId, int $mapId, array $alerts): array
+    private function reconcileMedicalAlertsWithUnitHealth(int $tenantId, int $mapId, array $alerts, ?array $units = null): array
     {
         if ($alerts === []) {
             return $alerts;
         }
 
-        $unitsByCallSign = $this->buildUnitHealthByCallSign($tenantId, $mapId);
+        $unitsByCallSign = $this->buildUnitHealthByCallSign($tenantId, $mapId, $units);
         if ($unitsByCallSign === []) {
             return $alerts;
         }
@@ -8483,10 +8635,10 @@ class AtakApiController
     /**
      * @return array<string, array{health: string, status: string}>
      */
-    private function buildUnitHealthByCallSign(int $tenantId, int $mapId): array
+    private function buildUnitHealthByCallSign(int $tenantId, int $mapId, ?array $units = null): array
     {
         $out = [];
-        foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+        foreach ($units ?? $this->atak->getUnits($tenantId, $mapId) as $unit) {
             if (!is_array($unit)) {
                 continue;
             }
@@ -9464,6 +9616,7 @@ class AtakApiController
      */
     public function ordersIndex(Request $request, array $params = []): Response
     {
+        $this->orderAliasUnitsCache = [];
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
@@ -9587,17 +9740,21 @@ class AtakApiController
         }
 
         $serverTime = date('Y-m-d H:i:s');
-        $cursor = $maxUpdated !== '' ? $maxUpdated : ($isDelta ? $since : $serverTime);
+        // COMSPEC Link (poll jeu toutes les 8 s) : il ne lit ni server_time ni cursor (SimplifyOrdersJson).
+        // Corps stable tant que les ordres ne changent pas → l’ETag de GameApiResponseCompactor peut renvoyer 304.
+        // L’heure serveur passe alors en en-tête X-Server-Time.
+        $stableForGame = $forGame && GameApiResponseCompactor::isGameClient($request->userAgent());
+        $cursor = $maxUpdated !== '' ? $maxUpdated : ($isDelta ? $since : ($stableForGame ? null : $serverTime));
         $orders = $this->applyIntelScramble($request, $r, $mapId, 'order', $orders);
 
-        return Response::json([
+        $payload = [
             'ok' => true,
             'mapId' => $mapId,
             'orders' => $orders,
             'delta' => $isDelta,
             'since' => $isDelta ? $since : null,
             'created_after' => $createdAfter !== '' ? $createdAfter : null,
-            'server_time' => $serverTime,
+            'server_time' => $stableForGame ? null : $serverTime,
             'cursor' => $cursor,
             'counts' => $counts,
             'canIssue' => $this->canIssueOrdersFromWeb(),
@@ -9611,7 +9768,13 @@ class AtakApiController
                 'custom_types' => $this->orderTypeRepository?->tablesReady() ?? false,
             ],
             'intel_view' => $this->resolveIntelView($request, $r, $mapId),
-        ]);
+        ];
+        $response = Response::json($payload);
+        if ($stableForGame) {
+            $response->header('X-Server-Time', $serverTime);
+        }
+
+        return $response;
     }
 
     /**
@@ -10545,7 +10708,7 @@ class AtakApiController
             }
         } elseif ($targetType === 'ally') {
             $found = null;
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 if (!$this->unitIsAllyAi($unit)) {
                     continue;
                 }
@@ -11008,6 +11171,22 @@ class AtakApiController
     }
 
     /**
+     * Unités de la carte pour le calcul des alias d’ordres : lues une seule fois par appel de ordersIndex
+     * (au lieu d’une lecture complète, avec passage hors ligne des obsolètes, pour chaque ordre).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function orderAliasUnits(int $tenantId, int $mapId): array
+    {
+        $key = $tenantId . ':' . $mapId;
+        if (!isset($this->orderAliasUnitsCache[$key])) {
+            $this->orderAliasUnitsCache[$key] = $this->atak->getUnits($tenantId, $mapId);
+        }
+
+        return $this->orderAliasUnitsCache[$key];
+    }
+
+    /**
      * Alias matchables pour un ordre (callsign, MID, steam, user:id, fire team…).
      *
      * @param array<string, mixed> $row
@@ -11056,7 +11235,7 @@ class AtakApiController
         } elseif ($targetType === 'solo') {
             $cs = $targetRef !== '' ? $targetRef : trim((string) ($row['target'] ?? ''));
             $add($cs);
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 if (strcasecmp((string) ($unit['call_sign'] ?? ''), $cs) !== 0) {
                     continue;
                 }
@@ -11158,7 +11337,7 @@ class AtakApiController
             $add('steam:' . $steam);
             $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam)
                 ?? $this->userRepository->findBySteamId($steam);
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 $extra = $this->parseUnitExtra($unit);
                 $unitSteam = SteamId::normalize((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? ''));
                 if ($unitSteam === null || $unitSteam !== $steam) {
@@ -11999,8 +12178,15 @@ class AtakApiController
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
-        $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION) ?: 'jpg';
-        $filename = date('YmdHis') . '-' . ($_FILES['photo']['name'] ?: 'photo.' . $ext);
+        // Extension tirée du contenu réel (jpg/png/webp) — jamais du nom client (dépôt de .php sous public/).
+        $ext = \App\Support\TerrainUploadedImage::detectExtension((string) ($_FILES['photo']['tmp_name'] ?? ''));
+        if ($ext === null) {
+            return Response::json([
+                'error' => 'invalid_image',
+                'message' => 'Le fichier reçu n’est pas une image (JPEG, PNG ou WebP attendu).',
+            ], 400);
+        }
+        $filename = date('YmdHis') . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
         $path = $dir . '/' . $filename;
         if (!move_uploaded_file($_FILES['photo']['tmp_name'], $path)) {
             return Response::json([
@@ -12684,8 +12870,14 @@ class AtakApiController
                 return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
             }
 
-            $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
-            $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
+            // Extension tirée du contenu réel (jpg/png/webp) — jamais du nom client (dépôt de .php sous public/).
+            $ext = \App\Support\TerrainUploadedImage::detectExtension((string) ($file['tmp_name'] ?? ''));
+            if ($ext === null) {
+                return Response::json([
+                    'error' => 'invalid_image',
+                    'message' => 'Le fichier reçu n’est pas une image (JPEG, PNG ou WebP attendu).',
+                ], 400);
+            }
             // Capture 4K en PNG (~10 Mo) : 1920 px, JPEG 80 avant rangement.
             if (\App\Support\StoredPhotoCompressor::compressUploadToJpeg((string) $file['tmp_name'])) {
                 $ext = 'jpg';

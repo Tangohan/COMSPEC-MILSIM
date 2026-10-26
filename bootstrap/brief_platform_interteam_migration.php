@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Paramètres plateforme pour le brief, clés section communauté par tenant, tables missions inter-équipes.
+ * Table platform_settings et tables missions inter-équipes.
  * Idempotent — appelée depuis run-migrations.php.
  */
 return function (PDO $pdo): void {
@@ -18,55 +18,6 @@ return function (PDO $pdo): void {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
         echo "Table platform_settings créée.\n";
-    }
-
-    $insPs = $pdo->prepare(
-        'INSERT INTO platform_settings (setting_key, value, updated_at) VALUES (?, ?, NOW())
-         ON DUPLICATE KEY UPDATE setting_key = setting_key'
-    );
-    $insPs->execute(['brief_member_access', '1']);
-    $insPs->execute(['brief_member_closed_message', '']);
-
-    $truthy = static function (mixed $raw): bool {
-        if ($raw === null || $raw === '') {
-            return false;
-        }
-        $v = strtolower(trim((string) $raw));
-
-        return in_array($v, ['1', 'true', 'yes', 'on'], true);
-    };
-
-    try {
-        $stmt = $pdo->query("SELECT tenant_id, value FROM site_settings WHERE `key` = 'forum_enabled'");
-        if ($stmt) {
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $tid = (int) ($row['tenant_id'] ?? 0);
-                if ($tid <= 0) {
-                    continue;
-                }
-                if ($truthy($row['value'] ?? '')) {
-                    continue;
-                }
-                $up = $pdo->prepare(
-                    'INSERT INTO site_settings (tenant_id, `key`, `value`, updated_at) VALUES (?, ?, ?, NOW())
-                     ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), updated_at = NOW()'
-                );
-                $up->execute([$tid, 'forum_community_section_enabled', '0']);
-                $chk = $pdo->prepare(
-                    'SELECT 1 FROM site_settings WHERE tenant_id = ? AND `key` = \'forum_community_section_notice\' LIMIT 1'
-                );
-                $chk->execute([$tid]);
-                if (!$chk->fetch()) {
-                    $notice = 'Cet espace est indisponible ici pour le moment. Pour les échanges d’unité, suivez les canaux indiqués par votre encadrement.';
-                    $insN = $pdo->prepare(
-                        'INSERT INTO site_settings (tenant_id, `key`, `value`, updated_at) VALUES (?, \'forum_community_section_notice\', ?, NOW())'
-                    );
-                    $insN->execute([$tid, $notice]);
-                }
-            }
-        }
-    } catch (\Throwable) {
-        // site_settings peut être absente en environnement minimal
     }
 
     $hasM = $pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'interteam_missions' LIMIT 1");
@@ -111,28 +62,5 @@ return function (PDO $pdo): void {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
         echo "Table interteam_mission_participants créée.\n";
-    }
-
-    $hasG = $pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'interteam_mission_forum_grants' LIMIT 1");
-    if (!$hasG || !$hasG->fetch()) {
-        $pdo->exec(
-            'CREATE TABLE interteam_mission_forum_grants (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            mission_id BIGINT UNSIGNED NOT NULL,
-            grant_type VARCHAR(16) NOT NULL,
-            resource_id INT UNSIGNED NOT NULL,
-            home_tenant_id INT UNSIGNED NOT NULL,
-            consumer_tenant_id INT UNSIGNED NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY interteam_grant_unique (mission_id, grant_type, resource_id, consumer_tenant_id),
-            KEY interteam_grant_consumer (consumer_tenant_id, mission_id),
-            KEY interteam_grant_home (home_tenant_id),
-            CONSTRAINT interteam_grant_mission_fk FOREIGN KEY (mission_id) REFERENCES interteam_missions (id) ON DELETE CASCADE,
-            CONSTRAINT interteam_grant_home_tenant_fk FOREIGN KEY (home_tenant_id) REFERENCES tenants (id) ON DELETE CASCADE,
-            CONSTRAINT interteam_grant_consumer_tenant_fk FOREIGN KEY (consumer_tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-        );
-        echo "Table interteam_mission_forum_grants créée.\n";
     }
 };

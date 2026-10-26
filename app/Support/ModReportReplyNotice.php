@@ -9,7 +9,7 @@ use App\Repositories\AtakModReportRepository;
 /**
  * Fenêtre « réponse à votre signalement » montrée au joueur à sa connexion sur Athena.
  *
- * Source : les notifications forum_notifications de type atak_mod_report_reply, créées seulement quand
+ * Source : les notifications member_notifications de type atak_mod_report_reply, créées seulement quand
  * l'exploitation coche « Notifier sur Athena » (réponse) ou prévient le joueur dans une action groupée « corrigé ».
  * Une réponse s'affiche tant que sa notification n'est pas lue ; « Compris » la marque lue.
  *
@@ -121,7 +121,7 @@ final class ModReportReplyNotice
     /**
      * Identifiants des rapports cités par les notifications (pour relire leur statut actuel).
      *
-     * @param list<array<string, mixed>> $rows lignes forum_notifications
+     * @param list<array<string, mixed>> $rows lignes member_notifications
      * @return list<int>
      */
     public static function reportIds(array $rows): array
@@ -141,7 +141,7 @@ final class ModReportReplyNotice
     /**
      * Réponses à afficher, dans l'ordre des notifications (plus récentes d'abord).
      *
-     * @param list<array<string, mixed>> $rows lignes forum_notifications (id, payload_json, created_at)
+     * @param list<array<string, mixed>> $rows lignes member_notifications (id, payload_json, created_at)
      * @param array<int, string> $statuses id de rapport → statut actuel
      * @return list<array{id:int, report:string, auto:bool, message:string, date:string, status:string, status_label:string, status_tone:string}>
      */

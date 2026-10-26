@@ -15,10 +15,14 @@ if (((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOr
 if (!_silent && {!isNil "comspec_overwatch_connect_fnc_playAtakVibrate"}) then { [0.7] call comspec_overwatch_connect_fnc_playAtakVibrate; };
 private _c = _d displayCtrl 88509;
 if ((uiNamespace getVariable ["COMSPEC_ATAK_Vibrating", -1]) >= 0) exitWith { true };
-private _base = ctrlPosition _c;
+// [position de repos, dernière position posée par la vibration] : si la coque a bougé entre deux pas (glisser,
+// orientation, bascule mini/plein par fn_layoutApply), la nouvelle position devient la position de repos.
+private _st = [ctrlPosition _c, ctrlPosition _c];
 private _h = [{
     params ["_args", "_handle"];
-    _args params ["_c", "_base", "_end"];
+    _args params ["_c", "_st", "_end"];
+    if (!isNull _c && {(ctrlPosition _c) isNotEqualTo (_st select 1)}) then { _st set [0, ctrlPosition _c]; };
+    private _base = _st select 0;
     if (isNull _c || {diag_tickTime > _end}) exitWith {
         if (!isNull _c) then { _c ctrlSetPosition _base; _c ctrlCommit 0; };
         uiNamespace setVariable ["COMSPEC_ATAK_Vibrating", -1];
@@ -28,6 +32,7 @@ private _h = [{
     private _b = (random 2 - 1) * pixelH * 2;
     _c ctrlSetPosition [(_base select 0) + _a, (_base select 1) + _b, _base select 2, _base select 3];
     _c ctrlCommit 0;
-}, 0.02, [_c, _base, diag_tickTime + 0.6]] call CBA_fnc_addPerFrameHandler;
+    _st set [1, ctrlPosition _c];
+}, 0.02, [_c, _st, diag_tickTime + 0.6]] call CBA_fnc_addPerFrameHandler;
 uiNamespace setVariable ["COMSPEC_ATAK_Vibrating", _h];
 true

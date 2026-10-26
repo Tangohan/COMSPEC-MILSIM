@@ -27,6 +27,7 @@
       ["candidates", [source, méthode]] [[unité, distance, joignable, raison]...] du camp, triés par distance
       ["send", [source, méthode, uid | "ALL"]]  partage ; renvoie le nombre d'ATAK servis
       ["revoke", source]                retire tous les accès (poseur ou porteur seulement)
+      ["srvAcc", [source, entrées]]     serveur : fusionne les entrées (vide = tout retirer) et publie la liste
       ["recv", [netId source, nom, méthode, qui]]  événement comspec_atak_native_camShare reçu : notification
 */
 params [["_mode", ""], ["_a", objNull], ["_b", objNull]];
@@ -139,7 +140,9 @@ switch (_mode) do {
         private _ids = if (_all) then { ["ALL"] } else { _targets apply { [_x] call _uidOf } };
         _acc = _acc select { !((_x param [0, ""]) in _ids) };
         { _acc pushBack [_x, _m, _me, _at]; } forEach _ids;
-        _src setVariable ["COMSPEC_ATAK_ShareAcc", _acc, true];
+        // Copie locale immédiate ; le serveur fusionne et publie (deux partages simultanés ne s'écrasent plus).
+        _src setVariable ["COMSPEC_ATAK_ShareAcc", _acc];
+        ["srvAcc", [_src, _ids apply { [_x, _m, _me, _at] }]] remoteExecCall ["comspec_atak_native_fnc_camShare", 2];
         if (_all) then { _targets = _cands apply { _x select 0 }; };
         if ((count _targets) > 0) then { ["comspec_atak_native_camShare", [netId _src, [_src] call _nameOf, _m, _me], _targets] call CBA_fnc_targetEvent; };
         playSound "ClickSoft";
@@ -149,8 +152,22 @@ switch (_mode) do {
     };
     case "revoke": {
         if !(["owner", _a] call _fn) exitWith { false };
-        _a setVariable ["COMSPEC_ATAK_ShareAcc", [], true];
+        _a setVariable ["COMSPEC_ATAK_ShareAcc", []];
+        ["srvAcc", [_a, []]] remoteExecCall ["comspec_atak_native_fnc_camShare", 2];
         ["INFO", format ["%1 : tous les accès partagés retirés", [_a] call _nameOf], 3, 30] call comspec_atak_native_fnc_notify;
+        true
+    };
+    // Serveur : seul à modifier et publier COMSPEC_ATAK_ShareAcc. Entrées vides : tous les accès retirés.
+    case "srvAcc": {
+        if (!isServer) exitWith { false };
+        _a params [["_src", objNull, [objNull]], ["_add", [], [[]]]];
+        if (isNull _src) exitWith { false };
+        private _acc = if (_add isEqualTo []) then { [] } else {
+            private _new = _add select { _x isEqualType [] && {(count _x) isEqualTo 4} && {(_x select 0) isEqualType ""} };
+            private _ids = _new apply { _x select 0 };
+            ((["access", _src] call _fn) select { !((_x param [0, ""]) in _ids) }) + _new
+        };
+        _src setVariable ["COMSPEC_ATAK_ShareAcc", _acc, true];
         true
     };
     case "recv": {

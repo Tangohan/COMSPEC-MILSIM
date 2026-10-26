@@ -6,6 +6,7 @@ namespace App\Services\Courrier;
 
 use App\Repositories\Courrier\DocumentPresetRepository;
 use App\Repositories\Courrier\DocumentTemplateRepository;
+use App\Support\SafeHtml;
 
 /**
  * Assemble le document final : preset (mise en page) + body rendu pour aperçu HTML.
@@ -33,6 +34,9 @@ class DocumentBuilderService
         $body = $this->renderService->renderBody($body, array_merge($context, [
             'document' => array_merge(is_array($context['document'] ?? null) ? $context['document'] : [], $document),
         ]));
+        // Corps saisi par le rédacteur + valeurs substituées : nettoyage DOM (liste blanche) avant affichage
+        // aux validateurs / destinataires. Les marqueurs et la signature sont ajoutés ensuite par le serveur.
+        $body = SafeHtml::clean($body, SafeHtml::documentProfile());
         $document['body_rendered'] = $body;
         $document = $this->applyOrgLetterhead($document, $context);
         $body = $this->redactionService->applyVisualMarkers($body);

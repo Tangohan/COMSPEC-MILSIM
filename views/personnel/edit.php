@@ -15,10 +15,7 @@ $currentJobRoles = is_array($currentJobRoles ?? null) ? $currentJobRoles : [];
 $jobRoleSlugToId = $jobRoleSlugToId ?? [];
 $maxJobRolesPerMember = (int) ($maxJobRolesPerMember ?? 3);
 $maxUnitAssignmentsPerMember = (int) ($maxUnitAssignmentsPerMember ?? 8);
-$forumQuickMode = $forumQuickMode ?? '';
-$forumFocus = $forumFocus ?? '';
-$forumPreHideLevel = !empty($forumPreHideLevel);
-$forumOrgRoleChoices = is_array($forumOrgRoleChoices ?? null) ? $forumOrgRoleChoices : [];
+$displayRoleChoices = is_array($displayRoleChoices ?? null) ? $displayRoleChoices : [];
 $memberCanChooseDisplayRole = !empty($memberCanChooseDisplayRole);
 $roleplayFollowupConfig = is_array($roleplayFollowupConfig ?? null) ? $roleplayFollowupConfig : ['enabled' => false, 'stages' => [], 'recruitment_tracks' => []];
 $rpTutorChoices = is_array($rpTutorChoices ?? null) ? $rpTutorChoices : [];
@@ -186,7 +183,7 @@ $editNavGroups = [
     [
         'title' => 'Affichage & suite',
         'items' => [
-            ['id' => 'forum-community-settings', 'label' => 'Forum &amp; fiche', 'show' => true],
+            ['id' => 'edit-affichage', 'label' => 'Affichage de la fiche', 'show' => true],
             ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true, 'locked' => $memberLocked],
             ['id' => 'edit-visibilite', 'label' => 'Visibilité', 'show' => !empty($canManageVisibility)],
             ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => !$memberLocked],
@@ -203,14 +200,6 @@ foreach ($editNavGroups as $grp) {
     }
 }
 $editDefaultTab = $editNavFlat[0]['id'] ?? '';
-if (($forumQuickMode !== '' || $forumFocus !== '' || $forumPreHideLevel) && $isMe) {
-    foreach ($editNavFlat as $ni) {
-        if (($ni['id'] ?? '') === 'forum-community-settings') {
-            $editDefaultTab = 'forum-community-settings';
-            break;
-        }
-    }
-}
 $editValidTabIds = implode(',', array_map(
     static fn ($ni) => "'" . addslashes((string) $ni['id']) . "'",
     $editNavFlat
@@ -424,7 +413,7 @@ $editValidTabIds = implode(',', array_map(
             <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
               <label class="flex items-start gap-3 text-sm text-slate-800">
                 <input type="checkbox" name="hide_personal_info" value="1" class="mt-1 rounded border-slate-300 text-amber-900" <?= !empty($d['hide_personal_info']) ? 'checked' : '' ?>>
-                <span><strong>Masquer le fuseau et la langue</strong> sur la fiche publique. Seuls les <strong>administrateurs</strong> (accès fiche personnel) et les <strong>modérateurs forum</strong> pourront les consulter. Le prénom, le nom et la présentation du personnage restent visibles comme le reste du dossier de jeu.</span>
+                <span><strong>Masquer le fuseau et la langue</strong> sur la fiche publique. Seuls les <strong>administrateurs</strong> (accès fiche personnel) et les <strong>modérateurs des signalements</strong> pourront les consulter. Le prénom, le nom et la présentation du personnage restent visibles comme le reste du dossier de jeu.</span>
               </label>
             </div>
           </div>
@@ -445,12 +434,12 @@ $editValidTabIds = implode(',', array_map(
                 <div>
                   <label for="rp_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
                   <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars($knownValue($up['first_name'] ?? '', $p['first_name'] ?? '', $targetUser['first_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-500">Prénom du personnage — identité unique (dossier, annuaire, forum).</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Prénom du personnage — identité unique (dossier, annuaire).</p>
                 </div>
                 <div>
                   <label for="rp_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
                   <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars($knownValue($up['last_name'] ?? '', $p['last_name'] ?? '', $targetUser['last_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-500">Nom du personnage — utilisé partout (dossier, annuaire, forum).</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Nom du personnage — utilisé partout (dossier, annuaire).</p>
                 </div>
                 <div class="md:col-span-2">
                   <label for="rp_bio" class="mb-1 block text-xs font-bold text-slate-600">Présentation du personnage</label>
@@ -819,49 +808,20 @@ $editValidTabIds = implode(',', array_map(
         <?php endif; ?>
         </div>
 
-        <div x-cloak x-show="['forum-community-settings','edit-equipement','edit-visibilite','edit-notes','edit-historique'].includes(tab)">
-        <section id="forum-community-settings" x-show="tab === 'forum-community-settings'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
+        <div x-cloak x-show="['edit-affichage','edit-equipement','edit-visibilite','edit-notes','edit-historique'].includes(tab)">
+        <section id="edit-affichage" x-show="tab === 'edit-affichage'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
           <div class="border-b border-violet-100 bg-violet-50/60 px-6 py-5">
-            <h2 class="text-base font-black tracking-tight text-violet-950">Forum &amp; fiche</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-violet-900/85">Éléments visibles sur vos messages et sur votre fiche pour les autres membres.</p>
+            <h2 class="text-base font-black tracking-tight text-violet-950">Affichage de la fiche</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-violet-900/85">Éléments visibles sur votre fiche pour les autres membres.</p>
           </div>
           <div class="space-y-6 p-6">
-            <div class="grid gap-4 md:grid-cols-2">
-              <div>
-                <label class="mb-1 block text-xs font-bold text-slate-600">Identité forum</label>
-                <input type="hidden" name="forum_alias" value="">
-                <input type="hidden" name="forum_label_mode" value="character_name">
-                <p class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">Le forum affiche le <strong>prénom + nom</strong> du personnage. Plus de pseudo séparé.</p>
-              </div>
-            </div>
-            <?php if (!empty($forumOrgRoleChoices)): ?>
-            <div class="md:col-span-2">
-              <label for="forum_visible_role_id" class="mb-1 block text-xs font-bold text-slate-600">Rôle affiché sur le forum (carte auteur)</label>
-              <select name="forum_visible_role_id" id="forum_visible_role_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <?php
-                $fvRole = isset($d['forum_visible_role_id']) && $d['forum_visible_role_id'] !== null && $d['forum_visible_role_id'] !== ''
-                    ? (int) $d['forum_visible_role_id'] : 0;
-                ?>
-                <option value=""<?= $fvRole === 0 ? ' selected' : '' ?>>Rôle principal du compte (défaut)</option>
-                <?php foreach ($forumOrgRoleChoices as $fro) {
-                    $oid = (int) ($fro['id'] ?? 0);
-                    $oname = trim((string) ($fro['name'] ?? ''));
-                    if ($oid < 1) {
-                        continue;
-                    }
-                    echo '<option value="' . $oid . '"' . ($fvRole === $oid ? ' selected' : '') . '>' . htmlspecialchars($oname !== '' ? $oname : ('#' . $oid)) . '</option>';
-                } ?>
-              </select>
-              <p class="mt-1 text-[11px] text-slate-500">Parmi vos rôles réellement attribués (communauté et, le cas échéant, plateforme), choisissez l’intitulé affiché sur la carte auteur ; sinon le rôle principal s’applique.</p>
-            </div>
-            <?php endif; ?>
-            <?php if ($isMe && $memberCanChooseDisplayRole && !empty($forumOrgRoleChoices)): ?>
+            <?php if ($isMe && $memberCanChooseDisplayRole && !empty($displayRoleChoices)): ?>
             <?php $prefRole = (int) ($targetUser['preferred_display_role_id'] ?? 0); ?>
             <div class="md:col-span-2 rounded-xl border border-sky-100 bg-sky-50/50 px-4 py-3">
-              <label for="preferred_display_role_id" class="mb-1 block text-xs font-bold text-slate-700">Rôle affiché en priorité (portail et forum)</label>
+              <label for="preferred_display_role_id" class="mb-1 block text-xs font-bold text-slate-700">Rôle affiché en priorité sur le portail</label>
               <select name="preferred_display_role_id" id="preferred_display_role_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
                 <option value=""<?= $prefRole === 0 ? ' selected' : '' ?>>Automatique (recommandé)</option>
-                <?php foreach ($forumOrgRoleChoices as $fro) {
+                <?php foreach ($displayRoleChoices as $fro) {
                     $oid = (int) ($fro['id'] ?? 0);
                     $oname = trim((string) ($fro['name'] ?? ''));
                     if ($oid < 1) {
@@ -873,16 +833,6 @@ $editValidTabIds = implode(',', array_map(
               <p class="mt-1 text-[11px] text-slate-600">Votre organisation autorise ce choix : il prime sur l’ordre habituel lorsqu’il est défini.</p>
             </div>
             <?php endif; ?>
-            <div>
-              <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Afficher sur le forum (carte auteur)</p>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_matricule_forum" value="1" <?= !empty($d['show_matricule_forum']) ? 'checked' : '' ?>> Matricule</label>
-                <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_grade_forum" value="1" <?= !empty($d['show_grade_forum']) ? 'checked' : '' ?>> Grade</label>
-                <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_unit_forum" value="1" <?= !empty($d['show_unit_forum']) ? 'checked' : '' ?>> Unité / rôle</label>
-                <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="show_bio_forum" value="1" <?= !empty($d['show_bio_forum']) ? 'checked' : '' ?>> Présentation du personnage</label>
-                <label class="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-700"><input type="checkbox" name="hide_forum_level" id="hide_forum_level" value="1" <?= (!empty($d['hide_forum_level']) || ($forumPreHideLevel && $isMe)) ? 'checked' : '' ?>> Masquer le niveau forum (LVL)</label>
-              </div>
-            </div>
             <div>
               <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Fiche personnelle (autres membres)</p>
               <input type="hidden" name="fiche_show_email_to_others" value="0">
@@ -897,30 +847,6 @@ $editValidTabIds = implode(',', array_map(
             </label>
           </div>
         </section>
-        <?php if (($forumQuickMode !== '' || $forumFocus !== '' || $forumPreHideLevel) && $isMe): ?>
-        <script>
-        (function () {
-          function go() {
-            var mode = <?= json_encode($forumQuickMode) ?>;
-            var focus = <?= json_encode($forumFocus) ?>;
-            var sel = document.getElementById('forum_label_mode');
-            if (mode && sel) { sel.value = mode; }
-            var sec = document.getElementById('forum-community-settings');
-            if (focus === 'label' && sel) {
-              sel.focus();
-              sec && sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } else if (focus === 'hide_level') {
-              var h = document.getElementById('hide_forum_level');
-              h && h.closest('label') && h.closest('label').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else if (mode && sec) {
-              sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }
-          if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
-          else go();
-        })();
-        </script>
-        <?php endif; ?>
 
         <section id="edit-equipement" x-show="tab === 'edit-equipement'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
@@ -1080,7 +1006,7 @@ $editValidTabIds = implode(',', array_map(
 
     <?php if (!$matriculeDisplay): ?>
     <div class="pd-matricule">
-      <p><strong>Matricule interne</strong> — attribue un identifiant unique au dossier (organigramme, courriers, forum).</p>
+      <p><strong>Matricule interne</strong> — attribue un identifiant unique au dossier (organigramme, courriers).</p>
       <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/generate-matricule')) ?>">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="return_to" value="edit">

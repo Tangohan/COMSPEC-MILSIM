@@ -19,9 +19,17 @@ final class AtakTranslationTemplate
     public const CATEGORIES = 'mod/COMSPEC_ATAK_Native/localisation/template/categories.json';
     /** Clés des stringtables (noms d'objets, modules Eden/Zeus de l'ATAK, du SSE et d'Overwatch connect) ; facultatif. */
     public const STRINGTABLE = 'mod/COMSPEC_ATAK_Native/localisation/template/stringtable.json';
+    /**
+     * Phrases du mod SSE absentes du téléphone (tools/i18n_sse_catalog.py) : elles rejoignent le même
+     * dictionnaire, car l'écran SSE demande sa traduction au téléphone quand celui-ci est chargé.
+     */
+    public const SSE = 'mod/COMSPEC_ATAK_Native/localisation/template/sse.json';
 
     /** @var array<string, array<string, true>> clés des phrases par empreinte du modèle */
     private static array $keySets = [];
+
+    /** @var array<string, array{categories: array<string, array{fr: string, en: string}>, place: array<string, array{0: string, 1: string}>, extra: list<array{0: string, 1: string}>}> */
+    private static array $sse = [];
 
     private const LINE = '/\[\s*"((?:[^"]|"")*)"\s*,\s*"((?:[^"]|"")*)"\s*(?:,\s*"((?:[^"]|"")*)"\s*)?\]/u';
 
@@ -32,8 +40,19 @@ final class AtakTranslationTemplate
     {
         $path = self::path($root);
         $raw = is_file($path) ? (string) file_get_contents($path) : '';
+        $out = self::parse($raw);
+        $seen = [];
+        foreach ($out as [$fr]) {
+            $seen[$fr] = true;
+        }
+        foreach (self::sseData($root)['extra'] as [$fr, $en]) {
+            if ($fr !== '' && !isset($seen[$fr])) {
+                $seen[$fr] = true;
+                $out[] = [$fr, $en];
+            }
+        }
 
-        return self::parse($raw);
+        return $out;
     }
 
     /**
@@ -76,12 +95,18 @@ final class AtakTranslationTemplate
     public static function catalog(?string $root = null): array
     {
         $cats = self::categoryData($root);
+        $sse = self::sseData($root);
         $out = [];
         foreach (self::entries($root) as [$fr, $en]) {
             $h = self::keyHash($fr);
             $c = $cats['strings'][$h] ?? null;
             $cat = is_array($c) && is_string($c[0] ?? null) ? $c[0] : 'other';
             $file = is_array($c) && is_string($c[1] ?? null) ? $c[1] : '';
+            $screen = $sse['place'][$h] ?? null;
+            if (is_array($screen)) {
+                $cat = $screen[0];
+                $file = $screen[1];
+            }
             $out[] = [$h, $fr, $en, $cat, $file];
         }
         $labels = [];
@@ -89,6 +114,9 @@ final class AtakTranslationTemplate
             if (is_string($id) && is_array($l)) {
                 $labels[$id] = ['fr' => (string) ($l['fr'] ?? $id), 'en' => (string) ($l['en'] ?? $id)];
             }
+        }
+        foreach ($sse['categories'] as $id => $l) {
+            $labels[$id] = $l;
         }
         if (!isset($labels['other'])) {
             $labels['other'] = ['fr' => 'Autres', 'en' => 'Other'];
@@ -154,10 +182,12 @@ final class AtakTranslationTemplate
             return 'none';
         }
 
-        $cat = rtrim($root ?? base_path(), '/') . '/' . self::CATEGORIES;
-        $st = rtrim($root ?? base_path(), '/') . '/' . self::STRINGTABLE;
+        $base = rtrim($root ?? base_path(), '/');
+        $cat = $base . '/' . self::CATEGORIES;
+        $st = $base . '/' . self::STRINGTABLE;
+        $sse = $base . '/' . self::SSE;
 
-        return substr(md5((string) md5_file($path) . (is_file($cat) ? (string) md5_file($cat) : '') . (is_file($st) ? (string) md5_file($st) : '')), 0, 16);
+        return substr(md5((string) md5_file($path) . (is_file($cat) ? (string) md5_file($cat) : '') . (is_file($st) ? (string) md5_file($st) : '') . (is_file($sse) ? (string) md5_file($sse) : '')), 0, 16);
     }
 
     /** Configuration du mod qui déclare les langues livrées avec l'ATAK (CfgComspecLanguages). */
@@ -191,6 +221,41 @@ final class AtakTranslationTemplate
         }
 
         return $out;
+    }
+
+    /**
+     * @return array{categories: array<string, array{fr: string, en: string}>, place: array<string, array{0: string, 1: string}>, extra: list<array{0: string, 1: string}>}
+     */
+    private static function sseData(?string $root): array
+    {
+        $key = $root ?? '';
+        if (isset(self::$sse[$key])) {
+            return self::$sse[$key];
+        }
+        $path = rtrim($root ?? base_path(), '/') . '/' . self::SSE;
+        $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+        $categories = [];
+        foreach (is_array($data['categories'] ?? null) ? $data['categories'] : [] as $id => $label) {
+            if (is_string($id) && is_array($label)) {
+                $categories[$id] = ['fr' => (string) ($label['fr'] ?? $id), 'en' => (string) ($label['en'] ?? $id)];
+            }
+        }
+        $place = [];
+        foreach (is_array($data['place'] ?? null) ? $data['place'] : [] as $hash => $row) {
+            if (is_string($hash) && is_array($row) && is_string($row[0] ?? null) && is_string($row[1] ?? null)) {
+                $place[$hash] = [$row[0], $row[1]];
+            }
+        }
+        $extra = [];
+        foreach (is_array($data['extra'] ?? null) ? $data['extra'] : [] as $row) {
+            if (is_array($row) && is_string($row[0] ?? null) && $row[0] !== '') {
+                $extra[] = [$row[0], is_string($row[1] ?? null) ? $row[1] : ''];
+            }
+        }
+        $parsed = ['categories' => $categories, 'place' => $place, 'extra' => $extra];
+        self::$sse = [$key => $parsed];
+
+        return $parsed;
     }
 
     private static function path(?string $root): string

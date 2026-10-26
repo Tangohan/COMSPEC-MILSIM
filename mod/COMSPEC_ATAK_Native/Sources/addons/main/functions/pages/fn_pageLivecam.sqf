@@ -293,7 +293,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
     if ((_st getOrDefault ["activePage", ""]) isNotEqualTo "LIVECAM") exitWith {};
     private _l = ["eval", objectFromNetId (_st getOrDefault ["livecamTarget", ""])] call comspec_atak_native_fnc_feedLink;
     _args set [0, _l get "drop"];
-    if ((_l get "tier") isNotEqualTo _tier) then {
+    // Pas de redessin pendant RENOMMER : il effaçait le nom en cours de saisie (palier repris à la fin du renommage).
+    if ((_l get "tier") isNotEqualTo _tier && {!(_st getOrDefault ["livecamRename", false])}) then {
         _args set [1, _l get "tier"];
         // Pas de notification ici : le changement de palier est déjà annoncé par la boucle du Live cam (fn_videoLink "adapt").
         [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;

@@ -35,9 +35,11 @@
   margin-right: auto;
   padding-left: 16px;
   padding-right: 16px;
+  /* Respiration sous la barre du haut : le bandeau ne colle plus à l’en-tête. */
+  padding-top: 20px;
 }
 @media (min-width: 640px) {
-  .personnel-file--public { padding-left: 24px; padding-right: 24px; }
+  .personnel-file--public { padding-left: 24px; padding-right: 24px; padding-top: 28px; }
 }
 @media (min-width: 768px) {
   .personnel-file--public { padding-left: 32px; padding-right: 32px; }

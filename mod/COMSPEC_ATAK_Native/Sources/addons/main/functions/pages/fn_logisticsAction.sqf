@@ -126,7 +126,8 @@ switch (_act) do {
         _pos = [_pos select 0, _pos select 1, 0];
         missionNamespace setVariable ["COMSPEC_ATAK_LogiLastAt", time];
         private _uid = getPlayerUID player;
-        private _id = format ["LG%1-%2", 100 + floor random 900, _uid select [((count _uid) - 3) max 0]];
+        // Id tiré de l'horloge (une demande par joueur toutes les 20 s au plus) : plus de collision au hasard.
+        private _id = format ["LG%1-%2", (floor _now) mod 100000, _uid select [((count _uid) - 3) max 0]];
         private _req = createHashMapFromArray [
             ["id", _id], ["uid", _uid], ["cs", call _me], ["side", str side group player], ["cat", _cat], ["label", _label],
             ["items", _items], ["box", _box], ["qty", _f getOrDefault ["qty", "2"]], ["mode", _f getOrDefault ["mode", "PICKUP"]],
@@ -225,6 +226,8 @@ switch (_act) do {
         switch (_op) do {
             case "NEW": {
                 private _r = createHashMapFromArray _p;
+                // Demande déjà connue (renvoi après coupure réseau) : on garde son statut et son historique.
+                if ((_r getOrDefault ["id", ""]) in _reqs) exitWith {};
                 _r set ["recvAt", time];
                 _reqs set [_r get "id", _r];
                 if ((_r get "uid") isNotEqualTo _mine && {_phone}) then {

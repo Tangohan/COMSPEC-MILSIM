@@ -173,7 +173,7 @@ switch (_act) do {
         };
         if (_style isNotEqualTo "jpc") then {
             profileNamespace setVariable ["COMSPEC_ATAK_CarryStyle", "jpc"];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
         };
         if !(call _usable) exitWith {
             ["INFO", "Tablette sur le JPC : il faut un gilet et un terminal ATAK, à pied", 4, 20] call comspec_atak_native_fnc_notify;

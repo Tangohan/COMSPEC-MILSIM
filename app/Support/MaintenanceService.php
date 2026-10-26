@@ -131,7 +131,7 @@ final class MaintenanceService
     }
 
     /**
-     * Accepte les préfixes saisis avec ou sans /public (ex. /public/forum → /forum).
+     * Accepte les préfixes saisis avec ou sans /public (ex. /public/documents → /documents).
      */
     private function normalizeRoutePrefix(string $raw): string
     {

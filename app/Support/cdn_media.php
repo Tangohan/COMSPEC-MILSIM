@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 if (!function_exists('cdn_libraries_config')) {
     /**
-     * @return array{version?: string, defaults?: list<string>, defaults_forum?: list<string>, packs?: array<string, mixed>}
+     * @return array{version?: string, defaults?: list<string>, packs?: array<string, mixed>}
      */
     function cdn_libraries_config(): array
     {
@@ -40,11 +40,7 @@ if (!function_exists('cdn_resolve_packs')) {
         }
 
         if ($requested === null || $requested === '') {
-            if ($preset === 'forum') {
-                $requested = $cfg['defaults_forum'] ?? ['emoji', 'gif', 'flags'];
-            } else {
-                $requested = $cfg['defaults'] ?? [];
-            }
+            $requested = $cfg['defaults'] ?? [];
         }
 
         if (is_string($requested)) {

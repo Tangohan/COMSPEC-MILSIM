@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Monitoring;
 
 use App\Repositories\AtakModReportRepository;
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 
@@ -34,7 +34,7 @@ final class AtakModReportReplyService
      */
     public function __construct(
         private AtakModReportRepository $reports,
-        private ?ForumNotificationRepository $notifications = null,
+        private ?MemberNotificationRepository $notifications = null,
         ?\Closure $sendMail = null
     ) {
         $this->sendMail = $sendMail ?? static function (string $to, array $vars, ?int $tenantId, array $summary): bool {
@@ -226,7 +226,7 @@ final class AtakModReportReplyService
             return false;
         }
         try {
-            $repo = $this->notifications ?? new ForumNotificationRepository();
+            $repo = $this->notifications ?? new MemberNotificationRepository();
             if (!$repo->tableExists()) {
                 return false;
             }

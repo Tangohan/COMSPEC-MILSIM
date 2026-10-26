@@ -44,8 +44,9 @@ if (_isContainer) then {
         };
     } forEach _visited;
     if (!_circular) then {
-        // Copie du chemin courant : les frères ne s'infectent pas mutuellement
-        _visited = +_visited;
+        // Copie superficielle du chemin courant : les frères ne s'infectent pas mutuellement, et les ancêtres restent
+        // les mêmes références (isEqualRef), sans recopier toute la fiche à chaque nœud.
+        _visited = _visited apply { _x };
         _visited pushBack _value;
     };
 };

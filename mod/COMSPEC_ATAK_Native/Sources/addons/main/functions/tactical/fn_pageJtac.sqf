@@ -248,7 +248,7 @@ switch (_tab) do {
         };
         (["jIp"] call _fld) params ["_v1", "_k1"];
         _rows pushBack ["line", "1", "IP / BP", _v1, _k1, "jIp", "nom du point initial", "mono"];
-        _rows pushBack ["line", "2", "Cap", _ln select 1, "auto", "", "posez l'IP", "mono"];
+        _rows pushBack ["line", "2", "Cap magnétique", _ln select 1, "auto", "", "posez l'IP", "mono"];
         _rows pushBack ["line", "3", "Distance", _ln select 2, "auto", "", "posez l'IP", "mono"];
         _rows pushBack ["line", "4", "Altitude cible", _ln select 3, "auto", "", "verrouillez la cible", "mono"];
         (["j5"] call _fld) params ["_v5", "_k5"];
@@ -278,6 +278,23 @@ switch (_tab) do {
         private _miss = _b get "missing";
         if (_miss isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.85' color='%1'>Il manque : %2.</t>", _amber, _miss]]; };
         _rows pushBack ["big", [[["TRANSMETTRE LE 9-LINE", "RETRANSMETTRE (CORRECTION)"] select (_hasM && {_stM in [1, 2]}), ["brief"] call _act, "green", _miss isEqualTo "", "L'équipage relira les lignes 4, 6 et les restrictions"]]];
+        // Outil carte IP → cible (cap magnétique, distance, altitude : fn_jtacTool) et 9-LINE sur un autre écran : page
+        // Athena /9-line (QR code fixe de l'adresse de production, tools/gen_remote_qr.py), sur le vrai téléphone ou dans
+        // une seconde fenêtre du PC.
+        _rows pushBack ["buttons", [
+            ["OUTIL CARTE IP → CIBLE", { ["MAP"] call comspec_atak_native_fnc_navigate; [{ ["IPTGT"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, false, true, "Clic sur l'IP puis sur la cible : cap magnétique, distance, altitude, repris ici"],
+            ["OUVRIR LA PAGE 9-LINE", {
+                private _url = "https://athena-comspec.eu/public/9-line";
+                private _r = (["COMSPECATAKNativeExtension", "COMSPECExtension"] select ([] call comspec_atak_native_fnc_bridge)) callExtension ["OpenAthenaLink", [_url]];
+                if (_r isEqualType []) then { _r = _r param [0, ""]; };
+                if ((_r select [0, 2]) isNotEqualTo "OK") then { ["INFO", format ["Ouvrez %1 dans votre navigateur", _url], 6, 30] call comspec_atak_native_fnc_notify; };
+            }, false, true, "Ouvre le 9-LINE dans votre navigateur (seconde fenêtre, second écran)"]
+        ]];
+        _rows append [
+            ["section", "9-LINE sur un autre écran", "Scannez avec votre vrai téléphone, connecté à votre compte Athena : le dernier 9-LINE transmis s'affiche en grand, avec un calculateur IP → cible."],
+            ["image", "\z\comspec_atak_native\addons\main\data\nineline_qr_ca.paa"],
+            ["text", "<t size='0.85' color='#8a9a93'>https://athena-comspec.eu/public/9-line</t>"]
+        ];
     };
     case "CTRL": {
         if (!_hasM) exitWith {

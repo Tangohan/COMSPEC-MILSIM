@@ -83,7 +83,16 @@ private _applyAlly = {
         [_targets select 0] call comspec_overwatch_connect_fnc_allyTrackConfigure;
     };
     {
-        [_x, _on] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+        [_x, _on] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 2];
+        // Serveur seul : lui seul diffuse les variables publiques et COMSPEC_AllyTrackNetIds (sinon N machines x N envois).
+        // Copie locale (non publique) pour le rapport immédiat ci-dessous, comme fn_allyTrackConfigure.
+        if (!isServer) then {
+            private _atl = missionNamespace getVariable ["COMSPEC_AllyTrackUnits", []];
+            if (!(_atl isEqualType [])) then { _atl = []; };
+            if (_on) then { _atl pushBackUnique _x; } else { _atl = _atl - [_x]; };
+            missionNamespace setVariable ["COMSPEC_AllyTrackUnits", _atl, false];
+            _x setVariable ["COMSPEC_AllyTrack", _on, false];
+        };
         if (_on) then {
             _x setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
             [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;

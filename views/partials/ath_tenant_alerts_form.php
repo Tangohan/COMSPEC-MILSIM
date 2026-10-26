@@ -108,7 +108,7 @@ $iconSvg = [
                     </label>
                     <label class="bo-ta2__field" for="ta-cta-url">
                         <span class="bo-ta2__label">Lien du bouton</span>
-                        <input id="ta-cta-url" type="text" name="cta_url" value="<?= $h((string) ($row['cta_url'] ?? '')) ?>" placeholder="Page de l’événement, du forum…">
+                        <input id="ta-cta-url" type="text" name="cta_url" value="<?= $h((string) ($row['cta_url'] ?? '')) ?>" placeholder="Page de l’événement, d’une formation…">
                     </label>
                 </div>
             </section>

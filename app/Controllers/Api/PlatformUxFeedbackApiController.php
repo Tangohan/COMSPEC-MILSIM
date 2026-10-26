@@ -40,7 +40,7 @@ final class PlatformUxFeedbackApiController
         if (!$this->feedbackRepository->isReady()) {
             return ApiResponder::success(['ready' => false, 'rating' => null, 'survey_done' => false]);
         }
-        $pageKey = $this->normalizePageKey((string) $request->query('page_key', ''));
+        $pageKey = $this->normalizePageKey($request->queryString('page_key', ''));
         if ($pageKey === '') {
             return ApiResponder::error('validation_failed', 'page_key requis.', 422);
         }

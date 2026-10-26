@@ -308,6 +308,9 @@ $tabs = [
   <?php endif; ?>
 </section>
 
+<!-- =========================================================== DONNÉES REMONTÉES -->
+<?php $baseUrl = url(''); require __DIR__ . '/_data_flows.php'; ?>
+
 <!-- =========================================================== MODULES DU PONT -->
 <?php
 $moduleGroups = [

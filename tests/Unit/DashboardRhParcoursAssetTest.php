@@ -22,10 +22,8 @@ final class DashboardRhParcoursAssetTest extends TestCase
         self::assertStringNotContainsString('dashboard_member_rh.php', $cc);
         self::assertStringNotContainsString("['show_offers'] = false", $cc);
         $requirePos = strpos($cc, "dashboard_rh_parcours.php");
-        $channelsPos = strpos($cc, 'Mes salons suivis');
         self::assertNotFalse($requirePos);
-        self::assertNotFalse($channelsPos);
-        self::assertGreaterThan($channelsPos, $requirePos);
+        self::assertStringNotContainsString('Mes salons suivis', $cc);
 
         self::assertStringContainsString('data-rh-go="absence"', $view);
         self::assertStringContainsString('data-rh-go="elevation"', $view);

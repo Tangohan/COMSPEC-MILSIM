@@ -47,10 +47,9 @@ switch (_act) do {
     case "connect": {
         private _o = _arg;
         if (isNull _o || {isNil { _o getVariable "COMSPEC_ATAK_Data" }}) exitWith { false };
-        if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { ["ERROR", "Il faut un téléphone ATAK pour extraire les données", 4, 30] call comspec_atak_native_fnc_notify; hint (("Il faut un téléphone ATAK pour extraire les données.") call comspec_atak_native_fnc_tr); false };
+        if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { ["ERROR", "Il faut un téléphone ATAK pour extraire les données", 4, 30] call comspec_atak_native_fnc_notify; false };
         if ((missionNamespace getVariable ["comspec_atak_native_data_cable", false]) && {!("COMSPEC_ATAK_DataCable" in (items player))}) exitWith {
             ["ERROR", "Câble DL-7 absent de votre équipement", 4, 30] call comspec_atak_native_fnc_notify;
-            hint (("Câble de données DL-7 absent de votre équipement.") call comspec_atak_native_fnc_tr);
             false
         };
         if ((player distance _o) > _len + 0.5) exitWith { ["WARNING", format ["Trop loin : le câble fait %1 m", _len], 3, 20] call comspec_atak_native_fnc_notify; false };

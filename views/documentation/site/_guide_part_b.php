@@ -3,7 +3,7 @@
     <p class="site-docs__lead">
         Cette famille d’écrans rassemble tout ce qui décrit <strong>qui compose votre communauté</strong> : l’annuaire des membres, la fiche personnelle
         de chacun, l’ordre de bataille (ORBAT) qui organise les postes, et les engagements visibles sur le mur opérationnel. C’est le référentiel humain
-        auquel se raccrochent le forum, les formations, les documents et les événements dès qu’il faut savoir « qui est qui » et « qui fait quoi ».
+        auquel se raccrochent les formations, les documents et les événements dès qu’il faut savoir « qui est qui » et « qui fait quoi ».
     </p>
 
     <h3>Présentation générale</h3>
@@ -11,7 +11,7 @@
         L’<strong>annuaire</strong> liste les membres de votre organisation avec un niveau de détail qui dépend de vos habilitations : certains voient
         une fiche courte (nom d’usage, affectation, grade), d’autres accèdent à des blocs plus complets (spécialités, historique, informations
         administratives). L’annuaire n’est pas un simple carnet d’adresses : c’est la porte d’entrée vers chaque <strong>fiche personnel</strong>, qui
-        centralise l’essentiel d’un membre au même endroit plutôt que de disperser l’information entre forum, messages et tableurs externes.
+        centralise l’essentiel d’un membre au même endroit plutôt que de disperser l’information entre messages et tableurs externes.
     </p>
     <p>
         <strong>Ma fiche</strong> est la vue personnelle de votre propre dossier : c’est l’endroit où vous complétez vous-même vos informations,
@@ -263,138 +263,12 @@
     </p>
 </section>
 
-<section id="forum-et-briefings" class="site-docs__section">
-    <h2>Forum &amp; briefings</h2>
-    <p class="site-docs__lead">
-        Le forum est l’espace d’échange écrit et durable de votre communauté : il porte les annonces, les discussions courantes et les
-        <strong>briefings</strong> qui préparent une activité, tout en respectant des règles de visibilité par catégorie et par section.
-    </p>
-
-    <h3>Présentation générale</h3>
-    <p>
-        Le forum est organisé en <strong>catégories</strong> (annonces, briefings, discussions générales, sections thématiques, etc.), chacune contenant
-        des <strong>sujets</strong>. À l’intérieur d’un sujet, les messages s’enchaînent selon le tri choisi (le plus souvent chronologique), ce qui permet
-        de suivre une discussion du début à la fin sans se perdre.
-    </p>
-    <p>
-        Les <strong>briefings</strong> sont des sujets à vocation opérationnelle : ils préparent une mission, un entraînement ou un événement, et
-        contiennent en général les informations que chaque participant doit avoir lues avant le rendez-vous. Ils peuvent être publiés dans une catégorie
-        dédiée pour rester faciles à retrouver, séparément des discussions informelles.
-    </p>
-    <p>
-        Certaines <strong>catégories privées</strong> ne sont visibles que par les membres d’un groupe précis (état-major, une section, un cercle de
-        confiance) : leur existence même peut être masquée à qui n’y a pas accès, pour éviter de laisser deviner qu’une discussion sensible existe.
-    </p>
-    <div class="site-docs__table-wrap">
-        <table class="site-docs__table">
-            <thead>
-                <tr>
-                    <th>Type de catégorie</th>
-                    <th>Visibilité typique</th>
-                    <th>Usage courant</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Annonces</td>
-                    <td>Toute la communauté, souvent en lecture pour la plupart des membres</td>
-                    <td>Informations officielles descendantes</td>
-                </tr>
-                <tr>
-                    <td>Briefings</td>
-                    <td>Participants d’une activité ou d’une section précise</td>
-                    <td>Préparation de missions et d’entraînements</td>
-                </tr>
-                <tr>
-                    <td>Discussions générales</td>
-                    <td>Toute la communauté</td>
-                    <td>Échanges informels, questions courantes</td>
-                </tr>
-                <tr>
-                    <td>Sections privées</td>
-                    <td>Groupe restreint (état-major, section, cercle de confiance)</td>
-                    <td>Discussions internes ou sensibles</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <h3>Fonctionnement</h3>
-    <p>
-        Pour créer un sujet ou répondre, utilisez l’éditeur prévu par le forum. Selon la configuration de votre communauté, des <strong>pièces
-        jointes</strong> (images, documents) peuvent être ajoutées, avec des limites de taille et de type de fichier destinées à préserver la fluidité du
-        forum et à éviter les dépôts inadaptés.
-    </p>
-    <p>
-        L’accès à une catégorie dépend de votre rôle et, parfois, de votre affectation : un membre d’une section peut voir une catégorie réservée à cette
-        section sans y avoir accès pour une autre. Les briefings d’une opération peuvent ainsi n’être visibles que par les participants concernés, sans
-        empêcher le reste de la communauté de consulter les catégories ouvertes à tous.
-    </p>
-    <p>
-        Les sujets importants peuvent être <strong>épinglés</strong> pour rester en tête de catégorie, et un sujet clos peut être <strong>verrouillé</strong>
-        pour empêcher de nouvelles réponses tout en conservant l’historique lisible. Ces actions relèvent de la modération, détaillée dans la section
-        <a href="#moderation-forum">Modération &amp; signalements</a>.
-    </p>
-    <p>
-        Un abonnement à un sujet ou à une catégorie peut déclencher une <strong>notification</strong> à chaque nouvelle réponse, selon vos préférences
-        personnelles. C’est particulièrement utile pour un briefing amené à évoluer avant l’activité : plutôt que de rouvrir le fil par habitude, vous
-        êtes prévenu dès qu’une consigne change.
-    </p>
-    <p>
-        Une recherche interne au forum permet de retrouver un sujet par mot-clé plutôt que de parcourir manuellement chaque catégorie ; elle est
-        particulièrement utile pour retrouver un ancien briefing servant de référence à une nouvelle activité similaire.
-    </p>
-
-    <h3>Utilisation</h3>
-    <ol class="site-docs__steps">
-        <li><strong>Choisir la bonne catégorie</strong> — Repérez la catégorie adaptée au sujet (annonce, briefing, discussion générale) avant de créer un
-            nouveau sujet, pour rester facilement retrouvable.</li>
-        <li><strong>Rédiger le sujet ou la réponse</strong> — Utilisez l’éditeur pour formuler un message clair ; ajoutez une pièce jointe si le contenu
-            le justifie et si votre communauté l’autorise.</li>
-        <li><strong>Lire un briefing avant l’activité</strong> — Ouvrez le sujet de briefing associé à une mission ou un entraînement avant le rendez-vous
-            pour connaître le cadre, les consignes et les points de vigilance.</li>
-        <li><strong>S’abonner à un sujet actif</strong> — Activez les notifications sur un fil amené à évoluer pour ne pas manquer une mise à jour de
-            dernière minute.</li>
-        <li><strong>Suivre un sujet</strong> — Revenez régulièrement sur un fil actif si vous préférez ne pas dépendre des notifications.</li>
-        <li><strong>Signaler un contenu problématique</strong> — Utilisez le bouton de signalement plutôt qu’une réponse publique conflictuelle si un
-            message enfreint le règlement.</li>
-    </ol>
-
-    <h3>Cas particuliers</h3>
-    <p>
-        <strong>Section privée invisible pour vous.</strong> Si un collègue mentionne une catégorie que vous ne voyez pas, ce n’est en général pas une
-        anomalie : votre rôle ou votre affectation ne couvre pas cette section. Demandez à un référent si vous pensez devoir y avoir accès.
-    </p>
-    <p>
-        <strong>Briefing manqué.</strong> Si vous rejoignez une activité en cours de préparation, ouvrez d’abord le sujet de briefing correspondant avant
-        de poser des questions déjà traitées dans le fil : cela évite de disperser l’information entre le forum et d’autres canaux.
-    </p>
-    <p>
-        <strong>Sujet verrouillé après clôture d’une activité.</strong> Un briefing ancien peut être verrouillé une fois l’activité terminée pour préserver
-        son contenu comme référence ; ouvrez un nouveau sujet pour tout retour d’expérience plutôt que de tenter de répondre sur un fil clos.
-    </p>
-    <p>
-        <strong>Pièce jointe refusée.</strong> Si un fichier ne peut pas être joint, vérifiez son format et sa taille par rapport aux limites affichées à
-        l’écran ; les documents volumineux gagnent souvent à être déposés dans l’espace <a href="#documents">Documents</a> puis liés depuis le forum.
-    </p>
-    <p>
-        <strong>Briefing partagé entre plusieurs unités.</strong> Lorsqu’un briefing concerne une activité menée avec une autre communauté, il peut être
-        plus adapté de le tenir dans l’espace commun d’une <a href="#cooperations-inter-unites">coopération inter-unités</a> plutôt que dans une
-        catégorie interne, afin que toutes les unités participantes y aient également accès.
-    </p>
-    <p>
-        <strong>Trop de notifications reçues.</strong> Si le forum génère plus de notifications que souhaité, ajustez vos préférences personnelles plutôt
-        que de vous désabonner de catégories utiles : un réglage plus fin (résumé regroupé, fréquence réduite) permet souvent de garder l’essentiel sans
-        être submergé.
-    </p>
-</section>
-
 <section id="cooperations-inter-unites" class="site-docs__section">
     <h2>Coopérations inter-unités</h2>
     <p class="site-docs__lead">
         Ce module organise une <strong>collaboration officielle entre deux communautés ou plus</strong> de la même plateforme : brief commun, partage
         d’informations encadré, réunions et suivi d’engagement. Il fournit un <strong>dossier dédié</strong>, une <strong>chronologie</strong> et un
-        <strong>espace de discussion partagé</strong>, avec des règles d’accès explicites, sans remplacer ni le forum de votre unité ni vos canaux externes.
+        <strong>espace commun</strong> avec des règles d’accès explicites, sans remplacer vos canaux externes.
     </p>
     <div class="site-docs__callout site-docs__callout--tip">
         <strong>Accès au module.</strong> Si aucun menu « Coopérations inter-unités » n’apparaît, votre compte n’a simplement pas l’habilitation
@@ -442,15 +316,14 @@
             marquées « Sensible » — puis saisit le code à six chiffres reçu par courriel. L’autorisation est valable un temps limité et se renouvelle
             depuis le même écran.</li>
         <li><strong>Exécution</strong> — Conduite de l’opération : changement d’étape de conduite (confirmé dans une fenêtre dédiée), points de situation,
-            réunions, structures et liaisons. Le pilote peut <strong>suspendre</strong> la coopération (espace commun en lecture seule) puis la
-            reprendre.</li>
+            réunions, structures et liaisons. Le pilote peut <strong>suspendre</strong> la coopération puis la reprendre.</li>
         <li><strong>Clôture &amp; REX</strong> — Motif, bilan et niveau de conservation, puis retour d’expérience de chaque communauté et vue
             consolidée pour les rôles habilités.</li>
     </ol>
     <p>
         Une coopération <strong>annulée</strong> ou <strong>clôturée</strong> passe en lecture seule : son journal et ses documents restent consultables.
         Le <strong>journal</strong> consigne, de façon horodatée, chaque événement marquant (invitations, réponses et motifs, relances, retraits,
-        changements d’étape…) pour se resynchroniser sans relire tout le fil.
+        changements d’étape…) pour se resynchroniser rapidement.
     </p>
     <h4>Onglets d’un dossier</h4>
     <p>
@@ -476,7 +349,7 @@
                 </tr>
                 <tr>
                     <td>Espace commun</td>
-                    <td>Fil partagé, accès au brief, verrouillage, et votre autorisation de partage</td>
+                    <td>Votre autorisation de partage et l’accès aux échanges entre unités engagées</td>
                 </tr>
                 <tr>
                     <td>Réunions</td>
@@ -517,16 +390,6 @@
         peuvent être attribués nommément à des membres (référent, lecture seule, rédacteur, observateur, officier de liaison…). Ces rôles ne remplacent
         pas votre rôle général dans la communauté : ils précisent ce que vous êtes autorisé à faire <em>dans ce dossier précis</em>.
     </p>
-    <p>
-        Un <strong>verrouillage de l’échange</strong> peut être appliqué par les pilotes (lecture seule du fil commun, blocage des nouvelles réponses),
-        selon la politique interne ou la phase du dossier, y compris après clôture. Respectez toujours la mention de consultation seule lorsqu’elle
-        apparaît : les échanges informels doivent alors passer par les canaux prévus par votre état-major.
-    </p>
-    <div class="site-docs__callout">
-        <strong>Cohérence avec la modération.</strong> Le fil d’une coopération suit les mêmes principes de civilité que le reste du forum ; les
-        signalements et interventions des modérateurs restent possibles selon les règles de votre communauté. Voir
-        <a href="#moderation-forum">Modération &amp; signalements</a> pour le détail des outils disponibles.
-    </div>
 
     <h3>Utilisation</h3>
     <p>
@@ -549,9 +412,8 @@
         justification si elle est demandée, puis saisissez le code reçu par courriel dans le délai indiqué.
     </p>
     <p>
-        Pour <strong>participer une fois la coopération activée</strong> : utilisez l’espace commun pour les échanges opérationnels, choisissez une
-        nature de message adaptée quand l’interface le propose (message standard, information officielle, décision validée), et gardez à l’esprit que le
-        contexte peut indiquer explicitement quelle communauté vous représentez dans cet échange, même publié depuis votre compte personnel.
+        Pour <strong>participer une fois la coopération activée</strong> : passez par les points de situation et les réunions du dossier pour les
+        échanges opérationnels, et gardez à l’esprit que votre autorisation de partage encadre ce que voient les unités partenaires.
     </p>
     <p>
         Pour <strong>préparer une réunion</strong> : renseignez un ordre du jour dans l’outil avant le rendez-vous, afin que les autres unités sachent à
@@ -576,9 +438,6 @@
         <dt>Message « accès refusé » en ouvrant un dossier</dt>
         <dd>Vous n’êtes pas listé comme participant actif, ou votre rôle ne couvre pas cette action à cette étape. Vérifiez aussi que la bonne
             communauté active est bien sélectionnée en haut de l’écran.</dd>
-        <dt>Impossible de répondre sur le fil commun</dt>
-        <dd>La coopération n’est peut-être pas encore activée, un verrouillage est en place, ou votre permission d’écriture dans l’espace commun n’a
-            pas été accordée. Demandez au pilote du dossier plutôt qu’au support technique.</dd>
         <dt>Code de confirmation jamais reçu</dt>
         <dd>Contrôlez le courrier indésirable et l’adresse associée à votre compte, puis patientez quelques minutes. Évitez de redemander plusieurs
             codes d’affilée : cela peut retarder la réception du bon code et déclencher un blocage temporaire.</dd>
@@ -598,138 +457,106 @@
     <div class="site-docs__callout site-docs__callout--warn">
         <strong>Rappel de sécurité.</strong> Les règles de classification de l’information, les ordres internes et le jugement du commandement restent
         toujours prioritaires sur tout affichage du portail. En cas de doute sur ce qui peut être partagé avec une autre unité, ne publiez pas et
-        sollicitez votre référent avant d’utiliser l’espace commun.
+        sollicitez votre référent avant de partager quoi que ce soit.
     </div>
 </section>
 
-<section id="moderation-forum" class="site-docs__section">
+<section id="moderation-signalements" class="site-docs__section">
     <h2>Modération &amp; signalements</h2>
     <p class="site-docs__lead">
-        La modération veille à ce que les espaces d’échange restent utilisables et respectueux : elle combine des outils pour les cadres de votre
-        communauté et un filet de sécurité que chaque membre peut activer via le signalement.
+        Le signalement est le filet de sécurité que chaque membre peut activer : une fiche, une photo de profil, un visuel d’opérateur, une formation
+        ou une page d’aide qui pose problème arrive dans une file traitée par les responsables de votre communauté.
     </p>
 
     <h3>Présentation générale</h3>
     <p>
-        Deux niveaux se combinent. Des personnes désignées par votre communauté modèrent <strong>les contenus de l’unité</strong> : forum général,
-        briefings, et le cas échéant les fils partagés d’une <a href="#cooperations-inter-unites">coopération inter-unités</a>. Un niveau « plateforme »
-        distinct peut exister pour les équipes techniques globales, mais il ne concerne pas le quotidien d’une unité classique : il intervient sur des
-        situations exceptionnelles dépassant le périmètre d’une seule communauté.
+        Deux niveaux se combinent. Des personnes désignées par votre communauté traitent <strong>les signalements de l’unité</strong>. Un niveau
+        « plateforme » distinct existe pour les équipes globales : il intervient sur des situations exceptionnelles qui dépassent le périmètre d’une
+        seule communauté.
     </p>
     <p>
         Ce cloisonnement est volontaire : un modérateur d’une autre communauté n’a pas de droit d’intervention chez vous, et inversement. Chaque unité
-        reste maîtresse de ses propres règles de civilité, dans le respect des règles générales de la plateforme.
+        reste maîtresse de ses propres règles, dans le respect des règles générales de la plateforme.
     </p>
 
     <h3>Fonctionnement</h3>
     <p>
-        Avec les habilitations adaptées, un modérateur peut <strong>épingler</strong> un sujet pour le maintenir visible en tête de catégorie,
-        <strong>verrouiller</strong> un fil pour empêcher toute nouvelle réponse tout en conservant l’historique, ou intervenir directement sur des
-        messages qui enfreignent le règlement (retrait, correction, avertissement à l’auteur selon les outils disponibles).
+        Tout membre peut <strong>signaler</strong> un contenu problématique depuis l’écran concerné. Le signalement n’est pas une accusation
+        publique : il ouvre un examen discret, sans exposer votre identité à la personne visée. Un <strong>motif</strong> court oriente l’examen ; un
+        commentaire libre peut le compléter.
     </p>
     <p>
-        Les outils d’<strong>administration des catégories</strong> permettent en complément de créer ou réorganiser des catégories, d’ajuster leur
-        visibilité par rôle ou par affectation, et de définir qui peut y publier ou seulement y lire. Une catégorie mal calibrée en visibilité est
-        souvent à l’origine d’une confusion (« pourquoi je ne vois pas ce fil ? ») plutôt qu’un problème de modération à proprement parler.
-    </p>
-    <p>
-        Tout membre peut <strong>signaler</strong> un contenu problématique : harcèlement, spam, fuite d’information, propos inappropriés. Le
-        signalement n’est pas une accusation publique : il ouvre un examen discret par les modérateurs, sans exposer votre identité aux autres
-        participants du fil.
-    </p>
-    <p>
-        Un signalement s’accompagne en général d’un <strong>motif</strong> choisi parmi une liste courte, pour orienter l’examen sans obliger le membre
-        signalant à rédiger un texte long : propos inapproprié, harcèlement, contenu hors sujet ou publicitaire, information sensible partagée à tort,
-        ou autre motif décrit librement lorsque aucune catégorie ne correspond.
+        Les responsables habilités (droit « Traiter les signalements des membres », ou administration de la communauté) retrouvent la file dans
+        <strong>Back-office › Signalements membres</strong>. Chaque dossier peut être <strong>pris en charge</strong> par un responsable, commenté,
+        clos avec une suite donnée, puis rouvert si besoin. Une chronologie garde la trace de chaque étape.
     </p>
     <div class="site-docs__table-wrap">
         <table class="site-docs__table">
             <thead>
                 <tr>
-                    <th>État du signalement</th>
+                    <th>Suite donnée</th>
                     <th>Signification</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>En attente</td>
-                    <td>Reçu, pas encore examiné par un modérateur</td>
+                    <td>Clore</td>
+                    <td>Le signalement est examiné et ne demande rien de plus</td>
                 </tr>
                 <tr>
-                    <td>En cours d’examen</td>
-                    <td>Un modérateur consulte le contexte et décide d’une action éventuelle</td>
+                    <td>Demander une correction</td>
+                    <td>La personne concernée est invitée à corriger le contenu</td>
                 </tr>
                 <tr>
-                    <td>Traité</td>
-                    <td>Une décision a été prise (intervention, avertissement, classement sans suite)</td>
+                    <td>Surveiller</td>
+                    <td>Le dossier est clos mais la situation reste à suivre</td>
                 </tr>
                 <tr>
-                    <td>Classé sans suite</td>
-                    <td>Le contenu ne justifiait pas d’action après examen</td>
+                    <td>Escalader au support</td>
+                    <td>La situation dépasse la communauté et part vers l’équipe plateforme</td>
+                </tr>
+                <tr>
+                    <td>Sanction</td>
+                    <td>Avertissement, mise en sourdine, suspension ou exclusion, selon la gravité</td>
                 </tr>
             </tbody>
         </table>
     </div>
     <p>
-        Les signalements en attente apparaissent regroupés dans la console de modération, ce qui évite aux modérateurs de devoir surveiller
-        manuellement chaque catégorie du forum. Le modérateur qui traite un signalement peut consulter le message d’origine dans son contexte complet
-        avant d’agir, pour éviter une décision hors contexte.
-    </p>
-    <p>
-        Les mesures disponibles suivent en général une <strong>gradation</strong>, du simple rappel des règles jusqu’à une restriction plus lourde
-        d’accès au forum, en passant par le retrait d’un message précis ou le verrouillage d’un fil devenu ingérable. Le choix de la mesure reste une
-        décision humaine du modérateur, éclairée par le contexte et l’historique, et non un barème appliqué mécaniquement.
+        Les mesures suivent une <strong>gradation</strong>, du simple rappel des règles jusqu’à l’exclusion. Le choix reste une décision humaine,
+        éclairée par le contexte et l’historique, et non un barème appliqué mécaniquement. Une exclusion définitive demande une confirmation explicite.
     </p>
 
     <h3>Utilisation</h3>
     <ol class="site-docs__steps">
-        <li><strong>Repérer un contenu problématique</strong> — Identifiez le message concerné et évitez d’y répondre publiquement de façon
+        <li><strong>Repérer un contenu problématique</strong> — Identifiez l’élément concerné et évitez d’y répondre publiquement de façon
             conflictuelle.</li>
-        <li><strong>Utiliser le bouton de signalement</strong> — Décrivez brièvement le motif si un champ de commentaire est proposé, pour aider le
-            modérateur à comprendre rapidement la situation.</li>
-        <li><strong>Laisser le modérateur examiner</strong> — Le contexte du fil et l’historique de l’auteur sont consultés avant toute décision.</li>
-        <li><strong>Action du modérateur</strong> — Selon la gravité : rien de plus si le signalement n’est pas fondé, avertissement, retrait du
-            contenu, verrouillage du fil, voire mesure plus lourde selon les outils et le règlement de votre communauté.</li>
-        <li><strong>Clôture du signalement</strong> — Le signalement est marqué comme traité une fois la situation réglée, ce qui le retire de la file
-            active des modérateurs.</li>
+        <li><strong>Utiliser le bouton de signalement</strong> — Choisissez un motif et décrivez brièvement la situation.</li>
+        <li><strong>Laisser le responsable examiner</strong> — Le contexte et l’historique sont consultés avant toute décision.</li>
+        <li><strong>Suite donnée</strong> — Selon la gravité : clôture simple, demande de correction, surveillance, escalade ou sanction.</li>
+        <li><strong>Notification</strong> — La personne qui a signalé est prévenue lorsque son signalement est traité.</li>
     </ol>
-    <p>
-        Pour un sujet à haute valeur de référence (briefing officiel, annonce importante), pensez à l’<strong>épingler</strong> dès sa publication plutôt
-        que d’attendre qu’il se noie dans le flux des messages plus récents.
-    </p>
 
     <h3>Cas particuliers</h3>
     <p>
-        <strong>Signalements répétés contre le même membre.</strong> Un historique de signalements sur un même auteur peut justifier une mesure plus
-        ferme qu’un incident isolé ; les modérateurs disposent en général d’une vue d’ensemble de cet historique pour éviter de traiter chaque
-        signalement en vase clos.
+        <strong>Signalements répétés contre le même membre.</strong> Un historique de signalements sur un même compte peut justifier une mesure plus
+        ferme qu’un incident isolé ; la console montre cet historique pour éviter de traiter chaque dossier en vase clos.
     </p>
     <p>
-        <strong>Contestation d’une décision de modération.</strong> Si un membre estime qu’une intervention était disproportionnée, le canal adapté est
-        un échange avec l’état-major de l’unité plutôt qu’une reprise du débat sur le fil concerné, qui peut déjà être verrouillé.
+        <strong>Contestation d’une décision.</strong> Si un membre estime qu’une mesure était disproportionnée, le canal adapté est un échange avec
+        l’état-major de l’unité.
     </p>
     <p>
-        <strong>Signalement dans une coopération inter-unités.</strong> Le fil partagé d’une coopération suit les mêmes principes de civilité que le
-        reste du forum ; le signalement fonctionne de la même façon, mais l’intervention peut impliquer une coordination entre les modérateurs des
-        différentes communautés participantes.
+        <strong>Situation dépassant le périmètre de votre unité.</strong> Si un incident implique plusieurs communautés ou relève d’une règle générale
+        de la plateforme, escaladez le dossier vers le support plutôt que de le traiter isolément.
     </p>
     <p>
-        <strong>Situation dépassant le périmètre de votre unité.</strong> Si un incident implique plusieurs communautés ou semble relever d’une règle
-        générale de la plateforme plutôt que du règlement interne d’une seule unité, l’état-major peut relayer la situation vers le niveau plateforme
-        plutôt que de tenter de la traiter isolément.
-    </p>
-    <p>
-        <strong>Signalement visant un modérateur.</strong> Un membre peut signaler le comportement d’un modérateur comme n’importe quel autre contenu ;
-        l’examen est alors confié à l’état-major ou à un autre modérateur habilité pour éviter que la personne visée traite elle-même le signalement.
-    </p>
-    <p>
-        <strong>Catégorie mal configurée.</strong> Si un fil semble accessible à des personnes qui ne devraient pas le voir, ou inversement invisible
-        pour des membres censés y avoir accès, vérifiez d’abord la configuration de visibilité de la catégorie avant de conclure à un problème de
-        modération : les deux sujets sont liés mais se règlent avec des outils différents.
+        <strong>Signalement visant un responsable.</strong> L’examen est confié à un autre responsable habilité, pour éviter que la personne visée
+        traite elle-même le dossier.
     </p>
     <div class="site-docs__callout">
-        <strong>Bon réflexe.</strong> Privilégiez toujours le signalement et les canaux officiels plutôt qu’une « riposte » publique sur le forum, qui
-        complique le travail de modération et nuit à l’image de l’unité aux yeux des autres membres.
+        <strong>Bon réflexe.</strong> Privilégiez toujours le signalement et les canaux officiels plutôt qu’une « riposte » publique, qui complique
+        le travail de modération et nuit à l’image de l’unité.
     </div>
 </section>
 
@@ -934,7 +761,7 @@
     </p>
     <p>
         <strong>Publication refusée malgré un menu visible.</strong> Comme rappelé plus haut, l’action de publication peut être grisée ou refusée si la
-        permission dédiée manque à votre rôle, y compris pour un auteur ayant créé l’intégralité du contenu : la <a href="#moderation-forum">séparation
+        permission dédiée manque à votre rôle, y compris pour un auteur ayant créé l’intégralité du contenu : la <a href="#moderation-signalements">séparation
         des rôles</a> s’applique aussi à la pédagogie, pour qu’une mise en ligne large reste toujours validée par un rôle habilité.
     </p>
     <p>
@@ -1220,7 +1047,7 @@
     <h2>Événements, messages &amp; pointage</h2>
     <p class="site-docs__lead">
         Ce module couvre trois usages complémentaires de la vie courante d’une unité : la planification et la confirmation de présence aux activités,
-        les échanges internes courts distincts du forum, et l’enregistrement des présences lors des manœuvres.
+        les échanges internes courts, et l’enregistrement des présences lors des manœuvres.
     </p>
 
     <h3>Présentation générale</h3>
@@ -1230,10 +1057,9 @@
         nombre de participants attendus avant même le jour J.
     </p>
     <p>
-        Les <strong>messages internes</strong> permettent des échanges courts et directs entre membres, sans passer par le forum public : ils
-        conviennent à une coordination rapide, une question ponctuelle ou un rappel personnel, là où le forum reste réservé à l’information durable et
-        structurée à destination d’un public plus large. Les deux canaux ne se substituent pas l’un à l’autre : une décision importante gagne à être
-        actée sur le forum ou en briefing, même si elle a été discutée en message.
+        Les <strong>messages internes</strong> permettent des échanges courts et directs entre membres : ils conviennent à une coordination
+        rapide, une question ponctuelle ou un rappel personnel. Une décision importante gagne à être actée dans une annonce ou en briefing, même si
+        elle a été discutée en message.
     </p>
     <p>
         Le <strong>pointage</strong> enregistre les présences ou les passages lors d’une manœuvre ou d’un exercice, selon les règles définies par votre
@@ -1287,9 +1113,9 @@
         planning.
     </p>
     <p>
-        Les <strong>messages internes</strong> se distinguent du forum par leur portée : un message est en général adressé à une ou plusieurs personnes
-        précises, tandis qu’un sujet de forum s’adresse à toute une catégorie. Cette différence structurelle explique pourquoi une information destinée
-        à toute l’unité doit être publiée en briefing plutôt qu’envoyée en message individuel à chacun.
+        Les <strong>messages internes</strong> se distinguent des annonces par leur portée : un message est en général adressé à une ou plusieurs
+        personnes précises, tandis qu’une annonce s’adresse à toute la communauté. C’est pourquoi une information destinée à toute l’unité doit être
+        publiée en annonce ou en briefing plutôt qu’envoyée en message individuel à chacun.
     </p>
     <p>
         Le <strong>pointage</strong> se déclenche en général à l’ouverture d’une manœuvre ou d’un créneau défini (« check-in ») : chaque participant
@@ -1301,8 +1127,7 @@
         présences pointées pour le suivi RH. Selon votre plan, des <strong>quotas de création mensuelle</strong> d’événements peuvent s’appliquer.
     </p>
     <p>
-        Un événement peut être rattaché à d’autres modules du portail : une fiche du <a href="#mur-operationnel">mur opérationnel</a>, un briefing du
-        <a href="#forum-et-briefings">forum</a>, ou une réunion planifiée dans un dossier de <a href="#cooperations-inter-unites">coopération
+        Un événement peut être rattaché à d’autres modules du portail : une fiche du <a href="#mur-operationnel">mur opérationnel</a>, ou une réunion planifiée dans un dossier de <a href="#cooperations-inter-unites">coopération
         inter-unités</a>. Ce lien évite de ressaisir les mêmes informations à plusieurs endroits et garde une cohérence entre les écrans.
     </p>
 
@@ -1338,7 +1163,7 @@
     </p>
     <p>
         <strong>Message interne utilisé comme canal d’annonce générale.</strong> Si une information censée toucher toute l’unité circule uniquement par
-        messages individuels, elle risque de ne pas atteindre tout le monde ; privilégiez alors un sujet de forum ou un briefing pour garantir une
+        messages individuels, elle risque de ne pas atteindre tout le monde ; privilégiez alors une annonce ou un briefing pour garantir une
         diffusion homogène et traçable.
     </p>
     <p>
@@ -1357,7 +1182,7 @@
     </p>
     <p>
         <strong>Message interne resté sans réponse.</strong> Si un message important n’obtient pas de réaction, envisagez un canal plus visible
-        (annonce forum, rappel en réunion) plutôt que de multiplier les messages individuels similaires, qui risquent d’être noyés au même titre que le
+        (annonce, rappel en réunion) plutôt que de multiplier les messages individuels similaires, qui risquent d’être noyés au même titre que le
         premier.
     </p>
     <div class="site-docs__callout site-docs__callout--tip">

@@ -80,8 +80,20 @@ switch (_mode) do {
     };
     case "athenaPull": { ["list", []] call comspec_sse_fnc_campaignAthena; };
     default {
-        // Traduit avant parseText (fn_tr ne traduit qu'une chaîne).
-        hint parseText (([] call comspec_sse_fnc_campaignInfo) call comspec_sse_fnc_tr);
+        // Jamais de bulle à l'écran : fiche dans un formulaire ZEN (interface Zeus), en texte brut traduit.
+        // fn_tr découpe le texte structuré autour des balises : traduit avant de retirer la mise en forme.
+        private _info = [] call comspec_sse_fnc_campaignInfo;
+        private _plain = {
+            params ["_t"];
+            ((_t regexReplace ["<br ?/?>", endl]) regexReplace ["<[^>]*>", ""]) regexReplace ["&amp;", "&"]
+        };
+        private _shown = [
+            "Campagne : état et journal",
+            [["EDIT:MULTI", "Journal de campagne", [[_info call comspec_sse_fnc_tr] call _plain, {}, 12]]],
+            {}
+        ] call comspec_sse_fnc_zenDialog;
+        // Sans ZEN : notification du téléphone (traduite ligne par ligne au rendu).
+        if (_shown isEqualTo false) then { [[_info] call _plain, "info"] call comspec_sse_fnc_zeusNotify; };
     };
 };
 true
