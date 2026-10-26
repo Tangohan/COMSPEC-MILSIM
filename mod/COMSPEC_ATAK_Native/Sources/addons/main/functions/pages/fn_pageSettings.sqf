@@ -173,8 +173,11 @@ private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _mo
         [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }]]],
     ["section", "Animations et sons", "Mouvements, clics et petites vibrations"],
-    ["COMSPEC_ATAK_Animations", true, "", "Animations", "Les icônes s'enfoncent sous le doigt, une onde apparaît à l'appui, les icônes de l'accueil arrivent en cascade, le volet rapide est animé"] call _profSwitch,
-    ["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages", "L'app s'ouvre depuis son icône, les pages arrivent en fondu et le titre glisse (sans flash sombre)"] call _profSwitch,
+    ["COMSPEC_ATAK_Animations", true, "", "Animations", "Interrupteur général : désactivé, plus aucun mouvement (onde à l'appui, icônes en cascade, volet rapide, transitions)"] call _profSwitch,
+    ["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages", "Les pages arrivent en fondu (sans flash sombre). Désactivé : changement de page immédiat, et les deux réglages suivants sont sans effet"] call _profSwitch,
+    ["COMSPEC_ATAK_OpenSplash", true, "", "Ouverture depuis l'icône", "L'icône de l'app grandit vers le centre de l'écran à l'ouverture (icônes réalistes)"] call _profSwitch,
+    ["COMSPEC_ATAK_TitleSlide", true, "", "Titre qui glisse", "Le titre de l'app arrive de la droite à l'ouverture et de la gauche au retour"] call _profSwitch,
+    ["COMSPEC_ATAK_PressFx", true, "", "Icône qui s'enfonce à l'appui", "L'icône d'une app s'enfonce légèrement sous le doigt"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Petit clic et légère vibration à chaque appui (sans son en mode discrétion)"] call _profSwitch,
     ["COMSPEC_ATAK_HandHint", true, "", "Rappel « prendre en main » quand le téléphone est porté", "Petite icône de main et Ctrl+Maj+U dans la barre du téléphone porté. Désactivé : écran sans indication, plus immersif"] call _profSwitch,
     ["COMSPEC_ATAK_LauncherSearch", true, "", "Recherche dans le lanceur", "Champ « Rechercher une app » en haut de la liste des apps (en main). Entrée ouvre la première trouvée"] call _profSwitch,
@@ -224,7 +227,7 @@ if (["dock"] call _foldOpen) then {
     _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
 };
 _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
-    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_CarryStyle", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_HandHint", "COMSPEC_ATAK_LauncherSearch"];
+    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_CarryStyle", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_PageFx", "COMSPEC_ATAK_OpenSplash", "COMSPEC_ATAK_TitleSlide", "COMSPEC_ATAK_PressFx", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_HandHint", "COMSPEC_ATAK_LauncherSearch"];
     [] call comspec_atak_native_fnc_saveProfile;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }]]];

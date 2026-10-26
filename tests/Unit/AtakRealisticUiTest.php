@@ -45,7 +45,7 @@ final class AtakRealisticUiTest extends TestCase
 
         $settings = $this->read('functions/pages/fn_pageSettings.sqf');
         self::assertStringContainsString('["COMSPEC_ATAK_IconStyle", "real", "Style des icônes"', $settings);
-        self::assertStringContainsString('"COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_DockApps"', $settings);
+        self::assertStringContainsString('"COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_PageFx", "COMSPEC_ATAK_OpenSplash", "COMSPEC_ATAK_TitleSlide", "COMSPEC_ATAK_PressFx", "COMSPEC_ATAK_DockApps"', $settings);
     }
 
     public function testTransitionsNoLongerDrawAnOpaqueVeil(): void
@@ -56,6 +56,12 @@ final class AtakRealisticUiTest extends TestCase
         self::assertStringContainsString('forEach [_d displayCtrl 88531, [_d] call comspec_atak_native_fnc_mapCtrl]', $fx);
         // La zone de contenu n'est jamais déplacée (son défilement repartirait en haut).
         self::assertStringNotContainsString('(_d displayCtrl 88531) ctrlSetPosition', $fx);
-        self::assertStringContainsString('["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages"', $this->read('functions/pages/fn_pageSettings.sqf'));
+        $settings = $this->read('functions/pages/fn_pageSettings.sqf');
+        self::assertStringContainsString('["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages"', $settings);
+        // Chaque effet a son propre interrupteur (TTRD, 26/10).
+        foreach (['OpenSplash', 'TitleSlide', 'PressFx'] as $k) {
+            self::assertStringContainsString('["COMSPEC_ATAK_' . $k . '", true, ""', $settings);
+            self::assertStringContainsString('"COMSPEC_ATAK_' . $k . '", true]', $fx . $this->read('functions/ui/fn_tileCreate.sqf'));
+        }
     }
 }

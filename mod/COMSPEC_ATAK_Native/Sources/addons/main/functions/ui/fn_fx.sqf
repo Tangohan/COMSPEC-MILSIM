@@ -87,8 +87,8 @@ switch (_act) do {
                 _x ctrlCommit ([0.26, 0.16] select (_act isEqualTo "back"));
             };
         } forEach [_d displayCtrl 88531, [_d] call comspec_atak_native_fnc_mapCtrl];
-        // Titre de la barre d'app : arrive de la droite (ouverture) ou de la gauche (retour).
-        if (_act isNotEqualTo "home") then {
+        // Titre de la barre d'app : arrive de la droite (ouverture) ou de la gauche (retour). Réglage à part.
+        if (_act isNotEqualTo "home" && {profileNamespace getVariable ["COMSPEC_ATAK_TitleSlide", true]}) then {
             private _t = _d displayCtrl 88518;
             private _tp = ctrlPosition _t;
             _t ctrlSetPosition [(_tp select 0) + _bw * ([0.06, -0.06] select (_act isEqualTo "back")), _tp select 1, _tp select 2, _tp select 3];
@@ -98,7 +98,8 @@ switch (_act) do {
             _t ctrlSetFade 0;
             _t ctrlCommit 0.2;
         };
-        if (_act isEqualTo "open" && {["on"] call comspec_atak_native_fnc_iconTint}) then {
+        // Icône qui grandit : réglage à part (Réglages > Animations et sons > Ouverture depuis l'icône).
+        if (_act isEqualTo "open" && {["on"] call comspec_atak_native_fnc_iconTint} && {profileNamespace getVariable ["COMSPEC_ATAK_OpenSplash", true]}) then {
             private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
             private _app = (([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
             if ((count _app) isEqualTo 0) exitWith {};

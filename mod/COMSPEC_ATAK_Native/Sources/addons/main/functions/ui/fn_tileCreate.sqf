@@ -141,7 +141,7 @@ _btn setVariable ["wip", _wip];
 _btn setVariable ["press", _press];
 _btn ctrlAddEventHandler ["MouseButtonDown", {
     params ["_c", "_b"];
-    if (_b isNotEqualTo 0 || {!(["anim"] call comspec_atak_native_fnc_fx)}) exitWith {};
+    if (_b isNotEqualTo 0 || {!(["anim"] call comspec_atak_native_fnc_fx)} || {!(profileNamespace getVariable ["COMSPEC_ATAK_PressFx", true])}) exitWith {};
     {
         _x params ["_k", "_p"];
         if (!isNull _k) then {
