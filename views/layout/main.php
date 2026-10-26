@@ -106,7 +106,6 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (is_file(base_path('public/assets/css/design-system.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/design-system.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
-    <link href="<?= htmlspecialchars(asset_url('assets/css/donor-marks.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/img-fallback.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/img-fallback.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -647,5 +646,6 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     }
     </script>
     <?php require base_path('views/partials/mirror_trap_link.php'); ?>
+<?php require base_path('views/partials/donor_marks_assets.php'); ?>
 </body>
 </html>

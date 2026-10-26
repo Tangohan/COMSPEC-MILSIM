@@ -5,7 +5,7 @@
 .ath-donor-mark:not(:has(span:not(.ath-donor-mark__sr))) { padding: 2px; }
 .ath-donor-mark--allie { color: #6d28d9; background: rgba(109, 40, 217, .1); border-color: rgba(109, 40, 217, .35); }
 .ath-donor-mark--pilier { color: #8a5a00; background: linear-gradient(135deg, rgba(245, 196, 66, .28), rgba(217, 70, 122, .16)); border-color: rgba(201, 145, 20, .55); }
-.is-donor { text-decoration: none; background-image: linear-gradient(currentColor, currentColor); background-image: linear-gradient(90deg, #d9467a, #d9467a); background-repeat: no-repeat; background-size: 100% 2px; background-position: 0 100%; padding-bottom: 1px; }
+.is-donor { text-decoration: none; background-image: linear-gradient(90deg, #d9467a, #d9467a); background-repeat: no-repeat; background-size: 100% 2px; background-position: 0 100%; padding-bottom: 1px; }
 .is-donor--allie { background-image: linear-gradient(90deg, #7c3aed, #d9467a); }
 .is-donor--pilier { background-image: linear-gradient(90deg, #f5b301, #d9467a 60%, #7c3aed); }
 /* Thème sombre (back-office et site) */
@@ -19,3 +19,17 @@ html[data-bo-theme="dark"] .ath-donor-mark--pilier, html.dark .ath-donor-mark--p
   .ath-donor-mark--pilier svg { animation: ath-donor-beat 2.4s ease-in-out infinite; }
 }
 @keyframes ath-donor-beat { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.22); } 90% { transform: scale(.96); } }
+
+/* Décoration automatique (donor-marks.js) */
+.ath-donor-ring img { outline: 2px solid #d9467a; outline-offset: 1px; }
+.ath-donor-ring--allie img { outline-color: #7c3aed; }
+.ath-donor-ring--pilier img { outline-color: #f5b301; box-shadow: 0 0 0 4px rgba(245, 179, 1, .18); }
+.ath-donor-card { box-shadow: inset 3px 0 0 #d9467a; }
+.ath-donor-card--allie { box-shadow: inset 3px 0 0 #7c3aed; }
+.ath-donor-card--pilier { box-shadow: inset 3px 0 0 #f5b301; }
+.ath-supporter-mark { display: inline-flex; align-items: center; margin-left: 5px; vertical-align: middle; color: #d9467a; }
+.ath-supporter-card { box-shadow: inset 0 3px 0 #d9467a; }
+html[data-bo-theme="dark"] .ath-supporter-mark, html.dark .ath-supporter-mark, [data-theme="dark"] .ath-supporter-mark { color: #ff8fb7; }
+.personnel-file-hero__name .ath-donor-mark { font-size: 12px; line-height: 18px; padding: 2px 8px; }
+.personnel-file-hero__donor { margin: 4px 0 0; font-size: 13px; opacity: .9; }
+.personnel-file-hero__donor a { color: #ff8fb7; font-weight: 700; text-decoration: none; }

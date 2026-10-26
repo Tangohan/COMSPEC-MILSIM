@@ -341,6 +341,61 @@ final class PaymentLedgerRepository
         return $out;
     }
 
+    /**
+     * Profils affichables des comptes (nom public, slug de fiche, communauté) — sans e-mail.
+     *
+     * @param list<int> $ids
+     * @return array<int, array{name: string, slug: string, tenant_id: int, tenant_name: string, tenant_slug: string}>
+     */
+    public function profilesForUserIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $i): bool => $i > 0)));
+        $out = [];
+        foreach (array_chunk($ids, 300) as $chunk) {
+            $in = implode(',', array_fill(0, count($chunk), '?'));
+            try {
+                $st = $this->pdo()->prepare('SELECT u.id, u.display_name, u.callsign, u.profile_slug, u.tenant_id, t.name AS tenant_name, t.slug AS tenant_slug FROM users u LEFT JOIN tenants t ON t.id = u.tenant_id WHERE u.id IN (' . $in . ')');
+                $st->execute($chunk);
+            } catch (\Throwable) {
+                $st = $this->pdo()->prepare('SELECT u.id, u.display_name, u.callsign, NULL AS profile_slug, u.tenant_id, t.name AS tenant_name, t.slug AS tenant_slug FROM users u LEFT JOIN tenants t ON t.id = u.tenant_id WHERE u.id IN (' . $in . ')');
+                $st->execute($chunk);
+            }
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                $out[(int) $r['id']] = [
+                    'name' => trim((string) (($r['display_name'] ?? '') ?: ($r['callsign'] ?? ''))),
+                    'slug' => trim((string) ($r['profile_slug'] ?? '')),
+                    'tenant_id' => (int) ($r['tenant_id'] ?? 0),
+                    'tenant_name' => (string) ($r['tenant_name'] ?? ''),
+                    'tenant_slug' => (string) ($r['tenant_slug'] ?? ''),
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return array<int, string> slug public par communauté
+     */
+    public function tenantSlugs(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $i): bool => $i > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $st = $this->pdo()->prepare('SELECT id, slug FROM tenants WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')');
+        $st->execute($ids);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            if ((string) ($r['slug'] ?? '') !== '') {
+                $out[(int) $r['id']] = (string) $r['slug'];
+            }
+        }
+
+        return $out;
+    }
+
     /** @return array<int, string> e-mail par id de compte */
     public function emailsForUserIds(array $ids): array
     {

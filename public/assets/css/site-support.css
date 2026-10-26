@@ -569,3 +569,30 @@ html:not(.don-js) .don-card__bar span { width: 100%; }
   .don-js .don-reveal { opacity: 1; transform: none; }
   .don-card__bar span { width: 100%; }
 }
+
+/* Mur des donateurs */
+.don-tier-word { font-weight: 800; }
+.don-tier-word--soutien { color: #ff8fb7; }
+.don-tier-word--allie { color: #c4b5fd; }
+.don-tier-word--pilier { color: var(--don-gold); }
+.don-wall { margin-top: 2rem; display: grid; gap: 1.25rem; }
+.don-wall__tier { border: 1px solid var(--don-line); background: var(--don-panel); padding: 1.1rem 1.25rem 1.25rem; position: relative; overflow: hidden; }
+.don-wall__tier::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: #d9467a; }
+.don-wall__tier--allie::before { background: linear-gradient(90deg, #7c3aed, #d9467a); }
+.don-wall__tier--pilier::before { background: linear-gradient(90deg, #f5b301, #d9467a 60%, #7c3aed); }
+.don-wall__tier--pilier { border-color: rgba(245, 198, 107, .35); background: linear-gradient(180deg, rgba(245, 198, 107, .07), var(--don-panel)); }
+.don-wall__title { display: flex; align-items: center; gap: .5rem; margin: 0 0 1rem; font-size: .8rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: #ff8fb7; }
+.don-wall__tier--allie .don-wall__title { color: #c4b5fd; }
+.don-wall__tier--pilier .don-wall__title { color: var(--don-gold); }
+.don-wall__title span { margin-left: auto; color: var(--don-ink-3); letter-spacing: .04em; }
+.don-wall__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .6rem; }
+.don-wall__tier--pilier .don-wall__list { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.don-wall__item { display: flex; align-items: center; gap: .7rem; min-width: 0; padding: .55rem .65rem; border: 1px solid var(--don-line); background: rgba(0, 0, 0, .18); }
+.don-wall__avatar { flex: 0 0 2.1rem; height: 2.1rem; display: grid; place-items: center; font-weight: 900; color: #0b0d0c; background: #ff8fb7; }
+.don-wall__tier--allie .don-wall__avatar { background: #c4b5fd; }
+.don-wall__tier--pilier .don-wall__avatar { background: linear-gradient(135deg, #ffd66b, #f59e0b); flex-basis: 2.6rem; height: 2.6rem; font-size: 1.1rem; }
+.don-wall__who { display: grid; min-width: 0; }
+.don-wall__who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--don-ink); }
+.don-wall__who small { overflow-wrap: anywhere; color: var(--don-ink-3); font-size: .78rem; }
+.don-wall__me { margin-top: 1.25rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem; padding: .9rem 1.1rem; border: 1px dashed var(--don-line); }
+.don-wall__me p { margin: 0; color: var(--don-ink-2); }

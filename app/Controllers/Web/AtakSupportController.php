@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakDonationRepository;
 use App\Services\Billing\AtakDonationFulfillmentService;
+use App\Services\Billing\DonorService;
 use App\Services\Billing\StripeCheckoutService;
 use App\Repositories\UserRepository;
 use App\Support\PayPalDonation;
@@ -73,7 +74,41 @@ final class AtakSupportController
             'paypalAmountable' => PayPalDonation::acceptsAmount($paypalBase),
             'alreadyDonor' => $alreadyDonor,
             'isLoggedIn' => $userId > 0,
+            'donorBoard' => DonorService::board(),
+            'supporterCount' => count(DonorService::cached()['tenants']),
+            'myDonorTier' => $userId > 0 ? DonorService::userTier($userId) : null,
+            'myDonorHidden' => $userId > 0 && DonorService::userTier($userId) !== null && $this->donorHidden($userId),
         ]);
+    }
+
+    /** Le donateur choisit d'apparaître ou non sur le mur public (POST /soutenir-atak/mur). */
+    public function wallVisibility(Request $request, array $params = []): Response
+    {
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId > 0 && Csrf::validate($request->input('_csrf_token')) && DonorService::userTier($userId) !== null) {
+            $email = (string) ($this->users->findById($userId)['email'] ?? '');
+            if ($email !== '') {
+                try {
+                    $svc = new DonorService();
+                    $svc->setHidden($email, (string) $request->input('visible', '1') !== '1');
+                    $svc->rebuild();
+                } catch (\Throwable) {
+                }
+            }
+        }
+
+        return Response::redirect(url('soutenir-atak') . '#donateurs');
+    }
+
+    private function donorHidden(int $userId): bool
+    {
+        try {
+            $email = (string) ($this->users->findById($userId)['email'] ?? '');
+
+            return $email !== '' && (new DonorService())->isHidden($email);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function checkout(Request $request, array $params = []): Response
