@@ -164,5 +164,7 @@ domaine demande de modifier cette liste et de republier les deux DLL.
   variable d'environnement `COMSPEC_DEV_TRUST_LOOPBACK=1` est posée pour le processus Arma (lue une fois au chargement
   de la DLL). Sans elle, un Athena local répond `ERR|untrusted_host` dès la liaison. Jamais en production.
 - **Avant de publier une DLL 2.4.1 ou plus récente**, vérifier sur les deux domaines qu'aucune route d'API ne redirige,
-  par exemple `curl -sI https://athena-comspec.eu/api/atak/version` et `curl -sI https://athena.ttrd.fr/api/atak/version`
-  (attendu : pas de `301`, `302`, `307` ni `308`), et de même pour un fichier sous `/map-photo/`.
+  sous l'adresse que la DLL appelle réellement (préfixe `/public` des mods, réécrit en interne par nginx) **et** sans
+  le préfixe : `curl -sI https://athena-comspec.eu/public/api/atak/version`,
+  `curl -sI https://athena.ttrd.fr/public/api/atak/version`, puis les deux mêmes sans `/public` (attendu : `200`,
+  jamais `301`, `302`, `307` ni `308`), et de même pour un fichier sous `/public/map-photo/`.
