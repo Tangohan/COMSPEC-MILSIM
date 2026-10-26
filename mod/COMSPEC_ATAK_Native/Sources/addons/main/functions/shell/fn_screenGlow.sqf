@@ -15,7 +15,7 @@ switch (_act) do {
         private _on = profileNamespace getVariable ["COMSPEC_ATAK_NvgFilter", false];
         if (!_on && {!(_item in (items player))}) exitWith { ["WARNING", "Aucun filtre d'écran JVN dans l'inventaire", 3, 20] call comspec_atak_native_fnc_notify; false };
         profileNamespace setVariable ["COMSPEC_ATAK_NvgFilter", !_on];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         playSound "ClickSoft";
         ["INFO", ["Filtre d'écran JVN posé : lueur de l'écran fortement réduite", "Filtre d'écran JVN retiré"] select _on, 3, 20] call comspec_atak_native_fnc_notify;
         if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_deviceOverlay; };

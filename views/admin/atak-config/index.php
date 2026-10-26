@@ -82,6 +82,8 @@ foreach ($dataSummary as $k => $v) {
         <span class="text-sm font-bold text-emerald-700">Ouvrir →</span>
     </a>
 
+    <?php require __DIR__ . '/_data_flows.php'; ?>
+
     <?php
     $bridgeModules = is_array($bridgeModules ?? null) ? $bridgeModules : [];
     $bridgeModulesUpdatedAt = (string) ($bridgeModulesUpdatedAt ?? '');

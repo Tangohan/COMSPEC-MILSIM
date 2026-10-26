@@ -17,7 +17,7 @@
       "relay" v / "cp" v / "off" v : changer l'état (envoyé au serveur)
       "list"         : passerelles de mon camp [[véhicule, mode, portée m, Mbit/s, nom]...]
       "nearest"      : la meilleure à portée du joueur [véhicule, distance, portée, Mbit/s, mode, nom] ou []
-      "srv" [act, v, camp] (serveur)     "sweep" (serveur, toutes les 5 s)
+      "srv" [act, v] (serveur, remoteExecCall : camp pris de l'émetteur)     "sweep" (serveur, toutes les 5 s)
 */
 params [["_act", "list"], ["_v", objNull]];
 private _ranges = missionNamespace getVariable ["COMSPEC_ATAK_GwRange", [4000, 10000]];
@@ -42,7 +42,8 @@ switch (_act) do {
         if (_act isEqualTo "cp" && {(speed _v) > 1 || {!isTouchingGround _v && {!(_v isKindOf "Ship")}}}) exitWith {
             ["WARNING", "Arrêtez le véhicule pour déployer le poste de commandement", 4, 30] call comspec_atak_native_fnc_notify; false
         };
-        ["comspec_atak_native_gwSrv", ["srv", [_act, _v, str side group player]]] call CBA_fnc_serverEvent;
+        // remoteExecCall (et non l'événement CBA) : le serveur sait qui envoie et en tire le camp et la distance.
+        ["srv", [_act, _v]] remoteExecCall ["comspec_atak_native_fnc_vehicleGateway", 2];
         playSound "ClickSoft";
         ["INFO", switch (_act) do {
             case "relay": { "Passerelle du véhicule activée : relais du réseau ATAK" };
@@ -83,8 +84,23 @@ switch (_act) do {
     };
     case "srv": {
         if (!isServer) exitWith {};
-        _v params [["_mode", "off"], ["_veh", objNull], ["_side", ""]];
-        if (isNull _veh) exitWith {};
+        _v params [["_mode", "off", [""]], ["_veh", objNull, [objNull]]];
+        if (isNull _veh || {!(_mode in ["relay", "cp", "off"])} || {!([_veh] call _ok)}) exitWith {};
+        // Émetteur : celui du remoteExec, jamais un argument (camp, distance et équipage vérifiés ici, comme "can").
+        private _u = objNull;
+        if (!isMultiplayer) then { _u = player; } else {
+            if (isRemoteExecuted) then {
+                private _owner = remoteExecutedOwner;
+                if (hasInterface && {_owner isEqualTo clientOwner}) then { _u = player; } else {
+                    private _i = allPlayers findIf { (owner _x) isEqualTo _owner };
+                    if (_i >= 0) then { _u = allPlayers select _i; };
+                };
+            };
+        };
+        if (isNull _u || {!alive _u}) exitWith {};
+        if ((objectParent _u) isNotEqualTo _veh && {(_u distance _veh) > 10}) exitWith {};
+        if (((crew _veh) findIf { alive _x && {[side group _x, side group _u] call BIS_fnc_sideIsEnemy} }) >= 0) exitWith {};
+        private _side = str side group _u;
         if (!_on) then { _mode = "off"; };
         private _mast = _veh getVariable ["COMSPEC_ATAK_GwMast", objNull];
         if (!isNull _mast && {_mode isNotEqualTo "cp"}) then { deleteVehicle _mast; _veh setVariable ["COMSPEC_ATAK_GwMast", objNull]; };

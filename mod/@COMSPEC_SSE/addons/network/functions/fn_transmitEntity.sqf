@@ -8,9 +8,27 @@ params [
     ["_announce", true, [true]]
 ];
 
+// Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
+// pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
+// Verrou par sujet (local, non diffusé) posé avant le spawn : des clics répétés lançaient des envois parallèles du
+// même sujet (doublons Athena, journal, missionRecords). Levé à la fin du corps relancé.
+if (!canSuspend) exitWith {
+    if (!isNull _entity && {_entity getVariable ["comspec_sse_txBusy", false]}) exitWith {
+        if (_announce) then { ["Transmission en cours…", "INFO"] call comspec_sse_fnc_notify; };
+        false
+    };
+    if (!isNull _entity) then { _entity setVariable ["comspec_sse_txBusy", true]; };
+    _this spawn {
+        _this call comspec_sse_fnc_transmitEntity;
+        private _e = _this param [0, objNull];
+        if (_e isEqualType objNull && {!isNull _e}) then { _e setVariable ["comspec_sse_txBusy", false]; };
+    };
+    true
+};
+
 if (isNull _entity) exitWith {
     ["TX abandon — aucune cible", "WARN"] call comspec_sse_fnc_log;
-    if (_announce) then { hint (("Aucun sujet à transmettre.") call comspec_sse_fnc_tr); };
+    if (_announce) then { ["Aucun sujet à transmettre.", "WARNING"] call comspec_sse_fnc_notify; };
     false
 };
 
@@ -43,9 +61,9 @@ if (_includeDigital && {!isNil "comspec_sse_fnc_submitDigitalAcquisition"}) then
 
 if (_announce) then {
     if (_okP) then {
-        hint (("Fiche d’identité envoyée au registre.") call comspec_sse_fnc_tr);
+        ["Fiche d’identité envoyée au registre.", "SUCCESS"] call comspec_sse_fnc_notify;
     } else {
-        hint (("La fiche n’est pas encore arrivée au registre. Elle est mise en attente — le détail est dans le journal COMSPEC.") call comspec_sse_fnc_tr);
+        ["La fiche n’est pas encore arrivée au registre. Elle est mise en attente — le détail est dans le journal COMSPEC.", "WARNING"] call comspec_sse_fnc_notify;
     };
 };
 

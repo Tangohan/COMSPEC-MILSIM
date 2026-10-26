@@ -32,6 +32,15 @@ class CfgFunctions {
     };
 };
 
+// Demandes des clients (Zeus, administrateur) : appel distant au serveur seulement. Liste blanche stricte
+// d'Overwatch (mode = 1) : sans ces entrées, les appels seraient rejetés en silence.
+class CfgRemoteExec {
+    class Functions {
+        class comspec_sse_fnc_campaignOp { allowedTargets = 2; jip = 0; };
+        class comspec_sse_fnc_campaignAthena { allowedTargets = 2; jip = 0; };
+    };
+};
+
 class Extended_PreInit_EventHandlers {
     class comspec_sse_campaign {
         init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\campaign\XEH_preInit.sqf'";

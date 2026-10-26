@@ -28,5 +28,5 @@ private _lines = [
     format ["Découvertes indexées : %1", count (keys (missionNamespace getVariable ["comspec_sse_discoveryStates", createHashMap]))]
 ];
 
-hint (((_lines joinString endl)) call comspec_sse_fnc_tr);
+[_lines joinString endl, "INFO"] call comspec_sse_fnc_notify;
 _lines

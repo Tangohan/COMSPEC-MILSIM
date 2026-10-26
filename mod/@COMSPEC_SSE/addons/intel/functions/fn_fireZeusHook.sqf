@@ -3,13 +3,19 @@ params [
     ["_entity", objNull, [objNull]],
     ["_datum", createHashMap, [createHashMap]]
 ];
-if (_intelId == "" || {isNil "comspec_sse_zeusHooks"}) exitWith { false };
-private _hook = comspec_sse_zeusHooks getOrDefault [_intelId, nil];
+if (_intelId == "") exitWith { false };
+// Hooks propres à chaque machine (registerZeusHook) : à enregistrer côté serveur (initServer.sqf). Un poste qui
+// exploite sans hook local passe la main au serveur (intel/XEH_postInit).
+private _hooks = missionNamespace getVariable ["comspec_sse_zeusHooks", createHashMap];
+private _hook = _hooks getOrDefault [_intelId, nil];
 if (isNil "_hook") then {
     private _hid = _datum getOrDefault ["hookId", ""];
-    _hook = comspec_sse_zeusHooks getOrDefault [_hid, nil];
+    _hook = _hooks getOrDefault [_hid, nil];
 };
-if (isNil "_hook") exitWith { false };
+if (isNil "_hook") exitWith {
+    if (!isServer) then { ["comspec_sse_fireZeusHook", [_intelId, _entity, _datum]] call CBA_fnc_serverEvent; };
+    false
+};
 
 if (_hook isEqualType {}) then {
     [_entity, _datum, _intelId] call _hook;

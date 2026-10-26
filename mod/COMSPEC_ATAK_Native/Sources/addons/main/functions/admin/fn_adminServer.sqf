@@ -1,0 +1,132 @@
+/*
+    App Admin de l'ATAK, côté serveur (seul juge des droits, fn_adminAllowed). Événement CBA serveur
+    comspec_atak_native_admin : [demandeur, action, arguments]. Rien ne tourne en continu : le serveur ne travaille que
+    quand un admin a l'app ouverte (une demande toutes les 10 s au plus).
+    Actions :
+      "scan"     état de la partie : chaque joueur renvoie la fiche de son ATAK directement au demandeur
+                 (fn_adminClient "report"), le serveur renvoie le debug de l'IA (téléphones ramassés, porteurs, traque)
+      "capture"  [id, "validate" | "dismiss" | "stopHunt" | "recover"]   téléphone aux mains de l'IA :
+                 valider ou rejeter la compromission, arrêter la traque de ses groupes, reprendre le téléphone au porteur
+      "hunt"     [actif]   traque des joueurs par l'IA qui a un téléphone (réglage comspec_atak_native_capture_hunt), pour la partie
+    Réponse au demandeur : comspec_atak_native_adminData [genre, données] ("debug" | "result" | "denied").
+*/
+if (!isServer) exitWith {};
+params [["_act", ""], ["_args", []], ["_caller", objNull]];
+private _now = [time, serverTime] select isMultiplayer;
+private _reply = { params ["_kind", "_data"]; ["comspec_atak_native_adminData", [_kind, _data], _caller] call CBA_fnc_targetEvent; };
+switch (_act) do {
+    case "init": {
+        ["comspec_atak_native_admin", {
+            params [["_caller", objNull], ["_a", ""], ["_xa", []]];
+            if (isNull _caller) exitWith {};
+            if !([_caller] call comspec_atak_native_fnc_adminAllowed) exitWith {
+                diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Demande refusée (ni Zeus ni admin) : %1 %2", name _caller, _a];
+                ["comspec_atak_native_adminData", ["denied", []], _caller] call CBA_fnc_targetEvent;
+            };
+            [_a, _xa, _caller] call comspec_atak_native_fnc_adminServer;
+        }] call CBA_fnc_addEventHandler;
+    };
+    case "scan": {
+        // Une demande toutes les 4 s au plus par admin.
+        private _last = _caller getVariable ["COMSPEC_ATAK_AdminScanAt", -100];
+        if ((_now - _last) < 4) exitWith {};
+        _caller setVariable ["COMSPEC_ATAK_AdminScanAt", _now];
+        private _to = allPlayers select { !(_x isKindOf "HeadlessClient_F") };
+        if (_to isNotEqualTo []) then { ["comspec_atak_native_adminReport", [_caller], _to] call CBA_fnc_targetEvent; };
+
+        private _side = { private _s = side group _this; [str _s, "?"] select (isNull group _this) };
+        private _caps = [];
+        {
+            private _c = _y;
+            private _t = _c get "tag";
+            private _ai = _c get "carrier";
+            private _alive = !isNull _ai && {alive _ai};
+            private _status = switch (true) do {
+                case ((_c get "state") isEqualTo "validated"): { "cut" };
+                case (_c get "wiped"): { "wiped" };
+                case (isNull _ai): { "recovered" };
+                case (!_alive): { "dead" };
+                case (_now < (_c get "exploitAt")): { format ["crack:%1", round ((_c get "exploitAt") - _now)] };
+                default { "exploit" };
+            };
+            private _hunters = (_c getOrDefault ["hunters", []]) select { !isNull _x && {(units _x) isNotEqualTo []} };
+            _caps pushBack [
+                _c get "id", _t param [2, ""], _t param [4, ""], _t param [3, ""], _t param [1, ""], _c get "state", _c get "by", _c get "athena",
+                _c get "grid", _c get "hour", _status,
+                [["", typeOf _ai] select _alive, ["", getText (configOf _ai >> "displayName")] select _alive, ["", _ai call _side] select _alive,
+                    ["", groupId group _ai] select _alive, [[], getPosATL _ai] select _alive],
+                _c get "lastGrid", round (_now - (_c getOrDefault ["lastRun", _now])),
+                _hunters apply { [groupId _x, count units _x, (_x getVariable ["COMSPEC_ATAK_HuntPos", []]), str side _x] },
+                _c getOrDefault ["targets", 0], _c get "pos", _t param [0, ""]
+            ];
+        } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]);
+        _caps sort false;
+        // IA en route pour ramasser un téléphone : [type, camp, distance, position de l'IA, propriétaire, position du téléphone]
+        private _going = [];
+        {
+            _y params [["_ai", objNull], ["_t0", 0]];
+            private _o = objectFromNetId _x;
+            if (isNull _ai || {!alive _ai} || {isNull _o}) then { continue };
+            private _tag = _o getVariable ["COMSPEC_ATAK_PhoneTag", []];
+            if (_tag isEqualTo []) then { _tag = (_o getVariable ["COMSPEC_ATAK_PhoneOwner", objNull]) getVariable ["COMSPEC_ATAK_PhoneTag", []]; };
+            _going pushBack [getText (configOf _ai >> "displayName"), _ai call _side, round (_ai distance _o), getPosATL _ai, _tag param [2, "?"], getPosATL _o, round (_now - _t0)];
+        } forEach (missionNamespace getVariable ["COMSPEC_ATAK_CapGo", createHashMap]);
+        ["debug", [
+            [missionNamespace getVariable ["comspec_atak_native_capture_enabled", true], missionNamespace getVariable ["comspec_atak_native_capture_radius", 100],
+                missionNamespace getVariable ["comspec_atak_native_capture_hunt", true], missionNamespace getVariable ["comspec_atak_native_capture_hunt_radius", 3000],
+                missionNamespace getVariable ["comspec_atak_native_capture_crack", 120]],
+            _caps select [0, 20], _going select [0, 20], round _now
+        ]] call _reply;
+    };
+    case "capture": {
+        _args params [["_id", ""], ["_op", ""]];
+        private _c = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_id, createHashMap];
+        if ((count _c) isEqualTo 0) exitWith { ["result", [false, "Capture introuvable."]] call _reply; };
+        private _who = [_caller] call comspec_atak_native_fnc_unitCallsign;
+        switch (_op) do {
+            case "validate";
+            case "dismiss": {
+                // Le gestionnaire valide aussi pour un camp qui n'est pas le sien (droit vérifié ci-dessus).
+                _caller setVariable ["COMSPEC_ATAK_AdminOk", true];
+                [_op, [_id, _caller]] call comspec_atak_native_fnc_captureServer;
+                _caller setVariable ["COMSPEC_ATAK_AdminOk", nil];
+                ["result", [true, ["Compromission rejetée.", "Compromission validée : le téléphone est coupé du réseau."] select (_op isEqualTo "validate")]] call _reply;
+            };
+            case "stopHunt": {
+                {
+                    if (!isNull _x) then {
+                        _x setVariable ["COMSPEC_ATAK_NoHunt", true, true];
+                        _x setVariable ["COMSPEC_ATAK_HuntPos", nil];
+                        [_x] call CBA_fnc_clearWaypoints;
+                    };
+                } forEach ((_c getOrDefault ["hunters", []]) + [group (_c get "carrier")]);
+                _c set ["hunters", []];
+                ["result", [true, "Traque arrêtée pour les groupes de cette capture."]] call _reply;
+            };
+            case "recover": {
+                private _ai = _c get "carrier";
+                if (!isNull _ai) then {
+                    private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
+                    {
+                        if ((toLower _x) in _cat) then { ["comspec_atak_native_capLocal", ["strip", _ai, _x], _ai] call CBA_fnc_targetEvent; };
+                    } forEach ((assignedItems _ai) + (items _ai));
+                    _ai setVariable ["COMSPEC_ATAK_CapOf", nil, true];
+                    _ai setVariable ["COMSPEC_ATAK_Ident", nil, true];
+                };
+                _c set ["carrier", objNull];
+                _c set ["by", _who];
+                ["result", [true, "Téléphone repris à l'IA : plus d'exploitation."]] call _reply;
+            };
+        };
+        ["INFO", "ADMIN", format ["%1 : %2 par %3 (app Admin)", _id, _op, _who]] call comspec_atak_native_fnc_log;
+        _caller setVariable ["COMSPEC_ATAK_AdminScanAt", -100];
+        ["scan", [], _caller] call comspec_atak_native_fnc_adminServer;
+    };
+    case "hunt": {
+        _args params [["_on", true]];
+        missionNamespace setVariable ["comspec_atak_native_capture_hunt", _on, true];
+        ["INFO", "ADMIN", format ["Traque par l'IA %1 par %2 (app Admin)", ["coupée", "rétablie"] select _on, name _caller]] call comspec_atak_native_fnc_log;
+        ["result", [true, ["Traque par l'IA coupée pour la partie.", "Traque par l'IA rétablie."] select _on]] call _reply;
+    };
+};
+true

@@ -461,9 +461,100 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
             defaultValue = "false";
             typeName = "BOOL";
         };
+        class Cond {
+            displayName = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_TIP";
+            property = "COMSPEC_ATAK_Module_Relay_Cond";
+            control = "Combo";
+            expression = "_this setVariable ['Cond',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_ALWAYS"; value = ""; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_MAST"; value = "mast"; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_STOPPED"; value = "stopped"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_RELAYCOND_ENGINE"; value = "engineoff"; };
+            };
+        };
+        class CondCode {
+            displayName = "$STR_COMSPEC_ATAK_CFG_RELAYCODE_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_RELAYCODE_TIP";
+            property = "COMSPEC_ATAK_Module_Relay_CondCode";
+            control = "EditCodeMulti3";
+            expression = "_this setVariable ['CondCode',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
     };
     class ModuleDescription {
         description = "$STR_COMSPEC_ATAK_CFG_22558DD904";
+    };
+};
+// Écran COMSPEC (fn_moduleScreen, fn_screenCast) : objets synchronisés où l'app Briefing diffuse ses diapositives.
+class COMSPEC_ATAK_Module_Screen: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_ATAK_Network";
+    displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
+    function = "comspec_atak_native_fnc_moduleScreen";
+    class Attributes {
+        class Name {
+            displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_N_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_SCREEN_N_TIP";
+            property = "COMSPEC_ATAK_Module_Screen_Name";
+            control = "Edit";
+            expression = "_this setVariable ['Name',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Range {
+            displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_R_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_SCREEN_R_TIP";
+            property = "COMSPEC_ATAK_Module_Screen_Range";
+            control = "Edit";
+            expression = "_this setVariable ['Range',_value,true];";
+            defaultValue = "25";
+            typeName = "NUMBER";
+        };
+        class Side {
+            displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_TIP";
+            property = "COMSPEC_ATAK_Module_Screen_Side";
+            control = "Combo";
+            expression = "_this setVariable ['Side',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_ALL"; value = ""; default = 1; };
+                class V1 { name = "BLUFOR"; value = "WEST"; };
+                class V2 { name = "OPFOR"; value = "EAST"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER"; value = "GUER"; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_CIV"; value = "CIV"; };
+            };
+        };
+        class Index {
+            displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_I_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_SCREEN_I_TIP";
+            property = "COMSPEC_ATAK_Module_Screen_Index";
+            control = "Edit";
+            expression = "_this setVariable ['Index',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+        };
+        class Ace {
+            displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_A_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_SCREEN_A_TIP";
+            property = "COMSPEC_ATAK_Module_Screen_Ace";
+            control = "Checkbox";
+            expression = "_this setVariable ['Ace',_value,true];";
+            defaultValue = "true";
+            typeName = "BOOL";
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_SCREEN_DESC";
     };
 };
 // Contrôle Zeus des ATAK (fn_moduleZeusControl, fn_moduleZeusJammer) : Zeus seulement, formulaire à la pose.

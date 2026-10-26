@@ -19,7 +19,7 @@
       "stainsCount" : nombre de taches (fn_screenClean).
     Taches de sang (1.97.0) : liste COMSPEC_ATAK_Device "stains", chaque tache gardée à sa place (plus de sang qui
     change de place quand une autre tache apparaît) : [genre, variante, x 0-1, y 0-1, taille (part de la hauteur de
-    l'écran), angle, opacité 0-1]. Genres : print (empreinte de doigt), smear (traînée), splat, hand (paume), drip
+    l'écran), angle, opacité 0-1, heure de la tache (time : le sang sèche et brunit, fn_screenSurface)]. Genres : print (empreinte de doigt), smear (traînée), splat, hand (paume), drip
     (coulure), spatter (projection fine), pool (nappe, gore). « blood » reste la couverture globale (0-1).
     Style (réglage serveur comspec_atak_native_blood_style) : 0 discret, 1 réaliste, 2 gore (plus de taches, plus
     grandes, nappes et mains entières).
@@ -45,7 +45,7 @@ private _stain = {
     if (_sy < 0) then { _sy = 0.15 + random 0.8; };
     if (_ang < 0) then { _ang = [random 360, (random 30) - 15] select (_kind isEqualTo "drip"); };
     _size = _size * ([0.75, 1, 1.35] select _style);
-    _stains pushBack [_kind, floor random (_vars getOrDefault [_kind, 1]), _sx, _sy, _size, _ang, _alpha max 0.05 min 1];
+    _stains pushBack [_kind, floor random (_vars getOrDefault [_kind, 1]), _sx, _sy, _size, _ang, _alpha max 0.05 min 1, time];
     // Au plus 40 taches : les plus pâles partent d'abord.
     if ((count _stains) > 40) then {
         private _low = 0;

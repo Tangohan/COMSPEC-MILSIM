@@ -19,9 +19,19 @@ class GradeSystemRepository
     /** @return list<array{id: int, code: string, label: string, country_code: string, format_type: string, is_active: int}> */
     public function listActive(): array
     {
-        $stmt = $this->pdo->query(
-            'SELECT id, code, label, country_code, format_type, is_active FROM grade_systems WHERE is_active = 1 ORDER BY country_code ASC, id ASC'
-        );
+        // Catalogue partagé seulement : les systèmes / catégories sur mesure ont leur propre écran.
+        try {
+            $stmt = $this->pdo->query(
+                'SELECT id, code, label, country_code, format_type, is_active FROM grade_systems WHERE is_active = 1 AND owner_tenant_id IS NULL ORDER BY country_code ASC, id ASC'
+            );
+        } catch (\Throwable) {
+            $stmt = false;
+        }
+        if ($stmt === false) {
+            $stmt = $this->pdo->query(
+                'SELECT id, code, label, country_code, format_type, is_active FROM grade_systems WHERE is_active = 1 ORDER BY country_code ASC, id ASC'
+            );
+        }
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(function ($r) {
             $r['id'] = (int) $r['id'];

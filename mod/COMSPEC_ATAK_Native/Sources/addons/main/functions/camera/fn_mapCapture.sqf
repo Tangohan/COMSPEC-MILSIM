@@ -198,7 +198,7 @@ private _sync = {
         _all set [_k, [_best, _ids arrayIntersect _ids, _land, if (_rec isEqualTo []) then { call _stamp } else { _rec select 3 }]];
     } forEach _found;
     profileNamespace setVariable ["COMSPEC_ATAK_MapCapProg", (keys _all) apply { [_x, _all get _x] }];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     true
 };
 private _progText = {
@@ -265,7 +265,7 @@ switch (_act) do {
         private _all = call _progAll;
         { if ((_x find ((toLower worldName) + "|")) isEqualTo 0) then { _all deleteAt _x; }; } forEach (keys _all);
         profileNamespace setVariable ["COMSPEC_ATAK_MapCapProg", (keys _all) apply { [_x, _all get _x] }];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         true
     };
     case "zeus": {
@@ -708,7 +708,7 @@ switch (_act) do {
                 };
             };
             call _save;
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
             _layer cutText ["", "PLAIN", 0];
             missionNamespace setVariable ["COMSPEC_ATAK_MapCapLive", nil];
             if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back"]; camDestroy _cam; };

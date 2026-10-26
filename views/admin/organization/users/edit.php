@@ -295,6 +295,9 @@ $formatDateFr = static function (?string $raw): string {
                                 <option value="">Non renseignée</option>
                                 <option value="FR" <?= ($user['nationality_code'] ?? '') === 'FR' ? 'selected' : '' ?>>Française</option>
                                 <option value="US" <?= ($user['nationality_code'] ?? '') === 'US' ? 'selected' : '' ?>>Américaine</option>
+                                <?php if (in_array(\App\Support\CustomGradeTemplates::COUNTRY, array_column($grades, 'country_code'), true)): ?>
+                                <option value="ZZ" <?= ($user['nationality_code'] ?? '') === 'ZZ' ? 'selected' : '' ?>>Sur mesure (grades de la communauté)</option>
+                                <?php endif; ?>
                             </select>
                             <p class="bo-user-edit__hint">La catégorie et le grade se mettent à jour selon la doctrine choisie.</p>
                         </div>

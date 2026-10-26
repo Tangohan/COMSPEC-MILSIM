@@ -360,7 +360,21 @@ internal static class GoogleSlidesDeck
                 if (!resp.IsSuccessStatusCode) continue;
                 var bytes = await resp.Content.ReadAsByteArrayAsync(token).ConfigureAwait(false);
                 if (!IsImageBytes(bytes)) continue;
-                await File.WriteAllBytesAsync(destPath, bytes, token).ConfigureAwait(false);
+                // Écriture atomique : le préchargement et StartSlide testent File.Exists, un PNG à moitié écrit
+                // partirait vers Arma. Nom temporaire unique : deux téléchargements de la même diapo ne se gênent pas.
+                var tmp = destPath + "." + Guid.NewGuid().ToString("N") + ".part";
+                try
+                {
+                    await File.WriteAllBytesAsync(tmp, bytes, token).ConfigureAwait(false);
+                    File.Move(tmp, destPath, true);
+                }
+                catch
+                {
+                    try { File.Delete(tmp); } catch { /* ignore */ }
+                    // L'autre téléchargement a gagné (fichier ouvert par Arma) : sa copie complète sert.
+                    if (File.Exists(destPath) && new FileInfo(destPath).Length > 64) return destPath;
+                    throw;
+                }
                 return destPath;
             }
             catch (OperationCanceledException) { throw; }

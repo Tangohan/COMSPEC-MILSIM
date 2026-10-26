@@ -16,7 +16,7 @@ missionNamespace setVariable ["comspec_overwatch_ecoti_compass_only", _only, fal
 
 if (_persist) then {
     profileNamespace setVariable ["COMSPEC_EcotiTubeInfo", _mode];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 if (!isNil "cba_settings_fnc_set") then {

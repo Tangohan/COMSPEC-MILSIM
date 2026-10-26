@@ -100,7 +100,7 @@ final class PlatformUserProfileService
             'extras' => is_array($extras) ? $extras : [],
             'tenant' => is_array($tenant) ? $tenant : [],
             'grades' => $tenantId > 0 ? $this->grades->listActiveForDoctrinePicker($tenantId) : [],
-            'grade_categories' => $this->gradeCategories->listActive(),
+            'grade_categories' => $tenantId > 0 ? $this->gradeCategories->listForTenant($tenantId) : $this->gradeCategories->listActive(),
             'units' => $tenantId > 0 ? $this->units->allForTenant($tenantId) : [],
             'roles' => $tenantId > 0 ? $this->roles->forTenantOrganization($tenantId) : [],
             'selected_role_ids' => $selectedRoleIds,
@@ -560,6 +560,7 @@ final class PlatformUserProfileService
         return [
             'FR' => 'Française',
             'US' => 'Américaine',
+            \App\Support\CustomGradeTemplates::COUNTRY => 'Sur mesure (grades de la communauté)',
         ];
     }
 

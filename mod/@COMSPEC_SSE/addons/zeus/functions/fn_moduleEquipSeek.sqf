@@ -28,6 +28,29 @@ private _targets = [_logic, _units, _radius] call comspec_sse_fnc_moduleTargets;
 // Seuls les joueurs sont dotés : donner le terminal à un PNJ ne sert à rien et
 // le rend récupérable sur son corps, ce qui n'est pas l'effet recherché.
 private _players = _targets select { isPlayer _x };
+
+// Unités jouables encore sans joueur (slots JIP) : dotées quand un joueur les prend (serveur, MP).
+private _pending = _targets select { !isPlayer _x && {_x in playableUnits} };
+if (isMultiplayer && {_pending isNotEqualTo []}) then {
+    if (isNil "comspec_sse_seekPending") then { comspec_sse_seekPending = []; };
+    { comspec_sse_seekPending pushBackUnique _x; } forEach _pending;
+    if (isNil "comspec_sse_seekJipEh") then {
+        comspec_sse_seekJipEh = addMissionEventHandler ["OnUserSelectedPlayer", {
+            params ["", ["_unit", objNull]];
+            if (isNull _unit || {!(_unit in comspec_sse_seekPending)}) exitWith {};
+            comspec_sse_seekPending = comspec_sse_seekPending - [_unit, objNull];
+            // Attend que l'unité soit au joueur (locale chez lui) avant de remettre le terminal.
+            [
+                { isPlayer _this && {!local _this || {player isEqualTo _this}} },
+                { [_this] remoteExecCall ["comspec_sse_fnc_giveSeek", _this]; },
+                _unit,
+                60
+            ] call CBA_fnc_waitUntilAndExecute;
+        }];
+    };
+    [format ["Terminal SEEK : %1 unité(s) jouable(s) en attente de joueur", count _pending], "INFO"] call comspec_sse_fnc_log;
+};
+
 if (_players isEqualTo []) exitWith {
     ["Module terminal SEEK : aucun joueur sous le module", "WARN"] call comspec_sse_fnc_log;
     deleteVehicle _logic;

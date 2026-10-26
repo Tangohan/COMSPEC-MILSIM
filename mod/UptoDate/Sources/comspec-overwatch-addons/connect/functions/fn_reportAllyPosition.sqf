@@ -20,15 +20,49 @@ private _pos = getPosWorld _unit;
 if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith { false };
 
 private _last = _unit getVariable ["COMSPEC_AllyTrackLastAt", -1e9];
-if ((diag_tickTime - _last) < 3) exitWith { false };
-_unit setVariable ["COMSPEC_AllyTrackLastAt", diag_tickTime, false];
+private _dt = diag_tickTime - _last;
+if (_dt < 3) exitWith { false };
 
-private _fnc_num = { (_this select 0) toFixed (_this select 1) };
-private _callSign = [_unit] call comspec_overwatch_connect_fnc_allyTrackCallsign;
 private _veh = vehicle _unit;
 private _inVeh = _veh isNotEqualTo _unit;
 private _heading = getDir (if (_inVeh) then { _veh } else { _unit });
 private _aslZ = (getPosASL (if (_inVeh) then { _veh } else { _unit })) select 2;
+
+private _health = "stable";
+if (!isNil "comspec_overwatch_connect_fnc_getMedicalState") then {
+    private _med = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
+    if (_med isEqualType "" && {_med isNotEqualTo ""}) then {
+        _health = (_med splitString "|") select 0;
+    };
+};
+if (!alive _unit) then { _health = "dead" };
+_health = (_health splitString """" joinString "");
+
+private _grpUnits = (units group _unit) select { alive _x && {!isPlayer _x} && {_x isKindOf "CAManBase"} };
+private _isLeader = (leader group _unit) isEqualTo _unit;
+private _grpCount = count _grpUnits;
+
+// Au plus toutes les 3 s, et seulement si l'IA a bougé (3 m), tourné (15°), changé de véhicule,
+// d'état ou de groupe ; sinon battement à 30 s. Une remise à -1e9 de COMSPEC_AllyTrackLastAt
+// (réglage Zeus / ZEN) force toujours l'envoi.
+private _sig = [
+    round ((_pos select 0) / 3),
+    round ((_pos select 1) / 3),
+    round (_aslZ / 3),
+    round (_heading / 15),
+    _veh,
+    _health,
+    _isLeader,
+    _grpCount,
+    count (crew _veh),
+    missionNamespace getVariable ["COMSPEC_TrackSigEpoch", 0]
+];
+if (_dt < 30 && {_sig isEqualTo (_unit getVariable ["COMSPEC_AllyTrackSig", []])}) exitWith { false };
+_unit setVariable ["COMSPEC_AllyTrackLastAt", diag_tickTime, false];
+_unit setVariable ["COMSPEC_AllyTrackSig", _sig, false];
+
+private _fnc_num = { (_this select 0) toFixed (_this select 1) };
+private _callSign = [_unit] call comspec_overwatch_connect_fnc_allyTrackCallsign;
 private _side = side group _unit;
 private _sideStr = switch (_side) do {
     case east: { "EAST" };
@@ -55,16 +89,6 @@ if (_role isEqualTo "" || {(toLower _role) in ["operator", "unknown", "inconnu"]
 };
 _role = (_role splitString """" joinString "");
 
-private _health = "stable";
-if (!isNil "comspec_overwatch_connect_fnc_getMedicalState") then {
-    private _med = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
-    if (_med isEqualType "" && {_med isNotEqualTo ""}) then {
-        _health = (_med splitString "|") select 0;
-    };
-};
-if (!alive _unit) then { _health = "dead" };
-_health = (_health splitString """" joinString "");
-
 private _allyId = _unit getVariable ["COMSPEC_AllyTrackId", ""];
 if (!(_allyId isEqualType "")) then { _allyId = str _allyId };
 if (_allyId isEqualTo "") then {
@@ -89,9 +113,6 @@ if (_inVeh) then {
     private _occ = [_veh] call comspec_overwatch_connect_fnc_collectVehicleOccupants;
     _occJson = (_occ apply { [_x] call comspec_overwatch_connect_fnc_hashMapToJson }) joinString ",";
 };
-private _grpUnits = (units group _unit) select { alive _x && {!isPlayer _x} && {_x isKindOf "CAManBase"} };
-private _isLeader = (leader group _unit) isEqualTo _unit;
-private _grpCount = count _grpUnits;
 private _extra = format [
     "{""ally_ai"":true,""is_ai"":true,""source"":""ally"",""ally_id"":""%1"",""display_name"":""%2"",""side"":""%3"",""affiliation"":""%4"",""in_vehicle"":%5,""platform"":""%6"",""vehicle"":""%7"",""vehicle_name"":""%8"",""vehicle_label"":""%8"",""occupants"":[%9],""military_id"":"""",""is_leader"":%10,""group_count"":%11,""group_name"":""%12""}",
     _allyId,

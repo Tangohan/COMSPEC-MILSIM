@@ -22,7 +22,9 @@ if (
 ) exitWith {};
 if (!isNil "comspec_overwatch_connect_fnc_uplinkQuiet" && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}) exitWith {};
 
-private _id = trim (str (_order getOrDefault ["id", ""]));
+// Ids d’ordre déjà en chaîne : str ajouterait des guillemets à chaque passage.
+private _fnc_idText = { params [["_v", ""]]; if (_v isEqualType "") then { trim _v } else { trim (str _v) } };
+private _id = [_order getOrDefault ["id", ""]] call _fnc_idText;
 private _issuer = _order getOrDefault ["issuer", ""];
 private _type = _order getOrDefault ["type", "MOVE"];
 private _priority = _order getOrDefault ["priority", "IMPORTANT"];
@@ -52,7 +54,7 @@ if (_selfIssued && {!_explicitMe} && {!((toUpper _type) in ["PHONE_GEOLOC", "PHO
 // Éviter les doublons (remoteExec + bus local + poll) — ids toujours en chaîne
 private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
 if (!(_seen isEqualType [])) then { _seen = []; };
-_seen = _seen apply { trim (str _x) };
+_seen = _seen apply { [_x] call _fnc_idText };
 if (_id in _seen) exitWith {};
 _seen pushBack _id;
 if (count _seen > 80) then { _seen deleteRange [0, (count _seen) - 80]; };

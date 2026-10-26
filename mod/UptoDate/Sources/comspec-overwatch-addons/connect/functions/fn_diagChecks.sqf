@@ -3,6 +3,7 @@
     Reprend les détections existantes : DLL (fn_extensionStatus), contrôle d'installation de l'ATAK natif
     (fn_integrityCheck : PBO en double, versions mélangées, DLL périmée, mise à jour publiée), service Athéna,
     état de la liaison, compte, terminal, pertes, dernier pas à pas interrompu.
+    Auto-test complet (fn_diagSelfTest) : contrôles d'Athena, chaque canal rejoué, file d'envoi de la DLL.
     Retour : [_rows, _verdict, _fix]
       _rows    [[niveau ("ok" | "info" | "warn" | "ko"), titre, valeur, cause et action, correction], ...]
       _verdict [niveau, libellé]
@@ -116,6 +117,24 @@ if (_mode isNotEqualTo "off") then {
                 "La liaison se rétablit seule en général. Si cela dure plus d'une minute : Reconnecter Athena." call _T, "reconnect"] call _add;
         };
         case (_link isEqualTo "disabled"): {};
+        // Clé refusée (fn_connect, ERR unauthorized) : clé du profil changée ou retirée côté Athena.
+        // Reconnecter renverrait la même clé : seule une nouvelle liaison en enregistre une valide.
+        case ((toLower _detail) find "cle athena invalide" >= 0): {
+            ["ko", "Liaison Athena" call _T, "clé d'accès refusée" call _T,
+                "Athena refuse la clé enregistrée dans votre profil : elle a été changée ou retirée. Refaites la liaison avec Lier mon compte (code affiché sur le site, page Mon compte) : une nouvelle clé est enregistrée toute seule." call _T, "link"] call _add;
+        };
+        case ((toLower _detail) find "communaute manquante" >= 0 || {(toLower _detail) find "steam invalide" >= 0}): {
+            ["ko", "Liaison Athena" call _T, _detail call _T,
+                "La liaison enregistrée dans votre profil est incomplète. Refaites-la avec Lier mon compte (code affiché sur le site, page Mon compte)." call _T, "link"] call _add;
+        };
+        case ((toLower _detail) find "non autorise" >= 0 || {(toLower _detail) find "acces mod refuse" >= 0}): {
+            ["ko", "Liaison Athena" call _T, _detail call _T,
+                "Athena bloque ce compte, cet identifiant Steam ou ce réseau. Une nouvelle liaison n'y changera rien : contactez un administrateur de votre communauté." call _T, ""] call _add;
+        };
+        case ((toLower _detail) find "steam requis" >= 0): {
+            ["ko", "Liaison Athena" call _T, _detail call _T,
+                "Cette version du mod n'envoie pas votre identifiant Steam. Mettez le mod à jour sur Steam, puis relancez Arma." call _T, ""] call _add;
+        };
         case (_notLinked): {
             ["ko", "Liaison Athena" call _T, "compte non lié" call _T,
                 "Le portail répond mais ce jeu n'est pas relié à votre compte Athena : Lier mon compte (code affiché sur le site, page Mon compte)." call _T, "link"] call _add;
@@ -178,6 +197,37 @@ private _last = profileNamespace getVariable ["COMSPEC_DiagIsolateLast", []];
 if (!_iso && {_last isEqualType []} && {(count _last) >= 2} && {((_last select 1) isEqualType "")} && {(_last select 1) isNotEqualTo ""}) then {
     ["warn", "Dernier pas à pas" call _T, (format ["interrompu à : %1", (_last select 1) call comspec_overwatch_connect_fnc_tr]) call _T,
         "Si le jeu s'est arrêté pendant ce pas à pas, cette fonction est suspecte. Signalez-le, puis relancez un pas à pas pour confirmer." call _T, "bug"] call _add;
+};
+
+// 11. Auto-test complet (Athena refait ses contrôles, chaque canal sondé est rejoué, file d'envoi de la DLL).
+// Lancé en tâche de fond à l'ouverture et à chaque « Revérifier » (plus vieux que 20 s) ; la fenêtre se rafraîchit seule.
+if (_extOk && {_enabled} && {_mode isNotEqualTo "off"}) then {
+    private _st = missionNamespace getVariable ["COMSPEC_DiagSelfTest", []];
+    private _running = missionNamespace getVariable ["COMSPEC_DiagSelfTestRunning", false];
+    private _fresh = (_st isEqualType []) && {(count _st) >= 3} && {(diag_tickTime - (_st select 0)) < 20};
+    if (!_fresh && {!_running}) then {
+        [] call comspec_overwatch_connect_fnc_diagSelfTest;
+        _running = true;
+    };
+    if (_running) then {
+        ["info", "Auto-test complet" call _T, "en cours…" call _T, "Athena et chaque canal sont testés en direct ; la fenêtre se met à jour toute seule." call _T, ""] call _add;
+    };
+    if ((_st isEqualType []) && {(count _st) >= 3}) then {
+        _st params ["", ["_stRows", []], ["_stErr", ""]];
+        if (_stErr isNotEqualTo "") then {
+            ["warn", "Auto-test complet" call _T, _stErr,
+                "La DLL n'a pas pu lancer l'auto-test (DLL plus ancienne ou liaison pas encore démarrée). Mettez le mod à jour ou Reconnecter Athena." call _T, "reconnect"] call _add;
+        } else {
+            {
+                // Refus d'authentification côté Athena : la correction proposée est de relier le compte.
+                private _row = +_x;
+                if ((_row select 0) isEqualTo "ko" && {(_row select 4) isEqualTo ""}) then {
+                    _row set [4, ["reconnect", "link"] select (((toLower (_row select 1)) find "auth") >= 0 || {((toLower (_row select 1)) find "compte") >= 0})];
+                };
+                _rows pushBack _row;
+            } forEach _stRows;
+        };
+    };
 };
 
 // Verdict et correction proposée.

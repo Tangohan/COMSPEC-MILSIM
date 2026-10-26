@@ -29,7 +29,7 @@ private _fnc_storeName = {
     if (_wname isNotEqualTo "") then { _names set [_wid, _wname]; };
 };
 
-private _raw = ["COMSPECExtension" callExtension ["GetWardrobe", [_id]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [["COMSPECExtension", "GetWardrobe", [_id]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw find "OK|" != 0}) exitWith {
     private _err = if (_raw isEqualType "") then { _raw } else { str _raw };
     private _code = if ((_err find "too_large") >= 0) then { "too_large" } else { "missing" };
@@ -56,7 +56,7 @@ if ((_body select [0, 7]) isEqualTo "CHUNKED") then {
     private _buf = "";
     private _ok = true;
     for "_ci" from 0 to (_chunks - 1) do {
-        private _cRaw = ["COMSPECExtension" callExtension ["GetWardrobeChunk", [_id, str _ci]]] call comspec_overwatch_connect_fnc_extResult;
+        private _cRaw = [["COMSPECExtension", "GetWardrobeChunk", [_id, str _ci]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         if (!(_cRaw isEqualType "") || {_cRaw find "OK|" != 0}) then {
             _ok = false;
             break;
@@ -90,6 +90,18 @@ private _loadout = [_parts select 2] call comspec_overwatch_connect_fnc_arsenalN
 if (_loadout isEqualTo []) exitWith {
     missionNamespace setVariable ["COMSPEC_ArsenalCloudLoadoutError", "missing", false];
     []
+};
+
+// Tenue ACE étendue [tenue, infos] : sur le site les infos sont du texte (str d'un HashMap = paires) ; ACE attend un
+// HashMap pour les relire. Laissé en tableau, l'écran « Mes équipements » d'ACE n'affichait plus la tenue.
+if (
+    (count _loadout) == 2
+    && {(_loadout select 0) isEqualType []}
+    && {(count (_loadout select 0)) >= 9}
+    && {(_loadout select 1) isEqualType []}
+) then {
+    private _pairs = (_loadout select 1) select { (_x isEqualType []) && {(count _x) == 2} && {(_x select 0) isEqualType ""} };
+    _loadout = [_loadout select 0, createHashMapFromArray _pairs];
 };
 
 _cache set [_id, _loadout];

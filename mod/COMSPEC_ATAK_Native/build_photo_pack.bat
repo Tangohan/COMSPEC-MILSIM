@@ -10,7 +10,7 @@ setlocal
 :: Options passees telles quelles a tools\map_stitch.py, ex. :
 ::   build_photo_pack.bat --world Altis
 ::   build_photo_pack.bat --addon-max-mb 600
-::   build_photo_pack.bat --upload https://athena.ttrd.fr/public --key <X_COMSPEC_KEY>   (envoie aussi le fond au site)
+::   build_photo_pack.bat --upload https://athena-comspec.eu/public --key <X_COMSPEC_KEY>   (envoie aussi le fond au site)
 set "ROOT=%~dp0"
 set "BASE=%USERPROFILE%\Documents\COMSPEC_cartes"
 if defined COMSPEC_CARTES set "BASE=%COMSPEC_CARTES%"

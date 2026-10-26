@@ -11,7 +11,7 @@ declare(strict_types=1);
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $datasets = is_array($registryDatasets ?? null) ? $registryDatasets : [];
 ?>
-<section class="ath-page-head" aria-labelledby="adr-title">
+<section class="ath-page-head pa-head" aria-labelledby="adr-title">
   <div class="ath-page-head__copy">
     <p class="ath-page-head__kicker">EXPLOITATION · DONNÉES</p>
     <h1 class="ath-page-head__title" id="adr-title">Registre des données</h1>
