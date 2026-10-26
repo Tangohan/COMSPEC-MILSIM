@@ -185,7 +185,8 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
                 ];
             };
             // Marqueur joueur posé par un autre client : c'est son poste qui le relaie (sinon N envois).
-            if (_local isNotEqualTo true && {((toLower _marker) find "_defined") >= 0}) exitWith {};
+            // Tout autre marqueur global non local est déjà relayé par le hub serveur (sinon N+1 envois).
+            if (_local isNotEqualTo true && {(((toLower _marker) find "_defined") >= 0) || {missionNamespace getVariable ["COMSPEC_ServerHubActive", false]}}) exitWith {};
             [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
         }],
         addMissionEventHandler ["MarkerUpdated", {
@@ -198,7 +199,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
             // Dernier paramètre = changement local : seul le poste auteur relaie un marqueur joueur (_USER_DEFINED, _DEFINED #, cTab).
             private _local = _this param [(count _this) - 1, true];
-            if (_local isEqualTo false && {((toLower _marker) find "_defined") >= 0}) exitWith {};
+            if (_local isEqualTo false && {(((toLower _marker) find "_defined") >= 0) || {missionNamespace getVariable ["COMSPEC_ServerHubActive", false]}}) exitWith {};
             [_marker, false, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
         }],
         addMissionEventHandler ["MarkerDeleted", {
@@ -211,7 +212,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
             // Dernier paramètre = changement local : seul le poste auteur relaie un marqueur joueur (_USER_DEFINED, _DEFINED #, cTab).
             private _local = _this param [(count _this) - 1, true];
-            if (_local isEqualTo false && {((toLower _marker) find "_defined") >= 0}) exitWith {};
+            if (_local isEqualTo false && {(((toLower _marker) find "_defined") >= 0) || {missionNamespace getVariable ["COMSPEC_ServerHubActive", false]}}) exitWith {};
             [_marker, true, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
         }]
     ];

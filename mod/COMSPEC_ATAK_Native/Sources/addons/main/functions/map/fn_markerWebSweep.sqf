@@ -1,7 +1,7 @@
 /*
     Tous les marqueurs de la carte vers le web (Athena), y compris ceux de la mission et ceux posés avec la carte Arma.
     COMSPEC Link ne relaie la carte entière que s'il voit son propre terminal : le téléphone natif s'en charge.
-    Un seul relais par camp (le premier joueur qui le réclame, remplacé s'il part) envoie, par différence de signature,
+    Un seul relais par camp (le joueur équipé au plus petit identifiant, remplacé s'il part) envoie, par différence de signature,
     40 marqueurs au plus par passage ; les marqueurs disparus sont supprimés côté web. Appelé toutes les 15 s.
 */
 if (isNil "comspec_overwatch_connect_fnc_syncMapMarker") exitWith {};
@@ -12,12 +12,17 @@ private _key = format ["COMSPEC_ATAK_MkRelay_%1", side group player];
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {
     if ((missionNamespace getVariable [_key, objNull]) isEqualTo player) then { missionNamespace setVariable [_key, objNull, true]; };
 };
-private _relay = missionNamespace getVariable [_key, objNull];
-if (isNull _relay || {!alive _relay} || {!isPlayer _relay} || {(side group _relay) isNotEqualTo (side group player)}) then {
-    missionNamespace setVariable [_key, player, true];
-    _relay = player;
-};
+// Relais choisi de la même façon sur chaque poste : le joueur du camp, vivant et équipé, au plus petit identifiant
+// (avant : le premier qui le réclamait par variable publique ; deux réclamations croisées laissaient chacun voir l'autre
+// comme relais, et plus personne n'envoyait la carte). Seul l'élu écrit la variable (affichée par Resynch).
+private _side = side group player;
+private _cands = allPlayers select { alive _x && {!(_x isKindOf "HeadlessClient_F")} && {(side group _x) isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} };
+private _uids = _cands apply { getPlayerUID _x };
+private _sorted = +_uids;
+_sorted sort true;
+private _relay = if ((count _sorted) isEqualTo 0) then { player } else { _cands select (_uids find (_sorted select 0)) };
 if (_relay isNotEqualTo player) exitWith {};
+if ((missionNamespace getVariable [_key, objNull]) isNotEqualTo player) then { missionNamespace setVariable [_key, player, true]; };
 // Aucun marqueur créé, modifié ou supprimé depuis le dernier passage complet (compteur COMSPEC_ATAK_MkRev) : rien à
 // comparer (avant, chaque marqueur de la carte était relu et sérialisé toutes les 15 s).
 // Passage mémorisé dans missionNamespace comme MkRev (uiNamespace survivait à la mission : après un redémarrage, MkRev

@@ -143,7 +143,7 @@ final class BackOfficeSearchService
      */
     private function filterPages(string $raw, Gate $gate): array
     {
-        return $this->rank($this->pageCatalog($gate), $raw, 8, 40);
+        return $this->rank(SearchCatalogLocale::localize($this->pageCatalog($gate)), $raw, 8, 40);
     }
 
     /**
@@ -153,7 +153,7 @@ final class BackOfficeSearchService
      */
     private function filterGuides(string $raw): array
     {
-        return $this->rank(BackOfficeHelpCatalog::entries(), $raw, 3, self::GUIDES_LIMIT);
+        return $this->rank(SearchCatalogLocale::localize(BackOfficeHelpCatalog::entries()), $raw, 3, self::GUIDES_LIMIT);
     }
 
     /**

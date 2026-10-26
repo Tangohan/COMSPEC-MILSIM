@@ -11,6 +11,11 @@ use App\Services\Replay\ReplayService;
 use App\Support\AtakMissionKey;
 use App\Support\TacticalMissionScope;
 
+/**
+ * Relecture et AAR d'une mission de la communauté de l'appelant. Les bornes from et to passent par
+ * queryString : une valeur non scalaire (?from[]=…) est ignorée comme une borne absente, au lieu
+ * d'une TypeError (500) dans ReplayService.
+ */
 class ReplayController
 {
     public function __construct(
@@ -24,8 +29,8 @@ class ReplayController
         if ($missionId instanceof Response) {
             return $missionId;
         }
-        $from = $request->query('from');
-        $to = $request->query('to');
+        $from = $request->queryString('from');
+        $to = $request->queryString('to');
         $data = $this->replayService->getTimeline($missionId, $from ?: null, $to ?: null, $this->missionKey($request));
         return Response::json($data);
     }
@@ -80,8 +85,8 @@ class ReplayController
         if ($missionId instanceof Response) {
             return $missionId;
         }
-        $from = $request->query('from');
-        $to = $request->query('to');
+        $from = $request->queryString('from');
+        $to = $request->queryString('to');
         return Response::json($this->replayService->getEvents($missionId, $from ?: null, $to ?: null, $this->missionKey($request)));
     }
 
@@ -91,8 +96,8 @@ class ReplayController
         if ($missionId instanceof Response) {
             return $missionId;
         }
-        $from = $request->query('from');
-        $to = $request->query('to');
+        $from = $request->queryString('from');
+        $to = $request->queryString('to');
         return Response::json($this->replayService->buildAfterActionReview($missionId, $from ?: null, $to ?: null, $this->missionKey($request)));
     }
 
@@ -102,8 +107,8 @@ class ReplayController
         if ($missionId instanceof Response) {
             return $missionId;
         }
-        $from = $request->query('from');
-        $to = $request->query('to');
+        $from = $request->queryString('from');
+        $to = $request->queryString('to');
         $aar = $this->replayService->buildAfterActionReview($missionId, $from ?: null, $to ?: null, $this->missionKey($request));
         $title = trim($request->queryString('title'));
 

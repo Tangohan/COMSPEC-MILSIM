@@ -118,7 +118,7 @@ switch (_act) do {
     };
     case "talkgroup": {
         player setVariable ["COMSPEC_ATAK_Talkgroup", _k, true];
-        ["INFO", format ["Talkgroup %1", _k], 3, 20] call comspec_atak_native_fnc_notify;
+        ["INFO", ["Talkgroup quitté", format ["Talkgroup %1", _k]] select (_k isNotEqualTo ""), 3, 20] call comspec_atak_native_fnc_notify;
         call _render;
     };
     case "channel": {

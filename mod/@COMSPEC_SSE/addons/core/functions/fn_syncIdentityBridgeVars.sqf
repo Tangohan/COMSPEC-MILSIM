@@ -1,13 +1,15 @@
 /*
     Miroir identité SSE → variables Eden / terminal SEEK (Overwatch).
-    [_entity] call comspec_sse_fnc_syncIdentityBridgeVars
+    [_entity, _public, _commit] call comspec_sse_fnc_syncIdentityBridgeVars
+    _commit = false : la section identité normalisée reste locale (l'appelant fait un seul commit public).
 
     Sans ce pont, le dialog SEEK ne voit que COMSPEC_SSE_* ou name _unit,
     et remonte le nom généré en « alias » Athena (nom/prénom vides, FALCON perdu).
 */
 params [
     ["_entity", objNull, [objNull]],
-    ["_public", true, [true]]
+    ["_public", true, [true]],
+    ["_commit", true, [true]]
 ];
 
 if (isNull _entity) exitWith { false };
@@ -43,7 +45,7 @@ if (_authored) then {
         _identity set ["first_name", _first];
         _identity set ["last_name", _last];
         _identity set ["name", _full];
-        [_entity, "identity", _identity, _public] call comspec_sse_fnc_setSection;
+        [_entity, "identity", _identity, _public && _commit] call comspec_sse_fnc_setSection;
     };
 };
 if (_keepAlias isNotEqualTo "") then { _alias = _keepAlias; };

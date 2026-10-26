@@ -125,7 +125,7 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay"}) the
     if (_r isEqualType createHashMap && {(count _r) > 0}) then {
         _rows append [
             ["info", "Relais", format ["%1 · %2", _r getOrDefault ["name", "?"], _r getOrDefault ["grid", ""]]],
-            ["info", "Distance", format ["%1 m / portée %2 m %3", round (_r getOrDefault ["dist", 0]), round (_r getOrDefault ["range", 0]), ["<t color='#e5483a'>hors portée</t>", "<t color='#5cc76b'>couvert</t>"] select (_r getOrDefault ["in_range", false])]],
+            ["info", "Distance", format ["%1 m / portée %2 m %3", round (_r getOrDefault ["dist", 0]), round (_r getOrDefault ["range", 0]), ["<t color='#e5483a'>hors portée</t>", "<t color='#5cc76b'>à portée</t>"] select (_r getOrDefault ["in_range", false])]],
             ["info", "Charge", format ["%1 / %2 postes · %3 %%", _r getOrDefault ["used", 0], _r getOrDefault ["slots", 0], _r getOrDefault ["reliability_pct", 100]]]
         ];
     } else { _rows pushBack ["text", "<t color='#8a9a93'>Aucun relais déployé.</t>"]; };

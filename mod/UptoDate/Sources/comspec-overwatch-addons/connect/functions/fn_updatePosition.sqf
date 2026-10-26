@@ -545,8 +545,9 @@ if (_vehDmg >= 0) then {
 if (isClass (configFile >> "CfgPatches" >> "tfar_core") && {!isNil "TFAR_fnc_getLrFrequency"}) then {
     private _lrFreq = "";
     private _lrRadio = if (!isNil "TFAR_fnc_activeLrRadio") then { _unit call TFAR_fnc_activeLrRadio } else { nil };
-    if (!isNil "_lrRadio") then {
-        _lrFreq = str (_unit call TFAR_fnc_getLrFrequency);
+    if (!isNil "_lrRadio" && {_lrRadio isEqualType []} && {_lrRadio isNotEqualTo []}) then {
+        // TFAR attend la radio LR ([objet, qualificatif]) renvoyée par activeLrRadio, pas l'unité.
+        _lrFreq = str (_lrRadio call TFAR_fnc_getLrFrequency);
         _lrFreq = (_lrFreq splitString """" joinString "");
     };
     if (!(_lrFreq isEqualTo "") && {!(_lrFreq in ["any", "<null>", "nil"])}) then {

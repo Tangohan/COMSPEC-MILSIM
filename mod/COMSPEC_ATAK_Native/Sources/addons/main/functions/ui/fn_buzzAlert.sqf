@@ -38,6 +38,10 @@ switch (_act) do {
         if ((diag_tickTime - _at) > 120) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_BuzzAlert", []]; };
         private _d = [] call comspec_atak_native_fnc_display;
         if (isNull _d) exitWith {};
+        // Écran éteint ou détruit, animation d'alimentation, verrou à distance du Zeus : l'alerte attend (comme fn_fullAlert).
+        if ((([] call comspec_atak_native_fnc_deviceHealth) getOrDefault ["state", "OK"]) in ["OFF", "BROKEN"]) exitWith {};
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) > diag_tickTime) exitWith {};
+        if ((["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo "") exitWith {};
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         (_l get "body") params ["_bx", "_by", "_bw", "_bh"];
         private _pad = _l get "pad";
@@ -80,6 +84,8 @@ switch (_act) do {
         } forEach [["VU", "ack", "COMSPEC_RscButtonPrimary"], ["CARTE", "map", "COMSPEC_RscButton"], ["FERMER", "close", "COMSPEC_RscButton"]];
         { _x ctrlCommit 0; } forEach _ctrls;
         uiNamespace setVariable ["COMSPEC_ATAK_BuzzCtrls", _ctrls];
+        // Bandeau sous les bris d'écran et les effets, comme les notifications (fn_overlayRaise, à l'image suivante).
+        [] call comspec_atak_native_fnc_overlayRaise;
         // Clignotement du bandeau les premières secondes (animé par le moteur, sans boucle par image).
         if ((diag_tickTime - _at) < 6) then {
             {

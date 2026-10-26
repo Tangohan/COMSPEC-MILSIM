@@ -708,6 +708,7 @@ class UserAdminController
             ]);
         } catch (\Throwable) {
         }
+        \App\Services\Personnel\NewMemberNumbers::assign($userId, $tenantId);
         try {
             $this->userRepository->syncOrganizationRoles($userId, $tenantId, $roleIds, $actorUserId);
         } catch (\InvalidArgumentException $e) {

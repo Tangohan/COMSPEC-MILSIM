@@ -19,7 +19,7 @@ switch (_act) do {
     case "wipe": {
         if (!isNil "ace_common_fnc_progressBar") exitWith {
             [4, [], { ["wipeNow"] call comspec_atak_native_fnc_phoneSecurity; }, { ["INFO", "Effacement annulé", 3, 20] call comspec_atak_native_fnc_notify; },
-                "Effacement d'urgence du téléphone…", { alive player }, ["isNotSwimming"]] call ace_common_fnc_progressBar;
+                ("Effacement d'urgence du téléphone…" call comspec_atak_native_fnc_tr), { alive player }, ["isNotSwimming"]] call ace_common_fnc_progressBar;
             true
         };
         ["wipeNow"] call comspec_atak_native_fnc_phoneSecurity

@@ -157,7 +157,14 @@ private _clipSet = {
     copyToClipboard _s;
     // En multijoueur copyToClipboard est sans effet : la DLL du mod écrit le presse-papiers Windows (par morceaux).
     if (((["ClipBegin"] call comspec_atak_native_fnc_extensionCall) select [0, 2]) isEqualTo "OK") then {
-        for "_i" from 0 to ((count _s) - 1) step 4000 do { ["ClipAppend", [_s select [_i, 4000]]] call comspec_atak_native_fnc_extensionCall; };
+        // Découpe en caractères, pas en octets : un accent coupé en deux arrivait en U+FFFD dans le presse-papiers.
+        forceUnicode 0;
+        private _len = count _s;
+        for "_i" from 0 to (_len - 1) step 2000 do {
+            forceUnicode 0;
+            private _part = _s select [_i, 2000];
+            ["ClipAppend", [_part]] call comspec_atak_native_fnc_extensionCall;
+        };
         ["ClipCommit"] call comspec_atak_native_fnc_extensionCall;
     };
 };
@@ -176,7 +183,11 @@ private _clipGet = {
             private _chunk = _rest select [_bar + 1];
             if (_chunk isEqualTo "") exitWith {};
             _s = _s + _chunk;
-            _off = _off + (count _chunk);
+            // La DLL compte en caractères UTF-16 (Substring) ; sans forceUnicode, count renvoie des octets UTF-8 (accents).
+            // Caractère hors plan de base (émoji) : deux unités UTF-16.
+            forceUnicode 0;
+            private _n = count _chunk;
+            _off = _off + _n + ({ _x > 65535 } count (toArray _chunk));
         };
     };
     _s

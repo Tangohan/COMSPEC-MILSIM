@@ -5,6 +5,7 @@
 
     "merge"  : [_section, _patch(HashMap)]           fusion clé par clé dans une section HashMap
     "append" : [_section, _items(ARRAY), _idKey("")] ajout en fin de section ARRAY, sans doublon d'_idKey
+    "batch"  : [[_op, _args], ...]                    plusieurs merge/append appliqués puis un seul commit public
     Sur un client : application locale immédiate (affichage) puis envoi au serveur.
 */
 params [
@@ -38,6 +39,22 @@ private _apply = {
                 if (!_dup) then { _cur pushBack _item; };
             } forEach _items;
             [_entity, _section, _cur, _public] call comspec_sse_fnc_setSection;
+        };
+        case "batch": {
+            {
+                if (_x isEqualType [] && {count _x >= 2}) then {
+                    _x params [["_subOp", "", [""]], ["_subArgs", [], [[]]]];
+                    if ((toLower _subOp) isNotEqualTo "batch") then {
+                        [_subOp, _entity, _subArgs, false] call _apply;
+                    };
+                };
+            } forEach _args;
+            if (_public) then {
+                private _data = [_entity] call comspec_sse_fnc_getData;
+                if (!isNil "_data" && {_data isEqualType []}) then {
+                    [_entity, _data, true] call comspec_sse_fnc_setData;
+                };
+            };
         };
         default {
             [format ["recordOp inconnue : %1", _op], "WARN"] call comspec_sse_fnc_log;

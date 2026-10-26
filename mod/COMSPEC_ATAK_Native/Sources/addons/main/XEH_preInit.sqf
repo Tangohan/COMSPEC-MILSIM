@@ -4,6 +4,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 // Plancher des petites tailles de texte, recalculé par fn_layoutGet (0 tant qu'aucun écran n'est dessiné).
 COMSPEC_ATAK_FontMin = 0;
+COMSPEC_ATAK_FontBody = 0; // taille de base du texte structuré des pages (fn_layoutGet, fn_fontApply)
 // Police du téléphone (Réglages > Police) : familles courante, grasse et légère, avant tout dessin.
 [] call comspec_atak_native_fnc_fontSet;
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
@@ -77,6 +78,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_startup_report", "CHECKBOX",
     ["Envoyer le rapport de démarrage", "Coché par défaut. Une seule fois, au premier lancement : quand vous vous connectez à Athena en jeu (ou si la connexion échoue), un rapport sur l'état du mod est posté dans le salon de debug du Discord Athena, avec votre pseudo et votre indicatif : versions, DLL, connexion, numéro et IMEI du téléphone, appareil porté, FPS, erreurs. Ça aide l'équipe à vous dépanner. Pour le renvoyer : menu Échap > Dépannage liaison > Renvoyer le check de démarrage. Aucun UID Steam ni adresse IP. Décochez pour ne rien envoyer."],
     ["COMSPEC", "ATAK · Debug"], true, 0] call comspec_atak_native_fnc_addSetting;
+
+// Liaison Athena proposée à la première sortie du téléphone sans compte (fn_displayLoad), par joueur.
+["comspec_atak_native_link_offer", "CHECKBOX",
+    ["Proposer la liaison Athena à la sortie du téléphone", "Coché par défaut. Tant que votre jeu n'est pas relié à un compte Athena, la première sortie du téléphone de chaque mission ouvre l'app Athena avec un code à saisir sur le site. Décochez pour garder votre dernière app à l'ouverture."],
+    ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
 ["comspec_atak_native_full_scale", "SLIDER",
