@@ -466,14 +466,8 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         array_map('intval', is_array($row['access_role_ids'] ?? null) ? $row['access_role_ids'] : []),
                         static fn (int $rid): bool => $rid > 0
                     ));
-                    $currentAccessRoleId = 0;
-                    foreach ($roles as $accessRole) {
-                        $rid = (int) ($accessRole['id'] ?? 0);
-                        if ($rid > 0 && in_array($rid, $accessRoleIds, true)) {
-                            $currentAccessRoleId = $rid;
-                            break;
-                        }
-                    }
+                    // Tout le monde porte Membre : présélectionner le niveau le plus élevé tenu.
+                    $currentAccessRoleId = \App\Services\Rbac\CommunityAccessProfiles::currentAccessRoleId($roles, $accessRoleIds);
                     if ($currentAccessRoleId < 1 && $roleParts !== []) {
                         foreach ($roles as $accessRole) {
                             $roleName = trim((string) ($accessRole['name'] ?? ''));

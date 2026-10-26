@@ -631,7 +631,7 @@ class EffectifsWorkspaceController
         $row = $enriched[0] ?? $user;
         $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($id);
         $personnelProfile = $this->personnelProfileRepository->getByUserId($id);
-        $roleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
+        $roleIds = $this->userRepository->listOrganizationRoleIdsForUser($id, $tenantId);
         $allOrgRoles = $this->roleRepository->forTenantOrganization($tenantId);
         $roles = $this->roleRepository->forTenantAccessProfiles($tenantId);
         $roleNames = [];
@@ -641,13 +641,11 @@ class EffectifsWorkspaceController
                 $roleSlugs[] = (string) ($r['slug'] ?? '');
             }
         }
-        $currentAccessRoleId = 0;
+        // Tout le monde porte Membre : afficher le niveau le plus élevé, pas le premier de la liste.
+        $currentAccessRoleId = CommunityAccessProfiles::currentAccessRoleId($roles, $roleIds);
         foreach ($roles as $r) {
-            $rid = (int) ($r['id'] ?? 0);
-            if ($rid > 0 && in_array($rid, $roleIds, true)) {
-                $currentAccessRoleId = $rid;
+            if ((int) ($r['id'] ?? 0) === $currentAccessRoleId && $currentAccessRoleId > 0) {
                 $roleNames[] = (string) ($r['name'] ?? '');
-                break;
             }
         }
         $currentAccessKey = CommunityAccessProfiles::resolveFromSlugs($roleSlugs);
@@ -1455,14 +1453,23 @@ class EffectifsWorkspaceController
 
             return Response::redirect($this->redirectAfterMemberAction($request, $id));
         }
+        $oldRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id, $tenantId);
+        // Un seul niveau d’accès : on remplace l’ancien, sans toucher aux autres rôles
+        // (position de service, statuts) que la personne garde.
+        $accessIds = array_map(
+            static fn (array $r): int => (int) ($r['id'] ?? 0),
+            $this->roleRepository->forTenantAccessProfiles($tenantId, true)
+        );
         $roleIds = [$targetId];
-        $oldRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
-        foreach ($roleIds as $rid) {
-            if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
-                Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis Effectifs.');
-
-                return Response::redirect($this->redirectAfterMemberAction($request, $id));
+        foreach ($oldRoleIds as $oldId) {
+            if (!in_array($oldId, $accessIds, true) && !in_array($oldId, $roleIds, true)) {
+                $roleIds[] = $oldId;
             }
+        }
+        if (!$this->roleRepository->canAssignInTenantAdminContext($targetId, $tenantId)) {
+            Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis Effectifs.');
+
+            return Response::redirect($this->redirectAfterMemberAction($request, $id));
         }
         $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
         if ($ownerRoleId !== null) {
@@ -1897,7 +1904,7 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
-        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId);
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId, true);
         $gate = Gate::getInstance();
         $selectedId = (int) $request->query('role', 0);
         $selected = null;
@@ -2086,25 +2093,69 @@ class EffectifsWorkspaceController
         $tenantId = (int) Session::get('tenant_id');
         $roleId = (int) $request->input('role_id', 0);
         $role = $this->roleRepository->findById($roleId, $tenantId);
-        if (!$role || !CommunityAccessProfiles::isCustomAccessSlug((string) ($role['slug'] ?? ''))) {
-            Session::flash('error', 'Les trois modèles de départ ne peuvent pas être supprimés.');
+        $slug = (string) ($role['slug'] ?? '');
+        $isCustom = $role !== null && CommunityAccessProfiles::isCustomAccessSlug($slug);
+        $isHideable = $role !== null && CommunityAccessProfiles::isHideablePresetSlug($slug);
+        if (!$isCustom && !$isHideable) {
+            Session::flash('error', 'Membre et Gestionnaire ne peuvent pas être supprimés : Membre est le socle que tout le monde porte, Gestionnaire tient les clés de la communauté. Renommez-les ou changez leurs droits.');
 
-            return Response::redirect(effectifs_workspace_url('roles'));
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
         }
         $memberId = (int) ($this->roleRepository->getIdBySlug($tenantId, CommunityAccessProfiles::SLUG_MEMBER) ?? 0);
         $actorId = (int) Session::get('user_id');
         if ($memberId > 0) {
             foreach ($this->roleRepository->userIdsWithRole($tenantId, $roleId) as $uid) {
+                $kept = array_values(array_filter(
+                    $this->userRepository->listOrganizationRoleIdsForUser($uid, $tenantId),
+                    static fn (int $rid): bool => $rid !== $roleId
+                ));
                 try {
-                    $this->userRepository->syncOrganizationRoles($uid, $tenantId, [$memberId], $actorId);
+                    $this->userRepository->syncOrganizationRoles($uid, $tenantId, array_merge([$memberId], $kept), $actorId);
                 } catch (\Throwable) {
                 }
             }
+        }
+        if ($isHideable) {
+            // Le socle de la communauté recrée RH : on le masque au lieu de le supprimer.
+            if (!$this->roleRepository->setAccessPresetHidden($tenantId, $roleId, true)) {
+                Session::flash('error', 'Ce niveau ne peut pas être masqué sur ce serveur.');
+
+                return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+            }
+            Session::flash('success', 'Niveau masqué : il n’est plus proposé. Les personnes concernées sont revenues au niveau Membre. Vous pouvez le réafficher à tout moment.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
         }
         $this->roleRepository->deleteCustomAccessRole($tenantId, $roleId);
         Session::flash('success', 'Niveau d’accès retiré. Les personnes concernées sont revenues au niveau Membre.');
 
         return Response::redirect(effectifs_workspace_url('roles'));
+    }
+
+    public function showAccessRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les niveaux d’accès.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $roleId = (int) $request->input('role_id', 0);
+        if ($this->roleRepository->setAccessPresetHidden($tenantId, $roleId, false)) {
+            Session::flash('success', 'Niveau réaffiché : il est de nouveau proposé.');
+        }
+
+        return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
     }
 
     public function droits(Request $request, array $params = []): Response
@@ -3302,20 +3353,26 @@ class EffectifsWorkspaceController
         if ($days < 1) {
             return '—';
         }
+        // Libellé composé en une seule langue : la traduction automatique ne reconnaît pas
+        // « 7 ans 4 mois » et ne traduisait que la fin (« 7 ans 4 months »).
+        $en = locale() === 'en';
         if ($days < 30) {
-            return $days . ' j';
+            return $days . ($en ? ' d' : ' j');
         }
         $months = intdiv($days, 30);
         if ($months < 24) {
-            return $months . ' mois';
+            return $months . ($en ? ($months > 1 ? ' months' : ' month') : ' mois');
         }
         $years = intdiv($days, 365);
         $remMonths = intdiv($days % 365, 30);
+        $label = $en
+            ? $years . ($years > 1 ? ' years' : ' year')
+            : $years . ' an' . ($years > 1 ? 's' : '');
         if ($remMonths > 0) {
-            return $years . ' an' . ($years > 1 ? 's' : '') . ' ' . $remMonths . ' mois';
+            $label .= ' ' . $remMonths . ($en ? ($remMonths > 1 ? ' months' : ' month') : ' mois');
         }
 
-        return $years . ' an' . ($years > 1 ? 's' : '');
+        return $label;
     }
 
     /**

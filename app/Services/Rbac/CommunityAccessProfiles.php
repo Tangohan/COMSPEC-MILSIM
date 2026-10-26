@@ -81,6 +81,45 @@ final class CommunityAccessProfiles
         return false;
     }
 
+    /**
+     * Niveau d’accès affiché pour une personne. Tout le monde porte aussi Membre :
+     * le niveau le plus élevé tenu l’emporte (Gestionnaire, RH, niveau personnalisé, puis Membre).
+     *
+     * @param list<array<string, mixed>> $accessRoles niveaux de la communauté
+     * @param list<int> $heldRoleIds rôles tenus par la personne
+     */
+    public static function currentAccessRoleId(array $accessRoles, array $heldRoleIds): int
+    {
+        $held = array_fill_keys(array_map('intval', $heldRoleIds), true);
+        $best = 0;
+        $bestRank = PHP_INT_MAX;
+        foreach ($accessRoles as $role) {
+            $rid = (int) ($role['id'] ?? 0);
+            if ($rid < 1 || !isset($held[$rid])) {
+                continue;
+            }
+            $slug = strtolower(trim((string) ($role['slug'] ?? '')));
+            $rank = match (true) {
+                $slug === self::SLUG_MANAGER => 0,
+                $slug === self::SLUG_HR => 1,
+                self::isCustomAccessSlug($slug) => 2,
+                default => 3,
+            };
+            if ($rank < $bestRank) {
+                $best = $rid;
+                $bestRank = $rank;
+            }
+        }
+
+        return $best;
+    }
+
+    /** Membre et Gestionnaire ne peuvent être ni supprimés ni masqués ; RH peut être masqué. */
+    public static function isHideablePresetSlug(string $slug): bool
+    {
+        return strtolower(trim($slug)) === self::SLUG_HR;
+    }
+
     public static function moduleLabel(string $module): string
     {
         return match (strtolower(trim($module))) {
