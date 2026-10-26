@@ -58,6 +58,23 @@ class COMSPEC_RscATAKTexture: COMSPEC_RscDisplayATAK {
     onLoad="[_this select 0, false, true] call comspec_atak_native_fnc_displayLoad";
 };
 
+// Écran TOC (fn_tocScreen) : texture UI 1600 x 900 posée sur un écran du jeu, contrôles créés par le code.
+class COMSPEC_RscTocScreenTexture {
+    idd=-1; movingEnable=0;
+    onLoad="['load', _this select 0] call comspec_atak_native_fnc_tocScreen";
+    class controls {};
+};
+
+// PC portable du poste TOC (fn_tocLaptop) : écran du PC lui-même, indépendant du téléphone (carte en grand, nœuds
+// ATAK du camp, groupes, flux, ordres, messages au camp). Contrôles créés par le code.
+class COMSPEC_RscTocLaptop {
+    idd=COMSPEC_ATAK_IDD_TOCLAPTOP; movingEnable=0; enableSimulation=1;
+    onLoad="['load', _this select 0] call comspec_atak_native_fnc_tocLaptop";
+    onUnload="['unload'] call comspec_atak_native_fnc_tocLaptop";
+    class controlsBackground {};
+    class controls {};
+};
+
 class RscTitles {
     // Terminal porté (HUD) : visible pendant que l'on joue, sans souris ni clavier.
     class COMSPEC_RscTitleATAK: COMSPEC_RscDisplayATAK {

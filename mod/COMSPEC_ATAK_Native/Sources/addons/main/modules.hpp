@@ -501,18 +501,18 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
             typeName = "NUMBER";
             class values {
                 class V0 { name = "$STR_COMSPEC_ATAK_CFG_FREQ_AUTO"; value = 0; default = 1; };
-                class V1 { name = "UHF 400 MHz"; value = 400; };
-                class V2 { name = "L 1,4 GHz"; value = 1400; };
-                class V3 { name = "S 2,4 GHz"; value = 2400; };
-                class V4 { name = "C 4,9 GHz"; value = 4900; };
-                class C1 { name = "C 4 940 MHz"; value = 4940; };
-                class C2 { name = "C 4 945 MHz"; value = 4945; };
-                class C3 { name = "C 4 950 MHz"; value = 4950; };
-                class C4 { name = "C 4 955 MHz"; value = 4955; };
-                class C5 { name = "C 4 960 MHz"; value = 4960; };
-                class C6 { name = "C 4 965 MHz"; value = 4965; };
-                class C7 { name = "C 4 970 MHz"; value = 4970; };
-                class C8 { name = "C 4 975 MHz"; value = 4975; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_22424B2581"; value = 400; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_CD3A37DD0E"; value = 1400; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_4D2F56FC32"; value = 2400; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_2D08DDA555"; value = 4900; };
+                class C1 { name = "$STR_COMSPEC_ATAK_CFG_3EF48FC3A1"; value = 4940; };
+                class C2 { name = "$STR_COMSPEC_ATAK_CFG_D58E1749BA"; value = 4945; };
+                class C3 { name = "$STR_COMSPEC_ATAK_CFG_7ED3477395"; value = 4950; };
+                class C4 { name = "$STR_COMSPEC_ATAK_CFG_BE95616EC5"; value = 4955; };
+                class C5 { name = "$STR_COMSPEC_ATAK_CFG_BC5203222A"; value = 4960; };
+                class C6 { name = "$STR_COMSPEC_ATAK_CFG_AA0E17E9A6"; value = 4965; };
+                class C7 { name = "$STR_COMSPEC_ATAK_CFG_B765617C85"; value = 4970; };
+                class C8 { name = "$STR_COMSPEC_ATAK_CFG_02B48D9628"; value = 4975; };
             };
         };
         class StartOn {
@@ -645,6 +645,140 @@ class COMSPEC_ATAK_Module_Screen: COMSPEC_ATAK_Module_DataBase {
     };
     class ModuleDescription {
         description = "$STR_COMSPEC_ATAK_CFG_SCREEN_DESC";
+    };
+};
+// Écran TOC (fn_moduleTocScreen, fn_tocScreen) : grand écran du jeu qui affiche le réseau ATAK d'un camp, persistant.
+class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_ATAK_Network";
+    displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
+    function = "comspec_atak_native_fnc_moduleTocScreen";
+    class Attributes {
+        class Name {
+            displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_N_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_N_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Name";
+            control = "Edit";
+            expression = "_this setVariable ['Name',_value,true];";
+            defaultValue = "'TOC'";
+            typeName = "STRING";
+        };
+        class Side {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_S_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_S_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Side";
+            control = "Combo";
+            expression = "_this setVariable ['Side',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_S_ALL"; value = ""; default = 1; };
+                class V1 { name = "BLUFOR"; value = "WEST"; };
+                class V2 { name = "OPFOR"; value = "EAST"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER"; value = "GUER"; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_CIV"; value = "CIV"; };
+            };
+        };
+        class View {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_View";
+            control = "Combo";
+            expression = "_this setVariable ['View',_value,true];";
+            defaultValue = "'SPLIT'";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_SPLIT"; value = "SPLIT"; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_MAP"; value = "MAP"; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_FEED"; value = "FEED"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_PIP"; value = "TOC"; };
+            };
+        };
+        class Toc {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_T_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_T_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Toc";
+            control = "Checkbox";
+            expression = "_this setVariable ['Toc',_value,true];";
+            defaultValue = "true";
+            typeName = "BOOL";
+        };
+        class Class {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Class";
+            control = "Combo";
+            expression = "_this setVariable ['Class',_value,true];";
+            defaultValue = "'Land_TripodScreen_01_large_F'";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGE"; value = "Land_TripodScreen_01_large_F"; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGEB"; value = "Land_TripodScreen_01_large_black_F"; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_DUAL"; value = "Land_TripodScreen_01_dual_v1_F"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_TV"; value = "Land_FlatTV_01_F"; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_PROJ"; value = "Land_ProjectorScreen_01_F"; };
+                class V5 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_PC"; value = "Land_PCSet_01_screen_F"; };
+            };
+        };
+        class Index {
+            displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_I_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_SCREEN_I_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Index";
+            control = "Edit";
+            expression = "_this setVariable ['Index',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_TOCSCR_DESC";
+    };
+};
+// IA équipées d'un ATAK (fn_moduleAiAtak, fn_aiAtak).
+class COMSPEC_ATAK_Module_AiAtak: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_ATAK_Network";
+    displayName = "$STR_COMSPEC_ATAK_CFG_AIATAK_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\app_bft.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\app_bft.paa";
+    function = "comspec_atak_native_fnc_moduleAiAtak";
+    class Attributes {
+        class Who {
+            displayName = "$STR_COMSPEC_ATAK_CFG_AIATAK_W_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_AIATAK_W_TIP";
+            property = "COMSPEC_ATAK_Module_AiAtak_Who";
+            control = "Combo";
+            expression = "_this setVariable ['Who',_value,true];";
+            defaultValue = "'all'";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_AIATAK_W_ALL"; value = "all"; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_AIATAK_W_LEAD"; value = "leaders"; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_AIATAK_W_NONE"; value = "none"; };
+            };
+        };
+        class Side {
+            displayName = "$STR_COMSPEC_ATAK_CFG_AIATAK_S_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_AIATAK_S_TIP";
+            property = "COMSPEC_ATAK_Module_AiAtak_Side";
+            control = "Combo";
+            expression = "_this setVariable ['Side',_value,true];";
+            defaultValue = "'WEST'";
+            typeName = "STRING";
+            class values {
+                class V1 { name = "BLUFOR"; value = "WEST"; default = 1; };
+                class V2 { name = "OPFOR"; value = "EAST"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER"; value = "GUER"; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_CIV"; value = "CIV"; };
+            };
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_AIATAK_DESC";
     };
 };
 // Contrôle Zeus des ATAK (fn_moduleZeusControl, fn_moduleZeusJammer) : Zeus seulement, formulaire à la pose.

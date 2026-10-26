@@ -15,9 +15,28 @@
     (fn_compromiseView) ; vide avec un Link plus ancien (origine manuelle, état lu dans le titre).
     Compromission : le téléphone passe en mode « terminal compromis » (fn_compromiseView) jusqu'à la levée.
     CR de fin d'opération (genre « debrief », réglages « debrief_cfg ») : confiés à l'app CR fin d'op (fn_debrief).
+    Avis déjà vus et déjà validés : gardés dans le profil du joueur (COMSPEC_ATAK_NoticeSeen, COMSPEC_ATAK_NoticeAck,
+    200 derniers) et non dans la seule partie en cours. Un avis validé n'est plus affiché ni listé, même si Athena le
+    renvoie (retour de TTRD, 26/10 : « j'ai beau valider la levée de compromission, le message s'affiche à chaque
+    fois ») : le COMPRIS repart vers Athena à chaque réception, jusqu'à ce qu'il cesse de l'envoyer. Un avis déjà vu
+    la partie précédente, mais pas encore validé, reste dans l'app Alertes sans rejouer son bandeau.
 */
 params [["_act", ""], ["_arg", []]];
 private _list = missionNamespace getVariable ["COMSPEC_ATAK_AdminNotices", []];
+// Listes gardées dans le profil : avis déjà affichés, avis validés par le joueur (lues aussi depuis la requête Athena).
+private _keep = {
+    params ["_k", ["_add", ""]];
+    private _l = profileNamespace getVariable [_k, []];
+    if !(_l isEqualType []) then { _l = []; };
+    if (_add isNotEqualTo "" && {!(_add in _l)}) then {
+        _l pushBack _add;
+        while { (count _l) > 200 } do { _l deleteAt 0; };
+        profileNamespace setVariable [_k, _l];
+        [] call comspec_atak_native_fnc_saveProfile;
+    };
+    _l
+};
+missionNamespace setVariable ["COMSPEC_ATAK_NoticeKeep", _keep];
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 switch (_act) do {
     case "check": {
@@ -47,7 +66,11 @@ switch (_act) do {
             if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith {};
             private _list = missionNamespace getVariable ["COMSPEC_ATAK_AdminNotices", []];
             private _seen = missionNamespace getVariable ["COMSPEC_ATAK_AdminNoticesSeen", []];
+            private _keep = missionNamespace getVariable ["COMSPEC_ATAK_NoticeKeep", {[]}];
+            private _shown = ["COMSPEC_ATAK_NoticeSeen"] call _keep;
+            private _acked = ["COMSPEC_ATAK_NoticeAck"] call _keep;
             private _new = [];
+            private _again = [];
             {
                 (_x splitString toString [9]) params [["_id", ""], ["_kind", "message"], ["_level", "info"], ["_title", ""], ["_body", ""], ["_ack", "1"], ["_meta", ""]];
                 // Réglages du CR de fin d'opération (ligne « debrief_cfg », redonnée à chaque relève) : sans alerte.
@@ -58,6 +81,8 @@ switch (_act) do {
                     };
                     continue;
                 };
+                // Avis déjà validé par le joueur : jamais réaffiché, le COMPRIS repart vers Athena.
+                if (_id isNotEqualTo "" && {_id in _acked}) then { _again pushBackUnique _id; continue };
                 if (_id isNotEqualTo "" && {!(_id in _seen)}) then {
                     private _row = [_id, _kind, _level, _title, _body, _ack isEqualTo "1", [dayTime, "HH:MM"] call BIS_fnc_timeToString, _meta];
                     // CR de fin d'opération imposé par le site : la fiche s'ouvre dans l'app CR fin d'op, validée à la remise.
@@ -70,9 +95,18 @@ switch (_act) do {
                     _seen pushBack _id;
                     _new pushBack _id;
                     if (_ack isEqualTo "1") then { _list pushBack _row; };
-                    ["show", _row] call comspec_atak_native_fnc_adminNotices;
+                    // Déjà affiché dans une partie précédente : repris dans l'app Alertes, sans rejouer le bandeau.
+                    if (_id in _shown) then {
+                        ["state", _row] call comspec_atak_native_fnc_adminNotices;
+                    } else {
+                        ["COMSPEC_ATAK_NoticeSeen", _id] call _keep;
+                        ["show", _row] call comspec_atak_native_fnc_adminNotices;
+                    };
                 };
             } forEach ((_r select [3]) splitString toString [10]);
+            if (_again isNotEqualTo []) then {
+                ["COMSPECExtension", "AdminControl.Ack", [_again joinString ",", "acked", getPlayerUID player]] call comspec_atak_native_fnc_extAwait;
+            };
             while { (count _list) > 10 } do { _list deleteAt 0; };
             missionNamespace setVariable ["COMSPEC_ATAK_AdminNotices", _list];
             missionNamespace setVariable ["COMSPEC_ATAK_AdminNoticesSeen", _seen];
@@ -98,6 +132,7 @@ switch (_act) do {
             };
         }
     };
+    case "state";
     case "show": {
         if (!hasInterface) exitWith {};
         _arg params [["_id", ""], ["_kind", "message"], "", ["_title", ""], ["_body", ""], "", "", ["_meta", ""]];
@@ -115,6 +150,8 @@ switch (_act) do {
             case "compromise_cleared": { ["clear"] call comspec_atak_native_fnc_compromiseView; };
             case "certificate": { if ((_title find "évoqu") < 0) then { ["clear"] call comspec_atak_native_fnc_compromiseView; }; };
         };
+        // « state » : avis déjà vu la partie précédente, son effet est repris sans rejouer le bandeau.
+        if (_act isEqualTo "state") exitWith { call _render; };
         // Détail donné par Athena (motif, référence, numéro) sous le texte de l'avis.
         private _detail = [_msg, format ["%1 · %2", _msg, _body]] select (_kind isNotEqualTo "message" && {_body isNotEqualTo ""});
         [toUpper _t, _detail, _from, _rgba, 14] call comspec_atak_native_fnc_fullAlert;
@@ -122,6 +159,7 @@ switch (_act) do {
         call _render;
     };
     case "ack": {
+        ["COMSPEC_ATAK_NoticeAck", _arg] call _keep;
         private _i = _list findIf { (_x select 0) isEqualTo _arg };
         if (_i < 0) exitWith {};
         _list deleteAt _i;
@@ -129,5 +167,5 @@ switch (_act) do {
         call _render;
         [_arg] spawn { params ["_id"]; ["COMSPECExtension", "AdminControl.Ack", [_id, "acked", getPlayerUID player]] call comspec_atak_native_fnc_extAwait; };
     };
-    case "list": { private _c = +_list; reverse _c; _c };
+    case "list": { private _acked = ["COMSPEC_ATAK_NoticeAck"] call _keep; private _c = +(_list select { !((_x select 0) in _acked) }); reverse _c; _c };
 };

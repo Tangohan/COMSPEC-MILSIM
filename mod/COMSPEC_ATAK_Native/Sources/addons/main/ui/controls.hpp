@@ -86,6 +86,9 @@ class COMSPEC_RscMapAtakHyb: COMSPEC_RscMapAtakSat {
     colorRoads[]={0.80,0.76,0.62,0.75}; colorRoadsFill[]={1,0.96,0.80,0.9};
     colorMainRoads[]={0.85,0.62,0.25,0.85}; colorMainRoadsFill[]={1,0.82,0.42,0.95}; };
 class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { showMarkers=1; sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; };
+// Carte du PC portable du poste TOC (fn_tocLaptop) : vraie carte d'Arma en grand, marqueurs de la mission compris,
+// textes à la taille d'un écran d'ordinateur (le PC n'est pas un téléphone).
+class COMSPEC_RscMapToc: COMSPEC_RscMap { showMarkers=1; sizeExLabel="0.020 * safeZoneH"; sizeExNames="0.026 * safeZoneH"; sizeExGrid="0.016 * safeZoneH"; sizeExInfo="0.020 * safeZoneH"; };
 class COMSPEC_RscPanel: COMSPEC_RscText { colorBackground[]=ATAK_BG1; };
 class COMSPEC_RscTile: COMSPEC_RscText { colorBackground[]=ATAK_BG2; };
 class COMSPEC_RscBadge: COMSPEC_RscTextCenter { font=ATAK_FONT_BOLD; colorBackground[]=ATAK_DANGER; colorText[]={1,1,1,1}; sizeEx="0.018 * safeZoneH"; };
