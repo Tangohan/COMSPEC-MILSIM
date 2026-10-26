@@ -3,7 +3,8 @@
     LINE : clic A puis clic B. DRAW : maintenir le clic gauche et dessiner, relâcher pour poser : le tracé est lissé
     et allégé (fn_strokeSimplify), fermé si l'option FERMÉ est cochée.
     Style choisi dans la barre du dessin (fn_strokeBar, profil) : couleur COMSPEC_ATAK_DrawColor, épaisseur
-    COMSPEC_ATAK_DrawWidth (1-3), flèche COMSPEC_ATAK_DrawArrow, forme fermée COMSPEC_ATAK_DrawClosed.
+    COMSPEC_ATAK_DrawWidth (1-3), flèche COMSPEC_ATAK_DrawArrow, forme fermée COMSPEC_ATAK_DrawClosed, TRAIT qui suit les
+    routes COMSPEC_ATAK_DrawRoads (fn_roadPath).
     L'épaisseur et la flèche partent avec le trait (variable publique COMSPEC_ATAK_SK_<nom>, dessinée par fn_strokeDraw).
     Params : ["DOWN" | "MOVE" | "UP", position monde] ; ["UNDO"] défait mon dernier trait ; ["CLEARMINE"] efface les miens.
 */
@@ -47,7 +48,20 @@ private _commit = {
 switch (_event) do {
     case "DOWN": {
         if (_mode isEqualTo "LINE") exitWith {
-            if ((count _stroke) isEqualTo 0) then { _s set ["drawStroke", [_pos]]; } else { [[_stroke select 0, _pos]] call _commit; _s set ["drawStroke", []]; };
+            if ((count _stroke) isEqualTo 0) exitWith { _s set ["drawStroke", [_pos]]; true };
+            _s set ["drawStroke", []];
+            // Option ROUTES : le trait suit le réseau routier entre A et B (fn_roadPath, calcul en arrière-plan).
+            if (profileNamespace getVariable ["COMSPEC_ATAK_DrawRoads", false]) exitWith {
+                ["INFO", "Tracé par les routes…", 2, 10] call comspec_atak_native_fnc_notify;
+                [_stroke select 0, _pos, _commit] spawn {
+                    params ["_a", "_b", "_commit"];
+                    ([_a, _b] call comspec_atak_native_fnc_roadPath) params ["_pts", "_ok"];
+                    if (!_ok) then { ["WARNING", "Pas de route trouvée entre ces deux points : trait direct", 3, 20] call comspec_atak_native_fnc_notify; };
+                    [_pts] call _commit;
+                };
+                true
+            };
+            [[_stroke select 0, _pos]] call _commit;
             true
         };
         if (_mode isEqualTo "DRAW") exitWith { _s set ["drawStroke", [_pos]]; _s set ["drawing", true]; true };

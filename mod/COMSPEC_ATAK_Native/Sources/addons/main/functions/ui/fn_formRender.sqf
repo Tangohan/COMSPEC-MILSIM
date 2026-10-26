@@ -15,8 +15,8 @@
       ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé]
       ["fold", titre, résumé, ouverte, code]   en-tête de section repliable : barre pleine largeur cliquable, chevron
           à droite ; le contenu qui suit n'est ajouté par la page que si la section est ouverte
-      ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône]
-          curseur 0-100 au cran de 1 : code appelé avec [valeur] pendant le glissé (sans redessiner la page) ; icône
+      ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône, [min, max]]
+          curseur 0-100 (ou [min, max], valeur affichée en %) au cran de 1 : code appelé avec [valeur] pendant le glissé (sans redessiner la page) ; icône
           (data\nom) cliquable à gauche, valeur à droite (0 = MUET) ; actif = liseré et icône en couleur d'accent
       ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur]   ["image", chemin]
       ["line", numéro, libellé, valeur, genre, clé, aide]   ligne de formulaire type 9-LINE, hauteur fixe :
@@ -360,7 +360,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _h + _pad / ([3, 2] select _open);
         };
         case "slider": {
-            _row params ["", "_label", "_val", "_code", ["_help", ""], ["_active", false], ["_icon", ""], ["_iconCode", {}], ["_iconTip", ""]];
+            _row params ["", "_label", "_val", "_code", ["_help", ""], ["_active", false], ["_icon", ""], ["_iconCode", {}], ["_iconTip", ""], ["_range", [0, 100]]];
+            _range params [["_min", 0], ["_max", 100]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
             private _h = _rowH * 1.3;
             private _card = ["COMSPEC_RscText", [_pad, _y, _w, _h]] call _mk;
@@ -388,22 +389,22 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _vw = _font * 2.8 / _ratio;
             private _sx = _ix + _lw + _pad / 2;
             private _sw = (_pad + _w - _pad / 2 - _vw) - _sx - _pad / 2;
-            private _vt = ["COMSPEC_RscTextRight", [_pad + _w - _pad / 2 - _vw, _y, _vw, _h], [(str (round _val)) + " %", "MUET"] select ((round _val) <= 0)] call _mk;
+            private _vt = ["COMSPEC_RscTextRight", [_pad + _w - _pad / 2 - _vw, _y, _vw, _h], [(str (round _val)) + " %", "MUET"] select (_min <= 0 && {(round _val) <= 0})] call _mk;
             _vt ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
             _vt ctrlSetFontHeight _fs;
             _vt ctrlSetTextColor ([[0.86, 0.91, 0.88, 1], _acc] select _active);
             private _sl = ["COMSPEC_RscSlider", [_sx, _y + _h * 0.3, _sw, _h * 0.4]] call _mk;
-            _sl sliderSetRange [0, 100];
+            _sl sliderSetRange [_min, _max];
             _sl sliderSetSpeed [1, 10];
-            _sl sliderSetPosition (_val max 0 min 100);
-            _sl setVariable ["comspec_slide", [_code, _vt, round _val]];
+            _sl sliderSetPosition (_val max _min min _max);
+            _sl setVariable ["comspec_slide", [_code, _vt, round _val, _min]];
             _sl ctrlAddEventHandler ["SliderPosChanged", {
                 params ["_c", "_v"];
-                (_c getVariable ["comspec_slide", [{}, controlNull, -1]]) params ["_code", "_vt", "_last"];
+                (_c getVariable ["comspec_slide", [{}, controlNull, -1, 0]]) params ["_code", "_vt", "_last", ["_min", 0]];
                 _v = round _v;
                 if (_v isEqualTo _last) exitWith {};
-                _c setVariable ["comspec_slide", [_code, _vt, _v]];
-                if (!isNull _vt) then { _vt ctrlSetText (([(str _v) + " %", "MUET"] select (_v <= 0)) call comspec_atak_native_fnc_tr); };
+                _c setVariable ["comspec_slide", [_code, _vt, _v, _min]];
+                if (!isNull _vt) then { _vt ctrlSetText (([(str _v) + " %", "MUET"] select (_min <= 0 && {_v <= 0})) call comspec_atak_native_fnc_tr); };
                 [_v] call _code;
             }];
             _y = _y + _h + _pad / 3;

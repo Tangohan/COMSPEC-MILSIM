@@ -463,7 +463,51 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 // Antennes du jeu converties en relais (fn_relayConvert).
 ["comspec_atak_native_relay_convert", "LIST",
     ["Antennes du jeu = relais ATAK", "Les pylônes, mâts et tours de transmission, antennes omnidirectionnelles et paraboles du jeu deviennent des relais du réseau ATAK (portée et débit selon leur hauteur : tour 6 km, mât 3 à 5 km, antenne 1,5 km, parabole 1 km). Objets de la mission : ceux posés dans Eden ou par le Zeus. Décor de la carte en plus : les antennes de la carte elle-même (60 au plus, les plus hautes) ; une antenne détruite coupe son relais."],
-    _sim, [[0, 1, 2], ["Non", "Objets de la mission (Eden, Zeus)", "Mission et décor de la carte"], 1], 1] call comspec_atak_native_fnc_addSetting;
+    _sim, [[0, 1, 2], ["Non", "Objets de la mission (Eden, Zeus)", "Mission et décor de la carte"], 0], 1] call comspec_atak_native_fnc_addSetting;
+// Relais par type (module « ATAK · Relais », fn_moduleRelay) : portée et débit quand le module garde la valeur du type.
+["comspec_atak_native_relay_portable_range", "SLIDER",
+    ["Relais radio portable : portée (m)", "Portée d'un relais « radio portable » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
+    _sim, [300, 20000, 1500, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_portable_mbps", "SLIDER",
+    ["Relais radio portable : débit (Mbit/s)", "Débit maximal d'un relais « radio portable » posé avec le débit du type."],
+    _sim, [0.5, 100, 4, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_mat_range", "SLIDER",
+    ["Relais mât tactique : portée (m)", "Portée d'un relais « mât tactique » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
+    _sim, [300, 20000, 3000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_mat_mbps", "SLIDER",
+    ["Relais mât tactique : débit (Mbit/s)", "Débit maximal d'un relais « mât tactique » posé avec le débit du type."],
+    _sim, [0.5, 100, 8, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_tour_range", "SLIDER",
+    ["Relais tour fixe : portée (m)", "Portée d'un relais « tour fixe » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
+    _sim, [300, 20000, 6000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_tour_mbps", "SLIDER",
+    ["Relais tour fixe : débit (Mbit/s)", "Débit maximal d'un relais « tour fixe » posé avec le débit du type."],
+    _sim, [0.5, 100, 20, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_satellite_range", "SLIDER",
+    ["Relais terminal satellite : portée (m)", "Portée d'un relais « terminal satellite » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
+    _sim, [300, 20000, 1000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_satellite_mbps", "SLIDER",
+    ["Relais terminal satellite : débit (Mbit/s)", "Débit maximal d'un relais « terminal satellite » posé avec le débit du type."],
+    _sim, [0.5, 100, 10, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_damage", "LIST",
+    ["Dégâts des relais", "Perte de débit d'un relais complètement endommagé (la portée baisse de moitié moins). Les dégâts dégradent le relais petit à petit ; détruit (95 %), il est coupé."],
+    _sim, [[0, 30, 50, 70, 90], ["Aucun effet", "30 %", "50 %", "70 % (défaut)", "90 %"], 3], 1] call comspec_atak_native_fnc_addSetting;
+// Téléphone branché sur une radio ACRE2 ou TFAR (fn_mpu5 "plug") : la radio relaie les données comme une MPU5.
+["comspec_atak_native_radio_data", "CHECKBOX",
+    ["Données par radio ACRE2 / TFAR", "Le joueur peut brancher son téléphone sur sa radio (app Wave Relay) : elle relaie ses données et celles de l'équipe, comme une MPU5, avec la portée et le débit ci-dessous. La radio personnelle 343 ne compte pas."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_radio_lr_range", "SLIDER", ["Radio longue portée : portée données (m)", "Portée dans le maillage d'un téléphone branché sur une radio longue portée."],
+    _sim, [500, 30000, 10000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_radio_lr_gain", "SLIDER", ["Radio longue portée : gain (dB)", "Marge radio ajoutée à la liaison vers les relais. 6 dB double à peu près la portée."],
+    _sim, [0, 15, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_radio_lr_mbps", "SLIDER", ["Radio longue portée : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio tactique transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
+    _sim, [0.1, 20, 2, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_radio_sw_range", "SLIDER", ["Radio portative : portée données (m)", "Portée dans le maillage d'un téléphone branché sur une radio portative."],
+    _sim, [500, 30000, 2000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_radio_sw_gain", "SLIDER", ["Radio portative : gain (dB)", "Marge radio ajoutée à la liaison vers les relais. 6 dB double à peu près la portée."],
+    _sim, [0, 15, 4, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_radio_sw_mbps", "SLIDER", ["Radio portative : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio tactique transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
+    _sim, [0.1, 20, 0.5, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

@@ -125,6 +125,16 @@ switch (_mode) do {
                 ["clip", _g] call comspec_atak_native_fnc_planAction;
                 [format ["Grille %1 copiée", _g], 2] call comspec_atak_native_fnc_toast;
             };
+            case "COPYMK": {
+                // Marqueur en texte (nom, grille 10 chiffres, altitude) : presse-papiers et brouillon du chat, prêt à coller.
+                if (_m isEqualTo "") exitWith {};
+                private _mp = getMarkerPos _m;
+                private _name = [markerText _m, [markerText _m] call comspec_atak_native_fnc_markerAutoName] select ((markerText _m) isEqualTo "");
+                private _txt = format ["%1 : %2 (%3 m)", [_name, "Marqueur"] select (_name isEqualTo ""), [_mp, 10] call comspec_atak_native_fnc_gridRef, round (getTerrainHeightASL _mp)];
+                ["clip", _txt] call comspec_atak_native_fnc_planAction;
+                uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", _txt];
+                [format ["Copié : %1", _txt], 3] call comspec_atak_native_fnc_toast;
+            };
             case "DELETE": { if (_m isNotEqualTo "") then { [_m] call comspec_atak_native_fnc_markerDelete; }; };
             // Marqueur de joueur pointé : éditeur (titre, description, type, couleur, taille, orientation, opacité).
             case "MKEDIT": { if (_m isNotEqualTo "" && {(markerShape _m) isNotEqualTo ""}) then { [_m] call comspec_atak_native_fnc_markerEditOpen; }; };
@@ -148,6 +158,11 @@ switch (_mode) do {
             case "LOSDEL": {
                 ["losClear"] call comspec_atak_native_fnc_reliefAction;
                 ["INFO", "Ligne de vue effacée", 2, 20] call comspec_atak_native_fnc_notify;
+            };
+            case "V3D": {
+                private _p = AGLToASL [_pos select 0, _pos select 1, 0];
+                _s set ["v3d", [_p, player getDir _p, 300, 120]];
+                ["VIEW3D"] call comspec_atak_native_fnc_navigate;
             };
             case "VIEW": { ["compute", [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_reliefAction; };
             case "VIEWU": { ["compute", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_reliefAction; };
@@ -211,6 +226,7 @@ switch (_mode) do {
             ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
             ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]],
             ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
+            ["V3D", "Vue 3D ici", "orbite autour du point", _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]],
             ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]]
         ];
         // Montre Garmin portée : le point (ou le marqueur pointé) part sur la boussole de la montre (fn_watch "send").
@@ -282,6 +298,7 @@ switch (_mode) do {
             _rows pushBack ["MKEDIT", "Modifier le marqueur", "texte, type, couleur, taille", _dir + "map_marker.paa", _acc];
         };
         if (_m isNotEqualTo "") then {
+            _rows pushBack ["COPYMK", "Copier le marqueur", "texte : nom, grille, altitude", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]];
             _rows pushBack ["DELETE", ["Supprimer le marqueur", "Effacer cette alerte"] select (([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 2), [([markerText _m] call comspec_atak_native_fnc_markerAutoName), ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
         // Repères d'alerte reçus (CONTACT, WIA, SALUTE, PANIQUE…, locaux à ce téléphone) : tous d'un coup.

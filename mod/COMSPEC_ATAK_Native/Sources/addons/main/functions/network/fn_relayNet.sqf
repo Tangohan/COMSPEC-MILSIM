@@ -77,7 +77,9 @@ switch (_act) do {
             // Relais réservé à un camp (module « ATAK · Relais ») : invisible pour les autres.
             private _rs = _x getVariable ["COMSPEC_AtakRelaySide", ""];
             if (_rs isEqualType "" && {_rs isNotEqualTo ""} && {_rs isNotEqualTo _side}) then { continue };
-            private _r = [_x getVariable ["COMSPEC_AtakRelayRange", _defR], _defR] call _num;
+            // Dégâts : débit puis portée baissent petit à petit (réglage comspec_atak_native_relay_damage, perte à 100 % de dégâts).
+            private _dmgK = (missionNamespace getVariable ["comspec_atak_native_relay_damage", 70]) / 100;
+            private _r = ([_x getVariable ["COMSPEC_AtakRelayRange", _defR], _defR] call _num) * (1 - 0.5 * _dmgK * damage _x);
             private _mb = [_x getVariable ["COMSPEC_AtakRelayThroughput", 12], 12] call _num;
             private _n = _x getVariable ["COMSPEC_AtakRelayName", "Relais ATAK"];
             if (!(_n isEqualType "") || {_n isEqualTo ""}) then { _n = "Relais ATAK"; };
@@ -97,7 +99,7 @@ switch (_act) do {
                 default { "" };
             };
             private _j = [_ant] call _jamAt;
-            private _m = _mb * (1 - 0.7 * damage _x) * _j;
+            private _m = _mb * (1 - _dmgK * damage _x) * _j;
             if (_st isEqualTo "" && {_m < 0.05}) then { _st = "brouillé"; };
             _jf pushBack _j;
             _out pushBack [_x, _ant, _n, "relay", _r, _m, _st isEqualTo "", _st, 0, _slots, _batt, _root isEqualTo true, objNull,
@@ -167,17 +169,17 @@ switch (_act) do {
                 4985, false, 0, round (100 * (1 - damage _o)), "", 0, 0, 0];
             _jf pushBack 1;
         } forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);
-        // Radios maillées MPU5 des équipiers (fn_mpu5) : relais portés qui redistribuent le débit montant que leur
+        // Radios maillées MPU5 des équipiers, ou radio ACRE2/TFAR où leur téléphone est branché (fn_mpu5) : relais portés qui redistribuent le débit montant que leur
         // téléphone reçoit d'un relais ou d'une autre MPU5 (au plus 3 bonds, publiés dans COMSPEC_ATAK_Mpu5).
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
         {
-            (_x getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_hp", 0]];
+            (_x getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_hp", 0], ["_rg", _mR], ["_rn", "MPU5"]];
             if (!(_up isEqualType 0) || {_up <= 0} || {_hp >= 3}) then { continue };
             private _ant = (eyePos _x) vectorAdd [0, 0, 0.4];
             private _j = [_ant] call _jamAt;
             private _m = _up * _j;
             private _st = ["", "brouillé"] select (_m < 0.05);
-            _out pushBack [_x, _ant, format ["MPU5 %1", [_x, true] call comspec_atak_native_fnc_unitCallsign], "mpu5", _mR, _m, _st isEqualTo "", _st, 0, 0, -1, false, objNull,
+            _out pushBack [_x, _ant, format ["%1 %2", ["Radio", "MPU5"] select (_rn isEqualTo "MPU5"), [_x, true] call comspec_atak_native_fnc_unitCallsign], "mpu5", _rg, _m, _st isEqualTo "", _st, 0, 0, -1, false, objNull,
                 4990, false, 0, round (100 * (1 - damage _x)), "", _hp, 0, 0];
             _jf pushBack _j;
         } forEach (allPlayers select { alive _x && {_x isNotEqualTo player} && {str side group _x isEqualTo _side} });
