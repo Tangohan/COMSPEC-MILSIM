@@ -1,5 +1,6 @@
 /*
-    Montre Garmin au poignet (Forerunner 965 coyote), ouverte avec la touche « Montre » du jeu (O par défaut) quand le
+    Montre Garmin au poignet (Forerunner 965 ; coloris noire, coyote, FreeCandy, drapeau US selon l'objet porté :
+    propriété comspec_watchFrame de l'objet, photos de TTRD), ouverte avec la touche « Montre » du jeu (O par défaut) quand le
     joueur porte la « Montre Garmin » (emplacement montre) ou l'a en objet divers : elle remplace la montre d'Arma.
     Sans montre Garmin, la touche garde son effet habituel.
     Touche Montre : appui court = allumer, puis écran suivant (après le dernier, la montre s'éteint) ; appui long
@@ -69,7 +70,7 @@ private _tex = { format ["\z\comspec_atak_native\addons\main\data\%1.paa", _this
 private _has = {
     alive player && {lifeState player isNotEqualTo "INCAPACITATED"} && {!(player getVariable ["ACE_isUnconscious", false])}
     && {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0
-        || {"COMSPEC_ATAK_GarminWatchItem" in (items player)}}
+        || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0}}
 };
 private _linkNow = {
     (([] call comspec_atak_native_fnc_canUse) isEqualTo "") && {(missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false]}
@@ -424,7 +425,12 @@ switch (_act) do {
         private _wpt = _m get "wpt";
 
         // --- Construction de l'écran (au changement d'écran, de taille, de mode nuit ou de luminosité) ---
-        private _sig = str [_page, _size, _side, _ratio, _big, _night, _lum, _w get "zoom"];
+        // Coloris : celui de la montre portée (emplacement montre d'abord, puis objets divers).
+        private _wc = (assignedItems player) select { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] };
+        if (_wc isEqualTo []) then { _wc = (items player) select { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }; };
+        private _skin = if (_wc isEqualTo []) then { "" } else { getText (configFile >> "CfgWeapons" >> (_wc select 0) >> "comspec_watchFrame") };
+        if (_skin isEqualTo "") then { _skin = "gw_frame"; };
+        private _sig = str [_page, _size, _side, _ratio, _big, _night, _lum, _w get "zoom", _skin];
         private _n = _w getOrDefault ["ctrls", createHashMap];
         if ((_w get "built") isNotEqualTo _sig || {isNull (_n getOrDefault ["frame", controlNull])}) then {
             { ctrlDelete _x; } forEach (allControls _d);
@@ -628,7 +634,7 @@ switch (_act) do {
             ["banBg", -0.8, -0.66, 1.6, 0.46, [0.13, 0.14, 0.15, 0.97]] call _box;
             ["ban", -0.74, -0.62, 1.48, 0.4, 0.105] call _rich;
             ["frame", "COMSPEC_RscPicture", [_x0, _y0, _ww, _size]] call _mk;
-            (_n get "frame") ctrlSetText ("gw_frame" call _tex);
+            (_n get "frame") ctrlSetText (_skin call _tex);
             (_n get "frame") ctrlSetTextColor [1, 1, 1, 1];
             { (_n get _x) ctrlShow false; } forEach ["banBg", "ban"];
             _w set ["slow", 0];

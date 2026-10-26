@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh","3DEN"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Screen"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Screen"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
@@ -310,6 +310,8 @@ class CfgWeapons {
         descriptionShort="$STR_COMSPEC_ATAK_CFG_0AFE1639F8";
         picture="\z\comspec_atak_native\addons\main\data\item_garminwatch.paa";
         model="\z\comspec_atak_native\addons\items\data\item3d_garminwatch.p3d";
+        // Texture de la montre à l'écran (fn_watch) : un coloris par objet.
+        comspec_watchFrame="gw_frame";
     };
     // Même montre en objet divers (onglet « Divers » de l'arsenal, sac ou veste) : laisse libre l'emplacement montre
     // (montre du jeu, boussole ACE) et fait aussi marcher l'app Garmin (fn_garminTick « worn »).
@@ -321,6 +323,40 @@ class CfgWeapons {
         model="\z\comspec_atak_native\addons\items\data\item3d_garminwatch.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=1; };
+        comspec_watchFrame="gw_frame";
+    };
+    // Coloris coyote (photo de TTRD, tools/gen_garmin_watch.py) : même montre, autre texture à l'écran et autre icône.
+    class COMSPEC_ATAK_GarminWatch_Coyote: COMSPEC_ATAK_GarminWatch {
+        displayName="$STR_COMSPEC_ATAK_CFG_533917F4EA";
+        picture="\z\comspec_atak_native\addons\main\data\item_garminwatch_coyote.paa";
+        comspec_watchFrame="gw_frame_coyote";
+    };
+    class COMSPEC_ATAK_GarminWatchItem_Coyote: COMSPEC_ATAK_GarminWatchItem {
+        displayName="$STR_COMSPEC_ATAK_CFG_6FF666F5E6";
+        picture="\z\comspec_atak_native\addons\main\data\item_garminwatch_coyote.paa";
+        comspec_watchFrame="gw_frame_coyote";
+    };
+    // Coloris freecandy (photo de TTRD, tools/gen_garmin_watch.py) : même montre, autre texture à l'écran et autre icône.
+    class COMSPEC_ATAK_GarminWatch_FreeCandy: COMSPEC_ATAK_GarminWatch {
+        displayName="$STR_COMSPEC_ATAK_CFG_016E7159E9";
+        picture="\z\comspec_atak_native\addons\main\data\item_garminwatch_freecandy.paa";
+        comspec_watchFrame="gw_frame_freecandy";
+    };
+    class COMSPEC_ATAK_GarminWatchItem_FreeCandy: COMSPEC_ATAK_GarminWatchItem {
+        displayName="$STR_COMSPEC_ATAK_CFG_683C914A32";
+        picture="\z\comspec_atak_native\addons\main\data\item_garminwatch_freecandy.paa";
+        comspec_watchFrame="gw_frame_freecandy";
+    };
+    // Coloris usa (photo de TTRD, tools/gen_garmin_watch.py) : même montre, autre texture à l'écran et autre icône.
+    class COMSPEC_ATAK_GarminWatch_USA: COMSPEC_ATAK_GarminWatch {
+        displayName="$STR_COMSPEC_ATAK_CFG_B188071E5D";
+        picture="\z\comspec_atak_native\addons\main\data\item_garminwatch_usa.paa";
+        comspec_watchFrame="gw_frame_usa";
+    };
+    class COMSPEC_ATAK_GarminWatchItem_USA: COMSPEC_ATAK_GarminWatchItem {
+        displayName="$STR_COMSPEC_ATAK_CFG_52B2031F34";
+        picture="\z\comspec_atak_native\addons\main\data\item_garminwatch_usa.paa";
+        comspec_watchFrame="gw_frame_usa";
     };
     class COMSPEC_ATAK_Phone: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
@@ -517,6 +553,30 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\items\data\item3d_garminwatch.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_garminwatch_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_GarminWatchItem { name="COMSPEC_ATAK_GarminWatchItem"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_GarminWatch_Coyote: Item_COMSPEC_ATAK_GarminWatch {
+        displayName="$STR_COMSPEC_ATAK_CFG_533917F4EA";
+        class TransportItems { class _xx_COMSPEC_ATAK_GarminWatch_Coyote { name="COMSPEC_ATAK_GarminWatch_Coyote"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_GarminWatchItem_Coyote: Item_COMSPEC_ATAK_GarminWatchItem {
+        displayName="$STR_COMSPEC_ATAK_CFG_6FF666F5E6";
+        class TransportItems { class _xx_COMSPEC_ATAK_GarminWatchItem_Coyote { name="COMSPEC_ATAK_GarminWatchItem_Coyote"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_GarminWatch_FreeCandy: Item_COMSPEC_ATAK_GarminWatch {
+        displayName="$STR_COMSPEC_ATAK_CFG_016E7159E9";
+        class TransportItems { class _xx_COMSPEC_ATAK_GarminWatch_FreeCandy { name="COMSPEC_ATAK_GarminWatch_FreeCandy"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy: Item_COMSPEC_ATAK_GarminWatchItem {
+        displayName="$STR_COMSPEC_ATAK_CFG_683C914A32";
+        class TransportItems { class _xx_COMSPEC_ATAK_GarminWatchItem_FreeCandy { name="COMSPEC_ATAK_GarminWatchItem_FreeCandy"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_GarminWatch_USA: Item_COMSPEC_ATAK_GarminWatch {
+        displayName="$STR_COMSPEC_ATAK_CFG_B188071E5D";
+        class TransportItems { class _xx_COMSPEC_ATAK_GarminWatch_USA { name="COMSPEC_ATAK_GarminWatch_USA"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_GarminWatchItem_USA: Item_COMSPEC_ATAK_GarminWatchItem {
+        displayName="$STR_COMSPEC_ATAK_CFG_52B2031F34";
+        class TransportItems { class _xx_COMSPEC_ATAK_GarminWatchItem_USA { name="COMSPEC_ATAK_GarminWatchItem_USA"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Phone: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
