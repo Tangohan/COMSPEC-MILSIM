@@ -32,7 +32,7 @@ private _lifePilot = _book getOrDefault ["pilot", createHashMap];
 private _rec = _book getOrDefault ["rec", createHashMap];
 private _missions = _book getOrDefault ["missions", []];
 private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]];
-(player getVariable ["COMSPEC_ATAK_DistMe", [[], []]]) params [["_pairs", []], ["_pilot", []]];
+([] call comspec_atak_native_fnc_distanceMine) params [["_pairs", []], ["_pilot", []]];
 private _c = createHashMapFromArray _pairs;
 private _get = { params ["_key"]; _c getOrDefault [_key, 0] };
 

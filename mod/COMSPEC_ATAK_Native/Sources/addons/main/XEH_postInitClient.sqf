@@ -1028,9 +1028,15 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 {
     addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
 } forEach ["Ended", "MPEnded"];
-// Quitter la partie (Échap > Quitter) ne déclenche pas Ended : l'écran de jeu qui se ferme vide aussi l'écriture.
+// Relais des distances : fin de mission côté serveur seulement (MPEnded), sinon perdu jusqu'à 10 min de compteurs.
+addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; }];
+// Quitter la partie (Échap > Quitter) ne déclenche pas Ended : l'écran de jeu qui se ferme vide aussi l'écriture
+// (profil et relais des distances, l'équivalent du départ d'un joueur côté serveur).
 [{ !isNull (findDisplay 46) }, {
-    (findDisplay 46) displayAddEventHandler ["Unload", { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+    (findDisplay 46) displayAddEventHandler ["Unload", {
+        ["selfFlush"] call comspec_atak_native_fnc_distanceServer;
+        if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; };
+    }];
 }] call CBA_fnc_waitUntilAndExecute;
 // Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
 // (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.

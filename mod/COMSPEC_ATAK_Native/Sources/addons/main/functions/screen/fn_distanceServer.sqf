@@ -25,6 +25,11 @@ if (!_self && {!isServer}) exitWith { false };
 // Relais du joueur : mémoire à part (un hôte de partie est serveur et joueur à la fois).
 private _v = ["", "Self"] select _self;
 private _srvOk = missionNamespace getVariable ["COMSPEC_ATAK_SrvPlayOK", false];
+// Relais au repos (cas courant : le serveur compte) et rien en attente : sortie avant toute allocation.
+if (_mode isEqualTo "self" && {_srvOk} && {(count (missionNamespace getVariable ["COMSPEC_ATAK_DistAccSelf", []])) isEqualTo 0}) exitWith {
+    missionNamespace setVariable ["COMSPEC_ATAK_DistLastSelf", nil];
+    true
+};
 private _now = diag_tickTime;
 private _last = missionNamespace getVariable ["COMSPEC_ATAK_DistLast" + _v, createHashMap];
 private _acc = missionNamespace getVariable ["COMSPEC_ATAK_DistAcc" + _v, createHashMap];
@@ -37,7 +42,10 @@ if (_mode in ["tick", "self"]) then {
     private _dt = (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DistTick" + _v, _now])) min 10;
     missionNamespace setVariable ["COMSPEC_ATAK_DistTick" + _v, _now];
     // Un seul compteur à la fois : le serveur tant qu'il sait envoyer, sinon le joueur lui-même.
-    if (_dt <= 0 || {!(missionNamespace getVariable ["comspec_atak_native_distance", true])} || {_srvOk isEqualTo _self}) exitWith {};
+    // Compteur au repos : sa dernière position est oubliée, sinon le trajet fait pendant que l'autre comptait serait
+    // recompté au premier passage après la bascule.
+    if (_srvOk isEqualTo _self) exitWith { { _last deleteAt _x; } forEach (keys _last); };
+    if (_dt <= 0 || {!(missionNamespace getVariable ["comspec_atak_native_distance", true])}) exitWith {};
     // Vitesse au-delà de laquelle l'écart est un téléport (respawn, Zeus, changement de slot) : non compté.
     private _vmax = createHashMapFromArray [["foot", 14], ["land", 130], ["sea", 60], ["air", 900], ["halo", 120]];
     private _publish = (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DistPub" + _v, -1e9])) >= 15;
@@ -97,7 +105,8 @@ if (_mode in ["tick", "self"]) then {
         if (_publish) then {
             (_sess get _uid) params ["", "_c", "_p"];
             private _me = [(keys _c) apply { [_x, _c get _x] }, (keys _p) apply { [_x] + (_p get _x) }];
-            if (_self) then { _unit setVariable ["COMSPEC_ATAK_DistMe", _me]; } else { _unit setVariable ["COMSPEC_ATAK_DistMe", _me, owner _unit]; };
+            // Part du serveur et part du relais publiées à part : le téléphone les additionne (fn_distanceMine).
+            if (_self) then { _unit setVariable ["COMSPEC_ATAK_DistMeSelf", _me]; } else { _unit setVariable ["COMSPEC_ATAK_DistMe", _me, owner _unit]; };
         };
     } forEach ([allPlayers, [player]] select _self);
 };
