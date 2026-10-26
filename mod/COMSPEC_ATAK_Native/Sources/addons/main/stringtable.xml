@@ -1163,9 +1163,9 @@
             <French>Affichage</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_TIP">
-            <Original>Carte et flux, carte seule (carte en grand) ou flux seul. Modifiable en jeu (ACE ou molette).</Original>
-            <English>Map and feed, map only (large map) or feed only. Can be changed in game (ACE or scroll wheel).</English>
-            <French>Carte et flux, carte seule (carte en grand) ou flux seul. Modifiable en jeu (ACE ou molette).</French>
+            <Original>Carte et flux, carte seule (carte en grand), flux seul, ou PIP du poste (l'écran recopie ce que l'opérateur a sous les yeux sur le PC du poste). Modifiable en jeu (ACE ou molette).</Original>
+            <English>Map and feed, map only (large map), feed only, or post PIP (the screen mirrors what the operator has in front of them on the post laptop). Can be changed in game (ACE or scroll wheel).</English>
+            <French>Carte et flux, carte seule (carte en grand), flux seul, ou PIP du poste (l'écran recopie ce que l'opérateur a sous les yeux sur le PC du poste). Modifiable en jeu (ACE ou molette).</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_SPLIT">
             <Original>Carte et flux</Original>
@@ -1181,6 +1181,11 @@
             <Original>Flux seul</Original>
             <English>Feed only</English>
             <French>Flux seul</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_PIP">
+            <Original>PIP du poste (ce que voit l'opérateur)</Original>
+            <English>Post PIP (what the operator sees)</English>
+            <French>PIP du poste (ce que voit l'opérateur)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_T_NAME">
             <Original>Sert aussi de poste TOC</Original>

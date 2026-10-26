@@ -604,6 +604,7 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
                 class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_SPLIT"; value = "SPLIT"; default = 1; };
                 class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_MAP"; value = "MAP"; };
                 class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_FEED"; value = "FEED"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_PIP"; value = "TOC"; };
             };
         };
         class Toc {

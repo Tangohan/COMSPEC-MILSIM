@@ -4,7 +4,9 @@
     (COMSPEC_ATAK_Data "localTasks", lu par fn_tasksAll) ; les réponses REÇU / EN COURS / TERMINÉ passent par fn_orderAck.
       "local"  -> true quand les ordres passent en local (pas de COMSPEC Link, ATAK local, ou poste TOC sans Athena)
       "can"    -> true si je peux émettre : opérateur d'un PC de TOC, chef de groupe, joueur seul, rôle chef / commandant
-      "send" [type, libellé du type, genre de cible ("all" | "group"), clé du groupe, nom de la cible, consigne, priorité] -> id
+      "send" [type, libellé du type, genre de cible ("all" | "group"), clé du groupe, nom de la cible, consigne, priorité,
+              PC du poste (fn_tocLaptop : émetteur « TOC · indicatif », envoi direct par le réseau filaire du poste),
+              position de l'objectif [x, y] ou []] -> id
       "recv" [ordre en paires [[clé, valeur]...], camp]   (événement comspec_atak_native_localOrder)
     Tout passe en tableaux simples (jamais de HashMap sur le réseau).
 */
@@ -22,8 +24,8 @@ switch (_act) do {
             || {private _r = toLower (roleDescription player); (_r find "chef") >= 0 || {(_r find "command") >= 0} || {(_r find "leader") >= 0}}
     };
     case "send": {
-        _arg params [["_kind", "MOVE"], ["_typeLabel", ""], ["_tType", "all"], ["_tRef", ""], ["_tLabel", ""], ["_payload", ""], ["_prio", "ROUTINE"]];
-        private _toc = ([player] call comspec_atak_native_fnc_vehicleTerminal) isEqualTo "toc";
+        _arg params [["_kind", "MOVE"], ["_typeLabel", ""], ["_tType", "all"], ["_tRef", ""], ["_tLabel", ""], ["_payload", ""], ["_prio", "ROUTINE"], ["_direct", false], ["_pos", []]];
+        private _toc = _direct || {([player] call comspec_atak_native_fnc_vehicleTerminal) isEqualTo "toc"};
         private _issuer = if (_toc) then {
             format ["TOC · %1", ((["get"] call comspec_atak_native_fnc_localCfg) get "toc") get "callsign"]
         } else {
@@ -35,8 +37,10 @@ switch (_act) do {
             ["priority", _prio], ["issuer", _issuer], ["issuerUid", getPlayerUID player], ["status", "NEW"], ["payload", _payload],
             ["targetType", _tType], ["targetRef", _tRef], ["source", "local"], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString]
         ];
+        if ((count _pos) >= 2) then { _o pushBack ["pos", [_pos select 0, _pos select 1]]; };
         private _side = str side group player;
         ["recv", [_o, _side]] call comspec_atak_native_fnc_orderLocal;
+        if (_direct) exitWith { ["comspec_atak_native_sideEvent", ["comspec_atak_native_localOrder", [_o, _side], _side]] call CBA_fnc_serverEvent; _id };
         [{ ["comspec_atak_native_sideEvent", ["comspec_atak_native_localOrder", _this, _this select 1]] call CBA_fnc_serverEvent; }, [_o, _side], "Ordre", 2] call comspec_atak_native_fnc_netSend;
         _id
     };

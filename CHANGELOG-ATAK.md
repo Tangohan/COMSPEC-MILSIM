@@ -38,19 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Écrans TOC persistants en jeu et IA équipées d'un ATAK (ATAK natif, prochain regroupement)
+## Écrans TOC persistants, PC du poste de commandement et IA équipées d'un ATAK (ATAK natif, prochain regroupement)
 
 ### Résumé joueur
 Type : nouveauté
 FR : Des écrans TOC en jeu et des IA vraiment reliées au réseau ATAK
 - Nouveau module Écran TOC (Eden et Zeus) : une TV ou un grand écran du jeu affiche en direct le réseau ATAK de ton camp, avec la carte, les positions des équipiers, les marqueurs et les derniers comptes rendus et messages.
-- Devant l'écran, ACE ou la molette : carte et flux, carte seule ou flux seul, zoom, et « Carte en grand » qui ouvre la carte complète dans l'ATAK du poste.
+- Le poste TOC ouvre maintenant l'écran du PC portable lui-même, sans passer par le téléphone : la vraie carte en grand avec les marqueurs, les groupes du camp, le flux des comptes rendus, le rédacteur d'ordre (clic droit sur la carte pour poser l'objectif) et les messages au camp.
+- Devant l'écran, ACE ou la molette : carte et flux, carte seule, flux seul, ou « PIP du poste » où l'écran recopie ce que l'opérateur a sous les yeux sur le PC.
 - Les écrans TOC sont gardés d'une partie à l'autre sur le même serveur.
+- Un avis d'Athena validé avec COMPRIS (dont la levée de compromission) ne revient plus à chaque partie.
 - Les missions peuvent obliger les IA à porter un ATAK : elles apparaissent sur le BFT comme un joueur, avec une position qui se met à jour au rythme du réseau, une erreur GPS réaliste, et se perdent près d'un brouilleur.
 EN : In-game TOC screens and AI really linked to the ATAK network
 - New TOC screen module (Eden and Zeus): a TV or large in-game screen shows your side's ATAK network live, with the map, teammates' positions, markers and the latest reports and messages.
-- In front of the screen, with ACE or the scroll wheel: map and feed, map only or feed only, zoom, and "Large map" which opens the full map in the post's ATAK.
+- The TOC post now opens the laptop's own screen, with no phone involved: the real map in full size with markers, the side's groups, the report feed, an order composer (right click on the map to set the objective) and messages to the side.
+- In front of the screen, with ACE or the scroll wheel: map and feed, map only, feed only, or "Post PIP", where the screen mirrors what the operator has in front of them on the laptop.
 - TOC screens are kept from one session to the next on the same server.
+- An Athena notice acknowledged with GOT IT (including a lifted compromise) no longer comes back every session.
 - Missions can force AI to carry an ATAK: they show on the BFT like a player, with a position updated at the network rate, a realistic GPS error, and they drop out near a jammer.
 
 ### Détail technique
@@ -59,7 +63,10 @@ EN : In-game TOC screens and AI really linked to the ATAK network
 - `fn_tocPersist.sqf` : profil du serveur, clé `COMSPEC_ATAK_TocSave_<carte>_<mission>`, reprise 3 s après le départ, écriture regroupée (`fn_saveProfile`) ; réglage CBA `comspec_atak_native_toc_persist`.
 - `fn_moduleTocScreen.sqf` + module `COMSPEC_ATAK_Module_TocScreen` (objets synchronisés, ou pose d'un écran du jeu). `fn_tocPost` : un écran TOC sert de PC de TOC à 4,5 m.
 - `functions/core/fn_aiAtak.sqf` : réglages `comspec_atak_native_ai_atak` (off / leaders / all), `comspec_atak_native_ai_realism` (défaut vrai), `comspec_atak_native_ai_atak_item` ; variable `COMSPEC_ATAK_AiAtak` (vrai / faux) ; PLI des IA envoyé par le serveur (`COMSPEC_ATAK_Pli`, dérive GPS par IA, toit / forêt, brouilleurs comme `fn_ewEffects`). `fn_hasDevice` : variable IA prioritaire, IA réalistes = objet requis. `fn_localDataRefresh` : point serveur des IA utilisé comme celui d'un joueur. Module `COMSPEC_ATAK_Module_AiAtak`.
-- Traductions : 82 phrases dans `i18n/en.txt`, clés `STR_COMSPEC_ATAK_CFG_TOCSCR_*` / `AIATAK_*`, gabarits de traduction régénérés (`tools/i18n.py community`, `fr`).
+- `functions/toc/fn_tocLaptop.sqf` + display `COMSPEC_RscTocLaptop` (idd 88560) et contrôle `COMSPEC_RscMapToc` : écran du PC du poste, indépendant du téléphone (aucune vérification `fn_hasDevice`). Vraie carte Arma (`Draw` : nœuds, C.R., poste, objectif), onglets GROUPES / FLUX / ORDRES / CAMP, ordre par `fn_orderLocal` "send" (nouveaux paramètres : envoi direct par le serveur, position de l'objectif), message au camp ou à un chef par `comspec_atak_native_tocMsg` (nouveau 8e champ : destinataire). `fn_tocPost` "open" ouvre ce PC au lieu de l'ATAK du poste ; l'app Poste TOC du téléphone reste pour qui a un ATAK.
+- PIP : le PC publie sur son opérateur `COMSPEC_ATAK_TocView` = [camp, centre, demi-largeur, onglet, sélection, indicatif, nom, ordre en cours, objectif] (au plus toutes les 2 s) ; l'affichage `TOC` de `fn_tocScreen` reprend ce cadrage, le groupe choisi et l'objectif, et revient à `SPLIT` sans opérateur. `fn_tocFeed` publie aussi pour les camps qui n'ont qu'un PC ouvert, et pousse les ordres du camp dans le flux.
+- `fn_adminNotices` : avis vus et avis validés gardés dans le profil (`COMSPEC_ATAK_NoticeSeen`, `COMSPEC_ATAK_NoticeAck`, 200 derniers) ; un avis déjà validé n'est plus affiché ni listé et son COMPRIS repart vers Athena à chaque réception ; un avis déjà vu la partie précédente reprend son effet sans rejouer le bandeau. Corrige « je valide la levée de compromission, le message revient à chaque fois ».
+- Traductions : 82 + 97 phrases dans `i18n/en.txt`, clés `STR_COMSPEC_ATAK_CFG_TOCSCR_*` / `AIATAK_*`, gabarits de traduction régénérés (`tools/i18n.py community`, `fr`).
 - Non testé en jeu.
 
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)

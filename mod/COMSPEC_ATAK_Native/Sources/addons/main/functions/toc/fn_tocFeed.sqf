@@ -3,12 +3,12 @@
     réseau, celui que le serveur connaît, avec les mêmes règles que le BFT des téléphones (fn_localDataRefresh) :
     seuls les porteurs d'un ATAK (joueurs et IA équipées, fn_aiAtak) sont des nœuds, à leur dernier point PLI (fn_pli),
     en direct / ancien / perdu selon l'âge du point, hors ligne si le téléphone ne balise plus (COMSPEC_ATAK_Beacon).
-    Publié toutes les 3 s, pour les seuls camps qui ont un écran TOC, dans la variable publique
+    Publié toutes les 3 s, pour les seuls camps qui ont un écran TOC ou un PC du poste ouvert (fn_tocLaptop), dans la variable publique
       COMSPEC_ATAK_TocFeed_<WEST | EAST | GUER | CIV> = [serverTime, nœuds, flux, état]
         nœud  : [clé, indicatif, [x, y], cap, fraîcheur (0 direct, 1 ancien, 2 perdu, 3 hors ligne), "inf" | "veh" |
                  "armor" | "air" | "boat", IA, groupe, occupants (équipage d'un véhicule regroupé en un nœud)]
         flux  : 30 derniers [heure, sorte, priorité, auteur, grille, texte, [x, y] ou [], serverTime, partie précédente]
-                (comptes rendus, alertes, SALUTE, MEDEVAC, BDA, messages du poste TOC)
+                (comptes rendus, alertes, SALUTE, MEDEVAC, BDA, ordres, messages du poste TOC)
         état  : [brouilleurs actifs, relais, joueurs, IA]
     Modes : ["init"] (serveur) | ["tick"] | ["push", [camp, entrée]] | ["events"] -> HashMap camp -> flux (fn_tocPersist)
             ["setEvents", HashMap] (fn_tocPersist : flux de la partie précédente)
@@ -54,8 +54,21 @@ switch (_mode) do {
                 (_r getOrDefault ["summary", _r getOrDefault ["text", ""]]) select [0, 200], [[], [_p select 0, _p select 1]] select (_p isEqualType [] && {(count _p) >= 2})]]] call comspec_atak_native_fnc_tocFeed;
         }] call CBA_fnc_addEventHandler;
         ["comspec_atak_native_tocMsg", {
-            params [["_cs", "TOC"], ["_body", ""], ["_time", ""], ["_prio", "ROUTINE"], ["_side", ""]];
+            params [["_cs", "TOC"], ["_body", ""], ["_time", ""], ["_prio", "ROUTINE"], ["_side", ""], "", "", ["_to", ""]];
+            // Message à un seul chef (PC du poste) : pas sur les écrans.
+            if (_to isNotEqualTo "") exitWith {};
             ["push", [_side, [_time, "TOC", _prio, _cs, "", _body select [0, 200], []]]] call comspec_atak_native_fnc_tocFeed;
+        }] call CBA_fnc_addEventHandler;
+        // Ordres du camp (PC du poste, chefs) : sur les écrans TOC et dans le flux du PC.
+        ["comspec_atak_native_localOrder", {
+            params [["_pairs", []], ["_side", ""]];
+            private _o = createHashMapFromArray _pairs;
+            private _p = _o getOrDefault ["pos", []];
+            private _lbl = _o getOrDefault ["typeLabel", ""];
+            if (_lbl isEqualTo "") then { _lbl = _o getOrDefault ["type", "ORDRE"]; };
+            private _tgt = _o getOrDefault ["target", ""];
+            ["push", [_side, [_o getOrDefault ["time", ""], "ORDRE", _o getOrDefault ["priority", ""], _o getOrDefault ["issuer", ""], [[[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef, ""] select ((count _p) < 2),
+                format ["%1 → %2 : %3", _lbl, ["tout le camp", _tgt] select (_tgt isNotEqualTo ""), (_o getOrDefault ["payload", ""]) select [0, 160]], [[], [_p select 0, _p select 1]] select ((count _p) >= 2)]]] call comspec_atak_native_fnc_tocFeed;
         }] call CBA_fnc_addEventHandler;
         [{ ["tick"] call comspec_atak_native_fnc_tocFeed; }, 3] call COMSPEC_ATAK_PfhSpread;
     };
@@ -84,14 +97,16 @@ switch (_mode) do {
     };
     case "tick": {
         private _screens = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} };
-        if ((count _screens) isEqualTo 0) exitWith {};
+        // PC du poste ouverts (fn_tocLaptop) : leur camp est publié aussi, même sans écran.
+        private _ops = allPlayers select { ((_x getVariable ["COMSPEC_ATAK_TocView", []]) param [0, ""]) isNotEqualTo "" };
+        if ((count _screens) isEqualTo 0 && {(count _ops) isEqualTo 0}) exitWith {};
         // Camps à publier : ceux des écrans ; un écran ouvert à tous publie pour chaque camp qui a des joueurs.
-        private _sides = [];
+        private _sides = _ops apply { (_x getVariable "COMSPEC_ATAK_TocView") select 0 };
         {
             private _s = (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""];
             if (_s isEqualTo "") then { { _sides pushBackUnique str side group _x; } forEach allPlayers; } else { _sides pushBackUnique _s; };
         } forEach _screens;
-        _sides = _sides select { _x in ["WEST", "EAST", "GUER", "CIV"] };
+        _sides = (_sides arrayIntersect _sides) select { _x in ["WEST", "EAST", "GUER", "CIV"] };
         private _pli = ["pli"] call comspec_atak_native_fnc_netCond;
         private _rate = (["pliRate"] call comspec_atak_native_fnc_netCond) max 1;
         private _liveAge = [5, _rate * 1.6 + 2] select _pli;

@@ -7,13 +7,16 @@
     sur l'objet (setObjectTexture local), rafraîchie toutes les 2 s quand l'écran est proche et visible. Une carte Arma
     ne se dessine pas dans une texture UI (fn_jpcMap) : le fond est la photo de la carte (mod @COMSPEC_ATAK_Photo,
     fn_photoMap) ou, sans lui, la carte d'ensemble du terrain (pictureMap), avec le quadrillage kilométrique.
-    Carte en grand : l'écran passe en CARTE SEULE, et l'action « Carte en grand » ouvre l'ATAK du poste (fn_tocPost),
-    tablette agrandie sur la carte complète du téléphone (dans l'ATAK, jamais par-dessus l'écran du jeu).
+    Carte en grand : l'écran passe en CARTE SEULE, et l'action « Ouvrir le PC du poste » ouvre l'écran du PC portable
+    du poste (fn_tocLaptop), indépendant du téléphone.
+    PIP du TOC (demande de TTRD, 26/10) : affichage « PIP DU POSTE », l'écran recopie ce que l'opérateur a devant lui
+    sur le PC du poste (fn_tocLaptop, COMSPEC_ATAK_TocView) : même cadrage de carte, onglet, groupe ou compte rendu
+    choisi, objectif de l'ordre en cours. Sans opérateur, l'écran revient de lui-même à carte et flux.
     Persistant : registre tenu par le serveur (joueurs qui rejoignent compris), écrans et affichage gardés d'une partie
     à l'autre sur le même serveur (fn_tocPersist, réglage « Garder les écrans TOC »).
 
     Variables publiques de l'objet :
-      COMSPEC_ATAK_TocScr [nom, camp ("" = celui de chaque joueur), index de texture, affichage ("SPLIT" | "MAP" | "FEED"),
+      COMSPEC_ATAK_TocScr [nom, camp ("" = celui de chaque joueur), index de texture, affichage ("SPLIT" | "MAP" | "FEED" | "TOC"),
                            demi-largeur de la carte en m (0 = cadrage automatique sur le réseau), centre ([] = auto),
                            poste TOC (l'écran sert aussi de PC de TOC), à recréer à la partie suivante (posé en cours de partie)]
       COMSPEC_ATAK_TocOwned   objet créé par le module ou la sauvegarde (supprimé avec l'écran)
@@ -74,7 +77,7 @@ switch (_mode) do {
         if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["add", _a]] call CBA_fnc_serverEvent; true };
         if (_name isEqualTo "") then { _name = "TOC"; };
         private _old = [_o] call _cfgOf;
-        if !(_view in ["SPLIT", "MAP", "FEED"]) then { _view = "SPLIT"; };
+        if !(_view in ["SPLIT", "MAP", "FEED", "TOC"]) then { _view = "SPLIT"; };
         _o setVariable ["COMSPEC_ATAK_TocScr", [_name select [0, 32], toUpper _side, (round _sel) max 0, _view, _old param [4, 0], _old param [5, []], _toc, _spawned || {_old param [7, false]}], true];
         // Poste TOC : l'écran donne aussi l'ATAK du poste et l'app Poste TOC à qui s'en approche (fn_tocPost).
         _o setVariable ["COMSPEC_ATAK_Toc", _toc, true];
@@ -122,7 +125,7 @@ switch (_mode) do {
         private _c = +([_o] call _cfgOf);
         if ((count _c) < 8) exitWith { false };
         switch (_k) do {
-            case "mode": { if (_v in ["SPLIT", "MAP", "FEED"]) then { _c set [3, _v]; }; };
+            case "mode": { if (_v in ["SPLIT", "MAP", "FEED", "TOC"]) then { _c set [3, _v]; }; };
             case "zoom": { _c set [4, ((_v max 100) min (worldSize max 1000))]; };
             case "center": { if (_v isEqualType [] && {(count _v) >= 2}) then { _c set [5, [_v select 0, _v select 1]]; }; };
             case "auto": { _c set [4, 0]; _c set [5, []]; };
@@ -217,6 +220,14 @@ switch (_mode) do {
         private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
         private _sideRgb = (createHashMapFromArray [["WEST", [0.28, 0.62, 1]], ["EAST", [0.95, 0.3, 0.25]], ["GUER", [0.36, 0.85, 0.42]], ["CIV", [0.75, 0.5, 0.95]]]) getOrDefault [_side, [0.28, 0.62, 1]];
         private _sideName = (createHashMapFromArray [["WEST", "BLUFOR"], ["EAST", "OPFOR"], ["GUER", "Indépendant"], ["CIV", "Civil"]]) getOrDefault [_side, _side];
+        // PIP du poste : ce que l'opérateur du PC regarde (fn_tocLaptop). L'opérateur du poste de même nom passe devant.
+        private _op = [];
+        if (_view isEqualTo "TOC") then {
+            private _cands = (allPlayers select { !isNull _x && {alive _x} && {((_x getVariable ["COMSPEC_ATAK_TocView", []]) param [0, ""]) isEqualTo _side} }) apply { _x getVariable "COMSPEC_ATAK_TocView" };
+            private _i = _cands findIf { (_x param [5, ""]) isEqualTo _name };
+            _op = _cands param [_i max 0, []];
+            if ((count _op) < 8) then { _view = "SPLIT"; _op = []; };
+        };
         private _ui = _d getVariable ["COMSPEC_ATAK_TocUi", createHashMap];
         // Contrôles créés une fois par display (réserves d'icônes et de textes réutilisées à chaque image).
         if ((count _ui) isEqualTo 0) then {
@@ -269,6 +280,10 @@ switch (_mode) do {
         (_ui get "accent") ctrlSetBackgroundColor (_sideRgb + [1]);
         private _age = [-1, round ((serverTime - _ft) max 0)] select (_ft >= 0);
         (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.9' font='COMSPEC_BarlowBold'>TOC · %1</t>   <t size='1.5' color='#8a9a93'>%2 · réseau ATAK</t>", [_name] call _esc, _sideName])) call comspec_atak_native_fnc_tr);
+        if ((count _op) >= 8) then {
+            (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.9' font='COMSPEC_BarlowBold'>TOC · %1</t>   <t size='1.5' color='#e0b040'>PIP du poste · %2</t>   <t size='1.5' color='#8a9a93'>opérateur %3 · %4</t>",
+                [_op param [5, _name]] call _esc, [_sideName] call _esc, [_op param [6, ""]] call _esc, [_op param [3, ""]] call _esc])) call comspec_atak_native_fnc_tr);
+        };
         private _live = [["<t color='#e05a4a'>● HORS LIGNE</t>", "<t color='#e0b040'>● RETARD</t>"] select (_age >= 0), "<t color='#5cc76b'>● EN DIRECT</t>"] select (_age >= 0 && {_age < 12});
         (_ui get "clock") ctrlSetStructuredText parseText (((format ["<t align='right' size='1.5'>%1   <t color='#8a9a93'>%2</t>   %3</t>",
             [dayTime, "HH:MM"] call BIS_fnc_timeToString, [format ["données il y a %1 s", _age], "aucune donnée du serveur"] select (_age < 0), _live])) call comspec_atak_native_fnc_tr);
@@ -277,6 +292,8 @@ switch (_mode) do {
         private _top = 0.08;
         private _mapR = switch (_view) do { case "MAP": { [0, _top, 1, 1 - _top] }; case "FEED": { [0, 0, 0, 0] }; default { [0, _top, 0.64, 1 - _top] }; };
         private _panR = switch (_view) do { case "MAP": { [0, 0, 0, 0] }; case "FEED": { [0.015, _top + 0.01, 0.97, 0.9 - _top] }; default { [0.648, _top + 0.008, 0.344, 0.984 - _top] }; };
+        // PIP : cadrage de la carte imposé par le PC de l'opérateur.
+        if ((count _op) >= 8) then { _center = _op select 1; _half = _op select 2; };
         private _grp = _ui get "grp";
         _grp ctrlSetPosition _mapR; _grp ctrlCommit 0;
         _grp ctrlShow (_view isNotEqualTo "FEED");
@@ -450,11 +467,30 @@ switch (_mode) do {
                     private _t = _uLbls select _ui0;
                     private _lbl = _cs + (["", format [" +%1", _n - 1]] select (_n > 1)) + (["", " · IA"] select _ai) + (["", " · ancien", " · perdu", " · hors ligne"] select (_fr min 3));
                     _t ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr);
-                    _t ctrlSetTextColor ([[1, 1, 1, 1], [0.8, 0.8, 0.8, 1]] select (_fr >= 2));
+                    // PIP : le groupe choisi par l'opérateur ressort en jaune.
+                    private _picked = (count _op) >= 5 && {(_op param [3, ""]) isEqualTo "GROUPES"} && {(_op param [4, ""]) isNotEqualTo ""} && {(_x param [7, ""]) isEqualTo (_op select 4)};
+                    _t ctrlSetTextColor ([[[1, 1, 1, 1], [0.8, 0.8, 0.8, 1]] select (_fr >= 2), [1, 0.85, 0.3, 1]] select _picked);
+                    if (_picked) then { _c ctrlSetTextColor [1, 0.85, 0.3, 1]; };
                     _t ctrlSetPosition [_gx + 20 / _texW, _gy - 13 / _texH, ((count _lbl) * 12 + 10) / _texW, 26 / _texH]; _t ctrlCommit 0; _t ctrlShow true;
                     _ui0 = _ui0 + 1;
                 };
             } forEach _nodes;
+            // PIP : objectif de l'ordre en cours de rédaction sur le PC, et repère du groupe choisi.
+            if ((count _op) >= 9) then {
+                private _opos = _op param [8, []];
+                if ((count _opos) >= 2 && {[_opos select 0, _opos select 1] call _inView} && {_ui0 < 100}) then {
+                    ([_opos select 0, _opos select 1] call _toG) params ["_gx", "_gy"];
+                    private _c = _uIcons select _ui0;
+                    _c ctrlSetText (("\A3\ui_f\data\map\markers\military\objective_CA.paa") call comspec_atak_native_fnc_tr);
+                    _c ctrlSetTextColor [1, 0.85, 0.2, 1];
+                    _c ctrlSetPosition [_gx - 20 / _texW, _gy - 20 / _texH, 40 / _texW, 40 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
+                    private _t = _uLbls select _ui0;
+                    _t ctrlSetText (("OBJECTIF") call comspec_atak_native_fnc_tr);
+                    _t ctrlSetTextColor [1, 0.9, 0.5, 1];
+                    _t ctrlSetPosition [_gx + 22 / _texW, _gy - 13 / _texH, 120 / _texW, 26 / _texH]; _t ctrlCommit 0; _t ctrlShow true;
+                    _ui0 = _ui0 + 1;
+                };
+            };
             for "_i" from _ui0 to 99 do { (_uIcons select _i) ctrlShow false; (_uLbls select _i) ctrlShow false; };
             private _sc = _ui get "scale";
             _sc ctrlSetText (((format ["Carreaux de %1 · largeur %2", [format ["%1 m", _step], format ["%1 km", _step / 1000]] select (_step >= 1000), [format ["%1 m", round (2 * _hw)], format ["%1 km", (round (2 * _hw / 100)) / 10]] select (_hw >= 500)])) call comspec_atak_native_fnc_tr);
@@ -472,7 +508,15 @@ switch (_mode) do {
             private _cnt = [0, 0, 0, 0];
             { private _f = (_x select 4) min 3; _cnt set [_f, (_cnt select _f) + (_x param [8, 1])]; } forEach _nodes;
             _stats params [["_jam", 0], ["_relays", 0], ["_players", 0], ["_ais", 0]];
-            private _s = format ["<t size='1.45' font='COMSPEC_BarlowBold'>RÉSEAU</t><br/><t size='1.25'><t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t> · <t color='#6f7773'>%4 hors ligne</t></t><br/><t size='1.1' color='#8a9a93'>%5 joueurs · %6 IA · %7 relais · %8 brouilleurs actifs</t><br/><br/>",
+            private _s = "";
+            // PIP : ce que l'opérateur a sous les yeux sur le PC du poste.
+            if ((count _op) >= 8) then {
+                _s = _s + format ["<t size='1.45' font='COMSPEC_BarlowBold' color='#e0b040'>PIP DU POSTE</t><br/><t size='1.2'>Poste %1 · opérateur %2<br/>Onglet %3 %4</t><br/>%5<br/>",
+                    [_op param [5, ""]] call _esc, [_op param [6, ""]] call _esc, [_op param [3, ""]] call _esc,
+                    ["", format [" · %1", [_op param [4, ""]] call _esc]] select ((_op param [4, ""]) isNotEqualTo "" && {(_op param [3, ""]) isEqualTo "GROUPES"}),
+                    ["", format ["<t size='1.2' color='#ffd47f'>Ordre en préparation : %1</t><br/>", [_op param [7, ""]] call _esc]] select ((_op param [7, ""]) isNotEqualTo "")];
+            };
+            _s = _s + format ["<t size='1.45' font='COMSPEC_BarlowBold'>RÉSEAU</t><br/><t size='1.25'><t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t> · <t color='#6f7773'>%4 hors ligne</t></t><br/><t size='1.1' color='#8a9a93'>%5 joueurs · %6 IA · %7 relais · %8 brouilleurs actifs</t><br/><br/>",
                 _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3, _players, _ais, _relays, _jam];
             // Groupes : nœuds par groupe, grille de leur premier nœud.
             private _gm = createHashMap;
@@ -516,9 +560,10 @@ switch (_mode) do {
             switch (_k) do {
                 case "cycle": {
                     private _m = (_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, "SPLIT"];
-                    private _next = ["SPLIT", "MAP", "FEED"] select ((((["SPLIT", "MAP", "FEED"] find _m) + 1) max 0) mod 3);
+                    private _modes = ["SPLIT", "MAP", "FEED", "TOC"];
+                    private _next = _modes select ((((_modes find _m) + 1) max 0) mod 4);
                     ["view", [_o, "mode", _next]] call comspec_atak_native_fnc_tocScreen;
-                    ["INFO", format ["Écran TOC : %1", (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"]]) get _next], 2, 20] call comspec_atak_native_fnc_notify;
+                    ["INFO", format ["Écran TOC : %1", (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"], ["TOC", "PIP du poste (ce que voit l'opérateur)"]]) get _next], 2, 20] call comspec_atak_native_fnc_notify;
                 };
                 case "in": {
                     ["view", [_o, "center", _shown select 0]] call comspec_atak_native_fnc_tocScreen;
@@ -534,9 +579,8 @@ switch (_mode) do {
                 };
                 case "auto": { ["view", [_o, "auto"]] call comspec_atak_native_fnc_tocScreen; };
                 case "big": {
-                    // Carte complète dans l'ATAK du poste (tablette agrandie, fn_tocPost), jamais par-dessus l'écran du jeu.
+                    // Écran du PC du poste (fn_tocLaptop) : carte en grand, groupes, flux et ordres, sans téléphone.
                     ["open", _o] call comspec_atak_native_fnc_tocPost;
-                    [{ ["MAP"] call comspec_atak_native_fnc_navigate; }, [], 0.5] call CBA_fnc_waitAndExecute;
                 };
             };
             _o setVariable ["COMSPEC_ATAK_TocAt", -10];
@@ -551,14 +595,14 @@ switch (_mode) do {
                     _x params ["_id", "_lbl", "_k"];
                     _out pushBack [[_id, _lbl, "", compile format ["[_target, %1] call COMSPEC_ATAK_TocDo;", str _k], { true }] call comspec_atak_native_fnc_aceAction, [], _target];
                 } forEach [
-                    ["COMSPEC_ATAK_TocCycle", "Changer d'affichage (carte et flux, carte, flux)", "cycle"],
+                    ["COMSPEC_ATAK_TocCycle", "Changer d'affichage (carte et flux, carte, flux, PIP du poste)", "cycle"],
                     ["COMSPEC_ATAK_TocIn", "Zoomer", "in"],
                     ["COMSPEC_ATAK_TocOut", "Dézoomer", "out"],
                     ["COMSPEC_ATAK_TocMe", "Centrer sur ma position", "me"],
                     ["COMSPEC_ATAK_TocAuto", "Cadrer tout le réseau", "auto"]
                 ];
                 if (_target getVariable ["COMSPEC_ATAK_Toc", false]) then {
-                    _out pushBack [["COMSPEC_ATAK_TocBig", "Carte en grand (ATAK du poste)", "", { [_target, "big"] call COMSPEC_ATAK_TocDo; }, { isNull objectParent _player }] call comspec_atak_native_fnc_aceAction, [], _target];
+                    _out pushBack [["COMSPEC_ATAK_TocBig", "Ouvrir le PC du poste (carte en grand)", "", { [_target, "big"] call COMSPEC_ATAK_TocDo; }, { isNull objectParent _player }] call comspec_atak_native_fnc_aceAction, [], _target];
                 };
                 _out
             }, [], [0, 0, 0], 5] call comspec_atak_native_fnc_aceAction;
@@ -570,7 +614,7 @@ switch (_mode) do {
                     _cond + ([" ", " && {_o getVariable ['COMSPEC_ATAK_Toc', false]}"] select (_k isEqualTo "big")), 5];
             } forEach [
                 ["Écran TOC : changer d'affichage", "cycle", 1.45], ["Écran TOC : zoomer", "in", 1.44], ["Écran TOC : dézoomer", "out", 1.43],
-                ["Écran TOC : cadrer tout le réseau", "auto", 1.42], ["Écran TOC : carte en grand (ATAK du poste)", "big", 1.41]
+                ["Écran TOC : cadrer tout le réseau", "auto", 1.42], ["Écran TOC : ouvrir le PC du poste", "big", 1.41]
             ];
         };
         true

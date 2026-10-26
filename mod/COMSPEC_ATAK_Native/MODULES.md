@@ -150,8 +150,21 @@ dernier point PLI, en direct / ancien / perdu / hors ligne), marqueurs de la mis
 géolocalisés, et un panneau réseau (nœuds, groupes, flux des comptes rendus, MEDEVAC, BDA, messages du poste TOC).
 Synchronisé avec des objets, il les désigne ; sans objet, il pose lui-même l'écran choisi (grand écran sur trépied,
 TV, écran de projection, poste informatique). ACE (ou la molette) sur l'écran : changer d'affichage (carte et flux,
-carte seule, flux seul), zoomer, dézoomer, centrer, cadrer tout le réseau, et « Carte en grand », qui ouvre la carte
-complète dans l'ATAK du poste (l'écran sert aussi de PC de TOC, `fn_tocPost`). Camp vide : chaque joueur voit le
+carte seule, flux seul, PIP du poste), zoomer, dézoomer, centrer, cadrer tout le réseau, et « Ouvrir le PC du poste »,
+qui ouvre l'écran du PC portable du poste (l'écran sert aussi de PC de TOC, `fn_tocPost`).
+
+**PIP du poste.** L'affichage « PIP du poste » recopie sur l'écran ce que l'opérateur a sous les yeux sur le PC
+(`fn_tocLaptop`, variable publique `COMSPEC_ATAK_TocView` de son unité) : même cadrage de carte, onglet en cours,
+groupe ou compte rendu choisi, objectif de l'ordre en préparation. Sans opérateur, l'écran revient de lui-même à
+carte et flux.
+
+**PC du poste (`fn_tocLaptop`).** L'action « PC du poste TOC » (ACE ou molette, 2,5 m d'un PC de TOC, 4,5 m d'un
+écran TOC) ouvre l'écran du PC lui-même, sans téléphone : vraie carte d'Arma en grand avec les marqueurs de la
+mission, les nœuds ATAK du camp, les comptes rendus géolocalisés et le poste ; onglets GROUPES (chef, effectif,
+nœuds, grille, ordre au groupe, message au chef), FLUX (C.R., alertes, MEDEVAC, BDA, ordres, messages),
+ORDRES (type, destinataire, priorité, consigne, objectif par clic droit sur la carte, suivi des réponses) et
+CAMP (message à tout le camp ou à un chef de groupe, indicatif du poste). Tout vient du serveur : le PC est sur le
+réseau filaire du poste, sans signal ni batterie de téléphone. Camp vide : chaque joueur voit le
 réseau de son propre camp sur le même écran. Les écrans sont gardés d'une partie à l'autre (réglage « Garder les
 écrans TOC ») : posés au Zeus, ils sont recréés à leur place ; ceux de la mission retrouvent affichage et cadrage.
 
@@ -160,7 +173,7 @@ Fond de carte : la photo de la carte si le mod @COMSPEC_ATAK_Photo est chargé, 
 
 ```sqf
 // Serveur (l'init d'un objet dans Eden tourne aussi sur le serveur). Ailleurs, la demande part au serveur.
-// [objet, nom, camp ("" = celui de chaque joueur), index de texture, "SPLIT" | "MAP" | "FEED", sert de poste TOC]
+// [objet, nom, camp ("" = celui de chaque joueur), index de texture, "SPLIT" | "MAP" | "FEED" | "TOC", sert de poste TOC]
 if (isServer) then { ["add", [this, "TOC Bravo", "WEST", 0, "SPLIT", true]] call comspec_atak_native_fnc_tocScreen; };
 ["remove", objet] call comspec_atak_native_fnc_tocScreen;
 // Pose d'un écran du jeu : [position ATL, direction, classe, nom, camp, affichage, poste TOC]
@@ -169,8 +182,10 @@ if (isServer) then { ["add", [this, "TOC Bravo", "WEST", 0, "SPLIT", true]] call
 
 **English.** The "ATAK · TOC screen" Eden/Zeus module shows a side's live ATAK network, as computed by the mission
 server (`fn_tocFeed`), on a game TV or screen: map with nodes, mission markers, geolocated reports, network panel and
-feed. ACE/scroll actions change the display, zoom and open the full map in the post's ATAK. Screens persist across
-sessions (`fn_tocPersist`, setting "Keep TOC screens").
+feed. ACE/scroll actions change the display (map and feed, map, feed, post PIP), zoom and open the post laptop. The
+"TOC post laptop" action opens the laptop's own screen (`fn_tocLaptop`), with no phone: the real Arma map, groups,
+feed, order composer and side messages. "Post PIP" mirrors the operator's laptop on any in-game screen. Screens
+persist across sessions (`fn_tocPersist`, setting "Keep TOC screens").
 
 ## 8. IA équipées d'un ATAK
 

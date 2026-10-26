@@ -65,6 +65,16 @@ class COMSPEC_RscTocScreenTexture {
     class controls {};
 };
 
+// PC portable du poste TOC (fn_tocLaptop) : écran du PC lui-même, indépendant du téléphone (carte en grand, nœuds
+// ATAK du camp, groupes, flux, ordres, messages au camp). Contrôles créés par le code.
+class COMSPEC_RscTocLaptop {
+    idd=COMSPEC_ATAK_IDD_TOCLAPTOP; movingEnable=0; enableSimulation=1;
+    onLoad="['load', _this select 0] call comspec_atak_native_fnc_tocLaptop";
+    onUnload="['unload'] call comspec_atak_native_fnc_tocLaptop";
+    class controlsBackground {};
+    class controls {};
+};
+
 class RscTitles {
     // Terminal porté (HUD) : visible pendant que l'on joue, sans souris ni clavier.
     class COMSPEC_RscTitleATAK: COMSPEC_RscDisplayATAK {

@@ -5,7 +5,8 @@
     comme lui.
     Zeus : lâché sur un objet, il le désigne (ou le retire s'il l'est déjà) ; lâché sur le sol, il pose un écran du jeu
     tourné vers la caméra. Les écrans posés au Zeus sont gardés pour la partie suivante (réglage « Garder les écrans TOC »).
-    Attributs : Nom, Camp affiché (vide : celui de chaque joueur), Affichage, Poste TOC, Écran posé, Texture (index).
+    Attributs : Nom, Camp affiché (vide : celui de chaque joueur), Affichage (dont « PIP du poste » : l'écran recopie
+    ce que l'opérateur a sous les yeux sur le PC du poste), Poste TOC, Écran posé, Texture (index).
 */
 params [["_logic", objNull, [objNull]], ["_units", [], [[]]], ["_activated", true, [true]]];
 private _ctx = [_logic, _units, _activated] call comspec_atak_native_fnc_moduleContext;
@@ -30,7 +31,7 @@ private _pos = getPosATL _logic;
 deleteVehicle _logic;
 private _obj = _targets param [0, _ctx getOrDefault ["near", objNull]];
 private _sides = [["Celui de chaque joueur", ""], ["BLUFOR", "WEST"], ["OPFOR", "EAST"], ["Indépendant", "GUER"], ["Civil", "CIV"]];
-private _views = [["Carte et flux", "SPLIT"], ["Carte seule (carte en grand)", "MAP"], ["Flux seul", "FEED"]];
+private _views = [["Carte et flux", "SPLIT"], ["Carte seule (carte en grand)", "MAP"], ["Flux seul", "FEED"], ["PIP du poste (ce que voit l'opérateur)", "TOC"]];
 if (isNull _obj) exitWith {
     private _classes = (["classes"] call comspec_atak_native_fnc_tocScreen) apply { [_x select 0, _x select 1] };
     if ((count _classes) isEqualTo 0) exitWith { ["feedback", ["ATAK : aucun écran du jeu disponible"]] call comspec_atak_native_fnc_zeusMenu; true };
@@ -39,7 +40,7 @@ if (isNull _obj) exitWith {
         ["EDIT", "Nom", "TOC"],
         ["COMBO", "Camp affiché", _sides, ""],
         ["COMBO", "Affichage", _views, "SPLIT"],
-        ["CHECK", "Sert aussi de poste TOC (ATAK du poste, carte en grand)", true]
+        ["CHECK", "Sert aussi de poste TOC (PC du poste, carte en grand)", true]
     ], {
         params ["_v", "_pos"];
         _v params ["_cls", "_name", "_side", "_view", "_toc"];
@@ -56,7 +57,7 @@ if ((count _cur) >= 8) then { _name = _cur select 0; _side = _cur select 1; _sel
     ["EDIT", "Nom", [_name, "TOC"] select (_name isEqualTo "")],
     ["COMBO", "Camp affiché", _sides, _side],
     ["COMBO", "Affichage", _views, _view],
-    ["CHECK", "Sert aussi de poste TOC (ATAK du poste, carte en grand)", _toc],
+    ["CHECK", "Sert aussi de poste TOC (PC du poste, carte en grand)", _toc],
     ["SLIDER", "Texture (index de sélection)", [0, 5, _sel]]
 ], {
     params ["_v", "_obj"];
