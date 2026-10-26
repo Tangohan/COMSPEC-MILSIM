@@ -19,7 +19,7 @@ final class StaffMarkServiceTest extends TestCase
         StaffMarkService::seed([]);
     }
 
-    public function testAdminNameIsRedWithEagleBadge(): void
+    public function testAdminNameIsRedWithEaglePastille(): void
     {
         $html = StaffMarkService::name('TTRD <b>', 7);
         self::assertStringContainsString('is-staff--admin', $html);
@@ -33,7 +33,7 @@ final class StaffMarkServiceTest extends TestCase
     {
         self::assertSame(' is-staff is-staff--support', StaffMarkService::nameClass(9));
         self::assertStringContainsString('title="Support Athena"', StaffMarkService::mark(9));
-        self::assertStringContainsString('>Support</span>', StaffMarkService::mark(9, true));
+        self::assertStringContainsString('ath-staff-mark--lg', StaffMarkService::mark(9, true));
     }
 
     public function testOtherMembersAreLeftUntouched(): void

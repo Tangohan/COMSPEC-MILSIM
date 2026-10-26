@@ -9,8 +9,8 @@ use PDO;
 
 /**
  * Marques « équipe Athena » sur tout le site : les administrateurs de la plateforme (users.is_platform_admin)
- * ont un badge aigle et leur nom en rouge, le support (rôle contributeur « support » validé dans
- * Admin > Contributeurs) un badge casque et leur nom en vert.
+ * ont une pastille rouge à l'aigle et leur nom en rouge, le support (rôle contributeur « support » validé
+ * dans Admin > Contributeurs) une pastille verte au casque et leur nom en vert.
  *
  * Une personne est reconnue par son e-mail : toutes ses lignes users (une par communauté) portent la marque.
  * Le résultat est gardé dans storage/cache/staff-marks.json (10 minutes, vidé à chaque changement d'accès ou
@@ -51,24 +51,25 @@ final class StaffMarkService
         return $k !== null ? ' is-staff is-staff--' . $k : '';
     }
 
-    /** Petit badge (aigle pour l'administration, casque pour le support) à placer juste après un nom. */
-    public static function mark(int $userId, bool $withLabel = false): string
+    /**
+     * Pastille ronde (aigle blanc sur rouge pour l'administration, casque blanc sur vert pour le support) à placer
+     * juste après un nom ; $large pour un titre (fiche, en-tête de profil).
+     */
+    public static function mark(int $userId, bool $large = false): string
     {
         $k = self::kindOf($userId);
         if ($k === null) {
             return '';
         }
         $label = self::label($k);
-        $short = $k === self::ADMIN ? 'Admin' : 'Support';
 
-        return '<span class="ath-staff-mark ath-staff-mark--' . $k . '" title="' . $label . '" role="img" aria-label="' . $label . '">'
+        return '<span class="ath-staff-mark ath-staff-mark--' . $k . ($large ? ' ath-staff-mark--lg' : '') . '" title="' . $label . '" role="img" aria-label="' . $label . '">'
             . self::icon($k)
-            . ($withLabel ? '<span class="ath-staff-mark__text" aria-hidden="true">' . $short . '</span>' : '')
             . '</span>';
     }
 
     /** Nom échappé, coloré et suivi du badge si la personne fait partie de l'équipe Athena. */
-    public static function name(string $name, int $userId, bool $withLabel = false): string
+    public static function name(string $name, int $userId, bool $large = false): string
     {
         $safe = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
         $k = self::kindOf($userId);
@@ -76,14 +77,14 @@ final class StaffMarkService
             return $safe;
         }
 
-        return '<span class="ath-staff-name is-staff is-staff--' . $k . '" data-staff-done>' . $safe . '</span>' . self::mark($userId, $withLabel);
+        return '<span class="ath-staff-name is-staff is-staff--' . $k . '" data-staff-done>' . $safe . '</span>' . self::mark($userId, $large);
     }
 
     public static function icon(string $kind): string
     {
         if ($kind === self::ADMIN) {
             // Aigle aux ailes déployées.
-            return '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10.4 8.6L1 5.2L2.9 7.9L1.2 8.4L3.9 10.1L2.6 10.9L5.5 12.1L4.6 12.9L8.1 13.4L10.3 12.2Z"/><path fill="currentColor" d="M13.6 8.6L23 5.2L21.1 7.9L22.8 8.4L20.1 10.1L21.4 10.9L18.5 12.1L19.4 12.9L15.9 13.4L13.7 12.2Z"/><path fill="currentColor" d="M12 3.1a2.1 2.1 0 0 0-2.1 2.1c0 .6.2 1.1.6 1.5-.8.8-1.2 2.2-1.2 4 0 1.6.4 2.8 1 3.6L9 19.2l1.6-1 1.4 2.5 1.4-2.5 1.6 1-1.3-4.9c.6-.8 1-2 1-3.6 0-1.8-.4-3.2-1.2-4l.6-.4 1.6-.3-1.6-.6A2.1 2.1 0 0 0 12 3.1Z"/></svg>';
+            return '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10.6 9.6L3.4 2.6L4 5.4L1.6 5L3.4 7.5L1.2 7.8L3.8 9.8L2.2 10.6L5.6 11.8L4.6 12.8L9.9 13.4Z"/><path fill="currentColor" d="M13.4 9.6 L20.6 2.6 L20 5.4 L22.4 5 L20.6 7.5 L22.8 7.8 L20.2 9.8 L21.8 10.6 L18.4 11.8 L19.4 12.8 L14.1 13.4 Z"/><path fill="currentColor" d="M9.7 11a2.3 3.9 0 1 0 4.6 0a2.3 3.9 0 1 0-4.6 0Z"/><path fill="currentColor" d="M10.5 14L8.8 19l1.8-.9.6 2.4L12 19l.8 1.5.6-2.4 1.8.9L13.5 14Z"/><path fill="currentColor" d="M10.6 6a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0Z"/><path fill="currentColor" d="M13.1 5.3L15.4 5.9L14.6 6.9L13.4 6.6Z"/></svg>';
         }
 
         // Casque-micro du support.
