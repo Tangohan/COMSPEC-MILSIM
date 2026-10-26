@@ -15976,5 +15976,7 @@
 ["Inspecteur SSE activé — survolez une entité en Zeus.", "SSE inspector enabled — hover an entity in Zeus."],
 ["Reposez le module pour le désactiver.", "Place the module again to disable it."],
 ["Dataset « %1 » appliqué : %2 rôle(s) · niveau %3", "Dataset ""%1"" applied: %2 role(s) · level %3"],
-["ligne %1 : %2", "line %1: %2"]
+["ligne %1 : %2", "line %1: %2"],
+["Proposer la liaison Athena à la sortie du téléphone", "Offer the Athena link when taking out the phone"],
+["Coché par défaut. Tant que votre jeu n'est pas relié à un compte Athena, la première sortie du téléphone de chaque mission ouvre l'app Athena avec un code à saisir sur le site. Décochez pour garder votre dernière app à l'ouverture.", "Checked by default. While your game is not linked to an Athena account, the first time you take out the phone in each mission it opens the Athena app with a code to enter on the site. Uncheck to keep your last app on opening."]
 ]
