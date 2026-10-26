@@ -92,5 +92,17 @@ if (_loadout isEqualTo []) exitWith {
     []
 };
 
+// Tenue ACE étendue [tenue, infos] : sur le site les infos sont du texte (str d'un HashMap = paires) ; ACE attend un
+// HashMap pour les relire. Laissé en tableau, l'écran « Mes équipements » d'ACE n'affichait plus la tenue.
+if (
+    (count _loadout) == 2
+    && {(_loadout select 0) isEqualType []}
+    && {(count (_loadout select 0)) >= 9}
+    && {(_loadout select 1) isEqualType []}
+) then {
+    private _pairs = (_loadout select 1) select { (_x isEqualType []) && {(count _x) == 2} && {(_x select 0) isEqualType ""} };
+    _loadout = [_loadout select 0, createHashMapFromArray _pairs];
+};
+
 _cache set [_id, _loadout];
 _loadout
