@@ -13,7 +13,7 @@
       ["unit", clé]         → unité de ce profil (objNull si disparue)
       ["profile", unité]    → HashMap name, age, bio, tags, kind, dist
       ["roll"]              → profil particulier à montrer au prochain tour, tiré selon le réglage (objNull sinon)
-      ["clue", unité]       → [message d'indice, position floue, vrai] ; un HVT ment une fois sur quatre (rendez-vous
+      ["clue", unité]       → [message d'indice, position floue, vrai] ; un HVT ment parfois (réglage, 25 %) (rendez-vous
                                piège à 1 ou 2 km de lui) : l'indice entre dans son dossier comme tuyau « contact direct »
       ["chance", unité]     → probabilité de match (0 à 1)
 */
@@ -44,7 +44,7 @@ switch (_act) do {
     };
     case "hvts": {
         if ((missionNamespace getVariable ["comspec_atak_native_hvt_tips", 2]) <= 0) exitWith { [] };
-        allUnits select { !isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"} && {([_x] call _kindOf) isEqualTo "HVT"} }
+        allUnits select { !isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"} && {([_x] call _kindOf) isEqualTo "HVT"} && {_x getVariable ["COMSPEC_ATAK_TinderTips", true]} }
     };
     case "roll": {
         private _p = [0, 0.1, 0.25, 0.5] select ((missionNamespace getVariable ["comspec_atak_native_dating_specials", 1]) max 0 min 3);
@@ -102,7 +102,10 @@ switch (_act) do {
         private _hvt = ([_u] call _kindOf) isEqualTo "HVT";
         // Position floue : 300 m pour un HVT (prudent), 150 m sinon. Un HVT méfiant donne parfois un faux rendez-vous.
         private _r = [150, 300] select _hvt;
-        private _true = !_hvt || {random 1 >= 0.25};
+        // Mensonge : imposé par la cible (module), sinon réglage de mission (25 % par défaut).
+        private _lie = _u getVariable ["COMSPEC_ATAK_TinderLie", -1];
+        if (!(_lie isEqualType 0) || {_lie < 0}) then { _lie = (missionNamespace getVariable ["comspec_atak_native_hvt_lie", 25]) / 100; };
+        private _true = !_hvt || {random 1 >= _lie};
         private _p = if (_true) then { (getPosATL _u) getPos [random _r, random 360] } else { (getPosATL _u) getPos [1000 + random 1500, random 360] };
         private _locs = nearestLocations [_p, ["NameCityCapital", "NameCity", "NameVillage", "NameLocal", "Hill", "NameMarine"], 2500];
         private _loc = if (_locs isEqualTo []) then { "" } else { text (_locs select 0) };

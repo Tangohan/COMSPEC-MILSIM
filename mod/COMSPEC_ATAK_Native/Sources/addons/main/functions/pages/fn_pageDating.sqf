@@ -319,7 +319,8 @@ switch (_tab) do {
                 ["info", "Reçu", format ["il y a %1 min", _age]]
             ];
             if (_from isNotEqualTo "") then { _rows pushBack ["info", "Partagé par", [_from] call _esc]; };
-            if (_age >= 45) then { _rows pushBack ["text", "<t size='0.85' color='#f2ab33'>Tuyau périmé (plus de 45 min) : il n'entre plus dans l'estimation.</t>"]; };
+            private _life = ["life"] call comspec_atak_native_fnc_hvtIntel;
+            if (_age >= _life) then { _rows pushBack ["text", format ["<t size='0.85' color='#f2ab33'>Tuyau périmé (plus de %1 min) : il n'entre plus dans l'estimation.</t>", _life]]; };
             _rows append [
                 ["buttons", [
                     ["REJETER", compile format ["['review', [%1, 'NO']] call comspec_atak_native_fnc_datingAction;", str _id]],
@@ -440,7 +441,7 @@ switch (_tab) do {
             _rows append [
                 ["buttons", [
                     ["MARQUER", compile format ["['fileMark', %1] call comspec_atak_native_fnc_datingAction;", str _openFile], true, _st isNotEqualTo "JACKPOT"],
-                    ["PARTAGER", compile format ["['fileShare', %1] call comspec_atak_native_fnc_datingAction;", str _openFile], false, _st isNotEqualTo "JACKPOT", "Envoyer les tuyaux confirmés à mon groupe"],
+                    ["PARTAGER", compile format ["['fileShare', %1] call comspec_atak_native_fnc_datingAction;", str _openFile], false, _st isNotEqualTo "JACKPOT" && {missionNamespace getVariable ["comspec_atak_native_hvt_share", true]}, "Envoyer les tuyaux confirmés à mon groupe"],
                     ["SALUTE", compile format ["['fileSalute', %1] call comspec_atak_native_fnc_datingAction;", str _openFile], false, true, "Compte rendu SALUTE prérempli"]
                 ]],
                 ["buttons", [
@@ -485,7 +486,7 @@ switch (_tab) do {
         if (_keys isEqualTo []) then {
             _rows pushBack ["hero", _icon, "<t font='COMSPEC_BarlowBold'>Aucun dossier</t><br/><t color='#8a9a93'>Confirmez des likes (tuyaux des informateurs) ou matchez un profil HVT pour ouvrir un dossier.</t>"];
         };
-        _rows pushBack ["text", format ["<t size='0.8' color='%1'>FIND, FIX, FINISH, EXPLOIT. Deux sources différentes qui se recoupent font un MATCH (FIX). Un tuyau est périmé après 45 min et sa zone grossit avec le temps : la cible bouge.</t>", _grey]];
+        _rows pushBack ["text", format ["<t size='0.8' color='%1'>FIND, FIX, FINISH, EXPLOIT. Deux sources différentes qui se recoupent font un MATCH (FIX). Un tuyau est périmé après %2 min et sa zone grossit avec le temps : la cible bouge.</t>", _grey, ["life"] call comspec_atak_native_fnc_hvtIntel]];
         [_rows, [0, _cy, _bw, _ch]] call comspec_atak_native_fnc_formRender;
     };
     case "MATCH": {

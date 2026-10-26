@@ -13,7 +13,12 @@
       MESSAGES : chaque source a son fil ; on peut la relancer (une fois toutes les 5 min) : une source honnête précise,
                  une source qui ment continue de mentir.
     Tout reste local au joueur ; PARTAGER envoie les tuyaux confirmés d'un dossier à son groupe (comspec_atak_native_hvtTip).
-    Fréquence : réglage de mission comspec_atak_native_hvt_tips ; plus de civils autour du joueur, plus de tuyaux.
+    Réglages de mission (CBA, « ATAK · Tinder : chasse aux HVT ») : fréquence (comspec_atak_native_hvt_tips), part de faux
+    tuyaux (_hvt_false), péremption en minutes (_hvt_stale), vitesse de dérive de la cible (_hvt_drift), mensonge au
+    rendez-vous (_hvt_lie, fn_datingSpecials), civils qui comptent (_hvt_civ), partage au groupe (_hvt_share).
+    Par cible (module Eden / Zeus « Tinder : profil HVT / SSE », ou init de l'unité) : COMSPEC_ATAK_TinderTips (faux = pas
+    de tuyaux sur elle), COMSPEC_ATAK_TinderFalse (part de faux tuyaux 0 à 1, -1 = réglage de mission),
+    COMSPEC_ATAK_TinderLie (mensonge au rendez-vous 0 à 1, -1 = réglage de mission).
     Tuyau : [id, clé HVT, code source, position annoncée, rayon d'origine, heure (CBA_missionTime), état NEW|OK|NO,
              texte, vrai, partagé par, nom du HVT]
     Params : [action, argument]
@@ -30,6 +35,7 @@
       "grade", code           lettre de fiabilité        "cred", tuyau : chiffre de crédibilité     "radius", tuyau
       "source", code          [métier, âge] ([] si source inconnue : tuyau partagé)
       "name", clé             nom affiché du HVT          "unread" : tuyaux non lus     "stats" : bilan du joueur
+      "life"                  péremption d'un tuyau en minutes (réglage)
       "followup", code        relancer une source          "mark", clé / "markTip", id : marquer sur la carte
       "share", clé            partager au groupe           "salute", clé : SALUTE prérempli
 */
@@ -47,12 +53,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_HvtCredited", _credited];
 private _pol = missionNamespace getVariable ["COMSPEC_ATAK_HvtPol", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_HvtPol", _pol];
 private _now = CBA_missionTime;
-private _life = 2700;
+private _life = 60 * ((missionNamespace getVariable ["comspec_atak_native_hvt_stale", 45]) max 5);
+private _drift = (missionNamespace getVariable ["comspec_atak_native_hvt_drift", 0.8]) max 0;
 private _hhmm = { [(dayTime - ((_now - _this) / 3600) + 24) mod 24, "HH:MM"] call BIS_fnc_timeToString };
 
 private _unitOf = { ["unit", _this] call comspec_atak_native_fnc_datingSpecials };
-// Rayon actuel : rayon annoncé + ce qu'une cible à pied a pu parcourir depuis (0,8 m/s), 3 km au plus.
-private _radiusOf = { params ["_t"]; round (((_t select 4) + 0.8 * (_now - (_t select 5))) min 3000) };
+// Rayon actuel : rayon annoncé + ce que la cible a pu parcourir depuis (réglage, 0,8 m/s par défaut), 3 km au plus.
+private _radiusOf = { params ["_t"]; round (((_t select 4) + _drift * (_now - (_t select 5))) min 3000) };
 private _gradeOf = {
     params ["_code"];
     private _e = _srcs getOrDefault [_code, []];
@@ -196,7 +203,12 @@ switch (_act) do {
         if (isNull _u || {!alive _u}) exitWith { "" };
         if (_src isEqualTo "") then { _src = call _pickSource; };
         private _e = _srcs getOrDefault [_src, ["", 30, 0.6, 0, 0]];
-        private _true = [_forced isEqualTo 1, random 1 < (_e select 2)] select (_forced isEqualTo -1);
+        // Part de faux tuyaux : imposée par la cible (module), sinon honnêteté de la source corrigée par le réglage de mission.
+        private _fs = _u getVariable ["COMSPEC_ATAK_TinderFalse", -1];
+        private _honest = if (_fs isEqualType 0 && {_fs >= 0}) then { 1 - (_fs min 1) } else {
+            1 - ((1 - (_e select 2)) * ([0.5, 1, 1.5] select ((missionNamespace getVariable ["comspec_atak_native_hvt_false", 1]) max 0 min 2)))
+        };
+        private _true = [_forced isEqualTo 1, random 1 < _honest] select (_forced isEqualTo -1);
         if (_r0 < 0) then { _r0 = selectRandom [120, 200, 300, 450, 700]; };
         private _hp = getPosATL _u;
         private _pick = { if (_true) then { _hp getPos [random (_r0 * 0.8), random 360] } else { _hp getPos [900 + random 2200, random 360] } };
@@ -259,7 +271,8 @@ switch (_act) do {
         if (_p <= 0 || {_hvts isEqualTo []}) exitWith {};
         // Le renseignement humain vient de la population : plus de civils autour du joueur, plus de tuyaux.
         private _civ = { alive _x && {(side group _x) isEqualTo civilian} && {!isPlayer _x} } count (player nearEntities ["CAManBase", 600]);
-        if (random 1 >= _p * (0.4 + ((0.15 * _civ) min 1.2))) exitWith {};
+        private _civK = [1, 0.4 + ((0.15 * _civ) min 1.2)] select (missionNamespace getVariable ["comspec_atak_native_hvt_civ", true]);
+        if (random 1 >= _p * _civK) exitWith {};
         private _u = selectRandom _hvts;
         private _id = ["tip", [["key", _u] call comspec_atak_native_fnc_datingSpecials]] call comspec_atak_native_fnc_hvtIntel;
         if (_id isEqualTo "") exitWith {};
@@ -308,6 +321,7 @@ switch (_act) do {
     case "radius": { [_arg] call _radiusOf };
     case "name": { [_arg] call _nameOf };
     case "source": { private _e = _srcs getOrDefault [_arg, []]; if (_e isEqualTo []) then { [] } else { [_e select 0, _e select 1] } };
+    case "life": { round (_life / 60) };
     case "unread": { { (_x select 6) isEqualTo "NEW" } count _tips };
     case "keys": {
         private _k = [];
@@ -383,6 +397,7 @@ switch (_act) do {
         private _d = [_arg] call _dossier;
         private _send = (_d get "tips") select { (_x select 6) isEqualTo "OK" && {(_now - (_x select 5)) < _life} };
         private _to = (units group player) select { isPlayer _x && {_x isNotEqualTo player} };
+        if !(missionNamespace getVariable ["comspec_atak_native_hvt_share", true]) exitWith { ["INFO", "Tinder : partage désactivé par la mission", 3, 20] call comspec_atak_native_fnc_notify; };
         if (_send isEqualTo []) exitWith { ["INFO", "Tinder : aucun tuyau confirmé à partager", 3, 20] call comspec_atak_native_fnc_notify; };
         if (_to isEqualTo []) exitWith { ["INFO", "Tinder : personne d'autre dans votre groupe", 3, 20] call comspec_atak_native_fnc_notify; };
         { ["comspec_atak_native_hvtTip", [_x, name player], _to] call CBA_fnc_targetEvent; } forEach _send;
