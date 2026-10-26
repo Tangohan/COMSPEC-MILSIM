@@ -66,8 +66,9 @@ internal static class GoogleSlidesDeck
         requestId = (requestId ?? "").Trim();
         if (requestId.Length == 0 || requestId.Length > 96)
             return "[\"rejected\",\"invalid_request\"]";
-        if (!TryParsePresentationId(url, out var presentationId))
+        if (!TryParsePresentationId(url, out var presentationId, out var canonicalUrl))
             return "[\"rejected\",\"invalid_url\"]";
+        url = canonicalUrl; // https://docs.google.com/... vérifié : seule adresse source jamais chargée
 
         CancellationTokenSource cts;
         lock (Gate)
@@ -122,14 +123,29 @@ internal static class GoogleSlidesDeck
     }
 
     internal static bool TryParsePresentationId(string url, out string presentationId)
+        => TryParsePresentationId(url, out presentationId, out _);
+
+    internal static bool TryParsePresentationId(string url, out string presentationId, out string canonicalUrl)
     {
         presentationId = "";
+        canonicalUrl = "";
         if (string.IsNullOrWhiteSpace(url)) return false;
-        if (!url.Contains("docs.google.com/presentation/", StringComparison.OrdinalIgnoreCase))
+        // Hôte vérifié sur l'URL analysée (pas une sous-chaîne) : https://docs.google.com uniquement, sinon le jeu
+        // irait chercher (redirections suivies) une adresse arbitraire qui contient ce chemin.
+        var raw = url.Trim();
+        if (raw.StartsWith("http://", StringComparison.OrdinalIgnoreCase)) raw = "https://" + raw.Substring(7);
+        else if (!raw.Contains("://", StringComparison.Ordinal)) raw = "https://" + raw; // lien collé sans schéma
+        if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri)
+            || uri.Scheme != Uri.UriSchemeHttps
+            || !string.Equals(uri.Host, "docs.google.com", StringComparison.OrdinalIgnoreCase)
+            || !uri.IsDefaultPort
+            || uri.UserInfo.Length > 0
+            || !uri.AbsolutePath.StartsWith("/presentation/d/", StringComparison.OrdinalIgnoreCase))
             return false;
-        var m = PresentationIdRegex.Match(url);
+        var m = PresentationIdRegex.Match("docs.google.com" + uri.AbsolutePath);
         if (!m.Success) return false;
         presentationId = m.Groups[1].Value;
+        canonicalUrl = uri.AbsoluteUri;
         return presentationId.Length >= 10;
     }
 

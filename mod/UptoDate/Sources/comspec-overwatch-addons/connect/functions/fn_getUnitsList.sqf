@@ -48,8 +48,14 @@ private _myPos = getPosWorld player;
 private _myGrid = [mapGridPosition player] call _parseGrid;
 private _myRole = [player] call comspec_overwatch_connect_fnc_getUnitRole;
 
-// 1) Joueurs locaux (même camp en priorité, sinon tous)
-private _pool = allPlayers select { alive _x && {!isNull _x} };
+// 1) Joueurs locaux : camp ami et équipés d'un terminal (pas de fuite de positions ennemies en JcJ)
+private _mySide = side group player;
+private _pool = allPlayers select {
+    alive _x && {!isNull _x} && {
+        (_x isEqualTo player)
+        || {([_mySide, side group _x] call BIS_fnc_sideIsFriendly) && {[_x] call comspec_overwatch_connect_fnc_hasTerminal}}
+    }
+};
 if ((count _pool) == 0) then { _pool = [player]; };
 {
     private _u = _x;
@@ -68,10 +74,10 @@ _byCs set [toLower _myCs, [_myCs, _myGrid select 0, _myGrid select 1, true, _myP
 
 // 2) Athena via extension (complète / met à jour les absents locaux)
 private _raw = ["COMSPECExtension" callExtension "GetUnits"] call comspec_overwatch_connect_fnc_extResult;
-private _parts = _raw splitString "|";
-private _prefix = if ((count _parts) >= 1) then { _parts select 0 } else { "" };
-if (_prefix isEqualTo "OK") then {
-    private _payload = if ((count _parts) >= 2) then { _parts select 1 } else { "" };
+if (!(_raw isEqualType "")) then { _raw = str _raw; };
+// Charge utile = tout ce qui suit « OK| » : un « | » dans un indicatif ne doit pas tronquer la liste.
+if ((_raw select [0, 3]) isEqualTo "OK|") then {
+    private _payload = _raw select [3];
     {
         private _cols = _x splitString toString [9]; // tab
         if ((count _cols) >= 4 && {(_cols select 0) isEqualTo "U"}) then {
@@ -95,7 +101,8 @@ if (_prefix isEqualTo "OK") then {
                 if (_roleKeep isEqualTo "" || {_roleKeep isEqualTo "Operator"}) then {
                     if (!(_roleAthena isEqualTo "")) then { _roleKeep = _roleAthena; };
                 };
-                _byCs set [_key, [_cs, _gx, _gy, _isSelf || (_existing select 3), _existing select 4, _existing select 5, _roleKeep, 0, "linked", diag_tickTime]];
+                // Grille locale conservée : celle d'Athena retarde d'un cycle et ne collerait plus à la position tracée.
+                _byCs set [_key, [_cs, _existing select 1, _existing select 2, _isSelf || (_existing select 3), _existing select 4, _existing select 5, _roleKeep, 0, "linked", diag_tickTime]];
             } else {
                 private _wx = _wxAthena;
                 private _wy = _wyAthena;

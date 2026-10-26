@@ -86,7 +86,9 @@ if (_key isNotEqualTo "") then {
         if (missionNamespace getVariable ["comspec_atak_native_music_athena", true]) then { _kinds pushBack "lib"; };
         {
             private _s = _x getVariable ["COMSPEC_ATAK_Spk", []];
-            if ((count _s) >= 6 && {alive _x} && {(_s select 0) in _kinds} && {(_s select 1) isEqualType ""}) then {
+            if ((count _s) >= 6 && {alive _x} && {(_s select 0) in _kinds} && {(_s select 1) isEqualType ""}
+                // Début et volume publiés par un autre client : nombres exigés (sinon erreur de script à chaque tour).
+                && {(_s select 3) isEqualType 0} && {(_s select 4) isEqualType 0}) then {
                 private _d = _x distance player;
                 private _g = if (_veh isNotEqualTo player && {vehicle _x isEqualTo _veh}) then { 1 } else {
                     private _k = (1 - _d / _range) max 0;
@@ -97,7 +99,7 @@ if (_key isNotEqualTo "") then {
                 private _k2 = format ["%1|%2|%3|%4", getPlayerUID _x, _s select 0, _s select 1, _s select 5];
                 if (_g > _best && {!(_k2 in _fail)}) then {
                     _best = _g;
-                    _tgt = [_k2, _s select 0, _s select 1, _s select 3, (_s select 4) * _g, name _x, _s select 2];
+                    _tgt = [_k2, _s select 0, _s select 1, _s select 3, ((_s select 4) max 0 min 100) * _g, name _x, _s select 2];
                 };
             };
         } forEach ((allPlayers - [player]) select { (_x distance player) < _range });

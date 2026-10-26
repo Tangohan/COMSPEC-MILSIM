@@ -33,6 +33,13 @@ if (isNil "_tab") then { _tab = createHashMap; missionNamespace setVariable ["CO
 private _meta = missionNamespace getVariable "COMSPEC_ATAK_MarkerMeta";
 if (isNil "_meta") then { _meta = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MarkerMeta", _meta]; };
 private _hms = { (([dayTime, "HH:MM:SS"] call BIS_fnc_timeToString) splitString ":") joinString "" };
+// Style public d'un trait épais / fléché (fn_markerStroke, COMSPEC_ATAK_SK_<nom>, JIP) : retiré par le serveur quand le
+// trait est effacé (sinon une entrée JIP par trait jamais retirée).
+private _skClear = {
+    if (!(_this isEqualType "") || {_this isEqualTo ""}) exitWith {};
+    private _sk = format ["COMSPEC_ATAK_SK_%1", _this regexReplace ["[^A-Za-z0-9]", "_"]];
+    if !(isNil {missionNamespace getVariable _sk}) then { missionNamespace setVariable [_sk, nil, true]; };
+};
 private _stateOf = {
     params ["_m"];
     [markerPos _m, markerShape _m, markerType _m, markerText _m, markerColor _m, markerDir _m, markerAlpha _m, markerSize _m,
@@ -125,6 +132,7 @@ switch (_act) do {
         // Marqueur effacé vu par le serveur : sa note pourra être retirée (op "note").
         if (isNull _owner) exitWith {
             _mm deleteAt _m;
+            _m call _skClear;
             private _gone = missionNamespace getVariable "COMSPEC_ATAK_MkGoneSrv";
             if (isNil "_gone") then { _gone = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MkGoneSrv", _gone]; };
             // Seuls comptent les marqueurs qui ont une note (pas de table sans fin sur une mission qui efface beaucoup).
@@ -173,6 +181,7 @@ switch (_act) do {
             };
             case "del": {
                 _gone set [_m, true];
+                _m call _skClear;
                 private _e = _srv deleteAt _m;
                 if (isNil "_e") exitWith {};
                 // À tout le camp : un joueur qui a changé de groupe garde sinon un marqueur effacé.

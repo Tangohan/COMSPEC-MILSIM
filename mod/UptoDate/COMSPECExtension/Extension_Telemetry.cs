@@ -64,6 +64,7 @@ public static partial class Extension
         if (mode is "legacy" or "unit" or "unitary" or "off" or "0" or "false")
         {
             _telemetryBatchEnabled = false;
+            FlushTelemetryQueuesUnitary();
             return "OK|legacy";
         }
         return "OK|" + (_telemetryBatchEnabled ? "batch" : "legacy");
@@ -276,7 +277,28 @@ public static partial class Extension
         TelemetryDeltaFingerprints[key] = fp;
         TelemetryDeltaFingerprints[key + ":ts"] =
             Environment.TickCount64.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (TelemetryDeltaFingerprints.Count > TelemetryDeltaMaxEntries)
+            PurgeTelemetryDeltaFingerprints();
         return true;
+    }
+
+    // EmitTelemetry P2/P3 : la clé par défaut (type:tick) est unique, la table grossissait toute la session.
+    private const int TelemetryDeltaMaxEntries = 4096;
+    private const long TelemetryDeltaMaxAgeMs = 600_000;
+
+    /// <summary>Retire les empreintes non revues depuis 10 min (clé + clé:ts).</summary>
+    private static void PurgeTelemetryDeltaFingerprints()
+    {
+        var now = Environment.TickCount64;
+        foreach (var kv in TelemetryDeltaFingerprints)
+        {
+            if (!kv.Key.EndsWith(":ts", StringComparison.Ordinal))
+                continue;
+            if (long.TryParse(kv.Value, out var ts) && now - ts < TelemetryDeltaMaxAgeMs)
+                continue;
+            TelemetryDeltaFingerprints.TryRemove(kv.Key, out _);
+            TelemetryDeltaFingerprints.TryRemove(kv.Key[..^3], out _);
+        }
     }
 
     private static string Fingerprint(string s)
@@ -604,6 +626,8 @@ public static partial class Extension
                 _telemetryBatchEnabled = false;
                 Interlocked.Increment(ref _telemetryFallbackStreak);
                 FallbackTelemetryUnitary(items);
+                // Le drain lot ne repassera plus : vider le reste des files P0-P3 vers les routes unitaires.
+                FlushTelemetryQueuesUnitary();
                 Interlocked.Increment(ref _telemetryBatchFail);
                 return true;
             }

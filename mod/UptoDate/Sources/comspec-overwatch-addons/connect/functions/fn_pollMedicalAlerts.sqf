@@ -27,18 +27,23 @@ private _alerts = [];
 {
     private _line = _x;
     if (_line isEqualTo "") then { continue };
-    private _cols = _line splitString (toString [9]);
+    // splitKeepEmpty : cellules vides conservées (grille / indicatif vides ne décalent plus la sévérité).
+    private _cols = [_line, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _cols) < 6) then { continue };
 
     private _id = _cols select 0;
     private _kind = _cols select 1;
     private _callSign = _cols select 2;
     private _label = _cols select 3;
+    if (_label isEqualTo "") then { _label = "Assistance médicale"; };
     private _grid = _cols select 4;
     private _created = _cols select 5;
     private _triageStatus = if ((count _cols) > 6) then { _cols select 6 } else { "a_secourir" };
     private _triageLabel = if ((count _cols) > 7) then { _cols select 7 } else { "À secourir" };
     private _severity = if ((count _cols) > 8) then { _cols select 8 } else { "urgent" };
+    if (_triageStatus isEqualTo "") then { _triageStatus = "a_secourir"; };
+    if (_triageLabel isEqualTo "") then { _triageLabel = "À secourir"; };
+    if (_severity isEqualTo "") then { _severity = "urgent"; };
 
     private _hm = createHashMapFromArray [
         ["id", _id],

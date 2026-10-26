@@ -13,6 +13,7 @@ if (["off", false] call comspec_atak_native_fnc_zeusFx) exitWith { "zeus" };
 if ((["heat", 0] call comspec_atak_native_fnc_zeusFx) isEqualTo 3) exitWith { "heat" };
 if ([player] call comspec_atak_native_fnc_aircrewTerminal) exitWith { "" };
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { "item" };
-if ((profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]) && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0}) exitWith { "battery" };
+// Batterie vide seulement si la simulation est active (profil et condition « battery » de fn_netCond, comme fn_battery).
+if ((profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]) && {["battery"] call comspec_atak_native_fnc_netCond} && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0}) exitWith { "battery" };
 if (!_allowBroken && {(([] call comspec_atak_native_fnc_deviceHealth) get "state") isEqualTo "BROKEN"}) exitWith { "broken" };
 ""

@@ -10,6 +10,9 @@ if (isNull _disp) exitWith {};
 
 [] call comspec_overwatch_connect_fnc_intelNoteApplyGeometry;
 
+// Verrou anti double clic : uiNamespace survit à la mission, un envoi coupé (fin de mission) le laissait levé.
+uiNamespace setVariable ["COMSPEC_IntelNote_Submitting", false];
+
 // Mémoire des champs de la fiche précédente : elle ne doit pas déteindre.
 ["clear"] call comspec_overwatch_connect_fnc_intelNoteCache;
 

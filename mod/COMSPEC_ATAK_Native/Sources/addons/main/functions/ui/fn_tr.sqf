@@ -111,20 +111,30 @@ private _seg = {
     (_text select [0, _at]) + _r + (_text select [_at + count _core])
 };
 
-// Découpe autour des balises du texte structuré.
+// Découpe autour des balises du texte structuré. « < » n'ouvre une balise que suivi d'une lettre ou de « / » (<t, <br, </t>, <img) :
+// « < RÉGLAGES », « <  PRÉC. » ou « noir < 25 % » restent du texte, cherché en entier dans le dictionnaire.
 private _out = "";
+private _txt = "";
 private _rest = _v;
 while { _rest isNotEqualTo "" } do {
     private _i = _rest find "<";
-    if (_i < 0) then { _out = _out + ([_rest] call _seg); _rest = ""; } else {
-        if (_i > 0) then { _out = _out + ([_rest select [0, _i]] call _seg); };
+    private _c = if (_i < 0) then { "" } else { _rest select [_i + 1, 1] };
+    if (_i >= 0 && {(_c isEqualTo "/") || {(toLower _c) isNotEqualTo (toUpper _c)}}) then {
+        _txt = _txt + (_rest select [0, _i]);
+        if (_txt isNotEqualTo "") then { _out = _out + ([_txt] call _seg); _txt = ""; };
         private _j = (_rest select [_i]) find ">";
         if (_j < 0) then { _out = _out + (_rest select [_i]); _rest = ""; } else {
             _out = _out + (_rest select [_i, _j + 1]);
             _rest = _rest select [_i + _j + 1];
         };
+    } else {
+        if (_i < 0) then { _txt = _txt + _rest; _rest = ""; } else {
+            _txt = _txt + (_rest select [0, _i + 1]);
+            _rest = _rest select [_i + 1];
+        };
     };
 };
+if (_txt isNotEqualTo "") then { _out = _out + ([_txt] call _seg); };
 if (((_v splitString "0123456789") joinString "") isNotEqualTo _v) exitWith {
     if (count _cacheNum > 1500) then { _cacheNum = createHashMap; };
     missionNamespace setVariable ["COMSPEC_ATAK_I18nCacheNum", _cacheNum];
