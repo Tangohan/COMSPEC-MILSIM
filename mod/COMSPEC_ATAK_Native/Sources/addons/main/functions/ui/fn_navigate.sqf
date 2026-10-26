@@ -8,6 +8,24 @@ if ((([] call comspec_atak_native_fnc_appList) findIf { (_x get "page") isEqualT
     ["Application en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast;
     false
 };
+// App Store (fn_appInstall) : une app interdite par l'encadrement ne s'ouvre d'aucune façon ; une app désinstallée
+// (raccourci, notification) ouvre sa fiche dans l'App Store pour la réinstaller.
+private _appOf = (([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
+if ((count _appOf) > 0 && {!((_appOf get "id") in ["Admin", "Toc"])}) then {
+    private _inst = ["state", _appOf get "id"] call comspec_atak_native_fnc_appInstall;
+    if (_inst isEqualTo "forbidden") exitWith {
+        ["Cette app est interdite par l'encadrement", 2.5] call comspec_atak_native_fnc_toast;
+        _page = "";
+    };
+    if (_inst isEqualTo "removed") then {
+        [(_appOf get "name") + " n'est pas installée : App Store", 2.5] call comspec_atak_native_fnc_toast;
+        private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        _st set ["storeQuery", _appOf get "name"];
+        _st set ["storeTab", "ALL"];
+        _page = "STORE";
+    };
+};
+if (_page isEqualTo "") exitWith { false };
 
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Touche accueil (coque ou barre d'app) sur l'écran de verrouillage : déverrouille.

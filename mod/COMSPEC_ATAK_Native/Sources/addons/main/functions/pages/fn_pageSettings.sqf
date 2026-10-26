@@ -223,7 +223,7 @@ if (["dock"] call _foldOpen) then {
     _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
 };
 _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
-    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_CarryStyle", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_HandHint", "COMSPEC_ATAK_LauncherSearch"];
+    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_CarryStyle", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_HandHint", "COMSPEC_ATAK_LauncherSearch"];
     [] call comspec_atak_native_fnc_saveProfile;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }]]];
@@ -390,25 +390,19 @@ private _hw = [
     ["info", "Réseau simulé", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · %2", _lq get "label", [format ["%1 kbit/s", _lq get "kbps"], format ["%1 Mbit/s", ((_lq get "kbps") / 1000) toFixed 1]] select ((_lq get "kbps") >= 1000)]] select (_lq get "sim")]
 ];
 
-private _appsRows = [];
-// Applications : chaque app (sauf Réglages) peut être cachée du lanceur et du dock.
-uiNamespace setVariable ["COMSPEC_ATAK_AppHide", {
-    params ["_id"];
-    private _h = profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []];
-    if (_id in _h) then { _h = _h - [_id]; } else { _h pushBack _id; };
-    profileNamespace setVariable ["COMSPEC_ATAK_HiddenApps", _h];
-    [] call comspec_atak_native_fnc_saveProfile;
-    [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
-}];
-private _hidden = profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []];
-_appsRows pushBack ["section", "Applications", format ["%1 app(s) cachée(s) du lanceur", count _hidden]];
-{
-    private _id = _x get "id";
-    if (_id isNotEqualTo "Settings" && {!((_x get "section") isEqualTo "Civil" && {!(missionNamespace getVariable ["comspec_atak_native_civil_apps", true])})}) then {
-        // App en chantier (wip=1) : signalée W.I.P dans la liste (elle reste grisée et fermée au lanceur).
-        _appsRows pushBack ["switch", format ["%1  <t size='0.8' color='#8a9a93'>%2</t>%3", _x get "name", _x get "section", ["", "  <t size='0.75' color='#d99a1f'>W.I.P</t>"] select (_x getOrDefault ["wip", false])], !(_id in _hidden), compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_AppHide');", _id]];
-    };
-} forEach ([] call comspec_atak_native_fnc_appList);
+// Applications : installées et désinstallées dans l'App Store (fn_pageStore), qui remplace les bascules « cacher l'app ».
+private _appsAll = ([] call comspec_atak_native_fnc_appList) select { !((_x get "id") in ["Admin", "Toc"]) };
+private _appsSt = _appsAll apply { ["state", _x get "id"] call comspec_atak_native_fnc_appInstall };
+private _appsRows = [
+    ["section", "Applications", "Installer, désinstaller et retrouver les apps du téléphone"],
+    ["cells", [
+        ["\z\comspec_atak_native\addons\main\data\ui_check.paa", [0.36, 0.78, 0.42, 1], "Installées", format ["<t color='#5cc76b'>%1</t>", { _x in ["system", "required", "installed"] } count _appsSt], "Sur l'écran d'accueil et dans le dock"],
+        ["\z\comspec_atak_native\addons\main\data\app_store.paa", [0.55, 0.6, 0.57, 1], "À installer", format ["<t color='#8a9a93'>%1</t>", { _x isEqualTo "removed" } count _appsSt], "Disponibles dans l'App Store"]
+    ], 2],
+    ["buttons", [["OUVRIR L'APP STORE", { [{ ["STORE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, true]]]
+];
+private _imp = { _x in ["required", "forbidden"] } count _appsSt;
+if (_imp > 0) then { _appsRows pushBack ["text", format ["<t size='0.8' color='#e8b84a'>%1 app(s) imposée(s) ou interdite(s) par l'encadrement</t>", _imp]]; };
 
 private _rule = ["require_equipment"] call comspec_atak_native_fnc_tenantRule;
 private _require = if (_rule in ["on", "off"]) then { _rule isEqualTo "on" } else { missionNamespace getVariable ["comspec_atak_native_require_item", true] };
@@ -626,7 +620,7 @@ private _cats = [
     ["PLACE", "Emplacement", "Coin, taille et sens du téléphone porté", "ui_rotate", _place],
     ["MAP", "Carte", "Indicatifs, couleurs, grilles, tailles, fond", "app_map", _map],
     ["ALERTS", "Alertes", "Notifications et vibration", "ui_vibrate", _alerts],
-    ["APPS", "Applications", format ["%1 app(s) cachée(s)", count (profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []])], "ui_apps", _appsRows],
+    ["APPS", "Applications", format ["App Store : %1 app(s) à installer", { _x isEqualTo "removed" } count _appsSt], "ui_apps", _appsRows],
     ["HW", "Matériel et réseau", "Mode avion, Bluetooth, dégâts, réseau simulé, caméra en direct", "app_network", _hw + _live],
     ["REAL", "Réalisme", ["Données médicales, saleté de l'écran", "Roleplay, données médicales, réglages imposés"] select _bridge, "app_status", _real],
     ["ACCESS", "Accès et touches", format ["Item requis, %1 raccourcis clavier réglables ici", count _kbAll], "ui_hand", _access],

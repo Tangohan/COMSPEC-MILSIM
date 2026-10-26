@@ -517,6 +517,10 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     ["Repérage automatique par les drones", "Décoché par défaut : le pilote repère et marque lui-même. Coché : la caméra du drone repère seule les ennemis qu'elle voit (onglet CIBLES, traces sur la carte) et les drones d'escorte préviennent le pilote quand des ennemis sont proches."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_apps_off", "EDITBOX", ["Apps retirées", "Apps à retirer de tous les téléphones : leurs noms de classe séparés par des virgules (ex. Dating, Food, MonModule). Marche aussi pour les apps ajoutées par d'autres mods."], _sim, "", 1] call comspec_atak_native_fnc_addSetting;
+// App Store (fn_appInstall) : apps imposées à tous les joueurs du serveur. La mission, le Zeus (app Admin, onglet APPS)
+// et la communauté Athena (Contrôle serveur) peuvent en ajouter ; une app interdite par l'un d'eux l'emporte.
+["comspec_atak_native_apps_required", "EDITBOX", ["Apps obligatoires", "Apps toujours installées sur tous les téléphones : le joueur ne peut pas les désinstaller de l'App Store. Noms de classe séparés par des virgules (ex. Map, Chat, Bft)."], _sim, "", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_apps_forbidden", "EDITBOX", ["Apps interdites", "Apps que personne ne peut installer ni ouvrir : elles restent visibles dans l'App Store avec la mention INTERDITE. Noms de classe séparés par des virgules (ex. Dating, Food). Pour qu'une app n'existe plus du tout, utilisez « Apps retirées »."], _sim, "", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décochez pour les retirer de tous les téléphones."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

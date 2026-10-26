@@ -186,6 +186,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_lockAction; ["marquage suivi", _t] call comspec_atak_native_fnc_perfAcc; }, 0.5] call COMSPEC_ATAK_PfhSpread;
 // Contrôle Zeus des ATAK : effets reçus du serveur (fn_zeusClient), boucle d'une seconde, menu clic droit ZEN du Zeus.
 ["comspec_atak_native_zeusFx", { _this call comspec_atak_native_fnc_zeusClient; }] call CBA_fnc_addEventHandler;
+// App Store : apps imposées ou interdites changées par la mission ou le Zeus (fn_appInstall), ou par les réglages CBA du
+// serveur : l'app ouverte se ferme si elle devient interdite, l'écran d'accueil et le dock se redessinent.
+["comspec_atak_native_appPolicy", { ["applied"] call comspec_atak_native_fnc_appInstall; }] call CBA_fnc_addEventHandler;
+["CBA_SettingChanged", { params [["_k", ""]]; if (_k in ["comspec_atak_native_apps_required", "comspec_atak_native_apps_forbidden"]) then { ["applied"] call comspec_atak_native_fnc_appInstall; }; }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_zeusClient; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Positions BFT par points (fn_pli) : un point de position envoyé aux alliés à l'intervalle choisi (10 s en Milsim).
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
