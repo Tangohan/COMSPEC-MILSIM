@@ -125,6 +125,31 @@ EN : Your own callsign, named markers and JTAC tools
 - GPS : soi-même (icône, anneaux, étiquettes, trait de distance) dessiné à la position GPS simulée (`COMSPEC_ATAK_SelfGpsPos`).
 - Clic gauche de la carte : armé à l'appui (`mapLc`), exécuté au relâchement s'il n'y a pas eu de glisser (`fn_mapMouseButtonUp` rappelle `fn_mapMouseButtonDown` avec `_click`) ; TRAIT et DESSIN démarrent toujours à l'appui. Menu OUTILS en sections (NAVIGATION, MESURER, DESSINER, AFFICHAGE), bandeau d'outil actif avec icône et bouton ✕.
 - JTAC : `fn_magBearing` (réglage serveur `comspec_atak_native_mag_decl`), outil carte IPTGT `fn_jtacTool` (VERS LE 9-LINE remplit l'app JTAC), ligne 2 du 9-LINE en cap magnétique ; page site `/9-line` (flux des 9-LINE de la communauté toutes les 5 s, calculateur IP → cible), QR `data\nineline_qr_ca.paa`.
+## Mode full local : PC portable de TOC, app Numéros, configuration locale config.json (ATAK natif, version attribuée au regroupement ; COMSPEC Link : DLL native modifiée)
+
+### Résumé joueur
+Type : nouveauté
+FR : Jouer sans Athena, avec un vrai PC de TOC en jeu
+- Mode full local : un serveur peut jouer sans Athena ni site web (réglage serveur). Ordres, messages du poste, comptes rendus, numéros de téléphone et carnet passent en jeu.
+- PC portable de TOC : un ordinateur posé dans la mission devient le poste de commandement. À côté, l'ATAK du poste s'ouvre sur une grande tablette avec l'app Poste TOC : message à tout le camp (ROUTINE, URGENT, FLASH), ordres aux groupes et leurs réponses, situation des groupes, derniers comptes rendus. Les réponses des joueurs arrivent à l'opérateur assis au poste.
+- Nouvelle app Numéros : tes numéros et leurs types (mobile, satellite, fixe, radio IP, ligne chiffrée, bip, urgence), numéro principal, annuaire des joueurs de ton camp et carnet de contacts.
+- Tout est gardé dans un fichier config.json modifiable à la main (Documents, Arma 3, COMSPEC_Local), aussi hors ligne.
+EN : Play without Athena, with a real TOC laptop in game
+- Full local mode: a server can play with no Athena and no website (server setting). Orders, post messages, reports, phone numbers and contacts run in game.
+- TOC laptop: a computer placed in the mission becomes the command post. Next to it, the post's ATAK opens on a large tablet with the TOC post app: message to the whole side (ROUTINE, URGENT, FLASH), orders to groups and their replies, group situation, latest reports. Players' replies reach the operator sitting at the post.
+- New Numbers app: your numbers and their types (mobile, satellite, landline, IP radio, secure line, pager, emergency), main number, directory of the players on your side and contact list.
+- Everything is kept in a config.json file you can edit by hand (Documents, Arma 3, COMSPEC_Local), offline too.
+
+### Détail technique
+- DLL native (`COMSPECATAKNativeExtension/LocalConfig.cs`, aiguillage `Local*` dans `Extension.cs` sous `COMSPEC_ATAK_NATIVE`) : `LocalBegin / LocalAppend / LocalCommit [nom] / LocalGet [nom, décalage] / LocalFolder / LocalOpenFolder`. Fichiers `Documents\Arma 3\COMSPEC_Local\<nom>.json` (nom : lettres, chiffres, `-`, `_`), JSON vérifié et indenté, écriture atomique, ancien fichier en `.bak` ; lecture tolérante (commentaires, virgules finales), rendue en tableau SQF (`["#obj", [clé, valeur]...]`) par morceaux (réponse bornée à 8000 octets). Compilé et testé hors jeu (dotnet 8). Le DLL est à reconstruire (COMSPEC Link +1 au regroupement) ; sans lui, la configuration reste dans le profil Arma.
+- `fn_localCfg` : chargement (fichier, sinon profil `COMSPEC_ATAK_LocalCfgSave`, sinon défauts), normalisation (8 numéros, 100 contacts, un seul principal), enregistrement fichier + profil, `apply` (variables publiques `COMSPEC_ATAK_LocalNum` en ATAK local, `COMSPEC_ATAK_Numbers`), types, générateur de numéros par plan (FR, US, UK, DE, BE, RU, ES). `fn_phoneIdent` prend `COMSPEC_ATAK_LocalNum` (avant la surcharge de mission `COMSPEC_ATAK_Ident`).
+- App Numéros (`fn_pageNumbers`, `fn_numbersAction`) : onglets MES NUMÉROS / ANNUAIRE / CARNET / FICHIER.
+- PC de TOC (`functions/toc` : `fn_tocPost`, `fn_pageToc`, `fn_tocAction`) : objet `COMSPEC_ATAK_TocLaptop` (modèle de l'ordinateur portable d'Arma, attribut Eden « Camp du poste TOC »), variable `COMSPEC_ATAK_Toc` sur n'importe quel objet, réglage « Tous les ordinateurs portables servent de PC de TOC » ; recherche du poste chaque seconde (2,5 m, à pied), `fn_vehicleTerminal` renvoie `toc` (tablette de bord), action ACE / molette, app Poste TOC visible seulement au poste. Messages du poste : événement `comspec_atak_native_tocMsg` relayé au camp par le serveur et rejoué aux arrivants ; `fn_p2pSend` remet les réponses à « TOC · indicatif » à l'opérateur au poste (`COMSPEC_ATAK_TocOn`).
+- Ordres sans Athena (`fn_orderLocal`) : sans COMSPEC Link, en ATAK local ou au poste TOC, `fn_orderAction` envoie l'ordre par `comspec_atak_native_localOrder` (camp, rejoué aux arrivants), `fn_tasksAll` ajoute `localTasks`, réponses par `fn_orderAck` comme avant. NOUVEL ORDRE visible pour chef de groupe, joueur seul, rôle chef / commandant, opérateur du poste.
+- Réglages serveur **ATAK · Mode local et poste TOC** : `comspec_atak_native_local_only` (mode full local : `fn_athenaMode` natif et Overwatch connect renvoient `off`, Réglages > Service Athéna affiche « imposé »), `comspec_atak_native_toc_enabled`, `comspec_atak_native_toc_anylaptop`.
+- Nouvelles icônes `app_numbers`, `app_toc` (`tools/gen_assets.py only app_numbers,app_toc`). Traductions EN ajoutées. `hemtt check` et `hemtt build` OK.
+- Au regroupement : bump de version, main.pbo reconstruit, `comspec_overwatch_connect.pbo` repacké (fn_athenaMode du connect modifié), DLL native reconstruite.
+- À tester en jeu (rien ne l'a été) : réglage mode full local (plus de question Athéna, Réglages « imposé ») ; app Numéros (ajout, GÉNÉRER, principal, privé, annuaire, carnet, FICHIER : ouvrir le dossier, modifier config.json à la main puis RECHARGER) ; recherche par numéro sur la carte avec le numéro choisi ; PC de TOC posé dans Eden et par Zeus (action ACE et sans ACE, tablette, app Poste TOC qui disparaît en s'éloignant) ; message du poste URGENT et réponse d'un joueur ; NOUVEL ORDRE sans Athena, réponses REÇU / TERMINÉ, joueur arrivé en cours de partie.
 
 ---
 

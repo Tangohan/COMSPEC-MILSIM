@@ -3091,6 +3091,11 @@ public static partial class Extension
         {
             return BtCommand(function, args);
         }
+        // Configuration locale en JSON, mode full local sans Athena (LocalConfig.cs) : Documents\Arma 3\COMSPEC_Local.
+        if (function != null && function.StartsWith("Local", StringComparison.Ordinal))
+        {
+            return LocalCommand(function, args);
+        }
 #endif
 
         if (function == "MemStats")

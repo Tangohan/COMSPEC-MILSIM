@@ -488,9 +488,12 @@ _access append [
 ];
 
 // Service Athéna : la question du premier lancement (Oui : COMSPEC Link et synchro ; Non : ATAK local).
+// Mode full local imposé par le serveur (réglage comspec_atak_native_local_only) : plus de question.
 private _athMode = [] call comspec_atak_native_fnc_athenaMode;
+private _forcedLocal = missionNamespace getVariable ["comspec_atak_native_local_only", false];
 private _athReady = _bridge && {[] call comspec_overwatch_connect_fnc_isReady};
 private _athState = switch (true) do {
+    case (_forcedLocal): { "<t color='#8a9a93'>mode full local (serveur) · aucune connexion ni donnée envoyée</t>" };
     case (_athMode isEqualTo "off"): { "<t color='#8a9a93'>ATAK local · aucune connexion ni donnée envoyée</t>" };
     case (_athMode isEqualTo ""): { "<t color='#e8b84a'>pas encore choisi</t>" };
     case (_athReady): { format ["<t color='#5cc76b'>compte lié</t>%1", ["", format [" · %1", missionNamespace getVariable ["comspec_tenant_name", ""]]] select ((missionNamespace getVariable ["comspec_tenant_name", ""]) isNotEqualTo "")] };
@@ -498,10 +501,14 @@ private _athState = switch (true) do {
 };
 private _athena = [
     ["section", "Service Athéna", "Votre unité utilise-t-elle Athéna ?"],
-    ["segment", "Mon unité utilise Athéna", [
-        ["OUI", { ["on"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "on"],
-        ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "off"]
-    ], "Oui : COMSPEC Link, synchro avec le poste, compte lié. Non : ATAK local sur le serveur, rien n'est envoyé."],
+    if (_forcedLocal) then {
+        ["switch", "Mode full local imposé par le serveur", true, {}, "Le serveur joue sans Athena : numéros, carnet et poste TOC restent dans config.json (app Numéros).", true]
+    } else {
+        ["segment", "Mon unité utilise Athéna", [
+            ["OUI", { ["on"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "on"],
+            ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "off"]
+        ], "Oui : COMSPEC Link, synchro avec le poste, compte lié. Non : ATAK local sur le serveur, rien n'est envoyé."]
+    },
     ["info", "État", _athState],
     ["buttons", [
         ["LIER MON COMPTE", { ["link"] call comspec_atak_native_fnc_athenaChoice; }, true, _bridge && {_athMode isEqualTo "on"} && {!_athReady}]

@@ -606,6 +606,17 @@ private _dock = ["COMSPEC", "ATAK · Socle de recharge"];
 ["comspec_atak_native_dock_anyone", "CHECKBOX",
     ["Tout le monde peut reprendre n'importe quel téléphone", "Décoché : seul le propriétaire (compte Steam) peut reprendre son téléphone. Zeus et l'admin peuvent toujours."],
     _dock, false, 1] call comspec_atak_native_fnc_addSetting;
+// Mode full local et PC portable de TOC (fn_localCfg, fn_tocPost, fn_orderLocal).
+private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
+["comspec_atak_native_local_only", "CHECKBOX",
+    ["Mode full local (sans Athena)", "Coché : personne ne se connecte à Athena sur ce serveur, la question du service Athéna disparaît. Ordres, messages du poste, comptes rendus, numéros de téléphone et carnet passent en jeu ; chaque joueur garde sa configuration dans Documents\Arma 3\COMSPEC_Local\config.json."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_enabled", "CHECKBOX",
+    ["PC portables de TOC", "Un joueur à côté d'un PC de TOC (objet « PC portable de TOC (ATAK) » d'Eden ou de Zeus) a l'ATAK du poste et l'app Poste TOC : message à tout le camp, ordres aux groupes, situation, comptes rendus. Aussi sans Athena."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_anylaptop", "CHECKBOX",
+    ["Tous les ordinateurs portables servent de PC de TOC", "Coché : les ordinateurs portables et postes informatiques du jeu posés dans la mission deviennent des PC de TOC (pour tous les camps). Décoché : seulement l'objet PC portable de TOC et les objets désignés par la mission (this setVariable [""COMSPEC_ATAK_Toc"", true, true])."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",
     ["ATAK pour les équipages d'hélico et d'avion", "Pilote, copilote et tireurs d'un hélicoptère ou d'un avion ont l'ATAK sur la tablette de bord, même sans téléphone ou avec un téléphone vide ou cassé. Elle se range quand on descend."],

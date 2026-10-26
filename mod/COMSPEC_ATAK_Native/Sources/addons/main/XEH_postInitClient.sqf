@@ -397,6 +397,16 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     [_type, _who, _pos, _grid, _text] call comspec_atak_native_fnc_alertsLog;
 }] call CBA_fnc_addEventHandler;
 
+// Mode local et poste TOC : messages d'un PC de TOC (fn_tocAction) et ordres émis sans Athena (fn_orderLocal).
+["comspec_atak_native_tocMsg", {
+    if (["hold", ["comspec_atak_native_tocMsg", _this]] call comspec_atak_native_fnc_offline) exitWith {};
+    ["recv", _this] call comspec_atak_native_fnc_tocAction;
+}] call CBA_fnc_addEventHandler;
+["comspec_atak_native_localOrder", {
+    if (["hold", ["comspec_atak_native_localOrder", _this]] call comspec_atak_native_fnc_offline) exitWith {};
+    ["recv", _this] call comspec_atak_native_fnc_orderLocal;
+}] call CBA_fnc_addEventHandler;
+
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
 // Seulement avec un téléphone et une carte à l'écran (téléphone ou carte Arma) : inutile sinon.
 [{
@@ -410,6 +420,14 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 [] call comspec_atak_native_fnc_aceMenu;
 // Socle de recharge CS-10 (fn_dockMenu) : poser, reprendre, état, replier, poser le kit.
 [] call comspec_atak_native_fnc_dockMenu;
+// PC portable de TOC (fn_tocPost) : action ACE / molette, poste le plus proche cherché chaque seconde.
+["menu"] call comspec_atak_native_fnc_tocPost;
+[{ ["tick"] call comspec_atak_native_fnc_tocPost; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Configuration locale (config.json, fn_localCfg) : mes numéros publiés aux autres joueurs, aussi après une réapparition
+// ou un changement du service Athéna.
+[{ !isNull player }, { ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_waitUntilAndExecute;
+player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }, [], 1] call CBA_fnc_waitAndExecute; }];
+["COMSPEC_AthenaModeChanged", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_execNextFrame; }] call CBA_fnc_addEventHandler;
 // Téléphone visible sur le gilet (fn_vestMount), téléphone extractible en cas de capture (fn_phoneSecurity).
 [{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_phoneSecurity; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Terminal de bord (tablette du véhicule, PC mobile) gagné ou perdu : coque redessinée, message à l'arrivée.
@@ -418,6 +436,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if (_k isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_TermKind", ""])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_TermKind", _k];
     if (_k in ["vehicle", "cp"] && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { ["INFO", ["Tablette du véhicule disponible (ATAK)", "Terminal du poste de commandement disponible"] select (_k isEqualTo "cp"), 4, 20] call comspec_atak_native_fnc_notify; };
+    if (_k isEqualTo "toc") then { ["INFO", format ["Poste TOC %1 : app Poste TOC disponible", ["callsign"] call comspec_atak_native_fnc_tocPost], 4, 20, "TOC"] call comspec_atak_native_fnc_notify; };
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
 }, 2] call COMSPEC_ATAK_PfhSpread;
 // Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).

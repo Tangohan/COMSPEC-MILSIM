@@ -60,6 +60,10 @@ def phone_landscape(w=2048, h=1024):
 
 
 ICONS = {
+    # Numéros : combiné de téléphone et fiche du carnet.
+    "app_numbers": '<rect x="3" y="3" width="13" height="18" rx="1.5"/><path d="M6.5 8h6M6.5 11.5h6M6.5 15h3.5"/><path d="M17.5 8.5c1.6 1.6 2.6 3.7 2.6 6.1M17.5 12c.7.7 1.1 1.6 1.1 2.6"/>',
+    # Poste TOC : ordinateur portable ouvert, carte et repère à l'écran.
+    "app_toc": '<rect x="4" y="4.5" width="16" height="11" rx="1"/><path d="M2 19.5h20l-1.5-4h-17z"/><path d="M7 12.5l3-3 2.5 2 4-4"/><circle cx="16.5" cy="7.5" r="1"/>',
     # Liaison ATAK : deux téléphones reliés par un câble, ondes NFC.
     "app_linkally": '<rect x="2.5" y="5" width="7" height="13" rx="1.5"/><rect x="14.5" y="5" width="7" height="13" rx="1.5"/><path d="M6 18v2.5h12V18"/><path d="M11 9.5a2 2 0 0 1 0 4M13 9.5a2 2 0 0 0 0 4"/>',
     # Discord (dessin maison, pas le logo) : bulle de salon avec dièse.
