@@ -33,7 +33,8 @@ vers `Sources/comspec-overwatch-addons/connect/<même chemin>` suivi d'un rebuil
 - `texHeaders.bin` — index de textures produit par Binarize. Exact mais incomplet : ses
   37 entrées décrivent bien les fichiers, mais 31 visent des textures sorties de l'addon
   (ci-dessus), 6 des textures encore affichées, et 24 textures affichées n'y ont jamais
-  figuré. Le jeu ne l'exige pas (il lit alors l'en-tête de chaque texture) : les `main.pbo`
-  natifs 1.95.0 et 1.96.0 ont été livrés sans, les autres en contiennent un, produit par
-  HEMTT. **À remettre dans l'addon (`git mv`) ou à régénérer avec Binarize** si un essai en
+  figuré. Plusieurs `main.pbo` natifs ont déjà été livrés sans index (1.95.0, 1.96.0 et
+  2.0.1, probablement aussi 1.97.0) sans qu'aucune régression de texture soit notée au
+  CHANGELOG ; rien dans le dépôt ne documente en revanche ce que fait le moteur sans ce
+  fichier. **À remettre dans l'addon (`git mv`) ou à régénérer avec Binarize** si un essai en
   jeu montre une régression d'affichage sur la tablette connect.

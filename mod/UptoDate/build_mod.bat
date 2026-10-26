@@ -51,9 +51,9 @@ if not "%DOTNET_ERR%"=="0" (
 if not exist "%OUTPUT_DIR%\addons" mkdir "%OUTPUT_DIR%\addons"
 
 :: 3. Compilation des PBO
-:: AddonBuilder copie chaque addon dans %TEMP%\<nom du dossier> sans jamais le vider : sans -clear, le PBO connect
-:: reprenait les fichiers retires des sources (39 entrees orphelines dans le connect 1.6.15). Meme reglage que le
-:: build natif (mod\COMSPEC_ATAK_Native\build_mod.bat) : un dossier temporaire par addon, vide a chaque build.
+:: AddonBuilder copie chaque addon dans %TEMP%\<nom du dossier> sans jamais le vider : sans -clear, un PBO reprend
+:: ce qui traine dans ce dossier (le main.pbo Overwatch embarquait 45 fichiers de l'ATAK natif, venus du dossier
+:: %TEMP%\main partage avec d'autres builds). Meme reglage que le build natif : un dossier par addon, vide a chaque build.
 set "ABTMP=%TEMP%\comspec_overwatch_ab"
 if exist "%ABTMP%" rmdir /s /q "%ABTMP%"
 echo [BUILD] Compilation de comspec_overwatch_main... >> "%BUILD_LOG%"
