@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Dépannage liaison : clé refusée, liaison incomplète ou compte bloqué reconnus (Overwatch connect 1.6.17)
+
+### Résumé joueur
+Type : correctif
+FR : Le Dépannage liaison propose la bonne correction quand Athena refuse ta clé
+- Si Athena refuse la clé enregistrée dans ton profil (clé changée ou retirée), le Dépannage liaison le dit et propose Lier mon compte au lieu de Reconnecter, qui échouait à chaque fois.
+- Même chose quand la liaison enregistrée est incomplète : il propose de la refaire.
+- Si ton compte, ton Steam ou ton réseau est bloqué par ta communauté, il te dit de contacter un administrateur au lieu de proposer une reconnexion inutile.
+EN : Link troubleshooting suggests the right fix when Athena refuses your key
+- If Athena refuses the key saved in your profile (key changed or withdrawn), Link troubleshooting says so and offers Link my account instead of Reconnect, which kept failing.
+- Same when the saved link is incomplete: it offers to redo it.
+- If your account, Steam or network is blocked by your community, it tells you to contact an administrator instead of offering a useless reconnection.
+
+### Détail technique
+- `fn_diagChecks.sqf` (connect embarqué dans l'ATAK natif), étape 6 « Liaison » : avant, tout échec de `fn_connect` hors « non lié » tombait dans le cas par défaut (« site injoignable », correction Reconnecter). Désormais `COMSPEC_LinkDetail` est classé : clé refusée (`ERR unauthorized`) → Lier mon compte ; communauté manquante ou Steam invalide → Lier mon compte ; compte non autorisé ou accès mod restreint → contacter un administrateur, pas de correction ; Steam requis → mettre le mod à jour.
+- Contexte : rotation de la clé plateforme du 2026-10-26. Depuis #1052 la liaison renvoie une clé de communauté ; un profil qui gardait l'ancienne clé plateforme reçoit maintenant `unauthorized`, et seule une nouvelle liaison enregistre une clé valide.
+- `comspec_overwatch_connect.pbo` repaqueté seul (AddonBuilder, préfixe `z\comspec_overwatch\addons\connect`) ; main.pbo et la version de l'ATAK natif ne changent pas. Nouveaux textes en français seulement (repli de `fn_tr`), à ajouter à `en.txt` au prochain regroupement de main.pbo.
+- Non testé en jeu. À tester : profil avec une clé invalide → Échap › Dépannage liaison affiche « clé d'accès refusée » et le bouton ouvre Lier mon compte ; après liaison, Revérifier → Liaison OK.
+
+---
+
 ## Traduction ouverte aux contributeurs : rôles, traduction du site, kit des mods complété (ATAK natif : numéro donné au regroupement, site)
 
 ### Résumé joueur
