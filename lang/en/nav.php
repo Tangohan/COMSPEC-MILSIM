@@ -702,4 +702,7 @@ return [
     'signalement_s_a_traiter' => 'report(s) to handle',
     'tout_athena_effectifs_recrutement_formations_operations_documents_et_carte_atak' => 'All of Athena: personnel, recruitment, training, operations, documents and the ATAK map.',
     'in_rubric' => 'Section “:name”',
+    'installer_les_mods' => 'Install the mods',
+    'mods_arma_3_via_le_steam_workshop' => 'Arma 3 mods through the Steam Workshop',
+    'mods_steam_workshop' => 'Mods (Steam Workshop)',
 ];
