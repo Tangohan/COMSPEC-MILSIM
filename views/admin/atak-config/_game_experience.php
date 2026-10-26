@@ -15,7 +15,7 @@ $hasLogo = trim((string) ($ge['logo_path'] ?? '')) !== '';
 $interval = (int) ($ge['update_interval'] ?? 0);
 ?>
 <section class="bo-ac-sec" id="overwatch-game-experience" data-ac-panel>
-  <?= $section('game', 'Connexion en jeu', 'Ce que voient vos opérateurs au lancement d’Arma (fenêtre Athena) et ce que le mod a le droit de faire. Appliqué à la prochaine connexion de chaque joueur.') ?>
+  <?= $section('game', 'Connexion en jeu', 'Expérience en jeu : ce que voient vos opérateurs au lancement d’Arma (fenêtre Athena) et ce que le mod a le droit de faire. Appliqué à la prochaine connexion de chaque joueur.') ?>
   <form method="post" action="<?= $h($base . '/game-experience') ?>" enctype="multipart/form-data" class="bo-ac-form bo-ac-game" id="bo-ac-game">
     <?= $csrf ?>
     <div class="bo-ac-game__cfg">
