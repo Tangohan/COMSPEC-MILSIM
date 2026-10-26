@@ -1,8 +1,15 @@
 <?php
 $units = $units ?? [];
 $unitTypes = $unitTypes ?? [];
-$typeLabel = function ($type) use ($unitTypes) {
-    return $unitTypes[$type]['label'] ?? $type ?: '—';
+// Sections créées d'office pour le pilotage des formations (TenantPedagogyStructureService) : recréées si supprimées.
+$reservedTypes = [
+    'pedagogy_pilotage' => 'Pilotage et expertise (réservé)',
+    'pedagogy_bureau_competences' => 'Bureau du personnel et des compétences (réservé)',
+];
+$typeLabel = function ($type) use ($unitTypes, $reservedTypes) {
+    $type = (string) $type;
+
+    return $unitTypes[$type]['label'] ?? $reservedTypes[$type] ?? ($type !== '' ? ucfirst(str_replace('_', ' ', $type)) : '—');
 };
 ?>
 <div class="bo-legacy bo-legacy--4xl">
@@ -38,10 +45,14 @@ $typeLabel = function ($type) use ($unitTypes) {
                 <td class="p-3"><?= (int) ($u['display_order'] ?? 0) ?></td>
                 <td class="p-3">
                     <a href="<?= url('back-office/units/' . $u['id'] . '/edit') ?>" class="text-slate-600 hover:text-slate-900 text-sm underline">Modifier</a>
+                    <?php if (isset($reservedTypes[(string) ($u['type'] ?? '')])): ?>
+                    <span class="ml-2 text-xs text-slate-400" title="Section créée automatiquement pour le pilotage des formations : elle serait recréée.">Section réservée</span>
+                    <?php else: ?>
                     <form action="<?= url('back-office/units/' . $u['id'] . '/delete') ?>" method="post" class="inline ml-2" onsubmit="return confirm('Supprimer cette unité ?');">
-                        <input type="hidden" name="_method" value="DELETE" />
+                        <?= \App\Core\Csrf::field() ?>
                         <button type="submit" class="text-red-600 hover:text-red-800 text-sm underline">Supprimer</button>
                     </form>
+                    <?php endif; ?>
                 </td>
             </tr>
             <?php endforeach; ?>

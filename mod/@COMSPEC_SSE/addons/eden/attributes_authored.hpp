@@ -7,7 +7,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_3C674C54E0";
             property = "comspec_sse_documentsMode";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_documentsMode', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_documentsMode', _value, true]; };";
             defaultValue = "'AUTO'";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -22,7 +22,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_C4BA3E1DB8";
             property = "comspec_sse_doc1_title";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc1_title', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc1_title', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -32,7 +32,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_2A78F654E6";
             property = "comspec_sse_doc1_summary";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_doc1_summary', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc1_summary', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -42,7 +42,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_EABBD83E6E";
             property = "comspec_sse_doc1_grid";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc1_grid', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc1_grid', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -52,7 +52,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_33BD4A53AC";
             property = "comspec_sse_doc1_codeword";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc1_codeword', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc1_codeword', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -62,7 +62,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_824AA3F775";
             property = "comspec_sse_doc2_title";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc2_title', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc2_title', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -72,7 +72,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_4D03EE89F4";
             property = "comspec_sse_doc2_summary";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_doc2_summary', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc2_summary', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -82,7 +82,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_7B4C88CB3D";
             property = "comspec_sse_doc2_grid";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc2_grid', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc2_grid', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -92,7 +92,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_5E9A3CF066";
             property = "comspec_sse_doc2_codeword";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc2_codeword', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc2_codeword', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -102,7 +102,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_11D30DD9B9";
             property = "comspec_sse_doc3_title";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc3_title', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc3_title', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -112,7 +112,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_4D03EE89F4";
             property = "comspec_sse_doc3_summary";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_doc3_summary', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc3_summary', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -122,7 +122,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_7B4C88CB3D";
             property = "comspec_sse_doc3_grid";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc3_grid', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc3_grid', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -132,7 +132,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "$STR_COMSPEC_SSE_CFG_5E9A3CF066";
             property = "comspec_sse_doc3_codeword";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc3_codeword', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_doc3_codeword', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -149,7 +149,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "$STR_COMSPEC_SSE_CFG_2B8561B169";
             property = "comspec_sse_phoneMode";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_phoneMode', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_phoneMode', _value, true]; };";
             defaultValue = "'AUTO'";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -164,7 +164,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "$STR_COMSPEC_SSE_CFG_072AA07E5B";
             property = "comspec_sse_phoneNumber";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_phoneNumber', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_phoneNumber', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -174,7 +174,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "$STR_COMSPEC_SSE_CFG_F657DAC55C";
             property = "comspec_sse_phoneModel";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_phoneModel', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_phoneModel', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -184,7 +184,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "$STR_COMSPEC_SSE_CFG_2C0BC4D5A7";
             property = "comspec_sse_phoneContacts";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_phoneContacts', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_phoneContacts', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -194,7 +194,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "$STR_COMSPEC_SSE_CFG_C358CEA867";
             property = "comspec_sse_phoneMessages";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_phoneMessages', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_phoneMessages', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -204,7 +204,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "$STR_COMSPEC_SSE_CFG_2C5469EC6E";
             property = "comspec_sse_phoneNotes";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_phoneNotes', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_phoneNotes', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -214,7 +214,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "$STR_COMSPEC_SSE_CFG_5B8C197248";
             property = "comspec_sse_phonePlaces";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_phonePlaces', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_phonePlaces', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -231,7 +231,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "$STR_COMSPEC_SSE_CFG_A545BBF213";
             property = "comspec_sse_digitalMode";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_digitalMode', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_digitalMode', _value, true]; };";
             defaultValue = "'AUTO'";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -246,7 +246,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "$STR_COMSPEC_SSE_CFG_8AF850AA39";
             property = "comspec_sse_pcHostname";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcHostname', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_pcHostname', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -256,7 +256,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "$STR_COMSPEC_SSE_CFG_FFD602F24B";
             property = "comspec_sse_pcOwner";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcOwner', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_pcOwner', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -266,7 +266,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "$STR_COMSPEC_SSE_CFG_2A815E91A6";
             property = "comspec_sse_pcFiles";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_pcFiles', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_pcFiles', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -276,7 +276,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "$STR_COMSPEC_SSE_CFG_F950DFB835";
             property = "comspec_sse_pcMailSubject";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcMailSubject', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_pcMailSubject', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -286,7 +286,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "$STR_COMSPEC_SSE_CFG_0A410DAD21";
             property = "comspec_sse_pcMailSnippet";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_pcMailSnippet', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_pcMailSnippet', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -296,7 +296,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "$STR_COMSPEC_SSE_CFG_438E4536B9";
             property = "comspec_sse_pcWifi";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcWifi', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_pcWifi', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -306,7 +306,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "$STR_COMSPEC_SSE_CFG_DAC5C299CF";
             property = "comspec_sse_pcAccessHint";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcAccessHint', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_pcAccessHint', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";

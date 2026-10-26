@@ -66,7 +66,7 @@ final class DashboardUiTourAssetTest extends TestCase
         self::assertStringContainsString('CREATE TABLE user_ui_tours', $mig);
         self::assertStringContainsString('run_user_ui_tours_migration', $run);
         // The controller now normalises the key into $key before refusing unknown guides.
-        self::assertStringContainsString('trim((string) $request->input(\'tour_key\', \'\'))', $ctrl);
+        self::assertStringContainsString('trim($request->inputString(\'tour_key\', \'\'))', $ctrl);
         self::assertStringContainsString('$key !== UserUiTourRepository::KEY_DASHBOARD', $ctrl);
         self::assertStringNotContainsString('Cette annonce ne peut pas être masquée', $ctrl);
     }

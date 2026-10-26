@@ -102,9 +102,11 @@ public static partial class Extension
             RememberDetectedMod(modVer);
             if (args.Length > 4)
                 ApplySteamUid(ArmaString(args[4]));
+            // Guillemets extérieurs déjà retirés par RVExtensionArgs (pas de second ArmaString : un mot de passe
+            // entouré de ' ou " perdait les siens) ; callExtension double les guillemets intérieurs, rétablis ici.
             return GameAuthPassword(
-                ArmaString(args[1]),
-                args.Length > 2 ? ArmaString(args[2]) : "",
+                (args[1] ?? "").Replace("\"\"", "\""),
+                args.Length > 2 ? (args[2] ?? "").Replace("\"\"", "\"") : "",
                 modVer);
         }
 
@@ -171,6 +173,10 @@ public static partial class Extension
             if (string.Equals(state, "READY", StringComparison.Ordinal) && !wasReady)
                 _gameAuthBecameReadyAt = DateTimeOffset.UtcNow;
         }
+        // Liaison refaite, nouvelle clé ou client-init accepté : les refus mémorisés ne valent plus.
+        // READY avec erreur C2_* (FinishGameAuthReady) : client-init toujours refusé, le verrou reste.
+        if (string.Equals(state, "READY", StringComparison.Ordinal) && string.IsNullOrEmpty(error))
+            ClearRefusalLatches();
     }
 
     private static string FormatGameAuthState()
@@ -315,16 +321,19 @@ public static partial class Extension
 
     private static void EnsureGameDeviceId()
     {
-        var store = DpapiGameStore.Load();
-        if (store != null && store.DeviceId.Length >= 16)
+        lock (DpapiGameStore.Sync)
         {
-            _gameDeviceId = store.DeviceId;
-            return;
+            var store = DpapiGameStore.Load();
+            if (store != null && store.DeviceId.Length >= 16)
+            {
+                _gameDeviceId = store.DeviceId;
+                return;
+            }
+            _gameDeviceId = Guid.NewGuid().ToString("N");
+            var next = store ?? new DpapiGameStore.Payload();
+            next.DeviceId = _gameDeviceId;
+            DpapiGameStore.Save(next);
         }
-        _gameDeviceId = Guid.NewGuid().ToString("N");
-        var next = store ?? new DpapiGameStore.Payload();
-        next.DeviceId = _gameDeviceId;
-        DpapiGameStore.Save(next);
     }
 
     /// <summary>
@@ -345,6 +354,22 @@ public static partial class Extension
     {
         SetGameAuth("RESTORING_SESSION", 24, "");
         EnsureGameDeviceId();
+        // Même verrou que le rafraîchissement de fond : deux refresh avec le même jeton (qu'Athena fait tourner)
+        // feraient échouer le second, et IsRefreshRevoked effacerait alors le jeton tout juste enregistré.
+        var waitUntil = Environment.TickCount64 + (SyncTimeoutSeconds + 4) * 1000L;
+        while (System.Threading.Interlocked.CompareExchange(ref _gameRefreshBusy, 1, 0) != 0)
+        {
+            if (Environment.TickCount64 > waitUntil)
+                return FailGameAuth("NETWORK_ERROR");
+            System.Threading.Thread.Sleep(50);
+        }
+        try { return RestoreGameSessionLocked(modVersion); }
+        finally { System.Threading.Interlocked.Exchange(ref _gameRefreshBusy, 0); }
+    }
+
+    private static string RestoreGameSessionLocked(string modVersion)
+    {
+        // Relu sous le verrou : un rafraîchissement qui vient de finir a pu faire tourner le jeton.
         var store = DpapiGameStore.Load();
         if (store == null || string.IsNullOrEmpty(store.RefreshToken))
         {
@@ -396,8 +421,24 @@ public static partial class Extension
             || raw.Contains("SESSION_REVOKED", StringComparison.OrdinalIgnoreCase)
             || raw.Contains("INVALID_REFRESH", StringComparison.OrdinalIgnoreCase)
             || raw.Contains("refresh_revoked", StringComparison.OrdinalIgnoreCase)
-            || raw.Contains("http_401", StringComparison.OrdinalIgnoreCase)
-            || raw.Contains("http_403", StringComparison.OrdinalIgnoreCase);
+            // Athena répond 401 {"error":"SESSION_EXPIRED"} à un refresh inconnu/expiré/révoqué
+            // (/session/refresh et /session/restore, appelés sans Bearer) : GamePostJson le mappe
+            // en ERR|SESSION_EXPIRED avant http_401, donc le traiter comme une révocation.
+            || raw.StartsWith("ERR|SESSION_EXPIRED", StringComparison.Ordinal)
+            // 401 nu sur /session/refresh = refresh refusé. Un 403 nu (WAF, proxy, blocage IP
+            // temporaire) ne doit pas effacer le refresh DPAPI : seuls les codes explicites ci-dessus.
+            || raw.Contains("http_401", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ExplicitRevocationCode(string body)
+    {
+        if (string.IsNullOrEmpty(body)) return "";
+        foreach (var code in new[] { "TOKEN_REVOKED", "REFRESH_REVOKED", "SESSION_REVOKED", "INVALID_REFRESH" })
+        {
+            if (body.Contains(code, StringComparison.OrdinalIgnoreCase))
+                return code;
+        }
+        return "";
     }
 
     // Rafraîchissement du jeton de jeu : un seul à la fois, et pas plus d'un essai par minute après un échec.
@@ -440,6 +481,33 @@ public static partial class Extension
             return false;
         }
         finally { System.Threading.Interlocked.Exchange(ref _gameRefreshBusy, 0); }
+    }
+
+    /// <summary>
+    /// Variante sans attente pour AttachApiKeyHeader : vrai si le jeton de jeu peut partir tel quel. Proche de
+    /// l'échéance ou périmé, le rafraîchissement part en tâche de fond (un seul à la fois, pause d'une minute
+    /// après un échec) au lieu de bloquer l'appelant jusqu'à SyncTimeoutSeconds.
+    /// </summary>
+    private static bool GameAccessTokenUsableNow()
+    {
+        if (_gameAccessToken.Length == 0) return false;
+        if (_gameAccessExpiresAt == DateTimeOffset.MinValue
+            || DateTimeOffset.UtcNow < _gameAccessExpiresAt.AddSeconds(-45))
+            return true;
+        var expired = DateTimeOffset.UtcNow >= _gameAccessExpiresAt;
+        if (expired
+            && DateTime.UtcNow.Ticks - System.Threading.Interlocked.Read(ref _gameRefreshFailTicks) < TimeSpan.FromSeconds(60).Ticks)
+            return false;
+        if (System.Threading.Interlocked.CompareExchange(ref _gameRefreshBusy, 1, 0) == 0)
+        {
+            _ = Task.Run(() =>
+            {
+                try { RefreshGameAccessTokenNow(); }
+                catch { System.Threading.Interlocked.Exchange(ref _gameRefreshFailTicks, DateTime.UtcNow.Ticks); }
+                finally { System.Threading.Interlocked.Exchange(ref _gameRefreshBusy, 0); }
+            });
+        }
+        return !expired;
     }
 
     private static bool RefreshGameAccessTokenNow()
@@ -593,10 +661,11 @@ public static partial class Extension
         _sessionToken = "";
         _sessionExpiresAt = DateTimeOffset.MinValue;
         _tenantId = "";
-        var store = DpapiGameStore.Load() ?? new DpapiGameStore.Payload();
-        store.RefreshToken = "";
-        store.PairingToken = "";
-        DpapiGameStore.Save(store);
+        DpapiGameStore.Update(store =>
+        {
+            store.RefreshToken = "";
+            store.PairingToken = "";
+        });
         SetGameAuth("INITIALIZING", 0, "");
         _gameProfileName = "";
         _gameProfileCallsign = "";
@@ -682,6 +751,7 @@ public static partial class Extension
                 if (access.Length > 0)
                 {
                     _gameAccessToken = access;
+                    ResetPollRefusals();
                     // Clé communauté fournie par le portail (comme Appairer) : la garder
                     // pour les routes ATAK si le Bearer est mal relayé. Sinon ne plus
                     // effacer une clé déjà valide (Redeem / Connect préalable).
@@ -700,14 +770,15 @@ public static partial class Extension
                     _gameAccessExpiresAt = DateTimeOffset.UtcNow.AddSeconds(7200);
                 if (device.Length >= 16)
                     _gameDeviceId = device;
-                var store = DpapiGameStore.Load() ?? new DpapiGameStore.Payload();
-                store.DeviceId = _gameDeviceId;
-                store.BaseUrl = _baseUrl;
-                if (refresh.Length > 0)
-                    store.RefreshToken = refresh;
-                if (pairing.Length > 0)
-                    store.PairingToken = pairing;
-                DpapiGameStore.Save(store);
+                DpapiGameStore.Update(store =>
+                {
+                    store.DeviceId = _gameDeviceId;
+                    store.BaseUrl = _baseUrl;
+                    if (refresh.Length > 0)
+                        store.RefreshToken = refresh;
+                    if (pairing.Length > 0)
+                        store.PairingToken = pairing;
+                });
             }
             SetGameAuth("RESOLVING_TENANT", 58, "");
             var accountSteamId = "";
@@ -905,6 +976,10 @@ public static partial class Extension
                 var mapped = MapGameError("", body);
                 if (mapped != "NETWORK_ERROR")
                     return "ERR|" + mapped;
+                // Code de révocation explicite conservé (sinon perdu derrière http_4xx) pour IsRefreshRevoked.
+                var revoked = ExplicitRevocationCode(body);
+                if (revoked.Length > 0)
+                    return "ERR|" + revoked;
                 return "ERR|http_" + ((int)resp.StatusCode).ToString(CultureInfo.InvariantCulture);
             }
             return body;
@@ -971,6 +1046,9 @@ internal static class DpapiGameStore
 
     private const int UiForbidden = 0x1;
 
+    /// <summary>Lecture-modification-écriture atomique entre threads (refresh de fond, jeu, Async).</summary>
+    internal static readonly object Sync = new();
+
     private static string FilePath()
     {
 #if COMSPEC_ATAK_NATIVE
@@ -1000,6 +1078,7 @@ internal static class DpapiGameStore
 
     internal static Payload? Load()
     {
+        lock (Sync)
         try
         {
             var path = FilePath();
@@ -1033,6 +1112,7 @@ internal static class DpapiGameStore
 
     internal static void Save(Payload payload)
     {
+        lock (Sync)
         try
         {
             var json = "{\"d\":\"" + EscapeLocal(payload.DeviceId)
@@ -1044,7 +1124,7 @@ internal static class DpapiGameStore
             if (protectedBytes.Length == 0)
                 return;
             var path = FilePath();
-            var tmp = path + ".tmp";
+            var tmp = path + ".tmp"; // sous Sync : une seule écriture à la fois dans ce processus
             File.WriteAllBytes(tmp, protectedBytes);
             if (File.Exists(path))
             {
@@ -1070,18 +1150,29 @@ internal static class DpapiGameStore
 
     internal static void ClearTokens(bool keepDeviceId)
     {
-        try
+        Update(current =>
         {
-            var current = Load() ?? new Payload();
             if (!keepDeviceId)
                 current.DeviceId = "";
             current.RefreshToken = "";
             current.PairingToken = "";
-            Save(current);
-        }
-        catch
+        });
+    }
+
+    internal static void Update(Action<Payload> mutate)
+    {
+        lock (Sync)
         {
-            // best-effort local store
+            try
+            {
+                var current = Load() ?? new Payload();
+                mutate(current);
+                Save(current);
+            }
+            catch
+            {
+                // best-effort local store
+            }
         }
     }
 

@@ -291,7 +291,14 @@ class AuthController
 
     public function showLogin(Request $request, array $params = []): Response
     {
+        $back = LoginIntendedDestination::suffixFromRedirect((string) $request->query('redirect', ''));
+        if ($back !== null && !$this->authService->check()) {
+            LoginIntendedDestination::rememberSuffix($back);
+        }
         if ($this->authService->check()) {
+            if ($back !== null) {
+                return Response::redirect(url($back));
+            }
             if (LoginWelcomeGate::isPending()) {
                 return Response::redirect(url('login/accueil'));
             }

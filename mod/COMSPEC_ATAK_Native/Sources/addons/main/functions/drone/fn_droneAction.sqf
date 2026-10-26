@@ -745,7 +745,8 @@ switch (_act) do {
         private _new = _arg;
         if (isNull _new || {!alive _new} || {(player distance _new) > 15}) exitWith { ["WARNING", "Posez le drone à vos pieds pour l'appairer"] call _say; };
         private _owner = _new getVariable ["COMSPEC_DroneOwner", ""];
-        if (_owner isNotEqualTo "" && {_owner isNotEqualTo getPlayerUID player}) exitWith { ["WARNING", "Ce drone est déjà appairé à un autre téléphone"] call _say; };
+        // Pilote parti de la partie (UID absent des joueurs) : drone libre.
+        if (_owner isNotEqualTo "" && {_owner isNotEqualTo getPlayerUID player} && {(allPlayers findIf { (getPlayerUID _x) isEqualTo _owner }) >= 0}) exitWith { ["WARNING", "Ce drone est déjà appairé à un autre téléphone"] call _say; };
         // Flotte : un drone déjà appairé devient le drone piloté ; un nouveau drone s'ajoute, celui d'avant continue seul.
         if (_new in (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []])) exitWith { ["switch", _new] call comspec_atak_native_fnc_droneFleet; };
         if (_new isEqualTo _d) exitWith { call _render; };
@@ -1083,7 +1084,7 @@ switch (_act) do {
     };
     case "quality": {
         profileNamespace setVariable ["COMSPEC_ATAK_DroneQuality", ((_arg max 0) min 1)];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         ["INFO", format ["Flux du drone : qualité %1", ["basse (512 px, plus fluide)", "haute (1024 px, plus lourde)"] select ((_arg max 0) min 1)]] call _say;
         call _render;
     };
@@ -1279,7 +1280,7 @@ switch (_act) do {
                 _b ctrlSetFontHeight ((_fs * 0.74) max COMSPEC_ATAK_FontMin);
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-                _b ctrlAddEventHandler ["ButtonClick", compile format ["%1 call comspec_atak_native_fnc_droneAction;", str _a]];
+                [_b, compile format ["%1 call comspec_atak_native_fnc_droneAction;", str _a]] call comspec_atak_native_fnc_clickNext;
             } forEach _row;
             _y = _y + _rh + _pad / 3;
         } forEach _rows;
@@ -1461,13 +1462,14 @@ switch (_act) do {
         if ((count _tr) isEqualTo 0) exitWith {};
         _tr params ["_o", "_name", "_pos", "", "_clock", "_tag", "", "_num"];
         // Marqueur ordinaire du téléphone (palette réglée le temps de la pose) : camp vu, infanterie ou véhicule.
-        private _keys = ["markerAff", "markerType", "markerColor", "markerEditAfter"];
+        private _keys = ["markerAff", "markerType", "markerColor", "markerEditAfter", "markerText"];
         private _old = _keys apply { _s getOrDefault [_x, "§"] };
         private _aff = ["u", "o", "b"] select (["INCONNU", "ENNEMI", "AMI"] find _tag);
         _s set ["markerAff", _aff];
         _s set ["markerType", format ["%1_%2", _aff, ["motor_inf", "inf"] select (_o isKindOf "CAManBase")]];
         _s set ["markerColor", "AUTO"];
         _s set ["markerEditAfter", false];
+        _s set ["markerText", ""];
         private _m = [_pos] call comspec_atak_native_fnc_markerDrop;
         { if ((_old select _forEachIndex) isEqualTo "§") then { _s deleteAt _x; } else { _s set [_x, _old select _forEachIndex]; }; } forEach _keys;
         if (_m isNotEqualTo "") then {
@@ -1570,8 +1572,12 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
         missionNamespace setVariable ["COMSPEC_ATAK_Drone", objNull];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", []];
-        [missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]] call CBA_fnc_removePerFrameHandler;
-        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", -1];
+        // Flotte : comme au désappairage, le drone suivant devient le drone piloté (la surveillance continue).
+        ["promote"] call comspec_atak_native_fnc_droneFleet;
+        if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
+            [missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]] call CBA_fnc_removePerFrameHandler;
+            missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", -1];
+        };
         call _render;
     };
     case "transferIn": {

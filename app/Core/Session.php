@@ -8,7 +8,78 @@ class Session
 {
     private static bool $started = false;
 
-    public static function start(): void
+    /**
+     * Routes GET en lecture seule, sondées en tâche de fond : la session y est lue puis
+     * fermée tout de suite. Le gestionnaire « files » pose un verrou
+     * exclusif sur le fichier de session jusqu'à la fin du script ; sans cela, chaque
+     * sondage attendait la fin de la page en cours du même utilisateur (et inversement).
+     * N'ajouter ici que des routes qui n'écrivent jamais en session.
+     *
+     * @var list<string>
+     */
+    private const READ_ONLY_GET_PATHS = [
+        '/api/system/version',
+    ];
+
+    /**
+     * Préfixes des sondages GET du jeu (DLL) : ils s'authentifient par clé ou jeton et ne
+     * font que lire la session. La DLL rejoue le cookie de session : sans lecture seule,
+     * ses sondages parallèles (ordres, marqueurs, tchat…) attendaient un par un derrière
+     * le lot de positions du même joueur.
+     *
+     * @var list<string>
+     */
+    private const GAME_READ_ONLY_GET_PREFIXES = [
+        '/api/atak/',
+        '/api/game/v1/',
+    ];
+
+    /**
+     * Sous ces préfixes, routes gardées en écriture (appairage, pages d'administration).
+     *
+     * @var list<string>
+     */
+    private const GAME_READ_WRITE_PREFIXES = [
+        '/api/atak/pair',
+        '/api/atak/relays/',
+    ];
+
+    /**
+     * La requête peut-elle se contenter d'une session en lecture seule ?
+     *
+     * @param bool $gameKeyPresented la requête porte une clé ou un jeton du jeu
+     *                               (X-COMSPEC-KEY, X-ATAK-TOKEN ou Bearer)
+     */
+    public static function isReadOnlyRequest(string $method, string $path, bool $gameKeyPresented = false): bool
+    {
+        if (strtoupper($method) !== 'GET') {
+            return false;
+        }
+        if (in_array($path, self::READ_ONLY_GET_PATHS, true)) {
+            return true;
+        }
+        if (!$gameKeyPresented) {
+            return false;
+        }
+        foreach (self::GAME_READ_WRITE_PREFIXES as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                return false;
+            }
+        }
+        foreach (self::GAME_READ_ONLY_GET_PREFIXES as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param bool $readOnly lit la session puis libère aussitôt le verrou : les écritures
+     *                       dans `$_SESSION` faites ensuite ne sont pas enregistrées.
+     */
+    public static function start(bool $readOnly = false): void
     {
         if (self::$started) {
             return;
@@ -48,6 +119,11 @@ class Session
             'samesite' => 'Lax',
         ]);
         session_start();
+        if ($readOnly) {
+            // Fermeture immédiate plutôt que `read_and_close` : session_write_close() rafraîchit
+            // la date du fichier (lazy_write), le sondage garde donc la session en vie comme avant.
+            session_write_close();
+        }
         self::$started = true;
     }
 
@@ -152,7 +228,10 @@ class Session
     public static function destroy(): void
     {
         if (self::$started) {
-            session_destroy();
+            // Session ouverte en lecture seule : déjà fermée, rien à détruire côté serveur.
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_destroy();
+            }
             self::$started = false;
         }
     }

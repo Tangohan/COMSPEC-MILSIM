@@ -27,7 +27,12 @@ class Application
 
     public function run(): void
     {
-        \App\Core\Session::start();
+        // Sondages en lecture seule (/api/system/version, GET du jeu avec clé ou jeton) : verrou de session libéré tout de suite.
+        $method = $this->request->method();
+        $path = $this->request->path();
+        $gameKey = strtoupper($method) === 'GET' && str_starts_with($path, '/api/')
+            && \App\Support\ComspecApiKeyAuth::extractPresentedKey() !== '';
+        \App\Core\Session::start(\App\Core\Session::isReadOnlyRequest($method, $path, $gameKey));
         $runner = fn (\App\Core\Request $req): \App\Core\Response => $this->router->dispatch();
         $global = [
             new \App\Middleware\RequestIdMiddleware(),

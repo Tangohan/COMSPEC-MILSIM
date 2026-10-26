@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Repositories\AtakTranslationPackRepository as Packs;
+use App\Support\AtakTranslationModBuilder;
 use App\Support\AtakTranslationTemplate;
 use PHPUnit\Framework\TestCase;
 
@@ -41,6 +42,10 @@ final class AtakTranslationTemplateTest extends TestCase
             self::assertStringContainsString("AtakTranslationPackApiController::class, '" . $action . "']", $routes);
         }
         self::assertFileExists($root . '/migrations/20261018000003_atak_translation_packs.sql');
+        self::assertFileExists($root . '/migrations/20261025000004_atak_translation_pack_owner.sql');
+        self::assertStringContainsString("\$router->get('/api/traduire-atak/compte'", $routes);
+        self::assertStringContainsString("\$router->post('/api/traduire-atak/compte'", $routes);
+        self::assertStringContainsString("\$router->post('/api/traduire-atak/packs/{id}/liens'", $routes);
 
         $fr = require $root . '/lang/fr/site.php';
         $en = require $root . '/lang/en/site.php';
@@ -61,6 +66,33 @@ final class AtakTranslationTemplateTest extends TestCase
         self::assertArrayHasKey($c, $cat['categories']);
         self::assertTrue(AtakTranslationTemplate::hasKey($h, dirname(__DIR__, 2)));
         self::assertFalse(AtakTranslationTemplate::hasKey('0000000000000000', dirname(__DIR__, 2)));
+        self::assertArrayHasKey('sse_bureau', $cat['categories']);
+        self::assertArrayHasKey('sse_seek', $cat['categories']);
+    }
+
+    public function testSsePhrasesJoinTheSameDictionary(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $raw = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/localisation/template/xx.txt');
+        $base = count(AtakTranslationTemplate::parse($raw));
+        $entries = AtakTranslationTemplate::entries($root);
+        self::assertGreaterThan($base, count($entries));
+
+        $sse = json_decode((string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/localisation/template/sse.json'), true);
+        self::assertIsArray($sse);
+        $extra = $sse['extra'][0][0] ?? '';
+        self::assertNotSame('', $extra);
+        $hash = AtakTranslationTemplate::keyHash($extra);
+        self::assertTrue(AtakTranslationTemplate::hasKey($hash, $root));
+
+        $found = false;
+        foreach (AtakTranslationTemplate::catalog($root)['entries'] as $row) {
+            if ($row[0] === $hash) {
+                $found = str_starts_with((string) $row[3], 'sse_');
+                break;
+            }
+        }
+        self::assertTrue($found);
     }
 
     public function testSharedPackInputsAreValidated(): void
@@ -81,5 +113,32 @@ final class AtakTranslationTemplateTest extends TestCase
         $t = Packs::newToken();
         self::assertMatchesRegularExpression('/^[A-Za-z0-9_-]{32}$/', $t);
         self::assertSame(64, strlen(Packs::tokenHash($t)));
+    }
+
+    public function testStringtableKeysAreInTheTemplate(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $keys = AtakTranslationTemplate::stringtable($root);
+        self::assertGreaterThan(500, count($keys));
+        $texts = [];
+        foreach (AtakTranslationTemplate::entries($root) as [$fr]) {
+            $texts[$fr] = true;
+        }
+        $missing = array_filter($keys, static fn (array $k): bool => !isset($texts[$k[1]]));
+        self::assertSame([], array_values($missing), 'every stringtable text is a sentence of xx.txt');
+    }
+
+    public function testLanguageModStringtableUsesTheGameLanguageColumn(): void
+    {
+        $keys = [['STR_X_1', 'Tour fixe', 'Fixed tower'], ['STR_X_2', 'Mât', 'Mast'], ['bad id', 'Relais', 'Relay']];
+        $xml = AtakTranslationModBuilder::buildStringtable($keys, ['Tour fixe' => 'Torre fija & <b>', 'Relais' => 'Relé'], 'es', 'Spanish');
+
+        self::assertStringContainsString('<Key ID="STR_X_1">', $xml);
+        self::assertStringContainsString('<English>Fixed tower</English>', $xml);
+        self::assertStringContainsString('<Spanish>Torre fija &amp; &lt;b&gt;</Spanish>', $xml);
+        self::assertStringNotContainsString('STR_X_2', $xml);
+        self::assertStringNotContainsString('bad id', $xml);
+        self::assertSame('', AtakTranslationModBuilder::buildStringtable($keys, ['Tour fixe' => 'x'], 'es', ''));
+        self::assertSame('', AtakTranslationModBuilder::buildStringtable($keys, ['Tour fixe' => 'x'], 'es', 'French'));
     }
 }

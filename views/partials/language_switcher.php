@@ -3,13 +3,17 @@
 declare(strict_types=1);
 
 /**
- * Sélecteur de langue compact (FR / EN).
+ * Sélecteur de langue compact (FR / EN, puis les langues publiées par la communauté).
  *
  * Variables optionnelles :
  * - $localeSwitcherClass : classes CSS additionnelles sur le conteneur
  * - $localeSwitcherVariant : 'light' | 'dark' (défaut dark)
  */
-$currentLocale = function_exists('locale') ? locale() : 'fr';
+$currentLocale = function_exists('site_lang') ? site_lang() : 'fr';
+$switchLabels = ['fr' => __('common.language_fr'), 'en' => __('common.language_en')];
+foreach (\App\Services\I18n\CommunityLanguages::published() as $switchCode => $switchName) {
+    $switchLabels[$switchCode] = $switchName;
+}
 $variant = $localeSwitcherVariant ?? 'dark';
 $extraClass = trim((string) ($localeSwitcherClass ?? ''));
 $isDark = $variant !== 'light';
@@ -24,11 +28,11 @@ $idleClass = $isDark
     : 'rounded-md px-2 py-1 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900';
 ?>
 <nav class="<?= htmlspecialchars(trim($wrapClass . ' ' . $extraClass), ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars(__('common.choose_language'), ENT_QUOTES, 'UTF-8') ?>">
-    <?php foreach (['fr' => __('common.language_fr'), 'en' => __('common.language_en')] as $code => $label): ?>
+    <?php foreach ($switchLabels as $code => $label): ?>
         <?php if ($currentLocale === $code): ?>
-            <span class="<?= $activeClass ?>" aria-current="true"><?= htmlspecialchars($code === 'fr' ? 'FR' : 'EN', ENT_QUOTES, 'UTF-8') ?></span>
+            <span class="<?= $activeClass ?>" aria-current="true"><?= htmlspecialchars(strtoupper($code), ENT_QUOTES, 'UTF-8') ?></span>
         <?php else: ?>
-            <a href="<?= htmlspecialchars(locale_switch_url($code), ENT_QUOTES, 'UTF-8') ?>" class="<?= $idleClass ?>" hreflang="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>" lang="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($code === 'fr' ? 'FR' : 'EN', ENT_QUOTES, 'UTF-8') ?></a>
+            <a href="<?= htmlspecialchars(locale_switch_url($code), ENT_QUOTES, 'UTF-8') ?>" class="<?= $idleClass ?>" hreflang="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>" lang="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(strtoupper($code), ENT_QUOTES, 'UTF-8') ?></a>
         <?php endif; ?>
     <?php endforeach; ?>
 </nav>

@@ -85,6 +85,10 @@ class EnlistmentController
         }
 
         $communityConfig = $this->communityConfig($tenant);
+        $discordOnly = $this->discordOnlyResponse($tenant, $communityConfig);
+        if ($discordOnly !== null) {
+            return $discordOnly;
+        }
         if (!empty($communityConfig['community_locked'])) {
             return Response::view('enlistment.error', ['message' => 'Le recrutement est verrouillé pour cette communauté.', 'enlistmentRetryUrl' => $this->enlistmentFormUrl($tenant)]);
         }
@@ -211,6 +215,10 @@ class EnlistmentController
         $this->flashEnlistmentRetryUrl($tenant);
 
         $communityConfig = $this->communityConfig($tenant);
+        if (\App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly((string) ($tenant['tenant_type'] ?? 'full'))) {
+            // Profils sans recrutement : aucune candidature déposée sur le site, même par un formulaire déjà ouvert.
+            return Response::redirect($this->enlistmentFormUrl($tenant));
+        }
         if (!empty($communityConfig['community_locked'])) {
             Session::flash('enlistment_error', 'Le recrutement est verrouillé pour cette communauté.');
 
@@ -1394,6 +1402,28 @@ class EnlistmentController
     }
 
     /** @param array<string,mixed> $tenant */
+    /**
+     * Profils « Bureau des effectifs » et « Carte ATAK » : pas de candidature sur le site,
+     * la page d’enrôlement explique qu’on rejoint la communauté par son Discord.
+     *
+     * @param array<string, mixed> $tenant
+     * @param array<string, mixed> $communityConfig
+     */
+    private function discordOnlyResponse(array $tenant, array $communityConfig): ?Response
+    {
+        if (!\App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly((string) ($tenant['tenant_type'] ?? 'full'))) {
+            return null;
+        }
+        $slug = trim((string) ($tenant['slug'] ?? ''));
+
+        return Response::view('enlistment.discord_only', [
+            'tenantName' => trim((string) ($tenant['name'] ?? 'Communauté')),
+            'discordUrl' => trim((string) ($communityConfig['contact_discord_url'] ?? '')),
+            'contactEmail' => trim((string) ($communityConfig['contact_email'] ?? '')),
+            'publicPageUrl' => $slug !== '' ? url('c/' . rawurlencode($slug)) : url('communities'),
+        ]);
+    }
+
     private function communityConfig(array $tenant): array
     {
         $raw = $tenant['settings'] ?? null;

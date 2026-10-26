@@ -12,10 +12,7 @@ use App\Services\Moderation\ContentModerationConfig;
 class SystemSettingsController
 {
     /** @var array<string, string> */
-    private const PLATFORM_SETTING_LABELS = [
-        'brief_member_access' => 'Accès au brief pour les membres',
-        'brief_member_closed_message' => 'Message affiché lorsque le brief est fermé aux membres',
-    ];
+    private const PLATFORM_SETTING_LABELS = [];
 
     public function __construct(
         private PlatformSettingsRepository $platformSettingsRepository
@@ -186,23 +183,6 @@ class SystemSettingsController
             ],
         ];
 
-        $forum = config('forum');
-        $forum = is_array($forum) ? $forum : [];
-        $sections[] = [
-            'title' => 'Salle de brief (forum)',
-            'rows' => [
-                ['label' => 'Module activé', 'value' => $this->yn((bool) ($forum['enabled'] ?? true))],
-                [
-                    'label' => 'Longueur maximale d’un message',
-                    'value' => (string) (int) ($forum['forum_max_post_length'] ?? 0) . ' caractères',
-                ],
-                [
-                    'label' => 'Délai avant sortie vers un lien externe',
-                    'value' => (string) (int) ($forum['leave_countdown_seconds'] ?? 0) . ' s',
-                ],
-            ],
-        ];
-
         $mod = ContentModerationConfig::fromEnv();
         $sections[] = [
             'title' => 'Modération de contenu',
@@ -279,15 +259,7 @@ class SystemSettingsController
         foreach ($all as $key => $value) {
             $label = self::PLATFORM_SETTING_LABELS[$key] ?? 'Autre réglage plateforme';
             $known = isset(self::PLATFORM_SETTING_LABELS[$key]);
-            if ($key === 'brief_member_access') {
-                $v = strtolower(trim($value));
-                $display = in_array($v, ['1', 'true', 'yes', 'on'], true) ? 'Oui' : 'Non';
-            } elseif ($key === 'brief_member_closed_message') {
-                $t = trim($value);
-                $display = $t === '' ? '—' : $this->truncate($t, 240);
-            } else {
-                $display = $value === '' ? '—' : $this->truncate($value, 240);
-            }
+            $display = $value === '' ? '—' : $this->truncate($value, 240);
             $row = ['label' => $label, 'value' => $display];
             if (!$known) {
                 $row['note'] = 'Clé : ' . $key;

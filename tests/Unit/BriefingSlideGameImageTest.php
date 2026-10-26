@@ -40,7 +40,9 @@ final class BriefingSlideGameImageTest extends TestCase
     public function testApiServesGameCopy(): void
     {
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakApiController.php');
-        self::assertStringContainsString("'image_url' => url(BriefingSlideGameImage::path(\$imagePath))", $src);
+        // Copie .paa pour COMSPEC Link qui l'annonce, sinon la copie JPEG comme avant.
+        self::assertStringContainsString('AtakGameImage::FIT_SLIDE', $src);
+        self::assertStringContainsString("?? url(BriefingSlideGameImage::path(\$imagePath))", $src);
     }
 
     public function testMissingSourceGivesReason(): void

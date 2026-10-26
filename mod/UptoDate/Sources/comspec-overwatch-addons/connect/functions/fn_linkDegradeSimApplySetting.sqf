@@ -11,7 +11,7 @@ missionNamespace setVariable ["comspec_overwatch_link_degrade_sim", _enabled, fa
 
 if (_persist) then {
     profileNamespace setVariable ["COMSPEC_LinkDegradeSimEnabled", _enabled];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 if (!isNil "cba_settings_fnc_set") then {

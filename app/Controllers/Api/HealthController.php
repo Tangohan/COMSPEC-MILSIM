@@ -18,7 +18,10 @@ class HealthController
             $pdo->query('SELECT 1');
             return ApiResponder::success(['db' => 'ok']);
         } catch (\Throwable $e) {
-            return ApiResponder::error('db_unreachable', 'Base de données indisponible.', 500, ['reason' => $e->getMessage()]);
+            // Le message PDO peut contenir l’hôte et l’utilisateur MySQL : journal seulement.
+            error_log('[health] ' . $e->getMessage());
+
+            return ApiResponder::error('db_unreachable', 'Base de données indisponible.', 500);
         }
     }
 }

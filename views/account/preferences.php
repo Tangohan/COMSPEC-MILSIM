@@ -43,6 +43,7 @@ require base_path('views/partials/account/shell_open.php');
     <a href="#section-locale">Fuseau &amp; langue</a>
     <a href="#section-interface">Interface</a>
     <a href="#notifications-email">Notifications</a>
+    <a href="#section-discord">Discord</a>
 </nav>
 
 <?php if ($steamSyncReport !== null): ?>
@@ -114,7 +115,7 @@ require base_path('views/partials/account/shell_open.php');
                 <div>
                     <label class="account-hub__label" for="first_name">Prénom</label>
                     <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars((string) ($profile['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
-                    <p class="account-hub__hint">Prénom — utilisé partout (dossier, annuaire, forum).</p>
+                    <p class="account-hub__hint">Prénom — utilisé partout (dossier, annuaire).</p>
                     <?php if (!empty($errors['first_name'])): foreach ($errors['first_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
@@ -122,7 +123,7 @@ require base_path('views/partials/account/shell_open.php');
                 <div>
                     <label class="account-hub__label" for="last_name">Nom</label>
                     <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
-                    <p class="account-hub__hint">Nom — utilisé partout (dossier, annuaire, forum).</p>
+                    <p class="account-hub__hint">Nom — utilisé partout (dossier, annuaire).</p>
                     <?php if (!empty($errors['last_name'])): foreach ($errors['last_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
@@ -134,6 +135,11 @@ require base_path('views/partials/account/shell_open.php');
                     <?php if (!empty($errors['callsign'])): foreach ($errors['callsign'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
+                </div>
+                <div>
+                    <label class="account-hub__label" for="public_name">Pseudo public</label>
+                    <input type="text" name="public_name" id="public_name" value="<?= htmlspecialchars((string) ($publicName ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="40" autocomplete="nickname" placeholder="<?= htmlspecialchars((string) ($user['callsign'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <p class="account-hub__hint">Le nom affiché sur les pages publiques du site (contributeurs, propositions de traduction) et en premier dans l’administration, à la place de votre indicatif. Vide : l’indicatif est repris. Vos prénom et nom ne sont jamais affichés en public.</p>
                 </div>
                 <div class="account-hub__form-grid" style="grid-column:1/-1">
                     <p class="account-hub__label" style="margin-bottom:.35rem">Indicatifs supplémentaires</p>
@@ -195,6 +201,9 @@ require base_path('views/partials/account/shell_open.php');
                     <select name="language" id="language">
                         <option value="fr" <?= ($profile['language'] ?? '') === 'fr' ? 'selected' : '' ?>><?= htmlspecialchars(__('common.language_fr'), ENT_QUOTES, 'UTF-8') ?></option>
                         <option value="en" <?= ($profile['language'] ?? '') === 'en' ? 'selected' : '' ?>><?= htmlspecialchars(__('common.language_en'), ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php foreach (\App\Services\I18n\CommunityLanguages::published() as $langCode => $langName): ?>
+                        <option value="<?= htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8') ?>" lang="<?= htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8') ?>" <?= ($profile['language'] ?? '') === $langCode ? 'selected' : '' ?>><?= htmlspecialchars($langName, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>
@@ -302,6 +311,45 @@ require base_path('views/partials/account/shell_open.php');
         <p class="account-hub__hint" style="margin:0">Les modifications de cette page sont enregistrées ensemble.</p>
     </div>
 </form>
+
+<?php
+// Rôles liés de Discord : hors du formulaire principal (envois séparés).
+$discordLr = null;
+$discordLink = null;
+try {
+    $discordLr = new \App\Services\Integrations\DiscordLinkedRoles();
+    $discordLinks = new \App\Repositories\UserDiscordLinkRepository();
+    $discordLink = $discordLinks->schemaReady() ? $discordLinks->find((int) ($user['id'] ?? 0)) : null;
+} catch (\Throwable) {
+}
+$discordReady = $discordLr !== null && $discordLr->configured();
+$discordOk = \App\Core\Session::getFlash('discord_link_success');
+$discordErr = \App\Core\Session::getFlash('discord_link_error');
+$hd = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+?>
+<?php if ($discordReady || $discordLink !== null || $discordOk || $discordErr): ?>
+<section id="section-discord" class="account-hub__panel account-hub__section-anchor" style="margin-top:1.25rem">
+    <div class="account-hub__panel-head">
+        <p class="account-hub__panel-kicker">Discord</p>
+        <h2 class="account-hub__panel-title">Rôles liés Discord</h2>
+        <p class="account-hub__panel-desc">Reliez votre compte Discord : le serveur Discord d’Athena vous reconnaît comme compte Athena et votre profil Discord affiche vos communautés.</p>
+    </div>
+    <div class="account-hub__panel-body">
+        <?php if ($discordOk): ?><p class="account-hub__hint" style="color:#047857;font-weight:600" role="status"><?= $hd($discordOk) ?></p><?php endif; ?>
+        <?php if ($discordErr): ?><p class="account-hub__field-error" role="alert"><?= $hd($discordErr) ?></p><?php endif; ?>
+        <?php if ($discordLink !== null): ?>
+            <p class="account-hub__hint">Relié à <strong><?= $hd($discordLink['discord_username'] ?: $discordLink['discord_user_id']) ?></strong><?php if (!empty($discordLink['synced_at'])): ?> · dernière mise à jour <?= $hd($discordLink['synced_at']) ?><?php endif; ?>.</p>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem">
+                <form method="post" action="<?= $hd(url('account/discord/actualiser')) ?>"><?= \App\Core\Csrf::field() ?><button type="submit" class="account-hub__btn account-hub__btn--ink">Mettre à jour maintenant</button></form>
+                <form method="post" action="<?= $hd(url('account/discord/delier')) ?>"><?= \App\Core\Csrf::field() ?><button type="submit" class="account-hub__btn" style="background:#fff;color:#b91c1c;border:1px solid #fecaca">Délier mon Discord</button></form>
+            </div>
+        <?php elseif ($discordReady): ?>
+            <a class="account-hub__btn account-hub__btn--ink" href="<?= $hd(url('discord/roles-lies')) ?>">Relier mon Discord</a>
+            <p class="account-hub__hint" style="margin-top:.5rem">Discord vous demande d’autoriser Athena à lire votre identifiant et à mettre à jour vos rôles liés. Rien n’est posté en votre nom.</p>
+        <?php endif; ?>
+    </div>
+</section>
+<?php endif; ?>
 
 <script>
 (function () {

@@ -92,12 +92,40 @@ final class ArsenalWardrobeRepository
             $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
             $payload = (string) ($row['payload_text'] ?? '');
             $row['kinds'] = ArsenalLoadoutItems::presentKinds($payload);
+            $row['preview_classes'] = ArsenalLoadoutItems::previewClasses($payload);
             $row['display_name'] = ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? ''));
             unset($row['payload_text']);
         }
         unset($row);
 
         return $rows;
+    }
+
+    /**
+     * Nom et contenu des tenues de la communauté (export pour l’arsenal ACE), d’une collection ou toutes.
+     *
+     * @return list<array{id: int, name: string, payload: string}>
+     */
+    public function exportPayloads(int $tenantId, ?int $collectionId = null): array
+    {
+        $sql = 'SELECT id, name, payload_text FROM arsenal_wardrobes WHERE tenant_id = ?';
+        $params = [$tenantId];
+        if ($collectionId !== null && $collectionId > 0) {
+            $sql .= ' AND collection_id = ?';
+            $params[] = $collectionId;
+        }
+        $st = $this->pdo->prepare($sql . ' ORDER BY name ASC, id ASC LIMIT 500');
+        $st->execute($params);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[] = [
+                'id' => (int) $row['id'],
+                'name' => ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? '')),
+                'payload' => (string) ($row['payload_text'] ?? ''),
+            ];
+        }
+
+        return $out;
     }
 
     public function findWardrobe(int $tenantId, int $id, ?int $userId = null): ?array
@@ -116,6 +144,34 @@ final class ArsenalWardrobeRepository
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return $row ? $this->mapWardrobe($row) : null;
+    }
+
+    /**
+     * Plusieurs tenues d’un tenant en une requête (vitrine du tableau de bord).
+     *
+     * @param list<int> $ids
+     * @return array<int, array<string, mixed>> id => tenue (mêmes champs que findWardrobe)
+     */
+    public function findWardrobesByIds(int $tenantId, array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $st = $this->pdo->prepare(
+            "SELECT w.*, c.name AS collection_name, c.slug AS collection_slug
+             FROM arsenal_wardrobes w
+             LEFT JOIN arsenal_equipment_collections c ON c.id = w.collection_id
+             WHERE w.tenant_id = ? AND w.id IN ($placeholders)"
+        );
+        $st->execute(array_merge([$tenantId], $ids));
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['id']] = $this->mapWardrobe($row);
+        }
+
+        return $out;
     }
 
     /**
@@ -156,22 +212,27 @@ final class ArsenalWardrobeRepository
 
         $existing = $this->findBySlug($tenantId, $userId, $slug);
         if ($existing !== null) {
+            // Renvoi depuis le jeu : seuls le nom et le contenu changent. Collection, note, favori, source, description
+            // et photos posés sur le site restent tels quels tant que l’envoi ne les fournit pas (jamais de WIPE).
             $st = $this->pdo->prepare(
+                // updated_at d’abord : MySQL applique les SET dans l’ordre, l’empreinte comparée est encore l’ancienne.
                 'UPDATE arsenal_wardrobes SET
-                    name = ?, collection_id = ?, source = ?, payload_format = ?,
-                    payload_text = ?, payload_sha256 = ?, notes = ?, is_favorite = ?,
-                    steam_uid = COALESCE(?, steam_uid), last_synced_at = NOW(), updated_at = NOW()
+                    updated_at = IF(payload_sha256 <=> ?, updated_at, NOW()),
+                    name = ?, collection_id = COALESCE(?, collection_id), source = ?, payload_format = ?,
+                    payload_text = ?, payload_sha256 = ?, notes = COALESCE(?, notes), is_favorite = ?,
+                    steam_uid = COALESCE(?, steam_uid), last_synced_at = NOW()
                  WHERE id = ? AND tenant_id = ? AND user_id = ?'
             );
             $st->execute([
+                $hash,
                 $name,
                 $collectionId,
-                $source,
-                $format,
+                array_key_exists('source', $data) ? $source : (string) ($existing['source'] ?? $source),
+                array_key_exists('payload_format', $data) ? $format : (string) ($existing['payload_format'] ?? $format),
                 $payload,
                 $hash,
                 $notes,
-                $favorite,
+                array_key_exists('is_favorite', $data) ? $favorite : (!empty($existing['is_favorite']) ? 1 : 0),
                 $steam,
                 (int) $existing['id'],
                 $tenantId,

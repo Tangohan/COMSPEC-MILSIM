@@ -61,7 +61,7 @@ final class ContainerIntegrations
             \App\Repositories\AsyncJobRepository::class => new \App\Repositories\AsyncJobRepository(),
             \App\Repositories\TenantApiKeyRepository::class => new \App\Repositories\TenantApiKeyRepository(),
             \App\Controllers\Web\ActivityHubController::class => new \App\Controllers\Web\ActivityHubController(
-                Container::get(\App\Repositories\ForumNotificationRepository::class),
+                Container::get(\App\Repositories\MemberNotificationRepository::class),
                 Container::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
                 Container::get(\App\Repositories\TenantMessageRepository::class),
                 Container::get(\App\Services\Notifications\ActivityHubPresentationService::class),
@@ -70,7 +70,6 @@ final class ContainerIntegrations
             \App\Services\Alerts\MemberAlertsPageService::class => new \App\Services\Alerts\MemberAlertsPageService(
                 Container::get(\App\Services\Alerts\AlertPresentationService::class),
                 Container::get(\App\Services\Dashboard\TenantDashboardPinService::class),
-                Container::get(\App\Repositories\ForumTopicRepository::class),
             ),
             \App\Controllers\Web\MemberAlertsController::class => new \App\Controllers\Web\MemberAlertsController(
                 Container::get(\App\Services\Alerts\MemberAlertsPageService::class),
@@ -174,6 +173,18 @@ final class ContainerIntegrations
                 Container::get(\App\Repositories\AtakRealismRepository::class),
                 Container::get(\App\Repositories\UserRepository::class),
                 Container::get(\App\Services\Audit\AuditService::class),
+            ),
+            \App\Repositories\PlanPaymentRequestRepository::class => new \App\Repositories\PlanPaymentRequestRepository(),
+            \App\Services\Billing\PlanPaymentService::class => new \App\Services\Billing\PlanPaymentService(
+                Container::get(\App\Repositories\PlanPaymentRequestRepository::class),
+                Container::get(\App\Repositories\SubscriptionPlanRepository::class),
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+            ),
+            \App\Services\Account\AccountUsageService::class => new \App\Services\Account\AccountUsageService(
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\RoleRepository::class),
             ),
             default => null,
         };

@@ -110,7 +110,7 @@ if (!(_serial isEqualType "") || {_serial isEqualTo ""} || {[_serial] call _isBa
 
     profileNamespace setVariable [_serialKey, _serial];
 
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 
 };
 
@@ -124,13 +124,17 @@ private _fingerprint = toLower format ["ow%1%2", _fpUid, _fpSerial];
 
 
 
-private _raw = ["COMSPECExtension" callExtension [
+// POST synchrone côté DLL : extAwait évite de figer le jeu en contexte planifié (appel direct sinon).
+
+private _raw = [[
+
+    "COMSPECExtension",
 
     "RegisterCertificate",
 
     [_terminalId, _certificateRef, _commonName, _serial, _fingerprint]
 
-]] call comspec_overwatch_connect_fnc_extResult;
+] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 
 
 

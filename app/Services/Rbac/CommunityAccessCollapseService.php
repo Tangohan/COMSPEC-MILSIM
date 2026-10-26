@@ -228,19 +228,6 @@ final class CommunityAccessCollapseService
                 array_merge([$fallbackId, $tenantId], $leftover)
             );
         }
-        if ($this->hasTable('user_profile_display_settings')
-            && $this->hasColumn('user_profile_display_settings', 'forum_visible_role_id')) {
-            $this->tryExec(
-                "UPDATE user_profile_display_settings SET forum_visible_role_id = NULL WHERE forum_visible_role_id IN ($in)",
-                $leftover
-            );
-        }
-        if ($this->hasTable('forum_categories') && $this->hasColumn('forum_categories', 'min_role_id')) {
-            $this->tryExec(
-                "UPDATE forum_categories SET min_role_id = NULL WHERE tenant_id = ? AND min_role_id IN ($in)",
-                array_merge([$tenantId], $leftover)
-            );
-        }
 
         $this->tryExec(
             "DELETE FROM roles WHERE tenant_id = ? AND id IN ($in)",

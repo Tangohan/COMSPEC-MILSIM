@@ -66,8 +66,6 @@ return static function (PDO $pdo): void {
                 status VARCHAR(20) NOT NULL DEFAULT \'draft\',
                 published_at DATETIME DEFAULT NULL,
                 closed_at DATETIME DEFAULT NULL,
-                forum_topic_id_externe INT UNSIGNED DEFAULT NULL,
-                forum_topic_id_interne INT UNSIGNED DEFAULT NULL,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
@@ -92,20 +90,6 @@ return static function (PDO $pdo): void {
                 echo "recruitment_openings.ro_pjr_fk ajouté.\n";
             } catch (Throwable $e) {
                 echo '  [ATTENTION] ro_pjr_fk : ' . $e->getMessage() . "\n";
-            }
-        }
-    }
-
-    foreach (['forum_topic_id_externe', 'forum_topic_id_interne'] as $roForumCol) {
-        $c = $pdo->query(
-            "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recruitment_openings' AND COLUMN_NAME = " . $pdo->quote($roForumCol) . " LIMIT 1"
-        );
-        if ($c && !$c->fetchColumn()) {
-            try {
-                $pdo->exec('ALTER TABLE recruitment_openings ADD COLUMN `' . str_replace('`', '', $roForumCol) . '` INT UNSIGNED DEFAULT NULL');
-                echo "recruitment_openings.$roForumCol ajouté.\n";
-            } catch (Throwable $e) {
-                echo '  [ATTENTION] recruitment_openings.' . $roForumCol . ' : ' . $e->getMessage() . "\n";
             }
         }
     }

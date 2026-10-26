@@ -31,7 +31,7 @@ final class AtakEnemyAiAssetTest extends TestCase
         self::assertStringContainsString('allGroups', $scan);
         self::assertStringContainsString('east', $scan);
         self::assertStringContainsString('isPlayer _leader', $scan);
-        self::assertStringContainsString('_sent >= 24', $scan);
+        self::assertStringContainsString('_tracked >= 24', $scan);
         self::assertStringContainsString('COMSPEC_AtakShowEnemyAi', $scan);
 
         $air = (string) file_get_contents($root . '/functions/fn_reportCrewedAirAssets.sqf');

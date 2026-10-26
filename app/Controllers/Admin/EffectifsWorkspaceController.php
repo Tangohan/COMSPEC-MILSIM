@@ -172,10 +172,16 @@ class EffectifsWorkspaceController
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 80;
         $sort = trim((string) $request->query('tri', 'nom'));
-        $allowedSorts = ['nom', 'commandement', 'grade', 'anciennete', 'disponibilite', 'presence', 'completion'];
+        $allowedSorts = ['nom', 'commandement', 'grade', 'anciennete', 'disponibilite', 'presence', 'completion', 'heures_vol', 'temps_mission'];
         if (!in_array($sort, $allowedSorts, true)) {
             $sort = 'nom';
         }
+        // Vue du tableur : colonnes générales, dossier médical, ou heures de vol par appareil.
+        $rosterView = trim((string) $request->query('vue', ''));
+        if (!in_array($rosterView, ['medical', 'aviation'], true)) {
+            $rosterView = 'general';
+        }
+        $jobFilter = mb_substr(trim((string) $request->query('fonction', '')), 0, 120, 'UTF-8');
 
         $statusFilter = $status !== '' ? $status : null;
         $roleFilter = $roleId > 0 ? $roleId : null;
@@ -195,7 +201,7 @@ class EffectifsWorkspaceController
 
         $languageCommunity = $this->communitySettingsFor($tenantId);
         $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
-        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '';
+        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '';
         if ($needsFullLoad) {
             $fetchLimit = min(2000, max($total, 1));
             $baseUsers = $this->userRepository->listForTenant(
@@ -224,6 +230,14 @@ class EffectifsWorkspaceController
                 }));
                 $total = count($allRows);
             }
+            if ($jobFilter !== '') {
+                // Filtre « fonction » : la fonction principale commence par l'emploi choisi (ex. « Medic — CLS »).
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => mb_stripos(trim((string) ($r['job_role_display'] ?? '')), $jobFilter, 0, 'UTF-8') === 0));
+                $total = count($allRows);
+            }
+            if (in_array($sort, ['heures_vol', 'temps_mission'], true)) {
+                $allRows = $this->attachRosterFieldData($tenantId, $allRows, false);
+            }
             $allRows = $this->sortRosterRows($allRows, $sort);
             $offset = ($page - 1) * $perPage;
             $rows = array_slice($allRows, $offset, $perPage);
@@ -242,6 +256,7 @@ class EffectifsWorkspaceController
             $rows = $this->enrichRosterRows($tenantId, $baseUsers);
         }
 
+        $rows = $this->attachRosterFieldData($tenantId, $rows, true);
         $counts = $this->rosterCounts($tenantId);
         $rowLanguages = $this->memberLanguages()->resolvedForUsers(
             $tenantId,
@@ -294,7 +309,11 @@ class EffectifsWorkspaceController
                 'sans_role' => $onlyNoRole,
                 'tri' => $sort,
                 'langue' => $languageFilter,
+                'vue' => $rosterView,
+                'fonction' => $jobFilter,
             ],
+            'rosterView' => $rosterView,
+            'rosterJobRoleOptions' => $this->rosterJobRoleOptions($tenantId),
             'rosterLanguages' => $rowLanguages,
             'rosterLanguageCodes' => CommunityLanguages::communityLanguages($languageCommunity),
             'rosterSortOptions' => [
@@ -305,6 +324,8 @@ class EffectifsWorkspaceController
                 'disponibilite' => 'Ordre de disponibilité',
                 'presence' => 'Ordre de présence',
                 'completion' => 'Ordre de complétion du dossier',
+                'temps_mission' => 'Temps en mission',
+                'heures_vol' => 'Heures de vol',
             ],
             'rosterCounts' => $counts,
             'orgRoles' => $this->roleRepository->forTenantAccessProfiles($tenantId),
@@ -443,7 +464,7 @@ class EffectifsWorkspaceController
             'Nom affiché', 'Indicatif', 'E-mail', 'Grade', 'Fonction', 'Affectation', 'Statut',
             'Ancienneté', 'Disponibilité (%)', 'Présence (%)', 'Complétion du dossier (%)',
             'platform_number', 'tenant_member_number', 'Langue de jeu', 'Autres langues',
-        ], $sep);
+        ], $sep, '"', '\\');
         foreach ($rows as $r) {
             $rStatus = (string) ($r['status'] ?? '');
             fputcsv($fh, [
@@ -465,7 +486,7 @@ class EffectifsWorkspaceController
                     [CommunityLanguages::class, 'label'],
                     $csvLanguages[(int) ($r['id'] ?? 0)]['others'] ?? []
                 )),
-            ], $sep);
+            ], $sep, '"', '\\');
         }
         rewind($fh);
         $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');
@@ -477,6 +498,112 @@ class EffectifsWorkspaceController
             ->setStatusCode(200)
             ->header('Content-Type', 'text/csv; charset=UTF-8')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($csv);
+    }
+
+    /**
+     * Bureau des effectifs : importe un tableur (CSV) en fiches sans compte. Les colonnes du fichier
+     * « Exporter » sont reconnues, on peut donc réimporter un export retouché dans Excel.
+     */
+    public function importRoster(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!\App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenant['tenant_type'] ?? 'full'))) {
+            Session::flash('error', 'L’import de tableur est réservé au profil « Bureau des effectifs ».');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
+            Session::flash('error', 'Il faut le droit de modifier les fiches pour importer un tableur.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $file = $_FILES['roster_file'] ?? null;
+        if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            Session::flash('error', 'Choisissez un fichier CSV (dans Excel : Fichier → Enregistrer sous → CSV).');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tmp = (string) ($file['tmp_name'] ?? '');
+        $content = $tmp !== '' && is_readable($tmp) && (int) ($file['size'] ?? 0) <= 2 * 1024 * 1024 ? (string) file_get_contents($tmp) : '';
+        if ($content === '') {
+            Session::flash('error', 'Fichier illisible ou trop lourd (2 Mo au plus).');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $parsed = \App\Services\Effectifs\RosterOnlyMemberService::parseCsv($content);
+        if ($parsed['error'] !== null) {
+            Session::flash('error', $parsed['error']);
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if (!$gate->canAddMember($tenantId)) {
+            Session::flash('error', 'Limite de membres du plan atteinte.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $service = new \App\Services\Effectifs\RosterOnlyMemberService(
+            $this->userRepository,
+            \App\Core\Container::get(\App\Repositories\UserProfileRepository::class),
+            $this->personnelProfileRepository,
+            $this->personnelAssignmentRepository,
+            $this->gradeRepository,
+            $this->unitRepository,
+        );
+        $result = $service->import($tenantId, $actorId, $parsed['rows']);
+
+        $msg = $result['created'] . ' fiche(s) créée(s).';
+        if ($result['skipped'] !== []) {
+            $msg .= ' ' . count($result['skipped']) . ' ligne(s) ignorée(s) : ' . implode(' ', array_slice($result['skipped'], 0, 5));
+            if (count($result['skipped']) > 5) {
+                $msg .= ' …';
+            }
+        }
+        if ($result['unknown_grades'] !== []) {
+            $msg .= ' Grades non reconnus (laissés vides) : ' . implode(', ', array_slice($result['unknown_grades'], 0, 8)) . '.';
+        }
+        if ($result['unknown_units'] !== []) {
+            $msg .= ' Unités inconnues (créez-les dans l’organigramme, puis réimportez ou affectez à la main) : ' . implode(', ', array_slice($result['unknown_units'], 0, 8)) . '.';
+        }
+        Session::flash($result['created'] > 0 ? 'success' : 'error', $msg);
+        try {
+            $this->adminAuditService->logUserUpdated($tenantId, $actorId, $actorId, 'import_tableur', (string) $result['created']);
+        } catch (\Throwable) {
+        }
+
+        return Response::redirect(effectifs_workspace_url());
+    }
+
+    /** Modèle CSV vierge pour l’import du Bureau des effectifs (s’ouvre dans Excel). */
+    public function rosterTemplate(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $fh = fopen('php://temp', 'r+');
+        fputcsv($fh, ['Prénom', 'Nom', 'Indicatif', 'Grade', 'Affectation', 'Steam ID'], ';', '"', '\\');
+        fputcsv($fh, ['Jean', 'Martin', 'Alpha 1-1', 'SGT', '1re Section', ''], ';', '"', '\\');
+        rewind($fh);
+        $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');
+        fclose($fh);
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="modele-effectifs.csv"')
             ->setBody($csv);
     }
 
@@ -1565,6 +1692,8 @@ class EffectifsWorkspaceController
         )));
         $weightRaw = trim((string) $request->input('weight_kg', ''));
         $weight = $weightRaw !== '' && ctype_digit($weightRaw) ? max(20, min(300, (int) $weightRaw)) : null;
+        $heightRaw = trim((string) $request->input('height_cm', ''));
+        $height = $heightRaw !== '' && ctype_digit($heightRaw) ? max(100, min(250, (int) $heightRaw)) : null;
         $data = [
             'birth_place' => $text($request->input('birth_place'), 150),
             'family_situation' => $choice('family_situation', $request->input('family_situation'), $values('family_situation')),
@@ -1573,6 +1702,9 @@ class EffectifsWorkspaceController
             'blood_type' => $choice('blood_type', $request->input('blood_type'), $values('blood_type')),
             'languages' => $text($request->input('languages'), 255),
             'weight_kg' => $weight,
+            'height_cm' => $height,
+            'drug_intolerances' => $text($request->input('drug_intolerances'), 500),
+            'allergies' => $text($request->input('allergies'), 500),
             'nickname_primary' => $text($request->input('nickname_primary'), 100),
             'motto' => $text($request->input('motto'), 255),
         ];
@@ -2635,7 +2767,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,
@@ -3009,6 +3141,75 @@ class EffectifsWorkspaceController
      * @param list<array<string, mixed>> $rows
      * @return list<array<string, mixed>>
      */
+    /**
+     * Colonnes du tableur alimentées par le jeu et le dossier : temps en mission, heures de vol (total et par type
+     * d'appareil) et, pour la page affichée, données médicales. Chaque source manquante laisse la colonne vide.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function attachRosterFieldData(int $tenantId, array $rows, bool $withMedical): array
+    {
+        $ids = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows), static fn (int $id): bool => $id > 0));
+        if ($ids === []) {
+            return $rows;
+        }
+        $playtime = [];
+        $pilot = [];
+        $medical = [];
+        try {
+            $playtime = \App\Core\Container::get(\App\Repositories\ArmaPlaytimeRepository::class)->summariesForUsers($tenantId, $ids);
+        } catch (\Throwable) {
+            $playtime = [];
+        }
+        try {
+            $pilot = \App\Core\Container::get(\App\Repositories\AtakDistanceRepository::class)->pilotByUsers($tenantId, $ids);
+        } catch (\Throwable) {
+            $pilot = [];
+        }
+        if ($withMedical) {
+            try {
+                $medical = $this->personnelProfileRepository->medicalForUsers($tenantId, $ids);
+            } catch (\Throwable) {
+                $medical = [];
+            }
+        }
+        foreach ($rows as &$row) {
+            $uid = (int) ($row['id'] ?? 0);
+            $sum = is_array($playtime[$uid] ?? null) ? $playtime[$uid] : [];
+            $secs = (int) ($sum['total_seconds'] ?? 0);
+            $row['arma_playtime_seconds'] = $secs;
+            $row['arma_playtime_label'] = $secs > 0 && function_exists('format_arma_playtime_french') ? format_arma_playtime_french($secs) : null;
+            $row['pilot_seconds'] = (int) ($pilot[$uid]['seconds'] ?? 0);
+            $row['pilot_families'] = is_array($pilot[$uid]['families'] ?? null) ? $pilot[$uid]['families'] : [];
+            $row['pilot_last_flown_at'] = (string) ($pilot[$uid]['last_flown_at'] ?? '');
+            if ($withMedical) {
+                foreach (PersonnelProfileRepository::MEDICAL_FIELDS as $field) {
+                    $row[$field] = (string) ($medical[$uid][$field] ?? '');
+                }
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * Emplois de la communauté proposés dans le filtre « Fonction » du tableur (Medic, Chef de groupe…).
+     *
+     * @return list<string>
+     */
+    private function rosterJobRoleOptions(int $tenantId): array
+    {
+        try {
+            $names = array_map(static fn (array $r): string => trim((string) ($r['name'] ?? '')), $this->personnelJobRoleRepository->listRolesWithCategory($tenantId));
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter($names, static fn (string $n): bool => $n !== '')));
+    }
+
     private function sortRosterRows(array $rows, string $sort): array
     {
         $nameKey = static function (array $row): string {
@@ -3043,6 +3244,12 @@ class EffectifsWorkspaceController
                     break;
                 case 'completion':
                     $cmp = ((int) ($b['completion_score'] ?? 0)) <=> ((int) ($a['completion_score'] ?? 0));
+                    break;
+                case 'heures_vol':
+                    $cmp = ((int) ($b['pilot_seconds'] ?? 0)) <=> ((int) ($a['pilot_seconds'] ?? 0));
+                    break;
+                case 'temps_mission':
+                    $cmp = ((int) ($b['arma_playtime_seconds'] ?? 0)) <=> ((int) ($a['arma_playtime_seconds'] ?? 0));
                     break;
                 default:
                     $cmp = strcmp($nameKey($a), $nameKey($b));

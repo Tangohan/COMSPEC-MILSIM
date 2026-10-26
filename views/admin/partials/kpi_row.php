@@ -4,7 +4,7 @@
 $kpis = $kpis ?? [];
 $blockError = $blockError ?? null;
 $kpiLabels = ['tenants' => 'Communautés'];
-$forumPending = isset($adminForumModerationSnapshotError) && $adminForumModerationSnapshotError ? null : (int) ($adminForumPendingTotal ?? 0);
+$reportsPending = isset($adminReportsSnapshotError) && $adminReportsSnapshotError ? null : (int) ($adminReportsPendingTotal ?? 0);
 $filesPending = isset($adminContentQueueSnapshotError) && $adminContentQueueSnapshotError ? null : (int) ($adminContentQueueTotal ?? 0);
 $e = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 ?>
@@ -26,10 +26,10 @@ $e = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
             <?php endif; ?>
         </li>
     <?php endforeach; ?>
-    <?php if ($forumPending !== null): ?>
-        <li><a class="pa-kpi<?= $forumPending > 0 ? ' pa-kpi--alert' : '' ?>" href="<?= $e(url('back-office/forum-moderation')) ?>">
-            <span class="pa-kpi__label">Signalements forum</span>
-            <span class="pa-kpi__value"><?= $forumPending ?></span>
+    <?php if ($reportsPending !== null): ?>
+        <li><a class="pa-kpi<?= $reportsPending > 0 ? ' pa-kpi--alert' : '' ?>" href="<?= $e(url('back-office/signalements')) ?>">
+            <span class="pa-kpi__label">Signalements membres</span>
+            <span class="pa-kpi__value"><?= $reportsPending ?></span>
             <span class="pa-kpi__hint">À traiter, toutes communautés</span>
         </a></li>
     <?php endif; ?>

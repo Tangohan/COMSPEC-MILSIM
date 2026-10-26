@@ -5,7 +5,7 @@ declare(strict_types=1);
 /** @var string $displayName */
 /** @var string $tenantName */
 /** @var string $planName */
-/** @var string $kind gift|trial */
+/** @var string $kind gift|trial|paid */
 /** @var string $endsAt */
 /** @var bool $atakLost */
 /** @var int $graceDays */

@@ -24,6 +24,30 @@ final class AtakQuickLinkPageTest extends TestCase
         self::assertStringContainsString("'verification_uri_complete'", $svc);
         self::assertStringContainsString('approveFromWeb', $ctrl);
         self::assertStringContainsString('Csrf::validate', $ctrl);
-        self::assertFileExists($root . '/views/account/game_link.php');
+        self::assertFileExists($root . '/views/link/lier.php');
+        self::assertStringContainsString("Response::view('link.lier'", $ctrl);
+        $view = (string) file_get_contents($root . '/views/link/lier.php');
+        self::assertStringContainsString('Autoriser ce jeu', $view);
+        self::assertStringContainsString('method="post"', $view);
+        self::assertStringContainsString("url('lier/etat')", $view);
+        self::assertStringContainsString('Éditeur Eden · COMSPEC SSE', $view);
+        self::assertStringContainsString('Téléphone ATAK · pack Overwatch', $view);
+        self::assertStringContainsString('Téléphone ATAK · app Athena', $view);
+        self::assertStringContainsString('assets/css/link-lier.css', $view);
+        self::assertStringNotContainsString('atak_quick_link_code_shown', $view);
+        self::assertStringNotContainsString('game-link.css', $view);
+        self::assertStringNotContainsString('.submit(', $view);
+        self::assertStringNotContainsString('requestSubmit', $view);
+        self::assertFileExists($root . '/public/assets/css/link-lier.css');
+        $css = (string) file_get_contents($root . '/public/assets/css/link-lier.css');
+        self::assertStringContainsString('prefers-reduced-motion', $css);
+    }
+
+    public function testRequestSourceTellsPhoneEdenAndOverwatchApart(): void
+    {
+        self::assertSame('eden', \App\Services\Game\GameAtakPairingService::requestSource('sse-eden'));
+        self::assertSame('phone', \App\Services\Game\GameAtakPairingService::requestSource('native'));
+        self::assertSame('phone', \App\Services\Game\GameAtakPairingService::requestSource(''));
+        self::assertSame('overwatch', \App\Services\Game\GameAtakPairingService::requestSource('1.6.16'));
     }
 }

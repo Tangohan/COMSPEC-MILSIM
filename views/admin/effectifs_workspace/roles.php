@@ -71,7 +71,7 @@ $selectedName = (string) ($selected['name'] ?? '');
             <p class="eff-page-lead">Aucun niveau d’accès n’est encore disponible.</p>
         <?php else: ?>
             <?php if ($canManage): ?>
-            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-access-editor">
+            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-access-editor" data-perm-form>
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="role_id" value="<?= $selectedId ?>">
                 <div class="eff-access-editor__identity">
@@ -81,16 +81,25 @@ $selectedName = (string) ($selected['name'] ?? '');
                     </label>
                     <label>
                         À quoi il sert
-                        <textarea name="description" rows="3" maxlength="500" placeholder="Ex. Accès lecture forum + documents pour les nouveaux intégrés."><?= htmlspecialchars((string) ($selected['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                        <textarea name="description" rows="3" maxlength="500" placeholder="Ex. Accès lecture documents pour les nouveaux intégrés."><?= htmlspecialchars((string) ($selected['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                     </label>
                 </div>
                 <p class="eff-access-editor__hint">
                     La description aide les responsables à comprendre le niveau. Cochez uniquement ce que les titulaires peuvent faire.
                     Les emplois du dossier (radio, médic…) restent à part — ils ne donnent aucun droit ici.
                 </p>
+                <label class="eff-access-all">
+                    <input type="checkbox" data-perm-all>
+                    <span>Tout cocher (puis décochez ce qui ne convient pas)</span>
+                </label>
                 <?php foreach ($groups as $group): ?>
-                <section class="eff-access-group">
-                    <h2><?= htmlspecialchars((string) ($group['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h2>
+                <section class="eff-access-group" data-perm-scope>
+                    <h2>
+                        <label class="eff-access-group__all">
+                            <input type="checkbox" data-perm-group aria-label="Tout cocher dans ce groupe">
+                            <span><?= htmlspecialchars((string) ($group['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                        </label>
+                    </h2>
                     <?php if (trim((string) ($group['description'] ?? '')) !== ''): ?>
                     <p class="eff-access-group__desc"><?= htmlspecialchars((string) $group['description'], ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endif; ?>
@@ -139,3 +148,4 @@ $selectedName = (string) ($selected['name'] ?? '');
     </div>
 </div>
 </div>
+<script src="<?= htmlspecialchars(asset_url('assets/js/perm-check-all.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>

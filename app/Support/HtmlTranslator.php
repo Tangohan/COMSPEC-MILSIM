@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Traduction anglaise des pages à l'affichage.
+ * Traduction anglaise des pages à l'affichage (et des langues de la communauté, posées sur l'anglais).
  *
  * Les vues restent écrites en français. Quand la langue du visiteur est l'anglais, Response::view passe la page
  * rendue ici : chaque texte entre balises et les attributs title, placeholder, aria-label, alt, data-confirm et value
@@ -73,6 +73,13 @@ final class HtmlTranslator
             $name = strtolower($m[2]);
 
             if ($skipTag !== null) {
+                if (!$closing && ($name === 'script' || $name === 'style') && $name !== $skipTag && !str_ends_with($tag, '/>')) {
+                    $close = stripos($html, '</' . $name, $pos);
+                    $close = $close === false ? $len : $close;
+                    $out .= $tag . substr($html, $pos, $close - $pos);
+                    $pos = $close;
+                    continue;
+                }
                 if ($name === $skipTag) {
                     if ($closing) {
                         $skipDepth--;
@@ -89,6 +96,15 @@ final class HtmlTranslator
 
             if (!$closing) {
                 $voidish = str_ends_with($tag, '/>') || in_array($name, ['input', 'img', 'br', 'hr', 'meta', 'link', 'source', 'area', 'col', 'wbr'], true);
+                // <script> / <style> : contenu brut jusqu'à la balise fermante. Un « i < n » du JavaScript passait
+                // pour une balise qui avalait le </script>, et toute la suite de la page restait en français.
+                if (($name === 'script' || $name === 'style') && !$voidish) {
+                    $close = stripos($html, '</' . $name, $pos);
+                    $close = $close === false ? $len : $close;
+                    $out .= $tag . substr($html, $pos, $close - $pos);
+                    $pos = $close;
+                    continue;
+                }
                 if (in_array($name, self::RAW_TAGS, true) || preg_match('~\btranslate\s*=\s*["\']?no\b~i', $tag)) {
                     if (!$voidish) {
                         $skipTag = $name;
@@ -148,6 +164,16 @@ final class HtmlTranslator
                 return $html;
             }
             $src = (function_exists('url') ? url('assets/js/' . $file) : '/assets/js/' . $file) . '?v=' . (int) filemtime($path);
+            if ($file === 'i18n_dom.js') {
+                // Dictionnaire de la langue de la communauté, posé sur l'anglais avant le traducteur (scripts différés :
+                // exécutés dans l'ordre).
+                $lang = function_exists('site_lang') ? site_lang() : 'en';
+                $v = \App\Services\I18n\CommunityLanguages::version($lang);
+                if ($v > 0) {
+                    $dict = (function_exists('url') ? url('traduire-site/dico/' . $lang . '.js') : '/traduire-site/dico/' . $lang . '.js') . '?v=' . $v;
+                    $tags .= '<script src="' . htmlspecialchars($dict, ENT_QUOTES, 'UTF-8') . '" defer></script>';
+                }
+            }
             $tags .= '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" defer></script>';
         }
 
@@ -272,6 +298,10 @@ final class HtmlTranslator
         }
         $exact = self::$exact ?? [];
         $r = $exact[$s] ?? null;
+        // Apostrophe droite saisie en base (« l'annuaire ») : le dictionnaire utilise l'apostrophe typographique.
+        if ($r === null && str_contains($s, "'")) {
+            $r = $exact[str_replace("'", '’', $s)] ?? null;
+        }
         if ($r === null && ($k = strpos($s, ' : ')) !== false && $k > 0) {
             $label = $exact[substr($s, 0, $k)] ?? null;
             if ($label !== null) {
@@ -417,10 +447,61 @@ final class HtmlTranslator
             return self::$exact !== [] || self::$templates !== [];
         }
         $path = base_path('lang/en/site_auto.php');
-        /** @var mixed $data */
-        $data = is_file($path) ? require $path : [];
+        if (!is_file($path)) {
+            return self::useDictionary([]);
+        }
+        // Langue de la communauté (ou corrections de l'anglais, /traduire-site) : ses textes validés passent avant
+        // l'anglais ; un texte qu'elle n'a pas traduit reste en anglais.
+        $lang = function_exists('site_lang') ? site_lang() : 'en';
+        $over = $lang !== 'fr' ? \App\Services\I18n\CommunityLanguages::dictionary($lang)['t'] : [];
+        if ($over !== []) {
+            /** @var mixed $data */
+            $data = require $path;
 
-        return self::useDictionary(is_array($data) ? $data : []);
+            return self::useDictionary($over + (is_array($data) ? $data : []));
+        }
+        // Anglais seul : dictionnaire déjà découpé (textes exacts / modèles %1) gardé dans storage/cache. Sans lui,
+        // chaque page anglaise relit et retrie les ~40 000 entrées. Reconstruit dès que site_auto.php change.
+        $stamp = (int) filemtime($path) . ':' . (int) filesize($path);
+        $cache = base_path('storage/cache/html_translator_en.php');
+        if (is_file($cache)) {
+            /** @var mixed $c */
+            $c = @include $cache;
+            if (is_array($c) && ($c['stamp'] ?? '') === $stamp && is_array($c['exact'] ?? null) && is_array($c['templates'] ?? null)) {
+                self::$exact = $c['exact'];
+                self::$templates = $c['templates'];
+                self::$memo = [];
+
+                return self::$exact !== [] || self::$templates !== [];
+            }
+        }
+        /** @var mixed $data */
+        $data = require $path;
+        $ok = self::useDictionary(is_array($data) ? $data : []);
+        self::writeCache($cache, $stamp);
+
+        return $ok;
+    }
+
+    private static function writeCache(string $cache, string $stamp): void
+    {
+        $dir = dirname($cache);
+        if (!is_dir($dir) || !is_writable($dir)) {
+            return;
+        }
+        $php = '<?php return ' . var_export(['stamp' => $stamp, 'exact' => self::$exact, 'templates' => self::$templates], true) . ";\n";
+        $tmp = $cache . '.' . getmypid() . '.tmp';
+        if (@file_put_contents($tmp, $php, LOCK_EX) === false) {
+            return;
+        }
+        if (!@rename($tmp, $cache)) {
+            @unlink($tmp);
+
+            return;
+        }
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($cache, true);
+        }
     }
 
     /**

@@ -15,6 +15,7 @@ $slug = (string) ($tenant['slug'] ?? '');
 $archivedAt = $archive !== null ? strtotime((string) ($archive['archived_at'] ?? '')) : false;
 $ruleLabels = [
     'CASCADE' => ['Supprimé', 'rose'],
+    'PURGE' => ['Purgé avant suppression (journal des interventions admin)', 'rose'],
     'SET NULL' => ['Détaché, conservé', 'amber'],
     'NONE' => ['Conservé', 'slate'],
     'RESTRICT' => ['Bloque la suppression', 'amber'],
@@ -99,9 +100,9 @@ $err = \App\Core\Session::getFlash('error');
                 <?php if ($archive === null): ?>
                     <h2 id="archive-heading" class="pa-card__title">Archiver la communauté</h2>
                     <ul class="pa-card__help" style="margin:.5rem 0 0 1.1rem;list-style:disc;">
-                        <li>Elle disparaît de l’annuaire, sa page publique et ses liens (recrutement, forum, code rejoindre) ne répondent plus.</li>
+                        <li>Elle disparaît de l’annuaire, sa page publique et ses liens (recrutement, code rejoindre) ne répondent plus.</li>
                         <li>Ses membres ne la voient plus dans leur sélecteur de communauté. Ceux dont c’était la communauté courante sont relogés dans une autre de leurs communautés, ou dans « Sans communauté ».</li>
-                        <li>Rien n’est effacé : unités, effectifs, documents, ATAK, forum restent en base. « Restaurer » remet toutes les appartenances.</li>
+                        <li>Rien n’est effacé : unités, effectifs, documents, ATAK restent en base. « Restaurer » remet toutes les appartenances.</li>
                     </ul>
                     <?php if ($archiveBlockers !== []): ?>
                         <?php foreach ($archiveBlockers as $b): ?>
@@ -152,7 +153,7 @@ $err = \App\Core\Session::getFlash('error');
                 <h2 id="delete-heading" class="pa-card__title">Supprimer définitivement</h2>
                 <ul class="pa-card__help" style="margin:.5rem 0 0 1.1rem;list-style:disc;">
                     <li>Une sauvegarde complète (toutes les lignes de la communauté, format JSON compressé) est écrite dans <code>storage/private/tenant-deletions</code> avant toute suppression. Si elle échoue, rien n’est supprimé.</li>
-                    <li>Supprimé : la fiche de la communauté et tout ce qui y est rattaché en cascade (unités, effectifs, grades, documents, formations, ATAK, forum, réglages…), soit les tables marquées « Supprimé » ci-dessous.</li>
+                    <li>Supprimé : la fiche de la communauté et tout ce qui y est rattaché en cascade (unités, effectifs, grades, documents, formations, ATAK, réglages…), soit les tables marquées « Supprimé » ci-dessous.</li>
                     <li>Conservé : les comptes des joueurs (relogés avant), le journal d’administration, les fichiers envoyés sur le disque (images, documents), les paiements déjà passés chez le prestataire.</li>
                     <li>L’adresse courte « <?= $h($slug) ?> » redevient libre.</li>
                 </ul>

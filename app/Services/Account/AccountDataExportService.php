@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Account;
 
 use App\Repositories\CommunityEventRepository;
-use App\Repositories\ForumPostRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\TenantMessageRepository;
 use App\Repositories\TrainingCertificateRepository;
@@ -17,7 +16,7 @@ use ZipArchive;
 
 /**
  * Export « mes données » en self-service (RGPD) : profil, dossier personnel, formations,
- * participations aux événements, messages du forum et internes — au format ZIP de fichiers
+ * participations aux événements et messages internes — au format ZIP de fichiers
  * CSV, réutilise l'idiome déjà en place pour l'export de conformité LMS
  * (ComplianceBundleExportController).
  */
@@ -31,7 +30,6 @@ final class AccountDataExportService
         private TrainingEnrollmentRepository $trainingEnrollmentRepository,
         private TrainingCertificateRepository $trainingCertificateRepository,
         private CommunityEventRepository $communityEventRepository,
-        private ForumPostRepository $forumPostRepository,
         private TenantMessageRepository $tenantMessageRepository,
     ) {}
 
@@ -52,7 +50,6 @@ final class AccountDataExportService
         $zip->addFromString('profil.csv', $this->profileCsv($userId, $tenantId));
         $zip->addFromString('formations.csv', $this->trainingCsv($userId, $tenantId));
         $zip->addFromString('evenements.csv', $this->eventsCsv($userId, $tenantId));
-        $zip->addFromString('forum.csv', $this->forumCsv($userId, $tenantId));
         $zip->addFromString('messages.csv', $this->messagesCsv($userId, $tenantId));
         $zip->addFromString('lisez_moi.txt', $this->readme());
         $zip->close();
@@ -69,7 +66,7 @@ final class AccountDataExportService
             . "Généré le " . date('d/m/Y H:i') . ".\n\n"
             . "Ce dossier contient les données que vous avez fournies ou générées sur cette "
             . "communauté : profil, dossier personnel, formations, participations aux "
-            . "événements, messages du forum et messages internes.\n\n"
+            . "événements et messages internes.\n\n"
             . "Pour une demande de rectification, d'effacement complet ou toute autre demande "
             . "RGPD, utilisez le formulaire dédié depuis la page « Mentions légales » du site.\n";
     }
@@ -167,13 +164,6 @@ final class AccountDataExportService
             ['Événement', 'Date', 'Participation', 'Motif d’absence', 'Pointage', 'Répondu le'],
             ['event_title', 'starts_at', 'status', 'absence_reason', 'checked_in_at', 'created_at']
         );
-    }
-
-    private function forumCsv(int $userId, int $tenantId): string
-    {
-        $rows = $this->forumPostRepository->listByUserId($userId, $tenantId);
-
-        return $this->csvFromRows($rows, ['Sujet', 'Message', 'Publié le'], ['topic_title', 'body', 'created_at']);
     }
 
     private function messagesCsv(int $userId, int $tenantId): string

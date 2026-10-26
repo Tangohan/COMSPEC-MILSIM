@@ -64,8 +64,8 @@ if ($dsn !== '') {
       FROM roles r ORDER BY r.tenant_id,r.id")->fetchAll(PDO::FETCH_ASSOC);
     file_put_contents($out . '/roles-existing.json', json_encode(['generated_at' => gmdate(DATE_ATOM), 'roles' => $roles], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     $csv = fopen($out . '/roles-existing.csv', 'wb');
-    fputcsv($csv, ['id','tenant_id','name','slug','created_at','origin','permissions','assigned_users']);
-    foreach ($roles as $role) { fputcsv($csv, $role); }
+    fputcsv($csv, ['id','tenant_id','name','slug','created_at','origin','permissions','assigned_users'], ',', '"', '\\');
+    foreach ($roles as $role) { fputcsv($csv, $role, ',', '"', '\\'); }
     fclose($csv);
 }
 echo "Audit written to {$out}\n";

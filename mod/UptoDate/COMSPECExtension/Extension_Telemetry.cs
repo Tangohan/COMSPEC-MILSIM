@@ -91,6 +91,8 @@ public static partial class Extension
         var eventJson = (args[3] ?? "").Trim();
         if (eventJson.Length < 2 || eventJson[0] != '{')
             return "ERR|json";
+        if (!DataFlowAllowsType(type))
+            return "OK|flow_off";
 
         // Garantir "t" dans le JSON.
         if (!eventJson.Contains("\"t\"", StringComparison.Ordinal))
@@ -553,6 +555,7 @@ public static partial class Extension
             if (code == 403)
             {
                 NoteAccessDenied(response, url);
+                NoteRefusal(url, 403, RefusalBody(response));
                 RequeueTelemetryItems(items);
                 Interlocked.Increment(ref _telemetryBatchFail);
                 return true;
@@ -570,6 +573,9 @@ public static partial class Extension
             {
                 // Réponse jointe : la raison d'Athena (ex. invalid_steam_uid) reste dans le journal au lieu de « 400|…|0 ».
                 NotePostError(code, url, response);
+                // 401 : vérifier la clé une fois (client-init) ; refusée → verrou, plus de lot chaque seconde.
+                if (code == 401)
+                    NoteRefusal(url, 401, RefusalBody(response));
                 if (ShouldRetryStatusCode(code))
                     RequeueTelemetryItems(items);
                 else
@@ -589,7 +595,11 @@ public static partial class Extension
         {
             Interlocked.Exchange(ref _telemetryLastLatencyMs, Math.Max(0, Environment.TickCount64 - started));
             JournalHttp(DateTime.UtcNow.Ticks - Math.Max(0, Environment.TickCount64 - started) * TimeSpan.TicksPerMillisecond, -1);
-            NoteTransientPostFailure(-1, url, payload, response: null);
+            // Pas de EnqueueForRetry du lot : les événements reviennent dans P0-P3 (filtre des 120 s compris) ;
+            // une copie figée du lot, rejouée plus tard, doublait des positions périmées.
+            NotePostError(-1, url);
+            if (IsBestEffortEndpoint(url)) NoteBestEffortCooldown();
+            else NoteNetworkHiccup();
             RequeueTelemetryItems(items);
             Interlocked.Increment(ref _telemetryBatchFail);
             return true;
@@ -637,8 +647,30 @@ public static partial class Extension
 
     private static void RequeueTelemetryItems(List<TelemetryItem> items)
     {
+        // Remise en file sans OfferTelemetry : l'âge d'origine est gardé (abandon au-delà de 120 s), et un état
+        // plus récent offert par le SQF pendant l'envoi (même clé P1/P2) n'est pas écrasé par l'ancien.
         foreach (var it in items)
-            OfferTelemetry(it.Priority, it.Type, it.CoalesceKey, it.EventJson, it.FallbackUrl, it.FallbackBody);
+        {
+            NoteOldestEnqueue(it.EnqueuedAtMs);
+            switch (it.Priority)
+            {
+                case 0:
+                    if (TelemetryP0.Count >= TelemetryP0Max) { Interlocked.Increment(ref _telemetryDropped); break; }
+                    TelemetryP0.Enqueue(it);
+                    break;
+                case 1:
+                    TelemetryP1.TryAdd(it.CoalesceKey, it);
+                    break;
+                case 2:
+                    TelemetryP2.TryAdd(it.CoalesceKey, it);
+                    break;
+                default:
+                    if (TelemetryP3.Count >= TelemetryP3Max) { Interlocked.Increment(ref _telemetryDropped); break; }
+                    TelemetryP3.Enqueue(it);
+                    break;
+            }
+        }
+        EnsureDrainTimer();
     }
 
     private static void FallbackTelemetryUnitary(List<TelemetryItem> items)

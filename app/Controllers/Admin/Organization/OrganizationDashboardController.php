@@ -900,19 +900,18 @@ class OrganizationDashboardController
         ];
         $missingMediaUsers = is_array($mediaScan['users'] ?? null) ? $mediaScan['users'] : [];
 
-        $actionableAlerts = [];
-        if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()) {
-            $actionableAlerts[] = [
+        $actionableAlerts = [
+            [
                 'id' => 'moderation_open',
                 'type' => 'Contenu',
-                'title' => 'Signalements modération à traiter',
+                'title' => 'Signalements membres à traiter',
                 'impact_score' => min(100, 30 + ($moderationOpen * 6)),
                 'sla_label' => 'SLA: 4h',
                 'count' => $moderationOpen,
-                'link' => url('back-office/forum-moderation'),
+                'link' => url('back-office/signalements'),
                 'cta' => 'Traiter maintenant',
-            ];
-        }
+            ],
+        ];
         $actionableAlerts = array_merge($actionableAlerts, [
             [
                 'id' => 'alerts_active',
@@ -1223,7 +1222,7 @@ class OrganizationDashboardController
             'roles' => $roleRepository->forTenantOrganization($tenantId),
             'roleMatrix' => $roleRepository->organizationRolesPermissionMatrix($tenantId),
             'grades' => $gradeRepository->listActiveForDoctrinePicker($tenantId),
-            'gradeCategories' => $gradeCategoryRepository->listActive(),
+            'gradeCategories' => $gradeCategoryRepository->listForTenant($tenantId),
             'organizationRoleLabelMode' => $organizationRoleLabelMode,
             'steamWebConfigured' => \App\Core\Container::get(\App\Services\Steam\SteamWebApiService::class)->isConfigured(),
         ]);

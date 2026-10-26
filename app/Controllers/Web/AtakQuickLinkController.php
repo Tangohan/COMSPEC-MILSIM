@@ -29,14 +29,24 @@ final class AtakQuickLinkController
     public function show(Request $request, array $params = []): Response
     {
         $code = self::cleanCode((string) $request->query('code', ''));
-        if (!Session::get('user_id')) {
-            // Le code de l’adresse est perdu par la redirection de connexion : on le garde en session.
+        $userId = (int) Session::get('user_id');
+        if ($userId < 1) {
+            // Page dédiée aussi pour un visiteur non connecté (QR code scanné sur son téléphone) : le code est gardé
+            // en session, la connexion ramène ici, et le joueur voit d'abord ce qu'il est en train de faire.
             if ($code !== '') {
                 Session::set(self::PENDING_CODE_KEY, $code);
+            } else {
+                $code = self::cleanCode((string) Session::get(self::PENDING_CODE_KEY, ''));
             }
             LoginIntendedDestination::rememberFromRequest($request);
 
-            return Response::redirect(url('login'));
+            return Response::view('link.lier', [
+                'title' => 'Lier le jeu',
+                'guest' => true,
+                'code' => $code,
+                'loginUrl' => url('login'),
+                'registerUrl' => url('register'),
+            ]);
         }
         if ($code === '') {
             $code = self::cleanCode((string) Session::get(self::PENDING_CODE_KEY, ''));
@@ -46,14 +56,15 @@ final class AtakQuickLinkController
         $gameRequest = null;
         if (!$linked && $code !== '') {
             $this->pairing ??= Container::get(GameAtakPairingService::class);
-            $gameRequest = $this->pairing->describePending($code, (int) Session::get('user_id'), (int) Session::get('tenant_id'));
+            $gameRequest = $this->pairing->describePending($code, $userId, (int) Session::get('tenant_id'));
         }
 
-        return Response::view('layout.main', [
+        return Response::view('link.lier', [
             'title' => 'Lier le jeu',
-            'content' => 'account.game_link',
-            'accountHubPage' => true,
+            'guest' => false,
             'code' => $code,
+            'account' => self::accountLabel(),
+            'community' => self::communityName((int) Session::get('tenant_id')),
             'gameRequest' => $gameRequest,
             'watch' => $linked ? (int) Session::get(self::WATCH_KEY, 0) : 0,
             'steamMoved' => $linked ? (int) Session::getFlash('atak_quick_link_moved') : 0,
@@ -61,6 +72,33 @@ final class AtakQuickLinkController
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
+    }
+
+    /** Compte connecté, tel qu'il sera rattaché au jeu (indicatif, sinon nom, sinon e-mail). */
+    private static function accountLabel(): string
+    {
+        foreach (['callsign', 'display_name', 'email'] as $key) {
+            $v = trim((string) Session::get($key, ''));
+            if ($v !== '') {
+                return $v;
+            }
+        }
+
+        return '';
+    }
+
+    private static function communityName(int $tenantId): string
+    {
+        if ($tenantId < 1) {
+            return '';
+        }
+        try {
+            $tenant = Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
+        } catch (\Throwable) {
+            return '';
+        }
+
+        return is_array($tenant) ? trim((string) ($tenant['name'] ?? '')) : '';
     }
 
     public function confirm(Request $request, array $params = []): Response

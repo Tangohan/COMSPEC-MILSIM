@@ -17,7 +17,7 @@ use App\Support\DiscordWebhookCatalog;
  * Salon : celui que la communauté du joueur a choisi dans Back-office > Intégrations > Relais Discord,
  * « Check de démarrage du mod » (désactivé par défaut). La communauté est reconnue au nom que le jeu envoie une fois
  * le joueur lié (« lié · Nom »), ou au champ « community » ; un nom porté par deux communautés n'est relayé nulle part.
- * Copie plateforme (facultative, Intégrations > Plateforme ; ancien .env DISCORD_DEBUG_WEBHOOK) : copie de tous les checks pour l'équipe de développement de la plateforme,
+ * Copie plateforme (facultative, Administration › Intégrations de la plateforme ; ancien .env DISCORD_DEBUG_WEBHOOK) : copie de tous les checks pour l'équipe de développement de la plateforme,
  * y compris ceux des joueurs non liés. Sans salon, le rapport est accepté et rien n'est posté.
  * Rien n'est enregistré en base. Aucune adresse IP, aucun UID Steam (le mod n'envoie qu'une empreinte), aucun lien :
  * les textes du mod sont nettoyés (liens, adresses IP, dossier utilisateur Windows, mentions) avant Discord.
@@ -60,8 +60,8 @@ final class AtakStartupCheckService
      */
     public const LINK_FIXES = [
         'STEAM_NOT_LINKED' => [
-            'Ce Steam n\'est relié à aucun compte Athena (un profil Steam privé n\'est pas en cause). Le joueur le relie une fois : téléphone > app Athena > OBTENIR MON CODE, puis il saisit le code sur athena.ttrd.fr/lier, connecté à son compte. Ou sur le site : Mon compte > Préférences > Se connecter avec Steam.',
-            'This Steam account is not linked to any Athena account (a private Steam profile is not the issue). The player links it once: phone > Athena app > GET MY CODE, then enters the code at athena.ttrd.fr/lier while signed in. Or on the site: My account > Preferences > Sign in with Steam.',
+            'Ce Steam n\'est relié à aucun compte Athena (un profil Steam privé n\'est pas en cause). Le joueur le relie une fois : téléphone > app Athena > OBTENIR MON CODE, puis il saisit le code sur %LIER%, connecté à son compte. Ou sur le site : Mon compte > Préférences > Se connecter avec Steam.',
+            'This Steam account is not linked to any Athena account (a private Steam profile is not the issue). The player links it once: phone > Athena app > GET MY CODE, then enters the code at %LIER% while signed in. Or on the site: My account > Preferences > Sign in with Steam.',
         ],
         'NO_TENANT' => [
             'Le compte Athena n\'est membre d\'aucune communauté active : un responsable doit l\'accepter dans sa communauté.',
@@ -210,7 +210,7 @@ final class AtakStartupCheckService
         return mb_strlen($raw) <= 120 ? $raw : '';
     }
 
-    /** Copie plateforme : salon réglé dans Intégrations > Plateforme (ancien .env DISCORD_DEBUG_WEBHOOK en secours). */
+    /** Copie plateforme : salon réglé dans Administration › Intégrations de la plateforme (ancien .env DISCORD_DEBUG_WEBHOOK en secours). */
     public static function configuredWebhook(): string
     {
         return \App\Services\Platform\PlatformIntegrationSettings::webhook(\App\Services\Platform\PlatformIntegrationSettings::STARTUP_CHECK);
@@ -360,7 +360,10 @@ final class AtakStartupCheckService
             $detail = strtoupper(str_replace('\\', '', $step['detail']));
             foreach (self::LINK_FIXES as $code => $fix) {
                 if (preg_match('/(?<![A-Z_])(?:C2_)?' . $code . '(?![A-Z_])/', $detail) === 1) {
-                    return $fix;
+                    // %LIER% : adresse /lier du portail (APP_URL), pas de domaine en dur.
+                    $lier = \App\Support\PortalHost::label('lier');
+
+                    return [str_replace('%LIER%', $lier, $fix[0]), str_replace('%LIER%', $lier, $fix[1])];
                 }
             }
         }

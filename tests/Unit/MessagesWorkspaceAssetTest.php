@@ -27,6 +27,7 @@ final class MessagesWorkspaceAssetTest extends TestCase
         self::assertStringContainsString('listInboxThreadsForUser', $controller);
         self::assertStringContainsString('markThreadRead', $controller);
         self::assertStringContainsString('assets/js/messages.js', $layout);
+        self::assertStringContainsString('empty($isPlatformAdminShell) && empty($messagesPage)', $layout);
         self::assertStringContainsString("'path' => 'messages'", $pages);
 
         // Deux colonnes : la liste est partagée par l’accueil et le fil.
@@ -36,7 +37,9 @@ final class MessagesWorkspaceAssetTest extends TestCase
         self::assertStringContainsString('data-msg-filter="unread"', $inbox);
         self::assertStringContainsString('data-msg-compose', $inbox);
         self::assertStringContainsString('data-msg-stream', $thread);
+        self::assertStringContainsString('msgx-bubble__text', $thread);
         self::assertStringContainsString('msgx-back', $thread);
+        self::assertStringContainsString('Cette conversation est introuvable.', $controller);
 
         // CSRF conservé sur les deux formulaires.
         self::assertStringContainsString('Csrf::field()', $index);
@@ -49,5 +52,6 @@ final class MessagesWorkspaceAssetTest extends TestCase
         self::assertStringContainsString("normalize('NFD')", $js);
         self::assertStringContainsString('e.ctrlKey || e.metaKey', $js);
         self::assertStringContainsString('data-msg-unread', $js);
+        self::assertStringNotContainsString('documentElement.scrollHeight', $js);
     }
 }

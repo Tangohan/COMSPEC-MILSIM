@@ -197,16 +197,6 @@ final class CooperationDictionary
         };
     }
 
-    /** Libellé métier pour un type d’autorisation forum stocké en base. */
-    public static function forumGrantTypeLabel(string $grantType): string
-    {
-        return match ($grantType) {
-            'topic' => 'Espace d’échange lié',
-            'category' => 'Rubrique partagée',
-            default => 'Autorisation d’accès',
-        };
-    }
-
     /** @return array<string, string> slug => libellé */
     public static function typologyChoices(): array
     {
@@ -317,28 +307,6 @@ final class CooperationDictionary
     public static function isSensitiveDataFamily(string $key): bool
     {
         return in_array($key, ['identity', 'qualification', 'cert_excerpt'], true);
-    }
-
-    public static function exchangeLockModeLabel(string $mode): string
-    {
-        return match ($mode) {
-            'none' => 'Aucun verrou supplémentaire',
-            'full' => 'Espace commun en consultation seule pour tous',
-            'main_only' => 'Fil principal : partenaires en consultation seule',
-            'after_close' => 'Verrou renforcé après clôture',
-            default => 'Autre mode',
-        };
-    }
-
-    /** @return array<string, string> */
-    public static function exchangeLockModeChoices(): array
-    {
-        return [
-            'none' => self::exchangeLockModeLabel('none'),
-            'full' => self::exchangeLockModeLabel('full'),
-            'main_only' => self::exchangeLockModeLabel('main_only'),
-            'after_close' => self::exchangeLockModeLabel('after_close'),
-        ];
     }
 
     /** @return array<string, string> */

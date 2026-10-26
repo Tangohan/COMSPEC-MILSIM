@@ -7,7 +7,7 @@ namespace App\Controllers\Admin\System;
 use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\AuditLogRepository;
-use App\Repositories\ForumReportRepository;
+use App\Repositories\ContentReportRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
@@ -18,13 +18,13 @@ class SystemDashboardController
     public function __construct(
         private ?AdminDashboardMetricsService $metrics = null,
         private ?AuditLogRepository $auditLogs = null,
-        private ?ForumReportRepository $forumReports = null,
+        private ?ContentReportRepository $contentReports = null,
         private ?ModerationArtifactRepository $moderationArtifacts = null,
         private ?TenantAnalyticsRepository $tenantAnalytics = null,
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
-        $this->forumReports ??= new ForumReportRepository();
+        $this->contentReports ??= new ContentReportRepository();
         $this->moderationArtifacts ??= new ModerationArtifactRepository();
         $this->tenantAnalytics ??= new TenantAnalyticsRepository();
     }
@@ -40,14 +40,14 @@ class SystemDashboardController
             $recentError = 'Activité récente indisponible.';
         }
 
-        $forumPendingTotal = 0;
-        $forumPendingByTenant = [];
-        $forumModerationSnapshotError = null;
+        $reportsPendingTotal = 0;
+        $reportsPendingByTenant = [];
+        $reportsSnapshotError = null;
         try {
-            $forumPendingTotal = $this->forumReports->countPendingAllTenants();
-            $forumPendingByTenant = $this->forumReports->pendingCountTopTenants(6);
+            $reportsPendingTotal = $this->contentReports->countPendingAllTenants();
+            $reportsPendingByTenant = $this->contentReports->pendingCountTopTenants(6);
         } catch (\Throwable) {
-            $forumModerationSnapshotError = 'Les totaux de signalements forum ne sont pas disponibles pour le moment.';
+            $reportsSnapshotError = 'Les totaux de signalements ne sont pas disponibles pour le moment.';
         }
 
         $contentQueueTotal = 0;
@@ -63,7 +63,7 @@ class SystemDashboardController
         }
 
         $auditContentActions = [
-            AuditAction::FORUM_MODERATION,
+            AuditAction::REPORT_MODERATION,
             AuditAction::MODERATION_ACTION,
             AuditAction::MODERATION_REVOKED,
         ];
@@ -109,9 +109,9 @@ class SystemDashboardController
             'adminPlatformEnvRaw' => $appEnv,
             'adminPlatformEnvLabel' => $adminPlatformEnvLabel,
             'adminHealthCheckUrl' => url('api/health'),
-            'adminForumPendingTotal' => $forumPendingTotal,
-            'adminForumPendingByTenant' => $forumPendingByTenant,
-            'adminForumModerationSnapshotError' => $forumModerationSnapshotError,
+            'adminReportsPendingTotal' => $reportsPendingTotal,
+            'adminReportsPendingByTenant' => $reportsPendingByTenant,
+            'adminReportsSnapshotError' => $reportsSnapshotError,
             'adminContentQueueTotal' => $contentQueueTotal,
             'adminContentQueueByTenant' => $contentQueueByTenant,
             'adminContentQueueSnapshotError' => $contentQueueSnapshotError,

@@ -12,7 +12,7 @@ declare(strict_types=1);
  *  - des formations ultra-rapides publiées
  *  - des inscriptions + avancements LMS (tableau de bord « formations prioritaires »)
  *  - des offres de recrutement publiées + candidatures (pipeline)
- *  - des annonces (alertes, mur recruteurs, sujet forum)
+ *  - des annonces (alertes, mur recruteurs)
  *  - des événements à venir
  *  - des alertes communauté + une alerte plateforme
  *  - une situation tactique fake pour ATAK + Overwatch (Altis)
@@ -39,9 +39,6 @@ use App\Repositories\CommunityEventRepository;
 use App\Repositories\DangerZoneRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\FireUnitRepository;
-use App\Repositories\ForumCategoryRepository;
-use App\Repositories\ForumPostRepository;
-use App\Repositories\ForumTopicRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\IffAssetStatusRepository;
 use App\Repositories\IffChallengeRepository;
@@ -334,7 +331,7 @@ $demoCourses = [
         'lessons' => [
             [
                 'title' => 'Ce que vous trouverez ici',
-                'content' => '<p>Forum, documents, formations, événements et alertes : ce parcours montre le fil conducteur d’un nouvel arrivant.</p>',
+                'content' => '<p>Documents, formations, événements et alertes : ce parcours montre le fil conducteur d’un nouvel arrivant.</p>',
                 'minutes' => 4,
             ],
         ],
@@ -660,7 +657,7 @@ demo_seed_training_progress($pdo, $tenantId, $authorId, $userIdsByEmail);
 // ----- Offres, postes & candidatures -----
 demo_seed_recruitment($pdo, $tenantId, $authorId, $userIdsByEmail, $tenants);
 
-// ----- Annonces (alertes + mur recruteurs + forum) -----
+// ----- Annonces (alertes + mur recruteurs) -----
 demo_seed_announcements($pdo, $tenantId, $authorId, $userIdsByEmail, $tenantAlerts);
 
 // ----- ATAK + Overwatch (situation tactique fake) -----
@@ -1563,7 +1560,7 @@ function demo_seed_recruitment(PDO $pdo, int $tenantId, int $authorId, array $us
             'mission_lead' => 'Appuyer la force démo sur le terrain fictif Altis.',
             'responsibility_blocks' => [
                 ['title' => 'Sur le terrain', 'items' => ['Exécuter les consignes de section', 'Remonter les incidents']],
-                ['title' => 'Hors session', 'items' => ['Lire les briefings', 'Participer au forum']],
+                ['title' => 'Hors session', 'items' => ['Lire les briefings', 'Lire les annonces']],
             ],
         ]);
         $openings->publish($oid, $tenantId, $tenant, $settings, $unit);
@@ -1696,7 +1693,7 @@ function demo_seed_recruitment(PDO $pdo, int $tenantId, int $authorId, array $us
 }
 
 /**
- * Annonces démo : alerte communauté, mur recruteurs, sujet forum.
+ * Annonces démo : alerte communauté, mur recruteurs.
  *
  * @param array<string, int> $userIdsByEmail
  */
@@ -1712,7 +1709,7 @@ function demo_seed_announcements(
         [
             'kind' => 'info',
             'title' => 'Annonce : session d’accueil vendredi',
-            'body' => 'Rendez-vous fictif pour les nouveaux arrivants. Présentation du portail, du forum et des formations flash.',
+            'body' => 'Rendez-vous fictif pour les nouveaux arrivants. Présentation du portail et des formations flash.',
             'cta_label' => 'Voir les événements',
             'cta_url' => 'evenements',
             'sort_order' => 20,
@@ -1792,62 +1789,6 @@ function demo_seed_announcements(
         }
     }
 
-    // --- Sujet forum (annonce) ---
-    $forumChk = $pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_topics' LIMIT 1");
-    if (!$forumChk || !$forumChk->fetchColumn()) {
-        echo "[OK] Annonces portail / mur synchronisées\n";
-
-        return;
-    }
-    try {
-        /** @var ForumCategoryRepository $cats */
-        $cats = Container::get(ForumCategoryRepository::class);
-        /** @var ForumTopicRepository $topics */
-        $topics = Container::get(ForumTopicRepository::class);
-        /** @var ForumPostRepository $posts */
-        $posts = Container::get(ForumPostRepository::class);
-        $root = $cats->findOrganizationRoot($tenantId);
-        if (!$root) {
-            $list = $cats->listForTenant($tenantId);
-            $root = $list[0] ?? null;
-        }
-        if (!$root || $authorId < 1) {
-            echo "[OK] Annonces (forum ignoré — pas de rubrique)\n";
-
-            return;
-        }
-        $catId = (int) $root['id'];
-        $title = '[Démo] Annonce — ouverture des postes';
-        $slug = 'demo-annonce-ouverture-postes';
-        $chkT = $pdo->prepare('SELECT id FROM forum_topics WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $chkT->execute([$tenantId, $slug]);
-        if ($chkT->fetchColumn()) {
-            echo "  [SKIP] Sujet forum « {$title} »\n";
-        } else {
-            $topicId = $topics->create($tenantId, $catId, $authorId, $title, $slug, [
-                'mandatory_read' => false,
-            ]);
-            $posts->create(
-                $tenantId,
-                $topicId,
-                $authorId,
-                "Bonjour à toutes et tous,\n\n"
-                . "Pour la démonstration du portail, trois postes fictifs sont ouverts au recrutement "
-                . "(transmissions, OPSAN, cadre de section).\n\n"
-                . "Les candidatures de démo sont déjà dans le pipeline pour illustrer l’instruction des dossiers.\n\n"
-                . "— État-major Force Démo COMSPEC"
-            );
-            // Pin si colonne dispo
-            try {
-                $pdo->prepare('UPDATE forum_topics SET is_pinned = 1 WHERE id = ? AND tenant_id = ?')
-                    ->execute([$topicId, $tenantId]);
-            } catch (Throwable) {
-            }
-            echo "  [OK] Annonce forum « {$title} » (#{$topicId})\n";
-        }
-    } catch (Throwable $e) {
-        echo "  [ATTENTION] Forum annonce : " . $e->getMessage() . "\n";
-    }
     echo "[OK] Annonces démo synchronisées\n";
 }
 

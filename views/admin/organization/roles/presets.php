@@ -39,7 +39,7 @@ $kitCount = count($customPresetKits);
     <p class="ath-note__title" style="color:#8a5a06;">Toujours exclus des profils automatiques</p>
     <p class="ath-note__text" style="color:#8a5a06;">
         Aucun profil ci-dessous n’accorde les habilitations réservées à l’administration de la plateforme
-        pour l’ensemble des communautés, ni la modération forum au niveau global. Cette exclusion est appliquée
+        pour l’ensemble des communautés, ni la modération au niveau global. Cette exclusion est appliquée
         par le service lui-même, pas par cet écran : elle ne peut pas être contournée depuis ici.
     </p>
 </div>

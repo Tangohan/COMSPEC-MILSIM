@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Community;
 
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Repositories\SiteRoleAssignmentRepository;
 use App\Repositories\TenantCommunityFeedRepository;
 use App\Repositories\TenantRepository;
@@ -22,7 +22,7 @@ final class CommunityReportNotificationService
         private EmailService $emailService,
         private UserRepository $userRepository,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
-        private ForumNotificationRepository $forumNotificationRepository,
+        private MemberNotificationRepository $memberNotificationRepository,
         private TenantCommunityFeedRepository $tenantCommunityFeedRepository,
         private TenantRepository $tenantRepository,
         private SiteRoleAssignmentRepository $siteRoleAssignmentRepository,
@@ -71,14 +71,14 @@ final class CommunityReportNotificationService
         $kind = strtolower(trim((string) $contentKind));
         $siteAdminOnly = $kind === 'site_support_request';
 
-        $modIds = $siteAdminOnly ? [] : $this->userRepository->listForumAlertRecipientUserIds($tenantId);
+        $modIds = $siteAdminOnly ? [] : $this->userRepository->listReportAlertRecipientUserIds($tenantId);
         foreach ($modIds as $modUserId) {
             if ($modUserId < 1 || $modUserId === $reporterId) {
                 continue;
             }
-            if ($this->forumNotificationRepository->tableExists()) {
+            if ($this->memberNotificationRepository->tableExists()) {
                 try {
-                    $this->forumNotificationRepository->create($tenantId, $modUserId, 'report_opened', [
+                    $this->memberNotificationRepository->create($tenantId, $modUserId, 'report_opened', [
                         'report_id' => $reportId,
                         'summary' => $summary,
                     ]);
@@ -202,7 +202,7 @@ final class CommunityReportNotificationService
                     default => 'Nouveau signalement',
                 },
                 $summary,
-                \url('back-office/forum-moderation'),
+                \url('back-office/signalements'),
                 $reporterId > 0 ? $reporterId : null
             );
         } catch (\Throwable) {
@@ -244,9 +244,9 @@ final class CommunityReportNotificationService
             }
         }
 
-        if ($this->forumNotificationRepository->tableExists()) {
+        if ($this->memberNotificationRepository->tableExists()) {
             try {
-                $this->forumNotificationRepository->create($tenantId, $reporterId, 'report_closed', [
+                $this->memberNotificationRepository->create($tenantId, $reporterId, 'report_closed', [
                     'report_id' => $reportId,
                 ]);
             } catch (\Throwable) {
@@ -255,7 +255,7 @@ final class CommunityReportNotificationService
     }
 
     /**
-     * Dossier rouvert : alerte modérateurs (e-mail + notification forum) et option signaleur.
+     * Dossier rouvert : alerte modérateurs (e-mail + notification membre) et option signaleur.
      *
      * @param non-empty-string $summaryLine
      */
@@ -278,14 +278,14 @@ final class CommunityReportNotificationService
             $tenantName = community_display_name($tenant);
         }
 
-        $modIds = $this->userRepository->listForumAlertRecipientUserIds($tenantId);
+        $modIds = $this->userRepository->listReportAlertRecipientUserIds($tenantId);
         foreach ($modIds as $modUserId) {
             if ($modUserId < 1 || $modUserId === $reopenedByUserId) {
                 continue;
             }
-            if ($this->forumNotificationRepository->tableExists()) {
+            if ($this->memberNotificationRepository->tableExists()) {
                 try {
-                    $this->forumNotificationRepository->create($tenantId, $modUserId, 'report_reopened', [
+                    $this->memberNotificationRepository->create($tenantId, $modUserId, 'report_reopened', [
                         'report_id' => $reportId,
                         'summary' => $summary,
                     ]);
@@ -357,9 +357,9 @@ final class CommunityReportNotificationService
                     } catch (\Throwable) {
                     }
                 }
-                if ($this->forumNotificationRepository->tableExists()) {
+                if ($this->memberNotificationRepository->tableExists()) {
                     try {
-                        $this->forumNotificationRepository->create($tenantId, $reporterId, 'report_reopened_reporter', [
+                        $this->memberNotificationRepository->create($tenantId, $reporterId, 'report_reopened_reporter', [
                             'report_id' => $reportId,
                             'summary' => $summary,
                         ]);
@@ -376,7 +376,7 @@ final class CommunityReportNotificationService
                     'moderation_report',
                     'Dossier de signalement rouvert',
                     $this->truncateOneLine($internalNote, 400),
-                    \url('back-office/forum-moderation'),
+                    \url('back-office/signalements'),
                     $reopenedByUserId > 0 ? $reopenedByUserId : null
                 );
             } catch (\Throwable) {

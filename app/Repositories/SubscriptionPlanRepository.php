@@ -12,6 +12,14 @@ class SubscriptionPlanRepository
 {
     private PDO $pdo;
 
+    /**
+     * Formules déjà lues pendant la requête web (allows puis allowsBasic sur chaque appel du jeu).
+     * Vidé par update() / updatePrices() ; désactivé en CLI comme TenantRepository::findById.
+     *
+     * @var array<string, array<string, mixed>|null>
+     */
+    private array $findBySlugCache = [];
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -19,11 +27,20 @@ class SubscriptionPlanRepository
 
     public function findBySlug(string $slug): ?array
     {
+        $useCache = PHP_SAPI !== 'cli';
+        if ($useCache && array_key_exists($slug, $this->findBySlugCache)) {
+            return $this->findBySlugCache[$slug];
+        }
         $slugEq = SqlText::equals($this->pdo, 'slug');
         $stmt = $this->pdo->prepare('SELECT * FROM subscription_plans WHERE ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        $row = $row ?: null;
+        if ($useCache) {
+            $this->findBySlugCache[$slug] = $row;
+        }
+
+        return $row;
     }
 
     /** @return list<array<string, mixed>> */
@@ -73,6 +90,7 @@ class SubscriptionPlanRepository
      */
     public function update(int $id, array $data): bool
     {
+        $this->findBySlugCache = [];
         if ($id < 1) {
             return false;
         }
@@ -124,6 +142,21 @@ class SubscriptionPlanRepository
             $data['stripe_price_id_yearly'],
             $id,
         ]);
+    }
+
+    /** Prix PayPal (centimes) ; sans effet tant que la migration des prix n’a pas tourné. */
+    public function updatePrices(int $id, ?int $monthlyCents, ?int $yearlyCents): bool
+    {
+        $this->findBySlugCache = [];
+        if ($id < 1) {
+            return false;
+        }
+        try {
+            return $this->pdo->prepare('UPDATE subscription_plans SET price_monthly_cents = ?, price_yearly_cents = ? WHERE id = ?')
+                ->execute([$monthlyCents, $yearlyCents, $id]);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function hasPayPalPlanColumns(): bool

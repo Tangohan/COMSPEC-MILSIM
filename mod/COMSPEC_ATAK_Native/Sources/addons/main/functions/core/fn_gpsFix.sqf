@@ -9,7 +9,11 @@
       - attente des satellites : téléphone allumé, rallumé ou batterie changée, le GPS cherche de 3 s (éteint moins de
         2 min) à environ 40 s (premier démarrage de la mission) ; en attendant, position approximative par le réseau
         (environ 150 m, sans réseau aucune) ;
-      - l'erreur dérive lentement (multitrajets) au lieu de sauter d'une mesure à l'autre.
+      - l'erreur dérive lentement (multitrajets) au lieu de sauter d'une mesure à l'autre ;
+      - pertes de fix (condition « gpsLoss », 0-200 %) : part des satellites masqués par le toit, les arbres, les immeubles
+        ou le relief qui compte vraiment (0 % : le fix tient partout, seule la précision baisse) ;
+      - fiabilité (condition « gpsRel » : 0 parfaite, 1 bonne, 2 moyenne, 3 médiocre) : décrochages du fix de 5 à 25 s et
+        sauts de position (multitrajets, 15 à 60 m, qui reviennent en 10 à 30 s), de jamais à environ une fois par minute.
     Recalculé au plus toutes les 2 s (6 s téléphone fermé). État dans missionNamespace : repart à chaque mission.
     Renvoie [erreur en mètres, état "FIX" | "ACQ" | "NOFIX" | "NET" | "OFF", satellites, [raisons (textes à traduire)],
              décalage de la position affichée [dx, dy, 0]].
@@ -41,7 +45,8 @@ private _res = call {
             case (diag_tickTime - _offAt < 120): { 2 + random 3 };
             default { 12 + random 13 };
         };
-        _until = diag_tickTime + _wait;
+        // Fiabilité médiocre : satellites plus longs à trouver.
+        _until = diag_tickTime + _wait * ([1, 1, 1.2, 1.5] select (((["gpsRel"] call comspec_atak_native_fnc_netCond) max 0) min 3));
         missionNamespace setVariable ["COMSPEC_ATAK_GpsAcqUntil", _until];
         missionNamespace setVariable ["COMSPEC_ATAK_GpsOffAt", nil];
     };
@@ -90,7 +95,30 @@ private _res = call {
             };
         };
     };
-    _sats = _sats max 0;
+    // Pertes de fix réglables : les satellites masqués ne comptent qu'en partie (ou en plus).
+    private _lossK = ((["gpsLoss"] call comspec_atak_native_fnc_netCond) max 0) / 100;
+    _sats = (12 - round ((12 - _sats) * _lossK)) max 0 min 12;
+    // Fiabilité : décrochages et sauts tirés selon le temps écoulé depuis le calcul précédent.
+    private _rel = ((["gpsRel"] call comspec_atak_native_fnc_netCond) max 0) min 3;
+    private _relAt = missionNamespace getVariable ["COMSPEC_ATAK_GpsRelAt", diag_tickTime];
+    private _dt = ((diag_tickTime - _relAt) max 0) min 30;
+    missionNamespace setVariable ["COMSPEC_ATAK_GpsRelAt", diag_tickTime];
+    // Événements par minute : bonne 1 toutes les 20 min, moyenne toutes les 6 min, médiocre toutes les 2 min.
+    private _rate = [0, 0.05, 0.17, 0.5] select _rel;
+    private _outUntil = missionNamespace getVariable ["COMSPEC_ATAK_GpsOutUntil", -1];
+    if (_rate > 0 && {diag_tickTime > _outUntil} && {random 1 < 1 - exp (-_rate * _dt / 60)}) then {
+        _outUntil = diag_tickTime + 5 + random 20;
+        missionNamespace setVariable ["COMSPEC_ATAK_GpsOutUntil", _outUntil];
+    };
+    private _jump = missionNamespace getVariable ["COMSPEC_ATAK_GpsJump", []];
+    if (_rate > 0 && {_jump isEqualTo []} && {random 1 < 1 - exp (-_rate * 0.5 * _dt / 60)}) then {
+        private _a = random 360;
+        private _m = 15 + random 45;
+        _jump = [[_m * sin _a, _m * cos _a, 0], diag_tickTime, 10 + random 20];
+        missionNamespace setVariable ["COMSPEC_ATAK_GpsJump", _jump];
+    };
+    private _out = diag_tickTime < _outUntil;
+    if (_out) then { _sats = _sats min 3; _why pushBack "Décrochage du signal GPS"; };
     private _last = missionNamespace getVariable ["COMSPEC_ATAK_GpsLast", []];
     // Dérive lente de l'erreur (marche aléatoire bornée).
     private _walk = missionNamespace getVariable ["COMSPEC_ATAK_GpsWalk", [0, 0, 0]];
@@ -136,8 +164,19 @@ private _res = call {
     private _m = vectorMagnitude _walk;
     if (_m > 0.8 * _err && {_m > 0}) then { _walk = _walk vectorMultiply (0.8 * _err / _m); };
     missionNamespace setVariable ["COMSPEC_ATAK_GpsWalk", _walk];
-    missionNamespace setVariable ["COMSPEC_ATAK_GpsLast", [_pos vectorAdd _walk, _err, diag_tickTime]];
-    [round _err, "FIX", _sats, _why, _walk]
+    // Saut de position en cours : décalage qui revient peu à peu vers zéro, compté dans l'erreur annoncée.
+    private _off = _walk;
+    if (_jump isNotEqualTo []) then {
+        _jump params ["_jv", "_jt", "_jd"];
+        private _f = 1 - (diag_tickTime - _jt) / _jd;
+        if (_f <= 0) then { missionNamespace setVariable ["COMSPEC_ATAK_GpsJump", []]; } else {
+            _off = _off vectorAdd (_jv vectorMultiply _f);
+            _err = _err + (vectorMagnitude _jv) * _f;
+            _why pushBack "Saut de position (reflets du signal)";
+        };
+    };
+    missionNamespace setVariable ["COMSPEC_ATAK_GpsLast", [_pos vectorAdd _off, _err, diag_tickTime]];
+    [round _err, "FIX", _sats, _why, _off]
 };
 missionNamespace setVariable ["COMSPEC_ATAK_GpsFix", [diag_tickTime, _res]];
 _res

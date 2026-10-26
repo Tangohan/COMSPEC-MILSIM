@@ -194,7 +194,7 @@ final class GameAtakPairingService
      * Ce que le jeu a demandé, montré sur /lier avant d'autoriser : le joueur vérifie que c'est bien son jeu
      * (un code reçu d'un tiers donnerait sa session à ce tiers).
      *
-     * @return array{state: string, steam: string, steam_elsewhere: bool, steam_here: bool, mod_version: string, asked_min: int, left_min: int}|null
+     * @return array{state: string, steam: string, steam_elsewhere: bool, steam_here: bool, mod_version: string, source: string, asked_min: int, left_min: int, left_sec: int}|null
      */
     public function describePending(string $userCode, int $userId, int $tenantId): ?array
     {
@@ -221,9 +221,28 @@ final class GameAtakPairingService
             'steam_here' => $owner !== null && (int) ($owner['id'] ?? 0) === $userId,
             'steam_elsewhere' => $owner !== null && (int) ($owner['id'] ?? 0) !== $userId,
             'mod_version' => (string) ($row['mod_version'] ?? ''),
+            'source' => self::requestSource((string) ($row['mod_version'] ?? '')),
             'asked_min' => max(0, intdiv(time() - $created, 60)),
             'left_min' => max(0, (int) ceil(($expires - time()) / 60)),
+            'left_sec' => max(0, $expires - time()),
         ];
+    }
+
+    /**
+     * D'où vient le code, d'après la version envoyée par le mod : « eden » (COMSPEC SSE, éditeur Eden),
+     * « overwatch » (pack Overwatch, numéro de version), « phone » (ATAK natif sans Overwatch, « native »).
+     */
+    public static function requestSource(string $modVersion): string
+    {
+        $v = strtolower(trim($modVersion));
+        if ($v === 'sse-eden' || str_starts_with($v, 'sse')) {
+            return 'eden';
+        }
+        if ($v !== '' && $v !== 'native' && preg_match('/^\d/', $v) === 1) {
+            return 'overwatch';
+        }
+
+        return 'phone';
     }
 
     /**

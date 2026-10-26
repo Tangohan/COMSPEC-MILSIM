@@ -6,6 +6,7 @@
     - AUTRES : tous les marqueurs Arma et des mods, en liste ;
     - durée (permanent, 10 min, 30 min, 1 h) et récents (derniers camp, type et couleur posés) ;
     - canal (Général par défaut), « plusieurs marqueurs » (la palette reste après VALIDER), « titre et note » après la pose ;
+    - TEXTE : nom du marqueur posé (vide : nom automatique ou modèle du réglage d'addon, fn_markerDrop) ;
     - en-tête : VALIDER pose au point choisi d'un clic droit (fn_markerPlace), replier, fermer ; le point choisi
       avec sa grille, sa distance, son azimut, son altitude et le lieu nommé le plus proche.
     Les icônes sont montrées sur des tuiles claires, dans la couleur qu'elles auront sur la carte.
@@ -266,6 +267,29 @@ _eb ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
 if (_edit) then { _eb ctrlSetTextColor _green; };
 _eb ctrlSetTooltip (("Ouvrir l'éditeur (titre, description) juste après la pose") call comspec_atak_native_fnc_tr);
 _eb ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; ['markerEditAfter', !(_s getOrDefault ["markerEditAfter", false])] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick'); }];
+_y = _y + _rh + _pad / 2;
+
+// 5 bis. Texte du marqueur : vide = nom automatique (camp, type, numéro) ou modèle du réglage d'addon.
+["TEXTE", _x0, _w * 0.12] call _lab;
+private _txt = _s getOrDefault ["markerText", ""];
+private _ed = ["COMSPEC_RscEdit", [_x0 + _w * 0.12, _y, _w * 0.70, _rh], _txt] call _mk;
+_ed ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+_ed ctrlSetTooltip (("Nom du marqueur posé. Vide : nom automatique (« ENI INFANTERIE 3 ») ou modèle du réglage d'addon « Nom des marqueurs posés ». Avec « Plusieurs marqueurs », un numéro est ajouté.") call comspec_atak_native_fnc_tr);
+_ed ctrlAddEventHandler ["KeyUp", { params ["_c"]; (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerText", (ctrlText _c) select [0, 48]]; false }];
+_ed ctrlAddEventHandler ["KeyDown", {
+    params ["_c", "_key"];
+    if (_key in [28, 156]) exitWith {
+        (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerText", (ctrlText _c) select [0, 48]];
+        [{ ["validate"] call comspec_atak_native_fnc_markerPlace; }] call CBA_fnc_execNextFrame;
+        true
+    };
+    false
+}];
+private _auto = ["COMSPEC_RscButton", [_x0 + _w * 0.83, _y, _w * 0.17, _rh], ["AUTO", "EFFACER"] select (_txt isNotEqualTo "")] call _mk;
+_auto ctrlSetFontHeight ((_fs * 0.72) max COMSPEC_ATAK_FontMin);
+if (_txt isEqualTo "") then { _auto ctrlSetTextColor _green; };
+_auto ctrlSetTooltip (("Nom automatique : vide le champ TEXTE") call comspec_atak_native_fnc_tr);
+_auto ctrlAddEventHandler ["ButtonClick", { ['markerText', ''] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick'); }];
 _y = _y + _rh + _pad / 2;
 
 // 6. Durée (permanent, ou effacé tout seul : contact, point de passage d'un instant) et récents (camp, type, couleur).

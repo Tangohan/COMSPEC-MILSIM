@@ -32,7 +32,7 @@ final class I18nPhraseHelperTest extends TestCase
     {
         $this->setUiLocale('en');
         self::assertSame('Dashboard', i18n_phrase('nav', 'Tableau de bord'));
-        self::assertSame('Section “Ops”', t('nav.forum_in_rubric', ['name' => 'Ops'], 'Rubrique « :name »'));
+        self::assertSame('Section “Ops”', t('nav.in_rubric', ['name' => 'Ops'], 'Rubrique « :name »'));
         self::assertSame('Phrase inconnue xyz', i18n_phrase('nav', 'Phrase inconnue xyz'));
     }
 

@@ -3,7 +3,8 @@
     [_message, _kind] call comspec_sse_fnc_zeusNotify
       _message : texte brut ; retour à la ligne = "\n" (comme hint) ou endl
       _kind    : "info" (défaut) | "warn" | "error"
-    Erreur avec l'interface Zeus ouverte : message rouge natif du curateur.
+    Notification du téléphone ATAK (comspec_sse_fnc_notify), jamais de bulle par-dessus l'écran de jeu.
+    Interface Zeus ouverte : aussi dans l'interface du curateur (erreur : message rouge natif ; sinon bandeau ZEN).
 */
 params [
     ["_message", "", [""]],
@@ -13,27 +14,20 @@ params [
 if (!hasInterface || {_message isEqualTo ""}) exitWith { false };
 _kind = toLower _kind;
 
-if (_kind isEqualTo "error" && {!isNull (findDisplay 312)}) then {
-    [objNull, _message] call BIS_fnc_showCuratorFeedbackMessage;
+// Interface Zeus ouverte (le téléphone est fermé) : retour affiché dans l'interface du curateur pour tous les types,
+// erreur en message rouge natif, info et avertissement par le bandeau ZEN (sinon message natif du curateur).
+if (!isNull (findDisplay 312)) then {
+    if (_kind isNotEqualTo "error" && {!isNil "zen_common_fnc_showMessage"}) then {
+        [(_message call comspec_sse_fnc_tr) regexReplace ["%", "%%"]] call zen_common_fnc_showMessage;
+    } else {
+        [objNull, _message call comspec_sse_fnc_tr] call BIS_fnc_showCuratorFeedbackMessage;
+    };
 };
 
-private _color = switch (_kind) do {
-    case "error": { "#E0574F" };
-    case "warn": { "#F2B84B" };
-    default { "#73CC80" };
+// Règle « tout dans l'ATAK » : plus de bulle à l'écran, notification du téléphone (traduite au rendu, ligne par ligne).
+if (!isNil "comspec_sse_fnc_notify") then {
+    [_message, switch (_kind) do { case "error": { "ERROR" }; case "warn": { "WARNING" }; default { "INFO" }; }, "COMSPEC SSE", "SSE"] call comspec_sse_fnc_notify;
 };
-
-// Traduit d'abord : fn_tr ne traduit qu'une chaîne, jamais un texte déjà passé par parseText.
-private _safe = (_message call comspec_sse_fnc_tr) regexReplace ["&", "&amp;"];
-_safe = _safe regexReplace ["<", "&lt;"];
-_safe = _safe regexReplace [">", "&gt;"];
-_safe = _safe regexReplace ["\r\n|\n|\\n", "<br/>"];
-
-hintSilent parseText format [
-    "<t font='PuristaMedium' size='1.15' color='%1'>COMSPEC SSE</t><br/><t size='0.95' align='left'>%2</t>",
-    _color,
-    _safe
-];
 
 ["[ZEUS] " + _message, if (_kind isEqualTo "info") then { "INFO" } else { "WARNING" }] call comspec_sse_fnc_log;
 true

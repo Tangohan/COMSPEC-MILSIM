@@ -152,6 +152,37 @@ final class TenantRemovalServiceTest extends TestCase
         self::assertCount(1, $backup['tables']['users']);
     }
 
+    public function testDeletePurgesPlatformAdminInterventionSessions(): void
+    {
+        // Journal des interventions de l’admin du site : clés étrangères RESTRICT vers tenants et vers la session.
+        $this->pdo->exec('CREATE TABLE platform_admin_tenant_sessions (id INTEGER PRIMARY KEY, admin_id INTEGER, tenant_id INTEGER NOT NULL,
+            status TEXT, FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE RESTRICT)');
+        $this->pdo->exec('CREATE TABLE platform_admin_tenant_actions (id INTEGER PRIMARY KEY, session_id INTEGER NOT NULL, tenant_id INTEGER NOT NULL,
+            action_type TEXT, FOREIGN KEY (session_id) REFERENCES platform_admin_tenant_sessions (id) ON DELETE RESTRICT)');
+        $this->pdo->exec("INSERT INTO platform_admin_tenant_sessions (id, admin_id, tenant_id, status) VALUES (5, 99, 2, 'active'), (6, 99, 3, 'ended')");
+        $this->pdo->exec("INSERT INTO platform_admin_tenant_actions (session_id, tenant_id, action_type) VALUES (5, 2, 'write'), (6, 3, 'write')");
+
+        $this->service()->archive(2, null);
+        $preview = $this->service()->preview(2);
+        self::assertSame([], array_values(array_filter(
+            $preview['delete_blockers'],
+            static fn (string $b): bool => str_contains($b, 'platform_admin_tenant')
+        )), 'Les sessions d’intervention admin ne bloquent plus la suppression.');
+
+        $result = $this->service()->delete(2, 'doublon');
+
+        self::assertTrue($result['ok'], (string) ($result['error'] ?? ''));
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM tenants WHERE id = 2')->fetchColumn());
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM platform_admin_tenant_sessions WHERE tenant_id = 2')->fetchColumn());
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM platform_admin_tenant_actions WHERE tenant_id = 2')->fetchColumn());
+        // Les interventions sur les autres communautés restent.
+        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM platform_admin_tenant_sessions WHERE tenant_id = 3')->fetchColumn());
+        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM platform_admin_tenant_actions WHERE tenant_id = 3')->fetchColumn());
+
+        $backup = json_decode((string) gzdecode((string) file_get_contents((string) $result['backup'])), true);
+        self::assertCount(1, $backup['tables']['platform_admin_tenant_sessions']);
+    }
+
     public function testDeleteRefusedWhilePaidSubscriptionRuns(): void
     {
         $this->pdo->exec("UPDATE tenants SET subscription_status = 'active', stripe_subscription_id = 'sub_1' WHERE id = 2");

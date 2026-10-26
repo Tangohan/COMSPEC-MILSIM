@@ -8,7 +8,6 @@ use App\Core\Database;
 use App\Repositories\TenantGradeOverrideRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
-use App\Services\Moderation\SystemModeratorAccountService;
 use App\Services\Rbac\CommunityAccessCollapseService;
 use App\Support\SqlText;
 use PDO;
@@ -25,11 +24,10 @@ final class TenantBootstrapService
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
         private \App\Repositories\ReferralRepository $referralRepository,
-        private SystemModeratorAccountService $systemModeratorAccountService
     ) {}
 
     /**
-     * Crée une communauté (tenant), seeds forum/documents, duplique le créateur comme propriétaire communauté (rôle site séparé).
+     * Crée une communauté (tenant), seeds documents, duplique le créateur comme propriétaire communauté (rôle site séparé).
      *
      * @return array{tenant_id: int, user_id: int}
      */
@@ -70,11 +68,9 @@ final class TenantBootstrapService
 
             $gradeId = $this->resolveDefaultGradeIdForNewCommunity($pdo, $tenantId, $gradeSystemCode, $founderGradeId);
 
-            $seedConfig = TenantTypeConfig::getSeedConfig($tenantType);
 
             if ($tenantType === TenantTypeConfig::TYPE_FULL) {
-                TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-                TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+                TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
                 TenantSeedHelper::seedDocumentsEquipment($pdo, $tenantId);
                 TenantSeedHelper::ensureSystemAdminPermissions($pdo, $tenantId);
                 TenantSeedHelper::ensureTenantPermissionCatalog($pdo, $tenantId);
@@ -96,10 +92,7 @@ final class TenantBootstrapService
                 ))->ensureDefaultsForTenant($pdo, $tenantId);
             } else {
                 $this->seedSimplifiedTenant($pdo, $tenantId, $tenantType, $communityOwnerRoleId);
-                if (!empty($seedConfig['seed_forum'])) {
-                    TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-                    TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
-                }
+                TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
             }
 
             $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $communityOwnerRoleId, $gradeId);
@@ -182,6 +175,9 @@ final class TenantBootstrapService
             ];
             if ($wizard !== null) {
                 $merge['grade_system_code'] = $gradeSystemCode;
+                if (!empty($wizard['grades_hidden'])) {
+                    $merge['grades_hidden'] = true;
+                }
                 $merge['timezone'] = (string) $wizard['timezone'];
                 $merge['onboarding_wizard_version'] = 3;
                 $merge['onboarding_completed_at'] = date('c');
@@ -213,11 +209,7 @@ final class TenantBootstrapService
 
             $pdo->commit();
 
-            try {
-                $this->systemModeratorAccountService->ensureForTenant($tenantId);
-            } catch (\Throwable $e) {
-                // Ne pas faire échouer la création communauté si le compte technique est en défaut
-            }
+            // Le compte technique « Modération automatique » est créé à la demande, plus à la création.
 
             try {
                 $realism = new \App\Repositories\AtakRealismRepository();
@@ -357,7 +349,11 @@ final class TenantBootstrapService
 
             return ['tenant_id' => $tenantId, 'user_id' => $newUserId];
         } catch (\Throwable $e) {
-            $pdo->rollBack();
+            // Une erreur après le commit (ou un DDL qui a validé implicitement) ne doit pas masquer la vraie cause
+            // derrière « There is no active transaction ».
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             throw $e;
         }
     }

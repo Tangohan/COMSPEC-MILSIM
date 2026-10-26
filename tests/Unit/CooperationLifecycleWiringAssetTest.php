@@ -38,7 +38,7 @@ final class CooperationLifecycleWiringAssetTest extends TestCase
         $c = $this->read('app/Controllers/Web/InterteamMissionWebController.php');
         self::assertStringContainsString('CooperationTransitionRules::launchReadiness', $c);
         self::assertStringContainsString('CooperationTransitionRules::canRespondToInvitation', $c);
-        self::assertStringContainsString('deleteGrant($grantId, $mid)', $c);
+        self::assertStringNotContainsString('deleteGrant(', $c);
         self::assertStringNotContainsString('allPartnersAccepted($id)', $c);
         // saveMeta ne modifie que les champs envoyés (plus d’écrasement croisé Réunion / Structures).
         self::assertStringContainsString("needs_submitted", $c);

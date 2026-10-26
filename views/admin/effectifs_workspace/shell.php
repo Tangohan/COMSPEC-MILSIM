@@ -27,6 +27,12 @@ $tabs = [
     ['departures', 'Anciens membres', 'departs', 0],
     ['rh_settings', 'Réglages', 'reglages', 0],
 ];
+// Profils simplifiés : retirer les onglets sans usage (même liste que le menu latéral).
+$effTenantType = function_exists('navigation_current_tenant_type') ? navigation_current_tenant_type() : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
+$effRosterOnly = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts($effTenantType);
+$tabs = array_values(array_filter($tabs, static function (array $tab) use ($effTenantType): bool {
+    return $tab[2] === '' || !\App\Services\Community\TenantTypeConfig::backOfficePathHidden($effTenantType, effectifs_workspace_path() . '/' . $tab[2]);
+}));
 // Onglets rangés sous « Plus » : utiles mais moins fréquents. L’onglet actif reste toujours visible.
 $moreTabs = ['roles', 'fonctions', 'rh_documents', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
 $moreBadge = 0;
@@ -58,10 +64,20 @@ $lead = match ($active) {
             </a>
         </p>
         <div class="bo-eff-head__actions">
-            <a class="ath-btn ath-btn--solid" href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>">Ajouter un membre</a>
+            <a class="ath-btn ath-btn--solid" href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>"><?= $effRosterOnly ? 'Ajouter une fiche' : 'Ajouter un membre' ?></a>
+            <?php if ($effRosterOnly): ?>
+            <button type="button" class="ath-btn" data-eff-import-open>Importer un tableur</button>
+            <?php endif; ?>
             <a class="ath-btn" href="<?= htmlspecialchars(effectifs_workspace_url('export'), ENT_QUOTES, 'UTF-8') ?>">Exporter</a>
         </div>
     </header>
+
+    <?php if ($effRosterOnly): ?>
+    <aside class="bo-eff-bureau" aria-label="Bureau des effectifs">
+        <p>Bureau des effectifs : vous tenez le registre comme un tableur. Vos membres n’ont pas besoin de compte, seuls ceux qui gèrent les fiches se connectent. Le recrutement se fait sur votre Discord, pas sur le site.</p>
+    </aside>
+    <?php require __DIR__ . '/_roster_import.php'; ?>
+    <?php endif; ?>
 
     <nav class="bo-eff-tabs" aria-label="Sections des effectifs">
         <?php foreach ($tabs as [$id, $label, $suffix, $badge]): ?>

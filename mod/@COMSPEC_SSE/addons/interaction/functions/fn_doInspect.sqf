@@ -40,7 +40,7 @@ private _time = missionNamespace getVariable ["comspec_sse_timeInspect", 5];
         ] call comspec_sse_fnc_addJournalEntry;
 
         if (!isNil "comspec_sse_fnc_showResult") then {
-            [_fog] call comspec_sse_fnc_showResult;
+            [_fog, _target] call comspec_sse_fnc_showResult;
         };
     },
     [_target, _player]

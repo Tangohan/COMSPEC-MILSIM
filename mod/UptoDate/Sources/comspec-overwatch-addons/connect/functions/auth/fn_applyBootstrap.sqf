@@ -59,7 +59,7 @@ if ([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign) then {
     if (!(_prof isEqualType "")) then { _prof = ""; };
     if (!([_prof] call comspec_overwatch_connect_fnc_isUsableCallsign)) then {
         profileNamespace setVariable ["COMSPEC_Callsign", ""];
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
     };
 };
 

@@ -16,7 +16,6 @@ final class TenantInterventionBannerAssetTest extends TestCase
         $dashboard = (string) file_get_contents($root . '/views/dashboard.php');
         $effectifs = (string) file_get_contents($root . '/views/dashboard_effectifs.php');
         $atakDash = (string) file_get_contents($root . '/views/dashboard_atak.php');
-        $forum = (string) file_get_contents($root . '/views/layout/forum.php');
         $atak = (string) file_get_contents($root . '/views/atak.php');
 
         self::assertStringContainsString('tenant-intervention-banner', $banner);
@@ -24,14 +23,13 @@ final class TenantInterventionBannerAssetTest extends TestCase
         self::assertStringNotContainsString('MODE ADMINISTRATION TENANT', $banner);
         self::assertStringContainsString('Quitter l’organisation', $banner);
 
-        foreach ([$layout, $dashboard, $effectifs, $atakDash, $forum, $atak] as $view) {
+        foreach ([$layout, $dashboard, $effectifs, $atakDash, $atak] as $view) {
             self::assertStringContainsString('views/partials/tenant_intervention_banner.php', $view);
         }
 
         $this->assertBannerBeforeHeader($dashboard, 'header_dashboard.php');
         $this->assertBannerBeforeHeader($effectifs, 'header_dashboard.php');
         $this->assertBannerBeforeHeader($atakDash, 'header_dashboard.php');
-        $this->assertBannerBeforeHeader($forum, 'header_portal.php');
         $this->assertBannerBeforeHeader($layout, 'header_portal.php');
     }
 

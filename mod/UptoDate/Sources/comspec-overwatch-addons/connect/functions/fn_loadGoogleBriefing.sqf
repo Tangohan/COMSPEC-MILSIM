@@ -47,7 +47,10 @@ if (_native) then {
         ["INFO", "Présentation de briefing diffusée : ouvrez l'app Briefing.", 8, 30, "BRIEFING"] call comspec_atak_native_fnc_notify;
     };
 };
+// Ouverture uniquement sur action locale (_broadcast) : une diffusion reçue ne fait que mettre l'état à jour,
+// sans dialogue par-dessus le jeu (Zeus, joueurs sans téléphone, en plein combat).
 if (!_native
+    && {_broadcast}
     && {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Briefing_group", controlNull])}
     && {isNull (findDisplay 9970)}
 ) then {

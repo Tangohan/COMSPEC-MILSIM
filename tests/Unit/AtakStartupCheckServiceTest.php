@@ -124,7 +124,8 @@ final class AtakStartupCheckServiceTest extends TestCase
         $fields = array_column($sent[0]['fields'], 'value', 'name');
         self::assertArrayHasKey('Que faire / What to do', $fields);
         self::assertStringContainsString('OBTENIR MON CODE', $fields['Que faire / What to do']);
-        self::assertStringContainsString('athena.ttrd.fr/lier', $fields['Que faire / What to do']);
+        self::assertStringContainsString(\App\Support\PortalHost::label('lier'), $fields['Que faire / What to do']);
+        self::assertStringNotContainsString('%LIER%', $fields['Que faire / What to do']);
         self::assertStringContainsString('private Steam profile is not the issue', $fields['Que faire / What to do']);
     }
 
@@ -135,7 +136,11 @@ final class AtakStartupCheckServiceTest extends TestCase
         $other = [['id' => 'link', 'status' => 'fail', 'detail' => 'non lié : HTTP\\_500']];
         self::assertNull(AtakStartupCheckService::linkFix($other));
         $c2 = [['id' => 'link', 'status' => 'fail', 'detail' => 'non lié : C2\\_STEAM\\_NOT\\_LINKED']];
-        self::assertSame(AtakStartupCheckService::LINK_FIXES['STEAM_NOT_LINKED'], AtakStartupCheckService::linkFix($c2));
+        $lier = \App\Support\PortalHost::label('lier');
+        self::assertSame(
+            array_map(static fn (string $t): string => str_replace('%LIER%', $lier, $t), AtakStartupCheckService::LINK_FIXES['STEAM_NOT_LINKED']),
+            AtakStartupCheckService::linkFix($c2)
+        );
     }
 
     public function testUnknownTriggerFallsBackToStartupCheck(): void

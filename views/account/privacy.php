@@ -39,8 +39,7 @@ $deletionScheduledAt = $deletionScheduledAt ?? null;
             <h2 id="privacy-export-heading" class="account-hub__panel-title">Exporter mes données</h2>
             <p class="account-hub__panel-desc">
                 Génère une archive ZIP contenant votre profil, votre dossier personnel, vos
-                formations et attestations, vos participations aux événements, vos messages du
-                forum et vos messages internes envoyés sur cette communauté.
+                formations et attestations, vos participations aux événements et vos messages internes envoyés sur cette communauté.
             </p>
         </div>
         <div class="account-hub__panel-body">

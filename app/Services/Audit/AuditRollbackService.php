@@ -40,10 +40,7 @@ final class AuditRollbackService
     ];
 
     /** @var list<string> */
-    private const PLATFORM_SETTINGS_KEYS = [
-        'brief_member_access',
-        'brief_member_closed_message',
-    ];
+    private const PLATFORM_SETTINGS_KEYS = [];
 
     /** @var list<string> */
     private const SUBSCRIPTION_PLAN_KEYS = [
@@ -109,7 +106,7 @@ final class AuditRollbackService
             || str_starts_with($action, 'deployment.')
             || str_starts_with($action, 'app_update.')
             || str_starts_with($action, 'moderation.')
-            || $action === 'forum.moderation_action'
+            || $action === 'report.moderation_action'
             || $action === 'security.event'
         ) {
             return array_merge($empty, [
@@ -269,7 +266,7 @@ final class AuditRollbackService
         if (str_starts_with($action, 'auth.')) {
             return 'Les événements de connexion ne modifient pas une donnée à restaurer.';
         }
-        if (str_starts_with($action, 'moderation.') || $action === 'forum.moderation_action') {
+        if (str_starts_with($action, 'moderation.') || $action === 'report.moderation_action') {
             return 'Les mesures de modération se gèrent depuis l’écran de modération (levée de sanction), pas par restauration automatique.';
         }
         if (str_starts_with($action, 'deployment.') || str_starts_with($action, 'app_update.')) {
@@ -356,7 +353,7 @@ final class AuditRollbackService
         return [
             'can_rollback' => true,
             'reason' => '',
-            'summary' => 'Restaurer les réglages brief précédents.',
+            'summary' => 'Restaurer les réglages plateforme précédents.',
             'restore_fields' => $this->fieldSummaries($payload),
         ];
     }
@@ -480,11 +477,7 @@ final class AuditRollbackService
                 continue;
             }
             $v = $before[$k];
-            if ($k === 'brief_member_access') {
-                $pairs[$k] = ($v === true || $v === 1 || $v === '1' || $v === 'true') ? '1' : '0';
-            } else {
-                $pairs[$k] = (string) $v;
-            }
+            $pairs[$k] = (string) $v;
         }
         if ($pairs === []) {
             return false;

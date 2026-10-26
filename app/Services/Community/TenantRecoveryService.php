@@ -23,7 +23,6 @@ final class TenantRecoveryService
         'user_community_memberships',
         'documents',
         'units',
-        'forum_topics',
         'site_settings',
     ];
 

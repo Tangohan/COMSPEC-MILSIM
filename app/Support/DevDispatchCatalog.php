@@ -293,6 +293,116 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(1007, '2026-10-25', 'Data Inspector : l’onglet Mods ne contredit plus les versions', 'L’onglet Mods sépare le nom de chaque mod des versions vues en jeu. Si les noms ne sont pas disponibles, la page le dit et continue d’afficher les listes transmises par les joueurs, ainsi que les versions du mod COMSPEC et de COMSPEC Link. Rechargez le portail (Ctrl+F5).', [
+                'Un rappel distingue les listes reçues, toutes connexions confondues, et les versions de la période choisie',
+            ], [
+                'Les quatre chiffres, les versions en jeu et le détail des noms se lisent dans cet ordre',
+                'Le bouton d’export du Data Inspector s’intitule « Exporter le tableau »',
+            ], [
+                'Le bandeau ne dit plus que tout l’onglet est vide lorsque des versions et des listes sont déjà affichées',
+                'La mention « Aucun mod déclaré par les joueurs » ne s’affiche plus quand des versions sont déjà visibles',
+            ], ['atak'], [
+                'Ouvrez Data Inspector, onglet Mods. Les chiffres sont en haut, puis les versions du mod COMSPEC et de COMSPEC Link, puis le détail des noms.',
+                'Choisissez Ma communauté ou Plateforme, puis 1 h ou 24 h. Les versions suivent la période. La recherche et l’export du tableau restent disponibles.',
+            ], 'Portail Athena'),
+            $pr(1006, '2026-10-25', 'Atelier du téléphone : le mod SSE, et la traduction sur le compte', 'L’atelier de traduction du téléphone ATAK couvre aussi les écrans du mod SSE : Bureau SSE, SEEK II, terminal, numérique, site, graphe, preuves, mission, Zeus, tableau de bord et campagne. Les textes encore seulement en français, y compris ceux de ces écrans, restent en tête et dans le filtre « Seulement en français ». Sans compte, le travail reste sur l’appareil. Un membre connecté le retrouve sur son compte Athena, sur un autre appareil. Le mod téléchargé emporte les phrases du téléphone et celles du mod SSE. Rechargez l’atelier (Ctrl+F5).', [
+                'Les écrans du mod SSE apparaissent comme leurs propres applications : Bureau SSE, SEEK II, terminal SSE, numérique, site, graphe, preuves, mission, Zeus, tableau de bord SSE, campagne',
+                'Un membre connecté enregistre la traduction sur son compte et la reprend sur un autre appareil',
+                'Le mod téléchargé contient les phrases du téléphone et celles du mod SSE',
+            ], [
+                'Sans compte, le travail reste sur cet appareil, avec un lien pour se connecter et le retrouver ailleurs',
+                'Les applications sans anglais, y compris celles du mod SSE, passent en premier et portent la mention « Sans anglais »',
+                'Chaque phrase du mod SSE indique l’écran auquel elle appartient',
+            ], [
+                'Après connexion, le retour mène de nouveau vers l’atelier',
+            ], ['atak', 'platform'], [
+                'Ouvrez Traduire l’ATAK. Sans compte, une phrase propose de se connecter. Avec un compte, la langue choisie est indiquée « Sur votre compte ».',
+                'Dans la liste des applications, Bureau SSE, SEEK II et les autres écrans du mod SSE sont à part. Le filtre « Seulement en français » les inclut.',
+                'Téléchargez le mod : les phrases du téléphone et celles du mod SSE partent ensemble.',
+            ], 'Portail Athena'),
+            $pr(1005, '2026-10-25', 'Site public : le bas de page regroupe le nom et les liens', 'Le bas des pages publiques d’Athena change de forme. On y lit l’année, le nom Athena, la phrase de présentation du portail, et le choix de langue déjà proposé en haut de page. Trois colonnes mènent aux pages déjà en ligne : mentions et données, vie de la communauté, assistance. Le grand nom Athena apparaît en dessous, dans le vert du site, sans recouvrir les liens. Sur un petit écran, les colonnes se placent les unes sous les autres. Rechargez la page d’accueil (Ctrl+F5).', [
+                'Année, nom, phrase de présentation et choix de langue regroupés à gauche',
+                'Colonnes Mentions légales, Communauté et Assistance, vers des pages déjà en ligne',
+                'Grand nom Athena en bas de page, recadré, sans gêner les liens',
+            ], [
+                'Sur téléphone, les colonnes passent les unes sous les autres et le nom rétrécit',
+            ], [], ['platform'], [
+                'Ouvrez la page d’accueil ou À propos, descendez en bas. Le choix de langue propose Français et English. Les liens mènent aux pages déjà connues. Le lien Ops reste en haut de page.',
+            ], 'Portail Athena'),
+            $pr(1004, '2026-10-25', 'Messagerie : une conversation se lit comme un échange', 'Ouvrir une conversation affiche vos messages à droite et ceux des autres à gauche, avec l’heure sur chaque message. Le dernier message est visible dès l’ouverture, et la zone d’écriture reste accessible, y compris sur téléphone. Rechargez le portail (Ctrl+F5).', [
+                'Heure lisible sur chaque message, et vos messages alignés à droite',
+            ], [
+                'La zone d’écriture et le bouton Envoyer restent visibles au-dessus de la navigation du téléphone',
+                'Les retours à la ligne d’un message sont conservés',
+            ], [
+                'L’ouverture d’une conversation ne descend plus jusqu’au bas de la page',
+                'Un message vide explique quoi écrire, au lieu de disparaître',
+                'Un participant sans nom affiché n’apparaît plus avec son adresse de courriel',
+            ], ['platform'], [
+                'Ouvrez Messagerie, puis une conversation. Le dernier message est en bas. Écrivez une réponse et envoyez-la. Sur téléphone, le bouton Envoyer reste au-dessus de la barre de navigation.',
+            ], 'Portail Athena'),
+            $pr(1003, '2026-10-25', 'Contributeurs : plusieurs rôles, et les personnes d’abord', 'L’administration des contributeurs met les personnes au premier plan. Une même personne peut demander plusieurs rôles d’un coup, et l’équipe peut les lui accorder sans retirer ceux qu’elle a déjà. Refuser ou retirer un rôle laisse les autres en place. Les trois premiers traducteurs restent mis en avant, sur la page Contribuer et dans l’espace de traduction. Rechargez le portail (Ctrl+F5).', [
+                'Demande de plusieurs rôles en une fois : traducteur, testeur, créateur de contenu, développeur, support',
+                'Attribution de plusieurs rôles à une même personne, sans effacer les rôles déjà actifs',
+                'Les contributeurs qui acceptent d’être cités sont mis en avant, avec tous leurs rôles',
+            ], [
+                'Les demandes et les contributeurs actifs passent avant les langues',
+                'Premier, deuxième et troisième traducteur se distinguent, avec leur part du catalogue',
+            ], [
+                'Le classement ne compte plus plusieurs fois les textes d’une personne qui a aussi d’autres rôles',
+                'Le nom affiché est le pseudo choisi, ou l’indicatif',
+            ], ['platform'], [
+                'Ouvrez Administration du site, Contributeurs : les demandes sont en haut. Sur Contribuer, cochez plusieurs rôles. Sur Traduire le site, les trois premiers traducteurs sont en évidence.',
+            ], 'Portail Athena'),
+            $pr(1002, '2026-10-25', 'Traduction du site : la phrase, son écran, et des outils à côté', 'L’atelier de traduction du site reprend le rythme de l’atelier du téléphone : grand titre, trois étapes, bouton vert. Chaque texte indique l’écran où il apparaît. Quand ce n’est qu’un morceau de phrase, le passage autour est montré. À côté : copier le français, passer au texte suivant encore seulement en français, ou ouvrir l’atelier du téléphone. Rechargez le portail (Ctrl+F5).', [
+                'Contexte de chaque texte : l’écran, et la phrase autour quand elle existe',
+                'Outils à côté du texte : copier le français, écran suivant sans anglais, atelier du téléphone',
+                'Rappel, seulement si le texte contient une valeur ou une balise, de les conserver',
+            ], [
+                'L’atelier du site suit les étapes Choisir la langue, Traduire, Relire',
+                'Dans l’atelier du téléphone, chaque phrase indique son application et, quand elles existent, les phrases voisines',
+            ], [], ['platform'], [
+                'Ouvrez Traduire le site, puis une langue. Le texte à traduire reste au centre. L’écran et les outils sont à côté. Le filtre « Seulement en français » est inchangé.',
+            ], 'Portail Athena'),
+            $pr(1000, '2026-10-25', 'Lier le jeu : le code au centre, vous autorisez vous-même', 'La page pour relier Arma à votre compte Athena est recentrée. Le code du jeu s’affiche en grand, en deux groupes de quatre caractères. Vous voyez d’où vient la demande — téléphone ATAK, éditeur Eden ou pack Overwatch — puis vous l’autorisez. Rien ne se valide tout seul. Rechargez le portail (Ctrl+F5).', [
+                'Le code du jeu s’affiche en grand, en deux groupes de quatre caractères',
+                'L’origine de la demande est indiquée : téléphone ATAK, éditeur Eden ou pack Overwatch',
+            ], [
+                'Écran sombre et centré, lisible sur téléphone comme sur ordinateur',
+                'Les trois étapes restent visibles : le code dans le jeu, l’autorisation ici, puis la connexion du jeu',
+                'Vous voyez la demande, puis vous choisissez Autoriser ce jeu',
+            ], [], ['platform'], [
+                'Ouvrez la page depuis le jeu, avec le code ou le QR code. Vérifiez le code et l’origine, puis Autoriser ce jeu. Sans ce clic, le jeu reste déconnecté.',
+            ], 'Portail Athena'),
+            $pr(999, '2026-10-25', 'Hub : la fiche d’une communauté se lit comme un portrait', 'Ouvrir une communauté depuis le hub ne montre plus une grille de chiffres identiques. Le nom, le recrutement et les actions (page publique, recommandation, comparaison, coopération) sont regroupés. Chaque indicateur se compare à la médiane du réseau et indique le rang. L’organigramme sépare les volumes par niveau du détail des unités, affiché seulement quand la communauté le publie. Rechargez le portail (Ctrl+F5).', [
+                'Portrait de la communauté : identité, recrutement et actions',
+                'Indicateurs groupés, avec une barre, la médiane et le rang dans le réseau',
+            ], [
+                'Organigramme : volumes par niveau, types d’unités, et noms seulement s’ils sont publics',
+                'Avis des partenaires à part, avec un état clair quand aucun avis n’a encore été laissé',
+            ], [], ['platform'], [
+                'Ouvrez Hub des communautés, puis une fiche. Le portrait est en haut. Les indicateurs suivent, puis la structure et les avis.',
+            ], 'Portail Athena'),
+            $pr(998, '2026-10-25', 'Traduction : d’abord les textes encore seulement en français', 'L’espace de traduction du site et l’atelier du téléphone proposent une file « Seulement en français ». Ce sont les textes qui n’ont pas encore d’anglais, à traiter avant de relire ce qui existe déjà. Les applications du jeu sans anglais, comme le bureau SSE, passent en tête. La page des contributeurs affiche le taux de chaque langue et met en avant les traducteurs qui ont le plus avancé. Rechargez le portail (Ctrl+F5).', [
+                'File « Seulement en français » sur le site et dans l’atelier du téléphone',
+                'Applications du jeu sans anglais signalées et placées en premier',
+                'Classement des traducteurs, avec un taux de complétion',
+            ], [
+                'Page des langues : outils pour le site, le jeu et le rôle de traducteur',
+            ], [], ['platform', 'atak'], [
+                'Ouvrez Traduire le site, puis English : le filtre « Seulement en français » est déjà choisi. Dans Traduire l’ATAK, le même filtre isole les phrases sans anglais, et les applications concernées portent la mention « Sans anglais ».',
+            ], 'Portail Athena'),
+            $pr(997, '2026-10-25', 'Fiche personnel : disponibilité, temps de jeu et candidature', 'La fiche d’un membre affiche une disponibilité calculée sur les présences aux opérations des 45 derniers jours. Le temps de jeu a sa propre zone, avec le cumul, les dernières semaines et le détail par rôle. La dernière candidature reprend l’état réel du dossier, chaque information à côté de son intitulé. Rechargez le portail (Ctrl+F5).', [
+                'Disponibilité en pourcentage, avec le nombre de présences et d’opérations sur 45 jours',
+            ], [
+                'Le temps de jeu est regroupé : cumul, 7 et 30 jours, répartition, semaines et rôles',
+                'La dernière candidature aligne chaque intitulé avec sa valeur, et l’état suit le parcours du recrutement',
+            ], [
+                'Le pourcentage de disponibilité ne reprend plus le chiffre posé à l’intégration',
+                'Une candidature déjà rattachée à un compte n’apparaît plus comme « compte à rattacher »',
+            ], ['personnel'], [
+                'Ouvrez une fiche personnel, onglet Portrait. La disponibilité est dans la synthèse. Le temps de jeu est au-dessus. La dernière candidature, quand elle existe, est sous les décorations.',
+            ], 'Portail Athena'),
             $pr(996, '2026-10-19', 'Bureau SSE : fiche de transmission lisible, avec photo et iris', 'La fiche d’une transmission terrain redevient lisible : une seule valeur longue (les échantillons biométriques, par exemple) poussait toutes les autres hors de l’écran. Les champs s’affichent maintenant en liste nom / valeur, et les valeurs très longues se replient. Quand la transmission concerne une identité, sa photo, ses autres clichés et ses relevés biométriques (empreintes, iris, ADN, qualité de capture, terminal) s’affichent à côté, avec un lien vers sa fiche. Les images transmises s’affichent comme images et s’ouvrent dans la galerie 3D. Rechargez le portail (Ctrl+F5).', [
                 'Identité liée sur la fiche de transmission : photo, clichés, empreintes, iris, ADN, qualité, terminal et relevés',
                 'Images transmises affichées en vignettes, ouvertes dans la galerie',

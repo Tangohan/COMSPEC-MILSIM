@@ -21,9 +21,6 @@ return [
      */
     'defaults' => [],
 
-    /** Packs activés par défaut sur le forum (messagerie / réactions). */
-    'defaults_forum' => ['emoji', 'gif', 'flags'],
-
     /**
      * Définition des assets par pack.
      * phase: head | body (scripts différés en bas de page)
