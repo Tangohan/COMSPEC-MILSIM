@@ -266,6 +266,84 @@ final class ConfigSchemaService
     }
     
     /**
+     * Configuration complète : valeurs enregistrées posées sur les valeurs par défaut du schéma.
+     * Les paramètres ajoutés au schéma depuis le dernier enregistrement prennent leur défaut, et
+     * l'ancien domaine « waypoints_routes » (amorçage initial) est repris sous « waypoints ».
+     *
+     * @param array<string, mixed> $config
+     * @return array<string, array<string, mixed>>
+     */
+    public static function mergeWithDefaults(array $config): array
+    {
+        if (isset($config['waypoints_routes']) && is_array($config['waypoints_routes']) && !isset($config['waypoints'])) {
+            $config['waypoints'] = $config['waypoints_routes'];
+        }
+        $out = self::buildDefaultConfig();
+        foreach ($out as $domainKey => $params) {
+            $stored = is_array($config[$domainKey] ?? null) ? $config[$domainKey] : [];
+            foreach ($params as $paramKey => $_) {
+                if (array_key_exists($paramKey, $stored)) {
+                    $out[$domainKey][$paramKey] = $stored[$paramKey];
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Valeurs reçues d'un formulaire HTML (chaînes) converties au type du schéma.
+     * Un domaine absent de l'envoi garde ses valeurs ($base). Dans un domaine envoyé, un interrupteur
+     * arrive toujours (champ caché « 0 ») et une liste à choix multiples absente vaut « aucun ».
+     *
+     * @param array<string, mixed> $posted cfg[domaine][paramètre]
+     * @param array<string, array<string, mixed>> $base configuration actuelle complète
+     * @return array<string, array<string, mixed>>
+     */
+    public static function coerceFromForm(array $posted, array $base): array
+    {
+        $schema = self::getSchema();
+        $out = $base;
+        foreach ($schema['domains'] as $domainKey => $domain) {
+            $in = is_array($posted[$domainKey] ?? null) ? $posted[$domainKey] : null;
+            if ($in === null) {
+                continue;
+            }
+            foreach ($domain['parameters'] as $paramKey => $param) {
+                $type = (string) ($param['type'] ?? 'text');
+                if (!array_key_exists($paramKey, $in)) {
+                    if ($type === 'multi-select') {
+                        $out[$domainKey][$paramKey] = [];
+                    }
+                    continue;
+                }
+                $raw = $in[$paramKey];
+                if (is_array($raw) && $type !== 'multi-select') {
+                    $raw = end($raw);
+                }
+                $out[$domainKey][$paramKey] = match ($type) {
+                    'toggle' => in_array((string) $raw, ['1', 'true', 'on'], true),
+                    'slider', 'number' => self::numberValue($raw, $param),
+                    'multi-select' => array_values(array_map('strval', array_filter(is_array($raw) ? $raw : [$raw], static fn ($v) => (string) $v !== ''))),
+                    default => trim((string) $raw),
+                };
+            }
+        }
+
+        return $out;
+    }
+
+    /** @param array<string, mixed> $param */
+    private static function numberValue(mixed $raw, array $param): int|float
+    {
+        $n = (float) str_replace(',', '.', trim((string) $raw));
+        $step = (float) ($param['step'] ?? 1);
+        $isInt = is_int($param['default'] ?? null) && floor($step) === $step;
+
+        return $isInt ? (int) round($n) : round($n, 4);
+    }
+
+    /**
      * Récupère le nombre total de paramètres dans le schéma.
      * 
      * @return int Nombre de paramètres
