@@ -26,6 +26,8 @@ final class CronSchedule
         'cooperation_reminders' => 60,
         'training_expire' => 60,
         'qualification_expiry_scan' => 60,
+        // Cursus pilote : les heures de vol arrivent toutes les 10 min, un passage par heure suffit.
+        'pilot_qualifications' => 60,
         'personnel_progression_evaluate' => 60,
         'personnel_capability_refresh' => 60,
         'seniority_sync_all' => 1440,
