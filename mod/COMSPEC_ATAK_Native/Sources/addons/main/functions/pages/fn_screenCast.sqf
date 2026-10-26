@@ -19,10 +19,36 @@
       ["stop", objet]             arrête la diffusion        ["step", [objet, ±1]] : diapositive précédente / suivante
       ["sync"]                    ma diapositive a changé : les écrans que je diffuse suivent
       ["tick"]                    toutes les 2 s (XEH_postInitClient) : image des écrans proches, actions ACE ou molette
-      ["initServer"]              événement serveur (XEH_postInitServer)
-    Exemple de mission : ["add", [this, "Salle de briefing", 30]] call comspec_atak_native_fnc_screenCast;
+    Demande d'un client (« add », « remove ») : remoteExecCall ["comspec_atak_native_fnc_screenCast", 2] (CfgRemoteExec),
+    jugée sur le demandeur retrouvé par remoteExecutedOwner (fn_reqUnit) : Zeus, hôte, admin connecté ou UID autorisé
+    (fn_adminAllowed). Plus d'événement CBA comspec_atak_native_screen.
+    Exemple de mission : if (isServer) then { ["add", [this, "Salle de briefing", 30]] call comspec_atak_native_fnc_screenCast; };
 */
 params [["_mode", ""], ["_a", objNull]];
+// Lot mpauth3 (SEC-005) : l'événement CBA comspec_atak_native_screen ne disait pas qui l'avait levé. Tout client
+// désignait comme écran n'importe quel objet (nom, portée, camp, texture de son choix, image posée sur l'objet chez
+// chaque joueur) ou retirait un écran. Les demandes arrivent par remoteExecCall vers 2, jugées sur le demandeur, avec
+// la règle du module Zeus qui les envoie. Module Eden, init d'objet (serveur), hôte d'une partie locale et partie
+// solo : appel non distant, rien ne change.
+if (isRemoteExecutedJIP) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][SCREEN] Appel « %1 » refusé (rejoué depuis la file JIP)", _mode];
+    false
+};
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+private _req = objNull;
+if (_remote) then { _req = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
+if (_remote && {!(_mode in ["add", "remove"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][SCREEN] Action « %1 » refusée au poste %2 (locale au téléphone)", _mode, remoteExecutedOwner];
+    false
+};
+if (_remote && {isNull _req}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][SCREEN] Demande « %1 » refusée au poste %2 (demandeur introuvable)", _mode, remoteExecutedOwner];
+    false
+};
+if (_remote && {!([_req] call comspec_atak_native_fnc_adminAllowed)}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][SCREEN] Demande « %1 » refusée à %2 (ni Zeus ni admin)", _mode, name _req];
+    false
+};
 private _fn = comspec_atak_native_fnc_screenCast;
 private _canSee = {
     params ["_o"];
@@ -43,14 +69,13 @@ private _myDeck = {
 };
 
 switch (_mode) do {
-    case "initServer": {
-        ["comspec_atak_native_screen", { _this call comspec_atak_native_fnc_screenCast; }] call CBA_fnc_addEventHandler;
-        true
-    };
     case "add": {
-        _a params [["_o", objNull], ["_name", ""], ["_range", 25], ["_side", ""], ["_sel", 0], ["_ace", true]];
+        if !(_a isEqualType []) exitWith { false };
+        _a params [["_o", objNull, [objNull]], ["_name", "", [""]], ["_range", 25, [0]], ["_side", "", [""]], ["_sel", 0, [0]], ["_ace", true, [true]]];
         if (isNull _o) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_screen", ["add", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer) exitWith { ["add", _a] remoteExecCall ["comspec_atak_native_fnc_screenCast", 2]; true };
+        if ((count _name) > 64) then { _name = _name select [0, 64]; };
+        if !(_side in ["", "WEST", "EAST", "GUER", "CIV"]) then { _side = ""; };
         if (_name isEqualTo "") then { _name = getText (configOf _o >> "displayName"); };
         if (_name isEqualTo "") then { _name = "Écran"; };
         private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x };
@@ -64,8 +89,8 @@ switch (_mode) do {
         true
     };
     case "remove": {
-        if (isNull _a) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_screen", ["remove", _a]] call CBA_fnc_serverEvent; true };
+        if (!(_a isEqualType objNull) || {isNull _a}) exitWith { false };
+        if (!isServer) exitWith { ["remove", _a] remoteExecCall ["comspec_atak_native_fnc_screenCast", 2]; true };
         _a setVariable ["COMSPEC_ATAK_ScreenCast", [], true];
         _a setVariable ["COMSPEC_ATAK_Screen", nil, true];
         missionNamespace setVariable ["COMSPEC_ATAK_Screens", (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];

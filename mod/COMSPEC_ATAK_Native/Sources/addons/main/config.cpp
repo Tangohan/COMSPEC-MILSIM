@@ -702,6 +702,9 @@ class CfgRemoteExec {
         // Partage des caméras (lot mpauth3, SEC-006) : liste d'accès demandée au serveur (« srvAcc »), jugée sur le
         // demandeur (SEC-005). La notification du destinataire passe par l'événement CBA comspec_atak_native_camShare.
         class comspec_atak_native_fnc_camShare { allowedTargets = 2; };
+        // Écrans COMSPEC (lot mpauth3, SEC-005) : désigner, retirer, demandés au serveur par le module Zeus ou un
+        // script, jugés sur le demandeur (fn_screenCast). Remplace l'événement CBA comspec_atak_native_screen.
+        class comspec_atak_native_fnc_screenCast { allowedTargets = 2; };
     };
 };
 

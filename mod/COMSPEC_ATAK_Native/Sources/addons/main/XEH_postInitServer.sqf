@@ -24,8 +24,6 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_adminServer;
 // API brouilleurs pour les missions et les autres mods, objets brouilleurs d'autres mods (fn_jammer).
 ["init"] call comspec_atak_native_fnc_jammer;
-// Écrans COMSPEC : registre des écrans où l'app Briefing diffuse ses diapositives (fn_screenCast).
-["initServer"] call comspec_atak_native_fnc_screenCast;
 // Écrans TOC : registre, données du réseau calculées ici pour tous (fn_tocFeed), écrans gardés d'une partie à l'autre.
 ["initServer"] call comspec_atak_native_fnc_tocScreen;
 // IA et ATAK : IA équipées par le réglage ou la mission, leurs points PLI envoyés par le serveur (fn_aiAtak).

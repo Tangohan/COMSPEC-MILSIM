@@ -132,7 +132,8 @@ DIFFUSER y affiche la diapositive en cours, qui suit ensuite les pages tournées
 sur l'écran : diapositive suivante, précédente, arrêt. Chaque joueur voit l'image s'il a COMSPEC Link.
 
 ```sqf
-// Serveur (l'init d'un objet dans Eden tourne aussi sur le serveur). Ailleurs, la demande part au serveur.
+// Serveur (l'init d'un objet dans Eden tourne aussi sur le serveur). Ailleurs, la demande part au serveur
+// (remoteExecCall), qui ne l'accepte que d'un Zeus, de l'hôte, d'un admin connecté ou d'un UID autorisé.
 // [objet, nom, portée de détection m, camp qui le pilote ("" = tous), index de texture (0 le plus souvent), contrôle ACE]
 if (isServer) then { ["add", [this, "Salle de briefing", 30]] call comspec_atak_native_fnc_screenCast; };
 ["remove", objet] call comspec_atak_native_fnc_screenCast;
@@ -140,7 +141,8 @@ if (isServer) then { ["add", [this, "Salle de briefing", 30]] call comspec_atak_
 
 **English.** The "ATAK · COMSPEC screen" Eden/Zeus module (or `["add", [object, name, range, side, textureIndex, ace]]
 call comspec_atak_native_fnc_screenCast`) turns TVs, screens and projectors into screens the Briefing app can cast its
-slides to (SCREENS tab), then controlled from the phone or with ACE on the screen.
+slides to (SCREENS tab), then controlled from the phone or with ACE on the screen. Called on a client, `add` and
+`remove` are sent to the server, which accepts them only from a Zeus, the host, a logged-in admin or an authorized UID.
 
 ## 7. Écrans TOC : le réseau ATAK du camp sur un grand écran du jeu
 

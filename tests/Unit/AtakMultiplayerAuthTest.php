@@ -527,6 +527,52 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertSame(['srvAcc'], array_keys($sent['comspec_atak_native_fnc_camshare'] ?? []));
     }
 
+    public function testScreenRequestsAreJudgedOnTheRequesterFoundByTheServer(): void
+    {
+        // Lot mpauth3 (SEC-005) : le gestionnaire CBA comspec_atak_native_screen (fn_screenCast) ne contrôlait rien. Tout
+        // client désignait comme écran n'importe quel objet, avec nom, portée, camp et texture de son choix (l'image se
+        // pose sur l'objet chez chaque joueur), ou retirait un écran. Les demandes arrivent par remoteExecCall vers 2 et
+        // sont jugées sur le demandeur retrouvé par remoteExecutedOwner, avec la règle du module Zeus qui les envoie :
+        // Zeus, hôte, admin connecté ou UID autorisé (fn_adminAllowed). Le module Eden tourne sur le serveur.
+        $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/pages/fn_screenCast.sqf'));
+        $head = $this->between($code, 'params [["_mode", ""], ["_a", objNull]];', 'switch (_mode) do {');
+        self::assertMatchesRegularExpression('/^params \[\["_mode", ""\], \["_a", objNull\]\];\s*'
+            . 'if \(isRemoteExecutedJIP\) exitWith \{[^{}]*false\s*\};\s*'
+            . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+            . 'private _req = objNull;\s*'
+            . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
+            . 'if \(_remote && \{!\(_mode in \["add", "remove"\]\)\}\) exitWith \{[^{}]*false\s*\};\s*'
+            . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*false\s*\};\s*'
+            . 'if \(_remote && \{!\(\[_req\] call comspec_atak_native_fnc_adminAllowed\)\}\) exitWith \{[^{}]*false\s*\};/', $head);
+        foreach (['add', 'remove'] as $mode) {
+            self::assertStringContainsString('if (!isServer) exitWith { ["' . $mode . '", _a] remoteExecCall ["comspec_atak_native_fnc_screenCast", 2]; true };', $code, $mode);
+        }
+        self::assertStringNotContainsString('CBA_fnc_addEventHandler', $code);
+        self::assertStringNotContainsString('CBA_fnc_serverEvent', $code);
+        self::assertStringContainsString('class comspec_atak_native_fnc_screenCast { allowedTargets = 2; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        // Plus de gestionnaire ni d'émetteur de l'événement dans main/ et connect/ ; actions envoyées = liste distante.
+        $files = $this->sources();
+        $left = [];
+        foreach ($files as $rel => $units) {
+            foreach ($units as $u) {
+                if (preg_match('/(["\'])comspec_atak_native_screen\1/i', $u) === 1) {
+                    $left[$rel] = true;
+                }
+            }
+        }
+        self::assertSame([], array_keys($left));
+        $lists = $this->remoteLists($files);
+        self::assertSame(['add', 'remove'], $lists['comspec_atak_native_fnc_screencast'] ?? null);
+        [$sent] = $this->actionsSent($files, $lists);
+        $got = array_keys($sent['comspec_atak_native_fnc_screencast'] ?? []);
+        sort($got);
+        self::assertSame(['add', 'remove'], $got);
+        // L'API de mission documentée dit la règle (MODULES.md, en français et en anglais).
+        $doc = $this->read('mod/COMSPEC_ATAK_Native/MODULES.md');
+        self::assertStringContainsString("(remoteExecCall), qui ne l'accepte que d'un Zeus, de l'hôte, d'un admin connecté ou d'un UID autorisé.", $doc);
+        self::assertStringContainsString('which accepts them only from a Zeus, the host, a logged-in admin or an authorized UID.', $doc);
+    }
+
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */
     private function stripSqfComments(string $src): string
     {
