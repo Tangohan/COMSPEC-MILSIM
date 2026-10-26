@@ -38,6 +38,36 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Retours des contributeurs : téléphone en anglais, SEEK II, accueil qui garde sa place (ATAK natif : numéro donné au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Le téléphone parle mieux anglais et l'accueil ne remonte plus en haut
+- Les noms des apps et des sections de l'accueil, la flèche Retour, l'écran de verrouillage (date, batterie) et de nombreux boutons des apps (Météo, Sniper, Explosifs, Anti-drone, Logistique, Profil, Briefing…) sont traduits en anglais.
+- En revenant d'une app ou après un changement dans Réglages, l'accueil et les Réglages se rouvrent à l'endroit où tu étais.
+- SEEK II : les intitulés des écrans et les infobulles sont traduits, la consigne des empreintes n'apparaît plus en double, et QUERY sans relevé l'affiche sur l'écran du SEEK.
+- Menu Échap : la barre COMSPEC et le bouton Réalisme et réseau ne sont plus écrasés avec la taille d'interface Normale.
+EN : The phone speaks better English and the home screen keeps its place
+- App and section names on the home screen, the Back arrow, the lock screen (date, battery) and many app buttons (Weather, Sniper, Explosives, Anti-drone, Logistics, Profile, Briefing…) are now in English.
+- Coming back from an app or after a change in Settings, the home screen and Settings reopen where you were.
+- SEEK II: screen labels and tooltips are translated, the fingerprint instruction no longer shows twice, and QUERY with no capture says so on the SEEK screen.
+- Escape menu: the COMSPEC bar and the Realism and network button are no longer squashed with the Normal interface size.
+
+### Détail technique
+- Retours du salon Discord Contributor (kroncc). App renommées en anglais selon ses propositions : Liaison allié → ATAK Link, Vidéo live → Live Feed, Recherchés → Target Deck ; Rejeu → Replay (AAR).
+- `fn_tr` : un symbole devant le texte (« ■ SEEK PRÊT », « ‹ RETOUR ») ne bloque plus la recherche. `fn_langApply` : `%%` d'un modèle correspond au `%` affiché (73 modèles, dont « Batterie %1 %% », ne marchaient jamais).
+- `fn_displayLoad` : infobulles fixes de l'écran relues dans la config et traduites. `fn_trDisplay` d'Overwatch connect et du SSE : textes enrichis (type 13) et infobulles des écrans relus dans la config (écran retrouvé par son idd, mis en cache) ; avant, « ŒIL DROIT (OD) », « NOM »… restaient en français.
+- Mots français en capitales (CALCULER, TROUPES, RALLUMER…) : ignorés par `tools/i18n.py extract` (pris pour des identifiants), ajoutés à la main dans `en.txt` (~180 entrées).
+- `fn_pageRender` / `fn_displayUnload` : défilement gardé pour LAUNCHER et SETTINGS, y compris quand l'écran est recréé.
+- `fn_lockScreen` : date en anglais (« SATURDAY, FEBRUARY 24 ») hors langue française.
+- `fn_pageSse` : tuiles d'indicateurs sur deux lignes quand l'écran est étroit (les libellés se coupaient au milieu des mots).
+- Overwatch connect : `fn_sseIdentityQuery` (QUERY sans relevé : bandeau AUCUN RELEVÉ sur le SEEK), `fn_ssePersonRefreshPanels` (consigne bilingue en double retirée, légende NFIQ découpée pour la traduction), infobulle « dossier actif » raccourcie (elle débordait de l'écran), `fn_onInterruptLoad` et `fn_netConfig` (police tirée de la hauteur de la barre).
+- SSE : `docs/ZEUS_QUICKSTART_EN.md`, ce qu'il faut poser en Zeus pour une exploitation de site prête à jouer.
+- Non traité ici : titres des tuiles d'accueil du SEEK (gravés dans les images PAA), clavier du SEEK imposé (option CBA demandée).
+- À reconstruire au regroupement : main.pbo, comspec_overwatch_connect.pbo, PBO du SSE (core).
+
+---
+
 ## Traduction ouverte aux contributeurs : rôles, traduction du site, kit des mods complété (ATAK natif : numéro donné au regroupement, site)
 
 ### Résumé joueur

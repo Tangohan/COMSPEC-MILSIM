@@ -87,8 +87,14 @@ if (_loaded isNotEqualTo _lang) then {
                     _buf = "";
                     _i = _i + 2;
                 } else {
-                    _buf = _buf + _c;
-                    _i = _i + 1;
+                    // « %% » du modèle (format) : un seul « % » dans le texte affiché (« Batterie 99 % »).
+                    if (_c isEqualTo "%" && {_d isEqualTo "%"}) then {
+                        _buf = _buf + "%";
+                        _i = _i + 2;
+                    } else {
+                        _buf = _buf + _c;
+                        _i = _i + 1;
+                    };
                 };
             };
             _parts pushBack _buf;

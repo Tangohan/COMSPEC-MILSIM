@@ -2,6 +2,13 @@ params ["_display", ["_exitCode", 0]];
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Un autre display du terminal a déjà pris la place (bascule HUD / en main) : rien à nettoyer.
 if ((uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]) isNotEqualTo _display) exitWith {};
+// Défilement de la page affichée gardé : un réglage qui recrée l'écran (taille, police…) la rouvre au même endroit.
+private _drawnPage = _state getOrDefault ["pageDrawn", ""];
+if (_drawnPage isNotEqualTo "") then {
+    private _mem = _state getOrDefault ["scrollMem", createHashMap];
+    _mem set [_drawnPage, ctrlScrollValues (_display displayCtrl 88531)];
+    _state set ["scrollMem", _mem];
+};
 [] call comspec_atak_native_fnc_livecamStop;
 // Écran 3D du JPC : la caméra de la vue aérienne (fn_jpcMap) ne doit pas survivre au display.
 if (_state getOrDefault ["texture", false]) then { ["close"] call comspec_atak_native_fnc_jpcMap; };
