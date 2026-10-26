@@ -18,7 +18,6 @@ final class TenantRolePermissionPresetService
     /** Droits plateforme exclus de tout profil automatique. */
     public const EXCLUDED_SLUGS = [
         'admin.system',
-        'forum.moderate', // modération forum étendue (niveau site / global)
     ];
 
     public function __construct(
@@ -34,7 +33,7 @@ final class TenantRolePermissionPresetService
             [
                 'id' => 'member',
                 'label' => 'Membre actif',
-                'description' => 'Forum (lecture et participation), documents standards, formations en consultation, annuaire en lecture.',
+                'description' => 'Documents standards, formations en consultation, annuaire en lecture.',
             ],
             [
                 'id' => 'instructor',
@@ -48,8 +47,8 @@ final class TenantRolePermissionPresetService
             ],
             [
                 'id' => 'forum_moderator_org',
-                'label' => 'Modérateur forum (organisation)',
-                'description' => 'Toute la modération forum sur votre communauté (épinglage, signalements, catégories), sans modération « site » étendue.',
+                'label' => 'Modérateur (organisation)',
+                'description' => 'Traitement des signalements des membres sur votre communauté, sans modération « site » étendue.',
             ],
             [
                 'id' => 'doc_curator',
@@ -99,7 +98,7 @@ final class TenantRolePermissionPresetService
         return [
             'admin' => 'Administration',
             'dashboard' => 'Tableau de bord',
-            'forum' => 'Forum',
+            'moderation' => 'Modération',
             'documents' => 'Documents',
             'training' => 'Formations',
             'personnel' => 'Personnel',
@@ -263,11 +262,11 @@ final class TenantRolePermissionPresetService
         }
 
         if ($presetId === 'forum_moderator_org') {
-            $forum = array_filter(
+            $moderation = array_filter(
                 TenantPermissionCatalog::definitions(),
-                static fn (array $d): bool => ($d['module'] ?? '') === 'forum'
+                static fn (array $d): bool => ($d['module'] ?? '') === 'moderation'
             );
-            $slugs = array_map(static fn (array $d): string => (string) $d['slug'], $forum);
+            $slugs = array_map(static fn (array $d): string => (string) $d['slug'], $moderation);
 
             return array_values(array_diff($slugs, $excluded));
         }
@@ -289,7 +288,7 @@ final class TenantRolePermissionPresetService
                     'admin.organization', 'admin.backoffice.view', 'admin.members.view', 'admin.members.manage',
                     'admin.members.moderate',
                     'invitations.send', 'documents.view', 'documents.upload', 'documents.metadata.update',
-                    'forum.moderate_organization', 'dashboard.pins.manage',
+                    'moderation.reports.manage', 'dashboard.pins.manage',
                     'personnel.profile.view', 'personnel.profile.update', 'personnel.assignments.manage',
                     'organization.orbat.manage', 'organization.orbat.view', 'organization.effectifs.hub.view',
                     'organization.catalog.manage',
@@ -315,7 +314,6 @@ final class TenantRolePermissionPresetService
 
         return match ($presetId) {
             'member' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                 'documents.view', 'documents.download.standard',
                 'training.view',
                 'personnel.profile.view',

@@ -6,9 +6,9 @@ namespace App\Controllers\Api;
 
 use App\Core\Request;
 use App\Core\Response;
-use App\Core\Session;
 use App\Repositories\AssetLogisticsRepository;
 use App\Services\Logistics\AssetLogisticsEvaluator;
+use App\Support\TacticalMissionScope;
 
 class LogisticsController
 {
@@ -20,17 +20,23 @@ class LogisticsController
     ) {
     }
 
-    private function missionId(Request $request, array $body = []): string
+    /**
+     * Bac de mission de la communauté appelante (voir TacticalMissionScope) : un missionId
+     * étranger, vide ou numérique n’est jamais retenu tel quel ; non scalaire → 422.
+     */
+    private function missionId(Request $request, array $body = []): string|Response
     {
-        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
-        if ($missionId !== null && $missionId !== '') {
-            return (string) $missionId;
+        $tenantId = TacticalMissionScope::tenantId();
+        if ($tenantId === null) {
+            return TacticalMissionScope::tenantRequiredResponse();
         }
-        $tenantId = Session::get('tenant_id');
-        $tid = $tenantId !== null && $tenantId !== '' ? (int) $tenantId : 1;
+        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
+        if (!TacticalMissionScope::isAcceptableRaw($missionId)) {
+            return TacticalMissionScope::invalidMissionIdResponse();
+        }
         $mapId = $body['mapId'] ?? $request->query('mapId');
-        $mid = $mapId !== null && $mapId !== '' ? (int) $mapId : self::DEFAULT_MAP_ID;
-        return 'mission_' . $tid . '_map_' . $mid;
+
+        return TacticalMissionScope::resolve($missionId, $mapId, $tenantId, self::DEFAULT_MAP_ID);
     }
 
     private function jsonBody(Request $request): array
@@ -89,7 +95,10 @@ class LogisticsController
     public function update(Request $request, array $params = []): Response
     {
         $body = $this->jsonBody($request);
-        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $this->missionId($request, $body);
+        $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         // Le jeu envoie l'indicatif comme identifiant ; on le reprend s'il manque l'assetId.
         $assetId = trim((string) ($body['assetId'] ?? $body['asset_id'] ?? $body['callsign'] ?? $body['call_sign'] ?? ''));
         if ($assetId === '') {
@@ -104,6 +113,9 @@ class LogisticsController
     {
         $body = $this->jsonBody($request);
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $list = $this->repository->listByMission($missionId);
         $out = [];
         foreach ($list as $row) {

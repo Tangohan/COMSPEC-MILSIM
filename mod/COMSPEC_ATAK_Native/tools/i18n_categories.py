@@ -51,6 +51,7 @@ LABELS = {
     "status": ("État", "Status"), "tasks": ("Tâches", "Tasks"), "text": ("Textes", "Texts"), "tracking": ("Suivi", "Tracking"),
     "wanted": ("Avis de recherche", "Wanted"), "waverelay": ("Wave Relay", "Wave Relay"), "weather": ("Météo", "Weather"),
     "overwatch": ("Connexion Overwatch", "Overwatch connection"), "sse": ("Mod SSE", "SSE mod"),
+    "items": ("Objets et modules Eden/Zeus", "Items and Eden/Zeus modules"),
     "other": ("Autres", "Other"),
 }
 ALIASES = {"messages": "chat", "logi": "logistics", "photos": "photo", "task": "tasks", "ordercompose": "order",
@@ -97,6 +98,12 @@ def main():
     with open(TEMPLATE, encoding="utf-8-sig") as f:
         keys = [m.group(1).replace('""', '"') for m in re.finditer(r'\[\s*"((?:[^"]|"")*)"\s*,', f.read())]
     main_src, connect_src, sse_src = load_collect(""), load_collect("--connect"), load_collect("--sse")
+    # Noms d'objets et de modules (stringtables, template/stringtable.json écrit par i18n.py community).
+    st_path = os.path.join(ROOT, "localisation", "template", "stringtable.json")
+    st = {}
+    if os.path.exists(st_path):
+        with open(st_path, encoding="utf-8") as f:
+            st = {row[1]: row[3] for row in json.load(f).get("keys", [])}
     strings, used = {}, set()
     for fr in keys:
         if fr in main_src:
@@ -106,6 +113,8 @@ def main():
             rel, cat = "Overwatch connect/" + connect_src[fr].replace("\\", "/"), "overwatch"
         elif fr in sse_src:
             rel, cat = "@COMSPEC_SSE/" + sse_src[fr].replace("\\", "/"), "sse"
+        elif fr in st:
+            rel, cat = {"atak": "stringtable.xml", "sse": "@COMSPEC_SSE/stringtable.xml"}.get(st[fr], "Overwatch connect/stringtable.xml"), "items"
         else:
             rel, cat = "", "other"
         used.add(cat)

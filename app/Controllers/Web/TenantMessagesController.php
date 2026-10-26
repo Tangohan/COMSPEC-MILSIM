@@ -137,7 +137,7 @@ final class TenantMessagesController
         if ($staffIds === []) {
             Session::flash(
                 'error',
-                'Aucun contact n’est désigné pour recevoir les messages internes sur cette communauté. Utilisez le forum ou contactez un administrateur.'
+                'Aucun contact n’est désigné pour recevoir les messages internes sur cette communauté. Contactez directement un administrateur.'
             );
 
             return Response::redirect(url('messages'));

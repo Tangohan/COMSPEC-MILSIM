@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Repositories\AtakModReportRepository;
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Services\Monitoring\AtakModReportReplyService;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -39,9 +39,9 @@ final class AtakModReportAdminActionsTest extends TestCase
     }
 
     /** Notifications Athena gardées en mémoire (pas de base MySQL dans les tests). */
-    private function notifications(): ForumNotificationRepository
+    private function notifications(): MemberNotificationRepository
     {
-        return new class () extends ForumNotificationRepository {
+        return new class () extends MemberNotificationRepository {
             /** @var list<array{0:int, 1:int, 2:string, 3:array<string, mixed>}> */
             public array $sent = [];
 

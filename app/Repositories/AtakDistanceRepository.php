@@ -303,6 +303,56 @@ class AtakDistanceRepository
     }
 
     /**
+     * Heures de pilote de quelques membres (tableur des effectifs) : total et détail par type d'appareil, indexé
+     * par membre. Les membres sans vol n'apparaissent pas.
+     *
+     * @param list<int> $userIds
+     * @return array<int, array{seconds: int, last_flown_at: string, families: list<array{key: string, label: string, kind: string, seconds: int, meters: int, variants: list<string>, last_flown_at: string}>}>
+     */
+    public function pilotByUsers(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $userIds === [] || !$this->schemaReady()) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($userIds), '?'));
+        $st = $this->pdo()->prepare(
+            "SELECT user_id, vehicle_class, vehicle_label, vehicle_kind, seconds, meters, last_flown_at FROM atak_pilot_time
+             WHERE tenant_id = ? AND user_id IN ({$in})"
+        );
+        $st->execute(array_merge([$tenantId], $userIds));
+
+        return self::pilotByUserFromRows($st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows lignes de atak_pilot_time (avec user_id)
+     * @return array<int, array{seconds: int, last_flown_at: string, families: list<array{key: string, label: string, kind: string, seconds: int, meters: int, variants: list<string>, last_flown_at: string}>}>
+     */
+    public static function pilotByUserFromRows(array $rows): array
+    {
+        $byUser = [];
+        foreach ($rows as $row) {
+            $byUser[(int) ($row['user_id'] ?? 0)][] = $row;
+        }
+        $out = [];
+        foreach ($byUser as $uid => $userRows) {
+            $families = self::groupPilot($userRows);
+            $seconds = array_sum(array_column($families, 'seconds'));
+            if ($uid < 1 || $seconds < 1) {
+                continue;
+            }
+            $out[$uid] = [
+                'seconds' => $seconds,
+                'last_flown_at' => (string) max(array_column($families, 'last_flown_at') ?: ['']),
+                'families' => $families,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * @param list<array<string, mixed>> $rows lignes de atak_pilot_time (avec user_id)
      * @return array{by_user: array<int, int>, families: list<array{key: string, label: string, kind: string, seconds: int, meters: int, variants: list<string>, last_flown_at: string, pilots: int}>}
      */

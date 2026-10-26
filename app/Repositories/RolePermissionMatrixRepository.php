@@ -208,7 +208,7 @@ final class RolePermissionMatrixRepository
         if ($out === false) {
             return '';
         }
-        fputcsv($out, $headers, ';');
+        fputcsv($out, $headers, ';', '"', '\\');
         foreach ($rows as $row) {
             $line = [
                 (string) ($row['code'] ?? ''),
@@ -223,7 +223,7 @@ final class RolePermissionMatrixRepository
             $line[] = (string) ($row['can_export_label'] ?? 'Non');
             $line[] = (string) ($row['last_reviewed_label'] ?? '—');
             $line[] = (string) ($row['status_label'] ?? 'Actif');
-            fputcsv($out, $line, ';');
+            fputcsv($out, $line, ';', '"', '\\');
         }
         rewind($out);
         $csv = stream_get_contents($out);

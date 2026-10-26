@@ -194,9 +194,6 @@ class CommunityController
             'publishedAt' => (string) ($communityConfig['public_page_builder']['published_at'] ?? ''),
         ];
 
-        $forumMembersOnly = !empty($communityConfig['forum_members_only']);
-        $showForumCta = (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
-            && (!$forumMembersOnly || ($this->authService->check() && $hasMembershipInTenant));
         $communityProfile = TenantCommunityProfileService::getPublicViewModel($communityConfig, (string) ($tenant['slug'] ?? ''));
 
         $publicLayout = TenantCommunityProfileService::resolvePublicPageLayout($communityConfig['public_page_layout'] ?? null);
@@ -348,7 +345,6 @@ class CommunityController
             'communityConfig' => $communityConfig,
             'communityProfile' => $communityProfile,
             'hasMembershipInTenant' => $hasMembershipInTenant,
-            'showForumCta' => $showForumCta,
             'tenantSettings' => $settings,
             'publicLayout' => $publicLayout,
             'showcaseVm' => $showcaseVm,
@@ -930,32 +926,6 @@ class CommunityController
     }
 
     /**
-     * Accès forum dans le contexte d’une communauté : bascule la session si l’utilisateur y a un compte.
-     */
-    public function enterForum(Request $request, array $params = []): Response
-    {
-        $slug = (string) ($params['slug'] ?? '');
-        $tenant = $this->tenantRepository->findBySlug($slug);
-        if (!$tenant) {
-            Session::flash('error', 'Communauté introuvable.');
-            return Response::redirect(url(''));
-        }
-        if (!$this->authService->check()) {
-            Session::flash('error', 'Connectez-vous pour accéder au forum de cette communauté.');
-            return Response::redirect(url('login'));
-        }
-        if (!$this->authService->switchToTenant((int) $tenant['id'])) {
-            Session::flash('error', 'Vous n’avez pas de compte dans cette communauté. Demandez une invitation ou créez une communauté.');
-            return Response::redirect(url('c/' . $slug));
-        }
-        $user = $this->authService->user();
-        if ($user) {
-            $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
-        }
-        return Response::redirect(url('forum'));
-    }
-
-    /**
      * Bascule la session sur la communauté cible puis redirige vers le formulaire d’enrôlement (compte Athena).
      */
     public function enterEnlistment(Request $request, array $params = []): Response
@@ -1054,13 +1024,16 @@ class CommunityController
             $cents = $interval === 'monthly' ? $offer['monthly'] : ($interval === 'yearly' ? $offer['yearly'] : null);
             $base['value'] = $slug . '|' . ($interval !== '' ? $interval : 'monthly');
             $base['paid'] = true;
-            $base['available'] = $billingConfigured && $cents !== null;
+            $onSale = $offer === null || !empty($offer['on_sale']);
+            $base['available'] = $billingConfigured && $cents !== null && $onSale;
             $base['meta'] = $cents !== null
                 ? \App\Support\ManualBilling::formatAmount((int) $cents) . ($interval === 'yearly' ? ' / an' : ' / mois') . ' · PayPal'
                 : 'Abonnement';
             $base['unavailable_hint'] = !$billingConfigured
                 ? 'Paiement pas encore prêt (mise à jour de la base à lancer).'
-                : 'Prix pas encore réglé pour cette formule (administration plateforme → Formules d’accès).';
+                : (!$onSale
+                    ? 'Formule pas proposée pour le moment.'
+                    : 'Prix pas encore réglé pour cette formule (administration plateforme → Formules d’accès).');
 
             return $base;
         };
@@ -1070,7 +1043,7 @@ class CommunityController
                 'slug' => 'free',
                 'title' => 'Quartier libre',
                 'eyebrow' => 'Sans engagement',
-                'description' => 'Forum, documents, messagerie, effectifs et formations de base pour démarrer sans frais.',
+                'description' => 'Documents, messagerie, effectifs et formations de base pour démarrer sans frais.',
                 'meta' => 'Gratuit',
                 'limits' => ['10 places', '5 formations', '3 événements par mois', 'Liaison jeu de base (positions, comptes rendus, briefing)'],
                 'value' => 'free',
@@ -1274,9 +1247,12 @@ class CommunityController
             $referrerUserId = $this->resolveReferrerUserId((int) $user['id']);
             $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType((string) $request->input('tenant_type', 'full'));
             $optionsBase = [
-                'registration_mode' => TenantCommunityProfileService::normalizeRegistrationMode(
-                    $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
-                ),
+                // « Bureau des effectifs » et « Carte ATAK » ne recrutent pas sur le site : Discord uniquement.
+                'registration_mode' => \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly($tenantType)
+                    ? TenantCommunityProfileService::REGISTRATION_MODE_DISCORD
+                    : TenantCommunityProfileService::normalizeRegistrationMode(
+                        $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+                    ),
                 'community_locked' => $request->input('community_locked') ? true : false,
                 'require_ai_ack' => $request->input('require_ai_ack') ? true : false,
                 'refuse_other_community_members' => $request->input('refuse_other_community_members') ? true : false,
@@ -1836,6 +1812,11 @@ class CommunityController
         }
 
         $gs = strtoupper(trim((string) $request->input('wizard_grade_system_code', 'FR_CLASSIC')));
+        // « Aucun » : pas de grade affiché ; un référentiel technique (français) reste posé pour les données.
+        $gradesHidden = $gs === 'NONE';
+        if ($gradesHidden) {
+            $gs = 'FR_CLASSIC';
+        }
         if (!in_array($gs, CommunityOnboardingValidationService::GRADE_SYSTEMS, true)) {
             $gs = 'FR_CLASSIC';
         }
@@ -1851,6 +1832,7 @@ class CommunityController
 
         $wizard = [
             'grade_system_code' => $gs,
+            'grades_hidden' => $gradesHidden,
             'timezone' => trim((string) $request->input('wizard_timezone', 'Europe/Paris')),
             'default_locale' => trim((string) $request->input('wizard_default_locale', 'fr')),
             'orbat_visibility' => trim((string) $request->input('wizard_orbat_visibility', 'members')),

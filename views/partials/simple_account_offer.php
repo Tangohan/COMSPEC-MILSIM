@@ -12,21 +12,26 @@ $sao = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8'
 $saoCsrf = \App\Core\Csrf::token();
 ?>
 <style>
-.sao { margin: 1rem auto 0; max-width: 100rem; padding: 0 1rem; }
-.sao__box { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.25rem; border: 1px solid #d4d4d4; border-left: 3px solid #047857; background: #ffffff; color: #161616; }
-.sao__text { flex: 1 1 22rem; min-width: 0; }
-.sao__kicker { margin: 0 0 0.25rem; font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #047857; }
-.sao__title { margin: 0 0 0.3rem; font-size: 1rem; font-weight: 800; }
-.sao__lead { margin: 0; font-size: 0.86rem; line-height: 1.55; color: #4a4a4a; }
-.sao__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.sao { margin: 1.25rem auto 0; max-width: 72rem; padding: 0 1.5rem; }
+.sao__box { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; padding: 1rem 1.25rem; border: 1px solid #a7f3d0; border-radius: 1rem; background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 70%); color: #0f172a; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }
+.sao__icon { flex: 0 0 auto; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: .85rem; background: #059669; color: #fff; }
+.sao__text { flex: 1 1 20rem; min-width: 0; }
+.sao__kicker { margin: 0 0 .15rem; font-size: 10px; font-weight: 800; letter-spacing: .25em; text-transform: uppercase; color: #047857; }
+.sao__title { margin: 0 0 .25rem; font-size: 1rem; font-weight: 800; }
+.sao__lead { margin: 0; font-size: .85rem; line-height: 1.55; color: #475569; }
+.sao__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .sao__actions form { margin: 0; }
-.sao__btn { display: inline-flex; align-items: center; padding: 0.65rem 1rem; border: 1px solid #161616; background: #161616; color: #fff; font: inherit; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.sao__btn { display: inline-flex; align-items: center; min-height: 2.5rem; padding: .55rem 1.1rem; border: 1px solid #059669; border-radius: .75rem; background: #059669; color: #fff; font: inherit; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: background .15s; }
 .sao__btn:hover { background: #047857; border-color: #047857; }
-.sao__btn--ghost { background: transparent; color: #161616; border-color: #d4d4d4; }
-.sao__btn--ghost:hover { background: #f6f6f6; color: #161616; border-color: #d4d4d4; }
+.sao__btn--ghost { background: #fff; color: #334155; border-color: #cbd5e1; }
+.sao__btn--ghost:hover { background: #f1f5f9; border-color: #94a3b8; }
+@media (max-width: 640px) { .sao { padding: 0 1rem; } .sao__actions { width: 100%; } .sao__actions form, .sao__btn { flex: 1 1 auto; justify-content: center; } }
 </style>
 <section class="sao" aria-labelledby="sao-title">
     <div class="sao__box">
+        <span class="sao__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        </span>
         <div class="sao__text">
             <p class="sao__kicker">Compte simple</p>
             <h2 class="sao__title" id="sao-title">Vous êtes le seul membre de <?= $sao($simpleOffer['tenant_name']) ?></h2>

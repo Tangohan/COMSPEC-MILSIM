@@ -2328,7 +2328,7 @@ class UserRepository
 
     /**
      * Suppression douce (anonymisation) d'un compte depuis l'annuaire plateforme.
-     * Ne supprime jamais la ligne : ~99 clés étrangères (posts forum, dossiers personnel,
+     * Ne supprime jamais la ligne : ~99 clés étrangères (dossiers personnel,
      * formations, documents…) référencent users.id, la plupart en ON DELETE CASCADE —
      * une vraie suppression SQL effacerait tout cet historique en cascade.
      * Le compte reste identifié par son id mais devient inutilisable (email/mdp invalidés,
@@ -2520,37 +2520,6 @@ class UserRepository
         );
         $stmt->execute([$tenantId, $term, $term, $limit]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Résout un @identifiant unique (nom affiché ou indicatif exact, insensible à la casse).
-     *
-     * @return array{id: int, display_name: string, callsign: ?string}|null
-     */
-    public function findForForumMention(int $tenantId, string $token): ?array
-    {
-        $token = trim($token);
-        if ($token === '') {
-            return null;
-        }
-        $notDeleted = SqlText::normalizedNotLikeLiteral($this->pdo(), 'email', '%@deleted.invalid');
-        $extra = ' AND ' . SqlText::inLiterals($this->pdo(), 'status', ['active']) . ' AND ' . $notDeleted;
-        if ($this->hasDeletedAtColumn()) {
-            $extra .= ' AND deleted_at IS NULL';
-        }
-        $nameEq = SqlText::normalizedEquals($this->pdo(), 'display_name');
-        $callsignEq = SqlText::normalizedEquals($this->pdo(), 'callsign');
-        $stmt = $this->pdo()->prepare(
-            'SELECT id, display_name, callsign FROM users WHERE tenant_id = ? AND (
-                ' . $nameEq . '
-                OR (callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND ' . $callsignEq . ')
-            )' . $extra . ' LIMIT 1'
-        );
-        $tokenNorm = strtolower($token);
-        $stmt->execute([$tenantId, $tokenNorm, $tokenNorm]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $row ?: null;
     }
 
     /**
@@ -3192,6 +3161,33 @@ class UserRepository
         );
         $stmt->execute([$unitId]);
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * Nombre d’affectations en cours par unité, en une seule requête (liste des groupes).
+     *
+     * @param list<int> $unitIds
+     * @return array<int, int> unit_id => nombre de membres
+     */
+    public function countActiveByUnits(array $unitIds): array
+    {
+        $unitIds = array_values(array_unique(array_filter(array_map('intval', $unitIds), static fn (int $v): bool => $v > 0)));
+        if ($unitIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($unitIds), '?'));
+        $stmt = $this->pdo()->prepare(
+            'SELECT unit_id, COUNT(DISTINCT user_id) AS n FROM user_units
+             WHERE unit_id IN (' . $placeholders . ') AND (ended_at IS NULL OR ended_at > NOW())
+             GROUP BY unit_id'
+        );
+        $stmt->execute($unitIds);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['unit_id']] = (int) $row['n'];
+        }
+
+        return $out;
     }
 
     /** @return list<int> Unit IDs auxquelles l'utilisateur est affecté (user_units, non terminée). */
@@ -3953,7 +3949,6 @@ class UserRepository
         $sql = "SELECT u.id, u.display_name, u.callsign, u.status,
                        {$gradeShort},
                        r.name AS role_name,
-                       ups.forum_alias, ups.forum_label_mode,
                        un.name AS unit_name
                 FROM users u
                 INNER JOIN user_profile_display_settings ups ON ups.user_id = u.id AND COALESCE(ups.public_roster_opt_in, 0) = 1
@@ -4203,11 +4198,11 @@ class UserRepository
     }
 
     /**
-     * Membres actifs susceptibles de modérer le forum (alertes internes).
+     * Responsables de communauté prévenus des signalements (alertes internes).
      *
      * @return list<int>
      */
-    public function listForumAlertRecipientUserIds(int $tenantId): array
+    public function listReportAlertRecipientUserIds(int $tenantId): array
     {
         $ids = [];
         $pack = $this->technicalAccountExclusionPredicate('u');

@@ -6,7 +6,7 @@ namespace App\Services\Attendance;
 
 use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
@@ -33,7 +33,7 @@ final class CommunityEventAttendanceService
         private TenantRepository $tenants,
         private UserRepository $users,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
-        private ForumNotificationRepository $forumNotificationRepository,
+        private MemberNotificationRepository $memberNotificationRepository,
     ) {}
 
     /**
@@ -224,9 +224,9 @@ final class CommunityEventAttendanceService
                 } catch (\Throwable) {
                 }
             }
-            if ($this->forumNotificationRepository->tableExists()) {
+            if ($this->memberNotificationRepository->tableExists()) {
                 try {
-                    $this->forumNotificationRepository->create($tenantId, $organizerId, 'event_rsvp_change', [
+                    $this->memberNotificationRepository->create($tenantId, $organizerId, 'event_rsvp_change', [
                         'event_id' => $eventId,
                         'title' => (string) ($event['title'] ?? ''),
                         'participant' => $displayName,

@@ -59,7 +59,7 @@ $composeRequested = (bool) ($msgComposeRequested ?? false);
                 <div class="msgx-placeholder">
                     <span class="msgx-empty-icon msgx-empty-icon--warn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4 3 20h18L12 4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4.5M12 17v.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
                     <h3>Envoi indisponible pour le moment</h3>
-                    <p>Personne n’est encore désigné pour recevoir les messages internes de cette communauté. Passez par le forum ou contactez directement un responsable.</p>
+                    <p>Personne n’est encore désigné pour recevoir les messages internes de cette communauté. Contactez directement un responsable.</p>
                 </div>
                 <?php endif; ?>
             <?php else: ?>

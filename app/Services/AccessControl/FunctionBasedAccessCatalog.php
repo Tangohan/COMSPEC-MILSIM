@@ -26,7 +26,7 @@ final class FunctionBasedAccessCatalog
     public static function roles(): array
     {
         $member = [
-            'forum.view', 'documents.view', 'documents.download.standard', 'training.view',
+            'documents.view', 'documents.download.standard', 'training.view',
             'training.results.view', 'personnel.profile.view', 'organization.effectifs.hub.view',
             'organization.orbat.view', 'operational.board.view', 'operations.missions.view',
             'operations.sitrep.view', 'operations.aar.view', 'operations.readiness.view',
@@ -34,8 +34,7 @@ final class FunctionBasedAccessCatalog
             'operations.doctrine.view', 'media.view',
         ];
         $management = array_merge($member, [
-            'forum.topic.pin', 'forum.topic.lock', 'forum.topic.move', 'forum.post.edit_any',
-            'forum.post.delete_any', 'forum.reports.manage', 'forum.announcements.publish',
+            'moderation.reports.manage',
             'documents.upload', 'documents.version.replace', 'documents.metadata.update',
             'documents.delete', 'documents.archive', 'documents.categories.manage', 'documents.access.manage',
             'admin.members.view', 'admin.members.manage', 'admin.members.moderate',

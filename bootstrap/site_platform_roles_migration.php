@@ -37,44 +37,34 @@ function run_site_platform_roles_migration(PDO $pdo): void
         return (int) $pdo->lastInsertId();
     };
 
-    $pidModerate = $ensureGlobalPermission(
-        'forum.moderate',
-        'Modération forum (toutes communautés)',
-        'forum'
-    );
-    $pidCategories = $ensureGlobalPermission(
-        'forum.categories.manage',
-        'Canaux forum (toutes communautés)',
-        'forum'
+    $pidReportsManage = $ensureGlobalPermission(
+        'moderation.reports.manage',
+        'Traitement des signalements (toutes communautés)',
+        'moderation'
     );
     $pidSupport = $ensureGlobalPermission(
         'site.support',
         'Assistance membres (accès guidé)',
         'admin'
     );
-    $pidReportsManage = $ensureGlobalPermission(
-        'forum.reports.manage',
-        'Pilotage des dossiers de signalement',
-        'forum'
-    );
 
     $definitions = [
         [
             'slug' => 'site_moderator',
             'name' => 'Modérateur plateforme',
-            'description' => 'Modération des contenus du brief sur l’ensemble des communautés, sans administration système ni gestion des organisations.',
-            'permission_ids' => [$pidModerate],
+            'description' => 'Traitement des signalements des membres sur l’ensemble des communautés, sans administration système ni gestion des organisations.',
+            'permission_ids' => [$pidReportsManage],
         ],
         [
             'slug' => 'site_senior_moderator',
             'name' => 'Modérateur senior plateforme',
-            'description' => 'Même périmètre que le modérateur plateforme, avec la gestion de l’arborescence des canaux forum sur toutes les communautés.',
-            'permission_ids' => [$pidModerate, $pidCategories],
+            'description' => 'Même périmètre que le modérateur plateforme, avec la supervision des décisions de modération.',
+            'permission_ids' => [$pidReportsManage],
         ],
         [
             'slug' => 'site_support',
             'name' => 'Équipe assistance',
-            'description' => 'Accompagnement des membres : consultation des éléments utiles au support dans le back-office, sans modération globale des canaux ni réglages système.',
+            'description' => 'Accompagnement des membres : consultation des éléments utiles au support dans le back-office, sans modération globale ni réglages système.',
             'permission_ids' => [$pidSupport],
         ],
         [
@@ -87,7 +77,7 @@ function run_site_platform_roles_migration(PDO $pdo): void
             'slug' => 'site_report_supervisor',
             'name' => 'Superviseur signalements',
             'description' => 'Supervision de la file signalements, coordination des assignations et appui aux décisions de clôture.',
-            'permission_ids' => [$pidReportsManage, $pidModerate],
+            'permission_ids' => [$pidReportsManage],
         ],
     ];
 

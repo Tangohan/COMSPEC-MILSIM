@@ -41,6 +41,51 @@ class PersonnelProfileRepository
         return $this->columnExistsCache[$key];
     }
 
+    /** Champs médicaux du dossier affichés dans la vue « Médical » du tableur des effectifs. */
+    public const MEDICAL_FIELDS = ['blood_type', 'weight_kg', 'height_cm', 'drug_intolerances', 'allergies'];
+
+    /**
+     * Données médicales de plusieurs membres (groupe sanguin, poids, taille, intolérances, allergies), indexées par
+     * membre. Les colonnes absentes (migration pas encore passée) reviennent vides.
+     *
+     * @param list<int> $userIds
+     * @return array<int, array<string, string>>
+     */
+    public function medicalForUsers(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        if ($userIds === []) {
+            return [];
+        }
+        $cols = array_values(array_filter(self::MEDICAL_FIELDS, fn (string $c): bool => $this->columnExists('personnel_profiles', $c)));
+        if ($cols === []) {
+            return [];
+        }
+        $select = 'user_id, ' . ($this->hasTenantIdColumn() ? 'tenant_id, ' : '') . implode(', ', $cols);
+        $in = implode(',', array_fill(0, count($userIds), '?'));
+        try {
+            $st = $this->pdo->prepare("SELECT {$select} FROM personnel_profiles WHERE user_id IN ({$in})");
+            $st->execute($userIds);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+        $byUser = [];
+        foreach ($rows as $row) {
+            $byUser[(int) $row['user_id']][] = $row;
+        }
+        $out = [];
+        foreach ($byUser as $uid => $userRows) {
+            $row = UserIdentityMergeRules::pickPreferredDossierRow($userRows, $tenantId) ?? [];
+            $out[$uid] = [];
+            foreach (self::MEDICAL_FIELDS as $c) {
+                $out[$uid][$c] = trim((string) ($row[$c] ?? ''));
+            }
+        }
+
+        return $out;
+    }
+
     public function getByUserId(int $userId, ?int $tenantId = null): ?array
     {
         if ($userId < 1) {
@@ -68,14 +113,20 @@ class PersonnelProfileRepository
         return $this->withPrimaryJobRoleBridge($row);
     }
 
+    /** Mémoïsé pour la durée de la requête (appelé par l’en-tête de chaque page). */
+    private static ?bool $hasTenantIdColumnCache = null;
+
     private function hasTenantIdColumn(): bool
     {
-        $st = $this->pdo->query(
-            "SELECT 1 FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
-        );
+        if (self::$hasTenantIdColumnCache === null) {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
+            );
+            self::$hasTenantIdColumnCache = $st !== false && (bool) $st->fetchColumn();
+        }
 
-        return $st !== false && (bool) $st->fetchColumn();
+        return self::$hasTenantIdColumnCache;
     }
 
     /**
@@ -215,6 +266,11 @@ class PersonnelProfileRepository
             'rp_arma_blood_type', 'rp_arma_blood_type_at',
             'current_phase_id',
         ];
+        foreach (['height_cm', 'drug_intolerances', 'allergies'] as $medicalCol) {
+            if ($this->columnExists('personnel_profiles', $medicalCol)) {
+                $allowed[] = $medicalCol;
+            }
+        }
         if ($this->columnExists('personnel_profiles', 'visibility_level')) {
             $allowed[] = 'visibility_level';
         }

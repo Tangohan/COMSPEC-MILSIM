@@ -24,7 +24,6 @@ $pinTypeLabel = static function (string $t): string {
         'url' => 'Lien libre',
         'route' => 'Page du portail',
         'document' => 'Document',
-        'forum_topic' => 'Sujet de forum',
         'training' => 'Formation',
         'event' => 'Événement',
         default => $t !== '' ? ucfirst(str_replace('_', ' ', $t)) : 'Raccourci',

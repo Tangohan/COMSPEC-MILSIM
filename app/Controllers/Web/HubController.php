@@ -93,6 +93,18 @@ class HubController
         $rows = $stats->all();
         $mine = $tenantId > 0 ? $stats->forTenant($tenantId) : null;
         $userId = (int) Session::get('user_id');
+        $ranks = [];
+        $peaks = [];
+        foreach (array_keys(CommunityStatsService::METRICS) as $metric) {
+            $ranks[$metric] = CommunityStatsService::rank($rows, $metric, (int) $row['id']);
+            $peak = 0.0;
+            foreach ($rows as $candidate) {
+                if (isset($candidate[$metric]) && $candidate[$metric] !== null) {
+                    $peak = max($peak, (float) $candidate[$metric]);
+                }
+            }
+            $peaks[$metric] = $peak;
+        }
 
         return Response::view('layout.main', [
             'content' => 'hub.community',
@@ -102,6 +114,9 @@ class HubController
             'hubIsOwn' => $mine !== null && $mine['id'] === $row['id'],
             'hubMedians' => CommunityStatsService::medians($rows),
             'hubMetrics' => CommunityStatsService::METRICS,
+            'hubRanks' => $ranks,
+            'hubPeaks' => $peaks,
+            'hubNetworkSize' => count($rows),
             'hubStructure' => $stats->structure((int) $row['id'], (bool) $row['orbat_public']),
             'hubReviews' => $this->ecosystem()->reviewsFor((int) $row['id']),
             'hubRecommended' => in_array((int) $row['id'], $this->ecosystem()->recommendedByUser($userId), true),

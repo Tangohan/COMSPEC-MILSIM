@@ -10,7 +10,7 @@ use App\Core\Session;
 
 /**
  * Sélecteur de publication (« Publier ») : point d’entrée unique depuis le dashboard qui
- * redirige vers le bon flux existant (annonce, forum, ordre tactique, événement) selon
+ * redirige vers le bon flux existant (annonce, ordre tactique, événement) selon
  * les droits de l’utilisateur — pas de fusion de données, chaque flux garde son propre
  * contrôleur/table.
  */
@@ -24,7 +24,6 @@ final class PublicationLauncherController
         }
 
         $canAlerts = can('admin.organization') || can('admin.access') || can('site.support');
-        $canForumTopic = can('forum.create_topic');
         $canBriefing = can('admin.system') || can('admin.organization') || can('admin.access');
         $canEvents = can('admin.organization') || can('admin.access') || can('site.support');
 
@@ -42,13 +41,6 @@ final class PublicationLauncherController
                 'description' => 'Message affiché aux membres sur le tableau de bord, avec bandeau ou popup selon l’importance.',
                 'href' => url('back-office/alerts/create'),
                 'enabled' => $canAlerts,
-            ],
-            [
-                'key' => 'forum',
-                'label' => 'Sujet de forum',
-                'description' => 'Ouvrir un nouveau sujet dans une catégorie du forum de la communauté.',
-                'href' => url('forum/new-topic'),
-                'enabled' => $canForumTopic,
             ],
             [
                 'key' => 'briefing',

@@ -47,7 +47,6 @@ final class PlatformAdminScopeTest extends TestCase
         foreach ([
             "'/admin/atak-config' => 'back-office/ressources/atak-config'",
             "'/admin/modpacks' => 'back-office/ressources/modpacks'",
-            "'/admin/forum-config' => 'back-office/ressources/forum-config'",
             "'/admin/content-moderation' => 'back-office/content-moderation'",
         ] as $needle) {
             self::assertStringContainsString($needle, $routes);

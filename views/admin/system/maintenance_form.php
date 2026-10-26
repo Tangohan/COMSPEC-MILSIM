@@ -87,8 +87,8 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
                 <?php endforeach; ?>
             </div>
             <div class="mt-4 grid gap-3 md:grid-cols-3">
-                <input type="text" id="scope-route-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeRoute, ENT_QUOTES, 'UTF-8') ?>" placeholder="/forum">
-                <input type="text" id="scope-module-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeModule, ENT_QUOTES, 'UTF-8') ?>" placeholder="forum">
+                <input type="text" id="scope-route-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeRoute, ENT_QUOTES, 'UTF-8') ?>" placeholder="/documents">
+                <input type="text" id="scope-module-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeModule, ENT_QUOTES, 'UTF-8') ?>" placeholder="documents">
                 <input type="text" id="scope-custom-input" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars($scopeCustom, ENT_QUOTES, 'UTF-8') ?>" placeholder="scope custom">
             </div>
             <p class="mt-3 rounded-lg bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700">scope: <span id="scope-preview"><?= htmlspecialchars($scopeRaw === '' ? 'global' : $scopeRaw, ENT_QUOTES, 'UTF-8') ?></span></p>
@@ -115,20 +115,39 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
                 </label>
             </div>
 
-            <div class="mt-4 grid gap-4 md:grid-cols-3">
-                <label class="text-sm font-bold text-slate-700">UI maintenance
-                    <select name="ui_variant" id="ui_variant" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5">
-                        <option value="military" <?= $currentVariant === 'military' ? 'selected' : '' ?>>Military command</option>
-                        <option value="minimal" <?= $currentVariant === 'minimal' ? 'selected' : '' ?>>Minimal clean</option>
-                        <option value="neon" <?= $currentVariant === 'neon' ? 'selected' : '' ?>>Neon pulse</option>
-                        <option value="status" <?= $currentVariant === 'status' ? 'selected' : '' ?>>Status board</option>
-                    </select>
-                </label>
-                <label class="text-sm font-bold text-slate-700">Code maintenance
+            <div class="mt-6">
+                <p class="text-sm font-bold text-slate-700">Apparence de la page</p>
+                <p class="mt-1 text-xs text-slate-500">Choisissez un style : l’aperçu à droite montre la page telle que les membres la verront, avec votre titre et votre message.</p>
+                <div class="mt-3 mt-themes-layout">
+                    <div class="mt-themes-grid" role="radiogroup" aria-label="Apparence de la page de maintenance">
+                        <?php foreach (\App\Support\MaintenanceThemes::THEMES as $themeKey => $theme): ?>
+                            <label class="mt-theme">
+                                <input type="radio" name="ui_variant" value="<?= htmlspecialchars($themeKey, ENT_QUOTES, 'UTF-8') ?>" class="sr-only" data-maint-preview <?= $currentVariant === $themeKey ? 'checked' : '' ?>>
+                                <span class="mt-theme__thumb mt-theme__thumb--<?= htmlspecialchars($themeKey, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">
+                                    <span class="mt-theme__line mt-theme__line--title"></span>
+                                    <span class="mt-theme__line"></span>
+                                    <span class="mt-theme__line mt-theme__line--short"></span>
+                                    <span class="mt-theme__btn"></span>
+                                </span>
+                                <span class="mt-theme__name"><?= htmlspecialchars($theme['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="mt-theme__hint"><?= htmlspecialchars($theme['hint'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <div>
+                        <div class="mt-preview" data-maint-preview-frame-wrap>
+                            <iframe title="Aperçu de la page de maintenance" class="mt-preview__frame" data-maint-preview-frame loading="lazy" src="<?= htmlspecialchars(url('admin/maintenance/apercu') . '?' . http_build_query(['variant' => $currentVariant, 'title' => (string) ($row['title'] ?? ''), 'message' => (string) ($row['message'] ?? ''), 'animation' => $currentAnimation ? '1' : '0']), ENT_QUOTES, 'UTF-8') ?>"></iframe>
+                        </div>
+                        <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
+                                <input type="checkbox" name="ui_animation" value="1" <?= $currentAnimation ? 'checked' : '' ?> class="rounded border-slate-300 text-emerald-600" data-maint-preview> Animations (apparition du texte, radar, voyants)
+                            </label>
+                            <a href="#" class="text-sm font-semibold text-emerald-700 hover:text-emerald-900" target="_blank" rel="noopener" data-maint-preview-open>Ouvrir l’aperçu en grand ↗</a>
+                        </div>
+                    </div>
+                </div>
+                <label class="mt-5 block max-w-sm text-sm font-bold text-slate-700">Code maintenance <span class="font-medium text-slate-500">(interne, jamais affiché aux membres)</span>
                     <input type="text" name="maintenance_code" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm" value="<?= htmlspecialchars((string) ($row['maintenance_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                </label>
-                <label class="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
-                    <input type="checkbox" name="ui_animation" value="1" <?= $currentAnimation ? 'checked' : '' ?> class="rounded border-slate-300 text-emerald-600"> Activer les animations
                 </label>
             </div>
         </section>
@@ -197,6 +216,38 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
     </form>
 </div>
 
+<style>
+.mt-theme { position: relative; display: grid; gap: 0.3rem; padding: 0.65rem; border: 1px solid #e2e8f0; border-radius: 0.9rem; background: #fff; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease; }
+.mt-theme:hover { border-color: #94a3b8; }
+.mt-theme:has(input:checked) { border-color: #059669; box-shadow: 0 0 0 3px rgba(16,185,129,.25); }
+.mt-theme:has(input:focus-visible) { outline: 2px solid #059669; outline-offset: 2px; }
+.mt-themes-layout { display: grid; gap: 1.25rem; }
+.mt-themes-grid { display: grid; gap: 0.6rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 1100px) { .mt-themes-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; } }
+@media (max-width: 520px) { .mt-themes-grid { grid-template-columns: 1fr; } }
+.mt-theme__thumb { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 0.25rem; height: 5.5rem; padding: 0.6rem; border-radius: 0.6rem; overflow: hidden; }
+.mt-theme__line { display: block; width: 70%; height: 0.28rem; border-radius: 99px; background: rgba(255,255,255,.55); }
+.mt-theme__line--title { width: 55%; height: 0.5rem; background: #fff; }
+.mt-theme__line--short { width: 40%; }
+.mt-theme__btn { display: block; width: 2.2rem; height: 0.65rem; margin-top: 0.2rem; border-radius: 0.15rem; background: #fff; }
+.mt-theme__thumb--military { background: linear-gradient(180deg, rgba(5,5,5,.35), rgba(5,5,5,.92)), url('<?= htmlspecialchars(asset_url('assets/images/fog-team.jpg'), ENT_QUOTES, 'UTF-8') ?>') center / cover; }
+.mt-theme__thumb--minimal { align-items: center; justify-content: center; background: #f3f5f4; }
+.mt-theme__thumb--minimal::before { content: ""; position: absolute; inset: 0.75rem 1.4rem; border-radius: 0.4rem; background: #fff; box-shadow: 0 6px 16px -8px rgba(15,23,42,.35); }
+.mt-theme__thumb--minimal > * { position: relative; background: #cbd5e1; }
+.mt-theme__thumb--minimal .mt-theme__line--title, .mt-theme__thumb--minimal .mt-theme__btn { background: #0c1116; }
+.mt-theme__thumb--neon { background: radial-gradient(circle at 75% 35%, rgba(52,211,153,.35), transparent 45%), repeating-linear-gradient(0deg, rgba(52,211,153,.12) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(52,211,153,.12) 0 1px, transparent 1px 12px), #020806; }
+.mt-theme__thumb--neon .mt-theme__line--title { background: #a7f3d0; box-shadow: 0 0 8px rgba(52,211,153,.8); }
+.mt-theme__thumb--neon .mt-theme__line { background: rgba(167,243,208,.55); }
+.mt-theme__thumb--neon .mt-theme__btn { background: transparent; border: 1px solid #34d399; }
+.mt-theme__thumb--status { justify-content: center; background: #0b1014; }
+.mt-theme__thumb--status::before { content: ""; position: absolute; inset: 0.6rem 1rem; border: 1px solid rgba(255,255,255,.14); border-radius: 0.4rem; background: repeating-linear-gradient(180deg, transparent 0 0.85rem, rgba(255,255,255,.08) 0.85rem calc(0.85rem + 1px)); }
+.mt-theme__thumb--status::after { content: ""; position: absolute; right: 1.5rem; top: 1.05rem; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: #fbbf24; box-shadow: 0 0.85rem 0 #60a5fa, 0 1.7rem 0 #34d399; }
+.mt-theme__thumb--status > * { position: relative; margin-left: 0.6rem; }
+.mt-theme__name { font-size: 0.875rem; font-weight: 800; color: #0f172a; }
+.mt-theme__hint { font-size: 0.75rem; line-height: 1.35; color: #64748b; }
+.mt-preview { position: relative; aspect-ratio: 16 / 10; border: 1px solid #e2e8f0; border-radius: 0.9rem; overflow: hidden; background: #0b1014; }
+.mt-preview__frame { position: absolute; top: 0; left: 0; width: 200%; height: 200%; border: 0; transform: scale(0.5); transform-origin: 0 0; pointer-events: none; }
+</style>
 <script>
 (function () {
     var form = document.getElementById('maintenance-form');
@@ -264,5 +315,36 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
     });
 
     syncScope();
+
+    // Aperçu en direct : l’iframe recharge la page publique avec les valeurs en cours de saisie.
+    var frame = form.querySelector('[data-maint-preview-frame]');
+    var openLink = form.querySelector('[data-maint-preview-open]');
+    var previewBase = <?= json_encode(url('admin/maintenance/apercu'), JSON_UNESCAPED_SLASHES) ?>;
+    var endsInput = form.querySelector('input[name="ends_at"]');
+    var timer = null;
+    function previewUrl() {
+        var variant = form.querySelector('input[name="ui_variant"]:checked');
+        var anim = form.querySelector('input[name="ui_animation"]');
+        var q = new URLSearchParams();
+        q.set('variant', variant ? variant.value : 'military');
+        q.set('title', titleInput ? titleInput.value : '');
+        q.set('message', messageInput ? messageInput.value.slice(0, 1800) : '');
+        q.set('animation', anim && anim.checked ? '1' : '0');
+        if (endsInput && endsInput.value) q.set('ends_at', endsInput.value.replace('T', ' '));
+        return previewBase + '?' + q.toString();
+    }
+    function refreshPreview() {
+        var u = previewUrl();
+        if (frame) frame.src = u;
+        if (openLink) openLink.href = u;
+    }
+    function schedule() {
+        clearTimeout(timer);
+        timer = setTimeout(refreshPreview, 450);
+    }
+    form.querySelectorAll('[data-maint-preview]').forEach(function (el) { el.addEventListener('change', refreshPreview); });
+    [titleInput, messageInput, endsInput].forEach(function (el) { if (el) el.addEventListener('input', schedule); });
+    document.querySelectorAll('[data-preset-key]').forEach(function (btn) { btn.addEventListener('click', schedule); });
+    if (openLink) openLink.href = previewUrl();
 })();
 </script>

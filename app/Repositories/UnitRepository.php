@@ -272,6 +272,9 @@ class UnitRepository
         }
 
         $presenceByUser = [];
+        $presenceSampleByUser = [];
+        $presenceCheckedByUser = [];
+        $presenceCommittedByUser = [];
         if ($this->tableExists('community_event_rsvps') && $this->tableExists('community_events')) {
             $sql = "SELECT r.user_id,
                            COUNT(*) AS sample_size,
@@ -295,6 +298,9 @@ class UnitRepository
                 if ($uid < 1) {
                     continue;
                 }
+                $presenceSampleByUser[$uid] = $sample;
+                $presenceCheckedByUser[$uid] = $checked;
+                $presenceCommittedByUser[$uid] = $committed;
                 if ($sample === 0) {
                     $presenceByUser[$uid] = 50;
                     continue;
@@ -352,6 +358,9 @@ class UnitRepository
                 'components' => [
                     'certification' => $cert,
                     'presence' => $presence,
+                    'presence_sample' => $presenceSampleByUser[$uid] ?? 0,
+                    'presence_checked' => $presenceCheckedByUser[$uid] ?? 0,
+                    'presence_committed' => $presenceCommittedByUser[$uid] ?? 0,
                     'medical' => $medical,
                     'availability' => $availability,
                 ],

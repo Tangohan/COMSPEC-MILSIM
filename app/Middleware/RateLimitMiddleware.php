@@ -11,7 +11,7 @@ use App\Services\Security\FileRateLimiter;
 
 /**
  * Throttling par IP (invité) ou par compte connecté (uid) sur routes sensibles :
- * authentification, recrutement public, forum, hub « Mon activité », modération auto recrutement.
+ * authentification, recrutement public, hub « Mon activité », modération auto recrutement.
  * Inclut un plafond GET anonyme pour freiner le scraping / mirroring massif.
  */
 final class RateLimitMiddleware
@@ -83,7 +83,7 @@ final class RateLimitMiddleware
         if ($path === '/back-office/ressources/recrutement/automod/escalate') {
             return [10, 3600, 'rl:rw_automod_escalate:' . $actorKey];
         }
-        if (in_array($path, ['/activite/forum/lu', '/activite/courrier/lu', '/activite/messages/lu'], true)) {
+        if (in_array($path, ['/activite/courrier/lu', '/activite/messages/lu'], true)) {
             return [45, 300, 'rl:activite_mark:' . $path . ':' . $actorKey];
         }
 
@@ -98,10 +98,6 @@ final class RateLimitMiddleware
             '/communities/create' => [15, 3600],
             '/invitations/accept' => [30, 600],
             '/community/resolve-code' => [20, 600],
-            '/api/forum' => [120, 300],
-            '/api/forum-moderation' => [90, 300],
-            '/api/forum-upload' => [40, 300],
-            '/forum/new-topic' => [25, 600],
             '/api/atak/game-link/redeem' => [20, 3600],
             '/api/atak/game-link/by-steam' => [30, 3600],
             '/api/atak/client-init' => [60, 300],
@@ -119,9 +115,6 @@ final class RateLimitMiddleware
 
                 return [$max, $window, 'rl:' . $path . ':' . $method . ':' . $ip];
             }
-        }
-        if (str_starts_with($path, '/forum/topic/') && str_ends_with($path, '/reply')) {
-            return [50, 300, 'rl:' . $path . ':' . $method . ':' . $ip];
         }
 
         $prefixRules = [

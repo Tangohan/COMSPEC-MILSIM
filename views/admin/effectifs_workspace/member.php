@@ -158,6 +158,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         'blood_type' => 'Groupe sanguin',
         'languages' => 'Langues parlées',
         'weight_kg' => 'Poids',
+        'height_cm' => 'Taille',
         'nickname_primary' => 'Surnom',
         'motto' => 'Devise',
     ];
@@ -165,6 +166,9 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         $v = trim((string) ($profile[$key] ?? ''));
         if ($key === 'weight_kg' && $v !== '' && (int) $v > 0) {
             return (int) $v . ' kg';
+        }
+        if ($key === 'height_cm') {
+            return (int) $v > 0 ? (int) $v . ' cm' : '';
         }
 
         return $v;
@@ -382,6 +386,13 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
                     <dd class="<?= $cv === '' ? 'eff-dd--empty' : '' ?>"><?= $h($cv !== '' ? $cv : 'Non renseigné') ?></dd>
                 </div>
             <?php endforeach; ?>
+            <?php foreach (['drug_intolerances' => 'Intolérances médicamenteuses', 'allergies' => 'Allergies'] as $medKey => $medLabel): ?>
+                <?php $mv = trim((string) ($profile[$medKey] ?? '')); ?>
+                <div>
+                    <dt><?= $h($medLabel) ?></dt>
+                    <dd class="<?= $mv === '' ? 'eff-dd--empty' : '' ?>"><?= $h($mv !== '' ? $mv : 'Aucune connue') ?></dd>
+                </div>
+            <?php endforeach; ?>
         </dl>
     </article>
     <article class="eff-card eff-lang-card" id="langues">
@@ -496,7 +507,7 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
                 <button type="button" class="eff-btn eff-btn--ghost eff-btn--sm" data-dialog-open="eff-dlg-jobs">Modifier</button>
             <?php endif; ?>
         </div>
-        <p class="eff-card__lead">La fonction décrit le poste tenu (tireur, médecin, chef de groupe…). Ce n’est ni l’équipe ni un droit d’accès. La fonction principale apparaît sur la fiche, l’organigramme et le forum.</p>
+        <p class="eff-card__lead">La fonction décrit le poste tenu (tireur, médecin, chef de groupe…). Ce n’est ni l’équipe ni un droit d’accès. La fonction principale apparaît sur la fiche et l’organigramme.</p>
         <?php if ($jobRoles !== []): ?>
             <div class="eff-tags">
                 <?php foreach ($jobRoles as $jr): ?>
@@ -885,6 +896,9 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
             <?php endforeach; ?>
             <label>Nationalité<input type="text" name="nationality" maxlength="100" value="<?= $h($profile['nationality'] ?? '') ?>" placeholder="Ex. Française"></label>
             <label>Poids (kg)<input type="number" name="weight_kg" min="20" max="300" step="1" value="<?= $h((int) ($profile['weight_kg'] ?? 0) > 0 ? (int) $profile['weight_kg'] : '') ?>"></label>
+            <label>Taille (cm)<input type="number" name="height_cm" min="100" max="250" step="1" value="<?= $h((int) ($profile['height_cm'] ?? 0) > 0 ? (int) $profile['height_cm'] : '') ?>"></label>
+            <label class="eff-dialog__wide">Intolérances médicamenteuses<input type="text" name="drug_intolerances" maxlength="500" value="<?= $h($profile['drug_intolerances'] ?? '') ?>" placeholder="Ex. Pénicilline, AINS"></label>
+            <label class="eff-dialog__wide">Allergies<input type="text" name="allergies" maxlength="500" value="<?= $h($profile['allergies'] ?? '') ?>" placeholder="Ex. Latex, arachide"></label>
             <label class="eff-dialog__wide">Langues parlées<input type="text" name="languages" maxlength="255" value="<?= $h($profile['languages'] ?? '') ?>" placeholder="Ex. Français, anglais, arabe"></label>
             <label class="eff-dialog__wide">Devise<input type="text" name="motto" maxlength="255" value="<?= $h($profile['motto'] ?? '') ?>"></label>
         </div>

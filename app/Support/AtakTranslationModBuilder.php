@@ -40,6 +40,43 @@ final class AtakTranslationModBuilder
         return ['text' => "[\n" . implode(",\n", $lines) . "\n]\n", 'written' => $written, 'skipped' => $skipped];
     }
 
+    /** Colonnes de stringtable d'Arma 3 qu'un mod de langue peut remplir (valeurs de la commande language). */
+    public const GAME_COLUMNS = ['German', 'Italian', 'Spanish', 'Czech', 'Polish', 'Russian', 'Portuguese', 'Turkish', 'Japanese', 'Korean', 'Chinese', 'Chinesesimp'];
+
+    /**
+     * stringtable.xml du mod de langue : noms d'objets et de modules Eden/Zeus (ATAK, SSE, Overwatch connect) dans la
+     * colonne de la langue du jeu. Chargée après COMSPEC, elle remplace ces textes quand Arma tourne dans cette langue.
+     * Vide sans langue du jeu reconnue ou sans aucun nom traduit.
+     *
+     * @param list<array{0: string, 1: string, 2: string}> $keys [clé $STR_, texte original, anglais]
+     * @param array<string, string> $byText texte original => traduction
+     */
+    public static function buildStringtable(array $keys, array $byText, string $code, string $game): string
+    {
+        if (!in_array($game, self::GAME_COLUMNS, true)) {
+            return '';
+        }
+        $esc = static fn (string $t): string => htmlspecialchars($t, ENT_NOQUOTES | ENT_XML1, 'UTF-8');
+        $rows = [];
+        foreach ($keys as [$id, $orig, $en]) {
+            $t = $byText[$orig] ?? '';
+            if ($t === '' || preg_match('/^[A-Za-z0-9_]+$/', $id) !== 1 || AtakTranslationCheck::check($orig, $t)['errors'] !== []) {
+                continue;
+            }
+            $rows[] = '        <Key ID="' . $id . "\">\n"
+                . '            <Original>' . $esc($orig) . "</Original>\n"
+                . '            <English>' . $esc($en) . "</English>\n"
+                . '            <' . $game . '>' . $esc($t) . '</' . $game . ">\n"
+                . '        </Key>';
+        }
+        if ($rows === []) {
+            return '';
+        }
+
+        return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Project name=\"comspec_atak_lang_" . $code . "\">\n    <Package name=\"main\">\n"
+            . implode("\n", $rows) . "\n    </Package>\n</Project>\n";
+    }
+
     /**
      * @param array{code: string, name: string, game: string, author: string, version: string, site: string} $o
      */
@@ -123,18 +160,30 @@ final class AtakTranslationModBuilder
      * @param list<array{0: string, 1: string, 2: string}> $entries
      * @param array<string, string> $map
      * @param array{code: string, name: string, game: string, author: string, version: string, site: string, release: int, page: string} $o
+     * @param list<array{0: string, 1: string, 2: string}> $stringtable clés des stringtables (AtakTranslationTemplate::stringtable)
      * @return array{zip: string, file: string, written: int, skipped: int}
      */
-    public static function playerZip(array $entries, array $map, array $o, int $time): array
+    public static function playerZip(array $entries, array $map, array $o, int $time, array $stringtable = []): array
     {
         $code = $o['code'];
         $prefix = 'comspec_atak_lang_' . $code;
         $folder = '@COMSPEC_ATAK_Lang_' . $code . '/';
         $txt = self::buildTxt($entries, $map);
-        $pbo = self::buildPbo($prefix, [
+        $files = [
             ['name' => 'config.cpp', 'data' => self::buildConfig($o)],
             ['name' => $code . '.txt', 'data' => $txt['text']],
-        ], $time);
+        ];
+        $byText = [];
+        foreach ($entries as $e) {
+            if (($map[$e[0]] ?? '') !== '') {
+                $byText[$e[1]] = $map[$e[0]];
+            }
+        }
+        $xml = self::buildStringtable($stringtable, $byText, $code, $o['game']);
+        if ($xml !== '') {
+            $files[] = ['name' => 'stringtable.xml', 'data' => $xml];
+        }
+        $pbo = self::buildPbo($prefix, $files, $time);
         $label = 'COMSPEC ATAK - ' . self::cfg($o['name']);
         $mod = 'name = "' . $label . "\";\n"
             . 'author = "' . self::cfg($o['author'] !== '' ? $o['author'] : 'COMSPEC community') . "\";\n"

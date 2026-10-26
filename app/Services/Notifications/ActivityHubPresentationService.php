@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Notifications;
 
 /**
- * Libellés et liens pour le centre d’activité (forum, courrier, messagerie interne).
+ * Libellés et liens pour le centre d’activité (notifications membre, courrier, messagerie interne).
  */
 final class ActivityHubPresentationService
 {
@@ -13,7 +13,7 @@ final class ActivityHubPresentationService
      * @param array<string, mixed> $row
      * @return array{title: string, detail: string, href: string, unread: bool, at: string}
      */
-    public function formatForumRow(array $row): array
+    public function formatNotificationRow(array $row): array
     {
         $type = (string) ($row['type'] ?? '');
         $payload = [];
@@ -25,42 +25,10 @@ final class ActivityHubPresentationService
         $at = (string) ($row['created_at'] ?? '');
 
         return match ($type) {
-            'topic_reply' => [
-                'title' => 'Réponse sur un sujet suivi',
-                'detail' => trim((string) ($payload['title'] ?? 'Sujet du forum')),
-                'href' => isset($payload['topic_id']) ? url('forum/topic/' . (int) $payload['topic_id']) : url('forum'),
-                'unread' => $unread,
-                'at' => $at,
-            ],
-            'forum_mention' => [
-                'title' => 'Vous avez été cité sur le forum',
-                'detail' => trim((string) ($payload['title'] ?? 'Sujet du forum')),
-                'href' => (isset($payload['topic_id'], $payload['post_id']))
-                    ? url('forum/topic/' . (int) $payload['topic_id'] . '?newpost=' . (int) $payload['post_id'] . '#post-' . (int) $payload['post_id'])
-                    : (isset($payload['topic_id']) ? url('forum/topic/' . (int) $payload['topic_id']) : url('forum')),
-                'unread' => $unread,
-                'at' => $at,
-            ],
-            'interteam_coop_reply' => [
-                'title' => 'Message sur un fil partagé (coopération)',
-                'detail' => trim((string) ($payload['title'] ?? 'Sujet partagé')),
-                'href' => (isset($payload['mission_slug'], $payload['topic_id']) && trim((string) $payload['mission_slug']) !== '')
-                    ? url('forum/coop/' . rawurlencode(trim((string) $payload['mission_slug'])) . '/sujet/' . (int) $payload['topic_id'])
-                    : url('forum'),
-                'unread' => $unread,
-                'at' => $at,
-            ],
-            'moderation_alert' => [
-                'title' => 'Contrôle automatique sur un message',
-                'detail' => trim((string) ($payload['summary'] ?? 'Vérification requise.')),
-                'href' => url('forum'),
-                'unread' => $unread,
-                'at' => $at,
-            ],
             'report_opened' => [
                 'title' => 'Signalement à examiner',
                 'detail' => trim((string) ($payload['summary'] ?? 'Un membre a signalé un contenu ou envoyé une demande.')),
-                'href' => url('back-office/forum-moderation'),
+                'href' => url('back-office/signalements'),
                 'unread' => $unread,
                 'at' => $at,
             ],
@@ -74,7 +42,7 @@ final class ActivityHubPresentationService
             'report_reopened' => [
                 'title' => 'Signalement rouvert à traiter',
                 'detail' => trim((string) ($payload['summary'] ?? 'Un dossier clos a été remis dans la file d’attente.')),
-                'href' => url('back-office/forum-moderation'),
+                'href' => url('back-office/signalements'),
                 'unread' => $unread,
                 'at' => $at,
             ],
@@ -132,9 +100,9 @@ final class ActivityHubPresentationService
                 'at' => $at,
             ],
             default => [
-                'title' => 'Forum',
-                'detail' => 'Notification',
-                'href' => url('forum'),
+                'title' => 'Notification',
+                'detail' => '',
+                'href' => url('activite'),
                 'unread' => $unread,
                 'at' => $at,
             ],

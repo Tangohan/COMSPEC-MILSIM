@@ -46,12 +46,11 @@
         }
         var commands = data.commands || [];
         var docs = data.documents || [];
-        var forum = data.forum || [];
         var pers = data.personnel || [];
         var events = data.events || [];
         var training = data.training || [];
         var total =
-            commands.length + docs.length + forum.length + pers.length + events.length + training.length;
+            commands.length + docs.length + pers.length + events.length + training.length;
         if (total === 0) {
             resultsEl.innerHTML =
                 '<div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">' +
@@ -95,7 +94,6 @@
         }
         blocks.push(rows(commands, 'Raccourcis'));
         blocks.push(rows(docs, 'Documents'));
-        blocks.push(rows(forum, 'Forum'));
         blocks.push(rows(pers, 'Personnel'));
         blocks.push(rows(events, 'Événements'));
         blocks.push(rows(training, 'Formations'));
@@ -124,7 +122,7 @@
                 (apiUrl.indexOf('?') >= 0 ? '&' : '?') +
                 'q=' +
                 encodeURIComponent(q) +
-                '&commands=1&documents=0&forum=0&personnel=0&events=0&training=0';
+                '&commands=1&documents=0&personnel=0&events=0&training=0';
             fetch(shortUrl, {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' },
@@ -169,7 +167,7 @@
             (apiUrl.indexOf('?') >= 0 ? '&' : '?') +
             'q=' +
             encodeURIComponent(q) +
-            '&documents=1&forum=1&personnel=1&events=1&training=1&commands=1';
+            '&documents=1&personnel=1&events=1&training=1&commands=1';
         fetch(url, {
             credentials: 'same-origin',
             headers: { Accept: 'application/json' },

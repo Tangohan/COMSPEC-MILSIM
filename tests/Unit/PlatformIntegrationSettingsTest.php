@@ -10,7 +10,7 @@ use App\Support\DiscordWebhookCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Salons Discord de la plateforme réglés en base (Intégrations > Plateforme) au lieu du .env,
+ * Salons Discord de la plateforme réglés en base (Administration › Intégrations de la plateforme) au lieu du .env,
  * et copie des signalements du mod dans le salon de la communauté du joueur.
  */
 final class PlatformIntegrationSettingsTest extends TestCase
@@ -96,19 +96,26 @@ final class PlatformIntegrationSettingsTest extends TestCase
         self::assertSame('skipped_low', (new CommunityModReportRelay())->relay(5, ['gravity' => 'low']));
     }
 
-    public function testIntegrationsPageHasPlatformSectionForAdminsOnly(): void
+    public function testPlatformIntegrationsLiveInPlatformAdminOnly(): void
     {
         $root = dirname(__DIR__, 2);
-        $view = (string) file_get_contents($root . '/views/admin/organization/integrations.php');
-        $controller = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/OrganizationIntegrationsController.php');
+        $orgView = (string) file_get_contents($root . '/views/admin/organization/integrations.php');
+        $orgController = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/OrganizationIntegrationsController.php');
         $routes = (string) file_get_contents($root . '/routes/web.php');
-        $pages = (string) file_get_contents($root . '/config/back_office_pages.php');
+        $sidebar = (string) file_get_contents($root . '/views/partials/platform_admin_sidebar.php');
 
-        self::assertStringContainsString('<?php if ($platformAdmin): ?>', $view);
-        self::assertStringContainsString('isPlatformAdmin()', $controller);
-        self::assertStringContainsString("'/back-office/integrations/plateforme/discord'", $routes);
-        self::assertStringContainsString("'/back-office/integrations/plateforme/emails'", $routes);
-        self::assertStringContainsString("'back-office-integrations.css'", $pages);
+        // Plus rien de la plateforme dans le back-office des communautés.
+        self::assertStringNotContainsString('id="plateforme"', $orgView);
+        self::assertStringNotContainsString('PlatformIntegrationSettings', $orgController);
+        self::assertStringNotContainsString('/back-office/integrations/plateforme/', $routes);
+
+        foreach (['', '/discord', '/discord/essai', '/roles-lies', '/emails', '/emails/essai'] as $path) {
+            self::assertStringContainsString("'/admin/system/integrations" . $path . "', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class", $routes);
+        }
+        self::assertSame(6, substr_count($routes, "SystemPlatformIntegrationsController::class, '"));
+        self::assertSame(6, preg_match_all('#SystemPlatformIntegrationsController::class, \'\w+\'\], \[AuthMiddleware::class, SystemAdminMiddleware::class\]#', $routes));
+        self::assertStringContainsString("'admin/system/integrations'", $sidebar);
+        self::assertFileExists($root . '/views/admin/system/platform_integrations.php');
         self::assertFileExists($root . '/public/assets/js/back-office-integrations.js');
         self::assertFileExists($root . '/views/admin/organization/partials/integrations_mail_form.php');
     }

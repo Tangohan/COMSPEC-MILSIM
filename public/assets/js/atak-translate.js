@@ -121,6 +121,31 @@
             + '};\n';
     }
 
+    // Colonnes de stringtable d'Arma 3 qu'un mod de langue peut remplir (valeurs de la commande language).
+    var GAME_COLUMNS = ['German', 'Italian', 'Spanish', 'Czech', 'Polish', 'Russian', 'Portuguese', 'Turkish', 'Japanese', 'Korean', 'Chinese', 'Chinesesimp'];
+
+    function xmlStr(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    // stringtable.xml du mod : noms d'objets et de modules Eden/Zeus (ATAK, SSE, Overwatch connect) dans la colonne
+    // de la langue du jeu ; '' sans langue du jeu reconnue ou sans nom traduit. Même sortie que
+    // AtakTranslationModBuilder::buildStringtable côté serveur.
+    function buildStringtable(keys, byText, code, game) {
+        if (GAME_COLUMNS.indexOf(game) < 0) { return ''; }
+        var rows = [];
+        (keys || []).forEach(function (k) {
+            var t = byText[k[1]] || '';
+            if (!t || !/^[A-Za-z0-9_]+$/.test(k[0]) || check(k[1], t).errors.length) { return; }
+            rows.push('        <Key ID="' + k[0] + '">\n'
+                + '            <Original>' + xmlStr(k[1]) + '</Original>\n'
+                + '            <English>' + xmlStr(k[2] || k[1]) + '</English>\n'
+                + '            <' + game + '>' + xmlStr(t) + '</' + game + '>\n'
+                + '        </Key>');
+        });
+        if (!rows.length) { return ''; }
+        return '<?xml version="1.0" encoding="utf-8"?>\n<Project name="comspec_atak_lang_' + code + '">\n    <Package name="main">\n'
+            + rows.join('\n') + '\n    </Package>\n</Project>\n';
+    }
+
     function buildModCpp(o) {
         return 'name = "COMSPEC ATAK - ' + cfgStr(o.name) + '";\n'
             + 'author = "' + cfgStr(o.author || 'COMSPEC community') + '";\n'
@@ -253,7 +278,7 @@
         });
     }
 
-    var api = { placeholders: placeholders, check: check, parseCommunity: parseCommunity, buildTxt: buildTxt, buildConfig: buildConfig, buildModCpp: buildModCpp, buildVdf: buildVdf, buildPbo: buildPbo, buildZip: buildZip, sha1: sha1, crc32: crc32, renderRich: renderRich };
+    var api = { placeholders: placeholders, check: check, parseCommunity: parseCommunity, buildTxt: buildTxt, buildConfig: buildConfig, buildStringtable: buildStringtable, buildModCpp: buildModCpp, buildVdf: buildVdf, buildPbo: buildPbo, buildZip: buildZip, sha1: sha1, crc32: crc32, renderRich: renderRich };
     if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
     if (typeof document === 'undefined') { return; }
 
@@ -263,7 +288,7 @@
     if (!root) { return; }
     var L = {};
     try { L = JSON.parse(root.getAttribute('data-i18n') || '{}'); } catch (e) { L = {}; }
-    var EN_UI = (document.documentElement.lang || '').slice(0, 2) === 'en';
+    var EN_UI = (document.documentElement.lang || 'fr').slice(0, 2) !== 'fr';
     var API = root.getAttribute('data-api-url');
     var PAGE = root.getAttribute('data-page-url');
     var fmt = new Intl.NumberFormat(document.documentElement.lang || undefined);
@@ -373,12 +398,18 @@
         return S.tr[h] ? 'done' : 'todo';
     }
 
+    function hasEnglish(e) {
+        var en = (e.en || '').trim();
+        return en !== '' && fold(en) !== fold(e.fr);
+    }
+
     function counts() {
-        var c = { total: 0, done: 0, todo: 0, error: 0, warn: 0, sugg: 0, conflict: 0, mine: 0, cats: {} };
+        var c = { total: 0, done: 0, todo: 0, blank: 0, error: 0, warn: 0, sugg: 0, conflict: 0, mine: 0, cats: {} };
         S.entries.forEach(function (e) {
             c.total++;
-            var k = c.cats[e.cat] || (c.cats[e.cat] = { total: 0, done: 0 });
+            var k = c.cats[e.cat] || (c.cats[e.cat] = { total: 0, done: 0, shipped: 0 });
             k.total++;
+            if (hasEnglish(e)) { k.shipped++; } else if (!S.tr[e.h]) { c.blank++; }
             if (S.tr[e.h]) { c.done++; k.done++; } else { c.todo++; }
             var st = status(e.h);
             if (st === 'error' || st === 'sugg' || st === 'conflict' || st === 'mine') { c[st]++; }
@@ -392,6 +423,7 @@
         var st = status(e.h);
         switch (S.filter) {
         case 'todo': if (S.tr[e.h]) { return false; } break;
+        case 'blank': if (S.tr[e.h] || hasEnglish(e)) { return false; } break;
         case 'done': if (!S.tr[e.h]) { return false; } break;
         case 'error': if (st !== 'error') { return false; } break;
         case 'warn': if (!S.issues[e.h] || !S.issues[e.h].warnings.length || st === 'error') { return false; } break;
@@ -645,7 +677,7 @@
         txt.appendChild(el('span', '', tx('ring_done', { done: fmt.format(c.done), total: fmt.format(c.total) })));
         rb.appendChild(txt);
 
-        var filters = [['todo', c.todo], ['all', c.total], ['done', c.done]];
+        var filters = [['blank', c.blank], ['todo', c.todo], ['all', c.total], ['done', c.done]];
         if (S.pack) { filters.push(['sugg', isReviewer() ? c.mine : c.sugg]); }
         filters.push(['error', c.error], ['warn', c.warn]);
         if (c.conflict) { filters.push(['conflict', c.conflict]); }
@@ -666,7 +698,15 @@
 
         var cats = $('tw-cats');
         cats.textContent = '';
-        var ids = Object.keys(c.cats).sort(function (a, b) { return c.cats[b].total - c.cats[a].total; });
+        var ids = Object.keys(c.cats).sort(function (a, b) {
+            var ka = c.cats[a], kb = c.cats[b];
+            var aBare = ka.shipped === 0, bBare = kb.shipped === 0;
+            if (aBare !== bBare) { return aBare ? -1 : 1; }
+            var ap = ka.total ? ka.done / ka.total : 0;
+            var bp = kb.total ? kb.done / kb.total : 0;
+            if (ap !== bp) { return ap - bp; }
+            return kb.total - ka.total;
+        });
         var all = el('li');
         var ab = btn('tw-cat', '', function () { S.cat = ''; rebuild(); renderSide(); });
         ab.setAttribute('aria-pressed', S.cat === '' ? 'true' : 'false');
@@ -683,6 +723,7 @@
             b.setAttribute('aria-pressed', S.cat === id ? 'true' : 'false');
             b.appendChild(el('span', 'tw-cat__name', label));
             b.appendChild(el('span', 'tw-cat__n', fmt.format(k.done) + '/' + fmt.format(k.total)));
+            if (k.shipped === 0) { b.appendChild(el('span', 'tw-cat__bare', tx('cat_no_en'))); }
             var bar = el('span', 'tw-cat__bar');
             var fill = el('i');
             fill.style.width = (k.total ? (k.done / k.total) * 100 : 0) + '%';
@@ -1536,6 +1577,7 @@
 
     function start(data) {
         S.cats = data.categories || {};
+        S.stringtable = Array.isArray(data.stringtable) ? data.stringtable : [];
         S.entries = (data.entries || []).filter(function (e) { return Array.isArray(e) && typeof e[0] === 'string'; }).map(function (e, i) {
             return { i: i, h: e[0], fr: e[1], en: e[2] || '', cat: e[3] || 'other', file: e[4] || '', norm: fold(e[1] + '\n' + (e[2] || '')) };
         });
@@ -1695,7 +1737,12 @@
                 var txtBytes = enc.encode(txt.text);
                 var cfg = enc.encode(buildConfig(o));
                 var prefix = 'comspec_atak_lang_' + o.code;
-                var pbo = buildPbo(prefix, [{ name: 'config.cpp', data: cfg }, { name: o.code + '.txt', data: txtBytes }], Math.floor(Date.now() / 1000));
+                var byText = {};
+                S.entries.forEach(function (e) { if (S.tr[e.h]) { byText[e.fr] = S.tr[e.h]; } });
+                var st = buildStringtable(S.stringtable, byText, o.code, o.game);
+                var pboFiles = [{ name: 'config.cpp', data: cfg }, { name: o.code + '.txt', data: txtBytes }];
+                if (st) { pboFiles.push({ name: 'stringtable.xml', data: enc.encode(st) }); }
+                var pbo = buildPbo(prefix, pboFiles, Math.floor(Date.now() / 1000));
                 preview(o.name).then(function (jpg) {
                     var F = o.folder + '/';
                     var files = [
@@ -1707,8 +1754,9 @@
                         { name: F + 'source/' + prefix + '/config.cpp', data: cfg },
                         { name: F + 'source/' + prefix + '/$PBOPREFIX$', data: enc.encode(prefix + '\n') },
                         { name: F + 'source/' + prefix + '/' + o.code + '.txt', data: txtBytes },
+                    ].concat(st ? [{ name: F + 'source/' + prefix + '/stringtable.xml', data: enc.encode(st) }] : []).concat([
                         { name: F + 'README.txt', data: enc.encode(readme(o)) },
-                    ];
+                    ]);
                     if (jpg) { files.splice(3, 0, { name: F + 'preview.jpg', data: jpg, store: true }); }
                     return buildZip(files);
                 }).then(function (zip) {

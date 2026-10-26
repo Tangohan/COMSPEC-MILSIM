@@ -23,10 +23,30 @@ final class PayPalDonationTest extends TestCase
         }
     }
 
-    public function testRoutesAndAdminAccess(): void
+    public function testAmountIsPrefilledOnlyForPayPalMeLinks(): void
     {
-        $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
-        self::assertMatchesRegularExpression("#post\\('/admin/system/dons', \\[SystemDonationsController::class, 'save'\\], \\[AuthMiddleware::class, SystemAdminMiddleware::class\\]#", $routes);
+        self::assertSame('https://www.paypal.me/TTRDProIndividual/10.00EUR', PayPalDonation::amountUrl('https://www.paypal.me/TTRDProIndividual', 1000));
+        self::assertSame('https://www.paypal.com/paypalme/athena/5.00EUR', PayPalDonation::amountUrl('https://www.paypal.com/paypalme/athena', 500));
+        $button = 'https://www.paypal.com/donate/?hosted_button_id=ABC123';
+        self::assertSame($button, PayPalDonation::amountUrl($button, 1000));
+    }
+
+    public function testDonationPageUsesThePaymentsPayPalSetting(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        // Un seul réglage PayPal : l’ancienne page Admin > Dons renvoie vers Admin > Paiements.
+        self::assertStringNotContainsString('SystemDonationsController', $routes);
+        self::assertFileDoesNotExist($root . '/app/Controllers/Admin/System/SystemDonationsController.php');
+        self::assertMatchesRegularExpression("#get\\('/admin/system/dons', fn \\(\\) => \\\\App\\\\Core\\\\Response::redirect\\(url\\('admin/paiements'\\)#", $routes);
         self::assertStringContainsString("get('/soutenir-atak/paypal-qr.png'", $routes);
+        self::assertStringNotContainsString('admin/system/dons', (string) file_get_contents($root . '/views/partials/platform_admin_sidebar.php'));
+
+        $support = (string) file_get_contents($root . '/app/Support/PayPalDonation.php');
+        self::assertStringContainsString('ManualBilling::SETTING_PAYPAL_URL', $support);
+        $service = (string) file_get_contents($root . '/app/Services/Billing/PlanPaymentService.php');
+        self::assertStringContainsString('PayPalDonation::accountUrl(', $service);
+        $controller = (string) file_get_contents($root . '/app/Controllers/Web/AtakSupportController.php');
+        self::assertStringContainsString('PayPalDonation::accountUrl()', $controller);
     }
 }

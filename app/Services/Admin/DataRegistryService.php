@@ -1003,7 +1003,7 @@ final class DataRegistryService
         $fh = fopen('php://temp', 'w+');
         fwrite($fh, "\xEF\xBB\xBF");
         $cols = array_values(array_filter($data['meta']['columns'], static fn ($c) => ($c['key'] ?? '') !== ''));
-        fputcsv($fh, array_map(static fn ($c) => $c['label'], $cols), ';');
+        fputcsv($fh, array_map(static fn ($c) => $c['label'], $cols), ';', '"', '\\');
         foreach ($data['rows'] as $r) {
             fputcsv($fh, array_map(static function ($c) use ($r) {
                 $v = $r[$c['key']] ?? '';
@@ -1012,7 +1012,7 @@ final class DataRegistryService
                 }
 
                 return (string) $v;
-            }, $cols), ';');
+            }, $cols), ';', '"', '\\');
         }
         rewind($fh);
         $out = (string) stream_get_contents($fh);

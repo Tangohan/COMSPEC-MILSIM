@@ -296,6 +296,11 @@
 }
 .grd-ref__system:not(.is-other) .grd-ref__switch { background: transparent; color: var(--ath-ink, #0c1116); }
 .grd-ref__switch:hover { opacity: 0.88; }
+.grd-ref__system-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.grd-ref__system-actions form { margin: 0; }
+.grd-ref__system .grd-ref__switch--ghost { border-color: var(--ath-line, #e3e8ea); background: transparent; color: var(--ath-muted, #6d7a80); }
+.grd-ref__system.is-none { border-left-color: var(--ath-muted, #6d7a80); }
+.grd-ref__system.is-none .grd-ref__switch { background: var(--ath-ink, #0c1116); color: var(--ath-surface, #fff); }
 
 /* Onglet « Grades personnalisés » : compteur dans l'onglet et lien de pied de liste */
 .grd-ref__count {

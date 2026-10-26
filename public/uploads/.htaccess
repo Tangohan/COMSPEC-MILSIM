@@ -1,0 +1,19 @@
+# Athena — public/uploads/.htaccess
+# Fichiers téléversés (photos terrain, logos…) : servis tels quels, jamais exécutés.
+# Directives de la famille FileInfo uniquement (déjà requise par public/.htaccess pour RewriteRule) :
+# pas de php_flag / Options / Require, qui feraient un 500 si AllowOverride ne les autorise pas.
+# Équivalent nginx : docs/nginx.example.conf (location ^/uploads/ … deny).
+
+# PHP-FPM / CGI / mod_php : retirer tout gestionnaire de script.
+RemoveHandler .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .pht .cgi .pl .py .sh
+RemoveType .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .pht
+<FilesMatch "\.(php\d?|phtml|phar|pht|phps|cgi|pl|py|sh)$">
+    SetHandler none
+    ForceType text/plain
+</FilesMatch>
+
+# Ceinture : refuser purement ces extensions (403).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule \.(php\d?|phtml|phar|pht|phps|cgi|pl|py|sh)$ - [F,NC,L]
+</IfModule>

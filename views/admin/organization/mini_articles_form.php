@@ -4,8 +4,12 @@ declare(strict_types=1);
 use App\Core\Csrf;
 use App\Support\MiniArticleHtml;
 
-/** @var array<string, mixed>|null $miniArticle */
-/** @var string $formAction */
+/**
+ * Mini-article : rédaction à gauche (titre, résumé, éditeur riche), réglages et aperçu de la carte à droite.
+ *
+ * @var array<string, mixed>|null $miniArticle
+ * @var string $formAction
+ */
 $row = is_array($miniArticle ?? null) ? $miniArticle : null;
 $isEdit = $row !== null;
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -40,101 +44,126 @@ if (is_string($rawGal) && $rawGal !== '') {
     }
 }
 ?>
-<div class="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-    <div class="mb-6">
-        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700">Mini-article</p>
-        <h1 class="mt-1 text-2xl font-black tracking-tight text-slate-900"><?= $isEdit ? 'Modifier' : 'Nouveau' ?> mini-article</h1>
-        <p class="mt-1 text-sm text-slate-600">Rédigez rapidement un contenu permanent visible par les membres.</p>
-    </div>
-
-    <form id="mini-article-form" method="post" action="<?= $h((string) $formAction) ?>" enctype="multipart/form-data" class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+<div class="bo-ma">
+    <form id="mini-article-form" method="post" action="<?= $h((string) $formAction) ?>" enctype="multipart/form-data" class="bo-ma__layout">
         <input type="hidden" name="_csrf_token" value="<?= $h(Csrf::token()) ?>">
 
-        <div>
-            <label for="ma-title" class="block text-xs font-black uppercase tracking-wide text-slate-500">Titre</label>
-            <input type="text" id="ma-title" name="title" required maxlength="255" value="<?= $h($title) ?>"
-                   class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                   placeholder="Ex. Doctrine radio — règles de la semaine">
-        </div>
-
-        <div>
-            <label for="ma-tags" class="block text-xs font-black uppercase tracking-wide text-slate-500">Tags</label>
-            <input type="text" id="ma-tags" name="tags" value="<?= $h($tagsValue) ?>"
-                   class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                   placeholder="ops, rh, formation (séparés par des virgules)">
-            <p class="mt-1 text-[11px] text-slate-500">Jusqu’à 12 tags courts pour filtrer et classer.</p>
-        </div>
-
-        <div>
-            <label for="ma-excerpt" class="block text-xs font-black uppercase tracking-wide text-slate-500">Description courte</label>
-            <textarea id="ma-excerpt" name="excerpt" rows="3" maxlength="2000"
-                      class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                      placeholder="Résumé affiché sur le tableau de bord et la liste des articles."><?= $h($excerpt) ?></textarea>
-        </div>
-
-        <div>
-            <label for="ma-body" class="block text-xs font-black uppercase tracking-wide text-slate-500">Contenu (HTML)</label>
-            <textarea id="ma-body" name="body_html" rows="14"
-                      class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-                      placeholder="Rédigez le corps de l’article…"><?= $h($bodyHtml) ?></textarea>
-            <p class="mt-1 text-[11px] text-slate-500">Éditeur riche : titres, listes, liens, tableaux. Le HTML est assaini côté serveur.</p>
-        </div>
-
-        <div class="grid gap-4 sm:grid-cols-2">
-            <div>
-                <label for="ma-cover" class="block text-xs font-black uppercase tracking-wide text-slate-500">Image de couverture</label>
-                <?php if ($coverUrl !== null): ?>
-                <div class="mt-1.5 overflow-hidden rounded-xl border border-slate-200">
-                    <img src="<?= $h($coverUrl) ?>" alt="" class="h-36 w-full object-cover">
+        <div class="bo-ma__main">
+            <section class="bo-ma__card bo-ma__writer">
+                <label class="sr-only" for="ma-title">Titre</label>
+                <input type="text" id="ma-title" name="title" required maxlength="255" value="<?= $h($title) ?>" class="bo-ma__title-input" placeholder="Titre de l’article">
+                <label class="sr-only" for="ma-excerpt">Résumé</label>
+                <textarea id="ma-excerpt" name="excerpt" rows="2" maxlength="2000" class="bo-ma__excerpt-input" placeholder="En une ou deux phrases : de quoi parle cet article ? (affiché sur la liste et le tableau de bord)"><?= $h($excerpt) ?></textarea>
+                <div class="bo-ma__body">
+                    <label class="bo-ma__label" for="ma-body">Contenu</label>
+                    <textarea id="ma-body" name="body_html" rows="16" placeholder="Rédigez le corps de l’article…"><?= $h($bodyHtml) ?></textarea>
+                    <p class="bo-ma__hint">Titres, listes, liens, tableaux et images. Le contenu est nettoyé à l’enregistrement.</p>
                 </div>
-                <label class="mt-2 inline-flex items-center gap-2 text-xs text-slate-600">
-                    <input type="checkbox" name="remove_cover" value="1" class="rounded border-slate-300 text-emerald-600">
-                    Retirer la couverture
+            </section>
+        </div>
+
+        <aside class="bo-ma__aside">
+            <section class="bo-ma__card">
+                <h2 class="bo-ma__card-title">Publication</h2>
+                <div class="bo-ma__seg" role="radiogroup" aria-label="Statut">
+                    <label><input type="radio" name="status" value="draft" <?= $status !== 'published' ? 'checked' : '' ?>><span>Brouillon</span></label>
+                    <label><input type="radio" name="status" value="published" <?= $status === 'published' ? 'checked' : '' ?>><span>Publié</span></label>
+                </div>
+                <p class="bo-ma__hint" data-ma-status-hint></p>
+                <label class="bo-ma__check">
+                    <input type="checkbox" name="pinned" value="1" <?= $pinned ? 'checked' : '' ?>>
+                    <span>Épingler en tête de la liste</span>
                 </label>
+                <div class="bo-ma__submit">
+                    <button type="submit" class="ath-btn ath-btn--solid"><?= $isEdit ? 'Enregistrer' : 'Créer l’article' ?></button>
+                    <a href="<?= $h(url('back-office/articles')) ?>" class="ath-btn">Annuler</a>
+                </div>
+            </section>
+
+            <section class="bo-ma__card">
+                <h2 class="bo-ma__card-title">Image de couverture</h2>
+                <label class="bo-ma__drop<?= $coverUrl !== null ? ' has-image' : '' ?>" for="ma-cover" data-ma-drop>
+                    <img src="<?= $h((string) $coverUrl) ?>" alt="" data-ma-cover-img<?= $coverUrl === null ? ' hidden' : '' ?>>
+                    <span class="bo-ma__drop-text" data-ma-cover-text<?= $coverUrl !== null ? ' hidden' : '' ?>>Choisir une image<br><small>JPG, PNG ou WebP, format paysage conseillé</small></span>
+                </label>
+                <input type="file" id="ma-cover" name="cover" accept="image/jpeg,image/png,image/webp" class="bo-ma__file">
+                <?php if ($coverUrl !== null): ?>
+                <label class="bo-ma__check"><input type="checkbox" name="remove_cover" value="1"><span>Retirer la couverture</span></label>
                 <?php endif; ?>
-                <input type="file" id="ma-cover" name="cover" accept="image/jpeg,image/png,image/webp"
-                       class="mt-1.5 block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-emerald-800">
-            </div>
-            <div>
-                <label for="ma-gallery" class="block text-xs font-black uppercase tracking-wide text-slate-500">Galerie (max. 6)</label>
+            </section>
+
+            <section class="bo-ma__card">
+                <h2 class="bo-ma__card-title">Mots-clés</h2>
+                <label class="sr-only" for="ma-tags">Mots-clés</label>
+                <input type="text" id="ma-tags" name="tags" value="<?= $h($tagsValue) ?>" class="bo-ma__input" placeholder="ops, formation, radio">
+                <div class="bo-ma__chips" data-ma-chips aria-hidden="true"></div>
+                <p class="bo-ma__hint">Séparés par des virgules, 12 au maximum.</p>
+            </section>
+
+            <section class="bo-ma__card">
+                <h2 class="bo-ma__card-title">Galerie <span class="bo-ma__hint">(6 images max.)</span></h2>
                 <?php if ($gallery !== []): ?>
-                <div class="mt-1.5 grid grid-cols-3 gap-2">
+                <div class="bo-ma__gallery">
                     <?php foreach ($gallery as $g): ?>
-                    <label class="relative block overflow-hidden rounded-lg border border-slate-200">
-                        <img src="<?= $h($g['url']) ?>" alt="" class="h-20 w-full object-cover">
-                        <span class="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5 text-center text-[9px] font-bold uppercase text-white">
-                            <input type="checkbox" name="remove_gallery[]" value="<?= $h($g['path']) ?>" class="mr-1 align-middle"> Retirer
-                        </span>
+                    <label class="bo-ma__gallery-item">
+                        <img src="<?= $h($g['url']) ?>" alt="">
+                        <span><input type="checkbox" name="remove_gallery[]" value="<?= $h($g['path']) ?>"> Retirer</span>
                     </label>
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
-                <input type="file" id="ma-gallery" name="gallery[]" accept="image/jpeg,image/png,image/webp" multiple
-                       class="mt-1.5 block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-slate-700">
-            </div>
-        </div>
+                <input type="file" id="ma-gallery" name="gallery[]" accept="image/jpeg,image/png,image/webp" multiple class="bo-ma__file bo-ma__file--visible" aria-label="Ajouter des images à la galerie">
+            </section>
 
-        <div class="flex flex-wrap items-center gap-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
-                <input type="radio" name="status" value="draft" <?= $status !== 'published' ? 'checked' : '' ?> class="text-emerald-600">
-                Brouillon
-            </label>
-            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
-                <input type="radio" name="status" value="published" <?= $status === 'published' ? 'checked' : '' ?> class="text-emerald-600">
-                Publié
-            </label>
-            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800 sm:ml-auto">
-                <input type="checkbox" name="pinned" value="1" <?= $pinned ? 'checked' : '' ?> class="rounded border-slate-300 text-emerald-600">
-                Épingler en tête
-            </label>
-        </div>
-
-        <div class="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-            <button type="submit" class="inline-flex rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white hover:bg-emerald-700">
-                <?= $isEdit ? 'Enregistrer' : 'Créer' ?>
-            </button>
-            <a href="<?= $h(url('back-office/articles')) ?>" class="inline-flex rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-700 hover:bg-slate-50">Retour</a>
-        </div>
+            <section class="bo-ma__card">
+                <h2 class="bo-ma__card-title">Aperçu dans la liste</h2>
+                <div class="bo-ma__preview">
+                    <div class="bo-ma__preview-cover" data-ma-pv-cover<?= $coverUrl !== null ? ' style="background-image:url(\'' . $h($coverUrl) . '\')"' : '' ?>></div>
+                    <div class="bo-ma__preview-body">
+                        <p class="bo-ma__preview-title" data-ma-pv-title><?= $h($title !== '' ? $title : 'Titre de l’article') ?></p>
+                        <p class="bo-ma__preview-excerpt" data-ma-pv-excerpt><?= $h($excerpt) ?></p>
+                        <div class="bo-ma__chips" data-ma-pv-tags></div>
+                    </div>
+                </div>
+            </section>
+        </aside>
     </form>
 </div>
+<script>
+(function () {
+  var form = document.getElementById('mini-article-form');
+  if (!form) return;
+  var q = function (s) { return form.querySelector(s); };
+  var title = q('#ma-title'), excerpt = q('#ma-excerpt'), tags = q('#ma-tags'), cover = q('#ma-cover');
+  function chips(target) {
+    target.textContent = '';
+    tags.value.split(',').map(function (t) { return t.trim(); }).filter(Boolean).slice(0, 12).forEach(function (t) {
+      var s = document.createElement('span'); s.className = 'bo-ma__chip'; s.textContent = '#' + t; target.appendChild(s);
+    });
+  }
+  function render() {
+    q('[data-ma-pv-title]').textContent = title.value.trim() || 'Titre de l’article';
+    q('[data-ma-pv-excerpt]').textContent = excerpt.value.trim();
+    chips(q('[data-ma-chips]'));
+    chips(q('[data-ma-pv-tags]'));
+    var published = (q('input[name="status"]:checked') || {}).value === 'published';
+    q('[data-ma-status-hint]').textContent = published ? 'Visible par tous les membres dans « Articles ».' : 'Visible seulement des responsables tant qu’il reste en brouillon.';
+  }
+  if (cover) {
+    cover.addEventListener('change', function () {
+      var f = cover.files && cover.files[0];
+      if (!f) return;
+      var url = URL.createObjectURL(f);
+      var img = q('[data-ma-cover-img]');
+      img.src = url; img.hidden = false;
+      q('[data-ma-cover-text]').hidden = true;
+      q('[data-ma-drop]').classList.add('has-image');
+      q('[data-ma-pv-cover]').style.backgroundImage = 'url("' + url + '")';
+    });
+  }
+  form.addEventListener('input', render);
+  form.addEventListener('change', render);
+  render();
+})();
+</script>
 <script src="<?= htmlspecialchars(asset_url('assets/js/mini_article_editor.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>

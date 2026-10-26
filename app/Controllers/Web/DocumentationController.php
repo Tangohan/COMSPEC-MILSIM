@@ -154,8 +154,8 @@ final class DocumentationController
             ]);
         }
 
-        $html = function_exists('forum_markdown_to_html')
-            ? forum_markdown_to_html($loaded)
+        $html = function_exists('markdown_to_html')
+            ? markdown_to_html($loaded)
             : '<pre>' . htmlspecialchars($loaded, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</pre>';
 
         return Response::view('layout.main', [
@@ -174,8 +174,8 @@ final class DocumentationController
         if ($body === null) {
             return '<p class="site-docs__refs-lead">Document d’introduction indisponible pour le moment.</p>';
         }
-        if (function_exists('forum_markdown_to_html')) {
-            return forum_markdown_to_html($body);
+        if (function_exists('markdown_to_html')) {
+            return markdown_to_html($body);
         }
 
         return '<pre>' . htmlspecialchars($body, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</pre>';

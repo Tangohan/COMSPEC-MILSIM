@@ -144,7 +144,7 @@ final class OrganizationMemberNumberController
         $probe = fgets($fh);
         $sep = (is_string($probe) && substr_count($probe, ';') >= substr_count($probe, ',')) ? ';' : ',';
         rewind($fh);
-        $header = fgetcsv($fh, 0, $sep);
+        $header = fgetcsv($fh, 0, $sep, '"', '\\');
         if (!is_array($header) || $header === [] || $header === [null]) {
             fclose($fh);
             Session::flash('error', 'En-tête CSV introuvable.');
@@ -168,7 +168,7 @@ final class OrganizationMemberNumberController
         $errCount = 0;
         $errors = [];
 
-        while (($row = fgetcsv($fh, 0, $sep)) !== false) {
+        while (($row = fgetcsv($fh, 0, $sep, '"', '\\')) !== false) {
             if ($row === [null] || $row === []) {
                 continue;
             }

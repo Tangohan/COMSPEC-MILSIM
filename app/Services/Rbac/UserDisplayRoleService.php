@@ -7,7 +7,7 @@ namespace App\Services\Rbac;
 use PDO;
 
 /**
- * Résolution des libellés / ordre d’affichage des rôles pour l’UI (forum, profils).
+ * Résolution des libellés / ordre d’affichage des rôles pour l’UI (fiches, profils).
  */
 final class UserDisplayRoleService
 {

@@ -16,11 +16,6 @@ final class ModerationStatusPresenter
         if ($set->accountLocked) {
             $lines[] = 'Compte verrouillé (déconnexion forcée).';
         }
-        if ($set->forumAccess === 'none') {
-            $lines[] = 'Forum : aucun accès.';
-        } elseif ($set->forumAccess === 'read_only') {
-            $lines[] = 'Forum : lecture seule.';
-        }
         if ($set->messagesBlocked) {
             $lines[] = 'Messagerie interne : envoi bloqué.';
         }
@@ -28,7 +23,6 @@ final class ModerationStatusPresenter
             $lines[] = 'Nouvelle inscription avec la même adresse e-mail : bloquée pour cette communauté.';
         }
         $labels = ModerationRestrictionsCatalog::moduleLabels();
-        $labels[ModerationRestrictionsCatalog::KEY_FORUM] = 'Forum';
         foreach ($set->modulesBlocked as $key) {
             $label = $labels[$key] ?? $key;
             $lines[] = 'Accès limité : ' . $label . '.';
@@ -42,11 +36,8 @@ final class ModerationStatusPresenter
         if ($set->accountLocked) {
             return 'Votre accès au portail est restreint. En cas de question, contactez l’administration de votre communauté ou du site.';
         }
-        if ($set->forumAccess === 'none' || $set->messagesBlocked) {
-            return 'Votre participation au forum ou à la messagerie est actuellement limitée.';
-        }
-        if ($set->forumAccess === 'read_only') {
-            return 'Vous pouvez consulter le forum en lecture seule ; la publication de messages est limitée.';
+        if ($set->messagesBlocked) {
+            return 'Votre accès à la messagerie est actuellement limité.';
         }
         if ($set->modulesBlocked !== []) {
             return 'L’accès à certaines parties du portail (formations, documents, etc.) est limité par votre organisation.';

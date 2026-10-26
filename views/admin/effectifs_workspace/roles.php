@@ -81,7 +81,7 @@ $selectedName = (string) ($selected['name'] ?? '');
                     </label>
                     <label>
                         À quoi il sert
-                        <textarea name="description" rows="3" maxlength="500" placeholder="Ex. Accès lecture forum + documents pour les nouveaux intégrés."><?= htmlspecialchars((string) ($selected['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                        <textarea name="description" rows="3" maxlength="500" placeholder="Ex. Accès lecture documents pour les nouveaux intégrés."><?= htmlspecialchars((string) ($selected['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                     </label>
                 </div>
                 <p class="eff-access-editor__hint">

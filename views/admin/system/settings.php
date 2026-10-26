@@ -32,9 +32,6 @@ $envRaw = (string) ($adminSettingsEnvRaw ?? '');
                         <a href="<?= url('admin/maintenance') ?>" class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-950 shadow-sm hover:bg-amber-50/80 transition-colors">
                             Maintenance planifiée
                         </a>
-                        <a href="<?= url('admin/system/brief') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
-                            Paramètres du brief
-                        </a>
                     </div>
                 </div>
                 <div class="shrink-0 w-full sm:w-56 rounded-xl border border-slate-200/80 bg-white/90 backdrop-blur-sm p-4 shadow-sm">

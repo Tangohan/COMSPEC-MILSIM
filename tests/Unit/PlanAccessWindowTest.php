@@ -107,4 +107,44 @@ final class PlanAccessWindowTest extends TestCase
         self::assertStringContainsString('October 20, 2026', $en['lead']);
         self::assertSame('', $en['grace']);
     }
+
+    public function testManualPaypalPeriodEndingSoonIsReported(): void
+    {
+        $tenant = ['plan_slug' => 'pro', 'subscription_status' => 'active', 'settings' => [
+            'manual_billing' => ['reference' => 'ATH-7KQ2XM', 'plan_slug' => 'pro', 'interval' => 'monthly', 'ends_at' => date('Y-m-d H:i:s', self::NOW + 5 * 86400)],
+        ]];
+
+        $soon = PlanAccessWindow::endingSoon($tenant, 7, self::NOW);
+        self::assertSame('paid', $soon['kind'] ?? null);
+        self::assertSame('pro', $soon['plan_slug'] ?? null);
+        self::assertSame(5, $soon['days_left'] ?? null);
+        self::assertSame('first', PlanAccessWindow::reminderStage('paid', 5));
+        self::assertSame('last', PlanAccessWindow::reminderStage('paid', 1));
+        self::assertSame('', PlanAccessWindow::reminderStage('gift', 1));
+        self::assertSame(7, PlanAccessWindow::paidReminderDays(0));
+    }
+
+    public function testManualPaypalPeriodExpiredIsLapsedAndNoticed(): void
+    {
+        $tenant = ['plan_slug' => 'pro', 'subscription_status' => 'active', 'settings' => [
+            'manual_billing' => ['reference' => 'ATH-7KQ2XM', 'plan_slug' => 'pro', 'interval' => 'monthly', 'ends_at' => date('Y-m-d H:i:s', self::NOW - 2 * 86400)],
+        ]];
+
+        self::assertNull(PlanAccessWindow::endingSoon($tenant, 7, self::NOW));
+        self::assertSame('paid', PlanAccessWindow::lapsed($tenant, self::NOW)['kind'] ?? null);
+        self::assertSame('pro', PlanAccessWindow::paidExpired($tenant, self::NOW)['plan_slug'] ?? null);
+        self::assertNull(PlanAccessWindow::paidExpired($tenant, self::NOW + 40 * 86400));
+        $copy = PlanAccessWindow::paidExpiredCopy('fr', 'Pro', date('Y-m-d H:i:s', self::NOW - 2 * 86400));
+        self::assertStringContainsString('payée par PayPal', $copy['text']);
+    }
+
+    public function testPaidReminderFingerprintsAreDistinctPerStage(): void
+    {
+        $end = '2026-11-25 10:00:00';
+        $tenant = ['settings' => [PlanAccessWindow::WARNED_KEY => PlanAccessWindow::warningFingerprint('paid', $end, 'first')]];
+
+        self::assertTrue(PlanAccessWindow::alreadyWarned($tenant, 'paid', $end, 'first'));
+        self::assertFalse(PlanAccessWindow::alreadyWarned($tenant, 'paid', $end, 'last'));
+        self::assertSame('trial|' . $end, PlanAccessWindow::warningFingerprint('trial', $end));
+    }
 }

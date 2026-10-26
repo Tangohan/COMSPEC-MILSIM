@@ -95,7 +95,6 @@ $publicAboutBody = trim((string) ($c['public_about_body'] ?? ''));
 $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($c);
 
 $registryListed = !array_key_exists('registry_listed', $c) || !empty($c['registry_listed']);
-$forumMembersOnly = !empty($c['forum_members_only']);
 $unitAffiliation = is_array($c['unit_affiliation'] ?? null) ? $c['unit_affiliation'] : [];
 $unitAffiliationIsReal = !empty($unitAffiliation['is_real']);
 $unitAffiliationMode = $unitAffiliation !== [] ? ($unitAffiliationIsReal ? 'real' : 'fictional') : '';
@@ -170,6 +169,11 @@ $currentTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
 );
 $tenantTypeFormAction = (string) ($tenantTypeFormAction ?? url('back-office/organisation/profil'));
 $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTenantType);
+$settingsDiscordOnly = \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly($currentTenantType);
+if ($settingsDiscordOnly) {
+    $registrationLabel = 'Discord uniquement';
+    $discordInviteMissing = trim((string) ($c['contact_discord_url'] ?? '')) === '';
+}
 $hubTab = (string) ($settingsHubTab ?? 'identite');
 if (!in_array($hubTab, ['identite', 'vitrine', 'inscription', 'accueil', 'portail', 'profil'], true)) {
     $hubTab = 'identite';
@@ -215,7 +219,7 @@ $imagesNeedAddress = $slugHint === '';
                 <button type="button" role="tab" id="bo-settings-tab-inscription" data-settings-tab="inscription" <?= $hubNavSelected('inscription') ?>>
                     <span class="bcs-nav__num" aria-hidden="true">3</span>
                     <span class="bcs-nav__label">Inscription</span>
-                    <span class="bcs-nav__desc">Candidatures, contact, questions</span>
+                    <span class="bcs-nav__desc"><?= $settingsDiscordOnly ? 'Recrutement sur Discord, contact' : 'Candidatures, contact, questions' ?></span>
                 </button>
                 <button type="button" role="tab" id="bo-settings-tab-accueil" data-settings-tab="accueil" <?= $hubNavSelected('accueil') ?>>
                     <span class="bcs-nav__num" aria-hidden="true">4</span>
@@ -248,7 +252,7 @@ $imagesNeedAddress = $slugHint === '';
                 </div>
                 <div class="bcs-status__row">
                     <dt>Recrutement</dt>
-                    <dd><span class="bcs-pill <?= $communityLocked ? 'bcs-pill--warn' : 'bcs-pill--ok' ?>"><?= $communityLocked ? 'Fermé' : 'Ouvert' ?></span></dd>
+                    <dd><span class="bcs-pill <?= $communityLocked ? 'bcs-pill--warn' : 'bcs-pill--ok' ?>"><?= $communityLocked ? 'Fermé' : ($settingsDiscordOnly ? 'Sur Discord' : 'Ouvert') ?></span></dd>
                 </div>
                 <div class="bcs-status__row">
                     <dt>Pays et langues</dt>
@@ -273,7 +277,11 @@ $imagesNeedAddress = $slugHint === '';
     <?php if ($discordInviteMissing): ?>
         <div class="bcs-notice" role="status">
             <span aria-hidden="true">⚠</span>
+            <?php if ($settingsDiscordOnly): ?>
+            <span><strong>Lien Discord manquant.</strong> Avec le profil « <?= $h($currentTypeLabel) ?> », on vous rejoint uniquement par Discord : sans lien d’invitation, le bouton « Rejoindre sur Discord » de votre page publique ne mène nulle part. <a class="bcs-link" href="<?= $h($hubInscriptionUrl) ?>">Renseigner le lien Discord</a></span>
+            <?php else: ?>
             <span><strong>Lien Discord manquant.</strong> Le recrutement se fait via Discord, mais aucun lien d’invitation n’est renseigné : les candidats ne pourront pas rejoindre votre serveur depuis le formulaire public. <a class="bcs-link" href="<?= $h($hubInscriptionUrl) ?>">Renseigner le lien Discord</a></span>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 
@@ -723,14 +731,6 @@ $imagesNeedAddress = $slugHint === '';
                         'votre carte est visible dans l’annuaire et mène à votre page publique.',
                         'vous n’apparaissez pas dans l’annuaire. Votre page publique reste accessible à qui a le lien.'
                     ); ?>
-                    <?php $renderToggle(
-                        'Forum réservé aux membres',
-                        'Concerne le bouton « Accéder au forum » de votre page publique.',
-                        'forum_members_only',
-                        $forumMembersOnly,
-                        'les visiteurs non connectés ne voient pas le bouton du forum.',
-                        'tout visiteur peut ouvrir et lire le forum depuis votre page publique.'
-                    ); ?>
                     <div class="bcs-field">
                         <span class="bcs-label">Page publique</span>
                         <p class="bcs-help">
@@ -765,7 +765,6 @@ $imagesNeedAddress = $slugHint === '';
                 <div class="bcs-card__body">
                     <?php
                     $moduleHelp = [
-                        'forum' => ['Forum', 'Les derniers sujets publics du forum.'],
                         'documents' => ['Documents', 'Les documents marqués comme publics (règlement, doctrine…).'],
                         'events' => ['Événements', 'Vos prochaines opérations et entraînements ouverts.'],
                         'roster' => ['Effectifs', 'Le nombre de membres et la composition de l’unité.'],
@@ -934,7 +933,11 @@ $imagesNeedAddress = $slugHint === '';
         <header class="bcs-intro">
             <p class="bcs-intro__kicker">Rubrique 3 · Inscription</p>
             <h2 class="bcs-intro__title">Comment on vous rejoint</h2>
+            <?php if ($settingsDiscordOnly): ?>
+            <p class="bcs-intro__text">Avec le profil « <?= $h($currentTypeLabel) ?> », le recrutement se fait <strong>uniquement sur votre Discord</strong> : pas de formulaire de candidature sur le site, pas de compte à créer pour les candidats. Le bouton de votre page publique ouvre votre serveur.</p>
+            <?php else: ?>
             <p class="bcs-intro__text">Le parcours proposé aux candidats depuis votre page publique : type de formulaire, contact, et questions posées. Le bouton « Candidater » de la page publique mène à ce formulaire.</p>
+            <?php endif; ?>
             <div class="bcs-intro__foot">
                 <?php $renderWhere(['Page publique', 'Formulaire de candidature']); ?>
                 <?php if ($publicPageUrl !== ''): ?>

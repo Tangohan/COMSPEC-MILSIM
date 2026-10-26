@@ -20,8 +20,6 @@ return function (PDO $pdo): void {
         $adds = [
             'cooperation_starts_at' => 'DATETIME DEFAULT NULL',
             'cooperation_ends_at' => 'DATETIME DEFAULT NULL',
-            'coop_forum_category_id' => 'INT UNSIGNED DEFAULT NULL',
-            'coop_forum_topic_id' => 'INT UNSIGNED DEFAULT NULL',
             'meeting_replay_url' => 'VARCHAR(500) DEFAULT NULL',
             'atak_endpoint_primary' => 'VARCHAR(255) DEFAULT NULL',
             'atak_endpoint_partner' => 'VARCHAR(255) DEFAULT NULL',
@@ -179,18 +177,5 @@ return function (PDO $pdo): void {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
         echo "Table interteam_cooperation_consents créée.\n";
-    }
-
-    if ($col($pdo, 'forum_posts', 'id') && !$col($pdo, 'forum_posts', 'coop_source_tenant_id')) {
-        try {
-            $pdo->exec(
-                'ALTER TABLE forum_posts ADD COLUMN coop_source_tenant_id INT UNSIGNED DEFAULT NULL,
-                ADD KEY forum_posts_coop_src (coop_source_tenant_id),
-                ADD CONSTRAINT forum_posts_coop_src_fk FOREIGN KEY (coop_source_tenant_id) REFERENCES tenants (id) ON DELETE SET NULL'
-            );
-            echo "forum_posts.coop_source_tenant_id ajouté.\n";
-        } catch (\Throwable $e) {
-            echo '  [ATTENTION] forum_posts coop column : ' . $e->getMessage() . "\n";
-        }
     }
 };

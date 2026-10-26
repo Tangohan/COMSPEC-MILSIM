@@ -293,6 +293,35 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(999, '2026-10-25', 'Hub : la fiche d’une communauté se lit comme un portrait', 'Ouvrir une communauté depuis le hub ne montre plus une grille de chiffres identiques. Le nom, le recrutement et les actions (page publique, recommandation, comparaison, coopération) sont regroupés. Chaque indicateur se compare à la médiane du réseau et indique le rang. L’organigramme sépare les volumes par niveau du détail des unités, affiché seulement quand la communauté le publie. Rechargez le portail (Ctrl+F5).', [
+                'Portrait de la communauté : identité, recrutement et actions',
+                'Indicateurs groupés, avec une barre, la médiane et le rang dans le réseau',
+            ], [
+                'Organigramme : volumes par niveau, types d’unités, et noms seulement s’ils sont publics',
+                'Avis des partenaires à part, avec un état clair quand aucun avis n’a encore été laissé',
+            ], [], ['platform'], [
+                'Ouvrez Hub des communautés, puis une fiche. Le portrait est en haut. Les indicateurs suivent, puis la structure et les avis.',
+            ], 'Portail Athena'),
+            $pr(998, '2026-10-25', 'Traduction : d’abord les textes encore seulement en français', 'L’espace de traduction du site et l’atelier du téléphone proposent une file « Seulement en français ». Ce sont les textes qui n’ont pas encore d’anglais, à traiter avant de relire ce qui existe déjà. Les applications du jeu sans anglais, comme le bureau SSE, passent en tête. La page des contributeurs affiche le taux de chaque langue et met en avant les traducteurs qui ont le plus avancé. Rechargez le portail (Ctrl+F5).', [
+                'File « Seulement en français » sur le site et dans l’atelier du téléphone',
+                'Applications du jeu sans anglais signalées et placées en premier',
+                'Classement des traducteurs, avec un taux de complétion',
+            ], [
+                'Page des langues : outils pour le site, le jeu et le rôle de traducteur',
+            ], [], ['platform', 'atak'], [
+                'Ouvrez Traduire le site, puis English : le filtre « Seulement en français » est déjà choisi. Dans Traduire l’ATAK, le même filtre isole les phrases sans anglais, et les applications concernées portent la mention « Sans anglais ».',
+            ], 'Portail Athena'),
+            $pr(997, '2026-10-25', 'Fiche personnel : disponibilité, temps de jeu et candidature', 'La fiche d’un membre affiche une disponibilité calculée sur les présences aux opérations des 45 derniers jours. Le temps de jeu a sa propre zone, avec le cumul, les dernières semaines et le détail par rôle. La dernière candidature reprend l’état réel du dossier, chaque information à côté de son intitulé. Rechargez le portail (Ctrl+F5).', [
+                'Disponibilité en pourcentage, avec le nombre de présences et d’opérations sur 45 jours',
+            ], [
+                'Le temps de jeu est regroupé : cumul, 7 et 30 jours, répartition, semaines et rôles',
+                'La dernière candidature aligne chaque intitulé avec sa valeur, et l’état suit le parcours du recrutement',
+            ], [
+                'Le pourcentage de disponibilité ne reprend plus le chiffre posé à l’intégration',
+                'Une candidature déjà rattachée à un compte n’apparaît plus comme « compte à rattacher »',
+            ], ['personnel'], [
+                'Ouvrez une fiche personnel, onglet Portrait. La disponibilité est dans la synthèse. Le temps de jeu est au-dessus. La dernière candidature, quand elle existe, est sous les décorations.',
+            ], 'Portail Athena'),
             $pr(996, '2026-10-19', 'Bureau SSE : fiche de transmission lisible, avec photo et iris', 'La fiche d’une transmission terrain redevient lisible : une seule valeur longue (les échantillons biométriques, par exemple) poussait toutes les autres hors de l’écran. Les champs s’affichent maintenant en liste nom / valeur, et les valeurs très longues se replient. Quand la transmission concerne une identité, sa photo, ses autres clichés et ses relevés biométriques (empreintes, iris, ADN, qualité de capture, terminal) s’affichent à côté, avec un lien vers sa fiche. Les images transmises s’affichent comme images et s’ouvrent dans la galerie 3D. Rechargez le portail (Ctrl+F5).', [
                 'Identité liée sur la fiche de transmission : photo, clichés, empreintes, iris, ADN, qualité, terminal et relevés',
                 'Images transmises affichées en vignettes, ouvertes dans la galerie',

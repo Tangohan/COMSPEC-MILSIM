@@ -101,7 +101,6 @@ $modules = [
     'Personnel & ORBAT' => ['web' => ['/personnel', '/orbat'], 'api' => ['/api/orbat'], 'nav' => ['/personnel', '/orbat']],
     'Documents' => ['web' => ['/documents'], 'api' => [], 'nav' => ['/documents']],
     'Formations' => ['web' => ['/formations', '/formation'], 'api' => ['/api/training'], 'nav' => ['/formations', '/formation']],
-    'Forum' => ['web' => ['/forum'], 'api' => ['/api/forum'], 'nav' => ['/forum']],
     'Événements & pointage' => ['web' => ['/evenements', '/pointage'], 'api' => [], 'nav' => ['/evenements', '/pointage']],
     'Messagerie interne' => ['web' => ['/messages'], 'api' => [], 'nav' => ['/messages']],
     'Courrier officiel' => ['web' => ['/courrier'], 'api' => [], 'nav' => ['/courrier']],

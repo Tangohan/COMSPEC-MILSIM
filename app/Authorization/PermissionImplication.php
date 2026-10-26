@@ -67,7 +67,6 @@ final class PermissionImplication
             return true;
         }
 
-
         if (in_array('admin.access', $granted, true) && in_array($permission, self::tenantCatalogSlugs(), true)) {
             return true;
         }
@@ -76,23 +75,11 @@ final class PermissionImplication
             return true;
         }
 
-        if (in_array('forum.moderate', $granted, true) && self::impliedByForumModerate($permission)) {
-            return true;
-        }
-
-        if (in_array('forum.moderate_organization', $granted, true) && self::impliedByForumModerate($permission)) {
-            return true;
-        }
-
         if (in_array('training.manage', $granted, true) && self::impliedByTrainingManage($permission)) {
             return true;
         }
 
         if (in_array('media.manage', $granted, true) && self::impliedByMediaManage($permission)) {
-            return true;
-        }
-
-        if (self::aliasMatch($granted, $permission)) {
             return true;
         }
 
@@ -241,23 +228,12 @@ final class PermissionImplication
         static $slugs = null;
         if ($slugs === null) {
             $slugs = [
-                'forum.view', 'forum.reply', 'forum.create_topic', 'forum.edit_own', 'forum.delete_own',
                 'admin.backoffice.view', 'admin.members.view', 'personnel.profile.view',
                 'admin.audit.view', 'documents.view', 'documents.download.standard',
             ];
         }
 
         return in_array($permission, $slugs, true);
-    }
-
-    private static function impliedByForumModerate(string $permission): bool
-    {
-        $set = array_merge(
-            TenantPermissionCatalog::forumModerateGranularSlugs(),
-            ['forum.categories.manage', 'forum.manage_categories']
-        );
-
-        return in_array($permission, $set, true);
     }
 
     private static function impliedByTrainingManage(string $permission): bool
@@ -279,25 +255,5 @@ final class PermissionImplication
             'media.publish',
             'media.manage',
         ], true);
-    }
-
-    /**
-     * @param list<string> $granted
-     */
-    private static function aliasMatch(array $granted, string $permission): bool
-    {
-        $pairs = [
-            ['forum.categories.manage', 'forum.manage_categories'],
-        ];
-        foreach ($pairs as [$a, $b]) {
-            if ($permission === $a && in_array($b, $granted, true)) {
-                return true;
-            }
-            if ($permission === $b && in_array($a, $granted, true)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

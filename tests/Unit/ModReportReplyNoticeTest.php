@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Repositories\AtakModReportRepository;
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Services\Monitoring\AtakModReportReplyService;
 use App\Support\ModReportReplyNotice;
 use PDO;
@@ -24,15 +24,15 @@ final class ModReportReplyNoticeTest extends TestCase
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->sqliteCreateFunction('NOW', static fn (): string => date('Y-m-d H:i:s'), 0);
-        $pdo->exec('CREATE TABLE forum_notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id INTEGER, user_id INTEGER,
+        $pdo->exec('CREATE TABLE member_notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id INTEGER, user_id INTEGER,
             type TEXT, payload_json TEXT, read_at TEXT NULL, created_at TEXT)');
 
         return $pdo;
     }
 
-    private function notifications(PDO $pdo): ForumNotificationRepository
+    private function notifications(PDO $pdo): MemberNotificationRepository
     {
-        return new class ($pdo) extends ForumNotificationRepository {
+        return new class ($pdo) extends MemberNotificationRepository {
             public function tableExists(): bool
             {
                 return true;
@@ -42,7 +42,7 @@ final class ModReportReplyNoticeTest extends TestCase
 
     private static function add(PDO $pdo, int $userId, string $type, array $payload, string $createdAt, ?string $readAt = null): int
     {
-        $pdo->prepare('INSERT INTO forum_notifications (tenant_id, user_id, type, payload_json, read_at, created_at) VALUES (3, ?, ?, ?, ?, ?)')
+        $pdo->prepare('INSERT INTO member_notifications (tenant_id, user_id, type, payload_json, read_at, created_at) VALUES (3, ?, ?, ?, ?, ?)')
             ->execute([$userId, $type, json_encode($payload), $readAt, $createdAt]);
 
         return (int) $pdo->lastInsertId();
@@ -76,7 +76,7 @@ final class ModReportReplyNoticeTest extends TestCase
 
         // Un joueur ne peut pas marquer lue la réponse d'un autre, ni une autre sorte de notification.
         self::assertSame(1, $repo->markReadForUser([$a, $other, $forum], 7, self::TYPE));
-        $read = $pdo->query('SELECT id FROM forum_notifications WHERE read_at IS NOT NULL')->fetchAll(PDO::FETCH_COLUMN);
+        $read = $pdo->query('SELECT id FROM member_notifications WHERE read_at IS NOT NULL')->fetchAll(PDO::FETCH_COLUMN);
         self::assertSame([$a], array_map('intval', $read));
         self::assertSame([$b], array_map(static fn (array $r): int => (int) $r['id'], $repo->listUnreadOfTypeForUser(7, self::TYPE)));
         self::assertSame(0, $repo->markReadForUser([$a], 7, self::TYPE), 'une seule fois');

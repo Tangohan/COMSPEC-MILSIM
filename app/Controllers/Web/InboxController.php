@@ -11,7 +11,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
-use App\Repositories\ForumNotificationRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Repositories\TenantMessageRepository;
 use App\Services\Alerts\AlertPresentationService;
 use App\Services\Moderation\ModerationRestrictionResolver;
@@ -19,14 +19,14 @@ use App\Services\Moderation\ModerationRestrictionsCatalog;
 use App\Services\Notifications\ActivityHubPresentationService;
 
 /**
- * Boîte de réception unifiée : messages internes, notifications du forum, courrier et annonces
+ * Boîte de réception unifiée : messages internes, notifications, courrier et annonces
  * dans un seul fil, avec filtres, recherche, lecture élément par élément, sélection et « tout lire ».
  */
 final class InboxController
 {
     public const SOURCES = [
         'messages' => 'Messages',
-        'forum' => 'Forum',
+        'notifications' => 'Notifications',
         'courrier' => 'Courrier',
         'annonces' => 'Annonces',
     ];
@@ -56,10 +56,10 @@ final class InboxController
                 $items[] = $this->item('messages', (int) $row['id'], $title, $f);
             }
         }
-        if ($available['forum']) {
-            foreach ($this->forum()->listRecentForUser($tenantId, $userId, self::LIMIT_PER_SOURCE) as $row) {
-                $f = $presentation->formatForumRow($row);
-                $items[] = $this->item('forum', (int) $row['id'], (string) $f['title'], $f);
+        if ($available['notifications']) {
+            foreach ($this->notifications()->listRecentForUser($tenantId, $userId, self::LIMIT_PER_SOURCE) as $row) {
+                $f = $presentation->formatNotificationRow($row);
+                $items[] = $this->item('notifications', (int) $row['id'], (string) $f['title'], $f);
             }
         }
         if ($available['courrier']) {
@@ -148,7 +148,7 @@ final class InboxController
 
         $done = 0;
         foreach ($targets as [$source, $id]) {
-            foreach ($source === 'all' ? ['messages', 'forum', 'courrier'] : [$source] as $src) {
+            foreach ($source === 'all' ? ['messages', 'notifications', 'courrier'] : [$source] as $src) {
                 if (empty($available[$src])) {
                     continue;
                 }
@@ -174,8 +174,8 @@ final class InboxController
                 }
 
                 return true;
-            case 'forum':
-                $id > 0 ? $this->forum()->markRead($tenantId, $userId, $id) : $this->forum()->markAllRead($tenantId, $userId);
+            case 'notifications':
+                $id > 0 ? $this->notifications()->markRead($tenantId, $userId, $id) : $this->notifications()->markAllRead($tenantId, $userId);
 
                 return true;
             case 'courrier':
@@ -187,22 +187,19 @@ final class InboxController
         }
     }
 
-    /** @return array{messages: bool, forum: bool, courrier: bool} */
+    /** @return array{messages: bool, notifications: bool, courrier: bool} */
     private function availableSources(int $tenantId, int $userId): array
     {
         $gate = Gate::getInstance();
-        $forum = false;
         $courrier = false;
         try {
             $resolver = Container::get(ModerationRestrictionResolver::class);
-            $forum = $resolver->canReadForum($tenantId, $userId)
-                && (!function_exists('forum_public_nav_visible') || forum_public_nav_visible());
             $courrier = $gate->allows('courrier.view')
                 && $resolver->isModuleAllowed($tenantId, $userId, ModerationRestrictionsCatalog::KEY_COURRIER);
         } catch (\Throwable) {
         }
 
-        return ['messages' => true, 'forum' => $forum, 'courrier' => $courrier];
+        return ['messages' => true, 'notifications' => true, 'courrier' => $courrier];
     }
 
     /**
@@ -249,9 +246,9 @@ final class InboxController
         return Container::get(TenantMessageRepository::class);
     }
 
-    private function forum(): ForumNotificationRepository
+    private function notifications(): MemberNotificationRepository
     {
-        return Container::get(ForumNotificationRepository::class);
+        return Container::get(MemberNotificationRepository::class);
     }
 
     private function courrier(): CourrierDocumentNotificationRepository

@@ -82,7 +82,7 @@ final class AccountPurgeServiceTest extends TestCase
 
         self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id IN (29, 30)'));
         self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id IN (29, 30)'));
-        self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM forum_posts WHERE author_user_id = 29'));
+        self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM wall_posts WHERE author_user_id = 29'));
     }
 
     public function testPurgeLeavesThirdPartyRecordsIntact(): void
@@ -92,7 +92,7 @@ final class AccountPurgeServiceTest extends TestCase
 
         self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id = 40'));
         self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id = 40'));
-        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM forum_posts WHERE author_user_id = 40'));
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM wall_posts WHERE author_user_id = 40'));
         self::assertSame(40, (int) $pdo->query('SELECT created_by_user_id FROM documents WHERE id = 2')->fetchColumn());
     }
 
@@ -137,7 +137,7 @@ final class AccountPurgeServiceTest extends TestCase
             updated_at TEXT
         )');
         $pdo->exec('CREATE TABLE user_profiles (id INTEGER PRIMARY KEY, user_id INT, bio TEXT)');
-        $pdo->exec('CREATE TABLE forum_posts (id INTEGER PRIMARY KEY, author_user_id INT, body TEXT)');
+        $pdo->exec('CREATE TABLE wall_posts (id INTEGER PRIMARY KEY, author_user_id INT, body TEXT)');
         $pdo->exec(
             "INSERT INTO users (id, tenant_id, email, display_name, callsign, status, is_service_account, created_at, updated_at) VALUES
              (1, 1, 'deleted-29-170000@deleted.invalid', 'Compte supprimé', 'DEL1', 'inactive', 0, '2026-01-01', '2026-01-01'),
@@ -146,7 +146,7 @@ final class AccountPurgeServiceTest extends TestCase
         );
         $pdo->exec('INSERT INTO user_profiles (id, user_id, bio) VALUES (1, 1, "orphelin"), (2, 3, "vivant")');
         $pdo->exec(
-            'INSERT INTO forum_posts (id, author_user_id, body) VALUES
+            'INSERT INTO wall_posts (id, author_user_id, body) VALUES
              (1, 1, "post anonymisé"),
              (2, 2, "autre post"),
              (3, 3, "post vivant")'
@@ -162,11 +162,11 @@ final class AccountPurgeServiceTest extends TestCase
         self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id = 3'));
         self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id = 3'));
         self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id IN (1, 2)'));
-        self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM forum_posts'));
+        self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM wall_posts'));
 
         $ghostId = (int) $pdo->query("SELECT id FROM users WHERE email = 'history.1@internal.local'")->fetchColumn();
         self::assertGreaterThan(0, $ghostId);
-        self::assertSame(2, $this->countRows($pdo, 'SELECT COUNT(*) FROM forum_posts WHERE author_user_id = ' . $ghostId));
+        self::assertSame(2, $this->countRows($pdo, 'SELECT COUNT(*) FROM wall_posts WHERE author_user_id = ' . $ghostId));
         self::assertSame(
             AccountDeletionService::HISTORY_GHOST_DISPLAY_NAME,
             (string) $pdo->query('SELECT display_name FROM users WHERE id = ' . $ghostId)->fetchColumn()
@@ -221,7 +221,7 @@ final class AccountPurgeServiceTest extends TestCase
 
         $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, tenant_id INT, email TEXT, display_name TEXT)');
         $pdo->exec('CREATE TABLE user_profiles (id INTEGER PRIMARY KEY, user_id INT, bio TEXT)');
-        $pdo->exec('CREATE TABLE forum_posts (id INTEGER PRIMARY KEY, author_user_id INT, body TEXT)');
+        $pdo->exec('CREATE TABLE wall_posts (id INTEGER PRIMARY KEY, author_user_id INT, body TEXT)');
         $pdo->exec('CREATE TABLE member_sanctions (id INTEGER PRIMARY KEY, target_user_id INT, issued_by_user_id INT, motif TEXT)');
         $pdo->exec('CREATE TABLE documents (id INTEGER PRIMARY KEY, title TEXT, created_by_user_id INT)');
         $pdo->exec('CREATE TABLE audit_log (id INTEGER PRIMARY KEY, action TEXT, actor_user_id INT)');
@@ -235,7 +235,7 @@ final class AccountPurgeServiceTest extends TestCase
              (40, 1, 'autre@example.com', 'Quelqu''un d''autre')"
         );
         $pdo->exec('INSERT INTO user_profiles (id, user_id, bio) VALUES (1, 29, "a"), (2, 30, "b"), (3, 40, "c")');
-        $pdo->exec('INSERT INTO forum_posts (id, author_user_id, body) VALUES (1, 29, "A"), (2, 40, "B")');
+        $pdo->exec('INSERT INTO wall_posts (id, author_user_id, body) VALUES (1, 29, "A"), (2, 40, "B")');
         $pdo->exec(
             'INSERT INTO member_sanctions (id, target_user_id, issued_by_user_id, motif) VALUES
              (1, 29, 40, "reçue par 29"),

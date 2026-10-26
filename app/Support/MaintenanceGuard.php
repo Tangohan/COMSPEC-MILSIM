@@ -141,6 +141,8 @@ final class MaintenanceGuard
         $endsAt = $maintenance['ends_at'] ?? null;
         $code = $maintenance['maintenance_code'] ?? null;
         $appName = function_exists('config') ? (string) config('app.name', 'Athena') : 'Athena';
+        $uiVariant = MaintenanceThemes::normalize($maintenance['ui_variant'] ?? null);
+        $uiAnimation = (int) ($maintenance['ui_animation'] ?? 1) === 1;
 
         if (self::wantsJson($requestPath)) {
             // Le mod et la DLL reconnaissent la maintenance (HTTP 503 + error « maintenance ») au lieu d'un

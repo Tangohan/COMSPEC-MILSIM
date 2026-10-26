@@ -100,7 +100,7 @@ final class AtakTranslationWorkshopController
             'site' => url('traduire-atak'),
             'release' => (int) $row['version'],
             'page' => url('traduire-atak/workshop/' . $row['public_id']),
-        ], (int) (strtotime((string) $row['released_at']) ?: time()));
+        ], (int) (strtotime((string) $row['released_at']) ?: time()), AtakTranslationTemplate::stringtable());
         $this->repo()->countDownload((int) $row['id']);
 
         return (new Response())
