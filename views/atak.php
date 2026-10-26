@@ -77,7 +77,7 @@ if ($atakMapConfig) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= $atakOverwatchBeta ? 'ATHENA | Overwatch Beta' : ($atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3')) ?></title>
   <link rel="icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <script>
