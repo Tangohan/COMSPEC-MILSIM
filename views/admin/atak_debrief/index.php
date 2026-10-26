@@ -117,7 +117,7 @@ $stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_l
       <li><span class="bo-dbf-steps__n">4</span><div><b><?= $ico('list', 16) ?> Vous suivez ici</b><p>Une ligne par joueur : état du CR, dernière synchro de son ATAK, remontées de la session. Les réponses se déplient avec ⋮ et s’exportent en Excel.</p></div></li>
       <li><span class="bo-dbf-steps__n">5</span><div><b><?= $ico('bell', 16) ?> Relancer puis clôturer</b><p>« Relancer les retardataires » renvoie le CR à ceux qui n’ont pas répondu. « Clôturer » le retire des téléphones qui ne l’ont pas encore reçu.</p></div></li>
     </ol>
-    <p class="bo-dbf-guide__foot">Prérequis : le mod Athena à jour chez les joueurs (la colonne ATAK affiche la version de chacun) et la liaison ATAK active pour votre communauté. <a href="<?= $h(url('back-office/ressources/atak-mod')) ?>">Mods (Steam Workshop)</a> · <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Configuration ATAK</a> · <a href="<?= $h(url('back-office/atak/comptes-rendus/modeles')) ?>">Modèles de questionnaire</a></p>
+    <p class="bo-dbf-guide__foot">Prérequis : <b>ATAK natif 2.4.0 ou plus récent</b> chez les joueurs (la colonne ATAK affiche la version de chacun et signale les versions trop anciennes) et la liaison ATAK active pour votre communauté. <a href="<?= $h(url('back-office/ressources/atak-mod')) ?>">Mods (Steam Workshop)</a> · <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Configuration ATAK</a> · <a href="<?= $h(url('back-office/atak/comptes-rendus/modeles')) ?>">Modèles de questionnaire</a></p>
   </details>
 
   <div class="ath-kpi-grid bo-aar-kpis">
@@ -271,7 +271,7 @@ $stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_l
             <td class="bo-dbf-c-cr"><span class="bo-dbf-box<?= $isDone ? ' is-on' : '' ?>" role="img" aria-label="<?= $isDone ? 'CR fait' : 'CR pas fait' ?>"><?= $isDone ? '✓' : '' ?></span></td>
             <td class="bo-dbf-name"><?= $h($r['name']) ?><?php if ($r['steam'] !== '' && (int) $r['user_id'] < 1): ?> <span class="bo-dbf-sub">sans compte</span><?php endif; ?></td>
             <td><?= $h($r['role'] !== '' ? $r['role'] : '—') ?></td>
-            <td><span class="bo-dbf-net<?= !empty($r['online']) ? ' is-on' : '' ?>"><?= !empty($r['online']) ? 'En ligne' : ($r['sync_at'] !== '' ? 'Hors ligne' : 'Aucun ATAK') ?></span><?php if (($r['mod_version'] ?? '') !== ''): ?> <span class="bo-dbf-sub"><?= $h($r['mod_version']) ?></span><?php endif; ?></td>
+            <td><span class="bo-dbf-net<?= !empty($r['online']) ? ' is-on' : '' ?>"><?= !empty($r['online']) ? 'En ligne' : ($r['sync_at'] !== '' ? 'Hors ligne' : 'Aucun ATAK') ?></span><?php if (($r['mod_version'] ?? '') !== ''): $dbfVer = preg_match('/\d+(?:\.\d+){0,2}/', (string) $r['mod_version'], $dbfM) ? $dbfM[0] : ''; ?> <span class="bo-dbf-sub"><?= $h($r['mod_version']) ?></span><?php if ($dbfVer !== '' && version_compare($dbfVer, '2.4.0', '<')): ?> <span class="ath-tag ath-tag--warn" title="Le CR de fin d’opération demande ATAK natif 2.4.0 ou plus récent : ce joueur ne le recevra pas.">Mise à jour requise (2.4.0)</span><?php endif; ?><?php endif; ?></td>
             <td class="bo-dbf-mono" title="<?= $h($fmt($r['sync_at'], 'd/m/Y H:i:s')) ?>"><?= $h($ago($r['sync_age'])) ?></td>
             <td class="bo-dbf-state"><?= $h($stateLabel($r['state'])) ?></td>
             <td class="bo-dbf-mono"><?= $h($fmt($r['seen_at'] !== '' ? $r['seen_at'] : null)) ?></td>
