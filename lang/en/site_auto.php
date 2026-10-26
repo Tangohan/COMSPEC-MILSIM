@@ -44486,4 +44486,5 @@ return [
     'Élévation confirmée' => 'Promotion confirmed',
     'Changement d’affectation confirmé' => 'Assignment change confirmed',
     'Décision d’élévation appliquée.' => 'Promotion decision applied.',
+    'Tableur des effectifs — Athena' => 'Personnel roster — Athena',
 ];
