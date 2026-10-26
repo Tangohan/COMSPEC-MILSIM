@@ -24,7 +24,9 @@ private _grpMem = _st getOrDefault ["scrollGroups", createHashMap];
 { _x params ["_n", "_c"]; if (!isNull _c) then { _grpMem set [_n, ctrlScrollValues _c]; }; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]);
 uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", []];
 _st set ["scrollGroups", _grpMem];
-private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]}) && {!(_page in ["MAP", "CHAT"])};
+// Accueil et Réglages : toujours rouverts à la position quittée (retour d'une app du bas de la liste, réglage qui
+// recrée l'écran).
+private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]} || {_page in ["LAUNCHER", "SETTINGS"]}) && {!(_page in ["MAP", "CHAT"])};
 _st set ["scrollRestore", false];
 _st set ["pageDrawn", _page];
 _st set ["pagePrev", _drawn]; // page dessinée juste avant (centre de notifications : « nouveau » à l'entrée seulement)

@@ -53,6 +53,9 @@ switch (_mode) do {
         // Sous la barre COMSPEC d'Overwatch (en haut à droite), alignée sur son bord droit.
         _bt ctrlSetPosition [safeZoneX + safeZoneW * 0.988 - _w, safeZoneY + 0.068 * safeZoneH, _w, 0.034 * safeZoneH];
         _bt ctrlSetText ("Réalisme et réseau" call _T);
+        // Police proportionnelle au bouton : avec la taille d'interface NORMALE ou plus grande, la police par défaut
+        // débordait du bouton (texte écrasé).
+        _bt ctrlSetFontHeight (0.034 * safeZoneH * 0.6);
         _bt ctrlSetTooltip ("Profil de réalisme et simulation du serveur : réseau radio, météo, surcharge, pertes, positions BFT, GPS, batterie" call _T);
         _bt ctrlSetBackgroundColor [0.10, 0.30, 0.16, 0.95];
         _bt ctrlAddEventHandler ["ButtonClick", { ["open", ctrlParent (_this select 0)] call comspec_atak_native_fnc_netConfig; }];

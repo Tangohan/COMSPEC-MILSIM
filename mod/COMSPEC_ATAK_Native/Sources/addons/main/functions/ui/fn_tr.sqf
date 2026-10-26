@@ -98,6 +98,14 @@ private _seg = {
     if (_r isEqualTo "" && {(_core find " · ") > 0}) then {
         _r = (([_core, " · "] call CBA_fnc_split) apply { [_x, _depth + 1] call _seg }) joinString " · ";
     };
+    // Puce ou symbole devant le texte (« ■ SEEK PRÊT », « ‹ RETOUR », « ● EN LIGNE ») : le texte qui suit est cherché seul.
+    if (_r isEqualTo "" && {_depth < 2}) then {
+        private _sp = _core find " ";
+        if (_sp > 0 && {_sp <= 4} && {private _p = _core select [0, _sp]; (toLower _p) isEqualTo (toUpper _p)}) then {
+            private _tail = [_core select [_sp + 1], _depth + 1] call _seg;
+            if (_tail isNotEqualTo (_core select [_sp + 1])) then { _r = (_core select [0, _sp + 1]) + _tail; };
+        };
+    };
     if (_r isEqualTo "") exitWith { _text };
     private _at = _text find _core;
     (_text select [0, _at]) + _r + (_text select [_at + count _core])
