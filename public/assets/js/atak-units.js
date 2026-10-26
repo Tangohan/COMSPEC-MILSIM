@@ -246,7 +246,21 @@ window.ATAKUnits = (function () {
     return '<div class="atak-note-chips">' + chips.join('') + '</div>';
   }
 
+  // Donateur Athena : le symbole de la liste prend l'anneau du palier et un petit cœur (atak-donor.css).
   function unitBadgeHtml(u, ex) {
+    var inner = unitBadgeInnerHtml(u, ex);
+    var P = window.ATAKUnitPopup;
+    if (P && P.isPhoneGeoloc && P.isPhoneGeoloc(ex)) return inner;
+    var key = (u.call_sign || '').toUpperCase().trim();
+    var prof = (window.ATAK_CALLSIGN_TO_USER && key) ? window.ATAK_CALLSIGN_TO_USER[key] : null;
+    var tier = prof && { soutien: 1, allie: 1, pilier: 1 }[prof.donorTier] ? prof.donorTier : '';
+    if (!tier) return inner;
+    var label = { soutien: 'Soutien', allie: 'Allié', pilier: 'Pilier' }[tier];
+    return '<span class="atak-donor atak-donor--' + tier + ' atak-donor--list" title="Donateur Athena · ' + label + '">' + inner +
+      '<span class="atak-donor-badge" aria-label="Donateur Athena"><svg viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z" fill="currentColor"/></svg></span></span>';
+  }
+
+  function unitBadgeInnerHtml(u, ex) {
     var P = window.ATAKUnitPopup;
     var isPhone = P && P.isPhoneGeoloc ? P.isPhoneGeoloc(ex) : !!(ex && ex.phone_geoloc);
     if (isPhone && window.ATAKPhoneIcon && window.ATAKPhoneIcon.listBadgeHtml) {

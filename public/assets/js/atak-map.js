@@ -222,6 +222,10 @@ window.ATAKMap = (function () {
     }
   }
 
+  // Paliers « Donateur Athena » (window.ATAK_CALLSIGN_TO_USER[...].donorTier, App\Support\DonorGamePerk).
+  var DONOR_LABELS = { soutien: 'Soutien', allie: 'Allié', pilier: 'Pilier' };
+  var DONOR_HEART = '<svg viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z" fill="currentColor"/></svg>';
+
   function unitBillboardLabel(callSign) {
     var cs = String(callSign || '').trim();
     if (!cs || !inclinedView()) return '';
@@ -2428,6 +2432,7 @@ window.ATAKMap = (function () {
         ? window.ATAK_CALLSIGN_TO_USER[callsignKey]
         : null;
       if (isPhone && (!rev || !rev.identity)) profile = null;
+      var donorTier = profile && DONOR_LABELS[profile.donorTier] ? profile.donorTier : '';
       var headingRounded = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
       if (isPhone && (!rev || !rev.heading)) headingRounded = '';
       var markerPriority = getUnitMarkerPriority();
@@ -2458,7 +2463,8 @@ window.ATAKMap = (function () {
         isPhone ? JSON.stringify(rev || {}) : '',
         inclinedView() ? '3d' : '2d',
         tenantMarkerUrl(unitKindFromExtra(extra)),
-        lastKnown ? 'lk' : ''
+        lastKnown ? 'lk' : '',
+        donorTier
       ].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       if (existing && existing._atakIconSig === iconSig && existing._atakPosSig === posSig) {
@@ -2532,6 +2538,12 @@ window.ATAKMap = (function () {
         if (prefs.showFtFrame && safeFt && prefs.styleMode === 'nato' && icon && icon.options) {
           icon.options.className = (icon.options.className || '') + ' atak-ft-marker';
           icon.options.html = '<div class="atak-ft-marker-wrap" style="--ft-color:' + safeFt + '">' + (icon.options.html || '') + '</div>';
+        }
+        // Donateur Athena : anneau au palier et petit cœur (atak-donor.css).
+        if (donorTier && icon && icon.options) {
+          icon.options.className = (icon.options.className || '') + ' atak-donor atak-donor--' + donorTier;
+          icon.options.html = (icon.options.html || '') +
+            '<span class="atak-donor-badge" title="Donateur Athena · ' + DONOR_LABELS[donorTier] + '" aria-label="Donateur Athena">' + DONOR_HEART + '</span>';
         }
       }
       if (!existing) {

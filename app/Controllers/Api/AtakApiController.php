@@ -8049,6 +8049,13 @@ class AtakApiController
         }
 
         $payload = $svc->payloadForGame($tenantId);
+        // Palier « Donateur Athena » du joueur de la session jeu (écusson en jeu, overlay ATAK).
+        $gameUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($gameUserId === null && ($steam = ComspecApiKeyAuth::matchedSteamId()) !== null) {
+            $row = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $gameUserId = $row !== null ? (int) $row['id'] : null;
+        }
+        $payload += \App\Support\DonorGamePerk::payload($gameUserId);
 
         return Response::json($payload);
     }
