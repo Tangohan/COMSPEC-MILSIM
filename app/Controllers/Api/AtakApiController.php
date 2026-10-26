@@ -7449,6 +7449,37 @@ class AtakApiController
     }
 
     /**
+     * App Médical de l'ATAK natif (COMSPEC Link « MedicalRoster ») : fiches médicales des membres de la communauté
+     * (groupe sanguin, poids, taille, intolérances, allergies), pour le joueur connecté en jeu par sa propre session
+     * qui est gestionnaire, au pilotage des effectifs ou titulaire d'une fonction médicale.
+     * -> {ok, role, generated_at, count, rows}. Joueur sans droit : 403 « forbidden ».
+     */
+    public function medicalRoster(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        // La clé d'accès commune du serveur ne dit pas qui joue : la session de jeu du joueur est exigée.
+        $userId = ComspecApiKeyAuth::matchedUserId();
+        $user = $userId !== null ? $this->userRepository->findById($userId) : null;
+        if ($user === null) {
+            return Response::json(['ok' => false, 'error' => 'session_required', 'message' => 'Reliez votre compte Athena en jeu.'], 403);
+        }
+        $service = new \App\Services\Atak\AtakMedicalRosterService($this->userRepository);
+        $role = $service->role($r, $userId, $user);
+        if ($role === null) {
+            return Response::json(['ok' => false, 'error' => 'forbidden', 'message' => 'Fiches médicales réservées aux médecins, à la gestion et au pilotage des effectifs.'], 403);
+        }
+        $rows = $service->rows($r);
+
+        return Response::json(['ok' => true, 'role' => $role, 'generated_at' => gmdate('Y-m-d H:i:s'), 'count' => count($rows), 'rows' => $rows]);
+    }
+
+    /**
      * Gestionnaire qui appelle depuis le jeu : il faut sa session de jeu (la clé du serveur ne dit pas qui joue).
      *
      * @return array{0: int, 1: array<string, mixed>, 2: ?string}|Response
