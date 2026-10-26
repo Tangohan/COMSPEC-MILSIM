@@ -44,8 +44,8 @@ if ($stmt && !$stmt->fetch()) {
         ADD INDEX idx_documents_parent (parent_document_id),
         ADD INDEX idx_documents_classification (classification_level),
         ADD INDEX idx_documents_visibility (visibility_scope)");
-    $pdo->exec("UPDATE documents SET owner_user_id = created_by WHERE owner_user_id IS NULL AND created_by IS NOT NULL");
-    $pdo->exec("UPDATE documents SET author_user_id = created_by WHERE author_user_id IS NULL AND created_by IS NOT NULL");
+    $pdo->exec("UPDATE documents SET owner_user_id = created_by WHERE owner_user_id IS NULL AND created_by IS NOT NULL AND EXISTS (SELECT 1 FROM users u WHERE u.id = documents.created_by)");
+    $pdo->exec("UPDATE documents SET author_user_id = created_by WHERE author_user_id IS NULL AND created_by IS NOT NULL AND EXISTS (SELECT 1 FROM users u WHERE u.id = documents.created_by)");
     $stmt2 = $pdo->query("SELECT id FROM documents WHERE uuid IS NULL LIMIT 1");
     if ($stmt2 && $stmt2->fetch()) {
         $pdo->exec("UPDATE documents SET uuid = LOWER(UUID()) WHERE uuid IS NULL");
