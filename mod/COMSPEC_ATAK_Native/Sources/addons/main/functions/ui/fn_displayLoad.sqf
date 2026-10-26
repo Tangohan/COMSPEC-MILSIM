@@ -124,7 +124,22 @@ if (_interactive) then {
 [] call comspec_atak_native_fnc_schedulerStart;
 // HUD des autres mods (F-PANO / ECOTI...) masqué sous le téléphone tant qu'il est affiché (fn_foreignHud).
 ["start"] call comspec_atak_native_fnc_foreignHud;
-[profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"]] call comspec_atak_native_fnc_navigate;
+private _page = profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"];
+// Première sortie en main de la mission, jeu pas encore relié à un compte Athena (service Athena « Oui ») :
+// le téléphone s'ouvre sur l'app Athena, onglet COMPTE, avec un code déjà demandé, à saisir sur le site (/lier).
+// Rien en mode local (service « Non », comspec_atak_native_local_only) ni quand BattlEye bloque la DLL.
+if (_interactive && {!(missionNamespace getVariable ["COMSPEC_ATAK_LinkOffered", false])}) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_LinkOffered", true];
+    private _st = [] call comspec_atak_native_fnc_athenaStatus;
+    if (!(_st get "logged") && {(_st get "key") in ["disconnected", "unlinked", "code", "error"]}) then {
+        _page = "ATHENA";
+        uiNamespace setVariable ["COMSPEC_ATAK_AthenaTab", "account"];
+        private _ls = (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", [""]]) param [0, ""];
+        if !(_ls in ["asking", "pending"]) then { ["start"] call comspec_atak_native_fnc_athenaLink; };
+        ["INFO", "ATHENA", "Première sortie du téléphone sans compte Athena : app Athena ouverte avec un code"] call comspec_atak_native_fnc_log;
+    };
+};
+[_page] call comspec_atak_native_fnc_navigate;
 // Écran de verrouillage : première sortie de la mission, après une minute rangé ou un redémarrage (fn_lockScreen).
 // Avant fn_statusUpdate, qui note l'heure du dernier affichage.
 ["check"] call comspec_atak_native_fnc_lockScreen;
