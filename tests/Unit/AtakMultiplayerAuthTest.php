@@ -156,6 +156,48 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_remote && \{!\(\[_caller\] call comspec_atak_native_fnc_adminAllowed\)\}\) exitWith \{.*?switch \(_act\) do \{/s', $code);
     }
 
+    public function testDebriefRequestsAreJudgedOnTheRequesterFoundByTheServer(): void
+    {
+        // CR fin d'op (contre-expertise v4, N15) : l'événement CBA comspec_atak_native_debrief portait l'unité du
+        // demandeur, choisie par l'émetteur. Tout client imposait, relançait ou levait un CR au nom d'un Zeus ou d'un
+        // admin, ou changeait l'état de la fiche d'un autre joueur. Les demandes arrivent par remoteExecCall vers 2 ;
+        // le serveur retrouve le demandeur par remoteExecutedOwner et juge ses droits avec la même règle qu'avant.
+        $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/debrief/fn_debriefServer.sqf'));
+        $head = $this->between($code, 'params [["_act", ""], ["_args", []], ["_caller", objNull]];', 'switch (_act) do {');
+        self::assertMatchesRegularExpression('/^params \[\["_act", ""\], \["_args", \[\]\], \["_caller", objNull\]\];\s*'
+            . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+            . 'if \(_remote\) then \{ _caller = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
+            . 'if \(!_remote && \{isNull _caller\} && \{hasInterface\}\) then \{ _caller = player; \};\s*'
+            . 'if \(_remote && \{!\(_act in \["force", "remind", "lift", "pull", "state", "hello"\]\)\}\) exitWith \{.*?'
+            . 'if \(isNull _caller && \{_act isNotEqualTo "init"\}\) exitWith \{.*?'
+            . 'if \(_act in \["force", "remind", "lift", "pull"\]\) then \{.*?'
+            . '_ok = \(_caller getVariable \["COMSPEC_ATAK_DebriefRight", false\]\) isEqualTo true\s*\|\| \{\[_caller\] call comspec_atak_native_fnc_adminAllowed && .*?'
+            . 'if \(!_ok\) exitWith \{.*?\["comspec_atak_native_debriefData", \["denied", \[\]\], _caller\] call CBA_fnc_targetEvent;/s', $head);
+        self::assertStringNotContainsString('CBA_fnc_addEventHandler', $code);
+        // Les deux émetteurs du client passent par remoteExecCall, sans unité dans la demande.
+        self::assertStringContainsString('private _server = { params ["_a", ["_x", []]]; [_a, _x] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2]; };', $this->read(self::MAIN . '/functions/debrief/fn_debrief.sqf'));
+        self::assertStringContainsString('["hello", []] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2];', $this->read(self::MAIN . '/XEH_postInitClient.sqf'));
+        self::assertStringContainsString('class comspec_atak_native_fnc_debriefServer { allowedTargets = 2; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        // Plus de gestionnaire ni d'émetteur de l'événement dans main/ et connect/ (code porté par des chaînes compris).
+        $files = $this->sources();
+        $left = [];
+        foreach ($files as $rel => $units) {
+            foreach ($units as $u) {
+                if (preg_match('/(["\'])comspec_atak_native_debrief\1/i', $u) === 1) {
+                    $left[$rel] = true;
+                }
+            }
+        }
+        self::assertSame([], array_keys($left));
+        // Toutes les actions que le client envoie sont ouvertes à distance (relais _server compris).
+        $lists = $this->remoteLists($files);
+        self::assertSame(['force', 'remind', 'lift', 'pull', 'state', 'hello'], $lists['comspec_atak_native_fnc_debriefserver'] ?? null);
+        [$sent] = $this->actionsSent($files, $lists);
+        $got = array_keys($sent['comspec_atak_native_fnc_debriefserver'] ?? []);
+        sort($got);
+        self::assertSame(['force', 'hello', 'lift', 'pull', 'remind', 'state'], $got);
+    }
+
     public function testCompromiseOrdersAreAcceptedOnlyFromTheServer(): void
     {
         // Alertes, révocation chez Athena et nouvel IMEI : l'événement CBA comspec_atak_native_compromise ne disait pas

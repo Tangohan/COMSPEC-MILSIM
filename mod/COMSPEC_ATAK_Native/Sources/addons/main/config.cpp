@@ -673,6 +673,8 @@ class Cfg3DEN {
 // déclare déjà (allowedTargets = 1) et la priorité entre deux addons qui déclarent la même classe n'est pas établie.
 class CfgRemoteExec {
     class Functions {
+        // CR fin d'op (contre-expertise v4, N15) : demandes de l'app, jugées sur le demandeur (fn_debriefServer).
+        class comspec_atak_native_fnc_debriefServer { allowedTargets = 2; };
         class comspec_atak_native_fnc_zeusServer { allowedTargets = 2; };
         class comspec_atak_native_fnc_adminServer { allowedTargets = 2; };
         class comspec_atak_native_fnc_ftServer { allowedTargets = 2; };

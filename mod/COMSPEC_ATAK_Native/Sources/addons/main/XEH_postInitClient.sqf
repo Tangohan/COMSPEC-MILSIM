@@ -961,7 +961,7 @@ addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_di
     };
 }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_debrief; }, 30] call COMSPEC_ATAK_PfhSpread;
-[{ if (!isNull player) then { ["comspec_atak_native_debrief", [player, "hello", []]] call CBA_fnc_serverEvent; }; }, [], 15] call CBA_fnc_waitAndExecute;
+[{ if (!isNull player) then { ["hello", []] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2]; }; }, [], 15] call CBA_fnc_waitAndExecute;
 // App Admin : droit de gestion lu sur Athena (le lanceur ne la montre qu'à qui y a droit), 90 s après l'arrivée puis
 // toutes les 15 min. Une seule petite requête, rien si le service Athena est coupé.
 [{ ["probe"] call comspec_atak_native_fnc_adminClient; }, 900] call COMSPEC_ATAK_PfhSpread;

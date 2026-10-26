@@ -1,6 +1,10 @@
 /*
-    App CR fin d'op, côté serveur (seul juge des droits). Événement CBA serveur comspec_atak_native_debrief :
-      [demandeur, action, arguments]. Imposer, relancer, lever et suivre : Zeus (si le réglage comspec_atak_native_debrief_zeus
+    App CR fin d'op, côté serveur (seul juge des droits). Appelée par un client avec
+      [action, arguments] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2] (CfgRemoteExec). Le demandeur n'est
+      JAMAIS celui qu'annonce la demande : il est retrouvé par remoteExecutedOwner (fn_reqUnit). Plus d'événement CBA
+      comspec_atak_native_debrief : il ne portait pas l'identité du poste émetteur, et tout client y mettait l'unité d'un
+      Zeus ou d'un admin pour imposer, relancer ou lever un CR, ou celle d'un autre joueur pour changer l'état de sa fiche.
+      Imposer, relancer, lever et suivre : Zeus (si le réglage comspec_atak_native_debrief_zeus
       le permet), hôte, admin connecté, UID autorisé (comspec_atak_native_admin_uids, fn_adminAllowed) ou gestionnaire
       désigné par Athena (variable publique COMSPEC_ATAK_DebriefRight du joueur, donnée par le site).
     Actions :
@@ -16,6 +20,35 @@
 */
 if (!isServer) exitWith {};
 params [["_act", ""], ["_args", []], ["_caller", objNull]];
+// Demande venue d'un client : seul remoteExecutedOwner fait foi, l'unité annoncée est écartée (même garde que
+// fn_adminServer). Un appel non distant ne vient que du code du serveur ; l'hôte d'une partie locale (son poste EST le
+// serveur) et le joueur d'une partie solo restent le demandeur.
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+if (_remote) then { _caller = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
+if (!_remote && {isNull _caller} && {hasInterface}) then { _caller = player; };
+// Actions ouvertes aux clients ; « init » est réservée au serveur.
+if (_remote && {!(_act in ["force", "remind", "lift", "pull", "state", "hello"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Action « %1 » refusée au poste %2 (réservée au serveur)", _act, remoteExecutedOwner];
+    false
+};
+if (isNull _caller && {_act isNotEqualTo "init"}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Demande « %1 » refusée au poste %2 (demandeur introuvable)", _act, remoteExecutedOwner];
+    false
+};
+// Imposer, relancer, lever et suivre : même règle qu'avant, jugée sur le demandeur retrouvé. « state » et « hello »
+// restent ouvertes à tout joueur, pour sa propre fiche seulement (le demandeur est son poste).
+private _ok = true;
+if (_act in ["force", "remind", "lift", "pull"]) then {
+    private _zeusOnly = !isNull (getAssignedCuratorLogic _caller) && {!(local _caller)} && {(admin (owner _caller)) isEqualTo 0}
+        && {!((getPlayerUID _caller) in (((missionNamespace getVariable ["comspec_atak_native_admin_uids", ""]) splitString ", ;") apply { trim _x }))};
+    _ok = (_caller getVariable ["COMSPEC_ATAK_DebriefRight", false]) isEqualTo true
+        || {[_caller] call comspec_atak_native_fnc_adminAllowed && {!_zeusOnly || {missionNamespace getVariable ["comspec_atak_native_debrief_zeus", true]}}};
+};
+if (!_ok) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Demande refusée (ni Zeus, ni admin, ni UID autorisé) : %1 %2", name _caller, _act];
+    ["comspec_atak_native_debriefData", ["denied", []], _caller] call CBA_fnc_targetEvent;
+    false
+};
 private _store = missionNamespace getVariable ["COMSPEC_ATAK_DbfSrv", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_DbfSrv", _store];
 private _now = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
@@ -31,20 +64,8 @@ private _publish = {
 private _watch = { params ["_u"]; private _w = missionNamespace getVariable ["COMSPEC_ATAK_DbfWatch", []]; _w pushBackUnique (getPlayerUID _u); missionNamespace setVariable ["COMSPEC_ATAK_DbfWatch", _w]; };
 switch (_act) do {
     case "init": {
-        ["comspec_atak_native_debrief", {
-            params [["_caller", objNull], ["_a", ""], ["_xa", []]];
-            if (isNull _caller) exitWith {};
-            if (_a in ["state", "hello"]) exitWith { [_a, _xa, _caller] call comspec_atak_native_fnc_debriefServer; };
-            private _zeusOnly = !isNull (getAssignedCuratorLogic _caller) && {!(local _caller)} && {(admin (owner _caller)) isEqualTo 0}
-                && {!((getPlayerUID _caller) in (((missionNamespace getVariable ["comspec_atak_native_admin_uids", ""]) splitString ", ;") apply { trim _x }))};
-            private _ok = (_caller getVariable ["COMSPEC_ATAK_DebriefRight", false]) isEqualTo true
-                || {[_caller] call comspec_atak_native_fnc_adminAllowed && {!_zeusOnly || {missionNamespace getVariable ["comspec_atak_native_debrief_zeus", true]}}};
-            if (!_ok) exitWith {
-                diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Demande refusée (ni Zeus, ni admin, ni UID autorisé) : %1 %2", name _caller, _a];
-                ["comspec_atak_native_debriefData", ["denied", []], _caller] call CBA_fnc_targetEvent;
-            };
-            [_a, _xa, _caller] call comspec_atak_native_fnc_debriefServer;
-        }] call CBA_fnc_addEventHandler;
+        // Pas de gestionnaire d'événement CBA : les demandes des clients arrivent par remoteExecCall vers 2, seule
+        // voie qui laisse le serveur reconnaître le poste émetteur (contrôle en tête de cette fonction).
     };
     case "force": {
         _args params [["_mode", "fill"], ["_target", "all"], ["_title", ""], ["_intro", ""], ["_read", ""], ["_qs", []], ["_units", []]];

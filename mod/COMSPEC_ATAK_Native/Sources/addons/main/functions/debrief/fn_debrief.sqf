@@ -29,7 +29,9 @@ uiNamespace setVariable ["COMSPEC_ATAK_DbfUi", _ui];
 private _cfg = missionNamespace getVariable ["COMSPEC_ATAK_DbfCfg", createHashMap];
 private _now = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
 private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DEBRIEF") then { ["DEBRIEF"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
-private _server = { params ["_a", ["_x", []]]; ["comspec_atak_native_debrief", [player, _a, _x]] call CBA_fnc_serverEvent; };
+// Demandes au serveur par remoteExecCall vers 2 (CfgRemoteExec), et non plus par l'événement CBA comspec_atak_native_debrief :
+// le serveur retrouve lui-même le demandeur (remoteExecutedOwner, fn_reqUnit), le joueur n'est plus dans la demande.
+private _server = { params ["_a", ["_x", []]]; [_a, _x] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2]; };
 // Questionnaire intégré (même liste que AtakDebriefSpec::BUILTIN sur le site) : traduit à l'affichage.
 private _builtin = [
     ["summary", "textarea", "Déroulé de votre mission", "", 1, []],
