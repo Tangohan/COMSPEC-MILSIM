@@ -10,6 +10,8 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
+// RECON.Note est une requête HTTP synchrone dans la DLL : hors contexte suspendable, relance en spawn (extAwait).
+if (!canSuspend) exitWith { [_text, _tag, _confidence, _pos] spawn comspec_overwatch_connect_fnc_reconPushNote; true };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 
 private _last = missionNamespace getVariable ["COMSPEC_ReconNoteAt", -100];
@@ -117,7 +119,7 @@ private _payload = createHashMapFromArray [
 ];
 private _json = [_payload] call comspec_overwatch_connect_fnc_hashMapToJson;
 private _parsed = [
-    "COMSPECExtension" callExtension ["RECON.Note", [_json]]
+    ["COMSPECExtension", "RECON.Note", [_json]] call comspec_overwatch_connect_fnc_extAwait
 ] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
 _parsed params ["_ok", "_status", "_detail"];
 

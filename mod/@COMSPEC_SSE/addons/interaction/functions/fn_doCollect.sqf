@@ -14,7 +14,16 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
 };
 // Une seule collecte par entité (état COLLECTED posé par le serveur) : la collecte se répétait à l'infini, chaque
 // fois avec une ligne de plus dans la chaîne de possession, le journal et le registre.
-if (([_target] call comspec_sse_fnc_getState) in ["COLLECTED", "TRANSMITTED"]) exitWith {
+// La collecte est suivie par le drapeau « collected » (posé par le serveur) et non par l'état seul : une pièce
+// TRANSMITTED depuis l'ATAK sans avoir été collectée doit rester collectable (chaîne de possession + garde).
+private _isCollected = {
+    params ["_e"];
+    private _d = [_e] call comspec_sse_fnc_getData;
+    if (isNil "_d") exitWith { false };
+    ([_d, "collected", false] call comspec_sse_fnc_getPair) isEqualTo true
+        || {([_d, "state", ""] call comspec_sse_fnc_getPair) isEqualTo "COLLECTED"}
+};
+if ([_target] call _isCollected) exitWith {
     // Déjà collectée mais pas encore scellée : le scellé seul reste à faire.
     if (_seal) exitWith { [_target, _player] call comspec_sse_fnc_bagEvidence; };
     ["Pièce déjà collectée : voir le registre des scellés.", "WARNING"] call comspec_sse_fnc_notify;
@@ -27,8 +36,8 @@ if (_seal && {!("COMSPEC_SSE_EvidenceBag" in (items _player))}) exitWith {
     8,
     "Collecte SSE...",
     {
-        params ["_target", "_player", ["_seal", false]];
-        if (([_target] call comspec_sse_fnc_getState) in ["COLLECTED", "TRANSMITTED"]) exitWith {
+        params ["_target", "_player", ["_seal", false], ["_isCollected", {false}]];
+        if ([_target] call _isCollected) exitWith {
             ["Pièce déjà collectée par un équipier.", "WARNING"] call comspec_sse_fnc_notify;
         };
         [_target] call comspec_sse_fnc_ensureGenerated;
@@ -76,5 +85,5 @@ if (_seal && {!("COMSPEC_SSE_EvidenceBag" in (items _player))}) exitWith {
             "QUEUED"
         ] call comspec_sse_fnc_addJournalEntry;
     },
-    [_target, _player, _seal]
+    [_target, _player, _seal, _isCollected]
 ] call comspec_sse_fnc_progressAction;

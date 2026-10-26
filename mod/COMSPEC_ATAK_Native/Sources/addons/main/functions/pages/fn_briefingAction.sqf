@@ -12,7 +12,14 @@
 */
 params [["_action", ""], ["_arg", 0]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _rerender = { [{ ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+// Redessin seulement si l'app Briefing est encore ouverte (réponses HTTP lentes) ; la question en cours de saisie est gardée.
+private _rerender = { [{
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING") exitWith {};
+    if (!isNull ((uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["briefQ", controlNull])) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ["briefQ", ""] call comspec_atak_native_fnc_formValue];
+    };
+    ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
+}] call CBA_fnc_execNextFrame; };
 
 switch (_action) do {
     case "tab": { _s set ["briefTab", _arg]; call _rerender; };
@@ -101,6 +108,9 @@ switch (_action) do {
             missionNamespace setVariable ["COMSPEC_ATAK_BriefAskBusy", false];
             if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith { ["WARNING", "Question non envoyée : Athena ne répond pas", 4, 30] call comspec_atak_native_fnc_notify; };
             uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ""];
+            // Champ encore affiché avec la question partie : vidé, sinon le redessin la remettrait en brouillon.
+            private _qc = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["briefQ", controlNull];
+            if (!isNull _qc && {(trim ctrlText _qc) isEqualTo _txt}) then { _qc ctrlSetText ""; };
             // Le présentateur la voit tout de suite sur son téléphone.
             private _pres = (["get"] call comspec_atak_native_fnc_briefingLive) param [0, objNull];
             if (!isNull _pres && {_pres isNotEqualTo player}) then { ["comspec_atak_native_briefQ", [_who, _txt], _pres] call CBA_fnc_targetEvent; };
@@ -123,7 +133,7 @@ switch (_action) do {
             private _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;
             missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
             ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
-            [{ ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
     };
 };

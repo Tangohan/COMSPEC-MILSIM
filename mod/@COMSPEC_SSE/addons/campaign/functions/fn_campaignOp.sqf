@@ -26,8 +26,18 @@
 */
 params [["_op", "", [""]], ["_args", [], [[]]], ["_req", objNull, [objNull]]];
 _op = toLower _op;
-if (!isServer) exitWith { ["comspec_sse_campOp", [_op, _args, player]] call CBA_fnc_serverEvent; false };
-// Demande venue d'un client (événement comspec_sse_campOp) : Zeus ou administrateur seulement, sauf la diffusion
+// Client : appel distant (liste blanche CfgRemoteExec) ; le serveur retrouve le demandeur par remoteExecutedOwner,
+// jamais par un objet fourni dans la demande (un client pouvait y mettre l'unité du Zeus).
+if (!isServer) exitWith { [_op, _args] remoteExecCall ["comspec_sse_fnc_campaignOp", 2]; false };
+if (isRemoteExecuted && {remoteExecutedOwner != 2}) then {
+    private _ro = remoteExecutedOwner;
+    _req = (allPlayers select { owner _x == _ro }) param [0, objNull];
+};
+if (isRemoteExecuted && {remoteExecutedOwner != 2} && {isNull _req} && {_op isNotEqualTo "publish"}) exitWith {
+    diag_log text format ["[COMSPEC SSE] Campagne : « %1 » refusé au poste %2 (demandeur introuvable).", _op, remoteExecutedOwner];
+    false
+};
+// Demande venue d'un client (appel distant, demandeur retrouvé ci-dessus) : Zeus ou administrateur seulement, sauf la diffusion
 // de l'état. Les appels du serveur lui-même (modules Eden, fin de mission, hôte) n'ont pas de demandeur.
 if (!isNull _req && {_op isNotEqualTo "publish"} && {!([_req] call comspec_sse_fnc_isAuthority)}) exitWith {
     diag_log text format ["[COMSPEC SSE] Campagne : « %1 » refusé à %2 (ni Zeus ni administrateur).", _op, name _req];

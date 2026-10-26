@@ -396,6 +396,10 @@ public static partial class Extension
             || raw.Contains("SESSION_REVOKED", StringComparison.OrdinalIgnoreCase)
             || raw.Contains("INVALID_REFRESH", StringComparison.OrdinalIgnoreCase)
             || raw.Contains("refresh_revoked", StringComparison.OrdinalIgnoreCase)
+            // Athena répond 401 {"error":"SESSION_EXPIRED"} à un refresh inconnu/expiré/révoqué
+            // (/session/refresh et /session/restore, appelés sans Bearer) : GamePostJson le mappe
+            // en ERR|SESSION_EXPIRED avant http_401, donc le traiter comme une révocation.
+            || raw.StartsWith("ERR|SESSION_EXPIRED", StringComparison.Ordinal)
             // 401 nu sur /session/refresh = refresh refusé. Un 403 nu (WAF, proxy, blocage IP
             // temporaire) ne doit pas effacer le refresh DPAPI : seuls les codes explicites ci-dessus.
             || raw.Contains("http_401", StringComparison.OrdinalIgnoreCase);

@@ -26,7 +26,10 @@ private _shown = [];
 
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    private _id = str (_x getOrDefault ["id", ""]);
+    // Id déjà en chaîne (pollMedicalAlerts) : str ajouterait des guillemets et la DLL renverrait 404.
+    private _id = _x getOrDefault ["id", ""];
+    if (!(_id isEqualType "")) then { _id = str _id; };
+    _id = trim _id;
     if (_id isEqualTo "" || {_id isEqualTo "0"}) then { continue };
 
     private _kind = _x getOrDefault ["kind", "medical_alert"];

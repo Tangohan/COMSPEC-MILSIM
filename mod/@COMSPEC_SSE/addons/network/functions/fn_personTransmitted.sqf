@@ -42,6 +42,9 @@ if (_raw isEqualType "" && {_raw isNotEqualTo ""}) then {
                                     _p set ["person_id", _aid];
                                     _x set ["payload", _p];
                                     _x set ["txRetryAfter", 0];
+                                    // Tentatives repartent de zéro : les échecs « fiche pas encore connue » ne comptent pas.
+                                    _x set ["txAttempts", 0];
+                                    _x set ["txStatus", "QUEUED"];
                                 };
                             };
                         };

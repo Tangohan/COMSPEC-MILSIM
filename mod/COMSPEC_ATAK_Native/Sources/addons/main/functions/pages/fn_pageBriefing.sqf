@@ -81,6 +81,12 @@ if (_tab isEqualTo "QUESTIONS") exitWith {
         ];
     };
     [_rows, [0, _y0, _bw, _bh - _y0]] call comspec_atak_native_fnc_formRender;
+    // Brouillon de la question tenu à jour à chaque frappe : tout redessin (PFH de signature, changement de
+    // diapositive, arrivée d'un participant, actualisation) le retrouve au lieu de l'effacer.
+    private _qc = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["briefQ", controlNull];
+    if (!isNull _qc) then {
+        _qc ctrlAddEventHandler ["KeyUp", { params ["_c"]; uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ctrlText _c]; false }];
+    };
     true
 };
 

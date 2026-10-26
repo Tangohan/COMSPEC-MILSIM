@@ -43,7 +43,8 @@ if (_alertId isEqualTo "") then {
             if (_idx >= 0 && {_idx < count _entries}) then {
                 (_entries select _idx) params ["_kind", "", "", "", ["_meta", []]];
                 if (_kind isEqualTo "medical" && {(_meta isEqualType []) && {(count _meta) > 0}}) then {
-                    _alertId = str (_meta select 0);
+                    _alertId = _meta select 0;
+                    if (!(_alertId isEqualType "")) then { _alertId = str _alertId; };
                 };
             };
         };
@@ -95,7 +96,9 @@ private _label = switch (_statusNorm) do {
 private _alerts = missionNamespace getVariable ["COMSPEC_MedicalAlerts", []];
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    if ((str (_x getOrDefault ["id", ""])) isEqualTo _alertId) exitWith {
+    private _aid = _x getOrDefault ["id", ""];
+    if (!(_aid isEqualType "")) then { _aid = str _aid; };
+    if (_aid isEqualTo _alertId) exitWith {
         _x set ["triage_status", _statusNorm];
         _x set ["triage_label", _label];
     };

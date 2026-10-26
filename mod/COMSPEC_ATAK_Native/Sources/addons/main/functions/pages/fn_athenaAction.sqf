@@ -71,7 +71,7 @@ switch (_action) do {
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", [["Reconnexion impossible : voir les étapes de la liaison.", "Liaison Athena rétablie."] select _ok, !_ok, diag_tickTime]];
                 [] call comspec_overwatch_connect_fnc_pollAuth;
                 [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
-                [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_p in ["ATHENA", "NETWORK"]) then { [_p] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
             };
         } else {
             ["AuthSteam", [_url, _steam, _pack]] call _ext;
@@ -85,5 +85,7 @@ switch (_action) do {
     };
 };
 if (_bridge) then { [] call comspec_overwatch_connect_fnc_pollAuth; };
-[{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+// Redessin de la page qui a lancé l'action (Athena ou Réseau) seulement si elle est encore ouverte : après les appels
+// HTTP (spawn), l'app ouverte entre-temps ne doit pas être recouverte.
+[{ private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_p in ["ATHENA", "NETWORK"]) then { [_p] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
 true

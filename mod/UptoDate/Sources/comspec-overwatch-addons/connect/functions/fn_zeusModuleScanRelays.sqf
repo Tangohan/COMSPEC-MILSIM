@@ -23,15 +23,18 @@ if (isNull _logic) exitWith {
 
 // Position centrale pour le scan
 private _centerPos = getPos _logic;
-private _scanRadius = 5000; // Rayon de scan par défaut
+private _scanRadius = _logic getVariable ["ScanRadius", 5000]; // Argument du module (défaut 5000 m)
+if (!(_scanRadius isEqualType 0) || {_scanRadius <= 0}) then { _scanRadius = 5000; };
 
-// Trouver tous les objets de type relais dans le rayon
-private _allRelays = [];
-{
-    if (_x getVariable ["COMSPEC_AtakRelayUid", ""] != "") then {
-        _allRelays pushBack _x;
-    };
-} forEach (nearestObjects [_centerPos, [], _scanRadius]);
+// Relais déjà référencés (placeAtakRelay) : pas de nearestObjects non filtré sur 5 km, qui figeait le jeu.
+private _registry = missionNamespace getVariable ["COMSPEC_AtakRelays", []];
+if (!(_registry isEqualType [])) then { _registry = []; };
+private _allRelays = _registry select {
+    (_x isEqualType objNull)
+    && {!isNull _x}
+    && {_x distance2D _centerPos < _scanRadius}
+    && {(_x getVariable ["COMSPEC_AtakRelayUid", ""]) != ""}
+};
 
 if (count _allRelays == 0) exitWith {
     ["Aucun relais trouvé dans un rayon de " + str _scanRadius + "m", "SCANNER RELAIS", 5] call BIS_fnc_curatorHint;
@@ -63,8 +66,10 @@ private _errors = [];
     // Détecter erreurs
     if (damage _x > 0.95) then {
         _errors pushBack [_x, "DÉTRUIT"];
-    } else if (!alive _x) then {
-        _errors pushBack [_x, "HORS LIGNE"];
+    } else {
+        if (!alive _x) then {
+            _errors pushBack [_x, "HORS LIGNE"];
+        };
     };
 } forEach _allRelays;
 

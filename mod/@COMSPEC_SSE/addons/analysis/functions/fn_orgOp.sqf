@@ -28,7 +28,17 @@ if (_op isEqualTo "orgof") exitWith {
     _args params [["_u", objNull, [objNull]]];
     _u getVariable ["COMSPEC_SSE_Org", []]
 };
-if (!isServer) exitWith { ["comspec_sse_orgOp", [_op, _args]] call CBA_fnc_serverEvent; "" };
+if (!isServer) exitWith { [_op, _args] remoteExecCall ["comspec_sse_fnc_orgOp", 2]; "" };
+// Demande venue d'un client (appel distant) : création, édition et suppression réservées aux Zeus et administrateurs.
+// Un appel imbriqué (« exploit » → « revealOrg ») hérite de la vérification de l'appel d'entrée.
+if (isNil "_orgOpChecked" && {isRemoteExecuted} && {remoteExecutedOwner != 2} && {_op in ["ensure", "set", "delete", "member", "unmember", "revealorg"]} && {
+    private _ro = remoteExecutedOwner;
+    !([(allPlayers select { owner _x == _ro }) param [0, objNull]] call comspec_sse_fnc_isAuthority)
+}) exitWith {
+    diag_log text format ["[COMSPEC SSE] Organisations : « %1 » refusé au poste %2 (ni Zeus ni administrateur).", _op, remoteExecutedOwner];
+    ""
+};
+private _orgOpChecked = true;
 
 if (isNil "comspec_sse_orgs") then { comspec_sse_orgs = createHashMap; };
 if (isNil "comspec_sse_orgMembers") then { comspec_sse_orgMembers = createHashMap; };

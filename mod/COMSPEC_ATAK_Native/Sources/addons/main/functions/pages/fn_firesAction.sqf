@@ -154,7 +154,8 @@ switch (_action) do {
             private _ok = (toUpper _r) find "OK" >= 0 && {(toUpper _r) find "ERR" < 0};
             [_ok] call _finish;
             missionNamespace setVariable ["COMSPEC_ATAK_Fires9Busy", false];
-            [] call _render;
+            // Réponse lente : pas de redessin de l'app CAS par-dessus une autre app ouverte entre-temps.
+            if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FIRES") then { [] call _render; };
         };
     };
     case "send5": {

@@ -2,6 +2,18 @@
     Soumet la fiche SSE (identité + armes) puis photo / biométrie optionnelles.
 */
 if (!hasInterface) exitWith {};
+// Bouton = contexte non planifié : SubmitSsePerson est un POST synchrone (jusqu'à 8 s), on passe en
+// spawn pour que extAwait ne fige pas le jeu. Le verrou évite une fiche en double si le bouton est
+// recliqué pendant l'attente.
+if (!canSuspend) exitWith {
+    // Verrou horodaté (uiNamespace survit à la mission : un spawn tué en fin de partie ne doit pas bloquer le bouton).
+    if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_SsePerson_Submitting", -1e9]) < 90) exitWith {};
+    uiNamespace setVariable ["COMSPEC_SsePerson_Submitting", diag_tickTime];
+    [] spawn {
+        [] call comspec_overwatch_connect_fnc_ssePersonDialogSubmit;
+        uiNamespace setVariable ["COMSPEC_SsePerson_Submitting", -1e9];
+    };
+};
 
 private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
 if (isNull _disp) then { _disp = findDisplay 9991; };

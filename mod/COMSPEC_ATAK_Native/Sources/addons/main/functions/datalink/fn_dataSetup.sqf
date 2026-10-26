@@ -23,8 +23,9 @@
 */
 params [["_obj", objNull, [objNull]], ["_cfg", [], [[], createHashMap]], ["_merge", false]];
 if (isNull _obj) exitWith { false };
-// Champ init rejoué sur un client (JIP compris) avant son postInit : le serveur a déjà posé les données.
-if (!isServer && {hasInterface} && {isNil "COMSPEC_ATAK_DataInitDone"}) exitWith { false };
+// Champ init rejoué sur un client (JIP compris) avant son postInit, ou sur un client headless (qui ne pose jamais
+// COMSPEC_ATAK_DataInitDone) : le serveur a déjà posé les données.
+if (!isServer && {!hasInterface || {isNil "COMSPEC_ATAK_DataInitDone"}}) exitWith { false };
 if (_cfg isEqualType []) then { _cfg = createHashMapFromArray (_cfg select { _x isEqualType [] && {(count _x) isEqualTo 2} }); };
 private _old = createHashMapFromArray (_obj getVariable ["COMSPEC_ATAK_Data", []]);
 private _def = createHashMapFromArray [

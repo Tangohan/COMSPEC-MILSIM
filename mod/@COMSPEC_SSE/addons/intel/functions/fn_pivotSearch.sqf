@@ -1,11 +1,13 @@
 /*
     Pivot : trouve d'autres entités SSE partageant numéro / alias / grid / id.
     [_entity, _emit] call comspec_sse_fnc_pivotSearch
-      _emit : émet SSE_NetworkLinked (défaut true), une seule fois par paire et par machine
+      _emit : émet SSE_NetworkLinked (défaut false), une seule fois par paire et par machine.
+              Seule l'exploitation (advanceExploitation) émet ; l'interface (graphe, liens Zeus) ne fait que lire,
+              sinon chaque poste qui ouvre le graphe diffusait son propre événement global par lien.
 */
 params [
     ["_entity", objNull, [objNull]],
-    ["_emit", true, [true]]
+    ["_emit", false, [true]]
 ];
 
 if (isNull _entity) exitWith { [] };
@@ -58,8 +60,19 @@ private _emitted = missionNamespace getVariable ["comspec_sse_pivotEmitted", cre
 
 {
     private _o = _x;
-    if (!isNull _o && {_o != _entity} && {!isNil {[_o] call comspec_sse_fnc_getData}}) then {
-        private _blob = toLower str ([_o] call comspec_sse_fnc_getData);
+    private _data = [_o] call comspec_sse_fnc_getData;
+    if (!isNull _o && {_o != _entity} && {!isNil "_data"}) then {
+        // Fiche sérialisée mise en cache sur l'objet (local) : même fiche (même référence) et moins de 10 s, comme la
+        // liste des candidats ; vidée par comspec_sse_recordChanged (intel/XEH_postInit). Plus de str de chaque fiche
+        // à chaque rafraîchissement du graphe.
+        private _bc = _o getVariable ["comspec_sse_pivotBlob", []];
+        private _blob = "";
+        if ((count _bc) == 3 && {(_bc select 0) isEqualRef _data} && {(diag_tickTime - (_bc select 2)) <= 10}) then {
+            _blob = _bc select 1;
+        } else {
+            _blob = toLower str _data;
+            _o setVariable ["comspec_sse_pivotBlob", [_data, _blob, diag_tickTime]];
+        };
         private _hit = false;
         { if ((_blob find _x) >= 0) exitWith { _hit = true; }; } forEach _keys;
         if (_hit) then {

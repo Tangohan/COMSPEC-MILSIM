@@ -58,7 +58,7 @@ private _hasMine = false;
 } forEach _lines;
 private _offline = false;
 if (_lines isEqualTo []) then {
-    private _probe = ["COMSPECExtension" callExtension ["ListWardrobes", ["0"]]] call comspec_overwatch_connect_fnc_extResult;
+    private _probe = [["COMSPECExtension", "ListWardrobes", ["0"]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     _offline = !(_probe isEqualType "") || {(_probe find "OK|") != 0};
 };
 
