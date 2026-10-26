@@ -9,6 +9,38 @@ use PHPUnit\Framework\TestCase;
 
 final class GradeSelectOptionsTest extends TestCase
 {
+    /** @var array{set: bool, locale: mixed} */
+    private array $savedLocale = ['set' => false, 'locale' => null];
+
+    /** Libellés de groupe selon la langue de la page : on fige le français, puis on restaure. */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->savedLocale = [
+            'set' => array_key_exists('__app_locale', $GLOBALS),
+            'locale' => $GLOBALS['__app_locale'] ?? null,
+        ];
+        $GLOBALS['__app_locale'] = 'fr';
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->savedLocale['set']) {
+            $GLOBALS['__app_locale'] = $this->savedLocale['locale'];
+        } else {
+            unset($GLOBALS['__app_locale']);
+        }
+        parent::tearDown();
+    }
+
+    public function testGroupLabelsFollowEnglishPages(): void
+    {
+        $GLOBALS['__app_locale'] = 'en';
+        $labels = array_column(GradeSelectOptions::groups(array_slice($this->catalog(), 0, 6)), 'label');
+        self::assertContains('Officers', $labels);
+        self::assertNotContains('Officiers', $labels);
+    }
+
     /** @return list<array<string, mixed>> */
     private function catalog(): array
     {

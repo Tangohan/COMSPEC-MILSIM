@@ -87,24 +87,27 @@ $gradeOptionLabel = static function (array $g): string {
     return $short !== '' ? $short : ($long !== '' ? $long : 'Grade');
 };
 $proposalSummary = static function (array $labels, array $requestedPermissionIds = []) use ($permissionLabels): string {
+    // Résumé composé de valeurs : construit dans la langue du site (la traduction automatique ne le reconnaît pas).
+    $en = locale() === 'en';
+    $quote = static fn (string $v): string => $en ? '"' . $v . '"' : '« ' . $v . ' »';
     $bits = [];
     if (!empty($labels['grade'])) {
-        $bits[] = 'Grade « ' . $labels['grade'] . ' »';
+        $bits[] = ($en ? 'Rank ' : 'Grade ') . $quote((string) $labels['grade']);
     }
     if (!empty($labels['role'])) {
-        $bits[] = 'Rôle « ' . $labels['role'] . ' »';
+        $bits[] = ($en ? 'Role ' : 'Rôle ') . $quote((string) $labels['role']);
     }
     if (!empty($labels['job_role'])) {
-        $bits[] = 'Fonction « ' . $labels['job_role'] . ' »';
+        $bits[] = ($en ? 'Job ' : 'Fonction ') . $quote((string) $labels['job_role']);
     }
     if (!empty($labels['unit'])) {
-        $bits[] = 'Affectation « ' . $labels['unit'] . ' »';
+        $bits[] = ($en ? 'Assignment ' : 'Affectation ') . $quote((string) $labels['unit']);
     }
     $requestedRights = [];
     foreach ($requestedPermissionIds as $permissionId) {
-        if (!empty($permissionLabels[(int) $permissionId])) $requestedRights[] = $permissionLabels[(int) $permissionId];
+        if (!empty($permissionLabels[(int) $permissionId])) $requestedRights[] = $quote((string) $permissionLabels[(int) $permissionId]);
     }
-    if ($requestedRights !== []) $bits[] = 'Accès « ' . implode(' », « ', $requestedRights) . ' »';
+    if ($requestedRights !== []) $bits[] = ($en ? 'Access ' : 'Accès ') . implode(', ', $requestedRights);
 
     return $bits !== [] ? implode(' · ', $bits) : '—';
 };

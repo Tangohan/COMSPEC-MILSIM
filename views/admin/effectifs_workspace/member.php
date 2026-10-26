@@ -833,6 +833,10 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
         <?php $renderRhList($combinedHistory, static function (array $h) use ($fmtDate): string {
             $label = trim((string) ($h['title'] ?? $h['event_label'] ?? $h['event_type'] ?? $h['stage_label'] ?? $h['summary'] ?? 'Événement RH'));
             $date = $fmtDate((string) ($h['event_date'] ?? $h['occurred_at'] ?? $h['created_at'] ?? ''));
+            // Libellé enregistré en français : traduit avant d'être collé à la date.
+            if (locale() === 'en') {
+                $label = \App\Support\HtmlTranslator::translateText($label);
+            }
             return ($date !== '' ? $date . ' · ' : '') . $label;
         }); ?>
     </article>

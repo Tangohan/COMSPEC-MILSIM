@@ -2704,7 +2704,7 @@ class EffectifsWorkspaceController
                         (int) Session::get('user_id'),
                         [
                             'title' => 'Décision d’élévation',
-                            'detail' => (string) ($apply['message'] ?? ''),
+                            'detail' => (string) ($apply['record'] ?? $apply['message'] ?? ''),
                         ]
                     );
                 }
