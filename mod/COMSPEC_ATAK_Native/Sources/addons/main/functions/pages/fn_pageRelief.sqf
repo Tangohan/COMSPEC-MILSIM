@@ -274,7 +274,7 @@ switch (_tool) do {
             _y = _y + _bh2 + _pad;
         };
         // Légende : dégradé et bornes.
-        _y = [_pad, _y, _w, "Légende", ["bas → haut", "en dessous de moi → au-dessus de moi"] select (_heat isEqualTo "REL")] call _sec;
+        _y = [_pad, _y, _w, "Légende", ["bas » haut", "en dessous de moi » au-dessus de moi"] select (_heat isEqualTo "REL")] call _sec;
         private _ramp = [[[0.10, 0.18, 0.55, 1], [0.10, 0.65, 0.85, 1], [0.25, 0.80, 0.35, 1], [0.95, 0.85, 0.20, 1], [0.92, 0.22, 0.15, 1]],
             [[0.15, 0.35, 0.95, 1], [0.15, 0.50, 0.95, 1], [0.70, 0.75, 0.72, 1], [0.95, 0.55, 0.15, 1], [0.95, 0.20, 0.15, 1]]] select (_heat isEqualTo "REL");
         private _lh = _fs * 0.9;

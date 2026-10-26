@@ -167,7 +167,10 @@ switch (_act) do {
                 };
             } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) param [0, []]);
         }, 0] call CBA_fnc_addPerFrameHandler;
-        missionNamespace setVariable ["COMSPEC_ATAK_PipTest", [_cams, _ctrls, _top, _pfh]];
+        // Numéro du test (5e élément) : le minuteur de 30 s d'un test fermé plus tôt ne ferme pas le suivant.
+        private _seq = (missionNamespace getVariable ["COMSPEC_ATAK_PipTestSeq", 0]) + 1;
+        missionNamespace setVariable ["COMSPEC_ATAK_PipTestSeq", _seq];
+        missionNamespace setVariable ["COMSPEC_ATAK_PipTest", [_cams, _ctrls, _top, _pfh, _seq]];
         ["INFO", format ["TEST VIDÉO : PiP %1, distance de vue PiP %2 m, options %3, %4 caméras ouvertes", ["DÉSACTIVÉE", "active"] select isPiPEnabled, round getPiPViewDistance, getVideoOptions, count _cams]] call _say;
         // Relevé à 2 s : où chaque caméra se trouve vraiment (le premier test montrait le joueur de dos au lieu de la vue
         // devant lui : la caméra n'était pas là où le script l'avait posée).
@@ -182,7 +185,7 @@ switch (_act) do {
         }, [], 2] call CBA_fnc_waitAndExecute;
         ["INFO", "TEST VIDÉO : notez les lettres qui restent noires (fermeture dans 30 s, Échap ferme plus tôt)", 30, 40] call comspec_atak_native_fnc_notify;
         _top displayAddEventHandler ["Unload", { [{ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []])) > 0) then { ["testEnd"] call comspec_atak_native_fnc_pipCheck; }; }] call CBA_fnc_execNextFrame; }];
-        [{ ["testEnd"] call comspec_atak_native_fnc_pipCheck; }, [], 30] call CBA_fnc_waitAndExecute;
+        [{ if (((missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) param [4, -1]) isEqualTo _this) then { ["testEnd"] call comspec_atak_native_fnc_pipCheck; }; }, _seq, 30] call CBA_fnc_waitAndExecute;
         true
     };
     case "testEnd": {

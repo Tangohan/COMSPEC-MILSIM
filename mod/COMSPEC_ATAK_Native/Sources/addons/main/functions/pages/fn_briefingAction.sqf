@@ -133,8 +133,13 @@ switch (_action) do {
         // Relecture hors de l'image en cours (l'appel à Athena peut prendre plusieurs secondes).
         [] spawn {
             private _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;
-            missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
-            ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
+            // Échec (délai, joueur non lié) : getBriefingSlides renvoie [] et garde les diapositives déjà reçues.
+            if (_slides isEqualTo [] && {(missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) isNotEqualTo []}) then {
+                ["WARNING", "Athena n'a pas répondu : diapositives précédentes conservées", 4, 20] call comspec_atak_native_fnc_notify;
+            } else {
+                missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
+                ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
+            };
             [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
     };

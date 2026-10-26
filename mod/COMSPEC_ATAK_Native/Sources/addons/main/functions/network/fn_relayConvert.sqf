@@ -1,7 +1,7 @@
 /*
     Antennes du jeu converties en relais du réseau ATAK (réglage serveur comspec_atak_native_relay_convert) :
-      0 : rien ;
-      1 : objets posés dans la mission (Eden, Zeus, script), par défaut ;
+      0 : rien, par défaut (TTRD 2026-10-26 : une antenne n'est relais que désignée, module « ATAK · Relais » en Eden ou Zeus) ;
+      1 : objets posés dans la mission (Eden, Zeus, script) ;
       2 : objets de la mission et antennes du décor de la carte (type de carte « TRANSMITTER » : pylônes et tours de
           transmission, antennes de toit), 60 au plus, les plus hautes d'abord.
     Objets reconnus : pylônes et mâts de télécommunication (Land_TTowerBig_*, Land_TTowerSmall_*, Land_Communication_*,
@@ -15,12 +15,12 @@
     quand l'antenne du décor est détruite (vérifié toutes les 15 s), les téléphones reçoivent « Relais perdu ».
     Objets de mission : mêmes variables que fn_relayTower, posées sur l'objet ; détruit = relais « détruit » (fn_relayNet).
     Serveur seulement.
-      ["sweep"] call comspec_atak_native_fnc_relayConvert   (début de mission, puis toutes les 60 s : objets Zeus)
+      ["sweep"] call comspec_atak_native_fnc_relayConvert   (début de mission, puis toutes les 60 s : objets créés depuis)
       ["check"] call ...                                     (antennes du décor détruites)
 */
 params [["_mode", "sweep"]];
 if (!isServer) exitWith {};
-private _level = (missionNamespace getVariable ["comspec_atak_native_relay_convert", 1]) max 0 min 2;
+private _level = (missionNamespace getVariable ["comspec_atak_native_relay_convert", 0]) max 0 min 2;
 private _keys = ["ttower", "communication", "vysilac", "telek", "antenna", "transmitter", "radiotower", "radio_tower", "radiomast"];
 private _match = {
     params ["_cls"];
@@ -31,10 +31,13 @@ private _match = {
 private _preset = {
     params ["_cls", "_h"];
     private _l = toLower _cls;
-    if ("satellite" in _l || {"dish" in _l}) exitWith { ["satellite", 1000, 10, (_h * 0.9) max 2, 16] };
-    if (_h >= 30) exitWith { ["tour", 6000, 20, _h * 0.9, 64] };
-    if (_h >= 12) exitWith { ["mat", round (3000 + (_h - 12) * 110), 8, _h * 0.9, 24] };
-    ["antenne", 1500, 4, (_h * 0.9) max 2.5, 8]
+    // Portée et débit de base : réglages addon par type (comspec_atak_native_relay_<type>_range / _mbps).
+    private _rg = { params ["_k", "_d"]; missionNamespace getVariable [format ["comspec_atak_native_relay_%1_range", _k], _d] };
+    private _db = { params ["_k", "_d"]; missionNamespace getVariable [format ["comspec_atak_native_relay_%1_mbps", _k], _d] };
+    if ("satellite" in _l || {"dish" in _l}) exitWith { ["satellite", ["satellite", 1000] call _rg, ["satellite", 10] call _db, (_h * 0.9) max 2, 16] };
+    if (_h >= 30) exitWith { ["tour", ["tour", 6000] call _rg, ["tour", 20] call _db, _h * 0.9, 64] };
+    if (_h >= 12) exitWith { ["mat", round ((["mat", 3000] call _rg) + (_h - 12) * 110), ["mat", 8] call _db, _h * 0.9, 24] };
+    ["antenne", ["portable", 1500] call _rg, ["portable", 4] call _db, (_h * 0.9) max 2.5, 8]
 };
 private _register = {
     params ["_o", "_src", "_cls", "_h"];
@@ -73,7 +76,20 @@ private _height = {
 switch (_mode) do {
     case "sweep": {
         if (_level < 1) exitWith {};
-        // Objets de la mission (Eden, Zeus, script) : immobiles, pas des véhicules.
+        // Objets de la mission (Eden, Zeus, script) : immobiles, pas des véhicules. allMissionObjects (lent sur les grosses
+        // missions) une seule fois ; ensuite seuls les objets créés depuis, notés par EntityCreated (Zeus, scripts).
+        private _new = missionNamespace getVariable "COMSPEC_ATAK_ConvNew";
+        if (isNil "_new") then {
+            _new = (allMissionObjects "Static") + (allMissionObjects "Thing");
+            missionNamespace setVariable ["COMSPEC_ATAK_ConvNew", []];
+            addMissionEventHandler ["EntityCreated", {
+                params ["_e"];
+                if ((_e isKindOf "Static") || {_e isKindOf "Thing"}) then { (missionNamespace getVariable ["COMSPEC_ATAK_ConvNew", []]) pushBack _e; };
+            }];
+        } else {
+            missionNamespace setVariable ["COMSPEC_ATAK_ConvNew", []];
+            _new = _new select { !isNull _x };
+        };
         private _n = 0;
         {
             if (_x getVariable ["COMSPEC_AtakRelay", false] || {_x getVariable ["COMSPEC_ConvChecked", false]}) then { continue };
@@ -81,7 +97,7 @@ switch (_mode) do {
             if (_x isKindOf "AllVehicles" || {!([typeOf _x] call _match)}) then { continue };
             [_x, _x, typeOf _x, [_x] call _height] call _register;
             _n = _n + 1;
-        } forEach ((allMissionObjects "Static") + (allMissionObjects "Thing"));
+        } forEach _new;
         if (_n > 0) then { ["INFO", "RELAIS", format ["%1 antenne(s) de la mission converties en relais ATAK", _n]] call comspec_atak_native_fnc_log; };
         // Décor de la carte : une seule fois par mission.
         if (_level < 2 || {missionNamespace getVariable ["COMSPEC_ATAK_ConvTerrainDone", false]}) exitWith {};

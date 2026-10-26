@@ -110,6 +110,18 @@ final class AtakGameImagePaaTest extends TestCase
         self::assertSame('uploads/portraits/atak/p.paa', AtakGameImage::paaRel('uploads/portraits/atak/p.jpg'));
     }
 
+    public function testWebJpegSitsNextToThePaaAndStaysLight(): void
+    {
+        self::assertSame('uploads/briefing-slides/4/atak/slide-ab.jpg', AtakGameImage::webRel('uploads/briefing-slides/4/atak/slide-ab.paa'));
+        $jpg = AtakGameImage::webJpeg(AtakGameImage::fit(self::gradient(1920, 1080, true), AtakGameImage::FIT_SLIDE));
+        self::assertNotNull($jpg);
+        self::assertSame("\xFF\xD8\xFF", substr($jpg, 0, 3));
+        // Moins de 1,4 Mo : limite de COMSPEC Link (ImageDataChunk) pour une page data: de Chromium.
+        self::assertLessThan(1_400_000, strlen($jpg));
+        $back = imagecreatefromstring($jpg);
+        self::assertSame([1600, 800], [imagesx($back), imagesy($back)]);
+    }
+
     public function testPaaIsOnlyServedToALinkThatAnnouncesIt(): void
     {
         self::assertFalse(AtakGameImage::clientAcceptsPaa());

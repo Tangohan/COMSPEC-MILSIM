@@ -34,7 +34,11 @@ final class EnlistmentAcceptanceOnboardingAssetTest extends TestCase
         self::assertStringNotContainsString('Fonction RH', $view);
         self::assertStringContainsString('MilitaryOperationalRoleCatalog', $controller);
         self::assertStringContainsString('assignment_label', $controller);
-        self::assertStringContainsString('listRoleOptionsForSelect', $controller);
+        self::assertStringContainsString('EnlistmentOnboardingFormService', $controller);
+        self::assertStringContainsString('grade_id', $view);
+        self::assertStringContainsString('access_role_id', $view);
+        self::assertStringContainsString('jobRoleGroups', $view);
+        self::assertStringNotContainsString('role_ids[]', $view);
         self::assertStringContainsString('resolveOnboardingJobRoleId', $src);
         self::assertStringContainsString('findOrCreateImportedRoleByLabel', $src);
         self::assertStringContainsString('ensureForUnit', $src);

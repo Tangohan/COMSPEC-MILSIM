@@ -56,7 +56,9 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('affichage reporté', $pollOrders);
         self::assertStringContainsString('_fnc_markSeen', $pollOrders);
         self::assertStringContainsString('values _byId', $pollOrders);
-        self::assertStringContainsString('_newOnes select 0', $pollOrders);
+        // Un seul ordre livré par lecture (le premier non vu que receiveOrder accepte), les suivants au PFH de secours.
+        self::assertStringContainsString('_newOnes select { !(([_x getOrDefault ["id", ""]] call _fnc_idText) in _seenNow) }', $pollOrders);
+        self::assertStringContainsString('} forEach _unseen;', $pollOrders);
         self::assertStringContainsString('COMSPEC_DiagIsolateActive', $loops);
         self::assertStringContainsString('orders_push', $receive);
         // Le bandeau n’agrège plus diagStatusSnapshot (refonte 45a98240) : il lit directement l’état de liaison.

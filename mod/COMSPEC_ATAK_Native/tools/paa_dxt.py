@@ -5,7 +5,9 @@ Usage en module : from paa_dxt import save_paa ; save_paa(image_pillow_RGBA, "ch
 Usage en ligne de commande : python3 paa_dxt.py entree.png sortie.paa
 
 Côtés en puissances de 2 (4 à 2048). Mipmaps jusqu'à 4 x 4, données DXT5 non compressées (pas de LZO), mêmes
-TAGG que HEMTT (couleur moyenne, couleur max, drapeau alpha, table des mipmaps). Compression par bloc 4 x 4 :
+TAGG que HEMTT (couleur moyenne, couleur max, drapeau alpha, table des mipmaps). Avec le module python-lzo
+(pip install python-lzo), chaque mipmap est compressé en LZO1X comme ceux de HEMTT (largeur | 0x8000) : un 2048 x 2048
+passe de 5,6 Mo à quelques centaines de Ko. Compression par bloc 4 x 4 :
 couleurs extrêmes du bloc sur l'axe principal (RGB565, 4 niveaux), alpha sur 8 niveaux.
 Dépendances : Pillow, numpy.
 """
@@ -14,6 +16,11 @@ import sys
 
 import numpy as np
 from PIL import Image
+
+try:
+    import lzo
+except ImportError:
+    lzo = None
 
 
 def _565(c):
@@ -111,7 +118,12 @@ def save_paa(img, path):
     for m in mips:
         offsets.append(len(head) + len(body))
         data = _dxt5(np.asarray(m))
-        body += struct.pack("<HH", m.size[0], m.size[1]) + len(data).to_bytes(3, "little") + data
+        mw = m.size[0]
+        if lzo is not None:
+            packed = lzo.compress(bytes(data), 1, False)
+            if len(packed) < len(data):
+                data, mw = packed, mw | 0x8000
+        body += struct.pack("<HH", mw, m.size[1]) + len(data).to_bytes(3, "little") + data
     body += bytes(6)
     for i, o in enumerate(offsets[:16]):
         head[offs_pos + 4 * i:offs_pos + 4 * i + 4] = struct.pack("<I", o)

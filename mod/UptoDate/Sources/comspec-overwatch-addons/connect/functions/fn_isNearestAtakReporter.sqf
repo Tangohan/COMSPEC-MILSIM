@@ -27,6 +27,15 @@ private _ok = true;
     if !(_x getVariable ["COMSPEC_AtakReporterLinked", false]) then { continue };
     private _d = _x distance2D _obj;
     if ((_d + 20) < _myDist) then { _ok = false; break; };
-    if ((abs (_d - _myDist)) <= 20 && {(getPlayerUID _x) < _myUid}) then { _ok = false; break; };
+    // Départage à distance égale : UID le plus petit (ordre lexical via sort, '<' n'accepte pas les String).
+    if ((abs (_d - _myDist)) <= 20) then {
+        private _uid = getPlayerUID _x;
+        if (_uid isNotEqualTo _myUid) then {
+            private _pair = [_uid, _myUid];
+            _pair sort true;
+            if ((_pair select 0) isNotEqualTo _myUid) then { _ok = false; };
+        };
+    };
+    if (!_ok) then { break; };
 } forEach _others;
 _ok

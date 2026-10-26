@@ -25,7 +25,7 @@
     jambes), recalé sur la hauteur des yeux quand la posture change (debout, accroupi, couché).
 */
 params [["_act", "tick"]];
-private _phones = ["s7", "s23", "rugged", "iphone", "sonim"];
+private _phones = ["s7", "s23", "rugged", "iphone", "sonim", "ip17"];
 if (_act isEqualTo "sweep") exitWith {
     { if ((_x getVariable ["COMSPEC_ATAK_Jpc", false]) && {isNull attachedTo _x}) then { deleteVehicle _x; }; } forEach (allSimpleObjects (["COMSPEC_ATAK_JpcTablet"] + (_phones apply { "COMSPEC_ATAK_JpcPhone_" + _x })));
     true
@@ -117,7 +117,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_JpcMat", _mat];
         _obj setObjectMaterialGlobal [1, _mat];
         // Texture aux proportions de l'écran du modèle (photos de frame_photos.py plus allongées que le 16:9).
-        private _texH = (createHashMapFromArray [["iphone", 496], ["rugged", 384], ["sonim", 584]]) getOrDefault [_model, 576];
+        private _texH = (createHashMapFromArray [["iphone", 496], ["rugged", 384], ["sonim", 584], ["ip17", 496]]) getOrDefault [_model, 576];
         missionNamespace setVariable ["COMSPEC_ATAK_JpcTexH", _texH];
         _obj setObjectTexture [1, format ["#(rgb,1024,%2,1)ui(""COMSPEC_RscATAKTexture"",""comspec_atak_jpc_%1"")", _n, _texH]];
         // Rafraîchissement de l'écran (displayUpdate) : seulement s'il peut être vu (à l'écran, pas trop loin).

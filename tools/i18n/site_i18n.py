@@ -30,8 +30,17 @@ MISSING = os.path.join(ROOT, "tools", "i18n", "site_missing.tsv")
 
 PHP_BLOCK = re.compile(r"<\?(?:php|=)?(.*?)(?:\?>|\Z)", re.S)
 TAG = re.compile(r"<[^<>]*>")
-ATTR = re.compile(r"""\b(?:title|placeholder|aria-label|alt|value|data-confirm)\s*=\s*(["'])(.*?)\1""", re.S | re.I)
+ATTR = re.compile(r"""\b(?:title|placeholder|aria-label|alt|value|data-confirm|data-label)\s*=\s*(["'])(.*?)\1""", re.S | re.I)
 SKIP_BLOCK = re.compile(r"<(script|style|textarea|pre|code)\b[^>]*>.*?</\1\s*>", re.S | re.I)
+
+
+def skip_blocks(html):
+    """Retire les blocs jamais traduits ; garde la balise ouvrante d'un <textarea> (placeholder, title traduits)."""
+    def rep(m):
+        if m.group(1).lower() == "textarea":
+            return m.group(0)[:m.group(0).index(">") + 1] + "\x00"
+        return "\x00"
+    return SKIP_BLOCK.sub(rep, html)
 PHP_STR = re.compile(r"""'((?:[^'\\]|\\.)*)'|"((?:[^"\\$]|\\.)*)\"""")
 WORD = re.compile(r"[A-Za-zÀ-ÿ]")
 FRENCH_HINT = re.compile(r"[àâäçéèêëîïôöùûüÿœÀÂÇÉÈÊÎÔÙÛŒ]|\b(le|la|les|des|du|un|une|et|ou|pour|avec|sans|dans|sur|par|vos|votre|nos|notre|est|sont|pas|ne|aucun|aucune|à)\b", re.I)
@@ -49,7 +58,8 @@ def is_text(s):
     if re.fullmatch(r"[\w\-\./:#%]+", s) and not re.search(r"[À-ÿ]", s) and " " not in s:
         # Un seul mot : gardé s'il commence par une majuscule ou porte un accent (libellé), sinon identifiant probable.
         return bool(re.fullmatch(r"[A-ZÀ-Ý][a-zà-ÿ]+", s))
-    if re.search(r"[{};$]|=>|->|::|\bfunction\b|https?://", s):
+    # « ; » précédé d'une espace : point-virgule de phrase française, pas du code.
+    if re.search(r"[{}$]|(?<! );|=>|->|::|\bfunction\b|https?://", s):
         return False
     return True
 
@@ -88,7 +98,7 @@ def extract_view(src):
                 out.update(segments_from_text(lit2))
     # Gabarit HTML : PHP non affiché retiré, <?= ?> -> %N dans chaque texte.
     tpl = re.sub(r"<\?php.*?(?:\?>|\Z)", "\x00", src, flags=re.S)
-    tpl = SKIP_BLOCK.sub("\x00", tpl)
+    tpl = skip_blocks(tpl)
     for am in ATTR.finditer(tpl):
         v = am.group(2)
         if "<?=" in v:

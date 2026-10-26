@@ -188,7 +188,7 @@ if ((count _inbox) > 0) then {
 private _sent = _bt get "sent";
 if ((count _sent) > 0) then {
     _rows pushBack ["section", "Envois récents", ""];
-    _rows pushBack ["text", ((+_sent) apply { format ["<t size='0.85'>%1 → %2 · <t color='%3'>%4</t></t>", [_x select 2] call _esc, [_x select 1] call _esc,
+    _rows pushBack ["text", ((+_sent) apply { format ["<t size='0.85'>%1 » %2 · <t color='%3'>%4</t></t>", [_x select 2] call _esc, [_x select 1] call _esc,
         switch (_x select 3) do { case "ACCEPTÉ"; case "REÇU"; case "ENVOYÉ": { _accHex }; case "REFUSÉ"; case "ÉCHEC"; case "HORS PORTÉE": { "#e5483a" }; default { "#8a9a93" }; }, toLower (_x select 3)] }) joinString "<br/>"];
 };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;

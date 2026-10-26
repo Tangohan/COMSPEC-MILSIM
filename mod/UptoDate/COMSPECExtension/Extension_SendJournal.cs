@@ -361,6 +361,9 @@ public static partial class Extension
         try
         {
             if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth()) return;
+            var reportUrl = _baseUrl.TrimEnd('/') + "/api/atak/send-queue/report";
+            // Clé refusée (verrou jusqu'à la reliaison) ou rapport absent de l'offre : pas de POST toutes les 30 s.
+            if (IsRefusalLatched(reportUrl)) return;
             var nowTicks = DateTime.UtcNow.Ticks;
             var since = nowTicks - System.Threading.Interlocked.Read(ref _journalReportAtTicks);
             var changed = System.Threading.Interlocked.Read(ref _journalVersion) != System.Threading.Interlocked.Read(ref _journalReportedVersion);
@@ -371,7 +374,7 @@ public static partial class Extension
             System.Threading.Interlocked.Exchange(ref _journalReportAtTicks, nowTicks);
             var version = System.Threading.Interlocked.Read(ref _journalVersion);
             var json = JournalReportJson();
-            var req = new HttpRequestMessage(HttpMethod.Post, _baseUrl.TrimEnd('/') + "/api/atak/send-queue/report")
+            var req = new HttpRequestMessage(HttpMethod.Post, reportUrl)
             {
                 Content = JsonContent(json)
             };
@@ -382,6 +385,10 @@ public static partial class Extension
                 {
                     if (t.Status == TaskStatus.RanToCompletion && t.Result.IsSuccessStatusCode)
                         System.Threading.Interlocked.Exchange(ref _journalReportedVersion, version);
+                    // 401/403 : même traitement que les autres envois (client-init une fois, verrou si refus définitif).
+                    if (t.Status == TaskStatus.RanToCompletion
+                        && ((int)t.Result.StatusCode == 401 || (int)t.Result.StatusCode == 403))
+                        NoteRefusal(reportUrl, (int)t.Result.StatusCode, RefusalBody(t.Result));
                     if (t.Status == TaskStatus.RanToCompletion) t.Result.Dispose();
                 }
                 catch { /* ignore */ }

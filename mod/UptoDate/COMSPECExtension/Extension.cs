@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.96";
+    private const string ExtensionVersion = "2.0.97";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -671,7 +671,7 @@ public static partial class Extension
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
         try
         {
-            var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
+            using var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
             var code = (int)resp.StatusCode;
             var respBody = "";
             try { respBody = ReadContentUtf8(resp, cts.Token); } catch { /* ignore */ }
@@ -1694,7 +1694,7 @@ public static partial class Extension
                 Content = JsonContent(AddQueueSecrets(item.Body))
             };
             AttachApiKeyHeader(req);
-            var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+            using var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var sentCode = (int)response.StatusCode;
             JournalHttp(started, sentCode);
             NoteTrafficUntracked(req, response);
@@ -2892,7 +2892,9 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, ExtensionProductName + " " + CurrentExtensionVersion());
+            // Tampon de 32 octets côté Arma : la version seule (le nom du produit est déjà celui de la DLL ;
+            // « COMSPECATAKNativeExtension 1.0.0-native » était coupé dans le RPT).
+            Output(output, outputSize, CurrentExtensionVersion());
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -3887,7 +3889,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText,MedicalRoster";
         }
 
         if (function == "GetCapabilities")
@@ -4518,7 +4520,7 @@ public static partial class Extension
                 SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) : Arma/SQF splitString "\t" est fragile → URL/"h" + clé tronquée.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             catch (Exception ex)
             {
@@ -4603,7 +4605,7 @@ public static partial class Extension
                 SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) — même format que RedeemGameLink.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             catch (Exception ex)
             {
@@ -4918,7 +4920,7 @@ public static partial class Extension
                     var msg = safeBody.Length > 180 ? safeBody.Substring(0, 180) + "..." : safeBody;
                     return "{\"status\":\"error\",\"message\":\"" + EscapeJson(msg) + "\"}";
                 }
-                return safeBody.Length <= MaxOutputBytes - 1 ? safeBody : safeBody.Substring(0, MaxOutputBytes - 1);
+                return Utf8ClipLines(safeBody, MaxOutputBytes - 1);
             }
             if ((function == "RECON.Note" || function == "RECON_NOTE" || function == "Recon.Note") && args.Length >= 1)
             {
@@ -5051,7 +5053,7 @@ public static partial class Extension
                 }
                 var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifySessionRestoreJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
             // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
@@ -5059,6 +5061,8 @@ public static partial class Extension
             // mode « cache » : liste gardée en mémoire ou dans Sync\wardrobes.json, le site n'est appelé que
             // si ce PC n'a encore rien ; « refresh » ou absent : rechargée depuis le site à la page 0 (bouton Actualiser).
             // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
+            // App Médical de l'ATAK natif : fiches médicales de la communauté, gardées dans Sync\medical_roster.json (2.0.96).
+            if (function == "MedicalRoster" || function == "MedicalRosterInfo") return MedicalRosterCommand(function, args, token);
             if (function == "ListWardrobes")
             {
                 var startLine = 0;
@@ -5212,7 +5216,7 @@ public static partial class Extension
             if (function == "ListWardrobeCollections")
             {
                 var url = _baseUrl + "/api/atak/wardrobe-collections";
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5222,16 +5226,16 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyWardrobeCollectionsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
-                var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
+                using var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
-                return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
+                return "OK|" + Utf8ClipLines(safe, MaxOutputBytes - 4);
             }
             // Diapositives de briefing tactique (tableau/écran Eden Editor, ou dialog de briefing).
             // Format simplifié tabulation/retour-ligne (même convention que GetMarkers/GetUnits) :
@@ -5241,11 +5245,11 @@ public static partial class Extension
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
                 var url = _baseUrl + "/api/atak/briefing-slides";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifyBriefingSlidesJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // Fiches de renseignement (FRS / FRM) d'Athena, avec leurs photos, pour l'app FRS du téléphone.
             // Args : [limit, steamUid (vide = toutes les fiches de la communauté)]
@@ -5583,7 +5587,7 @@ public static partial class Extension
                 var url = _baseUrl + "/api/atak/fire-teams?kind=ephemeral";
                 if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
                 if (!string.IsNullOrEmpty(mapId)) url += "&mapId=" + Uri.EscapeDataString(mapId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5600,7 +5604,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyFireTeamsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // SEEK Query : registre + listes de surveillance Athena (pas de tirage simulé).
             // args : first, last, alias, q
@@ -5633,7 +5637,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplifiedId = SimplifyIdentityQueryJson(respBody);
-                return "OK|" + (simplifiedId.Length > MaxOutputBytes - 4 ? simplifiedId.Substring(0, MaxOutputBytes - 4) : simplifiedId);
+                return "OK|" + Utf8ClipLines(simplifiedId, MaxOutputBytes - 4);
             }
             if (function == "JoinFireTeam" && args.Length >= 1)
             {
@@ -6362,6 +6366,60 @@ public static partial class Extension
                 // Slash avant pour RscPicture / setObjectTexture sous Windows (Arma).
                 var armaPath = destPath.Replace('\\', '/');
                 return "OK|" + armaPath;
+            }
+
+            // Image d'Athena en base64, par morceaux, pour l'afficher dans un navigateur intégré (CT_WEBBROWSER) du
+            // téléphone : Arma refuse toute texture hors d'un PBO (« Cannot load texture », sans -filePatching), d'où les
+            // diapositives noires. Args : [adresse JPEG/PNG, clé de cache, décalage en octets]. Décalage 0 : télécharge
+            // (adresse du serveur Athena seulement, jamais un autre hôte). Réponse : OK|taille totale|décalage suivant|base64.
+            if (function == "ImageDataChunk" && args.Length >= 3 && !string.IsNullOrWhiteSpace(args[0]))
+            {
+                var imageUrl = args[0]!.Trim();
+                var keyRaw = string.IsNullOrWhiteSpace(args[1]) ? "web" : args[1]!;
+                var safeKey = new string(keyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+                if (safeKey.Length == 0 || safeKey.Length > 80) safeKey = "web";
+                if (!long.TryParse(args[2], out var offset) || offset < 0) offset = 0;
+                if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var imgUri) && !string.IsNullOrEmpty(_baseUrl))
+                {
+                    var rel = imageUrl.StartsWith('/') ? imageUrl : "/" + imageUrl.TrimStart('/');
+                    Uri.TryCreate(_baseUrl.TrimEnd('/') + rel, UriKind.Absolute, out imgUri);
+                }
+                if (imgUri == null || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var baseUri)
+                    || imgUri.Scheme != Uri.UriSchemeHttps && imgUri.Scheme != baseUri.Scheme
+                    || !string.Equals(imgUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase))
+                    return "ERR|host_not_allowed";
+                var cacheDir = GetWritableCacheDir();
+                if (cacheDir == null) return "ERR|no_writable_cache_dir";
+                var dest = Path.Combine(cacheDir, "web_" + safeKey + ".img");
+                if (offset == 0 || !File.Exists(dest))
+                {
+                    HttpResponseMessage imgResp;
+                    try { imgResp = SendGet(imgUri, token); }
+                    catch (OperationCanceledException) { return "ERR|timeout"; }
+                    catch (HttpRequestException) { return "ERR|network"; }
+                    if (!imgResp.IsSuccessStatusCode)
+                    {
+                        var code = (int)imgResp.StatusCode;
+                        return code == 404 ? "ERR|not_found" : code == 401 || code == 403 ? "ERR|unauthorized" : "ERR|http_" + code;
+                    }
+                    var bytes = imgResp.Content.ReadAsByteArrayAsync(token).GetAwaiter().GetResult();
+                    var isPng = bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
+                    var isJpeg = bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
+                    if (!isPng && !isJpeg) return "ERR|invalid_image";
+                    // Une page data: de Chromium est limitée à 2 Mo : image plus lourde refusée (le site en fait une copie légère).
+                    if (bytes.Length > 1_400_000) return "ERR|too_large";
+                    try { File.WriteAllBytes(dest, bytes); }
+                    catch (Exception ex) { return "ERR|write_failed_" + ex.GetType().Name; }
+                    offset = 0;
+                }
+                byte[] all;
+                try { all = File.ReadAllBytes(dest); }
+                catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
+                if (offset >= all.Length) return "OK|" + all.Length + "|" + all.Length + "|";
+                // 5940 octets (multiple de 3) = 7920 caractères base64 : tient dans la sortie limitée de la DLL.
+                var len = (int)Math.Min(5940, all.Length - offset);
+                var mime = all[0] == 0x89 ? "png" : "jpeg";
+                return "OK|" + all.Length + "|" + (offset + len) + "|" + Convert.ToBase64String(all, (int)offset, len) + (offset + len >= all.Length ? "|" + mime : "");
             }
 
             // --- Commandes ATAK Phase 1-2 (retour JSON ["OK"|"ERROR", message] pour SQF) ---

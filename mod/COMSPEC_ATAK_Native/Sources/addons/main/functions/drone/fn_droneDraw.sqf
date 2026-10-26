@@ -98,4 +98,4 @@ if ((count _rp) > 0 && {_ri < (count _rp)}) then { _map drawLine [_pos, _rp sele
 if (_m isEqualTo "STANDBY") then { _c = [0.56, 0.7, 0.79, 1]; };
 _map drawIcon [[_d, [], "ICON"] call comspec_atak_native_fnc_droneOsd, [_c, [0.6, 0.6, 0.6, 0.8]] select !_linked, _pos, 26, 26, getDir _d,
     format [" %1 %2 m%3%4%5", [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round ((getPosATL _d) select 2), ["", " CQB"] select (_d getVariable ["COMSPEC_DroneCqb", false]),
-        ["", " VEILLE"] select (_m isEqualTo "STANDBY"), ["", " (hors liaison)"] select !_linked], 1, 0.03, (COMSPEC_ATAK_FontSet select 1), "right"];
+        ["", (" VEILLE") call comspec_atak_native_fnc_tr] select (_m isEqualTo "STANDBY"), ["", (" (hors liaison)") call comspec_atak_native_fnc_tr] select !_linked], 1, 0.03, (COMSPEC_ATAK_FontSet select 1), "right"];

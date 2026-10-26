@@ -83,6 +83,8 @@ final class AdminOverwatchServerControlController
             'groupedRules' => $groupedRules,
             'groupLabels' => $exp->groupLabels(),
             'netLive' => $exp->get($tenantId)['settings']['net_live'] ?? [],
+            'phoneApps' => $exp->phoneApps(),
+            'appsPolicy' => $exp->get($tenantId)['settings']['apps_policy'] ?? [],
             'bridgeModules' => $moduleRows,
             'enabledModulesCount' => $enabledModules,
             'bridgeModulesTotal' => count($moduleRows),
@@ -164,6 +166,35 @@ final class AdminOverwatchServerControlController
         Session::flash('success', 'Fonctions actives enregistrées. Les opérateurs en liaison les reçoivent sous environ une minute.');
 
         return Response::redirect(url('back-office/atak/controle-serveur') . '#fonctions');
+    }
+
+    /**
+     * App Store du téléphone ATAK : apps obligatoires (installées chez tous) ou interdites pour toute la communauté.
+     */
+    public function storeApps(Request $request, array $params = []): Response
+    {
+        $redirect = $this->guardPost($request);
+        if ($redirect instanceof Response) {
+            return $redirect;
+        }
+        $tenantId = $this->tenantId();
+        if (!$this->atakConfig->isExperienceSchemaReady()) {
+            Session::flash('error', 'Impossible d’enregistrer : la base n’est pas à jour. Contactez le support, puis réessayez.');
+
+            return Response::redirect(url('back-office/atak/controle-serveur') . '#apps');
+        }
+        $svc = new AtakExperienceService();
+        $rules = [];
+        foreach ($svc->phoneApps() as $app) {
+            $rules[$app['id']] = trim((string) $request->input('app_' . $app['id'], 'player'));
+        }
+        $policy = $svc->putAppPolicy($tenantId, $rules);
+        $this->markControlReviewed($tenantId);
+        $req = count(array_filter($policy, static fn (string $r): bool => $r === 'required'));
+        $forb = count($policy) - $req;
+        Session::flash('success', sprintf('Apps du téléphone enregistrées : %d obligatoire(s), %d interdite(s). Les opérateurs en liaison les reçoivent sous environ une minute.', $req, $forb));
+
+        return Response::redirect(url('back-office/atak/controle-serveur') . '#apps');
     }
 
     /**

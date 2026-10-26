@@ -74,8 +74,13 @@ switch (_act) do {
         }, _t, 0.4] call CBA_fnc_waitAndExecute;
     };
     case "transmit": {
-        [_t, true, false] call comspec_sse_fnc_transmitEntity;
-        ["INFO", "Fiche envoyée vers Athena (file d'attente si hors liaison)"] call _say;
+        // false : envoi précédent du même sujet encore en vol (comspec_sse_txBusy), rien n'a été mis en file.
+        // (en contexte planifié, transmitEntity rend le résultat de l'envoi, mis en file si refusé).
+        if (([_t, true, false] call comspec_sse_fnc_transmitEntity) || {canSuspend}) then {
+            ["INFO", "Fiche envoyée vers Athena (file d'attente si hors liaison)"] call _say;
+        } else {
+            ["INFO", "Transmission en cours…"] call _say;
+        };
     };
     case "frs": { ["frs", "FRM"] call comspec_atak_native_fnc_sseAction; };
     case "exploited": { [_t, player] call comspec_sse_fnc_doMarkExploited; call _render; };

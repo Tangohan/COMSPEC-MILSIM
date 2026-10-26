@@ -128,7 +128,18 @@ if (!isNil "_zone") then {
     // Visuel = overlay sur l’écran ATAK uniquement (jamais le viewport 3D).
     [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 } else {
-    missionNamespace setVariable ["COMSPEC_ZoneEffects", nil, false];
+    // Brouillage Zeus (fn_applyZeusAtakEffect « jam ») sans zone réelle : ses effets restent jusqu'à
+    // disconnect_until (son propre minuteur les efface) ; sinon ce passage les supprimait sous 2 s.
+    private _netFx = missionNamespace getVariable ["COMSPEC_NetworkDisconnectState", createHashMap];
+    private _curFx = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
+    private _zeusJam = (!isNil "_curFx") && {_curFx isEqualType createHashMap}
+        && {(_curFx getOrDefault ["name", ""]) isEqualTo "Brouillage Zeus"}
+        && {_netFx isEqualType createHashMap}
+        && {_netFx getOrDefault ["is_disconnected", false]}
+        && {time < (_netFx getOrDefault ["disconnect_until", -1])};
+    if (!_zeusJam) then {
+        missionNamespace setVariable ["COMSPEC_ZoneEffects", nil, false];
+    };
     [] call comspec_overwatch_connect_fnc_refreshLinkState;
     [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 };

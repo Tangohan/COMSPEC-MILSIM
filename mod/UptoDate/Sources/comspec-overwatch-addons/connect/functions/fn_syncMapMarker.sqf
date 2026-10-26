@@ -67,7 +67,9 @@ if (!_force) then {
 private _mirroredElsewherePrefixes = [
     "poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_",
     "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
-    "comspec_relay_", "comspec_recon_", "ctab_u_"
+    "comspec_relay_", "comspec_recon_", "ctab_u_",
+    // Calques locaux du mod (zones tactiques, plan de mission, ordres, portée) : jamais renvoyés comme repères joueur.
+    "comspec_tz_", "comspec_mpgfx_", "comspec_ordwp_", "comspec_lk_", "comspec_reach_"
 ];
 private _nameLower = toLower _markerName;
 if (({ (_nameLower find _x) == 0 } count _mirroredElsewherePrefixes) > 0) exitWith { false };
@@ -148,14 +150,17 @@ if (((_size select 0) max (_size select 1)) < 0.05) then { _size = [0.8, 0.8]; }
 private _brush = markerBrush _markerName;
 private _polyJson = "[]";
 
+private _badPoly = false;
 if (_shape isEqualTo "POLYLINE") then {
     private _pts = markerPolyline _markerName;
-    if (!(_pts isEqualType []) || {(count _pts) < 4}) exitWith { false };
+    // exitWith ici ne quittait que le bloc then : la polyligne dégénérée partait quand même.
+    if (!(_pts isEqualType []) || {(count _pts) < 4}) exitWith { _badPoly = true; };
     private _parts = [];
     { _parts pushBack (str _x); } forEach _pts;
     _polyJson = "[" + (_parts joinString ",") + "]";
     _pos = [_pts select 0, _pts select 1, 0];
 };
+if (_badPoly) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "bad_polyline", false]; false };
 
 private _texture = "";
 if (_type isNotEqualTo "" && {!(_shape isEqualTo "POLYLINE")}) then {
