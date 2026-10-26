@@ -527,5 +527,6 @@ window.__LMS_LESSON_PROGRESS__ = <?= json_encode([
 <?php require base_path('views/training/partials/lms_lesson_reperes_modal.php'); ?>
 <?php require base_path('views/training/partials/lms_lesson_feedback_modal.php'); ?>
 <?php require base_path('views/partials/cookie_banner.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

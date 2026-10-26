@@ -178,7 +178,7 @@ $commentsCount = count($courseComments);
                             <div class="shrink-0 w-11 h-11 rounded-xl bg-slate-200 text-slate-700 font-black flex items-center justify-center text-sm"><?= htmlspecialchars($initial) ?></div>
                             <div class="min-w-0 flex-1">
                                 <?php $rvStars = max(0, min(5, (int) ($rv['rating'] ?? 0))); ?>
-                                <p class="text-sm font-bold text-slate-900"><?= htmlspecialchars($who) ?> <span class="text-amber-600 font-black"><?= str_repeat('★', $rvStars) ?><span class="text-slate-300"><?= str_repeat('★', 5 - $rvStars) ?></span></span></p>
+                                <p class="text-sm font-bold text-slate-900"><?= staff_name($who, (int) ($rv['user_id'] ?? 0)) ?> <span class="text-amber-600 font-black"><?= str_repeat('★', $rvStars) ?><span class="text-slate-300"><?= str_repeat('★', 5 - $rvStars) ?></span></span></p>
                                 <?php if (!empty($rv['body'])): ?><p class="text-sm text-slate-700 mt-2 leading-relaxed"><?= nl2br(htmlspecialchars((string) $rv['body'])) ?></p><?php endif; ?>
                                 <p class="text-[11px] text-slate-400 mt-2"><?= htmlspecialchars($fmtExDate((string) ($rv['created_at'] ?? ''))) ?></p>
                             </div>
@@ -241,7 +241,7 @@ $commentsCount = count($courseComments);
                                     <div class="lms-ex-qa__who">
                                         <span class="lms-ex-qa__avatar" aria-hidden="true"><?= htmlspecialchars($exInitial($qAuthor)) ?></span>
                                         <div>
-                                            <p class="lms-ex-qa__name"><?= htmlspecialchars($qAuthor !== '' ? $qAuthor : 'Membre') ?></p>
+                                            <p class="lms-ex-qa__name"><?= staff_name($qAuthor !== '' ? $qAuthor : 'Membre', (int) ($cq['user_id'] ?? 0)) ?></p>
                                             <?php if ($qCreated !== ''): ?>
                                             <p class="lms-ex-qa__date"><?= htmlspecialchars($qCreated) ?></p>
                                             <?php endif; ?>
@@ -258,7 +258,7 @@ $commentsCount = count($courseComments);
                             <?php if (!empty($cq['answer_text'])): ?>
                             <div class="lms-ex-qa__a">
                                 <p class="lms-ex-qa__a-label">
-                                    <span>Réponse du staff<?= $qStaff !== '' ? ' · ' . htmlspecialchars($qStaff) : '' ?></span>
+                                    <span>Réponse du staff<?= $qStaff !== '' ? ' · ' . staff_name($qStaff, (int) ($cq['answered_by'] ?? 0)) : '' ?></span>
                                     <?php if ($qAnsweredAt !== ''): ?>
                                     <span><?= htmlspecialchars($qAnsweredAt) ?></span>
                                     <?php endif; ?>
@@ -312,7 +312,7 @@ $commentsCount = count($courseComments);
                     <div class="space-y-5">
                     <?php foreach ($courseComments as $cc): ?>
                         <div class="rounded-xl border-l-4 border-violet-200 bg-violet-50/30 pl-4 py-3 pr-3">
-                            <p class="text-xs font-bold text-slate-800"><?= htmlspecialchars((string) ($cc['display_name'] ?? '')) ?></p>
+                            <p class="text-xs font-bold text-slate-800"><?= staff_name((string) ($cc['display_name'] ?? ''), (int) ($cc['user_id'] ?? 0)) ?></p>
                             <p class="text-sm text-slate-800 mt-1 leading-relaxed"><?= nl2br(htmlspecialchars((string) ($cc['body'] ?? ''))) ?></p>
                             <p class="text-[11px] text-slate-400 mt-2"><?= htmlspecialchars($fmtExDate((string) ($cc['created_at'] ?? ''))) ?></p>
                         </div>
@@ -352,5 +352,6 @@ $commentsCount = count($courseComments);
       window.addEventListener('hashchange', setActive);
     })();
     </script>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

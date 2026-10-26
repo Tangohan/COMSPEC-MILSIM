@@ -3362,6 +3362,7 @@ class UserRepository
         if (!$enabled) {
             $this->revokeLegacyPlatformAdminAssignment($email);
         }
+        \App\Services\Platform\StaffMarkService::forget();
 
         return ['ok' => true];
     }

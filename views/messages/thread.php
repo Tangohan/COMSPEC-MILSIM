@@ -74,7 +74,7 @@ $seed = $peer === 'Encadrement' ? 'staff' : (int) ($thread['created_by_user_id']
                         <div class="msgx-group<?= $g['mine'] ? ' is-mine' : '' ?>" role="group" aria-label="<?= htmlspecialchars($g['mine'] ? 'Vous' : (string) $g['name'], ENT_QUOTES, 'UTF-8') ?>">
                             <?php if (!$g['mine']): ?><span class="msgx-avatar msgx-avatar--sm" style="--h:<?= (int) $g['hue'] ?>" aria-hidden="true"><?= htmlspecialchars((string) $g['initials'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             <div class="msgx-group__body">
-                                <?php if (!$g['mine']): ?><div class="msgx-group__meta"><strong><?= htmlspecialchars((string) $g['name'], ENT_QUOTES, 'UTF-8') ?></strong></div><?php endif; ?>
+                                <?php if (!$g['mine']): ?><div class="msgx-group__meta"><strong><?= staff_name((string) $g['name'], (int) ($g['sender_id'] ?? 0)) ?></strong></div><?php endif; ?>
                                 <?php foreach ($g['messages'] as $m): ?>
                                     <div class="msgx-bubble">
                                         <p class="msgx-bubble__text"><?= htmlspecialchars((string) $m['body'], ENT_QUOTES, 'UTF-8') ?></p>

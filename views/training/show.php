@@ -130,5 +130,6 @@ $image = 'https://media.defense.gov/2019/Sep/12/2002181666/2000/2000/0/190905-F-
             </div>
         </div>
     </footer>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>
