@@ -63,6 +63,16 @@ final class CommunityLanguages
         return self::LANGUAGES[$code]['fr'] ?? strtoupper($code);
     }
 
+    /** Nom de la langue dans la langue de la page (« French » sur le site anglais). */
+    public static function pageLabel(string $code): string
+    {
+        if (function_exists('locale') && locale() === 'en') {
+            return self::LANGUAGES[$code]['en'] ?? strtoupper($code);
+        }
+
+        return self::label($code);
+    }
+
     /** « Russe · Русский », « Français ». */
     public static function fullLabel(string $code): string
     {

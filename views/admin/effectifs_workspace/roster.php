@@ -18,6 +18,8 @@ $canBulkAny = $canManageStatus || $canManageAssignments;
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $elevationNoRecipients = (bool) ($elevationNoRecipients ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
+// Libellés composés (title, info-bulles) : écrits dans la langue de la page.
+$rosterEn = locale() === 'en';
 $communityName = trim((string) ($communityName ?? 'Communauté'));
 $orgFoundingDate = trim((string) ($orgFoundingDate ?? ''));
 $currentSort = (string) ($filters['tri'] ?? 'nom');
@@ -175,12 +177,29 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
     <aside class="eff-banner eff-banner--warn" role="status">
         <div class="eff-banner__body">
             <p class="eff-banner__title">Fiches jumelles à relire</p>
+            <?php if ($rosterEn): ?>
+            <?php
+            $dupFieldsEn = array_map(static fn (string $label): string => 'the same ' . mb_strtolower(\App\Support\HtmlTranslator::translateText($label)), $dupFieldLabels);
+            $dupPhraseEn = match (count($dupFieldsEn)) {
+                0 => 'the same identifiers',
+                1 => $dupFieldsEn[0],
+                default => implode(', ', array_slice($dupFieldsEn, 0, -1)) . ' or ' . $dupFieldsEn[array_key_last($dupFieldsEn)],
+            };
+            ?>
+            <p class="eff-banner__text"><?= htmlspecialchars(
+                $dupGroupCount . ' group' . ($dupGroupCount > 1 ? 's' : '') . ' · ' . $dupMemberCount . ' member' . ($dupMemberCount > 1 ? 's' : '')
+                . ' share ' . $dupPhraseEn . '. Check that these are not two files for the same person.',
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?></p>
+            <?php else: ?>
             <p class="eff-banner__text">
                 <?= $dupGroupCount ?> groupe<?= $dupGroupCount > 1 ? 's' : '' ?> ·
                 <?= $dupMemberCount ?> membre<?= $dupMemberCount > 1 ? 's' : '' ?>
                 partagent <?= htmlspecialchars($dupFieldPhrase, ENT_QUOTES, 'UTF-8') ?>.
                 Vérifiez qu’il ne s’agit pas de deux dossiers pour la même personne.
             </p>
+            <?php endif; ?>
         </div>
         <a href="<?= htmlspecialchars(effectifs_workspace_url('doublons'), ENT_QUOTES, 'UTF-8') ?>" class="eff-banner__action">Ouvrir les fiches</a>
     </aside>
@@ -466,14 +485,8 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         array_map('intval', is_array($row['access_role_ids'] ?? null) ? $row['access_role_ids'] : []),
                         static fn (int $rid): bool => $rid > 0
                     ));
-                    $currentAccessRoleId = 0;
-                    foreach ($roles as $accessRole) {
-                        $rid = (int) ($accessRole['id'] ?? 0);
-                        if ($rid > 0 && in_array($rid, $accessRoleIds, true)) {
-                            $currentAccessRoleId = $rid;
-                            break;
-                        }
-                    }
+                    // Tout le monde porte Membre : présélectionner le niveau le plus élevé tenu.
+                    $currentAccessRoleId = \App\Services\Rbac\CommunityAccessProfiles::currentAccessRoleId($roles, $accessRoleIds);
                     if ($currentAccessRoleId < 1 && $roleParts !== []) {
                         foreach ($roles as $accessRole) {
                             $roleName = trim((string) ($accessRole['name'] ?? ''));
@@ -533,9 +546,13 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                         <?php if (is_array($rowLang)): ?>
                                             <?php
                                             $rowLangCodes = array_merge([(string) $rowLang['primary']], $rowLang['others']);
-                                            $rowLangTitle = 'Joue en ' . mb_strtolower(\App\Support\CommunityLanguages::label((string) $rowLang['primary']))
-                                                . ($rowLang['others'] !== [] ? ', comprend ' . implode(', ', array_map(static fn (string $c): string => mb_strtolower(\App\Support\CommunityLanguages::label($c)), $rowLang['others'])) : '')
-                                                . ($rowLang['source'] !== 'member' ? ' (à confirmer)' : '');
+                                            // Phrase composée : écrite dans la langue de la page (la traduction automatique ne la reconnaît pas).
+                                            $rowLangName = static fn (string $c): string => $rosterEn
+                                                ? \App\Support\CommunityLanguages::pageLabel($c)
+                                                : mb_strtolower(\App\Support\CommunityLanguages::label($c));
+                                            $rowLangTitle = ($rosterEn ? 'Plays in ' : 'Joue en ') . $rowLangName((string) $rowLang['primary'])
+                                                . ($rowLang['others'] !== [] ? ($rosterEn ? ', understands ' : ', comprend ') . implode(', ', array_map($rowLangName, $rowLang['others'])) : '')
+                                                . ($rowLang['source'] !== 'member' ? ($rosterEn ? ' (to be confirmed)' : ' (à confirmer)') : '');
                                             ?>
                                             <span class="eff-sheets__badge eff-sheets__badge--lang<?= $rowLang['source'] !== 'member' ? ' eff-sheets__badge--muted' : '' ?>" title="<?= htmlspecialchars($rowLangTitle, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(\App\Support\CommunityLanguages::flag((string) $rowLang['primary']) . ' ' . implode('·', array_map('strtoupper', $rowLangCodes)), ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endif; ?>
@@ -557,10 +574,10 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                     <?php if ($character !== ''): ?><span class="eff-sheets__meta">Personnage · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                                     <?php
                                     $idMeta = array_values(array_filter([
-                                        $matricule !== '' ? 'Mle ' . $matricule : '',
-                                        $orgNumber !== '' && strcasecmp($orgNumber, $matricule) !== 0 ? 'N° communauté ' . $orgNumber : '',
+                                        $matricule !== '' ? ($rosterEn ? 'SN ' . $matricule : 'Mle ' . $matricule) : '',
+                                        $orgNumber !== '' && strcasecmp($orgNumber, $matricule) !== 0 ? ($rosterEn ? 'Community no. ' : 'N° communauté ') . $orgNumber : '',
                                         $radioAssigned !== '' ? 'Radio ' . $radioAssigned : '',
-                                        $memberBadges !== [] ? count($memberBadges) . ' distinction' . (count($memberBadges) > 1 ? 's' : '') : '',
+                                        $memberBadges !== [] ? count($memberBadges) . ($rosterEn ? ' award' : ' distinction') . (count($memberBadges) > 1 ? 's' : '') : '',
                                     ]));
                                     ?>
                                     <?php if ($idMeta !== []): ?><span class="eff-sheets__meta"><?= htmlspecialchars(implode(' · ', $idMeta), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
@@ -674,7 +691,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <?php if ($roleParts === []): ?>
                                     <span class="eff-sheets__badge eff-sheets__badge--watch">Sans rôle</span>
                                 <?php else: ?>
-                                    <div class="eff-sheets__tags" title="<?= htmlspecialchars($rolesDisplay, ENT_QUOTES, 'UTF-8') ?>">
+                                    <div class="eff-sheets__tags" title="<?= htmlspecialchars($rosterEn ? implode(', ', array_map([\App\Support\HtmlTranslator::class, 'translateText'], $roleParts)) : $rolesDisplay, ENT_QUOTES, 'UTF-8') ?>">
                                         <?php foreach ($roleVisible as $rn): ?>
                                             <span class="eff-sheets__badge eff-sheets__badge--muted"><?= htmlspecialchars($rn, ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endforeach; ?>
@@ -709,8 +726,8 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         </td>
                         <td data-label="Ancienneté">
                             <?php
-                            $seniorityTitle = 'Ancienneté réelle : ' . $seniorityLabel
-                                . ($prePlatformLabel !== '' ? ' (avant le site : ' . $prePlatformLabel . ')' : '');
+                            $seniorityTitle = ($rosterEn ? 'Actual seniority: ' : 'Ancienneté réelle : ') . $seniorityLabel
+                                . ($prePlatformLabel !== '' ? ($rosterEn ? ' (before the site: ' : ' (avant le site : ') . $prePlatformLabel . ')' : '');
                             ?>
                             <div class="eff-sheets__assign">
                                 <span class="eff-das__seniority" title="<?= htmlspecialchars($seniorityTitle, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
@@ -754,7 +771,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <?php
                             $availHue = max(0, min(120, (int) round($availabilityScore * 1.2)));
                             ?>
-                            <span class="eff-das__avail" style="--avail-hue:<?= $availHue ?>;--avail-pct:<?= max(0, min(100, $availabilityScore)) ?>%" title="Disponibilité <?= $availabilityScore ?> % · Présence <?= $presenceScore ?> %">
+                            <span class="eff-das__avail" style="--avail-hue:<?= $availHue ?>;--avail-pct:<?= max(0, min(100, $availabilityScore)) ?>%" title="<?= $rosterEn ? 'Availability' : 'Disponibilité' ?> <?= $availabilityScore ?> % · <?= $rosterEn ? 'Attendance' : 'Présence' ?> <?= $presenceScore ?> %">
                                 <span class="eff-das__avail-track" aria-hidden="true"><span class="eff-das__avail-fill"></span></span>
                                 <span class="eff-das__avail-pct"><?= $availabilityScore ?> %</span>
                             </span>
