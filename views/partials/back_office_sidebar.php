@@ -127,6 +127,7 @@ $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
 $boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavAar = str_starts_with($p, 'back-office/atak/comptes-rendus');
+$boNavDebrief = str_starts_with($p, 'back-office/atak/suivi-cr');
 $boNavPlanning = str_starts_with($p, 'back-office/planification');
 $boNavMissionsPortal = $p === 'back-office/missions' || str_starts_with($p, 'back-office/missions/');
 $boNavCooperation = $p === 'back-office/cooperation' || str_starts_with($p, 'back-office/cooperation/');

@@ -1,0 +1,74 @@
+/**
+ * Back-office — suivi des CR de fin d'opération (views/admin/atak_debrief/index.php).
+ * S'appuie sur back-office-aar.css (indicateurs, segments) ; la liste est un tableau dense à barre de titre,
+ * une couleur de texte par état (en cours bleu, en attente orange, remis encre, échec rouge, pas demandé gris).
+ * Uniquement des jetons --ath-* : le thème sombre suit tout seul.
+ */
+
+.bo-dbf { --dbf-run: var(--ath-info, #2563eb); --dbf-wait: var(--ath-warn, #b26a00); --dbf-bad: var(--ath-danger, #c72e2e); }
+.bo-dbf-kpi-small { font-size: 18px !important; }
+
+/* Choix de l'opération */
+.bo-dbf-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.bo-dbf-pick__label { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ath-subtle); }
+.bo-dbf-pick__select { min-width: 0; max-width: 100%; flex: 0 1 520px; }
+
+/* En-tête de la demande */
+.bo-dbf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 14px 16px; border: 1px solid var(--ath-line); background: var(--ath-surface); }
+.bo-dbf-head__main { min-width: 0; flex: 1 1 360px; }
+.bo-dbf-head__title { margin: 6px 0 2px; font-size: 18px; font-weight: 800; color: var(--ath-ink); overflow-wrap: anywhere; }
+.bo-dbf-head__sub { margin: 0; font-size: 12px; color: var(--ath-muted); }
+.bo-dbf-head__actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.bo-dbf-head__actions form { margin: 0; }
+
+/* Tableau dense */
+.bo-dbf-grid { border: 1px solid var(--ath-line); background: var(--ath-surface); min-width: 0; }
+.bo-dbf-grid__bar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #36404f; color: #f1f5f9; }
+.bo-dbf-grid__title { font-family: var(--ath-mono); font-size: 12px; font-weight: 700; letter-spacing: .04em; flex: 1; }
+.bo-dbf-grid__search { width: 220px; max-width: 50%; padding: 4px 8px; font-size: 12px; border: 1px solid transparent; background: #f8fafc; color: #0f172a; }
+.bo-dbf-grid__wrap { overflow-x: auto; }
+.bo-dbf-grid__foot { padding: 4px 10px; border-top: 1px solid var(--ath-line); font-family: var(--ath-mono); font-size: 10.5px; color: var(--ath-subtle); }
+.bo-dbf-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.bo-dbf-table thead th { position: sticky; top: 0; padding: 6px 8px; text-align: left; font-weight: 800; color: var(--ath-ink); background: var(--ath-line-soft); border-bottom: 1px solid var(--ath-line); white-space: nowrap; }
+.bo-dbf-table td { padding: 5px 8px; border-bottom: 1px solid var(--ath-line-soft); white-space: nowrap; vertical-align: middle; }
+.bo-dbf-row:hover td { background: var(--ath-row-hover); }
+.bo-dbf-row.is-run td { color: var(--dbf-run); }
+.bo-dbf-row.is-wait td { color: var(--dbf-wait); }
+.bo-dbf-row.is-bad td { color: var(--dbf-bad); }
+.bo-dbf-row.is-none td { color: var(--ath-subtle); }
+.bo-dbf-row.is-done td { color: var(--ath-ink); }
+.bo-dbf-row td a { color: inherit !important; text-decoration: underline; }
+.bo-dbf-name { font-weight: 700; }
+.bo-dbf-state { font-weight: 700; }
+.bo-dbf-mono { font-family: var(--ath-mono); font-size: 11.5px; }
+.bo-dbf-sub { font-size: 10.5px; font-weight: 600; color: var(--ath-subtle); }
+.bo-dbf-c-cr { width: 34px; text-align: center !important; }
+.bo-dbf-c-num { text-align: right !important; font-family: var(--ath-mono); }
+.bo-dbf-c-act { width: 28px; text-align: center !important; }
+.bo-dbf-box { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 1px solid var(--ath-muted); background: var(--ath-surface); font-size: 12px; font-weight: 900; line-height: 1; color: #fff; }
+.bo-dbf-box.is-on { background: var(--dbf-run); border-color: var(--dbf-run); }
+.bo-dbf-net { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+.bo-dbf-net::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ath-subtle); }
+.bo-dbf-net.is-on::before { background: var(--ath-accent-bright, #12d18e); }
+.bo-dbf-more { border: 0; background: transparent; color: var(--ath-ink); font-size: 16px; font-weight: 900; line-height: 1; padding: 0 6px; cursor: pointer; }
+.bo-dbf-more[aria-expanded="true"] { color: var(--dbf-run); }
+.bo-dbf-answers td { white-space: normal; background: var(--ath-line-soft); color: var(--ath-ink); }
+.bo-dbf-qa { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 18px; margin: 4px 0; }
+.bo-dbf-qa dt { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--ath-subtle); }
+.bo-dbf-qa dd { margin: 2px 0 0; font-size: 12.5px; overflow-wrap: anywhere; }
+
+/* Formulaires */
+.bo-dbf-panel { margin: 0; }
+.bo-dbf-panel__sum { cursor: pointer; font-weight: 800; font-size: 14px; color: var(--ath-ink); }
+.bo-dbf-form { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.bo-dbf-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 14px; }
+.bo-dbf-form label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 800; color: var(--ath-muted); min-width: 0; }
+.bo-dbf-form label[hidden] { display: none; }
+.bo-dbf-form input[type="text"], .bo-dbf-form select, .bo-dbf-form textarea { width: 100%; min-width: 0; padding: 6px 8px; font: inherit; font-size: 13px; font-weight: 500; color: var(--ath-ink); background: var(--ath-surface); border: 1px solid var(--ath-line); }
+.bo-dbf-form__check { flex-direction: row !important; align-items: center; align-self: end; }
+.bo-dbf-form p { margin: 0; }
+
+@media (max-width: 640px) {
+    .bo-dbf-grid__search { width: 100%; max-width: none; }
+    .bo-dbf-grid__bar { flex-wrap: wrap; }
+}

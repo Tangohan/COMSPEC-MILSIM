@@ -525,7 +525,16 @@ if ($isOperatorBoNav) {
                 ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'cal', 'active' => $boNavPlanning],
                 ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => $boNavMissionsPortal],
                 ['label' => 'Carte tactique', 'href' => url('back-office/operations/carte-tactique'), 'icon' => 'ops', 'active' => $navTacticalMapActive],
-                ['label' => 'Comptes rendus', 'href' => url('back-office/atak/comptes-rendus'), 'icon' => 'aar', 'active' => $boNavAar],
+                [
+                    'label' => 'Comptes rendus',
+                    'href' => url('back-office/atak/comptes-rendus'),
+                    'icon' => 'aar',
+                    'active' => $boNavAar || !empty($boNavDebrief),
+                    'children' => [
+                        ['label' => 'Comptes rendus post-op', 'href' => url('back-office/atak/comptes-rendus'), 'active' => $boNavAar],
+                        ['label' => 'CR des joueurs (fin d’op)', 'href' => url('back-office/atak/suivi-cr'), 'active' => !empty($boNavDebrief)],
+                    ],
+                ],
                 [
                     'label' => 'Coopérations inter-unités',
                     'href' => cooperation_mission_index_url(),
