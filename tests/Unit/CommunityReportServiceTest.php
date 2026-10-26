@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use App\Repositories\ForumReportRepository;
+use App\Repositories\ContentReportRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
 use App\Services\Community\CommunityReportService;
@@ -14,7 +14,7 @@ final class CommunityReportServiceTest extends TestCase
 {
     public function testPortalHelpAcceptsSelectedTargetAndMember(): void
     {
-        $reports = $this->createMock(ForumReportRepository::class);
+        $reports = $this->createMock(ContentReportRepository::class);
         $courses = $this->createMock(TrainingCourseRepository::class);
         $users = $this->createMock(UserRepository::class);
 
@@ -28,8 +28,6 @@ final class CommunityReportServiceTest extends TestCase
             ->with(
                 10,
                 22,
-                null,
-                null,
                 self::stringContains('Membre ciblé : Orion (n° 77)'),
                 self::anything(),
                 self::anything(),
@@ -56,7 +54,7 @@ final class CommunityReportServiceTest extends TestCase
 
     public function testPortalHelpRejectsExternalSelectedUrl(): void
     {
-        $reports = $this->createMock(ForumReportRepository::class);
+        $reports = $this->createMock(ContentReportRepository::class);
         $courses = $this->createMock(TrainingCourseRepository::class);
         $users = $this->createMock(UserRepository::class);
 
@@ -77,7 +75,7 @@ final class CommunityReportServiceTest extends TestCase
 
     public function testOrgAnomalyIsForwardedToOrganizationManagement(): void
     {
-        $reports = $this->createMock(ForumReportRepository::class);
+        $reports = $this->createMock(ContentReportRepository::class);
         $courses = $this->createMock(TrainingCourseRepository::class);
         $users = $this->createMock(UserRepository::class);
 
@@ -86,8 +84,6 @@ final class CommunityReportServiceTest extends TestCase
             ->with(
                 10,
                 22,
-                null,
-                null,
                 self::stringContains('Anomalie transmise à la gestion — thème : Fiche, grade ou unité'),
                 'other',
                 self::anything(),
@@ -111,7 +107,7 @@ final class CommunityReportServiceTest extends TestCase
 
     public function testOrgAnomalyRejectsUnknownSubject(): void
     {
-        $reports = $this->createMock(ForumReportRepository::class);
+        $reports = $this->createMock(ContentReportRepository::class);
         $courses = $this->createMock(TrainingCourseRepository::class);
         $users = $this->createMock(UserRepository::class);
 
@@ -130,7 +126,7 @@ final class CommunityReportServiceTest extends TestCase
 
     public function testSiteSupportRequestIsRoutedToPlatformAdministration(): void
     {
-        $reports = $this->createMock(ForumReportRepository::class);
+        $reports = $this->createMock(ContentReportRepository::class);
         $courses = $this->createMock(TrainingCourseRepository::class);
         $users = $this->createMock(UserRepository::class);
 
@@ -139,8 +135,6 @@ final class CommunityReportServiceTest extends TestCase
             ->with(
                 10,
                 22,
-                null,
-                null,
                 self::stringContains('Demande organisateur → administration site — thème : Compte supprimé encore visible'),
                 'other',
                 self::anything(),
@@ -164,7 +158,7 @@ final class CommunityReportServiceTest extends TestCase
 
     public function testSiteSupportRequestRejectsUnknownSubject(): void
     {
-        $reports = $this->createMock(ForumReportRepository::class);
+        $reports = $this->createMock(ContentReportRepository::class);
         $courses = $this->createMock(TrainingCourseRepository::class);
         $users = $this->createMock(UserRepository::class);
 

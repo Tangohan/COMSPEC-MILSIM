@@ -106,7 +106,7 @@ final class TenantTypeProfilesAccessTest extends TestCase
             foreach (['admin.access', 'invitations.send', 'atak.manage', 'personnel.manage', 'personnel.edit'] as $slug) {
                 self::assertNotContains($slug, $member, $type . ' ' . $slug);
             }
-            self::assertContains('forum.view', $member);
+            self::assertNotContains('forum.view', $member);
             self::assertContains('atak.access', $member);
             self::assertContains('admin.access', TenantTypeConfig::basePermissionSlugsForLevel($type, 'manager'));
             self::assertNotContains('admin.access', TenantTypeConfig::basePermissionSlugsForLevel($type, 'hr'));

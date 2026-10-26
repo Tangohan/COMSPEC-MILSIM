@@ -69,6 +69,9 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
         <option value="">—</option>
         <option value="FR">Français</option>
         <option value="US">Américain</option>
+        <?php if (in_array(\App\Support\CustomGradeTemplates::COUNTRY, array_column($grades ?? [], 'country_code'), true)): ?>
+        <option value="ZZ">Sur mesure (grades de la communauté)</option>
+        <?php endif; ?>
     </select>
     <p class="mt-1 text-xs text-slate-500">La catégorie et le grade se mettent à jour selon la doctrine choisie.</p>
 </div>

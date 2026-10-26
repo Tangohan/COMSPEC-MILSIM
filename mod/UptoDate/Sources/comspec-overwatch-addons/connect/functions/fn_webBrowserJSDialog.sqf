@@ -54,7 +54,7 @@ switch (true) do {
     case (_cmd isEqualTo "ui:v2"): {
         missionNamespace setVariable ["COMSPEC_TabletUiVersion", "v2"];
         profileNamespace setVariable ["COMSPEC_TabletUiVersion", "v2"];
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
         private _disp = findDisplay 9974;
         if (!isNull _disp) then { _disp closeDisplay 1; };
         [] spawn {
@@ -70,7 +70,7 @@ switch (true) do {
     case (_cmd isEqualTo "ui:v1"): {
         missionNamespace setVariable ["COMSPEC_TabletUiVersion", "v1"];
         profileNamespace setVariable ["COMSPEC_TabletUiVersion", "v1"];
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
         private _disp = findDisplay 9974;
         if (!isNull _disp) then { _disp closeDisplay 1; };
         [] spawn {

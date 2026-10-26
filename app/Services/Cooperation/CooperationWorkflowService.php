@@ -70,40 +70,6 @@ final class CooperationWorkflowService
     }
 
     /**
-     * Message d’accueil (HTML) pour le premier message du fil coop.
-     *
-     * @param array<string, mixed> $mission
-     * @param list<array<string, mixed>> $participants
-     */
-    public function buildPinnedWelcomeBody(array $mission, array $participants, string $meetingUrl, string $orbatUrl, string $exchangeUrl): string
-    {
-        $title = htmlspecialchars((string) ($mission['title'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $phase = CooperationDictionary::phaseLabel(CooperationDictionary::effectivePhase($mission));
-        $lines = [];
-        $lines[] = '<p><strong>Objet</strong> : ' . $title . '</p>';
-        $lines[] = '<p><strong>Unités engagées</strong> :</p><ul>';
-        foreach ($participants as $p) {
-            if (($p['status'] ?? '') !== 'active') {
-                continue;
-            }
-            $nm = htmlspecialchars((string) ($p['tenant_name'] ?? ''), ENT_QUOTES, 'UTF-8');
-            $rl = htmlspecialchars(CooperationDictionary::participantRoleLabel((string) ($p['role'] ?? '')), ENT_QUOTES, 'UTF-8');
-            $lines[] = '<li>' . $nm . ' — ' . $rl . '</li>';
-        }
-        $lines[] = '</ul>';
-        $lines[] = '<p><strong>État actuel</strong> : ' . htmlspecialchars($phase, ENT_QUOTES, 'UTF-8') . '</p>';
-        $lines[] = '<p><strong>Règles de partage</strong> : chaque unité valide son autorisation de partage (code par e-mail) avant d’écrire sur ce fil.</p>';
-        $lines[] = '<p><strong>Liens utiles</strong> :</p><ul>';
-        $lines[] = '<li><a href="' . htmlspecialchars($meetingUrl, ENT_QUOTES, 'UTF-8') . '">Réunion</a></li>';
-        $lines[] = '<li><a href="' . htmlspecialchars($orbatUrl, ENT_QUOTES, 'UTF-8') . '">Structures &amp; liaisons</a></li>';
-        $lines[] = '<li><a href="' . htmlspecialchars($exchangeUrl, ENT_QUOTES, 'UTF-8') . '">Synthèse espace commun</a></li>';
-        $lines[] = '</ul>';
-        $lines[] = '<p class="text-sm text-slate-600"><strong>Consignes</strong> : ne diffusez que des informations couvertes par les autorisations validées par votre hiérarchie et les échanges officiels de cette coopération.</p>';
-
-        return implode("\n", $lines);
-    }
-
-    /**
      * @return list<string> lignes non vides
      */
     public static function parseSuspensiveConditionsFromText(string $raw): array

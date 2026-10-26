@@ -33,6 +33,7 @@ Le bootstrap charge **`app/Config/*.php`** (app, database, auth, maintenance, un
 1. Cloner le dépôt, installer les dépendances Composer (`composer install --no-dev` en prod si applicable).
 2. Copier `.env.example` vers `.env`, renseigner URL, base, courriel, secrets.
 3. Pointer le **vhost** vers **`public/`** (document root). Sur le VPS Athena : `APP_BASE_PATH` **vide** et rewrite interne `/public` → `/` (voir `docs/nginx.example.conf`) pour que les mods Workshop déjà installés (`https://athena.ttrd.fr/public/api/…`) continuent de parler au site sans mise à jour Steam. Ne pas republier le Workshop pour ce seul motif. Ne pas régénérer `X_COMSPEC_KEY` / JWT / secrets recopiés.
+   - **Exception, une seule fois** : après la mise à jour où la clé plateforme cesse d’être renvoyée au mod, **changer `X_COMSPEC_KEY`** (elle a été remise aux joueurs des communautés sans clé dédiée). Les joueurs concernés relient leur jeu et reçoivent la clé de leur communauté. La clé plateforme n’accepte plus de `tenant_id` / `tenant_slug` du client (sauf `ATAK_DEFAULT_TENANT_ID`, ou `X_COMSPEC_KEY_ALLOW_TENANT_PARAM=true` pour une intégration serveur de confiance).
 4. Appliquer les migrations et vérifier les droits d’écriture sur **`storage/`** et chemins d’upload configurés.
 5. Construire les assets front si nécessaire (`npm ci` / `npm run build` selon `package.json`).
 6. Vérifier **HTTPS**, cookies sécurisés, et sauvegardes planifiées.

@@ -22,7 +22,7 @@ final class AtakRealismProfileTest extends TestCase
     public function testSiteRulesExistForEveryNewCondition(): void
     {
         $ids = array_column((new AtakExperienceService())->networkCatalog(), 'id');
-        foreach (['net_profile', 'net_pli', 'net_pli_rate', 'net_gps', 'net_gps_k', 'net_gps_fix', 'net_battery'] as $id) {
+        foreach (['net_profile', 'net_pli', 'net_pli_rate', 'net_gps', 'net_gps_k', 'net_gps_fix', 'net_gps_loss', 'net_gps_rel', 'net_battery'] as $id) {
             self::assertContains($id, $ids);
         }
     }

@@ -85,22 +85,22 @@ final class AdminDashboardMetricsService
             ));
             $kpis[] = $this->kpi('training_expiring', 'Formations (échéance 30 j.)', fn () => $this->countTrainingExpiring($tenantId));
 
-            $forumPending = $this->countForumReportsPendingForTenant($tenantId);
-            if ($forumPending['ok']) {
+            $reportsPending = $this->countReportsPendingForTenant($tenantId);
+            if ($reportsPending['ok']) {
                 $kpis[] = [
                     'id' => 'moderation_open',
-                    'label' => 'Signalements forum (à traiter)',
-                    'value' => (string) $forumPending['value'],
+                    'label' => 'Signalements membres (à traiter)',
+                    'value' => (string) $reportsPending['value'],
                     'hint' => null,
                     'error' => null,
                 ];
             } else {
                 $kpis[] = [
                     'id' => 'moderation_open',
-                    'label' => 'Signalements forum (à traiter)',
+                    'label' => 'Signalements membres (à traiter)',
                     'value' => null,
                     'hint' => null,
-                    'error' => $forumPending['error'],
+                    'error' => $reportsPending['error'],
                 ];
             }
 
@@ -320,16 +320,16 @@ final class AdminDashboardMetricsService
     }
 
     /** @return array{ok: true, value: int}|array{ok: false, error: string} */
-    private function countForumReportsPendingForTenant(int $tenantId): array
+    private function countReportsPendingForTenant(int $tenantId): array
     {
         try {
-            $stmt = $this->pdo->query("SHOW TABLES LIKE 'forum_reports'");
+            $stmt = $this->pdo->query("SHOW TABLES LIKE 'content_reports'");
             if (!$stmt || !$stmt->fetchColumn()) {
                 return ['ok' => false, 'error' => 'N/A'];
             }
 
             $value = $this->scalarInt(
-                "SELECT COUNT(*) FROM forum_reports WHERE tenant_id = ? AND status = 'pending'",
+                "SELECT COUNT(*) FROM content_reports WHERE tenant_id = ? AND status = 'pending'",
                 [$tenantId]
             );
 

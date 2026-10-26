@@ -6,6 +6,9 @@ params ["_map", "_screen"];
 if (isNull _map) exitWith { "" };
 private _best = "";
 private _bestD = pixelW * 18;
+// Cache des icônes CfgMarkers partagé avec fn_mapGameMarkers (clé « i:<type> »).
+private _cfg = uiNamespace getVariable "COMSPEC_ATAK_GmCfg";
+if (isNil "_cfg") then { _cfg = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_GmCfg", _cfg]; };
 {
     private _sp = _map ctrlMapWorldToScreen (getMarkerPos _x);
     private _d = _sp distance2D _screen;
@@ -22,6 +25,17 @@ private _bestD = pixelW * 18;
             _d = _d min (_p distance2D _screen);
         };
     };
-    if (_d < _bestD && {(markerAlpha _x) > 0}) then { _bestD = _d; _best = _x; };
+    // Symboles que fn_mapGameMarkers ne dessine pas (type « Empty », sans icône : respawn_west, ancres de script) :
+    // invisibles, donc jamais cliquables (ils passaient avant les unités sous le curseur).
+    if (_d < _bestD && {(markerAlpha _x) > 0} && {(markerShape _x) isNotEqualTo "ICON" || {
+        private _type = markerType _x;
+        private _ic = _cfg getOrDefault ["i:" + _type, []];
+        if (_ic isEqualTo []) then {
+            _ic = [getText (configFile >> "CfgMarkers" >> _type >> "icon"), getNumber (configFile >> "CfgMarkers" >> _type >> "size"), getNumber (configFile >> "CfgMarkers" >> _type >> "shadow")];
+            if ((_ic select 1) <= 0) then { _ic set [1, 32]; };
+            _cfg set ["i:" + _type, _ic];
+        };
+        (_ic select 0) isNotEqualTo "" && {(toLower _type) isNotEqualTo "empty"}
+    }}) then { _bestD = _d; _best = _x; };
 } forEach allMapMarkers;
 _best

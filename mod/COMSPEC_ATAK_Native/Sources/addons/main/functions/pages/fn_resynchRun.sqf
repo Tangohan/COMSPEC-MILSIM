@@ -49,7 +49,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];
 
         // Montre Garmin : profil écrit et renvoyé (sans clore l'activité en cours).
         private _gmOn = !(missionNamespace getVariable ["comspec_atak_native_garmin_watch", true])
-            || {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0};
+            || {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0}
+            || {"COMSPEC_ATAK_GarminWatchItem" in (items player)};
         if (_gmOn && {_bridge}) then {
             (["push"] call comspec_atak_native_fnc_garminTick) params [["_t", -1], ["_st", ""]];
             ["garmin", ["warn", "ok"] select (_st isEqualTo "OK"), "Montre Garmin", ["Pas partie : " + _st + ".", "Pas, activités, cardio, stress et Body Battery."] select (_st isEqualTo "OK")] call _add;

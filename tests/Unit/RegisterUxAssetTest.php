@@ -29,7 +29,7 @@ final class RegisterUxAssetTest extends TestCase
         self::assertStringContainsString('.ds-main__inner--register', $css);
         self::assertStringContainsString('data-preview-modal', $register);
         self::assertStringContainsString('Preview ouverte', $register);
-        self::assertStringContainsString('no-reply@athena.ttrd.fr', $register);
+        self::assertStringContainsString('PortalHost::feedbackEmail()', $register);
         self::assertStringContainsString('.ds-preview-modal', $css);
 
         // Refonte : sections, partie facultative repliable, erreurs sous les champs, force du mot de passe, mode nuit.
@@ -53,6 +53,6 @@ final class RegisterUxAssetTest extends TestCase
 
         $email = (string) file_get_contents(dirname(__DIR__, 2) . '/views/emails/user_register_confirmation.php');
         self::assertStringContainsString('preview ouverte', $email);
-        self::assertStringContainsString('no-reply@athena.ttrd.fr', $email);
+        self::assertStringContainsString('PortalHost::feedbackEmail()', $email);
     }
 }

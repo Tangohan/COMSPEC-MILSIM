@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Alerts;
 
 use App\Authorization\DashboardPinsAccess;
-use App\Repositories\ForumTopicRepository;
 use App\Services\Dashboard\TenantDashboardPinService;
 use App\Support\AlertDisplayStyle;
 
@@ -17,7 +16,6 @@ final class MemberAlertsPageService
     public function __construct(
         private AlertPresentationService $alerts,
         private TenantDashboardPinService $pins,
-        private ForumTopicRepository $forumTopics,
         private ?\App\Repositories\TenantAdminSettingsRepository $adminSettings = null,
     ) {
         $this->adminSettings ??= new \App\Repositories\TenantAdminSettingsRepository();
@@ -86,33 +84,6 @@ final class MemberAlertsPageService
                 }
             } catch (\Throwable) {
                 // Optionnel.
-            }
-
-            try {
-                foreach ($this->forumTopics->listPinnedOnDashboardForTenant($tenantId, 12) as $ftPin) {
-                    $title = trim((string) ($ftPin['title'] ?? ''));
-                    if ($title === '') {
-                        continue;
-                    }
-                    $rawBody = trim((string) ($ftPin['first_post_body'] ?? ''));
-                    $topicId = (int) ($ftPin['id'] ?? 0);
-                    $active[] = [
-                        'scope' => 'tenant',
-                        'id' => 0,
-                        'kind' => 'forum_pin',
-                        'category' => 'Message épinglé',
-                        'title' => $title,
-                        'body' => $this->plainTextExcerpt($rawBody, 280),
-                        'cta_label' => 'Ouvrir le message',
-                        'cta_url' => $topicId > 0 ? url('forum/topic/' . $topicId) : null,
-                        'status' => 'active',
-                        'ended_at' => null,
-                        'dismissible' => false,
-                        'pinned' => true,
-                    ];
-                }
-            } catch (\Throwable) {
-                // Optionnel si le schéma forum n’est pas prêt.
             }
         }
 
@@ -198,7 +169,7 @@ final class MemberAlertsPageService
             'status' => $ended ? 'ended' : 'active',
             'ended_at' => isset($alert['ended_at']) && is_string($alert['ended_at']) ? $alert['ended_at'] : null,
             'dismissible' => !$ended && (!array_key_exists('dismissible', $alert) || (bool) $alert['dismissible']),
-            'pinned' => in_array(strtolower(trim($kind)), ['forum_pin', 'notice'], true),
+            'pinned' => in_array(strtolower(trim($kind)), ['notice'], true),
         ];
     }
 
@@ -206,7 +177,6 @@ final class MemberAlertsPageService
     {
         return match (strtolower(trim($kind))) {
             'urgent', 'security' => 0,
-            'forum_pin' => 1,
             'notice' => 2,
             'novelty', 'training' => 3,
             'recruitment' => 4,
@@ -225,28 +195,5 @@ final class MemberAlertsPageService
         }
 
         return 't:' . md5((string) ($item['title'] ?? '') . '|' . (string) ($item['body'] ?? ''));
-    }
-
-    private function plainTextExcerpt(string $raw, int $maxLen = 280): string
-    {
-        $text = trim(strip_tags($raw));
-        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
-        $text = trim($text);
-        if ($text === '') {
-            return '';
-        }
-        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
-            if (mb_strlen($text) > $maxLen) {
-                return rtrim(mb_substr($text, 0, $maxLen - 1)) . '…';
-            }
-
-            return $text;
-        }
-        if (strlen($text) > $maxLen) {
-            return rtrim(substr($text, 0, $maxLen - 1)) . '…';
-        }
-
-        return $text;
     }
 }

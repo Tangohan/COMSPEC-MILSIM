@@ -113,14 +113,20 @@ class PersonnelProfileRepository
         return $this->withPrimaryJobRoleBridge($row);
     }
 
+    /** Mémoïsé pour la durée de la requête (appelé par l’en-tête de chaque page). */
+    private static ?bool $hasTenantIdColumnCache = null;
+
     private function hasTenantIdColumn(): bool
     {
-        $st = $this->pdo->query(
-            "SELECT 1 FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
-        );
+        if (self::$hasTenantIdColumnCache === null) {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
+            );
+            self::$hasTenantIdColumnCache = $st !== false && (bool) $st->fetchColumn();
+        }
 
-        return $st !== false && (bool) $st->fetchColumn();
+        return self::$hasTenantIdColumnCache;
     }
 
     /**
@@ -235,6 +241,8 @@ class PersonnelProfileRepository
         }
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        // Copie .paa du portrait pour le téléphone en jeu, faite dès l'envoi.
+        \App\Support\AtakGameImage::prepare($path, \App\Support\AtakGameImage::FIT_PORTRAIT);
         return $stmt->rowCount() > 0;
     }
 
@@ -308,6 +316,9 @@ class PersonnelProfileRepository
         }
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        if (!empty($data['character_portrait_path'])) {
+            \App\Support\AtakGameImage::prepare((string) $data['character_portrait_path'], \App\Support\AtakGameImage::FIT_PORTRAIT);
+        }
         return $stmt->rowCount() > 0;
     }
 

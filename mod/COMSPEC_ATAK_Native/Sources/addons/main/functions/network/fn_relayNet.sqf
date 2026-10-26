@@ -9,6 +9,8 @@
                      fréquence MHz, fréquence automatique, perte %, structure % (100 - dégâts), santé ("nominal" | "dégradé" |
                      "critique" | "hors service"), bonds jusqu'au relais raccordé (0 = raccordé, -1 = sans liaison),
                      relais sur le même canal à portée, latence ms]...]
+                   Condition d'activation (COMSPEC_AtakRelayCond, fn_relayCond : mât déployé, à l'arrêt, code SQF) : relais
+                   et passerelles de véhicule hors service tant qu'elle n'est pas remplie, état = sa raison.
                    Variables d'un relais : COMSPEC_AtakRelayRange, Throughput, Name, Height (m, défaut 4), Slots, Side,
                    On (défaut vrai), Freq (canal en MHz, 0 = automatique : premier canal libre du plan 4 940-4 975 MHz
                    qu'aucun relais voisin n'occupe), Batt et Autonomy (minutes), Root (raccordé par satellite ou fibre, défaut vrai ; sinon
@@ -63,7 +65,9 @@ switch (_act) do {
                 _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
                 if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
                 private _d = _p distance2D _jp;
-                if (_d < _jr) then { _m = _m * ((_d / _jr) ^ 2); };
+                // Force du brouilleur (7e élément, 1 par défaut), comme fn_linkQuality.
+                private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
+                if (_d < _jr) then { _m = _m * (1 - _js * (1 - (_d / _jr) ^ 2)); };
             } forEach _jam;
             _m
         };
@@ -83,10 +87,13 @@ switch (_act) do {
             private _root = _x getVariable ["COMSPEC_AtakRelayRoot", true];
             private _freq = round ([_x getVariable ["COMSPEC_AtakRelayFreq", 0], 0] call _num);
             private _ant = (getPosASL _x) vectorAdd [0, 0, _h];
+            // Condition d'activation de la mission (fn_relayCond : mât déployé, à l'arrêt, code...).
+            private _cond = [_x] call comspec_atak_native_fnc_relayCond;
             private _st = switch (true) do {
                 case (!alive _x || {damage _x >= 0.95}): { "détruit" };
                 case !(_x getVariable ["COMSPEC_AtakRelayOn", true]): { "éteint" };
                 case (_batt isEqualTo 0): { "batterie vide" };
+                case !(_cond select 0): { _cond select 1 };
                 default { "" };
             };
             private _j = [_ant] call _jamAt;
@@ -154,7 +161,9 @@ switch (_act) do {
         } forEach _out;
         {
             _x params ["_o", "_m", "_r", "_mb", "_n"];
-            _out pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, ["gw", "cp"] select (_m isEqualTo "cp"), _r, _mb, true, "", 0, 0, -1, true, objNull,
+            // Passerelle de véhicule soumise à une condition (fn_relayCond, ex. mât déployé) : listée hors service sinon.
+            private _cond = [_o] call comspec_atak_native_fnc_relayCond;
+            _out pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, ["gw", "cp"] select (_m isEqualTo "cp"), _r, [0, _mb] select (_cond select 0), _cond select 0, _cond select 1, 0, 0, -1, true, objNull,
                 4985, false, 0, round (100 * (1 - damage _o)), "", 0, 0, 0];
             _jf pushBack 1;
         } forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);

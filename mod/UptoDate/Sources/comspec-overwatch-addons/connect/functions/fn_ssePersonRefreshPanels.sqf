@@ -141,8 +141,8 @@ private _fpPrompt = if (_fpDone) then {
     ]
 } else {
     format [
-        "<t size='0.46' font='TahomaB' color='%1'>Placez l'INDEX DROIT sur le capteur</t><t size='0.42' color='%2'>  ·  Place right index on sensor</t>",
-        _cBlue, _cMute
+        "<t size='0.46' font='TahomaB' color='%1'>Placez l'INDEX DROIT sur le capteur</t>",
+        _cBlue
     ]
 };
 if (_bioMsg isNotEqualTo "") then { _fpPrompt = _bioMsg; };
@@ -165,7 +165,7 @@ private _fpRows = [
     ["Roulés 10 doigts", _fpDone] call _fnc_step
 ];
 _fpRows pushBack format [
-    "<t size='0.38' color='%1'>NFIQ </t><t size='0.38' color='%2' font='TahomaB'>1-2</t><t size='0.38' color='%1'> bon · </t><t size='0.38' color='%3' font='TahomaB'>3</t><t size='0.38' color='%1'> moyen · </t><t size='0.38' color='%4' font='TahomaB'>4-5</t><t size='0.38' color='%1'> à refaire</t>",
+    "<t size='0.38' color='%1'>NFIQ </t><t size='0.38' color='%2' font='TahomaB'>1-2</t><t size='0.38' color='%1'> bon</t><t size='0.38' color='%1'> · </t><t size='0.38' color='%3' font='TahomaB'>3</t><t size='0.38' color='%1'> moyen</t><t size='0.38' color='%1'> · </t><t size='0.38' color='%4' font='TahomaB'>4-5</t><t size='0.38' color='%1'> à refaire</t>",
     _cMute, _cOk, _cWarn, _cBad
 ];
 if (_fpDone) then {

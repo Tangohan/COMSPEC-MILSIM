@@ -49,11 +49,11 @@ return [
         ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces', 'subtitle' => 'Les bandeaux affichés en haut du portail pour tous les membres connectés.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
             ['label' => 'Nouvelle annonce', 'href' => 'back-office/alerts/create'],
         ]],
-        ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'quick' => [
+        ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'css' => ['back-office-articles.css'], 'quick' => [
             ['label' => 'Liste', 'href' => 'back-office/articles'],
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
-        ['path' => 'back-office/articles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Mini-articles', 'subtitle' => 'De courts textes permanents pour informer les membres : règles, guides, présentations.', 'quick' => [
+        ['path' => 'back-office/articles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Mini-articles', 'subtitle' => 'De courts textes permanents pour informer les membres : règles, guides, présentations.', 'css' => ['back-office-articles.css'], 'quick' => [
             ['label' => 'Nouvel article', 'href' => 'back-office/articles/create'],
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
@@ -151,7 +151,7 @@ return [
         ['path' => 'back-office/organisation/indicatifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Indicatifs radio', 'subtitle' => 'Comment les indicatifs sont attribués : séries, numéros réservés et historique.'],
         ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes', 'subtitle' => 'Regroupez des membres en sous-unités ou en cellules.', 'css' => ['back-office-groups.css']],
         ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes', 'subtitle' => 'Des équipes formées pour une mission ou un créneau.'],
-        ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories du forum', 'subtitle' => 'Les rubriques du forum et l’ordre dans lequel elles apparaissent.'],
+        ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories', 'subtitle' => 'Les catégories de la communauté et l’ordre dans lequel elles apparaissent.'],
         ['path' => 'back-office/referentiels/grades', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Grades', 'subtitle' => 'La liste des grades de votre communauté, dans l’ordre hiérarchique.'],
         ['path' => 'back-office/positions', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Postes', 'subtitle' => 'Les postes à pourvoir dans l’organigramme et leurs titulaires.'],
         ['path' => 'back-office/roles-permissions', 'group' => 'Accès', 'kicker' => 'ACCÈS', 'title' => 'Rôles et droits', 'subtitle' => 'Ce que chaque rôle permet de faire, et qui le détient.'],
@@ -281,7 +281,7 @@ return [
         ['path' => 'back-office/security-indicators', 'group' => 'Accès', 'kicker' => 'ACCÈS · SÉCURITÉ', 'title' => 'Sécurité et blocages', 'subtitle' => 'Les comptes bloqués et les tentatives de connexion suspectes.'],
         // Messagerie interne (/messages) : le contrôleur charge aussi cette feuille, la page restant dans la coque portail.
         ['path' => 'messages', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGERIE', 'title' => 'Messagerie interne', 'subtitle' => 'Vos échanges avec l’encadrement de la communauté.', 'css' => ['back-office-messages.css'], 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/forum-moderation', 'group' => 'Système', 'kicker' => 'SYSTÈME · FORUM', 'title' => 'Modération du forum', 'subtitle' => 'Les messages signalés par les membres, à garder ou à retirer.'],
+        ['path' => 'back-office/signalements', 'group' => 'Système', 'kicker' => 'SYSTÈME · SIGNALEMENTS', 'title' => 'Signalements membres', 'subtitle' => 'Les fiches, photos et contenus signalés par les membres, à instruire puis clore.'],
         ['path' => 'back-office/courrier/traceabilite', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Traçabilité du courrier', 'subtitle' => 'Qui a reçu et lu chaque message officiel.'],
         ['path' => 'back-office/doctrine/referentiel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · DOCTRINE', 'title' => 'Référentiel doctrinal', 'subtitle' => 'Les textes de référence sur lesquels s’appuient vos procédures.', 'quick' => [
             ['label' => 'Doctrine et SOP', 'href' => 'back-office/doctrine'],
@@ -295,14 +295,12 @@ return [
         ['path' => 'back-office/cooperation', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Coopérations inter-unités', 'subtitle' => 'Les opérations menées avec d’autres communautés.', 'css' => ['cooperation.css']],
         // Les écrans des missions ont leur propre en-tête (titre, progression) : pas de bandeau du shell en double.
         ['path' => 'back-office/cooperation/missions', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Coopérations inter-unités', 'css' => ['cooperation.css'], 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/forum/priorite-mission', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORUM', 'title' => 'Publier en priorité mission', 'subtitle' => 'Mettez un sujet du forum en tête pour la prochaine mission.'],
         ['path' => 'back-office/ressources', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Ressources', 'subtitle' => 'Formations, documents, cartographie et outils de terrain.'],
         ['path' => 'formation', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORMATIONS', 'title' => 'Formations', 'subtitle' => 'Les cours, les inscriptions et les qualifications délivrées.'],
         ['path' => 'documents/gestion/ajout', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · DOCUMENTS', 'title' => 'Nouveau document', 'subtitle' => 'Ajoutez un fichier, ou rédigez directement un manuel avec sa page de garde.', 'css' => ['document-fm.css']],
         ['path' => 'documents/gestion', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · DOCUMENTS', 'title' => 'Documents', 'subtitle' => 'Les documents de la communauté, classés par type.', 'css' => ['document-fm.css']],
         ['path' => 'back-office/ressources/atak-config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Configuration ATAK', 'subtitle' => 'Cartes, calques et réglages de l’application ATAK pour vos membres.'],
         ['path' => 'back-office/ressources/modpacks', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Modpacks', 'subtitle' => 'Les listes de mods à installer pour rejoindre vos sessions.'],
-        ['path' => 'back-office/ressources/forum-config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORUM', 'title' => 'Réglages du forum', 'subtitle' => 'Rubriques, briefings et règles de publication du forum.'],
         ['path' => 'back-office/ressources/musique', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MUSIQUE', 'title' => 'Musique de l\'organisation', 'subtitle' => 'Morceaux et playlists de vos membres, écoutés sur le site et en jeu dans l\'app Musique de l\'ATAK.'],
         ['path' => 'back-office/content-moderation', 'group' => 'Système', 'kicker' => 'SYSTÈME · MODÉRATION', 'title' => 'Fichiers et pièces jointes', 'subtitle' => 'Les fichiers déposés par les membres, à vérifier ou supprimer.'],
         ['path' => 'tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Mur opérationnel', 'subtitle' => 'Ce que voient les membres : prochaines opérations, articles et annonces.'],

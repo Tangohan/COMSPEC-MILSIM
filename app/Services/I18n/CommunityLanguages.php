@@ -33,6 +33,58 @@ final class CommunityLanguages
     /** @var list<array{0: string, 1: string, 2: string, 3: string}>|null */
     private static ?array $catalog = null;
 
+    /** @var array<string, array{screen: string, label: string, context: string}>|null */
+    private static ?array $contexts = null;
+
+    /**
+     * Écran lisible d’un catalogue à clés : « groupe » ou « groupe.préfixe ».
+     * Les pages sans catalogue restent « Pages du portail ».
+     *
+     * @var array<string, string>
+     */
+    private const SCREENS = [
+        'auth' => 'Connexion et compte',
+        'auth.register' => 'Création de compte',
+        'auth.step' => 'Création de compte',
+        'auth.steps' => 'Création de compte',
+        'auth.forgot' => 'Mot de passe oublié',
+        'auth.reset' => 'Mot de passe oublié',
+        'auth.otp' => 'Double vérification',
+        'auth.flash' => 'Messages de connexion',
+        'auth.header' => 'En-tête du portail',
+        'auth.title' => 'Connexion et compte',
+        'common' => 'Textes communs',
+        'common.platform' => 'Avis sur Athena',
+        'common.integration' => 'Liaisons du compte',
+        'common.language' => 'Choix de la langue',
+        'cookies' => 'Bandeau des cookies',
+        'errors' => 'Pages d’erreur',
+        'errors.404' => 'Page introuvable',
+        'errors.403' => 'Accès refusé',
+        'errors.500' => 'Incident du portail',
+        'errors.personnel' => 'Fiche personnel',
+        'home' => 'Page d’accueil',
+        'home.demo' => 'Démonstration',
+        'home.faq' => 'Questions fréquentes',
+        'home.story' => 'Récit de la page d’accueil',
+        'home.persona' => 'Profils de la page d’accueil',
+        'home.units' => 'Unités',
+        'legal' => 'Mentions et droits',
+        'legal.gdpr' => 'Exercice des droits',
+        'nav' => 'Navigation',
+        'site' => 'Portail',
+        'site.sitetr' => 'Traduction du site',
+        'site.atakt' => 'Atelier du téléphone',
+        'site.atakn' => 'Téléphone ATAK',
+        'site.atak' => 'Téléphone ATAK',
+        'site.atakw' => 'Atelier du téléphone',
+        'site.sse' => 'Renseignement SSE',
+        'site.contrib' => 'Contribuer',
+        'site.about' => 'À propos',
+        'site.contact' => 'Contact',
+        'site.cl' => 'Journal des nouveautés',
+    ];
+
     /** Code de langue accepté pour une langue communautaire : « es », « pt-br ». Jamais « fr ». */
     public static function validCode(string $code): bool
     {
@@ -154,6 +206,28 @@ final class CommunityLanguages
         ksort($clean);
         self::writeFile('languages.json', (string) json_encode($clean, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n");
         self::$published = $clean;
+    }
+
+    /** L’anglais livré avec le site existe et n’est pas une copie du français. */
+    public static function hasShippedEnglish(string $fr, string $en): bool
+    {
+        $en = trim($en);
+
+        return $en !== '' && mb_strtolower($en) !== mb_strtolower(trim($fr));
+    }
+
+    /** Textes du catalogue qui n’ont encore que le français. */
+    public static function missingEnglishCount(?string $root = null): int
+    {
+        $n = 0;
+        foreach (self::catalog($root) as [, $src, $en, $kind]) {
+            $fr = $kind === 'key' ? self::frenchOf($src, $root) : $src;
+            if (!self::hasShippedEnglish($fr, $en)) {
+                $n++;
+            }
+        }
+
+        return $n;
     }
 
     /**
@@ -299,12 +373,233 @@ final class CommunityLanguages
         return array_merge($out, $m[0]);
     }
 
+    /**
+     * Où le texte apparaît, et la phrase autour quand le catalogue la contient déjà.
+     * Une phrase complète ne reçoit que le nom de l’écran.
+     *
+     * @return array{screen: string, label: string, context: string}
+     */
+    public static function contextOf(string $hash, ?string $root = null): array
+    {
+        $all = self::contexts($root);
+
+        return $all[$hash] ?? ['screen' => 'pages', 'label' => 'Pages du portail', 'context' => ''];
+    }
+
+    /**
+     * @return array<string, array{screen: string, label: string, context: string}>
+     */
+    public static function contexts(?string $root = null): array
+    {
+        if (self::$contexts !== null && $root === null) {
+            return self::$contexts;
+        }
+        $rows = [];
+        foreach (self::catalog($root) as [$h, $src, , $kind]) {
+            $fr = $kind === 'key' ? self::frenchOf($src, $root) : $src;
+            [$screen, $label] = self::screenOf($kind, $src);
+            $rows[] = ['h' => $h, 'fr' => $fr, 'kind' => $kind, 'screen' => $screen, 'label' => $label];
+        }
+        $byFrench = [];
+        foreach ($rows as $row) {
+            if ($row['kind'] === 'key' && !isset($byFrench[$row['fr']])) {
+                $byFrench[$row['fr']] = [$row['screen'], $row['label']];
+            }
+        }
+        foreach ($rows as $i => $row) {
+            if ($row['kind'] === 'text' && isset($byFrench[$row['fr']])) {
+                $rows[$i]['screen'] = $byFrench[$row['fr']][0];
+                $rows[$i]['label'] = $byFrench[$row['fr']][1];
+            }
+        }
+        /** @var array<string, list<int>> $groups */
+        $groups = [];
+        /** @var array<string, int> $keyByFrench */
+        $keyByFrench = [];
+        foreach ($rows as $i => $row) {
+            if ($row['kind'] !== 'key') {
+                continue;
+            }
+            $groups[$row['screen']][] = $i;
+            $keyByFrench[$row['fr']] ??= $i;
+        }
+        $byIndex = [];
+        foreach ($groups as $indexes) {
+            foreach ($indexes as $i) {
+                $byIndex[$i] = self::isWholeSentence($rows[$i]['fr'])
+                    ? ''
+                    : self::aroundText($rows, $indexes, $i);
+            }
+        }
+        $out = [];
+        foreach ($rows as $i => $row) {
+            $context = $byIndex[$i] ?? '';
+            if ($row['kind'] === 'text' && isset($keyByFrench[$row['fr']])) {
+                $context = $byIndex[$keyByFrench[$row['fr']]] ?? '';
+            }
+            $out[$row['h']] = [
+                'screen' => $row['screen'],
+                'label' => $row['label'],
+                'context' => $context,
+            ];
+        }
+        if ($root === null) {
+            self::$contexts = $out;
+        }
+
+        return $out;
+    }
+
     /** Pour les tests. */
     public static function reset(): void
     {
         self::$dicts = [];
         self::$published = null;
         self::$catalog = null;
+        self::$contexts = null;
+    }
+
+    /** @return array{0: string, 1: string} */
+    private static function screenOf(string $kind, string $src): array
+    {
+        if ($kind !== 'key' || !str_starts_with($src, '@')) {
+            return ['pages', 'Pages du portail'];
+        }
+        $id = substr($src, 1);
+        $dot = strpos($id, '.');
+        $group = $dot === false ? $id : substr($id, 0, $dot);
+        $key = $dot === false ? $id : substr($id, $dot + 1);
+        $head = explode('_', explode('.', $key)[0])[0];
+        $specific = $group . '.' . $head;
+        if (isset(self::SCREENS[$specific])) {
+            return [self::SCREENS[$specific], self::SCREENS[$specific]];
+        }
+        if (isset(self::SCREENS[$group])) {
+            return [self::SCREENS[$group], self::SCREENS[$group]];
+        }
+
+        return [$group !== '' ? $group : 'pages', 'Pages du portail'];
+    }
+
+    private static function isWholeSentence(string $fr): bool
+    {
+        $t = trim($fr);
+        if ($t === '' || preg_match('/^["\'<]/u', $t) === 1 || str_contains($t, 'class=') || str_contains($t, 'aria-')) {
+            return false;
+        }
+        $len = mb_strlen($t);
+        $words = preg_match_all('/\p{L}{2,}/u', $t);
+        if ($len >= 80) {
+            return true;
+        }
+        if ($words >= 8 && $len >= 45) {
+            return true;
+        }
+
+        return $words >= 6 && preg_match('/[.!?…:][»"\']?$/u', $t) === 1;
+    }
+
+    /**
+     * @param list<array{h: string, fr: string, kind: string, screen: string, label: string}> $rows
+     * @param list<int> $indexes
+     */
+    private static function aroundText(array $rows, array $indexes, int $i): string
+    {
+        $fr = trim($rows[$i]['fr']);
+        if ($fr === '') {
+            return '';
+        }
+        $pos = array_search($i, $indexes, true);
+        if ($pos === false) {
+            return '';
+        }
+        $sentence = self::containingSentence($rows, $indexes, $fr);
+        if ($sentence !== '') {
+            return $sentence;
+        }
+        $before = [];
+        for ($d = $pos - 1; $d >= 0 && count($before) < 2 && $pos - $d <= 8; $d--) {
+            $line = self::neighbourLine($rows[$indexes[$d]]['fr'], $fr);
+            if ($line !== '') {
+                array_unshift($before, $line);
+            }
+        }
+        $after = [];
+        $n = count($indexes);
+        for ($d = $pos + 1; $d < $n && count($after) < 2 && $d - $pos <= 8; $d++) {
+            $line = self::neighbourLine($rows[$indexes[$d]]['fr'], $fr);
+            if ($line !== '') {
+                $after[] = $line;
+            }
+        }
+
+        $lines = [];
+        foreach (array_merge($before, $after) as $line) {
+            if (!in_array($line, $lines, true)) {
+                $lines[] = $line;
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param list<array{h: string, fr: string, kind: string, screen: string, label: string}> $rows
+     * @param list<int> $indexes
+     */
+    private static function containingSentence(array $rows, array $indexes, string $fr): string
+    {
+        if (mb_strlen($fr) < 3 || mb_strlen($fr) > 60) {
+            return '';
+        }
+        $best = '';
+        $bestLen = PHP_INT_MAX;
+        $found = 0;
+        foreach ($indexes as $j) {
+            $other = trim($rows[$j]['fr']);
+            $len = mb_strlen($other);
+            if ($other === $fr || $len > 320 || $len < mb_strlen($fr) + 8) {
+                continue;
+            }
+            $pos = mb_stripos($other, $fr);
+            if ($pos === false || $pos < 1) {
+                continue;
+            }
+            $before = mb_substr($other, $pos - 1, 1);
+            $afterAt = $pos + mb_strlen($fr);
+            $after = $afterAt < $len ? mb_substr($other, $afterAt, 1) : ' ';
+            if (self::isWordChar($before) || self::isWordChar($after)) {
+                continue;
+            }
+            $found++;
+            if ($found > 2) {
+                return '';
+            }
+            if ($len < $bestLen) {
+                $best = $other;
+                $bestLen = $len;
+            }
+        }
+
+        return $found > 0 ? $best : '';
+    }
+
+    private static function neighbourLine(string $other, string $self): string
+    {
+        $t = trim($other);
+        if ($t === '' || $t === $self || preg_match('/^["\'<]/u', $t) === 1 || str_contains($t, 'class=')) {
+            return '';
+        }
+        if (mb_strlen($t) > 160) {
+            return '';
+        }
+
+        return $t;
+    }
+
+    private static function isWordChar(string $c): bool
+    {
+        return preg_match('/[\p{L}\p{N}]/u', $c) === 1;
     }
 
     /**

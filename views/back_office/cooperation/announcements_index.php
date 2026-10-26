@@ -11,7 +11,7 @@ $chLabels = $cooperationAnnouncementChannelLabels ?? [];
             <h1 class="mt-3 text-2xl font-black text-slate-900">Messages types — annonces coopération</h1>
         </div>
     </div>
-    <p class="text-sm text-slate-600 mb-6 max-w-3xl">Adaptez les textes envoyés par courriel, affichés dans le centre de notifications ou publiés sur le forum lors des principales étapes d’un dossier. Si vous ne personnalisez pas un couple « événement / canal », ce sont les réglages du site qui s’appliquent.</p>
+    <p class="text-sm text-slate-600 mb-6 max-w-3xl">Adaptez les textes envoyés par courriel ou affichés dans le centre de notifications lors des principales étapes d’un dossier. Si vous ne personnalisez pas un couple « événement / canal », ce sont les réglages du site qui s’appliquent.</p>
     <?php $s = \App\Core\Session::getFlash('success'); $e = \App\Core\Session::getFlash('error'); ?>
     <?php if ($s): ?><p class="text-emerald-700 text-sm mb-4"><?= htmlspecialchars($s, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if ($e): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($e, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>

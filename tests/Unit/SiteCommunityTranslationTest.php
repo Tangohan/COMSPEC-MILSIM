@@ -54,6 +54,11 @@ final class SiteCommunityTranslationTest extends TestCase
         self::assertFalse(CommunityLanguages::validCode('fr'));
         self::assertFalse(CommunityLanguages::validCode('../x'));
         self::assertFalse(CommunityLanguages::validCode('ESP'));
+        self::assertFalse(CommunityLanguages::hasShippedEnglish('Bonjour', ''));
+        self::assertFalse(CommunityLanguages::hasShippedEnglish('Bonjour', 'bonjour'));
+        self::assertTrue(CommunityLanguages::hasShippedEnglish('Bonjour', 'Hello'));
+        self::assertStringContainsString("'blank'", (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/I18n/SiteTranslationService.php'));
+        self::assertStringContainsString("case 'blank'", (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-translate.js'));
     }
 
     public function testCompiledDictionarySplitsPageTextsAndKeys(): void

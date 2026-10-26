@@ -1,7 +1,7 @@
 name = "COMSPEC ATAK";
 author = "COMSPEC";
 actionName = "Website";
-action = "https://athena.ttrd.fr/public";
+action = "https://athena-comspec.eu/public";
 logo = "logo.paa";
 logoOver = "logo.paa";
 logoSmall = "logo.paa";

@@ -36,6 +36,7 @@ final class SystemContributorsController
             'contribReady' => $ready,
             'contribRows' => $ready ? $this->repo()->allRoles() : [],
             'contribLanguages' => $ready ? $this->service()->languages() : [],
+            'contribLeaders' => $ready ? $this->repo()->translationLeaders(12) : [],
             'contribDiscordRoles' => ContributorController::DISCORD_ROLES,
             'contribBase' => self::BASE,
             'isPlatformAdminShell' => true,
@@ -43,7 +44,7 @@ final class SystemContributorsController
         ]);
     }
 
-    /** POST …/role : action accept | reject | revoke, note, langues (traducteur). */
+    /** POST …/role : action accept | reject | revoke. accept peut cocher plusieurs rôles (roles[]) pour la personne. */
     public function role(Request $request, array $params = []): Response
     {
         $adminId = (int) (ContributorController::user()['id'] ?? 0);
@@ -52,8 +53,11 @@ final class SystemContributorsController
 
             return Response::redirect(url(self::BASE));
         }
-        $row = $this->repo()->findRole((int) $request->input('id', 0));
         $action = (string) $request->input('action', '');
+        if ($action === 'accept' && is_array($request->input('roles'))) {
+            return $this->grantMany($request, $adminId);
+        }
+        $row = $this->repo()->findRole((int) $request->input('id', 0));
         if ($row === null || !in_array($action, ['accept', 'reject', 'revoke'], true)) {
             Session::flash('error', 'Demande introuvable.');
 
@@ -78,16 +82,127 @@ final class SystemContributorsController
             }
         }
         $discord = trim((string) $row['discord_handle']);
+        $label = $this->roleLabel((string) $row['role']);
+        $discordName = ContributorController::DISCORD_ROLES[(string) $row['role']] ?? '';
         $msg = match ($status) {
-            SiteContributorRepository::STATUS_ACTIVE => 'Rôle accordé.' . ($discord !== ''
-                ? ' Pensez à donner le rôle Discord « ' . (ContributorController::DISCORD_ROLES[(string) $row['role']] ?? '?') . ' » à ' . $discord . '.'
+            SiteContributorRepository::STATUS_ACTIVE => 'Rôle accordé : ' . $label . '.' . ($discord !== '' && $discordName !== ''
+                ? ' Pensez à donner le rôle Discord « ' . $discordName . ' » à ' . $discord . '.'
                 : ''),
-            SiteContributorRepository::STATUS_REJECTED => 'Demande refusée.',
-            default => 'Rôle retiré.' . ($discord !== '' ? ' Retirez aussi le rôle Discord de ' . $discord . '.' : ''),
+            SiteContributorRepository::STATUS_REJECTED => 'Demande refusée : ' . $label . '. Les autres rôles de cette personne restent en place.',
+            default => 'Rôle retiré : ' . $label . '. Les autres rôles restent en place.' . ($discord !== '' && $discordName !== ''
+                ? ' Retirez aussi le rôle Discord « ' . $discordName . ' » de ' . $discord . '.'
+                : ''),
         };
         Session::flash('success', $msg);
 
-        return Response::redirect(url(self::BASE) . '#r' . (int) $row['id']);
+        return Response::redirect(url(self::BASE) . '#u' . (int) $row['user_id']);
+    }
+
+    /**
+     * Accorde les rôles cochés. Ne retire rien : un rôle décoché, déjà actif ou non, reste tel quel.
+     */
+    private function grantMany(Request $request, int $adminId): Response
+    {
+        $userId = (int) $request->input('user_id', 0);
+        $anchor = url(self::BASE) . ($userId > 0 ? '#u' . $userId : '');
+        $picked = [];
+        foreach ((array) $request->input('roles', []) as $role) {
+            $role = (string) $role;
+            if (in_array($role, SiteContributorRepository::ROLES, true) && !in_array($role, $picked, true)) {
+                $picked[] = $role;
+            }
+        }
+        if ($picked === []) {
+            Session::flash('error', 'Cochez au moins un rôle à accorder.');
+
+            return Response::redirect($anchor);
+        }
+        if ($userId < 1 || $this->repo()->rolesOfUser($userId) === []) {
+            Session::flash('error', 'Demande introuvable.');
+
+            return Response::redirect(url(self::BASE));
+        }
+        $note = trim((string) $request->input('note', ''));
+        $languages = null;
+        if (in_array('translator', $picked, true) && $request->input('languages') !== null) {
+            $languages = implode(',', SiteContributorRepository::splitLanguages((string) $request->input('languages')));
+        }
+        $activated = [];
+        $kept = [];
+        foreach ($picked as $role) {
+            $result = $this->repo()->grantRole(
+                $userId,
+                $role,
+                $adminId,
+                $note,
+                $role === 'translator' ? $languages : null
+            );
+            if ($result === 'kept') {
+                $kept[] = $this->roleLabel($role);
+            } else {
+                $activated[] = $role;
+            }
+        }
+        if (in_array('translator', $picked, true)) {
+            $codes = SiteContributorRepository::splitLanguages((string) ($languages ?? ''));
+            if ($codes === []) {
+                foreach ($this->repo()->rolesOfUser($userId) as $row) {
+                    if ((string) $row['role'] === 'translator') {
+                        $codes = SiteContributorRepository::splitLanguages((string) $row['languages']);
+                    }
+                }
+            }
+            foreach ($codes as $code) {
+                if ($code !== CommunityLanguages::ENGLISH && $this->repo()->language($code) === null) {
+                    $this->repo()->createLanguage($code, strtoupper($code), $adminId);
+                }
+            }
+        }
+        $discord = '';
+        foreach ($this->repo()->rolesOfUser($userId) as $row) {
+            $handle = trim((string) ($row['discord_handle'] ?? ''));
+            if ($handle !== '') {
+                $discord = $handle;
+                break;
+            }
+        }
+        if ($activated === []) {
+            $msg = 'Ces rôles sont déjà actifs. Aucun autre rôle n’a été retiré.';
+        } else {
+            $labels = array_map($this->roleLabel(...), $activated);
+            $msg = 'Rôles accordés : ' . implode(', ', $labels) . '.';
+            if ($kept !== []) {
+                $msg .= ' Déjà en place : ' . implode(', ', $kept) . '.';
+            }
+            $msg .= ' Les rôles non cochés n’ont pas été modifiés.';
+            if ($discord !== '') {
+                $discordNames = [];
+                foreach ($activated as $role) {
+                    $discordName = ContributorController::DISCORD_ROLES[$role] ?? '';
+                    if ($discordName !== '') {
+                        $discordNames[] = '« ' . $discordName . ' »';
+                    }
+                }
+                if ($discordNames !== []) {
+                    $msg .= ' Pensez à donner sur Discord ' . implode(', ', $discordNames) . ' à ' . $discord . '.';
+                }
+            }
+        }
+        Session::flash('success', $msg);
+
+        return Response::redirect($anchor);
+    }
+
+    private function roleLabel(string $role): string
+    {
+        return match ($role) {
+            'translator' => 'Traducteur',
+            'tester' => 'Testeur',
+            'content' => 'Créateur de contenu',
+            'developer' => 'Développeur',
+            'support' => 'Support',
+            default => 'Contributeur',
+        };
     }
 
     /** POST …/langue : action create | save | recompile ; code, name, published. */

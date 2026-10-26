@@ -1156,6 +1156,13 @@
   width: 100%;
 }
 
+.home-impact .hi-wordmark__emblem {
+  display: block;
+  width: 1.85rem;
+  height: auto;
+  margin-right: 0.6rem;
+}
+
 .home-impact .hi-wordmark {
   display: inline-flex;
   align-items: center;

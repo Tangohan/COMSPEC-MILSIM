@@ -42,6 +42,10 @@ final class AtakTranslationTemplateTest extends TestCase
             self::assertStringContainsString("AtakTranslationPackApiController::class, '" . $action . "']", $routes);
         }
         self::assertFileExists($root . '/migrations/20261018000003_atak_translation_packs.sql');
+        self::assertFileExists($root . '/migrations/20261025000004_atak_translation_pack_owner.sql');
+        self::assertStringContainsString("\$router->get('/api/traduire-atak/compte'", $routes);
+        self::assertStringContainsString("\$router->post('/api/traduire-atak/compte'", $routes);
+        self::assertStringContainsString("\$router->post('/api/traduire-atak/packs/{id}/liens'", $routes);
 
         $fr = require $root . '/lang/fr/site.php';
         $en = require $root . '/lang/en/site.php';
@@ -62,6 +66,33 @@ final class AtakTranslationTemplateTest extends TestCase
         self::assertArrayHasKey($c, $cat['categories']);
         self::assertTrue(AtakTranslationTemplate::hasKey($h, dirname(__DIR__, 2)));
         self::assertFalse(AtakTranslationTemplate::hasKey('0000000000000000', dirname(__DIR__, 2)));
+        self::assertArrayHasKey('sse_bureau', $cat['categories']);
+        self::assertArrayHasKey('sse_seek', $cat['categories']);
+    }
+
+    public function testSsePhrasesJoinTheSameDictionary(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $raw = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/localisation/template/xx.txt');
+        $base = count(AtakTranslationTemplate::parse($raw));
+        $entries = AtakTranslationTemplate::entries($root);
+        self::assertGreaterThan($base, count($entries));
+
+        $sse = json_decode((string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/localisation/template/sse.json'), true);
+        self::assertIsArray($sse);
+        $extra = $sse['extra'][0][0] ?? '';
+        self::assertNotSame('', $extra);
+        $hash = AtakTranslationTemplate::keyHash($extra);
+        self::assertTrue(AtakTranslationTemplate::hasKey($hash, $root));
+
+        $found = false;
+        foreach (AtakTranslationTemplate::catalog($root)['entries'] as $row) {
+            if ($row[0] === $hash) {
+                $found = str_starts_with((string) $row[3], 'sse_');
+                break;
+            }
+        }
+        self::assertTrue($found);
     }
 
     public function testSharedPackInputsAreValidated(): void

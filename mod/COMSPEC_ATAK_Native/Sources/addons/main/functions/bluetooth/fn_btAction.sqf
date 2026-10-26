@@ -319,8 +319,10 @@ switch (_act) do {
         _arg params [["_type", ""], ["_a", []]];
         switch (_type) do {
             case "paired": {
-                _a params [["_uid", ""], ["_name", ""]];
+                _a params [["_uid", "", [""]], ["_name", "", [""]]];
                 if !(call _usable) exitWith {};
+                // Accepté seulement si ce téléphone affiche un code valide et que l'émetteur est à portée Bluetooth.
+                if ((_bt get "code") isEqualTo "" || {_now >= (_bt get "codeUntil")} || {!([[_uid] call _byUid] call _reach)}) exitWith {};
                 // Le code n'est valable que pour un appairage : il disparaît une fois utilisé.
                 _bt set ["code", ""];
                 call _publish;

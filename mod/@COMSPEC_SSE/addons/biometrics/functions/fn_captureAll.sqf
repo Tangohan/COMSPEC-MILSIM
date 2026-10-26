@@ -13,7 +13,7 @@ if (!_hasSeek) then {
         && {[_player, "dna"] call comspec_sse_fnc_hasEquipment}
         && {[_player, "face"] call comspec_sse_fnc_hasEquipment};
     if (!_hasKits) exitWith {
-        hint (("SEEK II / tablette compatible, ou kits empreintes + ADN + photo requis.") call comspec_sse_fnc_tr);
+        ["SEEK II / tablette compatible, ou kits empreintes + ADN + photo requis.", "WARNING"] call comspec_sse_fnc_notify;
         false
     };
 };
@@ -32,8 +32,8 @@ if (!_hasSeek) then {
                 if ([_target, _player, _x] call comspec_sse_fnc_bioApplyCapture) then { _done pushBack _x; };
             } forEach ["empreintes", "iris", "visage"];
             private _summary = [_target] call comspec_sse_fnc_getBiometricSummary;
-            hint ((format ["Capture complète : %1 sur 3 modalités.\nEmpreintes : %2\nIris : %3\nVisage : %4\nADN : prélèvement séparé (laboratoire).",
-                count _done, _summary get "fingerprint", _summary get "iris", _summary get "face"]) call comspec_sse_fnc_tr);
+            [format ["Capture complète : %1 sur 3 modalités.\nEmpreintes : %2\nIris : %3\nVisage : %4\nADN : prélèvement séparé (laboratoire).",
+                count _done, _summary get "fingerprint", _summary get "iris", _summary get "face"], ["WARNING", "SUCCESS"] select ((count _done) > 0)] call comspec_sse_fnc_notify;
             if ((count _done) > 0) then {
                 ["setstate", _target, ["PARTIALLY_EXPLOITED"]] call comspec_sse_fnc_requestServerOp;
                 if ("visage" in _done && {!isNil "comspec_overwatch_connect_fnc_sseCaptureFacePhoto"}) then {
@@ -62,7 +62,7 @@ if (!_hasSeek) then {
         };
 
         ["setstate", _target, ["PARTIALLY_EXPLOITED"]] call comspec_sse_fnc_requestServerOp;
-        hint (("Capture biométrique complète terminée.") call comspec_sse_fnc_tr);
+        ["Capture biométrique complète terminée.", "SUCCESS"] call comspec_sse_fnc_notify;
         if (!isNil "comspec_overwatch_connect_fnc_sseCaptureFacePhoto") then {
             [_target] call comspec_overwatch_connect_fnc_sseCaptureFacePhoto;
         };

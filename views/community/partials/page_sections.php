@@ -54,9 +54,6 @@ foreach ($pageLayout['blocks'] as $pbBlk) {
     }
     $pbNavHtml .= '<a href="' . htmlspecialchars($pbHref, ENT_QUOTES, 'UTF-8') . '" data-pb-nav-for="' . htmlspecialchars((string) $pbBlk['id'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($pbLabel) . '</a>';
 }
-if ($showForumCta) {
-    $pbNavHtml .= '<a href="' . htmlspecialchars($forumUrl, ENT_QUOTES, 'UTF-8') . '">Forum</a>';
-}
 echo str_replace('<!--pb-nav-links-->', $pbNavHtml, (string) ($pbTop ?? ''));
 unset($pbAnchors, $pbA, $pbHref, $pbLabel);
 

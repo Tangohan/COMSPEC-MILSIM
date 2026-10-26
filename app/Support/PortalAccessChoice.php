@@ -116,13 +116,12 @@ final class PortalAccessChoice
     }
 
     /**
-     * Pages qui servent à un compte sans organisation : tableau de bord, forum public, registre et
+     * Pages qui servent à un compte sans organisation : tableau de bord, registre et
      * création de communauté, rejoindre avec un code, sa propre fiche et son compte. Tout le reste
      * (Hub, Formations, Effectifs, back-office, manœuvres, ATAK…) ne mène qu’à des pages vides du sas.
      */
     public const NO_ORGANIZATION_PATHS = [
         'dashboard',
-        'forum',
         'communities',
         'join',
         'personnel/me',

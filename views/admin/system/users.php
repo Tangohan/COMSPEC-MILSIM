@@ -426,7 +426,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                                             'ok' => 'Retirer',
                                         ]) ?>
                                     <?php endif; ?>
-                                    <a class="pu-icon-link" href="<?= $h(url('admin/system/member-sanctions') . ($tid > 0 ? '?tenant_id=' . $tid : '')) ?>" title="Sanctions dans cette communauté (avertissement, restriction du forum…)">Sanctions</a>
+                                    <a class="pu-icon-link" href="<?= $h(url('admin/system/member-sanctions') . ($tid > 0 ? '?tenant_id=' . $tid : '')) ?>" title="Sanctions dans cette communauté (avertissement, restriction de messagerie…)">Sanctions</a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -447,7 +447,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                                 </ul>
                                 <label class="pu-dialog__field">
                                     <span>Motif (gardé dans le journal)</span>
-                                    <textarea name="reason" rows="2" required maxlength="500" placeholder="Ex. insultes répétées sur le forum, triche"></textarea>
+                                    <textarea name="reason" rows="2" required maxlength="500" placeholder="Ex. insultes répétées, triche"></textarea>
                                 </label>
                                 <fieldset class="pu-dialog__field">
                                     <legend>Bloquer aussi</legend>
@@ -524,7 +524,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                         <div><dt>Suspendre <span class="pa-pill pa-pill--mint">réversible</span></dt><dd>La personne reste membre mais ne peut plus entrer dans cette communauté. Pour une pause ou une enquête.</dd></div>
                         <div><dt>Retirer <span class="pa-pill pa-pill--mint">réversible</span></dt><dd>Elle ne fait plus partie de la communauté. Sa fiche reste visible ici avec « Retiré » et peut être réintégrée.</dd></div>
                         <div><dt>Effacer sa fiche ici <span class="pa-pill pa-pill--rose">définitif</span></dt><dd>Efface son dossier dans cette communauté (grade, rôle, dossier). Ses autres communautés et son compte restent.</dd></div>
-                        <div><dt>Sanctions</dt><dd>Avertissement, restriction du forum ou des modules, dans une communauté donnée.</dd></div>
+                        <div><dt>Sanctions</dt><dd>Avertissement, restriction de la messagerie ou des modules, dans une communauté donnée.</dd></div>
                     </dl>
                 </section>
                 <section>

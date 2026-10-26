@@ -36,7 +36,7 @@ $boHrefAllowed = static function (string $href) use ($tenantType): bool {
         : trim((string) $href, '/');
     if ($path !== '' && !\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
         $tenantOk = false;
-        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'forum/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
+        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
             $pos = strpos($path, $needle);
             if ($pos !== false) {
                 $tenantOk = \App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, substr($path, $pos));
@@ -46,6 +46,9 @@ $boHrefAllowed = static function (string $href) use ($tenantType): bool {
         if (!$tenantOk) {
             return false;
         }
+    }
+    if ($path !== '' && \App\Services\Community\TenantTypeConfig::backOfficePathHidden($tenantType, $path)) {
+        return false;
     }
 
     // Masquer les entrées sans droit (Gate), pas seulement filtrer par type de communauté.
@@ -67,7 +70,7 @@ try {
 
 $boBadges = [
     'recruitments_submitted' => 0,
-    'forum_moderation_total' => 0,
+    'reports_moderation_total' => 0,
     'personal_inbox' => 0,
     'messages_unread' => 0,
     'events_rsvp_pending' => 0,
@@ -197,7 +200,7 @@ try {
     }
     if ($boTidSide > 0 && $boUidSide > 0) {
         $uSide = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findById($boUidSide, $boTidSide);
-        if (is_array($uSide) && !empty($uSide['grade_id'])) {
+        if (is_array($uSide) && !empty($uSide['grade_id']) && !\App\Support\TenantGrades::hidden($boTidSide)) {
             $grSide = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
                 ->findById((int) $uSide['grade_id'], $boTidSide);
             if (is_array($grSide)) {

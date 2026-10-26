@@ -11,8 +11,35 @@ $user = is_array($contribUser ?? null) ? $contribUser : null;
 $ready = (bool) ($contribReady ?? false);
 $mine = is_array($contribMine ?? null) ? $contribMine : [];
 $credits = is_array($contribCredits ?? null) ? $contribCredits : [];
+$leaders = array_values(array_filter(
+    is_array($contribLeaders ?? null) ? $contribLeaders : [],
+    static fn (array $row): bool => !empty($row['public_credit'])
+));
+$podium = array_slice($leaders, 0, 3);
+$podiumIds = [];
+foreach ($podium as $i => $leader) {
+    $podiumIds[(int) ($leader['user_id'] ?? 0)] = $i;
+}
+$otherCredits = array_values(array_filter(
+    $credits,
+    static fn (array $row): bool => !isset($podiumIds[(int) ($row['user_id'] ?? 0)])
+));
+$roleLine = static function (array $roles) : string {
+    $labels = [];
+    foreach ($roles as $role) {
+        $label = __('site.contrib_role_' . $role);
+        if ($label !== 'site.contrib_role_' . $role) {
+            $labels[] = $label;
+        }
+    }
+
+    return implode(' · ', $labels);
+};
+$honors = ['sitetr_honor_1', 'sitetr_honor_2', 'sitetr_honor_3'];
 $want = (string) ($contribWant ?? '');
 $prefLang = (string) ($contribLang ?? '');
+$publicName = (string) ($contribPublicName ?? '');
+$callsign = (string) ($contribCallsign ?? '');
 $roles = [
     'translator' => '<path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6.5 8M11 5c-.6 3.4-3.2 6.6-7 8"/><path d="M13 20l4-9 4 9M14.5 17h5"/>',
     'tester' => '<path d="M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/>',
@@ -38,6 +65,49 @@ $flashErr = Session::getFlash('error');
 
     <?php if (is_string($flashOk) && $flashOk !== ''): ?><p class="ctb-msg is-ok" role="status"><?= $h($flashOk) ?></p><?php endif; ?>
     <?php if (is_string($flashErr) && $flashErr !== ''): ?><p class="ctb-msg is-bad" role="alert"><?= $h($flashErr) ?></p><?php endif; ?>
+
+    <?php if ($podium !== [] || $credits !== []): ?>
+    <section class="ctb-section ctb-showcase" id="ils-contribuent" aria-labelledby="ctb-credits-h">
+        <h2 id="ctb-credits-h" class="ctb-h2"><?= $t('credits_title') ?></h2>
+        <p class="ctb-sub"><?= $t('credits_lead') ?></p>
+        <?php if ($podium !== []): ?>
+        <ol class="ctb-podium">
+            <?php foreach ($podium as $i => $leader): ?>
+            <?php
+            $shown = is_array($leader['public_roles'] ?? null) ? $leader['public_roles'] : (is_array($leader['roles'] ?? null) ? $leader['roles'] : []);
+            $credit = null;
+            foreach ($credits as $candidate) {
+                if ((int) ($candidate['user_id'] ?? 0) === (int) ($leader['user_id'] ?? 0)) {
+                    $credit = $candidate;
+                    break;
+                }
+            }
+            if ($credit !== null && ($credit['roles'] ?? []) !== []) {
+                $shown = $credit['roles'];
+            }
+            ?>
+            <li class="ctb-podium__card is-<?= $i + 1 ?>">
+                <span class="ctb-podium__rank"><?= $i + 1 ?></span>
+                <strong class="ctb-podium__name" translate="no"><?= $h($leader['name'] ?? '') ?></strong>
+                <span class="ctb-pill ctb-pill--published"><?= $h(__('site.' . $honors[$i])) ?></span>
+                <?php if ($shown !== []): ?><span class="ctb-podium__roles"><?= $h($roleLine($shown)) ?></span><?php endif; ?>
+                <span class="ctb-podium__meta"><?= $t('leader_texts', ['n' => (int) ($leader['validated'] ?? 0)]) ?></span>
+            </li>
+            <?php endforeach; ?>
+        </ol>
+        <?php endif; ?>
+        <?php if ($otherCredits !== []): ?>
+        <ul class="ctb-credits">
+            <?php foreach ($otherCredits as $c): ?>
+            <li class="ctb-credit">
+                <strong translate="no"><?= $h($c['name']) ?></strong>
+                <span><?= $h($roleLine(is_array($c['roles'] ?? null) ? $c['roles'] : [])) ?><?php if (($c['languages'] ?? '') !== ''): ?> <span translate="no">(<?= $h(strtoupper(str_replace(',', ', ', (string) $c['languages']))) ?>)</span><?php endif; ?></span>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
 
     <section class="ctb-section" aria-labelledby="ctb-roles-h">
         <h2 id="ctb-roles-h" class="ctb-h2"><?= $t('roles_title') ?></h2>
@@ -100,13 +170,31 @@ $flashErr = Session::getFlash('error');
         <p class="ctb-sub"><?= $t('apply_lead') ?></p>
         <form method="post" action="<?= $h(url('contribuer/demande')) ?>" class="ctb-form" id="ctb-form">
             <?= Csrf::field() ?>
-            <label class="ctb-field"><span><?= $t('field_role') ?></span>
-                <select name="role" id="ctb-role" required>
+            <fieldset class="ctb-field ctb-field--wide">
+                <legend><?= $t('field_roles') ?></legend>
+                <small><?= $t('field_roles_help') ?></small>
+                <div class="ctb-choices">
                     <?php foreach (array_keys($roles) as $role): ?>
-                    <option value="<?= $role ?>" <?= $want === $role ? 'selected' : '' ?>><?= $t('role_' . $role) ?></option>
+                    <?php
+                    $mineRow = $mine[$role] ?? null;
+                    $mineStatus = is_array($mineRow) ? (string) ($mineRow['status'] ?? '') : '';
+                    $locked = in_array($mineStatus, ['active', 'pending'], true);
+                    $checked = !$locked && $want === $role;
+                    $hint = match ($mineStatus) {
+                        'active' => $t('already_active'),
+                        'pending' => $t('already_pending'),
+                        'rejected', 'revoked' => $t('reapply'),
+                        default => '',
+                    };
+                    ?>
+                    <label class="ctb-choice">
+                        <input type="checkbox" name="roles[]" value="<?= $h($role) ?>"<?= $checked ? ' checked' : '' ?><?= $locked ? ' disabled' : '' ?>>
+                        <span><strong><?= $t('role_' . $role) ?></strong><?php if ($hint !== ''): ?><em><?= $hint ?></em><?php endif; ?></span>
+                    </label>
                     <?php endforeach; ?>
-                </select></label>
-            <label class="ctb-field" id="ctb-langs-field"><span><?= $t('field_languages') ?></span>
+                </div>
+            </fieldset>
+            <label class="ctb-field ctb-field--wide" id="ctb-langs-field"><span><?= $t('field_languages') ?></span>
                 <input type="text" name="languages" maxlength="60" autocomplete="off" spellcheck="false" placeholder="es, de" value="<?= $h($prefLang) ?>">
                 <small><?= $t('field_languages_help') ?></small></label>
             <label class="ctb-field"><span><?= $t('field_discord') ?></span>
@@ -115,31 +203,27 @@ $flashErr = Session::getFlash('error');
             <label class="ctb-field ctb-field--wide"><span><?= $t('field_motivation') ?></span>
                 <textarea name="motivation" rows="4" maxlength="1500"></textarea>
                 <small><?= $t('field_motivation_help') ?></small></label>
+            <label class="ctb-field"><span><?= $t('field_public_name') ?></span>
+                <input type="text" name="public_name" maxlength="40" autocomplete="nickname" spellcheck="false" value="<?= $h($publicName) ?>" placeholder="<?= $h($callsign) ?>">
+                <small><?= $t('field_public_name_help') ?></small></label>
             <label class="ctb-check"><input type="checkbox" name="public_credit" value="1" checked> <?= $t('field_credit') ?></label>
             <div class="ctb-actions"><button type="submit" class="ctb-btn ctb-btn--primary"><?= $t('apply_submit') ?></button></div>
         </form>
         <script>
         (function () {
-            var role = document.getElementById('ctb-role');
+            var form = document.getElementById('ctb-form');
             var langs = document.getElementById('ctb-langs-field');
-            if (!role || !langs) { return; }
-            var sync = function () { langs.hidden = role.value !== 'translator'; };
-            role.addEventListener('change', sync);
+            if (!form || !langs) { return; }
+            var box = form.querySelector('input[name="roles[]"][value="translator"]');
+            var sync = function () { langs.hidden = !(box && box.checked && !box.disabled); };
+            if (box) { box.addEventListener('change', sync); }
+            form.querySelectorAll('input[name="roles[]"]').forEach(function (input) {
+                input.addEventListener('change', sync);
+            });
             sync();
         })();
         </script>
         <?php endif; ?>
     </section>
 
-    <?php if ($credits !== []): ?>
-    <section class="ctb-section" aria-labelledby="ctb-credits-h">
-        <h2 id="ctb-credits-h" class="ctb-h2"><?= $t('credits_title') ?></h2>
-        <ul class="ctb-credits">
-            <?php foreach ($credits as $c): ?>
-            <li><strong translate="no"><?= $h($c['name']) ?></strong>
-                <span><?= implode(' · ', array_map(static fn (string $r): string => htmlspecialchars(__('site.contrib_role_' . $r), ENT_QUOTES, 'UTF-8'), $c['roles'])) ?><?php if ($c['languages'] !== ''): ?> <span translate="no">(<?= $h(strtoupper(str_replace(',', ', ', $c['languages']))) ?>)</span><?php endif; ?></span></li>
-            <?php endforeach; ?>
-        </ul>
-    </section>
-    <?php endif; ?>
 </article>

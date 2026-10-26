@@ -52,7 +52,7 @@ if (_uid isEqualTo "") then {
     _uid = format ["OW-%1", _hash mod 100000000];
 
     profileNamespace setVariable ["comspec_overwatch_terminal_uid", _uid];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 
 };
 

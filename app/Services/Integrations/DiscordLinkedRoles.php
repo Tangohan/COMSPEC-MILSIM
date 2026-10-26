@@ -15,7 +15,7 @@ use App\Support\SecretCipher;
  * remplies (Paramètres du serveur › Rôles › Liens), et le profil Discord du membre affiche « Athena » avec le nom
  * de ses communautés.
  *
- * Réglages (Intégrations › Plateforme, enregistrés en base) : identifiant de l'application Discord et son secret
+ * Réglages (Administration › Intégrations de la plateforme, enregistrés en base) : identifiant de l'application Discord et son secret
  * client (chiffré). Le jeton du bot n'est jamais sur le site : la déclaration des conditions (METADATA) se fait
  * avec le script tools/discord/comspec_discord_contributors.py, sur le PC qui détient le jeton.
  *
@@ -366,7 +366,7 @@ final class DiscordLinkedRoles
     {
         $http = $this->http ??= static function (string $method, string $url, array $headers, ?string $body): array {
             $ch = curl_init($url);
-            $lines = ['User-Agent: Athena (https://athena.ttrd.fr, 1.0)'];
+            $lines = ['User-Agent: Athena (https://' . \App\Support\PortalHost::host() . ', 1.0)'];
             foreach ($headers as $k => $v) {
                 $lines[] = $k . ': ' . $v;
             }

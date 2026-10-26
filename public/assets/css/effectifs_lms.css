@@ -1831,6 +1831,29 @@ div.eff-role-grid {
     padding: 0.35rem 0;
 }
 
+.eff-access-group h2 .eff-access-group__all {
+    display: inline-flex;
+    align-items: center;
+    font-size: inherit;
+    font-weight: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+
+.eff-access-all {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    margin: 0 0 1rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.6rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #0f172a;
+    cursor: pointer;
+}
+
 .eff-access-editor__save {
     position: sticky;
     bottom: 0.5rem;

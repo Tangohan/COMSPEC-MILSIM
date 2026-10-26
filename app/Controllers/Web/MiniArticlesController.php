@@ -110,6 +110,7 @@ final class MiniArticlesController
             'pinned' => !empty($row['pinned']),
             'published_at' => isset($row['published_at']) ? (string) $row['published_at'] : null,
             'href' => url('articles/' . rawurlencode((string) ($row['slug'] ?? ''))),
+            'reading_minutes' => max(1, (int) ceil(count(preg_split('/\s+/u', trim(strip_tags((string) ($row['body_html'] ?? ''))), -1, PREG_SPLIT_NO_EMPTY) ?: []) / 200)),
         ];
     }
 }

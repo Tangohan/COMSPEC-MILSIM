@@ -53,12 +53,10 @@ final class TenantTypeSwitchService
             if ($newType === TenantTypeConfig::TYPE_FULL) {
                 $this->ensureFullSeeds($pdo, $tenantId);
             } elseif ($newType === TenantTypeConfig::TYPE_EFFECTIFS) {
-                TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-                TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+                TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
                 TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
             } elseif ($newType === TenantTypeConfig::TYPE_ATAK) {
-                TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-                TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+                TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
             }
 
             try {
@@ -76,6 +74,17 @@ final class TenantTypeSwitchService
                 $pdo->rollBack();
             }
             throw $e;
+        }
+
+        if (TenantTypeConfig::recruitsOnDiscordOnly($newType)) {
+            // Sans module recrutement, on rejoint la communauté par Discord : le formulaire du site s’efface.
+            try {
+                $settings = $this->tenantRepository->getSettings($tenantId);
+                $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+                $community['registration_mode'] = TenantCommunityProfileService::REGISTRATION_MODE_DISCORD;
+                $this->tenantRepository->mergeSettings($tenantId, ['community' => $community]);
+            } catch (\Throwable) {
+            }
         }
 
         return [
@@ -98,8 +107,7 @@ final class TenantTypeSwitchService
 
     private function ensureFullSeeds(PDO $pdo, int $tenantId): void
     {
-        TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-        TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+        TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
         TenantSeedHelper::seedDocumentsEquipment($pdo, $tenantId);
         TenantSeedHelper::ensureSystemAdminPermissions($pdo, $tenantId);
         TenantSeedHelper::ensureTenantPermissionCatalog($pdo, $tenantId);

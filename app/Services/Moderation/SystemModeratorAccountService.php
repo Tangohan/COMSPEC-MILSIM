@@ -9,7 +9,7 @@ use App\Repositories\UserRepository;
 /**
  * Compte technique par tenant pour attribuer les actions automatiques en base (audit, moderation_decisions).
  *
- * Usage prévu : expiration quarantaine, futurs jobs forum/tickets, intégrations (Discord), masquage / suppression auto.
+ * Usage prévu : expiration quarantaine, futurs jobs tickets, intégrations (Discord), masquage / suppression auto.
  * Email réservé : {@see UserRepository::SYSTEM_MODERATOR_EMAIL} — connexion interdite ({@see AuthService::attempt}).
  */
 final class SystemModeratorAccountService

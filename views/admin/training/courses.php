@@ -158,4 +158,30 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                     </table>
                 </div>
                 <?php endif; ?>
+                <?php
+                $platformCourses = is_array($platformCourses ?? null) ? $platformCourses : [];
+                $hiddenPlatform = array_flip(is_array($hiddenPlatformSlugs ?? null) ? $hiddenPlatformSlugs : []);
+                ?>
+                <?php if ($platformCourses !== [] && $trainingCanEditShowcaseOrCatalog): ?>
+                <section class="mt-8 rounded-2xl border border-slate-200 bg-white p-5" aria-labelledby="tc-platform-heading">
+                    <h2 id="tc-platform-heading" class="text-sm font-black uppercase tracking-wide text-slate-700">Parcours fournis par la plateforme</h2>
+                    <p class="mt-1 text-sm text-slate-500">Ces parcours Athena apparaissent dans votre catalogue et sur le tableau de bord. Masquez ceux dont votre communauté n’a pas besoin.</p>
+                    <ul class="mt-4 divide-y divide-slate-100">
+                        <?php foreach ($platformCourses as $pc):
+                            $pcSlug = strtolower(trim((string) ($pc['slug'] ?? '')));
+                            $pcHidden = isset($hiddenPlatform[$pcSlug]);
+                        ?>
+                        <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+                            <span class="text-sm font-semibold <?= $pcHidden ? 'text-slate-400 line-through' : 'text-slate-800' ?>"><?= htmlspecialchars((string) ($pc['title'] ?? $pcSlug)) ?></span>
+                            <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('courses/plateforme/visibilite')) ?>">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="slug" value="<?= htmlspecialchars($pcSlug) ?>">
+                                <input type="hidden" name="hidden" value="<?= $pcHidden ? '0' : '1' ?>">
+                                <button type="submit" class="tc-course-actions__btn <?= $pcHidden ? '' : 'tc-course-actions__btn--warn' ?>"><?= $pcHidden ? 'Réafficher' : 'Masquer' ?></button>
+                            </form>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+                <?php endif; ?>
 <?php require base_path('views/admin/training/partials/command_shell_close.php'); ?>

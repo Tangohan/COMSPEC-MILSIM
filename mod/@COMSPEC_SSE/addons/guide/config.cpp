@@ -35,6 +35,13 @@ class CfgFunctions {
     };
 };
 
+// Exercice Zeus posé par le serveur ; demandeur retrouvé par remoteExecutedOwner.
+class CfgRemoteExec {
+    class Functions {
+        class comspec_sse_fnc_guideExercise { allowedTargets = 2; jip = 0; };
+    };
+};
+
 class Extended_PostInit_EventHandlers {
     class comspec_sse_guide {
         init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\guide\XEH_postInit.sqf'";

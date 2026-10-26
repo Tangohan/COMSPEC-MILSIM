@@ -34,10 +34,10 @@ final class RolePermissionMatrixApiController
         }
 
         $filters = [
-            'q' => trim((string) $request->query('q', '')),
-            'scope' => trim((string) $request->query('scope', '')),
-            'level' => trim((string) $request->query('level', '')),
-            'active' => trim((string) $request->query('active', '')),
+            'q' => trim($request->queryString('q', '')),
+            'scope' => trim($request->queryString('scope', '')),
+            'level' => trim($request->queryString('level', '')),
+            'active' => trim($request->queryString('active', '')),
         ];
         $data = $this->matrix->listMatrix($tenantId, $filters);
 
@@ -93,10 +93,10 @@ final class RolePermissionMatrixApiController
         }
 
         $filters = [
-            'q' => trim((string) $request->query('q', '')),
-            'scope' => trim((string) $request->query('scope', '')),
-            'level' => trim((string) $request->query('level', '')),
-            'active' => trim((string) $request->query('active', '')),
+            'q' => trim($request->queryString('q', '')),
+            'scope' => trim($request->queryString('scope', '')),
+            'level' => trim($request->queryString('level', '')),
+            'active' => trim($request->queryString('active', '')),
         ];
         $data = $this->matrix->listMatrix($tenantId, $filters);
 

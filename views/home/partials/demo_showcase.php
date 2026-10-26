@@ -83,7 +83,7 @@ $first = array_key_first($tabs);
             <div class="hd-window">
                 <div class="hd-chrome" aria-hidden="true">
                     <span class="hd-dots"><i></i><i></i><i></i></span>
-                    <span class="hd-url">athena.ttrd.fr/c/tf-orion/<b data-hd-path><?= $e($tabs[$first]['path']) ?></b></span>
+                    <span class="hd-url"><?= $e(\App\Support\PortalHost::host()) ?>/c/tf-orion/<b data-hd-path><?= $e($tabs[$first]['path']) ?></b></span>
                     <span class="hd-chrome__badge"><?= $e($d('badge')) ?></span>
                 </div>
                 <div class="hd-app">

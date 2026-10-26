@@ -14,6 +14,12 @@ if !([] call comspec_atak_native_fnc_bridge) exitWith {
 };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+// Avis gardés en uiNamespace : ceux d'une mission précédente (autre serveur possible) sont oubliés à la première ouverture.
+if (isNil { missionNamespace getVariable "COMSPEC_ATAK_WantedMission" }) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_WantedMission", true];
+    uiNamespace setVariable ["COMSPEC_ATAK_Wanted", nil];
+    uiNamespace setVariable ["COMSPEC_ATAK_WantedImg", nil];
+};
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Wanted", []];
 if ((count _data) isEqualTo 0) then {
     uiNamespace setVariable ["COMSPEC_ATAK_Wanted", [[], "", ""]];

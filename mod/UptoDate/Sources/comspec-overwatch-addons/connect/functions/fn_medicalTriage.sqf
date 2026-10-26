@@ -9,6 +9,9 @@ params [
 ];
 
 if (!hasInterface) exitWith {};
+// Requête HTTP synchrone dans la DLL : depuis un contexte non suspendable (bouton, action), on relance en spawn
+// pour passer par extAwait (appel asynchrone) au lieu de figer le jeu le temps de la réponse Athena.
+if (!canSuspend) exitWith { [_status, _alertIdOverride] spawn comspec_overwatch_connect_fnc_medicalTriage; };
 
 if !([] call comspec_overwatch_connect_fnc_canTriageMedical) exitWith {
     ["COMSPEC_Warning", ["Seul un médecin ou un chef d’équipe peut faire le triage des alertes."]] call comspec_overwatch_connect_fnc_showNotification;
@@ -40,7 +43,8 @@ if (_alertId isEqualTo "") then {
             if (_idx >= 0 && {_idx < count _entries}) then {
                 (_entries select _idx) params ["_kind", "", "", "", ["_meta", []]];
                 if (_kind isEqualTo "medical" && {(_meta isEqualType []) && {(count _meta) > 0}}) then {
-                    _alertId = str (_meta select 0);
+                    _alertId = _meta select 0;
+                    if (!(_alertId isEqualType "")) then { _alertId = str _alertId; };
                 };
             };
         };
@@ -59,7 +63,7 @@ if !(_statusNorm in ["a_secourir", "en_cours", "traite", "kia", "annule"]) exitW
 private _by = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_by isEqualTo "") then { _by = name player; };
 
-private _raw = ["COMSPECExtension" callExtension ["TriageMedicalAlert", [_alertId, _statusNorm, _by]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [["COMSPECExtension", "TriageMedicalAlert", [_alertId, _statusNorm, _by]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith {
     ["COMSPEC_Warning", ["Impossible de joindre Athena pour le triage."]] call comspec_overwatch_connect_fnc_showNotification;
 };
@@ -92,7 +96,9 @@ private _label = switch (_statusNorm) do {
 private _alerts = missionNamespace getVariable ["COMSPEC_MedicalAlerts", []];
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    if ((str (_x getOrDefault ["id", ""])) isEqualTo _alertId) exitWith {
+    private _aid = _x getOrDefault ["id", ""];
+    if (!(_aid isEqualType "")) then { _aid = str _aid; };
+    if (_aid isEqualTo _alertId) exitWith {
         _x set ["triage_status", _statusNorm];
         _x set ["triage_label", _label];
     };

@@ -318,6 +318,7 @@ final class ConfigurationUpdateService
             $pdo->prepare(
                 'UPDATE tenants SET configuration_schema_version = ? WHERE id = ?'
             )->execute([self::CURRENT_SCHEMA_VERSION, $tenantId]);
+            $this->tenants->forgetCache();
         } catch (\Throwable) {
             // colonne absente tant que migration non jouée
         }

@@ -275,8 +275,8 @@ final class SitePagesController
     }
 
     /**
-     * Atelier public de traduction de l'ATAK natif : tout se passe dans le navigateur (lecture du modèle, saisie,
-     * vérification, création de l'addon et du zip). Rien n'est envoyé au serveur, aucun compte n'est demandé.
+     * Atelier public : téléphone ATAK et écrans du mod SSE. Un visiteur garde le travail sur son appareil.
+     * Un membre connecté le retrouve sur son compte. Un pack partagé s'ouvre toujours par son lien.
      */
     public function translateAtak(Request $request, array $params = []): Response
     {
@@ -289,8 +289,8 @@ final class SitePagesController
             'title' => __('site.atakt_meta_title'),
             'meta_description' => __('site.atakt_meta_description'),
             'marketingActive' => 'traduire-atak',
-            'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=3'],
-            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=4'],
+            'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=4'],
+            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=6'],
         ]);
     }
 

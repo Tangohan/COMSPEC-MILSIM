@@ -13,62 +13,13 @@ final class MiniArticleHtml
 
     public static function sanitize(string $html): string
     {
-        $html = preg_replace('#<(script|iframe|object|embed|form|style)\b[^>]*>.*?</\1>#is', '', $html) ?? $html;
-        $html = preg_replace('/\bon\w+\s*=\s*(["\']).*?\1/iu', '', $html) ?? $html;
-        $html = strip_tags(
-            $html,
-            '<p><br><strong><b><em><i><u><ul><ol><li><h2><h3><h4><blockquote><a><img><table><thead><tbody><tr><th><td><div><span><hr>'
-        );
-
-        $html = preg_replace_callback(
-            '#<a\b([^>]*)>#i',
-            static function (array $m): string {
-                $attrs = $m[1];
-                $href = '';
-                if (preg_match('/\bhref\s*=\s*(["\'])(.*?)\1/i', $attrs, $hm)) {
-                    $href = trim((string) $hm[2]);
-                }
-                if ($href === '' || preg_match('#^(javascript|data|vbscript):#i', $href)) {
-                    return '<a>';
-                }
-                // Délimiteur ~ : un # dans le motif (ancre) ne doit pas clôturer le pattern.
-                if (!preg_match('~^(https?://|/|#|mailto:)~i', $href)) {
-                    return '<a>';
-                }
-
-                return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" rel="noopener noreferrer">';
-            },
-            $html
-        ) ?? $html;
-
-        $html = preg_replace_callback(
-            '#<img\b([^>]*)>#i',
-            static function (array $m): string {
-                $attrs = $m[1];
-                $src = '';
-                if (preg_match('/\bsrc\s*=\s*(["\'])(.*?)\1/i', $attrs, $sm)) {
-                    $src = trim((string) $sm[2]);
-                }
-                if ($src === '' || preg_match('#^(javascript|data|vbscript):#i', $src)) {
-                    return '';
-                }
-                if (!preg_match('#^(https?://|/|uploads/)#i', $src)) {
-                    return '';
-                }
-                $alt = '';
-                if (preg_match('/\balt\s*=\s*(["\'])(.*?)\1/i', $attrs, $am)) {
-                    $alt = trim((string) $am[2]);
-                }
-
-                return '<img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8')
-                    . '" alt="' . htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') . '">';
-            },
-            $html
-        ) ?? $html;
-
+        // Coupe avant nettoyage : une troncature après coup pourrait laisser une balise ouverte.
         if (strlen($html) > self::MAX_BODY) {
             $html = substr($html, 0, self::MAX_BODY);
         }
+        // Parcours DOM à liste blanche : tout attribut non prévu (on*, avec ou sans guillemets) est retiré,
+        // href/src sont vérifiés et style est limité à des propriétés de mise en forme.
+        $html = SafeHtml::clean($html, SafeHtml::PROFILE_ARTICLE);
 
         return trim($html);
     }

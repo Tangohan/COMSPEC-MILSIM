@@ -68,19 +68,33 @@ private _title = _slide select 1;
 
 
 
-// Téléchargement bloquant (cache extension)
+// Téléchargement hors du thread du jeu (extAwait dans downloadBriefingSlide) : l'onLoad du dialog
 
-private _path = [_slide] call comspec_overwatch_connect_fnc_downloadBriefingSlide;
+// et chaque pas de diapositive figeaient la partie le temps du HTTP. On applique l'image au retour,
 
+// seulement si l'UI est encore ouverte et que la diapositive affichée n'a pas changé entre-temps.
 
+[_slide, _title, _index, count _slides] spawn {
 
-if (_path != "") then {
+    params ["_slide", "_title", "_index", "_total"];
 
-    [_path, _title, _index, count _slides] call comspec_overwatch_connect_fnc_applyGoogleBriefingSlide;
+    private _path = [_slide] call comspec_overwatch_connect_fnc_downloadBriefingSlide;
 
-} else {
+    if (missionNamespace getVariable ["COMSPEC_GoogleBriefingActive", false]) exitWith {};
 
-    ["COMSPEC_Warning", ["Impossible de charger cette diapositive (réseau ou cache indisponible)."]] call comspec_overwatch_connect_fnc_showNotification;
+    if ((missionNamespace getVariable ["COMSPEC_BriefingSlideIndex", -1]) != _index) exitWith {};
+
+    if (isNull (uiNamespace getVariable ["COMSPEC_ATAK_Briefing_group", controlNull]) && {isNull (findDisplay 9970)}) exitWith {};
+
+    if (_path != "") then {
+
+        [_path, _title, _index, _total] call comspec_overwatch_connect_fnc_applyGoogleBriefingSlide;
+
+    } else {
+
+        ["COMSPEC_Warning", ["Impossible de charger cette diapositive (réseau ou cache indisponible)."]] call comspec_overwatch_connect_fnc_showNotification;
+
+    };
 
 };
 

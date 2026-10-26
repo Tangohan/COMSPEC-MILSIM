@@ -35,8 +35,6 @@ final class CooperationConsentTest extends TestCase
         self::assertStringContainsString("mb_strlen(\$justification) < 10", $c);
         $repo = (string) file_get_contents($root . '/app/Repositories/InterteamMissionRepository.php');
         self::assertStringContainsString("return \$this->consentStatus(\$missionId, \$userId)['state'] === 'valid';", $repo);
-        $mw = (string) file_get_contents($root . '/app/Middleware/InterteamCooperationConsentMiddleware.php');
-        self::assertStringContainsString("'expired'", $mw);
         $view = (string) file_get_contents($root . '/views/back_office/cooperation/missions/consent.php');
         self::assertStringContainsString('autocomplete="one-time-code"', $view);
         self::assertStringContainsString('data-consent-all', $view);

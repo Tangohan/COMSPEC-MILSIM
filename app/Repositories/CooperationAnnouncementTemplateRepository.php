@@ -83,7 +83,6 @@ final class CooperationAnnouncementTemplateRepository
             'channel' => $channel,
             'subject' => null,
             'body' => '',
-            'forum_settings_json' => null,
             'min_interval_hours' => 24,
             'is_active' => 0,
         ];
@@ -107,23 +106,17 @@ final class CooperationAnnouncementTemplateRepository
     {
         $subject = isset($data['subject']) ? substr(trim((string) $data['subject']), 0, 255) : null;
         $body = trim((string) ($data['body'] ?? ''));
-        $forumJson = null;
-        if (isset($data['forum_settings_json'])) {
-            $forumJson = is_string($data['forum_settings_json'])
-                ? $data['forum_settings_json']
-                : json_encode($data['forum_settings_json'], JSON_UNESCAPED_UNICODE);
-        }
         $minH = max(0, min(168, (int) ($data['min_interval_hours'] ?? 24)));
         $active = !empty($data['is_active']) ? 1 : 0;
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO cooperation_announcement_templates
-            (tenant_id, event_key, channel, subject, body, forum_settings_json, min_interval_hours, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-            ON DUPLICATE KEY UPDATE subject = VALUES(subject), body = VALUES(body), forum_settings_json = VALUES(forum_settings_json),
+            (tenant_id, event_key, channel, subject, body, min_interval_hours, is_active, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE subject = VALUES(subject), body = VALUES(body),
             min_interval_hours = VALUES(min_interval_hours), is_active = VALUES(is_active), updated_at = NOW()'
         );
-        $stmt->execute([$tenantId, $eventKey, $channel, $subject !== '' ? $subject : null, $body, $forumJson, $minH, $active]);
+        $stmt->execute([$tenantId, $eventKey, $channel, $subject !== '' ? $subject : null, $body, $minH, $active]);
     }
 
     public function delete(int $tenantId, string $eventKey, string $channel): void

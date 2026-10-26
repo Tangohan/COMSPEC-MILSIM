@@ -2,6 +2,18 @@
     Envoie une demande MEDEVAC depuis le mini-formulaire (nombre, gravité, grille, notes).
 */
 if (!hasInterface) exitWith {};
+// Bouton = contexte non planifié : on passe en spawn pour que requestMEDEVAC (POST synchrone) passe
+// par extAwait sans figer le jeu, en gardant son retour (fermeture du formulaire si succès).
+// Le verrou évite un double envoi si le bouton est recliqué pendant l'attente.
+if (!canSuspend) exitWith {
+    // Verrou horodaté (uiNamespace survit à la mission : un spawn tué en fin de partie ne doit pas bloquer le bouton).
+    if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_Medevac_Submitting", -1e9]) < 30) exitWith {};
+    uiNamespace setVariable ["COMSPEC_Medevac_Submitting", diag_tickTime];
+    [] spawn {
+        [] call comspec_overwatch_connect_fnc_medevacDialogSubmit;
+        uiNamespace setVariable ["COMSPEC_Medevac_Submitting", -1e9];
+    };
+};
 
 private _disp = uiNamespace getVariable ["COMSPEC_Medevac_Display", displayNull];
 if (isNull _disp) then { _disp = findDisplay 9987; };

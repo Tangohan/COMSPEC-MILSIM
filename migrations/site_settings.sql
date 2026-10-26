@@ -1,4 +1,4 @@
--- Table site_settings (paramètres par tenant, ex. forum_*)
+-- Table site_settings (paramètres par tenant)
 -- À exécuter si la table n'existe pas (ex. base créée avant son ajout au schema).
 -- Exemple : mysql -u ... -p ... < migrations/site_settings.sql
 

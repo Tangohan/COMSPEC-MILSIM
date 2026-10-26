@@ -549,7 +549,7 @@ if (!function_exists('app_environment_label_fr')) {
 
 if (!function_exists('email_config')) {
     /**
-     * Envoi commun de la plateforme. Le compte réglé par l'administrateur dans Intégrations > Plateforme
+     * Envoi commun de la plateforme. Le compte réglé par l'administrateur dans Administration › Intégrations de la plateforme
      * (platform_settings) l'emporte ; les réglages MAIL_* du .env ne servent plus que de secours.
      *
      * @return array<string, mixed>
@@ -579,7 +579,7 @@ if (!function_exists('email_file_mailer_notice')) {
         $m = strtolower((string) (email_config()['default_mailer'] ?? ''));
 
         return $m === 'file'
-            ? 'Le courrier est en mode « fichier » : les messages sont enregistrés dans storage/mail-outbox/ sur le serveur, ils ne partent pas sur Internet. Pour un envoi réel, chaque communauté peut saisir son compte d’envoi dans Intégrations > E-mails, et l’administrateur de la plateforme règle l’envoi commun dans Intégrations > Plateforme (plus besoin du .env).'
+            ? 'Le courrier est en mode « fichier » : les messages sont enregistrés dans storage/mail-outbox/ sur le serveur, ils ne partent pas sur Internet. Pour un envoi réel, chaque communauté peut saisir son compte d’envoi dans Intégrations > E-mails, et l’administrateur de la plateforme règle l’envoi commun dans Administration › Intégrations de la plateforme (plus besoin du .env).'
             : '';
     }
 }
@@ -1520,7 +1520,8 @@ if (!function_exists('portal_nav_href_permission_allowed')) {
 
         if (function_exists('navigation_current_tenant_type')) {
             $tenantType = navigation_current_tenant_type();
-            if (!\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
+            if (!\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)
+                || \App\Services\Community\TenantTypeConfig::backOfficePathHidden($tenantType, $path)) {
                 return false;
             }
         }
@@ -1653,7 +1654,7 @@ if (!function_exists('is_formation_workspace_request')) {
 if (!function_exists('is_platform_site_admin_shell_request')) {
     /**
      * Pages d’administration « site entier » (pilotage / infra) avec barre latérale dédiée.
-     * Les outils de la communauté active vivent sous /back-office (modpacks, ATAK, forum…) :
+     * Les outils de la communauté active vivent sous /back-office (modpacks, ATAK…) :
      * tout ce qui reste sous /admin relève de l’administrateur de la plateforme.
      */
     function is_platform_site_admin_shell_request(): bool
@@ -2085,13 +2086,6 @@ if (!function_exists('detect_current_module')) {
      */
     function detect_current_module(string $path): ?string
     {
-        if (preg_match('#^/c/[^/]+/forum#', $path) === 1) {
-            return 'forum';
-        }
-        if (str_starts_with($path, '/forum') || str_starts_with($path, '/api/forum')) {
-            return 'forum';
-        }
-
         // Aligné sur TenantTypeConfig::moduleForUri — les règles plateforme « module carte » couvrent toute la surface ATAK.
         $atakPrefixes = [
             '/atak', '/tacmap', '/overwatch', '/c2',
@@ -2512,4 +2506,5 @@ if (!function_exists('email_for_display')) {
     }
 }
 
-require __DIR__ . '/forum_helpers.php';
+require __DIR__ . '/markdown_helpers.php';
+require __DIR__ . '/moderation_helpers.php';

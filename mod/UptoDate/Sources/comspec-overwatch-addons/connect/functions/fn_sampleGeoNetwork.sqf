@@ -250,7 +250,7 @@ if (!(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])) then {
     _saved set [3, count _places];
     _saved set [4, count _roads];
     profileNamespace setVariable [_countKey, _saved];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
     if (_ownsBusy || {missionNamespace getVariable ["COMSPEC_TheaterGeoOwnsBusy", false]}) then {
         missionNamespace setVariable ["COMSPEC_TheaterSampling", false, false];
         missionNamespace setVariable ["COMSPEC_TheaterGeoOwnsBusy", false, false];

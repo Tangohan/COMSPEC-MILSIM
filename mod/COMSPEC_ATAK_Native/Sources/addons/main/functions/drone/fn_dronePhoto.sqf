@@ -34,7 +34,7 @@ params [["_act", "list"], ["_arg", -1]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
 if !(_lib isEqualType []) then { _lib = []; };
-private _store = { profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _lib]; saveProfileNamespace; };
+private _store = { profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _lib]; [] call comspec_atak_native_fnc_saveProfile; };
 // Page redessinée : app Drone, ou app Galerie ( : les clichés du drone y sont envoyés et supprimés aussi).
 private _render = { [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
@@ -268,7 +268,7 @@ switch (_act) do {
             showHUD _hud;
             // La vue plein écran a pu dérégler le rendu de la nacelle : caméra et cible neuves au prochain dessin.
             private _c2 = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
-            if (!isNull _c2) then { _c2 setVariable ["rendering", false]; };
+            if (!isNull _c2) then { [_c2, "rendering", false, true] call comspec_atak_native_fnc_camVar; };
             missionNamespace setVariable ["COMSPEC_ATAK_DroneShotBusy", false];
             if (!_ok) exitWith {
                 ["WARNING", "Cliché refusé par le jeu : passez la qualité HDR au moins sur Moyen (options vidéo), puis recommencez", 6, 40] call comspec_atak_native_fnc_notify;
@@ -282,7 +282,7 @@ switch (_act) do {
                 [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd, "DRAFT", "", round ((getPosATL _d) select 2), round (getDirVisual _d) mod 360, format ["%1-%2-%3", _yy, _mo, _dd], getPosASL _d, _pose];
             while { (count _lib) > 40 } do { _lib deleteAt 0; };
             profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _lib];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
             // Fiche du cliché : fenêtre de transmission plein écran ; le viseur se referme, surlignages oubliés.
             private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             _s set ["dronePhEdit", (count _lib) - 1];
@@ -396,7 +396,7 @@ switch (_act) do {
             _b ctrlSetFontHeight (_fs * 0.95);
             if (_on) then { _b ctrlSetBackgroundColor _onCol; _b ctrlSetTextColor [1, 1, 1, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; };
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
-            _b ctrlAddEventHandler ["ButtonClick", compile format ["['flag', %1] call comspec_atak_native_fnc_dronePhoto;", str _flag]];
+            [_b, compile format ["['flag', %1] call comspec_atak_native_fnc_dronePhoto;", str _flag]] call comspec_atak_native_fnc_clickNext;
         } forEach [
             ["SSE", _sse, "sse", [0.85, 0.55, 0.12, 1], "Exploitation de site : rattache le cliché au dossier SSE actif (app SSE)"],
             ["CONFIDENTIEL", _cf, "conf", [0.78, 0.2, 0.16, 1], "Marqué [CONFIDENTIEL] en tête de la légende sur Athena"]
@@ -419,7 +419,7 @@ switch (_act) do {
             _b ctrlSetFontHeight (_fs * 1.0);
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
             _b ctrlEnable _en;
-            _b ctrlAddEventHandler ["ButtonClick", _code];
+            [_b, _code] call comspec_atak_native_fnc_clickNext;
             if (_forEachIndex isEqualTo 0 && {_delOn}) then { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 1]; };
             _bx = _bx + (_bws select _forEachIndex) + _pad / 2;
         } forEach [
@@ -475,10 +475,12 @@ switch (_act) do {
             [_pos, _spPos] select ((count _pos) < 3 && {(count _spPos) >= 3}), _hdg, _extra, _spDir]] select _withMeta;
         [{
             params ["_file", "_caption", "_feed", "_meta"];
-            private _ok = [_file, _caption, "UAV", _feed, true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage;
+            private _ok = if (isNil "comspec_overwatch_connect_fnc_captureReconImage") then { false } else {
+                [_file, _caption, "UAV", _feed, true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage
+            };
             private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
             private _j = _lib findIf { (_x select 0) isEqualTo _file };
-            if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select (_ok isEqualTo true)]; saveProfileNamespace; };
+            if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select (_ok isEqualTo true)]; [] call comspec_atak_native_fnc_saveProfile; };
             [["WARNING", "SUCCESS"] select (_ok isEqualTo true), ["Cliché du drone non envoyé : voir le détail dans Photos", "Cliché du drone en cours d'envoi vers Athena"] select (_ok isEqualTo true), 4, 30] call comspec_atak_native_fnc_notify;
             ["log", format ["Cliché %1 : %2", _file, ["envoi refusé", "envoyé vers Athena"] select (_ok isEqualTo true)], ["#e5483a", "#5cc76b"] select (_ok isEqualTo true)] call comspec_atak_native_fnc_droneAction;
             [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;

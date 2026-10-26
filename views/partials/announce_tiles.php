@@ -33,7 +33,6 @@ $kindLabelFr = static function (string $kind): string {
         'novelty' => 'Nouveau',
         'discount' => 'Promotion',
         'notice' => 'Annonce',
-        'forum_pin' => 'Épinglé',
         default => 'Information',
     };
 };
@@ -41,7 +40,6 @@ $kindLabelFr = static function (string $kind): string {
 $announcePriority = static function (array $item): int {
     return match (strtolower(trim((string) ($item['kind'] ?? 'info')))) {
         'urgent', 'security' => 0,
-        'forum_pin' => 1,
         'notice' => 2,
         'novelty' => 3,
         'discount' => 4,
@@ -133,10 +131,7 @@ $hEsc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8
                     <?php foreach ($announceItems as $item): ?>
                         <?php
                         $kind = strtolower(trim((string) ($item['kind'] ?? 'info')));
-                        $isPinned = in_array($kind, ['forum_pin', 'notice'], true);
-                        if ($kind === 'forum_pin') {
-                            $kind = 'notice';
-                        }
+                        $isPinned = $kind === 'notice';
                         $rawKind = $kind;
                         /* Types étendus des annonces communauté : même couleur que la famille la plus proche, libellé d’origine. */
                         $kind = match ($kind) {

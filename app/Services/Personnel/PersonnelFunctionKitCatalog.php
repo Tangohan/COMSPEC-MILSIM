@@ -32,11 +32,10 @@ final class PersonnelFunctionKitCatalog
             [
                 'id' => 'lecture',
                 'label' => 'Lecture',
-                'summary' => 'Consulter le forum, les documents standards, les formations et l’annuaire.',
+                'summary' => 'Consulter les documents standards, les formations et l’annuaire.',
                 'tone' => 'lecture',
                 'role_slug' => self::ROLE_SLUG_PREFIX . 'lecture',
                 'permission_slugs' => [
-                    'forum.view',
                     'documents.view',
                     'documents.download.standard',
                     'training.view',
@@ -46,11 +45,10 @@ final class PersonnelFunctionKitCatalog
             [
                 'id' => 'lecture_modification',
                 'label' => 'Lecture et modification',
-                'summary' => 'Participer au forum, déposer des documents et mettre à jour les fiches.',
+                'summary' => 'Déposer des documents et mettre à jour les fiches.',
                 'tone' => 'modification',
                 'role_slug' => self::ROLE_SLUG_PREFIX . 'lecture_modification',
                 'permission_slugs' => [
-                    'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
                     'documents.view', 'documents.download.standard', 'documents.upload', 'documents.metadata.update',
                     'training.view',
                     'personnel.profile.view', 'personnel.profile.update',

@@ -53,7 +53,6 @@ final class UserIdentityMergeRules
         'password_resets',
         'user_login_devices',
         'user_alert_dismissals',
-        'user_forum_stats',
         'user_totp_recovery_codes',
     ];
 

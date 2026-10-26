@@ -95,7 +95,8 @@ final class SseAccessCodeService
             'clearance_level' => $clearanceLevel,
             'case_id' => $caseId,
             'created_by' => $createdBy,
-            'expires_at' => date('Y-m-d H:i:s', time() + $ttlHours * 3600),
+            // En UTC : la validation compare à NOW() (session +00:00).
+            'expires_at' => gmdate('Y-m-d H:i:s', time() + $ttlHours * 3600),
             'session_ttl_minutes' => $sessionTtlMinutes,
             'max_uses' => $maxUses,
         ]);

@@ -34,7 +34,7 @@ $kpiLabelFr = static function (string $id, string $fallback): string {
         'members_no_role' => 'Sans rôle communautaire',
         'active_30d' => 'Actifs sur 30 jours',
         'training_expiring' => 'Formations à échéance (30 j.)',
-        'moderation_open' => 'Signalements forum à traiter',
+        'moderation_open' => 'Signalements membres à traiter',
         default => $fallback !== '' ? $fallback : 'Indicateur',
     };
 };
@@ -91,9 +91,7 @@ $kpiHref = static function (string $id) use ($moreUrl): array {
         'members_no_unit' => [url('back-office/users') . '?filter_no_unit=1', 'Corriger'],
         'members_no_role' => [url('back-office/users') . '?filter_no_role=1', 'Corriger'],
         'training_expiring' => [training_lms_admin_url(), 'Ouvrir'],
-        'moderation_open' => (function_exists('forum_public_nav_visible') && !forum_public_nav_visible())
-            ? ['', '']
-            : [url('back-office/forum-moderation'), 'Traiter'],
+        'moderation_open' => [url('back-office/signalements'), 'Traiter'],
         default => ['', ''],
     };
 };

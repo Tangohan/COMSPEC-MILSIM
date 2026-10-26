@@ -118,6 +118,30 @@ class Request
         return $this->request[$key] ?? $default;
     }
 
+    /**
+     * Paramètre de requête en chaîne. Une valeur non scalaire (?x[]=…) donne le défaut au lieu
+     * d’un « Array to string conversion » (ErrorException, 500). Équivaut à (string) $this->query().
+     */
+    public function queryString(string $key, mixed $default = ''): string
+    {
+        return self::scalarString($this->query[$key] ?? $default, $default);
+    }
+
+    /** Même chose pour le corps POST : équivaut à (string) $this->input() sur une valeur scalaire. */
+    public function inputString(string $key, mixed $default = ''): string
+    {
+        return self::scalarString($this->request[$key] ?? $default, $default);
+    }
+
+    private static function scalarString(mixed $value, mixed $default): string
+    {
+        if ($value === null || is_scalar($value)) {
+            return (string) $value;
+        }
+
+        return is_scalar($default) ? (string) $default : '';
+    }
+
     public function all(): array
     {
         return array_merge($this->query, $this->request);

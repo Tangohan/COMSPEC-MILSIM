@@ -116,10 +116,6 @@ final class SystemMemberSanctionsController
 
         $restrictions = [];
         if ($type !== 'warn') {
-            $forum = trim((string) $request->input('forum_access'));
-            if (!in_array($forum, ['full_access', 'read_only', 'none'], true)) {
-                $forum = 'full_access';
-            }
             $modsIn = $request->input('modules_blocked');
             if (!is_array($modsIn)) {
                 $modsIn = [];
@@ -130,7 +126,6 @@ final class SystemMemberSanctionsController
             ));
             $restrictions = [
                 'account_lock' => $request->input('account_lock') === '1',
-                'forum' => $forum,
                 'messages_blocked' => $request->input('messages_blocked') === '1',
                 'join_blocked' => $request->input('join_blocked') === '1',
                 'modules_blocked' => $modsClean,

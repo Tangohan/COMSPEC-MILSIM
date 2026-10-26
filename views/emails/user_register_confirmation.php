@@ -15,6 +15,8 @@ $ttlMinutes = (int) $ttlMinutes;
 $ttlLabel = $ttlMinutes >= 60 && $ttlMinutes % 60 === 0
     ? (int) ($ttlMinutes / 60) . ' heure' . ($ttlMinutes > 60 ? 's' : '')
     : $ttlMinutes . ' minutes';
+$feedbackEmailText = \App\Support\PortalHost::feedbackEmail();
+$feedbackEmail = htmlspecialchars($feedbackEmailText, ENT_QUOTES, 'UTF-8');
 
 if ($isPlatformWelcome) {
     $accountLine = '<p>Votre compte sur <strong>' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</strong> est prêt. Une dernière étape : confirmez votre adresse e-mail pour activer l’accès au portail. Le lien ci-dessous expire dans <strong>' . $ttlLabel . '</strong>.</p>';
@@ -31,7 +33,7 @@ $body = '<p>Bonjour ' . $name . ',</p>'
     . '<div style="margin-top:24px;padding:16px;border-left:4px solid #ca8a04;background:#fefce8;color:#3f3f46;">'
     . '<p style="margin:0 0 8px;"><strong>Information importante — preview ouverte</strong></p>'
     . '<p style="margin:0 0 8px;">Athena et son mod sont encore en preview. L’intuitivité est en cours d’amélioration et certaines fonctions peuvent évoluer.</p>'
-    . '<p style="margin:0;">Selon les versions du portail web et du mod, une fonction peut marcher puis devenir temporairement indisponible. Vos conseils et retours sont les bienvenus à <a href="mailto:no-reply@athena.ttrd.fr">no-reply@athena.ttrd.fr</a>.</p>'
+    . '<p style="margin:0;">Selon les versions du portail web et du mod, une fonction peut marcher puis devenir temporairement indisponible. Vos conseils et retours sont les bienvenus à <a href="mailto:' . $feedbackEmail . '">' . $feedbackEmail . '</a>.</p>'
     . '</div>'
     . '<p style="margin-top:24px;font-size:14px;color:#64748b;">Si vous n’êtes pas à l’origine de cette inscription, vous pouvez ignorer ce message en toute sécurité.</p>';
 
@@ -45,7 +47,7 @@ $html = email_html_layout(
 $text = "Bonjour {$displayName},\n\n"
     . $textAccount
     . $verifyUrl . "\n\n"
-    . "Information preview ouverte : Athena et son mod sont encore en cours d’amélioration. Une fonction peut devenir temporairement indisponible en cas de décalage entre les versions web et mod. Envoyez vos conseils et retours à no-reply@athena.ttrd.fr.\n\n"
+    . "Information preview ouverte : Athena et son mod sont encore en cours d’amélioration. Une fonction peut devenir temporairement indisponible en cas de décalage entre les versions web et mod. Envoyez vos conseils et retours à {$feedbackEmailText}.\n\n"
     . "Si vous n’êtes pas à l’origine de cette inscription, ignorez ce message.\n";
 
 return ['html' => $html, 'text' => $text];

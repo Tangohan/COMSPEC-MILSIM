@@ -1,67 +1,136 @@
 <?php
 declare(strict_types=1);
 
-/** @var list<array<string, mixed>> $miniArticles */
+/**
+ * Articles de la communauté : l’épinglé le plus récent en grand, les autres en cartes, recherche et filtre par mot-clé.
+ *
+ * @var list<array<string, mixed>> $miniArticles
+ */
 $items = is_array($miniArticles ?? null) ? $miniArticles : [];
 $canManage = !empty($canManageMiniArticles);
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$dateLabel = static function (string $raw): string {
+    $t = $raw !== '' ? strtotime($raw) : false;
+    if (!$t) {
+        return '';
+    }
+    $months = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+    return (int) date('j', $t) . ' ' . $months[(int) date('n', $t) - 1] . ' ' . date('Y', $t);
+};
+$allTags = [];
+foreach ($items as $it) {
+    foreach ((array) ($it['tags'] ?? []) as $t) {
+        $t = trim((string) $t);
+        if ($t !== '') {
+            $allTags[mb_strtolower($t)] = $t;
+        }
+    }
+}
+ksort($allTags);
+$featuredIndex = null;
+foreach ($items as $i => $it) {
+    if (!empty($it['pinned'])) {
+        $featuredIndex = $i;
+        break;
+    }
+}
 ?>
-<div class="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+<link href="<?= $h(asset_url('assets/css/mini-articles.css')) ?>" rel="stylesheet">
+<div class="ma-pub" data-ma-list>
+    <div class="ma-pub__head">
         <div>
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700">Communauté</p>
-            <h1 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Articles</h1>
-            <p class="mt-1 text-sm text-slate-600">Notes et contenus permanents publiés par l’organisation.</p>
+            <p class="ma-pub__kicker">Communauté</p>
+            <h1 class="ma-pub__title">Articles</h1>
+            <p class="ma-pub__sub">Règles, guides et présentations publiés par l’encadrement.</p>
         </div>
         <?php if ($canManage): ?>
-        <a href="<?= $h(url('back-office/articles/create')) ?>" class="inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-xs font-black uppercase tracking-wide text-white hover:bg-emerald-700">Rédiger</a>
+        <a href="<?= $h(url('back-office/articles/create')) ?>" class="ma-pub__btn">Rédiger un article</a>
         <?php endif; ?>
     </div>
 
     <?php if ($items === []): ?>
-    <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-600">
-        Aucun article publié pour le moment.
+    <div class="ma-pub__empty">
+        <strong>Aucun article pour l’instant</strong>
+        Les règles, guides et présentations de la communauté apparaîtront ici.
     </div>
     <?php else: ?>
-    <div class="grid gap-4 sm:grid-cols-2">
-        <?php foreach ($items as $item):
+    <?php if (count($items) > 3 || $allTags !== []): ?>
+    <div class="ma-pub__tools">
+        <input type="search" class="ma-pub__search" placeholder="Rechercher un article" aria-label="Rechercher un article" data-ma-search>
+        <?php if ($allTags !== []): ?>
+        <button type="button" class="ma-pub__tag" aria-pressed="true" data-ma-tag="">Tous</button>
+        <?php foreach (array_slice($allTags, 0, 12, true) as $key => $label): ?>
+        <button type="button" class="ma-pub__tag" aria-pressed="false" data-ma-tag="<?= $h($key) ?>">#<?= $h($label) ?></button>
+        <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <div class="ma-pub__grid">
+        <?php foreach ($items as $i => $item):
             $href = (string) ($item['href'] ?? '#');
             $title = (string) ($item['title'] ?? '');
             $excerpt = (string) ($item['excerpt'] ?? '');
-            $cover = $item['cover_url'] ?? null;
+            $cover = is_string($item['cover_url'] ?? null) ? (string) $item['cover_url'] : '';
             $tags = is_array($item['tags'] ?? null) ? $item['tags'] : [];
-            $pub = (string) ($item['published_at'] ?? '');
-            $pubLabel = $pub !== '' ? date('d/m/Y', strtotime($pub) ?: time()) : '';
+            $pubLabel = $dateLabel((string) ($item['published_at'] ?? ''));
+            $minutes = (int) ($item['reading_minutes'] ?? 0);
+            $meta = trim($pubLabel . ($minutes > 0 ? ' · ' . $minutes . ' min de lecture' : ''), ' ·');
+            $tagKeys = implode('|', array_map(static fn ($t): string => mb_strtolower(trim((string) $t)), $tags));
+            $search = mb_strtolower($title . ' ' . $excerpt . ' ' . implode(' ', array_map('strval', $tags)));
         ?>
-        <a href="<?= $h($href) ?>" class="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
-            <?php if (is_string($cover) && $cover !== ''): ?>
-            <div class="aspect-[16/9] overflow-hidden bg-slate-100">
-                <img src="<?= $h($cover) ?>" alt="" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]">
-            </div>
+        <a href="<?= $h($href) ?>" class="ma-card<?= $i === $featuredIndex ? ' ma-card--featured' : '' ?>" data-ma-card data-tags="<?= $h($tagKeys) ?>" data-search="<?= $h($search) ?>">
+            <?php if ($cover !== ''): ?>
+            <div class="ma-card__cover" style="background-image:url('<?= $h($cover) ?>')">
+            <?php else: ?>
+            <div class="ma-card__cover ma-card__cover--empty"><span aria-hidden="true"><?= $h(mb_strtoupper(mb_substr($title, 0, 1))) ?></span>
             <?php endif; ?>
-            <div class="p-4">
-                <div class="flex flex-wrap items-center gap-2">
-                    <?php if (!empty($item['pinned'])): ?>
-                    <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-800">Épinglé</span>
-                    <?php endif; ?>
-                    <?php if ($pubLabel !== ''): ?>
-                    <span class="text-[11px] text-slate-400"><?= $h($pubLabel) ?></span>
-                    <?php endif; ?>
-                </div>
-                <h2 class="mt-1.5 text-base font-black text-slate-900 group-hover:text-emerald-800"><?= $h($title) ?></h2>
-                <?php if ($excerpt !== ''): ?>
-                <p class="mt-1 line-clamp-3 text-sm text-slate-600"><?= $h($excerpt) ?></p>
-                <?php endif; ?>
+                <?php if (!empty($item['pinned'])): ?><span class="ma-card__pin">Épinglé</span><?php endif; ?>
+            </div>
+            <div class="ma-card__body">
+                <?php if ($meta !== ''): ?><span class="ma-card__meta"><?= $h($meta) ?></span><?php endif; ?>
+                <h2 class="ma-card__title"><?= $h($title) ?></h2>
+                <?php if ($excerpt !== ''): ?><p class="ma-card__excerpt"><?= $h($excerpt) ?></p><?php endif; ?>
                 <?php if ($tags !== []): ?>
-                <div class="mt-2 flex flex-wrap gap-1">
-                    <?php foreach ($tags as $tag): ?>
-                    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">#<?= $h((string) $tag) ?></span>
-                    <?php endforeach; ?>
+                <div class="ma-card__tags">
+                    <?php foreach (array_slice($tags, 0, 4) as $tag): ?><span class="ma-chip">#<?= $h((string) $tag) ?></span><?php endforeach; ?>
                 </div>
                 <?php endif; ?>
             </div>
         </a>
         <?php endforeach; ?>
     </div>
+    <p class="ma-pub__none" data-ma-none>Aucun article ne correspond.</p>
     <?php endif; ?>
 </div>
+<script>
+(function () {
+  var root = document.querySelector('[data-ma-list]');
+  if (!root) return;
+  var input = root.querySelector('[data-ma-search]');
+  var tags = root.querySelectorAll('[data-ma-tag]');
+  var cards = root.querySelectorAll('[data-ma-card]');
+  var none = root.querySelector('[data-ma-none]');
+  var tag = '';
+  function apply() {
+    var q = (input && input.value || '').trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function (c) {
+      var okTag = tag === '' || ('|' + c.getAttribute('data-tags') + '|').indexOf('|' + tag + '|') !== -1;
+      var ok = okTag && (q === '' || (c.getAttribute('data-search') || '').indexOf(q) !== -1);
+      c.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (none) none.style.display = shown === 0 ? 'block' : 'none';
+  }
+  tags.forEach(function (b) {
+    b.addEventListener('click', function () {
+      tag = b.getAttribute('data-ma-tag');
+      tags.forEach(function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+      apply();
+    });
+  });
+  if (input) input.addEventListener('input', apply);
+})();
+</script>

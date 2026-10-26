@@ -72,13 +72,16 @@ final class SseFieldNoteApiController
         $notes = $this->intake()->presentNotes($tenant, $notes, SseCaseRepository::CLASS_INTERNAL, $this->viewerId($tenant, $request));
 
         // Téléphone en jeu : les photos de chaque fiche, pour les afficher sans rouvrir la fiche (pièces floutées exclues).
-        if ((string) $request->query('with_images', '') === '1') {
+        if ($request->queryString('with_images', '') === '1') {
+            // COMSPEC Link 2.0.95+ : photos en texture .paa (Arma n'affiche ni PNG ni WebP).
+            $paa = \App\Support\AtakGameImage::clientAcceptsPaa();
             foreach ($notes as $i => $note) {
                 $images = [];
                 if ((int) ($note['attachment_count'] ?? 0) > 0) {
                     foreach ($this->notes->listAttachments($tenant, (int) $note['id']) as $piece) {
                         if (!empty($piece['is_image']) && !empty($piece['url']) && empty($piece['blurred'])) {
-                            $images[] = (string) $piece['url'];
+                            $url = (string) $piece['url'];
+                            $images[] = ($paa ? \App\Support\AtakGameImage::urlFor($url, \App\Support\AtakGameImage::FIT_PHOTO) : null) ?? $url;
                         }
                         if (count($images) >= 4) {
                             break;

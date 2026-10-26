@@ -35,6 +35,14 @@ $motivationData = is_array($em['motivation'] ?? null) ? $em['motivation'] : [];
 $availabilityQ15 = trim((string) ($em['availability_q15'] ?? ''));
 
 $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($c);
+$inscriptionTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
+    (string) ($tenant['tenant_type'] ?? (function_exists('navigation_current_tenant_type') ? navigation_current_tenant_type() : 'full'))
+);
+$discordOnly = \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly($inscriptionTenantType);
+if ($discordOnly) {
+    $registrationMode = \App\Services\Community\TenantCommunityProfileService::REGISTRATION_MODE_DISCORD;
+    $discordInviteMissing = trim((string) ($c['contact_discord_url'] ?? '')) === '';
+}
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
@@ -79,6 +87,35 @@ $renderToggle = static function (
         <input type="hidden" name="em_settings_enlistment_partial" value="1">
         <input type="hidden" name="settings_tab" value="inscription">
 
+            <?php if ($discordOnly): ?>
+            <section class="bcs-card bcs-card--discord-only" id="parcours">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Recrutement : uniquement sur Discord</h3>
+                        <p class="bcs-card__desc">Avec le profil « <?= $h(\App\Services\Community\TenantTypeConfig::label($inscriptionTenantType)) ?> », personne ne candidate sur le site.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <ol class="bcs-steps">
+                        <li><strong>Le visiteur clique « Rejoindre sur Discord »</strong> sur votre page publique : il arrive directement sur votre serveur, sans formulaire ni compte à créer ici.</li>
+                        <li><strong>Vous recrutez sur Discord</strong>, comme d’habitude : présentation, entretien, période d’essai.</li>
+                        <li><strong>Une fois accepté</strong>, <?= \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts($inscriptionTenantType) ? 'vous créez sa fiche dans les Effectifs (ou vous l’ajoutez à votre tableur et vous l’importez). Il n’a pas besoin de compte.' : 'vous lui envoyez une invitation pour qu’il relie son téléphone en jeu.' ?></li>
+                    </ol>
+                    <p class="bcs-help">Seul réglage nécessaire : le <a class="bcs-link" href="#coordonnees">lien d’invitation Discord</a> ci-dessous. Pour un formulaire de candidature sur le site, passez au profil « Complet » (Rubrique 6 · Profil).</p>
+                    <?php $renderToggle(
+                        'Fermer temporairement le recrutement',
+                        'Utile pendant une campagne, une pause estivale ou si vous êtes complets.',
+                        'community_locked',
+                        $communityLocked,
+                        'le bouton « Rejoindre sur Discord » disparaît de la page publique, seul le contact reste.',
+                        'le bouton « Rejoindre sur Discord » est affiché sur la page publique.'
+                    ); ?>
+                </div>
+            </section>
+            <style>
+            .bcs-steps{margin:0 0 12px;padding-left:20px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+            </style>
+            <?php else: ?>
             <section class="bcs-card" id="parcours">
                 <div class="bcs-card__head">
                     <div class="bcs-card__heading">
@@ -146,6 +183,7 @@ $renderToggle = static function (
                     ); ?>
                 </div>
             </section>
+            <?php endif; ?>
 
             <section class="bcs-card" id="coordonnees">
                 <span id="contact"></span>
@@ -184,6 +222,7 @@ $renderToggle = static function (
                 </div>
             </section>
 
+            <?php if (!$discordOnly): ?>
             <section class="bcs-card" id="dossier">
                 <div class="bcs-card__head">
                     <div class="bcs-card__heading">
@@ -226,6 +265,7 @@ $renderToggle = static function (
                     <a class="bcs-link" href="<?= $h(url('back-office/community/presentation') . '#pack-milsim-editor') ?>">éditeur complet du formulaire de candidature</a>
                 </p>
             </section>
+            <?php endif; ?>
 
         <?php if (!$settingsHubEmbed): ?>
         <div class="bcs-savebar">
