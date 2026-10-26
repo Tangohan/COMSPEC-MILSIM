@@ -24,6 +24,6 @@ if ((count _win) isEqualTo 2) then {
     private _half = ((((_hi - _lo) + 360) mod 360) / 2) max 1;
     private _inFah = ([_hdg, _center] call _diff) <= _half;
     _ok = _ok && _inFah;
-    _txt = _txt + format [" · FAH %1", ["HORS AXE", "respecté"] select _inFah];
+    _txt = _txt + " · " + (["FAH HORS AXE", "FAH respecté"] select _inFah);
 };
 [_txt, _ok]

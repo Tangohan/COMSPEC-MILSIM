@@ -40,6 +40,8 @@ private _tplMatch = {
     params ["_core", "_depth"];
     private _res = "";
     private _n = count _core;
+    private _hasDot = (_core find " · ") >= 0;
+    private _hasColon = (_core find " : ") > 0;
     {
         _x params ["_parts", "_ids", "_en"];
         private _p0 = _parts select 0;
@@ -53,19 +55,27 @@ private _tplMatch = {
                 private _at = -1;
                 if (_i isEqualTo _last) then {
                     private _st = _n - (count _pi);
-                    if (_st > _pos && {(_core select [_st]) isEqualTo _pi}) then { _at = _st; };
+                    // Valeur vide acceptée (« %1 marqueur(s) renvoyé(s)%2. » avec %2 = "") : sinon tout le texte restait en français.
+                    if (_st >= _pos && {(_core select [_st]) isEqualTo _pi}) then { _at = _st; };
                 } else {
                     private _f = (_core select [_pos]) find _pi;
-                    if (_f > 0) then { _at = _pos + _f; };
+                    if (_f >= 0) then { _at = _pos + _f; };
                 };
                 if (_at < 0) then { _pos = -1; } else {
                     _caps pushBack (_core select [_pos, _at - _pos]);
                     _pos = _at + (count _pi);
                 };
             };
+            // Valeur qui contient « · » alors que le modèle n'en a pas (« Ordre %1 » sur « Ordre de déplacement — … · … ») :
+            // le modèle avalait toute la ligne ; on laisse la découpe autour des « · » traduire chaque morceau.
+            if (_pos >= 0 && {_hasDot} && {((_parts joinString "") find " · ") < 0} && {(_caps findIf { (_x find " · ") >= 0 }) >= 0}) then { _pos = -1; };
+            // Même chose pour « Libellé : valeur » : « Ordre %1 » ne doit pas avaler « Ordre : escorte de … ».
+            if (_pos >= 0 && {_hasColon} && {((_parts joinString "") find " : ") < 0} && {(_caps findIf { (_x select [0, 2]) isEqualTo ": " }) >= 0}) then { _pos = -1; };
             if (_pos >= 0) then {
                 private _args = [];
                 { _args set [_x - 1, [(_caps select _forEachIndex), _depth + 1] call _seg]; } forEach _ids;
+                // Valeur vidée par fn_langApply (deux valeurs collées « %1%2 ») : jamais capturée, rendue vide.
+                if ((count _args) < 9) then { _args resize 9; };
                 _args = _args apply { if (isNil "_x") then { "" } else { _x } };
                 _res = format ([_en] + _args);
             };
@@ -81,22 +91,41 @@ private _seg = {
     private _core = trim _text;
     if (_core isEqualTo "" || {_depth > 2}) exitWith { _text };
     private _r = _exact getOrDefault [_core, ""];
+    // Sans lettre (nombres, heures, grilles, ponctuation) : rien à traduire, on évite le parcours des modèles
+    // (valeurs capturées surtout : le texte du curseur de carte change à chaque mouvement de souris).
+    if (_r isEqualTo "" && {(toLower _core) isEqualTo (toUpper _core)}) exitWith { _text };
+    // « · » collé à une balise (« 2 charge(s) cochée(s) · <t …>sécurité levée</t> ») : le morceau finit ou commence
+    // par « · » ; traduit sans lui.
+    if (_r isEqualTo "" && {(count _core) > 2}) then {
+        if ((_core select [(count _core) - 2]) isEqualTo " ·") then {
+            private _in = _core select [0, (count _core) - 2];
+            private _tr = [_in, _depth] call _seg;
+            if (_tr isNotEqualTo _in) then { _r = _tr + " ·"; };
+        } else {
+            if ((_core select [0, 2]) isEqualTo "· ") then {
+                private _in = _core select [2];
+                private _tr = [_in, _depth] call _seg;
+                if (_tr isNotEqualTo _in) then { _r = "· " + _tr; };
+            };
+        };
+    };
+    // Modèle avant « Libellé : valeur » : « Connexion Athena : sur %1, saisissez le code %2 » est dans le dictionnaire
+    // en entier, alors que le libellé seul (« Connexion Athena ») laissait la suite en français dans les notifications.
+    if (_r isEqualTo "") then { _r = [_core, _depth] call _tplMatch; };
+    // Lignes et « · » avant « Libellé : valeur » : le dictionnaire est découpé de la même façon (tools/i18n.py), donc
+    // « Poste : bâtiments %1 / %2 · forêts %3 / %4 » y est en morceaux ; le libellé seul (« Poste ») gâchait la suite.
+    if (_r isEqualTo "" && {(_core find _nl) >= 0}) then {
+        _r = ((_core splitString _nl) apply { [_x, _depth] call _seg }) joinString _nl;
+    };
+    if (_r isEqualTo "" && {(_core find " · ") > 0}) then {
+        _r = (([_core, " · "] call CBA_fnc_split) apply { [_x, _depth + 1] call _seg }) joinString " · ";
+    };
     // « Libellé : valeur » assemblé dans le code : libellé traduit, ponctuation anglaise.
     if (_r isEqualTo "" && {(_core find " : ") > 0}) then {
         private _k = _core find " : ";
         private _lbl = _core select [0, _k];
         private _lblEn = _exact getOrDefault [_lbl, _lbl];
         if (_lblEn isNotEqualTo _lbl) then { _r = _lblEn + _colon + ([_core select [_k + 3], _depth + 1] call _seg); };
-    };
-    // Sans lettre (nombres, heures, grilles, ponctuation) : rien à traduire, on évite le parcours des modèles
-    // (valeurs capturées surtout : le texte du curseur de carte change à chaque mouvement de souris).
-    if (_r isEqualTo "" && {(toLower _core) isEqualTo (toUpper _core)}) exitWith { _text };
-    if (_r isEqualTo "") then { _r = [_core, _depth] call _tplMatch; };
-    if (_r isEqualTo "" && {(_core find _nl) >= 0}) then {
-        _r = ((_core splitString _nl) apply { [_x, _depth] call _seg }) joinString _nl;
-    };
-    if (_r isEqualTo "" && {(_core find " · ") > 0}) then {
-        _r = (([_core, " · "] call CBA_fnc_split) apply { [_x, _depth + 1] call _seg }) joinString " · ";
     };
     // Puce ou symbole devant le texte (« ■ SEEK PRÊT », « ‹ RETOUR », « ● EN LIGNE ») : le texte qui suit est cherché seul.
     if (_r isEqualTo "" && {_depth < 2}) then {
@@ -119,7 +148,8 @@ while { _rest isNotEqualTo "" } do {
     if (_i < 0) then { _out = _out + ([_rest] call _seg); _rest = ""; } else {
         if (_i > 0) then { _out = _out + ([_rest select [0, _i]] call _seg); };
         private _j = (_rest select [_i]) find ">";
-        if (_j < 0) then { _out = _out + (_rest select [_i]); _rest = ""; } else {
+        // « < » sans « > » : pas une balise (bouton « < RÉGLAGES · AFFICHAGE ») ; le texte est traduit quand même.
+        if (_j < 0) then { _out = _out + ([_rest select [_i]] call _seg); _rest = ""; } else {
             _out = _out + (_rest select [_i, _j + 1]);
             _rest = _rest select [_i + _j + 1];
         };

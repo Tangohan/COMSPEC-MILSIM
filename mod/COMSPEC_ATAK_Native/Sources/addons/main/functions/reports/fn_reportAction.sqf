@@ -234,13 +234,13 @@ switch (_act) do {
             if (_name isEqualTo "") then { _name = _k; };
             switch (true) do {
                 case (_kind isEqualTo "sec"): {};
-                case (_req && {_kind isEqualTo "big"} && {!(_k in _vals)}): { _bad pushBack _k; _why pushBack _name; };
-                case (_req && {_kind in ["edit", "memo", "num", "dtg", "grid", "dir"]} && {_v isEqualTo ""}): { _bad pushBack _k; _why pushBack _name; };
-                case (_kind isEqualTo "num" && {_v isNotEqualTo ""} && {!(_v regexMatch "^[0-9]{1,4}$")}): { _bad pushBack _k; _why pushBack (_name + " (nombre)"); };
+                case (_req && {_kind isEqualTo "big"} && {!(_k in _vals)}): { _bad pushBack _k; _why pushBack (_name call comspec_atak_native_fnc_tr); };
+                case (_req && {_kind in ["edit", "memo", "num", "dtg", "grid", "dir"]} && {_v isEqualTo ""}): { _bad pushBack _k; _why pushBack (_name call comspec_atak_native_fnc_tr); };
+                case (_kind isEqualTo "num" && {_v isNotEqualTo ""} && {!(_v regexMatch "^[0-9]{1,4}$")}): { _bad pushBack _k; _why pushBack ((format ["%1 (nombre)", _name]) call comspec_atak_native_fnc_tr); };
                 case (_kind isEqualTo "grid" && {_v isNotEqualTo ""} && {
                     private _g = (_v splitString " ,.-") joinString "";
                     !(_g regexMatch "^[0-9]{6,10}$") || {((count _g) mod 2) isEqualTo 1}
-                }): { _bad pushBack _k; _why pushBack (_name + " (grille)"); };
+                }): { _bad pushBack _k; _why pushBack ((format ["%1 (grille)", _name]) call comspec_atak_native_fnc_tr); };
             };
         } forEach _fields;
         if ((count _bad) > 0) exitWith {

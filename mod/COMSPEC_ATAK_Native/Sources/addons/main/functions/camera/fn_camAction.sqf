@@ -182,7 +182,7 @@ switch (_mode) do {
             private _gh = createVehicle ["GroundWeaponHolder", getPosATL player, [], 0, "CAN_COLLIDE"];
             _gh addItemCargoGlobal [CAM_ITEM, 1];
         };
-        ["INFO", format ["%1 récupérée%2", _name, ["", " (inventaire plein : posée au sol)"] select !(CAM_ITEM in (items player))], 3, 20] call comspec_atak_native_fnc_notify;
+        ["INFO", format [["%1 récupérée", "%1 récupérée (inventaire plein : posée au sol)"] select !(CAM_ITEM in (items player)), _name], 3, 20] call comspec_atak_native_fnc_notify;
         true
     };
     // Serveur : registre COMSPEC_ATAK_Cams tenu et publié par lui seul (objets supprimés retirés au passage). Pose :
