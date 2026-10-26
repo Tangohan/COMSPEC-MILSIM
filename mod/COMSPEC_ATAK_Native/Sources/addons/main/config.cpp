@@ -609,12 +609,15 @@ class CfgRemoteExec {
         class comspec_atak_native_fnc_dataServer { allowedTargets = 2; };
         // Serveur -> client : relevé de l'app Admin demandé au joueur (fn_adminServer « scan »). La fonction refuse
         // tout appel distant qui ne vient pas du serveur, donc la déclarer ne permet rien de client à client.
-        class comspec_atak_native_fnc_adminClient { allowedTargets = 1; };
+        // jip = 0 : aucun ordre du serveur ne passe par la file JIP ; en liste blanche, le moteur refuse alors qu'un
+        // client y dépose cet appel, avant même la garde de la fonction (qui reste seule en mode 2).
+        class comspec_atak_native_fnc_adminClient { allowedTargets = 1; jip = 0; };
         // Serveur -> joueurs : alertes de compromission, révocation chez Athena, nouvel IMEI (fn_captureServer). Même
         // garde : la fonction refuse tout appel distant qui ne vient pas du serveur (sauf deux lectures sans effet), donc
         // la déclarer ne permet rien de client à client. 0 et non 1 : en partie hébergée, l'hôte, qui est le serveur,
-        // peut être le joueur à prévenir ; sur un serveur dédié la fonction ne fait rien (pas d'interface).
-        class comspec_atak_native_fnc_compromise { allowedTargets = 0; };
+        // peut être le joueur à prévenir ; sur un serveur dédié la fonction ne fait rien (pas d'interface). jip = 0 :
+        // même raison que ci-dessus.
+        class comspec_atak_native_fnc_compromise { allowedTargets = 0; jip = 0; };
     };
 };
 

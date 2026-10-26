@@ -28,8 +28,9 @@ params [["_act", ""], ["_arg", []]];
 // Solo : un seul poste. File JIP : un client peut aussi déposer l'appel dans la file JIP (troisième argument de
 // remoteExecCall), que le serveur rejoue à chaque joueur qui arrive ensuite ; la valeur de remoteExecutedOwner pendant
 // ce rejeu n'est pas établie (client d'origine, 0 ou 2). Aucun ordre du serveur n'emprunte cette file : un appel
-// rejoué est refusé, quel que soit le poste annoncé.
-if (!(_act in ["can", "mine"]) && {isMultiplayer} && {isRemoteExecuted} && {isRemoteExecutedJIP || {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
+// rejoué est refusé, quel que soit le poste annoncé. isRemoteExecutedJIP est lu en premier, seul : le refus ne dépend
+// pas de ce que isRemoteExecuted vaut pendant un rejeu (faux en solo, où il n'y a pas de file JIP).
+if (!(_act in ["can", "mine"]) && {isRemoteExecutedJIP || {isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2}}}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] Appel « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _act, remoteExecutedOwner, isRemoteExecutedJIP];
 };
 // Comme l'ancien gestionnaire, enregistré seulement chez les joueurs (hasInterface).

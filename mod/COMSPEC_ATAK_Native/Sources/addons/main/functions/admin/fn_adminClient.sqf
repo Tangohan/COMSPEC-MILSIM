@@ -31,8 +31,9 @@ params [["_act", ""], ["_arg", []]];
 // Les autres actions (scan, zeus, server, fleet, site) agissent au nom du joueur local : elles n'ont pas non plus à
 // être déclenchables par un autre poste. Un appel rejoué depuis la file JIP est refusé lui aussi : aucun ordre du
 // serveur n'emprunte cette file, et la valeur de remoteExecutedOwner pendant le rejeu chez un joueur qui arrive n'est
-// pas établie (client d'origine, 0 ou 2).
-if (isRemoteExecuted && {isRemoteExecutedJIP || {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
+// pas établie (client d'origine, 0 ou 2). isRemoteExecutedJIP est lu en premier, seul : le refus ne dépend pas de ce
+// que isRemoteExecuted vaut pendant un rejeu.
+if (isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Appel « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _act, remoteExecutedOwner, isRemoteExecutedJIP];
 };
 private _render = {

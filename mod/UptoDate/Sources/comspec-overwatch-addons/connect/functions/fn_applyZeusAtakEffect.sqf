@@ -16,7 +16,8 @@ params [
 // qui peut être VISÉ, pas qui peut émettre, et le mode par défaut (2) n'exige aucune liste. Le contrôle est donc ici.
 // Un appel rejoué depuis la file JIP est refusé lui aussi : le relais n'emprunte jamais cette file, et la valeur de
 // remoteExecutedOwner pendant le rejeu chez un joueur qui arrive n'est pas établie (client d'origine, 0 ou 2).
-if (isRemoteExecuted && {isRemoteExecutedJIP || {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
+// isRemoteExecutedJIP est lu en premier, seul : le refus ne dépend pas de ce que isRemoteExecuted vaut pendant un rejeu.
+if (isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
     diag_log format ["[COMSPEC] applyZeusAtakEffect: « %1 » refusé, l'appel ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _action, remoteExecutedOwner, isRemoteExecutedJIP];
 };
 

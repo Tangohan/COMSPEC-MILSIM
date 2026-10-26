@@ -662,7 +662,9 @@ class CfgFunctions {
 // à Zeus et au vanilla). Seules les classes COMSPEC sont déclarées : elles servent quand une mission active la liste blanche.
 class CfgRemoteExec {
     class Functions {
-        class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; };
+        // jip = 0 : le relais n'emprunte jamais la file JIP ; en liste blanche, le moteur refuse qu'un client y dépose
+        // cet appel, avant même la garde de la fonction (qui reste seule en mode 2).
+        class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; jip = 0; };
         class comspec_overwatch_connect_fnc_relayZeusAtakEffect { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_giveSeekTerminal { allowedTargets = 0; };
