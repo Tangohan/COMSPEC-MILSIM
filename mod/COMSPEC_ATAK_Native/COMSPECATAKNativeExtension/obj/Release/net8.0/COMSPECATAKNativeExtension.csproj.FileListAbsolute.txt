@@ -1,9 +1,0 @@
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/bin/Release/net8.0/COMSPECATAKNativeExtension_x64.deps.json
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/bin/Release/net8.0/COMSPECATAKNativeExtension_x64.dll
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/obj/Release/net8.0/COMSPECATAKNativeExtension.GeneratedMSBuildEditorConfig.editorconfig
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/obj/Release/net8.0/COMSPECATAKNativeExtension.AssemblyInfoInputs.cache
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/obj/Release/net8.0/COMSPECATAKNativeExtension.AssemblyInfo.cs
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/obj/Release/net8.0/COMSPECATAKNativeExtension.csproj.CoreCompileInputs.cache
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/obj/Release/net8.0/COMSPECATAKNativeExtension_x64.dll
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/obj/Release/net8.0/refint/COMSPECATAKNativeExtension_x64.dll
-/home/user/COMSPEC-MILSIM/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/obj/Release/net8.0/ref/COMSPECATAKNativeExtension_x64.dll
