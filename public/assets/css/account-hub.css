@@ -1427,3 +1427,208 @@
   .account-hub__ov-event { grid-template-columns: auto minmax(0, 1fr); }
   .account-hub__ov-event-when { grid-column: 2; }
 }
+
+/* --- Double vérification : niveau, codes de secours, appareils de confiance --- */
+@media (min-width: 1100px) {
+  .account-hub__method-grid:has(> :nth-child(3)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.account-hub__text {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #334155;
+}
+.account-hub__text--flush {
+  margin: 0;
+}
+
+.account-hub__level {
+  margin-top: 1rem;
+  max-width: 34rem;
+}
+.account-hub__level-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.3rem;
+  height: 0.4rem;
+}
+.account-hub__level-bar span {
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+.account-hub__level[data-level="0"] .account-hub__level-bar span:first-child { background: #f87171; }
+.account-hub__level[data-level="1"] .account-hub__level-bar span:nth-child(-n+1) { background: #f59e0b; }
+.account-hub__level[data-level="2"] .account-hub__level-bar span:nth-child(-n+2) { background: #10b981; }
+.account-hub__level[data-level="3"] .account-hub__level-bar span { background: #059669; }
+.account-hub__level-label {
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+  color: #334155;
+}
+.account-hub__level-next {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.account-hub__setup-steps--numbered {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: ah-step;
+  display: grid;
+  gap: 0.6rem;
+}
+.account-hub__setup-steps--numbered li {
+  position: relative;
+  padding-left: 2.25rem;
+  counter-increment: ah-step;
+}
+.account-hub__setup-steps--numbered li + li {
+  margin-top: 0;
+}
+.account-hub__setup-steps--numbered li::before {
+  content: counter(ah-step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: #059669;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.account-hub__codes-box {
+  padding: 1rem 1.1rem 1.1rem;
+  border-radius: 0.9rem;
+  border: 1px dashed #f59e0b;
+  background: #fffbeb;
+}
+.account-hub__codes-warn {
+  margin: 0 0 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #92400e;
+}
+.account-hub__codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 720px) {
+  .account-hub__codes {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+.account-hub__codes code {
+  display: block;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fde68a;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+.account-hub__codes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+.account-hub__codes-meter {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.25rem;
+  max-width: 20rem;
+  height: 0.45rem;
+}
+.account-hub__codes-meter span {
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+.account-hub__codes-meter span.is-left {
+  background: #10b981;
+}
+
+.account-hub__devices {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account-hub__device {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.8rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+.account-hub__device-icon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.65rem;
+  background: #ecfdf5;
+  color: #047857;
+}
+.account-hub__device-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.account-hub__device-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.account-hub__device-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+.account-hub__device form {
+  margin: 0;
+  flex-shrink: 0;
+}
+@media (max-width: 559px) {
+  .account-hub__device {
+    flex-wrap: wrap;
+  }
+  .account-hub__device form {
+    width: 100%;
+  }
+}
+
+@media print {
+  .account-hub__codes-box {
+    border-style: solid;
+    background: #ffffff;
+  }
+  .account-hub__codes-actions {
+    display: none;
+  }
+}
