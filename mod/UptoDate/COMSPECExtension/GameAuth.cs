@@ -957,6 +957,9 @@ public static partial class Extension
             return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
+        // SEC-001 : ce site pose lui-même le Bearer du compte (et le corps porte mot de passe, code ou OTP) sans
+        // passer par AttachApiKeyHeader : même filtre d'hôte, au cas où _baseUrl cesserait un jour d'être sûr.
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
@@ -993,6 +996,8 @@ public static partial class Extension
             return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
+        // SEC-001 : Bearer du compte posé ici, hors AttachApiKeyHeader : même filtre d'hôte.
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));

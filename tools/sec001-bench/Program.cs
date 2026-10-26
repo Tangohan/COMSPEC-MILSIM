@@ -26,6 +26,7 @@ using System.Text;
 const string KEY = "ow_FAKEKEY_1111111111111111deadbeef";       // clé communauté factice
 const string SESSION = "ffffffffffffffffffffffffffffffff11111111111111111111111111111111"; // jeton session factice
 const string STEAM = "76561197960265728";                        // SteamID64 factice (valide en forme)
+const string GAMETOK = "GAMEACCESS_FAKE_aaaaaaaaaaaaaaaaaaaaaaaa"; // jeton d'accès de jeu (Bearer du compte) factice
 const string DEAD = "http://127.0.0.1:9";                        // adresse morte : jamais de requête utile
 
 var prodMode = Environment.GetEnvironmentVariable("BENCH_PROD") == "1";
@@ -55,10 +56,11 @@ void ResetSecrets()
     SetF("_baseUrl", DEAD);                // jamais l'adresse de production : rien ne doit sortir du banc
 }
 
-bool Leaks(string raw) =>
-    raw.Contains(KEY, StringComparison.Ordinal) || raw.Contains(SESSION, StringComparison.Ordinal);
+// Un secret factice OU un en-tête porteur de secret, quelle que soit sa valeur (un correctif qui laisserait
+// partir un autre secret, ou le SteamID seul, ne passe plus).
+bool Leaks(string raw) => Capture.Needles.Any(nd => raw.Contains(nd, StringComparison.Ordinal)) || Capture.HasSecretHeader(raw);
 
-Capture.Needles = new[] { KEY, SESSION };
+Capture.Needles = new[] { KEY, SESSION, STEAM, GAMETOK };
 
 int failures = 0;
 void Check(string label, bool ok, string detail = "")
@@ -217,6 +219,12 @@ else
     Check("file disque : aucun secret (corps compris) vers l'hôte hostile", !qEvil.AnyLeak(),
         qEvil.Count == 0 ? "hôte hostile non contacté" : qEvil.Count + " requête(s)"
             + (qEvil.AnyLeak() ? " AVEC SECRET DANS LE CORPS" : ", aucun secret"));
+    // Positions et marqueurs ne sont pas suivis par le journal d'envoi : l'abandon doit quand même être compté.
+    if (Has("NoteUntrustedQueueDrop"))
+    {
+        var dropped = (long)(GetF("_untrustedQueueDropped") ?? 0L);
+        Check("file disque : abandon compté (signalé au journal de liaison)", dropped >= 1, dropped + " abandon(s)");
+    }
     try { File.Delete(Path.Combine(dir, "queue.jsonl")); File.Delete(Path.Combine(dir, "position.json")); } catch { }
 }
 
@@ -288,6 +296,33 @@ if (isFixed)
     Check("aucune requête vers l'hôte arbitraire", sEvil.Count == 0, sEvil.Count + " requête(s)");
 Check("aucun secret vers l'hôte arbitraire", !sEvil.AnyLeak(), sEvil.Count + " requête(s)");
 
+// ----- G : GamePostJson / GameGetJson posent eux-mêmes le Bearer du compte ---------------------------
+// Défense en profondeur : _baseUrl est contrôlé partout, mais si une régression le reposait sans contrôle,
+// ces deux sites (hors AttachApiKeyHeader) ne doivent toujours rien envoyer à un hôte non sûr.
+Console.WriteLine("\n[G] Bearer du compte (GameAuth) avec un _baseUrl hostile forcé par réflexion");
+var gEvil = new Capture("game-evil", "127.0.0.2");
+ResetSecrets();
+SetF("_gameAccessToken", GAMETOK);
+SetF("_gameAccessExpiresAt", DateTimeOffset.UtcNow.AddHours(2));
+SetF("_baseUrl", $"http://127.0.0.2:{gEvil.Port}/public");   // ce que ferait une future régression
+string gGet, gPost;
+try { gGet = (string?)M("GameGetJson", typeof(string)).Invoke(null, new object?[] { "/api/game/v1/session/me" }) ?? "null"; }
+catch (Exception ex) { gGet = "EXC:" + (ex.InnerException?.Message ?? ex.Message); }
+try { gPost = (string?)M("GamePostJson", typeof(string), typeof(string), typeof(bool)).Invoke(null, new object?[] { "/api/game/v1/session/refresh", "{}", true }) ?? "null"; }
+catch (Exception ex) { gPost = "EXC:" + (ex.InnerException?.Message ?? ex.Message); }
+Thread.Sleep(300);
+Console.WriteLine("      GameGetJson  : " + gGet);
+Console.WriteLine("      GamePostJson : " + gPost);
+if (isFixed)
+{
+    Check("GameGetJson / GamePostJson refusent l'hôte non sûr", gGet == "ERR|untrusted_host" && gPost == "ERR|untrusted_host",
+        gGet + " / " + gPost);
+    Check("aucune requête GameAuth vers l'hôte hostile", gEvil.Count == 0, gEvil.Count + " requête(s)");
+}
+Check("aucun Bearer du compte vers l'hôte hostile", !gEvil.AnyLeak(), gEvil.Count + " requête(s)");
+SetF("_gameAccessToken", "");
+SetF("_baseUrl", DEAD);
+
 // ----- P : analyse des candidats _baseUrl (URL piégées) ----------------------------------------------
 if (isFixed)
 {
@@ -297,7 +332,7 @@ if (isFixed)
         "https://athena.ttrd.fr/public", "https://ATHENA.TTRD.FR/public", "https://athena.ttrd.fr./public",
         "athena.ttrd.fr/public", "https://athena-comspec.eu/public", "http://athena.ttrd.fr/public",
         "https://athena-comspec.eu.attaquant.tld/public", "https://attaquantathena-comspec.eu/public",
-        "https://x.athena-comspec.eu/public", "https://127.0.0.1.nip.io/", "http://2130706433/",
+        "https://x.athena-comspec.eu/public", "https://x.athena.ttrd.fr/public", "https://127.0.0.1.nip.io/", "http://2130706433/",
         "http://0x7f000001/", "http://127.1/", "http://017700000001/", "http://127.0.0.2/",
         "http://[::1]:8080/", "http://[0:0:0:0:0:0:0:1]/", "http://[::ffff:127.0.0.1]/", "http://0.0.0.0/",
         "http://localhost./", "http://LocalHost/", "https://athena.ttrd.fr@evil.example/",
@@ -409,7 +444,11 @@ sealed class Capture
     public List<string> All() { lock (_sync) return _requests.ToList(); }
     public bool AnyLeak()
     {
-        lock (_sync) return _requests.Any(r => Needles.Any(nd => r.Contains(nd, StringComparison.Ordinal)));
+        lock (_sync) return _requests.Any(r => Needles.Any(nd => r.Contains(nd, StringComparison.Ordinal)) || HasSecretHeader(r));
     }
+    static readonly string[] SecretHeaders =
+        { "authorization:", "x-comspec-key:", "x-comspec-session:", "x-comspec-steam:", "x-atak-token:" };
+    public static bool HasSecretHeader(string raw) =>
+        raw.Split('\n').Any(l => SecretHeaders.Any(h => l.TrimStart().StartsWith(h, StringComparison.OrdinalIgnoreCase)));
     public int Count { get { lock (_sync) return _requests.Count; } }
 }

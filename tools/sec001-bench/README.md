@@ -27,7 +27,11 @@ envoyer au portail Athena. Il charge la DLL **managée** par réflexion et appel
   RequestOtp/VerifyOtp/AuthSteam) + le Connect « async » : `_baseUrl` jamais hostile, aucun secret capté.
 - `[Q]` **file d'envoi reprise du disque** : `queue.jsonl` / `position.json` du dossier de synchro réécrits
   avec une adresse hostile (ce qu'une version détournée aurait laissé) — l'envoi doit être abandonné, sans
-  `api_key` ni `session_token` dans le corps.
+  `api_key` ni `session_token` dans le corps, et l'abandon compté (il est signalé au journal de liaison du
+  téléphone, positions comprises, que le journal d'envoi ne suit pas).
+- `[G]` `GamePostJson` / `GameGetJson` (GameAuth), qui posent eux-mêmes le Bearer du compte hors
+  `AttachApiKeyHeader` : avec un `_baseUrl` hostile forcé par réflexion (ce que ferait une régression), ils
+  doivent répondre `ERR|untrusted_host` sans aucune requête.
 - `[E]` redirection `127.0.0.1` (confiance) → `127.0.0.2` (hostile) : l'hôte hostile ne reçoit aucun
   secret (en-têtes personnalisés conservés par .NET lors d'une redirection).
 - `[E2]` `DownloadBriefingSlideImage` : redirection confiance → hostile **suivie** mais sans secret (un CDN
@@ -35,9 +39,13 @@ envoyer au portail Athena. Il charge la DLL **managée** par réflexion et appel
 - `[R]` tuiles `/map-photo` (client sans secret) : la redirection est bien **suivie** (sinon l'étape 6 de
   `docs/migration-domaine-athena-comspec.md` casserait le fond PHOTO en silence).
 - `[S]` `StartupCheck`, `LatestVersions`, `Server.PublicIp` : adresse arbitraire refusée, aucune requête.
-- `[P]` 40 candidats `_baseUrl` piégés (casse, point final, IDN homographes, `@` / `#` / `?` / `%40`,
+- `[P]` 41 candidats `_baseUrl` piégés (casse, point final, IDN homographes, `@` / `#` / `?` / `%40`,
   IPv4 décimale et octale, `::ffff:`, `nip.io`, `ftp://`, `file://`) : aucun accepté ne mène à une
   destination non sûre.
+
+Secrets cherchés dans chaque requête captée : la clé, le jeton de session, le SteamID et le Bearer du compte
+(valeurs factices), **et** tout en-tête porteur de secret quelle que soit sa valeur (`Authorization`,
+`X-COMSPEC-KEY`, `X-COMSPEC-SESSION`, `X-COMSPEC-STEAM`, `X-ATAK-TOKEN`).
 
 ## Lancer (sur une copie HORS du worktree — dotnet écrit bin/obj à côté du csproj)
 

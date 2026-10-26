@@ -154,3 +154,15 @@ une 3xx d'un hôte Athena vers un tiers emporterait les en-têtes `X-COMSPEC-*`,
 route d'API renverrait `ERR|http_308` au téléphone au lieu d'être suivie. **L'API ne doit donc jamais rediriger** —
 ni `athena.ttrd.fr` vers `athena-comspec.eu`, ni `/api/x` vers `/api/x/`. Les tuiles `/map-photo/` ne portent aucun
 secret : leur client suit les redirections, mais l'exemption ci-dessus évite un aller-retour par tuile.
+
+**Hôtes auxquels la DLL confie ses secrets** (correctif SEC-001, `IsTrustedPortalHost` dans `Extension.cs`) :
+`https://athena.ttrd.fr` et `https://athena-comspec.eu`, rien d'autre — ni sous-domaine (`atak.`, `sse.`), ni `http://`,
+ni identifiants dans l'adresse. Toute autre adresse reçue du jeu est refusée avec `ERR|untrusted_host`. Ajouter un
+domaine demande de modifier cette liste et de republier les deux DLL.
+
+- **Athena local de développement** : la boucle locale (`127.0.0.1`, `localhost`, `::1`) n'est acceptée que si la
+  variable d'environnement `COMSPEC_DEV_TRUST_LOOPBACK=1` est posée pour le processus Arma (lue une fois au chargement
+  de la DLL). Sans elle, un Athena local répond `ERR|untrusted_host` dès la liaison. Jamais en production.
+- **Avant de publier une DLL 2.4.1 ou plus récente**, vérifier sur les deux domaines qu'aucune route d'API ne redirige,
+  par exemple `curl -sI https://athena-comspec.eu/api/atak/version` et `curl -sI https://athena.ttrd.fr/api/atak/version`
+  (attendu : pas de `301`, `302`, `307` ni `308`), et de même pour un fichier sous `/map-photo/`.

@@ -1588,13 +1588,41 @@ public static partial class Extension
         return code is 408 or 425;
     }
 
+    private static long _untrustedQueueDropped;
+    private static long _lastUntrustedDropCbTicks;
+
+    /// <summary>
+    /// SEC-001 : envoi de file abandonné parce que son hôte n'est pas Athena. Compté, et signalé au journal de
+    /// liaison du téléphone (rappel PostError, code 0 = avertissement) au plus une fois par 30 s, avec le chemin
+    /// seul : jamais l'hôte refusé ni le corps.
+    /// </summary>
+    private static void NoteUntrustedQueueDrop(string url)
+    {
+        var total = System.Threading.Interlocked.Increment(ref _untrustedQueueDropped);
+        var now = DateTime.UtcNow.Ticks;
+        var prev = System.Threading.Interlocked.Read(ref _lastUntrustedDropCbTicks);
+        if (now - prev < TimeSpan.FromSeconds(30).Ticks) return;
+        if (System.Threading.Interlocked.CompareExchange(ref _lastUntrustedDropCbTicks, now, prev) != prev) return;
+        string path;
+        try { path = new Uri(url).AbsolutePath; } catch { path = ""; }
+        // Chemin venu d'un fichier modifiable : caractères sûrs seulement, longueur bornée.
+        var safe = new System.Text.StringBuilder(Math.Min(path.Length, 80));
+        foreach (var ch in path)
+        {
+            if (safe.Length >= 80) break;
+            if (char.IsAsciiLetterOrDigit(ch) || ch is '/' or '-' or '_' or '.') safe.Append(ch);
+        }
+        InvokeCallback("PostError", "0|" + safe + "|0|hôte non-Athena, envoi abandonné ("
+            + total.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")");
+    }
+
     /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
     private static bool TrySendQueuedPost((string Url, string Body) item)
     {
         // SEC-001 : adresse que IsSecretSafeUri refuse, typiquement reprise du disque (queue.jsonl / position.json
         // écrits par une version détournée, ou fichier modifié) : AddQueueSecrets y mettrait la clé et le jeton de
-        // session. Envoi abandonné et journalisé, jamais renvoyé. Seul envoi de la file : FIFO, marqueurs et
-        // position coalescée (rechargée ou non) passent tous ici.
+        // session. Envoi abandonné, jamais renvoyé. Seul envoi de la file : FIFO, marqueurs et position
+        // coalescée (rechargée ou non) passent tous ici.
         if (!IsSecretSafeUri(item.Url))
         {
             // Envoi posé hors liaison (« queued:/api/… », poste encore inconnu) : remis en file comme avant,
@@ -1604,7 +1632,10 @@ public static partial class Extension
                 EnqueueForRetry(item.Url, item.Body);
                 return true;
             }
+            // Journal d'envoi (envois suivis seulement) ET journal de liaison du téléphone : positions, marqueurs
+            // et météo ne sont pas suivis par le premier, l'abandon resterait sinon sans trace.
             JournalTrack(item.Url, item.Body, "failed", "hôte non-Athena");
+            NoteUntrustedQueueDrop(item.Url);
             return true;
         }
         // Adresse absente de l'offre de la communauté : envoi abandonné, pas renvoyé.

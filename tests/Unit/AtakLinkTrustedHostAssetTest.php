@@ -317,4 +317,51 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
         self::assertStringContainsString('if (!IsSecretSafeUri(ipUri)) return "ERR|untrusted_host";', $ext,
             'Server.PublicIp doit refuser un hôte non-Athena');
     }
+
+    /**
+     * Seuls AttachApiKeyHeader et les deux sites de GameAuth (Bearer du compte) posent un en-tête porteur de
+     * secret, et ces deux sites refusent d'abord un hôte non sûr. Un en-tête secret ajouté ailleurs, même juste
+     * après AttachApiKeyHeader, contournerait le filtre : ce recensement échoue alors.
+     */
+    public function testSecretHeadersAreOnlySetBehindTheHostFilter(): void
+    {
+        $extFile = $this->linkDir() . '/Extension.cs';
+        $guarded = [[$extFile, self::blockAfter($this->read($extFile), 'private static void AttachApiKeyHeader(HttpRequestMessage req)')]];
+        $gameAuthFile = $this->linkDir() . '/GameAuth.cs';
+        $gameAuth = $this->read($gameAuthFile);
+        $guard = 'if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";';
+        foreach (['private static string GamePostJson(', 'private static string GameGetJson('] as $signature) {
+            $block = self::blockAfter($gameAuth, $signature);
+            self::assertStringContainsString($guard, $block, $signature . ' doit refuser un hôte non sûr');
+            $bearerAt = strpos($block, '"Authorization"');
+            self::assertNotFalse($bearerAt, $signature . ' : Bearer du compte attendu');
+            self::assertLessThan($bearerAt, (int) strpos($block, $guard),
+                $signature . ' : le filtre d\'hôte doit précéder le Bearer');
+            $guarded[] = [$gameAuthFile, $block];
+        }
+
+        $pattern = '/\.(?:TryAddWithoutValidation|Add)\(\s*"(?:Authorization|X-ATAK-TOKEN|X-COMSPEC-KEY|X-COMSPEC-SESSION|X-COMSPEC-STEAM)"/i';
+        $sites = 0;
+        foreach ($this->dllSourceFiles() as $file) {
+            $src = $this->read($file);
+            if (preg_match_all($pattern, $src, $m, PREG_OFFSET_CAPTURE) < 1) {
+                continue;
+            }
+            foreach ($m[0] as [$text, $offset]) {
+                $sites++;
+                $inside = false;
+                foreach ($guarded as [$guardedFile, $block]) {
+                    $start = $guardedFile === $file ? strpos($src, $block) : false;
+                    if ($start !== false && $offset >= $start && $offset < $start + strlen($block)) {
+                        $inside = true;
+                        break;
+                    }
+                }
+                $line = substr_count(substr($src, 0, $offset), "\n") + 1;
+                self::assertTrue($inside, 'En-tête secret posé hors du filtre d\'hôte : '
+                    . basename($file) . ':' . $line . ' ' . $text);
+            }
+        }
+        self::assertGreaterThanOrEqual(5, $sites, 'Recensement des en-têtes secrets vide : motif à revoir');
+    }
 }
