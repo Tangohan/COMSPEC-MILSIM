@@ -80,9 +80,14 @@ if (_interactive) then {
             [{ [] call comspec_atak_native_fnc_hudToggle; }] call CBA_fnc_execNextFrame;
             true
         };
+        // Touches d'autres mods (alternat radio TFAR / ACRE2…) : leurs raccourcis CBA ne passent pas sans ce relais (fn_keyPass).
+        if (["down", _this] call comspec_atak_native_fnc_keyPass) exitWith { true };
         // Saisie dans un champ du téléphone (« a », « e »… faisaient pencher le personnage) : touche gardée (fn_keyBlock).
         _this call comspec_atak_native_fnc_keyBlock
     }];
+    // Alternat relâché : fin d'émission radio (fn_keyPass).
+    ["reset"] call comspec_atak_native_fnc_keyPass;
+    _display displayAddEventHandler ["KeyUp", { ["up", _this] call comspec_atak_native_fnc_keyPass }];
     // Même garde sur le display de mission, si la touche y passe quand même (posée une fois par partie).
     private _d46 = findDisplay 46;
     if (!isNull _d46 && {(_d46 getVariable ["COMSPEC_KeyBlockEh", -1]) < 0}) then {

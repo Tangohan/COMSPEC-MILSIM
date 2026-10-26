@@ -13,6 +13,8 @@ if (_drawnPage isNotEqualTo "") then {
 // Écran 3D du JPC : la caméra de la vue aérienne (fn_jpcMap) ne doit pas survivre au display.
 if (_state getOrDefault ["texture", false]) then { ["close"] call comspec_atak_native_fnc_jpcMap; };
 private _wasInteractive = _state getOrDefault ["interactive", false];
+// Alternat radio encore appuyé (fn_keyPass) : relâché, sinon la radio resterait en émission téléphone rangé.
+if (_wasInteractive) then { ["release"] call comspec_atak_native_fnc_keyPass; };
 [] call comspec_atak_native_fnc_schedulerStop;
 // Menu d'actions (fn_open) : gestionnaires inGameUI retirés une fois le téléphone rangé, sauf s'il a été rouvert entre-temps
 // (bascule HUD / en main : fn_open les a déjà réinstallés).
