@@ -231,6 +231,13 @@ if (_prefix == "OK") then {
                     _detail = "Adresse Athena invalide";
                     _logMsg = "Adresse portail invalide.";
                 };
+                case "untrusted_host": {
+                    // SEC-001 : la DLL a refuse cette adresse de portail (hote non-Athena, ou http en clair) pour ne
+                    // pas envoyer les jetons ailleurs. Aucun repli : la liaison echoue. Le portail de connect est
+                    // fixe (fn_portalUrl), donc ce refus signale un appel venu d'un autre mod ou d'une mission.
+                    _detail = "Adresse Athena non autorisee";
+                    _logMsg = "Portail refuse par la DLL (protection des jetons) : seule l'adresse officielle Athena en https est acceptee.";
+                };
                 case "not_found": {
                     _detail = "Service Athena introuvable";
                     _logMsg = "Service introuvable — verifiez l'adresse (.../public).";

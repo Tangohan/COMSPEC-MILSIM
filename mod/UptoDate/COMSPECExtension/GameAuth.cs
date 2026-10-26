@@ -48,12 +48,11 @@ public static partial class Extension
     {
         if (function == "Init")
         {
-            var url = args.Length > 0 ? NormalizeBaseUrl(args[0]) : "";
-            if (url.Length == 0)
-                url = NormalizeBaseUrl("https://athena.ttrd.fr/public");
-            if (url.Length == 0)
+            // SEC-001 : adresse de portail depuis SQF → point de contrôle unique. Une adresse refusée (hôte non-Athena,
+            // http en clair : voir IsSecretSafeUri) est traitée comme une adresse vide : portail officiel, jamais elle.
+            if (!TrySetSqfBaseUrl(args.Length > 0 ? args[0] : "", out _)
+                && !TrySetSqfBaseUrl("https://athena.ttrd.fr/public", out _))
                 return FailGameAuth("NETWORK_ERROR");
-            _baseUrl = url;
             SetGameAuth("EXTENSION_READY", 8, "");
             EnsureGameDeviceId();
             SetGameAuth("CONTACTING_ATHENA", 16, "");
@@ -83,9 +82,9 @@ public static partial class Extension
 
         if (function == "RestoreSession")
         {
-            var url = args.Length > 0 ? NormalizeBaseUrl(args[0]) : _baseUrl;
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (on garde _baseUrl courant, déjà contrôlé).
+            if (args.Length > 0)
+                TrySetSqfBaseUrl(args[0], out _);
             var modVer = args.Length > 1 ? ArmaString(args[1]) : "";
             RememberDetectedMod(modVer);
             if (args.Length > 2)
@@ -95,9 +94,8 @@ public static partial class Extension
 
         if (function == "AuthPassword" && args.Length >= 2)
         {
-            var url = NormalizeBaseUrl(args[0]);
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (identifiants envoyés à Athena seulement, en https).
+            TrySetSqfBaseUrl(args[0], out _);
             var modVer = args.Length > 3 ? ArmaString(args[3]) : "";
             RememberDetectedMod(modVer);
             if (args.Length > 4)
@@ -112,17 +110,15 @@ public static partial class Extension
 
         if (function == "RequestOtp" && args.Length >= 2)
         {
-            var url = NormalizeBaseUrl(args[0]);
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (identifiants envoyés à Athena seulement, en https).
+            TrySetSqfBaseUrl(args[0], out _);
             return GameRequestOtp(ArmaString(args[1]));
         }
 
         if (function == "VerifyOtp" && args.Length >= 3)
         {
-            var url = NormalizeBaseUrl(args[0]);
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (identifiants envoyés à Athena seulement, en https).
+            TrySetSqfBaseUrl(args[0], out _);
             var modVer = args.Length > 3 ? ArmaString(args[3]) : "";
             RememberDetectedMod(modVer);
             if (args.Length > 4)
@@ -132,9 +128,8 @@ public static partial class Extension
 
         if (function == "AuthSteam" && args.Length >= 2)
         {
-            var url = NormalizeBaseUrl(args[0]);
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (identifiants envoyés à Athena seulement, en https).
+            TrySetSqfBaseUrl(args[0], out _);
             var steamMod = args.Length > 2 ? ArmaString(args[2]) : "";
             RememberDetectedMod(steamMod);
             return GameAuthSteam(ArmaString(args[1]), steamMod);
@@ -378,8 +373,10 @@ public static partial class Extension
                 return resumed;
             return FailGameAuth("SESSION_EXPIRED");
         }
+        // SEC-001 : même le magasin local passe par le point de contrôle (défense en profondeur : un fichier
+        // de session altéré ne doit pas rediriger la liaison). Hôte non-Athena → on garde _baseUrl courant.
         if (!string.IsNullOrEmpty(store.BaseUrl))
-            _baseUrl = NormalizeBaseUrl(store.BaseUrl);
+            TrySetSqfBaseUrl(store.BaseUrl, out _);
 
         // Modern flow first: refresh rotates the refresh token atomically.
         var json = RefreshGameSession(store.RefreshToken, modVersion);
@@ -1031,6 +1028,9 @@ public static partial class Extension
             return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
+        // SEC-001 : ce site pose lui-même le Bearer du compte (et le corps porte mot de passe, code ou OTP) sans
+        // passer par AttachApiKeyHeader : même filtre d'hôte, au cas où _baseUrl cesserait un jour d'être sûr.
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
@@ -1067,6 +1067,8 @@ public static partial class Extension
             return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
+        // SEC-001 : Bearer du compte posé ici, hors AttachApiKeyHeader : même filtre d'hôte.
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));

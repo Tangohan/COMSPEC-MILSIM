@@ -131,6 +131,7 @@ public static partial class Extension
                     {
                         NotePollResult(c.Slot, code);
                         FeatureLatchUntilMs.TryRemove(RefusalEndpointKey(c.Url), out _);
+                        FeatureLatchCodes.TryRemove(RefusalEndpointKey(c.Url), out _);
                     }
                     var why = code is 401 or 403 ? RefusalErrorCode(body) : "";
                     var (level, hint) = code switch
@@ -168,7 +169,11 @@ public static partial class Extension
         if (_authLatchCode.Length > 0)
             Add("L", "ko", "Liaison arrêtée", _authLatchCode, RefusalHint(_authLatchCode) + " Reprise après une nouvelle liaison.");
         foreach (var key in FeatureLatchUntilMs.Keys)
-            Add("L", "warn", "Fonction hors offre", key, RefusalHint("feature_unavailable") + " Nouvel essai toutes les 30 min.");
+        {
+            var why = FeatureLatchCodes.TryGetValue(key, out var c) && c.Length > 0 ? c : "feature_unavailable";
+            Add("L", "warn", why == "feature_unavailable" ? "Fonction hors offre" : "Canal refusé (" + why + ")", key,
+                RefusalHint(why) + " Nouvel essai toutes les 30 min.");
+        }
 
         // 3. État local de la DLL.
         var s = JournalSummarize();

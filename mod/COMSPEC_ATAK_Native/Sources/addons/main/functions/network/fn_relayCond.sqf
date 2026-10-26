@@ -70,13 +70,6 @@ private _ok = switch (toLower trim _c) do {
                 if (_code isEqualTo {}) then { _code = compile _src; _codes set [_src, _code]; };
                 _r = _o call _code;
                 _r = !isNil "_r" && {_r isEqualType true} && {_r};
-            } else {
-                // Condition en code posée seulement dans la variable publique (ancienne façon de faire) : jamais évaluée,
-                // relais hors service toute la mission. Signalé une fois par objet au créateur de mission.
-                if !(_o getVariable ["COMSPEC_ATAK_RelayCondWarned", false]) then {
-                    _o setVariable ["COMSPEC_ATAK_RelayCondWarned", true];
-                    ["WARN", "RELAIS", format ["%1 (%2) : condition en code sans copie serveur COMSPEC_AtakRelayCondSrv, relais toujours inactif. Poser la condition avec le module « ATAK · Relais » ou sur le serveur : _veh setVariable [""COMSPEC_AtakRelayCondSrv"", <code>]", typeOf _o, _o]] call comspec_atak_native_fnc_log;
-                };
             };
             if ((_o getVariable ["COMSPEC_AtakRelayCondOk", []]) isNotEqualTo [_r, _def]) then { _o setVariable ["COMSPEC_AtakRelayCondOk", [_r, _def], true]; };
             _r

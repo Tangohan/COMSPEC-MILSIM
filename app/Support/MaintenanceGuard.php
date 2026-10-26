@@ -6,7 +6,13 @@ namespace App\Support;
 
 final class MaintenanceGuard
 {
+    /** Aucune fin annoncée : les clients reviennent dans 15 min (la DLL plafonne à 10 min). */
     private const DEFAULT_RETRY_AFTER = 900;
+
+    /** Fin imminente : jamais moins, pour ne pas faire revenir tous les clients en rafale. */
+    private const MIN_RETRY_AFTER = 15;
+    /** Étalement des retours après une fin annoncée (secondes ajoutées au hasard, 0 à 15). */
+    private const RETURN_SPREAD = 15;
 
     public function __construct(
         private MaintenanceService $maintenanceService
@@ -132,8 +138,10 @@ final class MaintenanceGuard
             exit;
         }
 
+        // Calculé une fois : l'en-tête et le corps JSON annoncent le même délai.
+        $retryAfter = self::retryAfterSeconds($maintenance, time(), random_int(0, self::RETURN_SPREAD));
         http_response_code($status);
-        header('Retry-After: ' . self::DEFAULT_RETRY_AFTER);
+        header('Retry-After: ' . $retryAfter);
         header('X-Athena-Maintenance: 1');
 
         $title = $maintenance['title'] ?: 'Maintenance en cours';
@@ -149,7 +157,7 @@ final class MaintenanceGuard
             // « serveur injoignable » : l'app Athena du téléphone l'annonce telle quelle.
             header('Content-Type: application/json; charset=utf-8');
             header('Cache-Control: no-store');
-            echo json_encode(self::jsonPayload($maintenance, $message), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            echo json_encode(self::jsonPayload($maintenance, $message, $retryAfter), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             exit;
         }
 
@@ -174,7 +182,7 @@ final class MaintenanceGuard
      * @param array<string, mixed> $maintenance
      * @return array<string, mixed>
      */
-    public static function jsonPayload(array $maintenance, string $message): array
+    public static function jsonPayload(array $maintenance, string $message, ?int $retryAfter = null): array
     {
         $endsAt = trim((string) ($maintenance['ends_at'] ?? ''));
         $endsTs = $endsAt !== '' ? strtotime($endsAt) : false;
@@ -187,8 +195,28 @@ final class MaintenanceGuard
             'title' => (string) ($maintenance['title'] ?: 'Maintenance en cours'),
             'message' => $message,
             'ends_at' => $endsTs !== false ? gmdate('c', $endsTs) : null,
-            'retry_after' => self::DEFAULT_RETRY_AFTER,
+            'retry_after' => $retryAfter ?? self::retryAfterSeconds($maintenance),
         ];
+    }
+
+    /**
+     * Délai de retour annoncé aux clients (en-tête Retry-After et champ retry_after) : le temps qui reste jusqu'à la
+     * fin prévue, au lieu de 15 min fixes. La DLL COMSPEC Link et l'Overwatch web suspendent leurs envois pendant ce
+     * délai : avec 900 s fixes, une maintenance de 2 min figeait les positions près de 10 min après sa fin.
+     * `$spread` (0 à RETURN_SPREAD, tiré par requête) étale les retours : sans lui, tous les clients reviendraient
+     * à la même seconde, celle de la fin annoncée.
+     *
+     * @param array<string, mixed> $maintenance
+     */
+    public static function retryAfterSeconds(array $maintenance, ?int $now = null, int $spread = 0): int
+    {
+        $endsAt = trim((string) ($maintenance['ends_at'] ?? ''));
+        $endsTs = $endsAt !== '' ? strtotime($endsAt) : false;
+        if ($endsTs === false) {
+            return self::DEFAULT_RETRY_AFTER;
+        }
+
+        return min(self::DEFAULT_RETRY_AFTER, max(self::MIN_RETRY_AFTER, $endsTs - ($now ?? time())) + $spread);
     }
 
     /** Ferme la session du visiteur (données et cookie) : il devra se reconnecter après la maintenance. */
@@ -244,25 +272,8 @@ final class MaintenanceGuard
 
     public static function resolveClientIp(): string
     {
-        $keys = [
-            'HTTP_CF_CONNECTING_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'REMOTE_ADDR',
-        ];
+        $ip = ClientIp::resolve();
 
-        foreach ($keys as $key) {
-            if (!empty($_SERVER[$key])) {
-                $value = trim((string) $_SERVER[$key]);
-                if ($key === 'HTTP_X_FORWARDED_FOR' && str_contains($value, ',')) {
-                    $parts = explode(',', $value);
-
-                    return trim($parts[0]);
-                }
-
-                return $value;
-            }
-        }
-
-        return '0.0.0.0';
+        return $ip !== '' ? $ip : '0.0.0.0';
     }
 }

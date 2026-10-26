@@ -378,12 +378,7 @@ final class AtakArmaWriteGuard
 
     public function clientIp(): string
     {
-        $ip = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '');
-        if (str_contains($ip, ',')) {
-            $ip = trim(explode(',', $ip)[0]);
-        }
-
-        return trim($ip);
+        return \App\Support\ClientIp::resolve();
     }
 
     /** @param array<string, mixed> $meta */

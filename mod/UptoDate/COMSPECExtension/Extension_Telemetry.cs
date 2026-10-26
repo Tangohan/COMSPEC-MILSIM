@@ -496,9 +496,11 @@ public static partial class Extension
             return false;
         if (IsPostPausedNow())
             return false;
-        // Lot refusé par l'offre de la communauté (feature_unavailable) ou clé refusée : plus de POST pendant le
-        // verrou (sinon le même refus repartait à chaque passage et remplissait la pause commune à tous les envois).
-        if (IsRefusalLatched(_baseUrl.TrimEnd('/') + "/api/atak/telemetry/batch"))
+        var url = _baseUrl.TrimEnd('/') + "/api/atak/telemetry/batch";
+        // Lot refusé par une règle d'Athena : on ne le renvoie pas pendant le verrou (30 min). Sans ça le lot
+        // repartait sans fin, la pause globale montait et le tchat, les photos et les marqueurs n'étaient plus
+        // envoyés (contre-revue du correctif 2.4.1). Les files P0-P3 sont bornées et les positions se remplacent.
+        if (IsRefusalLatched(url))
             return false;
 
         List<TelemetryItem> items;
@@ -530,7 +532,6 @@ public static partial class Extension
         }
         sb.Append("]}");
         var payload = sb.ToString();
-        var url = _baseUrl.TrimEnd('/') + "/api/atak/telemetry/batch";
         var started = Environment.TickCount64;
 
         try
@@ -584,22 +585,17 @@ public static partial class Extension
             }
             if (code == 403)
             {
-                NoteAccessDenied(response, url);
-                var refusalBody = RefusalBody(response);
-                NoteRefusal(url, 403, refusalBody);
-                // Lot absent de l'offre de la communauté : bascule legacy pour cette session (comme 404/405/501),
-                // ce lot et ce qui attend dans P0-P3 partent par les routes unitaires (sinon plus rien ne partait
-                // et P1/P2 grossissaient pendant tout le verrou).
-                if (RefusalErrorCode(refusalBody) == "feature_unavailable")
-                {
-                    _telemetryBatchEnabled = false;
-                    Interlocked.Increment(ref _telemetryFallbackStreak);
-                    FallbackTelemetryUnitary(items);
-                    FlushTelemetryQueuesUnitary();
-                }
-                else
-                    RequeueTelemetryItems(items);
+                // Le verrou décide d'abord : refus « règle » sur cette route (ou compte refusé) → le lot est
+                // abandonné, sans remise en file ni pause globale des envois, pour que le reste continue.
+                NoteRefusal(url, 403, RefusalBody(response));
                 Interlocked.Increment(ref _telemetryBatchFail);
+                if (IsRefusalLatched(url))
+                {
+                    Interlocked.Add(ref _telemetryDropped, items.Count);
+                    return false;
+                }
+                NoteAccessDenied(response, url);
+                RequeueTelemetryItems(items);
                 return true;
             }
             if (code == 404 || code == 501 || code == 405)

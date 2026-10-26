@@ -159,7 +159,7 @@ class Request
 
     public function ip(): string
     {
-        return $this->server['HTTP_X_FORWARDED_FOR'] ?? $this->server['HTTP_CLIENT_IP'] ?? $this->server['REMOTE_ADDR'] ?? '';
+        return \App\Support\ClientIp::resolve($this->server);
     }
 
     public function userAgent(): string
