@@ -681,6 +681,8 @@ class CfgRemoteExec {
         class comspec_atak_native_fnc_planServer { allowedTargets = 2; };
         class comspec_atak_native_fnc_captureServer { allowedTargets = 2; };
         class comspec_atak_native_fnc_dataServer { allowedTargets = 2; };
+        // Écrans TOC (contre-expertise v4, N15) : poser, désigner, retirer, affichage, jugés sur le demandeur (fn_tocScreen).
+        class comspec_atak_native_fnc_tocScreen { allowedTargets = 2; };
         // Serveur -> client : relevé de l'app Admin demandé au joueur (fn_adminServer « scan »). La fonction refuse
         // tout appel distant qui ne vient pas du serveur, donc la déclarer ne permet rien de client à client.
         // jip = 0 : aucun ordre du serveur ne passe par la file JIP ; en liste blanche, le moteur refuse alors qu'un

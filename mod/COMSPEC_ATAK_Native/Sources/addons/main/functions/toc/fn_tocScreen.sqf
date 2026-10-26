@@ -31,7 +31,11 @@
       ["tick"]                             client, chaque seconde (XEH_postInitClient) : textures et rafraîchissement
       ["load", display]                    onLoad du display de la texture
       ["initServer"]                       serveur (XEH_postInitServer)
-    Exemple de mission : ["add", [this, "TOC Bravo", "WEST"]] call comspec_atak_native_fnc_tocScreen;
+    Demande d'un client : [mode, argument] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2] (CfgRemoteExec), jugée
+    sur le demandeur retrouvé par remoteExecutedOwner (fn_reqUnit). « add », « remove » et « spawn » : Zeus, hôte, admin
+    connecté ou UID autorisé (fn_adminAllowed) ; « view » : en plus, joueur du camp de l'écran, à moins de 25 m.
+    Plus d'événement CBA comspec_atak_native_tocScreen.
+    Exemple de mission : if (isServer) then { ["add", [this, "TOC Bravo", "WEST"]] call comspec_atak_native_fnc_tocScreen; };
 */
 params [["_mode", "tick"], ["_a", objNull]];
 private _fn = comspec_atak_native_fnc_tocScreen;
@@ -49,32 +53,66 @@ private _sideOk = {
     private _s = ([_o] call _cfgOf) param [1, ""];
     _s isEqualTo "" || {_s isEqualTo str side group _u}
 };
+// Écrans du jeu proposés à la pose (« classes », et « spawn » sans se ré-appeler).
+private _classes = {
+    ([
+        ["Grand écran sur trépied", "Land_TripodScreen_01_large_F"],
+        ["Grand écran sur trépied (noir)", "Land_TripodScreen_01_large_black_F"],
+        ["Grand écran sur trépied (sable)", "Land_TripodScreen_01_large_sand_F"],
+        ["Double écran sur trépied", "Land_TripodScreen_01_dual_v1_F"],
+        ["TV à écran plat", "Land_FlatTV_01_F"],
+        ["Écran de projection", "Land_ProjectorScreen_01_F"],
+        ["Poste informatique", "Land_PCSet_01_screen_F"],
+        ["Ordinateur portable", "Land_Laptop_unfolded_F"]
+    ]) select { isClass (configFile >> "CfgVehicles" >> (_x select 1)) }
+};
+// Affichage d'un écran demandé par un joueur : écran du registre, joueur de son camp, à moins de 25 m (les actions de
+// l'écran portent à 5 m).
+private _viewer = {
+    params ["_v", "_u"];
+    if !(_v isEqualType []) exitWith { false };
+    private _o = _v param [0, objNull];
+    _o isEqualType objNull && {!isNull _o} && {_o in (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []])}
+        && {[_o, _u] call _sideOk} && {(_u distance _o) <= 25}
+};
+// Demande venue d'un client (remoteExecCall vers 2) : seul remoteExecutedOwner fait foi (fn_reqUnit). Plus d'événement
+// CBA comspec_atak_native_tocScreen : il ne disait pas qui l'avait levé, et tout client faisait poser au serveur des
+// écrans sans limite, désigner comme écran n'importe quel objet (recréé aux parties suivantes, quelle que soit sa
+// classe), supprimer un objet marqué COMSPEC_ATAK_TocOwned ou changer l'affichage de tout écran (contre-expertise v4,
+// N15). Poser, désigner, retirer : Zeus, hôte, admin connecté ou UID autorisé (fn_adminAllowed), comme le module Zeus.
+// Hôte d'une partie locale et partie solo : appel non distant, rien ne change. Dans la pile d'une demande distante, le
+// ré-appel « add » de « spawn » voit le même appel distant : il est jugé sur le même demandeur, déjà admis.
+private _remote = isServer && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+private _req = objNull;
+if (_remote) then { _req = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
+if (_remote && {!(_mode in ["add", "remove", "spawn", "view"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][TOC] Action « %1 » refusée au poste %2 (réservée au serveur)", _mode, remoteExecutedOwner];
+    false
+};
+if (_remote && {isNull _req}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][TOC] Demande « %1 » refusée au poste %2 (demandeur introuvable)", _mode, remoteExecutedOwner];
+    false
+};
+if (_remote && {!([_req] call comspec_atak_native_fnc_adminAllowed)} && {!(_mode isEqualTo "view" && {[_a, _req] call _viewer})}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][TOC] Demande « %1 » refusée à %2 (ni Zeus ni admin, ni joueur du camp près de l'écran)", _mode, name _req];
+    false
+};
 
 switch (_mode) do {
     case "initServer": {
         if (!isServer) exitWith {};
-        ["comspec_atak_native_tocScreen", { _this call comspec_atak_native_fnc_tocScreen; }] call CBA_fnc_addEventHandler;
+        // Pas de gestionnaire d'événement CBA : les demandes des clients arrivent par remoteExecCall vers 2, seule voie
+        // qui laisse le serveur reconnaître le poste émetteur (contrôle avant ce switch).
         ["init"] call comspec_atak_native_fnc_tocFeed;
         // Écrans gardés de la partie précédente : remis une fois les modules Eden passés.
         [{ ["restore"] call comspec_atak_native_fnc_tocPersist; }, [], 3] call CBA_fnc_waitAndExecute;
         true
     };
-    case "classes": {
-        ([
-            ["Grand écran sur trépied", "Land_TripodScreen_01_large_F"],
-            ["Grand écran sur trépied (noir)", "Land_TripodScreen_01_large_black_F"],
-            ["Grand écran sur trépied (sable)", "Land_TripodScreen_01_large_sand_F"],
-            ["Double écran sur trépied", "Land_TripodScreen_01_dual_v1_F"],
-            ["TV à écran plat", "Land_FlatTV_01_F"],
-            ["Écran de projection", "Land_ProjectorScreen_01_F"],
-            ["Poste informatique", "Land_PCSet_01_screen_F"],
-            ["Ordinateur portable", "Land_Laptop_unfolded_F"]
-        ]) select { isClass (configFile >> "CfgVehicles" >> (_x select 1)) }
-    };
+    case "classes": { call _classes };
     case "add": {
         _a params [["_o", objNull], ["_name", ""], ["_side", ""], ["_sel", 0], ["_view", "SPLIT"], ["_toc", true], ["_spawned", false]];
         if (isNull _o) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["add", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer) exitWith { ["add", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; true };
         if (_name isEqualTo "") then { _name = "TOC"; };
         private _old = [_o] call _cfgOf;
         if !(_view in ["SPLIT", "MAP", "FEED", "TOC"]) then { _view = "SPLIT"; };
@@ -90,7 +128,7 @@ switch (_mode) do {
     };
     case "remove": {
         if (isNull _a) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["remove", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer) exitWith { ["remove", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; true };
         private _owned = _a getVariable ["COMSPEC_ATAK_TocOwned", false];
         _a setVariable ["COMSPEC_ATAK_TocScr", nil, true];
         _a setVariable ["COMSPEC_ATAK_Toc", nil, true];
@@ -102,8 +140,8 @@ switch (_mode) do {
     };
     case "spawn": {
         _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_cls", ""], ["_name", ""], ["_side", ""], ["_view", "SPLIT"], ["_toc", true]];
-        if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["spawn", _a]] call CBA_fnc_serverEvent; objNull };
-        private _cands = (["classes"] call _fn) apply { _x select 1 };
+        if (!isServer) exitWith { ["spawn", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; objNull };
+        private _cands = (call _classes) apply { _x select 1 };
         if !(_cls in _cands) then { _cls = _cands param [0, ""]; };
         if (_cls isEqualTo "") exitWith {
             ["WARNING", "TOC", "Écran TOC : aucun écran du jeu disponible pour la pose."] call comspec_atak_native_fnc_log;
@@ -121,7 +159,7 @@ switch (_mode) do {
     case "view": {
         _a params [["_o", objNull], ["_k", ""], ["_v", 0]];
         if (isNull _o) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["view", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer) exitWith { ["view", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; true };
         private _c = +([_o] call _cfgOf);
         if ((count _c) < 8) exitWith { false };
         switch (_k) do {

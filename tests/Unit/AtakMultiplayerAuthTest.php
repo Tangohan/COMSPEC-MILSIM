@@ -236,6 +236,52 @@ final class AtakMultiplayerAuthTest extends TestCase
         }
     }
 
+    public function testTocScreenRequestsAreJudgedOnTheRequesterFoundByTheServer(): void
+    {
+        // Écrans TOC (contre-expertise v4, N15) : le gestionnaire CBA comspec_atak_native_tocScreen ne contrôlait rien.
+        // Tout client faisait poser au serveur des écrans sans limite, désigner comme écran n'importe quel objet (recréé
+        // par fn_tocPersist aux parties suivantes, quelle que soit sa classe), supprimer un objet marqué
+        // COMSPEC_ATAK_TocOwned ou changer l'affichage de tout écran. Les demandes arrivent par remoteExecCall vers 2 et
+        // sont jugées sur le demandeur retrouvé par remoteExecutedOwner : Zeus, hôte, admin ou UID autorisé ;
+        // l'affichage, aussi le joueur du camp de l'écran, à moins de 25 m.
+        $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/toc/fn_tocScreen.sqf'));
+        $head = $this->between($code, 'params [["_mode", "tick"], ["_a", objNull]];', 'switch (_mode) do {');
+        self::assertMatchesRegularExpression('/private _remote = isServer && \{isMultiplayer\} && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+            . 'private _req = objNull;\s*'
+            . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
+            . 'if \(_remote && \{!\(_mode in \["add", "remove", "spawn", "view"\]\)\}\) exitWith \{.*?'
+            . 'if \(_remote && \{isNull _req\}\) exitWith \{.*?'
+            . 'if \(_remote && \{!\(\[_req\] call comspec_atak_native_fnc_adminAllowed\)\} && \{!\(_mode isEqualTo "view" && \{\[_a, _req\] call _viewer\}\)\}\) exitWith \{.*?false\s*\};\s*$/s', $head);
+        self::assertMatchesRegularExpression('/private _viewer = \{\s*params \["_v", "_u"\];\s*if !\(_v isEqualType \[\]\) exitWith \{ false \};\s*private _o = _v param \[0, objNull\];\s*'
+            . '_o isEqualType objNull && \{!isNull _o\} && \{_o in \(missionNamespace getVariable \["COMSPEC_ATAK_TocScreens", \[\]\]\)\}\s*'
+            . '&& \{\[_o, _u\] call _sideOk\} && \{\(_u distance _o\) <= 25\}\s*\};/', $head);
+        // « spawn » ne se ré-appelle plus pour la liste des écrans (« classes » est refusée à distance) ; plus d'événement.
+        self::assertStringNotContainsString('["classes"] call _fn', $code);
+        self::assertStringNotContainsString('CBA_fnc_addEventHandler', $code);
+        self::assertStringNotContainsString('CBA_fnc_serverEvent', $code);
+        foreach (['add' => 'true', 'remove' => 'true', 'spawn' => 'objNull', 'view' => 'true'] as $mode => $ret) {
+            self::assertStringContainsString('if (!isServer) exitWith { ["' . $mode . '", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; ' . $ret . ' };', $code, $mode);
+        }
+        self::assertStringContainsString('class comspec_atak_native_fnc_tocScreen { allowedTargets = 2; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        // Plus de gestionnaire ni d'émetteur de l'événement dans main/ et connect/ ; actions envoyées = liste distante.
+        $files = $this->sources();
+        $left = [];
+        foreach ($files as $rel => $units) {
+            foreach ($units as $u) {
+                if (preg_match('/(["\'])comspec_atak_native_tocScreen\1/i', $u) === 1) {
+                    $left[$rel] = true;
+                }
+            }
+        }
+        self::assertSame([], array_keys($left));
+        $lists = $this->remoteLists($files);
+        self::assertSame(['add', 'remove', 'spawn', 'view'], $lists['comspec_atak_native_fnc_tocscreen'] ?? null);
+        [$sent] = $this->actionsSent($files, $lists);
+        $got = array_keys($sent['comspec_atak_native_fnc_tocscreen'] ?? []);
+        sort($got);
+        self::assertSame(['add', 'remove', 'spawn', 'view'], $got);
+    }
+
     public function testCallsReplayedFromTheJipQueueAreRefusedByTheServerOnlyGuards(): void
     {
         // Un client peut déposer un appel dans la file JIP (troisième argument de remoteExec / remoteExecCall) : le
