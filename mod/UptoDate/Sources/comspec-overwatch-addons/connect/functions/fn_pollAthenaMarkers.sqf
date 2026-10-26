@@ -84,7 +84,8 @@ if (!_bootMk) then {
     };
     if (_text isEqualTo "") then { _text = "Repère poste"; };
 
-    if (!(_name in _mkIndex) && {_created >= 25}) then { _capped = true; continue };
+    if (!(_name in _mkIndex) && {_created >= 25}) then { _capped = true; };
+    if (!(_name in _mkIndex) && {_created >= 25}) then { continue };
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
