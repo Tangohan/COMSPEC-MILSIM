@@ -13,7 +13,10 @@ $n = static function (string $fr): string {
 <footer class="portal-footer" data-portal-footer>
     <div class="portal-footer__inner">
         <div class="portal-footer__brand">
-            <p class="portal-footer__mark" role="img" aria-label="ATHENA"><span class="portal-footer__logo"></span></p>
+            <a class="portal-footer__brandline" href="<?= htmlspecialchars(url('home'), ENT_QUOTES, 'UTF-8') ?>" aria-label="ATHENA">
+                <span class="portal-footer__emblem" aria-hidden="true"></span>
+                <span class="portal-footer__brandtext"><b>ATHENA<i>.</i></b><small><?= $n('Portail MILSIM') ?></small></span>
+            </a>
             <p class="portal-footer__lead">
                 <?= $n('Centralisez le recrutement, la présence, les formations et la coordination opérationnelle.') ?>
             </p>
@@ -77,9 +80,15 @@ $n = static function (string $fr): string {
         </nav>
     </div>
 
+    <div class="portal-footer__giant" aria-hidden="true">
+        <span class="portal-footer__giant-eagle"></span>
+        <span class="portal-footer__giant-word">Athena</span>
+    </div>
+
     <div class="portal-footer__bar">
         <p class="portal-footer__copy">© <?= $year ?> Athena Comspec. <?= $n('Tous droits réservés.') ?></p>
         <p class="portal-footer__tag"><?= $n('Outils de gestion pour communautés MILSIM.') ?></p>
+        <a class="portal-footer__top" href="#top" data-portal-footer-top><?= $n('Haut de page') ?> <span aria-hidden="true">↑</span></a>
     </div>
 </footer>
 <script>
@@ -125,5 +134,26 @@ $n = static function (string $fr): string {
     mq.addListener(applyViewportDefaults);
   }
   applyViewportDefaults();
+
+  // Le grand mot ATHENA remplit exactement la largeur, quelle que soit la police chargée.
+  var giant = root.querySelector('.portal-footer__giant');
+  var word = root.querySelector('.portal-footer__giant-word');
+  function fitWord() {
+    if (!giant || !word) return;
+    var avail = giant.clientWidth - 40;
+    if (avail <= 0) return;
+    word.style.fontSize = '100px';
+    var w = word.getBoundingClientRect().width || 1;
+    word.style.fontSize = Math.max(40, Math.floor(100 * avail / w)) + 'px';
+  }
+  fitWord();
+  window.addEventListener('resize', fitWord);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitWord);
+
+  var top = root.querySelector('[data-portal-footer-top]');
+  if (top) top.addEventListener('click', function (e) {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  });
 })();
 </script>
