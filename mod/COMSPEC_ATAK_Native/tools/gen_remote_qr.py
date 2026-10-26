@@ -3,7 +3,7 @@
 QR codes fixes à scanner avec son vrai téléphone (512x512, modules noirs sur fond blanc) :
   data/drone_remote_qr_ca.paa  page /telecommande-drone, onglet FLOTTE de l'app Drone (par défaut)
   data/athena_link_qr_ca.paa   page /lier, onglet CODE de l'app Athena :
-                               python3 tools/gen_remote_qr.py https://athena.ttrd.fr/lier hemtt athena_link_qr_ca
+                               python3 tools/gen_remote_qr.py https://athena-comspec.eu/lier hemtt athena_link_qr_ca
 Adresse par défaut : celle du site de production ; une autre en premier argument.
 
   python3 tools/gen_remote_qr.py [adresse] [chemin de hemtt] [nom du fichier sans extension]

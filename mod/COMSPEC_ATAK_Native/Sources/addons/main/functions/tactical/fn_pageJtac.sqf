@@ -284,7 +284,7 @@ switch (_tab) do {
         _rows pushBack ["buttons", [
             ["OUTIL CARTE IP → CIBLE", { ["MAP"] call comspec_atak_native_fnc_navigate; [{ ["IPTGT"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, false, true, "Clic sur l'IP puis sur la cible : cap magnétique, distance, altitude, repris ici"],
             ["OUVRIR LA PAGE 9-LINE", {
-                private _url = "https://athena.ttrd.fr/public/9-line";
+                private _url = "https://athena-comspec.eu/public/9-line";
                 private _r = (["COMSPECATAKNativeExtension", "COMSPECExtension"] select ([] call comspec_atak_native_fnc_bridge)) callExtension ["OpenAthenaLink", [_url]];
                 if (_r isEqualType []) then { _r = _r param [0, ""]; };
                 if ((_r select [0, 2]) isNotEqualTo "OK") then { ["INFO", format ["Ouvrez %1 dans votre navigateur", _url], 6, 30] call comspec_atak_native_fnc_notify; };
@@ -293,7 +293,7 @@ switch (_tab) do {
         _rows append [
             ["section", "9-LINE sur un autre écran", "Scannez avec votre vrai téléphone, connecté à votre compte Athena : le dernier 9-LINE transmis s'affiche en grand, avec un calculateur IP → cible."],
             ["image", "\z\comspec_atak_native\addons\main\data\nineline_qr_ca.paa"],
-            ["text", "<t size='0.85' color='#8a9a93'>https://athena.ttrd.fr/public/9-line</t>"]
+            ["text", "<t size='0.85' color='#8a9a93'>https://athena-comspec.eu/public/9-line</t>"]
         ];
     };
     case "CTRL": {

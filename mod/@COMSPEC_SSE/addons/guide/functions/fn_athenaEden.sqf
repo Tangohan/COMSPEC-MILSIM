@@ -56,7 +56,7 @@ private _status = {
     private _ok = (_cells param [1, ""]) isEqualTo "READY" || {uiNamespace getVariable ["comspec_sse_athenaPaired", false]};
     [_ok, 5 call _cell, 6 call _cell, 7 call _cell, true]
 };
-// Adresse courte à taper (« athena.ttrd.fr/lier ») : sans regexReplace, qui lit le dernier « / » du motif comme
+// Adresse courte à taper (« athena-comspec.eu/lier ») : sans regexReplace, qui lit le dernier « / » du motif comme
 // le début des options et affichait « //lier ».
 private _shortUrl = {
     params [["_u", "", [""]]];

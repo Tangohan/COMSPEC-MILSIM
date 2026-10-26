@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
+
+### Résumé joueur
+Type : nouveauté
+FR : Grosse mise à jour du téléphone ATAK
+- Nouvelles apps : Admin (gestion et Zeus), Numéros et PC portable de TOC pour jouer sans Athena, montre Garmin au poignet (touche Montre, O), diapositives du Briefing sur les TV et projecteurs du jeu.
+- Carte : indicatif perso, marqueurs nommés et modifiables avec leur heure de pose, recherche par grille, outils JTAC, réalisme GPS et brouillage d'écran.
+- Arsenal ACE : « Tout basculer dans l'arsenal ACE » sans jamais effacer tes tenues, liste gardée sur ton PC.
+- Moins de freezes, jeu plus fluide, centaines de corrections, téléphone traduit en anglais, et le site passe à l'adresse athena-comspec.eu.
+EN : Big ATAK phone update
+- New apps: Admin (management and Zeus), Numbers and a TOC laptop to play without Athena, a Garmin watch on your wrist (Watch key, O), Briefing slides on in-game TVs and projectors.
+- Map: personal callsign, named and editable markers with the time they were placed, grid search, JTAC tools, GPS realism and screen jamming.
+- ACE arsenal: "Send all to ACE arsenal" never wipes your loadouts any more, and the list is kept on your PC.
+- Fewer freezes, smoother game, hundreds of fixes, phone translated into English, and the website moves to athena-comspec.eu.
+
+### Détail technique
+Un seul numéro pour tout le lot : ATAK natif 2.4.0 (après 2.3.10 sur main ; les numéros 2.3.11 réservés par certaines PR ne sont jamais sortis), COMSPEC Link 2.0.95 (après 2.0.93 sur main), Overwatch connect 1.6.17. Le détail de chaque partie est dans les entrées ci-dessous et dans les PR d'origine, fermées avec un lien vers ce regroupement.
+
+- PR regroupées : #1029 (app Admin, parc Athena en jeu, debug IA), #1030 (logos ATHENA), #1032 (réalisme GPS, sang, dégâts et brouillage d'écran, montre Garmin, antennes du jeu en relais), #1033 (indicatif, marqueurs, recherche par grille, JTAC, jumelles), #1035 (app Athena : maintenance, /lier, QR code), #1036 (mode full local : PC de TOC, app Numéros, config.json), #1040 (écrans COMSPEC, diapositives sur les TV), #1044 (freezes, BIS_fnc_crewCount, fonctions connect), #1051 (marqueurs par le réseau ATAK, heure de pose, relais mât déployé), #1055 (images en PAA), #1057 (revue + optimisation, inclut #1034 et #1073 : refus d'Athena sans boucle, auto-test Dépannage liaison), #1064 (arsenal ACE), #1069 (revue multi-agents : 263 correctifs), #1072 (portail athena-comspec.eu), #1075 (retours des contributeurs : traductions natif, connect, SSE).
+- Conflits résolus au regroupement : `fn_mapOnDraw` / `fn_mapLabels` (position GPS affichée), `config.cpp` (listes `units[]` et `CfgFunctions` réunies), `stringtable.xml` (clés des deux côtés), `XEH_postInitServer` (journal à deux plafonds de #1069 + nettoyage des accusés de #1057, `tocMsg` / `localOrder` de #1036), `fn_dataServer` / `fn_dataSetup` (code de fin gardé au serveur : version de #1057), sauvegardes du profil (`fn_profileSave` de #1057 pour les passages périodiques, `fn_saveProfile` de #1044 ailleurs, jamais `saveProfileNamespace` direct dans les fichiers fusionnés), arsenal connect (appel async de #1069 + cache local de #1064), `fn_zeusShowPlayerAtak` (journal du terminal, plus de hint par-dessus l'écran), `views/link/lier.php` (refonte déjà sur main gardée).
+- Domaine : restes `athena.ttrd.fr` du natif passés à `athena-comspec.eu` (9-LINE du JTAC, commentaires), QR codes régénérés (`drone_remote_qr_ca`, `nineline_qr_ca`, `athena_link_qr_ca`). Overwatch connect et la DLL gardent `athena.ttrd.fr` (toujours servi).
+- Build : `COMSPECATAKNativeExtension.csproj` liste maintenant `Extension_DataFlows.cs`, `Extension_RefusalLatch.cs`, `Extension_SelfTest.cs`, `Extension_WardrobeCache.cs` (la DLL de l'ATAK natif ne compilait plus avec #1057 + #1064). Les deux projets C# compilent (dotnet 8). main.pbo et towers.pbo reconstruits par HEMTT, comspec_overwatch_connect.pbo par `tools/pack_pbo.py`, `verify_build.py` OK. DLL Windows (NativeAOT) et PBO SSE à reconstruire sur le PC (`build_mod.bat`).
+- Reporté au prochain regroupement : les 23 points restants de la revue (`/mnt/project-files/revue-mod/passe-2-corrections.md`, section « Reporté »).
+
+---
+
 ## Moins de freezes, plus d'erreur BIS_fnc_crewCount en véhicule, fonctions connect réparées (ATAK natif : numéro donné au regroupement)
 
 ### Résumé joueur
@@ -155,7 +181,7 @@ EN : Athena is now translated with the community
 - Site : `/contribuer` (ContributorController), `/traduire-site` (SiteTranslationController, SiteTranslationService), `/admin/system/contributeurs` (SystemContributorsController). Migration `20261025000001_site_contributors_translation.sql` (run-migrations sur le VPS). Les langues publiées et leurs dictionnaires sont compilés dans `storage/i18n/community/` (CommunityLanguages) : `LocaleService` accepte leurs codes, une langue de la communauté se comporte comme l'anglais (`locale()` = en, `site_lang()` = son code) avec son dictionnaire par-dessus (HtmlTranslator, Translator, dictionnaire JavaScript `/traduire-site/dico/{code}.js`).
 - Discord : script `tools/discord/comspec_discord_contributors.py` (lancé sur le PC de TTRD, jeton du bot jamais sur le site) : rôles Translator / Content creator, salons translation / contributors, question de choix des rôles dans l'accueil du serveur (Onboarding), conditions des rôles liés déclarées à l'application et rôle Athena verified.
 - Rôles liés Discord (Linked Roles) : `DiscordLinkedRoles` (OAuth `identify role_connections.write`, conditions compte Athena / membre d'une communauté / nombre de communautés / ancienneté, nom des communautés sur le profil), `/discord/roles-lies` (adresse de vérification) et retour, panneau Discord dans Mon compte › Préférences, réglages Application ID + secret client chiffré dans Intégrations › Plateforme, tâche automatique quotidienne `discord_linked_roles_sync`. Migration `20261025000002_user_discord_links.sql`. Dans le portail des développeurs Discord : OAuth2 › Redirects = `/discord/roles-lies/retour` ; puis la condition « Compte Athena » sur le rôle Athena verified (Paramètres du serveur › Rôles › Liens).
-## App Admin dans le téléphone : parc ATAK de la communauté, ATAK de la partie et debug de l'IA, pour la gestion et les Zeus (ATAK natif 2.3.11.AB - Denver, COMSPEC Link 2.0.94)
+## App Admin dans le téléphone : parc ATAK de la communauté, ATAK de la partie et debug de l'IA, pour la gestion et les Zeus (regroupé dans ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
 Type : nouveauté
@@ -179,7 +205,7 @@ EN : New Admin app for community managers and Zeus
 - Boutons à conséquence en deux temps (CONFIRMER). `i18n/en.txt` : 143 textes.
 - Version 2.3.11, COMSPEC Link 2.0.94 (DLL à recompiler). main.pbo non reconstruit dans cette PR (regroupement).
 - À tester en jeu : app visible en Zeus et invisible pour un joueur ; relevé EN JEU avec plusieurs joueurs ; effets Zeus depuis l'app ; parc ATHENA avec un compte gestionnaire relié (bloquer puis lever, message reçu, compromission puis levée) ; DEBUG IA après qu'une IA ennemie a ramassé un téléphone (traque visible, ARRÊTER LA TRAQUE, REPRENDRE LE TÉLÉPHONE).
-## Nouveaux logos ATHENA sur le site et dans le téléphone (ATAK natif 2.3.11.AB - Denver)
+## Nouveaux logos ATHENA sur le site et dans le téléphone (regroupé dans ATAK natif 2.4.0.AB - Denver)
 
 ### Résumé joueur
 Type : nouveauté
@@ -247,7 +273,7 @@ EN : Play without Athena, with a real TOC laptop in game
 
 ---
 
-## Jeu plus fluide, app Drone réparée, choix des données envoyées à Athena (ATAK natif 2.3.11.AB - Denver, COMSPEC Link 2.0.94)
+## Jeu plus fluide, app Drone réparée, choix des données envoyées à Athena (regroupé dans ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
 Type : performance

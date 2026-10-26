@@ -1,6 +1,6 @@
 /*
     Adresse courte à taper sur un autre appareil : sans « https:// » ni « /public », jamais deux barres d'affilée.
-    « https://athena.ttrd.fr/public/lier » -> « athena.ttrd.fr/lier ».
+    « https://athena-comspec.eu/public/lier » -> « athena-comspec.eu/lier ».
     Sans expression régulière : dans regexReplace, Arma lit le dernier « / » du motif comme le début des options
     (« ^https?:// » devenait « ^https?:/ », « /public/ » devenait « /public »), d'où l'adresse « //lier » affichée.
     Params : [adresse]  Retour : adresse courte ("" si vide)
