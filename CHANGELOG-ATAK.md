@@ -102,6 +102,29 @@ EN : New ATHENA identity: the eagle
 - Logos vectorisés (potrace, tracé à 6x avec lissage) à partir des PNG fournis ; colonne blanche des 3 premiers pixels du logo complet retirée. Sources : `public/assets/brand/*.svg` (blanc / noir), `mod/COMSPEC_ATAK_Native/tools/src/athena_logo.svg` et `athena_embleme.svg`.
 - Site : `athena-header__brand-mark`, `dash-rail__brand-mark` et le pied de page portail utilisent l'emblème / le logo en masque CSS (couleur du thème) ; en-tête d'accès public et accueil (`hi-wordmark`, pied) en `<img>` ; `athena-192/512.png` carrés (étaient 520x240 et 1200x480), nouveaux `athena-180/32.png`, `athena-maskable-512.png`, `favicon.ico` ; manifeste PWA et cache `sw.js` (v11) à jour ; `atak-eagle-logo.png` (ATAK web, porte SSE) remplacé par l'emblème.
 - Mod : `gen_assets.py <hemtt> athenalogo` régénère `app_athena.paa` (emblème) et le nouveau `logo_athena.paa` (logo complet) ; `fn_pageAthena` et le repli de la ligne « status » de `fn_formRender` l'utilisent. Version 2.3.11, main.pbo reconstruit (HEMTT), verify_build OK. Link inchangé (2.0.93).
+## Indicatif perso, marqueurs nommés et modifiables, recherche par grille, outils JTAC (cap magnétique, 9-LINE sur un autre écran), jumelles sans marquage ENI par défaut (ATAK natif, version fixée au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Ton propre indicatif, des marqueurs à ton nom et les outils du JTAC
+- C2 et Groupe : « Mon indicatif » te laisse choisir ton indicatif ; il est gardé hors ligne et repris sur Athena (et l'inverse).
+- Marqueurs : écris leur texte dans la palette, modifie un marqueur posé (appui long, Modifier le marqueur), choisis le nom par défaut et la numérotation (suite ou reprise des numéros manquants) dans les réglages de l'addon.
+- Carte : déplacer la carte au clic gauche ne ferme plus l'outil ouvert (bouton ✕ pour le quitter, menu OUTILS rangé par usage) ; RECHERCHE accepte une grille avec ou sans espaces ni tirets ; tes cercles suivent ta position GPS.
+- JTAC : l'outil carte IP → cible donne le cap magnétique, la distance et l'altitude pour le 9-LINE, et le 9-LINE s'ouvre sur un autre écran ou un téléphone (QR code ou bouton). Les jumelles ne marquent plus d'ENI sur la carte, sauf si l'option est activée.
+EN : Your own callsign, named markers and JTAC tools
+- C2 and Group: "My callsign" lets you choose your callsign; it is kept offline and sent to Athena (and the other way round).
+- Markers: type their text in the palette, edit a placed marker (long press, Edit marker), choose the default name and numbering (next number or reuse missing ones) in the addon settings.
+- Map: dragging the map with the left button no longer closes the open tool (✕ button to leave it, TOOLS menu grouped by use); SEARCH accepts a grid with or without spaces or dashes; your rings follow your GPS position.
+- JTAC: the IP → target map tool gives the magnetic heading, distance and elevation for the 9-LINE, and the 9-LINE opens on another screen or a phone (QR code or button). Binoculars no longer mark enemies on the map unless the option is enabled.
+
+### Détail technique
+- Indicatif : `fn_callsignAction` (profil `COMSPEC_ATAK_MyCallsign`, variable publique `COMSPEC_ATAK_CsCustom`, lue en premier par `fn_unitCallsign`) ; vers le site par `Squad.Sync` (`callsign_custom`, `AtakRoleService::recordFromSync` met à jour `users.callsign` et `personnel_profiles.callsign`, 2 à 24 caractères nettoyés) ; depuis le site par la ligne `CS` du catalogue des rôles (`GetFireTeams roles:`), appliquée si la valeur du site a changé depuis la dernière lecture.
+- Jumelles : réglage serveur `comspec_atak_native_optic_mark` (désactivé par défaut) ; le désignateur laser marque toujours.
+- Marqueurs : réglages client `comspec_atak_native_marker_name` (jetons {camp} {type} {n} {grille} {indicatif} {heure}) et `comspec_atak_native_marker_numbering` (next / fill) ; ligne TEXTE de la palette ; entrée MKEDIT du menu contextuel.
+- Recherche : type GRILLE, `fn_gridParse` (préfixe MGRS ignoré, deux blocs ramenés à la même précision).
+- GPS : soi-même (icône, anneaux, étiquettes, trait de distance) dessiné à la position GPS simulée (`COMSPEC_ATAK_SelfGpsPos`).
+- Clic gauche de la carte : armé à l'appui (`mapLc`), exécuté au relâchement s'il n'y a pas eu de glisser (`fn_mapMouseButtonUp` rappelle `fn_mapMouseButtonDown` avec `_click`) ; TRAIT et DESSIN démarrent toujours à l'appui. Menu OUTILS en sections (NAVIGATION, MESURER, DESSINER, AFFICHAGE), bandeau d'outil actif avec icône et bouton ✕.
+- JTAC : `fn_magBearing` (réglage serveur `comspec_atak_native_mag_decl`), outil carte IPTGT `fn_jtacTool` (VERS LE 9-LINE remplit l'app JTAC), ligne 2 du 9-LINE en cap magnétique ; page site `/9-line` (flux des 9-LINE de la communauté toutes les 5 s, calculateur IP → cible), QR `data\nineline_qr_ca.paa`.
 
 ---
 

@@ -844,6 +844,8 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
 ["init"] call comspec_atak_native_fnc_ftRoleSync;
+// Indicatif choisi dans C2 / Groupe (profil, hors ligne) publié aux autres joueurs (fn_callsignAction).
+["init"] call comspec_atak_native_fnc_callsignAction;
 
 // Serveur de la communauté : avertit le joueur relié à Athena qui joue ailleurs (vérifié dès que la liaison est prête,
 // puis toutes les 10 min).
