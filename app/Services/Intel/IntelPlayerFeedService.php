@@ -136,11 +136,20 @@ class IntelPlayerFeedService
      */
     public function players(int $tenantId, string $period = '30j'): array
     {
-        $since = self::periodStart(self::normalizePeriod($period));
+        return $this->playersBetween($tenantId, self::periodStart(self::normalizePeriod($period)), null);
+    }
+
+    /**
+     * Comme {@see players()}, sur une plage de dates libre [$since, $until[ (bornes facultatives).
+     *
+     * @return array{players: list<array<string, mixed>>, sources: array<string, bool>}
+     */
+    public function playersBetween(int $tenantId, ?string $since, ?string $until): array
+    {
         $identity = $this->identity($tenantId);
         $players = [];
         $sources = [];
-        foreach ($this->groups($tenantId, $since) as $table => $groups) {
+        foreach ($this->groups($tenantId, $since, $until) as $table => $groups) {
             $sources[$table] = $groups !== null;
             $def = self::SOURCES[$table];
             foreach ($groups ?? [] as $g) {
@@ -224,7 +233,7 @@ class IntelPlayerFeedService
      *
      * @return array<string, list<array<string, mixed>>|null>
      */
-    private function groups(int $tenantId, ?string $since): array
+    private function groups(int $tenantId, ?string $since, ?string $until = null): array
     {
         $out = [];
         foreach (self::SOURCES as $table => $def) {
@@ -233,7 +242,7 @@ class IntelPlayerFeedService
                 $out[$table] = null;
                 continue;
             }
-            [$where, $args] = $this->baseWhere($table, $def, $tenantId, $since);
+            [$where, $args] = $this->baseWhere($table, $def, $tenantId, $since, $until);
             $sub = $this->subSql($table, $def);
             try {
                 $st = $this->pdo()->prepare(
@@ -553,13 +562,17 @@ class IntelPlayerFeedService
      * @param array<string, mixed> $def
      * @return array{0: string, 1: list<mixed>}
      */
-    private function baseWhere(string $table, array $def, int $tenantId, ?string $since): array
+    private function baseWhere(string $table, array $def, int $tenantId, ?string $since, ?string $until = null): array
     {
         $where = ['tenant_id = ?'];
         $args = [$tenantId];
         if ($since !== null) {
             $where[] = "{$def['time']} >= ?";
             $args[] = $since;
+        }
+        if ($until !== null) {
+            $where[] = "{$def['time']} < ?";
+            $args[] = $until;
         }
         foreach ((array) ($def['not_null'] ?? []) as $col) {
             if ($this->hasColumn($table, $col)) {

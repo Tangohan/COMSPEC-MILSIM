@@ -103,6 +103,7 @@ $platformNav = [
     ['key' => 'communication', 'label' => 'Communication', 'items' => [
         ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'hub', 'desc' => 'Bandeaux et annonces sur le portail'],
         ['path' => 'admin/system/e-mails', 'label' => 'Envois d’e-mails', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Quota quotidien, alertes regroupées, volume par type'],
+        ['path' => 'admin/system/retrospective', 'label' => 'Rétrospective annuelle', 'icon' => 'star', 'access' => 'system', 'desc' => 'Bilan de l’année des joueurs et des unités : date de publication, aperçu'],
         ['path' => 'admin/newsletter', 'label' => 'Lettre d’information', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Inscrits depuis la page d’accueil'],
         ['path' => 'admin/system/cooperation/catalog', 'label' => 'Types de coopération', 'icon' => 'coop', 'access' => 'system', 'desc' => 'Catalogue des coopérations entre unités'],
         ['path' => 'admin/system/cooperation/announcements', 'label' => 'Annonces de coopération', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Messages diffusés aux communautés'],

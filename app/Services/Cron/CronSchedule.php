@@ -47,6 +47,8 @@ final class CronSchedule
         'photo_compress' => 60,
         // Fins d'essai fondateur et de formule offerte : e-mail une fois par fin.
         'plan_end_warning' => 360,
+        // Annonce de la rétrospective annuelle : une part du quota d'e-mails par jour, pendant 14 jours.
+        'year_review_mail' => 1440,
         // Rôles liés Discord : chaque compte relié est renvoyé au plus une fois par 24 h, 50 par passage.
         'discord_linked_roles_sync' => 60,
         // E-mails reportés par le quota quotidien ou mis en file (MAIL_QUEUE).

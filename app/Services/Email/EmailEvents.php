@@ -21,6 +21,8 @@ final class EmailEvents
     public const PLAN_PAYMENT_DECIDED = 'PLAN_PAYMENT_DECIDED';
     /** Essai fondateur ou formule offerte qui se termine bientôt — e-mail aux gestionnaires. */
     public const PLAN_END_WARNING = 'PLAN_END_WARNING';
+    /** Rétrospective annuelle publiée — e-mail au joueur (une fois par année). */
+    public const YEAR_REVIEW_READY = 'YEAR_REVIEW_READY';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';
     /** Membre a quitté la communauté — notification aux responsables. */
     public const MEMBER_LEFT_COMMUNITY_STAFF = 'MEMBER_LEFT_COMMUNITY_STAFF';
@@ -273,5 +275,6 @@ final class EmailEvents
         self::MEMBER_INTEGRATION_REMINDER,
         self::MEMBER_INTEGRATION_REFERENT_MESSAGE,
         self::MEMBER_INTEGRATION_COMPLETED,
+        self::YEAR_REVIEW_READY,
     ];
 }
