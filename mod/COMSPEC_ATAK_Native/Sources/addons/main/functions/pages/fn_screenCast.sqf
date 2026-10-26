@@ -205,7 +205,7 @@ switch (_mode) do {
                                             _use = "WEB:" + _key;
                                             _how = "affichée par le navigateur intégré (texture refusée par Arma)";
                                         } else {
-                                            _how = "écran noir : Arma refuse l'image (hors PBO) et " + _why;
+                                            _how = format ["écran noir : Arma refuse l'image (hors PBO) et %1", _why];
                                         };
                                     };
                                     ["INFO", "BRIEFING", format ["Écran : diapositive %1, source %2, fichier %3, %4", _id, _key, [_p, "illisible"] select (_p isEqualTo ""), _how]] call comspec_atak_native_fnc_log;

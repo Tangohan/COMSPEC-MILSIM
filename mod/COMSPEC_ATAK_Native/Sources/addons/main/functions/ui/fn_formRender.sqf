@@ -552,11 +552,28 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _lt ctrlSetStructuredText parseText ((format ["<t color='%3'>%1</t>%2", _label,
                 ["", format [["<br/><t size='0.72' color='#93a39c'>%1</t>", "  <t size='0.72' color='#93a39c'>%1</t>"] select _wide, _help]] select (_help isNotEqualTo ""),
                 ["#e3ebe7", "#ff6a5c"] select _warn]) call comspec_atak_native_fnc_tr);
+            // Même chose que "line" : libellé + aide plus hauts que la tête, la ligne grandit (choix et liste restent à
+            // leur hauteur, centrés ; en mode large, les boutons descendent sous la tête).
+            private _off = 0;
+            private _need = (ctrlTextHeight _lt) + _pad / 2;
+            if (_need > _hHead) then {
+                private _hHead0 = _hHead;
+                private _grow = _need - _hHead;
+                if (!_wide) then { _off = _grow / 2; };
+                _hHead = _need;
+                _tot = _tot + _grow;
+                _bgL ctrlSetPosition [_pad, _y, _w, _tot - pixelH * 2];
+                _bgL ctrlCommit 0;
+                _nb ctrlSetPosition [_pad * 1.5, _y + (_hHead - _hHead0 * 0.7) / 2, _nw, _hHead0 * 0.7 - pixelH * 2];
+                _nb ctrlCommit 0;
+                _nt ctrlSetPosition [_pad * 1.5, _y + (_hHead - _fs * 1.25) / 2, _nw, _fs * 1.25];
+                _nt ctrlCommit 0;
+            };
             private _th = (ctrlTextHeight _lt) min _hHead;
             _lt ctrlSetPosition [_lx, _y + (_hHead - _th) / 2, _lw, _th];
             _lt ctrlCommit 0;
             if (_isCombo) then {
-                private _c = ["COMSPEC_RscCombo", [_vx, _y + _h * 0.14, _vw, _h * 0.72]] call _mk;
+                private _c = ["COMSPEC_RscCombo", [_vx, _y + _off + _h * 0.14, _vw, _h * 0.72]] call _mk;
                 _c ctrlSetFontHeight _font;
                 private _sel = 0;
                 {
@@ -578,7 +595,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                     _x params ["_text", "_code", ["_active", false], ["_col", []]];
                     private _r = floor (_forEachIndex / (_cols max 1));
                     private _bx = _ax + (_forEachIndex mod (_cols max 1)) * _sw;
-                    private _by = [_y + _h * 0.14, _y + _hHead + _r * (_bh + pixelH * 3)] select _wide;
+                    private _by = [_y + _off + _h * 0.14, _y + _hHead + _r * (_bh + pixelH * 3)] select _wide;
                     private _b = ["COMSPEC_RscButton", [_bx, _by, _sw - _pad / 6, [_h * 0.72, _bh] select _wide], _text] call _mk;
                     _b ctrlSetFontHeight ((_fs * 0.82) max COMSPEC_ATAK_FontMin);
                     private _has = (count _col) isEqualTo 4;
