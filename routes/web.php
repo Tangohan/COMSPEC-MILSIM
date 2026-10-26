@@ -1160,6 +1160,10 @@ return function (Router $router) {
     $router->get('/admin/paiements/membres', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'searchMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/dons', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'recordDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/dons/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'refundDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons-stripe/{id}/annuler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationCancel'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons-stripe/{id}/refuser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationReject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons-stripe/{id}/encaisser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationMarkPaid'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons-stripe/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationRefund'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/donateurs/attribuer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorGrant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/donateurs/retirer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRevoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/donateurs/retablir', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRestore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

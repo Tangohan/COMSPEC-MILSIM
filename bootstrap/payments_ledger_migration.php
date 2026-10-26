@@ -6,7 +6,8 @@ declare(strict_types=1);
  * Suivi des paiements et des dons (Administration > Paiements) — idempotente.
  * - payment_events : journal de chaque demande de paiement, don et attribution du rôle donateur ;
  * - platform_donations : dons reçus hors Stripe (PayPal, virement…) saisis par l'administration ;
- * - plan_payment_requests : relances de la personne qui n'a pas finalisé son paiement.
+ * - plan_payment_requests : relances de la personne qui n'a pas finalisé son paiement ;
+ * - atak_donations : décision de l'administration sur les dons Stripe (annulé, refusé, encaissé, remboursé).
  * Appelée par run-migrations.php et, en silence, au premier accès à la page.
  */
 return static function (PDO $pdo, ?callable $say = null): void {
@@ -75,6 +76,26 @@ return static function (PDO $pdo, ?callable $say = null): void {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         $say('[OK] platform_donations créée');
+    }
+
+    if ($tableExists('payment_events') && !$columnExists('payment_events', 'atak_donation_id')) {
+        $pdo->exec('ALTER TABLE payment_events ADD COLUMN atak_donation_id INT UNSIGNED NULL AFTER donation_id, ADD KEY idx_pe_atak_donation (atak_donation_id, created_at)');
+        $say('[OK] payment_events.atak_donation_id');
+    }
+
+    // Dons Stripe ATAK : décision de l'administration (annulé, refusé, encaissé à la main, remboursé).
+    if ($tableExists('atak_donations')) {
+        foreach ([
+            'admin_note' => 'ADD COLUMN admin_note VARCHAR(500) NULL',
+            'decided_at' => 'ADD COLUMN decided_at DATETIME NULL',
+            'decided_by' => 'ADD COLUMN decided_by INT UNSIGNED NULL',
+            'refunded_at' => 'ADD COLUMN refunded_at DATETIME NULL',
+        ] as $col => $ddl) {
+            if (!$columnExists('atak_donations', $col)) {
+                $pdo->exec('ALTER TABLE atak_donations ' . $ddl);
+                $say('[OK] atak_donations.' . $col);
+            }
+        }
     }
 
     if ($tableExists('plan_payment_requests')) {

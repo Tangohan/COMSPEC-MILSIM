@@ -55,6 +55,7 @@ $eventLabels = [
     'reminder' => 'Relance envoyée', 'reminder_auto' => 'Relance automatique envoyée', 'renewal_sent' => 'Renouvellement envoyé',
     'extended' => 'Formule prolongée', 'plan_ended' => 'Formule arrêtée', 'note' => 'Note', 'expired' => 'Annulée automatiquement',
     'donation_recorded' => 'Don enregistré', 'donation_refunded' => 'Don remboursé', 'donation_paid' => 'Don Stripe payé',
+    'donation_cancelled' => 'Don annulé', 'donation_rejected' => 'Don refusé', 'donation_marked_paid' => 'Don marqué encaissé',
     'donor_granted' => 'Rôle donateur attribué', 'donor_revoked' => 'Rôle donateur retiré', 'donor_restored' => 'Rôle donateur rétabli',
 ];
 $tierTone = ['soutien' => 'neut', 'allie' => 'info', 'pilier' => 'ok'];
@@ -209,7 +210,7 @@ $qs = static function (array $over) use ($f): string {
             [$sl, $stn] = $sources[$e['source']] ?? [$e['source'], 'neut'];
             [$tl, $tt] = $statuses[$e['status']] ?? [$e['status'], 'neut'];
             $isReq = in_array($e['source'], ['plan', 'heart'], true);
-            $evs = $events[$isReq ? 'r' . $e['id'] : 'd' . $e['id']] ?? [];
+            $evs = $events[($isReq ? 'r' : ($e['source'] === 'stripe_donation' ? 's' : 'd')) . $e['id']] ?? [];
             $ref = (string) $e['reference'];
             $open = $focus !== '' && $focus === strtoupper($ref);
             ?>
@@ -237,6 +238,9 @@ $qs = static function (array $over) use ($f): string {
               <?php if ($isReq && $e['status'] === 'declared'): ?>
                 <p class="ap-check">Sur PayPal, cherchez <b class="ap-mono"><?= $h($e['transaction_ref']) ?></b> (ou la référence <b class="ap-mono"><?= $h($ref) ?></b>) et vérifiez le montant <b><?= $h($money((int) $e['amount_cents'])) ?></b>. <a href="https://www.paypal.com/activities" target="_blank" rel="noopener">Ouvrir l’activité PayPal</a></p>
               <?php endif; ?>
+              <?php if ($e['source'] === 'stripe_donation' && $e['status'] === 'awaiting'): ?>
+                <p class="ap-check">Paiement Stripe non finalisé (souvent un paiement abandonné). Vérifiez sur Stripe avant de le marquer encaissé, sinon annulez-le.</p>
+              <?php endif; ?>
               <div class="ap-acts">
                 <?php if ($isReq && in_array($e['status'], ['awaiting', 'declared'], true)): ?>
                   <form method="post" action="<?= $h($base . '/' . $e['id'] . '/activer') ?>" class="ap-act ap-act--ok"><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Message au payeur (facultatif)" maxlength="500"><button class="ath-btn ath-btn--solid"><?= $e['status'] === 'awaiting' ? 'Confirmer (payé sans déclaration)' : 'Confirmer et activer' ?></button></form>
@@ -244,10 +248,17 @@ $qs = static function (array $over) use ($f): string {
                   <form method="post" action="<?= $h($base . '/' . $e['id'] . '/refuser') ?>" class="ap-act" data-ap-confirm="Refuser ce paiement ? Le payeur est prévenu."><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Raison du refus (envoyée au payeur)" maxlength="500" required><button class="ath-btn ap-danger">Refuser</button></form>
                   <?php else: ?>
                   <form method="post" action="<?= $h($base . '/' . $e['id'] . '/relancer') ?>" class="ap-act"><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Petit mot ajouté à la relance (facultatif)" maxlength="500"><button class="ath-btn">Relancer par e-mail</button></form>
+                  <form method="post" action="<?= $h($base . '/' . $e['id'] . '/refuser') ?>" class="ap-act" data-ap-confirm="Refuser cette demande ? Le payeur est prévenu."><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Raison du refus (envoyée au payeur)" maxlength="500" required><button class="ath-btn ap-danger">Refuser</button></form>
                   <?php endif; ?>
                   <form method="post" action="<?= $h($base . '/' . $e['id'] . '/annuler') ?>" class="ap-act" data-ap-confirm="Annuler cette demande ?"><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Raison (doublon, erreur de formule…)" maxlength="500"><button class="ath-btn">Annuler la demande</button></form>
                 <?php elseif ($isReq && $e['status'] === 'activated'): ?>
                   <form method="post" action="<?= $h($base . '/' . $e['id'] . '/rembourser') ?>" class="ap-act" data-ap-confirm="Marquer remboursé ? Faites d’abord le remboursement sur PayPal."><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Raison du remboursement" maxlength="500"><?php if ($e['source'] === 'plan'): ?><label class="ap-checkline"><input type="checkbox" name="end_plan" value="1" checked> Arrêter aussi la formule</label><?php endif; ?><button class="ath-btn ap-danger">Marquer remboursé</button></form>
+                <?php elseif ($e['source'] === 'stripe_donation' && $e['status'] === 'awaiting'): ?>
+                  <form method="post" action="<?= $h($base . '/dons-stripe/' . $e['id'] . '/encaisser') ?>" class="ap-act ap-act--ok" data-ap-confirm="Marquer ce don encaissé ? Le rôle donateur sera recalculé."><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Note (ex. reçu sur Stripe)" maxlength="500"><button class="ath-btn ath-btn--solid">Marquer encaissé</button></form>
+                  <form method="post" action="<?= $h($base . '/dons-stripe/' . $e['id'] . '/refuser') ?>" class="ap-act" data-ap-confirm="Refuser ce don ?"><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Raison du refus" maxlength="500" required><button class="ath-btn ap-danger">Refuser</button></form>
+                  <form method="post" action="<?= $h($base . '/dons-stripe/' . $e['id'] . '/annuler') ?>" class="ap-act" data-ap-confirm="Annuler ce don ?"><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Raison (abandon, doublon…)" maxlength="500"><button class="ath-btn">Annuler</button></form>
+                <?php elseif ($e['source'] === 'stripe_donation' && $e['status'] === 'activated'): ?>
+                  <form method="post" action="<?= $h($base . '/dons-stripe/' . $e['id'] . '/rembourser') ?>" class="ap-act" data-ap-confirm="Marquer ce don remboursé ? Faites d’abord le remboursement sur Stripe. Le rôle donateur sera recalculé."><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Raison du remboursement" maxlength="500"><button class="ath-btn ap-danger">Marquer remboursé</button></form>
                 <?php elseif ($e['source'] === 'donation' && $e['status'] === 'activated'): ?>
                   <form method="post" action="<?= $h($base . '/dons/' . $e['id'] . '/rembourser') ?>" class="ap-act" data-ap-confirm="Marquer ce don remboursé ? Le rôle donateur sera recalculé."><?= $csrf('paiements', $ref) ?><input name="admin_note" placeholder="Raison" maxlength="500"><button class="ath-btn ap-danger">Marquer remboursé</button></form>
                 <?php endif; ?>
