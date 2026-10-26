@@ -49,7 +49,7 @@ class RoleRepository
      *
      * @return list<array<string, mixed>>
      */
-    public function forTenantAccessProfiles(int $tenantId): array
+    public function forTenantAccessProfiles(int $tenantId, bool $includeHidden = false): array
     {
         $slugs = CommunityAccessProfiles::slugs();
         $ph = implode(',', array_fill(0, count($slugs), '?'));
@@ -63,6 +63,9 @@ class RoleRepository
         $custom = [];
         foreach ($rows as $row) {
             $slug = (string) ($row['slug'] ?? '');
+            if (!$includeHidden && self::isHiddenAccessRow($row)) {
+                continue;
+            }
             if (CommunityAccessProfiles::isCustomAccessSlug($slug)) {
                 $custom[] = $row;
             } else {
@@ -291,8 +294,40 @@ class RoleRepository
         if ($layer !== 'community' && $layer !== 'intra') {
             return false;
         }
+        if (self::isHiddenAccessRow($r)) {
+            return false;
+        }
 
         return CommunityAccessProfiles::isAssignableAccessSlug((string) ($r['slug'] ?? ''));
+    }
+
+    /**
+     * Niveau masqué par la communauté (RH seulement) : n’est plus proposé ni attribuable.
+     *
+     * @param array<string, mixed> $role
+     */
+    public static function isHiddenAccessRow(array $role): bool
+    {
+        return array_key_exists('is_active', $role)
+            && $role['is_active'] !== null
+            && (int) $role['is_active'] === 0
+            && CommunityAccessProfiles::isHideablePresetSlug((string) ($role['slug'] ?? ''));
+    }
+
+    /**
+     * Masque ou réaffiche un modèle de départ masquable (RH). Le rôle reste en base :
+     * le socle de la communauté le recrée sinon, et le réafficher rend ses droits intacts.
+     */
+    public function setAccessPresetHidden(int $tenantId, int $roleId, bool $hidden): bool
+    {
+        $r = $this->findById($roleId, $tenantId);
+        if (!$r || !array_key_exists('is_active', $r) || !CommunityAccessProfiles::isHideablePresetSlug((string) ($r['slug'] ?? ''))) {
+            return false;
+        }
+        $st = $this->pdo->prepare('UPDATE roles SET is_active = ? WHERE id = ? AND tenant_id = ?');
+        $st->execute([$hidden ? 0 : 1, $roleId, $tenantId]);
+
+        return true;
     }
 
     public function createCustomAccessRole(int $tenantId, string $name, ?string $description = null): int

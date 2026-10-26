@@ -185,7 +185,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
             _p removeItem "COMSPEC_ATAK_VehicleKit";
             _v setVariable ["COMSPEC_ATAK_VehTerm", true, true];
             ["INFO", "Terminal ATAK installé : l'équipage a la tablette de bord", 4, 30] call comspec_atak_native_fnc_notify;
-        }, {}, "Installation du terminal ATAK…"] call ace_common_fnc_progressBar;
+        }, {}, ("Installation du terminal ATAK…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
     }, {
         (missionNamespace getVariable ["comspec_atak_native_vehicle_terminal", "all"]) isEqualTo "kit" && {alive _target}
             && {!(_target getVariable ["COMSPEC_ATAK_VehTerm", false])} && {"COMSPEC_ATAK_VehicleKit" in (items _player)}
@@ -209,7 +209,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
         ["COMSPEC_ATAK_RelayOff", "Couper le relais", { ["power", [_target, "off"]] call comspec_atak_native_fnc_relayNet; }, { _target getVariable ["COMSPEC_AtakRelayOn", true] }],
         ["COMSPEC_ATAK_RelayOn", "Allumer le relais", { ["power", [_target, "on"]] call comspec_atak_native_fnc_relayNet; }, { !(_target getVariable ["COMSPEC_AtakRelayOn", true]) }],
         ["COMSPEC_ATAK_RelayBatt", "Changer la batterie", {
-            [10, _target, { ["power", [_this select 0, "battery"]] call comspec_atak_native_fnc_relayNet; }, {}, "Changement de la batterie du relais…"] call ace_common_fnc_progressBar;
+            [10, _target, { ["power", [_this select 0, "battery"]] call comspec_atak_native_fnc_relayNet; }, {}, ("Changement de la batterie du relais…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
         }, { private _b = _target getVariable ["COMSPEC_AtakRelayBatt", -1]; _b isEqualType 0 && {_b >= 0} && {_b < 95} }]
     ];
 } forEach ["Static", "Thing", "LandVehicle", "Ship", "Air"];

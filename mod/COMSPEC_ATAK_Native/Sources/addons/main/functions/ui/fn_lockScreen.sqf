@@ -52,6 +52,10 @@ switch (_act) do {
             if ((call _notifSig) isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_LockNotifN", []])) exitWith {
                 ["build"] call comspec_atak_native_fnc_lockScreen;
                 ["front"] call comspec_atak_native_fnc_fx;
+                // Toast et alertes (vibreur, commandement) remis devant l'écran recréé, comme fn_fx « raise ».
+                [] call comspec_atak_native_fnc_toast;
+                ["draw"] call comspec_atak_native_fnc_buzzAlert;
+                ["draw"] call comspec_atak_native_fnc_fullAlert;
             };
             (uiNamespace getVariable ["COMSPEC_ATAK_LockClock", []]) params [["_clock", controlNull], ["_bat", controlNull], ["_net", controlNull], ["_hint", controlNull], ["_bar", controlNull]];
             if (!isNull _clock) then { _clock ctrlSetText ((([dayTime, "HH:MM"] call BIS_fnc_timeToString)) call comspec_atak_native_fnc_tr); };
@@ -260,6 +264,11 @@ switch (_act) do {
         if (_act isEqualTo "show") then {
             if (uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false]) then { ["close"] call comspec_atak_native_fnc_quickSettings; };
             ["front"] call comspec_atak_native_fnc_fx;
+            // Toast et alertes (vibreur, commandement) dessinés avant l'écran de verrouillage (fn_displayLoad : rendu
+            // puis « check ») : remis devant, sinon l'alerte du commandement expirait cachée dessous.
+            [] call comspec_atak_native_fnc_toast;
+            ["draw"] call comspec_atak_native_fnc_buzzAlert;
+            ["draw"] call comspec_atak_native_fnc_fullAlert;
             [] call comspec_atak_native_fnc_overlayFront;
         };
         true

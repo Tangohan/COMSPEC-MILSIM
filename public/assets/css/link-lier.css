@@ -527,3 +527,25 @@ a.ll-btn.main:focus-visible { color: var(--ll-accent-ink); }
     .ll-field { border: 1px solid ButtonText; }
     .ll-btn.main { background: ButtonText; color: ButtonFace; }
 }
+
+/* Première connexion : aide à l'installation du mod et déconnexion (étape obligatoire). */
+.ll-first {
+    margin: 1.1rem 0 0;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid var(--ll-line);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: var(--ll-muted);
+}
+.ll-first b { color: var(--ll-ink); }
+.ll-first p { margin: 0.35rem 0 0; }
+.ll-first a { color: var(--ll-ink); font-weight: 600; }
+.ll-link {
+    border: 0;
+    background: none;
+    padding: 0;
+    color: var(--ll-muted);
+    font: inherit;
+    cursor: pointer;
+}
+.ll-link:hover { color: var(--ll-ink); text-decoration: underline; }

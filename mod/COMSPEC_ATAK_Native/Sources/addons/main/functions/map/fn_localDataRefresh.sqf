@@ -12,8 +12,6 @@ private _units = createHashMap;
         default {"OFFLINE"};
     };
     _remote set ["freshness",_freshness];
-    // Cache de dessin posé par fn_mapOnDraw : retiré pour qu'il n'entre pas dans la signature du magasin « units ».
-    _remote deleteAt "drawCache";
     _units set [_x,_remote];
 } forEach (_data getOrDefault ["remoteUnits",createHashMap]);
 // Filtre des alliés (réglage) : tous, mon groupe, ou mon rattachement ORBAT Athena (repli : groupe).

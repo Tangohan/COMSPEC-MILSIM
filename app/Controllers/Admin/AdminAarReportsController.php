@@ -189,7 +189,7 @@ final class AdminAarReportsController
             'aarMission' => $mission,
             'aarTemplate' => $template,
             'aarCanManage' => ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'),
-            'aarMissionPdfUrl' => $missionId > 0 ? url('api/operations/aar/' . $missionId . '/export.pdf') : null,
+            'aarMissionPdfUrl' => self::missionAarPdfUrl($mission),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -601,6 +601,27 @@ final class AdminAarReportsController
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Synthèse PDF de la mission liée : AAR de son bac de relecture (replay_mission_id) sur sa
+     * fenêtre. L’id du cycle n’est pas un missionId : /api/operations/aar le refuse (SEC-008).
+     *
+     * @param array<string, mixed>|null $mission cycle présenté (TheatreMissionCycleRepository::present)
+     */
+    public static function missionAarPdfUrl(?array $mission): ?string
+    {
+        $replayMissionId = trim((string) ($mission['replay_mission_id'] ?? ''));
+        if ($replayMissionId === '') {
+            return null;
+        }
+        $window = is_array($mission['window'] ?? null) ? $mission['window'] : [];
+        $q = http_build_query(array_filter([
+            'from' => $window['from'] ?? null,
+            'to' => $window['to'] ?? null,
+        ], static fn ($v) => $v !== null && $v !== ''));
+
+        return url('api/operations/aar/' . rawurlencode($replayMissionId) . '/export.pdf') . ($q !== '' ? '?' . $q : '');
     }
 
     /**

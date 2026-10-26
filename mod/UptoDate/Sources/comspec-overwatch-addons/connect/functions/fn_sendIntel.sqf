@@ -58,7 +58,8 @@ private _ttl = 900;
 _intelStore = _intelStore select {
     (_now - (_x getOrDefault ["createdAt", _now])) <= _ttl
 };
-missionNamespace setVariable ["COMSPEC_IntelStore", _intelStore, true];
+// Local : la liste n'est lue nulle part ailleurs (diffusion globale + JIP à chaque intel inutile).
+missionNamespace setVariable ["COMSPEC_IntelStore", _intelStore, false];
 
 // Heatmap locale simple: key = cellule 100m
 if (_record getOrDefault ["x", -1] >= 0) then {

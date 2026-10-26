@@ -41,6 +41,10 @@ $consequencesMap = [];
 foreach (array_keys($visibilityLevelOptions) as $lvl) {
     $consequencesMap[$lvl] = VisibilityLevel::consequence((string) $lvl, 'personnel');
 }
+// Textes repris par le script depuis data-consequences : la traduction de la page ne les voit pas.
+if (locale() === 'en') {
+    $consequencesMap = array_map([\App\Support\HtmlTranslator::class, 'translateText'], $consequencesMap);
+}
 $h = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 $ajaxUrl = $visibilityTargetUserId > 0 ? url('personnel/' . $visibilityTargetUserId . '/visibility') : '';
 ?>

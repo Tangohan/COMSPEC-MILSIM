@@ -22,9 +22,8 @@ if (!(_pool isEqualType []) || {_pool isEqualTo []}) then {
     _pool = missionNamespace getVariable ["zen_context_menu_selected", []];
 };
 if (!(_pool isEqualType []) || {_pool isEqualTo []}) then {
-    if (!isNil "curatorSelected") then {
-        _pool = curatorSelected;
-    };
+    // curatorSelected est une commande (pas une variable) : pas de garde isNil.
+    _pool = curatorSelected;
 };
 
 if (_pool isEqualType []) then {

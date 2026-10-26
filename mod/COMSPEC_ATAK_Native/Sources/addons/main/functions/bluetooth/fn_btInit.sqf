@@ -18,8 +18,11 @@ if (!hasInterface) exitWith {};
     };
     // Sons say3D terminés (source supprimée) retirés : la table ne se vidait qu'à la réception d'un « stop ».
     { if (_y isEqualType objNull && {isNull _y}) then { _h deleteAt _x; }; } forEach +_h;
-    _a params [["_src", objNull], ["_kind", ""], ["_ref", ""], ["_range", 20], ["_id", ""]];
+    _a params [["_src", objNull, [objNull]], ["_kind", ""], ["_ref", "", [""]], ["_range", 20, [0]], ["_id", ""]];
     if (isNull _src || {_ref isEqualTo ""}) exitWith {};
+    // Portée envoyée par un autre client : bornée au réglage serveur ; joueur hors de portée, rien n'est joué.
+    _range = (_range min (missionNamespace getVariable ["comspec_atak_native_bt_sound_range", 20])) max 1;
+    if ((player distance _src) > (_range + 10)) exitWith {};
     // Haut-parleurs du téléphone qui joue coupés par le Zeus (fn_zeusFx "mute") : aucun son.
     if (["mute", false, _src] call comspec_atak_native_fnc_zeusFx) exitWith {};
     if (_kind isEqualTo "snd") exitWith {

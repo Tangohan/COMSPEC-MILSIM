@@ -586,8 +586,40 @@ html[data-bo-theme="dark"] .bo-eff-workspace .bo-eff-page {
 :root .bo-eff-workspace .bo-eff-page .eff-rh-split {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 1rem;
   margin: 0;
+}
+@media (max-width: 860px) {
+  :root .bo-eff-workspace .bo-eff-page .eff-rh-split { grid-template-columns: minmax(0, 1fr); }
+}
+:root .bo-eff-workspace .bo-eff-page .eff-rh-fill { display: inline-flex; align-items: center; gap: 0.45rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-rh-fill b { font-weight: 700; }
+:root .bo-eff-workspace .bo-eff-page .eff-rh-fill-legend {
+  margin: 0 0 0.35rem;
+  color: var(--pg-subtle);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: right;
+  text-transform: uppercase;
+}
+:root .bo-eff-workspace .bo-eff-page .eff-rh-pill {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--pg-line);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-style: normal;
+  font-weight: 700;
+}
+:root .bo-eff-workspace .bo-eff-page .eff-rh-pill--bad { border-color: currentColor; color: var(--pg-bad); }
+:root .bo-eff-workspace .bo-eff-page .eff-rh-more { margin-top: 0.25rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-rh-more > summary {
+  padding: 0.55rem 0;
+  color: var(--pg-accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 :root .bo-eff-workspace .bo-eff-page .eff-rh-list-card { display: flex; flex-direction: column; }
 :root .bo-eff-workspace .bo-eff-page .eff-rh-list-card__count {

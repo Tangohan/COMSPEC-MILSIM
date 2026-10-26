@@ -65,6 +65,14 @@ class COMSPEC_RscTocScreenTexture {
     class controls {};
 };
 
+// Écran COMSPEC (fn_screenCast) : diapositive Athena montrée par le navigateur intégré dans une texture UI 1280 x 720
+// posée sur l'objet, Arma refusant l'image téléchargée hors d'un PBO. Contrôle créé par le code.
+class COMSPEC_RscScreenSlideTexture {
+    idd=-1; movingEnable=0;
+    onLoad="['load', _this select 0] call comspec_atak_native_fnc_screenCast";
+    class controls {};
+};
+
 // PC portable du poste TOC (fn_tocLaptop) : écran du PC lui-même, indépendant du téléphone (carte en grand, nœuds
 // ATAK du camp, groupes, flux, ordres, messages au camp). Contrôles créés par le code.
 class COMSPEC_RscTocLaptop {

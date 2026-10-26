@@ -43,12 +43,15 @@ class COMSPEC_RscButton: RscButton {
     // des boutons verts (RÉDIGER, option choisie d'un sélecteur) jusqu'à le rendre illisible.
     shadow=0; font=ATAK_FONT_BOLD; colorText[]=ATAK_TEXT; colorDisabled[]={0.42,0.46,0.44,0.7};
     colorBackground[]=ATAK_BG2; colorBackgroundActive[]=ATAK_GREEN_DIM; colorBackgroundDisabled[]={0.04,0.045,0.042,0.55};
-    colorFocused[]=ATAK_BG2; colorBorder[]=ATAK_BORDER; colorShadow[]={0,0,0,0}; offsetPressedX=0; offsetPressedY=0;
+    colorFocused[]=ATAK_BG2; colorBackground2[]=ATAK_BG2; colorBorder[]=ATAK_BORDER; colorShadow[]={0,0,0,0}; offsetPressedX=0; offsetPressedY=0;
     sizeEx="0.024 * safeZoneH";
 };
-class COMSPEC_RscButtonPrimary: COMSPEC_RscButton { colorText[]=ATAK_BG0; colorBackground[]=ATAK_GREEN; colorFocused[]=ATAK_GREEN; colorBackgroundActive[]={0.46,0.88,0.52,1}; };
+class COMSPEC_RscButtonPrimary: COMSPEC_RscButton { colorText[]=ATAK_BG0; colorBackground[]=ATAK_GREEN; colorBackground2[]=ATAK_GREEN; colorFocused[]=ATAK_GREEN; colorBackgroundActive[]={0.46,0.88,0.52,1}; };
 // Bouton invisible posé au-dessus d'une tuile (fond + icône + libellé) : seul le survol l'éclaire.
-class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0}; colorFocused[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorBackgroundActive[]={0.36,0.78,0.42,0.18}; colorBorder[]={0,0,0,0}; text=""; };
+// Bouton transparent posé sur une ligne (sous-menu repliable, interrupteur, tuile) : toutes les couleurs de fond à 0,
+// focus compris (colorBackground2, avec laquelle le moteur fait clignoter un bouton qui a le focus). Retour de jeu :
+// PERSONNALISER LE GROUPE et les lignes de réglage apparaissaient assombries (tout le dessous à 40 %).
+class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0}; colorBackground2[]={0,0,0,0}; colorFocused[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorBackgroundActive[]={0.36,0.78,0.42,0.18}; colorBorder[]={0,0,0,0}; text=""; };
 // Touches physiques de la coque : aucune surbrillance (la texture du téléphone suffit).
 class COMSPEC_RscButtonInvisible: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorShadow[]={0,0,0,0}; };
 class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelection[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };

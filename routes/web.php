@@ -1789,6 +1789,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/roles/nouveau', [EffectifsWorkspaceController::class, 'createAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/retablir', [EffectifsWorkspaceController::class, 'restoreAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/supprimer', [EffectifsWorkspaceController::class, 'deleteAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/reafficher', [EffectifsWorkspaceController::class, 'showAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'saveJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1960,6 +1961,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/atak-config/data-flows', [AdminAtakConfigController::class, 'storeDataFlows'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/game-experience', [AdminAtakConfigController::class, 'storeGameExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/first-login-link', [AdminAtakConfigController::class, 'storeFirstLoginLink'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/photo-hud', [AdminAtakConfigController::class, 'storePhotoHud'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/marker-icons', [AdminAtakConfigController::class, 'storeMarkerIcons'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/marker-icons/upload', [AdminAtakConfigController::class, 'uploadMarkerIcon'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

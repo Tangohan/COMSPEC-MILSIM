@@ -10,7 +10,8 @@ private _bridge = [] call comspec_atak_native_fnc_bridge;
 // Connexion par COMSPEC Link (requêtes HTTP bloquantes de la DLL) : relancée dans un spawn pour que extAwait passe
 // en Async, sinon le jeu fige pendant chaque tentative. Le redessin final reste en fin de script.
 // Steam, Entrer (ConnectC2 → VerifyClientInitSync) et Déconnexion (POST logout) font aussi de l'HTTP synchrone.
-if (_bridge && {!canSuspend} && {_action in ["password", "otp_ask", "otp_ok", "pair", "steam", "enter", "logout"]}) exitWith {
+// Sans COMSPEC Link, la DLL native (GameAuth) fait les mêmes requêtes synchrones : même spawn, puis extAwait en Async.
+if (!canSuspend && {_action in ["password", "otp_ask", "otp_ok", "pair", "steam", "enter", "reconnect", "logout"]}) exitWith {
     // Une seule requête à la fois : un deuxième clic pendant l'appel HTTP renverrait un code OTP ou écraserait la réponse.
     if (missionNamespace getVariable ["COMSPEC_ATAK_AthenaBusy", false]) exitWith {
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", ["Patientez quelques secondes.", true, diag_tickTime]];
@@ -25,7 +26,7 @@ if (_bridge && {!canSuspend} && {_action in ["password", "otp_ask", "otp_ok", "p
     };
     true
 };
-private _ext = { params ["_cmd", ["_args", []]]; if (_bridge) then { private _r = ["COMSPECExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait; if (_r isEqualType []) then { _r select 0 } else { _r } } else { [_cmd, _args] call comspec_atak_native_fnc_extensionCall } };
+private _ext = { params ["_cmd", ["_args", []]]; if (_bridge) then { private _r = ["COMSPECExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait; if (_r isEqualType []) then { _r select 0 } else { _r } } else { private _r = ["COMSPECATAKNativeExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait; private _q = if (_r isEqualType []) then { _r param [0, ""] } else { _r }; if !(_q isEqualType "") then { _q = str _q; }; _q } };
 private _url = "https://athena-comspec.eu/public"; // portail Athena fixe
 private _pack = if (_bridge) then { [] call comspec_overwatch_connect_fnc_packVersion } else { "native" };
 private _steam = getPlayerUID player;
@@ -86,7 +87,8 @@ switch (_action) do {
         if (_bridge) then {
             missionNamespace setVariable ["COMSPEC_LinkState", "connecting", false];
             missionNamespace setVariable ["COMSPEC_LinkDetail", "Reconnexion manuelle…", false];
-            [] spawn {
+            // En ligne (déjà dans le spawn du verrou AthenaBusy) : un deuxième appui pendant la reconnexion est refusé.
+            call {
                 [] call comspec_overwatch_connect_fnc_connect;
                 private _ok = (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isEqualTo "linked";
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", [["Reconnexion impossible : voir les étapes de la liaison.", "Liaison Athena rétablie."] select _ok, !_ok, diag_tickTime]];

@@ -151,7 +151,7 @@ if (!_bootstrapped) exitWith {
     {
         private _line = _x;
         if (_line isEqualTo "") then { continue };
-        private _cols = _line splitString _tab;
+        private _cols = [_line, _tab] call comspec_overwatch_connect_fnc_splitKeepEmpty;
         if ((count _cols) < 3) then { continue };
         private _id = _cols select 0;
         if (_id isNotEqualTo "" && {!(_id in _seen)}) then { _seen pushBack _id; };
@@ -174,7 +174,8 @@ if (!_bootstrapped) exitWith {
 {
     private _line = _x;
     if (_line isEqualTo "") then { continue };
-    private _cols = _line splitString _tab;
+    // splitKeepEmpty : un auteur vide ne décale plus le corps / l'horodatage.
+    private _cols = [_line, _tab] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _cols) < 3) then { continue };
 
     private _id = _cols select 0;

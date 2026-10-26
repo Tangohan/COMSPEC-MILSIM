@@ -180,11 +180,11 @@ $athKpis = [
     ['label' => 'CRÉNEAUX', 'value' => (string) count($events), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => match ($eventsVue) {
         'passes' => 'passés',
         'annules' => 'annulés',
-        'calendrier' => 'ce mois',
+        'calendrier' => locale() === 'en' ? 'this month' : 'ce mois',
         default => 'à venir',
     }],
     ['label' => 'CONFIRMÉS', 'value' => (string) $confirmed, 'delta' => '', 'tone' => '#1e4f80', 'pct' => $confirmed > 0 ? '74%' : '0%', 'note' => 'présence déclarée'],
-    ['label' => 'PRÉSENCE EFF.', 'value' => $effectiveRate . ' %', 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $effectiveRate . '%', 'note' => $effective . ' pointés'],
+    ['label' => 'PRÉSENCE EFF.', 'value' => $effectiveRate . ' %', 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $effectiveRate . '%', 'note' => $effective . (locale() === 'en' ? ' checked in' : ' pointés')],
     ['label' => 'NO-SHOW', 'value' => (string) $noShow, 'delta' => '', 'tone' => $noShow > 0 ? '#c98a12' : '#0b8a5c', 'pct' => $confirmed > 0 ? (int) round($noShow / $confirmed * 100) . '%' : '0%', 'note' => 'absents non pointés'],
 ];
 require base_path('views/partials/ath_kpis.php');
@@ -217,6 +217,11 @@ $chipClass = static function (array $ev): string {
     $cal = $eventsCalendarMonth;
     $calMois = (string) ($cal['mois'] ?? $filterMois);
     $calLabel = (string) ($cal['label'] ?? $calMois);
+    // Mois et jours composés côté serveur en français : la traduction de la page ne les reconnaît pas (« Jeu » devenait « Game »).
+    $calEn = locale() === 'en';
+    if ($calEn && preg_match('/^\d{4}-\d{2}$/', $calMois) === 1) {
+        $calLabel = date('F Y', (int) strtotime($calMois . '-01'));
+    }
     $calPrev = (string) ($cal['prev'] ?? $calMois);
     $calNext = (string) ($cal['next'] ?? $calMois);
     $calWeeks = is_array($cal['weeks'] ?? null) ? $cal['weeks'] : [];
@@ -274,7 +279,7 @@ $chipClass = static function (array $ev): string {
 
     <div class="ath-cal__grid" role="grid" aria-label="<?= $h($calLabel) ?>">
         <div class="ath-cal__head" role="row">
-            <?php foreach (['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as $dow): ?>
+            <?php foreach ($calEn ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as $dow): ?>
             <div class="ath-cal__dow" role="columnheader"><?= $dow ?></div>
             <?php endforeach; ?>
         </div>
