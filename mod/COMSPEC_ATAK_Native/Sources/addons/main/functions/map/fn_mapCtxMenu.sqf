@@ -1,6 +1,7 @@
 /*
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
-    POINT DE PASSAGE (fiche de pose de l'étape au point, fn_wpAction "open"), CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
+    POINT DE PASSAGE (fiche de pose de l'étape au point, fn_wpAction "open"), ENVOYER À LA MONTRE (montre Garmin portée :
+    boussole de la montre, fn_watch "send"), CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
     et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
     sous le clic), RETIRER TOUTES LES ZONES (camp), MODIFIER LE MARQUEUR (marqueur joueur pointé, éditeur), SUPPRIMER (marqueur joueur ou alerte pointés), EFFACER LES ALERTES (repères
     d'alerte reçus). MARQUEUR ouvre la palette au point (fn_markerPlace) ou l'éditeur complet (réglage d'addon). Drone appairé et en vie : ORDRE AU DRONE
@@ -114,6 +115,10 @@ switch (_mode) do {
             case "WPGO": { ["goto", _c getOrDefault ["wp", -1]] call comspec_atak_native_fnc_wpAction; };
             case "WPDEL": { ["del", _c getOrDefault ["wp", -1]] call comspec_atak_native_fnc_wpAction; };
             case "ROUTE": { [_pos, "Point de la carte"] spawn comspec_atak_native_fnc_routeCompute; };
+            case "WATCH": {
+                private _lbl = if (_m isNotEqualTo "" && {(markerText _m) isNotEqualTo ""}) then { markerText _m } else { mapGridPosition _pos };
+                ["send", [_pos, _lbl select [0, 14]]] call comspec_atak_native_fnc_watch;
+            };
             case "CENTER": { _s set ["mapFollow", false]; [_pos] call comspec_atak_native_fnc_mapCenter; };
             case "COPY": {
                 private _g = [_pos, 10] call comspec_atak_native_fnc_gridRef;
@@ -208,6 +213,11 @@ switch (_mode) do {
             ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
             ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]]
         ];
+        // Montre Garmin portée : le point (ou le marqueur pointé) part sur la boussole de la montre (fn_watch "send").
+        if (((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0
+            || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0}) then {
+            _rows insert [4, [["WATCH", "Envoyer à la montre", "boussole de la montre", _dir + "app_garmin.paa", [0.36, 0.78, 0.42, 1]]]];
+        };
         // Étape pointée : ses lignes en tête (la liste a pu changer depuis l'ouverture : index revérifié).
         private _wpPts = (missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []];
         private _wpi = _c getOrDefault ["wp", -1];

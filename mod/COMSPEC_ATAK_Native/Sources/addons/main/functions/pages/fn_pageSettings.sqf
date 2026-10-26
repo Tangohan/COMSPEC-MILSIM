@@ -469,6 +469,7 @@ private _changed = 0;
     ["PHONE", "Prendre le téléphone", "Sortir, ranger, prendre en main"],
     ["MINI", "Miniature et carte", "Téléphone porté dans un coin de l'écran"],
     ["QUICK", "Raccourcis rapides", "Sans ouvrir le téléphone"],
+    ["WATCH", "Montre Garmin", "Les 5 boutons de la montre et ses raccourcis", true],
     ["DRONE", "Drone et marquage", "Drone appairé, réticule", true],
     ["GESTURE", "Gestes", "Gestes du personnage", true]
 ];

@@ -115,7 +115,7 @@ if (_mode isEqualTo "push") exitWith { [] call _save; _gm getOrDefault ["web", [
 // saut de distance quand elle revient) ; l'app affiche « Aucune montre Garmin ».
 private _worn = !(missionNamespace getVariable ["comspec_atak_native_garmin_watch", true])
     || {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0}
-    || {"COMSPEC_ATAK_GarminWatchItem" in (items player)};
+    || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0};
 private _was = _gm getOrDefault ["worn", true];
 _gm set ["worn", _worn];
 if (!_worn) exitWith {
