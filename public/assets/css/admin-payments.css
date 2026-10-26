@@ -207,3 +207,4 @@ tr.is-muted td { opacity: .6; }
 @media (max-width: 560px) {
   .ap-kpis .ath-card.ath-kpi { padding: 10px 12px; min-height: 0; }
 }
+.ap-inline { display: inline-flex; align-items: center; gap: 4px; margin: 0; }

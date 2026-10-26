@@ -119,4 +119,20 @@ final class PaymentsLedgerTest extends TestCase
         self::assertTrue(str_contains($csv, '"Kodiak; ""K"""'));
         self::assertTrue(str_contains($csv, '"Don";"Encaissé"'));
     }
+    public function testBoardHidesPrivateAndHiddenAndNeverShowsEmails(): void
+    {
+        $ledger = $this->ledger();
+        $ledger[] = ['source' => 'donation', 'status' => 'activated', 'amount_cents' => 5000, 'tenant_id' => 0, 'user_id' => 0, 'payer_email' => 'prive@x.fr', 'payer_name' => 'Discret', 'is_public' => false, 'reference' => 'DON-9', 'created_at' => '2025-01-01 10:00:00', 'paid_at' => '2025-01-01 10:00:00'];
+        $donors = DonorService::donorsFromLedger($ledger, [], ['part@x.fr' => 'allie']);
+        self::assertFalse($donors['prive@x.fr']['public']);
+        self::assertTrue($donors['b@x.fr']['public']);
+        $profiles = [30 => ['name' => 'Ghost', 'slug' => 'ghost', 'tenant_id' => 3, 'tenant_name' => 'Charlie', 'tenant_slug' => 'charlie'], 20 => ['name' => 'Bravo Six', 'slug' => '', 'tenant_id' => 2, 'tenant_name' => 'Bravo', 'tenant_slug' => 'bravo']];
+        $board = DonorService::boardFromDonors($donors, ['b@x.fr'], $profiles);
+        self::assertSame(['Ghost'], array_column($board, 'name'), 'b masqué, privé exclu, attribution sans nom exclue');
+        self::assertSame('pilier', $board[0]['tier']);
+        self::assertSame('Charlie', $board[0]['community']);
+        self::assertFalse(str_contains(json_encode($board), '@'));
+        $board = DonorService::boardFromDonors($donors, [], $profiles);
+        self::assertSame(['Ghost', 'Bravo Six'], array_column($board, 'name'), 'trié par palier');
+    }
 }

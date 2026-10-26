@@ -393,6 +393,7 @@ return function (Router $router) {
     $router->get('/soutenir-atak', [AtakSupportController::class, 'index']);
     $router->get('/soutenir-atak/connexion', [AtakSupportController::class, 'loginGate']);
     $router->post('/soutenir-atak/checkout', [AtakSupportController::class, 'checkout'], [AuthMiddleware::class]);
+    $router->post('/soutenir-atak/mur', [AtakSupportController::class, 'wallVisibility'], [AuthMiddleware::class]);
     $router->get('/soutenir-atak/merci', [AtakSupportController::class, 'thanks']);
     $router->get('/soutenir-atak/paypal-qr.png', [AtakSupportController::class, 'paypalQr']);
     $router->get('/platform/invite-unit', [ReferralInviteController::class, 'index'], [AuthMiddleware::class]);
@@ -1159,6 +1160,7 @@ return function (Router $router) {
     $router->post('/admin/paiements/donateurs/attribuer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorGrant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/donateurs/retirer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRevoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/donateurs/retablir', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRestore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/mur', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorWall'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/donateurs/recalculer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRebuild'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/communaute/{tenantId}/prolonger', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'extend'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/communaute/{tenantId}/renouveler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'renew'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

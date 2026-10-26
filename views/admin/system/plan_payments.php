@@ -20,6 +20,7 @@ $events = is_array($payEvents ?? null) ? $payEvents : [];
 $subs = is_array($paySubscriptions ?? null) ? $paySubscriptions : [];
 $donors = is_array($payDonors ?? null) ? $payDonors : [];
 $revoked = is_array($payRevoked ?? null) ? $payRevoked : [];
+$wallHidden = is_array($payHidden ?? null) ? $payHidden : [];
 $supporters = is_array($paySupporters ?? null) ? $paySupporters : [];
 $planNames = is_array($payPlanNames ?? null) ? $payPlanNames : [];
 $tenantNames = is_array($payTenantNames ?? null) ? $payTenantNames : [];
@@ -378,9 +379,9 @@ $qs = static function (array $over) use ($f): string {
   </div>
 
   <section class="ath-table-panel">
-    <div class="ath-table-toolbar"><span class="ath-table-toolbar__title">Donateurs</span><span class="ath-table-toolbar__count"><?= count($donors) ?></span><span class="ath-table-toolbar__spacer"></span><span class="ap-muted">Classés par total donné.</span></div>
+    <div class="ath-table-toolbar"><span class="ath-table-toolbar__title">Donateurs</span><span class="ath-table-toolbar__count"><?= count($donors) ?></span><span class="ath-table-toolbar__spacer"></span><span class="ap-muted">Classés par total donné · <?= (int) ($payBoardCount ?? 0) ?> sur le mur public.</span><a class="ath-btn" href="<?= $h(url('soutenir-atak') . '#donateurs') ?>" target="_blank" rel="noopener">Voir le mur</a></div>
     <?php if ($donors === []): ?><p class="ap-empty">Pas encore de donateur. Ils apparaissent après un don payé ou une attribution.</p><?php else: ?>
-    <div class="ath-table-wrap"><table class="ath-table ap-table"><thead><tr><th>Donateur</th><th>Palier</th><th class="ath-th-num">Total</th><th class="ath-th-num">Dons</th><th>Dernier don</th><th>Origine</th><th></th></tr></thead><tbody>
+    <div class="ath-table-wrap"><table class="ath-table ap-table"><thead><tr><th>Donateur</th><th>Palier</th><th class="ath-th-num">Total</th><th class="ath-th-num">Dons</th><th>Dernier don</th><th>Origine</th><th>Mur public</th><th></th></tr></thead><tbody>
       <?php foreach ($donors as $d): $isRevoked = in_array($d['email'], $revoked, true); ?>
         <tr<?= $isRevoked ? ' class="is-muted"' : '' ?>>
           <td><b class="ap-name<?= $isRevoked ? '' : ' is-donor is-donor--' . $h($d['tier']) ?>"><?= $h($d['name'] !== '' ? $d['name'] : ($d['email'] ?: 'Anonyme')) ?></b><small class="ap-sub"><?= $h($d['email']) ?></small></td>
@@ -389,6 +390,9 @@ $qs = static function (array $over) use ($f): string {
           <td class="ath-td-num"><?= (int) $d['count'] ?></td>
           <td><?= $h($fmt($d['last_at'], 'd/m/Y')) ?></td>
           <td><?= $d['manual'] ? '<span class="ath-tag ath-tag--info">Attribué</span>' : '<span class="ap-muted">Dons</span>' ?><?= $isRevoked ? ' <span class="ath-tag ath-tag--bad">Retiré</span>' : '' ?></td>
+          <td><?php if ($d['email'] !== '' && !$isRevoked): $onWall = !empty($d['public']) && !in_array($d['email'], $wallHidden, true); ?>
+            <form method="post" action="<?= $h($base . '/donateurs/mur') ?>" class="ap-inline"><?= $csrf('dons') ?><input type="hidden" name="email" value="<?= $h($d['email']) ?>"><input type="hidden" name="visible" value="<?= $onWall ? '0' : '1' ?>"><span class="ath-tag ath-tag--<?= $onWall ? 'ok' : 'neut' ?>"><?= $onWall ? 'Affiché' : (empty($d['public']) ? 'Don non public' : 'Masqué') ?></span> <button class="ap-copy"><?= $onWall ? 'Masquer' : 'Afficher' ?></button></form>
+          <?php endif; ?></td>
           <td class="ap-right"><?php if ($d['email'] !== ''): ?>
             <form method="post" action="<?= $h($base . '/donateurs/' . ($isRevoked ? 'retablir' : 'retirer')) ?>"<?= $isRevoked ? '' : ' data-ap-confirm="Retirer le rôle donateur à ' . $h($d['email']) . ' ? Ses dons restent enregistrés."' ?>><?= $csrf('dons') ?><input type="hidden" name="email" value="<?= $h($d['email']) ?>"><button class="ath-btn<?= $isRevoked ? '' : ' ap-danger' ?>"><?= $isRevoked ? 'Rétablir' : 'Retirer le rôle' ?></button></form>
           <?php endif; ?></td>

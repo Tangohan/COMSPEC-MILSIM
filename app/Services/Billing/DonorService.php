@@ -82,8 +82,12 @@ final class DonorService
             if ($key === 'u0') {
                 continue;
             }
-            $out[$key] ??= ['email' => $email, 'name' => '', 'total_cents' => 0, 'count' => 0, 'last_at' => null, 'tier' => 'soutien', 'manual' => false, 'user_ids' => []];
+            $out[$key] ??= ['email' => $email, 'name' => '', 'total_cents' => 0, 'count' => 0, 'first_at' => null, 'last_at' => null, 'tier' => 'soutien', 'manual' => false, 'public' => false, 'user_ids' => []];
             $out[$key]['total_cents'] += (int) ($e['amount_cents'] ?? 0);
+            // Un don saisi à la main sans accord de publication ne rend pas la personne visible sur le mur.
+            if (($e['source'] ?? '') !== 'donation' || !empty($e['is_public'])) {
+                $out[$key]['public'] = true;
+            }
             $out[$key]['count']++;
             if ($out[$key]['name'] === '' && trim((string) ($e['payer_name'] ?? '')) !== '') {
                 $out[$key]['name'] = trim((string) $e['payer_name']);
@@ -91,6 +95,9 @@ final class DonorService
             $at = (string) ($e['paid_at'] ?? $e['created_at'] ?? '');
             if ($at !== '' && ($out[$key]['last_at'] === null || $at > $out[$key]['last_at'])) {
                 $out[$key]['last_at'] = $at;
+            }
+            if ($at !== '' && ($out[$key]['first_at'] === null || $at < $out[$key]['first_at'])) {
+                $out[$key]['first_at'] = $at;
             }
             if ((int) ($e['user_id'] ?? 0) > 0) {
                 $out[$key]['user_ids'][] = (int) $e['user_id'];
@@ -101,7 +108,7 @@ final class DonorService
             if ($email === '') {
                 continue;
             }
-            $out[$email] ??= ['email' => $email, 'name' => '', 'total_cents' => 0, 'count' => 0, 'last_at' => null, 'tier' => 'soutien', 'manual' => true, 'user_ids' => []];
+            $out[$email] ??= ['email' => $email, 'name' => '', 'total_cents' => 0, 'count' => 0, 'first_at' => null, 'last_at' => null, 'tier' => 'soutien', 'manual' => true, 'public' => true, 'user_ids' => []];
             $out[$email]['manual'] = true;
             $out[$email]['forced_tier'] = isset(self::TIERS[$tier]) ? $tier : 'soutien';
         }
@@ -119,6 +126,47 @@ final class DonorService
         }
         unset($d);
         uasort($out, static fn (array $a, array $b): int => [$b['total_cents'], $b['last_at'] ?? ''] <=> [$a['total_cents'], $a['last_at'] ?? '']);
+
+        return $out;
+    }
+
+    /**
+     * Mur public des donateurs (pur) : nom public, palier, ancienneté, communauté. Jamais d'e-mail ni de montant.
+     * Exclus : donateurs masqués (choix de la personne ou de l'administration), dons manuels non publics, anonymes.
+     *
+     * @param array<string, array<string, mixed>> $donors donorsFromLedger()
+     * @param list<string> $hidden e-mails masqués
+     * @param array<int, array{name: string, slug: string, tenant_id: int, tenant_name: string, tenant_slug: string}> $profiles
+     * @return list<array{name: string, tier: string, since: ?string, community: string, community_slug: string}>
+     */
+    public static function boardFromDonors(array $donors, array $hidden, array $profiles): array
+    {
+        $rank = array_flip(array_keys(self::TIERS));
+        $out = [];
+        foreach ($donors as $d) {
+            if (empty($d['public']) || ($d['email'] !== '' && in_array($d['email'], $hidden, true))) {
+                continue;
+            }
+            $p = null;
+            foreach ($d['user_ids'] as $uid) {
+                if (isset($profiles[$uid]) && $profiles[$uid]['name'] !== '') {
+                    $p = $profiles[$uid];
+                    break;
+                }
+            }
+            $name = $p['name'] ?? trim((string) ($d['name'] ?? ''));
+            if ($name === '' || str_contains($name, '@')) {
+                continue;
+            }
+            $out[] = [
+                'name' => mb_substr($name, 0, 60),
+                'tier' => (string) $d['tier'],
+                'since' => $d['first_at'] ?? null,
+                'community' => (string) ($p['tenant_name'] ?? ''),
+                'community_slug' => (string) ($p['tenant_slug'] ?? ''),
+            ];
+        }
+        usort($out, static fn (array $a, array $b): int => [($rank[$b['tier']] ?? 0), $a['since'] ?? '9', $a['name']] <=> [($rank[$a['tier']] ?? 0), $b['since'] ?? '9', $b['name']]);
 
         return $out;
     }
@@ -179,6 +227,9 @@ final class DonorService
         return self::$cache = [
             'users' => array_map('strval', is_array($data['users'] ?? null) ? $data['users'] : []),
             'tenants' => array_map('strval', is_array($data['tenants'] ?? null) ? $data['tenants'] : []),
+            'slugs' => is_array($data['slugs'] ?? null) ? $data['slugs'] : [],
+            'tenant_slugs' => array_map('strval', is_array($data['tenant_slugs'] ?? null) ? $data['tenant_slugs'] : []),
+            'board' => is_array($data['board'] ?? null) ? $data['board'] : [],
             'updated_at' => (string) ($data['updated_at'] ?? ''),
         ];
     }
@@ -199,6 +250,57 @@ final class DonorService
         return is_string($t) && $t !== '' ? $t : null;
     }
 
+    /** Mur public des donateurs (calculé au dernier recalcul). */
+    public static function board(): array
+    {
+        return array_values(array_filter(self::cached()['board'], 'is_array'));
+    }
+
+    /**
+     * Correspondances pour la décoration côté navigateur (public/assets/js/donor-marks.js) :
+     * ids de comptes, slugs de fiche de la communauté courante, communautés soutien. Aucune donnée personnelle.
+     *
+     * @return array{u: array<string, string>, s: array<string, string>, t: array<string, string>, ts: array<string, string>}
+     */
+    public static function clientMap(int $tenantId = 0): array
+    {
+        $c = self::cached();
+        $slugs = $tenantId > 0 && is_array($c['slugs'][$tenantId] ?? null) ? $c['slugs'][$tenantId] : [];
+        $ts = [];
+        foreach ($c['tenant_slugs'] as $tid => $slug) {
+            if (isset($c['tenants'][$tid])) {
+                $ts[(string) $slug] = (string) $c['tenants'][$tid];
+            }
+        }
+
+        return [
+            'u' => array_map('strval', array_combine(array_map('strval', array_keys($c['users'])), $c['users']) ?: []),
+            's' => array_map('strval', $slugs),
+            't' => array_map('strval', array_combine(array_map('strval', array_keys($c['tenants'])), $c['tenants']) ?: []),
+            'ts' => $ts,
+        ];
+    }
+
+    /** Choix d'apparaître ou non sur le mur public (par e-mail, donc pour toutes les communautés). */
+    public function setHidden(string $email, bool $hidden): void
+    {
+        $email = strtolower(trim($email));
+        if ($email === '') {
+            return;
+        }
+        $o = $this->overrides();
+        $o['hidden'] = array_values(array_diff($o['hidden'], [$email]));
+        if ($hidden) {
+            $o['hidden'][] = $email;
+        }
+        $this->saveOverrides($o);
+    }
+
+    public function isHidden(string $email): bool
+    {
+        return in_array(strtolower(trim($email)), $this->overrides()['hidden'], true);
+    }
+
     /** Réglages manuels : e-mails retirés, attributions sans don. */
     public function overrides(): array
     {
@@ -211,6 +313,7 @@ final class DonorService
         return [
             'revoked' => array_values(array_map('strval', is_array($raw['revoked'] ?? null) ? $raw['revoked'] : [])),
             'granted' => array_map('strval', is_array($raw['granted'] ?? null) ? $raw['granted'] : []),
+            'hidden' => array_values(array_map('strval', is_array($raw['hidden'] ?? null) ? $raw['hidden'] : [])),
         ];
     }
 
@@ -219,6 +322,7 @@ final class DonorService
         (new \App\Repositories\PlatformSettingsRepository())->setMany(['donor_overrides' => json_encode([
             'revoked' => array_values(array_unique($o['revoked'])),
             'granted' => $o['granted'],
+            'hidden' => array_values(array_unique($o['hidden'] ?? [])),
         ], JSON_UNESCAPED_UNICODE)]);
     }
 
@@ -269,7 +373,33 @@ final class DonorService
         foreach (self::supportersFromLedger($ledger, $paidTenantIds) as $tid => $s) {
             $tenants[$tid] = $s['kind'];
         }
-        $payload = ['users' => $users, 'tenants' => $tenants, 'updated_at' => gmdate('c')];
+        $profiles = [];
+        $slugs = [];
+        $tenantSlugs = [];
+        try {
+            $profiles = $this->ledger()->profilesForUserIds(array_keys($users));
+            foreach ($profiles as $uid => $p) {
+                if ($p['slug'] !== '' && $p['tenant_id'] > 0 && isset($users[$uid])) {
+                    $slugs[$p['tenant_id']][$p['slug']] = $users[$uid];
+                }
+            }
+            $tenantSlugs = $this->ledger()->tenantSlugs(array_keys($tenants));
+        } catch (\Throwable) {
+        }
+        foreach ($donors as &$d) {
+            foreach ($memberships[$d['email']] ?? [] as $m) {
+                $d['user_ids'][] = (int) $m['id'];
+            }
+        }
+        unset($d);
+        $payload = [
+            'users' => $users,
+            'tenants' => $tenants,
+            'slugs' => $slugs,
+            'tenant_slugs' => $tenantSlugs,
+            'board' => self::boardFromDonors($donors, $o['hidden'], $profiles),
+            'updated_at' => gmdate('c'),
+        ];
         $dir = dirname(self::cachePath());
         if (!is_dir($dir)) {
             @mkdir($dir, 0775, true);
