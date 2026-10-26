@@ -508,6 +508,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 
 // Briefing présenté en direct : suivre le présentateur de mon camp, signaler ma présence.
 [{ ["tick"] call comspec_atak_native_fnc_briefingLive; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Écrans COMSPEC proches : diapositive diffusée affichée sur l'objet, actions ACE ou molette (fn_screenCast).
+[{ ["tick"] call comspec_atak_native_fnc_screenCast; }, 2] call COMSPEC_ATAK_PfhSpread;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
 [{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call COMSPEC_ATAK_PfhSpread;
