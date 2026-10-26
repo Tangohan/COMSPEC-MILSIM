@@ -209,6 +209,101 @@ final class AtakChatRouteCursorTest extends TestCase
         self::assertSame([1], $this->ids($this->poll(0, 25)));
     }
 
+    public function testCursorPollStopsBeforeTheGameDllCutsItsOutputAndTheRestFollows(): void
+    {
+        // Cas mesuré par le relecteur avec la vraie DLL : 40 messages de 200 caractères pour l'ATAK natif (limit=40),
+        // sortie coupée à 7 996 octets en gardant les plus récents, 9 messages perdus pour de bon.
+        $this->seed('TOC', 'déjà lu', 5);
+        for ($k = 0; $k < 40; $k++) {
+            $this->seed('TOC-ALPHA', self::frenchText($k, 200), 1);
+        }
+
+        $first = $this->poll(5, 40);
+        self::assertLessThan(40, count($first), 'page réduite à ce que la DLL rend sans couper');
+        self::assertLessThanOrEqual(7500, strlen(self::dllOutput($first)));
+        self::assertSame(range(6, 5 + count($first)), $this->ids($first), 'les plus anciens d’abord');
+        self::assertSame(range(6, 45), $this->drain(5, 40), 'les 40 arrivent, sans trou ni doublon');
+    }
+
+    public function testNewlinesAreCountedAsTheGameDllWritesThem(): void
+    {
+        // La DLL remplace chaque saut de ligne par « — » entre espaces (5 octets) : 10 corps de 200 sauts de ligne
+        // donnent plus de 10 000 octets de sortie pour 2 000 octets de corps.
+        $this->seed('TOC', 'déjà lu', 5);
+        $this->seed('TOC', str_repeat("\n", 200), 10);
+
+        $first = $this->poll(5, 25);
+        self::assertNotEmpty($first);
+        self::assertLessThanOrEqual(7500, strlen(self::dllOutput($first)));
+    }
+
+    public function testPageIsFilledUpToTheBudgetWithBodiesCutAt280Characters(): void
+    {
+        // La DLL n'écrit que les 280 premiers caractères du corps : compter 600 caractères arrêterait la page
+        // à la moitié de ce qui passe.
+        $this->seed('TOC', 'déjà lu', 5);
+        for ($k = 0; $k < 30; $k++) {
+            $this->seed('TOC-ALPHA', self::frenchText($k, 600), 1);
+        }
+
+        $first = $this->poll(5, 25);
+        $next = $this->poll(max($this->ids($first)), 1);
+        self::assertCount(1, $next);
+        self::assertLessThanOrEqual(7500, strlen(self::dllOutput($first)));
+        self::assertGreaterThan(7500, strlen(self::dllOutput($first)) + strlen(self::dllOutput($next)), 'page pleine');
+    }
+
+    public function testOneMessageLongerThanTheBudgetStillMovesTheCursor(): void
+    {
+        $this->seed('TOC', 'déjà lu', 5);
+        $this->seed(str_repeat('A', 9000), 'indicatif démesuré', 1);
+        $this->seed('TOC', 'suivant', 1);
+
+        self::assertSame([6], $this->ids($this->poll(5, 25)));
+        self::assertSame([7], $this->ids($this->poll(6, 25)));
+    }
+
+    public function testFirstSnapshotWithoutCursorIsNotReduced(): void
+    {
+        for ($k = 0; $k < 40; $k++) {
+            $this->seed('TOC-ALPHA', self::frenchText($k, 200), 1);
+        }
+
+        self::assertCount(40, $this->poll(0, 40));
+    }
+
+    /** Texte français accentué (2 octets par lettre accentuée), $chars caractères, numéroté. */
+    private static function frenchText(int $k, int $chars): string
+    {
+        $base = "Ordre TOC : progressez vers le point d'appui, sécurisez l'axe, rendez compte à l'arrivée. ";
+
+        return mb_substr(sprintf('#%02d ', $k) . str_repeat($base, 10), 0, $chars, 'UTF-8');
+    }
+
+    /**
+     * Sortie de la DLL du jeu pour ces messages avant sa coupe finale (Extension.cs, SimplifyChatMessagesJson) :
+     * « id\tauteur\tcorps (280 car.)\tcreated_at\tcanal\n », tabulation → espace, saut de ligne → « — », \r retiré.
+     *
+     * @param list<array<string, mixed>> $rows
+     */
+    private static function dllOutput(array $rows): string
+    {
+        $clean = static fn (string $s): string => str_replace(["\t", "\n", "\r"], [' ', ' — ', ''], $s);
+        $out = '';
+        foreach ($rows as $row) {
+            $id = (string) ($row['id'] ?? '');
+            if ($id === '' || $id === '0') {
+                continue;
+            }
+            $channel = trim((string) ($row['channel_key'] ?? '')) !== '' ? (string) $row['channel_key'] : 'general';
+            $out .= $clean($id) . "\t" . $clean((string) ($row['author'] ?? '')) . "\t"
+                . $clean(mb_substr((string) ($row['body'] ?? ''), 0, 280, 'UTF-8')) . "\t"
+                . $clean((string) ($row['created_at'] ?? '')) . "\t" . $clean($channel) . "\n";
+        }
+
+        return $out;
+    }
+
     private function seed(string $author, string $body, int $count): void
     {
         $insert = $this->pdo->prepare(

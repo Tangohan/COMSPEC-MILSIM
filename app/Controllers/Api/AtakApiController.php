@@ -7693,6 +7693,15 @@ class AtakApiController
      */
     private const CHAT_SCAN_MAX_PASSES = 4;
 
+    /**
+     * Octets de sortie DLL visés par relève avec curseur. La DLL du jeu (COMSPECExtension, GetChatMessages, même
+     * Extension.cs pour COMSPEC Link et l'ATAK natif) écrit une ligne « id\tauteur\tcorps\tcreated_at\tcanal\n »
+     * par message, corps coupé à 280 caractères, et coupe le tout à 7 996 octets UTF-8 en gardant les lignes les
+     * PLUS RÉCENTES : les plus anciennes étaient perdues pour de bon, puisque le client avance son curseur au plus
+     * grand id reçu. Marge d'environ 500 octets sous cette limite.
+     */
+    private const GAME_CHAT_OUTPUT_BUDGET = 7500;
+
     /** Auteur réservé au transport des réglages d'affichage des camps (« REGLAGES AFFICHAGE|… »). */
     private static function isReservedSettingsAuthor(string $author): bool
     {
@@ -7791,6 +7800,67 @@ class AtakApiController
         return count($rows) > $limit ? array_slice($rows, 0, $limit) : $rows;
     }
 
+    /**
+     * Relève avec curseur : les plus anciens messages, tant que la sortie de la DLL du jeu tient dans
+     * GAME_CHAT_OUTPUT_BUDGET. La suite part à la relève suivante (le client repart du plus grand id reçu).
+     * Toujours au moins un message, sinon un message trop long immobiliserait le curseur.
+     *
+     * @param list<mixed> $rows messages prêts à envoyer, ordre id croissant
+     * @return list<mixed>
+     */
+    private static function keepWithinGameChatOutput(array $rows, int $budget = self::GAME_CHAT_OUTPUT_BUDGET): array
+    {
+        $kept = [];
+        $bytes = 0;
+        foreach ($rows as $row) {
+            $lineBytes = is_array($row) ? self::gameChatLineBytes($row) : 0;
+            if ($kept !== [] && $bytes + $lineBytes > $budget) {
+                break;
+            }
+            $kept[] = $row;
+            $bytes += $lineBytes;
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Octets UTF-8 de la ligne que la DLL écrit pour ce message (SimplifyChatMessagesJson). Estimation par excès :
+     * la DLL coupe le corps à 280 unités UTF-16, 280 caractères en gardent au moins autant d'octets.
+     *
+     * @param array<string, mixed> $row
+     */
+    private static function gameChatLineBytes(array $row): int
+    {
+        $body = self::gameChatField($row['body'] ?? '');
+        if (mb_strlen($body, 'UTF-8') > 280) {
+            $body = mb_substr($body, 0, 280, 'UTF-8');
+        }
+        $channel = self::gameChatField($row['channel_key'] ?? ($row['channel'] ?? ''));
+        if (trim($channel) === '') {
+            $channel = 'general';
+        }
+
+        // 4 tabulations et le saut de ligne final.
+        return 5
+            + self::gameChatFieldBytes(self::gameChatField($row['id'] ?? ''))
+            + self::gameChatFieldBytes(self::gameChatField($row['author'] ?? ''))
+            + self::gameChatFieldBytes($body)
+            + self::gameChatFieldBytes(self::gameChatField($row['created_at'] ?? ''))
+            + self::gameChatFieldBytes($channel);
+    }
+
+    private static function gameChatField(mixed $value): string
+    {
+        return is_scalar($value) ? (string) $value : '';
+    }
+
+    /** Champ nettoyé comme par la DLL : tabulation → espace, saut de ligne → « — » entre espaces, \r retiré. */
+    private static function gameChatFieldBytes(string $value): int
+    {
+        return strlen(str_replace(["\t", "\n", "\r"], [' ', ' — ', ''], $value));
+    }
+
     public function chatIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -7880,6 +7950,10 @@ class AtakApiController
             $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'chat', $rows);
         } catch (\Throwable) {
             // Un brouillage intel défaillant ne doit pas couper le journal radio.
+        }
+        if ($afterId > 0) {
+            // Relève du jeu : pas plus que ce que la DLL rend sans couper, mesuré sur le texte réellement envoyé.
+            $rows = self::keepWithinGameChatOutput(array_values($rows));
         }
 
         return Response::json($rows);
