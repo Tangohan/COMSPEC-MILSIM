@@ -8,6 +8,20 @@
     L'app FRS est redessinée à la fin.
 */
 params [["_act", "load"], ["_arg", "mine"]];
+// Appelé depuis le dessin de la page (non suspendable) : requêtes HTTP de la DLL relancées dans un spawn, sinon le jeu
+// fige (liste, puis une fois par photo). Une seule requête en cours par portée / fiche.
+if (!canSuspend) exitWith {
+    private _busy = missionNamespace getVariable ["COMSPEC_ATAK_FrsBusy", createHashMap];
+    missionNamespace setVariable ["COMSPEC_ATAK_FrsBusy", _busy];
+    private _key = format ["%1:%2", _act, _arg];
+    if (_key in _busy) exitWith {};
+    _busy set [_key, true];
+    [_act, _arg, _key] spawn {
+        params ["_act", "_arg", "_key"];
+        [_act, _arg] call comspec_atak_native_fnc_frsLibrary;
+        (missionNamespace getVariable ["COMSPEC_ATAK_FrsBusy", createHashMap]) deleteAt _key;
+    };
+};
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FRS") then { ["FRS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _res = { params ["_r"]; if (!isNil "comspec_overwatch_connect_fnc_extResult") then { [_r] call comspec_overwatch_connect_fnc_extResult } else { _r } };
 switch (_act) do {

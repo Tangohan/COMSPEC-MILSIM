@@ -33,10 +33,12 @@ private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
 if (!(_modVersion isEqualType "")) then { _modVersion = "1.0"; };
 private _platform = format ["Arma 3 · COMSPEC %1", _modVersion];
 
-private _raw = ["COMSPECExtension" callExtension [
+// POST synchrone côté DLL : extAwait évite de figer le jeu en contexte planifié (appel direct sinon).
+private _raw = [[
+    "COMSPECExtension",
     "RegisterTerminal",
     [_terminalUid, _label, "tablet", _callsign, _pairingToken, "active", _platform]
-]] call comspec_overwatch_connect_fnc_extResult;
+] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 
 private _parts = _raw splitString "|";
 if ((count _parts) < 2 || {(_parts select 0) isNotEqualTo "OK"}) exitWith {

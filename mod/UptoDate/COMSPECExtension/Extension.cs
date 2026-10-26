@@ -388,9 +388,15 @@ public static partial class Extension
         }
         catch { /* corps illisible */ }
         if ((code == 400 || code == 422) && !string.IsNullOrEmpty(sentBody))
-            parts.Add("envoyé : " + OneLineExcerpt(sentBody, 240));
+            parts.Add("envoyé : " + OneLineExcerpt(MaskSecretsInJson(sentBody), 240));
         return string.Join(" · ", parts);
     }
+
+    /// <summary>Clé communauté et jetons masqués avant d'écrire un corps envoyé dans le journal de transmission.</summary>
+    private static string MaskSecretsInJson(string text) =>
+        System.Text.RegularExpressions.Regex.Replace(text,
+            "(\"(?:api_key|access_key|session_token|game_session|refresh_token|password)\"\\s*:\\s*\")(?:[^\"\\\\]|\\\\.)*\"",
+            "$1***\"");
 
     private static string OneLineExcerpt(string text, int max)
     {
@@ -1576,7 +1582,7 @@ public static partial class Extension
         {
             using var req = new HttpRequestMessage(HttpMethod.Post, item.Url)
             {
-                Content = JsonContent(item.Body)
+                Content = JsonContent(AddQueueSecrets(item.Body))
             };
             AttachApiKeyHeader(req);
             var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
@@ -1776,6 +1782,75 @@ public static partial class Extension
     private static int _diskQueueLoaded;
     private static readonly object DiskQueueLock = new();
 
+    private static bool IsQueueSecretProp(JsonProperty prop) =>
+        prop.NameEquals("api_key") || prop.NameEquals("access_key")
+        || prop.NameEquals("session_token") || prop.NameEquals("game_session");
+
+    /// <summary>Corps de file écrit sur disque sans clé communauté ni jeton de session (en clair sinon dans
+    /// queue.jsonl / position.json). Corps non objet JSON : inchangé.</summary>
+    private static string StripQueueSecrets(string body)
+    {
+        if (string.IsNullOrEmpty(body) || body.IndexOf('{') < 0
+            || (body.IndexOf("\"api_key\"", StringComparison.Ordinal) < 0
+                && body.IndexOf("\"access_key\"", StringComparison.Ordinal) < 0
+                && body.IndexOf("\"session_token\"", StringComparison.Ordinal) < 0
+                && body.IndexOf("\"game_session\"", StringComparison.Ordinal) < 0))
+            return body;
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object) return body;
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (IsQueueSecretProp(prop)) continue;
+                    prop.WriteTo(writer);
+                }
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return body;
+        }
+    }
+
+    /// <summary>Envoi d'un corps repris du disque (sans secrets) : clé et jeton de session courants remis à l'envoi.</summary>
+    private static string AddQueueSecrets(string body)
+    {
+        if (string.IsNullOrEmpty(body) || !body.TrimStart().StartsWith('{')
+            || body.IndexOf("\"session_token\"", StringComparison.Ordinal) >= 0
+            || (_sessionToken.Length == 0 && _apiKey.Length == 0))
+            return body;
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object) return body;
+            var hasKey = doc.RootElement.TryGetProperty("api_key", out _) || doc.RootElement.TryGetProperty("access_key", out _);
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                    prop.WriteTo(writer);
+                if (!hasKey && _apiKey.Length > 0)
+                    writer.WriteString("api_key", _apiKey);
+                if (_sessionToken.Length > 0)
+                    writer.WriteString("session_token", _sessionToken);
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return body;
+        }
+    }
+
     private static string QueueRowJson(string url, string body)
     {
         using var stream = new MemoryStream();
@@ -1843,19 +1918,19 @@ public static partial class Extension
                 foreach (var item in PendingPosts.ToArray())
                 {
                     if (lines.Count >= MaxQueueSize) break;
-                    lines.Add(QueueRowJson(item.Url, item.Body));
+                    lines.Add(QueueRowJson(item.Url, StripQueueSecrets(item.Body)));
                 }
                 foreach (var mk in PendingMarkersByName.Values)
                 {
                     if (lines.Count >= MaxQueueSize) break;
-                    lines.Add(QueueRowJson(mk.Url, mk.Body));
+                    lines.Add(QueueRowJson(mk.Url, StripQueueSecrets(mk.Body)));
                 }
                 File.WriteAllLines(fifo, lines);
                 lock (CoalescedPositionLock)
                 {
                     if (_coalescedPosition is { } p)
                     {
-                        File.WriteAllText(pos, QueueRowJson(p.Url, p.Body));
+                        File.WriteAllText(pos, QueueRowJson(p.Url, StripQueueSecrets(p.Body)));
                     }
                     else if (File.Exists(pos))
                     {
@@ -2475,10 +2550,7 @@ public static partial class Extension
 
     private static string PollOkClipped(string payload)
     {
-        payload ??= "";
-        if (payload.Length > MaxOutputBytes - 4)
-            payload = payload.Substring(0, MaxOutputBytes - 4);
-        return "OK|" + payload;
+        return "OK|" + Utf8ClipLines(payload ?? "", MaxOutputBytes - 4);
     }
 
     private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token, bool gzip = false)
@@ -2666,7 +2738,30 @@ public static partial class Extension
         var functionString = Marshal.PtrToStringUTF8(function);
         if (functionString == "Warmup")
             KickBackgroundWarmup();
-        RvExtensionArgsImpl(functionString, []);
+        // Forme chaîne (callExtension "GetUnits", "GetPings"…) : même chemin que RVExtensionArgs, réponse directe
+        // d'abord ; sans elle, ces commandes servies par TryGetSyncResponse rendaient toujours "".
+        string? syncResult;
+        try
+        {
+            syncResult = TryGetSyncResponse(functionString, []);
+        }
+        catch (Exception ex)
+        {
+            syncResult = FormatCaughtError(ex);
+        }
+        if (syncResult != null)
+        {
+            Output(output, outputSize, syncResult);
+            return;
+        }
+        try
+        {
+            RvExtensionArgsImpl(functionString, []);
+        }
+        catch
+        {
+            // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+        }
         Output(output, outputSize, "");
     }
 
@@ -2698,11 +2793,35 @@ public static partial class Extension
     private const int MaxOutputBytes = 8000;
     /// <summary>Morceaux de texte de campagne SSE reçus du jeu, par clé de campagne (SseCampaignPush).</summary>
     private static readonly ConcurrentDictionary<string, string?[]> SseCampaignPushBuffers = new(StringComparer.Ordinal);
+    /// <summary>Dernier morceau reçu par clé (ms) : un envoi interrompu est purgé au bout de 10 min.</summary>
+    private static readonly ConcurrentDictionary<string, long> SseCampaignPushTouched = new(StringComparer.Ordinal);
 
     /// <summary>Cache détail tenue pour GetWardrobeChunk (évite ERR|too_large).</summary>
     private static string _wardrobeDetailCacheId = "";
     private static string _wardrobeDetailCache = "";
     private static int _wardrobeDetailChunkSize = MaxOutputBytes - 80;
+
+    /// <summary>Débuts des morceaux (en caractères) d'un texte découpé en tranches d'au plus maxBytes octets UTF-8 :
+    /// Output coupe à 8000 octets, un découpage en caractères perdait la fin des tranches accentuées.</summary>
+    private static List<int> Utf8ChunkStarts(string s, int maxBytes)
+    {
+        var starts = new List<int>();
+        var i = 0;
+        while (i < s.Length)
+        {
+            starts.Add(i);
+            var bytes = 0;
+            while (i < s.Length)
+            {
+                var n = char.IsHighSurrogate(s[i]) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1]) ? 2 : 1;
+                var b = n == 2 ? 4 : s[i] < 0x80 ? 1 : s[i] < 0x800 ? 2 : 3;
+                if (bytes + b > maxBytes && bytes > 0) break;
+                bytes += b;
+                i += n;
+            }
+        }
+        return starts;
+    }
 
     /// <summary>Cache liste tenues pour pagination ListWardrobes / ListWardrobesPage.</summary>
     private static string _wardrobesListCache = "";
@@ -2940,10 +3059,9 @@ public static partial class Extension
     {
         // Jeton jeu : Bearer prioritaire. Miroir X-ATAK-TOKEN + clé communauté si connue
         // (certains reverse-proxies /public/ ne relaient pas Authorization).
-        if (_gameAccessToken.Length > 0)
-            EnsureFreshGameAccessToken();
-
-        var gameTok = _gameAccessToken;
+        // Sans attente : appelé aussi sur le thread du jeu (EnqueueOrSend, UpdatePosition). Jeton périmé =
+        // rafraîchi en tâche de fond, la requête part avec la clé communauté en attendant.
+        var gameTok = GameAccessTokenUsableNow() ? _gameAccessToken : "";
         if (gameTok.Length > 0)
         {
             try { req.Headers.Remove("X-COMSPEC-KEY"); } catch { /* ignore */ }
@@ -4726,7 +4844,7 @@ public static partial class Extension
                     WardrobeCacheStoreDetail(wid, simplified);
                 }
                 var cap = MaxOutputBytes - 4;
-                if (simplified.Length <= cap)
+                if (Encoding.UTF8.GetByteCount(simplified) <= cap)
                 {
                     _wardrobeDetailCacheId = "";
                     _wardrobeDetailCache = "";
@@ -4735,7 +4853,7 @@ public static partial class Extension
                 _wardrobeDetailCacheId = wid;
                 _wardrobeDetailCache = simplified;
                 _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
-                var chunks = (_wardrobeDetailCache.Length + _wardrobeDetailChunkSize - 1) / _wardrobeDetailChunkSize;
+                var chunks = Utf8ChunkStarts(_wardrobeDetailCache, _wardrobeDetailChunkSize).Count;
                 var t1 = simplified.IndexOf('\t');
                 var t2 = t1 < 0 ? -1 : simplified.IndexOf('\t', t1 + 1);
                 var idPart = t1 > 0 ? simplified.Substring(0, t1) : wid;
@@ -4776,10 +4894,11 @@ public static partial class Extension
                     _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
                 }
                 var chunkSize = _wardrobeDetailChunkSize > 0 ? _wardrobeDetailChunkSize : (MaxOutputBytes - 80);
-                var totalChunks = (_wardrobeDetailCache.Length + chunkSize - 1) / chunkSize;
+                var starts = Utf8ChunkStarts(_wardrobeDetailCache, chunkSize);
+                var totalChunks = starts.Count;
                 if (chunkIdx >= totalChunks) return "ERR|chunk_oob";
-                var offset = chunkIdx * chunkSize;
-                var len = Math.Min(chunkSize, _wardrobeDetailCache.Length - offset);
+                var offset = starts[chunkIdx];
+                var len = (chunkIdx + 1 < totalChunks ? starts[chunkIdx + 1] : _wardrobeDetailCache.Length) - offset;
                 var slice = _wardrobeDetailCache.Substring(offset, len);
                 return "OK|" + chunkIdx + "\t" + totalChunks + "\t" + slice;
             }
@@ -4921,6 +5040,13 @@ public static partial class Extension
                     || !int.TryParse(args[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var parts)
                     || parts < 1 || parts > 2000 || part < 0 || part >= parts)
                     return "ERR|bad_args";
+                var nowMs = Environment.TickCount64;
+                foreach (var stale in SseCampaignPushTouched)
+                {
+                    if (nowMs - stale.Value > 600_000 && SseCampaignPushTouched.TryRemove(stale.Key, out _))
+                        SseCampaignPushBuffers.TryRemove(stale.Key, out _);
+                }
+                SseCampaignPushTouched[key] = nowMs;
                 var buf = SseCampaignPushBuffers.AddOrUpdate(key, _ => new string?[parts], (_, old) => old.Length == parts && part > 0 ? old : new string?[parts]);
                 // callExtension passe chaque argument en chaîne SQF : guillemets extérieurs (déjà retirés
                 // par ArmaString) et guillemets intérieurs doublés, à rétablir ici. Le jeu découpe le texte
@@ -4928,10 +5054,24 @@ public static partial class Extension
                 buf[part] = (args[3] ?? "").Replace("\"\"", "\"");
                 if (part < parts - 1) return "OK|part";
                 SseCampaignPushBuffers.TryRemove(key, out _);
+                SseCampaignPushTouched.TryRemove(key, out _);
                 if (buf.Any(x => x == null)) return "ERR|missing_part";
                 var text = string.Concat(buf);
                 var actor = args.Length >= 5 ? (args[4] ?? "") : "";
-                var payload = JsonSerializer.Serialize(new Dictionary<string, string> { ["key"] = key, ["text"] = text, ["actor"] = actor });
+                // Native AOT : JsonSerializer sans JsonTypeInfo lève InvalidOperationException ; écriture à la main.
+                string payload;
+                using (var ms = new MemoryStream())
+                {
+                    using (var w = new Utf8JsonWriter(ms))
+                    {
+                        w.WriteStartObject();
+                        w.WriteString("key", key);
+                        w.WriteString("text", text);
+                        w.WriteString("actor", actor);
+                        w.WriteEndObject();
+                    }
+                    payload = Encoding.UTF8.GetString(ms.ToArray());
+                }
                 var resp = SendJsonPost(_baseUrl + "/api/sse/campaigns/sync", payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
@@ -7376,8 +7516,20 @@ public static partial class Extension
     private static string TruncateForExt(string payload)
     {
         if (string.IsNullOrEmpty(payload)) return "";
-        var cap = MaxOutputBytes - 4;
-        return payload.Length <= cap ? payload : payload.Substring(0, cap);
+        return Utf8ClipLines(payload, MaxOutputBytes - 4);
+    }
+
+    /// <summary>Préfixe d'au plus maxBytes octets UTF-8 (limite réelle d'Output), coupé après le dernier '\n'
+    /// complet quand il y en a un : jamais d'enregistrement tronqué (coordonnée coupée lue de travers en SQF).</summary>
+    private static string Utf8ClipLines(string payload, int maxBytes)
+    {
+        if (string.IsNullOrEmpty(payload) || maxBytes <= 0) return "";
+        if (payload.Length <= maxBytes / 3 || Encoding.UTF8.GetByteCount(payload) <= maxBytes) return payload;
+        var bytes = Encoding.UTF8.GetBytes(payload);
+        var n = Utf8Fit(bytes, maxBytes);
+        var nl = Array.LastIndexOf(bytes, (byte)'\n', Math.Max(0, n - 1));
+        if (nl >= 0 && nl < n) n = nl + 1;
+        return Encoding.UTF8.GetString(bytes, 0, n);
     }
 
     /// <summary>Simplifie GET /api/chat/channels — lignes key\tlabel\tkind</summary>
@@ -7440,26 +7592,32 @@ public static partial class Extension
     /// </summary>
     private static string TruncateTabLinesKeepingNewest(string payload, int maxLen)
     {
+        // maxLen en octets UTF-8 : Output coupe à 8000 octets, et un texte accentué compté en caractères
+        // dépassait, ce qui coupait la FIN (les messages les plus récents).
         if (string.IsNullOrEmpty(payload) || maxLen <= 0) return "";
-        if (payload.Length <= maxLen) return payload;
+        if (Encoding.UTF8.GetByteCount(payload) <= maxLen) return payload;
         var lines = payload.Split('\n');
         var sb = new StringBuilder();
+        var sbBytes = 0;
         for (var i = lines.Length - 1; i >= 0; i--)
         {
             var line = lines[i];
             if (string.IsNullOrEmpty(line)) continue;
-            var candidate = line + "\n" + sb;
-            if (candidate.Length > maxLen)
+            var lineBytes = Encoding.UTF8.GetByteCount(line) + 1;
+            if (sbBytes + lineBytes > maxLen)
             {
                 if (sb.Length == 0)
                 {
                     // Une seule ligne trop longue : garder la fin utile.
-                    var keep = Math.Min(line.Length, maxLen);
-                    return line.Substring(line.Length - keep);
+                    var bytes = Encoding.UTF8.GetBytes(line);
+                    var start = bytes.Length - maxLen;
+                    while (start < bytes.Length && (bytes[start] & 0xC0) == 0x80) start++;
+                    return Encoding.UTF8.GetString(bytes, start, bytes.Length - start);
                 }
                 break;
             }
             sb.Insert(0, line + "\n");
+            sbBytes += lineBytes;
         }
         return sb.ToString();
     }

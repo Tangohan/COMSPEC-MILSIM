@@ -17,9 +17,11 @@ params [
 if (isNull _obj) exitWith { false };
 if (!(_field isEqualType "") || {_field isEqualTo ""}) exitWith { false };
 
-// L'attribut s'exécute sur chaque machine (JIP compris) : seul le serveur diffuse et écrit la fiche,
-// sinon un joueur arrivant en cours de partie réimposerait les valeurs d'origine (verdict, confiance…).
-private _pub = isServer;
+// L'attribut s'exécute sur chaque machine (JIP compris) : seul le serveur écrit et diffuse la fiche ; un client
+// (JIP compris) n'écrit rien, même localement, sinon il réimposerait chez lui les valeurs d'origine (verdict,
+// confiance, identité…) modifiées depuis par le Zeus ou applyProfile. Les valeurs publiques du serveur suffisent.
+if (!isServer) exitWith { true };
+private _pub = true;
 
 private _person = _obj isKindOf "CAManBase";
 private _name = _field;

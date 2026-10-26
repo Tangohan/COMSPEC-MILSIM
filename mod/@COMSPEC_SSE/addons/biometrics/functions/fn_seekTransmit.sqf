@@ -1,6 +1,6 @@
 private _target = missionNamespace getVariable ["comspec_sse_seekTarget", objNull];
 if (isNull _target) exitWith {
-    hint (("Aucun sujet SEEK à transmettre.") call comspec_sse_fnc_tr);
+    ["Aucun sujet SEEK à transmettre.", "WARNING"] call comspec_sse_fnc_notify;
     false
 };
 

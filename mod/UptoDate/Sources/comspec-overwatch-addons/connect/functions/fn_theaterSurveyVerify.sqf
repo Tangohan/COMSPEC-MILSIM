@@ -23,7 +23,8 @@ missionNamespace setVariable ["COMSPEC_TheaterVerifyText", "Vérification auprè
     private _mapId = missionNamespace getVariable ["COMSPEC_MapId", 1];
     if (!(_mapId isEqualType 0) || {_mapId < 1}) then { _mapId = 1; };
 
-    private _raw = "COMSPECExtension" callExtension ["Theater.Coverage", [str _mapId]];
+    // extAwait : le spawn seul ne suffit pas, callExtension bloque quand même le thread du jeu.
+    private _raw = ["COMSPECExtension", "Theater.Coverage", [str _mapId]] call comspec_overwatch_connect_fnc_extAwait;
     private _parsed = [_raw] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
     _parsed params ["_extOk", "_status", "_detail"];
 

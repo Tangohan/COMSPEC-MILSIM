@@ -8,7 +8,8 @@
 params [["_act", "scan"], ["_arg", ""]];
 switch (_act) do {
     case "scan": {
-        private _cache = uiNamespace getVariable ["COMSPEC_ATAK_OsintScan", []];
+        // Cache de mission (missionNamespace) : daté avec « time », qui repart de 0 à chaque mission.
+        private _cache = missionNamespace getVariable ["COMSPEC_ATAK_OsintScan", []];
         if ((count _cache) isEqualTo 2 && {time - (_cache select 0) < 300} && {_arg isNotEqualTo "force"}) exitWith { _cache select 1 };
         private _out = [];
         private _locs = nearestLocations [getPosATL player, ["NameCityCapital", "NameCity", "NameVillage", "NameLocal"], 5000];
@@ -68,7 +69,7 @@ switch (_act) do {
             };
         } forEach _out;
         private _res = [_out, _posts];
-        uiNamespace setVariable ["COMSPEC_ATAK_OsintScan", [time, _res]];
+        missionNamespace setVariable ["COMSPEC_ATAK_OsintScan", [time, _res]];
         _res
     };
     case "post": {
@@ -81,7 +82,7 @@ switch (_act) do {
             params ["_p", "_t"];
             ["comspec_atak_native_osintPost", [format ["@%1", _p select [0, 20]], _t select [0, 200], [dayTime, "HH:MM"] call BIS_fnc_timeToString]] call CBA_fnc_globalEvent;
         }, [_pseudo, _txt], "Publication", 1] call comspec_atak_native_fnc_netSend;
-        [{ ["OSINT"] call comspec_atak_native_fnc_pageRender; }, [], 1] call CBA_fnc_waitAndExecute;
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "OSINT") then { ["OSINT"] call comspec_atak_native_fnc_pageRender; }; }, [], 1] call CBA_fnc_waitAndExecute;
         true
     };
 };

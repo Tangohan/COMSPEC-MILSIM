@@ -81,7 +81,8 @@ private _fnc_send = {
     private _json = [_data] call comspec_overwatch_connect_fnc_hashMapToJson;
     if (!(_json isEqualType "") || {_json isEqualTo ""}) exitWith { false };
     private _r = "COMSPECExtension" callExtension ["UpdateVehicleTracking", [_json]];
-    (_r isEqualType []) && {(_r param [0, ""]) isEqualTo "OK"}
+    // La DLL renvoie ["OK","queued"] dans _r select 0 : passer par le parseur commun.
+    (_r isEqualType []) && {(([_r] call comspec_overwatch_connect_fnc_parseAtakExtResponse) param [0, false]) isEqualTo true}
 };
 
 private _sent = 0;

@@ -30,7 +30,8 @@ if (!(_id isEqualType "")) then { _id = str _id };
 _id = trim _id;
 if (_id isEqualTo "" || {!([_id] call _fnc_isAutoId) && {(toLower _id) find "ally-" != 0}}) then {
     _id = format ["ALLY-%1", ((netId _unit) splitString ":") joinString "-"];
-    _unit setVariable ["COMSPEC_AllyTrackId", _id, true];
+    // Public seulement sur le serveur (setAllyTrack tient l'identifiant public) : pas de diffusion depuis chaque client.
+    _unit setVariable ["COMSPEC_AllyTrackId", _id, isServer];
 };
 
 private _custom = _unit getVariable ["COMSPEC_AllyCallsign", ""];

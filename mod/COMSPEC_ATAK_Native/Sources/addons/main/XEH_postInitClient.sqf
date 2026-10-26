@@ -256,18 +256,17 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if (_up > _up0) then { ["SUCCESS", format ["%1 photo(s) reçue(s) par Athena", _up - _up0], 4, 30] call comspec_atak_native_fnc_notify; };
     if (_ko > _ko0) then {
         private _last = missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []];
-        // Refus de la formule (403 feature_unavailable) : une fenêtre claire, une fois par session, au lieu d'une simple notification.
+        // Refus de la formule (403 feature_unavailable) : une alerte claire DANS le téléphone (fn_fullAlert, attend la
+        // prochaine ouverture), une fois par session, au lieu d'une simple notification. Jamais de fenêtre sur l'écran de jeu.
         if (((_last param [2, ""]) find "feature_unavailable") >= 0) then {
             if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanModalShown", false]) then {
                 missionNamespace setVariable ["COMSPEC_ATAK_PlanModalShown", true];
-                [] spawn {
-                    waitUntil { uiSleep 0.5; !isNull (findDisplay 46) && {isNull (findDisplay 49)} };
-                    private _msg = format ["%1<br/><br/>%2<br/><br/>%3",
-                        "Ta photo n'a pas été envoyée à Athena." call comspec_atak_native_fnc_tr,
-                        "La formule de ta communauté n'inclut pas la carte et les liaisons Athena, donc Athena refuse les envois du jeu." call comspec_atak_native_fnc_tr,
-                        "Préviens l'administrateur de ta communauté sur Athena. Ce n'est pas un bug, inutile de le signaler." call comspec_atak_native_fnc_tr];
-                    [parseText _msg, "Carte Athena non incluse" call comspec_atak_native_fnc_tr, "OK", false, findDisplay 46] call BIS_fnc_guiMessage;
-                };
+                private _msg = format ["%1 %2 %3",
+                    "Ta photo n'a pas été envoyée à Athena." call comspec_atak_native_fnc_tr,
+                    "La formule de ta communauté n'inclut pas la carte et les liaisons Athena, donc Athena refuse les envois du jeu." call comspec_atak_native_fnc_tr,
+                    "Préviens l'administrateur de ta communauté sur Athena. Ce n'est pas un bug, inutile de le signaler." call comspec_atak_native_fnc_tr];
+                ["Carte Athena non incluse" call comspec_atak_native_fnc_tr, _msg, "Athena", [0.55, 0.36, 0.06, 0.94], 30] call comspec_atak_native_fnc_fullAlert;
+                ["WARNING", "Ta photo n'a pas été envoyée à Athena.", 6, 40] call comspec_atak_native_fnc_notify;
             };
         } else {
             ["WARNING", format ["Photo refusée par Athena : %1", _last param [1, "voir l'app Galerie"]], 6, 40] call comspec_atak_native_fnc_notify;
@@ -301,7 +300,19 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
         ([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1],
         ([] call comspec_atak_native_fnc_deviceHealth) get "state"
     ];
-    if ((player getVariable ["COMSPEC_ATAK_Pub", []]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Pub", _pub, true]; };
+    // Une barre de plus ou de moins seulement (évanouissement près d'un seuil) : diffusée si elle tient deux tours de suite
+    // (comme fn_feedLink) ; batterie, état ou perte du signal : tout de suite.
+    private _pubOld = player getVariable ["COMSPEC_ATAK_Pub", []];
+    if (_pubOld isEqualTo _pub) then { uiNamespace setVariable ["COMSPEC_ATAK_PubPend", []]; } else {
+        private _soft = (count _pubOld) isEqualTo 3 && {(_pubOld select 0) isEqualTo (_pub select 0)} && {(_pubOld select 2) isEqualTo (_pub select 2)}
+            && {(_pubOld select 1) > 0} && {(_pub select 1) > 0} && {(abs ((_pubOld select 1) - (_pub select 1))) isEqualTo 1};
+        if (_soft && {_pub isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_PubPend", []])}) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_PubPend", _pub];
+        } else {
+            uiNamespace setVariable ["COMSPEC_ATAK_PubPend", []];
+            player setVariable ["COMSPEC_ATAK_Pub", _pub, true];
+        };
+    };
     // Batterie vide : carte SIM en mode secours, encore localisable par les relais (fn_simSos).
     ["publish"] call comspec_atak_native_fnc_simSos;
     // Étiquette du téléphone (numéro, IMEI, terminal Athena) : lue par le serveur si l'IA ennemie le ramasse (fn_captureServer).
@@ -470,8 +481,15 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _act, true] call ace_interact_menu_fnc_addActionToClass;
 } else {
     // Sans ACE : action de la molette (visible seulement avec une batterie de rechange et le téléphone sous 95 %).
-    player addAction ["<t color='#7fd0b0'>Changer la batterie ATAK</t>", { [] call comspec_atak_native_fnc_batterySwap; }, nil, 1, false, true, "",
-        "_this isEqualTo _target && {[_this] call comspec_atak_native_fnc_hasDevice} && {(missionNamespace getVariable ['COMSPEC_ATAK_Battery', 100]) < 95} && {([_this] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ''}"];
+    // Les actions ne suivent pas le joueur à la réapparition : remise sur la nouvelle unité.
+    private _add = {
+        params ["_u"];
+        _u addAction ["<t color='#7fd0b0'>Changer la batterie ATAK</t>", { [] call comspec_atak_native_fnc_batterySwap; }, nil, 1, false, true, "",
+            "_this isEqualTo _target && {[_this] call comspec_atak_native_fnc_hasDevice} && {(missionNamespace getVariable ['COMSPEC_ATAK_Battery', 100]) < 95} && {([_this] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ''}"];
+    };
+    missionNamespace setVariable ["COMSPEC_ATAK_BatterySwapAction", _add];
+    [player] call _add;
+    player addEventHandler ["Respawn", { params ["_u"]; [_u] call (missionNamespace getVariable ["COMSPEC_ATAK_BatterySwapAction", {}]); }];
 };
 
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
@@ -727,7 +745,8 @@ player addEventHandler ["Explosion", {
     ["blast", [_d, _dist]] call comspec_atak_native_fnc_deviceImpact;
     ["blast", _d] call comspec_atak_native_fnc_screenDirt;
 }];
-player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; }];
+// Réapparition : téléphone neuf (charge de départ du serveur comme fn_battery, données effacées oubliées).
+player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; ["resync"] call comspec_atak_native_fnc_phoneSecurity; }];
 // Eau : téléphone étanche quelques dizaines de secondes ; ensuite l'eau s'infiltre (haut-parleur, batterie, extinction…),
 // détruit seulement après une longue immersion. Dans le sac, l'eau entre deux fois moins vite. L'eau lave aussi l'écran.
 [{

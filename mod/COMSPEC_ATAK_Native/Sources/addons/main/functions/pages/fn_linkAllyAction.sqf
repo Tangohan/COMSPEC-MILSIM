@@ -67,7 +67,7 @@ switch (_action) do {
             _st set ["phase", "ACE"];
             [_dur, [_obj], { ["linked", (_this select 0) select 0] call comspec_atak_native_fnc_linkAllyAction; },
                 { (uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap]) set ["phase", ""]; ["WARNING", "Liaison ATAK interrompue", 3, 20] call comspec_atak_native_fnc_notify; },
-                format ["Liaison ATAK (%1)…", _mode], { (player distance ((_this select 0) select 0)) < 2.6 }] call ace_common_fnc_progressBar;
+                (format ["Liaison ATAK (%1)…", _mode]) call comspec_atak_native_fnc_tr, { (player distance ((_this select 0) select 0)) < 2.6 }] call ace_common_fnc_progressBar;
             true
         };
         _st set ["phase", "LINKING"];

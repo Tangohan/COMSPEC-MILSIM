@@ -57,9 +57,15 @@ switch (_act) do {
         _band ctrlSetBackgroundColor [0.95, 0.55, 0.12, 1];
         private _t = _d ctrlCreate ["COMSPEC_RscStructuredText", -1];
         _t ctrlSetPosition [_ax + _pad, _y + _pad * 0.6, _w - _pad * 2, _h - _font * 1.9];
-        private _esc = { params ["_s"]; [[_s, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
+        // Texte d'un autre joueur : &, < et > échappés (entités déjà échappées gardées), comme fn_fullAlert.
+        private _esc = {
+            params ["_s"];
+            _s = [str _s, _s] select (_s isEqualType "");
+            _s = _s regexReplace ["&(?!(amp|lt|gt|quot|apos|#[0-9]+);)", "&amp;"];
+            [[_s, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace
+        };
         _t ctrlSetStructuredText parseText ((format ["<t size='1.2' font='COMSPEC_BarlowBold' color='#1a0f05'>VIBREUR · %1</t><br/><br/><t size='1.5' font='COMSPEC_BarlowBold' color='#ffffff'>%2</t><br/><t size='0.85' color='#f2c18a'>%3 · grille %4%5</t>",
-            [_from] call _esc, [[_txt] call _esc, "Il vous appelle"] select (_txt isEqualTo ""), _hh, _grid, ["", format [" · %1 m", _dist]] select (_dist >= 0)]) call comspec_atak_native_fnc_tr);
+            [_from] call _esc, [[_txt] call _esc, "Il vous appelle"] select (_txt isEqualTo ""), _hh, [_grid] call _esc, ["", format [" · %1 m", _dist]] select (_dist >= 0)]) call comspec_atak_native_fnc_tr);
         private _ctrls = [_bg, _band, _t];
         private _bw3 = (_w - _pad * 4) / 3;
         {

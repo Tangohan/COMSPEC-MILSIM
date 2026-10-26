@@ -29,12 +29,22 @@ if (_noise isEqualType 0 && {_noise >= 0}) then {
     { _x setVariable ["comspec_sse_noiseOverride", ((_noise / 100) max 0) min 1]; } forEach _targets;
 };
 
+// Les NONE posés par Zeus sont notés (comspec_sse_zeusModes) : une case recochée lors d'une régénération
+// les remet à AUTO, sans toucher aux modes NONE saisis dans Eden.
 {
     private _ent = _x;
+    private _zeusModes = +(_ent getVariable ["comspec_sse_zeusModes", []]);
     {
         _x params ["_key", "_var"];
         if !(_options getOrDefault [_key, true]) then {
+            // Un NONE déjà présent (Eden) n'est pas repris à son compte par Zeus.
+            if ((_var in _zeusModes) || {(_ent getVariable [_var, "AUTO"]) isNotEqualTo "NONE"}) then { _zeusModes pushBackUnique _var; };
             _ent setVariable [_var, "NONE", true];
+        } else {
+            if (_var in _zeusModes) then {
+                if ((_ent getVariable [_var, "AUTO"]) isEqualTo "NONE") then { _ent setVariable [_var, nil, true]; };
+                _zeusModes = _zeusModes - [_var];
+            };
         };
     } forEach [
         ["identity", "comspec_sse_identityMode"],
@@ -42,6 +52,7 @@ if (_noise isEqualType 0 && {_noise >= 0}) then {
         ["documents", "comspec_sse_documentsMode"],
         ["bio", "comspec_sse_bioMode"]
     ];
+    _ent setVariable ["comspec_sse_zeusModes", _zeusModes, true];
 } forEach _targets;
 
 private _interval = 0.28;

@@ -17,7 +17,16 @@ private _grp = group _unit;
 if (isNull _grp) exitWith { false };
 
 if (!local _grp) exitWith {
-    [_posX, _posY, _orderId, _label, _unit] remoteExecCall ["comspec_overwatch_connect_fnc_applyAiMoveOrder", groupOwner _grp];
+    // groupOwner ne fonctionne que sur le serveur (renvoie 0 côté client => diffusion à tous, boucle infinie).
+    // Côté client : on relaie au serveur, qui résout le propriétaire et relaie à son tour.
+    if (isServer) then {
+        private _owner = groupOwner _grp;
+        if (_owner > 0) then {
+            [_posX, _posY, _orderId, _label, _unit] remoteExecCall ["comspec_overwatch_connect_fnc_applyAiMoveOrder", _owner];
+        };
+    } else {
+        [_posX, _posY, _orderId, _label, _unit] remoteExecCall ["comspec_overwatch_connect_fnc_applyAiMoveOrder", 2];
+    };
     true
 };
 

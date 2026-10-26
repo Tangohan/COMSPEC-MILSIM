@@ -41,13 +41,24 @@ switch (_event) do {
         true
     };
     case "ARRANGE_DRAW": {
-        call _wipe;
+        // Pendant le glisser (MOVE) : [disposition déjà calculée] ; les contrôles existants sont déplacés, pas recréés.
+        private _given = _button isEqualType createHashMap;
         private _d = [] call comspec_atak_native_fnc_display;
-        if (!_arrange || {isNull _d}) exitWith { false };
-        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        if (!_arrange || {isNull _d}) exitWith { call _wipe; false };
+        private _l = if (_given) then { _button } else { [] call comspec_atak_native_fnc_layoutGet };
         (_l get "visible") params ["_vx", "_vy", "_vw", "_vh"];
         (_l get "device") params ["_sx", "_sy", "_sw", "_sh"];
         private _font = _l get "font";
+        private _bw = _sw * 0.4;
+        private _rects = [[_sx, _sy, _sw, _sh], [_sx, _sy, _sw, _sh],
+            [_vx, _vy, _vw, pixelH * 2], [_vx, _vy + _vh - pixelH * 2, _vw, pixelH * 2], [_vx, _vy, pixelW * 2, _vh], [_vx + _vw - pixelW * 2, _vy, pixelW * 2, _vh],
+            [_sx, _sy + _sh * 0.28, _sw, _sh * 0.4], [_sx + (_sw - _bw) / 2, _sy + _sh * 0.72, _bw, _font * 1.6]];
+        private _old = uiNamespace getVariable ["COMSPEC_ATAK_ArrangeCtrls", []];
+        if (_given && {(count _old) isEqualTo (count _rects)} && {(_old findIf { isNull _x }) < 0}) exitWith {
+            { _x ctrlSetPosition (_rects select _forEachIndex); _x ctrlCommit 0; } forEach _old;
+            true
+        };
+        call _wipe;
         private _made = [];
         // Voile sur l'écran (bloque les apps), cadre pointillé autour du téléphone, consigne au centre.
         private _veil = _d ctrlCreate ["COMSPEC_RscText", -1];
@@ -73,7 +84,6 @@ switch (_event) do {
         _t ctrlSetFontHeight _font;
         _t ctrlCommit 0;
         _made pushBack _t;
-        private _bw = _sw * 0.4;
         private _b = _d ctrlCreate ["COMSPEC_RscButton", -1];
         _b ctrlSetPosition [_sx + (_sw - _bw) / 2, _sy + _sh * 0.72, _bw, _font * 1.6];
         _b ctrlSetText (("TERMINÉ") call comspec_atak_native_fnc_tr);
@@ -102,6 +112,9 @@ switch (_event) do {
     case "MOVE": {
         private _drag = _s getOrDefault ["drag", []];
         if ((count _drag) isEqualTo 0) exitWith { false };
+        // MouseMoving tombe plusieurs fois par image : une seule mise en page par image (UP rattrape la dernière position).
+        if ((_s getOrDefault ["dragFrame", -1]) isEqualTo diag_frameNo) exitWith { true };
+        _s set ["dragFrame", diag_frameNo];
         _drag params ["_start", "_off", "_key"];
         profileNamespace setVariable [_key, [(_off select 0) + (_mouse select 0) - (_start select 0), (_off select 1) + (_mouse select 1) - (_start select 1)]];
         // Le téléphone ne sort pas de l'écran : au moins un quart de sa coque reste visible.
@@ -112,13 +125,17 @@ switch (_event) do {
         if (_fx != 0 || {_fy != 0}) then {
             (profileNamespace getVariable [_key, [0, 0]]) params ["_ox", "_oy"];
             profileNamespace setVariable [_key, [_ox + _fx, _oy + _fy]];
+            _l = [] call comspec_atak_native_fnc_layoutGet;
         };
-        [] call comspec_atak_native_fnc_layoutApply;
-        if (_arrange) then { ["ARRANGE_DRAW"] call comspec_atak_native_fnc_phoneDrag; };
+        [_l] call comspec_atak_native_fnc_layoutApply;
+        if (_arrange) then { ["ARRANGE_DRAW", _l] call comspec_atak_native_fnc_phoneDrag; };
         true
     };
     case "UP": {
         if ((count (_s getOrDefault ["drag", []])) isEqualTo 0) exitWith { false };
+        // Dernière position de la souris (un MOVE de la même image a pu être sauté).
+        _s set ["dragFrame", -1];
+        ["MOVE"] call comspec_atak_native_fnc_phoneDrag;
         _s set ["drag", []];
         [] call comspec_atak_native_fnc_saveProfile;
         [_s getOrDefault ["activePage", "MAP"]] call comspec_atak_native_fnc_pageRender;

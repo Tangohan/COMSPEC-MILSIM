@@ -150,7 +150,7 @@ switch (_action) do {
             params ["_v", "_id"];
             [_v, _id] call comspec_overwatch_connect_fnc_medicalTriage;
             [] call comspec_overwatch_connect_fnc_pollMedicalAlerts;
-            [{ ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MEDICAL") then { ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
     };
 };

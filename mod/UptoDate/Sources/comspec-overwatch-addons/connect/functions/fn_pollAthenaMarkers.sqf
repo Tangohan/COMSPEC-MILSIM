@@ -34,8 +34,10 @@ if (_body isEqualTo "" || {_body isEqualTo "[]"}) exitWith {
     ["marqueurs", 0, " (aucun)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 };
 
-// Skip si payload inchangé (évite de rejouer tout l’historique à chaque poll)
-private _sig = format ["%1:%2", count _body, _body select [0, ((count _body) min 48)]];
+// Skip si payload inchangé (évite de rejouer tout l’historique à chaque poll).
+// Corps complet comparé : longueur + 48 premiers caractères laissaient passer un déplacement
+// (coordonnées de même longueur) ou toute modification après la première ligne.
+private _sig = _body;
 if (_sig isEqualTo (missionNamespace getVariable ["COMSPEC_WebMarkersSig", ""])) exitWith {
     ["marqueurs", 0, " (inchangé)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 };
@@ -43,6 +45,7 @@ missionNamespace setVariable ["COMSPEC_WebMarkersSig", _sig, false];
 
 private _seen = [];
 private _created = 0;
+private _capped = false;
 private _nl = toString [10];
 private _tab = toString [9];
 private _lines = _body splitString _nl;
@@ -81,6 +84,7 @@ if (!_bootMk) then {
     };
     if (_text isEqualTo "") then { _text = "Repère poste"; };
 
+    if (!(_name in _mkIndex) && {_created >= 25}) then { _capped = true; };
     if (!(_name in _mkIndex) && {_created >= 25}) then { continue };
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
@@ -110,6 +114,8 @@ if (!_bootMk) then {
     if (_unmute < 0) then { _unmute = 0; };
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _unmute, false];
 } forEach _lines;
+// Plafond de 25 créations atteint : signature oubliée pour créer le reste au passage suivant.
+if (_capped) then { missionNamespace setVariable ["COMSPEC_WebMarkersSig", "", false]; };
 
 ["marqueurs", count _seen, format [
     " · lignes %1%2",
