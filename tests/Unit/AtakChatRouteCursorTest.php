@@ -209,6 +209,30 @@ final class AtakChatRouteCursorTest extends TestCase
         self::assertSame([1], $this->ids($this->poll(0, 25)));
     }
 
+    /**
+     * « order| » qui termine un indicatif (« Border ») n'est pas le protocole d'ordres. L'ancienne règle (« ORDER| »
+     * n'importe où) masquait ces messages ; refusés à l'écriture, ils auraient été perdus avec leurs effets
+     * (journal d'activité, Discord, position de l'unité).
+     */
+    public function testCallsignEndingWithOrderIsAnOrdinaryMessage(): void
+    {
+        $response = $this->post('Border', 'MP|Border|TOC|reçu');
+
+        self::assertSame(201, $response->statusCode());
+        self::assertSame(1, $this->storedRows());
+        self::assertSame([1], $this->ids($this->poll(0, 25)), 'montré à la lecture');
+        $labels = array_column((new AtakActivityLogService())->listRecent($this->tenantId, self::MAP_ID), 'label');
+        self::assertContains('Message privé — Border → TOC', $labels);
+
+        foreach (['ALERTE TACTIQUE|TIC|Border|031047|||contact est', 'MP|RECORDER|TOC|ok', 'Éorder|x'] as $body) {
+            self::assertFalse(AtakDataRepository::isProtocolOrderChatBody($body), $body);
+        }
+        foreach (['ORDER|', 'order|ORD-1', 'Reçu, ORDER| annulé', 'MP|TOC|ALPHA|ORDER|ORD-1|MOVE', '[TOC]ORDER|x', '2ORDER|x'] as $body) {
+            self::assertTrue(AtakDataRepository::isProtocolOrderChatBody($body), $body);
+        }
+        self::assertTrue(AtakDataRepository::isProtocolOrderChatBody("Border|\xff"), 'corps illisible : règle large');
+    }
+
     public function testCursorPollStopsBeforeTheGameDllCutsItsOutputAndTheRestFollows(): void
     {
         // Cas mesuré par le relecteur avec la vraie DLL : 40 messages de 200 caractères pour l'ATAK natif (limit=40),
