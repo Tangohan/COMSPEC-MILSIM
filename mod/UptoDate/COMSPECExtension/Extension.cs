@@ -2350,6 +2350,9 @@ public static partial class Extension
         public volatile string Result = "OK|";
         public long FetchedAtMs;
         public int InFlight;
+        // Dernière adresse sondée et dernier code HTTP (-1 : erreur réseau) : rejoués par Link.SelfTest.
+        public volatile string Url = "";
+        public int LastCode;
     }
 
     private static readonly ConcurrentDictionary<string, PollGetSlot> PollGetCache = new();
@@ -2365,6 +2368,7 @@ public static partial class Extension
             return "ERR|invalid_url";
 
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
+        slot.Url = url;
         var now = Environment.TickCount64;
         const int minRefreshMs = 1200;
         var stale = slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs;
@@ -2377,6 +2381,7 @@ public static partial class Extension
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
                     using var resp = SendGet(url, cts.Token);
                     var body = ReadContentUtf8(resp, cts.Token);
+                    slot.LastCode = (int)resp.StatusCode;
                     var formatted = format(body, (int)resp.StatusCode);
                     if (formatted.StartsWith("OK|", StringComparison.Ordinal) || slot.FetchedAtMs == 0)
                         slot.Result = formatted;
@@ -2384,6 +2389,7 @@ public static partial class Extension
                 }
                 catch
                 {
+                    slot.LastCode = -1;
                     if (slot.FetchedAtMs == 0)
                         slot.Result = "ERR|network";
                     slot.FetchedAtMs = Environment.TickCount64;
@@ -3063,6 +3069,12 @@ public static partial class Extension
         if (function == "LatestVersions")
         {
             return LatestVersions(args.Length > 0 ? args[0] : null);
+        }
+        // Dépannage liaison : auto-test complet (contrôles serveur, chaque canal sondé rejoué, file d'envoi).
+        // ["Link.SelfTest", [mapId]] -> « OK|lignes » (voir Extension_SelfTest.cs). Réseau : toujours via Async.
+        if (function == "Link.SelfTest")
+        {
+            return LinkSelfTest(args.Length > 0 ? args[0] : null);
         }
         // Check de démarrage du mod (fn_startupCheck) : POST /api/atak/startup-check, public, sans session ni clé.
         // ["StartupCheck", [adresse du portail, "clé=valeur", ...]] -> « OK|posted », « OK|duplicate », « OK|no_channel »… ou « ERR|… ».

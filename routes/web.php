@@ -2450,6 +2450,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
+    // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.
+    $router->get('/api/atak/diag/selftest', [\App\Controllers\Api\AtakLinkSelfTestController::class, 'selfTest']);
     // App Musique de l'ATAK natif (COMSPEC Link AthenaMusic) ; flux audio par URL signée, sans en-tête Athena.
     $router->get('/api/atak/music', [MusicLibraryApiController::class, 'index']);
     $router->get('/api/music/stream/{file}', [MusicLibraryApiController::class, 'stream']);

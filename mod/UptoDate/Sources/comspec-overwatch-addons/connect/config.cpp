@@ -112,6 +112,7 @@ class CfgFunctions {
             class diagIsolateStop {};
             class diagIsolateOnLoad {};
             class diagChecks {};
+            class diagSelfTest {};
             class diagAction {};
             class collectBugReportLog {};
             class disconnect {};
