@@ -51,6 +51,9 @@ private _list = [
     ["GarminNight", "WATCH", "Mode nuit de la montre", "Écran en rouge.", "qs_night"],
     ["GarminDnd", "WATCH", "Ne pas déranger", "Plus de bandeau ni de vibration.", "qs_silent"],
     ["GarminFind", "WATCH", "Trouver mon téléphone", "Le téléphone relié sonne et vibre.", "app_garmin"],
+    ["GarminHHour", "WATCH", "Heure H au groupe", "Chef de groupe : compte à rebours sur toutes les montres du groupe.", "app_garmin"],
+    ["GarminJump", "WATCH", "Jumpmaster", "Régler l'altitude d'ouverture, armer ou désarmer.", "g_jump"],
+    ["GarminStealth", "WATCH", "Mode furtif", "Bluetooth coupé, écran au minimum.", "qs_silent"],
     ["GestureFinger", "GESTURE", "Doigt d'honneur", "Geste du bras gauche (réglage d'addon « Gestes doigt d'honneur »).", "ui_hand"],
     ["GestureFingerAim", "GESTURE", "Doigt d'honneur libre (maintenir)", "Bras tendu vers le joueur visé tant que la touche est maintenue.", "ui_hand"]
 ];

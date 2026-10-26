@@ -23,16 +23,25 @@
                pression, courbe des 30 dernières minutes, dénivelé positif et négatif du jour ;
       MAP      carte nord en haut : ma position (GPS, mêmes erreurs que le téléphone), mon groupe, point marqué,
                largeur affichée (START : zoom suivant) ;
-      COMPASS  boussole : cap, point cardinal, couronne qui tourne ; START marque ma position, la couronne montre
-               alors la direction du point et sa distance (BACK l'efface) ;
+      COMPASS  boussole : cap, point cardinal, couronne qui tourne, coordonnées MGRS ; START marque ma position, la
+               couronne montre alors la direction du point et sa distance (BACK l'efface) ; un point de la carte de
+               l'ATAK s'y envoie aussi (clic droit > Envoyer à la montre, liaison Bluetooth nécessaire) ;
+      JUMP     Jumpmaster (HALO / HAHO) : hauteur sol, vitesse de chute, altitude d'ouverture, direction et distance du
+               point (DIP) ; START : régler l'altitude d'ouverture (UP / DOWN, 100 m), puis armer. Armée, la montre
+               vibre à 300 m de l'ouverture puis à l'ouverture, même éteinte ; elle se désarme une fois posé ;
       CHRONO   chronomètre (START départ / arrêt, BACK tour ou remise à zéro) et activité reconnue en cours ;
       TIMER    minuteur (START : régler la durée avec UP / DOWN, puis lancer ; pause ; BACK : remise à zéro) ;
                la montre vibre à la fin ;
       PHONE    téléphone : liaison Bluetooth avec l'ATAK, batterie du téléphone, 3 dernières notifications
                (START : faire sonner le téléphone) ;
       DAY      ma journée : pas, distance, stress, Body Battery, sommeil / repos.
-    Menu des commandes : vue agrandie, mode nuit (écran rouge), ne pas déranger (pas de bandeau ni de vibration),
-    luminosité, marquer ma position, trouver mon téléphone, éteindre.
+    Menu des commandes : vue agrandie, mode nuit (écran rouge), rouge automatique avec les JVN, ne pas déranger (pas de
+    bandeau ni de vibration), mode furtif (Bluetooth coupé, écran au minimum), luminosité, heure H au groupe, marquer ma
+    position, trouver mon téléphone, éteindre.
+    Heure H (chef de groupe) : compte à rebours de la durée du minuteur envoyé aux montres de tout le groupe (heure du
+    serveur) ; elles vibrent à H-1 min puis trois fois au top ; le cadran et le minuteur affichent H-mm:ss. Relancée
+    pendant le décompte : annulée pour tout le groupe.
+    Cadran : phase et éclairement de la lune (préparer les opérations de nuit).
     Notifications du téléphone (liaison active, hors « ne pas déranger ») : bandeau sur la montre ouverte pendant
     5 s, quel que soit l'écran. La montre n'apparaît que sur demande du joueur (rien ne s'ouvre tout seul).
     Textes en Roboto Condensed du jeu (COMSPEC_Barlow*) : la Barlow embarquée (COMSPEC_BarlowC*) s'affiche mal en jeu.
@@ -43,16 +52,19 @@
     (0 gauche, 1 centre, 2 droite).
     Params : [action : "down" | "up" (touche Montre, renvoie true si la Garmin la prend) | "open" | "close" | "toggle" |
               "next" | "prev" | "start" | "back" | "lightDown" | "lightUp" | "lightHold" | "menu" | "big" | "chrono" | "lap" |
-              "timer" | "mark" | "night" | "dnd" | "find" | "ring" (fin du minuteur) | "buzz" | "tick" (PFH 0,1 s allumée)]
+              "timer" | "mark" | "night" | "dnd" | "find" | "hhour" | "jump" | "stealth" | "ring" (fin du minuteur) | "buzz" |
+              "send" ([position, nom] : point envoyé par l'ATAK) | "hhRecv" ([fin, envoyeur, id], remoteExecCall du chef) |
+              "hhWarn" / "hhTop" (id) | "jumpTick" (PFH 0,2 s, armée) | "tick" (PFH 0,1 s allumée), argument]
     Retour des touches : true si la montre est portée (la touche est prise), sinon false.
 */
-params [["_act", "tick"]];
+params [["_act", "tick"], ["_arg", []]];
 disableSerialization;
 if (!hasInterface) exitWith { false };
-private _pages = ["FACE", "HR", "ALT", "MAP", "COMPASS", "CHRONO", "TIMER", "PHONE", "DAY"];
+private _pages = ["FACE", "HR", "ALT", "MAP", "COMPASS", "JUMP", "CHRONO", "TIMER", "PHONE", "DAY"];
 private _menuItems = [
-    ["big", "Vue agrandie"], ["night", "Mode nuit"], ["dnd", "Ne pas déranger"], ["bright", "Luminosité"],
-    ["mark", "Marquer ma position"], ["find", "Trouver mon téléphone"], ["off", "Éteindre"]
+    ["big", "Vue agrandie"], ["night", "Mode nuit"], ["nvAuto", "Rouge auto (JVN)"], ["dnd", "Ne pas déranger"],
+    ["stealth", "Mode furtif"], ["bright", "Luminosité"], ["hh", "Heure H au groupe"], ["mark", "Marquer ma position"],
+    ["find", "Trouver mon téléphone"], ["off", "Éteindre"]
 ];
 private _w = uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap];
 if ((count _w) isEqualTo 0) then {
@@ -73,8 +85,11 @@ private _has = {
         || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0}}
 };
 private _linkNow = {
-    (([] call comspec_atak_native_fnc_canUse) isEqualTo "") && {(missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false]}
+    !(_w getOrDefault ["stealth", false]) && {([] call comspec_atak_native_fnc_canUse) isEqualTo ""}
+    && {(missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false]}
 };
+// Heure du serveur (même base sur toutes les montres du groupe pour l'heure H).
+private _now = [time, serverTime] select isMultiplayer;
 // Durée en secondes -> « 1:02:03 », « 12:34 » ou, avec dixièmes, « 12:34.5 ».
 private _fmtT = {
     params ["_s", ["_tenth", false]];
@@ -139,8 +154,12 @@ private _nav = {
     if !(_w get "open") exitWith { _w set ["page", 0]; call _open; };
     if ((_w get "menu") >= 0) exitWith { _w set ["menu", ((_w get "menu") + _step) max 0 min ((count _menuItems) - 1)]; call _redraw; };
     if (_w get "edit") exitWith {
-        _m set ["tdur", ((_m get "tdur") - _step * 60) max 60 min 5940];
-        _m set ["tleft", _m get "tdur"];
+        if ((_pages select (_w get "page")) isEqualTo "JUMP") then {
+            _m set ["jOpen", ((_m getOrDefault ["jOpen", 1200]) - _step * 100) max 300 min 9000];
+        } else {
+            _m set ["tdur", ((_m get "tdur") - _step * 60) max 60 min 5940];
+            _m set ["tleft", _m get "tdur"];
+        };
         call _redraw;
     };
     private _p = (_w get "page") + _step;
@@ -229,6 +248,42 @@ private _do = {
             call _buzz;
             ["Altimètre étalonné", "Sur l'altitude GPS"] call _toast;
         };
+        case "nvAuto": {
+            _w set ["nvAuto", !(_w getOrDefault ["nvAuto", true])];
+            _w set ["menu", -1];
+            [["Rouge auto désactivé", "Rouge auto avec les JVN"] select (_w get "nvAuto")] call _toast;
+        };
+        case "stealth": {
+            _w set ["stealth", !(_w getOrDefault ["stealth", false])];
+            _w set ["menu", -1];
+            if (_w get "stealth") then { ["Mode furtif activé", "Bluetooth coupé, écran au minimum"] call _toast; } else { ["Mode furtif désactivé", "Bluetooth rétabli"] call _toast; };
+        };
+        // Heure H : le chef de groupe envoie la fin du compte à rebours (heure du serveur) à toutes les montres du groupe.
+        case "hh": {
+            _w set ["menu", -1];
+            if ((leader group player) isNotEqualTo player) exitWith { ["Heure H", "Réservée au chef de groupe"] call _toast; };
+            private _hh = _m getOrDefault ["hh", []];
+            if (_hh isNotEqualTo [] && {(_hh select 0) > _now}) exitWith {
+                ["hhRecv", [-1, name player, -1]] remoteExecCall ["comspec_atak_native_fnc_watch", units group player];
+            };
+            ["hhRecv", [_now + (_m get "tdur"), name player, floor random 1e6]] remoteExecCall ["comspec_atak_native_fnc_watch", units group player];
+        };
+        // Jumpmaster : START règle l'altitude d'ouverture (UP / DOWN), START arme ; armée, START désarme.
+        case "jump": {
+            if (_w get "edit") exitWith { _w set ["edit", false]; ["jarm"] call _do; };
+            if (_m getOrDefault ["jArm", false]) exitWith { _m set ["jArm", false]; ["Jumpmaster désarmé"] call _toast; };
+            _w set ["edit", true];
+        };
+        case "jarm": {
+            _m set ["jArm", true];
+            _m set ["jStage", 0];
+            _m set ["jFall", false];
+            call _buzz;
+            [format ["Ouverture à %1 m", _m getOrDefault ["jOpen", 1200]], "Vibre à +300 m puis à l'ouverture"] call _toast;
+            if ((_m getOrDefault ["jPfh", -1]) < 0) then {
+                _m set ["jPfh", [{ ["jumpTick"] call comspec_atak_native_fnc_watch; }, 0.2] call CBA_fnc_addPerFrameHandler];
+            };
+        };
     };
 };
 private _start = {
@@ -241,6 +296,7 @@ private _start = {
         case "TIMER": { ["timer"] call _do; };
         case "MAP": { _w set ["zoom", ((_w get "zoom") + 1) mod 4]; _w set ["built", ""]; };
         case "COMPASS": { ["mark"] call _do; };
+        case "JUMP": { ["jump"] call _do; };
         case "ALT": { ["calib"] call _do; };
         case "PHONE": { ["find"] call _do; };
         default { _w set ["menu", 0]; };
@@ -250,7 +306,7 @@ private _start = {
 private _back = {
     if !(_w get "open") exitWith {};
     if ((_w get "menu") >= 0) exitWith { _w set ["menu", -1]; call _redraw; };
-    if (_w get "edit") exitWith { _w set ["edit", false]; _m set ["tleft", _m get "tdur"]; call _redraw; };
+    if (_w get "edit") exitWith { _w set ["edit", false]; if ((_pages select (_w get "page")) isEqualTo "TIMER") then { _m set ["tleft", _m get "tdur"]; }; call _redraw; };
     private _pg = _pages select (_w get "page");
     switch (true) do {
         case (_pg isEqualTo "CHRONO" && {_m get "run"}): { ["lap"] call _do; };
@@ -337,6 +393,96 @@ switch (_act) do {
     case "find": { if !(call _has) exitWith { false }; ["PHONE"] call _show; ["find"] call _do; call _redraw; true };
     case "night": { if !(call _has) exitWith { false }; if !(_w get "open") then { _w set ["page", 0]; call _open; }; ["night"] call _do; call _redraw; true };
     case "dnd": { if !(call _has) exitWith { false }; if !(_w get "open") then { _w set ["page", 0]; call _open; }; ["dnd"] call _do; call _redraw; true };
+    case "stealth": { if !(call _has) exitWith { false }; if !(_w get "open") then { _w set ["page", 0]; call _open; }; ["stealth"] call _do; call _redraw; true };
+    case "hhour": { if !(call _has) exitWith { false }; ["TIMER"] call _show; ["hh"] call _do; call _redraw; true };
+    case "jump": { if !(call _has) exitWith { false }; ["JUMP"] call _show; ["jump"] call _do; call _redraw; true };
+    // Point envoyé par l'ATAK (clic droit sur la carte > Envoyer à la montre) : liaison Bluetooth nécessaire.
+    case "send": {
+        _arg params [["_pos", []], ["_lbl", ""]];
+        if (_pos isEqualTo [] || {!(call _has)}) exitWith { false };
+        if !(call _linkNow) exitWith { ["Montre hors de portée Bluetooth", 3] call comspec_atak_native_fnc_toast; false };
+        _m set ["wpt", [_pos, _lbl]];
+        call _buzz;
+        ["Point envoyé à la montre", 2] call comspec_atak_native_fnc_toast;
+        [format ["Point reçu : %1", _lbl], "Boussole : cap et distance", 5] call _toast;
+        if (_w get "open") then { _w set ["page", _pages find "COMPASS"]; _w set ["menu", -1]; _w set ["edit", false]; call _redraw; };
+        true
+    };
+    // Heure H reçue du chef de groupe (fin < 0 : annulée). Rien ne s'ouvre : la montre vibre, le bandeau attend.
+    case "hhRecv": {
+        _arg params ["_end", "_from", "_id"];
+        if (_end < 0) exitWith {
+            _m set ["hh", []];
+            if (call _has) then { call _buzz; ["Heure H annulée", _from] call _toast; call _redraw; };
+            true
+        };
+        _m set ["hh", [_end, _from, _id]];
+        if (call _has) then {
+            call _buzz;
+            [format ["Heure H dans %1", [_end - _now] call _fmtT], format ["Envoyée par %1", _from], 6] call _toast;
+            call _redraw;
+        };
+        {
+            _x params ["_at", "_what"];
+            if (_at > _now) then {
+                [{ ([time, serverTime] select isMultiplayer) >= (_this select 0) }, {
+                    params ["", "_what", "_id"];
+                    [_what, _id] call comspec_atak_native_fnc_watch;
+                }, [_at, _what, _id]] call CBA_fnc_waitUntilAndExecute;
+            };
+        } forEach [[_end - 60, "hhWarn"], [_end, "hhTop"]];
+        true
+    };
+    case "hhWarn": {
+        private _hh = _m getOrDefault ["hh", []];
+        if (_hh isEqualTo [] || {(_hh select 2) isNotEqualTo _arg} || {!(call _has)}) exitWith { false };
+        call _buzz;
+        ["Heure H dans 1 min", _hh select 1, 5] call _toast;
+        true
+    };
+    case "hhTop": {
+        private _hh = _m getOrDefault ["hh", []];
+        if (_hh isEqualTo [] || {(_hh select 2) isNotEqualTo _arg}) exitWith { false };
+        _m set ["hh", []];
+        if !(call _has) exitWith { false };
+        ["TOP ! Heure H", _hh select 1, 8] call _toast;
+        call _buzz;
+        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.6] call CBA_fnc_waitAndExecute;
+        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 1.2] call CBA_fnc_waitAndExecute;
+        call _redraw;
+        true
+    };
+    // Jumpmaster armé (PFH 0,2 s, montre allumée ou non) : vibre à +300 m puis à l'altitude d'ouverture pendant la chute
+    // libre ; désarmé une fois posé après une chute.
+    case "jumpTick": {
+        private _stop = { [_m getOrDefault ["jPfh", -1]] call CBA_fnc_removePerFrameHandler; _m set ["jPfh", -1]; };
+        if (!(_m getOrDefault ["jArm", false]) || {!(call _has)}) exitWith { call _stop; false };
+        private _agl = [(getPosATL player) select 2, (getPosASL player) select 2] select (surfaceIsWater (getPosASL player));
+        private _vz = (velocity (vehicle player)) select 2;
+        private _open = _m getOrDefault ["jOpen", 1200];
+        private _stage = _m getOrDefault ["jStage", 0];
+        // Chute libre : hors véhicule (pas l'avion ni le parachute ouvert), plus de 15 m/s vers le bas.
+        private _free = _vz < -15 && {(vehicle player) isEqualTo player};
+        if (_free && {_agl > 50}) then { _m set ["jFall", true]; };
+        if (_free && {_stage < 1} && {_agl <= (_open + 300)} && {_agl > _open}) then {
+            _m set ["jStage", 1];
+            call _buzz;
+            ["Ouverture dans 300 m", format ["%1 m sol", round _agl], 4] call _toast;
+        };
+        if (_free && {_stage < 2} && {_agl <= _open}) then {
+            _m set ["jStage", 2];
+            ["OUVREZ !", format ["%1 m sol", round _agl], 6] call _toast;
+            call _buzz;
+            [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.4] call CBA_fnc_waitAndExecute;
+            [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.8] call CBA_fnc_waitAndExecute;
+        };
+        if ((_m getOrDefault ["jFall", false]) && {isTouchingGround player || {_agl < 1.5}} && {(vehicle player) isEqualTo player}) then {
+            _m set ["jArm", false];
+            ["Posé", "Jumpmaster désarmé"] call _toast;
+            call _stop;
+        };
+        true
+    };
     case "buzz": { call _buzz; true };
     case "ring": {
         // Fin du minuteur : la montre vibre trois fois ; le bandeau ne paraît que si elle est allumée (rien ne s'ouvre seul).
@@ -371,9 +517,13 @@ switch (_act) do {
         private _rx = _ry / _ratio;
         private _P = { params ["_u", "_v", "_uw", "_vh"]; [_cx + _u * _rx, _cy + _v * _ry, _uw * _rx, _vh * _ry] };
 
-        // --- Couleurs : luminosité (3 niveaux) et mode nuit (tout en rouge) ---
-        private _night = _w get "night";
-        private _lum = [0.5, 0.78, 1] select ((_w get "bright") max 0 min 2);
+        // --- Couleurs : luminosité (3 niveaux, au minimum en mode furtif) et mode nuit (tout en rouge ; aussi tout seul
+        // quand le joueur met ses JVN, réglage « Rouge auto ») ---
+        private _vm = currentVisionMode player;
+        if (_vm isEqualType []) then { _vm = _vm param [0, 0]; };
+        private _night = (_w get "night") || {(_w getOrDefault ["nvAuto", true]) && {_vm isEqualTo 1}};
+        private _stealth = _w getOrDefault ["stealth", false];
+        private _lum = if (_stealth) then { 0.35 } else { [0.5, 0.78, 1] select ((_w get "bright") max 0 min 2) };
         private _C = {
             params ["_r", "_g", "_b", ["_a", 1]];
             if (_night) exitWith { private _l = (_r max _g max _b) * _lum; [_l, _l * 0.14, _l * 0.08, _a] };
@@ -411,7 +561,7 @@ switch (_act) do {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _phoneWhy = [] call comspec_atak_native_fnc_canUse;
         private _btOn = ((missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false]);
-        private _link = _phoneWhy isEqualTo "" && {_btOn};
+        private _link = _phoneWhy isEqualTo "" && {_btOn} && {!_stealth};
         private _veh = vehicle player;
         private _heading = getDir _veh;
         private _alt = ((getPosASL player) select 2) + (call _drift) - (_m get "altOff");
@@ -423,6 +573,33 @@ switch (_act) do {
             _o
         };
         private _wpt = _m get "wpt";
+        // Heure H en cours (fin, envoyeur) : texte « H-mm:ss ».
+        private _hh = _m getOrDefault ["hh", []];
+        if (_hh isNotEqualTo [] && {(_hh select 0) <= _now}) then { _hh = []; };
+        private _hhTxt = if (_hh isEqualTo []) then { "" } else { format ["H-%1", [ceil ((_hh select 0) - _now)] call _fmtT] };
+        // Coordonnées MGRS : zone de la carte (ACE si présent, sinon latitude / longitude de CfgWorlds) et grille 8 chiffres.
+        private _mgrs = {
+            private _zone = uiNamespace getVariable ["COMSPEC_ATAK_MgrsZone", ["", ""]];
+            if ((_zone select 0) isNotEqualTo worldName) then {
+                private _z = "";
+                if (!isNil "ace_common_fnc_getMGRSdata") then {
+                    private _r = [] call ace_common_fnc_getMGRSdata;
+                    if (_r isEqualType [] && {(count _r) >= 2} && {(_r select 0) isEqualType ""} && {(_r select 1) isEqualType ""}) then { _z = format ["%1 %2", _r select 0, _r select 1]; };
+                };
+                if (_z isEqualTo "") then {
+                    private _cfg = configFile >> "CfgWorlds" >> worldName;
+                    private _lat = ((-(getNumber (_cfg >> "latitude"))) max -80) min 83.9;
+                    private _lon = getNumber (_cfg >> "longitude");
+                    _z = format ["%1%2", ((floor ((_lon + 180) / 6)) mod 60) + 1, "CDEFGHJKLMNPQRSTUVWX" select [floor ((_lat + 80) / 8), 1]];
+                };
+                _zone = [worldName, _z];
+                uiNamespace setVariable ["COMSPEC_ATAK_MgrsZone", _zone];
+            };
+            format ["%1 %2", _zone select 1, [_this, 8] call comspec_atak_native_fnc_gridRef]
+        };
+        // Hauteur sol (au-dessus de la mer sur l'eau) et vitesse verticale, pour l'écran Jumpmaster.
+        private _agl = [(getPosATL player) select 2, (getPosASL player) select 2] select (surfaceIsWater (getPosASL player));
+        private _vz = (velocity _veh) select 2;
 
         // --- Construction de l'écran (au changement d'écran, de taille, de mode nuit ou de luminosité) ---
         // Coloris : celui de la montre portée (emplacement montre d'abord, puis objets divers).
@@ -508,7 +685,8 @@ switch (_act) do {
                         [_k, _u - 0.24, 0.2, 0.48, 0.17, 0.16] call _txt;
                     } forEach [["bbv", "gw_bolt", -0.44, _cBlue], ["hrv", "g_heart", 0, _cRed], ["stv", "g_steps", 0.44, _cGreen]];
                     ["sun", -0.66, 0.42, 1.32, 0.13, 0.11, _fR, _cGrey] call _txt;
-                    ["foot", -0.6, 0.56, 1.2, 0.13, 0.1, _fR, _cGrey] call _txt;
+                    ["foot", -0.6, 0.55, 1.2, 0.12, 0.095, _fR, _cGrey] call _txt;
+                    ["moon", -0.5, 0.67, 1.0, 0.11, 0.085, _fR, _cGrey] call _txt;
                 };
                 case "HR": {
                     call _dots;
@@ -571,6 +749,19 @@ switch (_act) do {
                     ["card", -0.6, 0.06, 1.2, 0.17, 0.15, _fB, _cOrange] call _txt;
                     ["foot", -0.55, 0.26, 1.1, 0.13, 0.1, _fB, _cBlue] call _txt;
                     ["hint", -0.4, 0.41, 0.8, 0.11, 0.085, _fR, _cGrey] call _txt;
+                    ["mgrs", -0.6, 0.53, 1.2, 0.12, 0.095, _fB, _cWhite] call _txt;
+                };
+                case "JUMP": {
+                    call _dots;
+                    ["icon", "g_jump", -0.08, -0.86, 0.16, _cOrange] call _pic;
+                    ["title", -0.6, -0.7, 1.2, 0.13, 0.1, _fB, _cGrey] call _txt;
+                    ["val", -0.75, -0.57, 1.15, 0.4, 0.38, _fB, _cWhite, 1] call _txt;
+                    ["unit", 0.42, -0.35, 0.4, 0.16, 0.12, _fR, _cGrey, 0] call _txt;
+                    ["fall", -0.7, -0.15, 1.4, 0.14, 0.12, _fB, _cWhite] call _txt;
+                    ["open", -0.7, 0.01, 1.4, 0.14, 0.12, _fB, _cOrange] call _txt;
+                    ["dip", -0.7, 0.17, 1.4, 0.13, 0.1, _fR, _cBlue] call _txt;
+                    ["state", -0.6, 0.33, 1.2, 0.14, 0.12, _fB, _cGrey] call _txt;
+                    ["hint", -0.6, 0.55, 1.2, 0.11, 0.085, _fR, _cGrey] call _txt;
                 };
                 case "CHRONO": {
                     call _dots;
@@ -591,6 +782,8 @@ switch (_act) do {
                     ["val", -0.8, -0.44, 1.6, 0.42, 0.4] call _txt;
                     ["state", -0.6, -0.02, 1.2, 0.13, 0.11, _fB, _cOrange] call _txt;
                     ["hint", -0.6, 0.17, 1.2, 0.11, 0.085, _fR, _cGrey] call _txt;
+                    ["hhl", -0.6, 0.33, 1.2, 0.13, 0.11, _fB, _cOrange] call _txt;
+                    ["hhs", -0.6, 0.46, 1.2, 0.11, 0.085, _fR, _cGrey] call _txt;
                 };
                 case "PHONE": {
                     call _dots;
@@ -690,6 +883,10 @@ switch (_act) do {
             _mc ctrlMapAnimAdd [0.1, [0.012, 0.025, 0.05, 0.1] select (_w get "zoom"), [] call comspec_atak_native_fnc_gpsPos];
             ctrlMapAnimCommit _mc;
         };
+        if (_page isEqualTo "JUMP") then {
+            ("val" call _g) ctrlSetText ((round _agl) call _thou);
+            ("fall" call _g) ctrlSetText format ["%1 %2 km/h · %3 m/s", "Chute" call _tr, round ((-_vz max 0) * 3.6), round (-_vz max 0)];
+        };
         if (_page isEqualTo "CHRONO") then {
             private _run = _m get "run";
             private _tot = (_m get "acc") + ([0, diag_tickTime - (_m get "t0")] select _run);
@@ -700,6 +897,13 @@ switch (_act) do {
             ("val" call _g) ctrlSetText ([ceil _left] call _fmtT);
             private _k = round (40 * _left / ((_m get "tdur") max 1));
             for "_i" from 0 to 39 do { [format ["ring%1", _i], [_cDim, _cOrange] select (_i < _k)] call _col; };
+            if (_hhTxt isEqualTo "") then {
+                ("hhl" call _g) ctrlSetText "";
+                ["hhs", ["Menu : heure H au groupe", ""] select ((leader group player) isNotEqualTo player)] call _set;
+            } else {
+                ("hhl" call _g) ctrlSetText format ["%1  %2", "Heure H" call _tr, _hhTxt];
+                ("hhs" call _g) ctrlSetText format ["%1 %2", "par" call _tr, _hh select 1];
+            };
         };
 
         // --- Bandeau : nouvelle notification du téléphone (liaison active, hors « ne pas déranger ») ou retour d'action ---
@@ -756,6 +960,13 @@ switch (_act) do {
                     default { format ["%1 %2", "Coucher" call _tr, [_sunset, "HH:MM"] call BIS_fnc_timeToString] };
                 };
                 ("sun" call _g) ctrlSetText ([format ["%1 · %2 °C", _sunTxt, round _temp], format ["%1 °C", round _temp]] select (_sunTxt isEqualTo ""));
+                // Heure H en cours : à la place du soleil, en orange.
+                if (_hhTxt isNotEqualTo "") then { ("sun" call _g) ctrlSetText format ["%1  %2", "Heure H" call _tr, _hhTxt]; };
+                ["sun", [_cGrey, _cOrange] select (_hhTxt isNotEqualTo "")] call _col;
+                // Lune : part éclairée (moonPhase) et croissante / décroissante (comparée au lendemain).
+                private _mp = moonPhase date;
+                private _mp2 = moonPhase (numberToDate [_y, ((dateToNumber date) + 1 / 365) min 0.9999]);
+                ("moon" call _g) ctrlSetText format ["%1 %2 %3 · %4", "Lune" call _tr, round (_mp * 100), "%", (["décroissante", "croissante"] select (_mp2 >= _mp)) call _tr];
                 private _stressTxt = format [(["Stress %1 · repos", "Stress %1 · faible", "Stress %1 · moyen", "Stress %1 · élevé"] select ([0, 1, 2, 3] select (([25, 50, 75] findIf { _stress <= _x }) call { [_this, 3] select (_this < 0) }))), _stress];
                 ("foot" call _g) ctrlSetText (_stressTxt call _tr);
                 for "_i" from 0 to 29 do {
@@ -813,10 +1024,30 @@ switch (_act) do {
                 ["foot", format ["D+ %1 m   D- %2 m", (_day getOrDefault ["up_m", 0]) call _thou, (_day getOrDefault ["down_m", 0]) call _thou]] call _set;
                 ["hint", "START : étalonner sur le GPS"] call _set;
             };
+            case "COMPASS": {
+                ("mgrs" call _g) ctrlSetText (([] call comspec_atak_native_fnc_gpsPos) call _mgrs);
+            };
+            case "JUMP": {
+                ["title", "JUMPMASTER"] call _set;
+                ["unit", "m sol"] call _set;
+                private _arm = _m getOrDefault ["jArm", false];
+                private _edit = _w get "edit";
+                ("open" call _g) ctrlSetText format ["%1 %2 m", "Ouverture" call _tr, (_m getOrDefault ["jOpen", 1200]) call _thou];
+                ["open", [_cWhite, _cOrange] select _edit] call _col;
+                if (_wpt isEqualTo []) then { ["dip", "Pas de point (DIP) : boussole ou ATAK"] call _set; } else {
+                    private _me = [] call comspec_atak_native_fnc_gpsPos;
+                    private _dist = _me distance2D (_wpt select 0);
+                    ("dip" call _g) ctrlSetText format ["DIP %1 · %2 · %3°", _wpt select 1,
+                        [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), round (((_me getDir (_wpt select 0)) + 360) mod 360)];
+                };
+                ["state", switch (true) do { case (_edit): { "Réglage de l'ouverture" }; case (_arm): { "Armé" }; default { "Désarmé" }; }] call _set;
+                ["state", switch (true) do { case (_edit): { _cOrange }; case (_arm): { _cGreen }; default { _cGrey }; }] call _col;
+                ["hint", switch (true) do { case (_edit): { "UP / DOWN : 100 m · START : armer" }; case (_arm): { "START : désarmer" }; default { "START : régler et armer" }; }] call _set;
+            };
             case "MAP": {
                 private _fix = [] call comspec_atak_native_fnc_gpsFix;
                 ("north" call _g) ctrlSetText ("N" call _tr);
-                ["grid", format ["%1 · ±%2 m", mapGridPosition ([] call comspec_atak_native_fnc_gpsPos), round (_fix param [0, 0])]] call _set;
+                ("grid" call _g) ctrlSetText format ["%1 · ±%2 m", ([] call comspec_atak_native_fnc_gpsPos) call _mgrs, round (_fix param [0, 0])];
                 // Largeur réelle affichée, mesurée sur la carte (dépend du zoom choisi avec START).
                 private _mc = "map" call _g;
                 (ctrlPosition _mc) params ["_mx", "_my", "_mw", "_mh"];
@@ -881,6 +1112,7 @@ switch (_act) do {
                 ["state", ["Téléphone déconnecté", "ATAK connecté"] select _link] call _set;
                 ["state", [_cGrey, _cGreen] select _link] call _col;
                 private _sub = switch (true) do {
+                    case (_stealth): { "Mode furtif : Bluetooth coupé" };
                     case (_phoneWhy isEqualTo "item"): { "Pas de téléphone ATAK sur vous" };
                     case (_phoneWhy isEqualTo "battery"): { "Batterie du téléphone vide" };
                     case (_phoneWhy isEqualTo "broken"): { "Téléphone détruit" };
@@ -943,6 +1175,9 @@ switch (_act) do {
                             case "big": { ["Non", "Oui"] select (_w get "big") };
                             case "night": { ["Non", "Oui"] select (_w get "night") };
                             case "dnd": { ["Non", "Oui"] select (_w get "dnd") };
+                            case "nvAuto": { ["Non", "Oui"] select (_w getOrDefault ["nvAuto", true]) };
+                            case "stealth": { ["Non", "Oui"] select _stealth };
+                            case "hh": { _hhTxt };
                             case "bright": { ["Faible", "Moyenne", "Maximale"] select (_w get "bright") };
                             case "mark": { ["", "1 point"] select ((_m get "wpt") isNotEqualTo []) };
                             default { "" };

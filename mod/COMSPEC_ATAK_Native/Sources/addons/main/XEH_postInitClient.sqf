@@ -918,7 +918,10 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["GarminMark", "Montre Garmin : marquer ma position", "Garde ma position GPS : la boussole et la carte de la montre montrent ensuite sa direction et sa distance.", { ["mark"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
     ["GarminNight", "Montre Garmin : mode nuit", "Écran de la montre en rouge, pour garder la vision de nuit.", { ["night"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
     ["GarminDnd", "Montre Garmin : ne pas déranger", "Plus de bandeau ni de vibration à l'arrivée des notifications du téléphone.", { ["dnd"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
-    ["GarminFind", "Montre Garmin : trouver mon téléphone", "Fait sonner et vibrer le téléphone ATAK relié en Bluetooth.", { ["find"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]]
+    ["GarminFind", "Montre Garmin : trouver mon téléphone", "Fait sonner et vibrer le téléphone ATAK relié en Bluetooth.", { ["find"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminHHour", "Montre Garmin : heure H au groupe", "Chef de groupe : lance (ou annule) un compte à rebours de la durée du minuteur sur les montres de tout le groupe, qui vibrent ensemble au top.", { ["hhour"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminJump", "Montre Garmin : Jumpmaster", "Écran de saut (HALO / HAHO) : règle l'altitude d'ouverture et arme les alertes, ou les désarme.", { ["jump"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminStealth", "Montre Garmin : mode furtif", "Coupe le Bluetooth de la montre et met l'écran au minimum.", { ["stealth"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]]
 ];
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;

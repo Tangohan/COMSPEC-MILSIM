@@ -39,7 +39,7 @@ final class AtakGarminWatchTest extends TestCase
         $w = $this->read('functions/garmin/fn_watch.sqf');
         self::assertStringContainsString('"COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"', $w);
         self::assertStringContainsString('_x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"]', $w);
-        self::assertStringContainsString('["FACE", "HR", "ALT", "MAP", "COMPASS", "CHRONO", "TIMER", "PHONE", "DAY"]', $w);
+        self::assertStringContainsString('["FACE", "HR", "ALT", "MAP", "COMPASS", "JUMP", "CHRONO", "TIMER", "PHONE", "DAY"]', $w);
         self::assertStringContainsString('COMSPEC_RscMapAtak', $w);
         self::assertStringContainsString('comspec_atak_native_fnc_gpsPos', $w);
         self::assertStringContainsString('notifHistory', $w);
@@ -58,6 +58,24 @@ final class AtakGarminWatchTest extends TestCase
             self::assertStringContainsString('class COMSPEC_ATAK_GarminWatchItem_' . $cls . ': COMSPEC_ATAK_GarminWatchItem {', $cfg);
             self::assertStringContainsString('comspec_watchFrame="' . $tex . '";', $cfg);
             self::assertFileExists(self::MAIN . '/data/' . $tex . '.paa', $tex);
+        }
+    }
+
+    public function testWatchMilsimFeatures(): void
+    {
+        $w = $this->read('functions/garmin/fn_watch.sqf');
+        // Point envoyé par l'ATAK (clic droit sur la carte), heure H du chef de groupe, Jumpmaster, MGRS, furtif, JVN, lune.
+        self::assertStringContainsString('case "send": {', $w);
+        self::assertStringContainsString('["send", [_pos, _lbl select [0, 14]]] call comspec_atak_native_fnc_watch;', $this->read('functions/map/fn_mapCtxMenu.sqf'));
+        self::assertStringContainsString('remoteExecCall ["comspec_atak_native_fnc_watch", units group player]', $w);
+        self::assertStringContainsString('case "jumpTick": {', $w);
+        self::assertStringContainsString('ace_common_fnc_getMGRSdata', $w);
+        self::assertStringContainsString('!(_w getOrDefault ["stealth", false])', $w);
+        self::assertStringContainsString('currentVisionMode player', $w);
+        self::assertStringContainsString('moonPhase date', $w);
+        $post = $this->read('XEH_postInitClient.sqf');
+        foreach (['GarminHHour', 'GarminJump', 'GarminStealth'] as $k) {
+            self::assertStringContainsString('"' . $k . '"', $post, $k);
         }
     }
 
