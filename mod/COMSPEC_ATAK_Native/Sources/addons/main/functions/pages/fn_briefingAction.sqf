@@ -114,7 +114,7 @@ switch (_action) do {
             uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ""];
             // Champ encore affiché avec la question partie : vidé, sinon le redessin la remettrait en brouillon.
             private _qc = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["briefQ", controlNull];
-            if (!isNull _qc && {(trim ctrlText _qc) isEqualTo _txt}) then { _qc ctrlSetText ""; };
+            if (!isNull _qc && {(trim ctrlText _qc) isEqualTo _txt}) then { _qc ctrlSetText (("") call comspec_atak_native_fnc_tr); };
             // Le présentateur la voit tout de suite sur son téléphone.
             private _pres = (["get"] call comspec_atak_native_fnc_briefingLive) param [0, objNull];
             if (!isNull _pres && {_pres isNotEqualTo player}) then { ["comspec_atak_native_briefQ", [_who, _txt], _pres] call CBA_fnc_targetEvent; };
@@ -128,6 +128,8 @@ switch (_action) do {
         if !([] call comspec_atak_native_fnc_bridge) exitWith {
             ["WARNING", "Diapositives Athena : COMSPEC Link requis", 4, 30] call comspec_atak_native_fnc_notify;
         };
+        // Diapositives Google refusées ou ratées : relues au prochain affichage (navigateur intégré).
+        uiNamespace setVariable ["COMSPEC_ATAK_GSlideCache", createHashMap];
         private _gUrl = profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""];
         if ((profileNamespace getVariable ["COMSPEC_ATAK_BriefSource", "AUTO"]) isEqualTo "GOOGLE" && {_gUrl isNotEqualTo ""}) exitWith {
             ["load", [_gUrl, false]] call comspec_atak_native_fnc_briefingCfg;

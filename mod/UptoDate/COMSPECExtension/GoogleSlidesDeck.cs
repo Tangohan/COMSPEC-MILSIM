@@ -350,19 +350,25 @@ internal static class GoogleSlidesDeck
 
         var safePage = string.IsNullOrEmpty(pageId) ? "first" : new string(pageId.Where(c => char.IsLetterOrDigit(c) || c is '_' or '-').ToArray());
         if (safePage.Length == 0) safePage = "first";
-        var destPath = Path.Combine(cacheDir, $"slide_{index}_{safePage}.png");
-        if (File.Exists(destPath) && new FileInfo(destPath).Length > 64)
-            return destPath;
+        // JPEG d'abord : Arma ne lit pas le PNG, et le navigateur intégré (repli des diapositives refusées hors PBO,
+        // ImageDataChunk « local: ») n'accepte qu'une image légère. Extension du fichier = format reçu.
+        var basePath = Path.Combine(cacheDir, $"slide_{index}_{safePage}");
+        foreach (var ext in new[] { ".jpg", ".png" })
+        {
+            if (File.Exists(basePath + ext) && new FileInfo(basePath + ext).Length > 64)
+                return basePath + ext;
+        }
 
         var urls = new List<string>();
         if (!string.IsNullOrEmpty(pageId))
         {
-            urls.Add($"https://docs.google.com/presentation/d/{presentationId}/export/png?id={Uri.EscapeDataString(presentationId)}&pageid={Uri.EscapeDataString(pageId)}");
             urls.Add($"https://docs.google.com/presentation/d/{presentationId}/export/jpeg?id={Uri.EscapeDataString(presentationId)}&pageid={Uri.EscapeDataString(pageId)}");
+            urls.Add($"https://docs.google.com/presentation/d/{presentationId}/export/png?id={Uri.EscapeDataString(presentationId)}&pageid={Uri.EscapeDataString(pageId)}");
             urls.Add($"https://docs.google.com/presentation/d/{presentationId}/export?format=png&pageid={Uri.EscapeDataString(pageId)}");
         }
         else
         {
+            urls.Add($"https://docs.google.com/presentation/d/{presentationId}/export/jpeg");
             urls.Add($"https://docs.google.com/presentation/d/{presentationId}/export/png");
             urls.Add($"https://docs.google.com/presentation/d/{presentationId}/export?format=png");
         }
@@ -376,6 +382,7 @@ internal static class GoogleSlidesDeck
                 if (!resp.IsSuccessStatusCode) continue;
                 var bytes = await resp.Content.ReadAsByteArrayAsync(token).ConfigureAwait(false);
                 if (!IsImageBytes(bytes)) continue;
+                var destPath = basePath + (bytes[0] == 0xFF ? ".jpg" : ".png");
                 // Écriture atomique : le préchargement et StartSlide testent File.Exists, un PNG à moitié écrit
                 // partirait vers Arma. Nom temporaire unique : deux téléchargements de la même diapo ne se gênent pas.
                 var tmp = destPath + "." + Guid.NewGuid().ToString("N") + ".part";

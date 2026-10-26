@@ -366,6 +366,36 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
     _path = _p;
     _slideWhy = _why;
 };
+// Google Slides : image téléchargée par COMSPEC Link dans comspec_cache, refusée par Arma hors d'un PBO (écran noir,
+// capture de TTRD du 26/10). Même repli que pour Athena : navigateur intégré (COMSPEC Link 2.0.98+, « local: »).
+if (_src isEqualTo "GOOGLE" && {_path isNotEqualTo ""}) then {
+    private _use = [_path] call comspec_atak_native_fnc_texUsable;
+    if (_use isNotEqualTo "") exitWith { _path = _use; };
+    private _gCache = uiNamespace getVariable ["COMSPEC_ATAK_GSlideCache", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_GSlideCache", _gCache];
+    private _st = _gCache getOrDefault [_path, []];
+    // Entrée : [] absente, [heure] en cours, [résultat, raison] faite.
+    if ((count _st) isEqualTo 0 || {(count _st) isEqualTo 1 && {diag_tickTime - (_st select 0) > 25}}) then {
+        _gCache set [_path, [diag_tickTime]];
+        [_path, _gCache] spawn {
+            params ["_path", "_gCache"];
+            (["local:" + _path, format ["gslide_%1", hashValue _path]] call comspec_atak_native_fnc_slideWebData) params ["_mime", "_b64", "_why"];
+            if (_why isEqualTo "") then {
+                private _store = uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap];
+                if (count _store > 12) then { _store = createHashMap; };
+                _store set [_path, [_mime, _b64]];
+                uiNamespace setVariable ["COMSPEC_ATAK_SlideWeb", _store];
+            };
+            ["INFO", "BRIEFING", format ["Diapositive Google : fichier %1, %2", _path, ["affichée par le navigateur intégré (texture refusée par Arma)", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
+            _gCache set [_path, [["WEB:" + _path, ""] select (_why isNotEqualTo ""), ["", "Arma refuse l'image Google (hors PBO) et " + _why] select (_why isNotEqualTo "")]];
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+        };
+        _st = [diag_tickTime];
+    };
+    _slideLoading = (count _st) < 2;
+    _path = if (_slideLoading) then { "" } else { _st select 0 };
+    _slideWhy = _st param [1, ""];
+};
 
 private _btnH = _rowH;
 // Présentation en direct (Athena) : bandeau présentateur / présents et notes de la diapositive.
@@ -421,7 +451,7 @@ if (_total < 1 || {_path isEqualTo ""}) then {
         case (_total < 1 && {_bridge} && {_pref isEqualTo "GOOGLE"}): { ["Aucune présentation Google enregistrée.<br/>Touchez l'engrenage en haut à droite pour coller le lien Google Slides.", "Chargement de la présentation Google…<br/>En cas d'échec, l'engrenage en haut à droite explique pourquoi."] select (_gUrl isNotEqualTo "") };
         case (_total < 1 && {_bridge}): { "Aucune diapositive pour l'instant.<br/>Le présentateur partage un Google Slides depuis le tableau de briefing, ou publiez des diapositives sur Athena puis touchez ACTUALISER.<br/>Votre propre lien Google Slides : touchez l'engrenage en haut à droite." };
         case (_total < 1): { "Aucun briefing reçu.<br/>Les diapositives Athena demandent COMSPEC Link." };
-        case (_src isEqualTo "GOOGLE" || {_slideLoading}): { "Chargement de la diapositive…" };
+        case (_slideLoading || {_src isEqualTo "GOOGLE" && {_slideWhy isEqualTo ""}}): { "Chargement de la diapositive…" };
         case (_slideWhy isNotEqualTo ""): { _slideWhy + "<br/>Touchez ACTUALISER pour réessayer." };
         default { "Image indisponible (réseau ou cache).<br/>Touchez ACTUALISER pour réessayer." };
     };
