@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Compatibilité avec le mod Live Presentation de FENRIR dans l'app Briefing (ATAK natif, version fixée au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app Briefing sait lire les présentations du mod Live Presentation (FENRIR)
+- Si la mission utilise le mod Live Presentation de FENRIR, ses présentations proches apparaissent dans l'onglet ÉCRANS de l'app Briefing.
+- VOIR affiche la présentation dans DIAPOSITIVES, avec le titre et les notes de chaque diapositive ; MES DIAPOS te ramène aux tiennes.
+- Si le module FENRIR te laisse piloter, tu changes de diapositive depuis le téléphone et tu peux y envoyer ton Google Slides.
+- Sans ce mod, rien ne change : il reste facultatif et aucune de ses images ni de son code n'est inclus dans le nôtre.
+EN : The Briefing app can read presentations from FENRIR's Live Presentation mod
+- If the mission uses FENRIR's Live Presentation mod, its nearby presentations show up in the SCREENS tab of the Briefing app.
+- VIEW shows the presentation in SLIDES, with each slide's title and notes; MY SLIDES takes you back to your own.
+- If the FENRIR module lets you drive it, you change slides from the phone and can send it your Google Slides.
+- Without that mod nothing changes: it stays optional and none of its images or code are included in ours.
+
+### Détail technique
+- Nouvelle `fn_fenrir` (aucune dépendance : pas de `requiredAddons`, détection en jeu par `LPRES_fnc_request` + `CfgPatches >> lpres_main`). Lit l'état public répliqué `lpres_s_<id>` (ids `p1`, `p2`… suivis jusqu'à trois trous), liste les présentations dont un écran ou un contrôleur est à moins de 100 m, et passe les commandes par `[id, action, arg] remoteExecCall ["LPRES_fnc_request", 2]` : le serveur FENRIR vérifie lui-même les droits (« Qui peut piloter »), `LPRES_fnc_canControl` ne sert qu'à griser l'interface.
+- Images : JPEG base64 de `LPRES_cache` (demandées par `LPRES_fnc_requestImage`), affichées par le navigateur intégré comme le repli des diapositives Athena (`COMSPEC_ATAK_SlideWeb`).
+- `fn_briefingSignature` : source `FENRIR` quand une présentation est regardée (chemin = hash, suivi de `?` tant que l'image n'est pas arrivée, pour redessiner à son arrivée). `fn_briefingAction` : précédente / suivante / sommaire → `goto`, ACTUALISER → `refresh` FENRIR. PFH du briefing : révisions FENRIR ajoutées à l'empreinte.
+- `fn_pageBriefing` : onglet ÉCRANS affiché aussi pour les seules présentations FENRIR (section « Présentations FENRIR » : VOIR / MES DIAPOS, « », MON GOOGLE SLIDES = `load` du lien Google synchronisé ou enregistré) ; bandeau FENRIR (pilotage ou lecture seule, heure de mise à jour) dans DIAPOSITIVES. Pas de diffusion sur les écrans COMSPEC d'une présentation FENRIR regardée.
+- Licence : FENRIR demande d'être contacté avant tout réempaquetage ; rien de son mod n'est copié, seule son interface publique est appelée. Étude faite sur la version Workshop 1.1.2.
+- Traductions EN ajoutées dans `i18n/en.txt`.
+
 ## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
 
 ### Résumé joueur
