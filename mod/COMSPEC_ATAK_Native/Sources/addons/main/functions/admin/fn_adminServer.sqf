@@ -27,7 +27,9 @@ if (_remote) then { _caller = [remoteExecutedOwner] call comspec_atak_native_fnc
 // Hôte d'une partie locale : son propre appel n'est pas distant (son poste EST le serveur, remoteExecutedOwner y
 // vaut 2 ou rien). Il reste le demandeur, sans quoi la réponse et le journal partiraient vers objNull.
 if (!_remote && {isNull _caller} && {hasInterface}) then { _caller = player; };
-if (_remote && {!(_act in ["scan", "capture", "hunt"])}) exitWith {
+// Actions ouvertes aux clients (app Admin), le droit étant jugé juste après sur le demandeur. « apps » (App Store,
+// regroupement 2.5.0) y est : sans elle, tout admin qui n'est pas l'hôte était refusé (contre-expertise v4, B5).
+if (_remote && {!(_act in ["scan", "capture", "hunt", "apps"])}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Action « %1 » refusée au poste %2 (réservée au serveur)", _act, remoteExecutedOwner];
     false
 };

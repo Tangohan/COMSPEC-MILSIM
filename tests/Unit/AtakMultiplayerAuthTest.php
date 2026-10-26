@@ -139,6 +139,23 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('class comspec_atak_native_fnc_ftServer { allowedTargets = 2; };', $this->read(self::MAIN . '/config.cpp'));
     }
 
+    public function testAdminAppsRuleIsOpenToARemoteAdminAndStillJudgedOnTheRequester(): void
+    {
+        // « apps » (App Store, regroupement 2.5.0) : les boutons de l'app Admin l'envoient par la branche « server » de
+        // fn_adminClient, donc par remoteExecCall vers 2. Absente de la liste des actions distantes de fn_adminServer,
+        // elle était refusée à tout admin qui n'est pas l'hôte (contre-expertise v4, B5). Le droit reste jugé juste
+        // après, sur le demandeur retrouvé par remoteExecutedOwner.
+        $page = $this->read(self::MAIN . '/functions/admin/fn_pageAdmin.sqf');
+        self::assertStringContainsString("['server', ['apps', ['', 'reset']]] call comspec_atak_native_fnc_adminClient;", $page);
+        self::assertStringContainsString("['server', ['apps', [%1, %2]]] call comspec_atak_native_fnc_adminClient;", $page);
+        self::assertStringContainsString('[_a, _xa] remoteExecCall ["comspec_atak_native_fnc_adminServer", 2];', $this->read(self::MAIN . '/functions/admin/fn_adminClient.sqf'));
+        $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/admin/fn_adminServer.sqf'));
+        self::assertMatchesRegularExpression('/if \(_remote\) then \{ _caller = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};.*?'
+            . 'if \(_remote && \{!\(_act in \["scan", "capture", "hunt", "apps"\]\)\}\) exitWith \{.*?'
+            . 'if \(_remote && \{isNull _caller\}\) exitWith \{.*?'
+            . 'if \(_remote && \{!\(\[_caller\] call comspec_atak_native_fnc_adminAllowed\)\}\) exitWith \{.*?switch \(_act\) do \{/s', $code);
+    }
+
     public function testCompromiseOrdersAreAcceptedOnlyFromTheServer(): void
     {
         // Alertes, révocation chez Athena et nouvel IMEI : l'événement CBA comspec_atak_native_compromise ne disait pas
