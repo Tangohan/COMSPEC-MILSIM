@@ -16,6 +16,14 @@ $interval = (int) ($ge['update_interval'] ?? 0);
 ?>
 <section class="bo-ac-sec" id="overwatch-game-experience" data-ac-panel>
   <?= $section('game', 'Connexion en jeu', 'Expérience en jeu : ce que voient vos opérateurs au lancement d’Arma (fenêtre Athena) et ce que le mod a le droit de faire. Appliqué à la prochaine connexion de chaque joueur.') ?>
+  <form method="post" action="<?= $h($base . '/first-login-link') ?>" class="bo-ac-form" id="first-login-link">
+    <?= $csrf ?>
+    <div class="ath-panel bo-ac-card">
+      <p class="bo-ac-label">Première connexion d’un nouveau membre</p>
+      <?= $switch('require_game_link_first_login', !empty($firstLoginLinkRequired ?? true), 'Relier le jeu avant d’ouvrir le site', 'Un nouveau membre saisit d’abord le code affiché par ATAK dans Arma (app Athena du téléphone). Tant que son jeu n’est pas relié, le site le renvoie vers cette étape. Les administrateurs de la communauté et les membres inscrits avant cette fonction ne sont pas concernés. Désactivez-le si des membres jouent hors ligne ou n’ont pas le jeu.', 'steam') ?>
+      <div class="bo-ac-save bo-ac-save--inline"><button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button></div>
+    </div>
+  </form>
   <form method="post" action="<?= $h($base . '/game-experience') ?>" enctype="multipart/form-data" class="bo-ac-form bo-ac-game" id="bo-ac-game">
     <?= $csrf ?>
     <div class="bo-ac-game__cfg">
