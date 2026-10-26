@@ -1,6 +1,6 @@
 # DEPLOY — Migration ATHENA (back-office)
 
-Checklist de déploiement pour **athena.ttrd.fr** : coque ATHENA (sidebar, topbar, KPIs, tableaux) et pages back-office migrées.
+Checklist de déploiement pour **athena-comspec.eu** (ancien domaine athena.ttrd.fr encore servi, voir docs/migration-domaine-athena-comspec.md) : coque ATHENA (sidebar, topbar, KPIs, tableaux) et pages back-office migrées.
 
 ---
 
@@ -671,4 +671,4 @@ page concernée casse en production alors que le dépôt est sain. Deux réflexe
 
 ---
 
-*Dernière mise à jour : 27 juillet 2026 — checklist production athena.ttrd.fr*
+*Dernière mise à jour : 27 juillet 2026 — checklist production athena-comspec.eu*

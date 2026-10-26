@@ -297,6 +297,9 @@ return function (Router $router) {
     // Packs de langue partagés : la page s'ouvre par le lien (jeton dans le fragment #), l'API lit X-Pack-Token.
     $router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak']);
     $router->post('/api/traduire-atak/packs', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'create']);
+    $router->get('/api/traduire-atak/compte', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'mine']);
+    $router->post('/api/traduire-atak/compte', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'saveMine']);
+    $router->post('/api/traduire-atak/packs/{id}/liens', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'links']);
     $router->get('/api/traduire-atak/packs/{id}', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'show']);
     $router->get('/api/traduire-atak/packs/{id}/history', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'history']);
     $router->post('/api/traduire-atak/packs/{id}/strings', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'write']);

@@ -291,6 +291,10 @@
     var EN_UI = (document.documentElement.lang || 'fr').slice(0, 2) !== 'fr';
     var API = root.getAttribute('data-api-url');
     var PAGE = root.getAttribute('data-page-url');
+    var ACCOUNT = root.getAttribute('data-account') === '1';
+    var ACCOUNT_URL = root.getAttribute('data-account-url') || '';
+    var CSRF = root.getAttribute('data-csrf') || '';
+    var MINE = [];
     var fmt = new Intl.NumberFormat(document.documentElement.lang || undefined);
     var rtf = typeof Intl.RelativeTimeFormat === 'function' ? new Intl.RelativeTimeFormat(document.documentElement.lang || undefined, { numeric: 'auto' }) : null;
 
@@ -441,10 +445,11 @@
     var saveTimer = null;
     function scheduleLocalSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveLocal, 500); }
     function saveLocal() {
-        if (S.pack || !validCode(S.meta.code)) { return; }
+        if (!validCode(S.meta.code)) { return; }
+        if (S.pack && !S.pack.account) { return; }
         var ok = storageSet(STORE2 + S.meta.code, JSON.stringify({ meta: S.meta, tr: S.tr, at: Date.now() }));
         storageSet(STORE2 + 'last', S.meta.code);
-        setSync(ok ? tx('saved_local') : tx('save_failed'), ok ? 'ok' : 'bad');
+        if (!S.pack) { setSync(ok ? tx('saved_local') : tx('save_failed'), ok ? 'ok' : 'bad'); }
     }
     /** Travail local d'une langue : format v2 (clés), ou v1 (textes français) converti. */
     function loadLocal(code) {
@@ -467,9 +472,24 @@
     // ---------- API des packs ----------
 
     function call(method, path, body) {
-        var opt = { method: method, headers: { Accept: 'application/json', 'X-Pack-Token': S.pack ? S.pack.token : '' }, credentials: 'omit' };
+        var account = !!(S.pack && S.pack.account);
+        var opt = { method: method, headers: { Accept: 'application/json' }, credentials: account ? 'same-origin' : 'omit' };
+        if (account) {
+            opt.headers['X-Account-Pack'] = '1';
+            if (method !== 'GET') { opt.headers['X-CSRF-Token'] = CSRF; }
+        } else {
+            opt.headers['X-Pack-Token'] = S.pack ? S.pack.token : '';
+        }
         if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
         return fetch(API + path, opt).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) { j.httpStatus = r.status; return j; });
+        });
+    }
+    function accountFetch(method, body) {
+        var opt = { method: method, headers: { Accept: 'application/json' }, credentials: 'same-origin' };
+        if (method !== 'GET') { opt.headers['X-CSRF-Token'] = CSRF; }
+        if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+        return fetch(ACCOUNT_URL, opt).then(function (r) {
             return r.json().catch(function () { return {}; }).then(function (j) { j.httpStatus = r.status; return j; });
         });
     }
@@ -603,6 +623,7 @@
         if (S.pack) {
             if (!isReviewer()) { if (v) { S.tr[h] = v; } else { delete S.tr[h]; } }
             queueWrite(h, v);
+            if (S.pack.account) { scheduleLocalSave(); }
         } else {
             if (v) { S.tr[h] = v; } else { delete S.tr[h]; }
             scheduleLocalSave();
@@ -639,7 +660,9 @@
         $('tw-pct').textContent = fmt.format(pct) + ' %';
         $('tw-code').textContent = (S.meta.code || '··').toUpperCase();
         $('tw-name').textContent = S.meta.name || tx('no_language');
-        var mode = S.pack ? (S.pack.role === 'owner' ? tx('mode_pack_owner') : tx('mode_pack_editor')) + (S.pack.meta.review_mode === 'review' ? ' · ' + tx('mode_review') : '') : tx('mode_local');
+        var mode = tx('mode_local');
+        if (S.pack && S.pack.account) { mode = tx('mode_account'); }
+        else if (S.pack) { mode = (S.pack.role === 'owner' ? tx('mode_pack_owner') : tx('mode_pack_editor')) + (S.pack.meta.review_mode === 'review' ? ' · ' + tx('mode_review') : ''); }
         $('tw-mode').textContent = mode;
         renderTree();
         return c;
@@ -813,7 +836,18 @@
         src.appendChild(p2);
         var ch = chips(e.fr);
         if (ch) { src.appendChild(ch); }
-        if (e.file) { src.appendChild(el('p', 'tw-src__file', e.file)); }
+        var around = el('div', 'tw-context');
+        around.appendChild(el('p', 'tw-src__lab', tx('context')));
+        around.appendChild(el('p', 'tw-context__where', tx('context_app', { cat: catLabel(e.cat) })));
+        if (e.file && e.file !== catLabel(e.cat) && !/[\\/]/.test(e.file) && !/\.(sqf|hpp|txt|xml)$/i.test(e.file)) {
+            around.appendChild(el('p', 'tw-context__where', tx('context_screen', { screen: e.file })));
+        }
+        (e.around || []).forEach(function (line) {
+            var p = el('p', 'tw-context__line', line);
+            p.lang = 'fr';
+            around.appendChild(p);
+        });
+        src.appendChild(around);
         cols.appendChild(src);
 
         var ed = el('div', 'tw-ed');
@@ -940,7 +974,7 @@
         }
         ph.appendChild(scr);
         box.appendChild(ph);
-        box.appendChild(el('p', 'tw-muted', e.file ? tx('preview_where', { file: e.file, cat: catLabel(e.cat) }) : tx('preview_where_cat', { cat: catLabel(e.cat) })));
+        box.appendChild(el('p', 'tw-muted', tx('context_app', { cat: catLabel(e.cat) }) + (e.file && e.file !== catLabel(e.cat) && !/[\\/]/.test(e.file) && !/\.(sqf|hpp|txt|xml)$/i.test(e.file) ? ' · ' + e.file : '')));
     }
 
     function moveFocus(h, dir) {
@@ -1249,6 +1283,17 @@
         local.querySelector('[name="pseudo"]').value = S.pseudo;
         formError(local, '');
         formError(pk, '');
+        if (S.pack && S.pack.account && !S.pack.token) {
+            call('POST', '/' + S.pack.id + '/liens', {}).then(function (j) {
+                var pk = d.querySelector('[data-role="pack"]');
+                if (!j.ok) { formError(pk, apiError(j)); openDialog(d); return; }
+                S.pack.token = j.owner_token || '';
+                S.pack.editToken = j.edit_token || '';
+                rememberPack({ id: S.pack.id, token: S.pack.token, editToken: S.pack.editToken, role: 'owner', name: S.meta.name, code: S.meta.code, at: Date.now() });
+                openShare();
+            }, function () { formError(d.querySelector('[data-role="pack"]'), tx('api_network')); openDialog(d); });
+            return;
+        }
         if (S.pack) {
             var owner = S.pack.role === 'owner';
             pk.querySelector('[data-role="pack-lead"]').textContent = tx(owner ? 'share_pack_owner' : 'share_pack_editor');
@@ -1353,7 +1398,15 @@
         m.textContent = '';
         var local = loadLocalSummary();
         var items = [];
-        local.forEach(function (l) { items.push([l.code.toUpperCase() + ' · ' + (l.name || l.code), tx('mode_local'), PAGE + '?local=' + l.code, !S.pack && S.meta.code === l.code]); });
+        var mineCodes = {};
+        MINE.forEach(function (p) {
+            mineCodes[p.code] = true;
+            items.push([(p.code || '').toUpperCase() + ' · ' + (p.name || p.code), tx('mode_account'), PAGE + '?compte=' + encodeURIComponent(p.id), !!(S.pack && S.pack.account && S.pack.id === p.id)]);
+        });
+        local.forEach(function (l) {
+            if (ACCOUNT && mineCodes[l.code]) { return; }
+            items.push([l.code.toUpperCase() + ' · ' + (l.name || l.code), tx('mode_local'), PAGE + '?local=' + l.code, !S.pack && S.meta.code === l.code]);
+        });
         myPacks().forEach(function (p) {
             items.push([(p.code || '').toUpperCase() + ' · ' + (p.name || p.id), p.role === 'owner' ? tx('mode_pack_owner') : tx('mode_pack_editor'), PAGE + '/p/' + p.id + '#' + (p.role === 'owner' ? 'o' : 'k') + '=' + p.token, S.pack && S.pack.id === p.id]);
         });
@@ -1478,6 +1531,16 @@
         var ul = $('tw-mypacks');
         ul.textContent = '';
         var local = loadLocalSummary();
+        var mineCodes = {};
+        MINE.forEach(function (p) {
+            mineCodes[p.code] = true;
+            var li = el('li');
+            var a = el('a');
+            a.href = PAGE + '?compte=' + encodeURIComponent(p.id);
+            a.textContent = (p.code || '').toUpperCase() + ' · ' + (p.name || p.code) + ' — ' + tx('mode_account');
+            li.appendChild(a);
+            ul.appendChild(li);
+        });
         myPacks().forEach(function (p) {
             var li = el('li');
             var a = el('a');
@@ -1487,6 +1550,7 @@
             ul.appendChild(li);
         });
         local.forEach(function (l) {
+            if (ACCOUNT && mineCodes[l.code]) { return; }
             var li = el('li');
             var a = el('a');
             a.href = PAGE + '?local=' + l.code;
@@ -1506,6 +1570,16 @@
         var saved = loadLocal(code);
         if (saved) { setTranslations(saved.tr); }
         S.meta = { code: code, name: f.name.value.trim(), game: (saved && saved.meta && saved.meta.game) || GAME_BY_CODE[code] || '', author: (saved && saved.meta && saved.meta.author) || '' };
+        if (ACCOUNT) {
+            ensureAccount().catch(function () {
+                S.pack = null;
+                saveLocal();
+                history.replaceState(null, '', PAGE + '?local=' + code);
+                showWorkspace();
+                setSync(tx('account_unavailable'), 'bad');
+            });
+            return;
+        }
         saveLocal();
         history.replaceState(null, '', PAGE + '?local=' + code);
         showWorkspace();
@@ -1537,9 +1611,12 @@
             var saved = myPacks().filter(function (x) { return x.id === S.pack.id; })[0] || {};
             if (S.pack.role === 'editor') { S.pack.editToken = S.pack.token; }
             else if (saved.editToken) { S.pack.editToken = saved.editToken; }
-            rememberPack({ id: S.pack.id, token: S.pack.token, editToken: S.pack.editToken, role: S.pack.role, name: S.meta.name, code: S.meta.code, at: Date.now() });
+            if (!S.pack.account) {
+                rememberPack({ id: S.pack.id, token: S.pack.token, editToken: S.pack.editToken, role: S.pack.role, name: S.meta.name, code: S.meta.code, at: Date.now() });
+            }
             showWorkspace();
-            setSync(tx('synced', { when: ago(Date.now() / 1000) }), 'ok');
+            setSync(S.pack.account ? tx('saved_account') : tx('synced', { when: ago(Date.now() / 1000) }), 'ok');
+            if (S.pack.account) { saveLocal(); }
             if (!silent && !workshopBanner() && !S.pseudo) { showBanner(tx('pseudo_hint'), '', [[tx('pseudo_set'), openSettings]]); }
             pollTimer = setTimeout(poll, POLL_MS);
         }, function () { setSync(tx('api_network'), 'bad'); });
@@ -1575,12 +1652,119 @@
         if (window.matchMedia && window.matchMedia('(max-width: 899px)').matches) { $('tw-fold').open = false; }
     }
 
+    function isWholeSentence(fr) {
+        var t = String(fr || '').trim();
+        if (!t || /^["'<]/.test(t) || t.indexOf('class=') >= 0) { return false; }
+        if (t.length >= 80) { return true; }
+        var n = t.split(/\s+/).length;
+        if (n >= 8 && t.length >= 45) { return true; }
+        if (n >= 6 && /[.!?…:]$/.test(t)) { return true; }
+        return false;
+    }
+    function attachAround(entries) {
+        entries.forEach(function (e, i) {
+            e.around = [];
+            if (isWholeSentence(e.fr)) { return; }
+            [entries[i - 1], entries[i + 1]].forEach(function (n) {
+                if (!n) { return; }
+                var same = e.file ? n.file === e.file : n.cat === e.cat;
+                if (!same) { return; }
+                var line = String(n.fr || '').trim();
+                if (!line || line === String(e.fr).trim() || line.length > 180) { return; }
+                e.around.push(line.length > 140 ? line.slice(0, 139) + '…' : line);
+            });
+        });
+    }
+
+    function upsertMine(p) {
+        MINE = MINE.filter(function (x) { return x.id !== p.id && x.code !== p.code; });
+        MINE.unshift(p);
+    }
+    function openAccount(id) {
+        S.pack = newPackState(id, '', 'owner');
+        S.pack.account = true;
+        history.replaceState(null, '', PAGE + '?compte=' + encodeURIComponent(id));
+        return openPack(true).then(function () {
+            if (!S.pack || !validCode(S.meta.code)) { return; }
+            var saved = loadLocal(S.meta.code);
+            if (!saved || !saved.tr) { return; }
+            var missing = {};
+            Object.keys(saved.tr).forEach(function (h) { if (saved.tr[h] && !S.tr[h]) { missing[h] = saved.tr[h]; } });
+            if (!Object.keys(missing).length) { return; }
+            return uploadAll(missing, false).then(function () { return openPack(true); });
+        });
+    }
+    function ensureAccount() {
+        return accountFetch('POST', { code: S.meta.code, name: S.meta.name, game: S.meta.game, author_label: S.meta.author }).then(function (j) {
+            if (!j.ok) { throw new Error(apiError(j)); }
+            var localTr = {};
+            Object.keys(S.tr).forEach(function (h) { if (S.tr[h]) { localTr[h] = S.tr[h]; } });
+            S.pack = newPackState(j.public_id, j.owner_token || '', 'owner');
+            S.pack.account = true;
+            if (j.edit_token) { S.pack.editToken = j.edit_token; }
+            upsertMine({ id: j.public_id, code: S.meta.code, name: S.meta.name });
+            history.replaceState(null, '', PAGE + '?compte=' + encodeURIComponent(j.public_id));
+            if (j.resumed) {
+                return openPack(true).then(function () {
+                    if (!S.pack) { return; }
+                    var missing = {};
+                    Object.keys(localTr).forEach(function (h) { if (localTr[h] && !S.tr[h]) { missing[h] = localTr[h]; } });
+                    if (!Object.keys(missing).length) { return; }
+                    return uploadAll(missing, false).then(function () { return openPack(true); });
+                });
+            }
+            if (Object.keys(localTr).length) {
+                return uploadAll(localTr, true).then(function () { return openPack(true); });
+            }
+            showWorkspace();
+            setSync(tx('saved_account'), 'ok');
+            saveLocal();
+        });
+    }
+    function bootLocal() {
+        var q = new URLSearchParams(window.location.search);
+        var code = q.get('local') || (q.get('new') ? '' : storageGet(STORE2 + 'last') || storageGet('comspec-atakt:v1:last') || '');
+        var saved2 = validCode(code) ? loadLocal(code) : null;
+        if (saved2) {
+            S.meta = { code: code, name: (saved2.meta && saved2.meta.name) || '', game: (saved2.meta && saved2.meta.game) || '', author: (saved2.meta && saved2.meta.author) || '' };
+            setTranslations(saved2.tr);
+            if (ACCOUNT && !q.get('new')) {
+                ensureAccount().catch(function () {
+                    S.pack = null;
+                    showWorkspace();
+                    setSync(tx('saved_local'), 'ok');
+                });
+                return;
+            }
+            showWorkspace();
+            setSync(tx('saved_local'), 'ok');
+        } else {
+            showSetup();
+        }
+    }
+    function bootAccount() {
+        var q = new URLSearchParams(window.location.search);
+        if (q.get('new')) { showSetup(); return; }
+        var compte = q.get('compte') || '';
+        if (compte && MINE.some(function (p) { return p.id === compte; })) { openAccount(compte); return; }
+        var code = q.get('local') || '';
+        if (validCode(code)) {
+            var mine = MINE.filter(function (p) { return p.code === code; })[0];
+            if (mine) { openAccount(mine.id); return; }
+            bootLocal();
+            return;
+        }
+        if (MINE.length) { openAccount(MINE[0].id); return; }
+        bootLocal();
+    }
+
     function start(data) {
         S.cats = data.categories || {};
         S.stringtable = Array.isArray(data.stringtable) ? data.stringtable : [];
         S.entries = (data.entries || []).filter(function (e) { return Array.isArray(e) && typeof e[0] === 'string'; }).map(function (e, i) {
             return { i: i, h: e[0], fr: e[1], en: e[2] || '', cat: e[3] || 'other', file: e[4] || '', norm: fold(e[1] + '\n' + (e[2] || '')) };
         });
+        attachAround(S.entries);
         S.entries.forEach(function (e) { S.byH[e.h] = e; S.byFr[e.fr] = e; });
         if (data.version) { S.version = data.version; }
         bind();
@@ -1591,22 +1775,27 @@
             var saved = myPacks().filter(function (x) { return x.id === packId; })[0];
             var token = hm ? hm[2] : (saved ? saved.token : '');
             var role = hm ? (hm[1] === 'o' ? 'owner' : 'editor') : (saved ? saved.role : 'editor');
-            if (!token) { showSetup(); var er = $('tw-join-error'); er.textContent = tx('join_missing_key'); er.hidden = false; return; }
+            if (!token) {
+                if (ACCOUNT) {
+                    S.pack = newPackState(packId, '', 'owner');
+                    S.pack.account = true;
+                    openPack(false);
+                    return;
+                }
+                showSetup(); var er = $('tw-join-error'); er.textContent = tx('join_missing_key'); er.hidden = false; return;
+            }
             S.pack = newPackState(packId, token, role);
             openPack(false);
             return;
         }
-        var q = new URLSearchParams(window.location.search);
-        var code = q.get('local') || (q.get('new') ? '' : storageGet(STORE2 + 'last') || storageGet('comspec-atakt:v1:last') || '');
-        var saved2 = validCode(code) ? loadLocal(code) : null;
-        if (saved2) {
-            S.meta = { code: code, name: (saved2.meta && saved2.meta.name) || '', game: (saved2.meta && saved2.meta.game) || '', author: (saved2.meta && saved2.meta.author) || '' };
-            setTranslations(saved2.tr);
-            showWorkspace();
-            setSync(tx('saved_local'), 'ok');
-        } else {
-            showSetup();
+        if (ACCOUNT) {
+            accountFetch('GET').then(function (j) {
+                MINE = (j && j.ok && Array.isArray(j.packs)) ? j.packs : [];
+                bootAccount();
+            }, function () { bootLocal(); });
+            return;
         }
+        bootLocal();
     }
 
     // ---------- Téléchargement ----------
@@ -1730,7 +1919,7 @@
             people: S.pack ? (S.pack.people || []).map(function (p) { return p.name; }).slice(0, 12).join(', ') : '',
         };
         // Description Workshop toujours en anglais (public de Steam), quelle que soit la langue de la page.
-        o.desc = o.name + ' translation of the COMSPEC ATAK Native phone for Arma 3.';
+        o.desc = o.name + ' translation of the COMSPEC ATAK phone and the SSE mod for Arma 3.';
         setTimeout(function () {
             try {
                 var txt = buildTxt(S.entries, S.tr);

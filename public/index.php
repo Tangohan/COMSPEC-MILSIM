@@ -187,6 +187,18 @@ if ($isPublicAsset && !str_contains($requestPath, '..')) {
     exit;
 }
 
+// Ancien domaine athena.ttrd.fr : les pages affichent l'annonce du nouveau domaine (bouton vers la même page) ;
+// l'API et les fichiers restent servis tels quels pour les mods déjà installés.
+$domainMovedTarget = \App\Support\PortalHost::legacyNoticeTarget($_SERVER);
+if ($domainMovedTarget !== null) {
+    http_response_code(200);
+    header('Content-Type: text/html; charset=utf-8');
+    header('Cache-Control: no-store');
+    header('X-Robots-Tag: noindex');
+    require $root . '/views/errors/domain_moved.php';
+    exit;
+}
+
 $maintenanceSkipped = \App\Support\MaintenanceGuard::isInfrastructurePath($requestPath);
 if (!$maintenanceSkipped) {
     $legacyMaintenanceFile = $root . '/storage/maintenance.json';
