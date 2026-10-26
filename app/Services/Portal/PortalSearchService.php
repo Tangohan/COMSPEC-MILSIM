@@ -64,7 +64,7 @@ final class PortalSearchService
         $wantTraining = $scopes['training'] ?? true;
         $wantCommands = $scopes['commands'] ?? true;
 
-        $commands = $wantCommands ? $this->filterCommands($raw) : [];
+        $commands = $wantCommands ? $this->filterCommands($raw, $gate) : [];
 
         if (mb_strlen($raw) < self::MIN_QUERY_LEN) {
             return [
@@ -227,8 +227,9 @@ final class PortalSearchService
     /**
      * @return list<array{title: string, subtitle: string, href: string}>
      */
-    public function filterCommands(string $raw): array
+    public function filterCommands(string $raw, ?Gate $gate = null): array
     {
+        $staffBo = $gate !== null && ($gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('admin.system'));
         $all = [
             ['title' => 'Hub des communautés', 'subtitle' => 'Comparer, recommander, bourse aux coopérations', 'href' => url('hub'), 'keywords' => 'hub centre commandement communautés comparer classement statistiques recommander avis bourse coopération inter-team'],
             ['title' => 'Bourse aux coopérations', 'subtitle' => 'Besoins ouverts entre communautés', 'href' => url('hub/bourse'), 'keywords' => 'bourse coopération inter-team renfort opfor partenaire besoin'],
@@ -243,7 +244,46 @@ final class PortalSearchService
             ['title' => 'Poste de commandement', 'subtitle' => 'Modes ATAK et terrain', 'href' => url('c2'), 'keywords' => 'c2 poste commandement atak'],
             ['title' => 'Salle de guerre', 'subtitle' => 'Briefing collectif', 'href' => url('salle-de-guerre'), 'keywords' => 'salle guerre'],
             ['title' => 'Guide intégré', 'subtitle' => 'Aide et documentation du portail', 'href' => url('documentation'), 'keywords' => 'guide documentation aide'],
+            ['title' => 'Mes formations', 'subtitle' => 'Parcours en cours et terminés', 'href' => url('formations/mes-formations'), 'keywords' => 'mes formations parcours progression cours lms'],
+            ['title' => 'Tableau de bord', 'subtitle' => 'Synthèse du jour', 'href' => url('dashboard'), 'keywords' => 'tableau de bord dashboard accueil synthèse'],
+            ['title' => 'Messagerie', 'subtitle' => 'Échanges avec l’encadrement', 'href' => url('messages'), 'keywords' => 'messages messagerie encadrement conversation'],
+            ['title' => 'Courrier officiel', 'subtitle' => 'Notes, ordres et documents signés', 'href' => url('courrier'), 'keywords' => 'courrier officiel notes ordres signature', 'perm' => 'courrier.view'],
+            ['title' => 'Calendrier des opérations', 'subtitle' => 'Événements et inscriptions', 'href' => url('evenements'), 'keywords' => 'calendrier événements opérations agenda inscription rsvp'],
+            ['title' => 'Opérations', 'subtitle' => 'Espaces de mission et ordres', 'href' => url('operations'), 'keywords' => 'opérations mission ordres plan'],
+            ['title' => 'Annuaire du personnel', 'subtitle' => 'Membres, grades et unités', 'href' => url('personnel'), 'keywords' => 'annuaire personnel membres effectifs grades'],
+            ['title' => 'Organigramme', 'subtitle' => 'ORBAT de la communauté', 'href' => url('orbat'), 'keywords' => 'orbat organigramme structure unités chaîne commandement'],
+            ['title' => 'Mon espace RH', 'subtitle' => 'Absences, mobilité, documents', 'href' => url('personnel/mon-espace-rh'), 'keywords' => 'espace rh absences mobilité documents élévation'],
+            ['title' => 'Distinctions', 'subtitle' => 'Décorations et rubans', 'href' => url('distinctions'), 'keywords' => 'distinctions décorations médailles rubans'],
+            ['title' => 'Équipement', 'subtitle' => 'Fiches matériel et tenues', 'href' => url('equipment'), 'keywords' => 'équipement matériel armes tenues arsenal'],
+            ['title' => 'Overwatch', 'subtitle' => 'Mod et suivi en jeu (OVL)', 'href' => url('overwatch'), 'keywords' => 'overwatch ovl mod jeu arma suivi'],
+            ['title' => 'Tacmap', 'subtitle' => 'Carte tactique en direct', 'href' => url('tacmap'), 'keywords' => 'tacmap carte tactique atak direct'],
+            ['title' => 'Installer le mod (Steam)', 'subtitle' => 'Mod Athena sur le Steam Workshop', 'href' => url('atak/mod'), 'keywords' => 'mod steam workshop installer overwatch ovl modpack arma'],
+            ['title' => 'Liaison ATAK', 'subtitle' => 'Lier son téléphone ou sa tablette', 'href' => url('atak/liaison'), 'keywords' => 'liaison atak téléphone tablette appairer'],
+            ['title' => 'Renseignement (SSE)', 'subtitle' => 'Fiches, dossiers et rapports', 'href' => url('atak/sse'), 'keywords' => 'renseignement sse fiches dossiers rapports cr intel'],
+            ['title' => 'Pointage', 'subtitle' => 'Présence aux sessions', 'href' => url('pointage'), 'keywords' => 'pointage présence session heures'],
+            ['title' => 'Mon intégration', 'subtitle' => 'Étapes de mon arrivée', 'href' => url('mon-integration'), 'keywords' => 'intégration arrivée parcours accueil'],
+            ['title' => 'Soutenir Athena', 'subtitle' => 'Faire un don, mur des donateurs', 'href' => url('soutenir-atak'), 'keywords' => 'soutenir don donateur paypal stripe'],
+            ['title' => 'Mon compte', 'subtitle' => 'Profil, sécurité et préférences', 'href' => url('account'), 'keywords' => 'compte profil sécurité mot de passe préférences'],
+            // Espace personnel du back-office (carnet de vol) : réservé au personnel qui y a accès.
+            ['title' => 'Mon carnet de vol', 'subtitle' => 'Vols, heures et contreseing instructeur', 'href' => url('back-office/ma-situation/carnet-de-vol'), 'keywords' => 'carnet vol logbook pilote heures de vol', 'ok' => $staffBo],
+            ['title' => 'Heures de jeu (OVL)', 'subtitle' => 'Heures Overwatch par joueur', 'href' => url('back-office/atak/heures'), 'keywords' => 'heures ovl overwatch temps de jeu heures de vol playtime', 'ok' => $staffBo],
+            ['title' => 'CR des joueurs (fin d’op)', 'subtitle' => 'Suivi des comptes rendus imposés', 'href' => url('back-office/atak/suivi-cr'), 'keywords' => 'cr compte rendu fin opération debrief suivi', 'ok' => $staffBo],
+            ['title' => 'Comptes rendus', 'subtitle' => 'Après-action (AAR)', 'href' => url('back-office/atak/comptes-rendus'), 'keywords' => 'cr compte rendu aar après-action debriefing', 'ok' => $staffBo],
         ];
+        // Mêmes règles que les menus : droits explicites, type de communauté et règles de navigation.
+        $all = array_values(array_filter($all, static function (array $row) use ($gate): bool {
+            if (array_key_exists('ok', $row) && !$row['ok']) {
+                return false;
+            }
+            if (!empty($row['perm']) && ($gate === null || !$gate->allows((string) $row['perm']))) {
+                return false;
+            }
+            if (function_exists('portal_nav_href_permission_allowed') && !portal_nav_href_permission_allowed((string) $row['href'])) {
+                return false;
+            }
+
+            return true;
+        }));
         $all = array_values(array_filter($all, static fn ($row): bool => is_array($row)));
 
         $needle = mb_strtolower(trim($raw));
