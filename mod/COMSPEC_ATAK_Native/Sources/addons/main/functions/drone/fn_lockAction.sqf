@@ -172,13 +172,14 @@ private _tagOf = {
 private _dropMarker = {
     params ["_e"];
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-    private _keys = ["markerAff", "markerType", "markerColor", "markerEditAfter"];
+    private _keys = ["markerAff", "markerType", "markerColor", "markerEditAfter", "markerText"];
     private _old = _keys apply { _s getOrDefault [_x, "§"] };
     private _aff = ["u", "o", "b"] select (["INCONNU", "ENNEMI", "AMI"] find (_e get "tag"));
     _s set ["markerAff", _aff];
     _s set ["markerType", format ["%1_%2", _aff, ["motor_inf", "inf"] select ((_e get "obj") isKindOf "CAManBase")]];
     _s set ["markerColor", "AUTO"];
     _s set ["markerEditAfter", false];
+    _s set ["markerText", ""];
     private _m = [_e get "pos"] call comspec_atak_native_fnc_markerDrop;
     { if ((_old select _forEachIndex) isEqualTo "§") then { _s deleteAt _x; } else { _s set [_x, _old select _forEachIndex]; }; } forEach _keys;
     if (_m isNotEqualTo "") then {
@@ -292,7 +293,7 @@ switch (_act) do {
             private _live = _state isEqualTo "TRACK" && {!isNull _o};
             private _p = [_y get "pos", getPosASLVisual _o] select _live;
             [[objNull, _o] select _live, _p, switch (_state) do { case "TRACK": { [0.95, 0.25, 0.2, 1] }; case "DOWN": { [0.36, 0.78, 0.42, 1] }; default { [0.7, 0.72, 0.7, 0.7] }; },
-                format ["LOCK_%1 %2m%3", [_y get "num", 3] call CBA_fnc_formatNumber, round (_eye distance _p), ["", " PERDU", " NEUTR."] select ((["TRACK", "LOST", "DOWN"] find _state) max 0)]] call _box;
+                format ["LOCK_%1 %2m%3", [_y get "num", 3] call CBA_fnc_formatNumber, round (_eye distance _p), (["", " PERDU", " NEUTR."] select ((["TRACK", "LOST", "DOWN"] find _state) max 0)) call comspec_atak_native_fnc_tr]] call _box;
         } forEach _locks;
         if (diag_tickTime >= (_st getOrDefault ["lockNext", 0])) then {
             _st set ["lockNext", diag_tickTime + 0.25];

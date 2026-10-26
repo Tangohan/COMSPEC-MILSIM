@@ -7,6 +7,7 @@
                   COMSPEC_ATAK_VehicleKit est installé, "off" aucun)
       "cp"      : à bord (toute place) ou à moins de 8 m d'un véhicule de son camp dont le poste de commandement
                   est déployé (fn_vehicleGateway)
+      "toc"     : à pied, à moins de 2,5 m d'un PC portable de TOC (fn_tocPost), joueur local seulement
     Params : [unité (player)]
 */
 params [["_u", player]];
@@ -20,6 +21,8 @@ private _crew = {
 private _cpOf = { params ["_o"]; !isNull _o && {alive _o} && {((_o getVariable ["COMSPEC_ATAK_Gateway", []]) param [0, ""]) isEqualTo "cp"} && {((_o getVariable ["COMSPEC_ATAK_Gateway", []]) param [1, ""]) isEqualTo str side group _u} };
 if (!isNull _v && {[_v] call _cpOf}) exitWith { "cp" };
 if (isNull _v && {((missionNamespace getVariable ["COMSPEC_ATAK_Gateways", []]) findIf { [_x] call _cpOf && {(_x distance _u) < 8} }) >= 0}) exitWith { "cp" };
+// PC de TOC : objet le plus proche cherché chaque seconde par fn_tocPost "tick" (rien de calculé ici, appel fréquent).
+if (isNull _v && {_u isEqualTo player} && {!isNull (["near"] call comspec_atak_native_fnc_tocPost)}) exitWith { "toc" };
 if (isNull _v || {!alive _v} || {unitIsUAV _v}) exitWith { "" };
 if (_v isKindOf "Air") exitWith {
     ["", "air"] select ((missionNamespace getVariable ["comspec_atak_native_aircrew", true]) && {[_v, _u] call _crew})

@@ -21,6 +21,8 @@
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d) exitWith { false };
+// Contrôles des effets en cours de création : fn_pageCtrl ne demande pas de les remonter (fn_overlayRaise).
+uiNamespace setVariable ["COMSPEC_ATAK_OvBuild", diag_frameNo];
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _rect = _l get "device";
@@ -288,8 +290,11 @@ if (_front) then { [] call comspec_atak_native_fnc_overlayFront; };
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", [_crack, _black, _txt, _block, _tint, _glitch, _shatter, _boot, _barBg, _bar, _bootTxt, _dead, _deadSig, _lines, _lineSig]];
 // Rayures, pixels morts, poussière, traces de doigts, sang et gouttes, par-dessus le reste (fn_screenSurface).
 [_hp] call comspec_atak_native_fnc_screenSurface;
+// Variantes de dégâts (fuite d'encre, rétroéclairage, arc-en-ciel de pression) et parasites du brouillage (fn_screenFx).
+[_hp] call comspec_atak_native_fnc_screenFx;
 // Effets du Zeus (verrou, écran qui bugue, surchauffe) par-dessus tout ; écran éteint : rien à montrer.
 if (([] call comspec_atak_native_fnc_zeusOverlay) && {!_off}) then { [] call comspec_atak_native_fnc_overlayFront; };
+uiNamespace setVariable ["COMSPEC_ATAK_OvBuild", -1];
 // Redémarrage terminé : on redessine la page.
 private _wasOff = uiNamespace getVariable ["COMSPEC_ATAK_DevWasOff", false];
 uiNamespace setVariable ["COMSPEC_ATAK_DevWasOff", _off];

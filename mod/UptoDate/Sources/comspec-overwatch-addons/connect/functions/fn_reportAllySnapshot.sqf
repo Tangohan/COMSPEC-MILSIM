@@ -19,8 +19,20 @@ if (_nidTrim isEqualTo "") exitWith { false };
 private _allyId = format ["ALLY-%1", (_nidTrim splitString ":") joinString "-"];
 private _lastKey = format ["COMSPEC_AllySnapLast_%1", _allyId];
 private _last = missionNamespace getVariable [_lastKey, -1e9];
-if ((diag_tickTime - _last) < 3) exitWith { false };
+private _dt = diag_tickTime - _last;
+if (_dt < 3) exitWith { false };
+// Seulement si l'IA a bougé (3 m) ou tourné (15°) depuis le dernier envoi ; sinon battement à 30 s.
+private _sigKey = format ["COMSPEC_AllySnapSig_%1", _allyId];
+private _sig = [
+    round (_px / 3),
+    round (_py / 3),
+    round (_asl / 3),
+    round (_dir / 15),
+    missionNamespace getVariable ["COMSPEC_TrackSigEpoch", 0]
+];
+if (_dt < 30 && {_sig isEqualTo (missionNamespace getVariable [_sigKey, []])}) exitWith { false };
 missionNamespace setVariable [_lastKey, diag_tickTime, false];
+missionNamespace setVariable [_sigKey, _sig, false];
 
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 private _extra = format [

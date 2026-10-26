@@ -58,21 +58,24 @@ private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
 
 if (!(_orders isEqualType [])) then { _orders = []; };
 
+// Ids d’ordre déjà en chaîne : str ajouterait des guillemets à chaque passage.
+private _fnc_idText = { params [["_v", ""]]; if (_v isEqualType "") then { trim _v } else { trim (str _v) } };
+
 private _dismissed = missionNamespace getVariable ["COMSPEC_OrdersDismissed", []];
 if (!(_dismissed isEqualType [])) then { _dismissed = []; };
-_dismissed = _dismissed apply { trim (str _x) };
+_dismissed = _dismissed apply { [_x] call _fnc_idText };
 missionNamespace setVariable ["COMSPEC_OrdersDismissed", _dismissed, false];
 
 private _legacy = missionNamespace getVariable ["COMSPEC_OrdersBeforeSession", []];
 if (!(_legacy isEqualType [])) then { _legacy = []; };
-_legacy = _legacy apply { trim (str _x) };
+_legacy = _legacy apply { [_x] call _fnc_idText };
 
 // Les ordres du poste sont une photo de la dernière lecture, pas une file qui s’empile.
 // On ne conserve localement que les ordres émis ici (source != "web").
 private _byId = createHashMap;
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    private _oid = trim (str (_x getOrDefault ["id", ""]));
+    private _oid = [_x getOrDefault ["id", ""]] call _fnc_idText;
     if (_oid isEqualTo "") then { continue };
     if (_oid in _legacy) then { continue };
     if (_oid in _dismissed) then { continue };
@@ -104,7 +107,7 @@ private _newOnes = [];
         if (_s isEqualTo "-") then { "" } else { _s };
     };
 
-    private _id = trim (str ([_cols select 0] call _unblank));
+    private _id = [[_cols select 0] call _unblank] call _fnc_idText;
     if (_id isEqualTo "") then { continue };
 
     if (!_primed) then {
@@ -218,7 +221,7 @@ if (!_primed) then {
         missionNamespace setVariable ["COMSPEC_OrdersPollBootstrapped", true, false];
         private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
         if (!(_seen isEqualType [])) then { _seen = []; };
-        _seen = _seen apply { trim (str _x) };
+        _seen = _seen apply { [_x] call _fnc_idText };
         { if (!(_x in _seen)) then { _seen pushBack _x; }; } forEach _legacy;
         if (count _seen > 80) then { _seen deleteRange [0, (count _seen) - 80]; };
         missionNamespace setVariable ["COMSPEC_OrdersSeen", _seen, false];
@@ -252,10 +255,10 @@ if (!_primed) then {
         if (!(_list isEqualType [])) exitWith {};
         private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
         if (!(_seen isEqualType [])) then { _seen = []; };
-        _seen = _seen apply { trim (str _x) };
+        _seen = _seen apply { [_x] call _fnc_idText };
         {
             if (!(_x isEqualType createHashMap)) then { continue };
-            private _nid = trim (str (_x getOrDefault ["id", ""]));
+            private _nid = [_x getOrDefault ["id", ""]] call _fnc_idText;
             if (_nid isNotEqualTo "" && {!(_nid in _seen)}) then { _seen pushBack _nid; };
         } forEach _list;
         if ((count _seen) > 80) then { _seen deleteRange [0, (count _seen) - 80]; };

@@ -7,7 +7,7 @@
 if (!isServer && {isMultiplayer}) exitWith {
     // Clients : ne pas créer la zone (isGlobal=1) ; nettoyer la logique locale si présente.
     private _maybeLogic = if (_this isEqualType []) then { _this param [0, objNull] } else { _this };
-    if (_maybeLogic isEqualType objNull && {!isNull _maybeLogic}) then {
+    if (_maybeLogic isEqualType objNull && {!isNull _maybeLogic} && {local _maybeLogic}) then {
         deleteVehicle _maybeLogic;
     };
     true

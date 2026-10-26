@@ -64,6 +64,12 @@ class RscTitles {
         idd=-1; duration=1e+011; fadein=0; fadeout=0;
         onLoad="[_this select 0, false] call comspec_atak_native_fnc_displayLoad";
     };
+    // Montre Garmin au poignet (fn_watch, touche Montre du jeu) : contrôles créés par le code.
+    class COMSPEC_RscTitleGarmin {
+        idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
+        onLoad="uiNamespace setVariable ['COMSPEC_ATAK_WatchDisplay', _this select 0]";
+        class controls {};
+    };
     // Mode photo : viseur plein écran, le joueur se déplace normalement.
     class COMSPEC_RscTitleCamera {
         idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;

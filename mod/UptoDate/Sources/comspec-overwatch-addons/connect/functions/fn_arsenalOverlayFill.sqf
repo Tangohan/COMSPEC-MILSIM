@@ -213,11 +213,11 @@ if (!isNull _list) then {
     _grp setVariable ["COMSPEC_ArsenalUiLock", false];
 };
 
-// Heure de chargement et nombre affiché.
+// Date de la liste du site gardée sur ce PC et nombre affiché.
 private _status = _grp getVariable ["COMSPEC_ArsenalStatus", controlNull];
 if (!isNull _status) then {
     _status ctrlSetStructuredText parseText (format ["<t align='right' size='0.78' color='#8fa596'>%1 · %2</t>",
-        if (_offline) then { format ["<t color='#e0a050'>%1</t>", ("Athena hors ligne") call comspec_overwatch_connect_fnc_tr] } else { format [("Chargé à %1") call comspec_overwatch_connect_fnc_tr, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] },
+        if (_offline) then { format ["<t color='#e0a050'>%1</t>", ("Athena hors ligne") call comspec_overwatch_connect_fnc_tr] } else { format [("Liste du site du %1") call comspec_overwatch_connect_fnc_tr, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] },
         format [("%1 affichée(s) sur %2") call comspec_overwatch_connect_fnc_tr, count _shown, count _rows]]);
 };
 

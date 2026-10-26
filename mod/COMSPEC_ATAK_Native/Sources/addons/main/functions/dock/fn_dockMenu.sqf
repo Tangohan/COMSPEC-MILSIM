@@ -42,17 +42,17 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 } else {
     private _add = {
         private _cond = "cursorObject isKindOf 'COMSPEC_ATAK_ChargingDock' && {(player distance cursorObject) < 3}";
-        player addAction ["<t color='#7fd0b0'>Socle : poser mon téléphone</t>", { ["put", [cursorObject, -1]] call comspec_atak_native_fnc_dockClient; }, nil, 1.4, false, true, "",
+        player addAction [format ["<t color='#7fd0b0'>%1</t>", "Socle : poser mon téléphone" call comspec_atak_native_fnc_tr], { ["put", [cursorObject, -1]] call comspec_atak_native_fnc_dockClient; }, nil, 1.4, false, true, "",
             _cond + " && {(['free', [cursorObject]] call comspec_atak_native_fnc_dockClient) >= 0} && {(['phone'] call comspec_atak_native_fnc_dockClient) isNotEqualTo ''}"];
-        player addAction ["<t color='#7fd0b0'>Socle : reprendre mon téléphone</t>", {
+        player addAction [format ["<t color='#7fd0b0'>%1</t>", "Socle : reprendre mon téléphone" call comspec_atak_native_fnc_tr], {
             private _uid = getPlayerUID player;
             private _i = (cursorObject getVariable ["COMSPEC_ATAK_DockSlots", []]) findIf { (count _x) > 3 && {(_x select 0) isEqualTo _uid} };
             if (_i >= 0) then { ["take", [cursorObject, _i]] call comspec_atak_native_fnc_dockClient; };
         }, nil, 1.39, false, true, "", _cond + " && {private _u = getPlayerUID player; ((cursorObject getVariable ['COMSPEC_ATAK_DockSlots', []]) findIf { (count _x) > 3 && {(_x select 0) isEqualTo _u} }) >= 0}"];
-        player addAction ["<t color='#7fd0b0'>Socle : état</t>", { ["status", [cursorObject]] call comspec_atak_native_fnc_dockClient; }, nil, 1.38, false, true, "", _cond];
-        player addAction ["<t color='#7fd0b0'>Socle : replier</t>", { ["pack", [cursorObject]] call comspec_atak_native_fnc_dockClient; }, nil, 1.37, false, true, "",
+        player addAction [format ["<t color='#7fd0b0'>%1</t>", "Socle : état" call comspec_atak_native_fnc_tr], { ["status", [cursorObject]] call comspec_atak_native_fnc_dockClient; }, nil, 1.38, false, true, "", _cond];
+        player addAction [format ["<t color='#7fd0b0'>%1</t>", "Socle : replier" call comspec_atak_native_fnc_tr], { ["pack", [cursorObject]] call comspec_atak_native_fnc_dockClient; }, nil, 1.37, false, true, "",
             _cond + " && {cursorObject getVariable ['COMSPEC_ATAK_DockKit', false]} && {((cursorObject getVariable ['COMSPEC_ATAK_DockSlots', []]) findIf { (count _x) > 0 }) < 0}"];
-        player addAction ["<t color='#7fd0b0'>Poser le socle de recharge</t>", { ["deploy"] call comspec_atak_native_fnc_dockClient; }, nil, 1.36, false, true, "",
+        player addAction [format ["<t color='#7fd0b0'>%1</t>", "Poser le socle de recharge" call comspec_atak_native_fnc_tr], { ["deploy"] call comspec_atak_native_fnc_dockClient; }, nil, 1.36, false, true, "",
             "'COMSPEC_ATAK_DockKit' in (items player) && {isNull objectParent player}"];
     };
     call _add;

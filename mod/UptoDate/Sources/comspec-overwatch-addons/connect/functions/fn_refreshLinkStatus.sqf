@@ -28,7 +28,8 @@ _key = trim _key;
 missionNamespace setVariable ["COMSPEC_LinkState", "connecting", false];
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 
-private _raw = ["COMSPECExtension" callExtension ["GetClientIp", []]] call comspec_overwatch_connect_fnc_extResult;
+// extAwait : asynchrone quand l'appelant est en spawn (requête HTTP synchrone dans la DLL), appel direct sinon.
+private _raw = [["COMSPECExtension", "GetClientIp", []] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _raw };

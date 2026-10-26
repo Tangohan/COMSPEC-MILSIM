@@ -40,6 +40,29 @@ private _poly = {
     private _dOff = (5 + _wPx) * _mpx;
     private _on = true;
     private _ph = 0;
+    // Tirets : seule la partie visible (rectangle de la carte + marge) est découpée, et au plus ~120 tirets par
+    // segment (tirets allongés au-delà) : le coût ne croît plus avec le zoom.
+    private _vx0 = 0; private _vx1 = 0; private _vy0 = 0; private _vy1 = 0;
+    private _sk = 1;
+    if (_dashed) then {
+        (ctrlPosition _map) params ["_cx", "_cy", "_cw", "_ch"];
+        private _tl = _map ctrlMapScreenToWorld [_cx, _cy];
+        private _br = _map ctrlMapScreenToWorld [_cx + _cw, _cy + _ch];
+        private _mg = 40 * _mpx;
+        _vx0 = ((_tl select 0) min (_br select 0)) - _mg;
+        _vx1 = ((_tl select 0) max (_br select 0)) + _mg;
+        _vy0 = ((_tl select 1) min (_br select 1)) - _mg;
+        _vy1 = ((_tl select 1) max (_br select 1)) + _mg;
+        // Allongement fixé par la vue (pas par segment) : motif ancré au monde, il ne glisse pas quand on déplace la carte.
+        _sk = (((_tl distance2D _br) + 3 * _mg) / ((_dOn + _dOff) * 120)) max 1;
+    };
+    // Avance le motif de _d mètres sans dessiner (parties découpées hors vue).
+    private _adv = {
+        params ["_d"];
+        private _per = (_dOn + _dOff) * _sk;
+        private _pos = (([_dOn * _sk, 0] select _on) + _ph + _d) mod _per;
+        if (_pos < _dOn * _sk) then { _on = true; _ph = _pos; } else { _on = false; _ph = _pos - _dOn * _sk; };
+    };
     for "_i" from 0 to ((count _pts) - 2) do {
         private _p = _pts select _i;
         private _q = _pts select (_i + 1);
@@ -47,18 +70,39 @@ private _poly = {
             [_p, _q, _hw, _c, _mpx] call _seg;
             if (_wPx >= 2 && {_i > 0}) then { _map drawEllipse [_p, _hw, _hw, 0, _c, _tex]; };
         } else {
+            // Découpe du segment au rectangle visible (Liang-Barsky).
+            private _dx = (_q select 0) - (_p select 0);
+            private _dy = (_q select 1) - (_p select 1);
+            private _u0 = 0; private _u1 = 1;
+            {
+                _x params ["_pp", "_qq"];
+                if ((abs _pp) < 1e-6) then {
+                    if (_qq < 0) then { _u0 = 2; };
+                } else {
+                    private _rt = _qq / _pp;
+                    if (_pp < 0) then { _u0 = _u0 max _rt; } else { _u1 = _u1 min _rt; };
+                };
+            } forEach [[-_dx, (_p select 0) - _vx0], [_dx, _vx1 - (_p select 0)], [-_dy, (_p select 1) - _vy0], [_dy, _vy1 - (_p select 1)]];
+            private _full = _p distance2D _q;
+            if (_u0 >= _u1) then { [_full] call _adv; continue };
+            if (_u0 > 0) then { [_u0 * _full] call _adv; };
+            private _vd = _q vectorDiff _p;
+            _q = _p vectorAdd (_vd vectorMultiply _u1);
+            _p = _p vectorAdd (_vd vectorMultiply _u0);
             private _len = _p distance2D _q;
-            if (_len < 0.01) then { continue };
+            if (_len < 0.01) then { [(1 - _u0) * _full] call _adv; continue };
             private _u = (_q vectorDiff _p) vectorMultiply (1 / _len);
             private _t = 0;
             while { _t < _len } do {
                 private _cur = [_dOff, _dOn] select _on;
-                private _step = (_cur - _ph) min (_len - _t);
+                _cur = _cur * _sk;
+                private _step = ((_cur - _ph) max 0) min (_len - _t);
                 if (_on) then { [_p vectorAdd (_u vectorMultiply _t), _p vectorAdd (_u vectorMultiply (_t + _step)), _hw, _c, _mpx] call _seg; };
                 _t = _t + _step;
                 _ph = _ph + _step;
                 if (_ph >= _cur - 0.001) then { _ph = 0; _on = !_on; };
             };
+            if (_u1 < 1) then { [(1 - _u1) * _full] call _adv; };
         };
     };
 };

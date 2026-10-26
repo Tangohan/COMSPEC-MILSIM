@@ -15,7 +15,8 @@ if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapF
     if ((count _fwLast) isEqualTo 2 && {ctrlMapAnimDone _map} && {diag_tickTime - (_map getVariable ["comspec_centerAt", -1]) > 0.6}) then {
         (ctrlPosition _map) params ["_fwX", "_fwY", "_fwW", "_fwH"];
         private _fwVis = _map ctrlMapScreenToWorld [_fwX + _fwW / 2, _fwY + _fwH / 2];
-        private _fwPos = getPosASL (vehicle player);
+        // Position GPS affichée (fn_gpsPos) : la carte suit mon point et ses anneaux, pas ma position exacte.
+        private _fwPos = [] call comspec_atak_native_fnc_gpsPos;
         private _fwDx = (_fwPos select 0) - (_fwVis select 0);
         private _fwDy = (_fwPos select 1) - (_fwVis select 1);
         if ((abs _fwDx) + (abs _fwDy) > 0.25) then {
@@ -171,8 +172,18 @@ if ((count _route) > 0) then {
         _map drawRectangle [[((_a select 0) + (_b select 0)) / 2, ((_a select 1) + (_b select 1)) / 2], _w, _len / 2 + _w * 0.6, _a getDir _b, _c, _tex];
     };
     private _proj = _route getOrDefault ["proj", _pts select 0];
+    // Tronçons hors de la vue sautés (route de plusieurs km : des centaines de tronçons redessinés à chaque image).
+    (ctrlPosition _map) params ["_rcx", "_rcy", "_rcw", "_rch"];
+    private _rtl = _map ctrlMapScreenToWorld [_rcx, _rcy];
+    private _rbr = _map ctrlMapScreenToWorld [_rcx + _rcw, _rcy + _rch];
+    private _rmg = _mpu * 2;
+    private _rx0 = ((_rtl select 0) min (_rbr select 0)) - _rmg;
+    private _rx1 = ((_rtl select 0) max (_rbr select 0)) + _rmg;
+    private _ry0 = ((_rtl select 1) min (_rbr select 1)) - _rmg;
+    private _ry1 = ((_rtl select 1) max (_rbr select 1)) + _rmg;
     for "_i" from 0 to ((count _pts) - 2) do {
         private _a = _pts select _i; private _b = _pts select (_i + 1);
+        if ((((_a select 0) max (_b select 0)) < _rx0) || {((_a select 0) min (_b select 0)) > _rx1} || {((_a select 1) max (_b select 1)) < _ry0} || {((_a select 1) min (_b select 1)) > _ry1}) then { continue };
         private _past = _i < _idx;
         if (_i isEqualTo _idx) then {
             [_a, _proj, _mpu, [0.45, 0.48, 0.50, 0.75]] call _seg;
@@ -206,6 +217,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
 
 // Guerre électronique et GPS naturel (fn_gpsFix) : position affichée avec l'erreur GPS, pistes BFT dégradées.
 ([] call comspec_atak_native_fnc_ewEffects) params ["", "_ewBft", "", "", "", "_ewOff"];
+private _selfGps = (getPosASLVisual player) vectorAdd [_ewOff select 0, _ewOff select 1, 0];
+_selfGps set [2, 0];
+uiNamespace setVariable ["COMSPEC_ATAK_SelfGpsPos", _selfGps];
 private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
 // Terminal compromis (fn_compromiseView) : flux BFT coupé, seule ma position GPS reste en direct (pistes figées dessinées à la fin).
 private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
@@ -214,29 +228,45 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
     private _pos = _entity getOrDefault ["position",[]];
     if ((count _pos) < 2) then { continue };
     if (_compSkip && {!(_entity getOrDefault ["self", false])}) then { continue };
-    ([_entity] call comspec_atak_native_fnc_symbology) params ["_icon","_color"];
+    private _self = _entity getOrDefault ["self",false];
+    // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s dans la piste (« drawCache ») : refaits à
+    // chaque image et pour chaque unité avant, alors qu'ils ne changent qu'avec la table des unités.
+    private _dc = _entity getOrDefault ["drawCache", []];
+    if ((count _dc) < 7 || {diag_tickTime > (_dc select 0)} || {(_dc select 6) isNotEqualTo _nato}) then {
+        ([_entity] call comspec_atak_native_fnc_symbology) params ["_sIcon","_sColor"];
+        private _ci = "";
+        private _custom = _entity getOrDefault ["icon",""];
+        if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
+            _ci = _mkIconCache getOrDefault ["~" + _custom, "§"];
+            if (_ci isEqualTo "§") then { _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon"); _mkIconCache set ["~" + _custom, _ci]; };
+        };
+        private _nt = ""; private _ne = "";
+        if (_nato && {!_self}) then { ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt0", "_ne0"]; _nt = _nt0; _ne = _ne0; };
+        _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _nato];
+        _entity set ["drawCache", _dc];
+    };
+    private _icon = _dc select 1;
+    private _color = +(_dc select 2);
     private _freshness = _entity getOrDefault ["freshness","LIVE"];
     if (_freshness isEqualTo "STALE") then { _color set [3,0.65]; };
     if (_freshness in ["LOST","OFFLINE"]) then { _color set [3,0.3]; };
-    private _self = _entity getOrDefault ["self",false];
     private _size = ([16, 21] select (_x isEqualTo _selected || _self)) * _k * _is;
     if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
     if (_self) then { _color = +_selfRgb; };
-    if (_self && {(_ewOff select 0) != 0 || {(_ewOff select 1) != 0}}) then { _pos = [(_pos select 0) + (_ewOff select 0), (_pos select 1) + (_ewOff select 1), 0]; };
+    // Moi : position GPS affichée (vraie position à l'image près + erreur GPS simulée), la même pour l'icône, les anneaux
+    // d'équipe et de sélection, le cartouche et le trait de distance (avant : anneaux et trait restaient sur la vraie position).
+    if (_self) then { _pos = _selfGps; };
     if (_ewBft && {!_self}) then { _color set [3, ((_color select 3) min 0.65) * 0.5]; };
     private _dir = _entity getOrDefault ["heading",0];
-    private _custom = _entity getOrDefault ["icon",""];
-    if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
-        private _ci = _mkIconCache getOrDefault ["~" + _custom, "§"];
-        if (_ci isEqualTo "§") then { _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon"); _mkIconCache set ["~" + _custom, _ci]; };
-        if (_ci isNotEqualTo "") then { _icon = _ci; _dir = 0; };
-    };
+    if ((_dc select 3) isNotEqualTo "") then { _icon = _dc select 3; _dir = 0; };
+    // Fraîcheur gardée après la palette ami / moi (qui remet l'alpha à 1) : piste figée ou perdue toujours estompée.
+    if (_freshness isEqualTo "STALE") then { _color set [3, (_color select 3) min 0.65]; };
+    if (_freshness in ["LOST","OFFLINE"]) then { _color set [3, (_color select 3) min 0.3]; };
     // Réglages > Carte « Icônes des unités » OTAN : cadre + modificateur MIL-STD-2525 / APP-6 (moi : inchangé),
     // non orienté, un peu plus grand que le point ; échelon (points d'équipe / groupe) au-dessus pour les chefs.
     private _ech = "";
     if (_nato && {!_self}) then {
-        ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt", "_ne"];
-        _icon = _nt; _ech = _ne; _dir = 0; _size = _size * 1.3;
+        _icon = _dc select 4; _ech = _dc select 5; _dir = 0; _size = _size * 1.3;
     };
     // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
     private _acc = _entity getOrDefault ["acc", 0];
@@ -320,10 +350,15 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     {
         if ((count _x) >= 3) then { _map drawPolygon [_x,[0.95,0.67,0.20,0.18]]; };
     } forEach (_data getOrDefault ["zones",[]]);
+    uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", -1];
 } else {
     // Calque masqué : Overwatch recrée ses marqueurs de zone à chaque synchro, on les remasque.
-    if (diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0])) then {
+    // Seulement quand un marqueur a changé (compteur COMSPEC_ATAK_MkRev), au plus toutes les 2 s : avant, tous les
+    // marqueurs étaient parcourus toutes les 2 s même sans aucun changement.
+    private _zRev = missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0];
+    if (diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0]) && {_zRev isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideRev", -1])}) then {
         uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
+        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", _zRev];
         { if ((_x select [0, 11]) isEqualTo "COMSPEC_TZ_" && {(markerAlpha _x) > 0}) then { _x setMarkerAlphaLocal 0; }; } forEach allMapMarkers;
     };
 };
@@ -396,17 +431,17 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
             _map drawIcon [_dot,_sc,_pp,8,8,0,format ["%1 · %2°",_cs,round _brg],2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 0),"right"];
         } else {
             _map drawEllipse [_pp,_r,_r,0,_sc,""];
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n],2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,(format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n]) call comspec_atak_native_fnc_tr,2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
         };
     } forEach (uiNamespace getVariable ["COMSPEC_ATAK_Sigint",[]]);
 };
 
 // Trait jaune joueur -> curseur (outil Distance, en main)
 if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDistance",true]} && {(count _cursor) >= 2} && {(_state getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER"]}) then {
-    private _me = getPosASL player;
+    private _me = _selfGps;
     private _c = [_cursor select 0,_cursor select 1,0];
     [[_me select 0,_me select 1,0],_c,_yellow] call _dashed;
-    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (player distance2D _c),round (player getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (_me distance2D _c),round (_me getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
 // Point de pose choisi d'un clic droit en mode MARQUEUR (fn_markerPlace) : aperçu du type choisi dans un anneau qui pulse.
@@ -462,10 +497,10 @@ if ((count _los) >= 3) then {
     if ((count _block) > 0) then {
         _map drawLine [_from,ASLToAGL _block,[0.36,0.78,0.42,1]];
         _map drawLine [ASLToAGL _block,_to,[0.90,0.25,0.22,1]];
-        _map drawIcon [_dot,[0.90,0.25,0.22,1],ASLToAGL _block,12,12,0,"BLOQUÉ",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+        _map drawIcon [_dot,[0.90,0.25,0.22,1],ASLToAGL _block,12,12,0,("BLOQUÉ") call comspec_atak_native_fnc_tr,2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
     } else {
         _map drawLine [_from,_to,[0.36,0.78,0.42,1]];
-        _map drawIcon [_dot,[0.36,0.78,0.42,1],_to,12,12,0,"VUE OK",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+        _map drawIcon [_dot,[0.36,0.78,0.42,1],_to,12,12,0,("VUE OK") call comspec_atak_native_fnc_tr,2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
     };
 };
 
@@ -511,15 +546,16 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         private _id = _m getOrDefault ["id", _x];
         private _title = _m getOrDefault ["text", ""];
         if (_title isEqualTo "") then { continue };
-        _title = [_title] call comspec_atak_native_fnc_markerAutoName;
         if ((_m getOrDefault ["local", false]) && {(_id find "_USER_DEFINED") < 0}) then { continue };
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) in ["POLYLINE", "RECTANGLE", "ELLIPSE"]) then { continue };
-        // Contacts ENI : déjà dans un cartouche rouge (fn_mapLabels).
-        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) in ["ENI ", "ENY "]}}) then { continue };
         private _pos = _m getOrDefault ["position", []];
         if ((count _pos) < 2) then { continue };
         private _sp = _map ctrlMapWorldToScreen _pos;
         if ((_sp select 0) < (_mp select 0) || {(_sp select 0) > ((_mp select 0) + (_mp select 2))} || {(_sp select 1) < (_mp select 1)} || {(_sp select 1) > ((_mp select 1) + (_mp select 3))}) then { continue };
+        // Nom automatique seulement pour les marqueurs gardés par les tests ci-dessus (avant : pour tous, à chaque image).
+        _title = [_title] call comspec_atak_native_fnc_markerAutoName;
+        // Contacts ENI : déjà dans un cartouche rouge (fn_mapLabels).
+        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) in ["ENI ", "ENY "]}}) then { continue };
         private _rgba = [_m getOrDefault ["color", "ColorBlack"], [0.1, 0.1, 0.1, 1]] call _mkRgba;
         _rgba set [3, 1];
         private _r = (_scale * 900) max 12;
@@ -533,6 +569,16 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
             _gridCache set [_key, _g];
         };
         (_g splitString " ") params [["_e", ""], ["_n", ""]];
+        // Boîte gardée dans la carte (contrôle posé sur l'écran, rien ne le découpe) : à gauche de l'anneau si elle
+        // dépasse à droite, remontée si elle dépasse en bas ; sinon pas de cartouche (le nom reste dessiné sur la carte).
+        private _w = (_fs * 0.42 * (((count _title) max 9) + 1)) max (_fs * 4);
+        private _ringPx = (_map ctrlMapWorldToScreen [(_pos select 0) + _r, _pos select 1]) select 0;
+        private _rect = [_ringPx + _fs * 0.3, (_sp select 1) - _fs * 0.2, _w, _fs * 3.3];
+        if (((_rect select 0) + _w) > ((_mp select 0) + (_mp select 2))) then {
+            _rect set [0, ((_map ctrlMapWorldToScreen [(_pos select 0) - _r, _pos select 1]) select 0) - _fs * 0.3 - _w];
+        };
+        _rect set [1, ((_rect select 1) min ((_mp select 1) + (_mp select 3) - (_rect select 3))) max (_mp select 1)];
+        if ((_rect select 0) < (_mp select 0) || {((_rect select 1) + (_rect select 3)) > ((_mp select 1) + (_mp select 3))}) then { continue };
         private _c = _pool param [_used, controlNull];
         if (isNull _c) then {
             _c = _disp ctrlCreate ["COMSPEC_RscStructuredText", -1];
@@ -547,9 +593,6 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
             _c ctrlSetStructuredText parseText ((format ["<t size='%4' font='COMSPEC_BarlowBold' color='#ffffff'>%1<br/>%2E<br/>%3N</t>", toUpper ([_title, "<", "&lt;"] call CBA_fnc_replace), _e, _n, 1]) call comspec_atak_native_fnc_tr);
             _c ctrlSetFontHeight _fs;
         };
-        private _w = (_fs * 0.42 * (((count _title) max 9) + 1)) max (_fs * 4);
-        private _ringPx = (_map ctrlMapWorldToScreen [(_pos select 0) + _r, _pos select 1]) select 0;
-        private _rect = [_ringPx + _fs * 0.3, (_sp select 1) - _fs * 0.2, _w, _fs * 3.3];
         if ((_c getVariable ["comspec_rect", []]) isNotEqualTo _rect) then {
             _c setVariable ["comspec_rect", _rect];
             _c ctrlSetPosition _rect;
@@ -572,6 +615,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerLogi", true]) then { [_map] call comspec_atak_native_fnc_logisticsDraw; };
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerEw", true]) then { [_map] call comspec_atak_native_fnc_ewDraw; };
+// Outil JTAC IP → cible (fn_jtacTool).
+if ((count (_state getOrDefault ["jtacTool", []])) > 0) then { ["draw", _map] call comspec_atak_native_fnc_jtacTool; };
 // Résultat du bouton RECHERCHER (fn_mapSearch) : cercle de précision et anneau pulsant, seulement s'il y en a un.
 if ((count ((uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) getOrDefault ["hit", createHashMap])) > 0) then { ["draw", _map] call comspec_atak_native_fnc_mapSearch; };
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerDrone", true]) then { [_map] call comspec_atak_native_fnc_droneDetectDraw; };

@@ -73,7 +73,7 @@ final class AtakBftMapCallsignAssetTest extends TestCase
         self::assertStringContainsString('class applyCtabBftCallsign', $cfgConnect);
         self::assertStringContainsString('cTab_groupId', $applyCtab);
         self::assertStringContainsString('COMSPEC_CtabBftCallsign', $applyCtab);
-        self::assertStringContainsString('saveProfileNamespace', $applyCtab);
+        self::assertStringContainsString('fnc_saveProfile', $applyCtab);
         self::assertStringContainsString('applyCtabBftCallsign', $set);
         self::assertStringContainsString('applyCtabBftCallsign', $sync);
         self::assertStringContainsString('GetInMan', $veh);

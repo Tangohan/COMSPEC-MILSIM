@@ -8,17 +8,22 @@ params [
 ];
 
 private _pos = if (_center isEqualType []) then { _center } else { getPosATL _center };
-private _objs = nearestObjects [_pos, [], _radius];
+// Classes des entités SSE seulement (comme les modules Zeus) : plus d'arbres, rochers ni objets de terrain sans classe.
+private _objs = nearestObjects [_pos, ["ThingX", "ReammoBox_F", "WeaponHolder", "AllVehicles", "Static"], _radius];
 private _results = [];
 
 {
     private _o = _x;
     if (!isNull _o && {!isNil {[_o] call comspec_sse_fnc_getData}}) then {
-        [_o] call comspec_sse_fnc_ensureGenerated;
+        // Jamais de génération ici : le contenu naît au premier examen (génération paresseuse). Un élément pas encore
+        // généré est trié « UNKNOWN » (non examiné) sans être généré.
+        private _gen = [[_o] call comspec_sse_fnc_getData, "generated", false] call comspec_sse_fnc_getPair;
         private _sec = [_o, "sections"] call comspec_sse_fnc_getSection;
-        if (isNil {_sec getOrDefault ["intelLayers", nil]}) then {
+        if (isNil "_sec" || {!(_sec isEqualType createHashMap)}) then { _sec = createHashMap; };
+        if (_gen && {isNil {_sec getOrDefault ["intelLayers", nil]}}) then {
             [_o] call comspec_sse_fnc_attachIntelLayers;
             _sec = [_o, "sections"] call comspec_sse_fnc_getSection;
+            if (isNil "_sec" || {!(_sec isEqualType createHashMap)}) then { _sec = createHashMap; };
         };
 
         private _best = 0;
@@ -48,7 +53,7 @@ private _results = [];
         if (_type in ["PHONE", "SMARTPHONE", "PERSON"] && {_best >= 60}) then {
             _triage = "EXPLOIT_NOW";
         };
-        if (_best < 25) then { _triage = "LOW_VALUE"; };
+        if (_gen && {_best < 25}) then { _triage = "LOW_VALUE"; };
 
         private _entry = createHashMapFromArray [
             ["entity", _o],
@@ -67,5 +72,7 @@ private _results = [];
 // Tri décroissant par valeur
 _results = [_results, [], { -(_x getOrDefault ["INTEL_VALUE", 0]) }, "ASCEND"] call BIS_fnc_sortBy;
 
-["SSE_TriageDone", [_pos, _results]] call comspec_sse_fnc_emitEvent;
+// Événement local seulement (même signature qu'emitEvent) : le triage est relancé à chaque rafraîchissement de
+// l'onglet SITE, et diffuser tout le tableau de résultats à chaque machine chargeait le réseau pour rien.
+["comspec_sse_triageDone", [_pos, _results, clientOwner]] call CBA_fnc_localEvent;
 _results

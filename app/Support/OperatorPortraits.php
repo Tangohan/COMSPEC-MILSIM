@@ -131,6 +131,23 @@ final class OperatorPortraits
     }
 
     /**
+     * Comme gameThumbnail, en texture .paa (carré 256 px, même cadrage) pour COMSPEC Link 2.0.95+, qui l'annonce
+     * (AtakGameImage::clientAcceptsPaa). Si la copie .paa ne peut pas être faite, la vignette JPEG est rendue.
+     *
+     * @return array{url: ?string, status: string}
+     */
+    public static function gamePaa(int $tenantId, int $userId): array
+    {
+        $url = self::forUser($tenantId, $userId);
+        if ($url === null) {
+            return ['url' => null, 'status' => 'no_portrait'];
+        }
+        $paa = AtakGameImage::urlFor($url, AtakGameImage::FIT_PORTRAIT);
+
+        return $paa !== null ? ['url' => $paa, 'status' => 'ok'] : self::gameThumbnail($tenantId, $userId);
+    }
+
+    /**
      * @return \GdImage|null
      */
     private static function decode(string $src): mixed

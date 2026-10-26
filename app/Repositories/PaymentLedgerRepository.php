@@ -422,7 +422,7 @@ final class PaymentLedgerRepository
         }
         $st = $this->pdo()->prepare(
             'DELETE ub FROM user_badges ub INNER JOIN badges b ON b.id = ub.badge_id
-             WHERE b.slug = ? AND ub.user_id IN (' . implode(',', array_fill(0, count($userIds), '?')) . ')'
+             WHERE ' . \App\Support\SqlText::equals($this->pdo(), 'b.slug') . ' AND ub.user_id IN (' . implode(',', array_fill(0, count($userIds), '?')) . ')'
         );
         $st->execute(array_merge([$slug], $userIds));
 

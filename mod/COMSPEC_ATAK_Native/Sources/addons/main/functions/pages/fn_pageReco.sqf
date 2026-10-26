@@ -71,7 +71,14 @@ private _lbl = {
 private _hit = {
     params ["_rect", "_code", ["_tip", ""]];
     private _b = ["COMSPEC_RscButtonInvisible", _rect] call _mk;
-    _b ctrlAddEventHandler ["ButtonClick", _code];
+    // Clic différé d'une image (comme fn_formRender) : beaucoup d'actions redessinent la page, ce qui supprimait le bouton
+    // pendant son propre gestionnaire, une cause connue d'arrêt du moteur (« can't resize AutoArray to negative size »).
+    if (_code isEqualType "") then { _code = compile _code; };
+    _b setVariable ["comspec_click", _code];
+    _b ctrlAddEventHandler ["ButtonClick", {
+        params ["_c"];
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+    }];
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b
 };

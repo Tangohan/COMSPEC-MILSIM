@@ -62,14 +62,14 @@ switch (_act) do {
         _h set ["at", [[dayTime, "HH:MM:SS"] call BIS_fnc_timeToString, _old getOrDefault ["at", ""]] select _same];
         if (!_same || {isNil "COMSPEC_ATAK_CompSnap"}) then { call _snapshot; };
         profileNamespace setVariable [_key, [_h getOrDefault ["match", "terminal"], _h toArray false]];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         ["WARN", "CAPTURE", format ["Mode compromis : %1 %2 (%3) · %4", _h getOrDefault ["origin", ""], _h getOrDefault ["state", ""], _h getOrDefault ["source", ""], _h getOrDefault ["reason", ""]]] call comspec_atak_native_fnc_log;
         ["refresh"] call comspec_atak_native_fnc_compromiseView;
     };
     case "clear": {
         if (isNil {profileNamespace getVariable _key}) exitWith {};
         profileNamespace setVariable [_key, nil];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         missionNamespace setVariable ["COMSPEC_ATAK_CompSnap", nil];
         missionNamespace setVariable ["COMSPEC_ATAK_CompActive", createHashMap];
         ["INFO", "CAPTURE", "Mode compromis levé"] call comspec_atak_native_fnc_log;

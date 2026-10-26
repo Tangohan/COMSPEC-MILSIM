@@ -4460,6 +4460,12 @@ $migrationRunner->step('us_rank_catalog_fix', static function () use ($usRankCat
     $usRankCatalogFix($pdo);
 });
 
+// Grades sur mesure : systèmes, catégories et grades créés par une communauté (SCP, Star Wars…).
+$customGradeSystems = require $root . '/bootstrap/custom_grade_systems_migration.php';
+$migrationRunner->step('custom_grade_systems', static function () use ($customGradeSystems, $pdo): void {
+    $customGradeSystems($pdo);
+});
+
 require_once $root . '/bootstrap/migrations_full_post.php';
 comspec_print_post_migration_report($pdo, $root, $migrationFlush);
 $migrationsOk = $migrationRunner->printReport();

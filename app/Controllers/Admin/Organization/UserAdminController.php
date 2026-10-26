@@ -583,7 +583,7 @@ class UserAdminController
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
         $grades = $this->gradeRepository->listActiveForDoctrinePicker($tenantId);
-        $gradeCategories = $this->gradeCategoryRepository->listActive();
+        $gradeCategories = $this->gradeCategoryRepository->listForTenant($tenantId);
         $tenantRowCreate = $this->tenantRepository->findById($tenantId);
         $rosterWithoutAccounts = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenantRowCreate['tenant_type'] ?? 'full'));
         return Response::view('layout.main', [
@@ -858,7 +858,7 @@ class UserAdminController
             $selectedRoleIds = [(int) $user['role_id']];
         }
         $grades = $this->gradeRepository->listActiveForDoctrinePicker($tenantId);
-        $gradeCategories = $this->gradeCategoryRepository->listActive();
+        $gradeCategories = $this->gradeCategoryRepository->listForTenant($tenantId);
         $gradeValidationIssues = $this->gradeValidationService->validateUserProfile($user);
         $positions = $this->positionRepository->listForTenant($tenantId);
         $userActivePositions = $this->positionRepository->listActiveForUser($tenantId, $id);
@@ -1101,7 +1101,7 @@ class UserAdminController
 
         if ($request->input('nationality_code') !== null) {
             $v = trim((string) $request->input('nationality_code'));
-            if ($v !== '' && !in_array($v, ['FR', 'US'], true)) {
+            if ($v !== '' && !in_array($v, ['FR', 'US', \App\Support\CustomGradeTemplates::COUNTRY], true)) {
                 Session::flash('error', 'La nationalité / doctrine choisie n’est pas reconnue.');
 
                 return Response::redirect($editUrl);

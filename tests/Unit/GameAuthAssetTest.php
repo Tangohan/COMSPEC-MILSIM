@@ -138,7 +138,10 @@ final class GameAuthAssetTest extends TestCase
         $dll = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         $callback = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_extensionCallback.sqf');
 
-        self::assertStringContainsString('InvokeCallback("AuthInvalidated", verify)', $dll);
+        // Refus définitif de la réauthentification : verrou commun (Extension_RefusalLatch.cs), qui prévient le SQF.
+        $latch = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension_RefusalLatch.cs');
+        self::assertStringContainsString('LatchAuthRefusal(refused, verify)', $dll);
+        self::assertStringContainsString('InvokeCallback("AuthInvalidated", detail)', $latch);
         self::assertStringContainsString('MaybeReauthAfter401(uri.AbsoluteUri)', $dll);
         self::assertStringContainsString('case "AuthInvalidated"', $callback);
         self::assertStringContainsString('["COMSPEC_AthenaReady", false, false]', $callback);

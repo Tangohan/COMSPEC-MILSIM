@@ -23,7 +23,10 @@ switch (_act) do {
             private _p = ([_g] call BIS_fnc_gridToPos) param [0, []];
             if ((count _p) >= 2) then { _pos = [_p select 0, _p select 1, 0]; };
         };
-        private _id = format ["BDA%1", floor (random 90000) + 10000];
+        // Id unique : poste du joueur + compteur local (l'ancien tirage à 5 chiffres pouvait se répéter et le BDA était ignoré).
+        private _seq = (missionNamespace getVariable ["COMSPEC_ATAK_BdaSeq", 0]) + 1;
+        missionNamespace setVariable ["COMSPEC_ATAK_BdaSeq", _seq];
+        private _id = format ["BDA%1-%2", clientOwner, _seq];
         private _r = createHashMapFromArray [
             ["id", _id], ["by", [player, true] call comspec_atak_native_fnc_unitCallsign], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
             ["type", _f getOrDefault ["type", "PERS"]], ["res", _f getOrDefault ["res", "DESTROYED"]], ["reatk", _f getOrDefault ["reatk", "NO"]],

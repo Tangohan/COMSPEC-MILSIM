@@ -164,11 +164,13 @@ switch (_act) do {
             if (_used || {_keep && {(count (_rec select 1)) > 0}}) then { _out pushBack [_x, _rec select 0, _rec select 1, _rec select 2]; };
         } forEach _db;
         profileNamespace setVariable ["COMSPEC_ATAK_DockDb_v1", _out];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
     };
     case "put": {
         _a params [["_dock", objNull], ["_unit", objNull], ["_slot", -1], ["_item", ""], ["_level", 100], ["_device", []], ["_tint", "coyote"]];
-        if (isNull _dock || {isNull _unit} || {_item isEqualTo ""}) exitWith {};
+        if (isNull _unit || {_item isEqualTo ""}) exitWith {};
+        // Socle replié ou supprimé (Zeus) avant l'arrivée de la demande : le téléphone, déjà retiré côté joueur, lui est rendu.
+        if (isNull _dock) exitWith { [_unit, "put", false, "Socle replié", [_item]] call _reply; };
         private _id = ["id", [_dock]] call comspec_atak_native_fnc_dockServer;
         private _slots = (_db get _id) select 0;
         if (_slot < 0) then { _slot = _slots findIf { (count _x) == 0 }; };

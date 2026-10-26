@@ -241,6 +241,8 @@ class PersonnelProfileRepository
         }
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        // Copie .paa du portrait pour le téléphone en jeu, faite dès l'envoi.
+        \App\Support\AtakGameImage::prepare($path, \App\Support\AtakGameImage::FIT_PORTRAIT);
         return $stmt->rowCount() > 0;
     }
 
@@ -314,6 +316,9 @@ class PersonnelProfileRepository
         }
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        if (!empty($data['character_portrait_path'])) {
+            \App\Support\AtakGameImage::prepare((string) $data['character_portrait_path'], \App\Support\AtakGameImage::FIT_PORTRAIT);
+        }
         return $stmt->rowCount() > 0;
     }
 

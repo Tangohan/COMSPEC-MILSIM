@@ -6,8 +6,12 @@
 */
 if (isNil "comspec_overwatch_connect_fnc_syncMapMarker") exitWith {};
 if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith {};
-if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
 private _key = format ["COMSPEC_ATAK_MkRelay_%1", side group player];
+// Relais qui n'a plus de téléphone : il libère la place (les autres le voyaient toujours valide et ne prenaient jamais
+// le relais, la carte d'Athena ne bougeait plus pour tout le camp).
+if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {
+    if ((missionNamespace getVariable [_key, objNull]) isEqualTo player) then { missionNamespace setVariable [_key, objNull, true]; };
+};
 private _relay = missionNamespace getVariable [_key, objNull];
 if (isNull _relay || {!alive _relay} || {!isPlayer _relay} || {(side group _relay) isNotEqualTo (side group player)}) then {
     missionNamespace setVariable [_key, player, true];

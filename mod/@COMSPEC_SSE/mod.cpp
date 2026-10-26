@@ -1,7 +1,7 @@
 name = "COMSPEC SSE";
 picture = "logo.paa";
 actionName = "Website";
-action = "https://athena.ttrd.fr";
+action = "https://athena-comspec.eu";
 description = "Sensitive Site Exploitation — génération, collecte et transmission de renseignements terrain (CBA + ACE3 + COMSPEC ATAK Native).";
 logo = "logo.paa";
 logoOver = "logo.paa";

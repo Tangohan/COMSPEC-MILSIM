@@ -53,7 +53,9 @@ final class ArmaPlaytimeContextAssetTest extends TestCase
         );
         $mig = (string) file_get_contents($root . '/bootstrap/arma_playtime_migration.php');
         $api = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
-        $fiche = (string) file_get_contents($root . '/views/personnel/file.php');
+        // Le bloc « Temps de jeu » vit dans un partial inclus par la fiche (#1066).
+        $fiche = (string) file_get_contents($root . '/views/personnel/file.php')
+            . (string) file_get_contents($root . '/views/partials/personnel/file_playtime.php');
 
         foreach ([$tracker, $ow] as $sqf) {
             self::assertStringContainsString('is3DEN', $sqf);

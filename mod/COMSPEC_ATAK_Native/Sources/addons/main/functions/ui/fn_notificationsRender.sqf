@@ -83,6 +83,8 @@ private _mk = {
 };
 private _bg = ["COMSPEC_RscText", [_x0, _y, _w, _h]] call _mk;
 _bg ctrlSetBackgroundColor [0.05, 0.065, 0.06, 0.97];
+// Bandeau sous les bris d'écran, comme le reste de l'affichage (fn_overlayRaise, à l'image suivante).
+[] call comspec_atak_native_fnc_overlayRaise;
 private _bar = ["COMSPEC_RscText", [_x0, _y, _pad * 0.6, _h]] call _mk;
 _bar ctrlSetBackgroundColor _color;
 private _tx = _x0 + _pad * 1.4;

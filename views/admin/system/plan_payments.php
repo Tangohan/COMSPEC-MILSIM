@@ -74,17 +74,17 @@ $qs = static function (array $over) use ($f): string {
     return '?' . http_build_query(array_filter(array_merge($q, $over), static fn ($v) => $v !== '' && $v !== null));
 };
 ?>
-<section class="ath-page-head" aria-labelledby="ap-title">
-  <div class="ath-page-head__copy">
-    <p class="ath-page-head__kicker">ADMINISTRATION DU SITE · FINANCES</p>
-    <h1 class="ath-page-head__title" id="ap-title">Paiements et dons</h1>
-    <p class="ath-page-head__sub">Formules payées par PayPal, soutiens du cœur et dons : vérification, récurrence, relances, remboursements, et rôle donateur sur le site.</p>
+<div class="pa">
+<div class="pa__frame">
+<header class="pa-hero">
+  <p class="pa-crumb"><a href="<?= $h(url('admin')) ?>">Administration du site</a><span aria-hidden="true"> / </span>Finances</p>
+  <h1 class="pa-hero__title" id="ap-title">Paiements et dons</h1>
+  <p class="pa-hero__lead">Formules payées par PayPal, soutiens du cœur et dons : vérification, récurrence, relances, remboursements, et rôle donateur sur le site.</p>
+  <div class="pa-hero__actions">
+    <a class="pa-btn pa-btn--ghost" href="<?= $h(url('soutenir-atak')) ?>" target="_blank" rel="noopener">Page publique de soutien</a>
+    <a class="pa-btn pa-btn--ghost" href="<?= $h($base . '/export.csv') ?>">Exporter (Excel)</a>
   </div>
-  <div class="ath-page-head__actions">
-    <a class="ath-btn" href="<?= $h(url('soutenir-atak')) ?>" target="_blank" rel="noopener">Page publique de soutien</a>
-    <a class="ath-btn" href="<?= $h($base . '/export.csv') ?>">Exporter (Excel)</a>
-  </div>
-</section>
+</header>
 <?php $bo_flash_margin_class = ''; require base_path('views/partials/bo_session_flashes.php'); ?>
 
 <div class="ap" id="ap" data-csrf="<?= $h($csrfTok) ?>" data-members="<?= $h($base . '/membres') ?>" data-focus="<?= $h($focus) ?>">
@@ -465,5 +465,7 @@ $qs = static function (array $over) use ($f): string {
     </tbody></table></div>
   </section>
   <?php endif; ?>
+</div>
+</div>
 </div>
 <script src="<?= $h(asset_url('assets/js/admin-payments.js')) ?>" defer></script>
