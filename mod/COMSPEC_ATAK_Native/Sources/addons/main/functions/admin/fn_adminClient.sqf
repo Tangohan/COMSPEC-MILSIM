@@ -85,7 +85,8 @@ switch (_act) do {
         // Joueurs partis : retirés au bout de 30 s sans réponse.
         private _m = uiNamespace getVariable ["COMSPEC_ATAK_AdminPlayers", createHashMap];
         { if ((diag_tickTime - (_y select 1)) > 30) then { _m deleteAt _x; }; } forEach (+_m);
-        ["comspec_atak_native_admin", [player, "scan", []]] call CBA_fnc_serverEvent;
+        // remoteExecCall : le serveur retrouve le demandeur par remoteExecutedOwner (fn_adminServer).
+        ["scan", []] remoteExecCall ["comspec_atak_native_fnc_adminServer", 2];
     };
     case "probe";
     case "fleet": {
@@ -143,7 +144,7 @@ switch (_act) do {
     };
     case "server": {
         _arg params [["_a", ""], ["_xa", []]];
-        ["comspec_atak_native_admin", [player, _a, _xa]] call CBA_fnc_serverEvent;
+        [_a, _xa] remoteExecCall ["comspec_atak_native_fnc_adminServer", 2];
     };
     case "visible": {
         // Montrée au Zeus, à l'admin du serveur, au gestionnaire désigné et au gestionnaire Athena (droit déjà connu).
