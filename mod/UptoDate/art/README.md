@@ -1,0 +1,35 @@
+# Sources d'images et de sons sorties des addons empaquetés
+
+AddonBuilder est lancé avec `-packonly` sur le dossier de l'addon
+(`mod/UptoDate/build_mod.bat`) : **tout** ce qui se trouve dans
+`Sources/comspec-overwatch-addons/<addon>/` part dans le PBO, y compris les PNG
+et JPG de travail dont seul le `.paa` est chargé en jeu.
+
+Ce dossier recueille ces fichiers : ils restent dans le dépôt, consultables et
+réutilisables, mais ne sont plus téléchargés par les joueurs.
+
+## `connect/`
+
+Fichiers retirés du PBO `connect` le 26/10/2026 (audit DEAD-007, DEAD-009,
+DEAD-021). Aucun n'était chargé en jeu : ni chemin littéral, ni chemin construit
+(`format`, concaténation), ni `model=`, ni `CfgSounds`. L'arborescence reproduit
+celle de l'addon, donc remettre un fichier en service se fait par un `git mv`
+vers `Sources/comspec-overwatch-addons/connect/<même chemin>` suivi d'un rebuild.
+
+- `data/device/` — copies cTab NSWDG (itemAndroid, DK10, MicroDAGR : `.p3d`,
+  `.rvmat`, textures). Aucune classe de config n'a de `model=` vers ces modèles.
+  L'attribution GPL v2 reste dans l'addon (`data/device/SOURCES.txt`).
+- `img/device/` — maquettes PNG/JPG dont le `.paa` est (ou n'est plus) chargé, et
+  `.paa` d'écrans cTab abandonnés (FBCB2, TAD, MicroDAGR, fenêtres, icônes mail).
+  Les PNG sont les masters à repasser dans `tools/png2paa.py` ou TexView 2.
+- `img/overlays/` — overlays roleplay jamais branchés : les 5 icônes Zeus / ACE
+  (brouillons), `comspec_overlay_no_signal_ca` (son README dit « ne plus
+  utiliser ») et `comspec_overlay_screen_cracked_ca.png`. Les 3 overlays
+  réellement affichés (`static_noise`, `screen_off`, `atak-fx/broken-screen`)
+  restent dans l'addon.
+- `sounds/` — `roger_prio.ogg` et `roger_simple.ogg`, remplacés par des carillons
+  le 24/08/2026 (`docs/bugs/2026-08-24-atak-pack-sons.md`) et absents de
+  `CfgSounds`.
+- `texHeaders.bin` — index de textures produit par Binarize, périmé : il décrit
+  37 textures dont la plupart sont ci-dessus. **À régénérer avec Binarize** si un
+  essai en jeu montre une régression d'affichage sur la tablette connect.

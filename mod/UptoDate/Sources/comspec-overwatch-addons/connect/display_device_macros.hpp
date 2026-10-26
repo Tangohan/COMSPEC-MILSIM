@@ -11,28 +11,16 @@
 #define COMSPEC_PHONE_PW(n) ((n) / 2048 * COMSPEC_PHONE_W)
 #define COMSPEC_PHONE_PH(n) ((n) / 2048 * COMSPEC_PHONE_H)
 
-// Zone écran (hors barre d’état) : sous le header 60 px.
-#define COMSPEC_PHONE_SCR_X COMSPEC_PHONE_PX(452)
-#define COMSPEC_PHONE_SCR_Y COMSPEC_PHONE_PY(773)
-#define COMSPEC_PHONE_SCR_W COMSPEC_PHONE_PW(1098)
-#define COMSPEC_PHONE_SCR_H COMSPEC_PHONE_PH(566)
-
 #define COMSPEC_IMG_PHONE_BG "\z\comspec_overwatch\addons\connect\img\device\comspec_phone_bg_ca.paa"
-#define COMSPEC_IMG_TABLET_BG "\z\comspec_overwatch\addons\connect\img\device\comspec_tablet_bg_ca.paa"
 #define COMSPEC_IMG_ICON_BATTERY "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_battery_ca.paa"
 #define COMSPEC_IMG_ICON_SIGNAL "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_signal_ca.paa"
-#define COMSPEC_IMG_ICON_PHONE "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_phone.paa"
 #define COMSPEC_IMG_ICON_TABLET "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_tablet.paa"
-#define COMSPEC_IMG_ICON_MAIL "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_mail_ca.paa"
 
-// Overlays roleplay (PAA puissance de 2 — les PNG 1536×1024 ne s’affichent pas en RscPicture)
-#define COMSPEC_IMG_OVERLAY_SCREEN_CRACKED "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.paa"
-#define COMSPEC_IMG_OVERLAY_SCREEN_OFF "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.paa"
-#define COMSPEC_IMG_OVERLAY_STATIC "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa"
-#define COMSPEC_IMG_OVERLAY_NO_SIGNAL "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_no_signal_ca.paa"
-#define COMSPEC_IMG_OVERLAY_LOW_SIGNAL "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_low_signal_ca.paa"
-#define COMSPEC_IMG_ICON_JAMMER "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_jammer_ca.png"
-#define COMSPEC_IMG_ICON_NO_COVERAGE "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_no_coverage_ca.png"
-#define COMSPEC_IMG_ICON_DEVICE_DESTROYED "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_device_destroyed_ca.png"
-#define COMSPEC_IMG_ICON_REBOOT "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_reboot_ca.png"
-#define COMSPEC_IMG_ICON_REPAIR "\z\comspec_overwatch\addons\connect\img\overlays\comspec_icon_repair_ca.png"
+// Retirés le 26/10/2026 (audit DEAD-021) : 17 macros jamais développées, dont 15
+// nommaient des images sorties du PBO vers mod/UptoDate/art/connect/ (DEAD-007).
+// COMSPEC_PHONE_SCR_X/Y/W/H, COMSPEC_IMG_TABLET_BG, COMSPEC_IMG_ICON_PHONE,
+// COMSPEC_IMG_ICON_MAIL, COMSPEC_IMG_OVERLAY_SCREEN_CRACKED / SCREEN_OFF /
+// STATIC / NO_SIGNAL / LOW_SIGNAL, COMSPEC_IMG_ICON_JAMMER / NO_COVERAGE /
+// DEVICE_DESTROYED / REBOOT / REPAIR.
+// Les 3 overlays réellement affichés le sont par chemin littéral dans
+// functions/fn_updateDeviceOverlay.sqf, pas par ces macros.
