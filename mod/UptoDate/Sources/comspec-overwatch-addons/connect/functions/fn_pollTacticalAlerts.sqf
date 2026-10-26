@@ -96,22 +96,26 @@ private _playUnconscious = false;
     if (!_fromMe && {_bootTa}) then {
         _notifyTitles pushBack format ["%1 — %2", _kindLabel, if (_from isEqualTo "") then { "Athena" } else { _from }];
         if (_kindKey isEqualTo "EAGLE_DOWN") then { _playUnconscious = true; };
-        private _detail = format [
-            "<t color='#ffd27a'>%1</t><br/><t color='#8aa0b4'>De</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4<br/>%5",
-            _kindLabel,
-            if (_from isEqualTo "") then { "Athena" } else { _from },
-            if (_grid isEqualTo "") then { "—" } else { _grid },
-            _timeStr,
-            if (_summary isEqualTo "") then { "" } else { format ["<br/>%1", _summary] }
-        ];
-        [
-            "alert",
-            _kindLabel,
-            format ["%1 — %2", _kindLabel, if (_from isEqualTo "") then { "Athena" } else { _from }],
-            _detail,
-            format ["remote_%1", _id],
-            _timeStr
-        ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
+        // atak_athena (addon gelé) n'est pas livré dans @COMSPEC_ATAK_Native : même garde que fn_pollMedicalAlerts ;
+        // l'alerte reste dans l'inbox connect et le téléphone natif.
+        if (!isNil "comspec_overwatch_atak_athena_fnc_athena_pushNotification") then {
+            private _detail = format [
+                "<t color='#ffd27a'>%1</t><br/><t color='#8aa0b4'>De</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4<br/>%5",
+                _kindLabel,
+                if (_from isEqualTo "") then { "Athena" } else { _from },
+                if (_grid isEqualTo "") then { "—" } else { _grid },
+                _timeStr,
+                if (_summary isEqualTo "") then { "" } else { format ["<br/>%1", _summary] }
+            ];
+            [
+                "alert",
+                _kindLabel,
+                format ["%1 — %2", _kindLabel, if (_from isEqualTo "") then { "Athena" } else { _from }],
+                _detail,
+                format ["remote_%1", _id],
+                _timeStr
+            ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
+        };
     };
 } forEach _lines;
 
