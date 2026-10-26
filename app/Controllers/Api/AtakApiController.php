@@ -886,7 +886,8 @@ class AtakApiController
         $row = $this->gameLinkRepository->findValidByCode($code);
         if ($row === null) {
             $reason = $this->gameLinkRepository->explainInvalidCode($code);
-            $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
+            // Même règle que la garde : resolveTenantId() lisait (int) tenant_id (« tenant_id[]=N » donnait 1).
+            $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
             $failLabel = match ($reason) {
                 'already_used' => 'Liaison en jeu refusée — code déjà utilisé',
                 'expired' => 'Liaison en jeu refusée — code expiré',
@@ -1008,7 +1009,7 @@ class AtakApiController
 
         $user = $this->userRepository->findBySteamId($steamUid);
         if ($user === null) {
-            $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
+            $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
             $this->logUnverifiedLinkRefusal($failTenant, 'Liaison en jeu refusée — Steam non reconnu', [
                 'reason' => 'steam_not_linked',
                 'method' => 'steam',
@@ -1141,9 +1142,10 @@ class AtakApiController
     }
 
     /**
-     * Liaison refusée avant toute preuve (code inconnu, Steam non reconnu) : la communauté vient souvent de
-     * la requête elle-même (tenant_id de l’URL ou du corps). Journalisé seulement si elle existe, et au plus
-     * une fois par minute pour un même refus (AtakActivityLogService::recordUnverifiedAuthFailure).
+     * Liaison refusée avant toute preuve (code inconnu, Steam non reconnu) : la communauté vient de la même règle
+     * que la garde (ComspecApiKeyAuth::guessTenantIdForLog : tenant_id de l’URL en chiffres seulement, le corps
+     * n’est pas lu). Journalisé seulement si elle existe, et au plus une fois par minute pour un même refus
+     * (AtakActivityLogService::recordUnverifiedAuthFailure).
      *
      * @param array<string, mixed> $meta
      */
