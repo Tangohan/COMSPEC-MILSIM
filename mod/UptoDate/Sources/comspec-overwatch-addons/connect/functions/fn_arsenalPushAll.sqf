@@ -49,6 +49,9 @@ missionNamespace setVariable ["COMSPEC_ArsenalPushBusy", true, false];
 
 private _ok = 0;
 private _fail = 0;
+// Objets des tenues envoyées (nom affiché en jeu, mod) : le site les montre sous leur vrai nom, avec leur icône.
+private _itemCatalog = [];
+private _itemSeen = createHashMap;
 {
     _x params ["_name", "_data"];
     private _loadout = [_data] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
@@ -65,11 +68,28 @@ private _fail = 0;
         // Registre de synchro (panneau Tenues Athena) : ce texte est maintenant celui du site.
         private _sha = [_payload] call comspec_overwatch_connect_fnc_arsenalHash;
         ["set", _name, _sha, _sha] call comspec_overwatch_connect_fnc_arsenalLedger;
+        if ((count _itemCatalog) < 400) then {
+            // [tenue, infos étendues ACE] : seule la tenue compte ici.
+            private _lo = if ((count _loadout) == 2 && {(_loadout select 0) isEqualType []} && {(count (_loadout select 0)) >= 9}) then { _loadout select 0 } else { _loadout };
+            {
+                private _c = toLower (_x getOrDefault ["class", ""]);
+                if (_c isNotEqualTo "" && {!(_c in _itemSeen)}) then { _itemSeen set [_c, true]; _itemCatalog pushBack _x; };
+            } forEach ([_lo] call comspec_overwatch_connect_fnc_collectItemCatalog);
+        };
     } else {
         _fail = _fail + 1;
         ["DEBUG", "ARSENAL", format ["Sync fail %1 → %2 %3", _name, _status, _detail]] call comspec_overwatch_connect_fnc_log;
     };
 } forEach _entries;
+
+if (_itemCatalog isNotEqualTo []) then {
+    _itemCatalog = _itemCatalog select [0, 400];
+    // Noms seuls (aucune tenue dans ce lot) : le site ne compte pas d'usage pour ces objets. DLL sans la
+    // commande : réponse vide, rien d'autre ne change.
+    private _json = [createHashMapFromArray [["wardrobes", []], ["item_catalog", _itemCatalog]]] call comspec_overwatch_connect_fnc_jsonValue;
+    ["SyncWardrobesBatch", [_json], "ItemNames", false, false, "arsenal", false] call comspec_overwatch_connect_fnc_callExtLogged;
+    [_itemCatalog] call comspec_overwatch_connect_fnc_sendItemIcons;
+};
 
 missionNamespace setVariable ["COMSPEC_ArsenalPushBusy", false, false];
 if (_ok > 0) then { [] call comspec_overwatch_connect_fnc_saveProfile; };

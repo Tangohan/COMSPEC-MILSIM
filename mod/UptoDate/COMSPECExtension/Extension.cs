@@ -4591,14 +4591,22 @@ public static partial class Extension
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
             // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
-            // Args optionnels : [startLine] — page par lignes complètes (évite troncature).
+            // Args optionnels : [startLine, mode] — page par lignes complètes (évite troncature).
+            // mode « cache » : liste gardée en mémoire ou dans Sync\wardrobes.json, le site n'est appelé que
+            // si ce PC n'a encore rien ; « refresh » ou absent : rechargée depuis le site à la page 0 (bouton Actualiser).
             // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
             if (function == "ListWardrobes")
             {
                 var startLine = 0;
                 if (args.Length >= 1 && int.TryParse((args[0] ?? "0").Trim(), out var sl) && sl >= 0)
                     startLine = sl;
-                if (startLine == 0 || string.IsNullOrEmpty(_wardrobesListCache))
+                var fromCache = args.Length >= 2 && (args[1] ?? "").Trim() == "cache";
+                if (fromCache && string.IsNullOrEmpty(_wardrobesListCache))
+                {
+                    var saved = WardrobeCacheLoad();
+                    if (saved.Length > 0) _wardrobesListCache = saved;
+                }
+                if ((startLine == 0 && !fromCache) || string.IsNullOrEmpty(_wardrobesListCache))
                 {
                     var url = _baseUrl + "/api/atak/wardrobes";
                     var resp = SendGet(url, token);
@@ -4611,9 +4619,12 @@ public static partial class Extension
                         return "ERR|http_" + code;
                     }
                     _wardrobesListCache = SimplifyWardrobesListJson(respBody);
+                    _wardrobeCacheSavedAt = DateTime.Now.ToString("dd/MM HH:mm");
+                    WardrobeCacheSave();
                 }
                 return FormatWardrobesListPage(_wardrobesListCache, startLine);
             }
+            if (function == "WardrobesCacheInfo") return WardrobeCacheInfo();
             if (function == "ListWardrobesPage" && args.Length >= 1)
             {
                 if (!int.TryParse((args[0] ?? "0").Trim(), out var pageLine) || pageLine < 0)
@@ -4628,19 +4639,25 @@ public static partial class Extension
             {
                 var wid = (args[0] ?? "").Trim();
                 if (wid.Length < 1) return "ERR|invalid_id";
-                var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
-                var resp = SendGet(url, token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                // Même empreinte que dans la liste : la tenue gardée sur ce PC sert, sans la retélécharger.
+                var simplified = WardrobeCachedDetail(wid);
+                if (simplified is null)
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 404) return "ERR|not_found";
-                    if (code == 401 || code == 403) return "ERR|unauthorized";
-                    if (code == 503) return "ERR|migration_required";
-                    return "ERR|http_" + code;
+                    var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
+                    var resp = SendGet(url, token);
+                    var respBody = ReadContentUtf8(resp, token);
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var code = (int)resp.StatusCode;
+                        if (code == 404) return "ERR|not_found";
+                        if (code == 401 || code == 403) return "ERR|unauthorized";
+                        if (code == 503) return "ERR|migration_required";
+                        return "ERR|http_" + code;
+                    }
+                    simplified = SimplifyWardrobeDetailJson(respBody);
+                    if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
+                    WardrobeCacheStoreDetail(wid, simplified);
                 }
-                var simplified = SimplifyWardrobeDetailJson(respBody);
-                if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
                 var cap = MaxOutputBytes - 4;
                 if (simplified.Length <= cap)
                 {
@@ -4665,6 +4682,12 @@ public static partial class Extension
                 if (wid.Length < 1) return "ERR|invalid_id";
                 if (!int.TryParse((args[1] ?? "0").Trim(), out var chunkIdx) || chunkIdx < 0)
                     return "ERR|invalid_chunk";
+                if ((_wardrobeDetailCacheId != wid || string.IsNullOrEmpty(_wardrobeDetailCache)) && WardrobeCachedDetail(wid) is { } kept)
+                {
+                    _wardrobeDetailCacheId = wid;
+                    _wardrobeDetailCache = kept;
+                    _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
+                }
                 if (_wardrobeDetailCacheId != wid || string.IsNullOrEmpty(_wardrobeDetailCache))
                 {
                     var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
@@ -4680,6 +4703,7 @@ public static partial class Extension
                     }
                     var simplified = SimplifyWardrobeDetailJson(respBody);
                     if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
+                    WardrobeCacheStoreDetail(wid, simplified);
                     _wardrobeDetailCacheId = wid;
                     _wardrobeDetailCache = simplified;
                     _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
