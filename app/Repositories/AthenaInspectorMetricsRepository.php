@@ -351,34 +351,75 @@ final class AthenaInspectorMetricsRepository
     public function mods(?int $tenantId, int $hours, string $search = ''): array
     {
         [$w, $p] = $this->t($tenantId, 'm');
-        [$w2] = $this->t($tenantId, 'pm');
+        [$w2, $p2] = $this->t($tenantId, 'pm');
         $like = '%' . $search . '%';
-        $mods = $this->rows('mods détectés', "SELECT m.mod_dir, MAX(m.name) name, MAX(m.workshop_id) workshop_id, MAX(m.is_dlc) is_dlc,
-                MIN(m.first_seen) first_seen, MAX(m.last_seen) last_seen,
-                (SELECT COUNT(DISTINCT pm.steam_id) FROM game_player_mods pm WHERE pm.mod_dir = m.mod_dir AND {$w2}) players,
-                (SELECT COUNT(DISTINCT pm.steam_id) FROM game_player_mods pm WHERE pm.mod_dir = m.mod_dir AND {$w2}
-                    AND pm.last_seen >= NOW() - INTERVAL ? HOUR) players_recent
-                " . ($tenantId === null ? ', COUNT(DISTINCT m.tenant_id) communities' : '') . "
-            FROM game_detected_mods m WHERE {$w} AND (? = '' OR m.mod_dir LIKE ? OR m.name LIKE ?)
-            GROUP BY m.mod_dir ORDER BY players DESC, last_seen DESC LIMIT 400",
-            array_merge($p, $p, [$hours], $p, [$search, $like, $like]));
+        // Tri sur l’agrégat, pas sur la colonne last_seen : avec ONLY_FULL_GROUP_BY, ORDER BY last_seen
+        // vise la colonne brute, la lecture des noms échoue, et l’onglet annonce une source vide
+        // alors que les listes joueurs et les versions de session sont déjà là.
+        $community = $tenantId === null ? ', COUNT(DISTINCT m.tenant_id) AS communities' : '';
+        $mods = $this->rows(
+            'catalogue des mods',
+            "SELECT m.mod_dir, MAX(m.name) AS name, MAX(m.workshop_id) AS workshop_id, MAX(m.is_dlc) AS is_dlc,
+                    MIN(m.first_seen) AS first_seen, MAX(m.last_seen) AS last_seen{$community}
+             FROM game_detected_mods m
+             WHERE {$w} AND (? = '' OR m.mod_dir LIKE ? OR m.name LIKE ?)
+             GROUP BY m.mod_dir
+             ORDER BY MAX(m.last_seen) DESC
+             LIMIT 2000",
+            array_merge($p, [$search, $like, $like])
+        );
+        $catalogAvailable = !in_array('catalogue des mods', $this->missing, true);
+
+        $byDir = [];
+        if ($mods !== []) {
+            foreach ($this->rows(
+                'listes de mods des joueurs',
+                "SELECT pm.mod_dir,
+                        COUNT(DISTINCT pm.steam_id) AS players,
+                        COUNT(DISTINCT CASE WHEN pm.last_seen >= NOW() - INTERVAL ? HOUR THEN pm.steam_id END) AS players_recent
+                 FROM game_player_mods pm
+                 WHERE {$w2}
+                 GROUP BY pm.mod_dir",
+                array_merge([$hours], $p2)
+            ) as $row) {
+                $byDir[(string) $row['mod_dir']] = $row;
+            }
+        }
         foreach ($mods as &$m) {
-            $m['players'] = (int) $m['players'];
-            $m['players_recent'] = (int) $m['players_recent'];
-            $m['is_dlc'] = (bool) $m['is_dlc'];
+            $stats = $byDir[(string) $m['mod_dir']] ?? null;
+            $m['players'] = (int) ($stats['players'] ?? 0);
+            $m['players_recent'] = (int) ($stats['players_recent'] ?? 0);
+            $m['is_dlc'] = (int) ($m['is_dlc'] ?? 0) === 1;
+            if ($tenantId === null) {
+                $m['communities'] = (int) ($m['communities'] ?? 0);
+            }
         }
         unset($m);
+        usort($mods, static fn (array $a, array $b): int => [$b['players'], (string) $b['last_seen']] <=> [$a['players'], (string) $a['last_seen']]);
+        $modsTotal = count($mods);
+        if ($modsTotal > 400) {
+            $mods = array_slice($mods, 0, 400);
+        }
 
-        $playersWithList = $this->scalar('mods détectés', "SELECT COUNT(DISTINCT steam_id) FROM game_player_mods pm WHERE {$w2}", $p);
-        $perPlayer = $this->one('mods détectés', "SELECT ROUND(AVG(n)) avg_mods, MAX(n) max_mods FROM
-            (SELECT steam_id, COUNT(*) n FROM game_player_mods pm WHERE {$w2} GROUP BY steam_id) x", $p);
+        $summary = $this->one(
+            'listes de mods des joueurs',
+            "SELECT COUNT(*) AS lists, COALESCE(ROUND(AVG(n)), 0) AS avg_mods, COALESCE(MAX(n), 0) AS max_mods
+             FROM (
+                SELECT steam_id, COUNT(*) AS n
+                FROM game_player_mods pm
+                WHERE {$w2}
+                GROUP BY steam_id
+             ) player_lists",
+            $p2
+        );
 
         return [
             'mods' => $mods,
-            'mods_total' => count($mods),
-            'players_with_list' => $playersWithList,
-            'avg_mods_per_player' => (int) ($perPlayer['avg_mods'] ?? 0),
-            'max_mods_per_player' => (int) ($perPlayer['max_mods'] ?? 0),
+            'mods_total' => $catalogAvailable ? $modsTotal : 0,
+            'catalog_available' => $catalogAvailable,
+            'players_with_list' => (int) ($summary['lists'] ?? 0),
+            'avg_mods_per_player' => (int) ($summary['avg_mods'] ?? 0),
+            'max_mods_per_player' => (int) ($summary['max_mods'] ?? 0),
             'versions' => $this->versionCompliance($tenantId, $hours),
         ];
     }

@@ -45,9 +45,9 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<?php if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($accountHubPage)): ?>
+<?php if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($accountHubPage) || !empty($messagesPage)): ?>
     <script>
-    /* Mode nuit du back-office, de l’administration plateforme et de l’espace Mon compte : appliqué avant l'affichage pour éviter un flash clair. */
+    /* Mode nuit : back-office, administration plateforme, Mon compte et messagerie. Appliqué avant l'affichage pour éviter un flash clair. */
     (function () {
         var pref = 'auto';
         try { pref = localStorage.getItem('athena.bo.theme') || 'auto'; } catch (e) {}
@@ -443,7 +443,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php require base_path('views/partials/ui/confirm_dialog.php'); ?>
     <?php endif; ?>
     <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : ((!empty($layoutMainCompact) || !empty($compactPortalMain)) ? 'min-h-0 personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
-        <?php if (empty($communityReelsPage) && empty($isBackOfficeShell) && empty($isPlatformAdminShell)): ?>
+        <?php if (empty($communityReelsPage) && empty($isBackOfficeShell) && empty($isPlatformAdminShell) && empty($messagesPage)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php endif; ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>

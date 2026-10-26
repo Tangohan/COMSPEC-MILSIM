@@ -163,10 +163,7 @@ final class MessagingThreadPresenter
                 || $unreadHere
                 || $groups === [];
             if ($startNew) {
-                $name = trim((string) ($m['display_name'] ?? ''));
-                if ($name === '') {
-                    $name = trim((string) ($m['email'] ?? '')) ?: 'Participant';
-                }
+                $name = self::senderName($m);
                 $groups[] = [
                     'mine' => $mine,
                     'sender_id' => $senderId,
@@ -192,6 +189,25 @@ final class MessagingThreadPresenter
         }
 
         return $days;
+    }
+
+    /**
+     * Nom visible : nom affiché, sinon indicatif. Jamais l’adresse de courriel.
+     *
+     * @param array<string, mixed> $message
+     */
+    private static function senderName(array $message): string
+    {
+        $name = trim((string) ($message['display_name'] ?? ''));
+        if ($name !== '') {
+            return $name;
+        }
+        $callsign = trim((string) ($message['callsign'] ?? ''));
+        if ($callsign !== '') {
+            return $callsign;
+        }
+
+        return 'Participant';
     }
 
     private static function dayDiff(int $ts, int $now): int

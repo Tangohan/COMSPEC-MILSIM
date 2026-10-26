@@ -97,7 +97,8 @@
 
   /** Tableau triable : cols = [{k, l, f?(row), sort?(row), cls?}] */
   function table(id, cols, rows, opts = {}) {
-    const head0 = opts.title ? `<div class="ath-table-toolbar"><span class="ath-table-toolbar__title">${esc(opts.title)}</span><span class="ath-table-toolbar__count">${num(rows.length)}</span>${opts.lead ? `<span class="bo-di-muted">${esc(opts.lead)}</span>` : ''}</div>` : '';
+    const countHtml = opts.hideCount ? '' : `<span class="ath-table-toolbar__count">${num(rows.length)}</span>`;
+    const head0 = opts.title ? `<div class="ath-table-toolbar"><span class="ath-table-toolbar__title">${esc(opts.title)}</span>${countHtml}${opts.lead ? `<span class="bo-di-muted">${esc(opts.lead)}</span>` : ''}</div>` : '';
     if (!rows.length) return `<section class="ath-table-panel bo-di-tpanel">${head0}<p class="bo-di-empty is-flat">${esc(opts.empty || 'Aucune donnée pour ces filtres.')}</p></section>`;
     const s = state.sort[id];
     if (s) {
@@ -191,8 +192,26 @@
       ${table('players', cols, rows, { click: r => openPlayer(r), empty: 'Aucun joueur actif sur la période.' })}`;
   };
 
+  const versionPairs = map => Object.entries(map || {});
+  function modsEmptyMessage(d) {
+    const v = d.versions || {};
+    const hasVersions = versionPairs(v.mod_versions).length + versionPairs(v.link_versions).length > 0;
+    const listed = Number(d.players_with_list || 0) > 0;
+    const catalogOk = d.catalog_available !== false;
+    if (catalogOk && !hasVersions && !listed) return 'Aucun mod déclaré par les joueurs.';
+    if (!catalogOk) return 'Le nom de chaque mod n’est pas disponible sur cette installation. Les chiffres et les versions déjà affichés au-dessus restent valables.';
+    if (hasVersions) return 'Aucun nom de mod n’a été reçu. Les versions au-dessus viennent des connexions en jeu sur la période.';
+    return 'Des joueurs ont transmis une liste, mais aucun nom de mod n’a été reçu.';
+  }
+
   R.mods = d => {
     const v = d.versions || {};
+    const catalogOk = d.catalog_available !== false;
+    const mods = d.mods || [];
+    const linkItems = versionPairs(v.link_versions).map(([k, n]) => ({
+      k: v.latest_link && k === v.latest_link ? `${k} · référence` : k,
+      n,
+    }));
     const cols = [
       { k: 'name', l: 'Mod', f: r => `<b>${esc(r.name || r.mod_dir)}</b><small>${esc(r.mod_dir)}</small>`, sort: r => r.name || r.mod_dir },
       { k: 'is_dlc', l: 'Type', f: r => r.is_dlc ? '<span class="ath-tag ath-tag--info">DLC</span>' : (r.workshop_id ? `<a class="ath-tag ath-tag--neut" href="https://steamcommunity.com/sharedfiles/filedetails/?id=${encodeURIComponent(r.workshop_id)}" target="_blank" rel="noopener">Workshop</a>` : '<span class="ath-tag ath-tag--neut bo-di-muted">Local</span>') },
@@ -202,15 +221,31 @@
       { k: 'first_seen', l: 'Vu la 1re fois', f: r => esc(dt(r.first_seen)), sort: r => r.first_seen || '' },
       { k: 'last_seen', l: 'Dernière détection', f: r => `${esc(ago(r.last_seen))}`, sort: r => r.last_seen || '' },
     ];
-    return `<div class="ath-kpi-grid bo-di-kpis">
-        ${kpi('Mods détectés', num(d.mods_total))}
-        ${kpi('Joueurs avec modlist', num(d.players_with_list))}
-        ${kpi('Mods par joueur', num(d.avg_mods_per_player), `max ${num(d.max_mods_per_player)}`)}
-        ${kpi('Joueurs hors version', `${num(v.outdated)} / ${num(v.players)}`, v.latest_link ? `référence Link ${esc(v.latest_link)}` : '', v.outdated ? 'warn' : 'ok')}
-      </div>
-      <div class="bo-di-grid2">${card('Versions du mod COMSPEC', hbars(Object.entries(v.mod_versions || {}).map(([k, n]) => ({ k, n })), 'n', 'k'))}
-        ${card('Versions COMSPEC Link', hbars(Object.entries(v.link_versions || {}).map(([k, n]) => ({ k, n })), 'n', 'k'))}</div>
-      ${table('mods', cols, d.mods || [], { click: r => openMod(r), empty: 'Aucun mod déclaré par les joueurs.' })}`;
+    return `<div class="bo-di-mods">
+      <section class="bo-di-chapter">
+        <header class="bo-di-chapter__head">
+          <h3 class="bo-di-chapter__title">Synthèse</h3>
+          <p class="bo-di-chapter__lead">Les trois premiers chiffres décrivent les listes reçues, toutes connexions confondues. Le quatrième chiffre et les versions suivent la période choisie en haut.</p>
+        </header>
+        <div class="ath-kpi-grid bo-di-kpis is-quad">
+          ${kpi('Mods nommés', catalogOk ? num(d.mods_total) : '—', catalogOk ? 'noms reçus' : 'noms non disponibles')}
+          ${kpi('Joueurs avec une liste', num(d.players_with_list), 'listes reçues')}
+          ${kpi('Mods par joueur', num(d.avg_mods_per_player), `max ${num(d.max_mods_per_player)}`)}
+          ${kpi('Joueurs hors version', `${num(v.outdated)} / ${num(v.players)}`, v.latest_link ? `référence Link ${esc(v.latest_link)}` : 'sur la période', v.outdated ? 'warn' : 'ok')}
+        </div>
+      </section>
+      <section class="bo-di-chapter">
+        <header class="bo-di-chapter__head">
+          <h3 class="bo-di-chapter__title">Versions en jeu</h3>
+          <p class="bo-di-chapter__lead">Chaque barre compte des joueurs vus sur la période, d’après leur connexion en jeu.</p>
+        </header>
+        <div class="bo-di-grid2">
+          ${card('Versions du mod COMSPEC', hbars(versionPairs(v.mod_versions).map(([k, n]) => ({ k, n })), 'n', 'k'))}
+          ${card('Versions COMSPEC Link', hbars(linkItems, 'n', 'k'))}
+        </div>
+      </section>
+      ${table('mods', cols, mods, { title: 'Mods nommés', lead: mods.length ? 'Nom reçu pour chaque mod. « Sur la période » suit le filtre en haut.' : '', hideCount: !catalogOk && !mods.length, click: r => openMod(r), empty: modsEmptyMessage(d) })}
+    </div>`;
   };
 
   R.terminals = d => {
@@ -409,6 +444,36 @@
     const el = $('#adi-live'); el.classList.toggle('is-ok', ok); el.classList.toggle('is-ko', !ok);
     $('span', el).textContent = ok ? `À jour · ${new Date().toLocaleTimeString('fr-FR')}` : `Indisponible${msg ? ' · ' + msg : ''}`;
   }
+  function describeUnavailable(tab, miss, data) {
+    if (!miss.length) return { text: '', tone: '' };
+    if (tab !== 'mods') {
+      return { text: `Sources non disponibles sur cette installation : ${miss.join(', ')}. Les sections concernées restent vides.`, tone: 'warn' };
+    }
+    const catalog = miss.includes('catalogue des mods');
+    const lists = miss.includes('listes de mods des joueurs');
+    const sessions = miss.includes('sessions de jeu');
+    const known = new Set(['catalogue des mods', 'listes de mods des joueurs', 'sessions de jeu']);
+    const other = miss.filter(s => !known.has(s));
+    const v = (data && data.versions) || {};
+    const hasVersions = versionPairs(v.mod_versions).length + versionPairs(v.link_versions).length > 0;
+    const listed = Number((data && data.players_with_list) || 0) > 0;
+    const named = data && data.catalog_available !== false && (data.mods || []).length > 0;
+    const parts = [];
+    if (catalog) parts.push('Le nom de chaque mod n’est pas disponible sur cette installation.');
+    if (lists && !listed) parts.push('Les listes de mods transmises par les joueurs ne sont pas disponibles.');
+    else if (lists && listed) parts.push('Le nombre de joueurs par mod n’est pas disponible.');
+    if (sessions) parts.push('Les versions en jeu ne sont pas disponibles.');
+    if (other.length) parts.push('D’autres mesures de cet onglet ne sont pas disponibles.');
+    const shown = [];
+    if (!sessions && hasVersions) shown.push('les versions du mod COMSPEC et de COMSPEC Link');
+    if (listed) shown.push('le nombre de mods par joueur');
+    if (named) shown.push('le détail des mods nommés');
+    if (shown.length) parts.push(`Déjà affiché : ${shown.join(', ')}.`);
+    else if (parts.length) parts.push('Les blocs qui en dépendent restent vides.');
+    const calm = catalog && shown.length > 0 && !sessions && !(lists && !listed);
+    return { text: parts.join(' '), tone: calm ? 'info' : 'warn' };
+  }
+
   const SEARCHABLE = ['pipeline', 'players', 'mods', 'terminals'];
   const CSV = ['pipeline', 'players', 'mods', 'terminals', 'traffic', 'errors', 'communities'];
   async function render(silent = false) {
@@ -424,8 +489,11 @@
     if (!j) { if (!silent) view.innerHTML = empty('Impossible de charger les métriques. Nouvel essai dans 30 s.'); return; }
     const notice = $('#adi-notice');
     const miss = (j.unavailable || []).filter(Boolean);
-    notice.hidden = !miss.length;
-    notice.textContent = miss.length ? `Sources non disponibles sur cette installation : ${miss.join(', ')}. Les sections concernées restent vides.` : '';
+    const described = describeUnavailable(tab, miss, j.data || {});
+    notice.hidden = described.text === '';
+    notice.textContent = described.text;
+    notice.classList.toggle('ath-warn', described.tone === 'warn');
+    notice.classList.toggle('is-info', described.tone === 'info');
     const scrollY = window.scrollY;
     view.innerHTML = R[tab](j.data || {});
     if (silent) window.scrollTo(0, scrollY);

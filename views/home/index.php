@@ -207,6 +207,7 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
     <?php endif; ?>
     <link href="<?= $e($base) ?>/assets/css/styles.css" rel="stylesheet">
     <link href="<?= $e(asset_url('assets/css/home-impact.css')) ?>" rel="stylesheet">
+    <link href="<?= $e(asset_url('assets/css/public-site-footer.css')) ?>" rel="stylesheet">
 </head>
 <body class="home-impact layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
 
@@ -1009,25 +1010,7 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
         </div>
     </dialog>
 
-    <footer class="hi-footer border-t border-white/10 bg-black py-10 text-white">
-        <div class="hi-wrap flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
-            <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em]">Athena<span class="text-emerald-400" aria-hidden="true">.</span></p>
-                <p class="hi-body-sm mt-3 max-w-xs text-white/60"><?= $e(__('home.footer_tagline')) ?></p>
-            </div>
-            <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-1 text-xs" aria-label="<?= $e(__('home.footer_legal_aria')) ?>">
-                <a href="<?= $e(url('a-propos')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.about')) ?></a>
-                <a href="<?= $e(url('sse')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.sse')) ?></a>
-                <a href="<?= $e(url('atak-natif')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.atak_native')) ?></a>
-                <a href="<?= $e(url('contact')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.contact')) ?></a>
-                <a href="<?= $e(url('nouveautes')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.changelog')) ?></a>
-                <?php
-                $legal_link_class = 'text-white/65 transition hover:text-emerald-400 font-medium';
-                require base_path('views/partials/legal_site_links.php');
-                ?>
-            </nav>
-        </div>
-    </footer>
+    <?php require base_path('views/partials/public_site_footer.php'); ?>
 
     <?php require base_path('views/partials/cookie_banner.php'); ?>
     <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>

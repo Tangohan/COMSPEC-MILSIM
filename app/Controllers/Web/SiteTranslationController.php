@@ -82,6 +82,20 @@ final class SiteTranslationController
             return Response::json(['ok' => false, 'error' => 'unknown_language'], 404);
         }
         $uid = (int) (ContributorController::user()['id'] ?? 0);
+        if ((string) $request->query('jump', '') === 'next-bare') {
+            $loc = $this->service()->nextBare($code, (string) $request->query('h', ''));
+            if ($loc === null) {
+                return Response::json(['ok' => true, 'jump' => null])->header('Cache-Control', 'no-store');
+            }
+            $page = $this->service()->page($code, '', 'blank', $loc['page'], $uid);
+
+            return Response::json([
+                'ok' => true,
+                'can_review' => $this->service()->canReview($uid, $code),
+                'focus' => $loc['h'],
+                'filter' => 'blank',
+            ] + $page)->header('Cache-Control', 'no-store');
+        }
         $page = $this->service()->page(
             $code,
             mb_substr((string) $request->query('q', ''), 0, 200),

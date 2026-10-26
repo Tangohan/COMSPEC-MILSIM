@@ -81,6 +81,30 @@ final class AtakTranslationPackRepository
         return $ok;
     }
 
+    private static ?bool $accountReady = null;
+
+    /** Colonne user_id présente (migration qui rattache un pack au compte, sans toucher aux packs historiques) ? */
+    public function accountReady(): bool
+    {
+        if (self::$accountReady === true) {
+            return true;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute(['atak_translation_packs', 'user_id']);
+            $ok = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $ok = false;
+        }
+        if ($ok) {
+            self::$accountReady = true;
+        }
+
+        return $ok;
+    }
+
     // ---------- Valeurs reçues ----------
 
     public static function validCode(mixed $code): ?string
@@ -201,6 +225,98 @@ final class AtakTranslationPackRepository
             }
         }
         throw new \RuntimeException('pack id');
+    }
+
+    /**
+     * Pack du compte pour cette langue, ou un pack neuf rattaché au compte (jamais listé au catalogue).
+     * Un pack déjà ouvert seulement par son lien (user_id vide) n'est pas repris.
+     *
+     * @param array{code: string, name: string, game: string, author_label: string, review_mode: string} $meta
+     * @return array{public_id: string, owner_token?: string, edit_token?: string, resumed: bool}
+     */
+    public function createForUser(int $userId, array $meta): array
+    {
+        $existing = $this->findUserPack($userId, $meta['code']);
+        if ($existing !== null) {
+            return ['public_id' => (string) $existing['public_id'], 'resumed' => true];
+        }
+        $created = $this->create($meta);
+        $this->pdo()->prepare('UPDATE atak_translation_packs SET user_id = ? WHERE public_id = ?')->execute([$userId, $created['public_id']]);
+        $created['resumed'] = false;
+
+        return $created;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findUserPack(int $userId, string $code): ?array
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT * FROM atak_translation_packs WHERE user_id = ? AND lang_code = ? ORDER BY updated_at DESC, id DESC LIMIT 1'
+        );
+        $st->execute([$userId, $code]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * Pack de ce compte seulement. Un autre membre, ou un pack sans compte, ne passe pas.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function ownedBy(string $publicId, int $userId): ?array
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+        $st = $this->pdo()->prepare('SELECT * FROM atak_translation_packs WHERE public_id = ? AND user_id = ? LIMIT 1');
+        $st->execute([$publicId, $userId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * Langues enregistrées sur le compte. Pas de jeton : un autre membre ne peut pas ouvrir ces lignes.
+     *
+     * @return list<array{id: string, code: string, name: string, game: string, author_label: string, rev: int, updated_at: string, translated: int}>
+     */
+    public function listForUser(int $userId): array
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT p.public_id, p.lang_code, p.lang_name, p.game_language, p.author_label, p.rev, p.updated_at,
+                    (SELECT COUNT(*) FROM atak_translation_strings s WHERE s.pack_id = p.id AND s.text <> \'\') AS translated
+             FROM atak_translation_packs p
+             WHERE p.user_id = ?
+             ORDER BY p.updated_at DESC, p.id DESC
+             LIMIT 40'
+        );
+        $st->execute([$userId]);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[] = [
+                'id' => (string) $row['public_id'],
+                'code' => (string) $row['lang_code'],
+                'name' => (string) $row['lang_name'],
+                'game' => (string) $row['game_language'],
+                'author_label' => (string) $row['author_label'],
+                'rev' => (int) $row['rev'],
+                'updated_at' => (string) $row['updated_at'],
+                'translated' => (int) $row['translated'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /** Nouveau lien propriétaire : l'ancien ne donne plus accès. Le compte, lui, continue d'ouvrir le pack. */
+    public function rotateOwnerToken(int $packId): string
+    {
+        $token = self::newToken();
+        $st = $this->pdo()->prepare('UPDATE atak_translation_packs SET owner_token_hash = ?, updated_at = NOW() WHERE id = ?');
+        $st->execute([self::tokenHash($token), $packId]);
+
+        return $token;
     }
 
     /**
