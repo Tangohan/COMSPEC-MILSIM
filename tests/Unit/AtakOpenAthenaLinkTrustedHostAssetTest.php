@@ -15,8 +15,13 @@ use PHPUnit\Framework\TestCase;
  * Test statique (lecture des sources, bloc découpé par comptage d'accolades, commentaires retirés). Il échoue si
  * la comparaison avec l'hôte de _baseUrl revient, si le contrôle n'exige plus https et une adresse sans
  * identifiants (IsSecretSafeUri remplacé par un simple contrôle d'hôte), si l'adresse s'ouvre sans portail
- * configuré ou avant le contrôle, si un autre schéma que http(s) passe, ou si une adresse fixe passée par le jeu
- * n'est plus admise par la nouvelle règle.
+ * configuré ou avant le contrôle, si un autre schéma que http(s) passe, si une adresse fixe passée par le jeu
+ * n'est plus admise par la nouvelle règle, ou si un appelant apparaît ou disparaît.
+ *
+ * Cinq appelants dans mod/ : fn_pageJtac (9-LINE, adresse fixe), connect fn_webBrowserOpenSystem et
+ * fn_webBrowserOpenAthena (portail fixe de fn_portalUrl), fn_athenaLink du natif et fn_athenaEden du guide SSE (Eden).
+ * Ces deux derniers ouvrent l'adresse rendue par le site après PairStart (verification_uri_complete, construite sur
+ * APP_URL : https://athena-comspec.eu dans .env.example) et, à défaut, « /lier » sur leur portail fixe en https.
  */
 final class AtakOpenAthenaLinkTrustedHostAssetTest extends TestCase
 {
@@ -94,12 +99,47 @@ final class AtakOpenAthenaLinkTrustedHostAssetTest extends TestCase
         self::assertSame(1, preg_match('~private _url = "([^"]+)";\s*private _r = [^;]*callExtension \["OpenAthenaLink"~', $this->read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/tactical/fn_pageJtac.sqf'), $jt), 'Adresse 9-LINE introuvable');
         self::assertSame(1, preg_match('~^\s*"(https?://[^"]+)"\s*$~m', $this->read('mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_portalUrl.sqf'), $pu), 'Adresse du portail de connect introuvable');
 
-        foreach ([$jt[1], rtrim($pu[1], '/') . '/atak'] as $url) {
+        // Liaison par code (natif et guide Eden) : adresse de secours « /lier » construite sur le portail fixe.
+        $pairing = [];
+        foreach (['mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_athenaLink.sqf', 'mod/@COMSPEC_SSE/addons/guide/functions/fn_athenaEden.sqf'] as $rel) {
+            $src = $this->read($rel);
+            self::assertSame(1, preg_match_all('~private _url = "([^"]+)";~', $src, $pm), $rel . ' : portail fixe introuvable');
+            self::assertStringContainsString('then { _uri = _url + "/lier"; };', $src, $rel . ' : adresse de secours changée');
+            $pairing[] = $pm[1][0] . '/lier';
+        }
+
+        foreach ([$jt[1], rtrim($pu[1], '/') . '/atak', ...$pairing] as $url) {
             $p = parse_url($url);
             self::assertIsArray($p, $url);
             self::assertSame('https', $p['scheme'] ?? '', $url);
             self::assertArrayNotHasKey('user', $p, $url);
             self::assertContains(strtolower($p['host'] ?? ''), $trusted, $url . ' : hôte hors de la liste de SEC-001');
         }
+    }
+
+    public function testEveryCallerIsKnown(): void
+    {
+        // Un nouvel appelant doit passer une adresse en https sur un hôte de la liste de SEC-001 : la vérifier, puis
+        // l'ajouter ici. Toutes les sources texte de mod/ (natif, connect, guide SSE, anciens paquets).
+        $base = $this->root() . '/';
+        $callers = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base . 'mod', \FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $file) {
+            if (preg_match('~\.(sqf|hpp|cpp|h|inc|ext)$~i', $file->getFilename()) !== 1) {
+                continue;
+            }
+            $n = preg_match_all('~"OpenAthenaLink"~i', (string) file_get_contents($file->getPathname()));
+            if ($n > 0) {
+                $callers[str_replace('\\', '/', substr($file->getPathname(), strlen($base)))] = $n;
+            }
+        }
+        ksort($callers);
+        self::assertSame([
+            'mod/@COMSPEC_SSE/addons/guide/functions/fn_athenaEden.sqf' => 1,
+            'mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_athenaLink.sqf' => 1,
+            'mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/tactical/fn_pageJtac.sqf' => 1,
+            'mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_webBrowserOpenAthena.sqf' => 1,
+            'mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_webBrowserOpenSystem.sqf' => 1,
+        ], $callers, 'Appelants d\'OpenAthenaLink');
     }
 }
