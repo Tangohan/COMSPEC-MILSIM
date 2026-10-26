@@ -12,8 +12,9 @@ use PHPUnit\Framework\TestCase;
  * lue, puis lue plus tard, périmée, à l'ouverture d'un téléphone ramassé.
  *
  * Test statique (lecture de fn_deviceDenied et fn_canUse, commentaires retirés). Il échoue si « item » notifie de
- * nouveau (cas default ou cas « item » ajouté), si le son disparaît ou passe derrière la limite des 30 s, ou si les
- * autres raisons (Zeus, surchauffe, batterie, téléphone détruit) ne notifient plus.
+ * nouveau (cas default, cas « item » ajouté, ou appel n'importe où ailleurs dans le fichier), si un affichage à l'écran
+ * du jeu apparaît, si le son disparaît ou passe derrière la limite des 30 s, ou si les autres raisons (Zeus,
+ * surchauffe, batterie, téléphone détruit) ne notifient plus.
  */
 final class AtakDeviceDeniedNoPhoneAssetTest extends TestCase
 {
@@ -52,6 +53,25 @@ final class AtakDeviceDeniedNoPhoneAssetTest extends TestCase
         self::assertArrayHasKey('default', $b);
         self::assertStringNotContainsString('fnc_notify', $b['default'], 'Le cas default (« item ») notifie de nouveau');
         self::assertStringNotContainsString('fnc_notify', $b['item'] ?? '', 'Un cas « item » notifie de nouveau');
+    }
+
+    public function testNothingElseNotifiesOrShowsAnywhereInTheFile(): void
+    {
+        // Le contrôle par branche ne voit pas un appel placé avant ou après le switch (mutation P5a-a de la
+        // contre-expertise) : tout le fichier est lu. Quatre notifications, toutes dans les branches zeus, heat, battery
+        // et broken ; plus aucun texte « Pas de terminal » ; rien à l'écran du jeu (le fichier promet le son seul).
+        $src = $this->code('functions/core/fn_deviceDenied.sqf');
+        $b = $this->branches();
+        $inBranches = 0;
+        foreach (['zeus', 'heat', 'battery', 'broken'] as $why) {
+            $inBranches += preg_match_all('~fnc_notify\b~i', $b[$why] ?? '');
+        }
+        self::assertSame(4, $inBranches);
+        self::assertSame(4, preg_match_all('~fnc_notify\b~i', $src), 'Appel de fn_notify hors des branches zeus, heat, battery et broken');
+        foreach (['Pas de terminal', 'Il faut porter'] as $text) {
+            self::assertSame(0, preg_match('~' . $text . '~iu', $src), 'Message « ' . $text . ' » réintroduit');
+        }
+        self::assertSame(0, preg_match('~\b(?:hint\w*|systemChat|titleText|cutText|\w*fnc_toast|\w*fnc_fullAlert|\w*fnc_addScreenToast|BIS_fnc_showNotification)\b~i', $src), 'Affichage à l\'écran du jeu dans fn_deviceDenied');
     }
 
     public function testSoundStaysImmediateAndUnthrottled(): void
