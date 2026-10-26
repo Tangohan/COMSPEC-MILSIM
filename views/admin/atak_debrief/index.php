@@ -80,6 +80,27 @@ $asked = count(array_filter($all, static fn (array $r): bool => $r['state'] !== 
 $mode = (string) ($d['mode'] ?? $settings['default_mode']);
 $questions = $d !== null && $d['questions'] !== [] ? $d['questions'] : Spec::BUILTIN;
 $openPanel = (string) ($dbfOpen ?? '');
+$onlineMin = (int) (Ctl::ONLINE_SECONDS / 60);
+$ico = static function (string $name, int $size = 18): string {
+    $p = [
+        'send' => '<path d="M4 12 20 4l-6 16-3-7-7-1Z"/>',
+        'phone' => '<rect x="7" y="2.5" width="10" height="19" rx="1.5"/><path d="M11 18.5h2"/>',
+        'edit' => '<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
+        'list' => '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/>',
+        'bell' => '<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4l2-2Z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+        'tip' => '<circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 11h1v5h1"/>',
+        'radar' => '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 19 6"/>',
+    ][$name] ?? '';
+
+    return '<svg class="bo-dbf-ico" viewBox="0 0 24 24" width="' . $size . '" height="' . $size . '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $p . '</svg>';
+};
+$stateHelp = [
+    'attente' => 'Le CR est parti vers le téléphone (envoyé, affiché ou ouvert) mais pas encore remis ni lu.',
+    'remis' => 'Le joueur a remis son questionnaire (mode « à remplir ») ou confirmé sa lecture (mode « à lire »).',
+    'non_recu' => 'Le téléphone n’a pas encore affiché le CR : envoyé mais pas reçu, expiré, ou joueur pas encore visé.',
+    'hors_ligne' => 'L’ATAK ne s’est pas synchronisé depuis plus de ' . $onlineMin . ' min : il recevra le CR à sa prochaine connexion, s’il est encore affiché.',
+];
+$stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_ligne' => 'bad'];
 ?>
 <div class="bo-aar bo-dbf" id="bo-dbf">
 
@@ -87,31 +108,48 @@ $openPanel = (string) ($dbfOpen ?? '');
   <section class="ath-panel"><p class="ath-panel__lead">Les tables du suivi des CR ne sont pas encore en place : lancez <code>run-migrations.php</code> (étape <code>atak_debrief</code>).</p></section>
 <?php endif; ?>
 
+  <details class="ath-panel bo-dbf-guide"<?= $d === null && $op === '' ? ' open' : '' ?>>
+    <summary class="bo-dbf-guide__sum"><?= $ico('tip', 16) ?> Comment ça marche</summary>
+    <ol class="bo-dbf-steps">
+      <li><span class="bo-dbf-steps__n">1</span><div><b><?= $ico('send', 16) ?> Imposer le CR</b><p>Depuis cette page (« Imposer un CR ») ou en jeu par un Zeus, un gestionnaire ou un UID autorisé, avec l’app « CR fin d’op » du téléphone.</p></div></li>
+      <li><span class="bo-dbf-steps__n">2</span><div><b><?= $ico('phone', 16) ?> Le téléphone s’ouvre dessus</b><p>À sa prochaine synchro avec Athena (environ 30 s en jeu), l’ATAK de chaque joueur visé affiche le CR et le garde à l’écran jusqu’à la réponse.</p></div></li>
+      <li><span class="bo-dbf-steps__n">3</span><div><b><?= $ico('edit', 16) ?> Le joueur remet ou lit</b><p>« À remplir » : il répond au questionnaire (intégré ou votre modèle). « À lire » : il lit votre synthèse et confirme.</p></div></li>
+      <li><span class="bo-dbf-steps__n">4</span><div><b><?= $ico('list', 16) ?> Vous suivez ici</b><p>Une ligne par joueur : état du CR, dernière synchro de son ATAK, remontées de la session. Les réponses se déplient avec ⋮ et s’exportent en Excel.</p></div></li>
+      <li><span class="bo-dbf-steps__n">5</span><div><b><?= $ico('bell', 16) ?> Relancer puis clôturer</b><p>« Relancer les retardataires » renvoie le CR à ceux qui n’ont pas répondu. « Clôturer » le retire des téléphones qui ne l’ont pas encore reçu.</p></div></li>
+    </ol>
+    <p class="bo-dbf-guide__foot">Prérequis : le mod Athena à jour chez les joueurs (la colonne ATAK affiche la version de chacun) et la liaison ATAK active pour votre communauté. <a href="<?= $h(url('back-office/ressources/atak-mod')) ?>">Mods (Steam Workshop)</a> · <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Configuration ATAK</a> · <a href="<?= $h(url('back-office/atak/comptes-rendus/modeles')) ?>">Modèles de questionnaire</a></p>
+  </details>
+
   <div class="ath-kpi-grid bo-aar-kpis">
     <article class="ath-card ath-kpi">
       <p class="ath-kpi__label">Joueurs</p>
       <p class="ath-kpi__value"><?= $total ?></p>
-      <p class="ath-kpi__note"><?= $d !== null ? $asked . ' visé(s) par la demande' : ($op !== '' ? 'de la session' : 'choisissez une opération') ?></p>
+      <p class="ath-kpi__note"><?= $d !== null ? $asked . ' visé(s) par la demande' : ($op !== '' ? 'ayant joué la session choisie' : 'choisissez une opération ci-dessous') ?></p>
+      <p class="bo-dbf-kpi-help">Joueurs listés pour l’opération ou le CR sélectionné.</p>
     </article>
     <article class="ath-card ath-kpi<?= $d !== null && $done < $total ? ' is-warn' : '' ?>">
       <p class="ath-kpi__label"><?= $mode === 'read' ? 'CR lus' : 'CR remis' ?></p>
       <p class="ath-kpi__value"><?= $done ?> <small>/ <?= $total ?></small></p>
-      <p class="ath-kpi__note"><?= $total > 0 ? (int) round(100 * $done / $total) . ' % de l’effectif' : '—' ?></p>
+      <p class="ath-kpi__note"><?= $total > 0 ? (int) round(100 * $done / $total) . ' % de l’effectif' : 'aucun joueur listé' ?></p>
+      <p class="bo-dbf-kpi-help"><?= $mode === 'read' ? 'Lecture confirmée sur le téléphone.' : 'Questionnaire remis depuis le téléphone.' ?></p>
     </article>
     <article class="ath-card ath-kpi<?= $wait > 0 ? ' is-warn' : '' ?>">
       <p class="ath-kpi__label">En attente</p>
       <p class="ath-kpi__value"><?= $wait ?></p>
       <p class="ath-kpi__note"><?= (int) ($counts['non_recu'] ?? 0) ?> pas encore reçu(s)</p>
+      <p class="bo-dbf-kpi-help">Envoyé, affiché ou ouvert, sans réponse pour l’instant.</p>
     </article>
     <article class="ath-card ath-kpi">
       <p class="ath-kpi__label">ATAK en ligne</p>
       <p class="ath-kpi__value"><?= $online ?> <small>/ <?= $total ?></small></p>
-      <p class="ath-kpi__note">synchro depuis moins de <?= (int) (Ctl::ONLINE_SECONDS / 60) ?> min</p>
+      <p class="ath-kpi__note">synchro depuis moins de <?= $onlineMin ?> min</p>
+      <p class="bo-dbf-kpi-help">Ces téléphones reçoivent un CR imposé en 30 s environ.</p>
     </article>
     <article class="ath-card ath-kpi">
       <p class="ath-kpi__label">Dernière synchro</p>
       <p class="ath-kpi__value bo-dbf-kpi-small"><?= $h($ago($lastSync)) ?></p>
       <p class="ath-kpi__note">le plus récent des ATAK listés</p>
+      <p class="bo-dbf-kpi-help">« jamais » : aucun ATAK de la liste n’a encore parlé à Athena.</p>
     </article>
   </div>
 
@@ -135,11 +173,11 @@ $openPanel = (string) ($dbfOpen ?? '');
       <?php endif; ?>
     </select>
     <span class="bo-aar-tabs__spacer"></span>
-    <a class="ath-btn" href="<?= $h(url('back-office/atak/comptes-rendus')) ?>">Comptes rendus post-op</a>
     <?php if ($canManage): ?>
       <a class="ath-btn" href="#dbf-reglages" data-dbf-open="dbf-reglages">Réglages du jeu</a>
       <a class="ath-btn ath-btn--solid" href="#dbf-imposer" data-dbf-open="dbf-imposer">Imposer un CR</a>
     <?php endif; ?>
+    <p class="bo-dbf-pick__help">« CR demandés » : les CR déjà imposés, avec leur avancement. « Sessions jouées » : les parties remontées par les ATAK, pour voir qui y était et lui imposer un CR.</p>
   </form>
 
   <?php if ($d !== null): ?>
@@ -182,19 +220,39 @@ $openPanel = (string) ($dbfOpen ?? '');
 
   <div class="bo-aar-seg" role="group" aria-label="Filtre">
     <?php foreach (Ctl::FILTERS as $code => $label): ?>
-      <a href="<?= $h($base . $qs(['filtre' => $code === 'tous' ? '' : $code])) ?>" class="bo-aar-seg__btn<?= $filter === $code ? ' is-active' : '' ?>"><?php if ($code !== 'tous'): ?><span class="bo-aar-dot bo-aar-dot--<?= ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_ligne' => 'bad'][$code] ?>"></span><?php endif; ?><?= $h($label) ?> <b><?= (int) ($counts[$code] ?? 0) ?></b></a>
+      <a href="<?= $h($base . $qs(['filtre' => $code === 'tous' ? '' : $code])) ?>" title="<?= $h($stateHelp[$code] ?? 'Tous les joueurs listés.') ?>" class="bo-aar-seg__btn<?= $filter === $code ? ' is-active' : '' ?>"><?php if ($code !== 'tous'): ?><span class="bo-aar-dot bo-aar-dot--<?= ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_ligne' => 'bad'][$code] ?>"></span><?php endif; ?><?= $h($label) ?> <b><?= (int) ($counts[$code] ?? 0) ?></b></a>
     <?php endforeach; ?>
   </div>
+  <details class="bo-dbf-legend">
+    <summary>Que veulent dire les états ?</summary>
+    <dl>
+      <?php foreach ($stateHelp as $code => $txt): ?><div><dt><span class="bo-aar-dot bo-aar-dot--<?= $stateDot[$code] ?>"></span><?= $h(Ctl::FILTERS[$code]) ?></dt><dd><?= $h($txt) ?></dd></div><?php endforeach; ?>
+      <div><dt>Détail par joueur</dt><dd>Envoyé → Affiché (le téléphone l’a reçu) → Ouvert → Remis ou Lu. « Expiré » : la durée d’affichage est passée sans réponse. « Annulé » : CR clôturé avant réception.</dd></div>
+    </dl>
+  </details>
 
   <section class="bo-dbf-grid" aria-label="Joueurs">
     <header class="bo-dbf-grid__bar">
-      <span class="bo-dbf-grid__title">CR de fin d’opération</span>
+      <span class="bo-dbf-grid__title">Joueurs <small>une ligne par joueur · ⋮ pour lire ses réponses</small></span>
       <input class="bo-dbf-grid__search" type="search" placeholder="Filtrer par joueur ou rôle…" aria-label="Filtrer" data-dbf-search>
     </header>
     <?php if ($rows === []): ?>
-      <div class="bo-aar-empty"><p class="ath-panel__lead"><?= $all === []
-          ? ($d === null && $op === '' ? 'Aucune opération à suivre pour l’instant. Imposez un CR aux joueurs dont l’ATAK est en ligne, ou attendez qu’une session remonte ses joueurs.' : 'Aucun joueur pour l’instant.')
-          : 'Aucun joueur dans ce filtre. <a href="' . $h($base . $qs(['filtre' => ''])) . '">Tout afficher</a>' ?></p></div>
+      <div class="bo-dbf-empty">
+        <?php if ($all !== []): ?>
+          <p><b>Aucun joueur dans ce filtre.</b> <a href="<?= $h($base . $qs(['filtre' => ''])) ?>">Tout afficher</a></p>
+        <?php elseif ($d === null && $op === ''): ?>
+          <span class="bo-dbf-empty__ico"><?= $ico('radar', 28) ?></span>
+          <p><b>Rien à suivre pour l’instant.</b></p>
+          <ul>
+            <li><b>Une partie vient de se jouer ?</b> Choisissez-la dans « Opération » ci-dessus : la liste montre qui y était et l’état de son ATAK.</li>
+            <li><b>Aucune session dans la liste ?</b> Elles apparaissent dès qu’un joueur dont le mod Athena est lié à votre communauté joue sur le serveur (positions et remontées de l’ATAK).</li>
+            <li><b>Des joueurs en jeu maintenant ?</b> <?php if ($canManage): ?><a href="#dbf-imposer" data-dbf-open="dbf-imposer">Imposez un CR</a> aux « ATAK synchronisés récemment ».<?php else: ?>Un gestionnaire peut leur imposer un CR.<?php endif; ?></li>
+          </ul>
+          <p class="bo-dbf-sub"><a href="<?= $h(url('back-office/atak/comptes-rendus')) ?>">Comptes rendus post-op</a> · <a href="<?= $h(url('back-office/remontees')) ?>">Remontées</a> · <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Configuration ATAK</a></p>
+        <?php else: ?>
+          <p><b>Aucun joueur pour l’instant.</b> Les joueurs apparaissent quand leur ATAK remonte des positions ou des comptes rendus pour cette session.</p>
+        <?php endif; ?>
+      </div>
     <?php else: ?>
     <div class="bo-dbf-grid__wrap">
       <table class="bo-dbf-table">
@@ -254,9 +312,11 @@ $openPanel = (string) ($dbfOpen ?? '');
             <option value="fill"<?= $settings['default_mode'] === 'fill' ? ' selected' : '' ?>>À remplir par le joueur</option>
             <option value="read"<?= $settings['default_mode'] === 'read' ? ' selected' : '' ?>>À lire seulement</option>
           </select>
+          <small>« À remplir » : le joueur répond à un questionnaire. « À lire » : il lit votre synthèse (ex. debriefing de l’état-major) et confirme.</small>
         </label>
         <label>Titre
           <input type="text" name="titre" maxlength="200" placeholder="<?= $h($op !== '' ? AtakMissionKey::label($op) : 'Fin d’opération') ?>">
+          <small>Affiché en tête du téléphone. Ex. « Op. Tempête – CR de section ». Vide : le nom de la session.</small>
         </label>
         <label>Joueurs visés
           <select name="cible" data-dbf-target>
@@ -264,37 +324,45 @@ $openPanel = (string) ($dbfOpen ?? '');
             <option value="en_ligne"<?= $op === '' ? ' selected' : '' ?>>ATAK synchronisés récemment</option>
             <option value="liste">Liste d’UID Steam</option>
           </select>
+          <small>Session : tous ceux qui l’ont jouée. En ligne : ceux connectés en ce moment. Liste : des joueurs précis (UID Steam 7656119…).</small>
         </label>
         <label data-dbf-show="en_ligne">Synchronisés depuis
           <select name="minutes"><?php foreach ([15 => '15 min', 30 => '30 min', 60 => '1 h', 180 => '3 h', 720 => '12 h'] as $m => $l): ?><option value="<?= $m ?>"<?= $m === 30 ? ' selected' : '' ?>><?= $h($l) ?></option><?php endforeach; ?></select>
+          <small>Pour « ATAK synchronisés récemment ». 30 min couvre une fin de partie, 3 h une soirée entière.</small>
         </label>
         <label>Affiché pendant
           <select name="validite_heures"><?php foreach ([6 => '6 h', 24 => '24 h', 48 => '48 h', 168 => '7 jours'] as $hh => $l): ?><option value="<?= $hh ?>"<?= $hh === 48 ? ' selected' : '' ?>><?= $h($l) ?></option><?php endforeach; ?></select>
+          <small>Passé ce délai, un CR non remis passe « Expiré » et quitte les téléphones. 48 h laisse le temps à ceux qui partent vite.</small>
         </label>
         <label data-dbf-show-mode="fill">Questionnaire
           <select name="template_id">
             <option value="0">Questionnaire intégré à l’ATAK (6 questions)</option>
             <?php foreach ($dbfTemplates ?? [] as $tpl): ?><option value="<?= (int) $tpl['id'] ?>"<?= (int) $settings['template_id'] === (int) $tpl['id'] ? ' selected' : '' ?>><?= $h($tpl['title']) ?> (<?= (int) $tpl['field_count'] ?> question(s))</option><?php endforeach; ?>
           </select>
+          <small>Intégré : déroulé, réussites, axes de progrès, pertes, liaisons, note sur 5. Vos <a href="<?= $h(url('back-office/atak/comptes-rendus/modeles')) ?>">modèles</a> se créent dans Comptes rendus.</small>
         </label>
         <label data-dbf-show-mode="read">Compte rendu à lire
           <select name="aar_report_id">
             <option value="0">Texte ci-dessous</option>
             <?php foreach ($dbfAars ?? [] as $a): ?><option value="<?= (int) $a['id'] ?>"><?= $h(($a['reference_code'] ?? '') . ' · ' . (trim((string) ($a['operation_label'] ?? '')) ?: $a['title'])) ?></option><?php endforeach; ?>
           </select>
+          <small>Un compte rendu post-op existant, ou le texte saisi plus bas.</small>
         </label>
       </div>
       <input type="hidden" name="mission_key" value="<?= $h($op) ?>">
       <label class="bo-dbf-form__wide" data-dbf-show="liste">UID Steam (un par ligne ou séparés par des virgules)
         <textarea name="joueurs" rows="3" placeholder="7656119…"></textarea>
+          <small>L’UID Steam à 17 chiffres figure sur la fiche du membre (liaison Steam).</small>
       </label>
       <label class="bo-dbf-form__wide">Message d’introduction (facultatif)
         <input type="text" name="intro" maxlength="600" value="<?= $h($settings['intro']) ?>" placeholder="Merci de remplir votre compte rendu avant de quitter le serveur.">
+          <small>Une phrase au-dessus du questionnaire. Ex. « 2 minutes, ça aide à préparer la prochaine opé. » Pré-rempli avec l’introduction des réglages du jeu.</small>
       </label>
       <label class="bo-dbf-form__wide" data-dbf-show-mode="read">Texte à lire
         <textarea name="texte" rows="4" maxlength="6000" placeholder="Synthèse de l’opération, points forts, axes de progrès, consignes pour la prochaine session…"></textarea>
+          <small>Le téléphone affiche environ 2 000 caractères : restez court et renvoyez vers le site pour le détail.</small>
       </label>
-      <p><button class="ath-btn ath-btn--solid" type="submit">Envoyer aux téléphones</button></p>
+      <p class="bo-dbf-form__bar"><button class="ath-btn ath-btn--solid" type="submit">Envoyer aux téléphones</button><span class="bo-dbf-sub">Les joueurs visés le reçoivent à leur prochaine synchro : suivez l’avancement dans la liste.</span></p>
     </form>
   </details>
 
@@ -309,20 +377,24 @@ $openPanel = (string) ($dbfOpen ?? '');
             <option value="fill"<?= $settings['default_mode'] === 'fill' ? ' selected' : '' ?>>À remplir</option>
             <option value="read"<?= $settings['default_mode'] === 'read' ? ' selected' : '' ?>>À lire</option>
           </select>
+          <small>Mode proposé quand le CR est imposé depuis le téléphone.</small>
         </label>
         <label>Questionnaire en jeu
           <select name="template_id">
             <option value="0">Intégré à l’ATAK</option>
             <?php foreach ($dbfTemplates ?? [] as $tpl): ?><option value="<?= (int) $tpl['id'] ?>"<?= (int) $settings['template_id'] === (int) $tpl['id'] ? ' selected' : '' ?>><?= $h($tpl['title']) ?></option><?php endforeach; ?>
           </select>
+          <small>Questionnaire envoyé quand le CR part du jeu. Hors liaison, l’ATAK garde son questionnaire intégré.</small>
         </label>
-        <label class="bo-aar-check bo-dbf-form__check"><input type="checkbox" name="zeus" value="1"<?= !empty($settings['zeus_allowed']) ? ' checked' : '' ?>> Les Zeus peuvent imposer le CR</label>
+        <label class="bo-aar-check bo-dbf-form__check"><input type="checkbox" name="zeus" value="1"<?= !empty($settings['zeus_allowed']) ? ' checked' : '' ?>> <span>Les Zeus peuvent imposer le CR <small>Utile si vos missions sont menées par un Game Master qui n’est pas gestionnaire sur le site.</small></span></label>
       </div>
       <label class="bo-dbf-form__wide">Introduction par défaut
-        <input type="text" name="intro" maxlength="600" value="<?= $h($settings['intro']) ?>">
+        <input type="text" name="intro" maxlength="600" value="<?= $h($settings['intro']) ?>" placeholder="Ex. Merci de remplir votre compte rendu avant de quitter le serveur.">
+          <small>Reprise par défaut dans « Imposer un CR » et sur les CR imposés depuis le jeu.</small>
       </label>
       <label class="bo-dbf-form__wide">UID Steam autorisés en plus (chefs de groupe, instructeurs…)
         <textarea name="uids" rows="3" placeholder="7656119…"><?= $h(implode("\n", $settings['authorized_uids'])) ?></textarea>
+          <small>Un UID Steam par ligne. Ces joueurs voient le bouton « Imposer » dans l’app « CR fin d’op » de leur téléphone.</small>
       </label>
       <p class="bo-aar-muted">Administrateurs de la plateforme et gestionnaires de la communauté ont toujours le droit. L’hôte et les administrateurs du serveur Arma aussi.</p>
       <p><button class="ath-btn ath-btn--solid" type="submit">Enregistrer</button></p>
