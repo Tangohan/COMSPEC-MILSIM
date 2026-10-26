@@ -3804,7 +3804,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText,MedicalRoster";
         }
 
         if (function == "GetCapabilities")
@@ -4976,6 +4976,8 @@ public static partial class Extension
             // mode « cache » : liste gardée en mémoire ou dans Sync\wardrobes.json, le site n'est appelé que
             // si ce PC n'a encore rien ; « refresh » ou absent : rechargée depuis le site à la page 0 (bouton Actualiser).
             // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
+            // App Médical de l'ATAK natif : fiches médicales de la communauté, gardées dans Sync\medical_roster.json (2.0.96).
+            if (function == "MedicalRoster" || function == "MedicalRosterInfo") return MedicalRosterCommand(function, args, token);
             if (function == "ListWardrobes")
             {
                 var startLine = 0;

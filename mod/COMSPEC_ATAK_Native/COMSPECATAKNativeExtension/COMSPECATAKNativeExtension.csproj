@@ -29,6 +29,7 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_RefusalLatch.cs" Link="Extension_RefusalLatch.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SelfTest.cs" Link="Extension_SelfTest.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_WardrobeCache.cs" Link="Extension_WardrobeCache.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MedicalRoster.cs" Link="Extension_MedicalRoster.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_ItemIcons.cs" Link="Extension_ItemIcons.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapCapture.cs" Link="Extension_MapCapture.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapPhoto.cs" Link="Extension_MapPhoto.cs" />
