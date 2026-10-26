@@ -12,6 +12,15 @@ $headHtml = ob_get_clean();
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
 <head>
+<script>
+/* Mode nuit du back-office (même réglage) : seules les pages qui le prévoient, comme l’intégration, l’utilisent. */
+(function () {
+    var pref = 'auto';
+    try { pref = localStorage.getItem('athena.bo.theme') || 'auto'; } catch (e) {}
+    var dark = pref === 'dark' || (pref === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-bo-theme', dark ? 'dark' : 'light');
+})();
+</script>
 <?= $headHtml ?>
 </head>
 <body class="bg-slate-100 text-slate-900">
