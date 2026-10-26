@@ -657,6 +657,8 @@ if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_nat
 ["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
 // Pas de gestionnaire comspec_atak_native_captureSrv : « dropped », « validate », « dismiss » et « athena »
 // arrivent par remoteExecCall vers 2, seule voie qui laisse le serveur reconnaître l'acteur (fn_captureServer).
+// « giveFail » (téléphone posé au sol par une IA à l'inventaire plein) n'arrive d'aucun client : le serveur le
+// constate lui-même après l'ordre « give » (fn_captureServer « giveCheck »).
 // Pas de gestionnaire comspec_atak_native_compromise non plus : alertes, révocation chez Athena et nouvel IMEI arrivent
 // du serveur par remoteExecCall, seule voie qui laisse le joueur vérifier que l'ordre vient du serveur (fn_compromise).
 // App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).

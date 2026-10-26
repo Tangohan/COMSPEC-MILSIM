@@ -26,6 +26,10 @@
         pile du remoteExec de l'admin : l'admin y est recalculé à l'identique. « athena » (résultat de la révocation)
         n'est accepté que du joueur à qui le serveur l'a demandée (UID retenu dans « asked »), tant qu'elle est en attente.
       "local" [mode, objet, valeur] : sur la machine où l'objet est local ("strip" | "give" | "move" | "pick" | "hunt")
+      "giveCheck" [IA, classe, nombre avant, porte-objets proches avant, position, heure] : lancée par « tick » après
+        l'ordre « give ». Le serveur constate lui-même si l'IA a reçu le téléphone ; sinon (inventaire plein sur la
+        machine de l'IA) il cherche le porte-objet posé à côté d'elle et y reporte la capture (« giveFail » [IA,
+        porte-objet, position]). Aucun client ne les envoie : absentes de la liste des actions distantes.
     Debug (app Admin, fn_adminServer) : chaque capture garde « targets » (joueurs repérés) et « hunters » (groupes en traque).
 */
 params [["_act", "tick"], ["_arg", []]];
@@ -101,16 +105,37 @@ switch (_act) do {
         _l pushBackUnique _h;
         missionNamespace setVariable ["COMSPEC_ATAK_CapHolders", _l select { !isNull _x }];
     };
-    case "giveFail": {
-        // « give » sans place chez l'IA : le téléphone a été posé au sol (porte-objet _gh). La capture déjà ouverte passe
-        // sur ce porte-objet (même id, reprise possible par une autre IA) et l'IA n'en est plus le porteur.
+    case "giveCheck": {
+        // Après l'ordre « give » (tick) : l'IA a-t-elle reçu le téléphone ? Le serveur le constate lui-même, sans
+        // message de la machine de l'IA. Avant, celle-ci levait l'événement CBA comspec_atak_native_captureSrv
+        // « giveFail », que tout client pouvait lever, et que ce lot retire (un client y validait une compromission
+        // au nom d'un chef ou posait le résultat de la révocation chez Athena).
         if (!isServer) exitWith {};
-        _arg params [["_ai", objNull], ["_gh", objNull], ["_later", false]];
-        if (isNull _ai || {isNull _gh}) exitWith {};
-        // IA locale au serveur : l'événement arrive avant l'ouverture de la capture (même image) ; traité à l'image suivante
-        // (le contenu du porte-objet créé par une machine distante a aussi eu le temps d'arriver).
-        if !(_later) exitWith { [{ ["giveFail", _this] call comspec_atak_native_fnc_captureServer; }, [_ai, _gh, true]] call CBA_fnc_execNextFrame; };
-        if (((_gh distance _ai) > 10) || {([_gh, "holder"] call _items) isEqualTo []}) exitWith {};
+        _arg params [["_ai", objNull], ["_cls", ""], ["_had", 0], ["_old", []], ["_p0", []], ["_t0", 0]];
+        if (isNull _ai || {_cls isEqualTo ""} || {_p0 isEqualTo []}) exitWith {};
+        // Reçu : un exemplaire de plus qu'avant l'ordre.
+        if (({ _x == _cls } count ((assignedItems _ai) + (items _ai))) > _had) exitWith {};
+        // Pas reçu : porte-objet apparu depuis l'ordre à moins de 10 m, qui contient cette classe et ne porte ni
+        // capture ni téléphone de joueur (un téléphone lâché par un joueur garde son propriétaire).
+        private _gh = (nearestObjects [_p0, ["GroundWeaponHolder"], 10]) select {
+            !(_x in _old) && {((itemCargo _x) findIf { _x == _cls }) >= 0}
+            && {(_x getVariable ["COMSPEC_ATAK_CapOf", ""]) isEqualTo ""} && {(_x getVariable ["COMSPEC_ATAK_PhoneTag", []]) isEqualTo []}
+            && {isNull (_x getVariable ["COMSPEC_ATAK_PhoneOwner", objNull])}
+        };
+        if (_gh isNotEqualTo []) exitWith { ["giveFail", [_ai, _gh select 0, _p0]] call comspec_atak_native_fnc_captureServer; };
+        // Ni l'un ni l'autre encore : inventaire d'une IA distante (client sans interface, groupe d'un joueur) ou
+        // porte-objet pas encore arrivés au serveur. Nouvel essai toutes les 2 s, pendant 20 s.
+        if ((_now - _t0) < 20) exitWith { [{ ["giveCheck", _this] call comspec_atak_native_fnc_captureServer; }, _arg, 2] call CBA_fnc_waitAndExecute; };
+        diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] %1 : %2 ni reçu par %3 ni posé au sol en %4 s", _ai getVariable ["COMSPEC_ATAK_CapOf", ""], _cls, typeOf _ai, round (_now - _t0)];
+    };
+    case "giveFail": {
+        // « give » sans place chez l'IA (constaté par « giveCheck ») : le téléphone a été posé au sol (porte-objet _gh).
+        // La capture déjà ouverte passe sur ce porte-objet (même id, reprise possible par une autre IA) et l'IA n'en
+        // est plus le porteur. Action interne du serveur : aucun client ne l'envoie (absente de la liste distante).
+        if (!isServer) exitWith {};
+        _arg params [["_ai", objNull], ["_gh", objNull], ["_p0", []]];
+        if (isNull _ai || {isNull _gh} || {_p0 isEqualTo []}) exitWith {};
+        if (((_gh distance2D _p0) > 10) || {([_gh, "holder"] call _items) isEqualTo []}) exitWith {};
         private _caps = missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap];
         private _cid = _ai getVariable ["COMSPEC_ATAK_CapOf", ""];
         if !(_cid isEqualType "" && {_cid in _caps}) exitWith {};
@@ -133,12 +158,12 @@ switch (_act) do {
             };
             case "give": {
                 // Plus de place (inventaire changé depuis la vérification du serveur) : le téléphone est posé au sol à
-                // côté de l'IA plutôt que perdu ; le serveur y reporte la capture (« giveFail ») pour qu'il reste ramassable
-                // et que l'IA sans téléphone ne l'exploite plus.
+                // côté de l'IA plutôt que perdu. Le serveur le constate lui-même (« giveCheck ») et y reporte la capture
+                // (« giveFail ») pour qu'il reste ramassable et que l'IA sans téléphone ne l'exploite plus. Cette
+                // machine n'envoie rien au serveur.
                 if (_o canAdd _v) then { _o addItem _v; } else {
                     private _gh = createVehicle ["GroundWeaponHolder", getPosATL _o, [], 0.5, "CAN_COLLIDE"];
                     _gh addItemCargoGlobal [_v, 1];
-                    ["comspec_atak_native_captureSrv", ["giveFail", [_o, _gh]]] call CBA_fnc_serverEvent;
                 };
                 _o playActionNow "PutDown";
                 _o doFollow (leader group _o);
@@ -249,7 +274,12 @@ switch (_act) do {
                 // Le corps n'a plus de téléphone à donner.
                 if !(alive _o) then { _o setVariable ["COMSPEC_ATAK_PhoneTag", nil, true]; _o setVariable ["COMSPEC_ATAK_CapOf", nil, true]; };
             };
+            // État relevé avant l'ordre « give », pour que le serveur constate lui-même s'il a abouti (« giveCheck ») :
+            // exemplaires de cette classe chez l'IA, porte-objets déjà là, position de l'IA.
+            private _p0 = ASLToAGL (getPosASL _ai);
+            private _chk = [_ai, _cls, { _x == _cls } count ((assignedItems _ai) + (items _ai)), nearestObjects [_p0, ["GroundWeaponHolder"], 12], _p0, _now];
             ["comspec_atak_native_capLocal", ["give", _ai, _cls], _ai] call CBA_fnc_targetEvent;
+            [{ ["giveCheck", _this] call comspec_atak_native_fnc_captureServer; }, _chk, 2] call CBA_fnc_waitAndExecute;
             // Le téléphone garde son identité : on peut le géolocaliser par son numéro ou son IMEI.
             _ai setVariable ["COMSPEC_ATAK_Ident", [_tag param [3, ""], _tag param [4, ""], ""], true];
             private _grid = [_pos, 8] call comspec_atak_native_fnc_gridRef;

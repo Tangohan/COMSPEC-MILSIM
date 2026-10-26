@@ -28,6 +28,21 @@ final class AtakMultiplayerAuthTest extends TestCase
         return $j === false ? '' : substr($src, (int) $i, $j - (int) $i);
     }
 
+    /** Fichiers .sqf d'un dossier du dépôt, récursivement : [chemin relatif => source], dans un ordre stable. */
+    private function sqfFiles(string $dir): array
+    {
+        $root = dirname(__DIR__, 2) . '/';
+        $out = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root . $dir, \FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $f) {
+            if (strtolower($f->getExtension()) === 'sqf') {
+                $out[substr($f->getPathname(), strlen($root))] = (string) file_get_contents($f->getPathname());
+            }
+        }
+        ksort($out);
+        return $out;
+    }
+
     /** Actions de fn_compromise que le garde de tête refuse à un appel distant qui ne vient pas du serveur. */
     private function compromiseGuarded(): array
     {
@@ -72,6 +87,43 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_ok\) exitWith \{ _c set \["athena", "ok"\]; call _publish; \};/s', $athena);
         self::assertSame(1, substr_count($athena, 'if (_ok) exitWith'));
         self::assertMatchesRegularExpression('/_c set \["asked", getPlayerUID _next\];\s*\S[^\n]*"revoke"[^\n]*_next\]/', $athena);
+    }
+
+    public function testGiveFailIsNoticedByTheServerWithoutAnyClientMessage(): void
+    {
+        // « giveFail » (regroupement 2.5.0) : une IA à l'inventaire plein pose le téléphone au sol. main le faisait
+        // savoir au serveur par l'événement CBA comspec_atak_native_captureSrv, que ce lot retire parce que tout client
+        // pouvait le lever (contre-expertise v4, B5). Le serveur le constate maintenant lui-même : après l'ordre
+        // « give », « giveCheck » regarde si l'IA a reçu le téléphone, sinon cherche le porte-objet apparu à moins de
+        // 10 m et y reporte la capture (« giveFail »).
+        $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/shell/fn_captureServer.sqf'));
+        // La machine de l'IA pose le téléphone et n'envoie rien.
+        $give = $this->between($code, 'case "give": {', 'case "move":');
+        self::assertStringContainsString('createVehicle ["GroundWeaponHolder"', $give);
+        foreach (['Event', 'remoteExec', 'publicVariable', 'setVariable', 'giveFail', 'giveCheck'] as $send) {
+            self::assertStringNotContainsString($send, $give, $send);
+        }
+        // Le serveur lance la vérification juste après son ordre « give » (tick), avec l'état relevé avant l'ordre.
+        self::assertMatchesRegularExpression('/private _chk = \[_ai, _cls, \{ _x == _cls \} count \(\(assignedItems _ai\) \+ \(items _ai\)\), nearestObjects \[_p0, \["GroundWeaponHolder"\], 12\], _p0, _now\];\s*'
+            . '\["comspec_atak_native_capLocal", \["give", _ai, _cls\], _ai\] call CBA_fnc_targetEvent;\s*'
+            . '\[\{ \["giveCheck", _this\] call comspec_atak_native_fnc_captureServer; \}, _chk, 2\] call CBA_fnc_waitAndExecute;/', $code);
+        $check = $this->between($code, 'case "giveCheck": {', 'case "giveFail": {');
+        self::assertStringContainsString('if (({ _x == _cls } count ((assignedItems _ai) + (items _ai))) > _had) exitWith {};', $check);
+        self::assertStringContainsString('(nearestObjects [_p0, ["GroundWeaponHolder"], 10]) select {', $check);
+        self::assertStringContainsString('if (_gh isNotEqualTo []) exitWith { ["giveFail", [_ai, _gh select 0, _p0]] call comspec_atak_native_fnc_captureServer; };', $check);
+        $fail = $this->between($code, 'case "giveFail": {', 'case "local": {');
+        self::assertStringContainsString('if (((_gh distance2D _p0) > 10) || {([_gh, "holder"] call _items) isEqualTo []}) exitWith {};', $fail);
+        // Ni « giveCheck » ni « giveFail » n'est ouverte aux clients, et aucun autre fichier ne les appelle.
+        self::assertStringContainsString('if (_remote && {!(_act in ["dropped", "validate", "dismiss", "athena"])}) exitWith {', $code);
+        $elsewhere = [];
+        foreach ([self::MAIN, self::CONNECT] as $dir) {
+            foreach ($this->sqfFiles($dir) as $rel => $src) {
+                if (!str_ends_with($rel, '/fn_captureServer.sqf') && preg_match('/give(?:Fail|Check)/', $this->stripSqfComments($src)) === 1) {
+                    $elsewhere[] = $rel;
+                }
+            }
+        }
+        self::assertSame([], $elsewhere);
     }
 
     public function testFireTeamsHaveNoCbaEventLeft(): void
