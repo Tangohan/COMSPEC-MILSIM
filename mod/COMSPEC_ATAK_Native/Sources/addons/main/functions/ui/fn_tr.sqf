@@ -128,6 +128,11 @@ private _seg = {
         private _lblEn = _exact getOrDefault [_lbl, _lbl];
         if (_lblEn isNotEqualTo _lbl) then { _r = _lblEn + _colon + ([_core select [_k + 3], _depth + 1] call _seg); };
     };
+    // « Titre — émetteur » assemblé dans le code (alertes du poste : « Opérateur à terre — Alpha 1 ») : chaque morceau.
+    if (_r isEqualTo "" && {_depth < 2} && {(_core find " — ") > 0}) then {
+        private _r2 = (([_core, " — "] call CBA_fnc_split) apply { [_x, _depth + 1] call _seg }) joinString " — ";
+        if (_r2 isNotEqualTo _core) then { _r = _r2; };
+    };
     // Puce ou symbole devant le texte (« ■ SEEK PRÊT », « ‹ RETOUR », « ● EN LIGNE ») : le texte qui suit est cherché seul.
     if (_r isEqualTo "" && {_depth < 2}) then {
         private _sp = _core find " ";
