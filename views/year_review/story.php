@@ -76,7 +76,7 @@ $count = count($yrSlides);
                     <?php if (!empty($s['stats'])): ?>
                         <dl class="yr-stats<?= ($s['key'] ?? '') === 'summary' ? ' yr-stats--grid' : '' ?>">
                             <?php foreach ($s['stats'] as [$label, $value]): ?>
-                                <div data-share-stat><dt><?= $h((string) $label) ?></dt><dd translate="no"><?= $h((string) $value) ?></dd></div>
+                                <div data-share-stat><dt><?= $h((string) $label) ?></dt><dd><?= $h((string) $value) ?></dd></div>
                             <?php endforeach; ?>
                         </dl>
                     <?php endif; ?>
