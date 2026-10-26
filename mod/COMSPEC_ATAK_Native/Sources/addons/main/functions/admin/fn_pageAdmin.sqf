@@ -1,0 +1,280 @@
+/*
+    App ADMIN : interface de gestion dans le téléphone, pour la gestion de la communauté et les Zeus (rien sur l'écran de jeu).
+    Onglets (clé admTab de l'état) :
+      EN JEU     ATAK de chaque joueur de la partie : porté ou non, batterie, état, liaison Athena, versions, numéro / IMEI,
+                 effets Zeus en cours ; actions Zeus par joueur (verrouiller, muet, brouiller, éteindre, tout rétablir),
+                 et sa fiche Athena (compte, compromission, blocage) quand le parc est chargé
+      ATHENA     parc ATAK de la communauté sur le site (comme Gestion > Parc ATAK) : bloquer, lever un blocage, déconnecter,
+                 message imposé, déclarer ou lever une compromission ; recherche et pages de 40
+      DEBUG IA   téléphones ramassés par l'IA ennemie : porteur, déchiffrage, exploitation du BFT, groupes en traque et joueurs
+                 repérés, IA en route pour ramasser ; valider / rejeter, arrêter la traque, reprendre le téléphone ; traque
+                 coupée pour la partie
+    Droits : voir fn_adminClient (en jeu : Zeus, hôte, admin connecté, gestionnaire désigné ; Athena : rôle sur le site).
+    Relevé de la partie toutes les 10 s tant que l'app est à l'écran (rien sinon).
+    Params (app déclarée avec function=) : [page, [x, y, largeur, hauteur]]
+*/
+disableSerialization;
+private _l = [] call comspec_atak_native_fnc_layoutGet;
+(_l get "body") params ["", "", "_bw", "_bh"];
+private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
+private _re = "[{ ['ADMIN'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+private _setS = { params ["_k", "_v"]; compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set [%1, %2]; %3", str _k, str _v, _re] };
+private _inGame = [player] call comspec_atak_native_fnc_adminAllowed;
+private _role = uiNamespace getVariable ["COMSPEC_ATAK_AdminRole", ""];
+private _site = _role in ["manager", "platform"];
+private _tab = _s getOrDefault ["admTab", ["ATHENA", "GAME"] select _inGame];
+private _open = _s getOrDefault ["admOpen", ""];
+private _confirm = _s getOrDefault ["admConfirm", ""];
+private _ago = {
+    params ["_sec"];
+    if (_sec < 0) exitWith { "jamais" };
+    if (_sec < 90) exitWith { format ["il y a %1 s", round _sec] };
+    if (_sec < 5400) exitWith { format ["il y a %1 min", round (_sec / 60)] };
+    if (_sec < 172800) exitWith { format ["il y a %1 h", round (_sec / 3600)] };
+    format ["il y a %1 j", round (_sec / 86400)]
+};
+private _sideHex = createHashMapFromArray [["WEST", "#4d8fe0"], ["EAST", "#e5483a"], ["GUER", "#5cc76b"], ["CIV", "#b48ae0"]];
+private _confirmBtn = {
+    // Bouton à deux temps : le premier clic arme, le second fait.
+    params ["_label", "_key", "_code", ["_help", ""], ["_enabled", true]];
+    if (_confirm isEqualTo _key) exitWith {
+        ["CONFIRMER : " + _label, compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set ['admConfirm', '']; %1 %2", _code, _re], "red", _enabled, _help]
+    };
+    [_label, compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set ['admConfirm', %1]; %2", str _key, _re], false, _enabled, _help]
+};
+
+// Relevé périodique tant que l'app est à l'écran.
+if (_inGame && {isNil { uiNamespace getVariable "COMSPEC_ATAK_AdminPfh" }}) then {
+    ["scan"] call comspec_atak_native_fnc_adminClient;
+    uiNamespace setVariable ["COMSPEC_ATAK_AdminPfh", [{
+        private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        if (isNull ([] call comspec_atak_native_fnc_display) || {(_st getOrDefault ["activePage", ""]) isNotEqualTo "ADMIN"}) exitWith {
+            [_this select 1] call CBA_fnc_removePerFrameHandler;
+            uiNamespace setVariable ["COMSPEC_ATAK_AdminPfh", nil];
+        };
+        // Message en cours de saisie : pas de relevé (le redessin effacerait le texte).
+        if ((_st getOrDefault ["admMsgFor", 0]) isNotEqualTo 0) exitWith {};
+        ["scan"] call comspec_atak_native_fnc_adminClient;
+    }, 10] call CBA_fnc_addPerFrameHandler];
+};
+// Parc Athena : chargé à la première ouverture, puis à la demande.
+private _fleet = uiNamespace getVariable ["COMSPEC_ATAK_AdminFleet", []];
+if (_fleet isEqualTo [] && {!(uiNamespace getVariable ["COMSPEC_ATAK_AdminFleetBusy", false])}) then { ["fleet", ["", 0]] call comspec_atak_native_fnc_adminClient; };
+_fleet params [["_fAt", -1], ["_fRole", ""], ["_fTotal", 0], ["_fRows", []], ["_fErr", ""], ["_fQ", ""], ["_fOff", 0]];
+// Fiches Athena par Steam, pour l'onglet EN JEU.
+private _bySteam = createHashMap;
+{ if ((_x param [2, ""]) isNotEqualTo "") then { _bySteam set [_x select 2, _x]; }; } forEach _fRows;
+
+private _players = (values (uiNamespace getVariable ["COMSPEC_ATAK_AdminPlayers", createHashMap])) apply { _x select 0 };
+_players = _players apply { [_x param [3, ""], toLower (_x param [2, ""]), _x] };
+_players sort true;
+_players = _players apply { _x select 2 };
+(uiNamespace getVariable ["COMSPEC_ATAK_AdminDebug", [[], -1]]) params [["_dbg", []], ["_dbgAt", -1]];
+_dbg params [["_cfg", []], ["_caps", []], ["_going", []], ["_srvNow", 0]];
+
+private _rows = [];
+_rows pushBack ["strip", format ["<t font='COMSPEC_BarlowBold'>ADMIN</t>  <t color='#8a9a93'>%1</t>", [player] call comspec_atak_native_fnc_unitCallsign],
+    format ["<t align='right' color='#8a9a93'>En jeu : %1 · Athena : %2</t>", ["non", "oui"] select _inGame,
+        (createHashMapFromArray [["platform", "admin plateforme"], ["manager", "gestion"], ["none", "aucun droit"]]) getOrDefault [_role, "inconnu"]],
+    [0.09, 0.12, 0.11, 1]];
+private _tabBtn = { params ["_t", "_k"]; [_t, ["admTab", _k] call _setS, _tab isEqualTo _k] };
+_rows pushBack ["segment", "", [
+    [format ["EN JEU (%1)", count _players], "GAME"] call _tabBtn,
+    [format ["ATHENA (%1)", _fTotal], "ATHENA"] call _tabBtn,
+    [format ["DEBUG IA (%1)", count _caps], "DEBUG"] call _tabBtn
+]];
+
+switch (_tab) do {
+    case "GAME": {
+        if (!_inGame) exitWith {
+            _rows pushBack ["text", "<t color='#8a9a93'>Réservé au Zeus, à l'admin du serveur (#login) et aux gestionnaires désignés par le serveur (réglage « Gestionnaires en jeu »). Le parc Athena reste disponible selon vos droits sur le site.</t>"];
+        };
+        _rows pushBack ["section", format ["ATAK des joueurs : %1", count _players], format ["Relevé toutes les 10 s tant que l'app est ouverte · %1", ["parc Athena chargé : fiches liées par Steam", "parc Athena non chargé"] select (_fAt < 0)]];
+        _rows pushBack ["buttons", [
+            ["ACTUALISER", { ["scan"] call comspec_atak_native_fnc_adminClient; }, true, true, "Redemande l'état de chaque ATAK"],
+            ["TOUT RÉTABLIR", compile format ["{ ['zeus', [getPlayerUID _x, 'reset']] call comspec_atak_native_fnc_adminClient; } forEach (allPlayers select { (_x getVariable ['COMSPEC_ATAK_ZeusFx', []]) isNotEqualTo [] }); %1", _re], false, true, "Retire les effets Zeus de tous les joueurs"]
+        ]];
+        if (_players isEqualTo []) then { _rows pushBack ["text", "<t color='#8a9a93'>En attente des réponses des joueurs…</t>"]; };
+        {
+            _x params ["_uid", "_name", "_cs", "_side", "_grp", "_has", "_bat", "_dev", "_aKey", "_aTitle", "_mod", "_link", "_fx", "_num", "_imei", "_tuid", "_sos", "_beacon", "_pos", "_comp", ["_net", -1]];
+            private _fxKeys = _fx apply { _x select 0 };
+            private _ath = _bySteam getOrDefault [_uid, []];
+            private _flags = [];
+            if (!_has) then { _flags pushBack "<t color='#8a9a93'>SANS ATAK</t>"; };
+            if (_dev in ["OFF", "BROKEN"]) then { _flags pushBack format ["<t color='#e5483a'>%1</t>", ["ÉTEINT", "CASSÉ"] select (_dev isEqualTo "BROKEN")]; };
+            if (_comp isNotEqualTo "") then { _flags pushBack "<t color='#e5483a'>COMPROMIS</t>"; };
+            if ((_ath param [5, "none"]) in ["captured", "compromised"]) then { _flags pushBack "<t color='#e5483a'>COMPROMIS (ATHENA)</t>"; };
+            if ((parseNumber (_ath param [6, "0"])) > 0) then { _flags pushBack "<t color='#e5483a'>BLOQUÉ</t>"; };
+            if (_sos) then { _flags pushBack "<t color='#f2ab33'>SOS</t>"; };
+            if (_fxKeys isNotEqualTo []) then { _flags pushBack format ["<t color='#f2ab33'>ZEUS : %1</t>", toUpper (_fxKeys joinString ", ")]; };
+            private _isOpen = _open isEqualTo ("P" + _uid);
+            _rows pushBack ["fold", format ["<t color='%1'>■</t> %2 <t color='#8a9a93'>· %3</t>", _sideHex getOrDefault [_side, "#c9d4cf"], [_cs] call _esc, [_name] call _esc],
+                (([format ["%1 %%", _bat], _aTitle] + _flags) select { _x isNotEqualTo "" }) joinString " · ", _isOpen,
+                ["admOpen", ["P" + _uid, ""] select _isOpen] call _setS];
+            if (!_isOpen) then { continue };
+            _rows pushBack ["info", "Groupe", format ["%1 · %2", _grp, _side]];
+            _rows pushBack ["info", "ATAK", [format ["porté · batterie %1 %% · appareil %2 · balise BFT %3", _bat, _dev, ["coupée", "active"] select _beacon], "aucun téléphone porté"] select !_has];
+            _rows pushBack ["info", "Athena", format ["%1 (%2)", _aTitle, _aKey]];
+            _rows pushBack ["info", "Versions", format ["mod %1 · Link %2", [_mod, "?"] select (_mod isEqualTo ""), [_link, "absent"] select (_link isEqualTo "")]];
+            _rows pushBack ["info", "Identité", format ["n° %1 · IMEI %2 · terminal %3", [_num, "—"] select (_num isEqualTo ""), [_imei, "—"] select (_imei isEqualTo ""), [_tuid select [0, 14], "—"] select (_tuid isEqualTo "")]];
+            if (_pos isEqualType [] && {(count _pos) >= 2}) then { _rows pushBack ["info", "Position", format ["%1 · à %2 m", [_pos, 8] call comspec_atak_native_fnc_gridRef, round (player distance2D _pos)]]; };
+            if (_ath isNotEqualTo []) then {
+                _rows pushBack ["info", "Fiche Athena", format ["%1 · compte %2 · vu %3", _ath select 1, _ath param [4, "?"], [parseNumber (_ath param [10, "-1"])] call _ago]];
+            } else {
+                _rows pushBack ["info", "Fiche Athena", [["aucune fiche pour ce Steam dans la page chargée", "parc Athena non chargé"] select (_fAt < 0), "réservé à la gestion (site)"] select !_site];
+            };
+            private _z = { params ["_lbl", "_k", "_on", "_off", "_help"]; private _act = _k in _fxKeys;
+                [[_lbl, "✓ " + _lbl] select _act, compile format ["['zeus', [%1, %2, %3]] call comspec_atak_native_fnc_adminClient;", str _uid, str _k, [_on, _off] select _act], false, true, _help] };
+            _rows pushBack ["buttons", [
+                ["VERROUILLER", "lock", str "Téléphone verrouillé par l'encadrement", str "", "Verrouille l'ATAK du joueur (message à l'écran) ; recliquer : déverrouiller"] call _z,
+                ["MUET", "mute", "true", "false", "Coupe ses haut-parleurs ; recliquer : rétablir"] call _z,
+                ["BROUILLER", "jam", "70", "0", "Brouillage fort ; recliquer : retirer"] call _z,
+                ["ÉTEINDRE", "off", "true", "false", "Désactive son ATAK ; recliquer : rallumer"] call _z
+            ]];
+            _rows pushBack ["buttons", [
+                ["CARTE", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.02] call comspec_atak_native_fnc_mapCenter;", _pos param [0, 0], _pos param [1, 0]], false, _pos isEqualType [] && {(count _pos) >= 2}, "Centre la carte sur le joueur"],
+                ["RÉPARER", compile format ["['zeus', [%1, 'once', ['repair', []]]] call comspec_atak_native_fnc_adminClient;", str _uid], false, _has, "Répare son téléphone (écran, composants)"],
+                ["TOUT RÉTABLIR", compile format ["['zeus', [%1, 'reset']] call comspec_atak_native_fnc_adminClient;", str _uid], false, true, "Retire tous les effets Zeus et répare"],
+                ["FICHE ATHENA", compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set ['admTab', 'ATHENA']; (uiNamespace getVariable 'COMSPEC_ATAK_State') set ['admOpen', %1]; ['fleet', [%2, 0]] call comspec_atak_native_fnc_adminClient; %3", str ("A" + _uid), str _uid, _re], false, _site, "Ouvre sa fiche dans le parc Athena (recherche par Steam)"]
+            ]];
+        } forEach _players;
+    };
+    case "ATHENA": {
+        if (([] call comspec_atak_native_fnc_athenaMode) isEqualTo "off") exitWith {
+            _rows pushBack ["text", "<t color='#8a9a93'>Service Athena coupé sur ce téléphone : le parc de la communauté n'est pas disponible.</t>"];
+        };
+        if (!_site) exitWith {
+            _rows pushBack ["text", format ["<t color='#8a9a93'>%1</t>", [
+                "Réservé à la gestion de la communauté et à l'administration du site. Vos droits sont lus sur Athena avec votre compte relié en jeu.",
+                "Lecture des droits sur Athena…"] select (uiNamespace getVariable ["COMSPEC_ATAK_AdminFleetBusy", false])]];
+            if (_fErr isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#f2ab33'>Athena : %1</t>", [_fErr] call _esc]]; };
+            _rows pushBack ["buttons", [["RÉESSAYER", { ["fleet", ["", 0]] call comspec_atak_native_fnc_adminClient; }, true, true]]];
+        };
+        _rows pushBack ["section", format ["Parc ATAK de la communauté : %1", _fTotal], format ["Mêmes règles que Gestion > Parc ATAK sur le site · %1 · chargé %2",
+            ["gestion de la communauté", "administration de la plateforme"] select (_role isEqualTo "platform"), [diag_tickTime - _fAt] call _ago]];
+        _rows pushBack ["field", "admQ", "Rechercher", _fQ, "CHERCHER", { ["fleet", [trim (["admQ"] call comspec_atak_native_fnc_formValue), 0]] call comspec_atak_native_fnc_adminClient; }, true];
+        if (_fErr isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#f2ab33'>Athena : %1</t>", [_fErr] call _esc]]; };
+        if (uiNamespace getVariable ["COMSPEC_ATAK_AdminFleetBusy", false]) then { _rows pushBack ["text", "<t color='#8a9a93'>Chargement…</t>"]; };
+        if (_fRows isEqualTo [] && {_fErr isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun ATAK.</t>"]; };
+        private _online = createHashMapFromArray (_players apply { [_x select 0, _x select 2] });
+        {
+            _x params ["_id", "_label", ["_steam", ""], ["_term", ""], ["_acc", ""], ["_comp", "none"], ["_bid", "0"], ["_bscope", ""], ["_breason", ""], ["_pend", "0"], ["_seen", "-1"], ["_play", "0"], ["_mod", ""], ["_lnk", ""]];
+            private _blocked = (parseNumber _bid) > 0;
+            private _compd = _comp in ["captured", "compromised"];
+            private _flags = [];
+            if (_steam in _online) then { _flags pushBack "<t color='#5cc76b'>EN JEU</t>"; };
+            if (_compd) then { _flags pushBack format ["<t color='#e5483a'>%1</t>", ["CAPTURÉ", "COMPROMIS"] select (_comp isEqualTo "compromised")]; };
+            if (_blocked) then { _flags pushBack format ["<t color='#e5483a'>BLOQUÉ%1</t>", ["", " (PLATEFORME)"] select (_bscope isEqualTo "all")]; };
+            if (_acc isNotEqualTo "ok") then { _flags pushBack format ["<t color='#f2ab33'>%1</t>", ["COMPTE DÉSACTIVÉ", "SANS COMPTE"] select (_acc isEqualTo "none")]; };
+            if ((parseNumber _pend) > 0) then { _flags pushBack format ["%1 message(s) en attente", _pend]; };
+            private _key = "T" + _id;
+            private _isOpen = _open in [_key, "A" + _steam];
+            _rows pushBack ["fold", format ["%1 <t color='#8a9a93'>· %2</t>", [_label] call _esc, [parseNumber _seen] call _ago], (_flags joinString " · "), _isOpen,
+                ["admOpen", [_key, ""] select _isOpen] call _setS];
+            if (!_isOpen) then { continue };
+            _rows pushBack ["info", "Steam", [_steam, "—"] select (_steam isEqualTo "")];
+            _rows pushBack ["info", "Terminal", [_term, "—"] select (_term isEqualTo "")];
+            _rows pushBack ["info", "Versions", format ["mod %1 · Link %2", [_mod, "?"] select (_mod isEqualTo ""), [_lnk, "?"] select (_lnk isEqualTo "")]];
+            _rows pushBack ["info", "Temps de jeu", format ["%1 h", _play]];
+            if (_blocked) then { _rows pushBack ["info", "Blocage", [_breason, "sans motif"] select (_breason isEqualTo "")]; };
+            private _act = { params ["_a", ["_extra", "[]"]]; format ["['site', [%1, createHashMapFromArray ([['terminal_id', %2]] + %3)]] call comspec_atak_native_fnc_adminClient;", str _a, _id, _extra] };
+            _rows pushBack ["buttons", [
+                if (_blocked) then {
+                    ["LEVER LE BLOCAGE", format ["unblock:%1", _bid], format ["['site', ['unblock', createHashMapFromArray [['block_id', %1]]]] call comspec_atak_native_fnc_adminClient;", _bid],
+                        "Le joueur peut se reconnecter", _bscope isNotEqualTo "all" || {_role isEqualTo "platform"}] call _confirmBtn
+                } else {
+                    ["BLOQUER", "block:" + _id, ["block", "[['reason', 'Bloqué en jeu par la gestion']]"] call _act, "Refuse le jeu à cet ATAK dans la communauté (sessions fermées)"] call _confirmBtn
+                },
+                ["DÉCONNECTER", "disc:" + _id, ["disconnect"] call _act, "Ferme ses sessions de jeu sans le bloquer"] call _confirmBtn,
+                ["MESSAGE", compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set ['admMsgFor', %1]; %2", _id, _re], false, true, "Message imposé : s'affiche dans son ATAK jusqu'à COMPRIS"]
+            ]];
+            _rows pushBack ["buttons", [
+                ["DÉCLARER CAPTURÉ", "cap:" + _id, ["compromise", "[['state', 'captured']]"] call _act, "L'ATAK est aux mains de l'ennemi (certificats gardés)", !_compd] call _confirmBtn,
+                ["DÉCLARER COMPROMIS", "comp:" + _id, ["compromise", "[['state', 'compromised']]"] call _act, "Révoque ses certificats : il n'est plus reconnu sur le réseau", _comp isNotEqualTo "compromised"] call _confirmBtn,
+                ["LEVER LA COMPROMISSION", "undo:" + _id, ["undo_compromise"] call _act, "L'ATAK repasse sous contrôle, certificats rétablis", _compd] call _confirmBtn
+            ]];
+            if ((_s getOrDefault ["admMsgFor", 0]) isEqualTo (parseNumber _id)) then {
+                _rows pushBack ["edit", "admMsgTitle", "Titre", ""];
+                _rows pushBack ["memo", "admMsgBody", "Texte", "", 3];
+                _rows pushBack ["buttons", [
+                    ["ENVOYER", compile format ["['site', ['message', createHashMapFromArray [['terminal_id', %1], ['title', trim (['admMsgTitle'] call comspec_atak_native_fnc_formValue)], ['body', trim (['admMsgBody'] call comspec_atak_native_fnc_formValue)], ['level', 'warning']]]] call comspec_atak_native_fnc_adminClient; (uiNamespace getVariable 'COMSPEC_ATAK_State') set ['admMsgFor', 0]; %2", _id, _re], true, true],
+                    ["ANNULER", ["admMsgFor", 0] call _setS, false, true]
+                ]];
+            };
+        } forEach _fRows;
+        if (_fTotal > (count _fRows)) then {
+            _rows pushBack ["buttons", [
+                ["PRÉCÉDENTS", compile format ["['fleet', [%1, %2]] call comspec_atak_native_fnc_adminClient;", str _fQ, (_fOff - 40) max 0], false, _fOff > 0],
+                [format ["%1-%2 / %3", _fOff + 1, _fOff + count _fRows, _fTotal], {}, false, false],
+                ["SUIVANTS", compile format ["['fleet', [%1, %2]] call comspec_atak_native_fnc_adminClient;", str _fQ, _fOff + 40], false, (_fOff + 40) < _fTotal]
+            ]];
+        };
+        _rows pushBack ["buttons", [["RECHARGER", compile format ["['fleet', [%1, %2]] call comspec_atak_native_fnc_adminClient;", str _fQ, _fOff], false, true]]];
+    };
+    case "DEBUG": {
+        if (!_inGame) exitWith {
+            _rows pushBack ["text", "<t color='#8a9a93'>Réservé au Zeus, à l'admin du serveur et aux gestionnaires désignés par le serveur.</t>"];
+        };
+        _cfg params [["_capOn", true], ["_radius", 100], ["_hunt", true], ["_huntR", 3000], ["_crack", 120]];
+        _rows pushBack ["section", "Téléphones et IA ennemie", format ["Ramassage %1 (rayon %2 m) · traque %3 (rayon %4 m) · déchiffrage %5 s · relevé %6",
+            ["coupé", "actif"] select _capOn, _radius, ["coupée", "active"] select _hunt, _huntR, _crack, [diag_tickTime - _dbgAt, "en attente"] select (_dbgAt < 0)]];
+        _rows pushBack ["buttons", [
+            ["ACTUALISER", { ["scan"] call comspec_atak_native_fnc_adminClient; }, true, true],
+            [["RÉTABLIR LA TRAQUE", "COUPER LA TRAQUE"] select _hunt, compile format ["['server', ['hunt', [%1]]] call comspec_atak_native_fnc_adminClient;", !_hunt], false, true,
+                "Traque des joueurs par l'IA qui a un téléphone, pour toute la partie"]
+        ]];
+        _rows pushBack ["section", format ["Aux mains de l'IA : %1", count _caps], "Téléphone ramassé, porteur, exploitation du BFT et groupes lancés à la poursuite des joueurs"];
+        if (_caps isEqualTo []) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun téléphone ramassé par l'IA dans cette partie.</t>"]; };
+        {
+            _x params ["_id", "_cs", "_imei", "_num", "_side", "_state", "_by", "_athena", "_grid", "_hour", "_status", "_carrier", "_lastGrid", "_lastAgo", "_hunters", "_targets", "_capPos", ["_ouid", ""]];
+            _carrier params [["_cType", ""], ["_cName", ""], ["_cSide", ""], ["_cGrp", ""], ["_cPos", []]];
+            private _stTxt = switch (true) do {
+                case (_status isEqualTo "cut"): { "<t color='#5cc76b'>coupé du réseau (validé)</t>" };
+                case (_status isEqualTo "wiped"): { "<t color='#8a9a93'>effacé : rien d'exploitable</t>" };
+                case (_status isEqualTo "recovered"): { "<t color='#8a9a93'>repris à l'IA</t>" };
+                case (_status isEqualTo "dead"): { "<t color='#8a9a93'>porteur mort (téléphone sur le corps)</t>" };
+                case ((_status select [0, 6]) isEqualTo "crack:"): { format ["<t color='#f2ab33'>déchiffrage : %1 s</t>", _status select [6]] };
+                default { "<t color='#e5483a'>EXPLOITÉ : l'IA lit le BFT</t>" };
+            };
+            private _isOpen = _open isEqualTo ("C" + _id);
+            _rows pushBack ["fold", format ["%1 · ATAK de %2", _id, [_cs] call _esc], format ["%1 · %2 · %3 joueur(s) repéré(s) · %4 groupe(s) en traque", _stTxt,
+                (createHashMapFromArray [["suspected", "suspectée"], ["validated", "validée"], ["dismissed", "rejetée"]]) getOrDefault [_state, _state], _targets, count _hunters], _isOpen,
+                ["admOpen", ["C" + _id, ""] select _isOpen] call _setS];
+            if (!_isOpen) then { continue };
+            _rows pushBack ["info", "Téléphone", format ["%1 · n° %2 · IMEI %3", _side, _num, _imei]];
+            _rows pushBack ["info", "Ramassé", format ["%1 vers %2", _hour, _grid]];
+            _rows pushBack ["info", "Porteur", [format ["%1 (%2) · %3 · groupe %4 · %5", [_cName] call _esc, _cType, _cSide, [_cGrp] call _esc,
+                [[_cPos, 8] call comspec_atak_native_fnc_gridRef, "—"] select (_cPos isEqualTo [])], "aucun"] select (_cType isEqualTo "")];
+            _rows pushBack ["info", "Dernière connexion", [format ["%1 · %2", _lastGrid, [_lastAgo] call _ago], "jamais"] select (_lastGrid isEqualTo "")];
+            _rows pushBack ["info", "Compromission", format ["%1%2 · Athena %3", (createHashMapFromArray [["suspected", "suspectée"], ["validated", "validée"], ["dismissed", "rejetée"]]) getOrDefault [_state, _state],
+                ["", " par " + _by] select (_by isNotEqualTo ""), [_athena, "—"] select (_athena isEqualTo "")]];
+            {
+                _x params ["_gid", "_n", "_hp", "_gs"];
+                _rows pushBack ["info", "Traque", format ["%1 (%2, %3 IA) → %4", [_gid] call _esc, _gs, _n, [[_hp, 6] call comspec_atak_native_fnc_gridRef, "en attente"] select (_hp isEqualTo [])]];
+            } forEach _hunters;
+            private _srv = { params ["_op"]; format ["['server', ['capture', [%1, %2]]] call comspec_atak_native_fnc_adminClient;", str _id, str _op] };
+            _rows pushBack ["buttons", [
+                ["PORTEUR", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.02] call comspec_atak_native_fnc_mapCenter;", _cPos param [0, 0], _cPos param [1, 0]], false, _cPos isNotEqualTo [], "Centre la carte sur l'IA qui a le téléphone"],
+                ["LIEU", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.02] call comspec_atak_native_fnc_mapCenter;", _capPos param [0, 0], _capPos param [1, 0]], false, true, "Centre la carte sur le lieu du ramassage"],
+                ["VALIDER", "cv:" + _id, ["validate"] call _srv, "Coupe le téléphone du réseau et révoque son certificat sur Athena", _state isEqualTo "suspected"] call _confirmBtn,
+                ["REJETER", "cd:" + _id, ["dismiss"] call _srv, "Fausse alerte : la compromission est rejetée", _state isEqualTo "suspected"] call _confirmBtn
+            ]];
+            _rows pushBack ["buttons", [
+                ["ARRÊTER LA TRAQUE", "ch:" + _id, ["stopHunt"] call _srv, "Les groupes de cette capture arrêtent de chercher les joueurs", _hunters isNotEqualTo [] || {_status isEqualTo "exploit"}] call _confirmBtn,
+                ["REPRENDRE LE TÉLÉPHONE", "cr:" + _id, ["recover"] call _srv, "Retire le téléphone à l'IA : plus d'exploitation", _cType isNotEqualTo ""] call _confirmBtn
+            ]];
+        } forEach _caps;
+        _rows pushBack ["section", format ["IA en route pour ramasser : %1", count _going], "Une IA ennemie proche d'un téléphone de joueur (corps, joueur à terre, téléphone posé) va le chercher"];
+        if (_going isEqualTo []) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune.</t>"]; };
+        {
+            _x params ["_name", "_gSide", "_dist", "_aiPos", "_owner", "_phPos", "_since"];
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t color='#8a9a93'>(%2)</t> → ATAK de %3 · à %4 m · depuis %5 s · %6",
+                [_name] call _esc, _gSide, [_owner] call _esc, _dist, _since, [_phPos, 8] call comspec_atak_native_fnc_gridRef]];
+            _rows pushBack ["buttons", [["CARTE", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.02] call comspec_atak_native_fnc_mapCenter;", _aiPos select 0, _aiPos select 1], false, true]]];
+        } forEach _going;
+    };
+};
+
+[_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+true

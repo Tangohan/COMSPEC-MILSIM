@@ -31,6 +31,6 @@ private _msg = format ["Kit SSE : %1 élément(s) ajouté(s).", count _added];
 if (count _skipped > 0) then {
     _msg = _msg + format [" %1 non placé(s) (inventaire plein).", count _skipped];
 };
-hint ((_msg) call comspec_sse_fnc_tr);
+[_msg, ["SUCCESS", "WARNING"] select (count _skipped > 0)] call comspec_sse_fnc_notify;
 ["equipSseKit", format ["+%1 / skip %2", count _added, count _skipped]] call comspec_sse_fnc_log;
 count _added

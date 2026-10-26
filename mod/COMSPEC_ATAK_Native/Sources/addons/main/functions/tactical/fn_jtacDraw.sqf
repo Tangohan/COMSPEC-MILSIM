@@ -65,7 +65,8 @@ if (_pilot) then {
     _ip = _d param [9, []];
     _risk = _d param [10, 0];
     _ipName = (_d param [0, []]) param [0, ""];
-    _air = vehicle player;
+    // À pied : pas d'appareil de mission (avant, le joueur était dessiné comme un avion).
+    _air = [objNull, vehicle player] select ((vehicle player) isKindOf "Air");
 } else {
     private _m = _s getOrDefault ["msn", createHashMap];
     private _live = (count _m) > 0 && {(_m getOrDefault ["step", 0]) < 7};
@@ -144,6 +145,8 @@ if (!_pilot) then {
 
 // Appareils : celui de la mission en vert vif avec son vecteur de cap.
 {
+    // Appareil supprimé depuis la dernière lecture (abattu puis nettoyé, Zeus) : pas d'icône à l'origine de la carte.
+    if (isNull _x || {!alive _x}) then { continue };
     private _mine = _x isEqualTo _air;
     private _ic = ["\A3\ui_f\data\map\vehicleicons\iconPlane_ca.paa", "\A3\ui_f\data\map\vehicleicons\iconHelicopter_ca.paa"] select (_x isKindOf "Helicopter");
     private _p = getPosASL _x;

@@ -11,6 +11,9 @@
       "rip"      : câble arraché pendant le transfert
       "reset"    : Zeus remet le support en état (essais, verrou, effacement)
       "remove"   : Zeus retire les données du support
+      "code"     : code de fin (argument : texte, vide = retiré), gardé au serveur seul (localNamespace, jamais diffusé).
+                   Accepté d'un appel local au serveur (fn_dataSetup) ou d'un remoteExec d'un Zeus / administrateur ;
+                   refusé par l'événement CBA (XEH_preInit).
     Zeus : chaque curateur reçoit un message (comspec_atak_native_dataNote).
 */
 if (!isServer) exitWith { false };
@@ -78,7 +81,8 @@ switch (_act) do {
         [format ["%1 a téléchargé %2 fichier(s) de %3", _whoName, count _names, _label]] call _note;
         if ((_cfg getOrDefault ["alarm", "none"]) isEqualTo "download") then { ["téléchargement"] call _alarm; };
         if (_full && {_cfg getOrDefault ["oneShot", false]}) then { _obj setVariable ["COMSPEC_ATAK_DataWiped", true, true]; };
-        private _code = _cfg getOrDefault ["code", ""];
+        // Code lu au serveur seul : jamais dans COMSPEC_ATAK_Data, que tout client peut réécrire.
+        private _code = (((localNamespace getVariable ["COMSPEC_ATAK_DataCodes", []]) select { (_x select 0) isEqualTo _obj }) param [0, [objNull, ""]]) select 1;
         if (_code isEqualType "" && {(trim _code) isNotEqualTo ""}) then {
             [_obj, _who, _names] call compile _code;
         };
@@ -90,8 +94,19 @@ switch (_act) do {
         _obj setVariable ["COMSPEC_ATAK_DataWiped", false, true];
         _obj setVariable ["COMSPEC_ATAK_DataTaken", [], true];
     };
+    case "code": {
+        // Contrôle côté serveur (comme fn_netConfig) : appel local, hôte, administrateur connecté ou Zeus.
+        private _owner = remoteExecutedOwner;
+        private _ok = !isRemoteExecuted || {_owner in [2, clientOwner]} || {(admin _owner) > 0}
+            || {(allPlayers findIf { owner _x isEqualTo _owner && {!isNull (getAssignedCuratorLogic _x)} }) > -1};
+        if (!_ok) exitWith { ["WARNING", "DATA", format ["Code de fin refusé pour %1 (client %2 sans droits)", _label, _owner]] call comspec_atak_native_fnc_log; };
+        private _codes = (localNamespace getVariable ["COMSPEC_ATAK_DataCodes", []]) select { !isNull (_x select 0) && {(_x select 0) isNotEqualTo _obj} };
+        if (_arg isEqualType "" && {(trim _arg) isNotEqualTo ""}) then { _codes pushBack [_obj, _arg]; };
+        localNamespace setVariable ["COMSPEC_ATAK_DataCodes", _codes];
+    };
     case "remove": {
         _obj setVariable ["COMSPEC_ATAK_Data", nil, true];
+        localNamespace setVariable ["COMSPEC_ATAK_DataCodes", (localNamespace getVariable ["COMSPEC_ATAK_DataCodes", []]) select { !isNull (_x select 0) && {(_x select 0) isNotEqualTo _obj} }];
         missionNamespace setVariable ["COMSPEC_ATAK_DataNodes", (missionNamespace getVariable ["COMSPEC_ATAK_DataNodes", []]) select { !isNull _x && {_x isNotEqualTo _obj} }, true];
     };
 };

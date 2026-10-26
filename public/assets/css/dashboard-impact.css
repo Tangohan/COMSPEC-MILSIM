@@ -1536,6 +1536,11 @@ a.dash-cc-row:hover,
     width: 2.4rem; height: 2.4rem; border-radius: 0.6rem;
     background: #fff; color: #050505; font-size: 1.05rem; font-weight: 900;
   }
+  .dash-rail .dash-rail__brand-emblem {
+    display: block; width: 82%; height: 82%; background: currentColor;
+    -webkit-mask: url("../brand/athena-embleme-noir.svg") center / contain no-repeat;
+    mask: url("../brand/athena-embleme-noir.svg") center / contain no-repeat;
+  }
   .dash-rail .dash-rail__brand-text { display: flex; flex-direction: column; min-width: 0; }
   .dash-rail .dash-rail__eyebrow { margin: 0 0 0.15rem; font-size: 0.625rem; letter-spacing: 0.16em; }
   .dash-rail .dash-rail__title { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; text-transform: none; }

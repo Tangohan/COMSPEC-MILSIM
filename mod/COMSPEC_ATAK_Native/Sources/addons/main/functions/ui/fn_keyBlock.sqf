@@ -14,10 +14,15 @@ params ["_disp", "_key", ["_shift", false], ["_ctrl", false], ["_alt", false]];
 // cela, le gestionnaire posé ensuite sur le display 46 rendait la main au jeu (F : mode de tir, l'arme ressortait ;
 // B et H allaient aussi au jeu).
 if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {_key in [0x39, 0x13, 0x21, 0x14, 0x30, 0x23, 0x3B, 0x0D, 0x4E, 0x0C, 0x4A]}) exitWith { true };
+// Champ qui a le focus : dans le téléphone, ou dans la fenêtre qui reçoit la touche (menu de la carte, plan, recherche).
+// Avant, seul le téléphone « en main » (état interactive) comptait : une saisie dans une fenêtre ouverte par le
+// téléphone, ou juste après un changement de mode, laissait passer A / E (pencher) au personnage (retour de TTRD, 25/10).
 private _phone = uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull];
-if (isNull _phone || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) exitWith { false };
-private _f = focusedCtrl _phone;
-if (isNull _f || {(ctrlType _f) isNotEqualTo 2} || {!ctrlEnabled _f}) exitWith { false };
+private _isEdit = { !isNull _this && {(ctrlType _this) isEqualTo 2} && {ctrlEnabled _this} && {ctrlShown _this} };
+private _f = controlNull;
+if (!isNull _phone) then { _f = focusedCtrl _phone; };
+if !(_f call _isEdit) then { _f = [controlNull, focusedCtrl _disp] select (!isNull _disp && {_disp isNotEqualTo (findDisplay 46)}); };
+if !(_f call _isEdit) exitWith { false };
 // Échap, effacer, tabulation, Entrée, Entrée du pavé, début, gauche, droite, fin, suppr.
 if (_key in [1, 14, 15, 28, 156, 199, 203, 205, 207, 211]) exitWith { false };
 // Flèches haut / bas : utiles dans une zone de texte sur plusieurs lignes seulement.

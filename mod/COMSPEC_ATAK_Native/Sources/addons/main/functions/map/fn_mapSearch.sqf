@@ -11,7 +11,9 @@
         suivi : nouvelle triangulation à l'intervalle « Rafraîchissement du suivi » ;
       - balise GPS (COMSPEC_GpsBeacon d'Overwatch, Eden / Zeus) : position exacte tant qu'elle est allumée
         (objet intact, balise active, hors brouillage) ; il faut du réseau sur mon téléphone ;
-      - indicatif / nom : image BFT de mon camp (COMSPEC_ATAK_Data units), figée si l'allié est hors ligne.
+      - indicatif / nom : image BFT de mon camp (COMSPEC_ATAK_Data units), figée si l'allié est hors ligne ;
+      - grille (GRILLE, ou des chiffres seuls tapés en INDICATIF) : 4 à 10 chiffres, avec ou sans espaces ni tirets
+        (fn_gridParse) ; la carte se centre sur la case et un repère reste jusqu'à FERMER.
     Aucun balayage par image : résolution à la demande, suivi relu toutes les 2 s (PFH tant qu'un résultat existe).
     Params : [action, argument]
       "toggle" | "open" | "close"    "type" k    "go"    "filter" (frappe dans le champ)    "pick" (liste)
@@ -150,6 +152,10 @@ private _fix = {
             };
             if (_code isEqualTo "OK") then { private _p = getPosASL _o; _pos = [_p select 0, _p select 1, 0]; _rad = 5; };
         };
+        case "GRID": {
+            _pos = _h getOrDefault ["gpos", []];
+            _rad = _h getOrDefault ["grad", 50];
+        };
         case "CS": {
             private _e = (call _bftUnits) getOrDefault [_h get "id", createHashMap];
             if ((count _e) isEqualTo 0) exitWith { _code = "BFTGONE"; };
@@ -243,6 +249,10 @@ private _known = {
         case "GPS": {
             { [[_x] call _beaconId, [_x] call _beaconName, [_x] call _beaconName] call _add; } forEach (call _beacons);
         };
+        case "GRID": {
+            { if ((_x select 0) isEqualTo "GRID") then { [_x select 1, "Recherche"] call _add; }; } forEach (missionNamespace getVariable ["COMSPEC_ATAK_MapSearchHist", []]);
+            [[getPosASL player, 8] call comspec_atak_native_fnc_gridRef, "Ma position"] call _add;
+        };
         case "CS": {
             {
                 private _cs = _y getOrDefault ["callsign", ""];
@@ -322,6 +332,8 @@ switch (_act) do {
         private _q = trim ([_st getOrDefault ["q", ""], ctrlText _e] select !isNull _e);
         _st set ["q", _q];
         if (_q isEqualTo "") exitWith { ["Saisissez ou choisissez un identifiant"] call _setMsg; call _rerender; };
+        // Des chiffres seuls (espaces, tirets) tapés comme indicatif : c'est une grille.
+        if (_type isEqualTo "CS" && {_q regexMatch "^[0-9][0-9 .,\-]*$"} && {([_q] call comspec_atak_native_fnc_gridParse) isNotEqualTo []}) then { _type = "GRID"; _st set ["type", "GRID"]; };
         private _items = [_type] call _known;
         private _qn = [_q] call _norm;
         // Saisie partielle : complétée si un seul identifiant connu correspond.
@@ -384,6 +396,18 @@ switch (_act) do {
                 _st set ["hit", _h];
                 ["resolved"] call comspec_atak_native_fnc_mapSearch;
                 call _startPfh;
+            };
+            case "GRID": {
+                private _gp = [_q] call comspec_atak_native_fnc_gridParse;
+                if (_gp isEqualTo []) exitWith { ["Grille non reconnue ou hors de la carte : 4 à 10 chiffres (012345, 012 345, 0123-4567)"] call _setMsg; };
+                _gp params ["_c", "_cell", "_gn"];
+                private _loc = (nearestLocations [_c, ["NameCityCapital", "NameCity", "NameVillage", "NameLocal"], 2500]) param [0, locationNull];
+                [_gn, ""] call _hist;
+                _h set ["kind", "GRID"]; _h set ["sub", "GRILLE"]; _h set ["q", _gn];
+                _h set ["owner", [format ["près de %1", text _loc], format ["case de %1 m", round _cell]] select (isNull _loc || {(text _loc) isEqualTo ""})];
+                _h set ["gpos", _c]; _h set ["grad", (round (_cell / 2)) max 1];
+                _st set ["hit", _h];
+                ["resolved"] call comspec_atak_native_fnc_mapSearch;
             };
             case "CS": {
                 private _ql = toLower _q;
@@ -488,16 +512,18 @@ switch (_act) do {
     case "known": { _ret = [_arg] call _known; };
     case "panel": {
         _arg params ["_px", "_py", "_pw", "_ph"];
-        private _types = [["IMEI", "IMEI", "IMEI ou adresse MAC d'un téléphone (règles GÉOLOC)"], ["NUM", "NUMÉRO", "Numéro de téléphone (règles GÉOLOC)"], ["GPS", "BALISE GPS", "Balise GPS posée sur un véhicule ou un objet (position exacte)"], ["CS", "INDICATIF", "Indicatif ou nom d'un allié suivi par le BFT"]];
+        private _types = [["IMEI", "IMEI", "IMEI ou adresse MAC d'un téléphone (règles GÉOLOC)"], ["NUM", "NUMÉRO", "Numéro de téléphone (règles GÉOLOC)"], ["GPS", "BALISE GPS", "Balise GPS posée sur un véhicule ou un objet (position exacte)"], ["CS", "INDICATIF", "Indicatif ou nom d'un allié suivi par le BFT"], ["GRID", "GRILLE", "Coordonnées de la carte : 4 à 10 chiffres, avec ou sans espaces ni tirets"]];
         private _label = switch (_type) do {
             case "NUM": { "Numéro (06 12 34 56 78, +33 6…)" };
             case "GPS": { "Identifiant de balise (GPS-…) ou nom" };
             case "CS": { "Indicatif ou nom" };
+            case "GRID": { "Grille (012345, 012 345, 0123-4567, 01234 56789)" };
             default { "IMEI (35-…) ou adresse MAC (A4:5E:…)" };
         };
         private _rule = switch (_type) do {
             case "GPS": { "Position exacte tant que la balise est alimentée. Il faut du réseau." };
-            case "CS": { "Position du suivi BFT de votre camp (dernière position si l'allié est hors ligne)." };
+            case "CS": { "Position du suivi BFT de votre camp (dernière position si l'allié est hors ligne). Des chiffres seuls sont lus comme une grille." };
+            case "GRID": { "Espaces, tirets et préfixe de zone (31U DQ) acceptés. 6 chiffres : case de 100 m, 8 : 10 m, 10 : 1 m." };
             default {
                 format ["Requête opérateur : quelques secondes, cercle d'environ %1 m. Il faut du réseau. Échec si le téléphone est éteint, en mode avion, sans signal ou brouillé.%2",
                     round ((missionNamespace getVariable ["comspec_atak_native_geoloc_precision", 150]) max 10),

@@ -34,6 +34,14 @@ if (_texture) then { ["init", _display] call comspec_atak_native_fnc_jpcMap; };
 // Textes fixes de l'écran (ui/displays.hpp) dans la langue du téléphone (fn_tr ; sans effet sans dictionnaire chargé).
 if ((missionNamespace getVariable ["COMSPEC_ATAK_I18nN", 0]) > 0) then {
     { if (ctrlType _x in [0, 1, 16]) then { private _t = ctrlText _x; if (_t isNotEqualTo "") then { _x ctrlSetText (_t call comspec_atak_native_fnc_tr); }; }; } forEach (allControls _display); // i18n:brut
+    // Infobulles fixes (flèche Retour, Centrer la carte sur moi…) : relues dans la config, aucune commande ne les lit sur le contrôle.
+    if (_interactive) then {
+        {
+            private _tip = getText (_x >> "tooltip");
+            private _idc = getNumber (_x >> "idc");
+            if (_tip isNotEqualTo "" && {_idc > 0}) then { (_display displayCtrl _idc) ctrlSetTooltip (_tip call comspec_atak_native_fnc_tr); };
+        } forEach ("true" configClasses (configFile >> "COMSPEC_RscDisplayATAK" >> "controls")); // i18n:brut
+    };
 };
 
 // Les raccourcis CBA ne passent pas quand le téléphone est en main : on reprend ici les touches « porter » et « interagir ».

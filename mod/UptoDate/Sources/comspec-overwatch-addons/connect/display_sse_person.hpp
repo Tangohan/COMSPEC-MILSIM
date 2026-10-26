@@ -738,7 +738,7 @@ class COMSPEC_SsePerson_Dialog {
             idc = 9544;
             text = "DOSSIER ACTIF";
             x = IN_X; y = SEC_Y; w = HALF_W; h = BTN_H;
-            tooltip = "Rend ce dossier actif pour l’élément — les fiches suivantes y seront classées.";
+            tooltip = "Classe les fiches suivantes dans ce dossier";
             action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; ['set', ctrlText (_d displayCtrl 9518)] call comspec_overwatch_connect_fnc_sseActiveCase; [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;";
         };
         class BtnSign: COMSPEC_SeekBtn {

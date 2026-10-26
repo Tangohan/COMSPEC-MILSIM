@@ -28,6 +28,10 @@ params [
 
 if (!hasInterface) exitWith { false };
 
+// RequestQRF est un POST synchrone côté DLL (jusqu'à 8 s) : touche CBA / action ACE sont non planifiées,
+// on relance en spawn pour que extAwait ne fige pas le jeu.
+if (!canSuspend) exitWith { _this spawn comspec_overwatch_connect_fnc_requestQRF; true };
+
 
 
 if (_threatDescription isEqualTo "") exitWith {
@@ -350,29 +354,15 @@ private _applyLocalQrfFeedback = {
 
     if (_okAthena && {[] call comspec_overwatch_connect_fnc_shouldShowScreenNotification}) then {
 
-        private _urgencyColor = if (_priorityNorm isEqualTo "FLASH") then { "#ff0000" } else { "#ff9900" };
-
-        hint ((parseText format [
-
-            "<t color='%1' size='1.5' align='center'>RENFORT DEMANDÉ</t><br/>" +
-
-            "<t size='1.2'>Menace : %2</t><br/>" +
-
-            "<t size='1.1'>Tenez la position, le renfort arrive</t><br/>" +
-
-            "<t size='1'>Effectif adverse estimé : %3</t><br/>" +
-
-            "<t size='1'>Statut : %4</t>",
-
-            _urgencyColor,
-
-            _threatLabel,
-
-            _enemyLabel,
-
-            _statusLabel
-
-        ]) call comspec_overwatch_connect_fnc_tr);
+        // Bandeau dans le téléphone ATAK natif (plus de hint par-dessus l'écran de jeu).
+        if (!isNil "comspec_atak_native_fnc_notify") then {
+            ["TACTICAL", format [
+                "RENFORT DEMANDÉ · Menace : %1 · Tenez la position, le renfort arrive · Effectif adverse estimé : %2 · Statut : %3",
+                _threatLabel,
+                _enemyLabel,
+                _statusLabel
+            ], 10, 40] call comspec_atak_native_fnc_notify;
+        };
 
     };
 

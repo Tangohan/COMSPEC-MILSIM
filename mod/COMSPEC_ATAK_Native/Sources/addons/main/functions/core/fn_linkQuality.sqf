@@ -133,13 +133,16 @@ if (_real isEqualTo 0) then {
     if (rain > 0.3) then { _mul = _mul * (1 - rain * 0.3); _f pushBack ["Pluie", format ["-%1 %%", round (rain * 30)]]; };
     if (fog > 0.5) then { _mul = _mul * 0.9; _f pushBack ["Brouillard dense", "-10 %"]; };
 };
+// Le brouilleur le plus fort parmi ceux qui couvrent le joueur compte (pas le premier de la liste : brouilleurs de
+// joueurs et de Zeus publiés avant ceux des missions).
+private _jamM = 1;
 {
     _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_side", ""], ["_until", 1e9], ["_exempt", false], ["_str", 1]];
     if (_until < ([time, serverTime] select isMultiplayer)) then { continue; };
     if (_exempt && {_side isEqualTo str side group player}) then { continue; };
     if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
     private _d = player distance2D _pos;
-    if (_d < _rad) exitWith {
+    if (_d < _rad) then {
         // Force du brouilleur (7e élément, brouilleurs de zone Zeus) : 1 par défaut.
         private _m = 1 - ((_str max 0) min 1) * (1 - (_d / _rad) ^ 2);
         // Rapport brouilleur / signal : le brouilleur gagne de 20 dB par décade en s'approchant de lui ; un signal de relais
@@ -149,9 +152,12 @@ if (_real isEqualTo 0) then {
             private _sg = [10, _margin] select (_margin >= 0);
             _m = 1 - ((_str max 0) min 1) * ((((_j - _sg + 12) / 24) max 0) min 1);
         };
-        _mul = _mul * _m; _loss = _loss max (round ((1 - _m) * 80)); _f pushBack ["Brouillage", format ["-%1 %%", round ((1 - _m) * 100)]];
+        _jamM = _jamM min _m;
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
+if (_jamM < 1) then {
+    _mul = _mul * _jamM; _loss = _loss max (round ((1 - _jamM) * 80)); _f pushBack ["Brouillage", format ["-%1 %%", round ((1 - _jamM) * 100)]];
+};
 // Brouillage Zeus ciblé sur ce joueur et brouilleurs du mod Crows Electronic Warfare (fn_zeusJam).
 private _zj = [] call comspec_atak_native_fnc_zeusJam;
 if (_zj > 0) then {

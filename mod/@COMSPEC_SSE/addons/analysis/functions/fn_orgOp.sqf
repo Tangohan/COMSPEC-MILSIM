@@ -28,7 +28,17 @@ if (_op isEqualTo "orgof") exitWith {
     _args params [["_u", objNull, [objNull]]];
     _u getVariable ["COMSPEC_SSE_Org", []]
 };
-if (!isServer) exitWith { ["comspec_sse_orgOp", [_op, _args]] call CBA_fnc_serverEvent; "" };
+if (!isServer) exitWith { [_op, _args] remoteExecCall ["comspec_sse_fnc_orgOp", 2]; "" };
+// Demande venue d'un client (appel distant) : création, édition et suppression réservées aux Zeus et administrateurs.
+// Un appel imbriqué (« exploit » → « revealOrg ») hérite de la vérification de l'appel d'entrée.
+if (isNil "_orgOpChecked" && {isRemoteExecuted} && {remoteExecutedOwner != 2} && {_op in ["ensure", "set", "delete", "member", "unmember", "revealorg"]} && {
+    private _ro = remoteExecutedOwner;
+    !([(allPlayers select { owner _x == _ro }) param [0, objNull]] call comspec_sse_fnc_isAuthority)
+}) exitWith {
+    diag_log text format ["[COMSPEC SSE] Organisations : « %1 » refusé au poste %2 (ni Zeus ni administrateur).", _op, remoteExecutedOwner];
+    ""
+};
+private _orgOpChecked = true;
 
 if (isNil "comspec_sse_orgs") then { comspec_sse_orgs = createHashMap; };
 if (isNil "comspec_sse_orgMembers") then { comspec_sse_orgMembers = createHashMap; };
@@ -41,6 +51,12 @@ private _publish = {
     if (missionNamespace getVariable ["comspec_sse_orgBatch", false]) exitWith {};
     publicVariable "comspec_sse_orgs";
     publicVariable "comspec_sse_orgMembers";
+    publicVariable "comspec_sse_anaSeen";
+    ["comspec_sse_anaChanged", []] call CBA_fnc_globalEvent;
+};
+// Seul le registre des personnes rencontrées a changé (« seen », « reveal » d'un non-membre).
+private _publishSeen = {
+    if (missionNamespace getVariable ["comspec_sse_orgBatch", false]) exitWith {};
     publicVariable "comspec_sse_anaSeen";
     ["comspec_sse_anaChanged", []] call CBA_fnc_globalEvent;
 };
@@ -149,15 +165,19 @@ switch (_op) do {
         private _key = [_u] call comspec_sse_fnc_bioPersonKey;
         if ((comspec_sse_anaSeen getOrDefault [_key, ""]) isEqualTo (netId _u)) exitWith { false };
         comspec_sse_anaSeen set [_key, netId _u];
-        call _publish;
+        call _publishSeen;
         true
     };
     case "reveal": {
         _args params [["_who", objNull, [objNull, ""]], ["_lvl", 1, [0]], ["_how", "", [""]], ["_by", objNull, [objNull]]];
         private _key = if (_who isEqualType "") then { _who } else { [_who] call comspec_sse_fnc_bioPersonKey };
-        if (_who isEqualType objNull && {!isNull _who}) then { comspec_sse_anaSeen set [_key, netId _who]; };
+        private _seenChanged = false;
+        if (_who isEqualType objNull && {!isNull _who} && {(comspec_sse_anaSeen getOrDefault [_key, ""]) isNotEqualTo (netId _who)}) then {
+            comspec_sse_anaSeen set [_key, netId _who];
+            _seenChanged = true;
+        };
         private _m = _mem getOrDefault [_key, createHashMap];
-        if (count _m == 0 || {(_m getOrDefault ["known", 0]) >= _lvl}) exitWith { call _publish; false };
+        if (count _m == 0 || {(_m getOrDefault ["known", 0]) >= _lvl}) exitWith { if (_seenChanged) then { call _publishSeen; }; false };
         _m set ["known", (_lvl max 1) min 2];
         _m set ["how", _how];
         _m set ["when", call _now];

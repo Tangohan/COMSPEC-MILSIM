@@ -13,8 +13,10 @@ params [
 private _payload = _input;
 private _command = "SendSSE";
 private _kind = "GENERIC";
+private _isEnvelope = false;
 
 if ((_input getOrDefault ["command", ""]) != "") then {
+    _isEnvelope = true;
     _command = _input get "command";
     _kind = _input getOrDefault ["kind", "GENERIC"];
     _payload = _input getOrDefault ["payload", _input];
@@ -46,9 +48,10 @@ private _needsPersonApi = (
     (toUpper _command) in ["SUBMITSSEPERSON", "SUBMITSSEBIOMETRICSSIM"]
 ) || {(toUpper _kind) in ["PERSON", "BIOMETRICS"]};
 
+// SendSSE / GENERIC (fiches génériques, payload plat legacy) : repli texte sendIntel autorisé sans DLL.
 private _needsTypedApi = _needsPersonApi
-    || {(toUpper _command) in ["SENDSSE", "SUBMITSSEDIGITAL"]}
-    || {(toUpper _kind) in ["DIGITAL", "GENERIC"]};
+    || {(toUpper _command) isEqualTo "SUBMITSSEDIGITAL"}
+    || {(toUpper _kind) isEqualTo "DIGITAL"};
 
 // Envoi par l'extension (fiches typées Athena). Renvoie true si l'extension répond OK.
 private _tryExt = {
@@ -97,6 +100,8 @@ private _tryExt = {
             ]] call comspec_sse_fnc_log;
             private _raw = [_command, _extArgs] call comspec_sse_fnc_extensionCall;
             if ([_raw] call _extOk) exitWith {
+                // Réponse gardée dans l'envelope : le global comspec_sse_lastExtRaw est écrasé par les envois parallèles.
+                if (_isEnvelope) then { _input set ["txRaw", _raw]; };
                 [format ["sendViaOverwatch OK ext %1", _command]] call comspec_sse_fnc_log;
                 true
             };
@@ -114,6 +119,7 @@ private _tryExt = {
         ]] call comspec_sse_fnc_log;
         private _raw = [_command, _extArgs] call comspec_sse_fnc_extensionCall;
         if ([_raw] call _extOk) exitWith {
+            if (_isEnvelope) then { _input set ["txRaw", _raw]; };
             [format ["sendViaOverwatch OK ext %1", _command]] call comspec_sse_fnc_log;
             true
         };

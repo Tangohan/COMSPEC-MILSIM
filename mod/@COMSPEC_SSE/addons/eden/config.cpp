@@ -56,7 +56,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_4225900977";
                         property = "comspec_sse_enabled";
                         control = "Checkbox";
-                        expression = "_this setVariable ['comspec_sse_enabled', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_enabled', _value, true]; };";
                         defaultValue = "false";
                         typeName = "BOOL";
                         condition = "objectSimulated";
@@ -66,7 +66,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_6844285EAD";
                         property = "comspec_sse_forcedType";
                         control = "Combo";
-                        expression = "if (_value isNotEqualTo '') then { _this setVariable ['comspec_sse_forcedType', _value, isServer]; };";
+                        expression = "if (_value isNotEqualTo '') then { if (isServer) then { _this setVariable ['comspec_sse_forcedType', _value, true]; }; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         condition = "objectSimulated - objectBrain";
@@ -89,7 +89,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_7565793116";
                         property = "comspec_sse_profile";
                         control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_profile', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_profile', _value, true]; };";
                         defaultValue = "'RANDOM'";
                         typeName = "STRING";
                         class values {
@@ -111,7 +111,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_1BBEEE7974";
                         property = "comspec_sse_generation";
                         control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_generation', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_generation', _value, true]; };";
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
@@ -124,7 +124,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_40DD5E3E2E";
                         property = "comspec_sse_complexity";
                         control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_complexity', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_complexity', _value, true]; };";
                         defaultValue = "'STANDARD'";
                         typeName = "STRING";
                         class values {
@@ -139,7 +139,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_FA27128D8A";
                         property = "comspec_sse_identityMode";
                         control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_identityMode', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_identityMode', _value, true]; };";
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
@@ -227,7 +227,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_3E775A5872";
                         property = "comspec_sse_personRole";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_personRole', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_personRole', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -254,7 +254,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_8F9A093B0E";
                         property = "comspec_sse_personPhone";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_personPhone', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_personPhone', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -263,7 +263,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_7B69F2D6FE";
                         property = "comspec_sse_bioMode";
                         control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_bioMode', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_bioMode', _value, true]; };";
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
@@ -276,7 +276,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_C23ACC81C0";
                         property = "comspec_sse_zeusNotes";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_zeusNotes', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_zeusNotes', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -285,7 +285,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_C0F632D7E1";
                         property = "comspec_sse_networkId";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_networkId', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_networkId', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -294,7 +294,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_001AD3CCE1";
                         property = "comspec_sse_modelId";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_modelId', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_modelId', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -303,7 +303,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_092AEF7733";
                         property = "comspec_sse_datasetId";
                         control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_datasetId', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_datasetId', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         class values {
@@ -316,7 +316,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_C6F8BEB399";
                         property = "comspec_sse_datasetRole";
                         control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_datasetRole', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_datasetRole', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         class values {
@@ -334,7 +334,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_6C242C62CF";
                         property = "comspec_sse_missionSeed";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_missionSeed', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_missionSeed', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };
@@ -343,7 +343,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_2C6DC8BE22";
                         property = "comspec_sse_region";
                         control = "Combo";
-                        expression = "_this setVariable ['comspec_sse_region', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_region', _value, true]; };";
                         defaultValue = "'IRAQ'";
                         typeName = "STRING";
                         class values {
@@ -361,7 +361,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_DBEE120484";
                         property = "comspec_sse_advancedData";
                         control = "Edit";
-                        expression = "_this setVariable ['comspec_sse_advancedData', _value, isServer];";
+                        expression = "if (isServer) then { _this setVariable ['comspec_sse_advancedData', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                     };

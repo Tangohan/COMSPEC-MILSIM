@@ -223,7 +223,12 @@ _shoot ctrlEnable _canShoot;
     _t ctrlSetStructuredText parseText ((format ["<t align='center' size='0.75' color='#a9b8b1'>%1</t>", _lbl]) call comspec_atak_native_fnc_tr);
     private _b = ["COMSPEC_RscButtonInvisible", [_cx - _sideW / 2, _cy - _side / 2 - _fs * 0.5, _sideW, _side + _fs * 1.2]] call _mk;
     _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
-    _b ctrlAddEventHandler ["ButtonClick", _code];
+    // Clic différé d'une image (comme fn_formRender) : GALERIE change de page, ce qui supprimait le bouton pendant son propre gestionnaire.
+    _b setVariable ["comspec_click", _code];
+    _b ctrlAddEventHandler ["ButtonClick", {
+        params ["_c"];
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+    }];
 } forEach [
     [_centers select 1, "ui_gallery.paa", format ["GALERIE (%1)", _nPh], compile format ["%1 ['GALLERY'] call comspec_atak_native_fnc_navigate;", _keep], "Ouvrir l'app Galerie : revoir, envoyer ou supprimer les photos"],
     [_centers select 2, "ui_rotate.paa", ["SELFIE", "ARRIÈRE"] select _selfie, compile format ["%1 ['selfie'] call comspec_atak_native_fnc_photoCam;", _keep], ["Passer à l'objectif avant (selfie)", "Revenir à l'objectif arrière"] select _selfie, _selfie]

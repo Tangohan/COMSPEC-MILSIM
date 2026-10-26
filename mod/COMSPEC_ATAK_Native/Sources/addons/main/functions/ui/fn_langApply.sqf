@@ -27,6 +27,7 @@ if (_set isEqualTo "") then { _set = "en"; };
 if (_force isNotEqualTo "") then { _set = _force; };
 private _lang = [_set] call comspec_atak_native_fnc_langResolve;
 missionNamespace setVariable ["COMSPEC_ATAK_I18nCache", createHashMap];
+missionNamespace setVariable ["COMSPEC_ATAK_I18nCacheNum", createHashMap];
 private _loaded = missionNamespace getVariable ["COMSPEC_ATAK_I18nLoaded", ""];
 // Dictionnaire déjà préparé pendant cette session de jeu (mission précédente) : gardé dans uiNamespace, il
 // n'est pas relu (740 Ko, 10 000 paires, plusieurs centaines de ms à chaque arrivée en mission hors français).
@@ -87,8 +88,14 @@ if (_loaded isNotEqualTo _lang) then {
                     _buf = "";
                     _i = _i + 2;
                 } else {
-                    _buf = _buf + _c;
-                    _i = _i + 1;
+                    // « %% » du modèle (format) : un seul « % » dans le texte affiché (« Batterie 99 % »).
+                    if (_c isEqualTo "%" && {_d isEqualTo "%"}) then {
+                        _buf = _buf + "%";
+                        _i = _i + 2;
+                    } else {
+                        _buf = _buf + _c;
+                        _i = _i + 1;
+                    };
                 };
             };
             _parts pushBack _buf;

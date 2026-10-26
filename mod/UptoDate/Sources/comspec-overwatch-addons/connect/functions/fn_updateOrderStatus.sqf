@@ -12,10 +12,13 @@ private _valid = ["PENDING", "ACK", "EXEC", "DONE", "FAILED", "CANCELLED", "DELI
 if !((toUpper _status) in _valid) exitWith { false };
 _status = toUpper _status;
 
+// Ids stockés en chaîne brute (pollOrders / issueOrder) : str ajouterait des guillemets et ne matcherait jamais.
+private _fnc_idText = { params [["_v", ""]]; if (_v isEqualType "") then { trim _v } else { trim (str _v) } };
+
 private _current = "PENDING";
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    if ((str (_x getOrDefault ["id", ""])) isEqualTo _orderId) exitWith {
+    if (([_x getOrDefault ["id", ""]] call _fnc_idText) isEqualTo _orderId) exitWith {
         _current = toUpper (trim (_x getOrDefault ["status", "PENDING"]));
     };
 } forEach (missionNamespace getVariable ["COMSPEC_Orders", []]);
@@ -28,7 +31,7 @@ private _updated = false;
 
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    if ((str (_x getOrDefault ["id", ""])) isEqualTo _orderId) exitWith {
+    if (([_x getOrDefault ["id", ""]] call _fnc_idText) isEqualTo _orderId) exitWith {
         _x set ["id", _orderId];
         _x set ["status", _status];
         _x set ["updatedAt", serverTime];

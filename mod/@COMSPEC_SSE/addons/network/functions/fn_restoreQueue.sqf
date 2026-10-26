@@ -33,6 +33,10 @@ private _case = [] call comspec_sse_fnc_getCaseReference;
     } else {
         if (_idem != "") then { _seen pushBack _idem; };
         _hm set ["txStatus", "QUEUED"];
+        // txRetryAfter est un instant `time` de la session précédente : `time` repart de 0, on le remet à zéro.
+        _hm set ["txRetryAfter", 0];
+        // netId d'une session précédente : il peut désigner un autre objet ici (flushQueue marquerait le mauvais sujet).
+        _hm deleteAt "entity_netid";
         _restored pushBack _hm;
     };
 } forEach _serial;

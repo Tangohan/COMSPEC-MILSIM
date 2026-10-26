@@ -12,7 +12,7 @@ if (!hasInterface) exitWith {};
 
 if (_clear) exitWith {
     profileNamespace setVariable ["COMSPEC_IntelNote_Draft", nil];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 private _disp = uiNamespace getVariable ["COMSPEC_IntelNote_Display", displayNull];
@@ -44,4 +44,4 @@ profileNamespace setVariable ["COMSPEC_IntelNote_Draft", [
     _themes,
     _source
 ]];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;

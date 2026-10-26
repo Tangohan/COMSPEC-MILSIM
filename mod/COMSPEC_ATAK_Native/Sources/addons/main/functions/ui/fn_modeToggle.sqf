@@ -2,7 +2,7 @@
 private _mode = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"]);
 private _next = ["MINI", "FULL"] select (_mode isEqualTo "MINI");
 profileNamespace setVariable ["COMSPEC_ATAK_Mode", _next];
-saveProfileNamespace;
+[] call comspec_atak_native_fnc_saveProfile;
 // Réduire depuis le plein écran rend la souris : le téléphone reste en mini et l'on continue à jouer.
 private _s0 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 if (_next isEqualTo "MINI" && {_s0 getOrDefault ["interactive", false]}) exitWith {

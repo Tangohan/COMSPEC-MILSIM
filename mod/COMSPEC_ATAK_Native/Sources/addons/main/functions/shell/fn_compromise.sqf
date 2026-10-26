@@ -74,15 +74,20 @@ switch (_act) do {
     };
     case "revoke": {
         _arg params [["_id", ""], ["_tuid", ""], ["_cs", ""]];
-        private _ok = false;
-        if (_tuid isNotEqualTo "" && {[] call comspec_atak_native_fnc_bridge}) then {
-            private _r = "COMSPECExtension" callExtension ["CompromiseTerminal", [_tuid, "compromised", format ["Compromission validée sur le terrain (%1, ATAK de %2) : révocation du certificat", _id, _cs]]];
-            if (_r isEqualType []) then { _r = _r param [0, ""]; };
-            _ok = (_r select [0, 3]) isEqualTo "OK|";
-            ["INFO", "CAPTURE", format ["%1 : CompromiseTerminal %2 -> %3", _id, _tuid, _r]] call comspec_atak_native_fnc_log;
+        // Requête HTTP vers Athena : hors du gestionnaire CBA (non suspendable), par fn_extAwait pour ne pas figer le jeu.
+        [_id, _tuid, _cs] spawn {
+            params ["_id", "_tuid", "_cs"];
+            private _ok = false;
+            if (_tuid isNotEqualTo "" && {[] call comspec_atak_native_fnc_bridge}) then {
+                private _r = ["COMSPECExtension", "CompromiseTerminal", [_tuid, "compromised", format ["Compromission validée sur le terrain (%1, ATAK de %2) : révocation du certificat", _id, _cs]]] call comspec_atak_native_fnc_extAwait;
+                if (_r isEqualType []) then { _r = _r param [0, ""]; };
+                if !(_r isEqualType "") then { _r = str _r; };
+                _ok = (_r select [0, 3]) isEqualTo "OK|";
+                ["INFO", "CAPTURE", format ["%1 : CompromiseTerminal %2 -> %3", _id, _tuid, _r]] call comspec_atak_native_fnc_log;
+            };
+            ["comspec_atak_native_captureSrv", ["athena", [_id, _ok, player]]] call CBA_fnc_serverEvent;
+            if (_ok) then { ["SUCCESS", format ["Athena : certificat de l'ATAK de %1 révoqué", _cs], 5, 40] call comspec_atak_native_fnc_notify; };
         };
-        ["comspec_atak_native_captureSrv", ["athena", [_id, _ok, player]]] call CBA_fnc_serverEvent;
-        if (_ok) then { ["SUCCESS", format ["Athena : certificat de l'ATAK de %1 révoqué", _cs], 5, 40] call comspec_atak_native_fnc_notify; };
     };
     case "ownerReset": {
         player setVariable ["COMSPEC_ATAK_PhoneGen", (player getVariable ["COMSPEC_ATAK_PhoneGen", 0]) + 1, true];

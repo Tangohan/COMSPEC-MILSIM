@@ -6,7 +6,7 @@ if (!hasInterface) exitWith { "" };
 
 private _fnc_safeLine = {
     params ["_line"];
-    if (_line isNotEqualType "") exitWith { "" };
+    if !(_line isEqualType "") exitWith { "" };
     if (_line find "api_key" >= 0) exitWith { "" };
     if (_line find "Bearer" >= 0) exitWith { "" };
     if (_line find "token" >= 0) exitWith { "" };

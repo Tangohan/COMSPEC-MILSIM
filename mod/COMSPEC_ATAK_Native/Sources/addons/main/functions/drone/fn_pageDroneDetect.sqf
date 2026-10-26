@@ -86,8 +86,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_DroneRadar", [_ring, _needles, _side, _su
 // --- Liste ---
 private _rows = [
     ["buttons", [["BALAYER", { ["manual"] call comspec_atak_native_fnc_droneDetectScan; }, true], ["EFFACER", compile format ["['clear'] call comspec_atak_native_fnc_droneDetectScan; %1", _rerender]]]],
-    ["switch", "Balayage automatique", _auto, compile format ["profileNamespace setVariable ['COMSPEC_ATAK_DroneAuto', %1]; saveProfileNamespace; %2", !_auto, _rerender], "Toutes les 5 s, même l'app fermée ; alerte et vibration si un drone inconnu est proche"],
-    ["switch", "Relèvements sur la carte", _layer, compile format ["profileNamespace setVariable ['COMSPEC_ATAK_LayerDrone', %1]; saveProfileNamespace; %2", !_layer, _rerender], "Cône d'erreur tracé depuis le point de relevé"],
+    ["switch", "Balayage automatique", _auto, compile format ["profileNamespace setVariable ['COMSPEC_ATAK_DroneAuto', %1]; [] call comspec_atak_native_fnc_saveProfile; %2", !_auto, _rerender], "Toutes les 5 s, même l'app fermée ; alerte et vibration si un drone inconnu est proche"],
+    ["switch", "Relèvements sur la carte", _layer, compile format ["profileNamespace setVariable ['COMSPEC_ATAK_LayerDrone', %1]; [] call comspec_atak_native_fnc_saveProfile; %2", !_layer, _rerender], "Cône d'erreur tracé depuis le point de relevé"],
     ["section", "Détections", format ["%1 liaison(s) · récepteur passif, n'émet rien", count _list]]
 ];
 {

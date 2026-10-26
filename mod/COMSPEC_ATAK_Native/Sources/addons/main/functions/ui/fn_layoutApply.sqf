@@ -5,7 +5,9 @@
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d) exitWith { false };
-private _l = [] call comspec_atak_native_fnc_layoutGet;
+// Disposition déjà calculée par l'appelant (glisser du téléphone, fn_phoneDrag) : pas de second calcul.
+private _l = param [0, createHashMap, [createHashMap]];
+if ((count _l) isEqualTo 0) then { _l = [] call comspec_atak_native_fnc_layoutGet; };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _page = _s getOrDefault ["activePage", "LAUNCHER"];
 private _interactive = _l get "interactive";

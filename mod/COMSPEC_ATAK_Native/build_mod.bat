@@ -25,7 +25,7 @@ if exist "%OUT%\addons\comspec_atak_native_towers.pbo" del /q "%OUT%\addons\coms
 if exist "%OUT%\addons\comspec_atak_native_items.pbo" del /q "%OUT%\addons\comspec_atak_native_items.pbo"
 dotnet publish "%ROOT%COMSPECATAKNativeExtension\COMSPECATAKNativeExtension.csproj" -c Release -r win-x64 --self-contained true
 if errorlevel 1 exit /b 1
-copy /Y "%ROOT%COMSPECATAKNativeExtension\bin\publish\COMSPECATAKNativeExtension_x64.dll" "%OUT%\COMSPECATAKNativeExtension_x64.dll" >nul
+copy /Y "%ROOT%COMSPECATAKNativeExtension\bin\publish\COMSPECATAKNativeExtension_x64.dll" "%OUT%\COMSPECATAKNativeExtension_x64.dll" >nul || (echo [ERREUR] COMSPECATAKNativeExtension_x64.dll non copiee : DLL verrouillee, fermer Arma & exit /b 1)
 :: Empreinte du build (docs\VERSIONING.md) : date UTC et commit dans build_info.hpp le temps d'empaqueter main.pbo.
 :: Le jeu affiche alors "1.94.0 - 2026.10.14 a1b2c3d" (Reglages, Debug, journal). Le fichier est remis a vide ensuite.
 set "BCOMMIT=local"
@@ -40,6 +40,8 @@ echo [INFO] Build ATAK natif : %BDATE% %BCOMMIT%
 "%BUILDER%" "%ADDON%" "%OUT%\addons" -packonly -clear -temp="%ABTMP%\native_main" -prefix=z\comspec_atak_native\addons\main
 set "BERR=%errorlevel%"
 copy /Y "%TEMP%\comspec_build_info.hpp" "%STAMPFILE%" >nul
+:: Build precedent interrompu (Ctrl+C) : la copie de sauvegarde contenait deja une empreinte. On remet toujours BUILD_STAMP a vide.
+powershell -NoProfile -Command "$p=$env:STAMPFILE; $q=[char]34; $t=[IO.File]::ReadAllText($p); [IO.File]::WriteAllText($p, ($t -replace ('#define BUILD_STAMP '+$q+'.*'+$q), ('#define BUILD_STAMP '+$q+$q)))" || (echo [ATTENTION] BUILD_STAMP non remis a vide dans build_info.hpp : ne pas committer ce fichier.)
 if not "%BERR%"=="0" exit /b 1
 :: Pylones relais 3D (modeles MLOD volumineux) : PBO a part.
 "%BUILDER%" "%ROOT%Sources\addons\towers" "%OUT%\addons" -packonly -clear -temp="%ABTMP%\native_towers" -prefix=z\comspec_atak_native\addons\towers
@@ -54,7 +56,8 @@ dotnet publish "%OW%\COMSPECExtension\COMSPECExtension.csproj" -c Release -r win
 if errorlevel 1 exit /b 1
 set "OWDLL=%OW%\COMSPECExtension\bin\publish\COMSPECExtension_x64.dll"
 if not exist "%OWDLL%" set "OWDLL=%OW%\COMSPECExtension\bin\Release\net8.0\win-x64\publish\COMSPECExtension_x64.dll"
-copy /Y "%OWDLL%" "%OUT%\COMSPECExtension_x64.dll" >nul
+if not exist "%OWDLL%" (echo [ERREUR] COMSPECExtension_x64.dll introuvable apres dotnet publish & exit /b 1)
+copy /Y "%OWDLL%" "%OUT%\COMSPECExtension_x64.dll" >nul || (echo [ERREUR] COMSPECExtension_x64.dll non copiee : DLL verrouillee, fermer Arma & exit /b 1)
 set "OWTMP=%TEMP%\comspec_ow_pack"
 if exist "%OWTMP%" rmdir /s /q "%OWTMP%"
 mkdir "%OWTMP%"
@@ -62,8 +65,8 @@ mkdir "%OWTMP%"
 if errorlevel 1 exit /b 1
 "%BUILDER%" "%OW%\Sources\comspec-overwatch-addons\connect" "%OWTMP%" -packonly -clear -temp="%ABTMP%\ow_connect" -prefix=z\comspec_overwatch\addons\connect
 if errorlevel 1 exit /b 1
-copy /Y "%OWTMP%\main.pbo" "%OUT%\addons\comspec_overwatch_main.pbo" >nul
-copy /Y "%OWTMP%\connect.pbo" "%OUT%\addons\comspec_overwatch_connect.pbo" >nul
+copy /Y "%OWTMP%\main.pbo" "%OUT%\addons\comspec_overwatch_main.pbo" >nul || (echo [ERREUR] comspec_overwatch_main.pbo non copie : PBO verrouille, fermer Arma & exit /b 1)
+copy /Y "%OWTMP%\connect.pbo" "%OUT%\addons\comspec_overwatch_connect.pbo" >nul || (echo [ERREUR] comspec_overwatch_connect.pbo non copie : PBO verrouille, fermer Arma & exit /b 1)
 :: Controle final (tools\verify_build.py) : tout PBO hors des cinq attendus est deplace dans %TEMP%\comspec_atak_retires,
 :: puis taille, SHA-256 et prefixe de chaque PBO ; echec si doublon, PBO manquant ou fichier absent des sources (build perime).
 set "PY="

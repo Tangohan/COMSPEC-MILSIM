@@ -6,12 +6,15 @@
       ["aim"]                                     touche « Envoyer le point visé à l'ATAK » : point du désignateur laser
                                                   en cours (laserTarget), sinon point visé dans une optique ou des jumelles
                                                   (jusqu'à 5 km)
-    Réglage serveur comspec_atak_native_lase_link. Il faut un ATAK utilisable (fn_canUse) ; 2 s au moins entre deux points.
+    Réglages serveur comspec_atak_native_lase_link (tout) et comspec_atak_native_optic_mark (jumelles, optiques et Vector,
+    décoché par défaut : seul le désignateur laser marque). Il faut un ATAK utilisable (fn_canUse) ; 2 s au moins entre deux points.
 */
 params [["_mode", ""], ["_arg", []]];
 if !(missionNamespace getVariable ["comspec_atak_native_lase_link", true]) exitWith { false };
 if (([] call comspec_atak_native_fnc_canUse) isNotEqualTo "") exitWith { false };
 if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_LaseT", -10]) < 2) exitWith { false };
+private _optic = missionNamespace getVariable ["comspec_atak_native_optic_mark", false];
+if (_mode isEqualTo "vector" && {!_optic}) exitWith { false };
 private _from = eyePos player;
 private _pos = [];
 switch (_mode) do {
@@ -25,6 +28,9 @@ switch (_mode) do {
         private _lt = laserTarget player;
         if (isNull _lt) then { _lt = laserTarget (vehicle player); };
         if (!isNull _lt) exitWith { _pos = getPosATL _lt; };
+        if (!_optic) exitWith {
+            ["WARNING", "Marquage depuis des jumelles désactivé sur ce serveur : allumez un désignateur laser ou reportez le point à la main", 4, 20] call comspec_atak_native_fnc_notify;
+        };
         if (cameraView isNotEqualTo "GUNNER") exitWith {
             ["WARNING", "Télémètre : visez dans une optique ou des jumelles", 3, 20] call comspec_atak_native_fnc_notify;
         };

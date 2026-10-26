@@ -344,6 +344,7 @@ def convert(img, name, tmp):
 
 
 def blood_assets(tmp):
+    """Anciennes textures de sang blanches (teinte unique), remplacées en jeu par bloodc_* (gen_screen_fx.py, en couleur)."""
     """Sang sur l'écran (1.97.0) : éclaboussures, mains, coulures, projections fines, nappes (gore)."""
     for i in range(2):
         convert(splat(42 + i), f"blood_splat_{i}", tmp)
@@ -379,8 +380,7 @@ def main():
             convert(fingerprint(21 + i), f"dirt_print_{i}", tmp)
         for i in range(3):
             convert(smear(31 + i), f"dirt_smear_{i}", tmp)
-        convert(splat(41), "dirt_splat", tmp)
-        blood_assets(tmp)
+        # Sang : textures en couleur bloodc_* (gen_screen_fx.py) ; « blood » refait encore les anciennes si besoin.
         convert(drop(), "dirt_drop", tmp)
         case_assets(tmp)
 

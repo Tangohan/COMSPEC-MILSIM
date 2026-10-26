@@ -20,9 +20,18 @@ if (_this isEqualType objNull) then {
         if (_a2 isEqualType true) then { _activated = _a2; };
         if (_a1 isEqualType true && {!(_a2 isEqualType true)}) then { _activated = _a1; };
     } else {
-        if (_a0 isEqualType "" && {(_this param [1, objNull]) isEqualType objNull}) then {
-            _logic = _this param [1, objNull];
-            _activated = _this param [3, true];
+        if (_a0 isEqualType "") then {
+            private _a1 = _this param [1, objNull];
+            if (_a1 isEqualType objNull) then {
+                _logic = _a1;
+                _activated = _this param [3, true];
+            } else {
+                // is3DEN = 1 : BI appelle [mode, [logic, activated, curatorPlaced]], mission comprise.
+                if (_a1 isEqualType [] && {(toLower _a0) in ["init", "registeredtoworld3den"]}) then {
+                    _logic = _a1 param [0, objNull, [objNull]];
+                    _activated = _a1 param [1, true, [true]];
+                };
+            };
         };
     };
 };
@@ -41,10 +50,9 @@ if (is3DEN) then {
     };
     true
 } else {
-    if (!hasInterface) exitWith {
-        deleteVehicle _logic;
-        false
-    };
+    // isGlobal = 1 : chaque machine lit la même logique. La supprimer ici (serveur ou premier client)
+    // l'enlèverait aux autres machines avant leur lecture ; on ne la supprime qu'en solo.
+    if (!hasInterface) exitWith { false };
 
     private _mode = _logic getVariable ["RunAtStart", "manual"];
     private _runAtStart = false;
@@ -60,7 +68,7 @@ if (is3DEN) then {
     };
     private _isAdmin = (!isMultiplayer) || {serverCommandAvailable "#kick"};
 
-    deleteVehicle _logic;
+    if (!isMultiplayer) then { deleteVehicle _logic; };
 
     if (_runAtStart && {_isZeus || {_isAdmin}}) then {
         [{

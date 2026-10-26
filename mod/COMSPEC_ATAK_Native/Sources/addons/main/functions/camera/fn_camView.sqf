@@ -29,6 +29,12 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
         if (isNull _cam) exitWith {};
         private _o = attachedTo _cam;
+        // Caméra fixe ramassée (fn_camAction "pickupNow", deleteVehicle) : la caméra locale est détachée, flux coupé.
+        if (isNull _o && {(missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""]) isEqualTo "fixed"}) exitWith {
+            [] call comspec_atak_native_fnc_livecamStop;
+            ["WARNING", "Live cam : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
+            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
         if (isNull _o || {!(_o isKindOf "COMSPEC_ATAK_CameraObj")}) exitWith {};
         private _st = ["status", _o] call comspec_atak_native_fnc_camAction;
         if ((_st select 0) isNotEqualTo "OK") exitWith {

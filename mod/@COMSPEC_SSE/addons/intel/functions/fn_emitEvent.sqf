@@ -4,6 +4,7 @@
     Diffusé une fois sur chaque machine ; l'émetteur est ajouté en dernier argument (clientOwner).
     Events: SSE_RecordCreated, SSE_RecordCollected, SSE_RecordExploited,
             SSE_IntelDiscovered, SSE_NetworkLinked, SSE_TriageDone, SSE_HookFired
+    (comspec_sse_triageDone est désormais levé localement par triageSite, sans passer par ici.)
 */
 params [
     ["_eventName", "", [""]],

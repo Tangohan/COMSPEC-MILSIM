@@ -56,6 +56,8 @@ switch (toLower _act) do {
     case "hold": {
         _arg params [["_ev", ""], ["_args", []]];
         if (missionNamespace getVariable ["COMSPEC_ATAK_NetReplay", false]) exitWith { false };
+        // Historique rejoué à l'arrivée en partie (syncData, sans alertes) : jamais retenu, sinon il ressortirait plus tard en alertes vives.
+        if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith { false };
         if (["online"] call comspec_atak_native_fnc_offline) exitWith { false };
         private _held = _st get "held";
         _held pushBack [_ev, _args];
@@ -167,9 +169,8 @@ switch (toLower _act) do {
             (keys _tasks) select { (_tasks get _x) isEqualType createHashMap } apply { [_x, [_tasks get _x] call _flat] },
             _alerts
         ]];
-        // Écrit sur le disque toutes les 2 min seulement (survit à un crash du jeu sans saccade à chaque sauvegarde).
-        private _n = (_st getOrDefault ["saveN", 0]) + 1;
-        _st set ["saveN", _n];
-        if ((_n mod 4) isEqualTo 1) then { saveProfileNamespace; };
+        // Écrit sur le disque au plus toutes les 2 min (fn_profileSave : échéance commune aux sauvegardes périodiques) :
+        // survit à un crash du jeu sans saccade à chaque sauvegarde.
+        ["dirty"] call comspec_atak_native_fnc_profileSave;
     };
 };

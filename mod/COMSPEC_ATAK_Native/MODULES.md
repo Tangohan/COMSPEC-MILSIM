@@ -123,3 +123,21 @@ the id) and `["remove", id or object]`. A jammer object stops when destroyed; se
 `a3f_jammer_active`) to `false` on it to switch it off. Admins can also list jammer classes from other mods in the CBA
 setting "Jammer objects from other mods" (`Class:radius:strength`). Crows Electronic Warfare jammers and TFAR jamming
 scripts (via `tf_sendingDistanceMultiplicator`) are already picked up.
+
+## 6. Écrans COMSPEC : diffuser les diapositives du briefing sur un objet du jeu
+
+Le module Eden / Zeus « ATAK · Écran COMSPEC » (catégorie réseau) transforme les objets synchronisés (TV, écran,
+ordinateur, projecteur, tableau) en écrans. Un téléphone à portée les voit dans l'app Briefing, onglet ÉCRANS :
+DIFFUSER y affiche la diapositive en cours, qui suit ensuite les pages tournées sur le téléphone. ACE (ou la molette)
+sur l'écran : diapositive suivante, précédente, arrêt. Chaque joueur voit l'image s'il a COMSPEC Link.
+
+```sqf
+// Serveur (l'init d'un objet dans Eden tourne aussi sur le serveur). Ailleurs, la demande part au serveur.
+// [objet, nom, portée de détection m, camp qui le pilote ("" = tous), index de texture (0 le plus souvent), contrôle ACE]
+if (isServer) then { ["add", [this, "Salle de briefing", 30]] call comspec_atak_native_fnc_screenCast; };
+["remove", objet] call comspec_atak_native_fnc_screenCast;
+```
+
+**English.** The "ATAK · COMSPEC screen" Eden/Zeus module (or `["add", [object, name, range, side, textureIndex, ace]]
+call comspec_atak_native_fnc_screenCast`) turns TVs, screens and projectors into screens the Briefing app can cast its
+slides to (SCREENS tab), then controlled from the phone or with ACE on the screen.

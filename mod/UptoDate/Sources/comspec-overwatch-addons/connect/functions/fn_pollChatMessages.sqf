@@ -26,10 +26,21 @@ private _seen = missionNamespace getVariable ["COMSPEC_ChatSeenIds", []];
 if (!(_seen isEqualType [])) then { _seen = []; };
 
 // afterId = max id déjà vu (poll incrémental — évite de recharger 50 gros messages).
+// Comparé en texte (longueur puis ordre) : str/parseNumber passaient en notation 1.2e+06 et perdaient
+// la précision au-delà de 16 777 216.
 private _afterId = "0";
 {
-    private _n = parseNumber _x;
-    if (_n > (parseNumber _afterId)) then { _afterId = str (floor _n); };
+    private _s = if (_x isEqualType "") then { trim _x } else { if (_x isEqualType 0) then { _x toFixed 0 } else { "" } };
+    if (_s isEqualTo "" || {!(_s regexMatch "^[0-9]+$")}) then { continue };
+    while { (count _s) > 1 && {(_s select [0, 1]) isEqualTo "0"} } do { _s = _s select [1]; };
+    // Même longueur : l'ordre alphabétique des chiffres = l'ordre numérique (exact, sans flottant).
+    private _gt = (count _s) > (count _afterId);
+    if (!_gt && {(count _s) == (count _afterId)} && {_s isNotEqualTo _afterId}) then {
+        private _pair = [_s, _afterId];
+        _pair sort true;
+        _gt = (_pair select 1) isEqualTo _s;
+    };
+    if (_gt) then { _afterId = _s; };
 } forEach _seen;
 
 private _bootstrapped = missionNamespace getVariable ["COMSPEC_ChatPollBootstrapped", false];
