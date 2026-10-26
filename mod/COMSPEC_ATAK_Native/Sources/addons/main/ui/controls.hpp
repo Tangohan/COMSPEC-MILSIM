@@ -25,12 +25,14 @@ class RscControlsGroup {
     class HScrollbar;
 };
 
-class COMSPEC_RscText: RscText { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; sizeEx="0.026 * safeZoneH"; };
+// shadow=0 : l'ombre portée des RscText / RscStructuredText du jeu (shadow=1) doublait chaque lettre d'un liseré noir
+// décalé, illisible sur les libellés gris (OUTILS, RECHERCHER) et le texte foncé ; les classes qui en ont besoin la remettent.
+class COMSPEC_RscText: RscText { shadow=0; font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; sizeEx="0.026 * safeZoneH"; };
 class COMSPEC_RscTextRight: COMSPEC_RscText { style=1; };
 class COMSPEC_RscTextCenter: COMSPEC_RscText { style=2; };
 // Texte centré sur plusieurs lignes (libellé long d'une tuile du lanceur).
 class COMSPEC_RscTextCenterMulti: COMSPEC_RscText { style=18; lineSpacing=1; };
-class COMSPEC_RscStructuredText: RscStructuredText { colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; size="0.024 * safeZoneH";
+class COMSPEC_RscStructuredText: RscStructuredText { shadow=0; colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; size="0.024 * safeZoneH";
     // Police des balises <t> sans font=… (Roboto Condensed dans la classe du jeu).
     class Attributes: Attributes { font=ATAK_FONT; };
 };
@@ -104,5 +106,9 @@ class COMSPEC_RscBubbleIn: COMSPEC_RscStructuredText { colorBackground[]=ATAK_BG
 class COMSPEC_RscBubbleOut: COMSPEC_RscStructuredText { colorBackground[]={0.10,0.20,0.12,1}; };
 class COMSPEC_RscChip: COMSPEC_RscTextCenter { font=ATAK_FONT_BOLD; colorBackground[]={0.55,0.38,0.08,1}; colorText[]={1,1,1,1}; };
 // Curseur du rejeu de mission (app AAR).
+// Navigateur intégré d'Arma (CT_WEBBROWSER, Arma 3 2.14+) : diapositives Athena qu'Arma refuse en texture (image
+// téléchargée hors d'un PBO). Contenu local seulement (page data: ouverte par OpenDataAsURL), aucune adresse externe.
+// Classe sans parent (comme la tablette Overwatch) : rien ne dépend d'une classe du jeu absente selon la version.
+class COMSPEC_RscWebBrowser { type=106; idc=-1; style=0; x=0; y=0; w=0.3; h=0.3; colorBackground[]={0,0,0,1}; colorText[]={1,1,1,1}; allowExternalURL=0; url=""; };
 class COMSPEC_RscSlider: RscXSliderH { color[]={0.36,0.78,0.42,0.9}; colorActive[]={0.46,0.88,0.52,1}; colorDisabled[]={0.4,0.45,0.42,0.6}; };
 class COMSPEC_RscMapPanel: COMSPEC_RscStructuredText { colorBackground[]={0.025,0.030,0.027,0.78}; };

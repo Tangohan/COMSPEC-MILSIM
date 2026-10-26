@@ -5,7 +5,7 @@
       ["click", pos]   1er clic : IP ; 2e clic : cible ; un clic de plus repart d'un nouvel IP
       ["calc"]         -> hashmap du calcul (vide sans IP et cible)
       ["draw", carte]  trait IP → cible fléché, IP, cible, cap et distance au milieu
-      ["card", rect]   fiche du résultat (VERS LE 9-LINE, EFFACER)
+      ["card", rect]   fiche du résultat (VERS LE 9-LINE, EFFACER) ; ["cardH"] -> sa hauteur
       ["send"]         IP et cible repris dans l'app JTAC (onglet 9-LINE), comme s'ils avaient été pointés dans l'app
       ["clear"]        efface les points
     État : COMSPEC_ATAK_State jtacTool = [IP, cible] (positions ASL).
@@ -26,7 +26,7 @@ switch (_act) do {
         playSound "ClickSoft";
         if ((count _pts) isEqualTo 2) then {
             private _c = ["calc"] call comspec_atak_native_fnc_jtacTool;
-            ["TACTICAL", format ["IP → cible : %1° M · %2 NM · %3 ft MSL", [_c get "mag", 3] call CBA_fnc_formatNumber, _c get "nm", _c get "ft"], 5, 30] call comspec_atak_native_fnc_notify;
+            ["TACTICAL", format ["IP vers cible : %1° M · %2 NM · %3 ft MSL", [_c get "mag", 3] call CBA_fnc_formatNumber, _c get "nm", _c get "ft"], 5, 30] call comspec_atak_native_fnc_notify;
         };
         call _redraw;
     };
@@ -39,7 +39,7 @@ switch (_act) do {
         private _side = side group player;
         private _fr = (allUnits select { alive _x && {side group _x isEqualTo _side} && {!((vehicle _x) isKindOf "Air")} && {(_x distance2D _tg) < 3000} }) apply { [_x distance2D _tg, _x] };
         _fr sort true;
-        private _l8 = if (_fr isEqualTo []) then { "aucun à 3 km" } else { (_fr select 0) params ["_fd", "_fu"]; format ["%1 %2 m", [_tg getDir _fu] call _card8, round _fd] };
+        private _l8 = if (_fr isEqualTo []) then { "aucun à 3 km" } else { (_fr select 0) params ["_fd", "_fu"]; format ["%1 m au %2" call comspec_atak_native_fnc_tr, round _fd, [_tg getDir _fu] call _card8] };
         private _locs = nearestLocations [_ip, ["NameCityCapital", "NameCity", "NameVillage", "NameLocal", "Hill"], 2500];
         private _nm = "";
         { if (_nm isEqualTo "" && {(text _x) isNotEqualTo ""}) then { _nm = toUpper (text _x); }; } forEach _locs;
@@ -68,35 +68,77 @@ switch (_act) do {
         _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", _cy, _mid, 0, 0, 0, format ["%1° M · %2 NM", [_c get "mag", 3] call CBA_fnc_formatNumber, _c get "nm"], 2, 0.032 * _ts, (COMSPEC_ATAK_FontSet select 1), "center"];
     };
     case "card": {
+        // Fiche en lignes fixes (numéro de ligne du 9-LINE, libellé, valeur) : chaque ligne a sa hauteur, rien ne
+        // déborde ni ne se chevauche quelle que soit la taille du texte. Hauteur conseillée : ["cardH"].
         if ((count _pts) < 2) exitWith {};
         _arg params ["_px", "_py", "_pw", "_ph"];
         private _c = ["calc"] call comspec_atak_native_fnc_jtacTool;
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         private _fs = _l get "fontSmall";
         private _pad = (_l get "pad") * 2;
+        private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
         private _bg = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ph], "", false] call comspec_atak_native_fnc_pageCtrl;
-        _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.94];
+        _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.95];
         private _edge = ["COMSPEC_RscText", [_px, _py, _pw, pixelH * 2], "", false] call comspec_atak_native_fnc_pageCtrl;
         _edge ctrlSetBackgroundColor [0.30, 0.85, 1, 0.8];
-        private _bh = _fs * 1.4;
-        private _t = ["COMSPEC_RscStructuredText", [_px + _pad / 2, _py + _pad / 3, _pw - _pad, _ph - _bh - _pad], "", false] call comspec_atak_native_fnc_pageCtrl;
-        _t ctrlSetFontHeight (_fs * 0.95);
         private _f3 = { [_this, 3] call CBA_fnc_formatNumber };
         private _tr = { _this call comspec_atak_native_fnc_tr };
-        _t ctrlSetStructuredText parseText format ["<t font='COMSPEC_BarlowBold' color='#4dd9ff'>%12</t>  <t size='0.85' color='#8a9a93'>%1 · %13 %2°</t><br/><t font='EtelkaMonospacePro' size='0.92'>2  %3° M (%14 %4°) · %15 %5° M<br/>3  %6 NM (%7 m)<br/>4  %8 ft MSL (%9 m)<br/>6  %10<br/>8  %11</t>",
-            _c get "ipName", _c get "decl", (_c get "mag") call _f3, (_c get "true") call _f3, (_c get "back") call _f3, _c get "nm", _c get "m",
-            _c get "ft", _c get "alt", _c get "tgtGrid", (_c get "l8") call _tr, "IP → CIBLE" call _tr, "déclinaison" call _tr, "vrai" call _tr, "retour" call _tr];
+        private _x0 = _px + _pad / 2;
+        private _iw = _pw - _pad;
+        private _rh = _fs * 1.3;
+        private _y = _py + _pad / 3;
+        // En-tête : titre de l'outil, nom de l'IP et déclinaison sur une seule ligne, coupée proprement si trop longue.
+        private _hd = ["COMSPEC_RscStructuredText", [_x0, _y, _iw, _rh], "", false] call comspec_atak_native_fnc_pageCtrl;
+        _hd ctrlSetFontHeight _fs;
+        _hd ctrlSetStructuredText parseText format ["<t font='COMSPEC_Barlow' color='#4dd9ff'>%1</t>  <t color='#9fb0a8' size='0.9'>%2 · %3 %4°</t>",
+            "IP VERS CIBLE" call _tr, _c get "ipName", "décl." call _tr, _c get "decl"];
+        _y = _y + _rh + pixelH * 4;
+        private _ami = _c get "l8";
+        private _rows = [
+            ["2", "CAP", format ["%1° M", (_c get "mag") call _f3], format ["vrai %1° · retour %2°" call _tr, (_c get "true") call _f3, (_c get "back") call _f3]],
+            ["3", "DISTANCE", format ["%1 NM", _c get "nm"], format ["%1 m", _c get "m"]],
+            ["4", "ALTITUDE", format ["%1 ft MSL", _c get "ft"], format ["%1 m", _c get "alt"]],
+            ["6", "GRILLE CIBLE", _c get "tgtGrid", ""],
+            ["8", "AMI PROCHE", _ami call _tr, ""]
+        ];
+        private _nw = _fs * 1.1 / _ratio * 0.9;
+        private _lw = (_iw - _nw) * 0.30;
+        private _vw = _iw - _nw - _lw;
+        {
+            _x params ["_n", "_lbl", "_val", "_aux"];
+            private _shade = ["COMSPEC_RscText", [_x0, _y, _iw, _rh], "", false] call comspec_atak_native_fnc_pageCtrl;
+            _shade ctrlSetBackgroundColor ([[1, 1, 1, 0.035], [0, 0, 0, 0]] select (_forEachIndex mod 2 isEqualTo 1));
+            private _cn = ["COMSPEC_RscMono", [_x0, _y, _nw, _rh], _n, false] call comspec_atak_native_fnc_pageCtrl;
+            _cn ctrlSetFontHeight (_fs * 0.95);
+            _cn ctrlSetTextColor [0.30, 0.85, 1, 1];
+            private _cl = ["COMSPEC_RscText", [_x0 + _nw, _y, _lw, _rh], _lbl, false] call comspec_atak_native_fnc_pageCtrl;
+            _cl ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+            _cl ctrlSetTextColor [0.62, 0.69, 0.66, 1];
+            private _cv = ["COMSPEC_RscStructuredText", [_x0 + _nw + _lw, _y, _vw, _rh], "", false] call comspec_atak_native_fnc_pageCtrl;
+            _cv ctrlSetFontHeight _fs;
+            _cv ctrlSetStructuredText parseText format ["<t font='EtelkaMonospacePro' size='0.92'>%1</t>%2", _val,
+                ["", format ["  <t color='#8a9a93' size='0.85'>%1</t>", _aux]] select (_aux isNotEqualTo "")];
+            _y = _y + _rh;
+        } forEach _rows;
+        private _bh = _fs * 1.6;
         private _btns = [
             ["VERS LE 9-LINE", { ["send"] call comspec_atak_native_fnc_jtacTool; }, true],
             ["EFFACER", { ["clear"] call comspec_atak_native_fnc_jtacTool; }, false]
         ];
-        private _bw = (_pw - _pad * 1.25) / 2;
+        private _bw = (_iw - _pad / 4) / 2;
+        private _by = (_y + pixelH * 6) max (_py + _ph - _bh - _pad / 3);
         {
             _x params ["_lbl", "_code", "_main"];
-            private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _main, [_px + _pad / 2 + _forEachIndex * (_bw + _pad / 4), _py + _ph - _bh - _pad / 3, _bw, _bh], _lbl, false] call comspec_atak_native_fnc_pageCtrl;
-            _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+            private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _main, [_x0 + _forEachIndex * (_bw + _pad / 4), _by, _bw, _bh], _lbl, false] call comspec_atak_native_fnc_pageCtrl;
+            _b ctrlSetFontHeight ((_fs * 0.95) max COMSPEC_ATAK_FontMin);
             _b ctrlAddEventHandler ["ButtonClick", _code];
         } forEach _btns;
+    };
+    case "cardH": {
+        // Hauteur de la fiche : en-tête + 5 lignes + boutons + marges.
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _fs = _l get "fontSmall";
+        _ret = _fs * (1.3 + 5 * 1.3 + 1.6) + (_l get "pad") * 2 * (2 / 3) + pixelH * 12;
     };
     case "send": {
         if ((count _pts) < 2) exitWith {};

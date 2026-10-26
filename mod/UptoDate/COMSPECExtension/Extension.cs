@@ -6083,6 +6083,60 @@ public static partial class Extension
                 return "OK|" + armaPath;
             }
 
+            // Image d'Athena en base64, par morceaux, pour l'afficher dans un navigateur intégré (CT_WEBBROWSER) du
+            // téléphone : Arma refuse toute texture hors d'un PBO (« Cannot load texture », sans -filePatching), d'où les
+            // diapositives noires. Args : [adresse JPEG/PNG, clé de cache, décalage en octets]. Décalage 0 : télécharge
+            // (adresse du serveur Athena seulement, jamais un autre hôte). Réponse : OK|taille totale|décalage suivant|base64.
+            if (function == "ImageDataChunk" && args.Length >= 3 && !string.IsNullOrWhiteSpace(args[0]))
+            {
+                var imageUrl = args[0]!.Trim();
+                var keyRaw = string.IsNullOrWhiteSpace(args[1]) ? "web" : args[1]!;
+                var safeKey = new string(keyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+                if (safeKey.Length == 0 || safeKey.Length > 80) safeKey = "web";
+                if (!long.TryParse(args[2], out var offset) || offset < 0) offset = 0;
+                if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var imgUri) && !string.IsNullOrEmpty(_baseUrl))
+                {
+                    var rel = imageUrl.StartsWith('/') ? imageUrl : "/" + imageUrl.TrimStart('/');
+                    Uri.TryCreate(_baseUrl.TrimEnd('/') + rel, UriKind.Absolute, out imgUri);
+                }
+                if (imgUri == null || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var baseUri)
+                    || imgUri.Scheme != Uri.UriSchemeHttps && imgUri.Scheme != baseUri.Scheme
+                    || !string.Equals(imgUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase))
+                    return "ERR|host_not_allowed";
+                var cacheDir = GetWritableCacheDir();
+                if (cacheDir == null) return "ERR|no_writable_cache_dir";
+                var dest = Path.Combine(cacheDir, "web_" + safeKey + ".img");
+                if (offset == 0 || !File.Exists(dest))
+                {
+                    HttpResponseMessage imgResp;
+                    try { imgResp = SendGet(imgUri, token); }
+                    catch (OperationCanceledException) { return "ERR|timeout"; }
+                    catch (HttpRequestException) { return "ERR|network"; }
+                    if (!imgResp.IsSuccessStatusCode)
+                    {
+                        var code = (int)imgResp.StatusCode;
+                        return code == 404 ? "ERR|not_found" : code == 401 || code == 403 ? "ERR|unauthorized" : "ERR|http_" + code;
+                    }
+                    var bytes = imgResp.Content.ReadAsByteArrayAsync(token).GetAwaiter().GetResult();
+                    var isPng = bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
+                    var isJpeg = bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
+                    if (!isPng && !isJpeg) return "ERR|invalid_image";
+                    // Une page data: de Chromium est limitée à 2 Mo : image plus lourde refusée (le site en fait une copie légère).
+                    if (bytes.Length > 1_400_000) return "ERR|too_large";
+                    try { File.WriteAllBytes(dest, bytes); }
+                    catch (Exception ex) { return "ERR|write_failed_" + ex.GetType().Name; }
+                    offset = 0;
+                }
+                byte[] all;
+                try { all = File.ReadAllBytes(dest); }
+                catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
+                if (offset >= all.Length) return "OK|" + all.Length + "|" + all.Length + "|";
+                // 5940 octets (multiple de 3) = 7920 caractères base64 : tient dans la sortie limitée de la DLL.
+                var len = (int)Math.Min(5940, all.Length - offset);
+                var mime = all[0] == 0x89 ? "png" : "jpeg";
+                return "OK|" + all.Length + "|" + (offset + len) + "|" + Convert.ToBase64String(all, (int)offset, len) + (offset + len >= all.Length ? "|" + mime : "");
+            }
+
             // --- Commandes ATAK Phase 1-2 (retour JSON ["OK"|"ERROR", message] pour SQF) ---
             if (function == "SubmitTacticalReport" && args.Length >= 1)
             {

@@ -248,12 +248,52 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
                 case !(_ext in [".jpg", "jpeg", ".paa"]): { format ["Image reçue au format %1, illisible par Arma (JPEG attendu).<br/>Le site Athena n'a pas pu en faire une copie JPEG : renvoyez la diapositive en JPG.", _ext] };
                 default { "" };
             };
-            // Taille lue par Arma : 0 x 0 = fichier illisible par le jeu (chemin refusé ou image abîmée), à joindre à un signalement.
+            // Taille lue par Arma : 0 x 0 ou -1 x -1 = fichier refusé par le jeu. Arma ne charge aucune image hors d'un PBO
+            // (sans -filePatching) : la diapositive restait noire alors que le journal disait « image affichée ».
             private _tex = if (_why isEqualTo "") then { getTextureInfo _p } else { [] };
-            ["INFO", "BRIEFING", format ["Diapositive %1 : adresse %2, fichier %3, texture %4, %5", _slide param [0, 0], _url, _p, _tex, ["image affichée", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
+            private _use = if (_why isEqualTo "") then { [_p] call comspec_atak_native_fnc_texUsable } else { "" };
+            private _web = false;
+            if (_why isEqualTo "" && {_use isEqualTo ""}) then {
+                // Repli : copie JPEG du site (même nom que le .paa) lue en base64 par COMSPEC Link (2.0.96+) et montrée
+                // dans un navigateur intégré (CT_WEBBROWSER), qui n'a pas cette restriction.
+                private _lu = toLower _url;
+                private _webUrl = if ((_lu select [((count _lu) - 4) max 0]) isEqualTo ".paa") then { (_url select [0, (count _url) - 4]) + ".jpg" } else { _url };
+                private _key = format ["slide_%1_%2", _slide param [0, 0], hashValue _webUrl];
+                private _b64 = "";
+                private _mime = "jpeg";
+                private _off = 0;
+                private _err = "";
+                for "_n" from 0 to 400 do {
+                    private _r = [(["COMSPECExtension", "ImageDataChunk", [_webUrl, _key, _off]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+                    if (isNil "_r") then { _r = ""; };
+                    if (_r isEqualType []) then { _r = _r param [0, ""]; };
+                    if !(_r isEqualType "") then { _r = str _r; };
+                    private _f = _r splitString "|";
+                    if ((_f param [0, ""]) isNotEqualTo "OK") exitWith { _err = [_f param [1, ""], "commande inconnue"] select (_r isEqualTo ""); };
+                    _b64 = _b64 + (_f param [3, ""]);
+                    _off = parseNumber (_f param [2, "0"]);
+                    if ((count _f) > 4) then { _mime = _f select 4; };
+                    if (_off >= parseNumber (_f param [1, "0"])) exitWith {};
+                };
+                if (_err isEqualTo "" && {_b64 isNotEqualTo ""}) then {
+                    private _store = uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap];
+                    if (count _store > 12) then { _store = createHashMap; };
+                    _store set [_path, [_mime, _b64]];
+                    uiNamespace setVariable ["COMSPEC_ATAK_SlideWeb", _store];
+                    _web = true;
+                } else {
+                    _why = switch (true) do {
+                        case (_err in ["commande inconnue", "unknown_command", "unknown"]): { "Arma refuse les images téléchargées (hors PBO) et COMSPEC Link est trop ancienne pour le navigateur intégré (2.0.96 requise)." };
+                        case (_err isEqualTo "not_found"): { "Arma refuse l'image téléchargée et le site n'a pas encore sa copie JPEG : renvoyez la diapositive sur Athena." };
+                        default { format ["Arma refuse l'image téléchargée (hors PBO) et le navigateur intégré n'a pas pu la lire (%1).", _err] };
+                    };
+                };
+            };
+            ["INFO", "BRIEFING", format ["Diapositive %1 : adresse %2, fichier %3, texture %4, %5", _slide param [0, 0], _url, _p, _tex,
+                switch (true) do { case (_why isNotEqualTo ""): { _why }; case (_web): { "affichée par le navigateur intégré (texture refusée par Arma)" }; default { "image affichée" }; }]] call comspec_atak_native_fnc_log;
             // Écrit dans le cache de départ : si ACTUALISER l'a remplacé entre-temps, le résultat périmé est abandonné
-            // et la page redessinée relance le téléchargement.
-            _cache set [_path, [[_p, ""] select (_why isNotEqualTo ""), _why]];
+            // et la page redessinée relance le téléchargement. Chemin "WEB" : rendu par le navigateur intégré.
+            _cache set [_path, [switch (true) do { case (_why isNotEqualTo ""): { "" }; case (_web): { "WEB:" + _path }; default { _use }; }, _why]];
             if ((_loading getOrDefault [_path, -1]) isEqualTo _stamp) then { _loading deleteAt _path; };
             [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
@@ -310,7 +350,21 @@ if (_total < 1 || {_path isEqualTo ""}) then {
     private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.38, _vw - 2 * _pad, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
     _t ctrlSetStructuredText parseText ((format ["<t align='center' color='#8a9a93'>%1</t>", _msg]) call comspec_atak_native_fnc_tr);
 } else {
-    ["COMSPEC_RscSlide", [_vx, _vy, _vw, _vh], _path] call comspec_atak_native_fnc_pageCtrl;
+    if ((_path select [0, 4]) isEqualTo "WEB:") then {
+        // Navigateur intégré : la diapositive (JPEG en base64) dans une page data: centrée sur fond noir.
+        ((uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]) getOrDefault [_path select [4], ["jpeg", ""]]) params ["_mime", "_b64"];
+        private _wb = ["COMSPEC_RscWebBrowser", [_vx, _vy, _vw, _vh]] call comspec_atak_native_fnc_pageCtrl;
+        if (isNull _wb || {_b64 isEqualTo ""}) exitWith {
+            private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.38, _vw - 2 * _pad, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
+            _t ctrlSetStructuredText parseText (("<t align='center' color='#8a9a93'>Le navigateur intégré d'Arma n'est pas disponible : diapositive impossible à afficher.</t>") call comspec_atak_native_fnc_tr);
+        };
+        // Concaténation (pas format) : l'image dépasse de loin la longueur qu'accepte format.
+        private _html = "<html><body style='margin:0;background:black;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden'><img src='data:image/" + _mime + ";base64," + _b64 + "' style='max-width:100%;max-height:100%;object-fit:contain'></body></html>";
+        private _enc = controlNull ctrlWebBrowserAction ["ToBase64", _html];
+        _wb ctrlWebBrowserAction ["OpenDataAsURL", if (_enc isEqualType "" && {_enc isNotEqualTo ""}) then { "data:text/html;base64," + _enc } else { "data:text/html;charset=utf-8," + _html }];
+    } else {
+        ["COMSPEC_RscSlide", [_vx, _vy, _vw, _vh], _path] call comspec_atak_native_fnc_pageCtrl;
+    };
 };
 
 // Titre, source et position

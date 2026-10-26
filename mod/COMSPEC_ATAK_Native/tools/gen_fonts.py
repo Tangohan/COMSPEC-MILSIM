@@ -113,6 +113,16 @@ CLASSES = [("COMSPEC_BarlowC", "barlow", "BarlowCondensed-Medium", False), ("COM
 ROBOTO_R = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 34, 35, 37, 46]
 ROBOTO = [("COMSPEC_Barlow", "Roboto-Condensed", ROBOTO_R), ("COMSPEC_BarlowBold", "Roboto-Condensed-Bold", ROBOTO_R[1:]),
           ("COMSPEC_BarlowLight", "Roboto-Condensed", ROBOTO_R)]
+# Gras lisible : sous BOLD_MIN pixels (écran 1440p compris), le gras de Roboto Condensed empâte les lettres en jeu (S lu 8, 9 lu 8 sur les
+# boutons verts, retour de TTRD du 2026-10-26) ; COMSPEC_BarlowBold y prend donc le fichier normal et ne garde le gras
+# que pour les grandes tailles (titres), où il reste net.
+BOLD_MIN = 34
+
+
+def roboto_dir(d, n):
+    return d if ("Bold" not in d or n >= BOLD_MIN) else "Roboto-Condensed"
+
+
 # Repli chinois (langue 简体中文, traduction communautaire de RickLeo et MOYA) : Noto Sans CJK Light du jeu, apparié à
 # chaque taille de Roboto par sa position dans la liste (liste du gras décalée d'un cran, comme ROBOTO ci-dessus).
 NOTO_R = list(range(6, 30)) + [30, 31, 34, 46]
@@ -132,7 +142,7 @@ def write_hpp():
            "    // Police par défaut du téléphone : fichiers Roboto Condensed du jeu (mêmes chemins que BCE). Les familles",
            "    // embarquées plus bas ne servent que si le joueur les choisit (Réglages > Police)."]
     for cls, d, sizes in ROBOTO:
-        rows = [f'{{"A3\\Uifonts_f\\Data\\Fonts\\{d}\\{d}{n}", "{cjk(n, "Bold" in d)}"}}' for n in sizes]
+        rows = [f'{{"A3\\Uifonts_f\\Data\\Fonts\\{roboto_dir(d, n)}\\{roboto_dir(d, n)}{n}", "{cjk(n, "Bold" in d)}"}}' for n in sizes]
         out.append(f"    class {cls} {{\n        fonts[] = {{\n            " + ",\n            ".join(rows) + "\n        };\n    };")
     for cls, d, name, bold in CLASSES:
         rows = []
@@ -149,9 +159,13 @@ def write_hpp():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--ttf", required=True)
+    ap.add_argument("--ttf", default="")
     ap.add_argument("--hemtt", default="hemtt")
+    ap.add_argument("--hpp-only", action="store_true", help="réécrit seulement ui/fonts.hpp")
     a = ap.parse_args()
+    if a.hpp_only:
+        write_hpp()
+        return
     for fam, faces in FAMILIES.items():
         outdir = os.path.join(OUT, fam)
         os.makedirs(outdir, exist_ok=True)
