@@ -29,7 +29,8 @@ missionNamespace setVariable ["comspec_sse_missionSeed", _ds getOrDefault ["seed
 
 private _roles = _ds getOrDefault ["roles", []];
 private _eligible = _roles select { (_x getOrDefault ["minLevel", 0]) <= _level };
-private _units = nearestObjects [_pos, ["CAManBase"], _radius];
+// Jamais de rôle sur un joueur (ni le Zeus lui-même, centre fréquent du rayon).
+private _units = nearestObjects [_pos, ["CAManBase"], _radius] select { alive _x && {!isPlayer _x} && {!(_x in playableUnits)} };
 private _created = [];
 private _roleMap = createHashMap; // roleId -> unit
 

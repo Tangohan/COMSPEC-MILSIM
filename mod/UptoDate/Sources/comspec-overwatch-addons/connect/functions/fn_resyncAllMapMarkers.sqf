@@ -24,8 +24,11 @@ private _next = createHashMap;
 private _mirroredElsewherePrefixes = [
     "poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_",
     "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
-    "comspec_relay_", "comspec_recon_", "_comspec_po_ring_", "_comspec_det_ring_", "comspec_gps_", "ctab_u_"
+    "comspec_relay_", "comspec_recon_", "_comspec_po_ring_", "_comspec_det_ring_", "comspec_gps_", "ctab_u_",
+    // Calques locaux du mod (zones tactiques, plan de mission, ordres, portée).
+    "comspec_tz_", "comspec_mpgfx_", "comspec_ordwp_", "comspec_lk_", "comspec_reach_"
 ];
+private _hubOwns = isMultiplayer && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]};
 
 {
     private _name = _x;
@@ -33,6 +36,24 @@ private _mirroredElsewherePrefixes = [
 
     private _nameLower = toLower _name;
     if (({ (_nameLower find _x) == 0 } count _mirroredElsewherePrefixes) > 0) then { continue };
+
+    // Repère d'une autre machine : son poseur (repère joueur) ou le hub serveur (Zeus, mission) l'envoie déjà.
+    // Le renvoyer depuis chaque client donnait N+1 envois attribués au mauvais joueur (comme les EH Marker*).
+    private _foreign = false;
+    if (isMultiplayer) then {
+        private _hasLocalMeta = !isNil { missionNamespace getVariable (format ["COMSPEC_UserMkMeta_%1", _name]) };
+        if (((_name find "#") >= 0 || {(_name find "__H__") >= 0}) && {!isNil "comspec_overwatch_connect_fnc_userMapMarkerMeta"}) then {
+            private _ownId = ([_name] call comspec_overwatch_connect_fnc_userMapMarkerMeta) getOrDefault ["owner_id", -1];
+            if (_ownId isEqualType 0 && {_ownId >= 0} && {_ownId isNotEqualTo clientOwner}) then { _foreign = true; };
+        } else {
+            if (_hubOwns && {!_hasLocalMeta}) then { _foreign = true; };
+        };
+    };
+    if (_foreign) then {
+        // Retiré de l'ancienne photo : pas de faux « supprimé » envoyé par le passage des suppressions.
+        _prev deleteAt _name;
+        continue
+    };
 
     private _shape = toUpper (markerShape _name);
     private _type = markerType _name;
@@ -75,7 +96,9 @@ private _mirroredElsewherePrefixes = [
     // (fiab. < 100 %) — sinon les INF / Widget restent coincés côté téléphone.
     // Ne figer la signature qu’après un envoi réussi, sinon plus aucun essai.
     private _ok = [_name, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
-    if (!_ok) then { _next set [_name, ""]; };
+    // Échec définitif (position nulle, polyligne dégénérée) : signature gardée, sinon le repère
+    // reprenait une place du budget à chaque passage et pouvait bloquer les suppressions.
+    if (!_ok && {!((missionNamespace getVariable ["COMSPEC_LastMarkerSyncSkip", ""]) in ["no_pos", "bad_polyline"])}) then { _next set [_name, ""]; };
 } forEach _markers;
 
 // Suppressions : seulement si le budget n’a pas été saturé (sinon on risque des faux positifs)

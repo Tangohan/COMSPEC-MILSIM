@@ -23,7 +23,7 @@ private _tab = toString [9];
 
 private _unblank = {
     params ["_s"];
-    _s = trim (str _s);
+    _s = if (_s isEqualType "") then { trim _s } else { trim (str _s) };
     if (_s isEqualTo "-") then { "" } else { _s };
 };
 
@@ -161,6 +161,11 @@ missionNamespace setVariable ["COMSPEC_TacticalZoneIds", _seen, false];
 missionNamespace setVariable ["COMSPEC_TacticalZoneSigs", _nextSigs, false];
 
 private _hit = [player] call comspec_overwatch_connect_fnc_checkPlayerInDangerZone;
+// Zones quittées : retirées de la liste « déjà entrée » pour réalerter à la prochaine entrée.
+private _hitId = if ((count _hit) >= 2) then { _hit select 0 } else { "" };
+private _entered = missionNamespace getVariable ["COMSPEC_EnteredZones", []];
+if (!(_entered isEqualType [])) then { _entered = []; };
+missionNamespace setVariable ["COMSPEC_EnteredZones", _entered select { _x isEqualTo _hitId }, false];
 if ((count _hit) >= 2) then {
     private _zid = _hit select 0;
     private _ztype = _hit select 1;

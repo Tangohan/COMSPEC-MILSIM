@@ -7,7 +7,8 @@ params [["_action", ""], ["_arg", ""]];
 [] call comspec_atak_native_fnc_firesSave;
 private _f = [] call comspec_atak_native_fnc_firesState;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
-private _render = { [{ ["FIRES"] call comspec_atak_native_fnc_pageRender; (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call CBA_fnc_execNextFrame; };
+// Redessin seulement si l'app CAS est encore ouverte (ex. 9-line envoyé depuis l'app JTAC : pas de CAS par-dessus).
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FIRES") then { ["FIRES"] call comspec_atak_native_fnc_pageRender; }; (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call CBA_fnc_execNextFrame; };
 private _say = { params ["_t", ["_warn", false]]; _f set ["hint", [_t, _warn]]; };
 private _time = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
 private _me = { private _c = if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then { [] call comspec_overwatch_connect_fnc_getCallsign } else { "" }; if (_c isEqualTo "") then { groupId group player } else { _c } };
@@ -58,7 +59,7 @@ switch (_action) do {
         ["Cible effacée."] call _say;
     };
     case "newMsn": {
-        { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy", "active"];
+        { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy", "active", "activeGrid"];
         _f set ["clearing", true];
         ["Nouvelle mission."] call _say;
     };
@@ -179,6 +180,8 @@ switch (_action) do {
         // Pièce
         private _gunId = _f getOrDefault ["gun", "MAN"];
         private _gun = if (_gunId isEqualTo "MAN") then { objNull } else { objectFromNetId _gunId };
+        // Pièce détruite depuis le choix : pas de calcul ni d'appel de feu pour l'épave.
+        if (!isNull _gun && {!alive _gun}) exitWith { _f set ["gun", "MAN"]; _f deleteAt "solution"; ["Pièce détruite : choisissez une autre pièce.", true] call _say; };
         private _gunPos = if (isNull _gun) then { [_f getOrDefault ["gunGrid", ""]] call _gridPos } else { getPosATL _gun };
         if ((count _gunPos) < 2) exitWith { ["Choisissez une pièce ou saisissez sa grille.", true] call _say; };
         // Cible
@@ -280,6 +283,8 @@ switch (_action) do {
         if (_how isEqualTo "hors portée") exitWith { ["Cible hors de portée de la pièce (ou munition absente).", true] call _say; };
         ["CUSTOM_CFF", "", _summary, "URGENT", "all"] call _order;
         _f set ["active", true];
+        // Grille tirée gardée pour FIN DE MISSION (la solution est effacée au changement de pièce, munition ou origine).
+        _f set ["activeGrid", _sol get "grid"];
         private _log = _f getOrDefault ["log", []];
         _log pushBack format ["<t color='#e5483a'>%1</t> TIR · %2 · %3 x%4 · %5", [] call _time, _sol get "grid", _ammo, _rounds, _how];
         _f set ["log", _log];
@@ -292,10 +297,13 @@ switch (_action) do {
     case "eom": {
         private _sol = _f getOrDefault ["solution", createHashMap];
         if !(_f getOrDefault ["active", false]) exitWith { ["Aucune mission en cours."] call _say; };
-        ["CUSTOM_CFF", "", format ["FIN DE MISSION %1 | cible %2", [] call _me, _sol getOrDefault ["grid", ""]], "IMPORTANT", "all"] call _order;
+        private _eomGrid = _f getOrDefault ["activeGrid", _sol getOrDefault ["grid", _f getOrDefault ["tgtGrid", ""]]];
+        if (_eomGrid isEqualTo "") then { _eomGrid = _f getOrDefault ["tgtGrid", ""]; };
+        ["CUSTOM_CFF", "", format ["FIN DE MISSION %1 | cible %2", [] call _me, _eomGrid], "IMPORTANT", "all"] call _order;
         _f set ["active", false];
+        _f deleteAt "activeGrid";
         private _log = _f getOrDefault ["log", []];
-        _log pushBack format ["<t color='#8a9a93'>%1</t> FIN DE MISSION · %2", [] call _time, _sol getOrDefault ["grid", ""]];
+        _log pushBack format ["<t color='#8a9a93'>%1</t> FIN DE MISSION · %2", [] call _time, _eomGrid];
         _f set ["log", _log];
         ["Fin de mission transmise."] call _say;
     };

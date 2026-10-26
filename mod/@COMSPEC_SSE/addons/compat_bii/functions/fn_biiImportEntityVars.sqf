@@ -42,8 +42,10 @@ if (_org isNotEqualTo "") then {
     _pairs pushBack ["organization", _org];
     _pairs pushBack ["role", _org];
 };
+// Fiche montée en local (_public = false) puis une seule écriture publique à la fin : chaque écriture publique
+// diffusait la fiche entière (7 à 8 fois par unité, pour toutes les unités BII au démarrage du serveur).
 if (_pairs isNotEqualTo []) then {
-    [_entity, _pairs] call comspec_sse_fnc_setIdentity;
+    [_entity, _pairs, false] call comspec_sse_fnc_setIdentity;
 };
 
 if (_threat isNotEqualTo "") then {
@@ -51,7 +53,7 @@ if (_threat isNotEqualTo "") then {
     private _data = [_entity] call comspec_sse_fnc_getData;
     if (!isNil "_data" && {_data isEqualType []}) then {
         _data = [_data, "profile", _profile] call comspec_sse_fnc_setPair;
-        [_entity, _data, true] call comspec_sse_fnc_setData;
+        [_entity, _data, false] call comspec_sse_fnc_setData;
     };
 };
 
@@ -64,7 +66,7 @@ if (_bioKey isNotEqualTo "") then {
     };
 };
 _bio set ["biiWatchlist", _watchlist];
-[_entity, "biometrics", _bio, true] call comspec_sse_fnc_setSection;
+[_entity, "biometrics", _bio, false] call comspec_sse_fnc_setSection;
 
 private _intel = [_entity, "intel"] call comspec_sse_fnc_getSection;
 if (isNil "_intel" || {!(_intel isEqualType createHashMap)}) then { _intel = createHashMap; };
@@ -73,14 +75,26 @@ if (_associates isNotEqualTo "") then { _intel set ["associates", _associates]; 
 if (_leads isNotEqualTo "") then { _intel set ["leads", _leads]; };
 if (_notes isNotEqualTo "") then { _intel set ["biiNotes", _notes]; };
 _intel set ["source", "BII"];
-[_entity, "intel", _intel, true] call comspec_sse_fnc_setSection;
+[_entity, "intel", _intel, false] call comspec_sse_fnc_setSection;
 
 if (_associates isNotEqualTo "" || {_family isNotEqualTo ""}) then {
     private _assoc = [_entity, "associations"] call comspec_sse_fnc_getSection;
     if (isNil "_assoc" || {!(_assoc isEqualType [])}) then { _assoc = []; };
     if (_family isNotEqualTo "") then { _assoc pushBackUnique format ["Famille: %1", _family]; };
     if (_associates isNotEqualTo "") then { _assoc pushBackUnique format ["Associés: %1", _associates]; };
-    [_entity, "associations", _assoc, true] call comspec_sse_fnc_setSection;
+    [_entity, "associations", _assoc, false] call comspec_sse_fnc_setSection;
+};
+
+private _final = [_entity] call comspec_sse_fnc_getData;
+if (!isNil "_final") then {
+    [_entity, _final, true] call comspec_sse_fnc_setData;
+    // Fiche née ici : comspec_sse_enabled déjà posé en local par les écritures locales, commitData ne le diffuse plus.
+    if (isServer && {isNil "_data0"}) then { _entity setVariable ["comspec_sse_enabled", true, true]; };
+};
+// Variables de pont (nom Eden / SEEK) posées en local par setIdentity : diffusées une fois, fiche déjà publiée.
+if (_pairs isNotEqualTo []) then {
+    if (_name isNotEqualTo "") then { _entity setVariable ["COMSPEC_SSE_NameAuthored", true, true]; };
+    if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then { [_entity, true] call comspec_sse_fnc_syncIdentityBridgeVars; };
 };
 
 _entity setVariable ["comspec_sse_biiImported", true, true];

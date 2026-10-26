@@ -30,7 +30,8 @@ private _keepFriend = {
 };
 // Unités Athena sans objet en jeu : on ne peut pas les filtrer, elles ne restent qu'en mode TOUS.
 if (_filter isNotEqualTo "ALL") then { _units = createHashMap; };
-private _athena = +_units;
+// Copie superficielle : les pistes ne sont que lues ici, seules les clés sont retirées (+_units recopiait toutes les pistes).
+private _athena = createHashMapFromArray (_units toArray false);
 // Liaison BFT : sans réseau je ne reçois plus rien ; un allié dont le téléphone est éteint, cassé ou sans signal
 // (balise COMSPEC_ATAK_Beacon publiée par son téléphone) reste figé à sa dernière position connue.
 private _last = uiNamespace getVariable ["COMSPEC_ATAK_BftLast", createHashMap];

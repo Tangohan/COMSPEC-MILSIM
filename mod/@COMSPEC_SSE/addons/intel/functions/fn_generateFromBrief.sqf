@@ -31,7 +31,8 @@ private _cluster = [_seed, _profile, _complexity, "IRAQ"] call comspec_sse_fnc_g
 _cluster set ["theme", _theme];
 _cluster set ["brief", _brief];
 
-private _units = nearestObjects [_pos, ["CAManBase"], _radius];
+// Jamais de cellule sur un joueur (ni le Zeus lui-même).
+private _units = nearestObjects [_pos, ["CAManBase"], _radius] select { alive _x && {!isPlayer _x} && {!(_x in playableUnits)} };
 private _n = (_count min count _units) max 0;
 private _jobs = [];
 for "_i" from 0 to (_n - 1) do {

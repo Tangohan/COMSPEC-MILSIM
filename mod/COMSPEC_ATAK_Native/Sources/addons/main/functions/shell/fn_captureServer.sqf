@@ -81,7 +81,12 @@ switch (_act) do {
                 if (_v in (assignedItems _o)) then { _o unlinkItem _v; } else { _o removeItem _v; };
             };
             case "give": {
-                if (_o canAdd _v) then { _o addItem _v; };
+                // Plus de place (inventaire changé depuis la vérification du serveur) : le téléphone est posé au sol à
+                // côté de l'IA plutôt que perdu.
+                if (_o canAdd _v) then { _o addItem _v; } else {
+                    private _gh = createVehicle ["GroundWeaponHolder", getPosATL _o, [], 0.5, "CAN_COLLIDE"];
+                    _gh addItemCargoGlobal [_v, 1];
+                };
                 _o playActionNow "PutDown";
                 _o doFollow (leader group _o);
             };
@@ -160,6 +165,7 @@ switch (_act) do {
                     && {[_sideO, side group _x] call BIS_fnc_sideIsEnemy}
                     && {!(_x getVariable ["COMSPEC_ATAK_NoPickup", false])} && {!((group _x) getVariable ["COMSPEC_ATAK_NoPickup", false])}
                     && {isNil { _x getVariable "COMSPEC_ATAK_CapGoing" }}
+                    && {_x canAdd (_it select 0)}
                 };
                 if (_cand isEqualTo []) exitWith {};
                 _cand = _cand apply { [_x distance _o, _x] };
@@ -174,14 +180,12 @@ switch (_act) do {
             private _cls = _it select 0;
             _go deleteAt _key;
             _ai setVariable ["COMSPEC_ATAK_CapGoing", nil];
+            // Inventaire plein arrivé sur place : le téléphone reste où il est (sinon retiré puis jamais donné, perdu)
+            // et aucune capture n'est ouverte ; une autre IA (ou celle-ci, avec de la place) pourra le prendre.
+            if !(_ai canAdd _cls) then { continue };
             if (_kind isEqualTo "holder") then {
-                (getItemCargo _o) params [["_cl", []], ["_cn", []]];
-                private _i = _cl findIf { _x isEqualTo _cls };
-                if (_i >= 0) then {
-                    _cn set [_i, (_cn select _i) - 1];
-                    clearItemCargoGlobal _o;
-                    { if ((_cn select _forEachIndex) > 0) then { _o addItemCargoGlobal [_x, _cn select _forEachIndex]; }; } forEach _cl;
-                };
+                // Sans vider les uniformes et gilets posés dans le même porte-objet (fn_droppedPhone "remove").
+                ["remove", [_o, _cls]] call comspec_atak_native_fnc_droppedPhone;
             } else {
                 ["comspec_atak_native_capLocal", ["strip", _o, _cls], _o] call CBA_fnc_targetEvent;
                 // Le corps n'a plus de téléphone à donner.

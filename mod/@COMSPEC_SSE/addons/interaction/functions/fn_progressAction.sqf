@@ -105,7 +105,8 @@ if (isNil "ace_common_fnc_progressBar") exitWith {
         private _why = _ctx call _check;
         [[_why, "annulée"] select (_why isEqualTo "")] call _stop;
     },
-    _label,
+    // Libellé écrit en français par les appelants : traduit comme les actions ACE et les notifications (i18n/en.txt).
+    (_label call comspec_sse_fnc_tr),
     {
         params ["_params"];
         _params params ["", "", "_ctx", "_check"];

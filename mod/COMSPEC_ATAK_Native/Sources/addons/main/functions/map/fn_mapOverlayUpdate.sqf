@@ -65,7 +65,9 @@ if (_compassOnly) exitWith {
 params ["", "", ["_tapeOnly", false]];
 
 private _cur = _ov getOrDefault ["cursor", controlNull];
-if (!isNull _cur) then {
+// Bandeau de la boussole seul (à chaque degré) : panneau curseur / MOI laissé au passage complet (une fois par seconde)
+// et aux mouvements de souris (grilles, réseau sous le curseur et textes refaits presque à chaque image sinon).
+if (!isNull _cur && {!_tapeOnly}) then {
     private _p = _s getOrDefault ["cursorPos", []];
     private _measure = _s getOrDefault ["mapMeasure", []];
     // Zone MGRS de la carte (zone UTM + bande, carré de 100 km si ACE le fournit), calculée une fois par carte.
@@ -103,7 +105,8 @@ if (!isNull _cur) then {
             // Téléphone porté : pas de curseur, le bandeau donne la position du joueur.
             private _pp = getPosASL (vehicle player);
             private _dig = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
-            private _g8 = [[_pp, 8] call comspec_atak_native_fnc_gridRef, [_pp] call comspec_atak_native_fnc_gridRef] select (_dig isEqualTo 8);
+            // Seule la précision affichée est calculée (select évaluait les deux grilles).
+            private _g8 = if (_dig isEqualTo 8) then { [_pp] call comspec_atak_native_fnc_gridRef } else { [_pp, 8] call comspec_atak_native_fnc_gridRef };
             format ["<t font='EtelkaMonospacePro'>%1%2%3</t>", ["MOI"] call _lbl, [_g8] call _big,
                 [format [_grey + " %2 %3 · " + _grey + " %4 m", "MGRS", _zone select 1, _g8, "ALT", round (_pp select 2)]] call _sub]
         };
@@ -112,7 +115,7 @@ if (!isNull _cur) then {
             private _alt = getTerrainHeightASL _p;
             private _dig = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
             private _g = [_p] call comspec_atak_native_fnc_gridRef;
-            private _g8 = [[_p, 8] call comspec_atak_native_fnc_gridRef, _g] select (_dig isEqualTo 8);
+            private _g8 = if (_dig isEqualTo 8) then { _g } else { [_p, 8] call comspec_atak_native_fnc_gridRef };
             // Couverture réseau calculée (app Wave Relay) et calque affiché : débit et perte sous le curseur.
             private _net = "";
             if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {

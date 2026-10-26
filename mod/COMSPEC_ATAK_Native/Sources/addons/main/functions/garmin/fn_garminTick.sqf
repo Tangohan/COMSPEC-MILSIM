@@ -12,13 +12,14 @@
     Params : [mode : "tick" | "save" (fin de mission : activité en cours close et profil écrit)
               | "push" (app Resynch : profil écrit et renvoyé au site tout de suite, activité en cours gardée ;
                 retour [heure, état] de l'envoi)]
-    Mémoire : missionNamespace COMSPEC_ATAK_Gm (HashMap) : bb, real (dernière seconde réelle vue), hr, stress, goal,
+    Mémoire : missionNamespace COMSPEC_ATAK_Gm (HashMap) : bb, real (dernier instant réel vu [jour, seconde du jour]), hr, stress, goal,
               days (jour -> HashMap), acts (liste), cur (activité en cours), last (position), rest (secondes de repos)
 */
 params [["_mode", "tick"]];
 if (!hasInterface) exitWith { false };
-// Secondes « réelles » croissantes (jour du mois arrondi à 31 : sert aux écarts, pas à une date exacte).
-private _real = { systemTime params ["_y", "_mo", "_d", "_h", "_mi", "_s"]; ((_y * 12 + _mo) * 31 + _d) * 86400 + _h * 3600 + _mi * 60 + _s };
+// Instant « réel » [jour, seconde du jour] (jour du mois arrondi à 31 : sert aux écarts, pas à une date exacte). Gardés à
+// part : en une seule valeur (~6,5e10 s) le flottant 32 bits de SQF n'a plus qu'un pas de 4096 s.
+private _real = { systemTime params ["_y", "_mo", "_d", "_h", "_mi", "_s"]; [(_y * 12 + _mo) * 31 + _d, _h * 3600 + _mi * 60 + _s] };
 private _dayKey = { systemTime params ["_y", "_mo", "_d"]; format ["%1-%2-%3", _y, [str _mo, "0" + str _mo] select (_mo < 10), [str _d, "0" + str _d] select (_d < 10)] };
 private _gm = missionNamespace getVariable ["COMSPEC_ATAK_Gm", createHashMap];
 if ((count _gm) isEqualTo 0) then {
@@ -30,7 +31,10 @@ if ((count _gm) isEqualTo 0) then {
     _gm set ["days", _days];
     _gm set ["acts", (_gm getOrDefault ["acts", []]) apply { createHashMapFromArray _x }];
     private _now = [] call _real;
-    private _away = (_now - (_gm getOrDefault ["real", _now])) max 0;
+    // Ancien profil (une seule valeur, imprécise) : pas de recharge hors du jeu cette fois.
+    private _then = _gm getOrDefault ["real", _now];
+    if !(_then isEqualTypeArray [0, 0]) then { _then = _now; };
+    private _away = (((_now select 0) - (_then select 0)) * 86400 + ((_now select 1) - (_then select 1))) max 0;
     private _bb = _gm getOrDefault ["bb", 75];
     private _gain = ((_away / 3600) * 12) min (100 - _bb);
     _gm set ["bb", _bb + _gain];
@@ -245,7 +249,7 @@ if (_now - _live >= 10) then {
 _gm set ["wbat", 3 max ((_gm getOrDefault ["wbat", 100]) - ([0.35, 2] select ((_gm getOrDefault ["cur", []]) isNotEqualTo [])) * _dt / 3600)];
 
 // --- Courbe du jour : un point toutes les 5 min réelles [heure décimale, BB, stress, FC, repos] ---
-private _min = floor ((_gm get "real") / 300);
+private _min = [(_gm get "real") select 0, floor (((_gm get "real") select 1) / 300)];
 if (_min isNotEqualTo (_gm getOrDefault ["min", -1])) then {
     _gm set ["min", _min];
     systemTime params ["", "", "", "_h", "_mi"];

@@ -15,6 +15,13 @@ private _dim = { format ["<t color='#8a9a93'>%1</t>", _this] };
 private _fmt = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _text = "";
+// Texte venu d'ailleurs (indicatif, nom et fonction du joueur, groupe, véhicule, ORBAT publié par l'autre client) :
+// &, < et > échappés pour le texte structuré (un « Tom & Jerry » ou « <TAG> Bob » vidait ou coupait le panneau).
+private _esc = {
+    private _v = [str _this, _this] select (_this isEqualType "");
+    _v = _v regexReplace ["&(?!(amp|lt|gt|quot|apos|#[0-9]+);)", "&amp;"];
+    [[_v, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace
+};
 if ((count _e) isEqualTo 0) then {
     private _units = values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]);
     private _fr = { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" } count _units;
@@ -29,7 +36,7 @@ if ((count _e) isEqualTo 0) then {
     _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7<br/>%8</t><br/><br/><t size='0.75' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
         [_fr, "alliés", "#47b3ff"] call _tile, [_ho, "contacts", ["#8a9a93", "#e5483a"] select (_ho > 0)] call _tile,
         ["Réseau", _netTxt] call _kv,
-        ["Groupe", [player, true] call comspec_atak_native_fnc_unitGroup] call _kv,
+        ["Groupe", ([player, true] call comspec_atak_native_fnc_unitGroup) call _esc] call _kv,
         ["Terrain", worldName] call _kv,
         ["Heure", [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _kv,
         ["Pluie", format ["%1 %%", round (rain * 100)]] call _kv,
@@ -40,13 +47,13 @@ if ((count _e) isEqualTo 0) then {
     private _aff = _e getOrDefault ["affiliation", "unknown"];
     private _affTxt = createHashMapFromArray [["friend", "<t color='#47b3ff'>ami</t>"], ["hostile", "<t color='#e5483a'>ennemi</t>"], ["neutral", "<t color='#5cc76b'>neutre</t>"]] getOrDefault [_aff, "inconnu"];
     private _fresh = createHashMapFromArray [["LIVE", "<t color='#5cc76b'>en direct</t>"], ["STALE", "<t color='#f2ab33'>retardée</t>"], ["LOST", "<t color='#e5483a'>perdue</t>"], ["OFFLINE", "<t color='#8a9a93'>hors ligne</t>"]] getOrDefault [_e getOrDefault ["freshness", "LIVE"], "?"];
-    private _lines = [format ["<t size='1.15' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  %2", _e getOrDefault ["callsign", "CONTACT"], _affTxt]];
+    private _lines = [format ["<t size='1.15' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  %2", (_e getOrDefault ["callsign", "CONTACT"]) call _esc, _affTxt]];
     if (!isNull _o) then {
-        if (isPlayer _o && {_aff isEqualTo "friend"}) then { _lines pushBack format ["%1 %2", "Nom :" call _dim, name _o]; };
+        if (isPlayer _o && {_aff isEqualTo "friend"}) then { _lines pushBack format ["%1 %2", "Nom :" call _dim, (name _o) call _esc]; };
         private _role = roleDescription _o;
         if (_role isEqualTo "") then { _role = getText (configOf _o >> "displayName"); };
-        _lines pushBack format ["%1 %2 · %3", "Rang :" call _dim, createHashMapFromArray [["PRIVATE", "Soldat"], ["CORPORAL", "Caporal"], ["SERGEANT", "Sergent"], ["LIEUTENANT", "Lieutenant"], ["CAPTAIN", "Capitaine"], ["MAJOR", "Commandant"], ["COLONEL", "Colonel"]] getOrDefault [rank _o, rank _o], _role];
-        if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, [_o, true] call comspec_atak_native_fnc_unitGroup, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
+        _lines pushBack format ["%1 %2 · %3", "Rang :" call _dim, createHashMapFromArray [["PRIVATE", "Soldat"], ["CORPORAL", "Caporal"], ["SERGEANT", "Sergent"], ["LIEUTENANT", "Lieutenant"], ["CAPTAIN", "Capitaine"], ["MAJOR", "Commandant"], ["COLONEL", "Colonel"]] getOrDefault [rank _o, rank _o], _role call _esc];
+        if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, ([_o, true] call comspec_atak_native_fnc_unitGroup) call _esc, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
         private _life = switch (true) do {
             case (!alive _o): { "<t color='#e5483a'>mort</t>" };
             case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='#8a9a93'>—</t>" };
@@ -61,7 +68,7 @@ if ((count _e) isEqualTo 0) then {
     if (!isNull _o && {alive _o}) then {
         private _v = vehicle _o;
         _lines pushBack format ["%1 %2 km/h · cap %3°%4", "Mouvement :" call _dim, round ((speed _v) max 0), round getDir _v,
-            ["", format [" · à bord : %1", getText (configOf _v >> "displayName")]] select (_v isNotEqualTo _o)];
+            ["", format [" · à bord : %1", (getText (configOf _v >> "displayName")) call _esc]] select (_v isNotEqualTo _o)];
     };
     if (!isNull _o && {_aff isEqualTo "friend"} && {isPlayer _o}) then {
         (_o getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], ["_bars", -1], ["_st", ""]];
@@ -70,7 +77,7 @@ if ((count _e) isEqualTo 0) then {
             ["", format [" · batterie %1 %%", _bat]] select (_bat >= 0), ["", format [" · signal %1/4", _bars]] select (_bars >= 0)];
         if (_st in ["DAMAGED", "BROKEN"]) then { _lines pushBack format ["%1 %2", "Appareil :" call _dim, ["écran fêlé", "détruit"] select (_st isEqualTo "BROKEN")]; };
         private _orbat = _o getVariable ["COMSPEC_ATAK_Orbat", ""];
-        if (_orbat isNotEqualTo "") then { _lines pushBack format ["%1 %2", "ORBAT :" call _dim, _orbat]; };
+        if (_orbat isNotEqualTo "") then { _lines pushBack format ["%1 %2", "ORBAT :" call _dim, _orbat call _esc]; };
     };
     _lines pushBack format ["%1 %2 · il y a %3 s", "Liaison :" call _dim, _fresh, round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]))];
     _text = format ["<t size='0.9'>%1</t>", _lines joinString "<br/>"];

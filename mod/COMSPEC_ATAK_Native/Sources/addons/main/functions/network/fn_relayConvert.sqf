@@ -15,7 +15,7 @@
     quand l'antenne du décor est détruite (vérifié toutes les 15 s), les téléphones reçoivent « Relais perdu ».
     Objets de mission : mêmes variables que fn_relayTower, posées sur l'objet ; détruit = relais « détruit » (fn_relayNet).
     Serveur seulement.
-      ["sweep"] call comspec_atak_native_fnc_relayConvert   (début de mission, puis toutes les 60 s : objets Zeus)
+      ["sweep"] call comspec_atak_native_fnc_relayConvert   (début de mission, puis toutes les 60 s : objets créés depuis)
       ["check"] call ...                                     (antennes du décor détruites)
 */
 params [["_mode", "sweep"]];
@@ -73,7 +73,20 @@ private _height = {
 switch (_mode) do {
     case "sweep": {
         if (_level < 1) exitWith {};
-        // Objets de la mission (Eden, Zeus, script) : immobiles, pas des véhicules.
+        // Objets de la mission (Eden, Zeus, script) : immobiles, pas des véhicules. allMissionObjects (lent sur les grosses
+        // missions) une seule fois ; ensuite seuls les objets créés depuis, notés par EntityCreated (Zeus, scripts).
+        private _new = missionNamespace getVariable "COMSPEC_ATAK_ConvNew";
+        if (isNil "_new") then {
+            _new = (allMissionObjects "Static") + (allMissionObjects "Thing");
+            missionNamespace setVariable ["COMSPEC_ATAK_ConvNew", []];
+            addMissionEventHandler ["EntityCreated", {
+                params ["_e"];
+                if ((_e isKindOf "Static") || {_e isKindOf "Thing"}) then { (missionNamespace getVariable ["COMSPEC_ATAK_ConvNew", []]) pushBack _e; };
+            }];
+        } else {
+            missionNamespace setVariable ["COMSPEC_ATAK_ConvNew", []];
+            _new = _new select { !isNull _x };
+        };
         private _n = 0;
         {
             if (_x getVariable ["COMSPEC_AtakRelay", false] || {_x getVariable ["COMSPEC_ConvChecked", false]}) then { continue };
@@ -81,7 +94,7 @@ switch (_mode) do {
             if (_x isKindOf "AllVehicles" || {!([typeOf _x] call _match)}) then { continue };
             [_x, _x, typeOf _x, [_x] call _height] call _register;
             _n = _n + 1;
-        } forEach ((allMissionObjects "Static") + (allMissionObjects "Thing"));
+        } forEach _new;
         if (_n > 0) then { ["INFO", "RELAIS", format ["%1 antenne(s) de la mission converties en relais ATAK", _n]] call comspec_atak_native_fnc_log; };
         // Décor de la carte : une seule fois par mission.
         if (_level < 2 || {missionNamespace getVariable ["COMSPEC_ATAK_ConvTerrainDone", false]}) exitWith {};

@@ -470,6 +470,10 @@ public static partial class Extension
             return false;
         if (IsPostPausedNow())
             return false;
+        // Lot refusé par l'offre de la communauté (feature_unavailable) ou clé refusée : plus de POST pendant le
+        // verrou (sinon le même refus repartait à chaque passage et remplissait la pause commune à tous les envois).
+        if (IsRefusalLatched(_baseUrl.TrimEnd('/') + "/api/atak/telemetry/batch"))
+            return false;
 
         List<TelemetryItem> items;
         lock (TelemetryDrainLock)
@@ -530,7 +534,7 @@ public static partial class Extension
                 catch { /* garder JSON brut */ }
             }
 
-            var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+            using var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var code = (int)response.StatusCode;
             NoteTrafficUntracked(req, response);
             Interlocked.Exchange(ref _telemetryLastLatencyMs, Math.Max(0, Environment.TickCount64 - started));
@@ -555,8 +559,13 @@ public static partial class Extension
             if (code == 403)
             {
                 NoteAccessDenied(response, url);
-                NoteRefusal(url, 403, RefusalBody(response));
-                RequeueTelemetryItems(items);
+                var refusalBody = RefusalBody(response);
+                NoteRefusal(url, 403, refusalBody);
+                // Fonction absente de l'offre : les événements sont abandonnés (le verrou coupe le lot 30 min).
+                if (RefusalErrorCode(refusalBody) == "feature_unavailable")
+                    Interlocked.Add(ref _telemetryDropped, items.Count);
+                else
+                    RequeueTelemetryItems(items);
                 Interlocked.Increment(ref _telemetryBatchFail);
                 return true;
             }

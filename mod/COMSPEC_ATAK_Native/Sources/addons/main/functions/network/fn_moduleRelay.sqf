@@ -52,7 +52,7 @@ if ((_ctx get "zeus") && {!isNull _edit} && {_edit getVariable ["COMSPEC_AtakRel
         _edit getVariable ["COMSPEC_AtakRelayRange", 0], _edit getVariable ["COMSPEC_AtakRelayThroughput", 0], _edit getVariable ["COMSPEC_AtakRelayHeight", 0],
         _edit getVariable ["COMSPEC_AtakRelaySlots", 0], _edit getVariable ["COMSPEC_AtakRelayAutonomy", 0],
         ["repeater", "root"] select (_edit getVariable ["COMSPEC_AtakRelayRoot", true]),
-        _edit getVariable ["COMSPEC_AtakRelayOn", true], !(isDamageAllowed _edit), missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false],
+        _edit getVariable ["COMSPEC_AtakRelayOn", true], _edit getVariable ["COMSPEC_AtakRelayIndestructible", !(isDamageAllowed _edit)], missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false],
         _edit getVariable ["COMSPEC_AtakRelayFreq", 0], missionNamespace getVariable ["COMSPEC_ATAK_RelayOnly", false],
         _edit getVariable ["COMSPEC_AtakRelayCond", ""]
     ];
@@ -123,11 +123,28 @@ private _apply = {
         _x setVariable ["COMSPEC_AtakRelayOn", _on, true];
         _x setVariable ["COMSPEC_AtakRelayFreq", _freq, true];
         _x setVariable ["COMSPEC_AtakRelayCond", trim _cond, true];
+        // Condition en code : copie locale du serveur, seule évaluée (fn_relayCond ne compile jamais la variable publique).
+        // Un Zeus client ne peut que garder le code déjà posé sur le serveur (Eden ou script serveur).
+        if (isServer && {!((toLower trim _cond) in ["", "stopped", "engineoff", "mast"])}) then { _x setVariable ["COMSPEC_AtakRelayCondSrv", trim _cond]; };
         _x setVariable ["COMSPEC_AtakRelayAutonomy", _aut, true];
         if (!_keepBatt) then { _x setVariable ["COMSPEC_AtakRelayBatt", [-1, 100] select (_aut > 0), true]; };
         _x setVariable ["COMSPEC_AtakRelayIp", format ["10.%1.%2.1", ((round abs (_p select 0)) mod 220) + 10, ((round abs (_p select 1)) mod 220) + 10], true];
         _x setVariable ["COMSPEC_AtakRelayReliability", 92, true];
-        if (_indes || {_was}) then { [_x, !_indes] remoteExec ["allowDamage", _x]; };
+        if (_indes || {_was}) then {
+            [_x, !_indes] remoteExec ["allowDamage", _x];
+            // allowDamage ne vaut que chez le propriétaire : perdu quand l'objet change de main (véhicule relais pris par un
+            // joueur). Drapeau public et événement « Local » sur tous les postes (JIP compris) qui le réapplique au nouveau
+            // propriétaire.
+            _x setVariable ["COMSPEC_AtakRelayIndestructible", _indes, true];
+            if (_indes && {!(_x getVariable ["COMSPEC_AtakRelayIndesEh", false])}) then {
+                _x setVariable ["COMSPEC_AtakRelayIndesEh", true, true];
+                [_x, ["Local", {
+                    params ["_o", "_isLocal"];
+                    private _f = _o getVariable "COMSPEC_AtakRelayIndestructible";
+                    if (_isLocal && {!isNil "_f"} && {_f isEqualType true}) then { _o allowDamage !_f; };
+                }]] remoteExec ["addEventHandler", 0, _x];
+            };
+        };
         _list pushBackUnique _x;
         // Fiche du relais remontée à Athena quand l'addon Overwatch est chargé (serveur).
         if (isServer && {!isNil "comspec_overwatch_connect_fnc_syncAtakRelay"}) then { [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };

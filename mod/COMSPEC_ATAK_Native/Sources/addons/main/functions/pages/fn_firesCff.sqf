@@ -105,7 +105,8 @@ private _panel = {
 // Données.
 private _guns = [] call comspec_atak_native_fnc_firesGuns;
 private _gunId = ["gun", if ((count _guns) > 0) then { netId (_guns select 0) } else { "MAN" }] call _v;
-if (_gunId isNotEqualTo "MAN" && {isNull (objectFromNetId _gunId)}) then { _gunId = "MAN"; };
+// Pièce absente de la liste (supprimée ou détruite : firesGuns ne garde que les vivantes) : retour à MAN, gardé dans l'état.
+if (_gunId isNotEqualTo "MAN" && {(_guns findIf { netId _x isEqualTo _gunId }) < 0}) then { _gunId = "MAN"; _f set ["gun", _gunId]; _f deleteAt "solution"; };
 private _gunName = { params ["_g", "_i"]; _g getVariable ["COMSPEC_ATAK_GunName", format [("PIÈCE %1") call comspec_atak_native_fnc_tr, _i + 1]] };
 private _gunLabel = if (_gunId isEqualTo "MAN") then { "MAN" } else { [objectFromNetId _gunId, _guns findIf { netId _x isEqualTo _gunId }] call _gunName };
 private _mode = ["mode", "POLAR"] call _v;

@@ -26,6 +26,8 @@ if ((toLower _op) isEqualTo "generate" && {!isNull _unit} && {!_isZeus}) exitWit
 
 [format ["serverOp %1 by %2 on %3", _op, name _unit, _target]] call comspec_sse_fnc_log;
 
+private _result = true;
+
 switch (toLower _op) do {
     case "setstate": {
         _args params [["_state", "DISCOVERED"]];
@@ -45,7 +47,7 @@ switch (toLower _op) do {
         if (!isNil "_d" && {([_d, "collected", false] call comspec_sse_fnc_getPair) isEqualTo true
             || {([_d, "state", ""] call comspec_sse_fnc_getPair) isEqualTo "COLLECTED"}}) exitWith {
             [format ["serverOp collect ignorée : %1 déjà collecté", _target], "WARN"] call comspec_sse_fnc_log;
-            false
+            _result = false;
         };
         // Auteur de la collecte (lu par le client avant sachet, notification et journal : fn_doCollect).
         private _byUid = if (isNull _unit) then { "" } else { [getPlayerUID _unit, netId _unit] select ((getPlayerUID _unit) isEqualTo "") };
@@ -94,5 +96,8 @@ switch (toLower _op) do {
     };
 };
 
-["comspec_sse_opResult", [_op, netId _target, true]] call CBA_fnc_globalEvent;
+// Résultat envoyé au seul demandeur (et non plus à toutes les machines), avec la vraie valeur (collecte refusée : false).
+if (!isNull _unit) then {
+    ["comspec_sse_opResult", [_op, netId _target, _result], _unit] call CBA_fnc_targetEvent;
+};
 true

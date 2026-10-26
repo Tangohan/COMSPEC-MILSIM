@@ -1,10 +1,12 @@
 /*
     Compte rendu after-action SSE.
-    [_center, _radius] call comspec_sse_fnc_afterActionReport
+    [_center, _radius, _notify] call comspec_sse_fnc_afterActionReport
+    _notify (défaut true) : false quand l'appelant affiche lui-même le résultat (évite le doublon ATAK).
 */
 params [
     ["_center", objNull, [objNull, []]],
-    ["_radius", 150, [0]]
+    ["_radius", 150, [0]],
+    ["_notify", true, [true]]
 ];
 
 private _list = [_center, _radius] call comspec_sse_fnc_listSiteEntities;
@@ -28,5 +30,5 @@ private _lines = [
     format ["Découvertes indexées : %1", count (keys (missionNamespace getVariable ["comspec_sse_discoveryStates", createHashMap]))]
 ];
 
-[_lines joinString endl, "INFO"] call comspec_sse_fnc_notify;
+if (_notify) then { [_lines joinString endl, "INFO"] call comspec_sse_fnc_notify; };
 _lines

@@ -76,7 +76,7 @@ if (_speed < 0.05) then { _speed = 0.05; };
 
 private _unblank = {
     params ["_s"];
-    _s = trim (str _s);
+    _s = if (_s isEqualType "") then { trim _s } else { trim (str _s) };
     if (_s isEqualTo "-") then { "" } else { _s };
 };
 

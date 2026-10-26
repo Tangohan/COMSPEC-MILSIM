@@ -469,16 +469,30 @@ private _fnc_addPoll = {
     if (!(_orders isEqualType [])) exitWith {};
     private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
     if (!(_seen isEqualType [])) then { _seen = []; };
-    _seen = _seen apply { trim (str _x) };
+    // Ids déjà en chaîne : str y ajoutait des guillemets (aucun id ne correspondait).
+    private _fnc_oidText = { params [["_v", ""]]; if (_v isEqualType "") then { trim _v } else { trim (str _v) } };
+    _seen = _seen apply { [_x] call _fnc_oidText };
+    // Ordres écartés par receiveOrder (pas pour ce joueur, émis par lui) : sans cette liste, le même ordre
+    // était repris toutes les 5 s et bloquait ceux placés derrière lui.
+    private _skip = missionNamespace getVariable ["COMSPEC_OrdersFallbackSkip", []];
+    if (!(_skip isEqualType [])) then { _skip = []; };
     private _pending = _orders select {
         (_x isEqualType createHashMap)
         && {
-            private _oid = trim (str (_x getOrDefault ["id", ""]));
-            _oid isNotEqualTo "" && {!(_oid in _seen)}
+            private _oid = [_x getOrDefault ["id", ""]] call _fnc_oidText;
+            _oid isNotEqualTo "" && {!(_oid in _seen)} && {!(_oid in _skip)}
         }
     };
     if ((count _pending) < 1) exitWith {};
-    [_pending select 0] call comspec_overwatch_connect_fnc_receiveOrder;
+    private _next = _pending select 0;
+    private _nextId = [_next getOrDefault ["id", ""]] call _fnc_oidText;
+    [_next] call comspec_overwatch_connect_fnc_receiveOrder;
+    private _seenAfter = (missionNamespace getVariable ["COMSPEC_OrdersSeen", []]) apply { [_x] call _fnc_oidText };
+    if (!(_nextId in _seenAfter)) then {
+        _skip pushBack _nextId;
+        if ((count _skip) > 80) then { _skip deleteRange [0, (count _skip) - 80]; };
+        missionNamespace setVariable ["COMSPEC_OrdersFallbackSkip", _skip, false];
+    };
 }, 5, []] call CBA_fnc_addPerFrameHandler;
 
 [{

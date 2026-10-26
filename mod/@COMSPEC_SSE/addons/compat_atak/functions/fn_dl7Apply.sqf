@@ -30,6 +30,6 @@ private _out = [["files", _files], ["theme", _theme]];
 if (_name isNotEqualTo "") then { _out pushBack ["name", _name]; };
 {
     if (_x in _cfg) then { _out pushBack [_x, _cfg get _x]; };
-} forEach ["banner", "password", "hint", "attempts", "onFail", "crack", "crackTime", "duration", "port", "alarm", "oneShot"];
+} forEach ["kind", "accent", "wallpaper", "banner", "password", "hint", "attempts", "onFail", "crack", "crackTime", "duration", "port", "alarm", "oneShot"];
 _obj setVariable ["COMSPEC_SSE_Dl7Ready", true, true];
 [_obj, _out] call comspec_atak_native_fnc_dataSetup

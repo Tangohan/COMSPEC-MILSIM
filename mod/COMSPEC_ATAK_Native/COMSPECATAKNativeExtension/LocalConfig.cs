@@ -164,6 +164,8 @@ public static partial class Extension
                     var room = Math.Max(0, MaxOutputBytes - head.Length - 64);
                     // Réponse bornée en octets : prudence pour l'UTF-8 (un caractère peut en prendre jusqu'à trois).
                     var take = Math.Min(Math.Max(0, total - offset), room / 3);
+                    // Jamais de coupure au milieu d'une paire de substitution (emoji…) : chaque moitié deviendrait U+FFFD.
+                    if (take > 0 && offset + take < total && char.IsHighSurrogate(_localRead[offset + take - 1])) take--;
                     return head + (offset < total ? _localRead.Substring(offset, take) : "");
                 }
             }
