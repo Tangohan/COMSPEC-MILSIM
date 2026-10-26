@@ -1156,6 +1156,18 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/supprimer', [SystemTenantsController::class, 'destroy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Paiements PayPal des formules : vérification et activation manuelle.
     $router->get('/admin/paiements', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/paiements/export.csv', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'export'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/paiements/membres', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'searchMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'recordDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'refundDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/attribuer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorGrant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/retirer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRevoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/retablir', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRestore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/recalculer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRebuild'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/communaute/{tenantId}/prolonger', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'extend'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/communaute/{tenantId}/renouveler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'renew'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/relancer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'remind'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/note', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'addNote'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/reglages', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/{id}/activer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'activate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/{id}/refuser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'reject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1184,7 +1196,7 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     // Ancienne page « Dons » : le compte PayPal se règle désormais dans Admin > Paiements (un seul réglage).
-    $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '#reglages'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '?vue=dons'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/storage', [SystemStorageController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Explorateur de données (administration du site) : lire, chercher, modifier, supprimer, vider.

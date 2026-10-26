@@ -324,7 +324,7 @@ require __DIR__ . '/ath_sidebar_nav.php';
             <?php endif; ?>
         </div>
         <div class="ath-sidebar__user-meta">
-            <div class="ath-sidebar__user-name"><?= $h(mb_strtoupper($boUserName, 'UTF-8')) ?></div>
+            <div class="ath-sidebar__user-name"><?= $h(mb_strtoupper($boUserName, 'UTF-8')) ?><?= \App\Services\Billing\DonorService::mark((int) (\App\Core\Session::get('user_id') ?? 0)) ?></div>
             <?php if ($boUserGradeLine !== ''): ?>
             <div class="ath-sidebar__user-role"><?= $h(mb_strtoupper($boUserGradeLine, 'UTF-8')) ?></div>
             <?php endif; ?>
