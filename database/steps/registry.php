@@ -325,4 +325,6 @@ return [
     ['id' => 'left_community_account_repair', 'label' => 'Comptes bloqués par l’ancien « Quitter la communauté » (statut global passé à inactive)', 'group' => 'maintenance', 'file' => '3070_left_community_account_repair.php', 'rerun' => true],
     ['id' => 'us_rank_catalog_fix', 'label' => 'Catalogue des grades américains : fautes de frappe, doublons et échelle de solde manquante', 'group' => 'maintenance', 'file' => '3080_us_rank_catalog_fix.php', 'rerun' => true],
     ['id' => 'custom_grade_systems', 'label' => 'Grades sur mesure : systèmes, catégories et grades créés par une communauté (SCP, Star Wars…)', 'group' => 'migrations', 'file' => '3090_custom_grade_systems.php', 'rerun' => true],
+    ['id' => 'pilot_qualification_rules', 'label' => 'Cursus pilote : qualifications de pilote attribuées d’après les heures de vol (règles par palier)', 'group' => 'migrations', 'file' => '3100_pilot_qualification_rules.php', 'rerun' => true],
+    ['id' => 'pilot_logbook', 'label' => 'Carnet de vol des pilotes (vols relevés en jeu et saisis par le pilote, contresignés par un instructeur)', 'group' => 'migrations', 'file' => '3110_pilot_logbook.php', 'rerun' => true],
 ];

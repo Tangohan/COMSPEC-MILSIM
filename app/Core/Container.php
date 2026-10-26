@@ -660,6 +660,7 @@ class Container
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\QualificationExpiryScanCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\PilotQualificationsCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelProgressionCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SenioritySyncCronJob::class),
@@ -1105,6 +1106,36 @@ class Container
             \App\Services\Cron\Jobs\QualificationExpiryScanCronJob::class => new \App\Services\Cron\Jobs\QualificationExpiryScanCronJob(
                 self::get(\App\Repositories\QualificationAwardRepository::class),
                 self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
+            ),
+            \App\Repositories\PilotQualificationRuleRepository::class => new \App\Repositories\PilotQualificationRuleRepository(),
+            \App\Services\Personnel\PilotQualificationService::class => new \App\Services\Personnel\PilotQualificationService(
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\QualificationReferentielRepository::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
+                self::get(\App\Services\Personnel\QualificationCurrencyService::class),
+                self::get(\App\Repositories\PilotLogbookRepository::class)
+            ),
+            \App\Repositories\PilotLogbookRepository::class => new \App\Repositories\PilotLogbookRepository(),
+            \App\Services\Personnel\PilotLogbookService::class => new \App\Services\Personnel\PilotLogbookService(
+                self::get(\App\Repositories\PilotLogbookRepository::class),
+                self::get(\App\Services\Personnel\PilotQualificationService::class)
+            ),
+            \App\Controllers\Admin\Organization\PilotLogbookController::class => new \App\Controllers\Admin\Organization\PilotLogbookController(
+                self::get(\App\Services\Personnel\PilotLogbookService::class),
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
+            \App\Services\Cron\Jobs\PilotQualificationsCronJob::class => new \App\Services\Cron\Jobs\PilotQualificationsCronJob(
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Services\Personnel\PilotQualificationService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
+            \App\Controllers\Admin\Organization\PilotSyllabusController::class => new \App\Controllers\Admin\Organization\PilotSyllabusController(
+                self::get(\App\Services\Personnel\PilotQualificationService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\Personnel\PilotLogbookService::class)
             ),
             \App\Controllers\Admin\Organization\QualificationReferentielController::class => new \App\Controllers\Admin\Organization\QualificationReferentielController(
                 self::get(\App\Repositories\QualificationDefinitionRepository::class),
