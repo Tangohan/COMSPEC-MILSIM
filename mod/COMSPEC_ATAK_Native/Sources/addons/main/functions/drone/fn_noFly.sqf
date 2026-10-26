@@ -11,6 +11,19 @@
       ["draw", carte]        dessin des zones (fn_mapOnDraw).
 */
 params [["_act", "list"], ["_arg", []]];
+// Lot mpauth3 (SEC-006) : la fonction entre en liste blanche (CfgRemoteExec, allowedTargets = 2) avec cette garde.
+// D'un autre poste que le serveur, seules « srvAdd », « srvRemove » et « srvClear » sont reçues, jugées plus bas sur
+// remoteExecutedOwner. Sur l'hôte d'une partie locale, un client faisait exécuter « add », « remove » ou « clear » :
+// l'hôte se renvoyait la demande et la zone était posée ou retirée au nom et dans le camp de l'hôte.
+if (isRemoteExecutedJIP) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][NOFLY] Appel « %1 » refusé (rejoué depuis la file JIP)", _act];
+    false
+};
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+if (_remote && {!(_act in ["srvAdd", "srvRemove", "srvClear"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][NOFLY] Action « %1 » refusée au poste %2 (locale)", _act, remoteExecutedOwner];
+    false
+};
 private _all = missionNamespace getVariable ["COMSPEC_ATAK_NoFly", []];
 if !(_all isEqualType []) then { _all = []; };
 private _mine = _all select { (_x param [4, sideUnknown]) isEqualTo (side group player) };

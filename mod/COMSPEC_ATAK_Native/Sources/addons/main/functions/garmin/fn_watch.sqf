@@ -58,6 +58,19 @@
     Retour des touches : true si la montre est portée (la touche est prise), sinon false.
 */
 params [["_act", "tick"], ["_arg", []]];
+// Lot mpauth3 (SEC-006) : la fonction entre en liste blanche (CfgRemoteExec, allowedTargets = 0, jip = 0) pour
+// l'heure H, que le chef envoie de son poste aux montres du groupe (« hhRecv », hôte compris). D'un autre poste que le
+// serveur, seule « hhRecv » est reçue ; rien de la file JIP. Un poste ne peut pas savoir ici quel joueur lui écrit
+// (fn_reqUnit ne répond que sur le serveur) : une fausse heure H d'un autre client reste possible (résidu connu).
+if (isRemoteExecutedJIP) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][WATCH] Appel « %1 » refusé (rejoué depuis la file JIP)", _act];
+    false
+};
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+if (_remote && {!(_act in ["hhRecv"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][WATCH] Action « %1 » refusée au poste %2 (locale)", _act, remoteExecutedOwner];
+    false
+};
 disableSerialization;
 if (!hasInterface) exitWith { false };
 private _pages = ["FACE", "HR", "ALT", "MAP", "COMPASS", "JUMP", "CHRONO", "TIMER", "PHONE", "DAY"];
@@ -409,18 +422,19 @@ switch (_act) do {
         true
     };
     // Heure H reçue du chef de groupe (fin < 0 : annulée). Rien ne s'ouvre : la montre vibre, le bandeau attend.
+    // Pas de _redraw ici : reçue d'un autre poste, la fonction ne se ré-appelle pas (« tick » serait refusée dans ce
+    // contexte distant) ; _toast remet « slow » à 0 et la montre ouverte se redessine au tour suivant (0,1 s).
     case "hhRecv": {
-        _arg params ["_end", "_from", "_id"];
+        _arg params [["_end", -1, [0]], ["_from", "", [""]], ["_id", -1, [0]]];
         if (_end < 0) exitWith {
             _m set ["hh", []];
-            if (call _has) then { call _buzz; ["Heure H annulée", _from] call _toast; call _redraw; };
+            if (call _has) then { call _buzz; ["Heure H annulée", _from] call _toast; };
             true
         };
         _m set ["hh", [_end, _from, _id]];
         if (call _has) then {
             call _buzz;
             [format ["Heure H dans %1", [_end - _now] call _fmtT], format ["Envoyée par %1", _from], 6] call _toast;
-            call _redraw;
         };
         {
             _x params ["_at", "_what"];

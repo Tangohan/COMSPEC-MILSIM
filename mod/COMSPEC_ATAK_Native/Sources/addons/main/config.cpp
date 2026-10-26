@@ -705,6 +705,16 @@ class CfgRemoteExec {
         // Écrans COMSPEC (lot mpauth3, SEC-005) : désigner, retirer, demandés au serveur par le module Zeus ou un
         // script, jugés sur le demandeur (fn_screenCast). Remplace l'événement CBA comspec_atak_native_screen.
         class comspec_atak_native_fnc_screenCast { allowedTargets = 2; };
+        // Lot mpauth3 (SEC-006) : demandes au serveur déjà jugées sur remoteExecutedOwner, absentes de la liste (refusées
+        // sans bruit en mode 1). Chaque fonction ne reçoit plus d'un autre poste que sa demande serveur : conditions
+        // réseau (« server » : admin connecté, hôte ou Zeus), zones interdites au drone (« srvAdd », « srvRemove »,
+        // « srvClear » : camp du demandeur), passerelle de véhicule (« srv » : équipage ou à 10 m, camp).
+        class comspec_atak_native_fnc_netConfig { allowedTargets = 2; };
+        class comspec_atak_native_fnc_noFly { allowedTargets = 2; };
+        class comspec_atak_native_fnc_vehicleGateway { allowedTargets = 2; };
+        // Heure H de la montre Garmin : du poste du chef aux montres du groupe (« hhRecv » seule reçue d'un autre poste).
+        // 0 : l'hôte d'une partie locale peut être du groupe. jip = 0 : aucun envoi ne passe par la file JIP.
+        class comspec_atak_native_fnc_watch { allowedTargets = 0; jip = 0; };
     };
 };
 

@@ -20,6 +20,20 @@
       "srv" [act, v] (serveur, remoteExecCall : camp pris de l'émetteur)     "sweep" (serveur, toutes les 5 s)
 */
 params [["_act", "list"], ["_v", objNull]];
+// Lot mpauth3 (SEC-006) : la fonction entre en liste blanche (CfgRemoteExec, allowedTargets = 2) avec cette garde.
+// D'un autre poste que le serveur, seule « srv » est reçue, jugée plus bas sur remoteExecutedOwner (équipage ou à
+// 10 m, camp). Sur l'hôte d'une partie locale, un client faisait exécuter « relay », « cp » ou « off » : l'hôte se
+// renvoyait la demande et la passerelle changeait au nom de l'hôte. L'événement CBA comspec_atak_native_gwSrv reste
+// (hors de ce lot, SEC-027).
+if (isRemoteExecutedJIP) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][GATEWAY] Appel « %1 » refusé (rejoué depuis la file JIP)", _act];
+    false
+};
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+if (_remote && {!(_act in ["srv"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][GATEWAY] Action « %1 » refusée au poste %2 (locale)", _act, remoteExecutedOwner];
+    false
+};
 private _ranges = missionNamespace getVariable ["COMSPEC_ATAK_GwRange", [4000, 10000]];
 private _spec = { params ["_mode"]; [[_ranges select 0, 6], [_ranges select 1, 20]] select (_mode isEqualTo "cp") };
 private _on = (["gateways"] call comspec_atak_native_fnc_netCond);

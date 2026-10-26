@@ -573,6 +573,51 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('which accepts them only from a Zeus, the host, a logged-in admin or an authorized UID.', $doc);
     }
 
+    public function testServerRequestsMissingFromTheWhitelistAreDeclaredWithTheirGuard(): void
+    {
+        // Lot mpauth3 (SEC-006) : quatre fonctions appelées par un client avec remoteExecCall manquaient à CfgRemoteExec
+        // (refusées sans bruit en mode 1) : conditions réseau, zones interdites au drone, passerelle de véhicule, heure H
+        // de la montre. Chacune y entre avec une garde en tête, juste après params : rien de la file JIP, et d'un autre
+        // poste que le serveur, seulement sa demande. Sur l'hôte d'une partie locale, un client faisait exécuter
+        // « apply », « add » ou « relay » : l'hôte se renvoyait la demande (poste 2, donc admise) et agissait en son nom.
+        $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
+        $files = $this->sources();
+        $lists = $this->remoteLists($files);
+        [$sent] = $this->actionsSent($files, $lists);
+        foreach ([
+            'netConfig' => ['network/fn_netConfig.sqf', 'params [["_mode", "open"], ["_a", displayNull], ["_b", ""]];', '_mode', ['server'], 'allowedTargets = 2;'],
+            'noFly' => ['drone/fn_noFly.sqf', 'params [["_act", "list"], ["_arg", []]];', '_act', ['srvAdd', 'srvRemove', 'srvClear'], 'allowedTargets = 2;'],
+            'vehicleGateway' => ['vehicle/fn_vehicleGateway.sqf', 'params [["_act", "list"], ["_v", objNull]];', '_act', ['srv'], 'allowedTargets = 2;'],
+            'watch' => ['garmin/fn_watch.sqf', 'params [["_act", "tick"], ["_arg", []]];', '_act', ['hhRecv'], 'allowedTargets = 0; jip = 0;'],
+        ] as $fn => [$file, $params, $sel, $acts, $targets]) {
+            $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/' . $file));
+            self::assertSame('', trim(substr($code, 0, (int) strpos($code, $params))), $fn);
+            $quoted = implode(', ', array_map(static fn (string $a): string => '"' . $a . '"', $acts));
+            self::assertMatchesRegularExpression('/^' . preg_quote($params, '/') . '\s*'
+                . 'if \(isRemoteExecutedJIP\) exitWith \{[^{}]*\};\s*'
+                . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+                . 'if \(_remote && \{!\(' . $sel . ' in \[' . preg_quote($quoted, '/') . '\]\)\}\) exitWith \{[^{}]*\};/', trim($code), $fn);
+            self::assertStringContainsString('class comspec_atak_native_fnc_' . $fn . ' { ' . $targets . ' };', $cfg, $fn);
+            $key = 'comspec_atak_native_fnc_' . strtolower($fn);
+            self::assertSame($acts, $lists[$key] ?? null, $fn);
+            $got = array_keys($sent[$key] ?? []);
+            sort($got);
+            $want = $acts;
+            sort($want);
+            self::assertSame($want, $got, $fn);
+        }
+        // Les demandes restent jugées sur remoteExecutedOwner, comme avant (la garde ne fait que fermer le reste).
+        self::assertStringContainsString('private _ok = !isMultiplayer || {_owner in [0, 2, clientOwner]} || {(admin _owner) > 0};', $this->read(self::MAIN . '/functions/network/fn_netConfig.sqf'));
+        self::assertStringContainsString('private _i = allPlayers findIf { (owner _x) isEqualTo _owner };', $this->read(self::MAIN . '/functions/drone/fn_noFly.sqf'));
+        self::assertStringContainsString('if ((objectParent _u) isNotEqualTo _veh && {(_u distance _veh) > 10}) exitWith {};', $this->read(self::MAIN . '/functions/vehicle/fn_vehicleGateway.sqf'));
+        // Heure H reçue d'un autre poste : la montre ne se ré-appelle pas (« tick » serait refusée dans ce contexte).
+        $hh = $this->between($this->stripSqfComments($this->read(self::MAIN . '/functions/garmin/fn_watch.sqf')), 'case "hhRecv": {', 'case "hhWarn": {');
+        self::assertNotEmpty($hh);
+        self::assertStringNotContainsString('call _redraw', $hh);
+        self::assertSame(1, preg_match_all('/\bcall\s+comspec_atak_native_fnc_watch\b/', $hh));
+        self::assertStringContainsString('}, [_at, _what, _id]] call CBA_fnc_waitUntilAndExecute;', $hh);
+    }
+
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */
     private function stripSqfComments(string $src): string
     {

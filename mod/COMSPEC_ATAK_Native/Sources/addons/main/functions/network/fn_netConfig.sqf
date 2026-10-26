@@ -14,6 +14,17 @@
              ["server", [[clé, valeur]...], nom] (serveur) | ["canEdit"] -> booléen | ["presets"] | ["expect", profil] -> HashMap clé -> valeur
 */
 params [["_mode", "open"], ["_a", displayNull], ["_b", ""]];
+// Lot mpauth3 (SEC-006) : la fonction entre en liste blanche (CfgRemoteExec, allowedTargets = 2) avec cette garde.
+// D'un autre poste que le serveur, seule « server » est reçue, et jugée plus bas sur remoteExecutedOwner (admin
+// connecté, Zeus). Un client faisait exécuter « apply » au serveur, qui se renvoyait « server » à lui-même (poste 2,
+// donc admis) : conditions réseau imposées à tous sans droit, et rapport au site au nom du serveur.
+if (isRemoteExecutedJIP) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][NET] Appel « %1 » refusé (rejoué depuis la file JIP)", _mode];
+};
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+if (_remote && {!(_mode in ["server"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][NET] Action « %1 » refusée au poste %2 (locale)", _mode, remoteExecutedOwner];
+};
 disableSerialization;
 private _T = { _this call comspec_atak_native_fnc_tr };
 switch (_mode) do {
