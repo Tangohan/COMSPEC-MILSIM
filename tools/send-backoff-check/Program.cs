@@ -4,9 +4,10 @@
 // que la liaison rencontre : panne (réseau, délai dépassé), maintenance 503 avec Retry-After, frein 429, 403 du site
 // entier. Aucune requête HTTP n'est émise : seules les méthodes internes de comptage sont appelées.
 //   BACKOFF_DLL=/chemin/COMSPECExtension_x64.dll   (obligatoire)
-// Sortie : lignes PASS/FAIL ; code de sortie 0 si tout passe, 1 sinon. Sur une DLL d'avant le correctif, A1 A2 A3 B2
-// B3 E1 E2 G I P1 P3 R1 R2 échouent (13 : c'est le défaut corrigé) ; U B1 C D F H T P2 P4 R3 R4 passent sur les deux
-// (le frein 429 / 403 et les refus doivent rester exactement comme avant).
+// Sortie : lignes PASS/FAIL ; code de sortie 0 si tout passe, 1 sinon. Sur la DLL de main, A1 A2 A3 B2 B3 E1 E2 G H2
+// H3 H4 I P1 P3 R1 R2 échouent (16 : c'est le défaut corrigé) ; sur la première version du lot (8faa74ab), H2 H3 H4
+// échouent (passage panne → frein). U B1 C D F H T P2 P4 R3 R4 passent partout (le frein 429 / 403 seul et les refus
+// doivent rester exactement comme avant).
 
 using System.Net;
 using System.Net.Http.Headers;
@@ -193,6 +194,59 @@ var hStep1 = Step();
 Ok();
 Check("H  panne puis 429 : échelle longue, deux succès pour sortir", hPause >= 44.9 && hStep1 == 1 && Step() == 0,
     $"pause {Fmt(hPause)} s ; palier après 1 succès {hStep1}, après 2 succès {Step()}");
+
+// [H2] [H3] [H4] Panne déjà montée sur l'échelle courte, puis 429 ou 403 : le frein repart du premier palier de
+// l'échelle longue (45 s exactement, ou le Retry-After s'il est plus long), comme un frein qui commence, puis deux
+// succès pour sortir. Avant ce correctif, le palier de la panne était relu sur l'échelle longue : palier 3 = 150 s,
+// palier 4 = 300 s, et 600 s si la fenêtre d'escalade était passée (B1 de la contre-expertise v1). Le 429 arrive ici
+// après la fenêtre d'escalade (cas réel : la pause de panne dure plus que la fenêtre) ; un second 429 juste après ne
+// doit pas monter d'un palier (l'heure d'escalade est notée au passage panne → frein).
+(int Rung, int St, double P) OutageThen(int outageRungs, Action brake)
+{
+    Reset();
+    for (var i = 0; i < 3; i++) Fail(0);
+    for (var i = 1; i < outageRungs; i++)
+    {
+        PretendWindowElapsed();
+        Fail(0);
+    }
+    var rung = Rung();
+    PretendWindowElapsed();
+    brake();
+    return (rung, Step(), PauseS());
+}
+string Seen((int Rung, int St, double P) s) => $"panne à {s.Rung} s → palier {s.St}, pause {Fmt(s.P)} s";
+bool Exactly45(int st, double p) => st == 1 && p is >= 44.9 and <= 45.1;
+
+var h2Low = new[] { 2, 3 }.Select(r => OutageThen(r, () => Limited(Resp(429, 30, TooMany)))).ToList();
+var h2 = OutageThen(4, () => Limited(Resp(429, 30, TooMany)));
+Limited(Resp(429, 30, TooMany));
+var (h2AgainSt, h2AgainP) = (Step(), PauseS());
+Ok();
+var (h2Ok1St, h2Ok1P) = (Step(), PauseS());
+Ok();
+var h2Out = Step();
+Check("H2 panne montée au palier 4 puis 429 : 1er palier de l'échelle longue (45 s exactement), deux succès pour sortir",
+    h2.Rung == 45 && h2Low.All(s => Exactly45(s.St, s.P)) && Exactly45(h2.St, h2.P) && Exactly45(h2AgainSt, h2AgainP)
+    && Exactly45(h2Ok1St, h2Ok1P) && h2Out == 0,
+    string.Join(" ; ", h2Low.Append(h2).Select(Seen)) + $" ; 2e 429 aussitôt : palier {h2AgainSt}, pause {Fmt(h2AgainP)} s ;"
+    + $" après 1 succès palier {h2Ok1St}, pause {Fmt(h2Ok1P)} s ; après 2 succès palier {h2Out}"
+    + " (attendu : panne à 45 s, puis palier 1 et 45 s partout, sortie au 2e succès)");
+
+var h3 = OutageThen(4, () => Fail(403));
+Ok();
+var (h3Ok1St, h3Ok1P) = (Step(), PauseS());
+Ok();
+var h3Out = Step();
+Check("H3 panne montée au palier 4 puis 403 : 1er palier de l'échelle longue (45 s exactement), deux succès pour sortir",
+    h3.Rung == 45 && Exactly45(h3.St, h3.P) && Exactly45(h3Ok1St, h3Ok1P) && h3Out == 0,
+    Seen(h3) + $" ; après 1 succès palier {h3Ok1St}, pause {Fmt(h3Ok1P)} s ; après 2 succès palier {h3Out}"
+    + " (attendu : panne à 45 s, palier 1, 45 s, sortie au 2e succès)");
+
+var h4 = OutageThen(4, () => Limited(Resp(429, 60, TooMany)));
+Check("H4 panne montée au palier 4 puis 429 + Retry-After 60 : le Retry-After, plus long que 45 s, est respecté exactement",
+    h4.Rung == 45 && h4.St == 1 && h4.P is >= 59.9 and <= 60.1,
+    Seen(h4) + " (attendu : panne à 45 s, puis palier 1, 60 s)");
 
 // [T] Frein (429, 403) : délais exacts, sans gigue, comme avant (Athena limite chaque compte ou chaque adresse à part :
 // les joueurs ne sont pas freinés ensemble). 30 tirages par cas : une gigue de 20 % se verrait à coup sûr.

@@ -60,6 +60,35 @@ final class AtakSendBackoffRecoveryTest extends TestCase
         self::assertStringContainsString('(int)response.StatusCode == 503 ? 503 : 429', $limited);
     }
 
+    public function testOutageTurningIntoAThrottleRestartsAtTheFirstLongRung(): void
+    {
+        // Un 429 ou un 403 qui arrive pendant une panne déjà montée sur l'échelle courte gardait le palier de la panne,
+        // relu sur l'échelle longue (palier 3 = 150 s, palier 4 = 300 s). Le frein repart du premier palier de l'échelle
+        // longue (45 s, ou le Retry-After s'il est plus long) et l'heure d'escalade est notée : une rafale de 429 ne
+        // monte pas aussitôt d'un palier. Comportement mesuré par tools/send-backoff-check (H2, H3, H4).
+        $fail = self::body(
+            self::extension(),
+            'private static void NoteSendFailure(int code, string url, HttpResponseMessage? response)'
+        );
+
+        self::assertStringContainsString(
+            'var outageTurnsToThrottle = (code is 429 or 403) && _sendBackoffStep > 0 && !_sendBackoffThrottled;',
+            $fail
+        );
+        self::assertMatchesRegularExpression(
+            '/if \(outageTurnsToThrottle\)\s*\{\s*_sendBackoffStep = 1;\s*'
+            . 'System\.Threading\.Interlocked\.Exchange\(ref _lastBackoffEscalateTicks, DateTime\.UtcNow\.Ticks\);\s*\}'
+            . '\s*else if \(_sendBackoffStep > 0\)/',
+            $fail
+        );
+        // Le passage se calcule avant que le drapeau du frein soit posé, sinon il ne se verrait jamais.
+        $turn = strpos($fail, 'var outageTurnsToThrottle');
+        $flag = strpos($fail, 'if (code is 429 or 403)');
+        self::assertNotFalse($turn);
+        self::assertNotFalse($flag);
+        self::assertLessThan($flag, $turn);
+    }
+
     public function testFirstSuccessEndsAnOutagePause(): void
     {
         $ok = self::body(self::extension(), 'private static void NoteSendSuccess()');

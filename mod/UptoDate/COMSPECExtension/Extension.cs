@@ -1284,9 +1284,11 @@ public static partial class Extension
     /// <summary>
     /// Pose la pause commune des envois. Panne (réseau, 503) : allongée d'une gigue tirée entre 0 et
     /// <paramref name="jitterMaxSec"/> (par défaut 20 % du délai), jamais plus courte que demandé, Retry-After compris :
-    /// les joueurs coupés en même temps ne reviennent plus tous dans la même seconde (TEST-010 : 6 joueurs repartis à
-    /// 0,3 s d'écart). Frein (429, 403) : délai exact, sans gigue, comme avant (Athena limite chaque compte ou chaque
-    /// adresse à part : les joueurs ne sont pas freinés ensemble).
+    /// les essais des joueurs coupés en même temps s'étalent pendant la panne. Le retour, lui, n'est pas étalé : le
+    /// premier envoi ou sondage qui réussit lève la pause (TEST-010, banc à 6 joueurs, coupure de 30 s, 3 passages :
+    /// 1re position des 6 joueurs à 0,8 à 0,9 s d'écart, contre 0,6 à 0,8 s sur main). Frein (429, 403) : délai exact,
+    /// sans gigue, comme avant (Athena limite chaque compte ou chaque adresse à part : les joueurs ne sont pas freinés
+    /// ensemble).
     /// </summary>
     private static void ApplySendPause(int delaySec, int jitterMaxSec = -1)
     {
@@ -1336,9 +1338,10 @@ public static partial class Extension
 
     private static void NoteRateLimited(HttpResponseMessage? response = null)
     {
-        // 503 (maintenance, base injoignable, schéma pas prêt…) : Athena est indisponible, c'est une panne. Son frein
-        // est le 429 (RateLimitMiddleware). Les deux gardent le même traitement immédiat (RateLimited, Retry-After) ;
-        // seules l'échelle, la gigue et la sortie diffèrent.
+        // 503 : seule la maintenance arrive ici (corps contenant « maintenance ») ; les autres 5xx, base injoignable
+        // comprise, ne mettent en attente que leur adresse (TryNoteEndpointServerError, appelé avant). Athena est alors
+        // indisponible : c'est une panne. Son frein est le 429 (RateLimitMiddleware). Les deux gardent le même
+        // traitement immédiat (RateLimited, Retry-After) ; seules l'échelle, la gigue et la sortie diffèrent.
         NoteSendFailure(response != null && (int)response.StatusCode == 503 ? 503 : 429, "", response);
     }
 
@@ -1358,10 +1361,21 @@ public static partial class Extension
 
         _sendOkStreak = 0;
         _sendFailStreak++;
+        // Passage panne → frein : un 429 ou un 403 qui arrive pendant une panne (échelle courte) repart du premier
+        // palier de l'échelle longue, 45 s ou le Retry-After s'il est plus long, comme un frein qui commence ; l'heure
+        // d'escalade est notée, une rafale de 429 ne monte donc pas aussitôt d'un palier. Garder le palier de la panne
+        // le relisait sur l'échelle longue (palier 3 = 150 s, palier 4 = 300 s) : après une coupure suivie d'un 429, la
+        // reprise devenait plus lente que sur main (B1 de la contre-expertise NET-006 v1).
+        var outageTurnsToThrottle = (code is 429 or 403) && _sendBackoffStep > 0 && !_sendBackoffThrottled;
         if (code is 429 or 403)
             _sendBackoffThrottled = true;
 
-        if (_sendBackoffStep > 0)
+        if (outageTurnsToThrottle)
+        {
+            _sendBackoffStep = 1;
+            System.Threading.Interlocked.Exchange(ref _lastBackoffEscalateTicks, DateTime.UtcNow.Ticks);
+        }
+        else if (_sendBackoffStep > 0)
         {
             // Une seule montée d’échelle par fenêtre (~moitié du délai courant, min 20 s).
             // Sinon une rafale de code 0 grimpe 45→600 en quelques millisecondes.
