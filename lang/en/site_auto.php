@@ -44485,4 +44485,5 @@ return [
     'Fiche membre — Athena' => 'Member file — Athena',
     'Élévation confirmée' => 'Promotion confirmed',
     'Changement d’affectation confirmé' => 'Assignment change confirmed',
+    'Décision d’élévation appliquée.' => 'Promotion decision applied.',
 ];
