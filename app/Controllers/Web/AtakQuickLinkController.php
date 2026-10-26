@@ -9,6 +9,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Services\Game\FirstLoginGameLinkGate;
 use App\Services\Game\GameAtakPairingService;
 use App\Support\LoginIntendedDestination;
 
@@ -69,6 +70,11 @@ final class AtakQuickLinkController
             'watch' => $linked ? (int) Session::get(self::WATCH_KEY, 0) : 0,
             'steamMoved' => $linked ? (int) Session::getFlash('atak_quick_link_moved') : 0,
             'linked' => $linked,
+            // Première connexion : le site reste fermé tant que le jeu n'est pas relié (FirstLoginGameLinkGate).
+            'required' => !$linked && (bool) Session::get(FirstLoginGameLinkGate::SESSION_REQUIRED, false),
+            'continueUrl' => $linked && (bool) Session::getFlash('atak_quick_link_first') ? FirstLoginGameLinkGate::continueUrl() : '',
+            'modUrl' => url('atak/mod'),
+            'guideUrl' => url('atak/premiere-liaison'),
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
@@ -124,6 +130,10 @@ final class AtakQuickLinkController
             return Response::redirect($back);
         }
         Session::flash('atak_quick_link_done', '1');
+        if (Session::get(FirstLoginGameLinkGate::SESSION_REQUIRED, false)) {
+            Session::flash('atak_quick_link_first', '1');
+        }
+        FirstLoginGameLinkGate::markLinked($userId, $tenantId);
         Session::set(self::WATCH_KEY, (int) ($result['payload']['challenge_id'] ?? 0));
         Session::flash('atak_quick_link_moved', (string) count((array) ($result['payload']['steam_moved_from'] ?? [])));
         Session::flash('success', 'C’est fait. Retournez dans Arma : votre téléphone se connecte et se synchronise tout seul.');

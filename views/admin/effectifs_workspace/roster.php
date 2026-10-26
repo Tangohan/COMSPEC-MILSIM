@@ -523,7 +523,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         $pilotFamilies
                     ));
                     ?>
-                    <tr<?= $status !== 'active' ? ' class="is-muted-row"' : '' ?>>
+                    <tr data-ath-quiet-scope="eff-row-<?= $id ?>"<?= $status !== 'active' ? ' class="is-muted-row"' : '' ?>>
                         <?php if ($canBulkAny): ?>
                         <td class="eff-das__check"><input type="checkbox" class="eff-bulk-check" name="user_ids[]" value="<?= $id ?>" form="eff-bulk-form" aria-label="Sélectionner <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"></td>
                         <?php endif; ?>
@@ -647,7 +647,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                     <details class="eff-sheets__pop">
                                         <summary class="eff-das__edit" title="<?= $assignmentPath !== '' ? 'Modifier l’affectation' : 'Affecter à une unité' ?>"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="sr-only"><?= $assignmentPath !== '' ? 'Modifier l’affectation' : 'Affecter' ?></span></summary>
                                         <div class="eff-sheets__pop-panel">
-                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
+                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form" data-ath-quiet>
                                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
                                                 <label for="eff-unit-<?= $id ?>">Unité de rattachement</label>
@@ -704,7 +704,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                     <details class="eff-sheets__pop">
                                         <summary class="eff-das__edit" title="<?= $roleParts !== [] ? 'Modifier l’accès' : 'Attribuer l’accès' ?>"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="sr-only"><?= $roleParts !== [] ? 'Modifier l’accès' : 'Attribuer l’accès' ?></span></summary>
                                         <div class="eff-sheets__pop-panel">
-                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
+                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form" data-ath-quiet>
                                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
                                                 <label for="eff-access-<?= $id ?>">Niveau d’accès</label>
@@ -735,7 +735,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                     <details class="eff-sheets__pop">
                                         <summary class="eff-das__edit" title="Modifier l’ancienneté"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="sr-only">Modifier l’ancienneté</span></summary>
                                         <div class="eff-sheets__pop-panel">
-                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
+                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form" data-ath-quiet>
                                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
                                                 <label for="eff-enlist-<?= $id ?>">Arrivée dans la communauté (sur Athena)</label>
@@ -805,7 +805,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             </div>
                             <?php if ($canRequestElevation && (int) ($elevationCooldownByUserId[$id] ?? 0) < 1): ?>
                             <dialog class="eff-elev-dialog" id="eff-elev-dialog-<?= $id ?>" aria-labelledby="eff-elev-dialog-title-<?= $id ?>">
-                                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-elev-dialog__inner eff-sheets__pop-form">
+                                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-elev-dialog__inner eff-sheets__pop-form" data-ath-quiet>
                                     <h3 id="eff-elev-dialog-title-<?= $id ?>" class="eff-elev-dialog__title">Demander une élévation</h3>
                                     <p class="eff-elev-dialog__lead"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></p>
                                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
@@ -849,29 +849,29 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
 </div>
         <script>
         (function () {
-            document.querySelectorAll('[data-eff-elev-open]').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var id = btn.getAttribute('data-eff-elev-open');
+            // Délégation : les lignes du tableau peuvent être remplacées après un enregistrement sans rechargement.
+            document.addEventListener('click', function (ev) {
+                var t = ev.target;
+                var open = t.closest ? t.closest('[data-eff-elev-open]') : null;
+                if (open) {
+                    var id = open.getAttribute('data-eff-elev-open');
                     var dialog = id ? document.getElementById('eff-elev-dialog-' + id) : null;
                     if (dialog && typeof dialog.showModal === 'function') {
                         dialog.showModal();
                     }
-                });
-            });
-            document.querySelectorAll('[data-eff-elev-close]').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var dialog = btn.closest('dialog');
-                    if (dialog) {
-                        dialog.close();
+                    return;
+                }
+                var close = t.closest ? t.closest('[data-eff-elev-close]') : null;
+                if (close) {
+                    var d = close.closest('dialog');
+                    if (d) {
+                        d.close();
                     }
-                });
-            });
-            document.querySelectorAll('dialog.eff-elev-dialog').forEach(function (dialog) {
-                dialog.addEventListener('click', function (ev) {
-                    if (ev.target === dialog) {
-                        dialog.close();
-                    }
-                });
+                    return;
+                }
+                if (t.matches && t.matches('dialog.eff-elev-dialog')) {
+                    t.close();
+                }
             });
         })();
         </script>
