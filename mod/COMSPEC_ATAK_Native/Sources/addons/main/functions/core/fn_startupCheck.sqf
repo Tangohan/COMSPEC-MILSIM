@@ -179,7 +179,7 @@ private _send = {
         saveProfileNamespace;
     };
     private _args = [
-        "https://athena.ttrd.fr/public",
+        "https://athena-comspec.eu/public",
         "atak=" + _code, "config=" + _cfg, "link=" + _dll, "link_expected=" + (missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", ""]),
         format ["arma=%1.%2", floor (_v / 100), _v mod 100],
         "player=" + profileName, "callsign=" + groupId group player,

@@ -1,6 +1,6 @@
 /*
     Connexion au compte Athena par code, sans clé de communauté ni identifiant à saisir.
-    Le jeu demande un code court (COMSPEC Link PairStart) ; le joueur l'autorise sur athena.ttrd.fr/lier,
+    Le jeu demande un code court (COMSPEC Link PairStart) ; le joueur l'autorise sur athena-comspec.eu/lier,
     connecté à son compte ; le jeu reçoit alors sa session (compte, communauté, Steam associé) par PairStatus.
     Aux parties suivantes, la session est restaurée ou la connexion Steam suffit : plus rien à faire.
     Params : [action, option, auto]
@@ -97,7 +97,7 @@ switch (_action) do {
             };
             private _mine = { (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLinkToken", -1]) isEqualTo _token };
             // Portail Athena fixe : plus d’adresse réglable ni mémorisée.
-            private _url = "https://athena.ttrd.fr/public";
+            private _url = "https://athena-comspec.eu/public";
             private _pack = if (_bridge) then { [] call comspec_overwatch_connect_fnc_packVersion } else { "native" };
             private _steam = getPlayerUID player;
             if ((count _steam) >= 8) then { ["SetSteamId", [_steam]] call _ext; };

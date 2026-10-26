@@ -46,7 +46,7 @@ private _clean = {
     _s
 };
 private _ensureLink = {
-    private _url = if (isNil "comspec_overwatch_connect_fnc_portalUrl") then { "https://athena.ttrd.fr/public" } else { [] call comspec_overwatch_connect_fnc_portalUrl };
+    private _url = if (isNil "comspec_overwatch_connect_fnc_portalUrl") then { "https://athena-comspec.eu/public" } else { [] call comspec_overwatch_connect_fnc_portalUrl };
     private _steam = [profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""]] call _clean;
     if ((["RestoreSession", [_url, "", _steam]] call _call) find "OK|READY" == 0) exitWith { true };
     private _key = [profileNamespace getVariable ["comspec_overwatch_saved_api_key", ""]] call _clean;
