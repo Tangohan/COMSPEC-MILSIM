@@ -20,7 +20,8 @@ jobs:
       - name: Composer audit
         run: composer audit --no-interaction
       - name: PHPUnit
-        run: vendor/bin/phpunit
+        run: |
+          vendor/bin/phpunit > pu.txt 2>&1 || { tail -c 20000 pu.txt | grep -vE '^\s*$' | head -120 | while IFS= read -r l; do echo "::error::$l"; done; exit 1; }
       - name: PHPStan
         run: vendor/bin/phpstan analyse --memory-limit=1G
 
