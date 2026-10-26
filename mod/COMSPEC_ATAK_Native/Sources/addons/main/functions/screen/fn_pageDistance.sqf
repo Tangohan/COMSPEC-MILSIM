@@ -91,8 +91,12 @@ private _dur = {
 };
 private _dayS = { params ["_d"]; (_d splitString "-") params [["_yy", ""], ["_mm", ""], ["_dd", ""]]; format ["%1/%2", _dd, _mm] };
 // Texte structuré : [texte, taille (× police du téléphone), couleur, gras, alignement]
+// Texte brut (nom de mission, d'appareil, carnet) : &, < et > échappés ; entités déjà échappées gardées.
 private _t = {
     params ["_s", ["_size", 1], ["_hex", ""], ["_bold", false], ["_align", ""]];
+    _s = [str _s, _s] select (_s isEqualType "");
+    _s = _s regexReplace ["&(?!(amp|lt|gt|quot|apos|#[0-9]+);)", "&amp;"];
+    _s = [[_s, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace;
     format ["<t size='%1'%2%3%4>%5</t>", (_size * _k) toFixed 3, ["", format [" color='%1'", _hex]] select (_hex isNotEqualTo ""),
         ["", " font='COMSPEC_BarlowBold'"] select _bold, ["", format [" align='%1'", _align]] select (_align isNotEqualTo ""), _s]
 };

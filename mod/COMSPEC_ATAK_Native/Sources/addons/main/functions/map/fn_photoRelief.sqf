@@ -54,8 +54,17 @@ private _shadow = [0, 0, 0, 0.32];
 private _fill = "#(rgb,8,8,3)color(0,0,0,1)";
 private _edge = [0.08, 0.08, 0.08, 0.55];
 private _n = 0;
+// Cases neuves relevées par image (nearestTerrainObjects + boîtes de modèle) : 3 au plus, les suivantes aux images
+// d'après (avant, une trentaine d'un coup au premier zoom ou en déplaçant la vue : saccade visible).
+private _newLeft = 3;
 for "_cy" from (floor ((_br select 1) / _cellM)) to (floor ((_tl select 1) / _cellM)) do {
+    if (_n >= 600) then { break };
     for "_cx" from (floor ((_tl select 0) / _cellM)) to (floor ((_br select 0) / _cellM)) do {
+        if (_n >= 600) then { break };
+        private _cv = _cells get (_cx * 10000 + _cy);
+        if (isNil "_cv") then {
+            if (_newLeft > 0) then { _newLeft = _newLeft - 1; _cv = [_cx, _cy] call _cell; } else { _cv = []; };
+        };
         {
             if (_n >= 600) then { break };
             _x params ["_pts", "_h"];
@@ -73,6 +82,6 @@ for "_cy" from (floor ((_br select 1) / _cellM)) to (floor ((_tl select 1) / _ce
             };
             _map drawPolygon [_pts, _edge];
             _n = _n + 1;
-        } forEach ([_cx, _cy] call _cell);
+        } forEach _cv;
     };
 };

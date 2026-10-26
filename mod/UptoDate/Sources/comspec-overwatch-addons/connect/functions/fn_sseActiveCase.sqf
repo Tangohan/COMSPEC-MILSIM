@@ -46,7 +46,7 @@ if (_mode isEqualTo "set") exitWith {
     // Une seule référence active pour le pack SSE (transmissions Athena).
     if (!isNil "comspec_sse_fnc_setCaseReference") then { [_clean] call comspec_sse_fnc_setCaseReference; };
     profileNamespace setVariable ["COMSPEC_SseLastCaseCode", _clean];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 
     if (hasInterface) then {
         [

@@ -14,6 +14,11 @@ _body = ((_tags apply { format ["[%1]", _x] }) joinString "") + ([" ", ""] selec
 if ((count _body) > 400) then { _body = _body select [0, 400]; };
 private _target = objNull;
 { if ((name _x) isEqualTo _peer) exitWith { _target = _x; }; } forEach allPlayers;
+// Réponse à un message du poste (« TOC · OVERWATCH », fn_tocAction) : remise à l'opérateur assis au PC de TOC de mon camp.
+if (isNull _target && {(_peer find "TOC · ") isEqualTo 0}) then {
+    private _ops = allPlayers select { (_x getVariable ["COMSPEC_ATAK_TocOn", ""]) isNotEqualTo "" && {side group _x isEqualTo side group player} && {_x isNotEqualTo player} };
+    if (_ops isNotEqualTo []) then { _target = _ops select 0; };
+};
 private _time = [daytime, "HH:MM"] call BIS_fnc_timeToString;
 private _date = [] call comspec_atak_native_fnc_p2pDate;
 private _id = format ["%1-%2-%3", getPlayerUID player, round (time * 1000), floor random 1e5];

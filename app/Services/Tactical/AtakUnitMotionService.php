@@ -213,7 +213,11 @@ final class AtakUnitMotionService
                 $tenantId, $mapId, $unitKind, $unitId, $unitRef,
                 $x, $y, $z, $headingObject, $speed, $vel[0], $vel[1], $vel[2],
             ]);
-            $this->pruneSamples($tenantId, $mapId, $unitKind, $unitRef);
+            // Purge environ un échantillon sur 8 (au lieu d’un DELETE … NOT IN à chaque position) :
+            // loadSamples ne lit de toute façon que les SAMPLE_KEEP derniers, le calcul est inchangé.
+            if (random_int(0, 7) === 0) {
+                $this->pruneSamples($tenantId, $mapId, $unitKind, $unitRef);
+            }
         } catch (Throwable) {
             return;
         }
@@ -649,15 +653,17 @@ final class AtakUnitMotionService
      */
     private function loadSamples(int $tenantId, int $mapId, string $unitKind, string $unitRef): array
     {
+        // Les SAMPLE_KEEP derniers (ceux que pruneSamples conserve), remis dans l’ordre chronologique.
         $st = $this->pdo()->prepare(
             'SELECT pos_x, pos_y, pos_z, heading_object, speed_ms, vel_x, vel_y, vel_z, sampled_at
              FROM atak_unit_motion_samples
              WHERE tenant_id = ? AND map_id = ? AND unit_kind = ? AND unit_ref = ?
-             ORDER BY sampled_at ASC, id ASC'
+             ORDER BY sampled_at DESC, id DESC
+             LIMIT ' . self::SAMPLE_KEEP
         );
         $st->execute([$tenantId, $mapId, $unitKind, $unitRef]);
         $out = [];
-        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+        foreach (array_reverse($st->fetchAll(PDO::FETCH_ASSOC) ?: []) as $r) {
             $t = strtotime((string) ($r['sampled_at'] ?? '')) ?: time();
             $out[] = [
                 'x' => (float) $r['pos_x'],

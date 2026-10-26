@@ -175,7 +175,18 @@ switch (_act) do {
             };
             _pub = [parseNumber (_mb toFixed 1), _hops];
         };
-        if (_pub isNotEqualTo (player getVariable ["COMSPEC_ATAK_Mpu5", []])) then { player setVariable ["COMSPEC_ATAK_Mpu5", _pub, true]; };
+        // Débit qui varie seul (évanouissement autour d'un palier de modulation) : diffusé s'il tient deux tours de suite
+        // (comme fn_feedLink) ; changement de sauts, coupure ou retour du réseau : tout de suite.
+        private _mOld = player getVariable ["COMSPEC_ATAK_Mpu5", []];
+        if (_pub isEqualTo _mOld) then { uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", []]; } else {
+            private _soft = (count _mOld) isEqualTo 2 && {(count _pub) isEqualTo 2} && {(_mOld select 1) isEqualTo (_pub select 1)} && {(_mOld select 0) > 0} && {(_pub select 0) > 0};
+            if (_soft && {_pub isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Pend", []])}) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", _pub];
+            } else {
+                uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", []];
+                player setVariable ["COMSPEC_ATAK_Mpu5", _pub, true];
+            };
+        };
         // Réseau voix publié pour les autres téléphones : fréquence d'émission et nom du canal de chaque radio ACRE2.
         private _vn = (["radios"] call comspec_atak_native_fnc_mpu5) select { (_x select 4) > 0 } apply { [_x select 0, parseNumber ((_x select 4) toFixed 4), _x select 3] };
         if (_vn isNotEqualTo (player getVariable ["COMSPEC_ATAK_VoiceNet", []])) then { player setVariable ["COMSPEC_ATAK_VoiceNet", _vn, true]; };

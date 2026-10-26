@@ -19,7 +19,8 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 
 private _tenantId = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
 private _mapId = missionNamespace getVariable ["comspec_overwatch_map_id", ""];
-private _raw = ["COMSPECExtension" callExtension ["GetFireTeams", [_tenantId, _mapId]]] call comspec_overwatch_connect_fnc_extResult;
+// extAwait : appel asynchrone si le contexte peut attendre (pas de gel du jeu), appel direct sinon.
+private _raw = [["COMSPECExtension", "GetFireTeams", [_tenantId, _mapId]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 

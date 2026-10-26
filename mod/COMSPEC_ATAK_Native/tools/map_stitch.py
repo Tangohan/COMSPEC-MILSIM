@@ -21,13 +21,13 @@ passe devant là où elle existe (une ville à 300 m, le reste de l'île à 1200
 y = 0 au nord. Avec le journal Arma (--rpt, trouvé tout seul sous Windows), chaque image satellite est redressée sur
 le relief (orthophoto) : le cadrage mesuré en jeu et les altitudes notées sous l'image (lignes CMAPL / CMAPS).
 
-  --upload https://athena.ttrd.fr/public --key <X_COMSPEC_KEY>   envoie le fond au site (calque « Photo COMSPEC ») :
+  --upload https://athena-comspec.eu/public --key <X_COMSPEC_KEY>   envoie le fond au site (calque « Photo COMSPEC ») :
                       tuiles WebP (site) et leur copie JPEG z/x/y.jpg (fond PHOTO du téléphone, téléchargé en jeu par la
                       DLL : Arma ne lit pas le WebP) ; --upload-format pour n'envoyer que l'un des deux. Clé lue aussi
                       dans la variable d'environnement COMSPEC_KEY (sans --key : la clé n'apparaît pas dans l'historique)
   Fond déjà fabriqué (dossier <sortie>/<carte>_<rendu> avec meta.json) donné à la place des captures : envoyé tel quel,
   sans refaire la pyramide :
-    python3 tools/map_stitch.py sortie/Altis_sat sortie --upload https://athena.ttrd.fr/public
+    python3 tools/map_stitch.py sortie/Altis_sat sortie --upload https://athena-comspec.eu/public
   --addon <dossier>   fabrique le pack secondaire <dossier>/@COMSPEC_ATAK_Photo (une PBO par carte, toutes les cartes
                       déjà assemblées gardées), le fond PHOTO du téléphone : mod optionnel chargé en plus de
                       @COMSPEC_ATAK_Native, qui retombe sur la carte d'Arma sans lui (PAA par HEMTT 1.15 ou plus, sinon JPG)
@@ -975,7 +975,7 @@ def main():
     ap.add_argument("--collect-format", choices=["webp", "png"], default="webp", help="images de la bibliothèque : WebP sans perte (défaut) ou PNG d'origine")
     ap.add_argument("--move", action="store_true", help="avec --collect : retire les originaux des dossiers Screenshots une fois rangés")
     ap.add_argument("--collect-only", action="store_true", help="avec --collect : seulement ranger")
-    ap.add_argument("--upload", metavar="URL", help="adresse du site (ex. https://athena.ttrd.fr/public)")
+    ap.add_argument("--upload", metavar="URL", help="adresse du site (ex. https://athena-comspec.eu/public)")
     ap.add_argument("--key", default=os.environ.get("COMSPEC_KEY", ""),
                     help="clé plateforme X_COMSPEC_KEY du site (avec --upload) ; défaut : variable d'environnement COMSPEC_KEY")
     ap.add_argument("--upload-format", choices=["both", "webp", "jpg"], default="both",

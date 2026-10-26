@@ -1222,7 +1222,7 @@ class OrganizationDashboardController
             'roles' => $roleRepository->forTenantOrganization($tenantId),
             'roleMatrix' => $roleRepository->organizationRolesPermissionMatrix($tenantId),
             'grades' => $gradeRepository->listActiveForDoctrinePicker($tenantId),
-            'gradeCategories' => $gradeCategoryRepository->listActive(),
+            'gradeCategories' => $gradeCategoryRepository->listForTenant($tenantId),
             'organizationRoleLabelMode' => $organizationRoleLabelMode,
             'steamWebConfigured' => \App\Core\Container::get(\App\Services\Steam\SteamWebApiService::class)->isConfigured(),
         ]);

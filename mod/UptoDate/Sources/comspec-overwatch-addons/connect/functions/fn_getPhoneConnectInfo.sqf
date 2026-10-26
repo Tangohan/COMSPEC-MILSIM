@@ -17,7 +17,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 missionNamespace setVariable ["COMSPEC_PhoneConnectLastError", "", false];
 
 private _tenantId = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
-private _raw = ["COMSPECExtension" callExtension ["GetPhoneConnectInfo", [_tenantId]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [["COMSPECExtension", "GetPhoneConnectInfo", [_tenantId]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 

@@ -262,45 +262,10 @@ def draw_labels(img):
     d.text((x0 + 39, y0 + 26), "!", font=font(30), fill=(25, 25, 22))
     d.text((x0 + 86, y0 + 12), "RF · 50 Ω", font=font(20), fill=(25, 25, 22))
     d.text((x0 + 86, y0 + 40), "SMA-M", font=font(20), fill=(25, 25, 22))
-    # Cadran de la montre Garmin (disque) : lunette noire graduée, écran MIP (heure, jauges Body Battery et cardio).
+    # Cadran de la montre Garmin (disque, Forerunner 570) : lunette anthracite lisse (GARMIN en bas), écran AMOLED noir :
+    # heure, date, Bluetooth, arcs de points Body Battery (bleu, gauche) et objectif de pas (vert, droite), FC, pas.
     x0, y0, x1, y1 = LABELS["garmin"]
-    S = 4
-    sz = (x1 - x0) * S
-    g = Image.new("RGB", (sz, sz), (22, 23, 24))
-    gd = ImageDraw.Draw(g)
-    c, rb, rs = sz / 2, sz / 2, sz / 2 * 0.80
-    gd.ellipse((0, 0, sz - 1, sz - 1), fill=(34, 35, 37))
-    for k in range(60):
-        if k % 15 == 0:
-            continue
-        a = math.radians(k * 6 - 90)
-        r1 = rb * (0.86 if k % 5 else 0.83)
-        gd.line((c + r1 * math.cos(a), c + r1 * math.sin(a), c + rb * 0.95 * math.cos(a), c + rb * 0.95 * math.sin(a)),
-                fill=(200, 200, 196) if k % 5 == 0 else (120, 120, 118), width=S * (2 if k % 5 == 0 else 1))
-    for k, t in ((0, "60"), (15, "15"), (30, "30"), (45, "45")):
-        a = math.radians(k * 6 - 90)
-        tw = gd.textlength(t, font=font(9 * S))
-        gd.text((c + rb * 0.89 * math.cos(a) - tw / 2, c + rb * 0.89 * math.sin(a) - 5 * S), t, font=font(9 * S), fill=(225, 225, 220))
-    gd.ellipse((c - rs - 2 * S, c - rs - 2 * S, c + rs + 2 * S, c + rs + 2 * S), fill=(12, 12, 13))
-    gd.ellipse((c - rs, c - rs, c + rs, c + rs), fill=(6, 7, 8))
-    # Jauges en arc : Body Battery (bleu, gauche) et fréquence cardiaque (rouge, droite).
-    for (a0, a1, col, part) in ((120, 240, (78, 161, 243), 0.75), (-60, 60, (240, 86, 106), 0.45)):
-        box_ = (c - rs * 0.9, c - rs * 0.9, c + rs * 0.9, c + rs * 0.9)
-        gd.arc(box_, a0, a1, fill=(46, 48, 50), width=3 * S)
-        if a0 > 0:
-            gd.arc(box_, a1 - (a1 - a0) * part, a1, fill=col, width=3 * S)
-        else:
-            gd.arc(box_, a0, a0 + (a1 - a0) * part, fill=col, width=3 * S)
-    def ct(t, y, size, col):
-        tw = gd.textlength(t, font=font(size * S))
-        gd.text((c - tw / 2, y), t, font=font(size * S), fill=col)
-    ct("SAM 18", c - rs * 0.62, 8, (170, 172, 170))
-    ct("14:32", c - rs * 0.40, 22, (236, 238, 236))
-    ct("75  ♥ 76", c + rs * 0.20, 9, (200, 202, 200))
-    ct("8 412", c + rs * 0.45, 8, (150, 152, 150))
-    gd.ellipse((c - rs * 0.06, c - rs * 0.76, c + rs * 0.06, c - rs * 0.64), fill=(53, 181, 90))
-    g = g.resize((x1 - x0, y1 - y0), Image.LANCZOS)
-    img.paste(g, (x0, y0))
+    img.paste(garmin_dial(x1 - x0), (x0, y0))
     # Plaque de numéro de série (code-barres).
     x0, y0, x1, y1 = box("serial", (210, 210, 202))
     d.text((x0 + 10, y0 + 6), "S/N 7741-0326-A", font=font(16), fill=(30, 30, 30))
@@ -310,6 +275,39 @@ def draw_labels(img):
         w = int(r.integers(1, 4))
         d.rectangle((x, y0 + 30, x + w - 1, y1 - 10), fill=(25, 25, 25))
         x += w + int(r.integers(1, 4))
+
+
+def garmin_dial(size):
+    """Cadran de la montre Garmin (disque de size px), comme l'écran de fn_watch (cadran FACE)."""
+    S = 4
+    sz = size * S
+    g = Image.new("RGB", (sz, sz), (22, 23, 24))
+    gd = ImageDraw.Draw(g)
+    c, rb, rs = sz / 2, sz / 2, sz / 2 * 0.82
+    gd.ellipse((0, 0, sz - 1, sz - 1), fill=(58, 60, 64))
+    gd.ellipse((S * 3, S * 3, sz - 1 - S * 3, sz - 1 - S * 3), fill=(74, 76, 80))
+    gd.ellipse((c - rs - 3 * S, c - rs - 3 * S, c + rs + 3 * S, c + rs + 3 * S), fill=(8, 8, 9))
+    gd.ellipse((c - rs, c - rs, c + rs, c + rs), fill=(2, 2, 3))
+    tw = gd.textlength("GARMIN", font=font(6 * S))
+    gd.text((c - tw / 2, c + rb * 0.84), "GARMIN", font=font(6 * S), fill=(190, 192, 196))
+    # Arcs de points (0 en haut, sens horaire) : 15 points, allumés selon la valeur.
+    for a0, a1, col, on in ((214, 326, (46, 148, 255), 11), (34, 146, (61, 219, 133), 9)):
+        for k in range(15):
+            a = math.radians(a0 + (a1 - a0) * k / 14)
+            x, y = c + rs * 0.9 * math.sin(a), c - rs * 0.9 * math.cos(a)
+            r = rs * 0.037
+            gd.ellipse((x - r, y - r, x + r, y + r), fill=col if k < on else (52, 54, 56))
+
+    def ct(t, y, sz_, col, dx=0):
+        tw = gd.textlength(t, font=font(sz_ * S))
+        gd.text((c - tw / 2 + dx, y), t, font=font(sz_ * S), fill=col)
+    ct("SAM. 25", c - rs * 0.66, 8, (140, 145, 150))
+    ct("14:32", c - rs * 0.50, 24, (242, 244, 244))
+    for dx, t, col in ((-rs * 0.44, "75", (46, 148, 255)), (0, "78", (255, 69, 84)), (rs * 0.44, "8 412", (61, 219, 133))):
+        r = rs * 0.05
+        gd.ellipse((c + dx - r, c + rs * 0.12 - r, c + dx + r, c + rs * 0.12 + r), fill=col)
+        ct(t, c + rs * 0.22, 8, (242, 244, 244), dx)
+    return g.resize((size, size), Image.LANCZOS)
 
 
 def main():

@@ -63,7 +63,7 @@ switch (_act) do {
     case "close": {
         if !(uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false]) exitWith { false };
         uiNamespace setVariable ["COMSPEC_ATAK_ShadeOpen", false];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         private _ctrls = uiNamespace getVariable ["COMSPEC_ATAK_ShadeCtrls", []];
         uiNamespace setVariable ["COMSPEC_ATAK_ShadeCtrls", []];
         if (["anim"] call comspec_atak_native_fnc_fx) then {

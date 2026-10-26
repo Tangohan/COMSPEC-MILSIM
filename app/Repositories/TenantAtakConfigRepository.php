@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SchemaPresenceCache;
 
 use PDO;
 
@@ -13,9 +14,13 @@ class TenantAtakConfigRepository
     use LazyDatabaseConnection;
 
 
+    /** PDO injectée (tests) : pas de cache fichier des drapeaux de schéma. */
+    private bool $injectedPdo = false;
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo;
+        $this->injectedPdo = $pdo !== null;
     }
 
     public function getByTenantId(int $tenantId): ?array
@@ -479,6 +484,12 @@ class TenantAtakConfigRepository
         if ($cached !== null) {
             return $cached;
         }
+        // Colonnes déjà constatées (storage/cache/schema-flags.json) : pas d’information_schema à chaque appel du jeu.
+        if (!$this->injectedPdo
+            && SchemaPresenceCache::isKnownColumn('tenant_atak_config', 'maintenance_enabled')
+            && SchemaPresenceCache::isKnownColumn('tenant_atak_config', 'maintenance_message')) {
+            return $cached = true;
+        }
         try {
             $st = $this->pdo()->query(
                 "SELECT COUNT(*) FROM information_schema.COLUMNS
@@ -487,6 +498,10 @@ class TenantAtakConfigRepository
             );
             if ($st && (int) $st->fetchColumn() >= 2) {
                 $cached = true;
+                if (!$this->injectedPdo) {
+                    SchemaPresenceCache::rememberColumn('tenant_atak_config', 'maintenance_enabled');
+                    SchemaPresenceCache::rememberColumn('tenant_atak_config', 'maintenance_message');
+                }
 
                 return true;
             }
@@ -650,6 +665,9 @@ class TenantAtakConfigRepository
         static $cached = null;
         if ($cached !== null) {
             return $cached;
+        }
+        if (!$this->injectedPdo) {
+            return $cached = SchemaPresenceCache::columnExists($this->pdo(), 'tenant_atak_config', 'access_key');
         }
         try {
             $st = $this->pdo()->query(

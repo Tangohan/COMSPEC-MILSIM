@@ -5,6 +5,10 @@
     Débit simulé (fn_netSend) : sans signal, l'envoi attend le retour du réseau ; seul le dernier état du marqueur part.
 */
 params [["_name", ""], ["_deleted", false]];
+// Mode « réseau ATAK uniquement » : le marqueur part aussi aux téléphones du canal (fn_markerNet), avec ou sans Athena.
+if (_name isNotEqualTo "") then {
+    [{ ["touch", _this] call comspec_atak_native_fnc_markerNet; }, [_name, _deleted], [0.5, 0] select _deleted] call CBA_fnc_waitAndExecute;
+};
 if (_name isEqualTo "" || {isNil "comspec_overwatch_connect_fnc_syncMapMarker"}) exitWith { false };
 // Laisse le temps au type, à la couleur et au texte d'être posés (le dernier appel global diffuse l'état).
 [{

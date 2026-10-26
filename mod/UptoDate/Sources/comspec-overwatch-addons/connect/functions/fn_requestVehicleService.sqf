@@ -10,6 +10,9 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
+// Requête HTTP synchrone dans la DLL : depuis un contexte non suspendable (bouton, action), on relance en spawn
+// pour passer par extAwait (appel asynchrone) au lieu de figer le jeu le temps de la réponse Athena.
+if (!canSuspend) exitWith { [_vehicle, _serviceType, _priority, _details] spawn comspec_overwatch_connect_fnc_requestVehicleService; true };
 
 if (isNull _vehicle) exitWith {
     ["Aucun véhicule sélectionné.", "system", "warn"] call comspec_overwatch_connect_fnc_announce;
@@ -34,7 +37,7 @@ _serviceData set ["requested_by_callsign", name player];
 
 private _jsonString = [_serviceData] call comspec_overwatch_connect_fnc_hashMapToJson;
 private _parsed = [
-    "COMSPECExtension" callExtension ["RequestVehicleService", [_jsonString]]
+    ["COMSPECExtension", "RequestVehicleService", [_jsonString]] call comspec_overwatch_connect_fnc_extAwait
 ] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
 _parsed params ["_ok", "", "_detail"];
 
@@ -50,15 +53,14 @@ private _serviceLabel = switch (toUpper _serviceType) do {
 if (_ok) then {
     [format ["Demande de %1 transmise.", _serviceLabel], "system", "info"] call comspec_overwatch_connect_fnc_announce;
 
-    if (_priority in ["HIGH", "CRITICAL"] && {[] call comspec_overwatch_connect_fnc_shouldShowScreenNotification}) then {
+    // Bandeau dans le téléphone ATAK natif (plus de hint par-dessus l'écran de jeu).
+    if (_priority in ["HIGH", "CRITICAL"] && {[] call comspec_overwatch_connect_fnc_shouldShowScreenNotification} && {!isNil "comspec_atak_native_fnc_notify"}) then {
         private _prioLabel = if (_priority isEqualTo "CRITICAL") then { "critique" } else { "haute" };
-        hint ((parseText format [
-            "<t color='#ff9900' size='1.3'>SERVICE VÉHICULE</t><br/>" +
-            "<t size='1.1'>%1 — priorité %2</t><br/>" +
-            "<t size='1'>Restez à proximité du véhicule</t>",
+        ["WARNING", format [
+            "SERVICE VÉHICULE — %1 — priorité %2 · Restez à proximité du véhicule",
             _serviceLabel,
             _prioLabel
-        ]) call comspec_overwatch_connect_fnc_tr);
+        ], 8, 30] call comspec_atak_native_fnc_notify;
     };
 
     if (_priority isEqualTo "CRITICAL") then {

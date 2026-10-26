@@ -38,7 +38,7 @@ private _checked = {
 private _save = {
     params ["_url"];
     profileNamespace setVariable ["COMSPEC_ATAK_BriefGoogleUrl", _url];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
 };
 
 switch (_action) do {
@@ -58,7 +58,7 @@ switch (_action) do {
     case "source": {
         call _keepDraft;
         profileNamespace setVariable ["COMSPEC_ATAK_BriefSource", _arg];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         uiNamespace setVariable ["COMSPEC_ATAK_BriefAutoTried", ""];
         if (_arg isEqualTo "GOOGLE" && {(profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""]) isEqualTo ""}) then {
             ["warn", "Source Google Slides : enregistrez d'abord un lien ci-dessous."] call _setTest;
@@ -88,7 +88,7 @@ switch (_action) do {
     case "auto": {
         call _keepDraft;
         profileNamespace setVariable ["COMSPEC_ATAK_BriefAuto", !(profileNamespace getVariable ["COMSPEC_ATAK_BriefAuto", false])];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         call _rerender;
     };
     case "test";
@@ -126,6 +126,9 @@ switch (_action) do {
             params ["_rid", "_url", "_broadcast"];
             private _t0 = diag_tickTime;
             waitUntil { sleep 0.25; (missionNamespace getVariable ["COMSPEC_GoogleBriefingRequestId", ""]) isNotEqualTo _rid || {diag_tickTime - _t0 > 45} };
+            // Chargement remplacé par un autre (nouvel id, pas "" posé par la réponse de la DLL) : c'est lui qui rendra compte.
+            private _cur = missionNamespace getVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+            if (_cur isNotEqualTo _rid && {_cur isNotEqualTo ""}) exitWith {};
             private _err = uiNamespace getVariable ["COMSPEC_ATAK_BriefGErr", []];
             private _res = switch (true) do {
                 case ((count _err) > 0): {

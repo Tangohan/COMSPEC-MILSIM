@@ -64,7 +64,7 @@ private _time = if (_full) then {
 
         if (!isNil "comspec_sse_fnc_showResult") then {
             _fog set ["lines", _lines];
-            [_fog] call comspec_sse_fnc_showResult;
+            [_fog, _target] call comspec_sse_fnc_showResult;
         };
     },
     [_target, _player, _full]

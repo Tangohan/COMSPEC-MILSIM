@@ -114,7 +114,7 @@ switch (_mode) do {
         private _reg = profileNamespace getVariable "cba_keybinding_registry_v3";
         if (!isNil "_reg") then {
             [_reg, _act, _binds] call CBA_fnc_hashSet;
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
         };
         // Pastille « prendre en main » du téléphone porté (fn_layoutApply) : affiche la nouvelle touche.
         if (!isNull ([] call comspec_atak_native_fnc_display)) then { [{ [] call comspec_atak_native_fnc_layoutApply; }] call CBA_fnc_execNextFrame; };

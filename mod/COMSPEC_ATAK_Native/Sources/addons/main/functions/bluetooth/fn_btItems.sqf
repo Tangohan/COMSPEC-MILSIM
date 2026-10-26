@@ -106,7 +106,7 @@ switch (_act) do {
                 private _l = +(profileNamespace getVariable ["COMSPEC_ATAK_PlanLib", []]);
                 _l pushBack [format ["%1 (de %2)", _n, _from], _w, _its, [_d, call _clock] select (_d isEqualTo "")];
                 profileNamespace setVariable ["COMSPEC_ATAK_PlanLib", _l select [((count _l) - 30) max 0]];
-                saveProfileNamespace;
+                [] call comspec_atak_native_fnc_saveProfile;
                 format ["plan « %1 » ajouté à la bibliothèque de l'app Plan", _n]
             };
             case "seek": {

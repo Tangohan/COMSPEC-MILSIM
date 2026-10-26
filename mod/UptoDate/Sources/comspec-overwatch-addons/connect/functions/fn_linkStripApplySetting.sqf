@@ -10,7 +10,7 @@ missionNamespace setVariable ["comspec_overwatch_show_link_strip", _enabled, fal
 
 if (_persist) then {
     profileNamespace setVariable ["COMSPEC_LinkStripVisible", _enabled];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 if (!isNil "cba_settings_fnc_set") then {

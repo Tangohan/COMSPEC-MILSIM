@@ -18,10 +18,10 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.617;
-        versionStr = "1.6.17";
-        versionAr[] = {1, 6, 17};
-        // 1.6.17 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
+        version = 1.618;
+        versionStr = "1.6.18";
+        versionAr[] = {1, 6, 18};
+        // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
     };
 };
 
@@ -113,6 +113,7 @@ class CfgFunctions {
             class diagIsolateStop {};
             class diagIsolateOnLoad {};
             class diagChecks {};
+            class diagSelfTest {};
             class diagAction {};
             class collectBugReportLog {};
             class disconnect {};
@@ -146,6 +147,7 @@ class CfgFunctions {
             class arsenalApplyLoadout {};
             class arsenalPushAll {};
             class arsenalPullAll {};
+            class arsenalSyncAll {};
             class arsenalApplyCloud {};
             class arsenalOverlayShow {};
             class arsenalOverlayBeginLoad {};
@@ -200,6 +202,7 @@ class CfgFunctions {
             class callExtLogged {};
             class outboxPush {};
             class outboxFlush {};
+            class saveProfile {};
             class outboxState {};
             class wallClockSeconds {};
             class openTabletView {};
@@ -496,6 +499,7 @@ class CfgFunctions {
             class linkDegradeSimApplySetting {};
             class isLinkDegradeSimActive {};
             class pollModModules {};
+            class pollDataFlows {};
             class pollExperience {};
             class applyTenantExperience {};
             class applyDonorPerk {};
@@ -653,10 +657,10 @@ class CfgFunctions {
     };
 };
 
+// Pas de mode / jip au niveau addon : ils s'appliqueraient à tout le jeu (liste blanche stricte imposée aux autres mods,
+// à Zeus et au vanilla). Seules les classes COMSPEC sont déclarées : elles servent quand une mission active la liste blanche.
 class CfgRemoteExec {
     class Functions {
-        mode = 1;
-        jip = 0;
         class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_relayZeusAtakEffect { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
@@ -671,8 +675,8 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_setAtakShowEnemyAi { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_forceSyncData { allowedTargets = 0; };
 
-        // Ces cinq-là étaient appelées via remoteExec sans figurer ici. « mode = 1 »
-        // étant une liste blanche stricte, les appels étaient rejetés en silence :
+        // Ces cinq-là étaient appelées via remoteExec sans figurer ici. Avec une liste
+        // blanche stricte (« mode = 1 » posé par la mission), les appels étaient rejetés en silence :
         // les ordres n'arrivaient pas, les zones posées depuis Zeus ne se créaient
         // pas, et la reprise de session après plantage ne se faisait pas.
         // allowedTargets reprend la cible réelle de chaque appel, au plus juste.
@@ -683,10 +687,6 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_clearDisconnectedAtakState { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_detonateChargeLocal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_applyAiMoveOrder { allowedTargets = 0; };
-    };
-    class Commands {
-        mode = 1;
-        jip = 0;
     };
 };
 

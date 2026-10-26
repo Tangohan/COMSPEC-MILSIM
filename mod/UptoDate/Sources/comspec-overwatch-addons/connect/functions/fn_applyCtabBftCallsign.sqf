@@ -46,7 +46,7 @@ if (_veh isNotEqualTo player && {!isNull _veh}) then {
 private _stored = profileNamespace getVariable ["COMSPEC_CtabBftCallsign", ""];
 if (!([_stored, _callsign] call _fncSame)) then {
     profileNamespace setVariable ["COMSPEC_CtabBftCallsign", _callsign];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_relabelBft") then {

@@ -42,8 +42,15 @@ if (_label == "") exitWith {
 
 private _localPath = "";
 if (_avatarUrl != "") then {
+    // Clé avatar_<uid>_<empreinte de l'adresse> : la DLL rend alors le portrait déjà en cache sans requête
+    // (« avatar_<uid> » seul n'avait qu'un « _ » et retéléchargeait à chaque ouverture). Sans HashText
+    // (DLL ancienne) : clé historique. extAwait : le GET ne fige plus le jeu depuis le spawn appelant.
     private _cacheKey = "avatar_" + (getPlayerUID player);
-    private _raw = ["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_avatarUrl, _cacheKey]]] call comspec_overwatch_connect_fnc_extResult;
+    private _urlHash = [_avatarUrl] call comspec_overwatch_connect_fnc_arsenalHash;
+    if (_urlHash isEqualType "" && {_urlHash isNotEqualTo ""}) then {
+        _cacheKey = format ["avatar_%1_%2", getPlayerUID player, _urlHash select [0, 16]];
+    };
+    private _raw = [["COMSPECExtension", "DownloadBriefingSlideImage", [_avatarUrl, _cacheKey]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     private _parts = _raw splitString "|";
     private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
     if (_prefix == "OK" && {count _parts >= 2}) then { _localPath = _parts select 1; };
