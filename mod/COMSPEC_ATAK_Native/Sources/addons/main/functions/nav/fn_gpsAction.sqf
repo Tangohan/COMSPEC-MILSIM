@@ -35,6 +35,9 @@ switch (_act) do {
         ["MAP"] call comspec_atak_native_fnc_navigate;
     };
     case "stop": {
+        // Calcul en cours et demande en attente annulés (avant : l'itinéraire arrêté revenait seul à la fin du calcul).
+        missionNamespace setVariable ["COMSPEC_ATAK_RoutePending", nil];
+        missionNamespace setVariable ["COMSPEC_ATAK_RouteGen", (missionNamespace getVariable ["COMSPEC_ATAK_RouteGen", 0]) + 1];
         missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap];
         ["INFO", "Guidage arrêté", 2, 10] call comspec_atak_native_fnc_notify;
         [{ ["GPS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;

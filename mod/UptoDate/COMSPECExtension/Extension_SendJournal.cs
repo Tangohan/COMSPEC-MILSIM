@@ -76,22 +76,23 @@ public static partial class Extension
         return url;
     }
 
+    // Libellés et raisons en anglais (langue par défaut du mod) : affichés tels quels par l'app Réseau du téléphone.
     private static string JournalLabel(string path)
     {
         var p = path.ToLowerInvariant();
         if (p.Contains("/api/cas")) return "9-line CAS";
-        if (p.Contains("/discord")) return "Message Discord";
-        if (p.Contains("/logistics")) return "Demande logistique";
-        if (p.Contains("/api/sse/")) return "Fiche SSE";
-        if (p.Contains("/medical")) return "Alerte médicale";
-        if (p.Contains("/orders") || p.Contains("/order-status")) return "Statut d'ordre";
-        if (p.Contains("/reports")) return "Rapport tactique";
-        if (p.Contains("/recon")) return "Note de reconnaissance";
-        if (p.Contains("/intel")) return "Renseignement";
+        if (p.Contains("/discord")) return "Discord message";
+        if (p.Contains("/logistics")) return "Logistics request";
+        if (p.Contains("/api/sse/")) return "SSE record";
+        if (p.Contains("/medical")) return "Medical alert";
+        if (p.Contains("/orders") || p.Contains("/order-status")) return "Order status";
+        if (p.Contains("/reports")) return "Tactical report";
+        if (p.Contains("/recon")) return "Recon note";
+        if (p.Contains("/intel")) return "Intel";
         if (p.Contains("/briefing")) return "Briefing";
         if (p.Contains("/upload") || p.Contains("/photo") || p.Contains("/image")) return "Photo";
-        if (p.Contains("/chat")) return "Message";
-        if (p.Contains("/operator")) return "Profil opérateur";
+        if (p.Contains("/chat")) return "Chat message";
+        if (p.Contains("/operator")) return "Operator profile";
         return path;
     }
 
@@ -156,9 +157,9 @@ public static partial class Extension
             if (code is >= 200 and < 300) { JournalTrack(url, body, "done", code.ToString(), code); return; }
             var reason = code switch
             {
-                0 or -1 => "délai dépassé ou pas de réseau",
-                429 => "Athena surchargé (429)",
-                503 => "Athena indisponible (503)",
+                0 or -1 => "timeout or no network",
+                429 => "Athena overloaded (429)",
+                503 => "Athena unavailable (503)",
                 _ => "http_" + code
             };
             lock (JournalLock)

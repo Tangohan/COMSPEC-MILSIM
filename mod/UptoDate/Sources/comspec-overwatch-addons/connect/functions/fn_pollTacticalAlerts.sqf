@@ -41,7 +41,8 @@ private _playUnconscious = false;
 {
     private _line = _x;
     if (_line isEqualTo "") then { continue };
-    private _cols = _line splitString _tab;
+    // splitKeepEmpty : la DLL n'écrit pas de marqueur pour les cellules vides (splitString décalerait les colonnes).
+    private _cols = [_line, _tab] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _cols) < 6) then { continue };
 
     private _id = _cols select 0;

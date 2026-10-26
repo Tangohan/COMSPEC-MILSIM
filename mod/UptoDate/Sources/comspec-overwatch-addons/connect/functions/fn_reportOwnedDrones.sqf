@@ -19,6 +19,9 @@ if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith { 0 };
 if (isNull player) exitWith { 0 };
 // Drones non remontés par choix de la communauté (fn_pollDataFlows).
 if !((missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["vehicles", true]) exitWith { 0 };
+// Téléphone cassé / éteint / brouillé / hors couverture : pas de piste drone (même règle que updatePosition).
+private _tx = [false] call comspec_overwatch_connect_fnc_canTransmit;
+if !(_tx getOrDefault ["can_transmit", true]) exitWith { 0 };
 
 private _uid = getPlayerUID player;
 private _now = diag_tickTime;

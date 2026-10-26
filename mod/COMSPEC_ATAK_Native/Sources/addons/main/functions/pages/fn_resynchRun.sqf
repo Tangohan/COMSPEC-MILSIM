@@ -53,7 +53,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];
             || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0};
         if (_gmOn && {_bridge}) then {
             (["push"] call comspec_atak_native_fnc_garminTick) params [["_t", -1], ["_st", ""]];
-            ["garmin", ["warn", "ok"] select (_st isEqualTo "OK"), "Montre Garmin", ["Pas partie : " + _st + ".", "Pas, activités, cardio, stress et Body Battery."] select (_st isEqualTo "OK")] call _add;
+            ["garmin", ["warn", "ok"] select (_st isEqualTo "OK"), "Montre Garmin", [format ["Pas partie : %1.", _st], "Pas, activités, cardio, stress et Body Battery."] select (_st isEqualTo "OK")] call _add;
         } else {
             ["garmin", "off", "Montre Garmin", ["COMSPEC Link absent.", "Pas de montre portée : rien à envoyer."] select _bridge] call _add;
         };
@@ -73,7 +73,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];
             private _sent = _changed isNotEqualTo [] && {[_changed] call comspec_overwatch_connect_fnc_arsenalPushAll};
             private _rest = ["", format [" %1 tenue(s) jamais partagée(s) restent sur ce PC (Tenues Athena pour les envoyer).", _never]] select (_never > 0);
             ["wardrobe", [["same", "warn"] select (_changed isNotEqualTo []), "ok"] select _sent, "Tenues ACE Arsenal", [
-                "Celles du site sont à jour." + _rest,
+                format ["Celles du site sont à jour.%1", _rest],
                 format ["%1 tenue(s) modifiée(s) ici %2.%3", count _changed, ["n'ont pas pu partir", "renvoyée(s)"] select _sent, _rest]
             ] select (_changed isNotEqualTo [])] call _add;
         };
@@ -83,13 +83,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];
         ["plan", [["same", "warn"] select _planSent, "ok"] select (_planSent && {_pst isEqualTo "plan envoyé"}), "Plan de briefing", switch (true) do {
             case (!_planSent): { "Pas de plan partagé dans cette mission." };
             case (_pst isEqualTo "plan envoyé"): { format ["Révision %1, %2 élément(s).", _prev, _pn] };
-            default { "Pas parti : " + _pst + "." };
+            default { format ["Pas parti : %1.", _pst] };
         }] call _add;
         (missionNamespace getVariable ["COMSPEC_ATAK_SquadSyncLast", []]) params [["_st", -1], ["_sst", ""], ["_sn", 0]];
         ["squads", [["same", "warn"] select _squadSent, "ok"] select (_squadSent && {_sst isEqualTo "OK"}), "Escouades et équipes", switch (true) do {
             case (!_squadSent): { "Rien à renvoyer." };
             case (_sst isEqualTo "OK"): { format ["%1 équipe(s) de feu et leurs rôles.", _sn] };
-            default { "Pas parti : " + toLower _sst + "." };
+            default { format ["Pas parti : %1.", toLower _sst] };
         }] call _add;
     };
 

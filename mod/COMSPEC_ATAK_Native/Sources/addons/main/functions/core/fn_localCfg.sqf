@@ -119,7 +119,11 @@ private _readFile = {
         private _chunk = _rest select [_bar + 1];
         if (_chunk isEqualTo "") exitWith {};
         _out = _out + _chunk;
-        _off = count _out;
+        // La DLL compte en caractères UTF-16 (Substring) ; sans forceUnicode, count renvoie des octets UTF-8 (accents).
+        // Caractère hors plan de base (émoji) : deux unités UTF-16.
+        forceUnicode 0;
+        private _n = count _chunk;
+        _off = _off + _n + ({ _x > 65535 } count (toArray _chunk));
     };
     if (_err isNotEqualTo []) exitWith { _err };
     private _arr = parseSimpleArray _out;
@@ -172,7 +176,14 @@ switch (_act) do {
         private _json = [_cfg] call comspec_atak_native_fnc_json;
         private _ok = false;
         if (((["LocalBegin"] call comspec_atak_native_fnc_extensionCall) select [0, 3]) isEqualTo "OK|") then {
-            for "_i" from 0 to ((count _json) - 1) step 4000 do { ["LocalAppend", [_json select [_i, 4000]]] call comspec_atak_native_fnc_extensionCall; };
+            // Découpe en caractères, pas en octets : un accent coupé en deux écrivait U+FFFD dans le fichier.
+            forceUnicode 0;
+            private _len = count _json;
+            for "_i" from 0 to (_len - 1) step 2000 do {
+                forceUnicode 0;
+                private _part = _json select [_i, 2000];
+                ["LocalAppend", [_part]] call comspec_atak_native_fnc_extensionCall;
+            };
             _ok = ((["LocalCommit", ["config"]] call comspec_atak_native_fnc_extensionCall) select [0, 3]) isEqualTo "OK|";
         };
         private _st = missionNamespace getVariable ["COMSPEC_ATAK_LocalCfgState", ["default", "", false]];

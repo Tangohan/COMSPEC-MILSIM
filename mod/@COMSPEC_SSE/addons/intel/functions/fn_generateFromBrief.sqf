@@ -21,11 +21,29 @@ private _complexity = _ov getOrDefault ["complexity", "DETAILED"];
 private _theme = _ov getOrDefault ["theme", "fuel_delivery"];
 
 private _b = toLower _brief;
-if ((_b find "5") >= 0 || {(_b find "cinq") >= 0}) then { _count = 5; };
-if ((_b find "3") >= 0 || {(_b find "trois") >= 0}) then { _count = 3; };
+// Effectif : nombre suivi d'un nom d'effectif (« cellule de 15 personnes » → 15, borné 1..10),
+// sinon premier nombre isolé d'au plus deux chiffres (pas une grille ni une heure),
+// sinon nombre en toutes lettres (FR / EN).
+private _num = _b regexFind ["([0-9]{1,2})\s*(personnes?|hommes?|membres?|men|people|members?)", 0];
+if (_num isNotEqualTo []) then {
+    _num = [[(_num select 0) select 1]];
+} else {
+    _num = _b regexFind ["(^|[^0-9])[0-9]{1,2}([^0-9]|$)", 0];
+    if (_num isNotEqualTo []) then {
+        private _m = (((_num select 0) select 0) select 0) regexReplace ["[^0-9]", ""];
+        _num = [[[_m, 0]]];
+    };
+};
+if (_num isNotEqualTo []) then {
+    _count = ((parseNumber (((_num select 0) select 0) select 0)) max 1) min 10;
+} else {
+    if ((_b find "cinq") >= 0 || {(_b find "five") >= 0}) then { _count = 5; } else {
+        if ((_b find "trois") >= 0 || {(_b find "three") >= 0}) then { _count = 3; };
+    };
+};
 if ((_b find "financ") >= 0) then { _profile = "FINANCIER"; _theme = "finance_drop"; };
-if ((_b find "ied") >= 0 || {(_b find "engin") >= 0}) then { _profile = "TECHNICIAN"; _theme = "ied_cell"; };
-if ((_b find "courrier") >= 0) then { _profile = "COURIER"; _theme = "courier_run"; };
+if ((_b find "ied") >= 0 || {(_b find "engin") >= 0} || {(_b find "explosi") >= 0}) then { _profile = "TECHNICIAN"; _theme = "ied_cell"; };
+if ((_b find "courrier") >= 0 || {(_b find "courier") >= 0}) then { _profile = "COURIER"; _theme = "courier_run"; };
 if ((_b find "command") >= 0 || {(_b find "chef") >= 0}) then { _profile = "COMMANDER"; _theme = "meeting_alpha"; };
 
 private _seed = floor random 999999;

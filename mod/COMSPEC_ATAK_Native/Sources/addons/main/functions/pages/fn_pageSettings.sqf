@@ -187,6 +187,14 @@ private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _mo
         { [["attach", "detach"] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])] call comspec_atak_native_fnc_powerBank; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
     ["switch", "Filtre d'écran JVN", ["filter"] call comspec_atak_native_fnc_screenGlow,
         { ["toggle"] call comspec_atak_native_fnc_screenGlow; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+    // Affichage situation sous JVN (Overwatch connect, fn_ecotiApplyHudSetting) : même case que le menu CBA, profil compris.
+    ["switch", "Infos tactiques dans les JVN", (missionNamespace getVariable ["comspec_overwatch_ecoti_hud", false]) isEqualTo true,
+        {
+            if (isNil "comspec_overwatch_connect_fnc_ecotiApplyHudSetting") exitWith {};
+            [!((missionNamespace getVariable ["comspec_overwatch_ecoti_hud", false]) isEqualTo true)] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
+            [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        },
+        "Alliés, repères et véhicules dans la vue quand vos JVN sont allumées. Marche aussi sans Athena"],
     ["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7", [["OLIVE", "olive"], ["NOIR", "black"], ["TAN", "tan"]], "Couleur du module de l'app Extraction"] call _profSegment
 ];
 _perso pushBack (["patch", "Patch au dos", format ["Porté : %1", (["name", profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"]] call comspec_atak_native_fnc_patchCatalog) regexReplace ["[<>&]", ""]]] call _fold);

@@ -60,12 +60,14 @@ switch (_act) do {
         private _ip = _pts select 0;
         _map drawIcon ["\A3\ui_f\data\map\markers\military\start_CA.paa", _cy, _ip, 22, 22, 0, "IP", 2, 0.032 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
         if ((count _pts) < 2) exitWith {};
-        private _c = ["calc"] call comspec_atak_native_fnc_jtacTool;
         private _tg = _pts select 1;
+        // À chaque image : seuls le cap magnétique et la distance (pas le calcul complet, ami le plus proche et grilles).
+        private _mag = ([_ip, _tg] call comspec_atak_native_fnc_magBearing) select 1;
+        private _nmTxt = ((_ip distance2D _tg) / 1852) toFixed 1;
         _map drawArrow [_ip, _tg, _cy];
         _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", _red, _tg, 22, 22, 0, "TGT", 2, 0.032 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
         private _mid = (_ip vectorAdd _tg) vectorMultiply 0.5;
-        _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", _cy, _mid, 0, 0, 0, format ["%1° M · %2 NM", [_c get "mag", 3] call CBA_fnc_formatNumber, _c get "nm"], 2, 0.032 * _ts, (COMSPEC_ATAK_FontSet select 1), "center"];
+        _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", _cy, _mid, 0, 0, 0, format ["%1° M · %2 NM", [_mag, 3] call CBA_fnc_formatNumber, _nmTxt], 2, 0.032 * _ts, (COMSPEC_ATAK_FontSet select 1), "center"];
     };
     case "card": {
         // Fiche en lignes fixes (numéro de ligne du 9-LINE, libellé, valeur) : chaque ligne a sa hauteur, rien ne

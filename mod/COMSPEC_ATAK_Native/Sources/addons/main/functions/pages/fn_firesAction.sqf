@@ -36,15 +36,17 @@ private _order = {
     ];
     while { (count _outbox) > 30 } do { _outbox deleteAt 0; };
     ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
+    // Libellé « Rapport » : rangé en urgent par fn_netSend (passe devant en file, jamais abandonné quand elle est pleine).
     [{
         params ["_id", "_author", "_message"];
         private _raw = ["SendChat", [_author, _message]] call comspec_atak_native_fnc_extensionCall;
-        private _ok = (_raw find "OK|") isEqualTo 0;
+        // SendChat part en file dans la DLL et répond "" : seul un retour ERR est un échec.
+        private _ok = (toUpper (_raw select [0, 3])) isNotEqualTo "ERR";
         private _outbox = +((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["outbox", []]);
         { if ((_x getOrDefault ["id", ""]) isEqualTo _id) then { _x set ["status", ["FAILED", "SENT"] select _ok]; }; } forEach _outbox;
         ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
         if !(_ok) then { ["WARNING", "Athena indisponible : message gardé sur le terminal", 4, 30] call comspec_atak_native_fnc_notify; };
-    }, [_id, _author, _body], "Message", 1] call comspec_atak_native_fnc_netSend;
+    }, [_id, _author, _body], format ["Rapport de feu %1", _type], 1] call comspec_atak_native_fnc_netSend;
 };
 
 switch (_action) do {
@@ -141,7 +143,7 @@ switch (_action) do {
             if (!_ok) then { ["CAS", "", _text, "URGENT", "all"] call _order; };
             private _log = _f getOrDefault ["log", []];
             _log pushBack format ["<t color='#5cc76b'>%1</t> 9-LINE · %2 · %3", [] call _time, _lines select 5, ["ordre CAS", "Athena"] select _ok];
-            _f set ["log", _log];
+            _f set ["log", _log select [((count _log) - 20) max 0]];
             [["9-line transmis en ordre CAS (la DLL ne connaît pas encore SubmitNineLine).", "9-line transmis à Athena : les pilotes le reçoivent."] select _ok] call _say;
             ["SUCCESS", "9-LINE transmis", 3, 50] call comspec_atak_native_fnc_notify;
         };
@@ -166,7 +168,7 @@ switch (_action) do {
         ["CAS", "", format ["5-LINE | 1 %1 | 2 %2 | 3 %3 | 4 %4 | 5 %5", _lines select 0, _lines select 1, _lines select 2, _lines select 3, _lines select 4], "URGENT", "all"] call _order;
         private _log = _f getOrDefault ["log", []];
         _log pushBack format ["<t color='#5cc76b'>%1</t> 5-LINE · %2", [] call _time, _lines select 2];
-        _f set ["log", _log];
+        _f set ["log", _log select [((count _log) - 20) max 0]];
         ["5-line transmis."] call _say;
         ["SUCCESS", "5-LINE transmis", 3, 50] call comspec_atak_native_fnc_notify;
     };
@@ -287,7 +289,7 @@ switch (_action) do {
         _f set ["activeGrid", _sol get "grid"];
         private _log = _f getOrDefault ["log", []];
         _log pushBack format ["<t color='#e5483a'>%1</t> TIR · %2 · %3 x%4 · %5", [] call _time, _sol get "grid", _ammo, _rounds, _how];
-        _f set ["log", _log];
+        _f set ["log", _log select [((count _log) - 20) max 0]];
         private _msn = _f getOrDefault ["missions", []];
         _msn pushBack [[] call _time, _sol get "grid", ["HE", "ILM", "FUM"] select ((["HE", "ILLUM", "SMOKE"] find _ammo) max 0), _rounds, _how, _ammo, _gunId];
         _f set ["missions", _msn select [((count _msn) - 20) max 0]];
@@ -304,7 +306,7 @@ switch (_action) do {
         _f deleteAt "activeGrid";
         private _log = _f getOrDefault ["log", []];
         _log pushBack format ["<t color='#8a9a93'>%1</t> FIN DE MISSION · %2", [] call _time, _eomGrid];
-        _f set ["log", _log];
+        _f set ["log", _log select [((count _log) - 20) max 0]];
         ["Fin de mission transmise."] call _say;
     };
 };

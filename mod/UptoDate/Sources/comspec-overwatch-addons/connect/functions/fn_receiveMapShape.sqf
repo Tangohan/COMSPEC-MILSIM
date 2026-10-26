@@ -9,7 +9,8 @@ params [["_payload", [], [[]]]];
 if (count _payload < 5) exitWith {};
 
 private _shapeId = str (_payload select 0);
-private _type = toUpper (str (_payload param [1, "POINT"]));
+private _typeRaw = _payload param [1, "POINT"];
+private _type = toUpper (if (_typeRaw isEqualType "") then { _typeRaw } else { str _typeRaw });
 private _label = _payload param [2, ""];
 private _color = _payload param [3, "ColorRed"];
 private _posX = _payload param [4, 0];

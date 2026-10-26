@@ -9,9 +9,11 @@ namespace COMSPECExtension;
 /// En multijoueur, copyToClipboard / copyFromClipboard d'Arma sont sans effet : la DLL lit et écrit le texte Unicode.
 /// Commandes SQF (retour "OK|..." ou "ERR|...") :
 ///   ClipBegin                 → vide le tampon d'écriture
-///   ClipAppend [morceau]      → ajoute au tampon (morceaux de 4000 caractères : la ligne d'appel Arma est bornée)
+///   ClipAppend [morceau]      → ajoute au tampon (morceaux coupés en caractères côté SQF, forceUnicode 0 : chaque
+///                               argument est décodé seul en UTF-8, un accent coupé en deux deviendrait U+FFFD)
 ///   ClipCommit                → écrit le tampon dans le presse-papiers
 ///   ClipGet [décalage]        → OK|longueur totale|morceau (lecture par morceaux, la réponse Arma est bornée)
+///                               longueur et décalage en unités UTF-16 (string.Length), comme LocalGet
 /// </summary>
 public static partial class Extension
 {

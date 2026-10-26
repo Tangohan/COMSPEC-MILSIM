@@ -65,7 +65,8 @@ private _register = {
     _o setVariable ["COMSPEC_AtakRelayConverted", _cls, true];
     private _list = (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x };
     _list pushBackUnique _o;
-    missionNamespace setVariable ["COMSPEC_AtakRelays", _list, true];
+    // Liste locale ici : diffusée une seule fois après le balayage (pas une fois par objet converti).
+    missionNamespace setVariable ["COMSPEC_AtakRelays", _list];
     if (!isNil "comspec_overwatch_connect_fnc_syncAtakRelay") then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
 };
 private _height = {
@@ -98,7 +99,10 @@ switch (_mode) do {
             [_x, _x, typeOf _x, [_x] call _height] call _register;
             _n = _n + 1;
         } forEach _new;
-        if (_n > 0) then { ["INFO", "RELAIS", format ["%1 antenne(s) de la mission converties en relais ATAK", _n]] call comspec_atak_native_fnc_log; };
+        if (_n > 0) then {
+            missionNamespace setVariable ["COMSPEC_AtakRelays", missionNamespace getVariable ["COMSPEC_AtakRelays", []], true];
+            ["INFO", "RELAIS", format ["%1 antenne(s) de la mission converties en relais ATAK", _n]] call comspec_atak_native_fnc_log;
+        };
         // Décor de la carte : une seule fois par mission.
         if (_level < 2 || {missionNamespace getVariable ["COMSPEC_ATAK_ConvTerrainDone", false]}) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_ConvTerrainDone", true];
@@ -117,6 +121,7 @@ switch (_mode) do {
             _proxies pushBack [_pr, _t];
         } forEach (_sorted select [0, 60]);
         missionNamespace setVariable ["COMSPEC_ATAK_ConvProxies", _proxies];
+        if (_proxies isNotEqualTo []) then { missionNamespace setVariable ["COMSPEC_AtakRelays", missionNamespace getVariable ["COMSPEC_AtakRelays", []], true]; };
         ["INFO", "RELAIS", format ["%1 antenne(s) du décor converties en relais ATAK", count _proxies]] call comspec_atak_native_fnc_log;
     };
     case "check": {

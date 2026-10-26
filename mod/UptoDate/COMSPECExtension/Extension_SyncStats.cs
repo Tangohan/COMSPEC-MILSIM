@@ -41,6 +41,10 @@ public static partial class Extension
 
     private const int EtagMaxEntries = 96;
     private const int EtagMaxBodyBytes = 512 * 1024;
+    /// <summary>Corps décompressé au plus : une petite « bombe » gzip (CDN tiers d'une diapositive) n'alloue pas des Go.</summary>
+    private const int MaxDecompressedBodyBytes = 32 * 1024 * 1024;
+    /// <summary>Copie gardée au moment où l'empreinte part : un 304 la ressert même si le cache l'a évincée entre-temps.</summary>
+    private static readonly HttpRequestOptionsKey<EtagEntry> EtagSentKey = new("comspec.etag");
     private const int TrafficWindowSeconds = 300;
     private static readonly ConcurrentDictionary<string, TrafficChannel> TrafficChannels = new();
     private static readonly ConcurrentDictionary<string, EtagEntry> EtagCache = new();
@@ -83,8 +87,9 @@ public static partial class Extension
             if (!req.Headers.Contains("Accept-Encoding"))
                 req.Headers.TryAddWithoutValidation("Accept-Encoding", "gzip");
             if (req.Method == HttpMethod.Get && req.RequestUri != null
-                && EtagCache.TryGetValue(req.RequestUri.AbsoluteUri, out var e) && e.Etag.Length > 0)
-                req.Headers.TryAddWithoutValidation("If-None-Match", e.Etag);
+                && EtagCache.TryGetValue(req.RequestUri.AbsoluteUri, out var e) && e.Etag.Length > 0
+                && req.Headers.TryAddWithoutValidation("If-None-Match", e.Etag))
+                req.Options.Set(EtagSentKey, e);
         }
         catch { /* en-têtes best-effort */ }
     }
@@ -112,12 +117,29 @@ public static partial class Extension
                 using var src = new MemoryStream(wire);
                 using var unzip = new GZipStream(src, CompressionMode.Decompress);
                 using var dst = new MemoryStream();
-                unzip.CopyTo(dst);
+                var buf = new byte[81920];
+                int n;
+                while ((n = unzip.Read(buf, 0, buf.Length)) > 0)
+                {
+                    if (dst.Length + n > MaxDecompressedBodyBytes)
+                    {
+                        // Trop gros une fois décompressé : réponse rendue vide en 502, rien n'est gardé en mémoire.
+                        var oldBig = resp.Content;
+                        resp.StatusCode = HttpStatusCode.BadGateway;
+                        resp.Content = new ByteArrayContent(Array.Empty<byte>());
+                        oldBig.Dispose();
+                        NoteTraffic(TrafficChannelKey(req.RequestUri), outBytes, inBytes, 502);
+                        return;
+                    }
+                    dst.Write(buf, 0, n);
+                }
                 body = dst.ToArray();
             }
             var contentType = resp.Content.Headers.ContentType?.ToString() ?? "";
             var key = req.RequestUri?.AbsoluteUri ?? "";
-            if (code == 304 && req.Method == HttpMethod.Get && EtagCache.TryGetValue(key, out var cached))
+            EtagEntry? cached = null;
+            if (code == 304 && req.Method == HttpMethod.Get
+                && (req.Options.TryGetValue(EtagSentKey, out var sent) ? (cached = sent) != null : EtagCache.TryGetValue(key, out cached)))
             {
                 resp.StatusCode = HttpStatusCode.OK;
                 body = cached.Body;

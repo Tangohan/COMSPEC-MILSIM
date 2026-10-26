@@ -418,10 +418,19 @@ private _fnc_applyNet = {
     "comspec_overwatch_ecoti_hud", "CHECKBOX",
     [
         "Infos tactiques dans les JVN",
-        "Décoché par défaut. Coché : alliés, marqueurs et véhicules s'affichent dans votre vision quand vous portez des JVN, avec boussole et étiquettes, comme un casque connecté. Aussi réglable dans le téléphone (Réglages). Sans effet si le mod F-PANO ECOTI est chargé."
+        "Décoché par défaut. Coché suffit : alliés, marqueurs et véhicules s'affichent dans votre vision quand vos JVN sont allumées, avec boussole et étiquettes, comme un casque connecté. Marche aussi sans Athena (hors ligne, mode local avec TOC). Le même interrupteur est dans le téléphone (Réglages › Accessoires). Sans effet si le mod F-PANO ECOTI est chargé."
     ],
     ["COMSPEC", "Overwatch · Infos tactiques JVN"],
-    false
+    false, false,
+    {
+        params ["_v"];
+        // Menu CBA et téléphone gardent le même état : le profil (relu au démarrage) suit la case CBA.
+        // Avant : un ancien « non » du téléphone resté dans le profil décochait la case à chaque mission.
+        if (!(_v isEqualType true)) exitWith {};
+        if ((profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"]) isEqualTo _v) exitWith {};
+        profileNamespace setVariable ["COMSPEC_EcotiHudEnabled", _v];
+        if (!isNil "comspec_overwatch_connect_fnc_saveProfile") then { [] call comspec_overwatch_connect_fnc_saveProfile; };
+    }
 ] call comspec_overwatch_connect_fnc_addSetting;
 
 [

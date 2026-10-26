@@ -67,6 +67,9 @@ private _processOne = {
     if (isNull _ent) exitWith {};
     if (!isNil "comspec_sse_fnc_isHatchetVehicle" && {[_ent] call comspec_sse_fnc_isHatchetVehicle}) exitWith {};
     if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
+    // Fiche déjà générée : on la garde (identité et exploitation joueurs conservées).
+    private _existing = [_ent] call comspec_sse_fnc_getData;
+    if (!isNil "_existing" && {[_existing, "generated", false] call comspec_sse_fnc_getPair}) exitWith {};
 
     private _processed = _state getOrDefault ["processed", []];
 
