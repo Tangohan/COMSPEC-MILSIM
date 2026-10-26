@@ -905,7 +905,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 ["COMSPEC ATAK", "GarminClose", ["Montre Garmin : éteindre", "Éteint la montre Garmin (sinon : appui long sur la touche Montre du jeu, O)."], { ["close"] call comspec_atak_native_fnc_watch }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;
-addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; ["flush"] call comspec_atak_native_fnc_profileSave; }];
+// Distances et heures de vol : relais du joueur quand le serveur n'arrive pas à envoyer à Athena (COMSPEC_ATAK_SrvPlayOK faux).
+[{ ["self"] call comspec_atak_native_fnc_distanceServer; }, 3] call COMSPEC_ATAK_PfhSpread;
+addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; ["flush"] call comspec_atak_native_fnc_profileSave; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
@@ -1030,9 +1032,15 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 {
     addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
 } forEach ["Ended", "MPEnded"];
-// Quitter la partie (Échap > Quitter) ne déclenche pas Ended : l'écran de jeu qui se ferme vide aussi l'écriture.
+// Relais des distances : fin de mission côté serveur seulement (MPEnded), sinon perdu jusqu'à 10 min de compteurs.
+addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; }];
+// Quitter la partie (Échap > Quitter) ne déclenche pas Ended : l'écran de jeu qui se ferme vide aussi l'écriture
+// (profil et relais des distances, l'équivalent du départ d'un joueur côté serveur).
 [{ !isNull (findDisplay 46) }, {
-    (findDisplay 46) displayAddEventHandler ["Unload", { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+    (findDisplay 46) displayAddEventHandler ["Unload", {
+        ["selfFlush"] call comspec_atak_native_fnc_distanceServer;
+        if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; };
+    }];
 }] call CBA_fnc_waitUntilAndExecute;
 // Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
 // (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.

@@ -172,6 +172,22 @@ class AtakDistanceRepository
     }
 
     /**
+     * Envoi du téléphone d'un joueur (source « client » : serveur Arma sans COMSPEC Link relié, fn_distanceServer en mode
+     * « self ») : seul le joueur identifié par la liaison est gardé, jamais d'autres joueurs glissés dans l'envoi.
+     *
+     * @param list<array{player_uid: string, call_sign: string, stats: array<string, int>, pilot: list<array{class: string, label: string, kind: string, seconds: int, meters: int}>}> $batch
+     * @return list<array{player_uid: string, call_sign: string, stats: array<string, int>, pilot: list<array{class: string, label: string, kind: string, seconds: int, meters: int}>}>
+     */
+    public static function onlyPlayer(array $batch, ?string $steamUid): array
+    {
+        if ($steamUid === null || $steamUid === '') {
+            return [];
+        }
+
+        return array_values(array_filter($batch, static fn (array $p): bool => $p['player_uid'] === $steamUid));
+    }
+
+    /**
      * Ajoute un envoi à la session du membre (créée au premier envoi) et à ses heures de pilote.
      *
      * @param array<string, int> $stats

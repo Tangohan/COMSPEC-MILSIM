@@ -39,6 +39,20 @@ final class AtakDistanceTest extends TestCase
         self::assertSame(13000, $p['pilot'][0]['meters']);
     }
 
+    public function testClientRelayKeepsOnlyTheLinkedPlayer(): void
+    {
+        $batch = AtakDistanceRepository::normalizeBatch([
+            ['player_uid' => '76561198000000001', 'foot_m' => 100],
+            ['player_uid' => '76561198000000002', 'pilot' => [['class' => 'RHS_UH60M', 'seconds' => 600]]],
+        ]);
+
+        $mine = AtakDistanceRepository::onlyPlayer($batch, '76561198000000002');
+        self::assertCount(1, $mine);
+        self::assertSame('76561198000000002', $mine[0]['player_uid']);
+        self::assertSame([], AtakDistanceRepository::onlyPlayer($batch, null), 'sans Steam lié, rien n’est gardé');
+        self::assertSame([], AtakDistanceRepository::onlyPlayer($batch, '76561198000000009'));
+    }
+
     public function testAircraftFamiliesFromClassname(): void
     {
         self::assertSame('ch47', AtakDistanceRepository::aircraftFamily('RHS_CH_47F', 'CH-47F')['key']);
