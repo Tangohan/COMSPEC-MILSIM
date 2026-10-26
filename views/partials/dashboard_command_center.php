@@ -285,12 +285,16 @@ if ($memberSinceRaw) {
         $daysSince = max(0, (int) floor((time() - $tsSince) / 86400));
         $yearsSince = intdiv($daysSince, 365);
         $monthsSince = intdiv($daysSince % 365, 30);
+        $en = locale() === 'en';
+        $monthsLabel = $monthsSince . ($en ? ($monthsSince > 1 ? ' months' : ' month') : ' mois');
         if ($yearsSince > 0) {
-            $memberSinceLabel = $yearsSince . ' an' . ($yearsSince > 1 ? 's' : '') . ($monthsSince > 0 ? ' et ' . $monthsSince . ' mois' : '');
+            $memberSinceLabel = $en
+                ? $yearsSince . ($yearsSince > 1 ? ' years' : ' year') . ($monthsSince > 0 ? ' and ' . $monthsLabel : '')
+                : $yearsSince . ' an' . ($yearsSince > 1 ? 's' : '') . ($monthsSince > 0 ? ' et ' . $monthsLabel : '');
         } elseif ($monthsSince > 0) {
-            $memberSinceLabel = $monthsSince . ' mois';
+            $memberSinceLabel = $monthsLabel;
         } else {
-            $memberSinceLabel = $daysSince . ' jour' . ($daysSince > 1 ? 's' : '');
+            $memberSinceLabel = $daysSince . ($en ? ($daysSince > 1 ? ' days' : ' day') : ' jour' . ($daysSince > 1 ? 's' : ''));
         }
     }
 }
