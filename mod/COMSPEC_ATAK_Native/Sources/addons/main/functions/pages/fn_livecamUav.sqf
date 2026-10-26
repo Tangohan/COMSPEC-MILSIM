@@ -56,6 +56,13 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
         params ["_args"];
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
         private _u = missionNamespace getVariable ["COMSPEC_ATAK_LivecamUav", objNull];
+        // Drone supprimé (nettoyage de l'épave, Zeus) : arrêt comme un drone perdu, sinon l'image resterait figée.
+        if (!isNull _cam && {isNull _u} && {(missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""]) isEqualTo "uav"}) exitWith {
+            [] call comspec_atak_native_fnc_livecamStop;
+            ["WARNING", "Live cam : drone perdu", 3, 30] call comspec_atak_native_fnc_notify;
+            private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+            if ((_st getOrDefault ["activePage", ""]) isEqualTo "LIVECAM") then { [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+        };
         if (isNull _cam || {isNull _u}) exitWith {};
         // Vue regardée au terminal : siège publié par l'opérateur, sinon celui qu'il tient, sinon la nacelle s'il y en a une.
         private _view = _u getVariable ["COMSPEC_UavView", []];

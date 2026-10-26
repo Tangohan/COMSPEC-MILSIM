@@ -17,11 +17,12 @@ private _sent = 0;
 private _sendBack = missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0];
 if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
 // Un seul client remonte chaque aéronef (avant : tous les clients envoyaient tous les aéronefs occupés).
-// Candidats : joueurs reliés à Athena (COMSPEC_LinkState public, moi compris). Joueur relié à bord : lui (plus
+// Candidats : joueurs reliés à Athena (COMSPEC_LinkState public « linked »/« degraded », moi compris ;
+// « connecting »/« disabled » = compte non relié, qui ne remonterait rien). Joueur relié à bord : lui (plus
 // petit UID de l'équipage) ; sinon (IA seules, équipage non relié) : le joueur relié de plus petit UID.
 private _myUid = getPlayerUID player;
 private _linked = (allPlayers select {
-    alive _x && {!(_x isKindOf "HeadlessClient_F")} && {_x isEqualTo player || {(_x getVariable ["COMSPEC_LinkState", "offline"]) isNotEqualTo "offline"}}
+    alive _x && {!(_x isKindOf "HeadlessClient_F")} && {_x isEqualTo player || {(_x getVariable ["COMSPEC_LinkState", "offline"]) in ["linked", "degraded"]}}
 }) apply { getPlayerUID _x };
 _linked sort true;
 private _globalReporter = _linked param [0, _myUid];

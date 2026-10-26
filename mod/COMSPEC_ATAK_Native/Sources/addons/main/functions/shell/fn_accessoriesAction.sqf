@@ -142,7 +142,7 @@ switch (_act) do {
                     if (isNil "ace_common_fnc_progressBar") then {
                         [] call comspec_atak_native_fnc_batterySwap;
                     } else {
-                        [5, [], { [] call comspec_atak_native_fnc_batterySwap; ["refresh"] call comspec_atak_native_fnc_accessoriesAction; }, {}, "Changement de la batterie…"] call ace_common_fnc_progressBar;
+                        [5, [], { [] call comspec_atak_native_fnc_batterySwap; ["refresh"] call comspec_atak_native_fnc_accessoriesAction; }, {}, ("Changement de la batterie…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
                     };
                 };
             };

@@ -8,6 +8,10 @@
 params [["_framed", [], [[]]], ["_zoom", 1, [0]]];
 if (_framed isEqualTo []) exitWith { false };
 private _shot = (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamShots", 0]) + 1;
+// Compteur propre au SSE, incrémenté à chaque appel : l'id reste unique même sans passer par l'app Photo native
+// (repli de l'app SSE terrain), sinon recordOp "append" écarterait les clichés suivants comme doublons.
+private _seq = (missionNamespace getVariable ["comspec_sse_evidenceShotN", 0]) + 1;
+missionNamespace setVariable ["comspec_sse_evidenceShotN", _seq];
 private _labels = [];
 {
     _x params ["_e", "_d"];
@@ -15,7 +19,7 @@ private _labels = [];
     private _pid = _e getVariable ["COMSPEC_SSE_PieceId", ""];
     private _moved = _pid isNotEqualTo "" && {((_custody getOrDefault [_pid, createHashMap]) getOrDefault ["seal", ""]) isNotEqualTo ""};
     private _photo = createHashMapFromArray [
-        ["id", format ["PH-%1-%2-%3", getPlayerUID player, _shot, netId _e]],
+        ["id", format ["PH-%1-%2-%3-%4", getPlayerUID player, _shot, _seq, netId _e]],
         ["by", name player],
         ["at", serverTime],
         ["clock", [dayTime, "HH:MM"] call BIS_fnc_timeToString],

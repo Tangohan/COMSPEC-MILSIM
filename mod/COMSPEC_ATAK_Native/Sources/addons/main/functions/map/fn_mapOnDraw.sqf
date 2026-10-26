@@ -194,7 +194,7 @@ if ((count _route) > 0) then {
             [_a, _b, _mpu, [0.26, 0.52, 0.96, 1]] call _seg;
         };
     };
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _k * _is, 26 * _k * _is, 0, _route getOrDefault ["label", ""], 2, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _k * _is, 26 * _k * _is, 0, (_route getOrDefault ["label", ""]) call comspec_atak_native_fnc_tr, 2, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
 
 // Calques Relief (champ de vision / altitudes) et Wave Relay (liens du maillage).
@@ -223,15 +223,19 @@ uiNamespace setVariable ["COMSPEC_ATAK_SelfGpsPos", _selfGps];
 private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
 // Terminal compromis (fn_compromiseView) : flux BFT coupé, seule ma position GPS reste en direct (pistes figées dessinées à la fin).
 private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
+private _dcAll = uiNamespace getVariable "COMSPEC_ATAK_MapDrawCache";
+if (isNil "_dcAll") then { _dcAll = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MapDrawCache", _dcAll]; };
+// Unités parties : entrées périmées retirées de temps en temps (pas de table sans fin).
+if ((count _dcAll) > (300 max (2 * (count (_data getOrDefault ["units", createHashMap]))))) then { private _tNow = diag_tickTime; { if (_tNow > ((_y select 0) + 5)) then { _dcAll deleteAt _x; }; } forEach +_dcAll; };
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
     if ((count _pos) < 2) then { continue };
     if (_compSkip && {!(_entity getOrDefault ["self", false])}) then { continue };
     private _self = _entity getOrDefault ["self",false];
-    // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s dans la piste (« drawCache ») : refaits à
-    // chaque image et pour chaque unité avant, alors qu'ils ne changent qu'avec la table des unités.
-    private _dc = _entity getOrDefault ["drawCache", []];
+    // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s par unité (table à part, COMSPEC_ATAK_MapDrawCache) :
+    // refaits à chaque image et pour chaque unité avant. Plus dans la piste : fn_localDataRefresh la refait 4 fois par seconde.
+    private _dc = _dcAll getOrDefault [_x, []];
     if ((count _dc) < 7 || {diag_tickTime > (_dc select 0)} || {(_dc select 6) isNotEqualTo _nato}) then {
         ([_entity] call comspec_atak_native_fnc_symbology) params ["_sIcon","_sColor"];
         private _ci = "";
@@ -243,7 +247,7 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
         private _nt = ""; private _ne = "";
         if (_nato && {!_self}) then { ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt0", "_ne0"]; _nt = _nt0; _ne = _ne0; };
         _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _nato];
-        _entity set ["drawCache", _dc];
+        _dcAll set [_x, _dc];
     };
     private _icon = _dc select 1;
     private _color = +(_dc select 2);

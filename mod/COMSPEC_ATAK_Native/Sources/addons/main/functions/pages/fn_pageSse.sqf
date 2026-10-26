@@ -362,7 +362,7 @@ private _pCase = {
     _yy = _yy + (([[_ox, _yy, _ow, _fs], format ["<t size='0.78' color='%1'>Le poste de commandement vous donne une référence (ex. OBJ-ALPHA-01). Toutes les fiches SSE de l'équipe (sujets, photos, constats) y seront rattachées sur Athena.</t>", _hDim]] call _st) call _hOf) + _pad * 0.4;
     // Saisie gardée telle quelle (pas de traduction du contenu).
     private _e = ["COMSPEC_RscEdit", [_ox, _yy, _ow, _btnH]] call _mk;
-    _e ctrlSetText (((["", profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]] select (_case isEqualTo ""))) call comspec_atak_native_fnc_tr);
+    _e ctrlSetText (["", profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]] select (_case isEqualTo "")); // i18n:brut
     _e ctrlSetFont _mono;
     _e ctrlSetFontHeight (_fs * 0.9);
     _e ctrlSetBackgroundColor _cBg;

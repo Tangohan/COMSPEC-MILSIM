@@ -40,7 +40,8 @@ class MatriculeService
         } else {
             $out = str_replace('{seq}', (string) $seq, $out);
         }
-        return $out;
+        // Sans préfixe, « {prefix}-{seq} » donnerait « -42 ».
+        return $prefix === '' ? ltrim($out, '-_./ ') : $out;
     }
 
     /** Attribue un nouveau matricule à l'utilisateur si il n'en a pas encore. Retourne le matricule ou null. */

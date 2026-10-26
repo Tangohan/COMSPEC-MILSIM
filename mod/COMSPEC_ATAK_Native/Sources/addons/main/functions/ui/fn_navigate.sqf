@@ -18,7 +18,7 @@ if ((count _appOf) > 0 && {!((_appOf get "id") in ["Admin", "Toc"])}) then {
         _page = "";
     };
     if (_inst isEqualTo "removed") then {
-        [(_appOf get "name") + " n'est pas installée : App Store", 2.5] call comspec_atak_native_fnc_toast;
+        [format ["%1 n'est pas installée : App Store", _appOf get "name"], 2.5] call comspec_atak_native_fnc_toast;
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         _st set ["storeQuery", _appOf get "name"];
         _st set ["storeTab", "ALL"];

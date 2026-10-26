@@ -24,6 +24,11 @@ uiNamespace setVariable ["COMSPEC_ATAK_ZeusGlitchPfh", -1];
 // Tables d'objets et de marqueurs de la partie précédente : le relais web (MkSnap) supprimait côté Athena les marqueurs
 // de l'ancienne mission, la liaison allié (LinkAlly) se coupait au démarrage sur un porteur disparu.
 { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_MkSnap", "COMSPEC_ATAK_GlowLights", "COMSPEC_ATAK_LinkAlly", "COMSPEC_ATAK_DroneAlerted", "COMSPEC_ATAK_MapSearchKnown", "COMSPEC_ATAK_MapSearch", "COMSPEC_ATAK_DroneStatic"];
+// Liaison montante publiée (fn_feedLink) et curseur du chat Athena natif (fn_pollChat) : propres à la mission.
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_NetUpSig", "COMSPEC_ATAK_NetUpPend", "COMSPEC_ATAK_ChatAfter", "COMSPEC_ATAK_ChatSeen"];
+// Dernière MPU5 vue (fn_mpu5) et terminal de bord (XEH_postInitClient) : sans remise à zéro, faux « MPU5 retirée » ou message
+// « Tablette du véhicule disponible » manqué au début de la mission suivante.
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Mpu5Was", "COMSPEC_ATAK_TermKind"];
 // États d'apps de la partie précédente, tous lus avec une valeur par défaut ("" ou table vide) : code de la salle de
 // l'app Plan (resté affiché), cible et formulaires des apps Feux, Guerre électronique, Logistique et BDA (la cible
 // « TGT » restait dessinée sur la carte). Numéro de la boucle de relevé de l'app Admin : lu par isNil, il supprimait

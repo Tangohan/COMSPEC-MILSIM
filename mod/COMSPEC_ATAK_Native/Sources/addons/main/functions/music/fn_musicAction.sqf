@@ -161,10 +161,18 @@ switch (_act) do {
             _ui set ["files", _p select [2, 400]];
             _ui set ["filesErr", ""];
         } else {
-            // Une DLL sans lecteur (ancienne, ou pas encore recompilée) répond par une erreur de connexion Athena.
+            // Réponse vide : l'extension du mod n'est pas chargée (fichier absent, bloqué, ou autre copie du mod chargée
+            // sans elle). Erreur de connexion Athena : DLL trop ancienne, sans lecteur. Le Ping départage les deux.
             private _why = _p param [1, ""];
             private _oldDll = !((_p param [0, ""]) isEqualTo "ERR") || {_why in ["not_connected", "unauthorized", "unknown_function", "unknown_command"]};
-            _ui set ["filesErr", [_why, "Lecteur audio absent de la DLL du mod : relancez build_mod.bat (DLL COMSPECATAKNativeExtension à recompiler)."] select _oldDll];
+            if (_oldDll) then {
+                _why = if (((["Ping"] call comspec_atak_native_fnc_extensionCall) find "OK|") isEqualTo 0) then {
+                    "Lecteur audio indisponible : le mod COMSPEC ATAK est trop ancien. Mettez-le à jour depuis le Steam Workshop."
+                } else {
+                    "Lecteur audio indisponible : l'extension du mod n'est pas chargée. Mettez à jour COMSPEC ATAK depuis le Steam Workshop et retirez toute autre copie du mod."
+                };
+            };
+            _ui set ["filesErr", _why];
         };
         call _rerender;
     };
