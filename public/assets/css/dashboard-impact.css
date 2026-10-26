@@ -4454,3 +4454,7 @@ html.dash-sign-lock { overflow: hidden; }
   text-underline-offset: 3px;
   cursor: pointer;
 }
+
+/* Tuile lien direct du rail (ex. « Mes formations ») : même apparence qu'une rubrique, sans panneau. */
+.dash-rail__tile--link { text-decoration: none; color: #fff; }
+.dash-rail__tile--link:visited { color: #fff; }
