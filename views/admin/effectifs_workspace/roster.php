@@ -145,6 +145,10 @@ $exportQuery = array_filter([
     'sans_role' => !empty($filters['sans_role']) ? '1' : null,
 ], static fn ($v) => $v !== null && $v !== '' && $v !== 0);
 $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_build_query($exportQuery) : '');
+// Export PDF : la vue (générale, médicale, heures de vol), les filtres et le tri affichés, sans pagination.
+$pdfQuery = $filterQuery(['page' => null]);
+$pdfExportUrl = effectifs_workspace_url('export.pdf') . ($pdfQuery ? '?' . http_build_query($pdfQuery) : '');
+$canExportPdf = (bool) ($canExportPdf ?? false);
 $dupScan = is_array($personnelDuplicateScan ?? null) ? $personnelDuplicateScan : [];
 $dupGroups = is_array($dupScan['groups'] ?? null) ? $dupScan['groups'] : [];
 $dupFieldLabels = [];
@@ -325,6 +329,20 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
             'aviation' => 'Heures relevées en jeu par la liaison ATAK, cumulées depuis le début.',
             default => 'Un membre par ligne : cliquez sur un nom pour ouvrir sa fiche.',
         }, ENT_QUOTES, 'UTF-8') ?></span>
+        <span class="eff-das-views__export" aria-label="Exporter ce tableau">
+            <a class="eff-das-views__btn" href="<?= htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8') ?>" title="Tableur CSV (Excel), avec les filtres de recherche">CSV</a>
+            <?php if ($canExportPdf): ?>
+            <a class="eff-das-views__btn eff-das-views__btn--pdf" href="<?= htmlspecialchars($pdfExportUrl, ENT_QUOTES, 'UTF-8') ?>" title="PDF prêt à imprimer ou à envoyer : cette vue, avec les filtres et le tri affichés">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v6"/><path d="m9 15 3 3 3-3"/></svg>
+                PDF<?= $rosterView === 'medical' ? ' médical' : ($rosterView === 'aviation' ? ' heures de vol' : '') ?>
+            </a>
+            <?php else: ?>
+            <a class="eff-das-views__btn eff-das-views__btn--locked" href="<?= htmlspecialchars(url('platform/upgrade?from=pdf_exports'), ENT_QUOTES, 'UTF-8') ?>" title="Les exports PDF sont inclus dans les formules payantes">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                PDF
+            </a>
+            <?php endif; ?>
+        </span>
     </nav>
 
     <?php if ($rows === []): ?>

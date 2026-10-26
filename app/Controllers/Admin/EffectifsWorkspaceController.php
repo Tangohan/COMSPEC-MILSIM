@@ -43,10 +43,12 @@ use App\Authorization\SystemReservedPermissions;
 use App\Services\Admin\RolePermissionService;
 use App\Services\Rbac\CommunityAccessProfiles;
 use App\Repositories\TenantAdminSettingsRepository;
+use App\Services\Export\TablePdfExportService;
 use App\Support\CommunityLanguages;
 use App\Support\EffectifsLmsAccess;
 use App\Support\GradeSelectOptions;
 use App\Support\OrganizationRoleLabels;
+use App\Support\PlanFeatureDenial;
 use DateTimeImmutable;
 
 /**
@@ -313,6 +315,7 @@ class EffectifsWorkspaceController
                 'fonction' => $jobFilter,
             ],
             'rosterView' => $rosterView,
+            'canExportPdf' => self::pdfExportsAllowed($tenantId),
             'rosterJobRoleOptions' => $this->rosterJobRoleOptions($tenantId),
             'rosterLanguages' => $rowLanguages,
             'rosterLanguageCodes' => CommunityLanguages::communityLanguages($languageCommunity),
@@ -499,6 +502,276 @@ class EffectifsWorkspaceController
             ->header('Content-Type', 'text/csv; charset=UTF-8')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($csv);
+    }
+
+    /**
+     * Export PDF du tableur (vue générale, médicale ou heures de vol) avec les filtres et le tri affichés.
+     * Module de formule « pdf_exports » : les offres gratuites voient la page d'offre supérieure.
+     */
+    public function exportPdf(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!self::pdfExportsAllowed($tenantId)) {
+            return PlanFeatureDenial::upgradeView('pdf_exports', 'Standard');
+        }
+
+        $search = trim((string) $request->query('q', ''));
+        $status = trim((string) $request->query('status', ''));
+        if ($status === 'pending') {
+            $status = 'pending_verification';
+        }
+        $roleId = max(0, (int) $request->query('role_id', 0));
+        $onlyNoUnit = $request->query('sans_affectation') === '1';
+        $onlyNoRole = $request->query('sans_role') === '1';
+        $sort = trim((string) $request->query('tri', 'nom'));
+        $sortLabels = [
+            'nom' => 'Nom',
+            'commandement' => 'Ordre de commandement',
+            'grade' => 'Ordre de grade',
+            'anciennete' => 'Ordre d’ancienneté',
+            'disponibilite' => 'Ordre de disponibilité',
+            'presence' => 'Ordre de présence',
+            'completion' => 'Ordre de complétion du dossier',
+            'temps_mission' => 'Temps en mission',
+            'heures_vol' => 'Heures de vol',
+        ];
+        if (!isset($sortLabels[$sort])) {
+            $sort = 'nom';
+        }
+        $view = trim((string) $request->query('vue', ''));
+        if (!in_array($view, ['medical', 'aviation'], true)) {
+            $view = 'general';
+        }
+        $jobFilter = mb_substr(trim((string) $request->query('fonction', '')), 0, 120, 'UTF-8');
+        $community = $this->communitySettingsFor($tenantId);
+        $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
+
+        $statusFilter = $status !== '' ? $status : null;
+        $roleFilter = $roleId > 0 ? $roleId : null;
+        $total = $this->userRepository->countListForTenant($tenantId, $search !== '' ? $search : null, $statusFilter, $roleFilter, true, $onlyNoUnit ? true : null, $onlyNoRole ? true : null);
+        $baseUsers = $this->userRepository->listForTenant(
+            $tenantId,
+            $search !== '' ? $search : null,
+            $statusFilter,
+            $roleFilter,
+            min(TablePdfExportService::MAX_ROWS, max($total, 1)),
+            0,
+            true,
+            $onlyNoUnit ? true : null,
+            $onlyNoRole ? true : null
+        );
+        $rows = $this->enrichRosterRows($tenantId, $baseUsers);
+        $languages = $this->memberLanguages()->resolvedForUsers(
+            $tenantId,
+            array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows),
+            $community
+        );
+        if ($languageFilter !== '') {
+            $rows = array_values(array_filter($rows, static function (array $r) use ($languages, $languageFilter): bool {
+                $lang = $languages[(int) ($r['id'] ?? 0)] ?? null;
+
+                return is_array($lang) && ($lang['primary'] === $languageFilter || in_array($languageFilter, $lang['others'], true));
+            }));
+        }
+        if ($jobFilter !== '') {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => mb_stripos(trim((string) ($r['job_role_display'] ?? '')), $jobFilter, 0, 'UTF-8') === 0));
+        }
+        $rows = $this->attachRosterFieldData($tenantId, $rows, $view === 'medical');
+        $rows = $this->sortRosterRows($rows, $sort);
+
+        $roleName = '';
+        if ($roleFilter !== null) {
+            foreach ($this->roleRepository->forTenantAccessProfiles($tenantId) as $role) {
+                if ((int) ($role['id'] ?? 0) === $roleFilter) {
+                    $roleName = (string) ($role['name'] ?? '');
+                }
+            }
+        }
+        $statusLabels = ['active' => 'Compte actif', 'inactive' => 'Compte inactif', 'pending_verification' => 'E-mail à vérifier'];
+        $filters = [
+            ['Recherche', $search],
+            ['Statut', $statusLabels[$status] ?? $status],
+            ['Rôle', $roleName],
+            ['Fonction', $jobFilter],
+            ['Langue', $languageFilter !== '' ? CommunityLanguages::label($languageFilter) : ''],
+            ['Affectation', $onlyNoUnit ? 'sans affectation' : ''],
+            ['Rôle d’accès', $onlyNoRole ? 'sans rôle' : ''],
+            ['Tri', $sort !== 'nom' ? $sortLabels[$sort] : ''],
+        ];
+
+        [$columns, $cells, $viewLabel] = self::rosterPdfTable($view, $rows);
+        $communityName = $this->communityNameForTenant($tenantId);
+        if ($view === 'medical') {
+            $this->adminAuditService->logUserUpdated($tenantId, (int) Session::get('user_id'), (int) Session::get('user_id'), 'export_pdf_medical', (string) count($cells));
+        }
+
+        return \App\Core\Container::get(TablePdfExportService::class)->export([
+            'title' => 'Effectifs · ' . $viewLabel,
+            'community' => $communityName,
+            'filters' => $filters,
+            'columns' => $columns,
+            'rows' => $cells,
+            'total' => count($cells),
+            'note' => $view === 'medical' ? 'Confidentiel : données médicales' : '',
+            'filename' => 'effectifs-' . $view . '-' . date('Y-m-d'),
+            'orientation' => 'L',
+        ]);
+    }
+
+    /** Module de formule « Exports PDF des tableaux » (valeur du catalogue si la formule n'a pas encore la clé). */
+    public static function pdfExportsAllowed(int $tenantId): bool
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allowsWithCatalogDefault($tenantId, 'pdf_exports');
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Colonnes et cellules texte du PDF pour une vue du tableur.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return array{0: list<array<string, mixed>>, 1: list<list<string>>, 2: string}
+     */
+    public static function rosterPdfTable(string $view, array $rows): array
+    {
+        $hours = static function (int $seconds): string {
+            if ($seconds <= 0) {
+                return '';
+            }
+            if ($seconds < 3600) {
+                return max(1, intdiv($seconds, 60)) . ' min';
+            }
+            $m = intdiv($seconds, 60);
+
+            return intdiv($m, 60) . ' h ' . str_pad((string) ($m % 60), 2, '0', STR_PAD_LEFT);
+        };
+        $member = static function (array $r): string {
+            $name = trim((string) ($r['display_name'] ?? ''));
+            $callsign = trim((string) ($r['callsign'] ?? ''));
+
+            return $callsign !== '' && strcasecmp($callsign, $name) !== 0 ? $name . "\n" . $callsign : $name;
+        };
+        $grade = static fn (array $r): string => trim((string) ($r['grade_short'] ?? '') ?: (string) ($r['grade_long'] ?? ''));
+        $job = static fn (array $r): string => trim((string) ($r['job_role_display'] ?? ''));
+        $unit = static fn (array $r): string => trim((string) ($r['assignment_path'] ?? ''));
+
+        if ($view === 'medical') {
+            $columns = [
+                ['label' => 'Membre', 'weight' => 2.2, 'bold' => true],
+                ['label' => 'Grade', 'weight' => 0.9],
+                ['label' => 'Fonction', 'weight' => 1.6],
+                ['label' => 'Groupe sanguin', 'weight' => 1, 'align' => 'C', 'bold' => true, 'muted' => ['À renseigner']],
+                ['label' => 'Poids', 'weight' => 0.8, 'align' => 'R'],
+                ['label' => 'Taille', 'weight' => 0.8, 'align' => 'R'],
+                ['label' => 'IMC', 'weight' => 0.7, 'align' => 'R'],
+                ['label' => 'Intolérances médicamenteuses', 'weight' => 2.5, 'alert' => true, 'muted' => ['Aucune connue']],
+                ['label' => 'Allergies', 'weight' => 2.5, 'alert' => true, 'muted' => ['Aucune connue']],
+            ];
+            $cells = [];
+            foreach ($rows as $r) {
+                $kg = (int) ($r['weight_kg'] ?? 0);
+                $cm = (int) ($r['height_cm'] ?? 0);
+                $intol = trim((string) ($r['drug_intolerances'] ?? ''));
+                $allergies = trim((string) ($r['allergies'] ?? ''));
+                $cells[] = [
+                    $member($r),
+                    $grade($r),
+                    $job($r),
+                    trim((string) ($r['blood_type'] ?? '')) ?: 'À renseigner',
+                    $kg > 0 ? $kg . ' kg' : '',
+                    $cm > 0 ? $cm . ' cm' : '',
+                    $kg > 0 && $cm > 0 ? number_format($kg / (($cm / 100) ** 2), 1, ',', ' ') : '',
+                    $intol !== '' ? $intol : 'Aucune connue',
+                    $allergies !== '' ? $allergies : 'Aucune connue',
+                ];
+            }
+
+            return [$columns, $cells, 'Médical'];
+        }
+
+        if ($view === 'aviation') {
+            // Mêmes colonnes « type d'appareil » que l'écran : les 6 appareils les plus pilotés.
+            $families = [];
+            foreach ($rows as $r) {
+                foreach (is_array($r['pilot_families'] ?? null) ? $r['pilot_families'] : [] as $fam) {
+                    $fk = (string) ($fam['key'] ?? '');
+                    if ($fk === '') {
+                        continue;
+                    }
+                    $families[$fk] ??= ['label' => (string) ($fam['label'] ?? $fk), 'seconds' => 0];
+                    $families[$fk]['seconds'] += (int) ($fam['seconds'] ?? 0);
+                }
+            }
+            uasort($families, static fn (array $x, array $y): int => $y['seconds'] <=> $x['seconds']);
+            $families = array_slice($families, 0, 6, true);
+            $columns = [
+                ['label' => 'Membre', 'weight' => 2.2, 'bold' => true],
+                ['label' => 'Fonction', 'weight' => 1.6],
+                ['label' => 'Affectation', 'weight' => 2],
+                ['label' => 'Heures de vol', 'weight' => 1, 'align' => 'R', 'bold' => true],
+            ];
+            foreach ($families as $fam) {
+                $columns[] = ['label' => (string) $fam['label'], 'weight' => 0.9, 'align' => 'R'];
+            }
+            $columns[] = ['label' => 'Dernier vol', 'weight' => 0.9, 'align' => 'C'];
+            $cells = [];
+            foreach ($rows as $r) {
+                $bySecs = [];
+                foreach (is_array($r['pilot_families'] ?? null) ? $r['pilot_families'] : [] as $fam) {
+                    $bySecs[(string) ($fam['key'] ?? '')] = (int) ($fam['seconds'] ?? 0);
+                }
+                $last = trim((string) ($r['pilot_last_flown_at'] ?? ''));
+                $lastTs = $last !== '' ? strtotime($last) : false;
+                $line = [$member($r), $job($r), $unit($r), $hours((int) ($r['pilot_seconds'] ?? 0))];
+                foreach (array_keys($families) as $fk) {
+                    $line[] = $hours((int) ($bySecs[$fk] ?? 0));
+                }
+                $line[] = $lastTs !== false ? date('d/m/Y', $lastTs) : '';
+                $cells[] = $line;
+            }
+
+            return [$columns, $cells, 'Heures de vol'];
+        }
+
+        $statusLabels = ['active' => 'Actif', 'inactive' => 'Inactif', 'pending_verification' => 'E-mail à vérifier'];
+        $columns = [
+            ['label' => 'Membre', 'weight' => 2.2, 'bold' => true],
+            ['label' => 'Grade', 'weight' => 0.9],
+            ['label' => 'Affectation', 'weight' => 2],
+            ['label' => 'Fonction', 'weight' => 1.6],
+            ['label' => 'Statut', 'weight' => 0.9, 'translate' => true],
+            ['label' => 'Ancienneté', 'weight' => 1],
+            ['label' => 'Temps en mission', 'weight' => 1, 'align' => 'R'],
+            ['label' => 'Heures de vol', 'weight' => 0.9, 'align' => 'R'],
+            ['label' => 'Dispo.', 'weight' => 0.7, 'align' => 'R'],
+            ['label' => 'Présence', 'weight' => 0.8, 'align' => 'R'],
+            ['label' => 'Dossier', 'weight' => 0.7, 'align' => 'R'],
+        ];
+        $cells = [];
+        foreach ($rows as $r) {
+            $st = (string) ($r['status'] ?? '');
+            $cells[] = [
+                $member($r),
+                $grade($r),
+                $unit($r) !== '' ? $unit($r) : 'Non affecté',
+                $job($r),
+                $statusLabels[$st] ?? $st,
+                (string) ($r['seniority_label'] ?? ''),
+                $hours((int) ($r['arma_playtime_seconds'] ?? 0)),
+                $hours((int) ($r['pilot_seconds'] ?? 0)),
+                (int) ($r['availability_score'] ?? 0) . ' %',
+                (int) ($r['presence_score'] ?? 0) . ' %',
+                (int) ($r['completion_score'] ?? 0) . ' %',
+            ];
+        }
+
+        return [$columns, $cells, 'Vue générale'];
     }
 
     /**

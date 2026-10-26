@@ -28,6 +28,7 @@ final class SubscriptionPlanFeaturesCatalog
         'advanced_integrations',
         'community_create',
         'registry_featured',
+        'pdf_exports',
     ];
 
     public const INT_FEATURES = [
@@ -126,6 +127,11 @@ final class SubscriptionPlanFeaturesCatalog
                 'help' => 'Badge « mise en avant » sur la carte de la communauté et place parmi les premières du registre des unités.',
                 'type' => 'bool',
             ],
+            'pdf_exports' => [
+                'label' => 'Exports PDF des tableaux',
+                'help' => 'Télécharger les tableaux du back-office (effectifs, dossier médical, heures de vol…) en PDF prêt à imprimer ou à envoyer.',
+                'type' => 'bool',
+            ],
             'max_members' => [
                 'label' => 'Nombre max. de membres',
                 'help' => 'Plafond de comptes dans la communauté (0 = illimite).',
@@ -165,6 +171,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => false,
+                'pdf_exports' => false,
                 'max_members' => 10,
                 'max_training_courses' => 5,
             ],
@@ -186,6 +193,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => false,
+                'pdf_exports' => true,
                 'max_members' => 25,
                 'max_training_courses' => 25,
             ],
@@ -207,6 +215,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => true,
+                'pdf_exports' => true,
                 'max_members' => 50,
                 'max_training_courses' => 100,
             ],
@@ -228,6 +237,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => true,
                 'community_create' => true,
                 'registry_featured' => true,
+                'pdf_exports' => true,
                 'max_members' => 80,
                 'max_training_courses' => 0,
             ],
