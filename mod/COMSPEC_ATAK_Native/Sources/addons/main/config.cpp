@@ -56,7 +56,7 @@ class CfgFunctions {
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
-            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {}; class droneSeq {}; class dronePhoto {}; class droneStatic {}; class noFly {}; class droneFleet {}; class droneRange {};
+            class droneCmd {}; class droneServer {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {}; class droneSeq {}; class dronePhoto {}; class droneStatic {}; class noFly {}; class droneFleet {}; class droneRange {};
         };
         class bluetooth { file="z\comspec_atak_native\addons\main\functions\bluetooth";
             class airplaneMode {}; class btAction {}; class btSounds {}; class btItems {}; class pageBluetooth {}; class btInit { postInit=1; };
@@ -719,6 +719,13 @@ class CfgRemoteExec {
         // déplacer, traquer ; lot mpauth3, SEC-023). Remplace l'événement CBA comspec_atak_native_capLocal. La fonction
         // refuse tout appel distant qui ne vient pas du serveur. 0 : l'objet peut être local au serveur. jip = 0.
         class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };
+        // Mode drone (lot mpauth3, SEC-022) : demandes du téléphone au serveur (ordres, appairage, désappairage, transfert,
+        // reprise de l'équipage), jugées sur le pilote que tient le serveur (fn_droneServer) ; puis ordres du serveur à la
+        // machine du drone, au nouveau pilote ou au demandeur refusé (fn_droneCmd, qui refuse tout appel distant qui ne
+        // vient pas du serveur). Remplace l'événement CBA comspec_atak_native_droneCmd. 0 : le drone, le pilote ou le
+        // demandeur peut être local au serveur (hôte d'une partie locale). jip = 0.
+        class comspec_atak_native_fnc_droneServer { allowedTargets = 2; };
+        class comspec_atak_native_fnc_droneCmd { allowedTargets = 0; jip = 0; };
     };
 };
 

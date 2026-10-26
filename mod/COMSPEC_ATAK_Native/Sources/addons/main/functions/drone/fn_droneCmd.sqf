@@ -1,6 +1,9 @@
 /*
-    Mode drone : ordre exécuté là où le drone est local (événement CBA comspec_atak_native_droneCmd,
-    envoyé par fn_droneAction avec CBA_fnc_targetEvent sur le drone).
+    Mode drone : ordre exécuté là où le drone est local. Le téléphone (fn_droneAction, fn_droneFleet, XEH_postInitClient)
+    envoie sa demande au serveur (fn_droneServer), qui ne la relaie ici (remoteExecCall vers le drone) que si elle vient
+    du pilote qu'il tient lui-même. Lot mpauth3 (SEC-022) : plus d'événement CBA comspec_atak_native_droneCmd ; un appel
+    distant qui ne vient pas du serveur, ou rejoué depuis la file JIP, est refusé (CfgRemoteExec : allowedTargets = 0, le
+    drone peut être local au serveur ; jip = 0). Les appels internes (boucles de vol de ce fichier) ne changent pas.
     Params : [drone, ordre, arguments]
       "takeoff" []                          démarre les moteurs et décolle, puis stationnaire à l'altitude choisie
                                             (tout ordre de vol donné au sol passe d'abord par cette séquence) ;
@@ -36,12 +39,12 @@
       "force"   [ordre, arguments]          FORCER L'EXÉCUTION : équipage IA recréé s'il manque, points de passage du groupe
                                             effacés, déplacement IA réactivé, altitude et vitesse réappliquées, puis l'ordre
                                             est rejoué normalement (il refait son doMove).
-    Ordres traités ailleurs que là où le drone est local (même événement, avant le contrôle de localité) :
-      "relocal" [ordre, arguments]          sur le serveur seulement : si l'équipage IA n'est pas local à la même machine que
-                                            le drone, le groupe y est déplacé (setGroupOwner), puis "force" y est renvoyé ;
+    Ordres traités ailleurs que là où le drone est local (avant le contrôle de localité) :
       "transferIn" [nom, uid cible, point de décollage ASL, "HELLO" | "DONE"]   sur le client du joueur qui reçoit le drone
-                                            (événement visé sur son unité) : "HELLO" annonce la liaison, "DONE" appaire le drone
-                                            chez lui (fn_droneAction "transferIn").
+                                            (le serveur vise son unité) : "HELLO" annonce la liaison, "DONE" appaire le drone
+                                            chez lui (fn_droneAction "transferIn") ;
+      "denied"  [message]                   sur le client du demandeur : le serveur a refusé sa demande, message affiché.
+    "relocal" (équipage IA ramené sur la machine du drone, puis "force") est traité par le serveur seul (fn_droneServer).
     Variables publiques du drone : COMSPEC_DroneMode, COMSPEC_DroneAlt, COMSPEC_DroneSpd, COMSPEC_DroneArmed (munition),
     COMSPEC_DroneSide (camp du pilote), COMSPEC_DroneCqb (profil CQB), COMSPEC_DroneTgt (position ASL visée, pour la carte),
     COMSPEC_DroneTask ([tâche, position ASL, rayon] de la tâche en cours, [] sinon),
@@ -52,19 +55,23 @@
     dernier FORCER L'EXÉCUTION). Posées par le téléphone : COMSPEC_DroneOwner, COMSPEC_DroneLock, COMSPEC_DroneName, COMSPEC_DroneIcon.
 */
 params [["_d", objNull], ["_cmd", "hover"], ["_args", []]];
-// Transfert d'appairage : reçu sur le client du nouveau pilote (l'événement vise son unité, pas le drone).
+if (isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][DRONE] Ordre « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _cmd, remoteExecutedOwner, isRemoteExecutedJIP];
+};
+if (!(_d isEqualType objNull) || {!(_cmd isEqualType "")} || {!(_args isEqualType [])}) exitWith {};
+// Transfert d'appairage : reçu sur le client du nouveau pilote (le serveur vise son unité, pas le drone).
 if (_cmd isEqualTo "transferIn") exitWith {
     _args params [["_from", ""], ["_uid", ""], ["_home", []], ["_stage", "DONE"]];
     if (!hasInterface || {isNull _d} || {!alive _d} || {getPlayerUID player isNotEqualTo _uid}) exitWith {};
     ["transferIn", [_d, _from, _home, _stage]] call comspec_atak_native_fnc_droneAction;
 };
-// Localité : drone et équipage IA sur deux machines différentes (terminal UAV connecté puis lâché, joueur parti...).
-if (_cmd isEqualTo "relocal") exitWith {
-    if (!isServer || {isNull _d} || {!alive _d}) exitWith {};
-    private _drv = driver _d;
-    if (isNull _drv || {(groupOwner group _drv) isEqualTo (owner _d)}) exitWith {};
-    (group _drv) setGroupOwner (owner _d);
-    [{ ["comspec_atak_native_droneCmd", [_this select 0, "force", _this select 1], _this select 0] call CBA_fnc_targetEvent; }, [_d, _args], 1.5] call CBA_fnc_waitAndExecute;
+// Demande refusée par le serveur (fn_droneServer) : message au demandeur, un toutes les 3 s au plus.
+if (_cmd isEqualTo "denied") exitWith {
+    private _msg = _args param [0, ""];
+    if (!hasInterface || {!(_msg isEqualType "")} || {_msg isEqualTo ""}) exitWith {};
+    if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_DroneDeniedAt", -1e9]) < 3) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneDeniedAt", diag_tickTime];
+    ["WARNING", _msg, 4, 40] call comspec_atak_native_fnc_notify;
 };
 if (isNull _d || {!alive _d} || {!local _d}) exitWith {};
 // Accusé de réception pour la surveillance du téléphone (ordre resté sans effet → reprise).

@@ -601,14 +601,15 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
                     if (_conn isEqualTo _x) then {
                         _x setVariable ["COMSPEC_DroneOwner", "", true];
                         _x setVariable ["COMSPEC_DroneLock", nil, true];
-                        ["comspec_atak_native_droneCmd", [_x, "release", []], _x] call CBA_fnc_targetEvent;
+                        // Le serveur l'accepte : le pilote qu'il tient a quitté la partie (fn_droneServer, lot mpauth3, SEC-022).
+                        [_x, "release", []] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
                     };
                 };
                 case (_owner isEqualTo _uid): {
                     if (_conn isNotEqualTo _x) exitWith {};
                     if (_prev isNotEqualTo _x) exitWith {
                         _x setVariable ["COMSPEC_DroneLock", _uid, true];
-                        ["comspec_atak_native_droneCmd", [_x, "manual", []], _x] call CBA_fnc_targetEvent;
+                        [_x, "manual", []] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
                         ["INFO", "Terminal UAV connecté : pilotage manuel. Un ordre du téléphone reprend la main.", 5, 40] call comspec_atak_native_fnc_notify;
                     };
                     player connectTerminalToUAV objNull;

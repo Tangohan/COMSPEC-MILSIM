@@ -297,6 +297,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             self::MAIN . '/functions/admin/fn_adminClient.sqf' => 'if (isRemoteExecutedJIP || ' . $remote,
             self::CONNECT . '/functions/fn_applyZeusAtakEffect.sqf' => 'if (isRemoteExecutedJIP || ' . $remote,
             self::MAIN . '/functions/shell/fn_captureLocal.sqf' => 'if (isRemoteExecutedJIP || ' . $remote,
+            self::MAIN . '/functions/drone/fn_droneCmd.sqf' => 'if (isRemoteExecutedJIP || ' . $remote,
         ] as $file => $guard) {
             $src = $this->read($file);
             self::assertSame(1, substr_count($src, $guard), $file);
@@ -319,13 +320,14 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('class comspec_atak_native_fnc_adminClient { allowedTargets = 1; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_compromise { allowedTargets = 0; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };', $mainCfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_droneCmd { allowedTargets = 0; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; jip = 0; };', $this->cppCode($this->read(self::CONNECT . '/config.cpp')));
         // Aucun ordre légitime vers ces fonctions n'emprunte la file : chaque appel distant n'a que deux arguments.
         // Lecture tolérante (contre-expertise v3, N10) : commentaires retirés, tableau lu jusqu'à son crochet fermant
         // (sur plusieurs lignes, sans « ; » final, nom entre guillemets simples), code porté par des chaînes compris.
         // Plus d'angle mort de nom (v4, N14, K15, K16) : dans main/ et connect/, tout remoteExec / remoteExecCall est
         // suivi d'un tableau écrit en toutes lettres, dont le premier élément est un nom de fonction littéral.
-        $targets = ['comspec_atak_native_fnc_compromise', 'comspec_atak_native_fnc_adminclient', 'comspec_overwatch_connect_fnc_applyzeusatakeffect', 'comspec_atak_native_fnc_capturelocal'];
+        $targets = ['comspec_atak_native_fnc_compromise', 'comspec_atak_native_fnc_adminclient', 'comspec_overwatch_connect_fnc_applyzeusatakeffect', 'comspec_atak_native_fnc_capturelocal', 'comspec_atak_native_fnc_dronecmd'];
         $calls = [];
         $opaque = [];
         $seen = 0;
@@ -359,8 +361,8 @@ final class AtakMultiplayerAuthTest extends TestCase
         // par des chaînes compris, casse ignorée comme le fait CBA). Un gestionnaire rétabli rouvre la voie que le lot
         // ferme (R2 : captureSrv gardé pour « giveFail » rouvrait B2 et D2) ; un émetteur sans gestionnaire perd la
         // demande sans bruit (R1).
-        // Lot mpauth3 : capLocal (SEC-023) s'y ajoute.
-        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal'];
+        // Lot mpauth3 : capLocal (SEC-023) et droneCmd (SEC-022) s'y ajoutent.
+        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal', 'droneCmd'];
         $quoted = '/(["\'])comspec_atak_native_(?:' . implode('|', $removed) . ')\1/i';
         // Fonctions qui jugent le demandeur par remoteExecutedOwner (fn_reqUnit) : appelées depuis un gestionnaire CBA,
         // elles ne voient pas d'appel distant et croient l'unité fournie par l'émetteur. Aucun gestionnaire ne les
@@ -662,6 +664,103 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('class captureServer {}; class captureLocal {};', $cfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };', $cfg);
         self::assertStringNotContainsString('comspec_atak_native_capLocal', $this->stripSqfComments($this->read(self::MAIN . '/XEH_preInit.sqf')));
+    }
+
+    public function testDroneOrdersReachTheDroneOnlyFromItsPilotThroughTheServer(): void
+    {
+        // Lot mpauth3 (SEC-022) : l'événement CBA comspec_atak_native_droneCmd faisait exécuter n'importe quel ordre à
+        // n'importe quel drone, à la demande de n'importe quel client (frappe, atterrissage, désappairage, transfert vers
+        // soi, « relocal » sur le serveur). Les demandes vont au serveur (fn_droneServer), qui les juge sur le pilote qu'il
+        // tient lui-même (localNamespace, jamais la variable publique COMSPEC_DroneOwner) et ne relaie que celles du
+        // pilote à fn_droneCmd, dont la garde de tête refuse tout appel distant qui ne vient pas du serveur.
+        $srv = $this->stripSqfComments($this->read(self::MAIN . '/functions/drone/fn_droneServer.sqf'));
+        self::assertMatchesRegularExpression('/^\s*params \[\["_d", objNull\], \["_cmd", ""\], \["_args", \[\]\]\];\s*'
+            . 'if \(!isServer\) exitWith \{\};\s*'
+            . 'if \(isRemoteExecutedJIP\) exitWith \{[^{}]*\};\s*'
+            . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+            . 'private _req = \[objNull, player\] select hasInterface;\s*'
+            . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
+            . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*\};/', $srv);
+        // Le pilote est celui que tient le serveur ; la variable publique n'est lue qu'une fois, pour la lui remettre.
+        self::assertStringContainsString('private _db = (localNamespace getVariable ["COMSPEC_ATAK_DroneOwners", []]) select {', $srv);
+        self::assertStringContainsString('localNamespace setVariable ["COMSPEC_ATAK_DroneOwners", _db];', $srv);
+        self::assertStringContainsString('private _pilot = if (_i >= 0) then { (_db select _i) select 1 } else { "" };', $srv);
+        self::assertStringContainsString('private _isPilot = isNull _req || {_pilot isNotEqualTo "" && {_pilot isEqualTo _uid}};', $srv);
+        self::assertSame(1, substr_count($srv, 'getVariable ["COMSPEC_DroneOwner"'));
+        self::assertStringContainsString('if ((_d getVariable ["COMSPEC_DroneOwner", ""]) isNotEqualTo _pilot) then { _d setVariable ["COMSPEC_DroneOwner", _pilot, true]; };', $srv);
+        // Chaque demande est jugée avant son premier effet (registre, relais au drone, setGroupOwner).
+        $default = (string) substr($srv, (int) strpos($srv, '    default {'));
+        foreach ([
+            [$this->between($srv, 'case "pair": {', 'case "release": {'), ['(_req distance _d) > 25', 'if (_pilot isNotEqualTo "" && {_pilot isNotEqualTo _uid} && {[_pilot] call _online}) exitWith {'], '[_uid] call _set;'],
+            [$this->between($srv, 'case "release": {', 'case "transferIn": {'), ['if (!_isPilot && {[_pilot] call _online}) exitWith {'], '[""] call _set;'],
+            [$this->between($srv, 'case "transferIn": {', 'case "relocal": {'), ['if (!_isPilot) exitWith {', '(_t distance _req) > 60', '(_x select 1) isEqualTo _to'], '[_to] call _set;'],
+            [$this->between($srv, 'case "transferIn": {', 'case "relocal": {'), ['if (!_isPilot) exitWith {'], 'remoteExecCall ["comspec_atak_native_fnc_droneCmd", _t];'],
+            [$this->between($srv, 'case "relocal": {', '    default {'), ['if (!_isPilot) exitWith {'], 'setGroupOwner'],
+            [$default, ['if (!_isPilot) exitWith {', '!(_cmd in (_orders + ["force"]))'], '[_d, _cmd, _args] remoteExecCall ["comspec_atak_native_fnc_droneCmd", _d];'],
+        ] as $n => [$body, $checks, $effect]) {
+            $at = strpos($body, $effect);
+            self::assertNotFalse($at, "branche $n : $effect");
+            foreach ($checks as $check) {
+                $c = strpos($body, $check);
+                self::assertNotFalse($c, "branche $n : $check");
+                self::assertLessThan($at, $c, "branche $n : $check");
+            }
+        }
+        // Ordres relayés : exactement ceux que fn_droneCmd exécute là où le drone est local (« release » a sa branche).
+        self::assertSame(1, preg_match('/private _orders = \[([^\]]*)\];/', $srv, $m));
+        preg_match_all('/"([^"]+)"/', $m[1], $o);
+        $orders = $o[1];
+        $cmd = $this->stripSqfComments($this->read(self::MAIN . '/functions/drone/fn_droneCmd.sqf'));
+        preg_match_all('/^    case "([^"]+)"/m', $cmd, $cases);
+        $want = array_values(array_diff($cases[1], ['release']));
+        sort($want);
+        $got = $orders;
+        sort($got);
+        self::assertSame($want, $got);
+        $act = $this->stripSqfComments($this->read(self::MAIN . '/functions/drone/fn_droneAction.sqf'));
+        self::assertSame(1, preg_match('/private _flight = \[([^\]]*)\];/', $act, $f));
+        preg_match_all('/"([^"]+)"/', $f[1], $fl);
+        self::assertSame([], array_values(array_diff($fl[1], $orders)));
+        // fn_droneCmd : garde de tête (testCallsReplayedFromTheJipQueueAreRefusedByTheServerOnlyGuards), plus de
+        // « relocal » ni d'émetteur ; un refus du serveur n'y fait qu'afficher un message.
+        self::assertStringNotContainsString('setGroupOwner', $cmd);
+        self::assertStringNotContainsString('CBA_fnc_targetEvent', $this->between($cmd, 'params [', 'if (isNull _d || {!alive _d} || {!local _d}) exitWith {};'));
+        $denied = $this->between($cmd, 'if (_cmd isEqualTo "denied") exitWith {', 'if (isNull _d || {!alive _d} || {!local _d}) exitWith {};');
+        self::assertStringContainsString('["WARNING", _msg, 4, 40] call comspec_atak_native_fnc_notify;', $denied);
+        self::assertStringNotContainsString('remoteExec', $denied);
+        self::assertStringNotContainsString('fnc_droneAction', $denied);
+        // Émetteurs : seul fn_droneServer parle à fn_droneCmd ; les téléphones parlent au serveur (vers 2), avec des
+        // demandes qu'il connaît.
+        $toCmd = [];
+        $literal = [];
+        foreach ($this->sources() as $rel => $units) {
+            foreach ($units as $code) {
+                foreach ($this->remoteCalls($code) as [$left, $right]) {
+                    $fn = strtolower((string) ($right === null ? '' : $this->literal($right[0])));
+                    if ($fn === 'comspec_atak_native_fnc_dronecmd') {
+                        $toCmd[basename($rel)] = true;
+                    } elseif ($fn === 'comspec_atak_native_fnc_droneserver') {
+                        self::assertSame('2', trim($right[1] ?? ''), $rel);
+                        $c = $this->literal($left[1] ?? '');
+                        if ($c !== null) {
+                            $literal[$c] = true;
+                        }
+                    }
+                }
+            }
+        }
+        self::assertSame(['fn_droneServer.sqf'], array_keys($toCmd));
+        $sent = array_keys($literal);
+        sort($sent);
+        self::assertSame(['force', 'goto', 'manual', 'pair', 'release', 'relocal', 'rth', 'transferIn'], $sent);
+        self::assertSame([], array_values(array_diff($sent, array_merge($orders, ['force', 'pair', 'release', 'transferIn', 'relocal']))));
+        // L'appairage au pied est déclaré au serveur, sinon il refuserait les ordres du nouveau pilote.
+        self::assertMatchesRegularExpression('/\[_new\] call _adopt;\s*\[_new, "pair", \[\]\] remoteExecCall \["comspec_atak_native_fnc_droneServer", 2\];/', $act);
+        $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
+        self::assertStringContainsString('class droneCmd {}; class droneServer {};', $cfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_droneServer { allowedTargets = 2; };', $cfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_droneCmd { allowedTargets = 0; jip = 0; };', $cfg);
+        self::assertStringNotContainsString('comspec_atak_native_droneCmd', $this->stripSqfComments($this->read(self::MAIN . '/XEH_preInit.sqf')));
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */

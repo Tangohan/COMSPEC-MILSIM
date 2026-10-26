@@ -764,8 +764,8 @@ if (isServer) then {
     ["Menu d'actions autorisé en véhicule", "Dans un véhicule, la molette et le menu d'actions d'Arma restent utilisables quand le téléphone est porté (en petit à l'écran) : démarrer le moteur, changer de place, descendre... Téléphone en main, la molette reste au téléphone."],
     ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;
 
-// Mode drone : les ordres s'exécutent là où le drone est local (pilote, serveur ou client qui l'a posé).
-["comspec_atak_native_droneCmd", { _this call comspec_atak_native_fnc_droneCmd; }] call CBA_fnc_addEventHandler;
+// Mode drone : plus de gestionnaire comspec_atak_native_droneCmd (lot mpauth3, SEC-022). Les demandes du téléphone vont
+// au serveur (fn_droneServer), qui relaie au drone celles de son pilote (fn_droneCmd, remoteExecCall vers le drone).
 // Retour du drone vers le pilote : ennemi repéré ou engagé en mode recherche.
 ["comspec_atak_native_droneEvent", {
     params ["_d", "_kind", "_pos", "_what"];

@@ -67,8 +67,10 @@
       de recoller l'équipage à la machine du drone. Surveillance automatique (tick) : ordre sans effet ou aucun progrès vers
       le but pendant 10 s → même reprise, une fois par ordre, notée au journal.
     Transfert : ["transfer", uid] vers un allié à moins de 50 m portant un téléphone, à confirmer d'un second appui, puis
-      3 s de liaison ; le drone lui appartient (COMSPEC_DroneOwner, et COMSPEC_ATAK_Drone sur son client par l'événement
-      visé comspec_atak_native_droneCmd "transferIn") ; noté au journal des deux pilotes. ["transferIn", [drone, de, home, étape]].
+      3 s de liaison ; le drone lui appartient (COMSPEC_DroneOwner, et COMSPEC_ATAK_Drone sur son client par fn_droneCmd
+      "transferIn", que le serveur lui relaie) ; noté au journal des deux pilotes. ["transferIn", [drone, de, home, étape]].
+    Lot mpauth3 (SEC-022) : toute demande sur un drone (ordre, appairage, désappairage, transfert, reprise) part au
+      serveur (fn_droneServer, remoteExecCall vers 2), qui la juge sur le pilote qu'il tient lui-même.
     Ordres web (COMSPEC Athena, via l'addon Overwatch connect), à appeler sur le client du pilote :
       ["webCmd", [ordre, [arguments]]] → true si l'ordre est accepté, false sinon (pas de drone, hors liaison, ordre inconnu).
       Positions : [x, y] ou [x, y, z] (z ignoré, recalé sur le sol) ; unité : uid du joueur ou netId.
@@ -171,7 +173,8 @@ private _send = {
     if (_cmd in _flight && {!(missionNamespace getVariable ["COMSPEC_ATAK_DroneSeqSending", false])}) then { ["stop", "", true] call comspec_atak_native_fnc_droneSeq; };
     // Un ordre du pilote remplace le rôle tenu seul par le drone (fn_droneFleet : garde, surveillance...).
     if (_cmd in _flight && {!(missionNamespace getVariable ["COMSPEC_ATAK_DroneRoleSending", false])} && {(_d getVariable ["COMSPEC_DroneRole", ""]) isNotEqualTo ""}) then { _d setVariable ["COMSPEC_DroneRole", "", true]; };
-    ["comspec_atak_native_droneCmd", [_d, _cmd, _args], _d] call CBA_fnc_targetEvent;
+    // Demande au serveur (fn_droneServer) : il ne la relaie au drone que si elle vient de son pilote (lot mpauth3, SEC-022).
+    [_d, _cmd, _args] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
     true
 };
 private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
@@ -655,8 +658,8 @@ private _recover = {
     // Unité suivie disparue : stationnaire.
     if (_cmd in ["follow", "escort", "home"] && {private _t = _args param [0, objNull]; !(_t isEqualType objNull) || {!alive _t}}) then { _cmd = "hover"; _args = []; };
     if (_cmd isNotEqualTo "manual" && {(_d getVariable ["COMSPEC_DroneLock", ""]) isNotEqualTo ""}) then { _d setVariable ["COMSPEC_DroneLock", "", true]; };
-    ["comspec_atak_native_droneCmd", [_d, "force", [_cmd, _args]], _d] call CBA_fnc_targetEvent;
-    ["comspec_atak_native_droneCmd", [_d, "relocal", [_cmd, _args]]] call CBA_fnc_serverEvent;
+    [_d, "force", [_cmd, _args]] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
+    [_d, "relocal", [_cmd, _args]] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", [_cmd, _args, time, _d getVariable ["COMSPEC_DroneAckN", 0], false, _auto || {_o param [5, false]}, -1, 1e9, time]];
     [format ["%1 : ordre « %2 » renvoyé, IA de vol remise d'aplomb%3", ["Exécution forcée", "Drone bloqué, reprise automatique"] select _auto,
         [_expect getOrDefault [_cmd, "HOVER"]] call _modeName, ["", format [" (%1)", _why]] select (_why isNotEqualTo "")], "#f2ab33"] call _log;
@@ -761,6 +764,8 @@ switch (_act) do {
         _new setVariable ["COMSPEC_DroneAlt", _s getOrDefault ["droneAlt", 40], true];
         _new setVariable ["COMSPEC_DroneSpd", _s getOrDefault ["droneSpd", 40], true];
         [_new] call _adopt;
+        // Le serveur tient le pilote lui-même (fn_droneServer) : sans cette demande, il refuserait les ordres du téléphone.
+        [_new, "pair", []] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
         private _nm = [_new, [], "NAME"] call comspec_atak_native_fnc_droneOsd;
         ["SUCCESS", format ["Drone appairé : %1", _nm]] call _say;
         [format ["Appairage : %1, point de décollage en %2", _nm, [getPosASL _new, 8] call comspec_atak_native_fnc_gridRef], "#5cc76b"] call _log;
@@ -771,7 +776,7 @@ switch (_act) do {
             if (alive _d) then { ["Désappairage du drone"] call _log; };
             _d setVariable ["COMSPEC_DroneOwner", "", true]; _d setVariable ["COMSPEC_DroneLock", nil, true];
             // Rendu propre au terminal UAV : plus de doStop ni de boucle du téléphone (fn_droneCmd "release").
-            if (alive _d) then { ["comspec_atak_native_droneCmd", [_d, "release", []], _d] call CBA_fnc_targetEvent; };
+            if (alive _d) then { [_d, "release", []] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2]; };
         };
         call _camClose;
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
@@ -1550,7 +1555,7 @@ switch (_act) do {
         _s set ["droneConfirm", ["", 0]];
         // Poignée de main : 3 s de liaison entre les deux téléphones, annoncée au destinataire.
         missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", true];
-        ["comspec_atak_native_droneCmd", [_d, "transferIn", [name player, _uid, [], "HELLO"]], _t] call CBA_fnc_targetEvent;
+        [_d, "transferIn", [name player, _uid, [], "HELLO"]] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
         ["INFO", format ["Liaison avec le téléphone de %1…", name _t]] call _say;
         [{ missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", false]; ["transferDo", _this] call comspec_atak_native_fnc_droneAction; }, [_d, _t, _uid], 3] call CBA_fnc_waitAndExecute;
         call _render;
@@ -1564,7 +1569,7 @@ switch (_act) do {
         };
         _d setVariable ["COMSPEC_DroneOwner", _uid, true];
         _d setVariable ["COMSPEC_DroneLock", "", true];
-        ["comspec_atak_native_droneCmd", [_d, "transferIn", [name player, _uid, missionNamespace getVariable ["COMSPEC_ATAK_DroneHome", []], "DONE"]], _t] call CBA_fnc_targetEvent;
+        [_d, "transferIn", [name player, _uid, missionNamespace getVariable ["COMSPEC_ATAK_DroneHome", []], "DONE"]] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
         [format ["Drone transféré à %1", name _t], "#5cc76b"] call _log;
         ["SUCCESS", format ["Drone transféré à %1", name _t]] call _say;
         // On rend la main sans libérer le drone : il appartient déjà au nouveau pilote.

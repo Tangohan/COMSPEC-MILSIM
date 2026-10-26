@@ -63,7 +63,8 @@ private _sendTo = {
         false
     };
     if ((_x getVariable ["COMSPEC_DroneLock", ""]) isNotEqualTo "") then { _x setVariable ["COMSPEC_DroneLock", "", true]; };
-    ["comspec_atak_native_droneCmd", [_x, _cmd, _args], _x] call CBA_fnc_targetEvent;
+    // Demande au serveur (fn_droneServer), relayée au drone s'il est à ce pilote (lot mpauth3, SEC-022).
+    [_x, _cmd, _args] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
     true
 };
 // Rang dans la flotte (0 = drone piloté) : décalage du suivi (fn_droneCmd, variable COMSPEC_DroneSlot) et des orbites.
@@ -108,7 +109,7 @@ switch (_act) do {
         _arg setVariable ["COMSPEC_DroneLock", nil, true];
         _arg setVariable ["COMSPEC_DroneRole", nil, true];
         // Rendu propre au terminal UAV, comme au désappairage (fn_droneCmd "release").
-        if (alive _arg) then { ["comspec_atak_native_droneCmd", [_arg, "release", []], _arg] call CBA_fnc_targetEvent; };
+        if (alive _arg) then { [_arg, "release", []] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2]; };
         missionNamespace setVariable ["COMSPEC_ATAK_DroneFleet", _bg - [_arg]];
         [format ["Flotte : %1 libéré", [_arg] call _name]] call _log;
         call _render;
@@ -202,14 +203,14 @@ switch (_act) do {
                 [format ["Flotte : %1 hors liaison, retour au point de décollage", [_x0] call _name], "#e5483a"] call _log;
                 if (_air && {!(_m in ["STRIKE", "RTH", "LAND", "STANDBY"])}) then {
                     _x0 setVariable ["COMSPEC_DroneRole", "", true];
-                    ["comspec_atak_native_droneCmd", [_x0, "rth", [_home]], _x0] call CBA_fnc_targetEvent;
+                    [_x0, "rth", [_home]] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
                 };
             };
             if (!_was && {_ok}) then { [format ["Flotte : %1 de nouveau en liaison", [_x0] call _name], "#5cc76b"] call _log; };
             if ((fuel _x0) <= 0.1 && {_air} && {!(_x0 getVariable ["COMSPEC_DroneBgLow", false])} && {!(_m in ["STRIKE", "RTH", "LAND"])}) then {
                 _x0 setVariable ["COMSPEC_DroneBgLow", true];
                 _x0 setVariable ["COMSPEC_DroneRole", "", true];
-                ["comspec_atak_native_droneCmd", [_x0, "rth", [_home]], _x0] call CBA_fnc_targetEvent;
+                [_x0, "rth", [_home]] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
                 ["WARNING", format ["%1 : batterie critique, retour au point de décollage", [_x0] call _name]] call _say;
                 [format ["Flotte : %1 batterie critique (%2 %%), retour automatique", [_x0] call _name, round (100 * fuel _x0)], "#e5483a"] call _log;
             };
@@ -219,7 +220,7 @@ switch (_act) do {
                 _x0 setVariable ["COMSPEC_DroneBgZone", _zid];
                 if (_zid isNotEqualTo "" && {_ok} && {_air} && {!(_m in ["STRIKE", "LAND", "RTH"])}) then {
                     private _out = ["exit", getPosASL _x0] call comspec_atak_native_fnc_noFly;
-                    ["comspec_atak_native_droneCmd", [_x0, "goto", [[_out select 0, _out select 1, 0]]], _x0] call CBA_fnc_targetEvent;
+                    [_x0, "goto", [[_out select 0, _out select 1, 0]]] remoteExecCall ["comspec_atak_native_fnc_droneServer", 2];
                     [format ["Flotte : %1 en zone interdite, sortie vers %2", [_x0] call _name, [_out, 8] call comspec_atak_native_fnc_gridRef], "#e5483a"] call _log;
                 };
             };
