@@ -53,7 +53,9 @@ if (_mode isEqualType "") then {
 // l'effacerait avant la lecture du serveur).
 if (local _logic) then { deleteVehicle _logic; };
 
-if (_show) then {
+// Serveur seul : la variable publique atteint les clients (sinon N diffusions et des clients
+// lents qui lisent une logique déjà supprimée).
+if (_show && {isServer}) then {
     [{
         [true] call comspec_overwatch_connect_fnc_setAtakShowEnemyAi;
     }, [], 2] call CBA_fnc_waitAndExecute;

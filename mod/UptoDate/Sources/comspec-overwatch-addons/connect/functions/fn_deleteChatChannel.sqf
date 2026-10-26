@@ -4,8 +4,6 @@
 */
 params [["_channelKey", "", [""]]];
 if (!hasInterface) exitWith { false };
-// Requête HTTP Athena : contexte suspendable requis (extAwait) pour ne pas figer le jeu.
-if (!canSuspend) exitWith { _this spawn comspec_overwatch_connect_fnc_deleteChatChannel; true };
 _channelKey = toLower (trim _channelKey);
 if (_channelKey isEqualTo "") exitWith { false };
 if (_channelKey in ["groupe", "commandement", "general", "jtac", "air", "squad", "global", "hq", "c2", "command", "group"]) exitWith {
@@ -14,6 +12,9 @@ if (_channelKey in ["groupe", "commandement", "general", "jtac", "air", "squad",
     false
 };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+// Requête HTTP Athena : contexte suspendable requis (extAwait) pour ne pas figer le jeu.
+// Contrôles synchrones (canal système, liaison) faits avant : true ici = requête envoyée.
+if (!canSuspend) exitWith { [_channelKey] spawn comspec_overwatch_connect_fnc_deleteChatChannel; true };
 
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
 if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };

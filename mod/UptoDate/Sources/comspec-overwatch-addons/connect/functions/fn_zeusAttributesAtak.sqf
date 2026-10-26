@@ -73,9 +73,19 @@ if (_isVeh) exitWith {
             {
                 if (!isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"}) then {
                     if (_crewLabel isNotEqualTo "") then {
-                        [_x, _crewAlly, _crewLabel] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+                        [_x, _crewAlly, _crewLabel] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 2];
                     } else {
-                        [_x, _crewAlly] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+                        [_x, _crewAlly] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 2];
+                    };
+                    // Serveur seul : lui seul diffuse les variables publiques et COMSPEC_AllyTrackNetIds (sinon N machines x N envois).
+                    // Copie locale (non publique) pour le rapport immédiat ci-dessous, comme fn_allyTrackConfigure.
+                    if (!isServer) then {
+                        private _atl = missionNamespace getVariable ["COMSPEC_AllyTrackUnits", []];
+                        if (!(_atl isEqualType [])) then { _atl = []; };
+                        if (_crewAlly) then { _atl pushBackUnique _x; } else { _atl = _atl - [_x]; };
+                        missionNamespace setVariable ["COMSPEC_AllyTrackUnits", _atl, false];
+                        _x setVariable ["COMSPEC_AllyTrack", _crewAlly, false];
+                        if (_crewAlly && {_crewLabel isNotEqualTo ""} && {!((toLower (trim _crewLabel)) regexMatch "^ally-[0-9]+-[0-9]+(-[0-9]+)*$")}) then { _x setVariable ["COMSPEC_AllyCallsign", trim _crewLabel, false]; };
                     };
                     if (_crewAlly) then {
                         _x setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
@@ -173,7 +183,17 @@ private _opened = [
                 };
             };
             {
-                [_x, _allyOnVal, _allyCs] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+                [_x, _allyOnVal, _allyCs] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 2];
+                // Serveur seul : lui seul diffuse les variables publiques et COMSPEC_AllyTrackNetIds (sinon N machines x N envois).
+                // Copie locale (non publique) pour le rapport immédiat ci-dessous, comme fn_allyTrackConfigure.
+                if (!isServer) then {
+                    private _atl = missionNamespace getVariable ["COMSPEC_AllyTrackUnits", []];
+                    if (!(_atl isEqualType [])) then { _atl = []; };
+                    if (_allyOnVal) then { _atl pushBackUnique _x; } else { _atl = _atl - [_x]; };
+                    missionNamespace setVariable ["COMSPEC_AllyTrackUnits", _atl, false];
+                    _x setVariable ["COMSPEC_AllyTrack", _allyOnVal, false];
+                    if (_allyOnVal && {_allyCs isEqualType ""} && {!((toLower (trim _allyCs)) regexMatch "^ally-[0-9]+-[0-9]+(-[0-9]+)*$")}) then { _x setVariable ["COMSPEC_AllyCallsign", trim _allyCs, false]; };
+                };
                 if (_allyOnVal) then {
                     _x setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
                     [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;

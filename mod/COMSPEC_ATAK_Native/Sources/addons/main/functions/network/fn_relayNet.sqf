@@ -65,7 +65,9 @@ switch (_act) do {
                 _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
                 if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
                 private _d = _p distance2D _jp;
-                if (_d < _jr) then { _m = _m * ((_d / _jr) ^ 2); };
+                // Force du brouilleur (7e élément, 1 par défaut), comme fn_linkQuality.
+                private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
+                if (_d < _jr) then { _m = _m * (1 - _js * (1 - (_d / _jr) ^ 2)); };
             } forEach _jam;
             _m
         };

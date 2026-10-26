@@ -107,10 +107,13 @@ switch (_act) do {
         } forEach allPlayers;
         private _srv = (missionNamespace getVariable ["COMSPEC_ATAK_ZeusJammersSrv", []]) select { (_x select 4) >= _now };
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusJammersSrv", _srv];
-        private _list = missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []];
+        private _all = missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []];
+        // Brouilleurs Zeus retirés (ou expirés) mais remis par l'écriture d'un client à liste périmée : enlevés à nouveau.
+        private _srvIds = _srv apply { _x select 2 };
+        private _list = _all select { private _id = _x param [2, ""]; !(_id isEqualType "") || {(_id find "zeus:") isNotEqualTo 0} || {_id in _srvIds} };
         private _have = _list apply { _x param [2, ""] };
         private _miss = _srv select { !((_x select 2) in _have) };
-        if (_miss isNotEqualTo []) then { missionNamespace setVariable ["COMSPEC_ATAK_Jammers", _list + _miss, true]; };
+        if (_miss isNotEqualTo [] || {(count _list) isNotEqualTo (count _all)}) then { missionNamespace setVariable ["COMSPEC_ATAK_Jammers", _list + _miss, true]; };
     };
 };
 true

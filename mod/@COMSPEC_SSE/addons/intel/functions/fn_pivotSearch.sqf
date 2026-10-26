@@ -46,9 +46,10 @@ if (_keys isEqualTo []) exitWith { [] };
 private _matches = [];
 // Candidats : entités SSE uniquement, sans doublons (allMissionObjects recoupe allUnits/vehicles).
 // Balayage de la mission mis en cache 10 s : l'onglet graphe rappelle le pivot à chaque rafraîchissement.
+// Cache vidé quand une entité devient SSE (intel/XEH_postInit) ; l'exploitation (_emit) rebalaye toujours.
 private _cache = missionNamespace getVariable ["comspec_sse_pivotCandidates", [-1, []]];
 private _candidates = _cache select 1;
-if ((_cache select 0) < 0 || {(diag_tickTime - (_cache select 0)) > 10}) then {
+if (_emit || {(_cache select 0) < 0} || {(diag_tickTime - (_cache select 0)) > 10}) then {
     _candidates = (allUnits + vehicles + (allMissionObjects "All")) select {
         _x getVariable ["comspec_sse_enabled", false]
     };

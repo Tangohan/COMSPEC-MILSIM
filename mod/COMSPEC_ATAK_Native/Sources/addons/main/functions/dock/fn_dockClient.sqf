@@ -69,7 +69,10 @@ switch (_act) do {
         if ((["phone"] call comspec_atak_native_fnc_dockClient) isEqualTo "") exitWith { playSound "ClickSoft"; };
         private _uid = getPlayerUID player;
         private _slots = _dock getVariable ["COMSPEC_ATAK_DockSlots", []];
+        // Résumé d'abord (seul lisible dans le bandeau d'une ligne) : emplacements libres et vitesse ; le détail suit (centre).
         private _lines = ["Socle de recharge CS-10"];
+        if ((count _slots) > 0) then { _lines pushBack format ["Libre : %1/%2", { (count _x) == 0 } count _slots, count _slots]; };
+        _lines pushBack format ["%1 %% par minute", missionNamespace getVariable ["comspec_atak_native_dock_rate", 1.5]];
         {
             if ((count _x) >= 4) then {
                 private _n = format ["%1", _forEachIndex + 1];
@@ -80,7 +83,6 @@ switch (_act) do {
             };
         } forEach _slots;
         if ((count _slots) == 0) then { _lines pushBack "Socle en démarrage…"; };
-        _lines pushBack format ["%1 %% par minute", missionNamespace getVariable ["comspec_atak_native_dock_rate", 1.5]];
         ["INFO", _lines joinString " · ", 8, 20] call comspec_atak_native_fnc_notify;
     };
     case "deploy": {

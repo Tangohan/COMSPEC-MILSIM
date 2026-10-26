@@ -109,6 +109,13 @@ switch (_act) do {
     case "tick": {
         if (!isServer || {!(missionNamespace getVariable ["comspec_atak_native_capture_enabled", true])}) exitWith {};
         private _caps = missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap];
+        // Révocation Athena sans réponse dans les délais (joueur sollicité parti, liaison morte) : « offline » plutôt
+        // qu'en attente pour le reste de la mission.
+        private _late = false;
+        {
+            if ((_y getOrDefault ["athena", ""]) isEqualTo "pending" && {_now > (_y getOrDefault ["revokeBy", 1e9])}) then { _y set ["athena", "offline"]; _late = true; };
+        } forEach _caps;
+        if (_late) then { call _publish; };
         private _go = missionNamespace getVariable ["COMSPEC_ATAK_CapGo", createHashMap];
         private _R = (missionNamespace getVariable ["comspec_atak_native_capture_radius", 100]) max 5;
         // Sources : [objet, genre, étiquette du téléphone, id de capture déjà ouverte]
@@ -259,6 +266,17 @@ switch (_act) do {
     };
     case "validate";
     case "dismiss": {
+        // Droits vérifiés ici aussi (fn_compromise « can ») : chef de groupe, propriétaire du téléphone, Zeus, ou
+        // réglage capture_validate ouvert à tous. Le camp est vérifié plus bas.
+        private _rb = _arg param [1, objNull];
+        private _rc = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_arg param [0, ""], createHashMap];
+        if ((count _rc) > 0 && {!isNull _rb} && {!((missionNamespace getVariable ["comspec_atak_native_capture_validate", 0]) isEqualTo 1
+            || {(leader group _rb) isEqualTo _rb}
+            || {(getPlayerUID _rb) isEqualTo ((_rc get "tag") param [0, ""])}
+            || {!isNull (getAssignedCuratorLogic _rb)}
+            || {_rb getVariable ["COMSPEC_ATAK_AdminOk", false]})}) exitWith {
+            ["WARNING", "CAPTURE", format ["%1 : %2 refusé à %3 (ni chef, ni propriétaire, ni Zeus)", _arg param [0, ""], _act, name _rb]] call comspec_atak_native_fnc_log;
+        };
         _arg params [["_id", ""], ["_by", objNull]];
         private _c = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_id, createHashMap];
         if ((count _c) isEqualTo 0 || {isNull _by}) exitWith {};
@@ -274,11 +292,14 @@ switch (_act) do {
             [_side, "dismissed", _id] call _toSide;
         };
         _c set ["state", "validated"];
-        _c set ["athena", "pending"];
+        // Sans identifiant de terminal, aucun client ne peut révoquer : « offline » tout de suite, sans chaîne d'essais.
+        private _term = (_c get "tag") param [5, ""];
+        _c set ["athena", ["offline", "pending"] select (_term isNotEqualTo "")];
+        _c set ["revokeBy", _now + 45];
         _c set ["tried", [getPlayerUID _by]];
         call _publish;
         [_side, "validated", _id] call _toSide;
-        ["comspec_atak_native_compromise", ["revoke", [_id, (_c get "tag") param [5, ""], (_c get "tag") param [2, ""]]], _by] call CBA_fnc_targetEvent;
+        if (_term isNotEqualTo "") then { ["comspec_atak_native_compromise", ["revoke", [_id, _term, (_c get "tag") param [2, ""]]], _by] call CBA_fnc_targetEvent; };
         // Propriétaire : nouvel IMEI sur son prochain téléphone.
         private _uid = (_c get "tag") param [0, ""];
         private _i = allPlayers findIf { (getPlayerUID _x) isEqualTo _uid };
@@ -290,6 +311,9 @@ switch (_act) do {
         private _c = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_id, createHashMap];
         if ((count _c) isEqualTo 0) exitWith {};
         if (_ok) exitWith { _c set ["athena", "ok"]; call _publish; };
+        // Déjà réglée (révoquée, ou délai dépassé) : un échec tardif ne relance rien. Sans identifiant de terminal : inutile.
+        if ((_c getOrDefault ["athena", ""]) isNotEqualTo "pending") exitWith {};
+        if (((_c get "tag") param [5, ""]) isEqualTo "") exitWith { _c set ["athena", "offline"]; call _publish; };
         // Pas de liaison Athena chez celui qui a validé : on essaie chez le propriétaire, puis chez un chef du camp.
         private _tried = _c getOrDefault ["tried", []];
         if (!isNull _from) then { _tried pushBackUnique getPlayerUID _from; };
@@ -301,6 +325,7 @@ switch (_act) do {
         if (_k < 0) then { _k = _cands findIf { (leader group _x) isEqualTo _x }; };
         if (_k < 0) exitWith { _c set ["athena", "offline"]; call _publish; };
         private _next = _cands select _k;
+        _c set ["revokeBy", _now + 45];
         ["comspec_atak_native_compromise", ["revoke", [_id, (_c get "tag") param [5, ""], (_c get "tag") param [2, ""]]], _next] call CBA_fnc_targetEvent;
     };
 };

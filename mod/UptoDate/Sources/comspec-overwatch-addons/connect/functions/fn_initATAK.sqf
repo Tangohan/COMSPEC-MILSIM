@@ -4,8 +4,16 @@
 if (!hasInterface) exitWith {};
 if (isNull player) exitWith {};
 
-waitUntil {!isNull player && {!isNull (findDisplay 46)}};
-waitUntil {CBA_missionTime > 1};
+// Appelé hors ordonnanceur (callback CBA) : pas de waitUntil possible, les appelants attendent joueur + écran 46.
+if (canSuspend) then {
+    waitUntil {!isNull player && {!isNull (findDisplay 46)}};
+    waitUntil {CBA_missionTime > 1};
+};
+if (isNull (findDisplay 46) || {CBA_missionTime <= 1}) exitWith {
+    [{ !isNull player && {!isNull findDisplay 46} && {CBA_missionTime > 1} }, {
+        [] call comspec_overwatch_connect_fnc_initATAK;
+    }] call CBA_fnc_waitUntilAndExecute;
+};
 
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
     diag_log "[COMSPEC ATAK] Overwatch désactivé — tracking reporté";

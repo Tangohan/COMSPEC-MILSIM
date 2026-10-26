@@ -40,6 +40,8 @@ echo [INFO] Build ATAK natif : %BDATE% %BCOMMIT%
 "%BUILDER%" "%ADDON%" "%OUT%\addons" -packonly -clear -temp="%ABTMP%\native_main" -prefix=z\comspec_atak_native\addons\main
 set "BERR=%errorlevel%"
 copy /Y "%TEMP%\comspec_build_info.hpp" "%STAMPFILE%" >nul
+:: Build precedent interrompu (Ctrl+C) : la copie de sauvegarde contenait deja une empreinte. On remet toujours BUILD_STAMP a vide.
+powershell -NoProfile -Command "$p=$env:STAMPFILE; $q=[char]34; $t=[IO.File]::ReadAllText($p); [IO.File]::WriteAllText($p, ($t -replace ('#define BUILD_STAMP '+$q+'.*'+$q), ('#define BUILD_STAMP '+$q+$q)))" || (echo [ATTENTION] BUILD_STAMP non remis a vide dans build_info.hpp : ne pas committer ce fichier.)
 if not "%BERR%"=="0" exit /b 1
 :: Pylones relais 3D (modeles MLOD volumineux) : PBO a part.
 "%BUILDER%" "%ROOT%Sources\addons\towers" "%OUT%\addons" -packonly -clear -temp="%ABTMP%\native_towers" -prefix=z\comspec_atak_native\addons\towers
@@ -63,8 +65,8 @@ mkdir "%OWTMP%"
 if errorlevel 1 exit /b 1
 "%BUILDER%" "%OW%\Sources\comspec-overwatch-addons\connect" "%OWTMP%" -packonly -clear -temp="%ABTMP%\ow_connect" -prefix=z\comspec_overwatch\addons\connect
 if errorlevel 1 exit /b 1
-copy /Y "%OWTMP%\main.pbo" "%OUT%\addons\comspec_overwatch_main.pbo" >nul
-copy /Y "%OWTMP%\connect.pbo" "%OUT%\addons\comspec_overwatch_connect.pbo" >nul
+copy /Y "%OWTMP%\main.pbo" "%OUT%\addons\comspec_overwatch_main.pbo" >nul || (echo [ERREUR] comspec_overwatch_main.pbo non copie : PBO verrouille, fermer Arma & exit /b 1)
+copy /Y "%OWTMP%\connect.pbo" "%OUT%\addons\comspec_overwatch_connect.pbo" >nul || (echo [ERREUR] comspec_overwatch_connect.pbo non copie : PBO verrouille, fermer Arma & exit /b 1)
 :: Controle final (tools\verify_build.py) : tout PBO hors des cinq attendus est deplace dans %TEMP%\comspec_atak_retires,
 :: puis taille, SHA-256 et prefixe de chaque PBO ; echec si doublon, PBO manquant ou fichier absent des sources (build perime).
 set "PY="

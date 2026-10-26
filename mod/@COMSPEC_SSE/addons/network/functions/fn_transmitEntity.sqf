@@ -10,7 +10,21 @@ params [
 
 // Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
 // pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
-if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_transmitEntity; true };
+// Verrou par sujet (local, non diffusé) posé avant le spawn : des clics répétés lançaient des envois parallèles du
+// même sujet (doublons Athena, journal, missionRecords). Levé à la fin du corps relancé.
+if (!canSuspend) exitWith {
+    if (!isNull _entity && {_entity getVariable ["comspec_sse_txBusy", false]}) exitWith {
+        if (_announce) then { ["Transmission en cours…", "INFO"] call comspec_sse_fnc_notify; };
+        false
+    };
+    if (!isNull _entity) then { _entity setVariable ["comspec_sse_txBusy", true]; };
+    _this spawn {
+        _this call comspec_sse_fnc_transmitEntity;
+        private _e = _this param [0, objNull];
+        if (_e isEqualType objNull && {!isNull _e}) then { _e setVariable ["comspec_sse_txBusy", false]; };
+    };
+    true
+};
 
 if (isNull _entity) exitWith {
     ["TX abandon — aucune cible", "WARN"] call comspec_sse_fnc_log;

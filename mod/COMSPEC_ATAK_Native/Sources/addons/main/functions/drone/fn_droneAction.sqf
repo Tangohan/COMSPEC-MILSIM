@@ -745,7 +745,8 @@ switch (_act) do {
         private _new = _arg;
         if (isNull _new || {!alive _new} || {(player distance _new) > 15}) exitWith { ["WARNING", "Posez le drone à vos pieds pour l'appairer"] call _say; };
         private _owner = _new getVariable ["COMSPEC_DroneOwner", ""];
-        if (_owner isNotEqualTo "" && {_owner isNotEqualTo getPlayerUID player}) exitWith { ["WARNING", "Ce drone est déjà appairé à un autre téléphone"] call _say; };
+        // Pilote parti de la partie (UID absent des joueurs) : drone libre.
+        if (_owner isNotEqualTo "" && {_owner isNotEqualTo getPlayerUID player} && {(allPlayers findIf { (getPlayerUID _x) isEqualTo _owner }) >= 0}) exitWith { ["WARNING", "Ce drone est déjà appairé à un autre téléphone"] call _say; };
         // Flotte : un drone déjà appairé devient le drone piloté ; un nouveau drone s'ajoute, celui d'avant continue seul.
         if (_new in (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []])) exitWith { ["switch", _new] call comspec_atak_native_fnc_droneFleet; };
         if (_new isEqualTo _d) exitWith { call _render; };
@@ -1571,8 +1572,12 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
         missionNamespace setVariable ["COMSPEC_ATAK_Drone", objNull];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", []];
-        [missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]] call CBA_fnc_removePerFrameHandler;
-        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", -1];
+        // Flotte : comme au désappairage, le drone suivant devient le drone piloté (la surveillance continue).
+        ["promote"] call comspec_atak_native_fnc_droneFleet;
+        if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
+            [missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]] call CBA_fnc_removePerFrameHandler;
+            missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", -1];
+        };
         call _render;
     };
     case "transferIn": {

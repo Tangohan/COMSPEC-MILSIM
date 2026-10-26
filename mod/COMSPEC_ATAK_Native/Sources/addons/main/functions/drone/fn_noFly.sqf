@@ -88,11 +88,12 @@ switch (_act) do {
     };
     case "draw": {
         if (isNull _arg) exitWith {};
+        private _lbl = ("ZONE INTERDITE DRONE") call comspec_atak_native_fnc_tr;
         {
             _x params ["", "_c", "_r"];
             _arg drawEllipse [_c, _r, _r, 0, [0.9, 0.2, 0.18, 0.9], ""];
             _arg drawEllipse [_c, _r, _r, 0, [0.9, 0.2, 0.18, 0.35], "\A3\ui_f\data\map\markerbrushes\bdiagonal_ca.paa"];
-            _arg drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.95, 0.3, 0.25, 1], _c, 0, 0, 0, "ZONE INTERDITE DRONE", 2, 0.03, (COMSPEC_ATAK_FontSet select 1), "center"];
+            _arg drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.95, 0.3, 0.25, 1], _c, 0, 0, 0, _lbl, 2, 0.03, (COMSPEC_ATAK_FontSet select 1), "center"];
         } forEach _mine;
     };
 };

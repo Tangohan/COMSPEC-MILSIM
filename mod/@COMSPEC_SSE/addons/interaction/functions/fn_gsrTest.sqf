@@ -1,7 +1,7 @@
 /*
     Test de résidus de tir (GSR) sur les mains d'une personne, avec un écouvillon du kit.
     Positif si la personne a tiré dans les 45 dernières minutes (horodatage serveur du dernier tir,
-    posé par le gestionnaire Fired de l'addon interaction). La pluie et le temps écoulé dégradent
+    posé par le gestionnaire Fired de l'addon interaction, diffusé au plus toutes les 5 min). La pluie et le temps écoulé dégradent
     les traces : au-delà de 20 min ou sous une forte pluie, le résultat devient « faible ».
     [_target, _player] call comspec_sse_fnc_gsrTest
 */

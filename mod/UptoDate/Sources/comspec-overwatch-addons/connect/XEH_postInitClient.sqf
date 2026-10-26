@@ -21,7 +21,17 @@ if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") then {
         if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {
             ["notify"] call comspec_atak_native_fnc_athenaChoice;
         };
-        [] call comspec_overwatch_connect_fnc_athenaChoiceShow;
+        // Sans ATAK natif : pas de fenêtre ouverte d'office par-dessus le jeu ; alerte dans le journal du téléphone,
+        // la question s'ouvre sur action du joueur (menu Échap › Service Athéna).
+        [
+            format [
+                "%1 (%2)",
+                ("Votre unité utilise-t-elle le service Athéna ?" call comspec_overwatch_connect_fnc_tr),
+                ("menu Échap › Service Athéna" call comspec_overwatch_connect_fnc_tr)
+            ],
+            "link",
+            "warn"
+        ] call comspec_overwatch_connect_fnc_announce;
     };
 }] call CBA_fnc_waitUntilAndExecute;
 
@@ -30,8 +40,11 @@ if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") then {
 
 // Différer ATAK / tracking : laisse MRH JIP + REAPP + ACE (~3k delayed) respirer
 [{
+    // Joueur / écran pas encore prêts (JIP lent) : attendre sans limite au lieu d'un seul nouvel essai à 5 s.
     if (isNull player || {isNull findDisplay 46}) exitWith {
-        [{ [] call comspec_overwatch_connect_fnc_initATAK; }, [], 5] call CBA_fnc_waitAndExecute;
+        [{ !isNull player && {!isNull findDisplay 46} && {CBA_missionTime > 1} }, {
+            [] call comspec_overwatch_connect_fnc_initATAK;
+        }] call CBA_fnc_waitUntilAndExecute;
     };
     // Grâce proactive si on arrive pile pendant l’écran respawn
     if (!(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false])) then {

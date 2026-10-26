@@ -62,7 +62,9 @@ private _bioWaitsPerson = {
                             private _ent = if (_nid isEqualType "" && {_nid isNotEqualTo ""}) then { objectFromNetId _nid } else { objNull };
                             private _rid = _x getOrDefault ["record_id", "?"];
                             if (!(_rid isEqualType "")) then { _rid = str _rid; };
-                            [_ent, _rid] call comspec_sse_fnc_personTransmitted;
+                            private _txRaw = _x getOrDefault ["txRaw", ""];
+                            if (!(_txRaw isEqualType "")) then { _txRaw = ""; };
+                            [_ent, _rid, _txRaw] call comspec_sse_fnc_personTransmitted;
                         };
                     } else {
                         private _next = _attempts + 1;

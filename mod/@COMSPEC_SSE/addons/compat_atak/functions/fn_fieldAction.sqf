@@ -22,7 +22,8 @@ private _away = { params ["_code", ["_args", []]]; [] call comspec_atak_native_f
 
 if (_act isEqualTo "tab") exitWith { _st set ["tab", _arg]; call _render; true };
 if (_act isEqualTo "guide") exitWith { [{ ["COMSPEC_SSE", "Start"] call BIS_fnc_openFieldManual; }] call _away; true };
-if (_act isEqualTo "techlog") exitWith { [{ [] call comspec_sse_fnc_showLog; }] call _away; true };
+// Journal technique : rendu dans l'onglet JOURNAL de l'app (téléphone gardé ouvert), bascule affiché / masqué.
+if (_act isEqualTo "techlog") exitWith { _st set ["tab", "journal"]; _st set ["techlog", !(_st getOrDefault ["techlog", false])]; call _render; true };
 if (_act isEqualTo "chart") exitWith { [{ [false] call comspec_sse_fnc_chartOpen; }] call _away; true };
 if (_act isEqualTo "registry") exitWith { [{ ["evidence"] call comspec_sse_fnc_uiOpenScreen; }] call _away; true };
 if (_act isEqualTo "triage") exitWith {

@@ -9,7 +9,24 @@ params [
 
 // Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
 // pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
-if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_submitDigitalAcquisition; true };
+// Verrou par sujet (local, non diffusé) posé avant le spawn : des clics répétés lançaient des envois parallèles du
+// même sujet (doublons Athena, journal, missionRecords). Levé à la fin du corps relancé.
+// Clics joueur seulement (_announce) : les paliers / paquets Zeus (_announce false) sont des envois distincts.
+if (!canSuspend) exitWith {
+    private _lock = _announce && {!isNull _entity};
+    if (_lock && {_entity getVariable ["comspec_sse_txBusy", false]}) exitWith {
+        ["Transmission en cours…", "INFO"] call comspec_sse_fnc_notify;
+        false
+    };
+    if (_lock) then { _entity setVariable ["comspec_sse_txBusy", true]; };
+    [_this, _lock] spawn {
+        params ["_args", "_lock"];
+        _args call comspec_sse_fnc_submitDigitalAcquisition;
+        private _e = _args param [0, objNull];
+        if (_lock && {_e isEqualType objNull} && {!isNull _e}) then { _e setVariable ["comspec_sse_txBusy", false]; };
+    };
+    true
+};
 
 if (count _fog == 0) then {
     _fog = missionNamespace getVariable ["comspec_sse_lastDigitalResult", createHashMap];

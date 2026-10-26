@@ -14,7 +14,24 @@ params [
 
 // Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
 // pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
-if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_submitRecord; true };
+// Verrou par record_id posé avant le spawn : des clics répétés lançaient des envois parallèles du même
+// enregistrement (doublons Athena, journal, missionRecords). Levé à la fin du corps relancé.
+if (!canSuspend) exitWith {
+    if (isNil "comspec_sse_txBusyIds") then { comspec_sse_txBusyIds = createHashMap; };
+    // record_id vide : pas de verrou (sinon tous les envois sans id se bloqueraient entre eux).
+    private _lock = _recordId isNotEqualTo "";
+    if (_lock && {_recordId in comspec_sse_txBusyIds}) exitWith {
+        ["Transmission en cours…", "INFO"] call comspec_sse_fnc_notify;
+        false
+    };
+    if (_lock) then { comspec_sse_txBusyIds set [_recordId, true]; };
+    [_this, _lock, _recordId] spawn {
+        params ["_args", "_lock", "_rid"];
+        _args call comspec_sse_fnc_submitRecord;
+        if (_lock) then { comspec_sse_txBusyIds deleteAt _rid; };
+    };
+    true
+};
 
 private _payload = [_recordId, _category, _sourceType, _collector, _pos, _quality, _data] call comspec_sse_fnc_buildPayload;
 _payload set ["case_reference", [] call comspec_sse_fnc_getCaseReference];

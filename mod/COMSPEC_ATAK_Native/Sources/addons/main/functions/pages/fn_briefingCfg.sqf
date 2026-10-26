@@ -126,6 +126,9 @@ switch (_action) do {
             params ["_rid", "_url", "_broadcast"];
             private _t0 = diag_tickTime;
             waitUntil { sleep 0.25; (missionNamespace getVariable ["COMSPEC_GoogleBriefingRequestId", ""]) isNotEqualTo _rid || {diag_tickTime - _t0 > 45} };
+            // Chargement remplacé par un autre (nouvel id, pas "" posé par la réponse de la DLL) : c'est lui qui rendra compte.
+            private _cur = missionNamespace getVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+            if (_cur isNotEqualTo _rid && {_cur isNotEqualTo ""}) exitWith {};
             private _err = uiNamespace getVariable ["COMSPEC_ATAK_BriefGErr", []];
             private _res = switch (true) do {
                 case ((count _err) > 0): {

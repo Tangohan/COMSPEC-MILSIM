@@ -34,6 +34,10 @@ private _vy1 = ((_vtl select 1) max (_vbr select 1)) + _vmg;
     // Élément entièrement hors de la vue : rien à dessiner (boîte englobante de ses points).
     private _bx0 = 1e9; private _bx1 = -1e9; private _by0 = 1e9; private _by1 = -1e9;
     { _bx0 = _bx0 min (_x select 0); _bx1 = _bx1 max (_x select 0); _by0 = _by0 min (_x select 1); _by1 = _by1 max (_x select 1); } forEach _pts;
+    // Point : son libellé part vers la droite (NOTE, CHECK) et peut dépasser la marge ; boîte élargie de sa largeur estimée.
+    if ((_def select 3) isEqualTo "POINT") then {
+        _bx1 = _bx1 + (((count _text) max (count (_def select 5))) * 0.52 * (_tsz / pixelH) + 40) * _mpx;
+    };
     if (_bx1 < _vx0 || {_bx0 > _vx1} || {_by1 < _vy0} || {_by0 > _vy1}) then { continue };
     private _geom = _def select 3;
     private _style = _def select 8;

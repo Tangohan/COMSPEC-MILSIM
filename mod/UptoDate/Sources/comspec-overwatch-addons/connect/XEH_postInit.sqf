@@ -406,7 +406,11 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
             // ATAK natif : un code de connexion au compte et une notification, à chaque partie sans session.
             if (!isNil "comspec_atak_native_fnc_athenaLink") then { ["offer", false] call comspec_atak_native_fnc_athenaLink; };
             // « Oui » au service Athéna sans session : proposer tout de suite de lier le compte.
-            [] call comspec_overwatch_connect_fnc_athenaOfferLink;
+            // Sans ATAK natif : pas de fenêtre ouverte d'office par-dessus le jeu (waitAthenaReady a déjà posté l'alerte
+            // « Connexion Athena » dans le téléphone) ; la fenêtre s'ouvre sur action du joueur.
+            if (!isNil "comspec_atak_native_fnc_athenaLink") then {
+                [] call comspec_overwatch_connect_fnc_athenaOfferLink;
+            };
             private _loginUntil = diag_tickTime + 600;
             waitUntil {
                 ([] call comspec_overwatch_connect_fnc_isReady)
@@ -535,7 +539,9 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     };
     0 spawn {
         uiSleep 2;
-        waitUntil { missionNamespace getVariable ["COMSPEC_AthenaReady", false] || {diag_tickTime > 90} };
+        // Délai relatif : diag_tickTime compte depuis le lancement du jeu, pas depuis la mission.
+        private _t0 = diag_tickTime;
+        waitUntil { missionNamespace getVariable ["COMSPEC_AthenaReady", false] || {diag_tickTime - _t0 > 90} };
         [false] call comspec_overwatch_connect_fnc_syncCallsignFromAthena;
     };
 

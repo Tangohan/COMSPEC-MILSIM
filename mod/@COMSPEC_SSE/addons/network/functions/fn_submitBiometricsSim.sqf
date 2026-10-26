@@ -9,7 +9,21 @@ params [
 
 // Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
 // pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
-if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_submitBiometricsSim; true };
+// Verrou par sujet (local, non diffusé) posé avant le spawn : des clics répétés lançaient des envois parallèles du
+// même sujet (doublons Athena, journal, missionRecords). Levé à la fin du corps relancé.
+if (!canSuspend) exitWith {
+    if (!isNull _entity && {_entity getVariable ["comspec_sse_txBusy", false]}) exitWith {
+        if (_announce) then { ["Transmission en cours…", "INFO"] call comspec_sse_fnc_notify; };
+        false
+    };
+    if (!isNull _entity) then { _entity setVariable ["comspec_sse_txBusy", true]; };
+    _this spawn {
+        _this call comspec_sse_fnc_submitBiometricsSim;
+        private _e = _this param [0, objNull];
+        if (_e isEqualType objNull && {!isNull _e}) then { _e setVariable ["comspec_sse_txBusy", false]; };
+    };
+    true
+};
 
 private _payload = [_entity, _bioBundle] call comspec_sse_fnc_buildAthenaBiometricsPayload;
 private _uid = _payload getOrDefault ["sse_uid", "?"];
@@ -27,6 +41,8 @@ private _envelope = createHashMapFromArray [
     ["command", "SubmitSseBiometricsSim"],
     ["payload", _payload],
     ["record_id", _uid],
+    // Rattachement à la fiche personne quand le sse_uid est inconnu (fn_personTransmitted).
+    ["entity_netid", if (isNull _entity) then { "" } else { netId _entity }],
     ["txStatus", "PENDING"]
 ];
 

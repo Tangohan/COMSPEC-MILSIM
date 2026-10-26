@@ -10,7 +10,21 @@ params [
 
 // Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
 // pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
-if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_submitPersonRecord; true };
+// Verrou par sujet (local, non diffusé) posé avant le spawn : des clics répétés lançaient des envois parallèles du
+// même sujet (doublons Athena, journal, missionRecords). Levé à la fin du corps relancé.
+if (!canSuspend) exitWith {
+    if (!isNull _entity && {_entity getVariable ["comspec_sse_txBusy", false]}) exitWith {
+        if (_announce) then { ["Transmission en cours…", "INFO"] call comspec_sse_fnc_notify; };
+        false
+    };
+    if (!isNull _entity) then { _entity setVariable ["comspec_sse_txBusy", true]; };
+    _this spawn {
+        _this call comspec_sse_fnc_submitPersonRecord;
+        private _e = _this param [0, objNull];
+        if (_e isEqualType objNull && {!isNull _e}) then { _e setVariable ["comspec_sse_txBusy", false]; };
+    };
+    true
+};
 
 private _payload = [_entity, _extra] call comspec_sse_fnc_buildAthenaPersonPayload;
 private _uid = _payload getOrDefault ["sse_uid", "?"];
@@ -41,7 +55,7 @@ if ([] call comspec_sse_fnc_isOnline) then {
 
 if (_ok) then {
     // Post-traitement partagé avec flushQueue (envoi depuis la file offline).
-    [_entity, _uid] call comspec_sse_fnc_personTransmitted;
+    [_entity, _uid, _envelope getOrDefault ["txRaw", ""]] call comspec_sse_fnc_personTransmitted;
     if (_announce) then {
         ["Fiche d’identité envoyée au registre.", "SUCCESS"] call comspec_sse_fnc_notify;
     };
@@ -54,5 +68,5 @@ if (_ok) then {
     [_uid, "person", "athena", "QUEUED", 80, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 
-[format ["submitPersonRecord uid=%1 ok=%2 raw=%3", _uid, _ok, missionNamespace getVariable ["comspec_sse_lastExtRaw", ""]]] call comspec_sse_fnc_log;
+[format ["submitPersonRecord uid=%1 ok=%2 raw=%3", _uid, _ok, _envelope getOrDefault ["txRaw", ""]]] call comspec_sse_fnc_log;
 _ok
