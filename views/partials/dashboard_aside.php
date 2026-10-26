@@ -607,6 +607,9 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
                         <h2 class="dash-rail__title">Tableau de bord</h2>
                         <p class="dash-rail__unit"><?= $h($unitLabel) ?></p>
                     </span>
+                    <button type="button" class="dash-rail__close" data-dash-rail-mobile-close aria-label="Fermer les rubriques">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                    </button>
                 </div>
 
                 <nav class="dash-rail__nav" aria-label="Rubriques">
@@ -679,3 +682,18 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
         </div>
     </div>
 </aside>
+<?php
+$railFabCount = 0;
+foreach (array_merge($navTiles, $espaceTiles, $backofficeTiles, $adminTiles) as $railItem) {
+    // Opérateurs en liaison : information, pas un élément à traiter.
+    if (in_array($railItem['id'] ?? '', ['atak', 'atak-operators'], true)) {
+        continue;
+    }
+    $railFabCount += ctype_digit((string) ($railItem['badge'] ?? '')) ? (int) $railItem['badge'] : 0;
+}
+?>
+<button type="button" class="dash-rail-fab" data-dash-rail-mobile-open aria-controls="dash-rail" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    <span>Rubriques</span>
+    <?php if ($railFabCount > 0): ?><span class="dash-rail-fab__badge" aria-label="<?= $h($railFabCount . ' élément(s) à traiter') ?>"><?= $h($railFabCount > 99 ? '99+' : (string) $railFabCount) ?></span><?php endif; ?>
+</button>

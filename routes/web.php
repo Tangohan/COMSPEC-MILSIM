@@ -554,6 +554,7 @@ return function (Router $router) {
     $router->get('/manoeuvres', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/boite-reception', [InboxController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/boite-reception/lu', [InboxController::class, 'markRead'], [AuthMiddleware::class]);
+    $router->post('/boite-reception/supprimer', [InboxController::class, 'delete'], [AuthMiddleware::class]);
     $router->get('/onboarding', [OnboardingController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/onboarding/persona', [OnboardingController::class, 'choosePersona'], [AuthMiddleware::class]);
     $router->post('/onboarding/step', [OnboardingController::class, 'toggleStep'], [AuthMiddleware::class]);
@@ -1154,6 +1155,18 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/supprimer', [SystemTenantsController::class, 'destroy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Paiements PayPal des formules : vérification et activation manuelle.
     $router->get('/admin/paiements', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/paiements/export.csv', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'export'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/paiements/membres', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'searchMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'recordDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'refundDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/attribuer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorGrant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/retirer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRevoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/retablir', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRestore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/recalculer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRebuild'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/communaute/{tenantId}/prolonger', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'extend'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/communaute/{tenantId}/renouveler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'renew'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/relancer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'remind'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/note', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'addNote'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/reglages', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/{id}/activer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'activate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/{id}/refuser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'reject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1182,7 +1195,7 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     // Ancienne page « Dons » : le compte PayPal se règle désormais dans Admin > Paiements (un seul réglage).
-    $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '#reglages'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '?vue=dons'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/storage', [SystemStorageController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Explorateur de données (administration du site) : lire, chercher, modifier, supprimer, vider.
@@ -1947,6 +1960,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/atak-realism/save', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-realism/history', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'history'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-realism/version/{id}', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'getVersion'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-realism/version/{id}/restaurer', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'restore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-realism/verify', [\App\Controllers\Admin\AdminAtakRealismVerifyController::class, 'verify'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1999,6 +2013,13 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/reseaux-chiffrement', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeCryptoDomain'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats/{id}/revoquer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'revokeCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats/{id}/supprimer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'deleteCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // CR de fin d'opération imposé sur les téléphones ATAK : suivi par joueur, envoi, relance, réglages du jeu.
+    $router->get('/back-office/atak/suivi-cr', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/imposer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'force'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/reglages', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'settings'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/suivi-cr/{id}/export.csv', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/relancer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'remind'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/cloturer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/export.csv', [\App\Controllers\Admin\AdminAarReportsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

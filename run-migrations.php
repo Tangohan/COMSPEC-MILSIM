@@ -3639,6 +3639,13 @@ try {
 }
 $migrationEnsurePdo();
 
+$migrationRunner->step('atak_debrief', static function () use ($root, $pdo): void {
+    echo "Migration atak_debrief (CR de fin d'opération imposé sur les ATAK)...\n";
+    require_once $root . '/bootstrap/atak_debrief_migration.php';
+    run_atak_debrief_migration($pdo);
+});
+$migrationEnsurePdo();
+
 $rolePermissionMatrixMigrate = require $root . '/bootstrap/role_permission_matrix_migration.php';
 try {
     echo "Migration role_permission_matrix (matrice rôles & permissions par module)...\n";
@@ -4333,6 +4340,16 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_donations : ' . $e->getMessage() . "\n";
     $migrationRunner->warn('atak_donations', $e);
+}
+$migrationEnsurePdo();
+
+$paymentsLedgerMigrate = require $root . '/bootstrap/payments_ledger_migration.php';
+try {
+    echo "Migration suivi des paiements et dons (payment_events, platform_donations)...\n";
+    $paymentsLedgerMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] payments_ledger : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('payments_ledger', $e);
 }
 $migrationEnsurePdo();
 
