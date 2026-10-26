@@ -229,6 +229,10 @@ return [
             ['label' => 'Suivi des actions', 'href' => 'back-office/atak/comptes-rendus?vue=actions'],
             ['label' => 'Missions sans retour', 'href' => 'back-office/atak/comptes-rendus?vue=missions'],
         ]],
+        ['path' => 'back-office/atak/suivi-cr', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Suivi des CR de fin d’opération', 'subtitle' => 'Qui a reçu le CR imposé sur son ATAK, qui l’a remis, et quand son téléphone s’est synchronisé pour la dernière fois.', 'css' => ['back-office-aar.css', 'back-office-debrief.css'], 'quick' => [
+            ['label' => 'Comptes rendus post-op', 'href' => 'back-office/atak/comptes-rendus'],
+            ['label' => 'Remontées', 'href' => 'back-office/remontees'],
+        ]],
         ['path' => 'back-office/atak/comptes-rendus/modeles', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Modèles de debriefing', 'subtitle' => 'Questionnaires de compte rendu : questions courtes, listes, cases à cocher et texte libre.', 'css' => ['back-office-aar.css'], 'quick' => [
             ['label' => 'Comptes rendus', 'href' => 'back-office/atak/comptes-rendus'],
             ['label' => 'Nouveau modèle', 'href' => 'back-office/atak/comptes-rendus/modeles/nouveau'],
@@ -275,6 +279,7 @@ return [
         ['path' => 'back-office/ressources/atak-mod-blocks', 'group' => 'Ressources', 'title' => 'Restrictions d’accès au mod', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/ressources/atak-diffusion-rapports', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diffusion des rapports', 'subtitle' => 'Qui doit lire chaque compte rendu dès sa réception, qui prévenir si personne ne réagit, et ce qui a réellement été diffusé.', 'css' => ['back-office-atak-routing.css']],
         ['path' => 'back-office/ressources/atak-realism', 'group' => 'Ressources', 'title' => 'Réglages réalisme', 'flags' => ['boSkipPageHead' => true]],
+        ['path' => 'back-office/ressources/atak-realism/config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · RÉALISME', 'title' => 'Configuration réalisme', 'subtitle' => 'Relais radio, météo, certificats, dégâts des terminaux, symbologie : les règles de réalisme appliquées à la communauté.', 'css' => ['back-office-atak-realism.css']],
         ['path' => 'back-office/ressources/atak-mod', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · MOD', 'title' => 'Mod Arma', 'css' => ['back-office-atak-mod.css']],
         ['path' => 'back-office/audit', 'group' => 'Système', 'kicker' => 'SYSTÈME · TRAÇABILITÉ', 'title' => 'Journal d\'audit', 'subtitle' => 'Toutes les actions des administrateurs, datées et conservées 24 mois.', 'flags' => ['hideAuditPageHeader' => true]],
         ['path' => 'back-office/moderation', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · DISCIPLINE', 'title' => 'Sanctions et absences', 'subtitle' => 'Les sanctions, limitations et absences en cours, membre par membre.'],

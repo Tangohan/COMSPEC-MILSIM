@@ -3639,6 +3639,13 @@ try {
 }
 $migrationEnsurePdo();
 
+$migrationRunner->step('atak_debrief', static function () use ($root, $pdo): void {
+    echo "Migration atak_debrief (CR de fin d'opération imposé sur les ATAK)...\n";
+    require_once $root . '/bootstrap/atak_debrief_migration.php';
+    run_atak_debrief_migration($pdo);
+});
+$migrationEnsurePdo();
+
 $rolePermissionMatrixMigrate = require $root . '/bootstrap/role_permission_matrix_migration.php';
 try {
     echo "Migration role_permission_matrix (matrice rôles & permissions par module)...\n";
