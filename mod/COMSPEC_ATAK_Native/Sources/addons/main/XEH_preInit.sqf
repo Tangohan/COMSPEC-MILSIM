@@ -582,8 +582,9 @@ if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_nat
 if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };
 if (hasInterface) then { ["comspec_atak_native_compromise", { params [["_k", ""], ["_v", []]]; if (_k in ["revoke", "ownerReset"]) then { [_k, _v] call comspec_atak_native_fnc_compromise; } else { ["event", [_k, _v]] call comspec_atak_native_fnc_compromise; }; }] call CBA_fnc_addEventHandler; };
 // App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).
+// Plus de gestionnaire comspec_atak_native_adminReport : la demande de relevé arrive par remoteExecCall du serveur
+// (fn_adminServer « scan »), seule voie où le joueur peut voir qu'elle vient bien du serveur et pas d'un autre client.
 if (hasInterface) then {
-    ["comspec_atak_native_adminReport", { ["report", _this] call comspec_atak_native_fnc_adminClient; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_adminData", { ["data", _this] call comspec_atak_native_fnc_adminClient; }] call CBA_fnc_addEventHandler;
 };
 if (hasInterface) then { ["comspec_atak_native_note", { params [["_t", ""]]; ["INFO", _t, 5, 40] call comspec_atak_native_fnc_notify; }] call CBA_fnc_addEventHandler; };

@@ -22,6 +22,17 @@
       "visible"                 l'app est-elle montrée dans le lanceur ?
 */
 params [["_act", ""], ["_arg", []]];
+// Appel distant : seul le serveur (poste 2) entre ici. Un autre poste client est refusé.
+// Avant, l'événement CBA comspec_atak_native_adminReport était enregistré chez tout le monde (XEH_preInit) et
+// « report » répondait à n'importe quel demandeur annoncé dans le message : un client qui levait l'événement vers
+// tous les joueurs obtenait UID Steam, camp, groupe, étiquette de téléphone et position exacte de toute la partie,
+// répétable à volonté. Le droit ne peut pas être jugé ici : un admin #login n'est reconnaissable que du serveur
+// (fn_adminAllowed.sqf:14). Le client ne juge donc pas le droit, il exige seulement que la demande vienne du serveur.
+// Les autres actions (scan, zeus, server, fleet, site) agissent au nom du joueur local : elles n'ont pas non plus à
+// être déclenchables par un autre poste.
+if (isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Appel « %1 » refusé : il ne vient pas du serveur (poste %2)", _act, remoteExecutedOwner];
+};
 private _render = {
     if (uiNamespace getVariable ["COMSPEC_ATAK_AdminRenderQ", false]) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_AdminRenderQ", true];

@@ -49,7 +49,10 @@ switch (_act) do {
         if ((_now - _last) < 4) exitWith {};
         _caller setVariable ["COMSPEC_ATAK_AdminScanAt", _now];
         private _to = allPlayers select { !(_x isKindOf "HeadlessClient_F") };
-        if (_to isNotEqualTo []) then { ["comspec_atak_native_adminReport", [_caller], _to] call CBA_fnc_targetEvent; };
+        // remoteExecCall (et non l'événement CBA comspec_atak_native_adminReport, que tout client pouvait lever) :
+        // le joueur qui reçoit la demande voit alors qu'elle vient du serveur (remoteExecutedOwner == 2) et n'y répond
+        // que dans ce cas. Le serveur reste seul juge du droit du demandeur (contrôle en tête de cette fonction).
+        if (_to isNotEqualTo []) then { ["report", [_caller]] remoteExecCall ["comspec_atak_native_fnc_adminClient", _to]; };
 
         private _side = { private _s = side group _this; [str _s, "?"] select (isNull group _this) };
         private _caps = [];
