@@ -211,50 +211,137 @@ final class AtakMultiplayerAuthTest extends TestCase
             self::assertSame(1, substr_count($src, $guard), $file);
             self::assertStringNotContainsString('isRemoteExecuted && {isRemoteExecutedJIP', $src, $file);
             self::assertStringNotContainsString('{isRemoteExecuted} && {isRemoteExecutedJIP', $src, $file);
-            // La garde est la première instruction après params, hors commentaires : ni commentée, ni placée après
-            // un effet (contre-expertise v3, N10).
+            // La garde est la première instruction de la fonction, juste après params, hors commentaires : ni
+            // commentée, ni placée après un effet (contre-expertise v3, N10), et rien avant params (v4, N14, K18).
             $code = $this->stripSqfComments($src);
             $open = strpos($code, 'params [');
             self::assertNotFalse($open, $file);
+            self::assertSame('', trim(substr($code, 0, (int) $open)), $file);
             $body = $this->bracketBody($code, $open + strlen('params '));
             self::assertNotNull($body, $file);
             $after = substr($code, $open + strlen('params ') + strlen((string) $body) + 2);
             self::assertMatchesRegularExpression('/^\s*;\s*' . preg_quote($guard, '/') . '/', $after, $file);
         }
-        // Liste blanche (mode 1) : jip = 0 fait refuser par le moteur tout dépôt de ces appels dans la file JIP.
-        $mainCfg = $this->read(self::MAIN . '/config.cpp');
+        // Liste blanche (mode 1) : jip = 0 fait refuser par le moteur tout dépôt de ces appels dans la file JIP. Lu sans
+        // commentaires ni blocs « #if 0 » : une classe en commentaire ou sous #if 0 ne compte pas (v4, N14, K13, K14).
+        $mainCfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
         self::assertStringContainsString('class comspec_atak_native_fnc_adminClient { allowedTargets = 1; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_compromise { allowedTargets = 0; jip = 0; };', $mainCfg);
-        self::assertStringContainsString('class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; jip = 0; };', $this->read(self::CONNECT . '/config.cpp'));
+        self::assertStringContainsString('class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; jip = 0; };', $this->cppCode($this->read(self::CONNECT . '/config.cpp')));
         // Aucun ordre légitime vers ces fonctions n'emprunte la file : chaque appel distant n'a que deux arguments.
         // Lecture tolérante (contre-expertise v3, N10) : commentaires retirés, tableau lu jusqu'à son crochet fermant
-        // (sur plusieurs lignes, sans « ; » final, nom entre guillemets simples). Un nom de fonction calculé n'est pas
-        // lisible ainsi : il n'y en a aucun aujourd'hui vers ces trois fonctions (rapport du lot).
+        // (sur plusieurs lignes, sans « ; » final, nom entre guillemets simples), code porté par des chaînes compris.
+        // Plus d'angle mort de nom (v4, N14, K15, K16) : dans main/ et connect/, tout remoteExec / remoteExecCall est
+        // suivi d'un tableau écrit en toutes lettres, dont le premier élément est un nom de fonction littéral.
         $targets = ['comspec_atak_native_fnc_compromise', 'comspec_atak_native_fnc_adminclient', 'comspec_overwatch_connect_fnc_applyzeusatakeffect'];
         $calls = [];
+        $opaque = [];
+        $seen = 0;
         foreach ([self::MAIN, self::CONNECT] as $dir) {
-            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(dirname(__DIR__, 2) . '/' . $dir, \FilesystemIterator::SKIP_DOTS));
-            foreach ($it as $f) {
-                if (strtolower($f->getExtension()) !== 'sqf') {
-                    continue;
-                }
-                $code = $this->stripSqfComments((string) file_get_contents($f->getPathname()));
-                preg_match_all('/remoteExec(?:Call)?\s*\[/i', $code, $m, PREG_OFFSET_CAPTURE);
-                foreach ($m[0] as [$txt, $off]) {
-                    $body = $this->bracketBody($code, $off + strlen($txt) - 1);
-                    if ($body === null) {
-                        continue;
-                    }
-                    $args = $this->topLevelSplit($body);
-                    if (preg_match('/^(["\'])(.*)\1$/s', trim($args[0]), $q) === 1 && in_array(strtolower($q[2]), $targets, true)) {
-                        $calls[] = [$f->getFilename() . ' : ' . preg_replace('/\s+/', ' ', trim($body)), count($args)];
+            foreach ($this->sqfFiles($dir) as $rel => $src) {
+                foreach ($this->codeUnits($src) as $code) {
+                    foreach ($this->remoteCalls($code) as [, $right, $at]) {
+                        $seen++;
+                        $fn = $right === null ? null : $this->literal($right[0]);
+                        if ($fn === null) {
+                            $opaque[] = $rel . ' : ' . preg_replace('/\s+/', ' ', substr($code, $at, 90));
+                        } elseif (in_array(strtolower($fn), $targets, true)) {
+                            $calls[] = [$rel . ' : ' . preg_replace('/\s+/', ' ', implode(',', (array) $right)), count((array) $right)];
+                        }
                     }
                 }
             }
         }
+        self::assertGreaterThan(80, $seen);
+        self::assertSame([], $opaque);
         self::assertGreaterThanOrEqual(6, count($calls), implode("\n", array_column($calls, 0)));
         foreach ($calls as [$call, $n]) {
             self::assertSame(2, $n, $call);
+        }
+    }
+
+    public function testEventsReplacedByTheLotHaveNeitherHandlerNorEmitterLeft(): void
+    {
+        // Contre-expertise v4, B5, point 4 (premier invariant) : les huit événements CBA que le lot remplace par
+        // remoteExecCall n'ont plus ni gestionnaire ni émetteur dans main/ et connect/ (commentaires retirés, code porté
+        // par des chaînes compris, casse ignorée comme le fait CBA). Un gestionnaire rétabli rouvre la voie que le lot
+        // ferme (R2 : captureSrv gardé pour « giveFail » rouvrait B2 et D2) ; un émetteur sans gestionnaire perd la
+        // demande sans bruit (R1).
+        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv'];
+        $quoted = '/(["\'])comspec_atak_native_(?:' . implode('|', $removed) . ')\1/i';
+        // Fonctions qui jugent le demandeur par remoteExecutedOwner (fn_reqUnit) : appelées depuis un gestionnaire CBA,
+        // elles ne voient pas d'appel distant et croient l'unité fournie par l'émetteur. Aucun gestionnaire ne les
+        // appelle (v4, N14, K17), sauf capLocal vers fn_captureServer « local » (actions sur la machine où l'objet est
+        // local, que le serveur refuse dans une pile distante : résidu connu du lot).
+        $files = $this->sources();
+        $judges = [];
+        foreach ($files as $rel => $units) {
+            if (preg_match('/\[\s*remoteExecutedOwner\s*\]\s*call\s+comspec_atak_native_fnc_reqUnit\b/i', $units[0]) === 1) {
+                $judges[] = $this->functionOf($rel);
+            }
+        }
+        foreach (['adminserver', 'zeusserver', 'captureserver', 'dataserver', 'planserver', 'ftserver'] as $f) {
+            self::assertContains('comspec_atak_native_fnc_' . $f, $judges);
+        }
+        $left = [];
+        $handlers = 0;
+        foreach ($files as $rel => $units) {
+            if (preg_match_all($quoted, $units[0], $m) > 0) {
+                $left[] = $rel . ' : ' . implode(', ', array_unique($m[0]));
+            }
+            foreach ($units as $code) {
+                foreach ($this->cbaHandlers($code) as [$name, $body]) {
+                    $handlers++;
+                    foreach ($judges as $fn) {
+                        if (preg_match('/\b' . preg_quote($fn, '/') . '\b/i', $body) !== 1) {
+                            continue;
+                        }
+                        if (strcasecmp($name, 'comspec_atak_native_capLocal') === 0
+                            && preg_replace('/\s+/', ' ', $body) === '{ ["local", _this] call comspec_atak_native_fnc_captureServer; }') {
+                            continue;
+                        }
+                        $left[] = "$rel : le gestionnaire $name appelle $fn";
+                    }
+                }
+            }
+        }
+        self::assertGreaterThan(50, $handlers);
+        self::assertSame([], $left);
+    }
+
+    public function testEveryActionAClientSendsToAListGuardedFunctionIsInItsRemoteList(): void
+    {
+        // Contre-expertise v4, B5, point 4 (second invariant) : une action qu'un client envoie, mais absente de la liste
+        // des actions distantes de la fonction, est refusée sans bruit (« apps »). Fonctions à liste : toute fonction de
+        // main/ ou connect/ dont la garde porte « if (_remote && {!(_act in [...])}) exitWith { » (quel que soit le nom
+        // du sélecteur). Actions envoyées : premier élément du tableau passé par remoteExec / remoteExecCall à ces
+        // fonctions, dans le code et dans le code porté par des chaînes. Une action non littérale n'est lue que si un
+        // relais connu la remplit (relayActions), dont les appelants sont lus à leur tour ; sinon le test échoue.
+        $files = $this->sources();
+        $lists = $this->remoteLists($files);
+        foreach (['adminserver', 'zeusserver', 'captureserver'] as $f) {
+            self::assertArrayHasKey('comspec_atak_native_fnc_' . $f, $lists);
+        }
+        [$sent, $unread] = $this->actionsSent($files, $lists);
+        self::assertSame([], $unread);
+        $refused = [];
+        foreach ($sent as $fn => $acts) {
+            foreach ($acts as $act => $where) {
+                if (!in_array($act, $lists[$fn], true)) {
+                    $refused[] = "$fn refuse « $act », envoyée par " . implode(', ', array_keys($where));
+                }
+            }
+        }
+        self::assertSame([], $refused);
+        // Repères : la lecture voit les envois connus, relais compris (une lecture cassée ne passerait pas en silence).
+        foreach ([
+            'comspec_atak_native_fnc_adminserver' => ['apps', 'capture', 'hunt', 'scan'],
+            'comspec_atak_native_fnc_captureserver' => ['athena', 'dismiss', 'dropped', 'validate'],
+            'comspec_atak_native_fnc_zeusserver' => ['jamArea', 'jamClear', 'once', 'reset', 'set'],
+        ] as $fn => $expected) {
+            $got = array_keys($sent[$fn] ?? []);
+            sort($got);
+            self::assertSame($expected, $got, $fn);
         }
     }
 
@@ -339,5 +426,345 @@ final class AtakMultiplayerAuthTest extends TestCase
         }
         $parts[] = substr($body, $start);
         return $parts;
+    }
+
+    /** Code de chaque fichier .sqf de main/ et de connect/ (codeUnits) : [chemin relatif => [code, code des chaînes…]]. */
+    private function sources(): array
+    {
+        $files = [];
+        foreach ([self::MAIN, self::CONNECT] as $dir) {
+            foreach ($this->sqfFiles($dir) as $rel => $src) {
+                $files[$rel] = $this->codeUnits($src);
+            }
+        }
+        return $files;
+    }
+
+    /** Listes d'actions distantes : [fonction (minuscules) => actions de sa garde « if (_remote && {!(_x in [...])}) exitWith { »]. */
+    private function remoteLists(array $files): array
+    {
+        $lists = [];
+        foreach ($files as $rel => $units) {
+            if (preg_match('/^if \(_remote && \{!\(_\w+ in \[([^\]]*)\]\)\}\) exitWith \{$/m', $units[0], $m) === 1) {
+                preg_match_all('/"([^"]+)"/', $m[1], $a);
+                $lists[$this->functionOf($rel)] = $a[1];
+            }
+        }
+        return $lists;
+    }
+
+    /**
+     * Actions envoyées par remoteExec / remoteExecCall aux fonctions à liste : [[fonction => [action => [fichier => true]]],
+     * [envois dont l'action n'est ni littérale ni remplie par un relais connu]].
+     */
+    private function actionsSent(array $files, array $lists): array
+    {
+        $sent = [];
+        $unread = [];
+        foreach ($files as $rel => $units) {
+            foreach ($units as $code) {
+                foreach ($this->remoteCalls($code) as [$left, $right, $at]) {
+                    $fn = strtolower((string) ($right === null ? '' : $this->literal($right[0])));
+                    if (!isset($lists[$fn])) {
+                        continue;
+                    }
+                    $first = trim($left[0] ?? '');
+                    $lit = $this->literal($first);
+                    $acts = $left === null ? [] : ($lit !== null ? [$lit] : $this->relayActions($rel, $code, $first, $at, $files));
+                    if ($acts === []) {
+                        $unread[] = "$rel : action « $first » vers $fn, ni littérale ni remplie par un relais connu";
+                    }
+                    foreach ($acts as $act) {
+                        $sent[$fn][$act][$rel] = true;
+                    }
+                }
+            }
+        }
+        return [$sent, $unread];
+    }
+
+    /** Nom CfgFunctions (en minuscules) de la fonction d'un fichier fn_*.sqf de main/ ou de connect/. */
+    private function functionOf(string $rel): string
+    {
+        $prefix = str_starts_with($rel, self::CONNECT . '/') ? 'comspec_overwatch_connect_fnc_' : 'comspec_atak_native_fnc_';
+        return preg_match('#/fn_(\w+)\.sqf$#', $rel, $m) === 1 ? strtolower($prefix . $m[1]) : '';
+    }
+
+    /** $code où le contenu de chaque chaîne est remplacé par des espaces (guillemets et retours à la ligne gardés). */
+    private function blankStrings(string $code): string
+    {
+        $n = strlen($code);
+        for ($i = 0; $i < $n; $i++) {
+            $c = $code[$i];
+            if ($c === '"' || $c === "'") {
+                $j = $this->stringEnd($code, $i);
+                for ($k = $i + 1; $k < $j; $k++) {
+                    if ($code[$k] !== "\n") {
+                        $code[$k] = ' ';
+                    }
+                }
+                $i = $j;
+            }
+        }
+        return $code;
+    }
+
+    /**
+     * Code d'un source SQF, commentaires retirés (en premier), puis le code porté par ses chaînes (actions d'interface
+     * compilées, formats), chaînes dans les chaînes comprises.
+     */
+    private function codeUnits(string $src): array
+    {
+        $units = [];
+        $todo = [$this->stripSqfComments($src)];
+        while ($todo !== []) {
+            $code = array_shift($todo);
+            $units[] = $code;
+            $n = strlen($code);
+            for ($i = 0; $i < $n; $i++) {
+                $c = $code[$i];
+                if ($c === '"' || $c === "'") {
+                    $j = $this->stringEnd($code, $i);
+                    $inner = str_replace($c . $c, $c, substr($code, $i + 1, max(0, $j - $i - 1)));
+                    if (preg_match('/\bcall\b|\bremoteExec|CBA_fnc_/i', $inner) === 1) {
+                        $todo[] = $inner;
+                    }
+                    $i = $j;
+                }
+            }
+        }
+        return $units;
+    }
+
+    /** Valeur d'un littéral de chaîne SQF ("…" ou '…', guillemet doublé = guillemet) ; null si $expr n'en est pas un. */
+    private function literal(string $expr): ?string
+    {
+        $e = trim($expr);
+        if (strlen($e) < 2 || ($e[0] !== '"' && $e[0] !== "'") || $this->stringEnd($e, 0) !== strlen($e) - 1) {
+            return null;
+        }
+        return str_replace($e[0] . $e[0], $e[0], substr($e, 1, -1));
+    }
+
+    /** Paires d'un code aux chaînes vidées (blankStrings) : position de l'ouvrant => position du fermant. */
+    private function pairsOf(string $blank, string $open, string $close): array
+    {
+        $pairs = [];
+        $stack = [];
+        preg_match_all('/[' . preg_quote($open . $close, '/') . ']/', $blank, $m, PREG_OFFSET_CAPTURE);
+        foreach ($m[0] as [$c, $i]) {
+            if ($c === $open) {
+                $stack[] = $i;
+            } elseif ($stack !== []) {
+                $pairs[array_pop($stack)] = $i;
+            }
+        }
+        return $pairs;
+    }
+
+    /** Éléments du tableau écrit juste avant $at (« [ … ] » puis des blancs) ; null s'il n'y en a pas. */
+    private function arrayBefore(string $code, string $blank, array $closeToOpen, int $at): ?array
+    {
+        $k = $at - 1;
+        while ($k >= 0 && ctype_space($blank[$k])) {
+            $k--;
+        }
+        if ($k < 0 || $blank[$k] !== ']' || !isset($closeToOpen[$k])) {
+            return null;
+        }
+        $o = $closeToOpen[$k];
+        return $this->topLevelSplit(substr($code, $o + 1, $k - $o - 1));
+    }
+
+    /**
+     * Appels remoteExec / remoteExecCall d'un code, hors chaînes (leur code est lu par codeUnits) : [éléments du
+     * tableau de gauche ou null, éléments du tableau de droite ou null s'il n'est pas écrit en toutes lettres, position].
+     */
+    private function remoteCalls(string $code): array
+    {
+        $blank = $this->blankStrings($code);
+        $pairs = $this->pairsOf($blank, '[', ']');
+        $back = array_flip($pairs);
+        $out = [];
+        preg_match_all('/\bremoteExec(?:Call)?\b/i', $blank, $m, PREG_OFFSET_CAPTURE);
+        foreach ($m[0] as [$txt, $at]) {
+            $k = $at + strlen($txt);
+            while ($k < strlen($blank) && ctype_space($blank[$k])) {
+                $k++;
+            }
+            $right = isset($pairs[$k]) ? $this->topLevelSplit(substr($code, $k + 1, $pairs[$k] - $k - 1)) : null;
+            $out[] = [$this->arrayBefore($code, $blank, $back, $at), $right, $at];
+        }
+        return $out;
+    }
+
+    /** Tableaux passés à « call <nom> » dans un code, hors chaînes (nom exact, casse ignorée) : [éléments ou null, position]. */
+    private function callsOf(string $code, string $name): array
+    {
+        $blank = $this->blankStrings($code);
+        $back = array_flip($this->pairsOf($blank, '[', ']'));
+        $out = [];
+        preg_match_all('/\bcall\s+' . preg_quote($name, '/') . '\b/i', $blank, $m, PREG_OFFSET_CAPTURE);
+        foreach ($m[0] as [, $at]) {
+            $out[] = [$this->arrayBefore($code, $blank, $back, $at), $at];
+        }
+        return $out;
+    }
+
+    /** Gestionnaires d'événement CBA écrits en toutes lettres dans un code : [nom, corps « { … } »]. */
+    private function cbaHandlers(string $code): array
+    {
+        $out = [];
+        foreach (['CBA_fnc_addEventHandler', 'CBA_fnc_addEventHandlerArgs'] as $add) {
+            foreach ($this->callsOf($code, $add) as [$args]) {
+                $name = $args === null ? null : $this->literal($args[0]);
+                $body = trim($args[1] ?? '');
+                if ($name !== null && str_starts_with($body, '{')) {
+                    $out[] = [$name, $body];
+                }
+            }
+        }
+        return $out;
+    }
+
+    /** Rang de $var dans le premier tableau « params [ … ] » de $code ; null s'il n'y est pas. */
+    private function paramRank(string $code, string $var): ?int
+    {
+        $i = strpos($code, '[');
+        $body = $i === false ? null : $this->bracketBody($code, $i);
+        if ($body === null) {
+            return null;
+        }
+        foreach ($this->topLevelSplit($body) as $k => $el) {
+            $el = trim($el);
+            if (str_starts_with($el, '[')) {
+                $inner = $this->bracketBody($el, 0);
+                $el = $inner === null ? '' : trim($this->topLevelSplit($inner)[0]);
+            }
+            $name = $this->literal($el);
+            if ($name !== null && strcasecmp($name, $var) === 0) {
+                return $k;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Actions qu'une variable porte jusqu'à un appel distant, quand un relais connu la remplit ([] sinon) :
+     * - paramètre d'une fonction locale (« private _send = { params ["_a", …]; … } ») : élément de même rang des
+     *   appelants « [...] call _send » du même code ;
+     * - sélecteur du switch englobant (« switch (_act) do { case "validate"; case "dismiss": { … } } ») : ces étiquettes ;
+     * - paramètre lu dans une branche de la fonction (« case "server": { _arg params [["_a", ""], …] … } ») : élément
+     *   de même rang du deuxième argument des appelants « ["server", [...]] call <fonction du fichier> », dans tous
+     *   les fichiers.
+     * Une valeur non littérale chez un appelant, qu'aucun relais ne remplit, est rendue entre chevrons : absente de
+     * toute liste, elle fait échouer le test.
+     */
+    private function relayActions(string $rel, string $code, string $var, int $at, array $files, int $depth = 0): array
+    {
+        if ($depth > 3 || preg_match('/^_\w+$/', $var) !== 1) {
+            return [];
+        }
+        $blank = $this->blankStrings($code);
+        $around = array_filter($this->pairsOf($blank, '{', '}'), static fn (int $c, int $o): bool => $o < $at && $at < $c, ARRAY_FILTER_USE_BOTH);
+        krsort($around);
+        foreach ($around as $o => $c) {
+            $inside = substr($code, $o + 1, $c - $o - 1);
+            if (preg_match('/^\s*params\s*\[/', $inside) === 1 && ($rank = $this->paramRank($inside, $var)) !== null) {
+                if (preg_match('/(_\w+)\s*=\s*$/', substr($blank, max(0, $o - 120), min(120, $o)), $nm) !== 1) {
+                    return [];
+                }
+                $acts = [];
+                foreach ($this->callsOf($code, $nm[1]) as [$args, $p]) {
+                    $acts = array_merge($acts, $this->valueAt($rel, $code, $args, $rank, $p, $files, $depth));
+                }
+                return $acts;
+            }
+            if (preg_match('/((?:\bcase\s+"[^"]*"\s*;\s*)*)\bcase\s+"([^"]*)"\s*:\s*$/i', substr($code, max(0, $o - 400), min(400, $o)), $cm) !== 1) {
+                continue;
+            }
+            preg_match_all('/"([^"]*)"/', $cm[0], $lm);
+            $outer = array_filter($around, static fn (int $c2, int $o2): bool => $o2 < $o && $c < $c2, ARRAY_FILTER_USE_BOTH);
+            $sw = $outer === [] ? null : max(array_keys($outer));
+            if ($sw !== null && preg_match('/\bswitch\s*\(\s*(_\w+)\s*\)\s*do\s*$/i', substr($code, max(0, $sw - 200), min(200, $sw)), $sm) === 1
+                && strcasecmp($sm[1], $var) === 0) {
+                return $lm[1];
+            }
+            $pre = substr($code, $o + 1, $at - $o - 1);
+            if (count($lm[1]) === 1 && preg_match('/\b_arg\s+params\s*\[/', $pre, $am, PREG_OFFSET_CAPTURE) === 1
+                && ($rank = $this->paramRank(substr($pre, $am[0][1]), $var)) !== null) {
+                $acts = [];
+                foreach ($files as $rel2 => $units) {
+                    foreach ($units as $code2) {
+                        foreach ($this->callsOf($code2, $this->functionOf($rel)) as [$args, $p]) {
+                            if ($args === null || $this->literal($args[0]) !== $lm[1][0]) {
+                                continue;
+                            }
+                            $sub = trim($args[1] ?? '');
+                            $inner = str_starts_with($sub, '[') && str_ends_with($sub, ']') ? $this->topLevelSplit(substr($sub, 1, -1)) : null;
+                            $acts = array_merge($acts, $this->valueAt($rel2, $code2, $inner, $rank, $p, $files, $depth));
+                        }
+                    }
+                }
+                return $acts;
+            }
+        }
+        return [];
+    }
+
+    /** Valeur d'un élément d'appel : littéral, ou actions d'un relais qui le remplit, ou l'expression entre chevrons. */
+    private function valueAt(string $rel, string $code, ?array $args, int $rank, int $at, array $files, int $depth): array
+    {
+        $v = trim($args[$rank] ?? '?');
+        $lit = $this->literal($v);
+        if ($lit !== null) {
+            return [$lit];
+        }
+        $deeper = $this->relayActions($rel, $code, $v, $at, $files, $depth + 1);
+        return $deeper !== [] ? $deeper : ['<' . $v . '>'];
+    }
+
+    /** Texte d'un config.cpp sans commentaires (hors chaînes "…") ni blocs « #if 0 » (jusqu'au #else ou #endif de même niveau). */
+    private function cppCode(string $src): string
+    {
+        $out = '';
+        $n = strlen($src);
+        for ($i = 0; $i < $n; $i++) {
+            $c = $src[$i];
+            if ($c === '"') {
+                $j = $this->stringEnd($src, $i);
+                $out .= substr($src, $i, $j - $i + 1);
+                $i = $j;
+            } elseif ($c === '/' && ($src[$i + 1] ?? '') === '/') {
+                $j = strpos($src, "\n", $i);
+                $i = $j === false ? $n : $j - 1;
+            } elseif ($c === '/' && ($src[$i + 1] ?? '') === '*') {
+                $j = strpos($src, '*/', $i + 2);
+                $i = $j === false ? $n : $j + 1;
+                $out .= ' ';
+            } else {
+                $out .= $c;
+            }
+        }
+        $keep = [];
+        $skip = 0;
+        foreach (explode("\n", $out) as $line) {
+            if ($skip > 0) {
+                if (preg_match('/^\s*#\s*if/', $line) === 1) {
+                    $skip++;
+                } elseif (preg_match('/^\s*#\s*endif\b/', $line) === 1) {
+                    $skip--;
+                } elseif ($skip === 1 && preg_match('/^\s*#\s*(?:else|elif)\b/', $line) === 1) {
+                    $skip = 0;
+                }
+                continue;
+            }
+            if (preg_match('/^\s*#\s*if\s+0\b/', $line) === 1) {
+                $skip = 1;
+                continue;
+            }
+            $keep[] = $line;
+        }
+        return implode("\n", $keep);
     }
 }
