@@ -7686,8 +7686,18 @@ class AtakApiController
     /** Fenêtre lue en base par relève de tchat avec curseur (le dépôt borne de son côté à 200). */
     private const CHAT_FETCH_MAX = 200;
 
-    /** Fenêtres enchaînées au plus par relève : traverse un bloc de messages cachés sans bloquer le curseur. */
+    /**
+     * Fenêtres enchaînées au plus par relève : traverse un bloc de messages cachés sans bloquer le curseur.
+     * La première fait 2 × limit (cas normal : une seule lecture), les suivantes CHAT_FETCH_MAX : au plus
+     * 2 × limit + 600 lignes brutes par relève (650 pour COMSPEC Link, 680 pour l'ATAK natif).
+     */
     private const CHAT_SCAN_MAX_PASSES = 4;
+
+    /** Auteur réservé au transport des réglages d'affichage des camps (« REGLAGES AFFICHAGE|… »). */
+    private static function isReservedSettingsAuthor(string $author): bool
+    {
+        return mb_strtoupper(trim($author)) === 'REGLAGES';
+    }
 
     /**
      * Messages à montrer : sans le bruit technique déjà en base, et sans les MP qui ne concernent pas l'indicatif.
@@ -7704,12 +7714,16 @@ class AtakApiController
             }
             $body = (string) ($row['body'] ?? '');
             $author = (string) ($row['author'] ?? '');
+            // Protocole d'ordres C2 : la relève avec curseur lit la fenêtre brute et le masque ici.
+            if (AtakDataRepository::isProtocolOrderChatBody($body)) {
+                continue;
+            }
             // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
             if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
                 continue;
             }
             if (
-                mb_strtoupper(trim($author)) === 'REGLAGES'
+                self::isReservedSettingsAuthor($author)
                 && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
             ) {
                 continue;
@@ -7734,6 +7748,10 @@ class AtakApiController
      * CHAT_SCAN_MAX_PASSES fenêtres pour qu'un bloc de messages cachés, ou de MP qui ne concernent pas cet
      * indicatif, ne laisse pas le curseur sur une réponse vide, ce qui aurait figé la relève.
      *
+     * $fetch doit rendre la fenêtre BRUTE (lignes « ORDER|… » comprises) : « pleine » et « jusqu'où avancer » se
+     * jugent sur les lignes lues en base, le masquage vient après (visibleChatRows). Après la première fenêtre, on lit
+     * CHAT_FETCH_MAX lignes à la fois : un bloc caché se traverse en peu de lectures.
+     *
      * @param callable(int, int): mixed $fetch (curseur, taille de fenêtre) → lignes brutes, ordre id croissant
      * @return list<array<string, mixed>>
      */
@@ -7749,7 +7767,8 @@ class AtakApiController
         $cursor = max(0, $afterId);
         $rows = [];
         for ($pass = 0; $pass < self::CHAT_SCAN_MAX_PASSES; $pass++) {
-            $raw = $fetch($cursor, $fetchLimit);
+            $window = $pass === 0 ? $fetchLimit : max($fetchLimit, self::CHAT_FETCH_MAX);
+            $raw = $fetch($cursor, $window);
             $raw = is_array($raw) ? array_values($raw) : [];
             if ($raw === []) {
                 break;
@@ -7763,7 +7782,7 @@ class AtakApiController
             foreach (self::visibleChatRows($raw, $mpCallsign) as $visibleRow) {
                 $rows[] = $visibleRow;
             }
-            if (count($rows) >= $limit || count($raw) < $fetchLimit || $maxId <= $cursor) {
+            if (count($rows) >= $limit || count($raw) < $window || $maxId <= $cursor) {
                 break;
             }
             $cursor = $maxId;
@@ -7805,7 +7824,7 @@ class AtakApiController
             try {
                 $rows = self::scanChatAfter(
                     fn (int $cursor, int $window): array
-                        => $this->atak->getChatMessagesAfter($tenantId, $mapId, $cursor, $window, $channelKey),
+                        => $this->atak->getChatMessagesAfter($tenantId, $mapId, $cursor, $window, $channelKey, true),
                     $afterId,
                     $limit,
                     $fetchLimit,
@@ -9013,6 +9032,22 @@ class AtakApiController
                 'hidden_from_chat' => true,
                 'order' => is_array($orderRow) ? $this->serializeOrder($orderRow) : null,
             ], 201);
+        }
+
+        // Ce que la lecture masquerait ensuite n'est plus stocké : invisible pour tous, une suite de ces lignes figeait
+        // la relève avec curseur de tous les clients du jeu (50 messages suffisaient pour COMSPEC Link). Les ordres
+        // complets et les réglages reconnus sont interceptés plus haut et ne passent pas par ici.
+        if (is_string($bodyText) && AtakDataRepository::isProtocolOrderChatBody($bodyText)) {
+            return Response::json([
+                'error' => 'order_incomplete',
+                'message' => 'Message refusé : « ORDER| » est réservé aux ordres complets (ORDER|identifiant|type|cible|priorité|émetteur).',
+            ], 422);
+        }
+        if (is_string($author) && self::isReservedSettingsAuthor($author)) {
+            return Response::json([
+                'error' => 'reserved_author',
+                'message' => 'Message refusé : l’auteur « REGLAGES » est réservé aux réglages d’affichage des camps.',
+            ], 422);
         }
 
         // Dédup alertes auto (KO / arrêt cardiaque) : ne pas réinsérer la même alerte en boucle.
