@@ -256,8 +256,7 @@ $materielChildren = [
 
 $atakResChildren = [
     ['label' => 'Configuration ATAK', 'href' => url('back-office/ressources/atak-config'), 'active' => $navAt('back-office/ressources/atak-config')],
-    ['label' => 'Mod ATAK', 'href' => url('back-office/ressources/atak-mod'), 'active' => $navAt('back-office/ressources/atak-mod')],
-    ['label' => 'Modpacks', 'href' => url('back-office/ressources/modpacks'), 'active' => $navAt('back-office/ressources/modpacks')],
+    ['label' => 'Mods (Steam Workshop)', 'href' => url('back-office/ressources/atak-mod'), 'active' => $navAt('back-office/ressources/atak-mod')],
     ['label' => 'Réglages réalisme', 'href' => url('back-office/ressources/atak-realism/config'), 'active' => $navAt('back-office/ressources/atak-realism')],
     ['label' => 'Serveurs de jeu', 'href' => url('back-office/ressources/serveurs-de-jeu'), 'active' => $navAt('back-office/ressources/serveurs-de-jeu')],
     ['label' => 'Restrictions d’accès au mod', 'href' => url('back-office/ressources/atak-mod-blocks'), 'active' => $navAt('back-office/ressources/atak-mod-blocks')],

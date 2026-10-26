@@ -58,26 +58,15 @@ final class SeoCommunityModpackAssetTest extends TestCase
         self::assertStringContainsString('$isBackOfficeShell', $layout);
     }
 
-    public function testModpackAdminChunkedUploadIsWired(): void
+    public function testHostedModpacksAreGoneAndRedirectToSteamWorkshopPage(): void
     {
-        $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Admin/AdminModpackController.php');
-        $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
-        $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/modpack-admin-upload.js');
-        $create = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/modpacks/create.php');
-        $download = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/ModpackController.php');
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
 
-        self::assertStringContainsString('function uploadInit', $controller);
-        self::assertStringContainsString('function uploadChunk', $controller);
-        self::assertStringContainsString('function uploadFinalize', $controller);
-        self::assertStringContainsString('staged_upload_id', $controller);
-        self::assertStringContainsString("normalizeExternalUrl", $controller);
-        self::assertStringContainsString('/back-office/ressources/modpacks/upload/init', $routes);
-        self::assertStringContainsString('/back-office/ressources/modpacks/upload/chunk', $routes);
-        self::assertStringContainsString('/back-office/ressources/modpacks/upload/finalize', $routes);
-        self::assertStringContainsString('data-modpack-upload', $create);
-        self::assertStringContainsString('name="url"', $create);
-        self::assertStringContainsString('uploadChunked', $js);
-        self::assertStringContainsString('setBodyStream', $download);
+        self::assertFileDoesNotExist($root . '/app/Controllers/Admin/AdminModpackController.php');
+        self::assertFileDoesNotExist($root . '/public/assets/js/modpack-admin-upload.js');
+        self::assertStringNotContainsString('/back-office/ressources/modpacks/upload/init', $routes);
+        self::assertStringContainsString("'/admin/modpacks' => 'back-office/ressources/atak-mod'", $routes);
     }
 
     public function testPortalSearchCoversAllScopesAndJobRoles(): void

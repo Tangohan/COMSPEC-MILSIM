@@ -95,7 +95,7 @@ if (is_array($gr)) {
 
 $modpack = $modpack ?? null;
 $atakModDownloadUrl = $atakModDownloadUrl ?? null;
-$hasPack = !empty($mbModpack['has_pack']) || (is_array($modpack) && !empty($modpack['id']));
+$hasPack = !empty($mbModpack['has_pack']) || (is_array($modpack) && !empty($modpack['has_collection']));
 $canViewAtakOperators = !empty($can_view_atak_operators);
 $atakOperatorsLinkedCount = isset($atak_operators_linked_count) && $atak_operators_linked_count !== null
     ? (int) $atak_operators_linked_count
@@ -295,28 +295,10 @@ if ($memberSinceRaw) {
     }
 }
 
-// Données situation tactique (carte + modal)
-$tactSizeFormatted = '—';
-$tactUpdatedAt = '—';
-$tactDetailUrl = url('modpacks');
-$tactDownloadUrl = null;
-$tactPackTitle = 'Modpack communautaire';
-$tactPackVersion = '—';
-if (is_array($modpack) && !empty($modpack['id'])) {
-    if (!empty($modpack['size'])) {
-        $b = (int) $modpack['size'];
-        $tactSizeFormatted = $b >= 1073741824
-            ? number_format($b / 1073741824, 1, ',', ' ') . ' Go'
-            : ($b >= 1048576 ? number_format($b / 1048576, 1, ',', ' ') . ' Mo' : number_format($b / 1024, 1, ',', ' ') . ' Ko');
-    }
-    $tactUpdatedAt = !empty($modpack['updated_at']) ? date('d.m.y', strtotime((string) $modpack['updated_at'])) : '—';
-    $tactDetailUrl = !empty($mbModpack['detail_href'])
-        ? (string) $mbModpack['detail_href']
-        : (!empty($modpack['slug']) ? url('modpacks/' . rawurlencode((string) $modpack['slug'])) : url('modpacks'));
-    $tactDownloadUrl = url('modpacks/' . (int) $modpack['id'] . '/download');
-    $tactPackTitle = !empty($mbModpack['title']) ? (string) $mbModpack['title'] : (string) ($modpack['name'] ?? $modpack['title'] ?? 'Modpack');
-    $tactPackVersion = (string) ($modpack['version'] ?? '—');
-}
+// Données situation tactique (carte + modal) : mods servis par le Steam Workshop (SteamWorkshop::modset).
+$steam = is_array($modpack) ? $modpack : \App\Support\SteamWorkshop::modset((int) (\App\Core\Session::get('tenant_id') ?? 0));
+$tactPackTitle = (string) ($steam['title'] ?? 'Mods de la communauté');
+$tactPackVersion = (string) (($steam['version'] ?? '') !== '' ? $steam['version'] : '—');
 ?>
 <div class="dash-cc dash-cc--rail">
     <?php require base_path('views/partials/dashboard_aside.php'); ?>
@@ -830,41 +812,33 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 <div class="dash-modal__head">
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-300">Situation tactique</p>
-                        <h2 id="dash-tactical-modal-title" class="mt-1 text-xl font-black text-white">ATAK &amp; Modpack</h2>
+                        <h2 id="dash-tactical-modal-title" class="mt-1 text-xl font-black text-white">ATAK &amp; mods</h2>
                     </div>
                     <button type="button" class="dash-modal__close" @click="tacticalOpen = false" aria-label="Fermer">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
                     </button>
                 </div>
                 <div class="dash-modal__body space-y-5">
-                    <?php if (is_array($modpack) && !empty($modpack['id'])): ?>
-                        <div>
-                            <p class="text-sm font-semibold text-white/90"><?= htmlspecialchars($tactPackTitle, ENT_QUOTES, 'UTF-8') ?></p>
-                            <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Version</p>
-                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactPackVersion, ENT_QUOTES, 'UTF-8') ?></p>
-                                </div>
-                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Taille</p>
-                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactSizeFormatted, ENT_QUOTES, 'UTF-8') ?></p>
-                                </div>
-                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Mise à jour</p>
-                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
-                                </div>
+                    <div>
+                        <p class="text-sm font-semibold text-white/90">Mods servis par le Steam Workshop</p>
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">COMSPEC ATAK Native</p>
+                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactPackVersion, ENT_QUOTES, 'UTF-8') ?></p>
+                            </div>
+                            <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Modset</p>
+                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars(!empty($steam['has_collection']) ? $tactPackTitle : 'Non défini', ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                         </div>
-                        <div class="flex flex-col gap-2 sm:flex-row">
-                            <?php if ($tactDownloadUrl): ?>
-                            <a href="<?= htmlspecialchars($tactDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-primary flex-1 text-center">Télécharger le modpack</a>
-                            <?php endif; ?>
-                            <a href="<?= htmlspecialchars($tactDetailUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-ghost--on-dark flex-1 text-center">Voir la fiche</a>
-                        </div>
-                    <?php else: ?>
-                        <p class="text-sm leading-relaxed text-white/70">Aucun pack publié pour cette communauté. Parcourez les packs ou ouvrez la carte tactique.</p>
-                        <a href="<?= url('modpacks') ?>" class="cc-btn cc-btn-primary">Parcourir les packs</a>
-                    <?php endif; ?>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <a href="<?= htmlspecialchars((string) ($steam['atak_client'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-primary flex-1 text-center">S’abonner sur Steam</a>
+                        <?php if (!empty($steam['has_collection'])): ?>
+                        <a href="<?= htmlspecialchars((string) $steam['collection_client'], ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-ghost--on-dark flex-1 text-center">Collection de la communauté</a>
+                        <?php endif; ?>
+                        <a href="<?= url('atak/mod') ?>" class="cc-btn cc-btn-ghost--on-dark flex-1 text-center">Guide d’installation</a>
+                    </div>
                     <div class="grid grid-cols-2 gap-2 border-t border-white/10 pt-4<?= $canViewAtakOperators ? ' sm:grid-cols-3' : '' ?>">
                         <a href="<?= url('atak') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center transition hover:bg-white/10">
                             <p class="text-xs font-black uppercase text-white">ATAK</p>

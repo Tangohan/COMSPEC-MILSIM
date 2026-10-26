@@ -999,7 +999,7 @@ if ($atakMapConfig) {
       <details class="atak-details">
         <summary>Pack Overwatch</summary>
         <div class="atak-details-body">
-          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Télécharger le pack Overwatch</a></p>
+          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Installer le mod (Steam Workshop)</a></p>
         </div>
       </details>
       <?php endif; ?>

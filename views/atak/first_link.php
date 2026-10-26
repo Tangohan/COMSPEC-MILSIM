@@ -149,7 +149,7 @@ $icon = static function (string $name): string {
                 <ul class="fl-checks">
                     <li class="<?= $hasMod ? 'is-ok' : 'is-warn' ?>">
                         <span class="fl-checks__mark" aria-hidden="true"><?= $hasMod ? '✓' : '!' ?></span>
-                        <span><?= $hasMod ? 'Mod disponible au téléchargement' : 'Mod pas encore publié pour votre communauté' ?></span>
+                        <span>Mod disponible sur le Steam Workshop</span>
                     </li>
                     <li class="<?= $hasIdentity ? 'is-ok' : 'is-warn' ?>">
                         <span class="fl-checks__mark" aria-hidden="true"><?= $hasIdentity ? '✓' : '!' ?></span>
@@ -191,14 +191,11 @@ $icon = static function (string $name): string {
                         <p class="fl-version__note">Le mod compare sa version au démarrage et vous prévient s’il est périmé. Après une mise à jour, quittez Arma complètement avant de relancer.</p>
                     </div>
                     <div class="fl-actions">
-                        <?php if ($hasMod && $modDownloadUrl): ?>
-                        <a class="fl-btn fl-btn--primary" href="<?= $e((string) $modDownloadUrl) ?>"><?= $icon('download') ?> Télécharger le mod</a>
+                        <?php if ($modDownloadUrl): ?>
+                        <a class="fl-btn fl-btn--primary" href="<?= $e((string) $modDownloadUrl) ?>"><?= $icon('download') ?> S’abonner sur Steam</a>
                         <?php endif; ?>
-                        <a class="fl-btn fl-btn--ghost" href="<?= $e($modPageUrl) ?>">Page de téléchargement</a>
+                        <a class="fl-btn fl-btn--ghost" href="<?= $e($modPageUrl) ?>">Guide d’installation</a>
                     </div>
-                    <?php if (!$hasMod): ?>
-                    <p class="fl-note fl-note--warn">Aucun fichier n’est encore publié pour votre communauté. Un administrateur doit le déposer ; vous pouvez déjà préparer votre fiche.</p>
-                    <?php endif; ?>
                 </div>
             </section>
 

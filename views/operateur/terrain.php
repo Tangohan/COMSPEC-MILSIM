@@ -9,7 +9,7 @@ $terrain_pin_links = $terrain_pin_links ?? [];
 <section class="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4">
     <h2 class="text-[10px] font-black uppercase tracking-widest text-emerald-400">Checklist rapide</h2>
     <ul class="mt-3 space-y-2 text-sm text-slate-200">
-        <li class="flex gap-2"><span class="text-emerald-500">✓</span> Modpack à jour et testé</li>
+        <li class="flex gap-2"><span class="text-emerald-500">✓</span> Mods à jour sur Steam (Arma relancé après mise à jour)</li>
         <li class="flex gap-2"><span class="text-emerald-500">✓</span> Briefing / consignes lus</li>
         <li class="flex gap-2"><span class="text-emerald-500">✓</span> Radio & fréquences validées</li>
         <li class="flex gap-2"><span class="text-emerald-500">✓</span> Formations obligatoires à jour</li>
@@ -20,17 +20,17 @@ $terrain_pin_links = $terrain_pin_links ?? [];
     <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-500">Liens</h2>
     <a href="<?= htmlspecialchars(url('evenements'), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:border-emerald-500/40">Calendrier des opérations</a>
     <a href="<?= htmlspecialchars(url('formations/mes-formations'), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:border-emerald-500/40">Mes formations</a>
-    <a href="<?= htmlspecialchars(url('modpacks'), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:border-emerald-500/40">Modpacks</a>
+    <a href="<?= htmlspecialchars(url('atak/mod'), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:border-emerald-500/40">Installer les mods (Steam)</a>
     <?php if (!empty($terrain_atak_url)): ?>
     <a href="<?= htmlspecialchars((string) $terrain_atak_url, ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm font-bold text-emerald-200">Module ATAK</a>
     <?php endif; ?>
 </section>
 
-<?php if ($terrain_modpack && !empty($terrain_modpack['slug'])): ?>
+<?php if (is_array($terrain_modpack) && !empty($terrain_modpack['has_collection'])): ?>
 <section class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-    <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-500">Modpack principal</h2>
-    <p class="mt-2 text-sm font-bold text-white"><?= htmlspecialchars((string) ($terrain_modpack['name'] ?? 'Modpack'), ENT_QUOTES, 'UTF-8') ?></p>
-    <a href="<?= htmlspecialchars(url('modpacks/' . rawurlencode((string) $terrain_modpack['slug'])), ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-block text-xs font-bold uppercase tracking-wider text-emerald-400">Ouvrir la fiche</a>
+    <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-500">Collection Steam de la communauté</h2>
+    <p class="mt-2 text-sm font-bold text-white"><?= htmlspecialchars((string) $terrain_modpack['title'], ENT_QUOTES, 'UTF-8') ?></p>
+    <a href="<?= htmlspecialchars((string) $terrain_modpack['collection_client'], ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-block text-xs font-bold uppercase tracking-wider text-emerald-400">S’abonner à la collection</a>
 </section>
 <?php endif; ?>
 

@@ -794,14 +794,14 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                 </a>
                 <?php endif; ?>
                 <?php if ($canTenantTechModules): ?>
-                <a href="<?= url('back-office/ressources/modpacks') ?>" class="org-dash__action org-dash__action--wide">
+                <a href="<?= url('back-office/ressources/atak-mod') ?>" class="org-dash__action org-dash__action--wide">
                     <div>
                         <div class="org-dash__action-top">
                             <span class="org-dash__action-mark" aria-hidden="true">R</span>
                             <span class="org-dash__action-tag">Ressources</span>
                         </div>
-                        <h3 class="org-dash__action-title">Modpacks &amp; outils terrain</h3>
-                        <p class="org-dash__action-text">Packs mods, cartographie et configuration associée pour votre communauté.</p>
+                        <h3 class="org-dash__action-title">Mods Steam &amp; outils terrain</h3>
+                        <p class="org-dash__action-text">Mod Athena et collection Steam de votre communauté, configuration ATAK associée.</p>
                     </div>
                     <span class="org-dash__action-foot">Ouvrir les ressources →</span>
                 </a>

@@ -31,7 +31,6 @@ use App\Controllers\Web\AccountPrivacyController;
 use App\Controllers\Web\HrCharterController;
 use App\Controllers\Web\RhWorkspaceController;
 use App\Controllers\Admin\System\PlatformDeploymentAdminController;
-use App\Controllers\Web\ModpackController;
 use App\Controllers\Web\InterteamMissionWebController;
 use App\Controllers\Web\CooperationCatalogWebController;
 use App\Controllers\Web\CooperationAnnouncementsWebController;
@@ -65,7 +64,6 @@ use App\Controllers\Web\PlatformSubscriptionController;
 use App\Controllers\Web\CommunityController;
 use App\Controllers\Web\AnalyticsBeaconController;
 use App\Controllers\Admin\AdminUnitsController;
-use App\Controllers\Admin\AdminModpackController;
 use App\Controllers\Admin\AdminAtakConfigController;
 use App\Controllers\Admin\AdminAtakReportRoutingController;
 use App\Controllers\Admin\AdminBriefingSlidesController;
@@ -780,10 +778,10 @@ return function (Router $router) {
     $router->post('/equipment/wardrobes/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
     $router->get('/equipment/{slug}', [EquipmentController::class, 'show'], [AuthMiddleware::class]);
-    $router->get('/modpacks', [ModpackController::class, 'index'], [AuthMiddleware::class]);
-    $router->get('/modpacks/images/{id}', [ModpackController::class, 'image'], [AuthMiddleware::class]);
-    $router->get('/modpacks/{id}/download', [ModpackController::class, 'download'], [AuthMiddleware::class]);
-    $router->get('/modpacks/{slug}', [ModpackController::class, 'show'], [AuthMiddleware::class]);
+    // Modpacks retirés : les mods sont servis par le Steam Workshop, les anciennes adresses mènent au guide d'installation.
+    foreach (['/modpacks', '/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
+        $router->get($legacyModpack, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/mod')), [AuthMiddleware::class]);
+    }
     $router->get('/formations', [TrainingController::class, 'index'], $mwTraining);
     $router->post('/formations/enroll', [TrainingController::class, 'postEnroll'], $mwTraining);
     $router->post('/formations/inscription/annuler', [TrainingController::class, 'postWithdrawEnrollment'], $mwTraining);
@@ -1900,8 +1898,10 @@ return function (Router $router) {
     // Outils de la communauté sortis de /admin (réservé à l’administrateur de la plateforme) :
     // les anciennes adresses renvoient vers le back-office, qui applique ses propres contrôles.
     $legacyTenantTools = [
-        '/admin/modpacks' => 'back-office/ressources/modpacks',
-        '/admin/modpacks/create' => 'back-office/ressources/modpacks/create',
+        '/admin/modpacks' => 'back-office/ressources/atak-mod',
+        '/admin/modpacks/create' => 'back-office/ressources/atak-mod',
+        '/back-office/ressources/modpacks' => 'back-office/ressources/atak-mod',
+        '/back-office/ressources/modpacks/create' => 'back-office/ressources/atak-mod',
         '/admin/atak-config' => 'back-office/ressources/atak-config',
         '/admin/atak-mod' => 'back-office/ressources/atak-mod',
         '/admin/atak-mod-blocks' => 'back-office/ressources/atak-mod-blocks',
@@ -1914,16 +1914,8 @@ return function (Router $router) {
     foreach ($legacyTenantTools as $legacyPath => $target) {
         $router->get($legacyPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url($target)), [AuthMiddleware::class]);
     }
-    $router->get('/admin/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/modpacks/' . (int) ($p['id'] ?? 0) . '/edit')), [AuthMiddleware::class]);
-    $router->get('/back-office/ressources/modpacks', [AdminModpackController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/ressources/modpacks/create', [AdminModpackController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/ressources/modpacks/store', [AdminModpackController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/ressources/modpacks/upload/init', [AdminModpackController::class, 'uploadInit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/ressources/modpacks/upload/chunk', [AdminModpackController::class, 'uploadChunk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/ressources/modpacks/upload/finalize', [AdminModpackController::class, 'uploadFinalize'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/ressources/modpacks/{id}/edit', [AdminModpackController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/ressources/modpacks/{id}/update', [AdminModpackController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/ressources/modpacks/{id}/delete', [AdminModpackController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/atak-mod')), [AuthMiddleware::class]);
+    $router->get('/back-office/ressources/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/atak-mod')), [AuthMiddleware::class]);
     $router->get('/back-office/ressources/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/etat', [AdminAtakReportRoutingController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2048,7 +2040,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/ressources/atak-mod/upload', [AdminAtakModController::class, 'upload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-mod/steam', [AdminAtakModController::class, 'saveSteam'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-mod/annoncer', [AdminAtakModController::class, 'announce'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/serveurs-de-jeu', [\App\Controllers\Admin\AdminGameServersController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/serveurs-de-jeu/enregistrer', [\App\Controllers\Admin\AdminGameServersController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
