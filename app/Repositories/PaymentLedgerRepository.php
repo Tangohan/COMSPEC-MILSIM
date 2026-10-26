@@ -56,13 +56,15 @@ final class PaymentLedgerRepository
         if (!$this->hasTable('payment_events')) {
             return;
         }
+        $atak = self::posInt($ids['atak_donation_id'] ?? null);
         try {
             $this->pdo()->prepare(
-                'INSERT INTO payment_events (request_id, donation_id, tenant_id, user_id, kind, actor_user_id, note, meta, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-            )->execute([
+                'INSERT INTO payment_events (request_id, donation_id, ' . ($atak !== null ? 'atak_donation_id, ' : '') . 'tenant_id, user_id, kind, actor_user_id, note, meta, created_at)
+                 VALUES (?, ?, ' . ($atak !== null ? '?, ' : '') . '?, ?, ?, ?, ?, ?, ?)'
+            )->execute(array_merge([
                 self::posInt($ids['request_id'] ?? null),
                 self::posInt($ids['donation_id'] ?? null),
+            ], $atak !== null ? [$atak] : [], [
                 self::posInt($ids['tenant_id'] ?? null),
                 self::posInt($ids['user_id'] ?? null),
                 mb_substr($kind, 0, 32),
@@ -70,24 +72,29 @@ final class PaymentLedgerRepository
                 $note !== '' ? mb_substr($note, 0, 500) : null,
                 $meta !== [] ? json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
                 gmdate('Y-m-d H:i:s'),
-            ]);
+            ]));
         } catch (\Throwable) {
             // Le journal ne doit jamais bloquer une action de paiement.
         }
     }
 
     /**
-     * Événements des demandes et dons donnés, groupés par clé « r<id> » / « d<id> ».
+     * Événements des demandes et dons donnés, groupés par clé « r<id> » / « d<id> » / « s<id> » (don Stripe).
      *
      * @param list<int> $requestIds
      * @param list<int> $donationIds
+     * @param list<int> $atakDonationIds
      * @return array<string, list<array<string, mixed>>>
      */
-    public function eventsFor(array $requestIds, array $donationIds = []): array
+    public function eventsFor(array $requestIds, array $donationIds = [], array $atakDonationIds = []): array
     {
         $requestIds = array_values(array_filter(array_map('intval', $requestIds), static fn (int $i): bool => $i > 0));
         $donationIds = array_values(array_filter(array_map('intval', $donationIds), static fn (int $i): bool => $i > 0));
-        if (!$this->hasTable('payment_events') || ($requestIds === [] && $donationIds === [])) {
+        $atakDonationIds = array_values(array_filter(array_map('intval', $atakDonationIds), static fn (int $i): bool => $i > 0));
+        if (!$this->hasTable('payment_events') || !$this->hasColumn('payment_events', 'atak_donation_id')) {
+            $atakDonationIds = [];
+        }
+        if (!$this->hasTable('payment_events') || ($requestIds === [] && $donationIds === [] && $atakDonationIds === [])) {
             return [];
         }
         $where = [];
@@ -100,6 +107,10 @@ final class PaymentLedgerRepository
             $where[] = 'e.donation_id IN (' . implode(',', array_fill(0, count($donationIds), '?')) . ')';
             $args = array_merge($args, $donationIds);
         }
+        if ($atakDonationIds !== []) {
+            $where[] = 'e.atak_donation_id IN (' . implode(',', array_fill(0, count($atakDonationIds), '?')) . ')';
+            $args = array_merge($args, $atakDonationIds);
+        }
         $st = $this->pdo()->prepare(
             'SELECT e.*, u.display_name AS actor_name FROM payment_events e
              LEFT JOIN users u ON u.id = e.actor_user_id
@@ -108,7 +119,8 @@ final class PaymentLedgerRepository
         $st->execute($args);
         $out = [];
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
-            $key = !empty($row['request_id']) ? 'r' . (int) $row['request_id'] : 'd' . (int) $row['donation_id'];
+            $key = !empty($row['request_id']) ? 'r' . (int) $row['request_id']
+                : (!empty($row['atak_donation_id']) ? 's' . (int) $row['atak_donation_id'] : 'd' . (int) $row['donation_id']);
             $out[$key][] = $row;
         }
 
@@ -178,6 +190,81 @@ final class PaymentLedgerRepository
         $st->execute([gmdate('Y-m-d H:i:s'), $id]);
 
         return $st->rowCount() === 1;
+    }
+
+    // ------------------------------------------------------------------ dons Stripe ATAK
+
+    /** Passages autorisés : statut cible => statuts de départ. */
+    public const STRIPE_DONATION_TRANSITIONS = [
+        'cancelled' => ['pending'],
+        'rejected' => ['pending'],
+        'paid' => ['pending'],
+        'refunded' => ['paid'],
+    ];
+
+    /** @return array<string, mixed>|null */
+    public function findStripeDonation(int $id): ?array
+    {
+        if (!$this->hasTable('atak_donations')) {
+            return null;
+        }
+        $st = $this->pdo()->prepare('SELECT * FROM atak_donations WHERE id = ? LIMIT 1');
+        $st->execute([$id]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * Décision de l'administration sur un don Stripe, seulement depuis un statut autorisé
+     * (une ligne déjà traitée n'est jamais réécrite).
+     */
+    public function decideStripeDonation(int $id, string $to, ?int $adminId, string $note): bool
+    {
+        $from = self::STRIPE_DONATION_TRANSITIONS[$to] ?? null;
+        if ($from === null || !$this->hasTable('atak_donations')) {
+            return false;
+        }
+        $now = gmdate('Y-m-d H:i:s');
+        $set = ['status = ?'];
+        $args = [$to];
+        $hasDecision = $this->hasColumn('atak_donations', 'decided_at');
+        if ($hasDecision) {
+            $set[] = 'decided_at = ?';
+            $set[] = 'decided_by = ?';
+            $set[] = 'admin_note = COALESCE(?, admin_note)';
+            array_push($args, $now, $adminId, $note !== '' ? mb_substr($note, 0, 500) : null);
+        }
+        if ($to === 'paid') {
+            $set[] = 'paid_at = COALESCE(paid_at, ?)';
+            $args[] = $now;
+        }
+        if ($to === 'refunded' && $hasDecision) {
+            $set[] = 'refunded_at = ?';
+            $args[] = $now;
+        }
+        $args[] = $id;
+        $st = $this->pdo()->prepare(
+            'UPDATE atak_donations SET ' . implode(', ', $set) . ' WHERE id = ? AND status IN (' . implode(',', array_fill(0, count($from), '?')) . ')'
+        );
+        $st->execute(array_merge($args, $from));
+
+        return $st->rowCount() === 1;
+    }
+
+    private function hasColumn(string $table, string $column): bool
+    {
+        $key = $table . '.' . $column;
+        if (!array_key_exists($key, $this->tables)) {
+            try {
+                $this->pdo()->query('SELECT `' . $column . '` FROM `' . $table . '` LIMIT 0');
+                $this->tables[$key] = true;
+            } catch (\Throwable) {
+                $this->tables[$key] = false;
+            }
+        }
+
+        return $this->tables[$key];
     }
 
     // ------------------------------------------------------------------ lectures agrégées
@@ -258,12 +345,12 @@ final class PaymentLedgerRepository
                     'channel' => 'stripe',
                     'transaction_ref' => (string) ($d['stripe_payment_intent_id'] ?? ''),
                     'payer_note' => '',
-                    'admin_note' => '',
+                    'admin_note' => (string) ($d['admin_note'] ?? ''),
                     'created_at' => $d['created_at'] ?? null,
                     'declared_at' => null,
-                    'decided_at' => $d['paid_at'] ?? null,
-                    'paid_at' => $paid ? ($d['paid_at'] ?? $d['created_at']) : null,
-                    'refunded_at' => null,
+                    'decided_at' => ($d['decided_at'] ?? null) ?: ($d['paid_at'] ?? null),
+                    'paid_at' => $paid || (string) $d['status'] === 'refunded' ? ($d['paid_at'] ?? $d['created_at']) : null,
+                    'refunded_at' => $d['refunded_at'] ?? null,
                     'period_ends_at' => null,
                     'badge_granted' => !empty($d['badge_granted']),
                 ];

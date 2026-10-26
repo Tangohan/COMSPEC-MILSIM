@@ -110,7 +110,8 @@ final class SystemPlanPaymentsController
         $page = array_slice($filtered, 0, 150);
         $events = $this->safe(fn () => $this->ledger()->eventsFor(
             array_map(static fn ($e) => (int) $e['id'], array_filter($page, static fn ($e) => in_array($e['source'], ['plan', 'heart'], true))),
-            array_map(static fn ($e) => (int) $e['id'], array_filter($page, static fn ($e) => $e['source'] === 'donation'))
+            array_map(static fn ($e) => (int) $e['id'], array_filter($page, static fn ($e) => $e['source'] === 'donation')),
+            array_map(static fn ($e) => (int) $e['id'], array_filter($page, static fn ($e) => $e['source'] === 'stripe_donation'))
         ), []);
         $statusCounts = [];
         foreach ($ledger as $e) {
@@ -310,6 +311,70 @@ final class SystemPlanPaymentsController
 
             return [['ok' => true], 'Don marqué remboursé. Le rôle donateur est recalculé.'];
         }, 'dons');
+    }
+
+    public function stripeDonationCancel(Request $request, array $params = []): Response
+    {
+        return $this->decideStripeDonation($request, $params, 'cancelled');
+    }
+
+    public function stripeDonationReject(Request $request, array $params = []): Response
+    {
+        return $this->decideStripeDonation($request, $params, 'rejected');
+    }
+
+    public function stripeDonationMarkPaid(Request $request, array $params = []): Response
+    {
+        return $this->decideStripeDonation($request, $params, 'paid');
+    }
+
+    public function stripeDonationRefund(Request $request, array $params = []): Response
+    {
+        return $this->decideStripeDonation($request, $params, 'refunded');
+    }
+
+    /** Don ATAK Stripe : annulé / refusé / encaissé à la main / remboursé, journalisé et audité. */
+    private function decideStripeDonation(Request $request, array $params, string $to): Response
+    {
+        return $this->act($request, function (int $actor) use ($request, $params, $to) {
+            $id = (int) ($params['id'] ?? 0);
+            $row = $this->ledger()->findStripeDonation($id);
+            if ($row === null) {
+                return [['ok' => false, 'error' => 'Don introuvable.'], ''];
+            }
+            $note = $this->note($request);
+            if ($to === 'rejected' && $note === '') {
+                return [['ok' => false, 'error' => 'Indiquez la raison du refus.'], ''];
+            }
+            if (!$this->ledger()->decideStripeDonation($id, $to, $actor ?: null, $note)) {
+                return [['ok' => false, 'error' => 'Ce don a déjà été traité.'], ''];
+            }
+            $kinds = ['cancelled' => 'donation_cancelled', 'rejected' => 'donation_rejected', 'paid' => 'donation_marked_paid', 'refunded' => 'donation_refunded'];
+            $ids = ['atak_donation_id' => $id, 'tenant_id' => (int) ($row['tenant_id'] ?? 0), 'user_id' => (int) ($row['user_id'] ?? 0)];
+            $this->ledger()->log($kinds[$to], $ids, $actor ?: null, $note, ['from' => (string) $row['status'], 'amount_cents' => (int) $row['amount_cents']]);
+            try {
+                (new \App\Services\Audit\AuditService())->log(
+                    'platform.atak_donation_' . $to,
+                    (int) ($row['tenant_id'] ?? 0) > 0 ? (int) $row['tenant_id'] : null,
+                    $actor ?: null,
+                    'atak_donation',
+                    $id,
+                    null,
+                    'DON-S' . str_pad((string) $id, 5, '0', STR_PAD_LEFT) . ' ' . $row['status'] . ' → ' . $to
+                );
+            } catch (\Throwable) {
+            }
+            if (in_array($to, ['paid', 'refunded'], true)) {
+                $this->service()->refreshDonors();
+            }
+
+            return [['ok' => true], [
+                'cancelled' => 'Don annulé.',
+                'rejected' => 'Don refusé.',
+                'paid' => 'Don marqué encaissé. Le rôle donateur est recalculé.',
+                'refunded' => 'Don marqué remboursé. Le rôle donateur est recalculé.',
+            ][$to]];
+        });
     }
 
     public function donorGrant(Request $request, array $params = []): Response
