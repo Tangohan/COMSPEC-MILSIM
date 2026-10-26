@@ -28,6 +28,7 @@ final class SubscriptionPlanFeaturesCatalog
         'advanced_integrations',
         'community_create',
         'registry_featured',
+        'pilot_qualifications',
     ];
 
     public const INT_FEATURES = [
@@ -126,6 +127,11 @@ final class SubscriptionPlanFeaturesCatalog
                 'help' => 'Badge « mise en avant » sur la carte de la communauté et place parmi les premières du registre des unités.',
                 'type' => 'bool',
             ],
+            'pilot_qualifications' => [
+                'label' => 'Cursus pilote automatique',
+                'help' => 'Qualifications de pilote attribuées ou proposées aux instructeurs d’après les heures de vol relevées en jeu.',
+                'type' => 'bool',
+            ],
             'max_members' => [
                 'label' => 'Nombre max. de membres',
                 'help' => 'Plafond de comptes dans la communauté (0 = illimite).',
@@ -165,6 +171,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => false,
+                'pilot_qualifications' => false,
                 'max_members' => 10,
                 'max_training_courses' => 5,
             ],
@@ -186,6 +193,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => false,
+                'pilot_qualifications' => true,
                 'max_members' => 25,
                 'max_training_courses' => 25,
             ],
@@ -207,6 +215,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => false,
                 'community_create' => true,
                 'registry_featured' => true,
+                'pilot_qualifications' => true,
                 'max_members' => 50,
                 'max_training_courses' => 100,
             ],
@@ -228,6 +237,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'advanced_integrations' => true,
                 'community_create' => true,
                 'registry_featured' => true,
+                'pilot_qualifications' => true,
                 'max_members' => 80,
                 'max_training_courses' => 0,
             ],
