@@ -52,8 +52,10 @@ Chaque changement (CLI ou administration) est relu en base et inscrit au journal
 ## Ce que la DLL corrigée doit annoncer
 
 - COMSPEC Link : `User-Agent: COMSPECExtension/2.0.96` (InformationalVersion du csproj, déjà repris par la DLL).
-- DLL native : `User-Agent: COMSPECATAKNativeExtension/2.0.96` ou `2.0.96-native` : le csproj natif doit passer de
-  `1.0.0-native` à un numéro qui **commence** par 2.0.96 ou plus, sinon la DLL native corrigée sera refusée.
+- DLL native : `User-Agent: COMSPECATAKNativeExtension/2.0.96-native`. Le csproj natif annonçait `1.0.0-native`,
+  ce qui aurait fait refuser la DLL native **corrigée** ; il est passé à `2.0.96-native` dans la PR du correctif
+  2.4.1 (`mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/COMSPECATAKNativeExtension.csproj`). Toute DLL
+  native reconstruite doit annoncer un numéro qui **commence** par 2.0.96 ou plus.
 - Le numéro doit commencer par des chiffres (`native-2.0.96` est illisible, donc refusé).
 
 ## Ce que voit le joueur
@@ -71,6 +73,7 @@ exemple « COMSPEC ATAK is out of date: update it from the Steam Workshop (2.4.1
 | ATAK 2.4.0 / Link 2.0.95, au lancement | reprise de session refusée en 426 : « Cette version du pack n'est plus acceptée. Pack actuel : 2.0.95 — version exigée : 2.0.96 » (COMSPEC Link) ou « Votre mod est trop ancien pour Athena. Mettez le mod à jour sur Steam » (téléphone) ; liaison par code : « Votre mod est plus ancien que la version minimale… Mettez le mod à jour sur Steam » ; « mise à jour disponible » si le site déployé annonce 2.4.1 |
 | ATAK 2.4.0 en partie au moment de l'activation | premier sondage refusé (403 « unauthorized ») : la DLL arrête sondages et envois (verrou de refus), Athena passe hors ligne ; à la reconnexion, mêmes messages que ci-dessus |
 | Link 2.0.94 et avant (sans verrou de refus) | mêmes messages à la connexion ; en partie, chaque appel est refusé avant la base, les envois attendent jusqu'à 10 min (Retry-After) |
-| ATAK natif seul (DLL native 1.0.0-native) | refusé comme Link 2.0.95 |
+| ATAK natif seul, DLL native d'avant le correctif (`1.0.0-native`) | refusé comme Link 2.0.95 |
+| ATAK natif seul, DLL native 2.4.1 (`2.0.96-native`) | aucun |
 
 Les serveurs dédiés Windows qui chargent une ancienne DLL sont refusés de la même façon jusqu'à leur mise à jour.
