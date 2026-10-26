@@ -708,4 +708,6 @@ return [
     'installer_les_mods' => 'Install the mods',
     'mods_arma_3_via_le_steam_workshop' => 'Arma 3 mods through the Steam Workshop',
     'mods_steam_workshop' => 'Mods (Steam Workshop)',
+    'portail_milsim' => 'MILSIM portal',
+    'haut_de_page' => 'Back to top',
 ];
