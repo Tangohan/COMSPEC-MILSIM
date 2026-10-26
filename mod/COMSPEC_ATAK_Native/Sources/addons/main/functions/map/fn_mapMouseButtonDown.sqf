@@ -1,9 +1,20 @@
 /* Clic gauche : action de l'outil actif (en sélection, sur un relais du calque Relais : sa fiche). Clic droit : quitte l'outil
    (retour à la sélection), sinon menu contextuel (au relâchement ; sur un relais, la fiche du relais en tête) ; en mode
-   MARQUEUR, choisit le point de pose de la palette. */
-params ["_map","_button","_mx","_my",["_shift",false],["_ctrl",false],["_alt",false]];
+   MARQUEUR, choisit le point de pose de la palette.
+   Le clic gauche n'agit qu'au relâchement et sans glisser (fn_mapMouseButtonUp rappelle cette fonction avec _click) :
+   déplacer la carte au clic gauche ne pose plus de point, ne consomme plus un pointage et ne ferme plus l'outil ni
+   la fiche ouverte. Seuls TRAIT et DESSIN démarrent à l'appui. */
+params ["_map","_button","_mx","_my",["_shift",false],["_ctrl",false],["_alt",false],["_click",false]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _world = _map ctrlMapScreenToWorld [_mx,_my];
+if (_button isEqualTo 0 && {!_click}) exitWith {
+    private _picking = ((["medevacPick", "reportPick", "dronePick", "logiPick", "jtacPick", "firePick"] findIf { (_s getOrDefault [_x, ""]) isNotEqualTo "" }) >= 0)
+        || {_s getOrDefault ["recoPick", false]} || {(_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "DRONE"};
+    _s set ["mapLc", []];
+    if (!_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {["DOWN", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_markerStroke}) exitWith { true };
+    _s set ["mapLc", [_mx, _my, _shift, _ctrl, _alt]];
+    true
+};
 // Menu contextuel ouvert : un clic gauche ailleurs le ferme seulement ; un clic droit le ferme et peut en rouvrir un.
 private _ctxOpen = (count (_s getOrDefault ["mapCtx", createHashMap])) > 0;
 if (_ctxOpen) then { ["close"] call comspec_atak_native_fnc_mapCtxMenu; };
@@ -34,7 +45,6 @@ if (_button isEqualTo 0) exitWith {
     };
     // Outil DRONE : le clic devient un ordre au drone appairé (aller ici, point de route, zone).
     if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "DRONE") exitWith { ["mapClick", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_droneAction; true };
-    if (["DOWN", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_markerStroke) exitWith { true };
     // Étape de l'itinéraire sous le curseur (sélection ou mode étapes) : sa fiche s'ouvre (renommer, type, déplacer).
     private _wi = if ((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","WP"] && {!_shift && !_ctrl && !_alt}) then { [_map, [_mx, _my]] call comspec_atak_native_fnc_wpAt } else { -1 };
     if (_wi >= 0) exitWith { ["edit", _wi] call comspec_atak_native_fnc_wpAction; true };
@@ -55,9 +65,9 @@ if (_button isEqualTo 0) exitWith {
             _s set ["selectedMarker",""];
             [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         };
-        [_world,_shift,_ctrl,_alt] call comspec_atak_native_fnc_mapSelect;
+        [_world,_shift,_ctrl,_alt,_map] call comspec_atak_native_fnc_mapSelect;
     } else {
-        [_world,_shift,_ctrl,_alt] call comspec_atak_native_fnc_mapSelect;
+        [_world,_shift,_ctrl,_alt,_map] call comspec_atak_native_fnc_mapSelect;
     };
     true
 };

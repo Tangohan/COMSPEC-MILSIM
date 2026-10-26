@@ -1,7 +1,7 @@
 /*
     Actions du rédacteur d'ordre (fn_pageOrderCompose).
       "open" / "cancel" : ouvre ou ferme le rédacteur     "set", clé, valeur : choix d'un segment
-      "grid" : ma position dans la grille                 "send" : envoie l'ordre (COMSPEC Link)
+      "grid" : ma position dans la grille                 "send" : envoie l'ordre (COMSPEC Link, ou sans Athena : fn_orderLocal)
 */
 params [["_action", ""], ["_key", ""], ["_value", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -15,8 +15,8 @@ private _keep = {
 private _redraw = { [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 switch (toLower _action) do {
     case "open": {
-        if !([] call comspec_atak_native_fnc_bridge) exitWith { ["WARNING", "Ordres indisponibles : COMSPEC Link absent", 3, 30] call comspec_atak_native_fnc_notify; };
-        if !([] call comspec_overwatch_connect_fnc_canIssueOrder) exitWith { ["WARNING", "Seul le chef d'unité peut émettre un ordre", 3, 30] call comspec_atak_native_fnc_notify; };
+        // Sans COMSPEC Link ou en ATAK local : ordres envoyés au camp sans Athena (fn_orderLocal).
+        if !(["can"] call comspec_atak_native_fnc_orderLocal) exitWith { ["WARNING", "Seul le chef d'unité peut émettre un ordre", 3, 30] call comspec_atak_native_fnc_notify; };
         uiNamespace setVariable ["COMSPEC_ATAK_OrderHint", ""];
         _s set ["orderCompose", true];
         call _redraw;
@@ -52,6 +52,14 @@ switch (toLower _action) do {
         };
         if (_grid isNotEqualTo "") then { _payload = format ["%1 — Grille: %2", _payload, _grid]; };
         private _target = if (_tType isEqualTo "all") then { "" } else { _tLabel };
+        // Mode full local, poste TOC ou pas de COMSPEC Link : l'ordre part au camp sans Athena.
+        if (["local"] call comspec_atak_native_fnc_orderLocal) exitWith {
+            ["send", [_kind, ["", "DEM-SSE"] select (_kind isEqualTo "DEMSSE"), _tType, _tgt param [1, ""], _tLabel, _payload, _prio]] call comspec_atak_native_fnc_orderLocal;
+            ["INFO", format ["Ordre envoyé à %1 (sans Athena)", ["tout le monde", _tLabel] select (_tType isNotEqualTo "all")], 3, 30] call comspec_atak_native_fnc_notify;
+            uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", createHashMapFromArray [["kind", _kind], ["prio", _prio], ["target", _d getOrDefault ["target", ""]]]];
+            _s set ["orderCompose", false];
+            call _redraw;
+        };
         private _order = [["CUSTOM_DEM_SSE", _kind] select (_kind isNotEqualTo "DEMSSE"), _target, _payload, _prio, "", _tType] call comspec_overwatch_connect_fnc_issueOrder;
         if (_kind isEqualTo "DEMSSE" && {_order isEqualType createHashMap}) then { _order set ["typeLabel", "DEM-SSE"]; };
         if (_kind isEqualTo "FRAGO" && {!isNil "comspec_overwatch_connect_fnc_sendTacticalAlert"}) then {

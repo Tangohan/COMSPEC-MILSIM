@@ -607,6 +607,10 @@ return function (Router $router) {
     // Télécommande drone sur le vrai téléphone (QR code de l'app Drone en jeu ou du panneau Drones d'Overwatch).
     $router->get('/telecommande-drone', [\App\Controllers\Web\AtakDroneRemoteController::class, 'show']);
     $router->get('/telecommande-drone/qr.png', [\App\Controllers\Web\AtakDroneRemoteController::class, 'qr']);
+    // 9-LINE du JTAC sur un autre écran (QR code et bouton de l'app JTAC de l'ATAK natif).
+    $router->get('/9-line', [\App\Controllers\Web\AtakNineLineViewController::class, 'show']);
+    $router->get('/9-line/feed', [\App\Controllers\Web\AtakNineLineViewController::class, 'feed'], [AuthMiddleware::class]);
+    $router->get('/9-line/qr.png', [\App\Controllers\Web\AtakNineLineViewController::class, 'qr']);
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
@@ -1534,6 +1538,20 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/grades/{id}/update', [GradeReferentielController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/deactivate', [GradeReferentielController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/reactivate', [GradeReferentielController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Grades sur mesure (SCP, Star Wars…) : systèmes, catégories et grades créés par la communauté.
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/utiliser', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'useSystemAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/move', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'moveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/move', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'moveGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/restore', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'restoreGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/back-office/organisation/grades', [AdvancementAdminController::class, 'grades'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/grades/create', [AdvancementAdminController::class, 'gradeCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1897,6 +1915,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/maintenance', [AdminAtakConfigController::class, 'setMaintenance'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/modules', [AdminAtakConfigController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/data-flows', [AdminAtakConfigController::class, 'storeDataFlows'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/game-experience', [AdminAtakConfigController::class, 'storeGameExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/photo-hud', [AdminAtakConfigController::class, 'storePhotoHud'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2443,6 +2462,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
+    // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.
+    $router->get('/api/atak/diag/selftest', [\App\Controllers\Api\AtakLinkSelfTestController::class, 'selfTest']);
     // App Musique de l'ATAK natif (COMSPEC Link AthenaMusic) ; flux audio par URL signée, sans en-tête Athena.
     $router->get('/api/atak/music', [MusicLibraryApiController::class, 'index']);
     $router->get('/api/music/stream/{file}', [MusicLibraryApiController::class, 'stream']);
@@ -2556,6 +2577,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // ATAK du joueur : ses propres messages et avis de l'administration (COMSPEC Link AdminControl.Poll / AdminControl.Ack).
     $router->post('/api/atak/admin-control/mine', [AtakApiController::class, 'adminControlMine']);
     $router->post('/api/atak/admin-control/mine/ack', [AtakApiController::class, 'adminControlMineAck']);
+    // App Admin de l'ATAK natif : parc de la communauté géré en jeu par un gestionnaire (COMSPEC Link GameAdmin.*).
+    $router->post('/api/atak/game-admin/fleet', [AtakApiController::class, 'gameAdminFleet']);
+    $router->post('/api/atak/game-admin/action', [AtakApiController::class, 'gameAdminAction']);
     $router->post('/api/atak/item-icons/missing', [AtakApiController::class, 'itemIconsMissing']);
     $router->post('/api/atak/item-icons', [AtakApiController::class, 'itemIconUpload']);
     $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);
@@ -2587,6 +2611,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/weather', [AtakApiController::class, 'weather']);
     $router->get('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
     $router->post('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
+    $router->get('/api/atak/data-flows', [AtakApiController::class, 'dataFlows']);
     $router->get('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);

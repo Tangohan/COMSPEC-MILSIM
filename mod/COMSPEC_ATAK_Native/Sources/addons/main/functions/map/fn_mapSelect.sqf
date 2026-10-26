@@ -1,5 +1,5 @@
 /* Clic gauche sur la carte selon l'outil actif (Ctrl = ping, Maj = marqueur, Alt = mesure). */
-params ["_world",["_shift",false],["_ctrl",false],["_alt",false]];
+params ["_world",["_shift",false],["_ctrl",false],["_alt",false],["_map",controlNull]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _tool = _s getOrDefault ["mapMode","SELECT"];
 if (_ctrl) then {_tool = "PING"};
@@ -20,6 +20,8 @@ switch (_tool) do {
     case "FLAT";
     case "LOS": { [_tool, _world] call comspec_atak_native_fnc_mapToolRun; };
     case "WP": { ["add", _world] call comspec_atak_native_fnc_wpAction; };
+    // JTAC : IP puis cible (cap magnétique, distance, altitude, fn_jtacTool).
+    case "IPTGT": { ["click", _world] call comspec_atak_native_fnc_jtacTool; };
     case "ROUTE": {
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
         ["INFO", "GPS : calcul de l'itinéraire…", 2, 20] call comspec_atak_native_fnc_notify;
@@ -28,12 +30,20 @@ switch (_tool) do {
     default {
         private _best = createHashMap;
         private _dist = 1e10;
+        // Tolérance en pixels écran autour du symbole (comme fn_markerAt) : avant, 150 m fixes (tout l'écran en zoom
+        // rapproché, quelques pixels en zoom éloigné). Sans contrôle carte : 150 m comme avant.
+        private _scr = [];
+        private _tol = 150;
+        if (!isNull _map) then {
+            _scr = _map ctrlMapWorldToScreen _world;
+            _tol = pixelW * 18 * (uiNamespace getVariable ["COMSPEC_ATAK_MapIs", 1]);
+        };
         {
             private _e = _y;
             private _p = _e getOrDefault ["position",[]];
             if (count _p >= 2) then {
-                private _v = _p distance2D _world;
-                if (_v < _dist && {_v < 150}) then { _dist = _v; _best = _e; };
+                private _v = if ((count _scr) > 0) then { (_map ctrlMapWorldToScreen _p) distance2D _scr } else { _p distance2D _world };
+                if (_v < _dist && {_v < _tol}) then { _dist = _v; _best = _e; };
             };
         } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["units",createHashMap]);
         _s set ["selectedEntity",_best];

@@ -46,7 +46,7 @@ class AtakVehicleTrackingRepository
             throw new \InvalidArgumentException('vehicle_callsign requis');
         }
         $data['vehicle_callsign'] = $callsign;
-        $data = self::normalizeEnums($data);
+        $data = self::sanitizeColumns(self::normalizeEnums($data));
 
         // Vérifier si le véhicule existe déjà
         $existing = $this->findByCallsign(
@@ -66,7 +66,112 @@ class AtakVehicleTrackingRepository
             return 0;
         }
 
-        return $this->create($data);
+        try {
+            return $this->create($data);
+        } catch (\PDOException $e) {
+            // Deux téléphones remontent le même véhicule au même instant (équipage) : le second INSERT tombe sur la clé
+            // unique (1062) ; on met à jour la ligne créée par le premier au lieu de renvoyer vehicle_exception.
+            if ((int) ($e->errorInfo[1] ?? 0) !== 1062) {
+                throw $e;
+            }
+            $again = $this->findByCallsign((int) ($data['tenant_id'] ?? 0), (int) ($data['context_id'] ?? 0), $callsign);
+            if (!$again) {
+                throw $e;
+            }
+            $this->update((int) $again['id'], $data);
+
+            return (int) $again['id'];
+        }
+    }
+
+    /** Colonnes texte et longueur maximale (VARCHAR de la table). */
+    private const STRING_COLUMNS = [
+        'vehicle_callsign' => 100, 'vehicle_name' => 200, 'vehicle_type' => 100, 'unit_assigned' => 200,
+        'crew_commander_callsign' => 100, 'mission_type' => 40, 'mission_description' => 20000,
+    ];
+    /** Entiers positifs : [nullable]. */
+    private const UINT_COLUMNS = [
+        'crew_commander_user_id' => true, 'crew_count' => false, 'crew_max' => true,
+        'passenger_count' => false, 'passenger_max' => true, 'fuel_capacity' => true,
+    ];
+    /** Décimaux : [min, max] (DECIMAL de la table). */
+    private const DECIMAL_COLUMNS = [
+        'pos_x' => [-99999999.0, 99999999.0], 'pos_y' => [-99999999.0, 99999999.0], 'pos_z' => [-99999999.0, 99999999.0],
+        'destination_pos_x' => [-99999999.0, 99999999.0], 'destination_pos_y' => [-99999999.0, 99999999.0],
+        'heading' => [0.0, 360.0], 'speed' => [-999999.0, 999999.0], 'fuel_consumption_rate' => [-999999.0, 999999.0],
+        'fuel_percent' => [0.0, 100.0], 'ammo_percent' => [0.0, 100.0], 'engine_health' => [0.0, 100.0],
+        'hull_health' => [0.0, 100.0], 'tracks_wheels_health' => [0.0, 100.0], 'turret_health' => [0.0, 100.0],
+    ];
+
+    /**
+     * Ramène chaque valeur du mod au type de sa colonne : texte coupé à la longueur de la colonne (UTF-8 réparé),
+     * nombres bornés (un indicatif Steam dans crew_commander_user_id, une vitesse de jet, « n/a » ou NaN faisaient
+     * échouer l'écriture en SQL strict : vehicle_exception, HTTP 500 dans le lot de télémétrie), booléens en 0 / 1.
+     * Une valeur illisible est retirée (la ligne garde l'ancienne) ou mise à NULL quand la colonne l'accepte.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public static function sanitizeColumns(array $data): array
+    {
+        foreach (self::STRING_COLUMNS as $col => $max) {
+            if (!array_key_exists($col, $data) || $data[$col] === null) {
+                continue;
+            }
+            $v = $data[$col];
+            if (is_bool($v)) {
+                $v = $v ? '1' : '0';
+            }
+            if (!is_scalar($v)) {
+                unset($data[$col]);
+                continue;
+            }
+            $v = mb_convert_encoding(trim((string) $v), 'UTF-8', 'UTF-8');
+            $data[$col] = $v === '' && $col !== 'vehicle_callsign' ? null : mb_substr($v, 0, $max);
+        }
+        foreach (self::UINT_COLUMNS as $col => $nullable) {
+            if (!array_key_exists($col, $data)) {
+                continue;
+            }
+            $v = $data[$col];
+            $ok = (is_int($v) || is_float($v) || (is_string($v) && is_numeric(trim($v))))
+                && is_finite((float) $v) && (float) $v >= 0 && (float) $v <= 4294967295;
+            if ($ok) {
+                $data[$col] = (int) round((float) $v);
+            } elseif ($nullable) {
+                $data[$col] = null;
+            } else {
+                unset($data[$col]);
+            }
+        }
+        foreach (self::DECIMAL_COLUMNS as $col => [$min, $max]) {
+            if (!array_key_exists($col, $data) || $data[$col] === null) {
+                continue;
+            }
+            $v = $data[$col];
+            if (is_string($v)) {
+                $v = str_replace(',', '.', trim($v));
+            }
+            if (!(is_int($v) || is_float($v) || (is_string($v) && is_numeric($v))) || !is_finite((float) $v)) {
+                if (in_array($col, ['pos_x', 'pos_y'], true)) {
+                    unset($data[$col]);
+                } else {
+                    $data[$col] = null;
+                }
+                continue;
+            }
+            $f = (float) $v;
+            if ($col === 'heading') {
+                $f = fmod(fmod($f, 360.0) + 360.0, 360.0);
+            }
+            $data[$col] = round(max($min, min($max, $f)), 4);
+        }
+        if (array_key_exists('is_visible', $data)) {
+            $v = $data['is_visible'];
+            $data['is_visible'] = (is_string($v) ? !in_array(strtolower(trim($v)), ['', '0', 'false', 'no', 'off'], true) : (bool) $v) ? 1 : 0;
+        }
+
+        return $data;
     }
 
     private const VEHICLE_CLASSES = [
@@ -196,7 +301,7 @@ class AtakVehicleTrackingRepository
         foreach ($jsonFields as $field) {
             if (isset($data[$field])) {
                 $fields[] = "{$field} = :{$field}";
-                $params[$field] = self::encodeJsonField($data[$field]) ?? json_encode($data[$field]);
+                $params[$field] = self::encodeJsonField($data[$field]);
             }
         }
 
@@ -249,7 +354,7 @@ class AtakVehicleTrackingRepository
             'fuel_capacity' => $data['fuel_capacity'] ?? null,
             'fuel_consumption_rate' => $data['fuel_consumption_rate'] ?? null,
             'ammo_percent' => $data['ammo_percent'] ?? null,
-            'weapons' => isset($data['weapons']) ? json_encode($data['weapons']) : null,
+            'weapons' => isset($data['weapons']) ? self::encodeJsonField($data['weapons']) : null,
             'engine_health' => $data['engine_health'] ?? null,
             'hull_health' => $data['hull_health'] ?? null,
             'tracks_wheels_health' => $data['tracks_wheels_health'] ?? null,
@@ -258,8 +363,8 @@ class AtakVehicleTrackingRepository
             'destination_pos_y' => $data['destination_pos_y'] ?? null,
             'mission_type' => $data['mission_type'] ?? null,
             'mission_description' => $data['mission_description'] ?? null,
-            'properties' => isset($data['properties']) ? json_encode($data['properties']) : null,
-            'is_visible' => $data['is_visible'] ?? true,
+            'properties' => isset($data['properties']) ? self::encodeJsonField($data['properties']) : null,
+            'is_visible' => $data['is_visible'] ?? 1,
             'last_seen_at' => $data['last_seen_at'] ?? date('Y-m-d H:i:s'),
         ];
     }
@@ -273,12 +378,42 @@ class AtakVehicleTrackingRepository
             return;
         }
 
+        // Chaque téléphone d’équipage remonte le même véhicule : pas de nouvelle ligne si le dernier point
+        // a moins de 10 s et que le véhicule a bougé de moins de 15 m (trajet de relecture inchangé à l’œil).
+        try {
+            $last = $this->db->fetchOne(
+                'SELECT pos_x, pos_y, TIMESTAMPDIFF(SECOND, recorded_at, NOW()) AS age_sec
+                 FROM atak_vehicle_position_history
+                 WHERE vehicle_tracking_id = :vehicle_id
+                 ORDER BY id DESC LIMIT 1',
+                ['vehicle_id' => $vehicleId]
+            );
+            if (is_array($last) && $last['age_sec'] !== null && (int) $last['age_sec'] < 10
+                && is_numeric($data['pos_x']) && is_numeric($data['pos_y'])
+                && hypot((float) $data['pos_x'] - (float) $last['pos_x'], (float) $data['pos_y'] - (float) $last['pos_y']) < 15.0
+            ) {
+                return;
+            }
+        } catch (\Throwable) {
+        }
+
         $sql = "INSERT INTO atak_vehicle_position_history (
             vehicle_tracking_id, pos_x, pos_y, pos_z, heading, speed, fuel_percent, ammo_percent
         ) VALUES (
             :vehicle_id, :pos_x, :pos_y, :pos_z, :heading, :speed, :fuel_percent, :ammo_percent
         )";
 
+        // Historique : secondaire, son échec ne doit pas faire échouer la mise à jour du véhicule.
+        try {
+            $this->insertHistory($sql, $vehicleId, $data);
+        } catch (\Throwable $e) {
+            error_log('[atak/vehicles] historique non écrit : ' . mb_substr($e->getMessage(), 0, 200));
+        }
+    }
+
+    /** @param array<string, mixed> $data */
+    private function insertHistory(string $sql, int $vehicleId, array $data): void
+    {
         $this->db->insert($sql, [
             'vehicle_id' => $vehicleId,
             'pos_x' => $data['pos_x'],
@@ -426,7 +561,8 @@ class AtakVehicleTrackingRepository
                 return $value;
             }
         }
-        $encoded = json_encode($value);
+        // Noms de joueurs mal encodés (passagers) : caractère de remplacement au lieu d'un échec (false → JSON invalide).
+        $encoded = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
 
         return $encoded === false ? null : $encoded;
     }

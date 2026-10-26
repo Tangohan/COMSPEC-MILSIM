@@ -1,12 +1,14 @@
 /* Athena PWA — cache shell + fonds de carte Overwatch (tuiles / relief).
    Les pages HTML dynamiques et le reste de l’API restent hors cache. */
-const CACHE_NAME = 'athena-shell-v10';
+const CACHE_NAME = 'athena-shell-v11';
 const TILE_CACHE_NAME = 'athena-overwatch-tiles-v2';
 const SHELL = [
   './manifest.webmanifest',
   './assets/css/design-system.css',
   './assets/js/portal_command_palette.js',
-  './assets/images/logo.png'
+  './assets/icons/athena-192.png',
+  './assets/brand/athena-embleme-noir.svg',
+  './assets/brand/athena-logo-noir.svg'
 ];
 
 self.addEventListener('install', function (event) {

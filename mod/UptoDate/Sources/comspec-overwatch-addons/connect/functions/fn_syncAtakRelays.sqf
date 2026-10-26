@@ -10,7 +10,8 @@ private _list = _all select { !isNull _x };
 } forEach _list;
 // Diffusion seulement si des relais ont disparu : la liste entière repartait toutes les 12 s
 // (chaque client + hub serveur) vers tous les clients (+ JIP), même inchangée.
-if ((count _list) != (count _all)) then {
+// Serveur seul : un client pas encore à jour effaçait un relais tout juste posé.
+if (isServer && {(count _list) != (count _all)}) then {
     missionNamespace setVariable ["COMSPEC_AtakRelays", _list, true];
 };
 true

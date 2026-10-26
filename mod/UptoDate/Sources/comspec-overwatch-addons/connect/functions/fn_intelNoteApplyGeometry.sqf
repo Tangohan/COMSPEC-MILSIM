@@ -76,9 +76,8 @@ if (!(_orig isEqualType []) || {_orig isEqualTo []}) then {
     {
         private _idc = ctrlIDC _x;
         if (_idc isEqualTo 9600) then { continue };
-        private _cfg = ctrlConfig _x;
-        private _sizeEx = 0;
-        if (isNumber (_cfg >> "sizeEx")) then { _sizeEx = getNumber (_cfg >> "sizeEx"); };
+        // Hauteur de police actuelle (ctrlConfig n'existe pas en SQF : la fonction ne compilait pas).
+        private _sizeEx = ctrlFontHeight _x;
         _orig pushBack [_x, ctrlPosition _x, _sizeEx];
     } forEach (allControls _disp);
     _disp setVariable ["COMSPEC_IntelNote_OrigGeom", _orig];

@@ -25,5 +25,5 @@ private _found = false;
 if (!_found) exitWith { false };
 
 profileNamespace setVariable ["ace_arsenal_saved_loadouts", _kept];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 true

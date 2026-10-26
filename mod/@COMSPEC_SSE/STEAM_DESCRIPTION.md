@@ -19,14 +19,14 @@ titres numérotés `01 · …` en `[h1]`, grille des fonctionnalités, vignettes
 
 Variante de titres : les en-têtes graphiques `section-01-about.png` … `section-09-credits.png` et
 `separateur.png` existent aussi (même dossier). Pour les utiliser, remplacer chaque `[h1]NN · …[/h1]` par
-`[img]https://athena.ttrd.fr/assets/workshop/sse/fr/section-NN-….png[/img]` (07 = `section-07-missions.png`).
+`[img]https://athena-comspec.eu/assets/workshop/sse/fr/section-NN-….png[/img]` (07 = `section-07-missions.png`).
 
 ---
 
 ## Version BBCode (FR) — coller dans Steam
 
 ```
-[img]https://athena.ttrd.fr/assets/workshop/sse/fr/banniere.png[/img]
+[img]https://athena-comspec.eu/assets/workshop/sse/fr/banniere.png[/img]
 
 [quote][b]Prérequis :[/b] Arma 3 2.14 ou plus récent, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url], [url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]ACE3[/url] et [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708][b]COMSPEC ATAK Native[/b][/url] (obligatoire). COMSPEC Overwatch n'est plus nécessaire.[/quote]
 
@@ -38,7 +38,7 @@ Le renseignement collecté part vers [b]Athena[/b], le portail web COMSPEC : les
 Gratuit, non commercial, en [b]français et en anglais[/b].
 
 [h1]02 · FONCTIONNALITÉS[/h1]
-[img]https://athena.ttrd.fr/assets/workshop/sse/fr/fonctionnalites.png[/img]
+[img]https://athena-comspec.eu/assets/workshop/sse/fr/fonctionnalites.png[/img]
 [list]
 [*][b]Fouille et collecte[/b] - menu ACE sur les personnes, corps, objets et véhicules : inspecter, fouiller, photographier, lire les documents, collecter dans un sachet de preuve, révéler une cache.
 [*][b]Biométrie SEEK II[/b] - empreintes (10 doigts), iris, photo du visage et ADN sur un vrai terminal. Qualité de capture réaliste (nuit, pluie, masque, blessures ACE), recherche 1:N, watchlist tiers 1 à 4, fausses alertes, empreintes latentes sur les armes et les objets.
@@ -54,7 +54,7 @@ Gratuit, non commercial, en [b]français et en anglais[/b].
 [/list]
 
 [h1]03 · GALERIE[/h1]
-[img]https://athena.ttrd.fr/assets/workshop/sse/fr/vignettes-seek.png[/img]
+[img]https://athena-comspec.eu/assets/workshop/sse/fr/vignettes-seek.png[/img]
 Plus d'images dans la galerie en haut de la page.
 
 [h1]04 · NOUVEAUTÉS[/h1]
@@ -126,7 +126,7 @@ Gardez le même identifiant de campagne d'une mission à l'autre. Pour changer d
 [/list]
 Gratuit, non commercial, aucun contenu payant.
 
-[url=https://athena.ttrd.fr]Portail Athena[/url]  ·  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url]
+[url=https://athena-comspec.eu]Portail Athena[/url]  ·  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url]
 ```
 
 ---
@@ -134,7 +134,7 @@ Gratuit, non commercial, aucun contenu payant.
 ## Version BBCode (EN) — paste into the English translation
 
 ```
-[img]https://athena.ttrd.fr/assets/workshop/sse/en/banniere.png[/img]
+[img]https://athena-comspec.eu/assets/workshop/sse/en/banniere.png[/img]
 
 [quote][b]Requirements:[/b] Arma 3 2.14 or newer, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url], [url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]ACE3[/url] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708][b]COMSPEC ATAK Native[/b][/url] (required). COMSPEC Overwatch is no longer needed.[/quote]
 
@@ -146,7 +146,7 @@ The intelligence you collect goes to [b]Athena[/b], the COMSPEC web portal: reco
 Free, non-commercial, in [b]English and French[/b].
 
 [h1]02 · FEATURES[/h1]
-[img]https://athena.ttrd.fr/assets/workshop/sse/en/fonctionnalites.png[/img]
+[img]https://athena-comspec.eu/assets/workshop/sse/en/fonctionnalites.png[/img]
 [list]
 [*][b]Search and collect[/b] - ACE menu on people, bodies, objects and vehicles: inspect, search, photograph, read documents, collect into an evidence bag, reveal a cache.
 [*][b]SEEK II biometrics[/b] - fingerprints (10 fingers), iris, face photo and DNA on a real terminal. Realistic capture quality (night, rain, mask, ACE wounds), 1:N search, tier 1 to 4 watchlist, false alarms, latent prints on weapons and objects.
@@ -162,7 +162,7 @@ Free, non-commercial, in [b]English and French[/b].
 [/list]
 
 [h1]03 · GALLERY[/h1]
-[img]https://athena.ttrd.fr/assets/workshop/sse/en/vignettes-seek.png[/img]
+[img]https://athena-comspec.eu/assets/workshop/sse/en/vignettes-seek.png[/img]
 More pictures in the gallery at the top of the page.
 
 [h1]04 · WHAT'S NEW[/h1]
@@ -234,5 +234,5 @@ Keep the same campaign ID from one mission to the next. To move to another serve
 [/list]
 Free, non-commercial, no paid content ever.
 
-[url=https://athena.ttrd.fr]Athena portal[/url]  ·  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url]
+[url=https://athena-comspec.eu]Athena portal[/url]  ·  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url]
 ```

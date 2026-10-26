@@ -1374,6 +1374,13 @@ class Container
                 self::get(\App\Repositories\TenantRepository::class),
                 self::get(\App\Repositories\TenantGradeOverrideRepository::class),
                 self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class),
+                self::get(\App\Repositories\CustomGradeSystemRepository::class)
+            ),
+            \App\Repositories\CustomGradeSystemRepository::class => new \App\Repositories\CustomGradeSystemRepository(),
+            \App\Controllers\Admin\Organization\CustomGradeSystemController::class => new \App\Controllers\Admin\Organization\CustomGradeSystemController(
+                self::get(\App\Repositories\CustomGradeSystemRepository::class),
+                self::get(\App\Repositories\TenantRepository::class),
                 self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
             ),
             \App\Services\Rank\RankReferenceValidator::class => new \App\Services\Rank\RankReferenceValidator(),

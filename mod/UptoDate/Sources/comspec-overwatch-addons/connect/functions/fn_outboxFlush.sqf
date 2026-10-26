@@ -37,6 +37,7 @@ params ["_force"];
 
 private _queue = profileNamespace getVariable ["COMSPEC_Outbox", []];
 if (!(_queue isEqualType [])) then { _queue = []; };
+private _queueSnap = +_queue;
 private _countIn = count _queue;
 _queue = _queue select {
     !((toLower (_x param [0, ""])) in ["syncwardrobe", "syncwardrobesbatch"])
@@ -129,10 +130,18 @@ private _tried = 0;
 } forEach _queue;
 
 _remaining append _retryLast;
+// Pendant l'attente DLL (extAwait), outboxPush a pu mettre en file de nouvelles transmissions :
+// on les reprend au lieu de les écraser avec l'instantané du début de passage.
+private _queueNow = profileNamespace getVariable ["COMSPEC_Outbox", []];
+if (!(_queueNow isEqualType [])) then { _queueNow = []; };
+{
+    private _entry = _x;
+    if ((_queueSnap findIf { _x isEqualTo _entry }) < 0) then { _remaining pushBack _entry; };
+} forEach _queueNow;
 profileNamespace setVariable ["COMSPEC_Outbox", _remaining];
 // Écriture disque seulement si la file a changé (saveProfileNamespace est coûteux).
 if (_sent > 0 || {_failed > 0} || {_expired > 0} || {(count _remaining) != _countIn}) then {
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 // Attente croissante tant qu'il reste des échecs (les entrées pas encore tentées partent au tick suivant).

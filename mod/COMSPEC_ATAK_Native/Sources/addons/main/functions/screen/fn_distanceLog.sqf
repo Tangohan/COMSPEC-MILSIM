@@ -88,6 +88,7 @@ private _out = [
 profileNamespace setVariable ["COMSPEC_ATAK_DistBook", _out];
 if (_mode isEqualTo "save" || {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_DistSaved", 0])) > 300}) then {
     missionNamespace setVariable ["COMSPEC_ATAK_DistSaved", diag_tickTime];
-    saveProfileNamespace;
+    // Fin de mission : écrit tout de suite ; passage périodique : profil marqué modifié (fn_profileSave).
+    ([["now"], ["dirty"]] select (_mode isEqualTo "tick")) call comspec_atak_native_fnc_profileSave;
 };
 true

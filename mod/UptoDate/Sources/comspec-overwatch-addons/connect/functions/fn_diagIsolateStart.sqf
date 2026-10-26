@@ -51,7 +51,7 @@ missionNamespace setVariable ["COMSPEC_DiagIsolateDelay", _delay, false];
         missionNamespace setVariable ["COMSPEC_DiagIsolateUntil", diag_tickTime + _delay, false];
 
         profileNamespace setVariable ["COMSPEC_DiagIsolateLast", [_id, _label]];
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
 
         ["WARN", "Diag", format ["Dépannage — étape %1/%2 : %3", _forEachIndex + 1, _total, _label]] call comspec_overwatch_connect_fnc_log;
         [_label, _forEachIndex, _total, _delay] call comspec_overwatch_connect_fnc_diagIsolateHud;

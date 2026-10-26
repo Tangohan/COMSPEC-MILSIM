@@ -237,6 +237,10 @@ final class FeatureGateService
             return;
         }
         Session::start();
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            // Session en lecture seule (sondage du jeu) : le dédoublonnage ne serait pas enregistré.
+            return;
+        }
         $dedup = 'quota_soft_block_' . $tenantId . '_' . $feature . '_' . ($status['period_start'] ?? '');
         if (Session::get($dedup)) {
             return;

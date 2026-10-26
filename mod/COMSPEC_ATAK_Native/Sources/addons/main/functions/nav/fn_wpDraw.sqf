@@ -43,9 +43,12 @@ private _dash = {
     private _n = ((round ((_a distance2D _b) / (_mpp * 10))) max 1) min 80;
     for "_k" from 0 to (_n - 1) step 2 do { _map drawLine [_a vectorAdd ((_b vectorDiff _a) vectorMultiply (_k / _n)), _a vectorAdd ((_b vectorDiff _a) vectorMultiply ((_k + 1) / _n)), _c]; };
 };
-// Couleur et icône de chaque type, lues une fois par image (pas une fois par étape).
-private _tmap = createHashMap;
-{ _tmap set [_x select 0, [_x select 3, ["icon", _x select 0] call comspec_atak_native_fnc_wpAction]]; } forEach (["types"] call comspec_atak_native_fnc_wpAction);
+// Couleur et icône de chaque type (table fixe) : faites une seule fois puis gardées (avant : 8 appels à fn_wpAction à chaque image).
+private _tmap = uiNamespace getVariable ["COMSPEC_ATAK_WpTypeMap", createHashMap];
+if ((count _tmap) isEqualTo 0) then {
+    { _tmap set [_x select 0, [_x select 3, ["icon", _x select 0] call comspec_atak_native_fnc_wpAction]]; } forEach (["types"] call comspec_atak_native_fnc_wpAction);
+    uiNamespace setVariable ["COMSPEC_ATAK_WpTypeMap", _tmap];
+};
 private _tOf = { params ["_k"]; _tmap getOrDefault [_k, _tmap get "WP"] };
 private _colOf = { params ["_p"]; +(([_p param [2, "WP"]] call _tOf) select 0) };
 

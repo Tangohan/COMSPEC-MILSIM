@@ -191,7 +191,7 @@ switch (_tab) do {
         [_x0 + _f, _y + _f * 7.4, _W - _f * 2, _f * 1.9, "<t align='center' font='COMSPEC_BarlowBold' size='1.4'>Aucune montre Garmin</t>"] call _txt;
         private _y0 = _y;
         _y = _y + _f * 9.3;
-        private _c = [format ["<t align='center' color='%1'>Portez la « Montre Garmin » dans l'emplacement montre de l'inventaire pour mesurer les pas, la fréquence cardiaque, le stress, le sommeil, la Body Battery et les activités.<br/>Les mesures déjà prises restent sur ce PC et reviennent avec la montre.</t>", _hDim]] call _para;
+        private _c = [format ["<t align='center' color='%1'>Portez la « Montre Garmin » dans l'emplacement montre de l'inventaire, ou gardez la « Montre Garmin (objet divers) » dans votre équipement, pour mesurer les pas, la fréquence cardiaque, le stress, le sommeil, la Body Battery et les activités.<br/>Les mesures déjà prises restent sur ce PC et reviennent avec la montre.</t>", _hDim]] call _para;
         _c ctrlSetPositionX (_x0 + _f); _c ctrlSetPositionW (_W - _f * 2); _c ctrlCommit 0;
         _y = (_y max (_y0 + _cardH)) + _gap;
     };

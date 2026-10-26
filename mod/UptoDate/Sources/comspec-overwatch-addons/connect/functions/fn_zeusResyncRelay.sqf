@@ -3,7 +3,14 @@
     Place le module sur un relais pour le resynchroniser immédiatement
 */
 
-if (!hasInterface) exitWith {};
+// isGlobal = 0 : sur serveur dédié, la fonction tourne sans interface. Relayer vers la machine
+// du Zeus qui a posé le module (propriétaire de la logique) : retour visuel et liaison Athena y sont.
+if (!hasInterface) exitWith {
+    private _lg = _this param [0, objNull];
+    if (isServer && {_lg isEqualType objNull} && {!isNull _lg} && {(owner _lg) > 2}) then {
+        _this remoteExec ["comspec_overwatch_connect_fnc_zeusResyncRelay", owner _lg];
+    };
+};
 
 params [
     ["_logic", objNull, [objNull]],
@@ -61,7 +68,7 @@ _light setDropInterval 0.03;
 [{
     params ["_relay", "_name", "_light"];
     
-    private _success = [_relay, true] call ATHENA_fnc_syncAtakRelay;
+    private _success = [_relay, true] call comspec_overwatch_connect_fnc_syncAtakRelay;
     
     if (_success) then {
         _relay setVariable ["COMSPEC_AtakRelayLastSync", time, true];

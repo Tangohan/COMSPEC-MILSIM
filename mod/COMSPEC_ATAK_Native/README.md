@@ -47,6 +47,26 @@ Identités livrées :
 - Logique : `functions/dock` (`fn_dockServer` état, recharge et mémoire serveur ; `fn_dockVisual` textures ; `fn_dockClient` et `fn_dockMenu` actions). Mémoire : `profileNamespace` du serveur, `COMSPEC_ATAK_DockDb_v1`.
 - Modèle `data/charging_dock.p3d` : `tools/model_charging_dock.py` (Blender, Arma 3 Object Builder ; reprend le maillage du téléphone du gilet), images 2D par `tools/gen_dock_assets.py`. Sélections `phone1..10`, `screen1..10`, `led1..10`.
 
+## Mode full local et PC portable de TOC
+
+- **Mode full local** : réglage serveur **COMSPEC > ATAK · Mode local et poste TOC > Mode full local (sans Athena)**. Personne ne se connecte à Athena, la question du service Athéna disparaît (`fn_athenaMode` natif et connect renvoient `off`). Sans ce réglage, un joueur qui répond Non au service Athéna est dans le même cas, pour lui seul.
+- **Configuration locale** (`fn_localCfg`) : `Documents\Arma 3\COMSPEC_Local\config.json`, créé au premier lancement, modifiable à la main (commentaires `//` acceptés), copie dans le profil Arma (sans la DLL native à jour, ou si le fichier est illisible). DLL native : commandes `LocalBegin / LocalAppend / LocalCommit / LocalGet / LocalFolder / LocalOpenFolder` (`COMSPECATAKNativeExtension/LocalConfig.cs`), ancien fichier gardé en `config.json.bak`.
+  ```json
+  {
+    "callsign": "Viper 2-1",
+    "phone": { "plan": "FR", "numbers": [
+      { "number": "06 12 34 56 78", "type": "mobile", "label": "Perso", "primary": true, "shared": true },
+      { "number": "+8816 1234 5678", "type": "satellite", "label": "Iridium", "primary": false, "shared": false }
+    ] },
+    "contacts": [ { "name": "TOC Alpha", "number": "01 45 67 89 10", "type": "landline", "note": "FOB nord" } ],
+    "toc": { "name": "TOC", "callsign": "OVERWATCH" }
+  }
+  ```
+  Types : `mobile`, `satellite`, `landline`, `radio_ip`, `secure`, `pager`, `emergency`. Plans (format des numéros générés) : `FR`, `US`, `UK`, `DE`, `BE`, `RU`, `ES`. Au plus 8 numéros et 100 contacts.
+- **App Numéros** (`fn_pageNumbers`) : mes numéros et leurs types (principal, visible ou privé, GÉNÉRER au format du plan), annuaire des joueurs du camp (SMS, + CARNET), carnet, onglet FICHIER (ouvrir le dossier, recharger, enregistrer). En ATAK local, le numéro principal remplace le numéro calculé (`fn_phoneIdent`, variable publique `COMSPEC_ATAK_LocalNum`) ; les numéros visibles sont publiés dans `COMSPEC_ATAK_Numbers` `[[numéro, type, libellé]...]`.
+- **PC portable de TOC** (`functions/toc`) : objet `COMSPEC_ATAK_TocLaptop` (Eden > Objets > Électronique, Zeus), attribut Eden « Camp du poste TOC » (vide = tous). Tout objet peut servir de poste : `this setVariable ["COMSPEC_ATAK_Toc", true, true];` (camp : `this setVariable ["COMSPEC_ATAK_TocSide", "WEST", true];`). Réglage « Tous les ordinateurs portables servent de PC de TOC » pour les ordinateurs du jeu. À moins de 2,5 m, à pied : ATAK du poste sur la tablette (sans téléphone), action ACE / molette **Poste TOC (ATAK)**, app **Poste TOC** : message à tout le camp (ROUTINE / URGENT / FLASH, dans Messages en « TOC · indicatif », les réponses arrivent à l'opérateur assis au poste), ordres aux groupes, situation des groupes, ordres émis et leurs réponses, derniers comptes rendus.
+- **Ordres sans Athena** (`fn_orderLocal`) : sans COMSPEC Link, en ATAK local ou au poste TOC, NOUVEL ORDRE (app Tâches) envoie l'ordre au camp par le serveur (rejoué aux arrivants) ; REÇU / EN COURS / TERMINÉ comme avant (`fn_orderAck`). Chef de groupe, joueur seul, rôle chef / commandant ou opérateur du poste.
+
 ## Données à extraire (mission makers)
 
 - **Eden** : module **COMSPEC — ATAK · Données > Données à extraire (câble ATAK)** synchronisé à un ou plusieurs objets (sans objet : le support choisi est créé à l'emplacement du module). **Ajouter un fichier** pour compléter.
@@ -66,7 +86,7 @@ Comme Plans ou Google Maps : une vue satellite de toute la carte, bâtiments et 
 2. **Sur le PC, tout en un** (Python 3, `pip install pillow numpy`, Arma fermé) : `build_photo_pack.bat`. Il regroupe les `cmap_*` de **tous** les dossiers Screenshots d'Arma (profil par défaut, `Arma 3 - Other Profiles\<profil>`, Documents sous OneDrive) dans `Documents\COMSPEC_cartes\captures\<carte>\<rendu>_h<hauteur>\`, en WebP sans perte (pixels vérifiés, 2 à 3 fois plus léger), avec les lignes `CMAPL` / `CMAPS` des journaux (`cmap_journal.txt` : plus besoin de garder le RPT), puis vide Screenshots. Il assemble ensuite le fond et fabrique le pack `Documents\COMSPEC_cartes\@COMSPEC_ATAK_Photo`. Options transmises : `--world Altis`, `--addon-max-mb 600`, `--no-enhance`.
 3. **Rendu** (satellite) : raccords fondus entre images voisines, exposition égalisée d'une prise à l'autre, voile de l'altitude retiré, couleurs (`--saturation 1.08`) et netteté (`--sharpen 0.6`). Compression : WebP méthode 6 pour le site ; dans le pack, tuiles pleines en DXT1 (deux fois plus légères que DXT5), DXT5 seulement sur les bords.
 4. **Pack secondaire `@COMSPEC_ATAK_Photo`** : une PBO par carte (`comspec_atak_photo_<carte>.pbo`), les cartes déjà faites restent dans le pack, `cartes.txt` donne la taille de chacune. À charger **en plus** de `@COMSPEC_ATAK_Native`, qui ne contient aucune image de carte et retombe sur la carte d'Arma sans le pack. Le fond **PHOTO** apparaît alors dans Réglages > Carte et CALQUES (`fn_photoMap`), et le fond SAT prend la capture là où elle existe. PAA avec HEMTT 1.15 ou plus (PATH ou variable `HEMTT`), sinon JPG. Taille : `--addon-max-tiles` (20000 tuiles par carte) et `--addon-max-mb` (niveaux les plus fins retirés au-delà). Refaire le pack sans réassembler : `python tools/map_stitch.py - "%USERPROFILE%\Documents\COMSPEC_cartes\fonds" --pack-only --addon "%USERPROFILE%\Documents\COMSPEC_cartes"`. Si les tuiles se chevauchent ou laissent des joints : `profileNamespace setVariable ["COMSPEC_ATAK_PhotoPx", 1.0]` (facteur de taille) puis le signaler.
-5. **Site** : ajouter `--upload https://athena.ttrd.fr/public --key <X_COMSPEC_KEY du .env>` ; le calque **Photo COMSPEC** apparaît dans les fonds de la carte ATAK web (`storage/map-photo/<carte>/sat`). Une zone capturée moins finement est découpée dans le niveau au-dessus, le zoom reste photo partout.
+5. **Site** : ajouter `--upload https://athena-comspec.eu/public --key <X_COMSPEC_KEY du .env>` ; le calque **Photo COMSPEC** apparaît dans les fonds de la carte ATAK web (`storage/map-photo/<carte>/sat`). Une zone capturée moins finement est découpée dans le niveau au-dessus, le zoom reste photo partout.
 
 Étapes à la main (`tools/map_stitch.py`, aide : `--help`) : `auto` (ou un dossier, ou plusieurs séparés par `;`) à la place du dossier des captures, `--collect <bibliothèque>` pour ranger, `--move` pour vider Screenshots, `--pyramid --no-mosaic` pour le fond, `--addon <dossier>` pour le pack.
 

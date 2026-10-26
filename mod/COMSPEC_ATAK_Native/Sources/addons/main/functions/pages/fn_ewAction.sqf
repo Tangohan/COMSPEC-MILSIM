@@ -156,13 +156,13 @@ switch (_act) do {
         // Brouillage subi : alerte à l'entrée et à la sortie de zone.
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
         ([] call comspec_atak_native_fnc_ewEffects) params ["_err", "_bft"];
-        private _was = uiNamespace getVariable ["COMSPEC_ATAK_EwWas", false];
+        private _was = missionNamespace getVariable ["COMSPEC_ATAK_EwWas", false];
         if (_err > 0 && {!_was}) then {
             ["WARNING", format ["Brouillage détecté : GPS imprécis (environ %1 m)%2", _err, ["", ", suivi des forces dégradé"] select _bft], 6, 60] call comspec_atak_native_fnc_notify;
             [] call comspec_atak_native_fnc_vibrate;
         };
         if (_err isEqualTo 0 && {_was}) then { ["INFO", "Fin du brouillage : GPS et réseau rétablis", 4, 30] call comspec_atak_native_fnc_notify; };
-        uiNamespace setVariable ["COMSPEC_ATAK_EwWas", _err > 0];
+        missionNamespace setVariable ["COMSPEC_ATAK_EwWas", _err > 0];
     };
     case "scan": {
         if !(call _allowed) exitWith { ["WARNING", "Goniométrie réservée aux opérateurs de guerre électronique", 3, 20] call comspec_atak_native_fnc_notify; };

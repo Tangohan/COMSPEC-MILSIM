@@ -15,9 +15,13 @@ if !([] call comspec_sse_fnc_biiIsPresent) exitWith { false };
 missionNamespace setVariable ["comspec_sse_biiHooksInstalled", true];
 
 if (isNil "BII_fnc_identifi_getState") exitWith {
-    ["BII getState absent - passerelle partielle (ensureGenerated seulement).", "WARNING"] call comspec_sse_fnc_log;
+    ["BII getState absent - passerelle partielle (ensureGenerated seulement).", "WARN"] call comspec_sse_fnc_log;
     true
 };
+
+// Poll + couche UI : lisent le dialogue BII (uiNamespace) et la base locale du joueur (profileNamespace).
+// Inutiles sur serveur dédié / HC : seul l'enregistrement du matériel (biiRegisterEquipment) y sert.
+if (!hasInterface) exitWith { true };
 
 if (missionNamespace getVariable ["comspec_sse_biiPollInstalled", false]) exitWith { true };
 missionNamespace setVariable ["comspec_sse_biiPollInstalled", true];

@@ -24,7 +24,9 @@ private _grpMem = _st getOrDefault ["scrollGroups", createHashMap];
 { _x params ["_n", "_c"]; if (!isNull _c) then { _grpMem set [_n, ctrlScrollValues _c]; }; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]);
 uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", []];
 _st set ["scrollGroups", _grpMem];
-private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]}) && {!(_page in ["MAP", "CHAT"])};
+// Accueil et Réglages : toujours rouverts à la position quittée (retour d'une app du bas de la liste, réglage qui
+// recrée l'écran).
+private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]} || {_page in ["LAUNCHER", "SETTINGS"]}) && {!(_page in ["MAP", "CHAT"])};
 _st set ["scrollRestore", false];
 _st set ["pageDrawn", _page];
 _st set ["pagePrev", _drawn]; // page dessinée juste avant (centre de notifications : « nouveau » à l'entrée seulement)
@@ -114,6 +116,8 @@ switch (_page) do {
 // Dégâts de l'écran par-dessus la page.
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
 [] call comspec_atak_native_fnc_deviceOverlay;
+// Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
+uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
 // Défilement retrouvé (et encore à l'image suivante, quand la hauteur du contenu est connue).
 private _sv = _scrollMem getOrDefault [_page, []];
 if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv select 0) > 0}) then {

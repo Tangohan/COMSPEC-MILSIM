@@ -7,7 +7,7 @@ private _now = diag_tickTime;
 // (balayage de toutes les unités du camp : coûteux dans les grosses missions).
 // Téléphone porté (HUD, petite carte) : une fois par seconde suffit, les symboles bougent peu à cette échelle.
 private _fastEvery = [2, [1, 0.25] select (_state getOrDefault ["interactive", false])] select ((_state getOrDefault ["activePage", ""]) in ["MAP", "BFT"]);
-if ((_now - (_state getOrDefault ["lastFast",0])) >= _fastEvery) then { _state set ["lastFast",_now]; [] call comspec_atak_native_fnc_localDataRefresh; };
+if ((_now - (_state getOrDefault ["lastFast",0])) >= _fastEvery) then { _state set ["lastFast",_now]; private _t = diag_tickTime; [] call comspec_atak_native_fnc_localDataRefresh; ["unités et marqueurs (carte)", _t] call comspec_atak_native_fnc_perfAcc; };
 // Animation d'extinction en cours (batterie vide, casse) : c'est fn_powerFx qui range le téléphone à la fin.
 private _why = if ((_now - (_state getOrDefault ["lastSecond",0])) >= 1 && {((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) <= _now}) then { [true] call comspec_atak_native_fnc_canUse } else { "" };
 if (_why isNotEqualTo "") exitWith {

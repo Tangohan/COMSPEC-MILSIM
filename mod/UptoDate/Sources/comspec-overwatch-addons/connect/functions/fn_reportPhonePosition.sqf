@@ -18,9 +18,23 @@ if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { f
 private _pos = getPosWorld _unit;
 if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith { false };
 
+// Au plus toutes les 6 s, et seulement si la personne a bougé (3 m), tourné (15°) ou changé de véhicule / camp ;
+// sinon battement à 30 s. Une remise à -1e9 de COMSPEC_PhoneTrackLastAt (réglage Zeus, ordre de géoloc) force l'envoi.
 private _last = _unit getVariable ["COMSPEC_PhoneTrackLastAt", -1e9];
-if ((diag_tickTime - _last) < 6) exitWith { false };
+private _dt = diag_tickTime - _last;
+if (_dt < 6) exitWith { false };
+private _sig = [
+    round ((_pos select 0) / 3),
+    round ((_pos select 1) / 3),
+    round (((getPosASL _unit) select 2) / 3),
+    round ((getDir _unit) / 15),
+    vehicle _unit,
+    side group _unit,
+    missionNamespace getVariable ["COMSPEC_TrackSigEpoch", 0]
+];
+if (_dt < 30 && {_sig isEqualTo (_unit getVariable ["COMSPEC_PhoneTrackSig", []])}) exitWith { false };
 _unit setVariable ["COMSPEC_PhoneTrackLastAt", diag_tickTime, false];
+_unit setVariable ["COMSPEC_PhoneTrackSig", _sig, false];
 
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 private _jb = {

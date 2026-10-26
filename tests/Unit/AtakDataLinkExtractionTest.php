@@ -44,7 +44,8 @@ final class AtakDataLinkExtractionTest extends TestCase
         foreach (['cable', 'length', 'speed'] as $k) {
             self::assertStringContainsString('"comspec_atak_native_data_' . $k . '"', $pre, $k);
         }
-        self::assertStringContainsString('["comspec_atak_native_dataSrv", { _this call comspec_atak_native_fnc_dataServer; }]', $pre);
+        // L'événement CBA relaie toutes les actions sauf « code » (code de fin, posé seulement par fn_dataSetup).
+        self::assertStringContainsString('["comspec_atak_native_dataSrv", { if ((_this param [0, ""]) isNotEqualTo "code") then { _this call comspec_atak_native_fnc_dataServer; }; }]', $pre);
         foreach (['app_datalink', 'item_datacable', 'datalink_land_up', 'datalink_land_down', 'datalink_port_left', 'datalink_port_right'] as $paa) {
             self::assertFileExists(dirname(__DIR__, 2) . '/' . self::MAIN . '/data/' . $paa . '.paa');
         }
@@ -57,6 +58,15 @@ final class AtakDataLinkExtractionTest extends TestCase
         self::assertStringContainsString('hashValue _pw', $setup);
         self::assertStringNotContainsString('["password", ""]', $setup);
         self::assertStringContainsString('(hashValue _pw) isEqualTo (_cfg getOrDefault ["pwHash", ""])', $this->read(self::MAIN . '/functions/datalink/fn_dataAction.sqf'));
+    }
+
+    public function testEndCodeStaysOnTheServer(): void
+    {
+        $setup = $this->read(self::MAIN . '/functions/datalink/fn_dataSetup.sqf');
+        self::assertStringContainsString('_out deleteAt "code";', $setup);
+        $server = $this->read(self::MAIN . '/functions/datalink/fn_dataServer.sqf');
+        self::assertStringContainsString('localNamespace getVariable ["COMSPEC_ATAK_DataCodes", []]', $server);
+        self::assertStringNotContainsString('_cfg getOrDefault ["code", ""]', $server);
     }
 
     public function testOverlayGeometryMatchesGenerator(): void

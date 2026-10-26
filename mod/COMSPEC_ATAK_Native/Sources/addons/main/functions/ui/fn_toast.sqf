@@ -77,6 +77,8 @@ private _anim = _new && {["anim"] call comspec_atak_native_fnc_fx};
     };
 } forEach [_bg, _tx];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastPill", [_bg, _tx]];
+// Sous les bris d'écran, comme le reste de l'affichage (fn_overlayRaise).
+[] call comspec_atak_native_fnc_overlayRaise;
 // Effacement en fondu à la fin (seulement si aucun autre toast n'a pris la place entre-temps).
 if (_new) then {
     [{

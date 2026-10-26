@@ -59,7 +59,7 @@ _cache set [_uid, [_path, diag_tickTime]];
         if (_p isNotEqualTo "") then { _disk pushBack [_uid, _url, _p]; };
         while {count _disk > 200} do { _disk deleteAt 0; };
         profileNamespace setVariable ["COMSPEC_ATAK_AvatarDisk", _disk];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
     };
     // Image prête (ou retirée) : mémoire de session, vérification faite, redessin des pages qui l'affichent.
     private _done = {

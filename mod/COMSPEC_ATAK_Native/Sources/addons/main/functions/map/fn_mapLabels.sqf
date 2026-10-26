@@ -54,7 +54,7 @@ if (_now > (_eni select 0)) then {
         };
         _mt params ["_hms", "_who"];
         private _title = toUpper ([_txt, ["ENY CONTACT", "ENI CONTACT"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")] select (_txt isEqualTo ""));
-        _list pushBack [_key, [_pos select 0, _pos select 1, 0], _title, [_hms, format ["%1 · signalé %2", _hms, toUpper _who]] select (_who isNotEqualTo "")];
+        _list pushBack [_key, [_pos select 0, _pos select 1, 0], _title, [_hms, (format ["%1 · signalé %2", _hms, toUpper _who]) call comspec_atak_native_fnc_tr] select (_who isNotEqualTo "")];
     } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["markers", createHashMap]);
     _eni = [_now + 1, _list];
     uiNamespace setVariable ["COMSPEC_ATAK_EniList", _eni];
@@ -77,7 +77,7 @@ private _ox = _fs1 * 1.1 / _ratio;
 private _oy = _fs1 * 0.9;
 
 // Candidats visibles, triés : sélection, contacts ENI, mon groupe, puis les autres, chacun du plus proche au plus loin.
-private _me = getPosASL player;
+private _me = [] call comspec_atak_native_fnc_gpsPos;
 private _vis = [];
 {
     _x params ["_prio", "_id", "_pos", "_cs", ["_hostile", false], ["_a", 1]];
