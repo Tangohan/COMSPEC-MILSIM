@@ -26,6 +26,10 @@ $typeLabels = [
 ];
 ?>
 <section class="eff-rh-hero">
+    <div class="eff-pg__actions">
+        <a class="eff-catalog__btn" href="<?= $h(url('back-office/roleplay/regles-phases')) ?>">Configurer le parcours</a>
+        <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= $h(url('back-office/roleplay-followup')) ?>">Ouvrir le suivi complet</a>
+    </div>
     <p class="eff-page-kicker">Dossier RH</p>
     <h2 class="eff-page-title">Suivi roleplay</h2>
     <p class="eff-page-lead">
@@ -42,7 +46,7 @@ $typeLabels = [
             <strong class="eff-rh-tile__value"><?= $overdue ?></strong>
             <span class="eff-rh-tile__label">échéance<?= $overdue > 1 ? 's' : '' ?> dépassée<?= $overdue > 1 ? 's' : '' ?></span>
         </article>
-        <article class="eff-rh-tile">
+        <article class="eff-rh-tile <?= $upcoming > 0 ? 'eff-rh-tile--info' : 'eff-rh-tile--ok' ?>">
             <span class="eff-rh-tile__kicker">À venir</span>
             <strong class="eff-rh-tile__value"><?= $upcoming ?></strong>
             <span class="eff-rh-tile__label">dans les 14 prochains jours</span>
@@ -52,23 +56,16 @@ $typeLabels = [
             <strong class="eff-rh-tile__value"><?= $phaseGateCount ?></strong>
             <span class="eff-rh-tile__label">passage<?= $phaseGateCount > 1 ? 's' : '' ?> en attente d’un responsable</span>
         </article>
-        <article class="eff-rh-tile <?= $phaseAutoErrorCount > 0 ? 'eff-rh-tile--warn' : '' ?>">
-            <span class="eff-rh-tile__kicker">Passages automatiques</span>
+        <article class="eff-rh-tile <?= $phaseAutoErrorCount > 0 ? 'eff-rh-tile--bad' : 'eff-rh-tile--ok' ?>">
+            <span class="eff-rh-tile__kicker">Passages auto</span>
             <strong class="eff-rh-tile__value"><?= $phaseAutoErrorCount ?></strong>
             <span class="eff-rh-tile__label"><?= $phaseAutoErrorCount > 0 ? 'erreur' . ($phaseAutoErrorCount > 1 ? 's' : '') . ' à relire' : 'aucune erreur en cours' ?></span>
         </article>
     </div>
 </section>
 
-<p class="bo-eff-jump">
-    <strong>Aller plus loin</strong>
-    <a href="<?= $h(url('back-office/roleplay-followup')) ?>">Ouvrir le suivi complet</a>
-    <a href="<?= $h(url('back-office/roleplay/regles-phases')) ?>">Configurer le parcours</a>
-    <a href="<?= $h(effectifs_workspace_url('reglages')) ?>">Réglages du bureau</a>
-</p>
-
 <?php if ($phaseAutoErrors !== []): ?>
-<div class="eff-catalog" style="margin-bottom:1.25rem">
+<div class="eff-catalog">
     <div class="eff-catalog__head">
         <div class="min-w-0">
             <p class="eff-catalog__kicker">Parcours</p>
@@ -92,11 +89,11 @@ $typeLabels = [
                     $errName = trim((string) ($err['display_name'] ?? '')) ?: trim((string) ($err['callsign'] ?? '')) ?: 'Membre';
                     ?>
                     <tr>
-                        <td><?= htmlspecialchars($errName, ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><strong class="eff-sheets__name"><?= htmlspecialchars($errName, ENT_QUOTES, 'UTF-8') ?></strong></td>
                         <td><?= htmlspecialchars((string) ($err['error_label'] ?? 'Passage automatique impossible'), ENT_QUOTES, 'UTF-8') ?></td>
                         <td>
                             <?php if ($errUid > 0): ?>
-                            <a href="<?= $h(url('personnel/' . $errUid)) ?>">Ouvrir la fiche</a>
+                            <div class="eff-sheets__actions"><a class="is-primary" href="<?= $h(effectifs_workspace_url('membres/' . $errUid)) ?>">Fiche</a></div>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -118,7 +115,7 @@ $typeLabels = [
     <?php if (!$enabled): ?>
         <div class="eff-catalog__empty">
             <strong>Le suivi roleplay n’est pas activé.</strong>
-            Activez-le dans Réglages, puis planifiez les entretiens depuis le suivi complet.
+            Activez-le dans <a href="<?= $h(effectifs_workspace_url('reglages')) ?>">Réglages</a>, puis planifiez les entretiens depuis le suivi complet.
         </div>
     <?php elseif ($rows === []): ?>
         <div class="eff-catalog__empty"><strong>Aucune échéance dans les 14 prochains jours.</strong></div>
@@ -148,7 +145,7 @@ $typeLabels = [
                         <td><span class="eff-rh-chip <?= $urgent ? 'eff-rh-chip--warn' : 'eff-rh-chip--info' ?>"><?= $urgent ? 'En retard' : 'À venir' ?></span></td>
                         <td>
                             <?php if ($uid > 0): ?>
-                                <a href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a>
+                                <div class="eff-sheets__actions"><a href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a></div>
                             <?php endif; ?>
                         </td>
                     </tr>

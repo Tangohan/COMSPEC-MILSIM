@@ -32,6 +32,10 @@ $tipById = [
 ];
 ?>
 <section class="eff-rh-hero">
+    <div class="eff-pg__actions">
+        <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('a-traiter')) ?>">À traiter</a>
+        <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('reglages')) ?>">Régler les seuils</a>
+    </div>
     <p class="eff-page-kicker">Dossier RH</p>
     <h2 class="eff-page-title">Alertes RH</h2>
     <p class="eff-page-lead">
@@ -40,7 +44,7 @@ $tipById = [
     </p>
     <div class="eff-rh-tiles" aria-label="Synthèse des alertes">
         <article class="eff-rh-tile <?= $total > 0 ? 'eff-rh-tile--warn' : 'eff-rh-tile--ok' ?>">
-            <span class="eff-rh-tile__kicker">À suivre</span>
+            <span class="eff-rh-tile__kicker">Total</span>
             <strong class="eff-rh-tile__value"><?= $total ?></strong>
             <span class="eff-rh-tile__label">signalement<?= $total > 1 ? 's' : '' ?> actif<?= $total > 1 ? 's' : '' ?></span>
         </article>
@@ -73,6 +77,7 @@ $tipById = [
     <section class="eff-rh-list-card">
         <div class="eff-rh-list-card__head">
             <h2 class="eff-rh-list-card__title">Sans activité</h2>
+            <span class="eff-rh-list-card__count<?= $inactive !== [] ? ' is-warn' : '' ?>"><?= count($inactive) ?></span>
             <?php $rhTip('tip-alert-inact-list', 'À propos de l’inactivité', 'Membres au compte actif qui ne se sont pas connectés depuis ' . $inactivityDays . ' jours. Ouvrez la fiche pour relancer ou noter une absence.'); ?>
         </div>
         <p class="eff-rh-list-card__lead">Aucune connexion depuis au moins <?= $inactivityDays ?> jours.</p>
@@ -97,6 +102,7 @@ $tipById = [
     <section class="eff-rh-list-card">
         <div class="eff-rh-list-card__head">
             <h2 class="eff-rh-list-card__title">Absences prolongées</h2>
+            <span class="eff-rh-list-card__count<?= $absences !== [] ? ' is-warn' : '' ?>"><?= count($absences) ?></span>
             <?php $rhTip('tip-alert-abs-list', 'À propos des absences', 'Absences encore ouvertes depuis au moins ' . $absenceDays . ' jours. Vérifiez la date de retour ou une décision de suivi.'); ?>
         </div>
         <p class="eff-rh-list-card__lead">Absences ouvertes depuis au moins <?= $absenceDays ?> jours.</p>
@@ -117,6 +123,7 @@ $tipById = [
     <section class="eff-rh-list-card">
         <div class="eff-rh-list-card__head">
             <h2 class="eff-rh-list-card__title">Qualifications à renouveler</h2>
+            <span class="eff-rh-list-card__count<?= $expiring !== [] ? ' is-warn' : '' ?>"><?= count($expiring) ?></span>
             <?php $rhTip('tip-alert-qualif-list', 'À propos des échéances', $tipById['qualif_expiring']); ?>
         </div>
         <p class="eff-rh-list-card__lead">Échues ou expirant dans les 60 prochains jours, les plus urgentes d’abord.</p>
@@ -152,6 +159,7 @@ $tipById = [
     <section class="eff-rh-list-card">
         <div class="eff-rh-list-card__head">
             <h2 class="eff-rh-list-card__title">Postes à pourvoir</h2>
+            <span class="eff-rh-list-card__count<?= $vacant !== [] ? ' is-warn' : '' ?>"><?= count($vacant) ?></span>
             <?php $rhTip('tip-alert-billets-list', 'À propos des postes', $tipById['vacant_billets']); ?>
         </div>
         <p class="eff-rh-list-card__lead">Postes de l’organigramme avec moins de titulaires que prévu, les critiques d’abord.</p>

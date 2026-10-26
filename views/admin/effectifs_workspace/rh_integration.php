@@ -24,6 +24,10 @@ foreach ($rows as $row) {
 }
 ?>
 <section class="eff-rh-hero">
+    <div class="eff-pg__actions">
+        <a class="eff-catalog__btn" href="<?= $h(url('back-office/integration-membres/modeles')) ?>">Modèles de parcours</a>
+        <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= $h(url('back-office/integration-membres')) ?>">Ouvrir le suivi complet</a>
+    </div>
     <p class="eff-page-kicker">Dossier RH</p>
     <h2 class="eff-page-title">Intégration des nouveaux membres</h2>
     <p class="eff-page-lead">
@@ -35,7 +39,7 @@ foreach ($rows as $row) {
             <strong class="eff-rh-tile__value"><?= $hasTemplate ? 'Prêt' : 'À préparer' ?></strong>
             <span class="eff-rh-tile__label"><?= $hasTemplate ? 'Un parcours d’accueil est en place' : 'Créez un modèle d’accueil' ?></span>
         </article>
-        <article class="eff-rh-tile <?= $open > 0 ? 'eff-rh-tile--info' : '' ?>">
+        <article class="eff-rh-tile <?= $open > 0 ? 'eff-rh-tile--info' : 'eff-rh-tile--ok' ?>">
             <span class="eff-rh-tile__kicker">En cours</span>
             <strong class="eff-rh-tile__value"><?= $open ?></strong>
             <span class="eff-rh-tile__label">parcours ouvert<?= $open > 1 ? 's' : '' ?></span>
@@ -45,20 +49,13 @@ foreach ($rows as $row) {
             <strong class="eff-rh-tile__value"><?= $overdue ?></strong>
             <span class="eff-rh-tile__label">parcours en retard</span>
         </article>
-        <article class="eff-rh-tile">
+        <article class="eff-rh-tile eff-rh-tile--ok">
             <span class="eff-rh-tile__kicker">Terminés</span>
             <strong class="eff-rh-tile__value"><?= $done ?></strong>
             <span class="eff-rh-tile__label">accueil achevé</span>
         </article>
     </div>
 </section>
-
-<p class="bo-eff-jump">
-    <strong>Aller plus loin</strong>
-    <a href="<?= $h(url('back-office/integration-membres')) ?>">Ouvrir le suivi complet</a>
-    <a href="<?= $h(url('back-office/integration-membres/modeles')) ?>">Modèles de parcours</a>
-    <a href="<?= $h(effectifs_workspace_url('reglages')) ?>">Réglages du bureau</a>
-</p>
 
 <div class="eff-catalog">
     <div class="eff-catalog__head">
@@ -147,3 +144,5 @@ foreach ($rows as $row) {
         </div>
     <?php endif; ?>
 </div>
+
+<?php $rhShortcutCurrent = ''; require base_path('views/admin/effectifs_workspace/partials/rh_shortcuts.php'); ?>

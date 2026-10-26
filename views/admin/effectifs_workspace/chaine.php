@@ -26,6 +26,11 @@ $typeLabel = static function (string $typeRaw): string {
 };
 ?>
 <section class="eff-rh-hero">
+    <?php if ($canManage): ?>
+    <div class="eff-pg__actions">
+        <a class="eff-catalog__btn" href="<?= $h(url('back-office/organisation/structure')) ?>">Ouvrir la structure</a>
+    </div>
+    <?php endif; ?>
     <p class="eff-page-kicker">Dossier RH</p>
     <h2 class="eff-page-title">Chaîne de commandement</h2>
     <p class="eff-page-lead">
@@ -33,17 +38,17 @@ $typeLabel = static function (string $typeRaw): string {
         Un chef relève du chef de l’unité immédiatement au-dessus, telle qu’elle est rangée dans l’organigramme.
     </p>
     <div class="eff-rh-tiles" aria-label="Aperçu de la chaîne">
-        <article class="eff-rh-tile">
+        <article class="eff-rh-tile <?= $units !== [] ? 'eff-rh-tile--ok' : 'eff-rh-tile--warn' ?>">
             <span class="eff-rh-tile__kicker">Unités</span>
             <strong class="eff-rh-tile__value"><?= count($units) ?></strong>
             <span class="eff-rh-tile__label">unité<?= count($units) > 1 ? 's' : '' ?></span>
         </article>
-        <article class="eff-rh-tile">
+        <article class="eff-rh-tile <?= $missingChefs > 0 ? 'eff-rh-tile--warn' : 'eff-rh-tile--ok' ?>">
             <span class="eff-rh-tile__kicker">Chefs à désigner</span>
             <strong class="eff-rh-tile__value"><?= $missingChefs ?></strong>
             <span class="eff-rh-tile__label">unité<?= $missingChefs > 1 ? 's' : '' ?> sans chef</span>
         </article>
-        <article class="eff-rh-tile">
+        <article class="eff-rh-tile <?= $missingSuperiors > 0 ? 'eff-rh-tile--warn' : 'eff-rh-tile--ok' ?>">
             <span class="eff-rh-tile__kicker">Relève</span>
             <strong class="eff-rh-tile__value"><?= $missingSuperiors ?></strong>
             <span class="eff-rh-tile__label">membre<?= $missingSuperiors > 1 ? 's' : '' ?> sans chef lisible</span>
@@ -57,9 +62,7 @@ $typeLabel = static function (string $typeRaw): string {
             <strong>Aucune unité définie</strong>
             Créez d’abord les unités de rattachement, puis revenez ici pour désigner qui commande chacune.
             <?php if ($canManage): ?>
-                <p style="margin-top:1rem">
-                    <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= $h(url('back-office/organisation/structure')) ?>">Ouvrir la structure</a>
-                </p>
+                <a href="<?= $h(url('back-office/organisation/structure')) ?>">Ouvrir la structure</a>
             <?php endif; ?>
         </div>
     </div>
@@ -75,14 +78,7 @@ $typeLabel = static function (string $typeRaw): string {
             </p>
             <div class="eff-sheets" role="region" aria-label="Chefs d’unité" tabindex="0">
                 <table class="eff-sheets__table" id="eff-chain-units">
-                    <colgroup>
-                        <col style="width:18rem">
-                        <col style="width:10rem">
-                        <col style="width:14rem">
-                        <col style="width:16rem">
-                        <col style="width:7rem">
-                    </colgroup>
-                    <thead>
+                        <thead>
                         <tr>
                             <th>Unité</th>
                             <th>Type</th>
@@ -173,22 +169,22 @@ $typeLabel = static function (string $typeRaw): string {
                 </table>
             </div>
             <?php if ($canManage): ?>
-                <div class="eff-rh-form__actions" style="display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:flex-start;margin-top:1rem">
-                    <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Enregistrer les chefs</button>
-                    <a class="eff-catalog__btn" href="<?= $h(url('back-office/organisation/structure')) ?>">Ouvrir la structure</a>
+                <div class="eff-card-foot">
+                    <span>Un chef laissé vide n’apparaît pas dans la chaîne tant qu’il n’est pas désigné.</span>
+                    <div><button type="submit" class="eff-rh-btn eff-rh-btn--primary">Enregistrer les chefs</button></div>
                 </div>
             <?php endif; ?>
         </section>
     </form>
 
-    <section class="bo-eff-settings__block" aria-labelledby="eff-chain-people" style="margin-top:1.15rem">
+    <section class="bo-eff-settings__block" aria-labelledby="eff-chain-people">
         <h2 id="eff-chain-people">Qui relève de qui</h2>
         <p>
             Lecture de la chaîne à partir des chefs désignés ci-dessus et de l’organigramme.
             Un membre sans unité n’a pas de chef tant qu’il n’est pas rattaché.
         </p>
         <?php if ($members === []): ?>
-            <p class="eff-catalog__empty" style="margin:0">Aucun membre actif à afficher.</p>
+            <p class="eff-catalog__empty">Aucun membre actif à afficher.</p>
         <?php else: ?>
             <div class="eff-sheets" role="region" aria-label="Qui relève de qui" tabindex="0">
                 <table class="eff-sheets__table" id="eff-chain-people">
@@ -211,7 +207,7 @@ $typeLabel = static function (string $typeRaw): string {
                         ?>
                         <tr>
                             <td>
-                                <a class="eff-sheets__cell-text" href="<?= $h(effectifs_workspace_url('membres/' . $mid)) ?>"><?= $h((string) ($m['label'] ?? 'Membre')) ?></a>
+                                <a href="<?= $h(effectifs_workspace_url('membres/' . $mid)) ?>"><?= $h((string) ($m['label'] ?? 'Membre')) ?></a>
                                 <?php if ($commands !== []): ?>
                                     <span class="eff-sheets__meta">Chef de <?= $h(implode(', ', $commands)) ?></span>
                                 <?php endif; ?>
@@ -245,9 +241,10 @@ $typeLabel = static function (string $typeRaw): string {
                 </table>
             </div>
             <?php if ($withoutUnit > 0): ?>
-                <p class="eff-catalog-foot" style="margin-top:0.85rem">
-                    <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url() . '?sans_affectation=1') ?>">Traiter les membres sans unité (<?= $withoutUnit ?>)</a>
-                </p>
+                <div class="eff-card-foot">
+                    <span><strong><?= $withoutUnit ?></strong> membre<?= $withoutUnit > 1 ? 's' : '' ?> sans unité, donc sans chef.</span>
+                    <div><a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url() . '?sans_affectation=1') ?>">Traiter les membres sans unité</a></div>
+                </div>
             <?php endif; ?>
         <?php endif; ?>
     </section>

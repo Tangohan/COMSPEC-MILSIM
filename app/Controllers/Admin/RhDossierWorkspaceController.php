@@ -825,7 +825,7 @@ final class RhDossierWorkspaceController
             'effectifsContent' => $content,
             'isBackOfficeShell' => true,
             'boSkipPageHead' => true,
-            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-ui.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css'],
             'showPortalFooter' => false,
             'rosterCounts' => [
                 'total' => $this->userRepository->countListForTenant($tenantId, null, null, null, true),

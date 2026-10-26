@@ -109,33 +109,41 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
     return $bits !== [] ? implode(' · ', $bits) : '—';
 };
 ?>
+<section class="eff-rh-hero">
+    <div class="eff-pg__actions">
+        <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Tableur des effectifs</a>
+    </div>
+    <p class="eff-page-kicker">Gouvernance</p>
+    <h2 class="eff-page-title">Demandes d’élévation</h2>
+    <p class="eff-page-lead">
+        Ouvrez une demande pour appliquer grade, rôle, fonction ou affectation,
+        choisir si le rôle remplace ou s’ajoute, puis vérifier l’aperçu des droits avant confirmation.
+    </p>
+    <div class="eff-rh-tiles" aria-label="Aperçu des demandes">
+        <article class="eff-rh-tile <?= $openCount > 0 ? 'eff-rh-tile--warn' : 'eff-rh-tile--ok' ?>">
+            <span class="eff-rh-tile__kicker">À traiter</span>
+            <strong class="eff-rh-tile__value"><?= $openCount ?></strong>
+            <span class="eff-rh-tile__label">demande<?= $openCount > 1 ? 's' : '' ?> en attente de décision</span>
+        </article>
+        <article class="eff-rh-tile">
+            <span class="eff-rh-tile__kicker"><?= $showAll ? 'Historique' : 'Listées' ?></span>
+            <strong class="eff-rh-tile__value"><?= $showAll ? $elevTotal : count($requests) ?></strong>
+            <span class="eff-rh-tile__label"><?= $showAll ? 'demandes au total' : 'demandes ouvertes affichées' ?></span>
+        </article>
+    </div>
+</section>
+
 <div class="eff-catalog">
     <div class="eff-catalog__head">
         <div class="min-w-0">
-            <p class="eff-catalog__kicker">Gouvernance</p>
-            <h1 class="eff-catalog__title">Demandes d’élévation</h1>
-            <p class="eff-catalog__lead">
-                Tableur des demandes d’évolution. Ouvrez une ligne pour appliquer grade, rôle, fonction ou affectation,
-                choisir si le rôle remplace ou s’ajoute, puis vérifier l’aperçu des droits avant confirmation.
-            </p>
+            <p class="eff-catalog__kicker">Registre</p>
+            <h3 class="eff-catalog__title"><?= $showAll ? 'Toutes les demandes' : 'Demandes ouvertes' ?></h3>
+            <p class="eff-catalog__lead">Les demandes envoyées depuis le tableur ou une fiche membre arrivent ici.</p>
         </div>
-        <div class="eff-catalog__tools">
-            <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">← Tableur effectifs</a>
-            <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations') . ($showAll ? '' : '?all=1'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn <?= $showAll ? '' : 'eff-catalog__btn--primary' ?>">
-                <?= $showAll ? 'Demandes ouvertes' : 'Tout l’historique' ?>
-            </a>
-        </div>
-    </div>
-
-    <div class="eff-catalog-filters" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-        <div>
-            <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Demandes listées</p>
-            <p class="eff-stat-value"><?= count($requests) ?></p>
-        </div>
-        <div>
-            <p class="eff-catalog__kicker" style="letter-spacing:0.14em">À traiter</p>
-            <p class="eff-stat-value"><?= $openCount ?></p>
-        </div>
+        <nav class="eff-seg" aria-label="Filtrer les demandes">
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $showAll ? '' : 'is-on' ?>">Ouvertes</a>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations') . '?all=1', ENT_QUOTES, 'UTF-8') ?>" class="<?= $showAll ? 'is-on' : '' ?>">Tout l’historique</a>
+        </nav>
     </div>
 
     <?php if ($requests === []): ?>
@@ -146,23 +154,14 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
     <?php else: ?>
         <div class="eff-sheets" role="region" aria-label="Tableur des demandes d’élévation" tabindex="0">
             <table class="eff-sheets__table" id="eff-elevations-table" data-cols-storage="eff-elevations-col-widths-v1">
-                <colgroup>
-                    <col data-col="cible" style="width:14rem">
-                    <col data-col="demandeur" style="width:12rem">
-                    <col data-col="type" style="width:10rem">
-                    <col data-col="proposition" style="width:22rem">
-                    <col data-col="statut" style="width:9rem">
-                    <col data-col="date" style="width:8rem">
-                    <col data-col="actions" style="width:14rem">
-                </colgroup>
                 <thead>
                     <tr>
-                        <th data-col="cible">Personne concernée<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner" tabindex="0"></span></th>
-                        <th data-col="demandeur">Demandée par<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner" tabindex="0"></span></th>
-                        <th data-col="type">Type<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner" tabindex="0"></span></th>
-                        <th data-col="proposition">Proposition<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner" tabindex="0"></span></th>
-                        <th data-col="statut">Statut<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner" tabindex="0"></span></th>
-                        <th data-col="date">Date<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner" tabindex="0"></span></th>
+                        <th data-col="cible">Personne concernée</th>
+                        <th data-col="demandeur">Demandée par</th>
+                        <th data-col="type">Type</th>
+                        <th data-col="proposition">Proposition</th>
+                        <th data-col="statut">Statut</th>
+                        <th data-col="date">Date</th>
                         <th data-col="actions">Actions</th>
                     </tr>
                 </thead>
@@ -183,7 +182,7 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
                     ?>
                     <tr data-elev-row="<?= $id ?>" class="<?= $isOpen ? '' : 'is-closed' ?>">
                         <td>
-                            <span class="eff-sheets__name"><?= htmlspecialchars($targetName, ENT_QUOTES, 'UTF-8') ?></span>
+                            <strong class="eff-sheets__name"><?= htmlspecialchars($targetName, ENT_QUOTES, 'UTF-8') ?></strong>
                         </td>
                         <td>
                             <span class="eff-sheets__meta"><?= htmlspecialchars($requesterName, ENT_QUOTES, 'UTF-8') ?></span>
@@ -192,10 +191,10 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
                             <span class="eff-sheets__badge eff-sheets__badge--muted"><?= htmlspecialchars($kindLabels[$kind] ?? 'Situation RH', ENT_QUOTES, 'UTF-8') ?></span>
                         </td>
                         <td>
-                            <span class="eff-sheets__cell-text" style="white-space:normal;max-width:22rem;display:inline-block" title="<?= htmlspecialchars($summary . ($note !== '' ? ' — ' . $note : ''), ENT_QUOTES, 'UTF-8') ?>">
+                            <span class="eff-sheets__cell-text" title="<?= htmlspecialchars($summary . ($note !== '' ? ' — ' . $note : ''), ENT_QUOTES, 'UTF-8') ?>">
                                 <?= htmlspecialchars($summary, ENT_QUOTES, 'UTF-8') ?>
                                 <?php if ($note !== ''): ?>
-                                    <span class="eff-sheets__path-muted"> — <?= htmlspecialchars(mb_strlen($note) > 80 ? mb_substr($note, 0, 77) . '…' : $note, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="eff-sheets__meta"><?= htmlspecialchars(mb_strlen($note) > 80 ? mb_substr($note, 0, 77) . '…' : $note, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php endif; ?>
                             </span>
                         </td>
@@ -220,17 +219,10 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
             </table>
         </div>
 
-        <div class="eff-catalog-foot">
-            <p style="margin:0"><?= count($requests) ?> demande<?= count($requests) > 1 ? 's' : '' ?><?= $showAll ? ' (historique)' : ' ouverte' . ($openCount > 1 ? 's' : '') ?></p>
-        </div>
-
         <?php if ($showAll && $elevTotalPages > 1): ?>
-        <div class="eff-catalog-foot">
-            <p style="margin:0">
-                <strong class="eff-stat-strong"><?= $elevTotal ?></strong>
-                demande<?= $elevTotal > 1 ? 's' : '' ?> — page <?= $elevPage ?> / <?= $elevTotalPages ?>
-            </p>
-            <div class="eff-catalog-foot__links">
+        <div class="eff-card-foot">
+            <span><strong><?= $elevTotal ?></strong> demande<?= $elevTotal > 1 ? 's' : '' ?> · page <?= $elevPage ?> / <?= $elevTotalPages ?></span>
+            <div>
                 <?php if ($elevPage > 1): ?>
                     <a class="eff-catalog__btn" href="<?= htmlspecialchars($elevPageUrl($elevPage - 1), ENT_QUOTES, 'UTF-8') ?>">Page précédente</a>
                 <?php endif; ?>
