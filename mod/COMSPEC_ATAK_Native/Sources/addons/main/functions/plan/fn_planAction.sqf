@@ -93,7 +93,9 @@ private _canOf = {
 private _can = { ["S"] call _canOf };
 private _srv = {
     params ["_op", ["_a", []], ["_tag", ""], ["_r", ""]];
-    ["comspec_atak_native_planSrv", [player, _op, _a, _tag, _r]] call CBA_fnc_serverEvent;
+    // remoteExecCall (et non l'événement CBA) : le serveur retrouve l'unité qui agit par remoteExecutedOwner, et
+    // avec elle le droit d'édition et le camp visé (fn_planServer).
+    [objNull, _op, _a, _tag, _r] remoteExecCall ["comspec_atak_native_fnc_planServer", 2];
 };
 private _srvOnF = { isServer || {missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false]} || {!isNil { missionNamespace getVariable _sharedVar }} };
 private _lib = { +(profileNamespace getVariable ["COMSPEC_ATAK_PlanLib", []]) };

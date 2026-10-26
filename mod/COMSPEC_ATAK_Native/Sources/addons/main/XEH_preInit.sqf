@@ -649,7 +649,8 @@ if (hasInterface) then {
     ["comspec_atak_native_planRoom", { ["roomJoin", _this param [0, ""]] call comspec_atak_native_fnc_planAction; }] call CBA_fnc_addEventHandler;
 };
 if (isServer) then {
-    ["comspec_atak_native_planSrv", { _this call comspec_atak_native_fnc_planServer; }] call CBA_fnc_addEventHandler;
+    // Pas de gestionnaire comspec_atak_native_planSrv : les demandes arrivent par remoteExecCall vers 2, seule voie
+    // qui laisse le serveur reconnaître le poste émetteur, donc le droit d'édition et le camp (fn_planServer).
     // Le serveur a le mod : posé dès le preInit (aussi en solo et en partie hébergée), sans attendre XEH_postInitServer.
     missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 };

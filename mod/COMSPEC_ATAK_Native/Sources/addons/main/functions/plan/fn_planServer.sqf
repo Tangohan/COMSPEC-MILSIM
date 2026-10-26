@@ -5,7 +5,12 @@
       - le plan du camp : missionNamespace COMSPEC_ATAK_Plan_<camp> (droit d'édition selon le réglage serveur) ;
       - une salle collaborative : COMSPEC_ATAK_PlanRoom_<ID> (code de 5 caractères) ; tous ceux qui ont le code,
         de n'importe quel camp, dessinent dessus.
-    Params : [unité qui agit, opération, arguments, repère d'historique, salle ("" : plan du camp)]
+    Params : [unité qui agit (ignorée pour les opérations serveur), opération, arguments, repère d'historique,
+             salle ("" : plan du camp)]
+    Les opérations serveur sont appelées par un client avec [objNull, opération, arguments, repère, salle]
+    remoteExecCall ["comspec_atak_native_fnc_planServer", 2] (CfgRemoteExec) : l'unité qui agit y est retrouvée par
+    remoteExecutedOwner (fn_reqUnit), jamais lue dans la demande. Les opérations locales (clean, can, diff,
+    patchList), elles, gardent l'unité passée : c'est un sujet à examiner, pas un demandeur.
       "add"     [élément]            ajoute (numéro attribué par le serveur, auteur = l'unité)
       "upd"     [id, élément]        remplace un élément (garde son id et son auteur)
       "del"     [id]                 retire un élément
@@ -94,7 +99,18 @@ if (_op isEqualTo "patchList") exitWith {
     _l
 };
 
-if (!isServer || {isNull _by}) exitWith { false };
+if (!isServer) exitWith { false };
+// Unité qui agit : remoteExecutedOwner, jamais l'argument reçu. Le serveur en tirait à la fois le droit d'édition
+// (« can », l. 60-72) ET le camp dont le plan est modifié (« side group _by » dans _var) : en passant un chef de
+// groupe ou un Zeus, un client contournait le réglage comspec_atak_native_plan_edit, même en valeur 2, et choisissait
+// le camp. La modification remonte ensuite au site (fn_planWeb, COMSPEC Link « BriefingPlan.Push »).
+_by = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit;
+// Hôte d'une partie locale : son propre appel n'est pas distant, son poste EST le serveur (clientOwner y vaut 2).
+if (isNull _by && {hasInterface} && {remoteExecutedOwner in [0, clientOwner]}) then { _by = player; };
+if (isNull _by) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][PLAN] Opération « %1 » refusée (demandeur introuvable, poste %2)", _op, remoteExecutedOwner];
+    false
+};
 private _say = { params ["_msg"]; ["comspec_atak_native_note", [_msg], _by] call CBA_fnc_targetEvent; };
 if !(_room isEqualType "") then { _room = ""; };
 _room = toUpper (_room select [0, 8]);
