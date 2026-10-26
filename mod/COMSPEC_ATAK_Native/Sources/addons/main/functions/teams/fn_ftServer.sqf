@@ -1,7 +1,10 @@
 /*
     Équipes de feu : modifications appliquées par le serveur, seul à écrire l'état partagé
     (deux téléphones qui modifient la même équipe au même instant ne s'écrasent pas).
-    Params : [unité qui agit, opération, arguments]
+    Params : [ignoré (compatibilité), opération, arguments]
+    Appelée par un client avec [objNull, opération, arguments] remoteExecCall
+    ["comspec_atak_native_fnc_ftServer", 2] (CfgRemoteExec). L'unité qui agit n'est PAS lue dans la demande : elle
+    est retrouvée par remoteExecutedOwner (fn_reqUnit), le seul identifiant que le client ne choisit pas.
       "create" [nom, couleur, icône, description]      crée une équipe dans le groupe de l'unité ; le créateur la rejoint en chef d'équipe
       "edit"   [id, nom, couleur, icône, description]  chef de groupe ou chef de cette équipe
       "delete" [id]                                    idem ; les membres repassent sans équipe
@@ -19,7 +22,17 @@
     Les cinq couleurs d'Arma sont aussi appliquées à l'équipe du jeu (assignTeam).
 */
 params [["_by", objNull], ["_op", ""], ["_args", []]];
-if (!isServer || {isNull _by}) exitWith { false };
+if (!isServer) exitWith { false };
+// Unité qui agit : remoteExecutedOwner, jamais l'argument reçu. Le serveur en tire le groupe visé (l. ci-dessous)
+// ET le droit de chef de groupe : en fournissant l'unité d'un autre joueur ou un chef IA, un client agissait en son
+// nom sur n'importe quel groupe, y compris ennemi (rien ne compare les camps).
+_by = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit;
+// Hôte d'une partie locale : son propre appel n'est pas distant, son poste EST le serveur (clientOwner y vaut 2).
+if (isNull _by && {hasInterface} && {remoteExecutedOwner in [0, clientOwner]}) then { _by = player; };
+if (isNull _by) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][FT] Demande « %1 » refusée (demandeur introuvable, poste %2)", _op, remoteExecutedOwner];
+    false
+};
 private _g = group _by;
 if (isNull _g) exitWith { false };
 private _cat = [] call comspec_atak_native_fnc_ftCatalog;

@@ -67,7 +67,7 @@ switch (_act) do {
             } forEach ((_r select [3]) splitString (toString [10]));
             missionNamespace setVariable ["COMSPEC_ATAK_RoleAthena", ["OK", _pref, _job, _jobLabel, count _roles]];
             if ((count _roles) > 0) then {
-                ["comspec_atak_native_ft", [player, "roles", [_roles]]] call CBA_fnc_serverEvent;
+                [objNull, "roles", [_roles]] remoteExecCall ["comspec_atak_native_fnc_ftServer", 2];
                 // Liste publiée par le serveur avant de choisir le rôle.
                 private _rev = missionNamespace getVariable ["COMSPEC_ATAK_FtRolesRev", 0];
                 private _t1 = diag_tickTime;
@@ -84,7 +84,7 @@ switch (_act) do {
         private _k = ([_p, _ap, _aj] select { _x isNotEqualTo "CDE" && {[_x] call _known} }) param [0, ""];
         if (_k isEqualTo "") exitWith {};
         player setVariable ["COMSPEC_FTRolePref", _k, true];
-        ["comspec_atak_native_ft", [player, "role", [netId player, _k]]] call CBA_fnc_serverEvent;
+        [objNull, "role", [netId player, _k]] remoteExecCall ["comspec_atak_native_fnc_ftServer", 2];
     };
     case "remember": {
         private _k = _arg;
@@ -97,7 +97,7 @@ switch (_act) do {
     };
     case "respawn": {
         _arg params [["_tid", ""], ["_r", ""]];
-        if (_tid isNotEqualTo "" || {_r isNotEqualTo ""}) then { ["comspec_atak_native_ft", [player, "restore", [_tid, _r]]] call CBA_fnc_serverEvent; };
+        if (_tid isNotEqualTo "" || {_r isNotEqualTo ""}) then { [objNull, "restore", [_tid, _r]] remoteExecCall ["comspec_atak_native_fnc_ftServer", 2]; };
         [{ ["auto"] call comspec_atak_native_fnc_ftRoleSync; }, [], 3] call CBA_fnc_waitAndExecute;
     };
 };

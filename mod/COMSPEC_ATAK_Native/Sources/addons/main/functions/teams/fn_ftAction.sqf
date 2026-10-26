@@ -13,7 +13,8 @@
 */
 params [["_act", ""], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _send = { params ["_op", ["_args", []]]; ["comspec_atak_native_ft", [player, _op, _args]] call CBA_fnc_serverEvent; };
+// remoteExecCall (et non l'événement CBA) : le serveur retrouve l'unité qui agit par remoteExecutedOwner.
+private _send = { params ["_op", ["_args", []]]; [objNull, _op, _args] remoteExecCall ["comspec_atak_native_fnc_ftServer", 2]; };
 private _val = { params ["_k", ["_d", ""]]; [_k, _d] call comspec_atak_native_fnc_formValue };
 private _rerender = { [{ [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "GROUP"]] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 switch (_act) do {
