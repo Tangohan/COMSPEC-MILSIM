@@ -30,6 +30,8 @@ switch (_action) do {
         private _target = if (_action isEqualTo "step") then { ((_idx + _arg) mod _total + _total) mod _total } else { (_arg max 0) min (_total - 1) };
         if (_target isEqualTo _idx) exitWith {};
         switch (_src) do {
+            // Présentation FENRIR : la commande part à son serveur, qui contrôle les droits ; l'état revient à tous.
+            case "FENRIR": { ["cmd", [["viewed"] call comspec_atak_native_fnc_fenrir, "goto", _target]] call comspec_atak_native_fnc_fenrir; };
             // Google : chargement asynchrone par la DLL, la page se redessine quand l'image arrive.
             case "GOOGLE": {
                 // Présentation chargée depuis l'engrenage pour ce téléphone seul : navigation non diffusée.
@@ -121,6 +123,8 @@ switch (_action) do {
         };
     };
     case "refresh": {
+        private _fid = ["viewed"] call comspec_atak_native_fnc_fenrir;
+        if (_fid isNotEqualTo "") exitWith { ["cmd", [_fid, "refresh"]] call comspec_atak_native_fnc_fenrir; };
         if !([] call comspec_atak_native_fnc_bridge) exitWith {
             ["WARNING", "Diapositives Athena : COMSPEC Link requis", 4, 30] call comspec_atak_native_fnc_notify;
         };

@@ -521,6 +521,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         if ((([] call comspec_atak_native_fnc_briefingSignature) select 0) isEqualTo "ATHENA") then { [] spawn { [] call comspec_overwatch_connect_fnc_getBriefingSlides; }; };
     };
     private _sig = (([] call comspec_atak_native_fnc_briefingSignature) select [0, 4]) + [["get"] call comspec_atak_native_fnc_briefingLive, count (["attendees"] call comspec_atak_native_fnc_briefingLive)];
+    // Présentations FENRIR à portée (onglet ÉCRANS) : nouvelle révision = redessin.
+    _sig pushBack (["sig"] call comspec_atak_native_fnc_fenrir);
     if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefSig", []])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
