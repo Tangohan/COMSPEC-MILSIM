@@ -8,6 +8,16 @@ params [
     ["_durationSec", 30, [0]]
 ];
 
+// Appel distant : seul le serveur (poste 2) peut imposer un effet, et seulement par le relais
+// fn_relayZeusAtakEffect, qui contrôle le droit du demandeur. La fonction est en liste blanche avec
+// allowedTargets = 0 (connect/config.cpp) : elle était donc appelable directement de client à client
+// (« ["jam", 600] remoteExecCall ["comspec_overwatch_connect_fnc_applyZeusAtakEffect", victime] »), ce qui
+// contournait le relais et son contrôle. Une entrée de liste blanche ne peut pas fermer ce chemin : elle désigne
+// qui peut être VISÉ, pas qui peut émettre, et le mode par défaut (2) n'exige aucune liste. Le contrôle est donc ici.
+if (isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}) exitWith {
+    diag_log format ["[COMSPEC] applyZeusAtakEffect: « %1 » refusé, l'appel ne vient pas du serveur (poste %2)", _action, remoteExecutedOwner];
+};
+
 if (!hasInterface) exitWith {};
 if (!alive player) exitWith {};
 
