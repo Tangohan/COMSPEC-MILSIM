@@ -2563,6 +2563,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // ATAK du joueur : ses propres messages et avis de l'administration (COMSPEC Link AdminControl.Poll / AdminControl.Ack).
     $router->post('/api/atak/admin-control/mine', [AtakApiController::class, 'adminControlMine']);
     $router->post('/api/atak/admin-control/mine/ack', [AtakApiController::class, 'adminControlMineAck']);
+    // App Admin de l'ATAK natif : parc de la communauté géré en jeu par un gestionnaire (COMSPEC Link GameAdmin.*).
+    $router->post('/api/atak/game-admin/fleet', [AtakApiController::class, 'gameAdminFleet']);
+    $router->post('/api/atak/game-admin/action', [AtakApiController::class, 'gameAdminAction']);
     $router->post('/api/atak/item-icons/missing', [AtakApiController::class, 'itemIconsMissing']);
     $router->post('/api/atak/item-icons', [AtakApiController::class, 'itemIconUpload']);
     $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);

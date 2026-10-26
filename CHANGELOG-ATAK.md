@@ -61,6 +61,30 @@ EN : Athena is now translated with the community
 - Site : `/contribuer` (ContributorController), `/traduire-site` (SiteTranslationController, SiteTranslationService), `/admin/system/contributeurs` (SystemContributorsController). Migration `20261025000001_site_contributors_translation.sql` (run-migrations sur le VPS). Les langues publiées et leurs dictionnaires sont compilés dans `storage/i18n/community/` (CommunityLanguages) : `LocaleService` accepte leurs codes, une langue de la communauté se comporte comme l'anglais (`locale()` = en, `site_lang()` = son code) avec son dictionnaire par-dessus (HtmlTranslator, Translator, dictionnaire JavaScript `/traduire-site/dico/{code}.js`).
 - Discord : script `tools/discord/comspec_discord_contributors.py` (lancé sur le PC de TTRD, jeton du bot jamais sur le site) : rôles Translator / Content creator, salons translation / contributors, question de choix des rôles dans l'accueil du serveur (Onboarding), conditions des rôles liés déclarées à l'application et rôle Athena verified.
 - Rôles liés Discord (Linked Roles) : `DiscordLinkedRoles` (OAuth `identify role_connections.write`, conditions compte Athena / membre d'une communauté / nombre de communautés / ancienneté, nom des communautés sur le profil), `/discord/roles-lies` (adresse de vérification) et retour, panneau Discord dans Mon compte › Préférences, réglages Application ID + secret client chiffré dans Intégrations › Plateforme, tâche automatique quotidienne `discord_linked_roles_sync`. Migration `20261025000002_user_discord_links.sql`. Dans le portail des développeurs Discord : OAuth2 › Redirects = `/discord/roles-lies/retour` ; puis la condition « Compte Athena » sur le rôle Athena verified (Paramètres du serveur › Rôles › Liens).
+## App Admin dans le téléphone : parc ATAK de la communauté, ATAK de la partie et debug de l'IA, pour la gestion et les Zeus (ATAK natif 2.3.11.AB - Denver, COMSPEC Link 2.0.94)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouvelle app Admin pour la gestion et les Zeus
+- EN JEU : l'ATAK de chaque joueur (batterie, état, liaison Athena) et les effets Zeus en un clic.
+- ATHENA : le parc ATAK de la communauté, avec blocage, message et compromission.
+- DEBUG IA : les téléphones ramassés par l'ennemi et qui il traque.
+EN : New Admin app for community managers and Zeus
+- IN GAME: every player's ATAK (battery, state, Athena link) and Zeus effects in one click.
+- ATHENA: the community ATAK fleet, with block, message and compromise.
+- AI DEBUG: phones picked up by the enemy and who it hunts.
+
+### Détail technique
+- App `Admin` (Système, `functions/admin/`), dans le téléphone uniquement, montrée seulement à qui y a droit (`fn_appVisible` -> `fn_adminClient "visible"`). Icône `data/app_admin.paa` (`tools/gen_assets.py only app_admin`).
+- Deux droits séparés :
+  - En jeu : Zeus, hôte, admin connecté (#login) ou UID Steam du nouveau réglage serveur `comspec_atak_native_admin_uids` (« ATAK · Admin »). Vérifié par le serveur (`fn_adminAllowed`), aussi pour les effets Zeus (`fn_zeusServer`).
+  - Athena : gestionnaire de la communauté (`admin.organization` / `admin.access`) ou administrateur de la plateforme, lu par le site sur la session de jeu du joueur (la clé commune du serveur ne suffit pas).
+- Onglet EN JEU : à la demande (toutes les 10 s app ouverte, rien sinon), le serveur demande à chaque joueur sa fiche, envoyée directement à l'admin (`comspec_atak_native_adminReport` / `adminData`) : ATAK porté, batterie, état, liaison Athena, versions, n° / IMEI / terminal, SOS, balise, position, compromission, effets Zeus. Actions par joueur via `comspec_atak_native_zeus` : verrouiller, muet, brouiller, éteindre, réparer, tout rétablir. Fiche Athena liée par Steam.
+- Onglet ATHENA : `POST /api/atak/game-admin/fleet` et `/action` (`AtakGameAdminService`, mêmes règles que /back-office/atak/parc-atak) : bloquer dans la communauté, lever un blocage (ceux de la plateforme : admin plateforme seulement), déconnecter, message imposé, déclarer capturé / compromis, lever la compromission (source `ingame` dans l'historique, journal « depuis le jeu »). Retrait et blocage toutes communautés restent sur le site. COMSPEC Link `GameAdmin.Fleet` / `GameAdmin.Action` (2.0.94), 40 fiches par page.
+- Onglet DEBUG IA (`fn_adminServer "scan"`) : captures avec porteur, déchiffrage, exploitation du BFT, joueurs repérés et groupes en traque (`fn_captureServer` garde `targets` / `hunters`), IA en route pour ramasser ; valider / rejeter (aussi pour un autre camp), arrêter la traque, reprendre le téléphone, couper la traque pour la partie.
+- Boutons à conséquence en deux temps (CONFIRMER). `i18n/en.txt` : 143 textes.
+- Version 2.3.11, COMSPEC Link 2.0.94 (DLL à recompiler). main.pbo non reconstruit dans cette PR (regroupement).
+- À tester en jeu : app visible en Zeus et invisible pour un joueur ; relevé EN JEU avec plusieurs joueurs ; effets Zeus depuis l'app ; parc ATHENA avec un compte gestionnaire relié (bloquer puis lever, message reçu, compromission puis levée) ; DEBUG IA après qu'une IA ennemie a ramassé un téléphone (traque visible, ARRÊTER LA TRAQUE, REPRENDRE LE TÉLÉPHONE).
 
 ---
 
