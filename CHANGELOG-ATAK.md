@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App Médical : dossiers médicaux de l'unité dans le téléphone (à regrouper, COMSPEC Link 2.0.96)
+
+### Résumé joueur
+Type : nouveauté
+FR : Les dossiers médicaux de l'unité dans l'app Médical
+- Nouvel onglet DOSSIERS : groupe sanguin, poids, taille, allergies et intolérances de chaque membre, tels que saisis sur Athena.
+- Les joueurs de la partie d'abord (EN JEU), ou toute l'unité, avec une recherche par indicatif ou fonction ; MONITEUR ouvre le suivi du blessé.
+- La liste est gardée sur ton PC : elle s'affiche tout de suite, même hors ligne, et ACTUALISER la relit sur Athena.
+- Réservé aux médecins (fonction médicale sur Athena), à la gestion et au pilotage des effectifs. Le groupe sanguin et le poids apparaissent aussi sur les alertes et le moniteur.
+EN : The unit's medical records in the Medical app
+- New RECORDS tab: blood type, weight, height, allergies and drug intolerances of every member, as entered on Athena.
+- Players in the mission first (IN GAME), or the whole unit, with a search by callsign or job; MONITOR opens the casualty's tracking.
+- The list is kept on your PC: it shows instantly, even offline, and REFRESH reads it again from Athena.
+- Restricted to medics (medical job on Athena), community management and personnel staff. Blood type and weight also show on alerts and on the monitor.
+
+### Détail technique
+- Site : `POST /api/atak/medical-roster` (PR site séparée) : membres actifs de la communauté de la session, session de jeu du joueur exigée ; droit = admin/gestion, `EffectifsLmsAccess`, ou emploi médical (`AtakMedicalRosterService::isMedicalJob`).
+- COMSPEC Link 2.0.96 : `MedicalRoster` [ligne, cache|refresh] (pages comme `ListWardrobes`) et `MedicalRosterInfo` ; copie dans `Documents\Arma 3 - COMSPEC\Sync\medical_roster.json`, propre au site + communauté + Steam ; un 403 `forbidden` efface la copie. Ajouté au projet de la DLL native.
+- ATAK natif : `fn_medRoster` (lecture paginée, cache, recherche, portée EN JEU / TOUTE L'UNITÉ), onglet DOSSIERS dans `fn_pageMedical`, `_medIdent` complète groupe sanguin et poids depuis le dossier. Debug > DLL vérifie `MedicalRoster`.
+- Numéro ATAK natif attribué par le regroupement (docs/VERSIONING.md).
+
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur

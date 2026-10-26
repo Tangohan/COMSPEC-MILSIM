@@ -82,7 +82,8 @@ switch (_tab) do {
             ["BriefingPresence", "Présence au briefing sur Athena"],
             ["BriefingComments", "Questions sur les diapositives"],
             ["PhoneIdentity", "Numéro de téléphone Athena"],
-            ["DownloadBriefingSlideImage", "Images (diapositives, fiches, photos)"]
+            ["DownloadBriefingSlideImage", "Images (diapositives, fiches, photos)"],
+            ["MedicalRoster", "Fiches médicales (app Médical)"]
         ];
         private _missing = _want select { !((_x select 0) in _have) };
         private _ok = { params ["_b"]; ["<t color='#e5483a'>MANQUANT</t>", "<t color='#5cc76b'>OK</t>"] select _b };
