@@ -109,6 +109,10 @@ class UserRepository
             return $user;
         }
         $profile = $this->communityMemberships()->findProfile((int) ($user['id'] ?? 0), $tenantId);
+        // Le matricule d’organisation de la communauté d’origine ne suit pas le membre ailleurs.
+        if (array_key_exists('tenant_member_number', $user) && (int) ($user['tenant_id'] ?? 0) !== $tenantId) {
+            $user['tenant_member_number'] = null;
+        }
         if ($profile === null) {
             $user['tenant_id'] = $tenantId;
 
@@ -242,11 +246,46 @@ class UserRepository
         if ($normalized === '') {
             $normalized = null;
         }
+        if (!$this->isMemberOfTenant($userId, $tenantId)) {
+            return false;
+        }
         $stmt = $this->pdo()->prepare(
             'UPDATE users SET tenant_member_number = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
         );
+        $stmt->execute([$normalized, $userId, $tenantId]);
+        // Membre venu d’une autre communauté : le matricule vit dans sa fiche de cette communauté.
+        if ($this->hasCommunityMembershipTable()) {
+            $this->communityMemberships()->upsertProfile($userId, $tenantId, ['tenant_member_number' => $normalized]);
+            if ($normalized === null) {
+                $this->pdo()->prepare(
+                    'UPDATE user_community_profiles SET tenant_member_number = NULL, updated_at = NOW() WHERE user_id = ? AND tenant_id = ?'
+                )->execute([$userId, $tenantId]);
+            }
+        }
 
-        return $stmt->execute([$normalized, $userId, $tenantId]);
+        return true;
+    }
+
+    /**
+     * Matricule d’organisation du membre dans CETTE communauté (jamais celui de sa communauté d’origine).
+     */
+    public function tenantMemberNumberFor(int $userId, int $tenantId): ?string
+    {
+        if (!$this->hasTenantMemberNumberColumn() || $userId < 1 || $tenantId < 1) {
+            return null;
+        }
+        if ($this->hasCommunityMembershipTable()) {
+            $profile = $this->communityMemberships()->findProfile($userId, $tenantId);
+            $v = trim((string) ($profile['tenant_member_number'] ?? ''));
+            if ($v !== '') {
+                return $v;
+            }
+        }
+        $st = $this->pdo()->prepare('SELECT tenant_member_number FROM users WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $st->execute([$userId, $tenantId]);
+        $v = trim((string) ($st->fetchColumn() ?: ''));
+
+        return $v !== '' ? $v : null;
     }
 
     public function tenantMemberNumberExists(int $tenantId, string $number, ?int $excludeUserId = null): bool
@@ -271,6 +310,25 @@ class UserRepository
         }
         $sql .= ' LIMIT 1';
         $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute($params);
+        if ((bool) $stmt->fetchColumn()) {
+            return true;
+        }
+        if (!$this->hasCommunityMembershipTable()) {
+            return false;
+        }
+        $profileEq = SqlText::normalizedEquals($this->pdo(), 'ucp.tenant_member_number');
+        $sql = 'SELECT 1 FROM user_community_profiles ucp
+                WHERE ucp.tenant_id = ?
+                  AND ucp.tenant_member_number IS NOT NULL
+                  AND TRIM(ucp.tenant_member_number) <> \'\'
+                  AND ' . $profileEq;
+        $params = [$tenantId, strtolower($number)];
+        if ($excludeUserId !== null && $excludeUserId > 0) {
+            $sql .= ' AND ucp.user_id <> ?';
+            $params[] = $excludeUserId;
+        }
+        $stmt = $this->pdo()->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
 
         return (bool) $stmt->fetchColumn();
@@ -1727,7 +1785,7 @@ class UserRepository
             : "'' AS athena_identifier";
         $tmnSelect = $hasTenantMemberNumber
             ? ($hasUcp
-                ? 'COALESCE(ucp.tenant_member_number, u.tenant_member_number) AS tenant_member_number'
+                ? 'COALESCE(ucp.tenant_member_number, CASE WHEN u.tenant_id = ' . $tenantLit . ' THEN u.tenant_member_number END) AS tenant_member_number'
                 : 'u.tenant_member_number')
             : 'NULL AS tenant_member_number';
         $ucpJoin = $hasUcp
@@ -1773,9 +1831,9 @@ class UserRepository
                 : '';
             $tmnFilter = $hasTenantMemberNumber
                 ? ($hasUcp
-                    ? ' OR (COALESCE(ucp.tenant_member_number, u.tenant_member_number) IS NOT NULL AND '
+                    ? ' OR (COALESCE(ucp.tenant_member_number, CASE WHEN u.tenant_id = ' . $tenantLit . ' THEN u.tenant_member_number END) IS NOT NULL AND '
                         . SqlText::coalesceTrimIsNotEmpty($pdo, 'ucp.tenant_member_number', 'u.tenant_member_number')
-                        . ' AND COALESCE(ucp.tenant_member_number, u.tenant_member_number) LIKE ?)'
+                        . ' AND COALESCE(ucp.tenant_member_number, CASE WHEN u.tenant_id = ' . $tenantLit . ' THEN u.tenant_member_number END) LIKE ?)'
                     : ' OR (u.tenant_member_number IS NOT NULL AND '
                         . SqlText::trimIsNotEmpty($pdo, 'u.tenant_member_number')
                         . ' AND u.tenant_member_number LIKE ?)')
@@ -2090,7 +2148,43 @@ class UserRepository
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->withTenantMemberNumbers($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], $tenantId);
+    }
+
+    /**
+     * Remplace tenant_member_number par le matricule de CETTE communauté (fiche communauté, sinon compte d’origine).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withTenantMemberNumbers(array $rows, int $tenantId): array
+    {
+        if ($rows === [] || !$this->hasTenantMemberNumberColumn()) {
+            return $rows;
+        }
+        $byProfile = [];
+        if ($this->hasCommunityMembershipTable()) {
+            $ids = array_values(array_unique(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows)));
+            $st = $this->pdo()->prepare(
+                'SELECT user_id, tenant_member_number FROM user_community_profiles
+                 WHERE tenant_id = ? AND user_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')'
+            );
+            $st->execute(array_merge([$tenantId], $ids));
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $p) {
+                $v = trim((string) ($p['tenant_member_number'] ?? ''));
+                if ($v !== '') {
+                    $byProfile[(int) $p['user_id']] = $v;
+                }
+            }
+        }
+        foreach ($rows as &$row) {
+            $id = (int) ($row['id'] ?? 0);
+            $home = (int) ($row['tenant_id'] ?? 0) === $tenantId ? trim((string) ($row['tenant_member_number'] ?? '')) : '';
+            $row['tenant_member_number'] = $byProfile[$id] ?? ($home !== '' ? $home : null);
+        }
+        unset($row);
+
+        return $rows;
     }
 
     public function countListForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null, bool $excludeServiceAccounts = true, ?bool $onlyWithoutUnit = null, ?bool $onlyWithoutRole = null): int

@@ -24,4 +24,19 @@ final class NewMemberNumbersTest extends TestCase
             (string) file_get_contents($root . '/app/Controllers/Admin/EffectifsWorkspaceController.php')
         );
     }
+
+    public function testOrganizationNumberFollowsTheCommunityNotTheHomeAccount(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $repo = (string) file_get_contents($root . '/app/Repositories/UserRepository.php');
+        // Un membre venu d’une autre communauté reçoit son matricule dans sa fiche communauté.
+        self::assertStringContainsString('upsertProfile($userId, $tenantId, [\'tenant_member_number\' => $normalized])', $repo);
+        self::assertStringContainsString('function tenantMemberNumberFor(', $repo);
+        self::assertStringContainsString('withTenantMemberNumbers(', $repo);
+        $service = (string) file_get_contents($root . '/app/Services/Personnel/TenantMemberNumberService.php');
+        self::assertStringContainsString('tenantMemberNumberFor($userId, $tenantId)', $service);
+        $backfill = (string) file_get_contents($root . '/app/Services/Personnel/NewMemberNumbers.php');
+        self::assertStringContainsString('sqlMemberOfTenantPredicate', $backfill);
+        self::assertStringContainsString("=== 'automatic'", $backfill);
+    }
 }
