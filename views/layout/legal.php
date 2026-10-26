@@ -88,5 +88,6 @@ $legalActiveSection = $legalActiveSection ?? '';
     })();
     </script>
     <?php require base_path('views/partials/mirror_trap_link.php'); ?>
+<?php require base_path('views/partials/donor_marks_assets.php'); ?>
 </body>
 </html>

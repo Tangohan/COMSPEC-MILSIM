@@ -135,7 +135,7 @@ final class SystemPlanPaymentsController
             'title' => 'Paiements et dons',
             'content' => 'admin.system.plan_payments',
             'isPlatformAdminShell' => true,
-            'backOfficePageCss' => ['admin-payments.css'],
+            'backOfficePageCss' => ['admin-payments.css', 'donor-marks.css'],
             'payView' => $view,
             'payError' => $error,
             'payFocus' => $focus,
@@ -155,6 +155,8 @@ final class SystemPlanPaymentsController
             'payPlanNames' => $planNames,
             'payDonors' => $donors,
             'payRevoked' => $overrides['revoked'],
+            'payHidden' => $overrides['hidden'] ?? [],
+            'payBoardCount' => count(DonorService::board()),
             'paySupporters' => $supporters,
             'payTenantNames' => $tenantNames,
             'payDonorCacheAt' => DonorService::cached()['updated_at'],
@@ -340,6 +342,19 @@ final class SystemPlanPaymentsController
             $this->service()->refreshDonors();
 
             return [['ok' => true], 'Rôle donateur retiré à ' . $email . ' (ses dons restent enregistrés).'];
+        }, 'dons');
+    }
+
+    /** Afficher ou masquer une personne sur le mur public des donateurs (/soutenir-atak#donateurs). */
+    public function donorWall(Request $request, array $params = []): Response
+    {
+        return $this->act($request, function (int $actor) use ($request) {
+            $email = strtolower(trim((string) $request->input('email', '')));
+            $visible = (string) $request->input('visible', '1') === '1';
+            (new DonorService($this->ledger()))->setHidden($email, !$visible);
+            $this->service()->refreshDonors();
+
+            return [['ok' => true], ($visible ? 'Affiché' : 'Masqué') . ' sur le mur des donateurs : ' . $email . '.'];
         }, 'dons');
     }
 
