@@ -18,9 +18,10 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.617;
-        versionStr = "1.6.17";
-        versionAr[] = {1, 6, 17};
+        version = 1.618;
+        versionStr = "1.6.18";
+        versionAr[] = {1, 6, 18};
+        // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
     };
 };
 
@@ -501,6 +502,7 @@ class CfgFunctions {
             class pollDataFlows {};
             class pollExperience {};
             class applyTenantExperience {};
+            class applyDonorPerk {};
             class showExperienceGuide {};
             class portalLabel {};
             class profileWrap {};
@@ -698,6 +700,29 @@ class CfgCommands {
         "http://localhost:*/*",
         "http://127.0.0.1:*/*",
         "file://z/comspec_overwatch/addons/connect/web/*"
+    };
+};
+
+// Écussons « Donateur Athena » : appliqués au joueur local par fn_applyDonorPerk selon le palier reçu d'Athena.
+// Sources : mod\UptoDate\Sources\art\donor_insignia (SVG + PNG 256x256, hors PBO) ; PAA DXT5 générés par mod\UptoDate\tools\png2paa.py.
+class CfgUnitInsignia {
+    class COMSPEC_Donor_soutien {
+        displayName = "Donateur Athena · Soutien";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_soutien_ca.paa";
+        textureVehicle = "";
+    };
+    class COMSPEC_Donor_allie {
+        displayName = "Donateur Athena · Allié";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_allie_ca.paa";
+        textureVehicle = "";
+    };
+    class COMSPEC_Donor_pilier {
+        displayName = "Donateur Athena · Pilier";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_pilier_ca.paa";
+        textureVehicle = "";
     };
 };
 

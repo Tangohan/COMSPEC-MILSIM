@@ -65,6 +65,11 @@ final class AtakDonationFulfillmentService
             }
             $this->donations->markPaid((int) $row['id'], $paymentIntentId);
             $row = $this->donations->findByCheckoutSessionId($sessionId) ?? $row;
+            (new \App\Repositories\PaymentLedgerRepository())->log('donation_paid', ['tenant_id' => (int) ($row['tenant_id'] ?? 0), 'user_id' => (int) ($row['user_id'] ?? 0)], null, '', ['stripe_donation_id' => (int) $row['id'], 'amount_cents' => (int) ($row['amount_cents'] ?? 0)]);
+            try {
+                (new DonorService())->rebuild();
+            } catch (\Throwable) {
+            }
         }
 
         if (!empty($row['badge_granted'])) {

@@ -32,12 +32,8 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
                 </li>
                 <li class="flex items-start gap-3">
                     <span class="text-slate-400 mt-0.5">□</span>
-                    <span><strong>Télécharger le pack</strong>
-                        <?php if ($atakModDownloadUrl): ?>
-                            — <a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="text-slate-900 underline font-medium">Page de téléchargement Overwatch</a>
-                        <?php else: ?>
-                            — à fournir par votre administrateur (voir <a href="<?= $baseUrl ?>/atak/tuto" class="text-slate-900 underline">tutoriel</a>).
-                        <?php endif; ?>
+                    <span><strong>S’abonner au mod sur Steam</strong>
+                            — <a href="<?= htmlspecialchars(url('atak/mod')) ?>" class="text-slate-900 underline font-medium">Installer le mod Athena (Steam Workshop)</a>
                     </span>
                 </li>
                 <li class="flex items-start gap-3">

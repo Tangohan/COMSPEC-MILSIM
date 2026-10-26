@@ -229,6 +229,10 @@ return [
             ['label' => 'Suivi des actions', 'href' => 'back-office/atak/comptes-rendus?vue=actions'],
             ['label' => 'Missions sans retour', 'href' => 'back-office/atak/comptes-rendus?vue=missions'],
         ]],
+        ['path' => 'back-office/atak/suivi-cr', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Suivi des CR de fin d’opération', 'subtitle' => 'Qui a reçu le CR imposé sur son ATAK, qui l’a remis, et quand son téléphone s’est synchronisé pour la dernière fois.', 'css' => ['back-office-aar.css', 'back-office-debrief.css'], 'quick' => [
+            ['label' => 'Comptes rendus post-op', 'href' => 'back-office/atak/comptes-rendus'],
+            ['label' => 'Remontées', 'href' => 'back-office/remontees'],
+        ]],
         ['path' => 'back-office/atak/comptes-rendus/modeles', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Modèles de debriefing', 'subtitle' => 'Questionnaires de compte rendu : questions courtes, listes, cases à cocher et texte libre.', 'css' => ['back-office-aar.css'], 'quick' => [
             ['label' => 'Comptes rendus', 'href' => 'back-office/atak/comptes-rendus'],
             ['label' => 'Nouveau modèle', 'href' => 'back-office/atak/comptes-rendus/modeles/nouveau'],
@@ -276,7 +280,7 @@ return [
         ['path' => 'back-office/ressources/atak-diffusion-rapports', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diffusion des rapports', 'subtitle' => 'Qui doit lire chaque compte rendu dès sa réception, qui prévenir si personne ne réagit, et ce qui a réellement été diffusé.', 'css' => ['back-office-atak-routing.css']],
         ['path' => 'back-office/ressources/atak-realism', 'group' => 'Ressources', 'title' => 'Réglages réalisme', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/ressources/atak-realism/config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · RÉALISME', 'title' => 'Configuration réalisme', 'subtitle' => 'Relais radio, météo, certificats, dégâts des terminaux, symbologie : les règles de réalisme appliquées à la communauté.', 'css' => ['back-office-atak-realism.css']],
-        ['path' => 'back-office/ressources/atak-mod', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · MOD', 'title' => 'Mod Arma', 'css' => ['back-office-atak-mod.css']],
+        ['path' => 'back-office/ressources/atak-mod', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · MOD', 'title' => 'Mods (Steam Workshop)', 'subtitle' => 'Le mod Athena et le modset de la communauté sont servis par Steam : liens, consignes et annonce de mise à jour.', 'css' => ['back-office-atak-mod.css']],
         ['path' => 'back-office/audit', 'group' => 'Système', 'kicker' => 'SYSTÈME · TRAÇABILITÉ', 'title' => 'Journal d\'audit', 'subtitle' => 'Toutes les actions des administrateurs, datées et conservées 24 mois.', 'flags' => ['hideAuditPageHeader' => true]],
         ['path' => 'back-office/moderation', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · DISCIPLINE', 'title' => 'Sanctions et absences', 'subtitle' => 'Les sanctions, limitations et absences en cours, membre par membre.'],
         ['path' => 'back-office/security-indicators', 'group' => 'Accès', 'kicker' => 'ACCÈS · SÉCURITÉ', 'title' => 'Sécurité et blocages', 'subtitle' => 'Les comptes bloqués et les tentatives de connexion suspectes.'],
@@ -301,7 +305,6 @@ return [
         ['path' => 'documents/gestion/ajout', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · DOCUMENTS', 'title' => 'Nouveau document', 'subtitle' => 'Ajoutez un fichier, ou rédigez directement un manuel avec sa page de garde.', 'css' => ['document-fm.css']],
         ['path' => 'documents/gestion', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · DOCUMENTS', 'title' => 'Documents', 'subtitle' => 'Les documents de la communauté, classés par type.', 'css' => ['document-fm.css']],
         ['path' => 'back-office/ressources/atak-config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Configuration ATAK', 'subtitle' => 'Cartes, calques et réglages de l’application ATAK pour vos membres.'],
-        ['path' => 'back-office/ressources/modpacks', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Modpacks', 'subtitle' => 'Les listes de mods à installer pour rejoindre vos sessions.'],
         ['path' => 'back-office/ressources/musique', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MUSIQUE', 'title' => 'Musique de l\'organisation', 'subtitle' => 'Morceaux et playlists de vos membres, écoutés sur le site et en jeu dans l\'app Musique de l\'ATAK.'],
         ['path' => 'back-office/content-moderation', 'group' => 'Système', 'kicker' => 'SYSTÈME · MODÉRATION', 'title' => 'Fichiers et pièces jointes', 'subtitle' => 'Les fichiers déposés par les membres, à vérifier ou supprimer.'],
         ['path' => 'tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Mur opérationnel', 'subtitle' => 'Ce que voient les membres : prochaines opérations, articles et annonces.'],

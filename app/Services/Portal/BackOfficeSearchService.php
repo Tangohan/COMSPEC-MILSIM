@@ -375,7 +375,7 @@ final class BackOfficeSearchService
             ['title' => 'Mini-articles', 'subtitle' => 'Actualités courtes de la communauté', 'href' => url('back-office/articles'), 'keywords' => 'articles actualités news publication', 'ok' => $org],
             ['title' => 'Modèles d’e-mail', 'subtitle' => 'Messages réutilisables', 'href' => url('back-office/communications/templates'), 'keywords' => 'modèles e-mail templates communications', 'ok' => $org],
             ['title' => 'Types de documents', 'subtitle' => 'Classement de la bibliothèque', 'href' => url('back-office/documents/types'), 'keywords' => 'types documents classement catégories', 'ok' => $org],
-            ['title' => 'Modpacks', 'subtitle' => 'Listes de mods de la communauté', 'href' => url('back-office/ressources/modpacks'), 'keywords' => 'modpacks mods workshop arma', 'ok' => $org],
+            ['title' => 'Mods (Steam Workshop)', 'subtitle' => 'Mod Athena et collection de la communauté', 'href' => url('back-office/ressources/atak-mod'), 'keywords' => 'modpacks mods workshop steam collection arma', 'ok' => $org],
             ['title' => 'Serveurs de jeu', 'subtitle' => 'Adresses et accès des serveurs', 'href' => url('back-office/ressources/serveurs-de-jeu'), 'keywords' => 'serveurs jeu arma adresse ip connexion', 'ok' => $org],
             ['title' => 'Configuration ATAK', 'subtitle' => 'Réglages de la carte tactique', 'href' => url('back-office/ressources/atak-config'), 'keywords' => 'atak tacmap configuration carte', 'ok' => $org],
             ['title' => 'Escouades en jeu', 'subtitle' => 'Groupes affichés dans ATAK', 'href' => url('back-office/atak/escouades'), 'keywords' => 'escouades atak jeu groupes', 'ok' => $org],

@@ -177,8 +177,8 @@ class HomeController
                 $usage->record((int) $tenantId, $uid, 'dashboard_visit', 'view');
             } catch (\Throwable) {
             }
-            $modpackRepo = \App\Core\Container::get(\App\Repositories\ModpackRepository::class);
-            $modpack = $modpackRepo->getPrimaryForTenant((int) $tenantId);
+            // Mods servis par le Steam Workshop (plus de modpack hébergé par le site).
+            $modpack = \App\Support\SteamWorkshop::modset((int) $tenantId);
             $auth = \App\Core\Container::get(\App\Services\Auth\AuthService::class);
             $currentUser = $auth->user();
             if ($currentUser) {
@@ -214,10 +214,8 @@ class HomeController
                     }
                 }
             }
-            $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
-            if (is_file($modPath) && is_readable($modPath)) {
-                $atakModDownloadUrl = url('atak/mod');
-            }
+            // Mod distribué par le Steam Workshop : la page d'installation est toujours disponible.
+            $atakModDownloadUrl = url('atak/mod');
         }
 
         $dashboardTenantLabel = null;

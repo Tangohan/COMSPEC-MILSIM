@@ -52,7 +52,7 @@ final class DecorationKitAssetTest extends TestCase
         $controller = (string) file_get_contents($this->root() . '/app/Controllers/Web/PersonnelController.php');
         $awardCtrl = (string) file_get_contents($this->root() . '/app/Controllers/Admin/Organization/AwardReferentielController.php');
         $dispatch = (string) file_get_contents($this->root() . '/app/Support/DevDispatchCatalog.php');
-        $migrations = (string) file_get_contents($this->root() . '/run-migrations.php');
+        $migrations = (string) \Tests\Support\MigrationPipelineSource::read($this->root());
 
         self::assertStringContainsString('DecorationCatalog::CAUTION', $kit);
         self::assertStringContainsString('DecorationCatalog::FOOTER', $kit);

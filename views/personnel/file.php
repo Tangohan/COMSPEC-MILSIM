@@ -599,7 +599,9 @@ if ($personnelFileIsRhFull) {
         <div class="personnel-file-hero__inner">
             <div class="personnel-file-hero__identity">
                 <p class="personnel-file-hero__eyebrow">Dossier personnel</p>
-                <h1 class="personnel-file-hero__name"><?= htmlspecialchars($displayName) ?></h1>
+                <?php $pfDonorUid = (int) (is_array($targetUser) ? ($targetUser['id'] ?? 0) : 0); $pfDonorTier = \App\Services\Billing\DonorService::userTier($pfDonorUid); ?>
+                <h1 class="personnel-file-hero__name" data-donor-skip><?= htmlspecialchars($displayName) ?><?= \App\Services\Billing\DonorService::mark($pfDonorUid, true) ?></h1>
+                <?php if ($pfDonorTier !== null): ?><p class="personnel-file-hero__donor"><a href="<?= htmlspecialchars(url('soutenir-atak') . '#donateurs') ?>">Donateur Athena · <?= htmlspecialchars(\App\Services\Billing\DonorService::tierLabel($pfDonorTier)) ?></a> — merci pour votre soutien au projet.</p><?php endif; ?>
                 <?php if ($callsign || !empty($effectiveRankDisplay) || $nicknamePrimary !== '' || ($matricule && !empty($showMatriculePublic))): ?>
                 <ul class="personnel-file-hero__meta">
                     <?php if ($callsign): ?>

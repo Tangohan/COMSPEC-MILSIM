@@ -1,0 +1,30 @@
+/* Tacmap / ATAK C2 — joueurs « Donateur Athena » (DonorGamePerk) : anneau au palier et petit cœur sur le marqueur. */
+.atak-donor { --atak-donor: #d9467a; --atak-donor-glow: rgba(217, 70, 122, .55); } /* pas de position : Leaflet garde absolute */
+.atak-donor--allie { --atak-donor: #7c3aed; --atak-donor-glow: rgba(124, 58, 237, .55); }
+.atak-donor--pilier { --atak-donor: #f5b301; --atak-donor-glow: rgba(245, 179, 1, .6); }
+
+/* Marqueur carte : halo discret autour du symbole, sans toucher au symbole OTAN lui-même. */
+.leaflet-marker-icon.atak-donor { overflow: visible; isolation: isolate; }
+.leaflet-marker-icon.atak-donor::before {
+  content: ""; position: absolute; left: 50%; top: 50%; width: calc(100% + 8px); height: calc(100% + 8px);
+  min-width: 18px; min-height: 18px; transform: translate(-50%, -50%);
+  border: 2px solid var(--atak-donor); border-radius: 50%;
+  box-shadow: 0 0 6px var(--atak-donor-glow); pointer-events: none; z-index: -1;
+}
+.leaflet-marker-icon.atak-donor--pilier::before { border-style: double; border-width: 3px; }
+.atak-donor-badge {
+  position: absolute; right: -6px; top: -6px; z-index: 2;
+  display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px;
+  color: #fff; background: var(--atak-donor); border: 1px solid rgba(0, 0, 0, .55);
+  box-shadow: 0 0 4px var(--atak-donor-glow); pointer-events: none; line-height: 0;
+}
+.atak-donor--pilier .atak-donor-badge { color: #3a2a00; }
+
+/* Liste des unités : le cœur se pose sur le coin du symbole. */
+.atak-donor--list { display: inline-flex; position: relative; outline: 1px solid var(--atak-donor); outline-offset: 1px; }
+.atak-donor--list .atak-donor-badge { right: -5px; top: -5px; width: 11px; height: 11px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .leaflet-marker-icon.atak-donor--pilier::before { animation: atak-donor-pulse 3s ease-in-out infinite; }
+}
+@keyframes atak-donor-pulse { 0%, 100% { box-shadow: 0 0 4px var(--atak-donor-glow); } 50% { box-shadow: 0 0 10px var(--atak-donor-glow); } }

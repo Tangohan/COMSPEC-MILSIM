@@ -120,6 +120,35 @@ class CourrierDocumentNotificationRepository
         $stmt->execute([$tenantId, $userId, $documentId]);
     }
 
+    /**
+     * Retire des avis de courrier de la boîte du membre (le document reste consultable dans Courrier).
+     *
+     * @param list<int> $documentIds vides + $onlyRead = tous les avis déjà lus
+     */
+    public function deleteForUser(int $tenantId, int $userId, array $documentIds, bool $onlyRead = false): int
+    {
+        if (!$this->tableExists()) {
+            return 0;
+        }
+        $documentIds = array_values(array_filter(array_map('intval', $documentIds), static fn (int $i): bool => $i > 0));
+        if ($documentIds === [] && !$onlyRead) {
+            return 0;
+        }
+        $sql = 'DELETE FROM courrier_document_notifications WHERE tenant_id = ? AND recipient_user_id = ?';
+        $args = [$tenantId, $userId];
+        if ($documentIds !== []) {
+            $sql .= ' AND document_id IN (' . implode(',', array_fill(0, count($documentIds), '?')) . ')';
+            $args = array_merge($args, $documentIds);
+        }
+        if ($onlyRead) {
+            $sql .= ' AND read_at IS NOT NULL';
+        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($args);
+
+        return $stmt->rowCount();
+    }
+
     public function markAllReadForUser(int $tenantId, int $userId): void
     {
         if (!$this->tableExists()) {

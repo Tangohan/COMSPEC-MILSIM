@@ -80,7 +80,6 @@ final class ContainerIntegrations
             ),
             \App\Controllers\Web\OperateurTerrainController::class => new \App\Controllers\Web\OperateurTerrainController(
                 Container::get(\App\Services\Auth\AuthService::class),
-                Container::get(\App\Repositories\ModpackRepository::class),
                 Container::get(\App\Services\Dashboard\TenantDashboardPinService::class),
             ),
             \App\Controllers\Api\IntegrationsPublicEventsController::class => new \App\Controllers\Api\IntegrationsPublicEventsController(

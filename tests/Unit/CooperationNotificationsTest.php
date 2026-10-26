@@ -102,7 +102,7 @@ final class CooperationNotificationsTest extends TestCase
         $container = (string) file_get_contents($root . '/app/Core/Container.php');
         self::assertStringContainsString('self::get(\App\Services\Cron\Jobs\CooperationRemindersCronJob::class)', $container);
         self::assertFileExists($root . '/send-cooperation-reminders.php');
-        $migrations = (string) file_get_contents($root . '/run-migrations.php');
+        $migrations = (string) \Tests\Support\MigrationPipelineSource::read($root);
         self::assertStringContainsString('cooperation_announcement_events_v3_migration.php', $migrations);
         $seed = (string) file_get_contents($root . '/bootstrap/cooperation_announcement_events_v3_migration.php');
         self::assertStringContainsString("'coop_sitrep_added'", $seed);

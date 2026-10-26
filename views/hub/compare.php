@@ -30,20 +30,14 @@ foreach ($structures as $st) {
     }
 }
 ?>
-<link rel="stylesheet" href="<?= $h(asset_url('assets/css/hub-ecosystem.css')) ?>">
-
-<div class="hubx">
-  <div class="hx-wrap pt-8">
-    <a href="<?= $h(url('hub')) ?>#annuaire" class="text-sm font-semibold underline">← Hub des communautés</a>
-    <div class="hx-section__head mt-4">
-      <div>
-        <p class="hx-kicker">Comparaison</p>
-        <h1 class="hx-title" style="font-size: clamp(1.5rem, 3vw, 2rem)">Deux communautés côte à côte</h1>
-        <p class="hx-sub">Indicateurs publics et forme de l’organigramme. Les noms d’unités ne s’affichent que pour votre communauté et celles qui publient leur organigramme.</p>
-      </div>
-    </div>
-
-    <form method="get" action="<?= $h(url('hub/comparer')) ?>" class="hx-card hx-filters" style="grid-template-columns: 1fr 1fr auto">
+<?php
+$hxBack = [url('hub') . '#annuaire', 'Hub des communautés'];
+$hxKicker = 'Comparaison';
+$hxTitle = 'Deux communautés côte à côte';
+$hxLead = 'Indicateurs publics et forme de l’organigramme. Les noms d’unités ne s’affichent que pour votre communauté et celles qui publient leur organigramme.';
+require __DIR__ . '/partials/shell_open.php';
+?>
+    <form method="get" action="<?= $h(url('hub/comparer')) ?>" class="hx-panel hx-cmp-form">
       <?php foreach (['a' => $hubA, 'b' => $hubB] as $key => $sel): ?>
       <div class="hx-field">
         <label for="hx-cmp-<?= $key ?>">Communauté <?= $key === 'a' ? 'A' : 'B' ?></label>
@@ -55,11 +49,11 @@ foreach ($structures as $st) {
         </select>
       </div>
       <?php endforeach; ?>
-      <button type="submit" class="hx-btn hx-btn--accent self-end">Comparer</button>
+      <button type="submit" class="hx-cta hx-cta--primary">Comparer</button>
     </form>
 
     <?php if ($hubA === null || $hubB === null): ?>
-    <p class="hx-empty mt-6">Choisissez deux communautés pour afficher la comparaison.</p>
+    <div class="hx-empty"><?= $hxIcon('comparer', 'hx-empty__icon') ?><p class="hx-empty__title">Rien à comparer</p><p>Choisissez deux communautés pour afficher la comparaison.</p></div>
     <?php else: ?>
     <section class="hx-section hx-card" aria-label="Indicateurs comparés">
       <table class="hx-vs">
@@ -97,7 +91,7 @@ foreach ($structures as $st) {
         <p class="hx-kicker">Organigramme</p>
         <h2 class="hx-title"><?= $h((string) $row['name']) ?></h2>
         <?php if (($st['levels'] ?? []) === []): ?>
-        <p class="hx-empty mt-3">Aucune unité déclarée.</p>
+        <p class="hx-note">Aucune unité déclarée.</p>
         <?php else: ?>
         <p class="hx-sub"><?= $num($row['units']) ?> unités · <?= count($st['levels']) ?> niveaux · <?= $num($row['members']) ?> membres actifs<?= $row['units'] > 0 ? ' · ' . $num($row['members'] / max(1, $row['units']), 1) . ' membres par unité' : '' ?></p>
         <div class="hx-levels mt-3">
@@ -126,5 +120,4 @@ foreach ($structures as $st) {
       <?php endforeach; ?>
     </section>
     <?php endif; ?>
-  </div>
-</div>
+<?php require __DIR__ . '/partials/shell_close.php'; ?>

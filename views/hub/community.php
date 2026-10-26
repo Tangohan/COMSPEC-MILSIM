@@ -87,14 +87,14 @@ if ($recos > 0) {
 }
 $since = !empty($hubRow['created_at']) ? date('d/m/Y', strtotime((string) $hubRow['created_at'])) : '';
 ?>
-<link rel="stylesheet" href="<?= $h(asset_url('assets/css/hub-ecosystem.css')) ?>">
-
-<div class="hubx">
-  <div class="hx-wrap hx-profile">
-    <a href="<?= $h(url('hub')) ?>#annuaire" class="hx-back">Hub des communautés</a>
-    <?php if ($flashOk): ?><p class="hx-flash hx-flash--ok" role="status"><?= $h((string) $flashOk) ?></p><?php endif; ?>
-    <?php if ($flashErr): ?><p class="hx-flash hx-flash--err" role="alert"><?= $h((string) $flashErr) ?></p><?php endif; ?>
-
+<?php
+$hxBack = [url('hub') . '#annuaire', 'Hub des communautés'];
+$hxKicker = $hubIsOwn ? 'Votre communauté · fiche comparée' : 'Communauté du réseau · fiche comparée';
+$hxTitle = $name;
+$hxLead = '';
+require __DIR__ . '/partials/shell_open.php';
+?>
+  <div class="hx-profile">
     <header class="hx-profile__head">
       <div class="hx-profile__id">
         <?php if ($hasLogo): ?>
@@ -103,8 +103,6 @@ $since = !empty($hubRow['created_at']) ? date('d/m/Y', strtotime((string) $hubRo
         <span class="hx-profile__mark" aria-hidden="true"><?= $h($initials) ?></span>
         <?php endif; ?>
         <div>
-          <p class="hx-kicker"><?= $hubIsOwn ? 'Votre communauté' : 'Communauté du réseau' ?></p>
-          <h1 class="hx-profile__name"><?= $h($name) ?></h1>
           <?php if (($hubRow['tagline'] ?? '') !== ''): ?><p class="hx-profile__tag"><?= $h((string) $hubRow['tagline']) ?></p><?php endif; ?>
           <ul class="hx-chips">
             <?php if (($hubRow['game'] ?? '') !== ''): ?><li><?= $h((string) $hubRow['game']) ?></li><?php endif; ?>
@@ -184,7 +182,7 @@ $since = !empty($hubRow['created_at']) ? date('d/m/Y', strtotime((string) $hubRo
         <p class="hx-kicker">Organigramme</p>
         <h2 class="hx-title">Structure</h2>
         <?php if ($levelCounts === []): ?>
-        <p class="hx-empty mt-3">Aucune unité déclarée.</p>
+        <p class="hx-note">Aucune unité déclarée.</p>
         <?php else: ?>
         <p class="hx-sub"><?= $num($units) ?> unités sur <?= count($levelCounts) ?> niveau<?= count($levelCounts) > 1 ? 'x' : '' ?>.</p>
         <div class="hx-levels mt-3">
@@ -253,4 +251,4 @@ $since = !empty($hubRow['created_at']) ? date('d/m/Y', strtotime((string) $hubRo
       </div>
     </section>
   </div>
-</div>
+<?php require __DIR__ . '/partials/shell_close.php'; ?>

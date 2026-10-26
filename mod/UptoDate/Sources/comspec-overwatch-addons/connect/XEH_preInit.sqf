@@ -53,6 +53,13 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
     ["COMSPEC", "Overwatch"], true
 ] call comspec_overwatch_connect_fnc_addSetting;
 
+[
+    "comspec_overwatch_donor_insignia", "CHECKBOX",
+    ["Écusson « Donateur Athena »", "Si votre compte Athena a fait un don, un écusson à votre palier (Soutien, Allié, Pilier) est posé sur votre épaule. Il ne remplace jamais l’écusson donné par la mission. Décochez pour ne pas le porter."],
+    ["COMSPEC", "Overwatch"], true, false,
+    { if (!isNil "comspec_overwatch_connect_fnc_applyDonorPerk" && {hasInterface} && {!isNull player}) then { [player] call comspec_overwatch_connect_fnc_applyDonorPerk; }; }
+] call comspec_overwatch_connect_fnc_addSetting;
+
 // Adresse du portail : plus de réglage, toujours https://athena.ttrd.fr/public (fn_portalUrl).
 // Une ancienne adresse enregistrée dans le profil est effacée.
 missionNamespace setVariable ["comspec_overwatch_api_url", "https://athena.ttrd.fr/public"];
