@@ -774,8 +774,18 @@ class EnlistmentRepository
             'UPDATE enlistments SET submitter_user_id = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ? AND status = \'reviewed\''
         );
         $stmt->execute([$userId, $tenantId, $enlistmentId]);
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+        // MySQL ne compte que les lignes réellement modifiées : déjà liée au même compte (updated_at posé dans la
+        // même seconde par la mise à jour d'identité de l'onboarding) donnait 0 et « compte local déjà présent ».
+        $check = $this->pdo->prepare(
+            'SELECT submitter_user_id FROM enlistments WHERE tenant_id = ? AND id = ? AND status = \'reviewed\' LIMIT 1'
+        );
+        $check->execute([$tenantId, $enlistmentId]);
+        $current = $check->fetchColumn();
 
-        return $stmt->rowCount() > 0;
+        return $current !== false && (int) $current === $userId;
     }
 
     /**

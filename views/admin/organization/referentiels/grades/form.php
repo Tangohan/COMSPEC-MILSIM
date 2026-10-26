@@ -12,7 +12,7 @@ $catalogLocked = $isEdit;
     <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Renommer le grade' : 'Nouveau grade d’avancement' ?></h1>
     <?php if ($tenantOwned): ?>
     <p class="mb-4 text-sm text-slate-600"><?= $isEdit
-        ? 'Les libellés et la visibilité s’appliquent à cette communauté. Le catalogue partagé (codes FR/US) est réutilisé, pas recopié.'
+        ? 'Vous pouvez donner à ce grade le nom de votre choix (libellé court et libellé long), changer son ordre et le masquer : cela ne touche que votre communauté. Le système, la catégorie et le code restent ceux du catalogue partagé, car ils relient le grade à l’avancement et aux fiches existantes. Pour une échelle entièrement différente (univers fictif, unité non militaire…), renommez les grades dont vous avez besoin et masquez les autres.'
         : 'Ce grade sera propre à la communauté et servira aux règles d’avancement. Il ne s’ajoute pas à la liste « Grade affiché » des fiches membres : pour changer le nom d’un grade existant, utilisez « Renommer » dans le référentiel.' ?></p>
     <?php endif; ?>
     <?php if ($flashError): ?>
@@ -25,7 +25,7 @@ $catalogLocked = $isEdit;
             <select id="grade_system_id" name="grade_system_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" <?= $catalogLocked ? 'disabled' : '' ?>>
                 <option value="">— Choisir —</option>
                 <?php foreach ($systems as $s): ?>
-                <option value="<?= (int) $s['id'] ?>" <?= ($grade['grade_system_id'] ?? '') == $s['id'] ? 'selected' : '' ?>><?= htmlspecialchars($s['label']) ?> (<?= htmlspecialchars($s['code']) ?>)</option>
+                <option value="<?= (int) $s['id'] ?>" <?= ($grade['grade_system_id'] ?? '') == $s['id'] ? 'selected' : '' ?>><?= htmlspecialchars($s['label']) ?></option>
                 <?php endforeach; ?>
             </select>
             <?php if ($catalogLocked): ?>
@@ -37,7 +37,7 @@ $catalogLocked = $isEdit;
             <select id="grade_category_id" name="grade_category_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" <?= $catalogLocked ? 'disabled' : '' ?>>
                 <option value="">— Choisir —</option>
                 <?php foreach ($categories as $c): ?>
-                <option value="<?= (int) $c['id'] ?>" <?= ($grade['grade_category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['label']) ?> (<?= htmlspecialchars($c['code']) ?>)</option>
+                <option value="<?= (int) $c['id'] ?>" <?= ($grade['grade_category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['label']) ?></option>
                 <?php endforeach; ?>
             </select>
             <?php if ($catalogLocked): ?>

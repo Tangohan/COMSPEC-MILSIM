@@ -4444,6 +4444,12 @@ $migrationRunner->step('left_community_account_repair', static function () use (
     $leftCommunityRepair($pdo);
 });
 
+// Catalogue des grades américains : fautes de frappe, doublons et échelle de solde manquante.
+$usRankCatalogFix = require $root . '/bootstrap/us_rank_catalog_fix_migration.php';
+$migrationRunner->step('us_rank_catalog_fix', static function () use ($usRankCatalogFix, $pdo): void {
+    $usRankCatalogFix($pdo);
+});
+
 require_once $root . '/bootstrap/migrations_full_post.php';
 comspec_print_post_migration_report($pdo, $root, $migrationFlush);
 $migrationsOk = $migrationRunner->printReport();

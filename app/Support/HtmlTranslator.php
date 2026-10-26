@@ -73,6 +73,13 @@ final class HtmlTranslator
             $name = strtolower($m[2]);
 
             if ($skipTag !== null) {
+                if (!$closing && ($name === 'script' || $name === 'style') && $name !== $skipTag && !str_ends_with($tag, '/>')) {
+                    $close = stripos($html, '</' . $name, $pos);
+                    $close = $close === false ? $len : $close;
+                    $out .= $tag . substr($html, $pos, $close - $pos);
+                    $pos = $close;
+                    continue;
+                }
                 if ($name === $skipTag) {
                     if ($closing) {
                         $skipDepth--;
@@ -89,6 +96,15 @@ final class HtmlTranslator
 
             if (!$closing) {
                 $voidish = str_ends_with($tag, '/>') || in_array($name, ['input', 'img', 'br', 'hr', 'meta', 'link', 'source', 'area', 'col', 'wbr'], true);
+                // <script> / <style> : contenu brut jusqu'à la balise fermante. Un « i < n » du JavaScript passait
+                // pour une balise qui avalait le </script>, et toute la suite de la page restait en français.
+                if (($name === 'script' || $name === 'style') && !$voidish) {
+                    $close = stripos($html, '</' . $name, $pos);
+                    $close = $close === false ? $len : $close;
+                    $out .= $tag . substr($html, $pos, $close - $pos);
+                    $pos = $close;
+                    continue;
+                }
                 if (in_array($name, self::RAW_TAGS, true) || preg_match('~\btranslate\s*=\s*["\']?no\b~i', $tag)) {
                     if (!$voidish) {
                         $skipTag = $name;
@@ -282,6 +298,10 @@ final class HtmlTranslator
         }
         $exact = self::$exact ?? [];
         $r = $exact[$s] ?? null;
+        // Apostrophe droite saisie en base (« l'annuaire ») : le dictionnaire utilise l'apostrophe typographique.
+        if ($r === null && str_contains($s, "'")) {
+            $r = $exact[str_replace("'", '’', $s)] ?? null;
+        }
         if ($r === null && ($k = strpos($s, ' : ')) !== false && $k > 0) {
             $label = $exact[substr($s, 0, $k)] ?? null;
             if ($label !== null) {

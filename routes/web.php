@@ -2181,6 +2181,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/formation/courses/{id}/showcase', [AdminTrainingController::class, 'courseShowcase'], $trainingResMw);
     $router->get('/formation/courses/{id}/export', [AdminTrainingController::class, 'exportCourse'], $trainingResMw);
     $router->post('/formation/courses/{id}/unpublish', [AdminTrainingController::class, 'courseUnpublish'], $trainingResMw);
+    $router->post('/formation/courses/plateforme/visibilite', [AdminTrainingController::class, 'coursePlatformVisibility'], $trainingResMw);
     $router->post('/formation/courses/{id}/delete', [AdminTrainingController::class, 'courseDelete'], $trainingResMw);
     $router->get('/formation/courses', [AdminTrainingController::class, 'courses'], $trainingResMw);
     $router->post('/formation/enrollments/{id}/approve', [AdminTrainingController::class, 'approveEnrollment'], $trainingResMw);
