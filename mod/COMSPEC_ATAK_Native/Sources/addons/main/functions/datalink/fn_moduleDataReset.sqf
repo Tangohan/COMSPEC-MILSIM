@@ -12,7 +12,9 @@ deleteVehicle _logic;
 if (_targets isEqualTo []) exitWith { ["comspec_atak_native_dataNote", ["Aucun support de données sous le module."]] call CBA_fnc_localEvent; true };
 private _apply = {
     params ["_vals", "_targets"];
-    { ["comspec_atak_native_dataSrv", [_vals select 0, _x, player, []]] call CBA_fnc_serverEvent; } forEach _targets;
+    // remoteExecCall (et non l'événement CBA) : le serveur retrouve le demandeur par remoteExecutedOwner. Module
+    // isGlobal : exécuté chez le Zeus qui le pose (curateur) ou sur le serveur en Eden (appel local, de confiance).
+    { [_vals select 0, _x, player, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2]; } forEach _targets;
     ["comspec_atak_native_dataNote", [format ["%1 support(s) : %2.", count _targets, ["remis en état", "données retirées"] select ((_vals select 0) isEqualTo "remove")]]] call CBA_fnc_localEvent;
 };
 if (_ctx get "zeus") then {

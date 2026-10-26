@@ -61,7 +61,7 @@ switch (_act) do {
             ["sel", (_cfg getOrDefault ["files", []]) apply { true }], ["queue", []], ["got", 0], ["msg", ""], ["fresh", true]
         ]];
         playSound "ClickSoft";
-        ["comspec_atak_native_dataSrv", ["connect", _o, player, []]] call CBA_fnc_serverEvent;
+        ["connect", _o, player, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2];
         // Téléphone en main sur l'app Extraction.
         if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
             [true] call comspec_atak_native_fnc_open;
@@ -70,7 +70,7 @@ switch (_act) do {
         true
     };
     case "disconnect": {
-        if (_phase isEqualTo "DL" && {!isNull _obj}) then { ["comspec_atak_native_dataSrv", ["rip", _obj, player, []]] call CBA_fnc_serverEvent; };
+        if (_phase isEqualTo "DL" && {!isNull _obj}) then { ["rip", _obj, player, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2]; };
         playSound "ClickSoft";
         [["", "Câble débranché : transfert interrompu"] select (_phase isEqualTo "DL"), "INFO"] call _end;
     };
@@ -81,12 +81,12 @@ switch (_act) do {
         if (_pw isEqualTo "") exitWith { _st set ["msg", "Saisissez le mot de passe"]; call _render; };
         private _cfg = [_obj] call _cfgOf;
         if ((hashValue _pw) isEqualTo (_cfg getOrDefault ["pwHash", ""])) then {
-            ["comspec_atak_native_dataSrv", ["unlock", _obj, player, []]] call CBA_fnc_serverEvent;
+            ["unlock", _obj, player, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2];
             _st set ["phase", "BROWSE"];
             _st set ["msg", ""];
             playSound "ClickSoft";
         } else {
-            ["comspec_atak_native_dataSrv", ["fail", _obj, player, []]] call CBA_fnc_serverEvent;
+            ["fail", _obj, player, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2];
             _st set ["msg", "Mot de passe incorrect"];
             _st set ["failAt", diag_tickTime];
             playSound "addItemFailed";
@@ -146,7 +146,7 @@ switch (_act) do {
         if (_why isEqualTo "" && {!alive player || {!isNull objectParent player}}) then { _why = "Câble débranché"; };
         if (_why isEqualTo "" && {!([player] call comspec_atak_native_fnc_hasDevice)}) then { _why = "ATAK retiré : liaison perdue"; };
         if (_why isNotEqualTo "") exitWith {
-            if (_phase isEqualTo "DL") then { ["comspec_atak_native_dataSrv", ["rip", _obj, player, []]] call CBA_fnc_serverEvent; };
+            if (_phase isEqualTo "DL") then { ["rip", _obj, player, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2]; };
             [_why, "WARNING"] call _end;
             playSound "addItemFailed";
         };
@@ -179,7 +179,7 @@ switch (_act) do {
             case "CRACK": {
                 if (_wiped) exitWith { _next = "WIPED"; };
                 if (_p >= 1) then {
-                    ["comspec_atak_native_dataSrv", ["cracked", _obj, player, []]] call CBA_fnc_serverEvent;
+                    ["cracked", _obj, player, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2];
                     _next = "BROWSE";
                     ["SUCCESS", format ["%1 : accès forcé", _cfg getOrDefault ["name", "Support"]], 3, 20] call comspec_atak_native_fnc_notify;
                 };
@@ -205,7 +205,7 @@ switch (_act) do {
                 call _libSet;
                 _st set ["got", _got];
                 if (_p >= 1) then {
-                    ["comspec_atak_native_dataSrv", ["done", _obj, player, [_queue apply { (_files param [_x, ["?"]]) select 0 }, _st getOrDefault ["full", false]]]] call CBA_fnc_serverEvent;
+                    ["done", _obj, player, [_queue apply { (_files param [_x, ["?"]]) select 0 }, _st getOrDefault ["full", false]]] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2];
                     _next = "DONE";
                     playSound "ClickSoft";
                     ["SUCCESS", format ["%1 fichier(s) récupéré(s) de %2", count _queue, _cfg getOrDefault ["name", "Support"]], 4, 30] call comspec_atak_native_fnc_notify;

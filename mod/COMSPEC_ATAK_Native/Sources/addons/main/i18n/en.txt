@@ -11337,6 +11337,7 @@
 ["Refusé par Athena : formule, droits ou session (voir les contrôles serveur).", "Refused by Athena: plan, rights or session (see the server checks)."],
 ["refusé par le poste", "refused by the station"],
 ["Refusé par le serveur : les effets Zeus sur les ATAK sont réservés à Zeus et aux admins.", "Refused by the server: Zeus effects on ATAKs are reserved for Zeus and admins."],
+["Refusé par le serveur : remettre en état ou effacer un support de données est réservé à Zeus et aux admins.", "Refused by the server: restoring or wiping a data device is reserved for Zeus and admins."],
 ["REFUSÉE", "REFUSED"],
 ["refusée (HTTP 401)", "refused (HTTP 401)"],
 ["refusée (HTTP 403)", "refused (HTTP 403)"],

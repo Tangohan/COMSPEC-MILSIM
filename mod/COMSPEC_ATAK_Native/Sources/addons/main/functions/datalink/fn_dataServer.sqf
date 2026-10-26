@@ -1,6 +1,9 @@
 /*
-    Serveur de l'extraction de données (événement CBA comspec_atak_native_dataSrv, branché dans XEH_preInit).
-    Params : [action, objet, joueur, argument]
+    Serveur de l'extraction de données. Appelée par un client avec
+    [action, objet, objNull, argument] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2] (CfgRemoteExec) :
+    le joueur n'est PAS lu dans la demande, il est retrouvé par remoteExecutedOwner (fn_reqUnit). Plus d'événement
+    CBA comspec_atak_native_dataSrv : il ne portait pas l'identité du poste émetteur et n'écartait que « code ».
+    Params : [action, objet, joueur (ignoré pour un appel distant), argument]
       "reg"      : ajoute le support à COMSPEC_ATAK_DataNodes (variable publique : app Extraction, actions ACE)
       "connect"  : un joueur branche son câble (Zeus prévenu, alarme « au branchement »)
       "fail"     : mauvais mot de passe ; au bout des essais permis : verrouillage, effacement ou alarme
@@ -12,13 +15,36 @@
       "reset"    : Zeus remet le support en état (essais, verrou, effacement)
       "remove"   : Zeus retire les données du support
       "code"     : code de fin (argument : texte, vide = retiré), gardé au serveur seul (localNamespace, jamais diffusé).
-                   Accepté d'un appel local au serveur (fn_dataSetup) ou d'un remoteExec d'un Zeus / administrateur ;
-                   refusé par l'événement CBA (XEH_preInit).
+                   Accepté d'un appel local au serveur (fn_dataSetup) ou d'un remoteExec d'un Zeus / administrateur
+                   (contrôle propre à cette action, plus bas).
     Zeus : chaque curateur reçoit un message (comspec_atak_native_dataNote).
 */
 if (!isServer) exitWith { false };
 params [["_act", ""], ["_obj", objNull], ["_who", objNull], ["_arg", []]];
 if (isNull _obj) exitWith { false };
+// Demande venue d'un client : seul remoteExecutedOwner fait foi. Un appel non distant ne peut venir que du code du
+// serveur (modules Eden, fn_dataSetup au démarrage).
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+if (_remote) then { _who = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
+// Actions qui supposent qu'on manipule le support : le demandeur doit être à portée de son câble, plus une marge (la
+// position d'une unité distante est connue avec du retard au serveur ; le client, lui, coupe à la longueur exacte,
+// fn_dataAction.sqf:55 et :145). Sans ce contrôle un client déclarait un support téléchargé sans y toucher
+// (« done » exécute le code de fin gardé par le serveur et lève comspec_atak_native_dataDownloaded), forçait le
+// verrou (« cracked »), remettait le compteur d'essais à zéro (« unlock »), ou faisait verrouiller / effacer le
+// support à distance en enchaînant les « fail ».
+if (_remote && {_act in ["connect", "fail", "unlock", "cracked", "rip", "done"]}
+    && {isNull _who || {!alive _who} || {(_who distance _obj) > (((missionNamespace getVariable ["comspec_atak_native_data_length", 3]) max 3) + 20)}}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][DATA] « %1 » refusé au poste %2 (demandeur absent ou hors de portée du support)", _act, remoteExecutedOwner];
+    false
+};
+// « reset » et « remove » sont des actions de Zeus (module « Remettre / retirer les données »), sauf un joueur qui
+// efface les données de son propre téléphone exposé (fn_phoneSecurity : l'objet visé est le joueur lui-même).
+if (_remote && {_act in ["reset", "remove"]} && {_obj isNotEqualTo _who}
+    && {isNull _who || {!([_who] call comspec_atak_native_fnc_adminAllowed)}}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][DATA] « %1 » refusé à %2 (ni Zeus ni admin)", _act, name _who];
+    ["comspec_atak_native_note", ["Refusé par le serveur : remettre en état ou effacer un support de données est réservé à Zeus et aux admins."], _who] call CBA_fnc_targetEvent;
+    false
+};
 private _cfg = createHashMapFromArray (_obj getVariable ["COMSPEC_ATAK_Data", []]);
 private _label = format ["%1%2", _cfg getOrDefault ["name", "Support"], ["", format [" (%1)", mapGridPosition _obj]] select (_act isNotEqualTo "reg")];
 private _whoName = if (isNull _who) then { "?" } else { name _who };

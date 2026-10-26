@@ -83,7 +83,7 @@ switch (_act) do {
             if (_has && {alive player}) then {
                 player setVariable ["COMSPEC_ATAK_Data", nil, true];
                 player setVariable ["COMSPEC_ATAK_ExposedSig", nil];
-                ["comspec_atak_native_dataSrv", ["remove", player, player, []]] call CBA_fnc_serverEvent;
+                ["remove", player, player, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2];
             };
         };
     };

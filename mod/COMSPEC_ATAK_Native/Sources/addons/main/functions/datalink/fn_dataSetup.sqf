@@ -84,5 +84,5 @@ if (!_merge) then {
     _obj setVariable ["COMSPEC_ATAK_DataWiped", false, true];
 };
 // Liste des supports (app Extraction, actions ACE) tenue par le serveur.
-["comspec_atak_native_dataSrv", ["reg", _obj, objNull, []]] call CBA_fnc_serverEvent;
+["reg", _obj, objNull, []] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2];
 true
