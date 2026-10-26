@@ -69,4 +69,27 @@ final class AtakMultiplayerAuthTest extends TestCase
         }
         self::assertStringContainsString('class comspec_atak_native_fnc_ftServer { allowedTargets = 2; };', $this->read(self::MAIN . '/config.cpp'));
     }
+
+    public function testCompromiseOrdersAreAcceptedOnlyFromTheServer(): void
+    {
+        // Alertes, révocation chez Athena et nouvel IMEI : l'événement CBA comspec_atak_native_compromise ne disait pas
+        // qui l'avait levé. Un client faisait révoquer un terminal de son choix avec la session d'un autre joueur,
+        // imposait un nouvel IMEI ou passait l'ATAK d'un joueur en mode compromis. Le serveur envoie ces ordres par
+        // remoteExecCall et fn_compromise n'accepte, à distance, que le poste 2.
+        self::assertStringNotContainsString('["comspec_atak_native_compromise", {', $this->read(self::MAIN . '/XEH_preInit.sqf'));
+        $srv = $this->read(self::MAIN . '/functions/shell/fn_captureServer.sqf');
+        self::assertStringNotContainsString('["comspec_atak_native_compromise", [', $srv);
+        foreach ([
+            '["event", [_kind, _row]] remoteExecCall ["comspec_atak_native_fnc_compromise", _to];',
+            '["revoke", [_id, _term, (_c get "tag") param [2, ""]]] remoteExecCall ["comspec_atak_native_fnc_compromise", _by];',
+            '["ownerReset", [_id]] remoteExecCall ["comspec_atak_native_fnc_compromise", allPlayers select _i];',
+            '["revoke", [_id, (_c get "tag") param [5, ""], (_c get "tag") param [2, ""]]] remoteExecCall ["comspec_atak_native_fnc_compromise", _next];',
+        ] as $call) {
+            self::assertStringContainsString($call, $srv);
+        }
+        // Le garde est en tête de fn_compromise, avant toute action.
+        $guard = $this->between($this->read(self::MAIN . '/functions/shell/fn_compromise.sqf'), 'params [["_act", ""], ["_arg", []]];', 'switch (_act) do {');
+        self::assertStringContainsString('if (_act in ["event", "revoke", "ownerReset"] && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2}) exitWith {', $guard);
+        self::assertStringContainsString('class comspec_atak_native_fnc_compromise { allowedTargets = 0; };', $this->read(self::MAIN . '/config.cpp'));
+    }
 }

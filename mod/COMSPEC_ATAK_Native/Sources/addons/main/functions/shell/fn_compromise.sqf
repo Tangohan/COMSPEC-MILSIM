@@ -12,10 +12,22 @@
       "event" [genre, ligne] : "new" | "activity" | "validated" | "dismissed" (du serveur)
       "revoke" [id, terminal, indicatif] : appel COMSPEC Link puis compte rendu au serveur
       "ownerReset"     : mon téléphone a été compromis : nouvel IMEI sur le prochain
+        Ces trois-là viennent du serveur seul (remoteExecCall de fn_captureServer) : un appel distant d'un autre poste
+        est refusé.
       "can" ligne      : puis-je valider ?        "validate" id    "dismiss" id    "map" id
       "mine"           : compromissions de mon camp (plus récentes d'abord)
 */
 params [["_act", ""], ["_arg", []]];
+// Avant, l'événement CBA comspec_atak_native_compromise, enregistré chez tout joueur, ne disait pas qui l'avait levé :
+// un client pouvait faire révoquer chez Athena par un autre joueur, avec la session de celui-ci, le terminal de son
+// choix (« revoke »), lui imposer un nouvel IMEI (« ownerReset ») ou passer son ATAK en mode compromis (faux
+// « validated »). Le serveur envoie désormais ces ordres par remoteExecCall, et seul un appel du serveur (poste 2) est
+// accepté. Solo : un seul poste.
+if (_act in ["event", "revoke", "ownerReset"] && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] Appel « %1 » refusé : il ne vient pas du serveur (poste %2)", _act, remoteExecutedOwner];
+};
+// Comme l'ancien gestionnaire, enregistré seulement chez les joueurs (hasInterface).
+if (_act in ["event", "revoke", "ownerReset"] && {!hasInterface}) exitWith {};
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _row = {
     params ["_id"];

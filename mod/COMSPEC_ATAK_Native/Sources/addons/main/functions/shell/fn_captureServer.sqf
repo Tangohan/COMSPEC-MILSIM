@@ -73,7 +73,9 @@ private _toSide = {
     private _i = _l findIf { (_x select 0) isEqualTo _id };
     private _row = if (_i >= 0) then { _l select _i } else { [] };
     private _to = allPlayers select { (str side group _x) isEqualTo _side };
-    if (_to isNotEqualTo [] && {_row isNotEqualTo []}) then { ["comspec_atak_native_compromise", [_kind, _row], _to] call CBA_fnc_targetEvent; };
+    // remoteExecCall (et non l'événement CBA comspec_atak_native_compromise, que tout client pouvait lever) : le joueur
+    // voit que l'ordre vient du serveur et n'accepte que celui-là (fn_compromise). Même voie pour « revoke » et « ownerReset ».
+    if (_to isNotEqualTo [] && {_row isNotEqualTo []}) then { ["event", [_kind, _row]] remoteExecCall ["comspec_atak_native_fnc_compromise", _to]; };
 };
 private _items = {
     params ["_o", "_kind"];
@@ -327,11 +329,11 @@ switch (_act) do {
         _c set ["asked", getPlayerUID _by];
         call _publish;
         [_side, "validated", _id] call _toSide;
-        if (_term isNotEqualTo "") then { ["comspec_atak_native_compromise", ["revoke", [_id, _term, (_c get "tag") param [2, ""]]], _by] call CBA_fnc_targetEvent; };
+        if (_term isNotEqualTo "") then { ["revoke", [_id, _term, (_c get "tag") param [2, ""]]] remoteExecCall ["comspec_atak_native_fnc_compromise", _by]; };
         // Propriétaire : nouvel IMEI sur son prochain téléphone.
         private _uid = (_c get "tag") param [0, ""];
         private _i = allPlayers findIf { (getPlayerUID _x) isEqualTo _uid };
-        if (_i >= 0) then { ["comspec_atak_native_compromise", ["ownerReset", [_id]], allPlayers select _i] call CBA_fnc_targetEvent; };
+        if (_i >= 0) then { ["ownerReset", [_id]] remoteExecCall ["comspec_atak_native_fnc_compromise", allPlayers select _i]; };
         ["INFO", "CAPTURE", format ["%1 : compromission validée par %2", _id, _who]] call comspec_atak_native_fnc_log;
     };
     case "athena": {
@@ -362,7 +364,7 @@ switch (_act) do {
         private _next = _cands select _k;
         _c set ["revokeBy", _now + 45];
         _c set ["asked", getPlayerUID _next];
-        ["comspec_atak_native_compromise", ["revoke", [_id, (_c get "tag") param [5, ""], (_c get "tag") param [2, ""]]], _next] call CBA_fnc_targetEvent;
+        ["revoke", [_id, (_c get "tag") param [5, ""], (_c get "tag") param [2, ""]]] remoteExecCall ["comspec_atak_native_fnc_compromise", _next];
     };
 };
 true
