@@ -1,6 +1,8 @@
 /*
     [_intelId, _codeOrArgs] call comspec_sse_fnc_registerZeusHook
     _codeOrArgs: CODE or [code, args]
+    Local à la machine : enregistrer sur le serveur (initServer.sqf). Les postes clients sans hook local
+    relaient au serveur (fireZeusHook).
 */
 params [
     ["_intelId", "", [""]],

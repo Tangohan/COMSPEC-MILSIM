@@ -171,8 +171,18 @@ if ((count _route) > 0) then {
         _map drawRectangle [[((_a select 0) + (_b select 0)) / 2, ((_a select 1) + (_b select 1)) / 2], _w, _len / 2 + _w * 0.6, _a getDir _b, _c, _tex];
     };
     private _proj = _route getOrDefault ["proj", _pts select 0];
+    // Tronçons hors de la vue sautés (route de plusieurs km : des centaines de tronçons redessinés à chaque image).
+    (ctrlPosition _map) params ["_rcx", "_rcy", "_rcw", "_rch"];
+    private _rtl = _map ctrlMapScreenToWorld [_rcx, _rcy];
+    private _rbr = _map ctrlMapScreenToWorld [_rcx + _rcw, _rcy + _rch];
+    private _rmg = _mpu * 2;
+    private _rx0 = ((_rtl select 0) min (_rbr select 0)) - _rmg;
+    private _rx1 = ((_rtl select 0) max (_rbr select 0)) + _rmg;
+    private _ry0 = ((_rtl select 1) min (_rbr select 1)) - _rmg;
+    private _ry1 = ((_rtl select 1) max (_rbr select 1)) + _rmg;
     for "_i" from 0 to ((count _pts) - 2) do {
         private _a = _pts select _i; private _b = _pts select (_i + 1);
+        if ((((_a select 0) max (_b select 0)) < _rx0) || {((_a select 0) min (_b select 0)) > _rx1} || {((_a select 1) max (_b select 1)) < _ry0} || {((_a select 1) min (_b select 1)) > _ry1}) then { continue };
         private _past = _i < _idx;
         if (_i isEqualTo _idx) then {
             [_a, _proj, _mpu, [0.45, 0.48, 0.50, 0.75]] call _seg;
@@ -231,6 +241,9 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
         if (_ci isEqualTo "§") then { _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon"); _mkIconCache set ["~" + _custom, _ci]; };
         if (_ci isNotEqualTo "") then { _icon = _ci; _dir = 0; };
     };
+    // Fraîcheur gardée après la palette ami / moi (qui remet l'alpha à 1) : piste figée ou perdue toujours estompée.
+    if (_freshness isEqualTo "STALE") then { _color set [3, (_color select 3) min 0.65]; };
+    if (_freshness in ["LOST","OFFLINE"]) then { _color set [3, (_color select 3) min 0.3]; };
     // Réglages > Carte « Icônes des unités » OTAN : cadre + modificateur MIL-STD-2525 / APP-6 (moi : inchangé),
     // non orienté, un peu plus grand que le point ; échelon (points d'équipe / groupe) au-dessus pour les chefs.
     private _ech = "";
@@ -396,7 +409,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
             _map drawIcon [_dot,_sc,_pp,8,8,0,format ["%1 · %2°",_cs,round _brg],2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 0),"right"];
         } else {
             _map drawEllipse [_pp,_r,_r,0,_sc,""];
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n],2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,(format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n]) call comspec_atak_native_fnc_tr,2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
         };
     } forEach (uiNamespace getVariable ["COMSPEC_ATAK_Sigint",[]]);
 };
@@ -462,10 +475,10 @@ if ((count _los) >= 3) then {
     if ((count _block) > 0) then {
         _map drawLine [_from,ASLToAGL _block,[0.36,0.78,0.42,1]];
         _map drawLine [ASLToAGL _block,_to,[0.90,0.25,0.22,1]];
-        _map drawIcon [_dot,[0.90,0.25,0.22,1],ASLToAGL _block,12,12,0,"BLOQUÉ",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+        _map drawIcon [_dot,[0.90,0.25,0.22,1],ASLToAGL _block,12,12,0,("BLOQUÉ") call comspec_atak_native_fnc_tr,2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
     } else {
         _map drawLine [_from,_to,[0.36,0.78,0.42,1]];
-        _map drawIcon [_dot,[0.36,0.78,0.42,1],_to,12,12,0,"VUE OK",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+        _map drawIcon [_dot,[0.36,0.78,0.42,1],_to,12,12,0,("VUE OK") call comspec_atak_native_fnc_tr,2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
     };
 };
 
@@ -511,15 +524,16 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         private _id = _m getOrDefault ["id", _x];
         private _title = _m getOrDefault ["text", ""];
         if (_title isEqualTo "") then { continue };
-        _title = [_title] call comspec_atak_native_fnc_markerAutoName;
         if ((_m getOrDefault ["local", false]) && {(_id find "_USER_DEFINED") < 0}) then { continue };
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) in ["POLYLINE", "RECTANGLE", "ELLIPSE"]) then { continue };
-        // Contacts ENI : déjà dans un cartouche rouge (fn_mapLabels).
-        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) in ["ENI ", "ENY "]}}) then { continue };
         private _pos = _m getOrDefault ["position", []];
         if ((count _pos) < 2) then { continue };
         private _sp = _map ctrlMapWorldToScreen _pos;
         if ((_sp select 0) < (_mp select 0) || {(_sp select 0) > ((_mp select 0) + (_mp select 2))} || {(_sp select 1) < (_mp select 1)} || {(_sp select 1) > ((_mp select 1) + (_mp select 3))}) then { continue };
+        // Nom automatique seulement pour les marqueurs gardés par les tests ci-dessus (avant : pour tous, à chaque image).
+        _title = [_title] call comspec_atak_native_fnc_markerAutoName;
+        // Contacts ENI : déjà dans un cartouche rouge (fn_mapLabels).
+        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) in ["ENI ", "ENY "]}}) then { continue };
         private _rgba = [_m getOrDefault ["color", "ColorBlack"], [0.1, 0.1, 0.1, 1]] call _mkRgba;
         _rgba set [3, 1];
         private _r = (_scale * 900) max 12;
@@ -533,6 +547,16 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
             _gridCache set [_key, _g];
         };
         (_g splitString " ") params [["_e", ""], ["_n", ""]];
+        // Boîte gardée dans la carte (contrôle posé sur l'écran, rien ne le découpe) : à gauche de l'anneau si elle
+        // dépasse à droite, remontée si elle dépasse en bas ; sinon pas de cartouche (le nom reste dessiné sur la carte).
+        private _w = (_fs * 0.42 * (((count _title) max 9) + 1)) max (_fs * 4);
+        private _ringPx = (_map ctrlMapWorldToScreen [(_pos select 0) + _r, _pos select 1]) select 0;
+        private _rect = [_ringPx + _fs * 0.3, (_sp select 1) - _fs * 0.2, _w, _fs * 3.3];
+        if (((_rect select 0) + _w) > ((_mp select 0) + (_mp select 2))) then {
+            _rect set [0, ((_map ctrlMapWorldToScreen [(_pos select 0) - _r, _pos select 1]) select 0) - _fs * 0.3 - _w];
+        };
+        _rect set [1, ((_rect select 1) min ((_mp select 1) + (_mp select 3) - (_rect select 3))) max (_mp select 1)];
+        if ((_rect select 0) < (_mp select 0) || {((_rect select 1) + (_rect select 3)) > ((_mp select 1) + (_mp select 3))}) then { continue };
         private _c = _pool param [_used, controlNull];
         if (isNull _c) then {
             _c = _disp ctrlCreate ["COMSPEC_RscStructuredText", -1];
@@ -547,9 +571,6 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
             _c ctrlSetStructuredText parseText ((format ["<t size='%4' font='COMSPEC_BarlowBold' color='#ffffff'>%1<br/>%2E<br/>%3N</t>", toUpper ([_title, "<", "&lt;"] call CBA_fnc_replace), _e, _n, 1]) call comspec_atak_native_fnc_tr);
             _c ctrlSetFontHeight _fs;
         };
-        private _w = (_fs * 0.42 * (((count _title) max 9) + 1)) max (_fs * 4);
-        private _ringPx = (_map ctrlMapWorldToScreen [(_pos select 0) + _r, _pos select 1]) select 0;
-        private _rect = [_ringPx + _fs * 0.3, (_sp select 1) - _fs * 0.2, _w, _fs * 3.3];
         if ((_c getVariable ["comspec_rect", []]) isNotEqualTo _rect) then {
             _c setVariable ["comspec_rect", _rect];
             _c ctrlSetPosition _rect;

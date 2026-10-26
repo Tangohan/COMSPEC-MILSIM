@@ -227,6 +227,7 @@ if (_min isNotEqualTo (_gm getOrDefault ["min", -1])) then {
     if ((count _ser) > 288) then { _ser deleteAt 0; };
     _day set ["series", _ser];
 };
-// Profil écrit toutes les 5 min.
-if ((_now - (_gm getOrDefault ["saved", _now - 240])) > 300) then { [] call _save; };
+// Profil écrit toutes les 15 min (saveProfileNamespace écrit tout le profil d'un coup : petite saccade) ; aussi en fin de
+// mission (save) et à la resynchro (push). Premier enregistrement 1 min après le début.
+if ((_now - (_gm getOrDefault ["saved", _now - 840])) > 900) then { [] call _save; };
 true

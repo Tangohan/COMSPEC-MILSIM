@@ -7,6 +7,8 @@ params [
 ];
 if (!hasInterface) exitWith { false };
 if (isNull player) exitWith { false };
+// Joueur mort (écran de réapparition / spectateur) : les autres l’ignorent déjà, il ne doit pas s’élire lui-même.
+if (!alive player) exitWith { false };
 if (isNull _obj) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };

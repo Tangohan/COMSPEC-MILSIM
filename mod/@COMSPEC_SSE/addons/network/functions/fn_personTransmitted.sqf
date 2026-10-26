@@ -1,14 +1,17 @@
 /*
     Suite d'un envoi PERSON réussi (direct ou depuis la file offline) : entité TRANSMITTED, id Athena lu dans
-    comspec_sse_lastExtRaw (détail OK), biométries en file recâblées sur cet id.
-    [_entity, _uid] call comspec_sse_fnc_personTransmitted
+    la réponse extension de CET envoi (txRaw de l'envelope, détail OK), biométries en file recâblées sur cet id.
+    [_entity, _uid, _raw] call comspec_sse_fnc_personTransmitted
       _entity : sujet (objNull accepté : file restaurée après redémarrage, entité introuvable)
       _uid    : sse_uid de la fiche envoyée
+      _raw    : réponse extension de l'envoi (envelope get "txRaw") ; jamais le global comspec_sse_lastExtRaw,
+                écrasé par les envois parallèles (file 45 s, autre transmission)
     Renvoie l'id Athena ("" s'il est inconnu).
 */
 params [
     ["_entity", objNull, [objNull]],
-    ["_uid", "?", [""]]
+    ["_uid", "?", [""]],
+    ["_raw", "", [""]]
 ];
 
 if (!isNull _entity) then {
@@ -17,8 +20,10 @@ if (!isNull _entity) then {
 
 // Mémoriser l’id Athena (détail OK) pour biométrie / photo.
 private _aid = "";
-private _raw = missionNamespace getVariable ["comspec_sse_lastExtRaw", ""];
-if (_raw isEqualType "" && {_raw isNotEqualTo ""}) then {
+// Biométries au sse_uid inconnu ("?", "", "any") : rattachées par netId du sujet, jamais à la fiche qui vient de partir.
+private _nid = if (isNull _entity) then { "" } else { netId _entity };
+private _unknownUids = ["?", "", "any"];
+if (_raw isNotEqualTo "") then {
     private _parsed = parseSimpleArray _raw;
     if (_parsed isEqualType [] && {(count _parsed) >= 2}) then {
         private _detail = _parsed select 1;
@@ -37,7 +42,12 @@ if (_raw isEqualType "" && {_raw isNotEqualTo ""}) then {
                             private _p = _x getOrDefault ["payload", createHashMap];
                             if (_p isEqualType createHashMap) then {
                                 private _u = _p getOrDefault ["sse_uid", ""];
-                                if (_u isEqualTo _uid || {_u isEqualTo "?"} || {_u isEqualTo "any"} || {_u isEqualTo ""}) then {
+                                private _match = if (_u in _unknownUids) then {
+                                    _nid isNotEqualTo "" && {(_x getOrDefault ["entity_netid", ""]) isEqualTo _nid}
+                                } else {
+                                    !(_uid in _unknownUids) && {_u isEqualTo _uid}
+                                };
+                                if (_match) then {
                                     _p set ["athena_person_id", _aid];
                                     _p set ["person_id", _aid];
                                     _x set ["payload", _p];

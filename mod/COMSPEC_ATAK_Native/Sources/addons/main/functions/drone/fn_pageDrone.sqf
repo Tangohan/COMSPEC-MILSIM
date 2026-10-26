@@ -71,7 +71,7 @@ if ((_l get "landscape") && {!_mini}) then {
         if (_x isEqualTo _d) then { _list lbSetCurSel _i; };
     } forEach _fleet;
     if ((count _fleet) isEqualTo 0) then { private _i = _list lbAdd (("Aucun drone appairé") call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
-    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {private _ow = _x getVariable ["COMSPEC_DroneOwner", ""]; _ow in ["", getPlayerUID player] || {(allPlayers findIf { (getPlayerUID _x) isEqualTo _ow }) < 0}} };
     private _hdr2 = _list lbAdd (("À PORTÉE (MOINS DE 15 M)") call comspec_atak_native_fnc_tr);
     _list lbSetColor [_hdr2, [0.36, 0.78, 0.42, 1]];
     {
@@ -109,7 +109,7 @@ if ((_l get "landscape") && {!_mini}) then {
 
 if (isNull _d) exitWith {
     // Drones à portée de main : posés au sol à moins de 15 m, sans pilote humain.
-    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {private _ow = _x getVariable ["COMSPEC_DroneOwner", ""]; _ow in ["", getPlayerUID player] || {(allPlayers findIf { (getPlayerUID _x) isEqualTo _ow }) < 0}} };
     _rows append [
         ["title", "Drone"],
         ["text", "<t color='#8a9a93'>Posez le drone à vos pieds (depuis le sac à dos : Assembler), puis appairez-le au téléphone. La liaison porte à quelques kilomètres, beaucoup moins derrière le relief. Si elle est perdue, le drone rentre seul à son point de décollage.</t>"]
@@ -944,7 +944,7 @@ switch (_tab) do {
             ["text", "<t size='0.85' color='#8a9a93'>https://athena.ttrd.fr/public/telecommande-drone</t>"]
         ];
         // Ajout d'un drone : posé à moins de 15 m, libre.
-        private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+        private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {private _ow = _x getVariable ["COMSPEC_DroneOwner", ""]; _ow in ["", getPlayerUID player] || {(allPlayers findIf { (getPlayerUID _x) isEqualTo _ow }) < 0}} };
         _rows pushBack ["section", "Ajouter un drone", ["Posez un autre drone à vos pieds : le drone piloté continue seul, le nouveau est pris en main.", "Flotte complète (4 drones)."] select ((count _fleet) >= 4)];
         if ((count _near) isEqualTo 0 && {(count _fleet) < 4}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun drone libre à moins de 15 m.</t>"]; };
         if ((count _fleet) < 4) then {

@@ -49,7 +49,9 @@ private _scan = {
         private _nid = netId _x;
         private _listed = _nid in _allyIds;
         if (_listed && {!([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag)}) then {
-            _x setVariable ["COMSPEC_AllyTrack", true, true];
+            // Réparation publique réservée au serveur (setAllyTrack + EH Local tiennent déjà le drapeau public) :
+            // sinon chaque client, JIP compris, rediffusait le même drapeau.
+            _x setVariable ["COMSPEC_AllyTrack", true, isServer];
         };
         if ([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag || {_listed}) then {
             _allies pushBackUnique _x;
@@ -80,7 +82,8 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
 [{
     // Drapeau public « lié à Athena » pour l’élection du relais (écrit seulement quand il change).
     if (!isNull player) then {
-        private _linked = (missionNamespace getVariable ["COMSPEC_AthenaReady", false])
+        private _linked = (alive player)
+            && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}
             && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])};
         if ((player getVariable ["COMSPEC_AtakReporterLinked", -1]) isNotEqualTo _linked) then {
             player setVariable ["COMSPEC_AtakReporterLinked", _linked, true];
@@ -167,10 +170,6 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         [] call comspec_overwatch_connect_fnc_reportCrewedAirAssets;
     };
 }, 3, []] call CBA_fnc_addPerFrameHandler;
-
-[{
-    if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
-    [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
-}, 60, []] call CBA_fnc_addPerFrameHandler;
+// Plus de second PFH à 60 s : le PFH ci-dessus refait déjà le balayage complet toutes les 12 s.
 
 ["INFO", "Tracking", "Balises GPS, téléphones, IA alliées et contacts ennemis ATAK actifs"] call comspec_overwatch_connect_fnc_log;

@@ -55,9 +55,9 @@ if (_button isEqualTo 0) exitWith {
             _s set ["selectedMarker",""];
             [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         };
-        [_world,_shift,_ctrl,_alt] call comspec_atak_native_fnc_mapSelect;
+        [_world,_shift,_ctrl,_alt,_map] call comspec_atak_native_fnc_mapSelect;
     } else {
-        [_world,_shift,_ctrl,_alt] call comspec_atak_native_fnc_mapSelect;
+        [_world,_shift,_ctrl,_alt,_map] call comspec_atak_native_fnc_mapSelect;
     };
     true
 };

@@ -100,7 +100,7 @@ switch (_action) do {
         if (_id isEqualTo -1) exitWith {};
         private _who = format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player];
         // Envoi hors de l'image (POST HTTP), une question à la fois.
-        if (missionNamespace getVariable ["COMSPEC_ATAK_BriefAskBusy", false]) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_ATAK_BriefAskBusy", false]) exitWith { ["INFO", "Envoi en cours…", 3, 20] call comspec_atak_native_fnc_notify; };
         missionNamespace setVariable ["COMSPEC_ATAK_BriefAskBusy", true];
         [_id, _txt, _who] spawn {
             params ["_id", "_txt", "_who"];

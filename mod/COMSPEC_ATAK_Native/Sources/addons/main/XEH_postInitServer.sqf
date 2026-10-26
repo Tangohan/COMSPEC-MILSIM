@@ -32,7 +32,14 @@ private _keep = {
     params ["_side", "_ev", "_args"];
     private _l = COMSPEC_ATAK_SrvLog getOrDefault [_side, []];
     _l pushBack [_ev, _args];
-    if ((count _l) > 200) then { _l deleteAt 0; };
+    // Accusés et états (réception des comptes rendus, réponses aux ordres, état des MEDEVAC) : 100 au plus, à part des
+    // demandes elles-mêmes (200 au plus), sinon quelques comptes rendus suffisaient à chasser MEDEVAC et logistique.
+    // Une seule liste pour garder l'ordre de la relecture ; la plus ancienne entrée de la même sorte part.
+    private _minor = ["comspec_atak_native_reportRcpt", "comspec_atak_native_orderAck", "comspec_atak_native_medevacStatus"];
+    private _isMinor = _ev in _minor;
+    if (({ ((_x select 0) in _minor) isEqualTo _isMinor } count _l) > ([200, 100] select _isMinor)) then {
+        _l deleteAt (_l findIf { ((_x select 0) in _minor) isEqualTo _isMinor });
+    };
     COMSPEC_ATAK_SrvLog set [_side, _l];
 };
 missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
@@ -81,7 +88,9 @@ COMSPEC_ATAK_FtCheck = {
         };
     } forEach allUnits;
     if (_fixed > 0) then { missionNamespace setVariable ["COMSPEC_ATAK_SquadRev", (missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0]) + 1, true]; };
-    if (!isNull _by) then { ["comspec_atak_native_ftChanged", [group _by, format ["Synchronisation : %1 correction(s), révision %2", _fixed, missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0]]], _by] call CBA_fnc_targetEvent; };
+    // Annonce seulement s'il y a eu des corrections (sinon une notification vide de sens à chaque arrivée) ; les pages
+    // sont redessinées dans tous les cas. RESYNCHRONISER confirme déjà la demande côté client (fn_interTeamAction).
+    if (!isNull _by) then { ["comspec_atak_native_ftChanged", [group _by, ["", format ["Synchronisation : %1 correction(s), révision %2", _fixed, missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0]]] select (_fixed > 0)], _by] call CBA_fnc_targetEvent; };
     _fixed
 };
 ["comspec_atak_native_ftCheck", { _this call COMSPEC_ATAK_FtCheck; }] call CBA_fnc_addEventHandler;

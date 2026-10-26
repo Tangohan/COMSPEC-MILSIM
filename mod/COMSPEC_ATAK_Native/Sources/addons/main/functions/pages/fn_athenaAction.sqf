@@ -10,7 +10,18 @@ private _bridge = [] call comspec_atak_native_fnc_bridge;
 // Connexion par COMSPEC Link (requêtes HTTP bloquantes de la DLL) : relancée dans un spawn pour que extAwait passe
 // en Async, sinon le jeu fige pendant chaque tentative. Le redessin final reste en fin de script.
 if (_bridge && {!canSuspend} && {_action in ["password", "otp_ask", "otp_ok", "pair"]}) exitWith {
-    [_action] spawn comspec_atak_native_fnc_athenaAction;
+    // Une seule requête à la fois : un deuxième clic pendant l'appel HTTP renverrait un code OTP ou écraserait la réponse.
+    if (missionNamespace getVariable ["COMSPEC_ATAK_AthenaBusy", false]) exitWith {
+        uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", ["Patientez quelques secondes.", true, diag_tickTime]];
+        [{ private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_p in ["ATHENA", "NETWORK"]) then { [_p] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+        true
+    };
+    missionNamespace setVariable ["COMSPEC_ATAK_AthenaBusy", true];
+    [_action] spawn {
+        params ["_a"];
+        [_a] call comspec_atak_native_fnc_athenaAction;
+        missionNamespace setVariable ["COMSPEC_ATAK_AthenaBusy", false];
+    };
     true
 };
 private _ext = { params ["_cmd", ["_args", []]]; if (_bridge) then { private _r = ["COMSPECExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait; if (_r isEqualType []) then { _r select 0 } else { _r } } else { [_cmd, _args] call comspec_atak_native_fnc_extensionCall } };

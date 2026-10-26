@@ -18,6 +18,7 @@
       oneShot    données effacées après le premier téléchargement complet
       files      [[nom, type, contenu, taille Ko]...] ou texte (fn_dataParseFiles)
       code       code SQF exécuté sur le serveur en fin de téléchargement, params ["_object", "_player", "_files"]
+                 (gardé sur le serveur seul, variable locale COMSPEC_ATAK_DataCode ; jamais diffusé)
     Variable publique de l'objet : COMSPEC_ATAK_Data (paires). État tenu par le serveur : COMSPEC_ATAK_DataTries,
     COMSPEC_ATAK_DataLocked, COMSPEC_ATAK_DataWiped, COMSPEC_ATAK_DataTaken.
 */
@@ -67,7 +68,18 @@ if !((_out get "onFail") in ["lock", "wipe", "alarm", "none"]) then { _out set [
 if !((_out get "alarm") in ["none", "connect", "fail", "download"]) then { _out set ["alarm", "none"]; };
 if ((_out get "name") isEqualTo "") then { _out set ["name", getText (configOf _obj >> "displayName")]; };
 if ((_out get "name") isEqualTo "") then { _out set ["name", "Support numérique"]; };
+// Code de fin : jamais dans la variable publique (tout client peut la réécrire) ; gardé sur le serveur seul.
+private _codeSet = "code" in _cfg;
+private _code = _out getOrDefault ["code", ""];
+if !(_code isEqualType "") then { _code = ""; };
+_out deleteAt "code";
 _obj setVariable ["COMSPEC_ATAK_Data", (keys _out) apply { [_x, _out get _x] }, true];
+if (isServer) then {
+    if (_codeSet || {!_merge}) then { _obj setVariable ["COMSPEC_ATAK_DataCode", _code]; };
+} else {
+    // Module Zeus (curateur) : le serveur vérifie l'émetteur du remoteExec avant de garder le code.
+    if (_codeSet || {!_merge}) then { ["code", _obj, player, _code] remoteExecCall ["comspec_atak_native_fnc_dataServer", 2]; };
+};
 if (!_merge) then {
     _obj setVariable ["COMSPEC_ATAK_DataTries", 0, true];
     _obj setVariable ["COMSPEC_ATAK_DataLocked", false, true];

@@ -133,16 +133,16 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         if (!_txt) then { continue };
         // Étiquette : nom (gras), puis « portée · débit · places » ou la raison de la panne.
         private _lp = _p getPos [_r * 2.4, 90];
-        _map drawIcon [_none, [1, 1, 1, [0.75, 1] select _ok], _lp, 0, 0, 0, _name + (["", "  (utilisé)"] select _use), 2, 0.026 * _ts, _fontB, "right"];
+        _map drawIcon [_none, [1, 1, 1, [0.75, 1] select _ok], _lp, 0, 0, 0, _name + (["", "  " + ("(utilisé)" call comspec_atak_native_fnc_tr)] select _use), 2, 0.026 * _ts, _fontB, "right"];
         private _sub = if (_ok) then {
             private _e = format ["%1 km · %2 Mbit/s", (_rng / 1000) toFixed 1, _mb toFixed 1];
             if (_sl > 0) then { _e = _e + format [" · %1/%2", _u, _sl]; };
-            if (_bt >= 0) then { _e = _e + format [" · batt. %1 %%", round _bt]; };
-            _e = _e + format [" · %1 MHz · perte %2 %%", _fq, _loss];
+            if (_bt >= 0) then { _e = _e + " · " + format [("batterie %1 %%") call comspec_atak_native_fnc_tr, round _bt]; };
+            _e = _e + format [" · %1 MHz · ", _fq] + format [("perte %1 %%") call comspec_atak_native_fnc_tr, _loss];
             if (_co > 0) then { _e = _e + " · " + ("canal partagé" call comspec_atak_native_fnc_tr); };
             if (_hl in ["dégradé", "critique"]) then { _e = _e + " · " + (_hl call comspec_atak_native_fnc_tr); };
             _e
-        } else { _st };
+        } else { _st call comspec_atak_native_fnc_tr };
         _map drawIcon [_none, [_col select 0, _col select 1, _col select 2, 0.95], [_lp, 1] call _below, 0, 0, 0, _sub, 2, 0.022 * _ts, _font, "right"];
     } forEach (["list"] call comspec_atak_native_fnc_relayNet);
 };
@@ -162,6 +162,6 @@ private _now = [time, serverTime] select isMultiplayer;
         _map drawEllipse [_est, _rad, _rad, 0, [1, 0.55, 0.1, _al], ""];
         _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa", [1, 0.55, 0.1, _al], _est, 20, 20, 0, format ["%1 ± %2 m", _name, _rad], 1, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     } else {
-        _map drawIcon [_none, [1, 0.75, 0.2, _al], (_src select 0) select 0, 0, 0, 0, format ["%1 : cercle %2 m", _name, round ((_src select 0) select 1)], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+        _map drawIcon [_none, [1, 0.75, 0.2, _al], (_src select 0) select 0, 0, 0, 0, format [("%1 : cercle %2 m") call comspec_atak_native_fnc_tr, _name, round ((_src select 0) select 1)], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Trilat", []]);

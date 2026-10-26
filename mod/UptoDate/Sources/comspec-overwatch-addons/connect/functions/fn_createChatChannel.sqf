@@ -4,11 +4,12 @@
 */
 params [["_label", "", [""]]];
 if (!hasInterface) exitWith { false };
-// Requête HTTP Athena : contexte suspendable requis (extAwait) pour ne pas figer le jeu.
-if (!canSuspend) exitWith { _this spawn comspec_overwatch_connect_fnc_createChatChannel; true };
 _label = trim _label;
 if (_label isEqualTo "") exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+// Requête HTTP Athena : contexte suspendable requis (extAwait) pour ne pas figer le jeu.
+// Contrôles synchrones faits avant : true ici = requête envoyée (résultat annoncé par la suite).
+if (!canSuspend) exitWith { [_label] spawn comspec_overwatch_connect_fnc_createChatChannel; true };
 
 private _cs = "";
 if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {

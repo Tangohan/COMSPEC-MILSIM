@@ -207,6 +207,7 @@ public static partial class Extension
                 _ = Task.Run(async () =>
                 {
                     var ok = false;
+                    string? claimed = null;
                     try
                     {
                         // Le moteur écrit l'image en fin d'image (PNG de 15 à 25 Mo) : jusqu'à 30 s pour la voir, stable.
@@ -215,6 +216,36 @@ public static partial class Extension
                         while (DateTime.UtcNow < until)
                         {
                             src ??= MapCapFind(file);
+                            // Fichier réservé (MapCapQueued) : MapCap.Scan ne le range pas en parallèle. Déjà pris par
+                            // Scan : on attend qu'il finisse ; s'il l'a rangé, la tuile est faite.
+                            if (src != null && claimed == null)
+                            {
+                                if (!MapCapQueued.TryAdd(src, 0))
+                                {
+                                    await Task.Delay(400).ConfigureAwait(false);
+                                    if (File.Exists(src)) continue; // encore là : nouvel essai de réservation
+                                }
+                                else claimed = src;
+                            }
+                            if (src != null && !File.Exists(src))
+                            {
+                                // Rangé par Scan entre-temps : la tuile est faite si la cible existe.
+                                var dst = MapCapTarget(world, mode, h, file);
+                                ok = File.Exists(Path.ChangeExtension(dst, ".jpg")) || File.Exists(dst);
+                                if (ok && grid.Length > 0)
+                                    File.WriteAllText(Path.ChangeExtension(dst, ".grid.txt"), grid);
+                                if (ok) break;
+                                // Scan le range encore (fichier déjà déplacé, JPEG pas encore écrit) : attente.
+                                if (claimed == null && MapCapQueued.ContainsKey(src))
+                                {
+                                    await Task.Delay(400).ConfigureAwait(false);
+                                    continue;
+                                }
+                                src = null;
+                                if (claimed != null) { MapCapQueued.TryRemove(claimed, out _); claimed = null; }
+                                await Task.Delay(400).ConfigureAwait(false);
+                                continue;
+                            }
                             if (src != null && await WaitFileStableAsync(src, TimeSpan.FromSeconds(4)).ConfigureAwait(false))
                             {
                                 var fi = new FileInfo(src);
@@ -232,6 +263,7 @@ public static partial class Extension
                     catch { ok = false; }
                     finally
                     {
+                        if (claimed != null) MapCapQueued.TryRemove(claimed, out _);
                         (ok ? MapCapDone : MapCapFailed).Enqueue(id);
                         Interlocked.Decrement(ref _mapCapPending);
                     }
@@ -275,7 +307,13 @@ public static partial class Extension
                     set.Add(gx * 10000 + gy);
                     // Tuile restée dans Screenshots (ancienne capture, ou triée à la main) : rangée (corrigée et compressée)
                     // en tâche de fond, sans bloquer le jeu ; le dossier se vide.
-                    if (fromShots && MapCapQueued.TryAdd(path, 0))
+                    // Fichier modifié il y a moins de 10 s : le moteur l'écrit peut-être encore (MapCap.Collect le prendra).
+                    var fresh = false;
+                    if (fromShots)
+                    {
+                        try { fresh = DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < TimeSpan.FromSeconds(10); } catch { fresh = true; }
+                    }
+                    if (fromShots && !fresh && MapCapQueued.TryAdd(path, 0))
                     {
                         _ = Task.Run(async () =>
                         {

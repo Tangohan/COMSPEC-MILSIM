@@ -95,6 +95,24 @@ switch (_tab) do {
             ["Guide SSE" call _tr, ["guide"] call _act],
             ["Journal technique" call _tr, ["techlog"] call _act]
         ]];
+        // Journal technique affiché dans l'app (bouton bascule) : une notification n'était pas vue, le téléphone se fermait.
+        if (_st getOrDefault ["techlog", false]) then {
+            private _log = [] call comspec_sse_fnc_getLog;
+            if !(_log isEqualType []) then { _log = []; };
+            _rows pushBack ["section", "Journal technique" call _tr, format ["%1 entrée(s)" call _tr, count _log]];
+            if (_log isEqualTo []) then {
+                _rows pushBack ["text", format ["<t color='#8b98a7'>%1</t>", "Journal SSE vide." call _tr]];
+            };
+            // Copie des 20 dernières lignes, la plus récente en tête.
+            private _lastLog = _log select [((count _log) - 20) max 0, 20];
+            reverse _lastLog;
+            {
+                if (_x isEqualType createHashMap) then {
+                    _rows pushBack ["text", format ["<t size='0.8'>%1</t>", [format ["%1 [%2] %3",
+                        _x getOrDefault ["clock", "?"], _x getOrDefault ["level", "INFO"], _x getOrDefault ["message", ""]]] call _esc]];
+                };
+            } forEach _lastLog;
+        };
         if (!isNil "comspec_sse_fnc_campaignInfo") then {
             _rows pushBack ["section", "Campagne" call _tr, ""];
             _rows pushBack ["text", ([] call comspec_sse_fnc_campaignInfo) call _tr];
@@ -144,7 +162,8 @@ switch (_tab) do {
         _rows pushBack ["buttons", [
             ["Transmettre à Athena" call _tr, ["transmit"] call _act],
             ["Fiche FRS" call _tr, ["frs"] call _act],
-            ["Marquer exploité" call _tr, ["exploited"] call _act, false, _state isNotEqualTo "EXPLOITED"]
+            // Actif seulement avant EXPLOITED : l'état ne recule pas (setState monotone), le marquage serait ignoré.
+            ["Marquer exploité" call _tr, ["exploited"] call _act, false, !(_state in ["EXPLOITED", "COLLECTED", "TRANSMITTED"])]
         ]];
 
         // Résultat du dernier geste sur cette cible (approfondir, chronologie).

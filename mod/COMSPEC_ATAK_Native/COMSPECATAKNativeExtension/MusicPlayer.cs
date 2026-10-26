@@ -38,11 +38,14 @@ public static partial class Extension
     {
         var handler = new SocketsHttpHandler
         {
-            MaxAutomaticRedirections = 5,
+            // Redirections suivies à la main (MusicSendAsync) : chaque cible est contrôlée avant la requête, même quand
+            // un proxy système fait la connexion (le contrôle ci-dessous ne voit alors que le proxy).
+            AllowAutoRedirect = false,
             ConnectCallback = async (ctx, ct) =>
             {
                 var target = ctx.InitialRequestMessage.RequestUri;
-                // Proxy système : la connexion part vers le proxy choisi par le joueur, l'hôte cible a été vérifié avant.
+                // Proxy système : la connexion part vers le proxy choisi par le joueur, l'hôte cible (et chaque
+                // redirection, MusicSendAsync) a été vérifié avant.
                 // Forme comparée : punycode et IPv6 sans crochets ("[::1]" vs "::1"), sinon une redirection vers une IP
                 // littérale IPv6 ou un nom IDN passerait pour un proxy et échapperait au contrôle.
                 var connHost = ctx.DnsEndPoint.Host.Trim('[', ']');
@@ -114,6 +117,28 @@ public static partial class Extension
             : await System.Net.Dns.GetHostAddressesAsync(uri.IdnHost).ConfigureAwait(false);
         if (addrs.Length == 0 || addrs.Any(MusicIsPrivateAddress))
             throw new InvalidOperationException("adresse locale ou privée refusée");
+    }
+
+    /// <summary>
+    /// GET sur MusicHttp en suivant les redirections (5 au plus) : chaque cible passe par MusicCheckHostAsync avant
+    /// d'être demandée. Comme le suivi automatique : pas de passage https -> http ni vers un autre schéma (la réponse 3xx
+    /// est alors renvoyée telle quelle et EnsureSuccessStatusCode échoue).
+    /// </summary>
+    private static async Task<HttpResponseMessage> MusicSendAsync(Uri uri, CancellationToken ct = default)
+    {
+        var current = uri;
+        for (var hop = 0; ; hop++)
+        {
+            var resp = await MusicHttp.SendAsync(new HttpRequestMessage(HttpMethod.Get, current), HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+            var code = (int)resp.StatusCode;
+            var loc = resp.Headers.Location;
+            if (hop >= 5 || loc == null || (code != 301 && code != 302 && code != 303 && code != 307 && code != 308)) return resp;
+            var next = loc.IsAbsoluteUri ? loc : new Uri(current, loc);
+            if ((next.Scheme != "http" && next.Scheme != "https") || (current.Scheme == "https" && next.Scheme == "http")) return resp;
+            resp.Dispose();
+            await MusicCheckHostAsync(next).ConfigureAwait(false);
+            current = next;
+        }
     }
     private static readonly BlockingCollection<Action> MusicQueue = new();
     private static Thread? _musicThread;
@@ -346,6 +371,8 @@ public static partial class Extension
             {
                 var dir = MusicFolder();
                 var sb = new StringBuilder("OK|").Append(dir);
+                // Output coupe à MaxOutputBytes octets UTF-8 (accents, CJK : jusqu'à 3 octets par caractère).
+                var bytes = Encoding.UTF8.GetByteCount(sb.ToString());
                 try
                 {
                     var files = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories)
@@ -355,7 +382,9 @@ public static partial class Extension
                         .Take(300);
                     foreach (var f in files)
                     {
-                        if (sb.Length + f.Length + 1 > MaxOutputBytes - 100) break;
+                        var fb = Encoding.UTF8.GetByteCount(f) + 1;
+                        if (bytes + fb > MaxOutputBytes - 100) break;
+                        bytes += fb;
                         sb.Append('|').Append(f);
                     }
                 }
@@ -464,8 +493,7 @@ public static partial class Extension
 
         await MusicCheckHostAsync(uri).ConfigureAwait(false);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
-        using var req = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var resp = await MusicHttp.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+        using var resp = await MusicSendAsync(uri, cts.Token).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var type = resp.Content.Headers.ContentType?.MediaType ?? "";
         if (type.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
@@ -481,22 +509,33 @@ public static partial class Extension
         }
         if (len > MusicMaxDownloadBytes) throw new InvalidOperationException("fichier trop lourd (80 Mo max)");
 
-        var tmp = target + ".part";
-        await using (var src = await resp.Content.ReadAsStreamAsync(cts.Token).ConfigureAwait(false))
-        await using (var dst = File.Create(tmp))
+        // Nom propre à cette demande : deux lectures du même morceau (double appui, nouvel essai) ne se disputent pas
+        // le même fichier ; la dernière arrivée remplace l'autre (File.Move écrase).
+        var tmp = target + "." + gen.ToString(CultureInfo.InvariantCulture) + "." + Environment.TickCount64.ToString(CultureInfo.InvariantCulture) + ".part";
+        try
         {
-            // Taille annoncée absente ou fausse : plafond aussi pendant la copie.
-            var buf = new byte[81920];
-            long total = 0;
-            int n;
-            while ((n = await src.ReadAsync(buf, cts.Token).ConfigureAwait(false)) > 0)
+            await using (var src = await resp.Content.ReadAsStreamAsync(cts.Token).ConfigureAwait(false))
+            await using (var dst = File.Create(tmp))
             {
-                total += n;
-                if (total > MusicMaxDownloadBytes) throw new InvalidOperationException("fichier trop lourd (80 Mo max)");
-                await dst.WriteAsync(buf.AsMemory(0, n), cts.Token).ConfigureAwait(false);
+                // Taille annoncée absente ou fausse : plafond aussi pendant la copie.
+                var buf = new byte[81920];
+                long total = 0;
+                int n;
+                while ((n = await src.ReadAsync(buf, cts.Token).ConfigureAwait(false)) > 0)
+                {
+                    total += n;
+                    if (total > MusicMaxDownloadBytes) throw new InvalidOperationException("fichier trop lourd (80 Mo max)");
+                    await dst.WriteAsync(buf.AsMemory(0, n), cts.Token).ConfigureAwait(false);
+                }
             }
+            File.Move(tmp, target, true);
         }
-        File.Move(tmp, target, true);
+        catch
+        {
+            // Plafond dépassé, délai, coupure : pas de fichier partiel laissé dans %TEMP%.
+            try { File.Delete(tmp); } catch { /* encore ouvert */ }
+            throw;
+        }
         MusicTrimCache(cache);
         return target;
     }
@@ -565,8 +604,7 @@ public static partial class Extension
                 }
                 var parts = head.ToString().Split("\r\n")[0].Split(' ');
                 if (parts.Length < 2 || !parts[1].StartsWith("/" + token, StringComparison.Ordinal)) return;
-                using var req = new HttpRequestMessage(HttpMethod.Get, remote);
-                using var resp = await MusicHttp.SendAsync(req, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                using var resp = await MusicSendAsync(remote).ConfigureAwait(false);
                 var type = resp.Content.Headers.ContentType?.MediaType ?? "audio/mpeg";
                 if (!resp.IsSuccessStatusCode || type.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
                 {
@@ -591,6 +629,12 @@ public static partial class Extension
         {
             // Les morceaux de la bibliothèque Athena (réécoutés souvent) ont leur propre quota.
             var all = new DirectoryInfo(cache).GetFiles();
+            // Fichiers partiels (.part) : hors quota ; ceux de plus d'une heure (téléchargement interrompu, jeu fermé) sont effacés.
+            foreach (var p in all.Where(f => f.Name.EndsWith(".part", StringComparison.Ordinal) && f.LastWriteTimeUtc < DateTime.UtcNow.AddHours(-1)))
+            {
+                try { p.Delete(); } catch { /* en cours d'écriture */ }
+            }
+            all = all.Where(f => !f.Name.EndsWith(".part", StringComparison.Ordinal)).ToArray();
             var files = all.Where(f => !f.Name.StartsWith("lib_", StringComparison.Ordinal)).OrderByDescending(f => f.LastWriteTimeUtc).Skip(25)
                 .Concat(all.Where(f => f.Name.StartsWith("lib_", StringComparison.Ordinal)).OrderByDescending(f => f.LastWriteTimeUtc).Skip(60));
             foreach (var f in files) { try { f.Delete(); } catch { /* fichier en lecture */ } }

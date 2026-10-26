@@ -119,6 +119,8 @@ switch (_action) do {
         ["Lignes 1 à 3 remplies."] call _say;
     };
     case "send9": {
+        // 9-line déjà en vol vers Athena : on le dit, et la géométrie JTAC (servie une fois) reste pour le prochain envoi.
+        if (_bridge && {missionNamespace getVariable ["COMSPEC_ATAK_Fires9Busy", false]}) exitWith { ["Envoi en cours…", true] call _say; };
         private _lines = ["n1","n2","n3","n4","n5","n6","n7","n8","n9"] apply { trim (_f getOrDefault [_x, ""]) };
         if ((_lines select 5) isEqualTo "" || {(_lines select 4) isEqualTo ""}) exitWith { ["Lignes 5 (description) et 6 (position) obligatoires.", true] call _say; };
         private _rem = trim (_f getOrDefault ["nr", ""]);
@@ -144,7 +146,6 @@ switch (_action) do {
         };
         if (!_bridge) exitWith { [false] call _finish; };
         // DLL à jour : vrai 9-line sur Athena (pilotes et web). POST HTTP hors de l'image (extAwait en Async), sinon le jeu fige.
-        if (missionNamespace getVariable ["COMSPEC_ATAK_Fires9Busy", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_Fires9Busy", true];
         [_json, _text, _lines, _f, _bridge, _order, _say, _time, _render, _finish] spawn {
             params ["_json", "_text", "_lines", "_f", "_bridge", "_order", "_say", "_time", "_render", "_finish"];

@@ -21,7 +21,7 @@
       "delete"  [id]
       "export"  [id]          → texte envoyé au demandeur (presse-papiers)
       "import"  [texte, nouvel id]
-      "bind"    [unité]       personnage récurrent apparu : identité et appartenance
+      "bind"    [unité, sans diffusion]  personnage récurrent apparu : identité et appartenance
       "publish" []            diffuse l'état (comspec_sse_campaign, comspec_sse_campIndex)
 */
 params [["_op", "", [""]], ["_args", [], [[]]], ["_req", objNull, [objNull]]];
@@ -33,13 +33,14 @@ if (isRemoteExecuted && {remoteExecutedOwner != 2}) then {
     private _ro = remoteExecutedOwner;
     _req = (allPlayers select { owner _x == _ro }) param [0, objNull];
 };
-if (isRemoteExecuted && {remoteExecutedOwner != 2} && {isNull _req} && {_op isNotEqualTo "publish"}) exitWith {
+if (isRemoteExecuted && {remoteExecutedOwner != 2} && {isNull _req}) exitWith {
     diag_log text format ["[COMSPEC SSE] Campagne : « %1 » refusé au poste %2 (demandeur introuvable).", _op, remoteExecutedOwner];
     false
 };
-// Demande venue d'un client (appel distant, demandeur retrouvé ci-dessus) : Zeus ou administrateur seulement, sauf la diffusion
-// de l'état. Les appels du serveur lui-même (modules Eden, fin de mission, hôte) n'ont pas de demandeur.
-if (!isNull _req && {_op isNotEqualTo "publish"} && {!([_req] call comspec_sse_fnc_isAuthority)}) exitWith {
+// Demande venue d'un client (appel distant, demandeur retrouvé ci-dessus) : Zeus ou administrateur seulement, diffusion
+// comprise (le serveur diffuse déjà au postInit et après chaque opération ; un client ne force pas de rediffusion JIP).
+// Les appels du serveur lui-même (modules Eden, fin de mission, hôte) n'ont pas de demandeur.
+if (!isNull _req && {!([_req] call comspec_sse_fnc_isAuthority)}) exitWith {
     diag_log text format ["[COMSPEC SSE] Campagne : « %1 » refusé à %2 (ni Zeus ni administrateur).", _op, name _req];
     ["comspec_sse_campNote", ["action réservée au Zeus ou à l'administrateur."], _req] call CBA_fnc_targetEvent;
     false
@@ -159,7 +160,9 @@ switch (_op) do {
         call _publish;
         // Personnages déjà présents : identité et appartenance rattachées ; les
         // appartenances saisies dans Eden s'ajoutent (sans rien faire oublier).
-        { ["bind", [_x]] call comspec_sse_fnc_campaignOp; } forEach (allUnits + allDeadMen);
+        // Une seule diffusion des appartenances et rencontres après la boucle, pas une par personnage.
+        { ["bind", [_x, true]] call comspec_sse_fnc_campaignOp; } forEach (allUnits + allDeadMen);
+        { publicVariable _x; } forEach ["comspec_sse_orgMembers", "comspec_sse_anaSeen"];
         if (!isNil "comspec_sse_fnc_orgApplyEden") then { [] call comspec_sse_fnc_orgApplyEden; };
         ["comspec_sse_anaChanged", []] call CBA_fnc_globalEvent;
 
@@ -319,7 +322,7 @@ switch (_op) do {
     };
 
     case "bind": {
-        _args params [["_u", objNull, [objNull]]];
+        _args params [["_u", objNull, [objNull]], ["_quiet", false, [false]]];
         if (isNull _u || {!(_u isKindOf "CAManBase")}) exitWith { false };
         private _k = [_u] call comspec_sse_fnc_bioPersonKey;
         if !([_k] call _stable) exitWith { false };
@@ -334,11 +337,11 @@ switch (_op) do {
         if (count _m > 0) then {
             _m set ["netId", netId _u];
             _u setVariable ["COMSPEC_SSE_Org", [_m get "org", _m get "role"], true];
-            publicVariable "comspec_sse_orgMembers";
+            if (!_quiet) then { publicVariable "comspec_sse_orgMembers"; };
         };
         if (_k in (missionNamespace getVariable ["comspec_sse_anaSeen", createHashMap])) then {
             comspec_sse_anaSeen set [_k, netId _u];
-            publicVariable "comspec_sse_anaSeen";
+            if (!_quiet) then { publicVariable "comspec_sse_anaSeen"; };
         };
         true
     };

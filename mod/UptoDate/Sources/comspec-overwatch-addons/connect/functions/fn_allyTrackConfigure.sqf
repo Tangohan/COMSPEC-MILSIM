@@ -63,6 +63,20 @@ private _apply = {
             if (!(_list isEqualType [])) then { _list = []; };
             if (_enabled) then { _list pushBackUnique _x; } else { _list = _list - [_x]; };
             missionNamespace setVariable ["COMSPEC_AllyTrackUnits", _list, false];
+            // Copie locale (non publique) avant le premier rapport : les variables publiques du serveur
+            // ne sont pas encore revenues, sinon le premier envoi et le message Zeus prennent le libellé de repli.
+            _x setVariable ["COMSPEC_AllyTrack", _enabled, false];
+            if (_enabled) then {
+                if (!isNil "_callsign" && {_callsign isEqualType ""}) then {
+                    private _csL = trim _callsign;
+                    if ((toLower _csL) regexMatch "^ally-[0-9]+-[0-9]+(-[0-9]+)*$") then { _csL = ""; };
+                    _x setVariable ["COMSPEC_AllyCallsign", _csL, false];
+                };
+                private _idL = _x getVariable ["COMSPEC_AllyTrackId", ""];
+                if (!(_idL isEqualType "") || {(toLower (trim _idL)) find "ally-" != 0}) then {
+                    _x setVariable ["COMSPEC_AllyTrackId", format ["ALLY-%1", ((netId _x) splitString ":") joinString "-"], false];
+                };
+            };
         };
         if (_enabled) then {
             _x setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];

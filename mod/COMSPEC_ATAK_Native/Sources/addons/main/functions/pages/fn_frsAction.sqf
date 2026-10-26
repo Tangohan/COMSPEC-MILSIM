@@ -70,7 +70,7 @@ switch (_act) do {
     case "full": { [{ [] call comspec_atak_native_fnc_modeToggle; }] call CBA_fnc_execNextFrame; };
     case "send": {
         // POST HTTP hors de l'image (extAwait en Async dans un spawn), sinon le jeu fige ; un seul envoi à la fois.
-        if (missionNamespace getVariable ["COMSPEC_ATAK_FrsSending", false]) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_ATAK_FrsSending", false]) exitWith { ["INFO", "Envoi en cours…", 3, 20] call comspec_atak_native_fnc_notify; };
         missionNamespace setVariable ["COMSPEC_ATAK_FrsSending", true];
         [] spawn { [] call comspec_atak_native_fnc_frsSubmit; missionNamespace setVariable ["COMSPEC_ATAK_FrsSending", false]; };
     };

@@ -6,7 +6,7 @@
       COMSPEC_ATAK_CamSide  camp du poseur (str side), seul ce camp la voit dans le téléphone
       COMSPEC_ATAK_CamName  nom (CAM-1, CAM-2... ou renommée)
       COMSPEC_ATAK_CamOwner nom du poseur ; COMSPEC_ATAK_CamGroup indicatif de son groupe
-    Registre partagé : missionNamespace COMSPEC_ATAK_Cams (objets, publié à chaque pose / récupération).
+    Registre partagé : missionNamespace COMSPEC_ATAK_Cams (objets), tenu et publié par le serveur seul (["srvReg", obj, ajout]).
     Détruite (dégâts, explosion, véhicule porteur détruit) : hors service, se retire sans rendre l'item.
 
     Modes :
@@ -95,7 +95,7 @@ switch (_mode) do {
         (_res select 0) params ["_pos", "_n", ["_obj", objNull], ["_parent", objNull]];
         private _hit = [_pos, _n, [_parent, _obj] select (isNull _parent)];
         if (isNil "ace_common_fnc_progressBar") exitWith { ["placeNow", _hit] call _fn };
-        [3, [_hit], { ["placeNow", (_this select 0) select 0] call comspec_atak_native_fnc_camAction; }, {}, "Pose de la caméra…"] call ace_common_fnc_progressBar;
+        [3, [_hit], { ["placeNow", (_this select 0) select 0] call comspec_atak_native_fnc_camAction; }, {}, ("Pose de la caméra…") call comspec_atak_native_fnc_tr] call ace_common_fnc_progressBar;
         true
     };
     case "placeNow": {
@@ -136,10 +136,11 @@ switch (_mode) do {
         _cam setVariable ["COMSPEC_ATAK_CamGroup", groupId group player, true];
         // Explosion proche : hors service, même si l'objet tient encore debout.
         _cam addEventHandler ["Explosion", { params ["_c", "_dmg"]; if (_dmg > 0.05) then { _c setVariable ["COMSPEC_ATAK_CamDead", true, true]; }; }];
+        // Copie locale immédiate ; le serveur seul tient et publie le registre (pas d'écrasement entre deux poses).
         private _all = (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x };
         _all pushBackUnique _cam;
-        missionNamespace setVariable ["COMSPEC_ATAK_Cams", _all, true];
-        { [_x, [[_cam], true]] remoteExec ["addCuratorEditableObjects", 2]; } forEach allCurators;
+        missionNamespace setVariable ["COMSPEC_ATAK_Cams", _all];
+        ["srvReg", _cam, true] remoteExecCall ["comspec_atak_native_fnc_camAction", 2];
         playSound "ClickSoft";
         ["SUCCESS", format ["%1 posée%2 : app Vidéo live > Caméras fixes", _name, ["", format [" sur %1", getText (configOf _o >> "displayName")]] select _onVeh], 4, 30] call comspec_atak_native_fnc_notify;
         _cam
@@ -147,14 +148,15 @@ switch (_mode) do {
     case "pickup": {
         if (isNull _a) exitWith { false };
         if (isNil "ace_common_fnc_progressBar") exitWith { ["pickupNow", _a] call _fn };
-        [2, [_a], { ["pickupNow", (_this select 0) select 0] call comspec_atak_native_fnc_camAction; }, {}, "Récupération de la caméra…"] call ace_common_fnc_progressBar;
+        [2, [_a], { ["pickupNow", (_this select 0) select 0] call comspec_atak_native_fnc_camAction; }, {}, ("Récupération de la caméra…") call comspec_atak_native_fnc_tr] call ace_common_fnc_progressBar;
         true
     };
     case "pickupNow": {
         if (isNull _a) exitWith { false };
         private _dead = ["dead", _a] call _fn;
         private _name = _a getVariable ["COMSPEC_ATAK_CamName", "Caméra"];
-        missionNamespace setVariable ["COMSPEC_ATAK_Cams", (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];
+        missionNamespace setVariable ["COMSPEC_ATAK_Cams", (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _a} }];
+        ["srvReg", _a, false] remoteExecCall ["comspec_atak_native_fnc_camAction", 2];
         deleteVehicle _a;
         if (_dead) exitWith { ["INFO", format ["%1 détruite retirée", _name], 3, 20] call comspec_atak_native_fnc_notify; true };
         if (player canAdd CAM_ITEM) then {
@@ -164,6 +166,23 @@ switch (_mode) do {
             _gh addItemCargoGlobal [CAM_ITEM, 1];
         };
         ["INFO", format ["%1 récupérée%2", _name, ["", " (inventaire plein : posée au sol)"] select !(CAM_ITEM in (items player))], 3, 20] call comspec_atak_native_fnc_notify;
+        true
+    };
+    // Serveur : registre COMSPEC_ATAK_Cams tenu et publié par lui seul (objets supprimés retirés au passage). Pose :
+    // objet rendu éditable par Zeus, et événement Explosion ajouté ici aussi (il ne joue que là où l'objet est local :
+    // le serveur reprend la caméra au départ du poseur).
+    case "srvReg": {
+        if (!isServer) exitWith { false };
+        private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _a} };
+        if (_b isEqualTo true && {!isNull _a} && {(typeOf _a) isEqualTo CAM_CLASS}) then {
+            _list pushBack _a;
+            if (isNil { _a getVariable "COMSPEC_ATAK_CamSrvEh" }) then {
+                _a setVariable ["COMSPEC_ATAK_CamSrvEh", true];
+                _a addEventHandler ["Explosion", { params ["_c", "_dmg"]; if (_dmg > 0.05) then { _c setVariable ["COMSPEC_ATAK_CamDead", true, true]; }; }];
+                { _x addCuratorEditableObjects [[_a], true]; } forEach allCurators;
+            };
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_Cams", _list, true];
         true
     };
     case "rotate": {

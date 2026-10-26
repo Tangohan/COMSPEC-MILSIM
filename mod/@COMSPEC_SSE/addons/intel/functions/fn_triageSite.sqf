@@ -72,5 +72,7 @@ private _results = [];
 // Tri décroissant par valeur
 _results = [_results, [], { -(_x getOrDefault ["INTEL_VALUE", 0]) }, "ASCEND"] call BIS_fnc_sortBy;
 
-["SSE_TriageDone", [_pos, _results]] call comspec_sse_fnc_emitEvent;
+// Événement local seulement (même signature qu'emitEvent) : le triage est relancé à chaque rafraîchissement de
+// l'onglet SITE, et diffuser tout le tableau de résultats à chaque machine chargeait le réseau pour rien.
+["comspec_sse_triageDone", [_pos, _results, clientOwner]] call CBA_fnc_localEvent;
 _results

@@ -32,13 +32,38 @@ private _rgbaOf = {
     +_c
 };
 private _mpx = ["mpx", _map] call comspec_atak_native_fnc_planGfx;
+// Rectangle visible (marge de 30 px pour l'épaisseur et la flèche) : traits hors de la vue sautés.
+(ctrlPosition _map) params ["_vcx", "_vcy", "_vcw", "_vch"];
+private _vtl = _map ctrlMapScreenToWorld [_vcx, _vcy];
+private _vbr = _map ctrlMapScreenToWorld [_vcx + _vcw, _vcy + _vch];
+private _vmg = 30 * _mpx;
+private _vx0 = ((_vtl select 0) min (_vbr select 0)) - _vmg;
+private _vx1 = ((_vtl select 0) max (_vbr select 0)) + _vmg;
+private _vy0 = ((_vtl select 1) min (_vbr select 1)) - _vmg;
+private _vy1 = ((_vtl select 1) max (_vbr select 1)) + _vmg;
+// Points et boîte englobante de chaque trait gardés tant que sa polyligne ne change pas (avant : liste refaite à chaque image).
+private _geo = uiNamespace getVariable ["COMSPEC_ATAK_SkGeo", createHashMap];
+if ((count _geo) > 400) then { _geo = createHashMap; };
+uiNamespace setVariable ["COMSPEC_ATAK_SkGeo", _geo];
 {
     _x params ["_m", "_st"];
     if ((markerShape _m) isEqualTo "" || {(markerAlpha _m) <= 0}) then { continue };
     _st params [["_w", 2], ["_arrow", false]];
     private _flat = markerPolyline _m;
-    private _pts = [];
-    for "_i" from 0 to ((count _flat) - 2) step 2 do { _pts pushBack [_flat select _i, _flat select (_i + 1), 0]; };
+    private _g = _geo getOrDefault [_m, []];
+    if ((_g param [0, []]) isNotEqualTo _flat) then {
+        private _pts = [];
+        private _bx0 = 1e9; private _bx1 = -1e9; private _by0 = 1e9; private _by1 = -1e9;
+        for "_i" from 0 to ((count _flat) - 2) step 2 do {
+            private _px = _flat select _i; private _py = _flat select (_i + 1);
+            _pts pushBack [_px, _py, 0];
+            _bx0 = _bx0 min _px; _bx1 = _bx1 max _px; _by0 = _by0 min _py; _by1 = _by1 max _py;
+        };
+        _g = [_flat, _pts, [_bx0, _bx1, _by0, _by1]];
+        _geo set [_m, _g];
+    };
+    _g params ["", "_pts", "_bb"];
+    if ((_bb select 1) < _vx0 || {(_bb select 0) > _vx1} || {(_bb select 3) < _vy0} || {(_bb select 2) > _vy1}) then { continue };
     private _c = [markerColor _m] call _rgbaOf;
     _c set [3, (_c select 3) * (markerAlpha _m)];
     ["line", _map, [_pts, _c, (_w max 1 min 3) * 1.3, false, _arrow, false, _mpx]] call comspec_atak_native_fnc_planGfx;

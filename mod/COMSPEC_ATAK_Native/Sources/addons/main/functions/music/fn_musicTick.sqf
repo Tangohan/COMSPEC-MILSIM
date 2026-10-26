@@ -77,12 +77,16 @@ if (_key isNotEqualTo "") then {
     private _spkOn = (_pub isNotEqualTo []);
     _tgt = [_key, _m get "kind", _m get "ref", _m get "start", if (_spkOn) then { _m getOrDefault ["spkVol", 70] } else { _m get "vol" }];
 } else {
-    if (_enabled && {alive player} && {_m get "hear"}) then {
+    // Réglages du serveur revérifiés côté auditeur : la variable COMSPEC_ATAK_Spk est publiée par le client qui joue.
+    if (_enabled && {alive player} && {_m get "hear"} && {missionNamespace getVariable ["comspec_atak_native_music_speaker", true]}) then {
         private _best = 0;
         private _veh = vehicle player;
+        private _kinds = ["srv", "file"];
+        if (missionNamespace getVariable ["comspec_atak_native_music_urls", true]) then { _kinds pushBack "url"; };
+        if (missionNamespace getVariable ["comspec_atak_native_music_athena", true]) then { _kinds pushBack "lib"; };
         {
             private _s = _x getVariable ["COMSPEC_ATAK_Spk", []];
-            if ((count _s) >= 6 && {alive _x}) then {
+            if ((count _s) >= 6 && {alive _x} && {(_s select 0) in _kinds} && {(_s select 1) isEqualType ""}) then {
                 private _d = _x distance player;
                 private _g = if (_veh isNotEqualTo player && {vehicle _x isEqualTo _veh}) then { 1 } else {
                     private _k = (1 - _d / _range) max 0;

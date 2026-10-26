@@ -172,19 +172,27 @@ private _slideLoading = false;
 if (_src isEqualTo "ATHENA" && {_total > 0}) then {
     // Image en cache local (téléchargée une fois par diapositive) : [chemin, raison].
     private _cache = uiNamespace getVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_SlideCache", _cache];
     // Téléchargement hors du dessin de la page (spawn + fn_extAwait) : callExtension direct figeait le jeu le temps
     // de la requête HTTP vers Athena ; « Chargement de la diapositive… » en attendant, puis la page est redessinée.
     private _loading = uiNamespace getVariable ["COMSPEC_ATAK_SlideLoading", createHashMap];
     uiNamespace setVariable ["COMSPEC_ATAK_SlideLoading", _loading];
-    if (!(_path in _cache) && {!(_path in _loading)}) then {
-        _loading set [_path, true];
+    // Entrée datée (diag_tickTime) : au-delà de 25 s (fin de mission ou erreur pendant le téléchargement), elle est périmée.
+    private _since = _loading getOrDefault [_path, -100];
+    if !(_since isEqualType 0) then { _since = -100; };
+    if (!(_path in _cache) && {diag_tickTime - _since > 25}) then {
+        private _stamp = diag_tickTime;
+        _loading set [_path, _stamp];
         private _slide = (missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx;
-        [_path, _slide, _loading] spawn {
-            params ["_path", "_slide", "_loading"];
+        [_path, _slide, _loading, _cache, _stamp] spawn {
+            params ["_path", "_slide", "_loading", "_cache", "_stamp"];
             private _url = _slide param [3, ""];
             // Fichier local propre à l'adresse de l'image : Arma garde en mémoire la texture d'un chemin déjà lu, une image
             // renvoyée sur Athena (nouvelle adresse) ou une première lecture ratée restaient sinon affichées jusqu'au redémarrage.
             private _raw = [(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, format ["%1_%2", _slide param [0, 0], hashValue _url]]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+            if (isNil "_raw") then { _raw = ""; };
+            if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
+            if !(_raw isEqualType "") then { _raw = str _raw; };
             private _dl = _raw splitString "|";
             private _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
             private _lp = toLower _p;
@@ -199,11 +207,10 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
             // Taille lue par Arma : 0 x 0 = fichier illisible par le jeu (chemin refusé ou image abîmée), à joindre à un signalement.
             private _tex = if (_why isEqualTo "") then { getTextureInfo _p } else { [] };
             ["INFO", "BRIEFING", format ["Diapositive %1 : adresse %2, fichier %3, texture %4, %5", _slide param [0, 0], _url, _p, _tex, ["image affichée", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
-            // Cache relu : ACTUALISER a pu le remplacer pendant le téléchargement.
-            private _cache = uiNamespace getVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
+            // Écrit dans le cache de départ : si ACTUALISER l'a remplacé entre-temps, le résultat périmé est abandonné
+            // et la page redessinée relance le téléchargement.
             _cache set [_path, [[_p, ""] select (_why isNotEqualTo ""), _why]];
-            uiNamespace setVariable ["COMSPEC_ATAK_SlideCache", _cache];
-            _loading deleteAt _path;
+            if ((_loading getOrDefault [_path, -1]) isEqualTo _stamp) then { _loading deleteAt _path; };
             [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
     };

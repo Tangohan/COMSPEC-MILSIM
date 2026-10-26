@@ -70,9 +70,12 @@ private _note = {
     };
 };
 private _publish = {
-    params ["_p"];
-    publicVariable "comspec_sse_custody";
-    ["comspec_sse_anaChanged", []] call CBA_fnc_globalEvent;
+    params ["_p", ["_registry", true]];
+    // _registry false : seule la fiche de l'entité est recopiée (remise groupée, registre diffusé une fois après).
+    if (_registry) then {
+        publicVariable "comspec_sse_custody";
+        ["comspec_sse_anaChanged", []] call CBA_fnc_globalEvent;
+    };
     private _e = objectFromNetId (_p getOrDefault ["netId", ""]);
     // Recopie sur l'entité : la fiche transmise au portail emporte sa chaîne.
     if (!isNull _e) then { [_e, "custody", +_p, true] call comspec_sse_fnc_setSection; };
@@ -169,8 +172,13 @@ switch (_op) do {
             [_p, "REMISE", _from, format ["de %1 à %2, scellé %3", name _from, name _to, ["non posé", "intact"] select ((_p get "state") isEqualTo "SCELLÉE")]] call _append;
             _p set ["holder", name _to];
             _p set ["holderUid", [_to] call _uidOf];
-            [_p] call _publish;
+            [_p, false] call _publish;
         } forEach _ids;
+        // Registre et événement une seule fois pour toute la remise.
+        if (_ids isNotEqualTo []) then {
+            publicVariable "comspec_sse_custody";
+            ["comspec_sse_anaChanged", []] call CBA_fnc_globalEvent;
+        };
         // Les sachets scellés changent de mains, une fois pour toutes les pièces. removeItem / addItem n'agissent que
         // là où l'unité est locale (le joueur, pas le serveur) : l'inventaire est modifié chez chacun.
         private _bags = ({ _x isEqualTo "COMSPEC_SSE_EvidenceBag" } count (items _from)) min (count _ids);

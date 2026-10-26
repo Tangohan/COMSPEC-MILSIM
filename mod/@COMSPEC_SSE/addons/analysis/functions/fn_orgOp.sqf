@@ -54,6 +54,12 @@ private _publish = {
     publicVariable "comspec_sse_anaSeen";
     ["comspec_sse_anaChanged", []] call CBA_fnc_globalEvent;
 };
+// Seul le registre des personnes rencontrées a changé (« seen », « reveal » d'un non-membre).
+private _publishSeen = {
+    if (missionNamespace getVariable ["comspec_sse_orgBatch", false]) exitWith {};
+    publicVariable "comspec_sse_anaSeen";
+    ["comspec_sse_anaChanged", []] call CBA_fnc_globalEvent;
+};
 private _slug = {
     params ["_s"];
     "ORG-" + (toUpper (((trim _s) splitString " '-_/.,:;") joinString ""))
@@ -159,15 +165,19 @@ switch (_op) do {
         private _key = [_u] call comspec_sse_fnc_bioPersonKey;
         if ((comspec_sse_anaSeen getOrDefault [_key, ""]) isEqualTo (netId _u)) exitWith { false };
         comspec_sse_anaSeen set [_key, netId _u];
-        call _publish;
+        call _publishSeen;
         true
     };
     case "reveal": {
         _args params [["_who", objNull, [objNull, ""]], ["_lvl", 1, [0]], ["_how", "", [""]], ["_by", objNull, [objNull]]];
         private _key = if (_who isEqualType "") then { _who } else { [_who] call comspec_sse_fnc_bioPersonKey };
-        if (_who isEqualType objNull && {!isNull _who}) then { comspec_sse_anaSeen set [_key, netId _who]; };
+        private _seenChanged = false;
+        if (_who isEqualType objNull && {!isNull _who} && {(comspec_sse_anaSeen getOrDefault [_key, ""]) isNotEqualTo (netId _who)}) then {
+            comspec_sse_anaSeen set [_key, netId _who];
+            _seenChanged = true;
+        };
         private _m = _mem getOrDefault [_key, createHashMap];
-        if (count _m == 0 || {(_m getOrDefault ["known", 0]) >= _lvl}) exitWith { call _publish; false };
+        if (count _m == 0 || {(_m getOrDefault ["known", 0]) >= _lvl}) exitWith { if (_seenChanged) then { call _publishSeen; }; false };
         _m set ["known", (_lvl max 1) min 2];
         _m set ["how", _how];
         _m set ["when", call _now];

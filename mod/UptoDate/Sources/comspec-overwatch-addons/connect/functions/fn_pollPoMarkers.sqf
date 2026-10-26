@@ -193,7 +193,10 @@ if (
         } else { _text };
         private _msg = if (_isPo) then { "Point d’objectif atteint — " } else { "Point suivi atteint — " };
         [_msg + _lbl, "gps", "info"] call comspec_overwatch_connect_fnc_announce;
+        // Gris purement local : EH muets, sinon MarkerUpdated le pousse vers Athena (vu par tous).
+        missionNamespace setVariable ["COMSPEC_MarkerEhMuted", (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1, false];
         _name setMarkerColorLocal "ColorGrey";
+        missionNamespace setVariable ["COMSPEC_MarkerEhMuted", ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1) max 0, false];
     };
 } forEach _cands;
 

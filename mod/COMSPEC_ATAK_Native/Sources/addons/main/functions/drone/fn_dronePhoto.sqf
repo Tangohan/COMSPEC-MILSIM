@@ -268,7 +268,7 @@ switch (_act) do {
             showHUD _hud;
             // La vue plein écran a pu dérégler le rendu de la nacelle : caméra et cible neuves au prochain dessin.
             private _c2 = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
-            if (!isNull _c2) then { _c2 setVariable ["rendering", false]; };
+            if (!isNull _c2) then { [_c2, "rendering", false, true] call comspec_atak_native_fnc_camVar; };
             missionNamespace setVariable ["COMSPEC_ATAK_DroneShotBusy", false];
             if (!_ok) exitWith {
                 ["WARNING", "Cliché refusé par le jeu : passez la qualité HDR au moins sur Moyen (options vidéo), puis recommencez", 6, 40] call comspec_atak_native_fnc_notify;

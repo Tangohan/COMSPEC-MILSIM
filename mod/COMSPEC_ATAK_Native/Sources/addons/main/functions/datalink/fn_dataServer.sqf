@@ -11,6 +11,7 @@
       "rip"      : câble arraché pendant le transfert
       "reset"    : Zeus remet le support en état (essais, verrou, effacement)
       "remove"   : Zeus retire les données du support
+      "code"     : code de fin d'un module Zeus (remoteExecCall d'un curateur seulement), gardé sur le serveur
     Zeus : chaque curateur reçoit un message (comspec_atak_native_dataNote).
 */
 if (!isServer) exitWith { false };
@@ -78,7 +79,8 @@ switch (_act) do {
         [format ["%1 a téléchargé %2 fichier(s) de %3", _whoName, count _names, _label]] call _note;
         if ((_cfg getOrDefault ["alarm", "none"]) isEqualTo "download") then { ["téléchargement"] call _alarm; };
         if (_full && {_cfg getOrDefault ["oneShot", false]}) then { _obj setVariable ["COMSPEC_ATAK_DataWiped", true, true]; };
-        private _code = _cfg getOrDefault ["code", ""];
+        // Code tenu par le serveur seul (fn_dataSetup) : jamais lu dans COMSPEC_ATAK_Data, que tout client peut réécrire.
+        private _code = _obj getVariable ["COMSPEC_ATAK_DataCode", ""];
         if (_code isEqualType "" && {(trim _code) isNotEqualTo ""}) then {
             [_obj, _who, _names] call compile _code;
         };
@@ -90,8 +92,15 @@ switch (_act) do {
         _obj setVariable ["COMSPEC_ATAK_DataWiped", false, true];
         _obj setVariable ["COMSPEC_ATAK_DataTaken", [], true];
     };
+    case "code": {
+        // Code de fin posé par un module Zeus : accepté seulement d'un curateur (émetteur du remoteExec, pas un argument).
+        private _owner = remoteExecutedOwner;
+        private _ok = isRemoteExecuted && {(hasInterface && {_owner isEqualTo clientOwner}) || {(allCurators findIf { private _u = getAssignedCuratorUnit _x; !isNull _u && {(owner _u) isEqualTo _owner} }) >= 0}};
+        if (_ok && {_arg isEqualType ""}) then { _obj setVariable ["COMSPEC_ATAK_DataCode", _arg]; };
+    };
     case "remove": {
         _obj setVariable ["COMSPEC_ATAK_Data", nil, true];
+        _obj setVariable ["COMSPEC_ATAK_DataCode", nil];
         missionNamespace setVariable ["COMSPEC_ATAK_DataNodes", (missionNamespace getVariable ["COMSPEC_ATAK_DataNodes", []]) select { !isNull _x && {_x isNotEqualTo _obj} }, true];
     };
 };

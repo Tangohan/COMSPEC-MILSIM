@@ -69,8 +69,9 @@ private _personIds = createHashMap;
         private _alias = _y getOrDefault ["alias", ""];
         if (_alias isEqualTo "") then { _alias = _lbl select 1; };
         private _id = "P:" + _x;
-        private _sub = ["roleLabel", _y getOrDefault ["role", "membre"]] call comspec_sse_fnc_orgTables;
-        if (!isNull _u && {!alive _u}) then { _sub = _sub + ", décédé"; };
+        // Traduit par morceaux : « membre, décédé » assemblé n'a pas d'entrée au dictionnaire.
+        private _sub = (["roleLabel", _y getOrDefault ["role", "membre"]] call comspec_sse_fnc_orgTables) call comspec_sse_fnc_tr;
+        if (!isNull _u && {!alive _u}) then { _sub = _sub + (", décédé" call comspec_sse_fnc_tr); };
         [_id, "person", [_lbl select 0, _alias] call _personLabel, _sub, _k, _y getOrDefault ["netId", ""], "O:" + (_y getOrDefault ["org", ""])] call _addNode;
         if (!isNull _u) then { _personIds set [netId _u, _id]; };
     };
@@ -215,7 +216,7 @@ if (_linkedCache isEqualTo [] || {time > ((_linkedCache select 0) + 60)}) then {
                             private _name = _x getOrDefault ["name", _x getOrDefault ["title", ""]];
                             if (!(_name isEqualType "")) then { _name = ""; };
                             private _id = "L:" + _g;
-                            ["L:" + _g, "place", ["Lieu " + _g, format ["%1 (%2)", _name, _g]] select (_name isNotEqualTo ""), "Point mentionné", _k] call _addNode;
+                            ["L:" + _g, "place", [(("Lieu") call comspec_sse_fnc_tr) + " " + _g, format ["%1 (%2)", _name, _g]] select (_name isNotEqualTo ""), "Point mentionné", _k] call _addNode;
                             [_from, _id, "mentionne", _k] call _edge;
                         };
                     };

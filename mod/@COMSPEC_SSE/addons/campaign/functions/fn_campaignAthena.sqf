@@ -102,13 +102,26 @@ switch (toLower _mode) do {
                 // OK|total|suivant|morceau : le morceau peut contenir des « | ».
                 private _rest = _r select [3];
                 private _p1 = _rest find "|";
-                _total = parseNumber (_rest select [0, _p1]);
-                _rest = _rest select [_p1 + 1];
-                private _p2 = _rest find "|";
-                private _next = parseNumber (_rest select [0, _p2]);
-                _text = _text + (_rest select [_p2 + 1]);
-                if (_next <= _offset) then { _ok = _total == 0; _offset = _total; } else { _offset = _next; };
+                private _p2 = if (_p1 < 0) then { -1 } else { (_rest select [_p1 + 1]) find "|" };
+                if (_p2 < 0) then {
+                    _ok = false;
+                    [format ["réponse Athena illisible (position %1).", _offset]] call _note;
+                } else {
+                    _total = parseNumber (_rest select [0, _p1]);
+                    _rest = _rest select [_p1 + 1];
+                    private _next = parseNumber (_rest select [0, _p2]);
+                    _text = _text + (_rest select [_p2 + 1]);
+                    if (_next <= _offset) then {
+                        _ok = _total == 0;
+                        if (!_ok) then { [format ["transfert interrompu (position %1/%2).", _offset, _total]] call _note; };
+                        _offset = _total;
+                    } else { _offset = _next; };
+                };
             };
+        };
+        if (_ok && {_total < 0 || {_offset < _total}}) then {
+            _ok = false;
+            [format ["transfert incomplet (position %1/%2).", _offset, _total]] call _note;
         };
         if (!_ok) exitWith { false };
         private _id = [[_newId, _key] select (_newId isEqualTo "")] call _slug;

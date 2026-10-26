@@ -16,10 +16,15 @@ switch (_act) do {
     case "load": {
         // Hors contexte suspendable (CBA_fnc_execNextFrame, clic de formulaire) fn_extAwait appelait la DLL en direct
         // et figeait le jeu le temps de la requête Athena : relancé dans un spawn pour passer par « Async ».
+        // Une seule requête à la fois (ACTUALISER répété, redessin) ; repère daté, périmé après 30 s.
+        if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_WantedBusy", -100]) < 30) exitWith {};
         if (!canSuspend) exitWith { [] spawn { ["load"] call comspec_atak_native_fnc_wantedAction; }; };
+        missionNamespace setVariable ["COMSPEC_ATAK_WantedBusy", diag_tickTime];
         private _now = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
         private _raw = [(["COMSPECExtension", "GetWantedNotices", []] call comspec_atak_native_fnc_extAwait)] call _res;
+        if (isNil "_raw") then { _raw = ""; };
         if !(_raw isEqualType "") then { _raw = str _raw; };
+        missionNamespace setVariable ["COMSPEC_ATAK_WantedBusy", -100];
         if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
             private _old = (uiNamespace getVariable ["COMSPEC_ATAK_Wanted", [[]]]) select 0;
             uiNamespace setVariable ["COMSPEC_ATAK_Wanted", [_old, _now, switch (true) do {
@@ -46,7 +51,12 @@ switch (_act) do {
                 _x params ["_kind", "_id", "", "", "", "", "", ["_url", ""]];
                 private _key = format ["%1:%2", _kind, _id];
                 if (_url isNotEqualTo "" && {!(_key in _imgs)}) then {
-                    private _dl = ([(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, format ["wanted_%1_%2", _kind, _id]]] call comspec_atak_native_fnc_extAwait)] call _res) splitString "|";
+                    // Clé réservée avant le téléchargement : un second chargement en parallèle ne la retélécharge pas.
+                    _imgs set [_key, ""];
+                    private _r = [(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, format ["wanted_%1_%2", _kind, _id]]] call comspec_atak_native_fnc_extAwait)] call _res;
+                    if (isNil "_r") then { _r = ""; };
+                    if !(_r isEqualType "") then { _r = str _r; };
+                    private _dl = _r splitString "|";
                     private _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
                     private _lp = toLower _p;
                     _imgs set [_key, [_p, ""] select !((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"])];

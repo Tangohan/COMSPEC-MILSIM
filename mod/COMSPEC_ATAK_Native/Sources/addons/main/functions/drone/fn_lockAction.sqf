@@ -292,7 +292,7 @@ switch (_act) do {
             private _live = _state isEqualTo "TRACK" && {!isNull _o};
             private _p = [_y get "pos", getPosASLVisual _o] select _live;
             [[objNull, _o] select _live, _p, switch (_state) do { case "TRACK": { [0.95, 0.25, 0.2, 1] }; case "DOWN": { [0.36, 0.78, 0.42, 1] }; default { [0.7, 0.72, 0.7, 0.7] }; },
-                format ["LOCK_%1 %2m%3", [_y get "num", 3] call CBA_fnc_formatNumber, round (_eye distance _p), ["", " PERDU", " NEUTR."] select ((["TRACK", "LOST", "DOWN"] find _state) max 0)]] call _box;
+                format ["LOCK_%1 %2m%3", [_y get "num", 3] call CBA_fnc_formatNumber, round (_eye distance _p), (["", " PERDU", " NEUTR."] select ((["TRACK", "LOST", "DOWN"] find _state) max 0)) call comspec_atak_native_fnc_tr]] call _box;
         } forEach _locks;
         if (diag_tickTime >= (_st getOrDefault ["lockNext", 0])) then {
             _st set ["lockNext", diag_tickTime + 0.25];

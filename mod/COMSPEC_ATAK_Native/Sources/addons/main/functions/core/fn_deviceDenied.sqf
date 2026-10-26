@@ -3,6 +3,13 @@
     Rien sur l'écran du jeu : notification gardée dans le centre du téléphone (vue à la prochaine ouverture).
 */
 params [["_why", "item"]];
+if (_why isEqualTo "down") exitWith { false };
+// Téléphone fermé par définition : retour sonore immédiat (local, rien à l'écran), sauf en mode discrétion.
+if !((profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]) || {["mute", false] call comspec_atak_native_fnc_zeusFx}) then { playSound "addItemFailed"; };
+// Touche pressée plusieurs fois : une seule notification par raison toutes les 30 s (compteur de non lus).
+(uiNamespace getVariable ["COMSPEC_ATAK_DeniedLast", ["", -1e9]]) params ["_w0", "_t0"];
+if (_w0 isEqualTo _why && {(diag_tickTime - _t0) < 30}) exitWith { false };
+uiNamespace setVariable ["COMSPEC_ATAK_DeniedLast", [_why, diag_tickTime]];
 switch (_why) do {
     // Mort ou inconscient : rangé sans message.
     case "down": {};
