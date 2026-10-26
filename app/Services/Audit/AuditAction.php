@@ -108,6 +108,17 @@ final class AuditAction
 
     /** Vidage d’un lot d’historiques volumineux (administration du site). */
     public const PLATFORM_STORAGE_PURGED = 'platform.storage_purged';
+
+    /** Console d'exploitation (/admin/system/exploitation). */
+    public const PLATFORM_OPS_UNLOCKED = 'platform.ops_console_unlocked';
+    public const PLATFORM_OPS_MIGRATIONS_LAUNCHED = 'platform.ops_migrations_launched';
+    public const PLATFORM_OPS_BACKUP_CREATED = 'platform.ops_backup_created';
+    public const PLATFORM_OPS_BACKUP_DOWNLOADED = 'platform.ops_backup_downloaded';
+    public const PLATFORM_OPS_BACKUP_RESTORED = 'platform.ops_backup_restored';
+    public const PLATFORM_OPS_BACKUP_DELETED = 'platform.ops_backup_deleted';
+    public const PLATFORM_OPS_DELETION_SCHEDULED = 'platform.ops_account_deletion_scheduled';
+    public const PLATFORM_OPS_DELETION_CANCELLED = 'platform.ops_account_deletion_cancelled';
+    public const PLATFORM_OPS_DELETION_EXECUTED = 'platform.ops_account_deletion_executed';
     public const PLATFORM_DATA_TABLE_EMPTIED = 'platform.data_table_emptied';
     public const PLATFORM_DATA_ROW_UPDATED = 'platform.data_row_updated';
     public const PLATFORM_DATA_ROW_DELETED = 'platform.data_row_deleted';

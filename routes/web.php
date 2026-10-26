@@ -1212,6 +1212,20 @@ return function (Router $router) {
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     // Ancienne page « Dons » : le compte PayPal se règle désormais dans Admin > Paiements (un seul réglage).
     $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '?vue=dons'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Console d'exploitation : état du site, migrations, sauvegardes, suppressions de comptes (double vérification).
+    $router->get('/admin/system/exploitation', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/code', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'sendCode'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/verifier', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'verify'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/verrouiller', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'lock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/migrations/lancer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'launchMigrations'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/creer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'createBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/verifier', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'verifyBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/telecharger', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'downloadBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/restaurer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'restoreBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/supprimer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'deleteBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/programmer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'scheduleDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/annuler', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'cancelDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/supprimer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'executeDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/storage', [SystemStorageController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Explorateur de données (administration du site) : lire, chercher, modifier, supprimer, vider.
