@@ -12,6 +12,8 @@ namespace COMSPECExtension;
 ///    jusqu'à une nouvelle liaison, une session rétablie (READY) ou un redémarrage d'Arma.
 ///  - Fonction absente de l'offre de la communauté (feature_unavailable) : cette adresse seule se tait
 ///    30 min, puis un seul essai (l'offre a pu changer sur le site).
+///  - Refus « règle » (code de PermanentRefusalCodes) sur une autre adresse que client-init : cette adresse se
+///    tait 30 min et client-init tranche pour toute la liaison (verrou global seulement s'il refuse aussi).
 /// </summary>
 public static partial class Extension
 {
@@ -26,6 +28,9 @@ public static partial class Extension
     private static volatile string _authLatchCode = "";
 
     private static readonly ConcurrentDictionary<string, long> FeatureLatchUntilMs = new();
+
+    /// <summary>Code du refus qui a fait taire une adresse (feature_unavailable, tenant_context_required…).</summary>
+    private static readonly ConcurrentDictionary<string, string> FeatureLatchCodes = new();
 
     /// <summary>Compte ou clé refusés pour de bon : plus de sondage ni d'envoi authentifié.</summary>
     private static bool IsAuthLatched()
@@ -45,7 +50,26 @@ public static partial class Extension
         if (!FeatureLatchUntilMs.TryGetValue(key, out var until)) return false;
         if (Environment.TickCount64 < until) return true;
         FeatureLatchUntilMs.TryRemove(key, out _);
+        FeatureLatchCodes.TryRemove(key, out _);
         return false;
+    }
+
+    /// <summary>Code renvoyé au SQF pour une adresse qui se tait (feature_unavailable par défaut).</summary>
+    private static string FeatureLatchCode(string url)
+        => FeatureLatchCodes.TryGetValue(RefusalEndpointKey(url), out var c) && c.Length > 0 ? c : "feature_unavailable";
+
+    private static void LatchEndpoint(string url, string code)
+    {
+        var key = RefusalEndpointKey(url);
+        FeatureLatchCodes[key] = code;
+        FeatureLatchUntilMs[key] = Environment.TickCount64 + FeatureLatchMs;
+    }
+
+    /// <summary>Session déjà prête et sans erreur : un client-init de contrôle accepté n'a rien à rétablir.</summary>
+    private static bool IsReadyWithoutError()
+    {
+        lock (GameAuthLock)
+            return string.Equals(_gameAuthState, "READY", StringComparison.Ordinal) && _gameAuthError.Length == 0;
     }
 
     private static bool IsRefusalLatched(string url) => IsAuthLatched() || IsFeatureLatched(url);
@@ -73,8 +97,9 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// À appeler sur chaque 401/403 d'Athena. 403 « règle » : verrou immédiat ; 401 : client-init une fois
-    /// (une session expirée se rétablit), verrou seulement si Athena le refuse aussi.
+    /// À appeler sur chaque 401/403 d'Athena. 403 « règle » sur client-init : verrou immédiat. 403 « règle » sur
+    /// une autre adresse : cette adresse se tait 30 min et client-init tranche, comme après un 401 (une session
+    /// expirée se rétablit) : verrou global seulement si Athena refuse aussi client-init.
     /// </summary>
     private static void NoteRefusal(string url, int status, string body)
     {
@@ -82,12 +107,21 @@ public static partial class Extension
         var code = RefusalErrorCode(body);
         if (status == 403 && code == "feature_unavailable")
         {
-            FeatureLatchUntilMs[RefusalEndpointKey(url)] = Environment.TickCount64 + FeatureLatchMs;
+            LatchEndpoint(url, code);
             return;
         }
         if (status == 403 && Array.IndexOf(PermanentRefusalCodes, code) >= 0)
         {
-            LatchAuthRefusal(code, "ERR|" + code);
+            if ((url ?? "").Contains("/api/atak/client-init", StringComparison.OrdinalIgnoreCase))
+            {
+                LatchAuthRefusal(code, "ERR|" + code);
+                return;
+            }
+            // Une seule adresse refusée ne prouve pas que la clé ou le compte le sont : Athena renvoie aussi
+            // tenant_context_required depuis des routes qui ne lisent la communauté que dans la clé (IFF, musique,
+            // ingest v2) alors que client-init l'accepte depuis le corps de la requête.
+            LatchEndpoint(url, code);
+            MaybeReauthAfter401(url, force: true);
             return;
         }
         if (status == 401)
@@ -108,5 +142,6 @@ public static partial class Extension
     {
         _authLatchCode = "";
         FeatureLatchUntilMs.Clear();
+        FeatureLatchCodes.Clear();
     }
 }

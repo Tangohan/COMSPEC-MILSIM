@@ -1102,7 +1102,10 @@ public static partial class Extension
                 var verify = VerifyClientInitSync();
                 if (verify.StartsWith("OK|", StringComparison.Ordinal))
                 {
-                    SetGameAuth("READY", 100, "");
+                    // Session déjà prête : rien à rétablir. SetGameAuth(READY) effacerait aussi les adresses
+                    // qui se taisent (ClearRefusalLatches) et la route refusée serait redemandée en boucle.
+                    if (!IsReadyWithoutError())
+                        SetGameAuth("READY", 100, "");
                     return;
                 }
 
@@ -2495,7 +2498,7 @@ public static partial class Extension
         if (IsAuthLatched())
             return "ERR|unauthorized";
         if (IsFeatureLatched(url))
-            return "ERR|feature_unavailable";
+            return "ERR|" + FeatureLatchCode(url);
 
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
         slot.Url = url;
