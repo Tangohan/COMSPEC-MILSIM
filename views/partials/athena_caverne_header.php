@@ -184,6 +184,8 @@ $espaceLinks = [
     ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat'), 'path' => 'orbat'],
     ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak'), 'path' => 'atak'],
     ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('formations'), 'path' => 'formations'],
+    // Accès direct à son parcours (sinon : Formations › catalogue › onglet), filtré comme le reste.
+    ['abbr' => 'MES', 'label' => 'Mes formations', 'desc' => 'Mon parcours et mes inscriptions', 'href' => url('formations/mes-formations'), 'path' => 'formations/mes-formations'],
 ];
 if ($canRecruit) {
     $espaceLinks[] = [
@@ -504,8 +506,9 @@ if (function_exists('i18n_phrase')) {
 
         <div class="athena-header__actions" id="dash-tour-nav-actions">
             <?php if (!empty(($dashboard_ui_tour ?? [])['enabled'])): ?>
-            <button type="button" class="athena-header__guide-btn" id="dash-tour-start" data-dash-tour-start title="Guide du tableau de bord">
-                Guide
+            <button type="button" class="athena-header__guide-btn" id="dash-tour-start" data-dash-tour-start title="Guide du tableau de bord" aria-label="<?= $n('Guide du tableau de bord') ?>">
+                <svg class="athena-header__btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="1.8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4M12 16.8h.01"/></svg>
+                <span class="athena-header__guide-label"><?= $n('Guide') ?></span>
             </button>
             <?php endif; ?>
             <a
@@ -534,7 +537,8 @@ if (function_exists('i18n_phrase')) {
                     aria-haspopup="true"
                     aria-controls="athena-header-espaces"
                 >
-                    <?= $n('Espaces') ?>
+                    <svg class="athena-header__btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linejoin="round" stroke-width="1.8" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+                    <span><?= $n('Espaces') ?></span>
                     <svg class="athena-header__chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="m6 9 6 6 6-6"/>
                     </svg>
