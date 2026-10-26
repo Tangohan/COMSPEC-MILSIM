@@ -187,6 +187,23 @@ $navTiles = [
     ]), 'hub'),
 ];
 
+// Accès direct à « Mes formations » (un clic, sans passer par le panneau Formations).
+if (class_exists(\App\Support\TrainingQuickAccess::class) && \App\Support\TrainingQuickAccess::allowed()) {
+    $myTrainingSummary = \App\Support\TrainingQuickAccess::summary();
+    $myTrainingOpen = $myTrainingSummary !== null ? (int) $myTrainingSummary['in_progress'] + (int) $myTrainingSummary['assigned'] : 0;
+    array_splice($navTiles, 1, 0, [
+        $tile(
+            'my-trainings',
+            'Mes formations',
+            $myTrainingOpen > 0 ? $myTrainingOpen . ' parcours à suivre' : 'Parcours et attestations',
+            'default',
+            $myTrainingOpen > 0 ? (string) $myTrainingOpen : null,
+            [],
+            'trainings'
+        ) + ['href' => url('formations/mes-formations'), 'lms_module' => 'formation'],
+    ]);
+}
+
 ob_start();
 require base_path('views/partials/dashboard_org_anomaly_form.php');
 $orgAnomalyExtra = (string) ob_get_clean();
@@ -531,6 +548,21 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
     $idxLabel = $num();
     $iconMarkup = $icon((string) ($item['icon'] ?? ''));
     ?>
+    <?php if (!empty($item['href'])): ?>
+    <div class="dash-rail__item" data-dash-rail-item="<?= $h($id) ?>">
+        <a class="<?= $h(implode(' ', $classes)) ?> dash-rail__tile--link" href="<?= $h((string) $item['href']) ?>"<?= !empty($item['lms_module']) ? ' data-lms-module-entry="' . $h((string) $item['lms_module']) . '"' : '' ?>>
+            <?php if ($iconMarkup !== ''): ?><span class="dash-rail__tile-icon" aria-hidden="true"><?= $iconMarkup ?></span><?php else: ?><b class="dash-rail__idx"><?= $h($idxLabel) ?></b><?php endif; ?>
+            <span class="dash-rail__copy">
+                <strong class="dash-rail__label"><?= $h($label) ?></strong>
+                <em class="dash-rail__hint"><?= $h((string) $item['hint']) ?></em>
+            </span>
+            <span class="dash-rail__end">
+                <?php if (is_string($badge) && $badge !== ''): ?><i class="dash-rail__meta dash-rail__meta--badge" aria-label="<?= $h($badge . ' élément(s)') ?>"><?= $h($badge) ?></i><?php endif; ?>
+                <svg class="dash-rail__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </span>
+        </a>
+    </div>
+    <?php return; endif; ?>
     <div class="dash-rail__item" data-dash-rail-item="<?= $h($id) ?>">
         <button
             type="button"

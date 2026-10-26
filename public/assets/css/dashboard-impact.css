@@ -4455,6 +4455,10 @@ html.dash-sign-lock { overflow: hidden; }
   cursor: pointer;
 }
 
+/* Tuile lien direct du rail (ex. « Mes formations ») : même apparence qu'une rubrique, sans panneau. */
+.dash-rail__tile--link { text-decoration: none; color: #fff; }
+.dash-rail__tile--link:visited { color: #fff; }
+
 /* ==========================================================================
    Bande d'identité sous la barre (refonte 2026) : même langage que la barre
    Athena — coins 2 px, contrôles de 34 px, casse normale, actions discrètes.
