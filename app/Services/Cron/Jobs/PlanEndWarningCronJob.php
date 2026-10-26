@@ -26,7 +26,7 @@ final class PlanEndWarningCronJob implements CronJobInterface
 
     public function label(): string
     {
-        return 'Fins de formule et paiements à valider';
+        return 'Fins de formule, relances de paiement et donateurs';
     }
 
     public function description(): string
@@ -38,8 +38,15 @@ final class PlanEndWarningCronJob implements CronJobInterface
     {
         $r = ($this->service ??= new PlanEndWarningService())->sendWarnings();
         $p = ['requests' => 0, 'emails' => 0];
+        $u = ['reminded' => 0, 'expired' => 0];
+        $donors = ['donors' => 0];
         try {
-            $p = \App\Core\Container::get(\App\Services\Billing\PlanPaymentService::class)->remindAdminsOfPendingDeclarations();
+            $svc = \App\Core\Container::get(\App\Services\Billing\PlanPaymentService::class);
+            $p = $svc->remindAdminsOfPendingDeclarations();
+            // Relances des paiements commencés mais jamais finalisés, annulation après 30 jours.
+            $u = $svc->processUnpaid();
+            // Donateurs et communautés soutien (badges, liserés) : recalculés chaque jour.
+            $donors = (new \App\Services\Billing\DonorService())->rebuild($svc->paidTenantIds());
         } catch (\Throwable) {
             // Registre des paiements absent (base pas à jour) : rien à relancer.
         }
@@ -47,12 +54,15 @@ final class PlanEndWarningCronJob implements CronJobInterface
         return [
             'ok' => true,
             'summary' => sprintf(
-                '%d communauté(s) prévenue(s), %d e-mail(s) envoyé(s) ; %d paiement(s) à valider relancé(s)',
+                '%d communauté(s) prévenue(s), %d e-mail(s) envoyé(s) ; %d paiement(s) à valider relancé(s) ; %d payeur(s) relancé(s), %d demande(s) abandonnée(s) annulée(s) ; %d donateur(s)',
                 $r['tenants'],
                 $r['emails'],
-                $p['requests']
+                $p['requests'],
+                $u['reminded'],
+                $u['expired'],
+                $donors['donors'] ?? 0
             ),
-            'details' => $r + ['payment_reminders' => $p],
+            'details' => $r + ['payment_reminders' => $p, 'unpaid' => $u, 'donors' => $donors],
         ];
     }
 }

@@ -74,14 +74,14 @@ $idstripGradesHidden = \App\Support\TenantGrades::hidden();
                         </svg>
                     </a>
                     </div>
-                    <a href="<?= url('messages') ?>" class="dash-idstrip__text-btn">
+                    <a href="<?= url('messages') ?>" class="dash-idstrip__text-btn" title="Demande à l’encadrement">
                         <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
                         </svg>
                         <span>Demande à l’encadrement</span>
                     </a>
-                    <button type="button" class="dash-idstrip__text-btn" data-dash-rail-open-external="org-anomaly" aria-controls="dash-rail-nested-org-anomaly">
+                    <button type="button" class="dash-idstrip__text-btn" data-dash-rail-open-external="org-anomaly" aria-controls="dash-rail-nested-org-anomaly" title="Signaler une anomalie">
                         <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.8 21 19.5H3L12 3.8Z"/>
                             <path stroke-linecap="round" d="M12 9.5v4.4M12 16.6h.01"/>
@@ -89,7 +89,7 @@ $idstripGradesHidden = \App\Support\TenantGrades::hidden();
                         <span>Signaler une anomalie</span>
                     </button>
                     <?php if ($canViewAtakOperators): ?>
-                    <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-idstrip__text-btn dash-idstrip__text-btn--accent">
+                    <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-idstrip__text-btn dash-idstrip__text-btn--accent" title="Effectifs en liaison ATAK">
                         <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
                             <circle cx="9" cy="7" r="4"/>

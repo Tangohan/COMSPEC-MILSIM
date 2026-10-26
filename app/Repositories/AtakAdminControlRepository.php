@@ -71,6 +71,8 @@ final class AtakAdminControlRepository
         'reset' => 'warning',
         'certificate' => 'warning',
         'phone' => 'info',
+        // CR de fin d'opération imposé (AtakDebriefService) : le téléphone ouvre la fiche à remplir ou à lire.
+        'debrief' => 'warning',
     ];
 
     /** Filtres d'état de la liste. */

@@ -236,6 +236,7 @@ return [
     ['id' => 'atak_realism_registry', 'label' => 'Migration atak_realism_registry (terminaux ATAK, certificats, rattachements opérateur)', 'group' => 'migrations', 'file' => '2200_atak_realism_registry.php', 'rerun' => true],
     ['id' => 'arsenal_wardrobe', 'label' => 'Migration arsenal_wardrobe (wardrobes ACE Arsenal + collections d’équipement)', 'group' => 'migrations', 'file' => '2210_arsenal_wardrobe.php', 'rerun' => true],
     ['id' => 'aar_reports', 'label' => 'Migration aar_reports (comptes rendus post-op structurés)', 'group' => 'migrations', 'file' => '2220_aar_reports.php', 'rerun' => true],
+    ['id' => 'atak_debrief', 'label' => 'Migration atak_debrief (CR de fin d’opération imposé sur les ATAK)', 'group' => 'migrations', 'file' => '2225_atak_debrief.php', 'rerun' => true],
     ['id' => 'role_permission_matrix', 'label' => 'Migration role_permission_matrix (matrice rôles & permissions par module)', 'group' => 'migrations', 'file' => '2230_role_permission_matrix.php', 'rerun' => true],
     ['id' => 'community_event_rsvp_nominative', 'label' => 'Migration community_event_rsvp_nominative (disponibilité, relances, commentaires orga)', 'group' => 'migrations', 'file' => '2240_community_event_rsvp_nominative.php', 'rerun' => true],
     ['id' => 'tenant_atak_experience', 'label' => 'Migration tenant_atak_experience (expérience Overwatch par communauté)', 'group' => 'migrations', 'file' => '2250_tenant_atak_experience.php', 'rerun' => true],

@@ -38,132 +38,62 @@ $rwAnalyses = function_exists('recruitment_workspace_url') ? recruitment_workspa
 $counts = is_array($recruitmentSidebarCounts ?? null) ? $recruitmentSidebarCounts : [];
 $nSubmitted = (int) ($counts['submitted'] ?? 0);
 $nTotal = $counts !== [] ? array_sum($counts) : 0;
-$numSla = $canRecOffers ? '06' : '04';
-$numMsg = $canRecOffers ? '07' : '05';
-$numStruct = $canRecOffers ? '08' : '06';
+$nTreated = max(0, $nTotal - $nSubmitted);
+$is = static fn (string $id): bool => $id === $active;
 
-$navClass = static function (string $id) use ($active): string {
-    return $id === $active
-        ? 'lms-active-nav flex items-center justify-between rounded-2xl border px-4 py-3 transition-all'
-        : 'flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all hover:border-sky-500/25';
-};
-?>
-<aside class="lms-dark-panel recruitment-lms-sidebar text-white p-6 lg:p-8 flex flex-col">
-    <div class="pb-8 border-b border-white/10">
-        <p class="text-[9px] font-black tracking-[0.35em] uppercase text-sky-400 mb-3">Athena / COMSPEC</p>
-        <h1 class="text-2xl font-black tracking-tight uppercase leading-none">Bureau recrutement</h1>
-        <p class="text-[11px] text-white/35 font-medium mt-3 leading-relaxed">
-            Candidatures, décisions, délais et offres publiées — pilotage sur un écran dédié, comme le module formations.
-        </p>
-    </div>
+$sections = [
+    ['label' => 'Dossiers', 'items' => [
+        ['href' => $rwBase, 'label' => 'Vue d’ensemble', 'hint' => 'Pilotage du bureau', 'icon' => 'overview', 'active' => $is('dashboard')],
+        ['href' => url('back-office/recruitments'), 'label' => 'File des dossiers', 'hint' => 'Candidatures à instruire', 'icon' => 'inbox', 'badge' => $nSubmitted > 0 ? $nSubmitted : null, 'active' => $is('queue')],
+        ['href' => url('back-office/recruitments/equipe'), 'label' => 'Fil recruteurs', 'hint' => 'Coordination de l’équipe', 'icon' => 'wall', 'active' => $is('teamwall')],
+        ['href' => $rwAnalyses, 'label' => 'Analyses', 'hint' => 'Délais, conversions, KPI', 'icon' => 'chart', 'active' => $is('analytics')],
+    ]],
+];
+if ($canRecOffers) {
+    $sections[] = ['label' => 'Offres', 'items' => [
+        ['href' => url('back-office/recruitment/offers'), 'label' => 'Offres', 'hint' => 'Avis d’ouverture publiés', 'icon' => 'offer', 'active' => $is('offers')],
+        ['href' => url('back-office/recruitment/reference-format'), 'label' => 'Références des offres', 'hint' => 'Format de numérotation', 'icon' => 'tag', 'active' => $is('reference')],
+    ]];
+}
+$sections[] = ['label' => 'Réglages', 'items' => [
+    ['href' => url('back-office/recruitments/settings'), 'label' => 'Délais (SLA)', 'hint' => 'Échéances d’instruction', 'icon' => 'clock', 'active' => $is('sla')],
+    ['href' => url('back-office/recruitments/messages-prefaits'), 'label' => 'Messages préfaits', 'hint' => 'Modèles de réponse', 'icon' => 'template', 'active' => $is('messages')],
+    ['href' => url('back-office/recruitments/discord-questions'), 'label' => 'Questions Discord', 'hint' => 'Questionnaire d’entretien', 'icon' => 'discord', 'active' => $is('discord')],
+    ['href' => url('back-office/recruitments/codes-invitation'), 'label' => 'Codes prioritaires', 'hint' => 'Accès prioritaire à la candidature', 'icon' => 'key', 'active' => $is('invite_codes')],
+]];
+if ($canStructureHub) {
+    $sections[] = ['label' => 'Organisation', 'items' => [
+        ['href' => url('back-office/organisation/structure'), 'label' => 'Structure', 'hint' => 'ORBAT et postes à pourvoir', 'icon' => 'sitemap', 'active' => false],
+    ]];
+}
 
-    <nav class="pt-8 space-y-3" aria-label="Sections recrutement">
-        <a href="<?= htmlspecialchars($rwBase, ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('dashboard'), ENT_QUOTES, 'UTF-8') ?>">
-            <span>
-                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'dashboard' ? 'text-sky-400' : 'text-white/25' ?>">01</span>
-                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Vue d’ensemble</span>
-            </span>
-            <span class="text-[10px] font-black tracking-widest uppercase text-white/40">Pilotage</span>
-        </a>
-        <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('queue'), ENT_QUOTES, 'UTF-8') ?>">
-            <span>
-                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'queue' ? 'text-sky-400' : 'text-white/25' ?>">02</span>
-                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">File des dossiers</span>
-            </span>
-            <span class="text-[10px] font-black tracking-widest uppercase text-white/25"><?= $nSubmitted > 0 ? (string) $nSubmitted : '—' ?></span>
-        </a>
-        <a href="<?= htmlspecialchars(url('back-office/recruitments/equipe'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('teamwall'), ENT_QUOTES, 'UTF-8') ?>">
-            <span>
-                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'teamwall' ? 'text-sky-400' : 'text-white/25' ?>">—</span>
-                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Fil recruteurs</span>
-            </span>
-            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Global</span>
-        </a>
-        <a href="<?= htmlspecialchars($rwAnalyses, ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('analytics'), ENT_QUOTES, 'UTF-8') ?>">
-            <span>
-                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'analytics' ? 'text-sky-400' : 'text-white/25' ?>">03</span>
-                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Analyses</span>
-            </span>
-            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">KPI</span>
-        </a>
-        <?php if ($canRecOffers): ?>
-            <a href="<?= htmlspecialchars(url('back-office/recruitment/offers'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('offers'), ENT_QUOTES, 'UTF-8') ?>">
-                <span>
-                    <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'offers' ? 'text-sky-400' : 'text-white/25' ?>">04</span>
-                    <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Offres</span>
-                </span>
-                <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Vitrine</span>
-            </a>
-            <a href="<?= htmlspecialchars(url('back-office/recruitment/reference-format'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('reference'), ENT_QUOTES, 'UTF-8') ?>">
-                <span>
-                    <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'reference' ? 'text-sky-400' : 'text-white/25' ?>">05</span>
-                    <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Références offres</span>
-                </span>
-                <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Format</span>
-            </a>
-        <?php endif; ?>
-        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('sla'), ENT_QUOTES, 'UTF-8') ?>">
-            <span>
-                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'sla' ? 'text-sky-400' : 'text-white/25' ?>"><?= htmlspecialchars($numSla, ENT_QUOTES, 'UTF-8') ?></span>
-                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Délais (SLA)</span>
-            </span>
-            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Réglages</span>
-        </a>
-        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('messages'), ENT_QUOTES, 'UTF-8') ?>">
-            <span>
-                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'messages' ? 'text-sky-400' : 'text-white/25' ?>"><?= htmlspecialchars($numMsg, ENT_QUOTES, 'UTF-8') ?></span>
-                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Messages préfaits</span>
-            </span>
-            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Modèles</span>
-        </a>
-        <a href="<?= htmlspecialchars(url('back-office/recruitments/discord-questions'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('discord'), ENT_QUOTES, 'UTF-8') ?>">
-            <span>
-                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'discord' ? 'text-sky-400' : 'text-white/25' ?>">—</span>
-                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Questions Discord</span>
-            </span>
-            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Réglages</span>
-        </a>
-        <a href="<?= htmlspecialchars(url('back-office/recruitments/codes-invitation'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('invite_codes'), ENT_QUOTES, 'UTF-8') ?>">
-            <span>
-                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'invite_codes' ? 'text-sky-400' : 'text-white/25' ?>">—</span>
-                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Codes prioritaires</span>
-            </span>
-            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Candidature</span>
-        </a>
-        <?php if ($canStructureHub): ?>
-            <a href="<?= htmlspecialchars(url('back-office/organisation/structure'), ENT_QUOTES, 'UTF-8') ?>" class="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all hover:border-emerald-500/20">
-                <span>
-                    <span class="block text-[8px] font-black tracking-[0.3em] uppercase text-white/25"><?= htmlspecialchars($numStruct, ENT_QUOTES, 'UTF-8') ?></span>
-                    <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Structure</span>
-                </span>
-                <span class="text-[10px] font-black tracking-widest uppercase text-white/25">ORBAT</span>
-            </a>
-        <?php endif; ?>
-    </nav>
+$lmsNav = [
+    'id' => 'recrutement',
+    'tone' => 'sky',
+    'kicker' => 'Athena · Recrutement',
+    'title' => 'Bureau recrutement',
+    'lead' => 'Candidatures, décisions, délais et offres publiées.',
+    'aria' => 'Navigation du bureau recrutement',
+    'sections' => $sections,
+    'progress' => $nTotal > 0 ? [
+        'label' => 'Dossiers instruits',
+        'value' => $nTreated,
+        'max' => $nTotal,
+        'caption' => $nTreated . ' / ' . $nTotal,
+        'text' => $nSubmitted > 0
+            ? $nSubmitted . ' dossier' . ($nSubmitted > 1 ? 's' : '') . ' à traiter.'
+            : 'Aucun dossier en attente.',
+    ] : [
+        'label' => 'Dossiers instruits',
+        'value' => 0,
+        'max' => 0,
+        'caption' => '—',
+        'text' => 'Aucun dossier enregistré pour l’instant.',
+    ],
+    'cards' => [
+        ['kicker' => 'Formation', 'label' => 'Parcours bureau recrutement', 'href' => url('formations/parcours-bureau-recrutement'), 'text' => 'Instruire une candidature de bout en bout.'],
+    ],
+    'foot' => ['href' => url('back-office'), 'label' => 'Retour au back-office', 'sub' => 'Menu de la communauté'],
+];
 
-    <div class="mt-10 pt-8 border-t border-white/10 space-y-5">
-        <div class="rounded-2xl bg-white/[0.03] border border-white/5 p-4">
-            <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">File</p>
-            <p class="text-sm font-black uppercase tracking-[0.14em]"><?= $nSubmitted ?> à traiter</p>
-            <p class="text-[11px] text-white/35 mt-2">Sur <?= $nTotal ?> dossier<?= $nTotal > 1 ? 's' : '' ?> enregistré<?= $nTotal > 1 ? 's' : '' ?>.</p>
-        </div>
-        <div class="rounded-2xl bg-white/[0.03] border border-white/5 p-4">
-            <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">Formation</p>
-            <a href="<?= htmlspecialchars(url('formations/parcours-bureau-recrutement'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-black uppercase tracking-[0.14em] text-emerald-300 hover:text-white transition-colors">Bureau recrutement</a>
-            <p class="text-[11px] text-white/35 mt-2">Parcours certifiant pour instruire une candidature de bout en bout.</p>
-        </div>
-        <div class="rounded-2xl bg-white/[0.03] border border-white/5 p-4">
-            <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">Portail</p>
-            <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-black uppercase tracking-[0.14em] text-sky-300 hover:text-white transition-colors">Retour back-office</a>
-            <p class="text-[11px] text-white/35 mt-2">Menu communauté, modules et administration générale.</p>
-        </div>
-    </div>
-
-    <div class="mt-auto pt-8 border-t border-white/10">
-        <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/20">Module</p>
-        <div class="flex items-center justify-between mt-3">
-            <span class="text-[10px] font-mono text-white/35 tracking-[0.22em] uppercase">Recrutement</span>
-            <span class="text-[10px] font-black uppercase text-sky-400">LMS</span>
-        </div>
-    </div>
-</aside>
+require base_path('views/partials/lms_nav_aside.php');

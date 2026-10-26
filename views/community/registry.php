@@ -498,9 +498,10 @@ if ($registryCount === 0) {
           $tagsMore = count($allTags) - count($tagsShown);
           $cardStyle = ($cardAccent !== '' ? '--cr-acc: ' . $cardAccent . ';' : '');
           $delayClass = 'cr-rise cr-rise-d' . min(3, 1 + ($i % 3));
+          $supportKind = \App\Services\Billing\DonorService::tenantSupport((int) ($t['id'] ?? 0));
           ?>
         <li
-          class="cr-card <?= $delayClass ?><?= $featured ? ' cr-card--featured' : '' ?><?= $pinned ? ' cr-card--pinned cr-card--spot' : '' ?><?= $cardAccent !== '' ? ' has-accent' : '' ?>"<?= $cardStyle !== '' ? ' style="' . htmlspecialchars($cardStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+          class="cr-card <?= $delayClass ?><?= $featured ? ' cr-card--featured' : '' ?><?= $pinned ? ' cr-card--pinned cr-card--spot' : '' ?><?= $cardAccent !== '' ? ' has-accent' : '' ?><?= $supportKind !== null ? ' cr-card--supporter' : '' ?>"<?= $cardStyle !== '' ? ' style="' . htmlspecialchars($cardStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
           data-cr-card
           data-cr-index="<?= (int) $i ?>"
           data-cr-name="<?= htmlspecialchars(mb_strtolower($name), ENT_QUOTES, 'UTF-8') ?>"
@@ -536,6 +537,9 @@ if ($registryCount === 0) {
               <?php endif; ?>
               <?php if ($trendRank > 0): ?>
               <span class="cr-pill cr-pill--trend">Tendance #<?= $trendRank ?></span>
+              <?php endif; ?>
+              <?php if ($supportKind !== null): ?>
+              <span class="cr-pill cr-pill--supporter" title="Cette communauté soutient Athena (formule payée, soutien du cœur ou dons de ses membres)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg> Soutient Athena</span>
               <?php endif; ?>
               <?php if ($featured): ?>
               <span class="cr-pill cr-pill--featured">À la une</span>

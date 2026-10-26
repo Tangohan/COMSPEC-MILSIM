@@ -158,6 +158,14 @@ final class AtakIcemanReportCatalog
             'persist' => true,
             'fields' => [],
         ],
+        // CR de fin d'opération imposé par le Zeus ou le site (app « CR de fin d'op » du téléphone, AtakDebriefService).
+        'DEBRIEF' => [
+            'label' => 'Fin d’opération',
+            'hint' => 'Compte rendu de fin d’opération demandé au joueur : déroulé, points forts, points à travailler.',
+            'alert_kind' => null,
+            'persist' => true,
+            'fields' => [],
+        ],
         'CONTACT' => [
             'label' => 'Prise de contact',
             'hint' => 'Contact ennemi depuis le terminal Overwatch.',
