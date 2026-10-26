@@ -543,6 +543,9 @@ if (_view isNotEqualTo "") then {
             true
         }]];
         _disp displayAddEventHandler ["KeyUp", { ["stickKey", [_this select 1, false]] call comspec_atak_native_fnc_droneAction }];
+        // Téléphone fermé touche de vol tenue (Échap, mort, téléphone rangé) : le KeyUp part à l'écran 46, sans
+        // gestionnaire hors vue directe, et l'axe restait à ±1 (drone lancé à pleine vitesse). Manche remis à zéro.
+        _disp displayAddEventHandler ["Unload", { ["stickStop"] call comspec_atak_native_fnc_droneAction; }];
     };
     // Barre de commandes sous l'image : groupes titrés (grand format), bouton actif en vert, marquage en rouge.
     private _y = _top + _areaH + _pad * 0.3;

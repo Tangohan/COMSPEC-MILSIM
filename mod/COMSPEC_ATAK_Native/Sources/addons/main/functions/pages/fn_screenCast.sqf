@@ -53,10 +53,14 @@ switch (_mode) do {
         if (!isServer) exitWith { ["comspec_atak_native_screen", ["add", _a]] call CBA_fnc_serverEvent; true };
         if (_name isEqualTo "") then { _name = getText (configOf _o >> "displayName"); };
         if (_name isEqualTo "") then { _name = "Écran"; };
-        _o setVariable ["COMSPEC_ATAK_Screen", [_name, (_range max 3) min 500, _side, _sel max 0, _ace], true];
         private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x };
+        // Écran (re)désigné : une diffusion restée sur l'objet retiré ne reprend pas toute seule.
+        if !(_o in _list) then { _o setVariable ["COMSPEC_ATAK_ScreenCast", [], true]; };
+        _o setVariable ["COMSPEC_ATAK_Screen", [_name, (_range max 3) min 500, _side, _sel max 0, _ace], true];
         _list pushBackUnique _o;
         missionNamespace setVariable ["COMSPEC_ATAK_Screens", _list, true];
+        private _off = missionNamespace getVariable ["COMSPEC_ATAK_ScreensOff", []];
+        if (_o in _off) then { missionNamespace setVariable ["COMSPEC_ATAK_ScreensOff", _off select { !isNull _x && {_x isNotEqualTo _o} }, true]; };
         true
     };
     case "remove": {
@@ -65,6 +69,10 @@ switch (_mode) do {
         _a setVariable ["COMSPEC_ATAK_ScreenCast", [], true];
         _a setVariable ["COMSPEC_ATAK_Screen", nil, true];
         missionNamespace setVariable ["COMSPEC_ATAK_Screens", (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];
+        // Écrans retirés : chaque poste y remet la texture d'origine (le registre ne les parcourt plus).
+        private _off = (missionNamespace getVariable ["COMSPEC_ATAK_ScreensOff", []]) select { !isNull _x };
+        _off pushBackUnique _a;
+        missionNamespace setVariable ["COMSPEC_ATAK_ScreensOff", _off, true];
         true
     };
     case "list": {
@@ -78,6 +86,7 @@ switch (_mode) do {
     };
     case "cast": {
         if (isNull _a) exitWith { false };
+        if ((count (_a getVariable ["COMSPEC_ATAK_Screen", []])) < 5) exitWith { false };
         private _d = call _myDeck;
         if ((count _d) isEqualTo 0) exitWith {
             ["WARNING", "Aucune diapositive à diffuser : ouvrez une présentation dans l'onglet DIAPOSITIVES", 4, 20] call comspec_atak_native_fnc_notify;
@@ -142,24 +151,30 @@ switch (_mode) do {
                     } else {
                         private _url = ((_c select 3) param [_c select 4, []]) param [2, ""];
                         if (_url isNotEqualTo "") then {
-                            private _p = _cache getOrDefault [_url, -1];
-                            if (_p isEqualType "") then {
-                                if (_p isNotEqualTo "") then { _want = _p; };
+                            // Cache : chemin de l'image, ou heure d'un échec (nouvel essai après 60 s).
+                            private _p = _cache getOrDefault [_url, -1e9];
+                            if (_p isEqualType "" && {_p isNotEqualTo ""}) then {
+                                _want = _p;
                             } else {
-                                // Téléchargement hors de l'image en cours, un à la fois (appel DLL bloquant).
-                                if !(missionNamespace getVariable ["COMSPEC_ATAK_ScreenDl", false]) then {
-                                    missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", true];
+                                if !(_p isEqualType 0) then { _p = -1e9; };
+                                // Téléchargement hors de l'image en cours, un à la fois (fn_extAwait : sans figer le jeu).
+                                // Verrou horodaté : libre après 30 s même si le script de téléchargement s'est arrêté.
+                                if (diag_tickTime - _p > 60 && {diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_ScreenDl", -1e9]) > 30} && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
+                                    missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", diag_tickTime];
                                     [_url, ((_c select 3) select (_c select 4)) select 0, _cache] spawn {
                                         params ["_url", "_id", "_cache"];
-                                        private _raw = ["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_url, format ["%1_%2", _id, hashValue _url]]]] call comspec_overwatch_connect_fnc_extResult;
+                                        private _raw = [(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, format ["%1_%2", _id, hashValue _url]]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+                                        if (isNil "_raw") then { _raw = ""; };
+                                        if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
+                                        if !(_raw isEqualType "") then { _raw = str _raw; };
                                         private _dl = _raw splitString "|";
                                         private _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
                                         private _lp = toLower _p;
                                         // Arma ne lit que JPEG et PAA sur un objet, comme dans le téléphone.
                                         if !((_lp select [((count _lp) - 4) max 0]) in [".jpg", "jpeg", ".paa"]) then { _p = ""; };
                                         ["INFO", "BRIEFING", format ["Écran : diapositive %1, adresse %2, fichier %3", _id, _url, [_p, "illisible"] select (_p isEqualTo "")]] call comspec_atak_native_fnc_log;
-                                        _cache set [_url, _p];
-                                        missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", false];
+                                        _cache set [_url, [_p, diag_tickTime] select (_p isEqualTo "")];
+                                        missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", -1e9];
                                     };
                                 };
                             };
@@ -173,8 +188,16 @@ switch (_mode) do {
                 if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", (getObjectTextures _o) param [_sel, ""]]; };
                 _o setObjectTexture [_sel, [_want, _o getVariable ["COMSPEC_ATAK_ScreenOrig", ""]] select (_want isEqualTo "")];
                 _o setVariable ["COMSPEC_ATAK_ScreenCur", _want];
+                _o setVariable ["COMSPEC_ATAK_ScreenSel", _sel];
             };
         } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {(player distance _x) < 300} });
+        // Écrans retirés (Zeus « Retirer l'écran ») : texture d'origine remise une fois sur ce poste.
+        {
+            if ((_x getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isNotEqualTo "") then {
+                _x setObjectTexture [_x getVariable ["COMSPEC_ATAK_ScreenSel", 0], _x getVariable ["COMSPEC_ATAK_ScreenOrig", ""]];
+                _x setVariable ["COMSPEC_ATAK_ScreenCur", ""];
+            };
+        } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_ScreensOff", []]) select { !isNull _x });
         true
     };
     case "actions": {
@@ -184,7 +207,7 @@ switch (_mode) do {
         private _cond = { private _c = _target getVariable ["COMSPEC_ATAK_ScreenCast", []]; private _s = (_target getVariable ["COMSPEC_ATAK_Screen", []]) param [2, ""]; (count _c) >= 5 && {_s isEqualTo "" || {_s isEqualTo str side group _player}} };
         if (!isNil "ace_interact_menu_fnc_createAction") then {
             private _icon = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
-            private _root = ["COMSPEC_ATAK_Screen", "Écran COMSPEC", _icon, {}, { true }, {
+            private _root = ["COMSPEC_ATAK_Screen", "Écran COMSPEC", _icon, {}, { (count (_target getVariable ["COMSPEC_ATAK_Screen", []])) >= 5 }, {
                 private _out = [];
                 private _c = _target getVariable ["COMSPEC_ATAK_ScreenCast", []];
                 private _s = (_target getVariable ["COMSPEC_ATAK_Screen", []]) param [2, ""];

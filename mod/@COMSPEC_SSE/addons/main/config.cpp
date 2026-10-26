@@ -32,7 +32,7 @@ class CfgMods {
         logoSmall = "";
         actionName = "Website";
         action = "https://athena-comspec.eu";
-        overview = "Sensitive Site Exploitation — Zeus, Eden, ACE, génération déterministe et liaison Athena.";
+        overview = "$STR_COMSPEC_SSE_CFG_5EF301D74E";
         tooltip = "$STR_COMSPEC_SSE_CFG_25ECDF92AF";
         author = "COMSPEC";
     };

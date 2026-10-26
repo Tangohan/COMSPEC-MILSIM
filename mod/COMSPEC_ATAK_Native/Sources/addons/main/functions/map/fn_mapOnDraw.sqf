@@ -309,8 +309,24 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
     };
 } forEach (_data getOrDefault ["units",createHashMap]);
 
+// Listes filtrées du magasin des marqueurs (repères Athena absents du jeu ; marqueurs à cartouche E / N), refaites quand
+// sa révision change (au plus 4 fois par seconde) et toutes les 2 s par sécurité : avant, deux passes complètes sur tous
+// les marqueurs (mission comprise) à chaque image.
+private _mkRev = (_data getOrDefault ["revisions",createHashMap]) getOrDefault ["markers",-1];
+private _mkLists = missionNamespace getVariable ["COMSPEC_ATAK_DrawMkLists", []];
+if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_tickTime > (_mkLists select 1)}) then {
+    private _rem = [];
+    private _tag = [];
+    {
+        private _lc = _y getOrDefault ["local",false];
+        if (!_lc) then { _rem pushBack [_x,_y]; };
+        if ((_y getOrDefault ["text",""]) isNotEqualTo "" && {!_lc || {((_y getOrDefault ["id",_x]) find "_USER_DEFINED") >= 0}} && {!((toUpper (_y getOrDefault ["shape","ICON"])) in ["POLYLINE","RECTANGLE","ELLIPSE"])}) then { _tag pushBack [_x,_y]; };
+    } forEach (_data getOrDefault ["markers",createHashMap]);
+    _mkLists = [_mkRev, diag_tickTime + 2, _rem, _tag];
+    missionNamespace setVariable ["COMSPEC_ATAK_DrawMkLists", _mkLists];
+};
 {
-    private _marker = _y;
+    private _marker = _x select 1;
     if (_marker getOrDefault ["local",false]) then { continue };
     private _pos = _marker getOrDefault ["position",[]];
     if ((count _pos) < 2) then { continue };
@@ -337,7 +353,7 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
             _map drawIcon [_icon,_rgba,_pos,16 * _k * _is,16 * _k * _is,_marker getOrDefault ["dir",0],"",0];
         };
     };
-} forEach (_data getOrDefault ["markers",createHashMap]);
+} forEach (_mkLists select 2);
 
 {
     if ((count _x) >= 2) then {
@@ -350,15 +366,15 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     {
         if ((count _x) >= 3) then { _map drawPolygon [_x,[0.95,0.67,0.20,0.18]]; };
     } forEach (_data getOrDefault ["zones",[]]);
-    uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", -1];
+    missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", -1];
 } else {
     // Calque masqué : Overwatch recrée ses marqueurs de zone à chaque synchro, on les remasque.
     // Seulement quand un marqueur a changé (compteur COMSPEC_ATAK_MkRev), au plus toutes les 2 s : avant, tous les
     // marqueurs étaient parcourus toutes les 2 s même sans aucun changement.
     private _zRev = missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0];
-    if (diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0]) && {_zRev isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideRev", -1])}) then {
-        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
-        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", _zRev];
+    if (diag_tickTime > (missionNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0]) && {_zRev isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_ZonesHideRev", -1])}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", _zRev];
         { if ((_x select [0, 11]) isEqualTo "COMSPEC_TZ_" && {(markerAlpha _x) > 0}) then { _x setMarkerAlphaLocal 0; }; } forEach allMapMarkers;
     };
 };
@@ -410,6 +426,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
 // Mes charges (app Explosifs) : numéro de pose, mode de mise à feu, temps restant des minuteries, T- de la séquence.
 {
     private _e = _x get "obj";
+    // Charge détonée ou supprimée dans la fenêtre du cache de fn_exploList (0,5 s) : pas d'icône à l'origine de la carte.
+    if (isNull _e) then { continue };
     private _c = [[0.95,0.67,0.20,1], [0.90,0.78,0.29,1], [0.90,0.28,0.23,1], [0.79,0.83,0.81,1]] select ((["atak","command","timer","mine"] find (_x get "kind")) max 0);
     private _txt = format ["C%1", _forEachIndex + 1];
     if ((_x get "remaining") >= 0) then { _txt = format ["%1 · %2 s", _txt, ceil (_x get "remaining")]; };
@@ -542,8 +560,8 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
     private _fs = (((_mp select 3) * 0.024) max (safeZoneH * 0.010)) * _ts;
     {
         if (_used >= 30) then { break };
-        private _m = _y;
-        private _id = _m getOrDefault ["id", _x];
+        private _m = _x select 1;
+        private _id = _m getOrDefault ["id", _x select 0];
         private _title = _m getOrDefault ["text", ""];
         if (_title isEqualTo "") then { continue };
         if ((_m getOrDefault ["local", false]) && {(_id find "_USER_DEFINED") < 0}) then { continue };
@@ -601,7 +619,7 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         if !(ctrlShown _c) then { _c ctrlShow true; };
         _used = _used + 1;
         _tagged pushBack _id;
-    } forEach (_data getOrDefault ["markers", createHashMap]);
+    } forEach (_mkLists select 3);
     if ((count _gridCache) > 400) then { _gridCache = createHashMap; };
     uiNamespace setVariable ["COMSPEC_ATAK_TagGridCache", _gridCache];
 };

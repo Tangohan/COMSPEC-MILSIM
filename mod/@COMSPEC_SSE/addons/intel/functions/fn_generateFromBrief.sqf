@@ -1,12 +1,14 @@
 /*
     Générateur narratif Zeus : brief textuel → réseau cohérent.
-    [_brief, _center, _radius, _overrides] call comspec_sse_fnc_generateFromBrief
+    [_brief, _center, _radius, _overrides, _notify] call comspec_sse_fnc_generateFromBrief
+    _notify (défaut true) : false quand le module appelant pousse sa propre notification Zeus.
 */
 params [
     ["_brief", "cellule logistique de 5 personnes", [""]],
     ["_center", objNull, [objNull, []]],
     ["_radius", 40, [0]],
-    ["_ov", createHashMap, [createHashMap]]
+    ["_ov", createHashMap, [createHashMap]],
+    ["_notify", true, [true]]
 ];
 
 private _pos = if (_center isEqualType []) then { _center } else {
@@ -31,7 +33,8 @@ private _cluster = [_seed, _profile, _complexity, "IRAQ"] call comspec_sse_fnc_g
 _cluster set ["theme", _theme];
 _cluster set ["brief", _brief];
 
-private _units = nearestObjects [_pos, ["CAManBase"], _radius];
+// Jamais de cellule sur un joueur (ni le Zeus lui-même).
+private _units = nearestObjects [_pos, ["CAManBase"], _radius] select { alive _x && {!isPlayer _x} && {!(_x in playableUnits)} };
 private _n = (_count min count _units) max 0;
 private _jobs = [];
 for "_i" from 0 to (_n - 1) do {
@@ -63,5 +66,7 @@ for "_i" from 0 to (_n - 1) do {
     ["members", count _jobs]
 ]] call comspec_sse_fnc_addLogicalEntity;
 
-[format ["Réseau en file depuis brief\n%1\n%2 entité(s)", _brief, count _jobs], "INFO"] call comspec_sse_fnc_notify;
+if (_notify) then {
+    [format ["Réseau en file depuis brief\n%1\n%2 entité(s)", _brief, count _jobs], "INFO"] call comspec_sse_fnc_notify;
+};
 _jobs apply { _x select 0 }

@@ -217,6 +217,7 @@ TAG = re.compile(r"<[^<>]*>")
 SEPS = re.compile(r"\s+·\s+|\n|\r")
 PLACEHOLDER = re.compile(r"%(\d+)")
 ADJACENT = re.compile(r"%\d+%\d")
+MULTIDIGIT = re.compile(r"(?<!%)%\d\d")
 WORD = re.compile(r"[A-Za-zÀ-ÿ]")
 
 
@@ -267,6 +268,11 @@ def save_dict(pairs):
         # fn_tr cherche le texte sans ses espaces de bord (gardés autour de la traduction) : clé "dont %1", jamais " dont %1".
         fr, en = fr.strip(), en.strip()
         if fr and en and fr != en:
+            # fn_langApply ne lit qu'un chiffre après « % » : « à %10 m » serait lu « à %1 » + « 0 m » et détournerait
+            # « à %1 m » (« à 250 m » -> « at  m »). Modèle refusé : renuméroter %1…%9 ou découper le texte dans le code.
+            if MULTIDIGIT.search(fr) or MULTIDIGIT.search(en):
+                print("Numéro à deux chiffres (%10+), modèle refusé : renuméroter de %1 à %9 :", fr, file=sys.stderr)
+                continue
             seen[fr] = en
             # fn_langApply ignore les modèles à valeurs collées (%1%2) : jamais traduits.
             if ADJACENT.search(fr):

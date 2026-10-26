@@ -1013,12 +1013,22 @@ addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_di
 ["comspec_atak_native_syncData", {
     params [["_log", []], ["_route", []]];
     missionNamespace setVariable ["COMSPEC_ATAK_Replaying", true];
-    { _x params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; } forEach _log;
-    if ((count _route) >= 2 && {(count (_route select 0)) > 0} && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
-        ["receive", [_route select 0, _route select 1, false]] call comspec_atak_native_fnc_wpAction;
+    // Rejoué par paquets de 10 par image (jusqu'à plusieurs centaines d'événements : pas de saccade à l'arrivée) ;
+    // itinéraire et fin du rejeu après le dernier paquet.
+    private _step = {
+        params ["_log", "_route", "_i", "_step"];
+        missionNamespace setVariable ["COMSPEC_ATAK_Replaying", true];
+        private _n = count _log;
+        private _end = (_i + 10) min _n;
+        for "_k" from _i to (_end - 1) do { (_log select _k) params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; };
+        if (_end < _n) exitWith { [_step, [_log, _route, _end, _step]] call CBA_fnc_execNextFrame; };
+        if ((count _route) >= 2 && {(count (_route select 0)) > 0} && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
+            ["receive", [_route select 0, _route select 1, false]] call comspec_atak_native_fnc_wpAction;
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_Replaying", false];
+        ["INFO", "SYNC", format ["Synchro serveur : %1 événement(s) rejoué(s)", _n]] call comspec_atak_native_fnc_log;
     };
-    missionNamespace setVariable ["COMSPEC_ATAK_Replaying", false];
-    ["INFO", "SYNC", format ["Synchro serveur : %1 événement(s) rejoué(s)", count _log]] call comspec_atak_native_fnc_log;
+    [_log, _route, 0, _step] call _step;
 }] call CBA_fnc_addEventHandler;
 [{ ["comspec_atak_native_syncReq", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 [{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call COMSPEC_ATAK_PfhSpread;

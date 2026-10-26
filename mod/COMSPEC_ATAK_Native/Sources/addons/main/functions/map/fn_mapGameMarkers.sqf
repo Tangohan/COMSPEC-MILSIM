@@ -14,7 +14,9 @@
 params ["_map", "_mk"];
 private _now = diag_tickTime;
 // Cache : [prochaine relecture complète, entrées dans l'ordre des marqueurs, index nom -> rang].
-private _cache = uiNamespace getVariable ["COMSPEC_ATAK_GmList", [-1, [], createHashMap]];
+// Caches des marqueurs dans missionNamespace (uiNamespace survit à la mission : marqueurs de la partie précédente
+// dessinés jusqu'à 30 s après un redémarrage, les icônes à l'origine de la carte).
+private _cache = missionNamespace getVariable ["COMSPEC_ATAK_GmList", [-1, [], createHashMap]];
 if ((count _cache) < 3 || {!((_cache select 2) isEqualType createHashMap)}) then { _cache = [-1, [], createHashMap]; };
 // Marqueurs changés depuis la dernière image (EH MarkerCreated / Deleted / Updated, XEH_postInitClient) : seuls eux sont
 // relus. Avant, un seul marqueur déplacé (piste Athena, marqueur suivi d'une mission) faisait relire toutes les propriétés
@@ -72,7 +74,10 @@ if (_full || {(count _dirty) > 0}) then {
                 _c set [3, (_c select 3) * _a];
                 private _pts = [];
                 for "_i" from 0 to ((count _flat) - 2) step 2 do { _pts pushBack [_flat select _i, _flat select (_i + 1), 0]; };
-                [1, _x, _pts, _c]
+                // Boîte du trait [xmin, ymin, xmax, ymax] : trait hors de la vue non dessiné.
+                private _xs = _pts apply { _x select 0 };
+                private _ys = _pts apply { _x select 1 };
+                [1, _x, _pts, _c, [selectMin _xs, selectMin _ys, selectMax _xs, selectMax _ys]]
             };
             case "RECTANGLE";
             case "ELLIPSE": {
@@ -85,7 +90,11 @@ if (_full || {(count _dirty) > 0}) then {
                 private _c = [markerColor _x, ""] call _rgbOf;
                 _c set [3, (_c select 3) * _a];
                 (markerSize _x) params [["_sw", 1], ["_sh", 1]];
-                [[2, 3] select (_shape isEqualTo "ELLIPSE"), _x, getMarkerPos _x, _c, _sw, _sh, markerDir _x, _br select 0, _br select 1]
+                // Boîte de la zone (rayon de la diagonale : couvre toute rotation) : zone hors de la vue non dessinée.
+                private _mp = getMarkerPos _x;
+                private _rr = sqrt (_sw * _sw + _sh * _sh);
+                [[2, 3] select (_shape isEqualTo "ELLIPSE"), _x, _mp, _c, _sw, _sh, markerDir _x, _br select 0, _br select 1,
+                    [(_mp select 0) - _rr, (_mp select 1) - _rr, (_mp select 0) + _rr, (_mp select 1) + _rr]]
             };
             default { [] };
         }
@@ -111,11 +120,19 @@ if (_full || {(count _dirty) > 0}) then {
             };
         } forEach (keys _dirty);
     };
-    uiNamespace setVariable ["COMSPEC_ATAK_GmList", _cache];
+    missionNamespace setVariable ["COMSPEC_ATAK_GmList", _cache];
 };
 
 (ctrlPosition _map) params ["_mx", "_my", "_mw", "_mh"];
 private _mg = 0.04;
+// Vue en coordonnées du monde [xmin, ymin, xmax, ymax] (marge comprise) : traits et zones qui n'y touchent pas sautés.
+private _wa = _map ctrlMapScreenToWorld [_mx - _mg, _my - _mg];
+private _wb = _map ctrlMapScreenToWorld [_mx + _mw + _mg, _my + _mh + _mg];
+private _view = [(_wa select 0) min (_wb select 0), (_wa select 1) min (_wb select 1), (_wa select 0) max (_wb select 0), (_wa select 1) max (_wb select 1)];
+private _off = {
+    params ["_bb"];
+    (count _bb) > 3 && {(_bb select 2) < (_view select 0) || {(_bb select 0) > (_view select 2)} || {(_bb select 3) < (_view select 1)} || {(_bb select 1) > (_view select 3)}}
+};
 {
     if ((count _x) isEqualTo 0) then { continue };
     switch (_x select 0) do {
@@ -127,11 +144,13 @@ private _mg = 0.04;
             _map drawIcon [_icon, _c, _pos, (_w * _mk) max 7, (_h * _mk) max 7, _dir, "", _shadow];
         };
         case 1: {
-            _x params ["", "", "_pts", "_c"];
+            _x params ["", "", "_pts", "_c", ["_bb", []]];
+            if ([_bb] call _off) then { continue };
             for "_i" from 0 to ((count _pts) - 2) do { _map drawLine [_pts select _i, _pts select (_i + 1), _c]; };
         };
         default {
-            _x params ["_kind", "", "_pos", "_c", "_w", "_h", "_dir", "_tex", "_border"];
+            _x params ["_kind", "", "_pos", "_c", "_w", "_h", "_dir", "_tex", "_border", ["_bb", []]];
+            if ([_bb] call _off) then { continue };
             if (_kind isEqualTo 2) then {
                 _map drawRectangle [_pos, _w, _h, _dir, _c, _tex];
                 if (_border && {_tex isNotEqualTo ""}) then { _map drawRectangle [_pos, _w, _h, _dir, _c, ""]; };

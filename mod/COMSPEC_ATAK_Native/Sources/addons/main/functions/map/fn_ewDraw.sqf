@@ -42,7 +42,8 @@ private _side = str side group player;
 {
     _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_s", ""], ["_until", 1e9]];
     if (_s isEqualTo _side && {_until >= _now}) then {
-        if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
+        // Objet supprimé (Zeus, nettoyage) : rien dessiné (getPosATL objNull = origine de la carte).
+        if (_pos isEqualType objNull) then { if (isNull _pos) then { continue; }; _pos = getPosATL _pos; };
         _map drawEllipse [[_pos select 0, _pos select 1, 0], _rad, _rad, 0, [0.85, 0.25, 0.95, 0.9], ""];
         _map drawEllipse [[_pos select 0, _pos select 1, 0], _rad, _rad, 0, [0.85, 0.25, 0.95, 0.08], _fill];
         _map drawIcon [_none, [0.85, 0.25, 0.95, 1], [_pos select 0, _pos select 1, 0], 0, 0, 0, ("BROUILLEUR") call comspec_atak_native_fnc_tr, 2, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "center"];

@@ -420,7 +420,9 @@ switch (_act) do {
                         _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
                         if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
                         private _d = _p distance2D _jp;
-                        if (_d < _jr) then { private _m = (_d / _jr) ^ 2; _mbps = _mbps * _m; _loss = _loss max (round ((1 - _m) * 80)); };
+                        // Force du brouilleur (7e élément, 1 par défaut), comme _jamAt et fn_linkQuality.
+                        private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
+                        if (_d < _jr) then { private _m = 1 - _js * (1 - (_d / _jr) ^ 2); _mbps = _mbps * _m; _loss = _loss max (round ((1 - _m) * 80)); };
                     } forEach _jam;
                     if (_mbps > 0.05) then { _cov = _cov + 1; _sum = _sum + _mbps; } else { _mbps = 0; _loss = 100; };
                     _cells pushBack [_p, _mbps, _loss, _src];

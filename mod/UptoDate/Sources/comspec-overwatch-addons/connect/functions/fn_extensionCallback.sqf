@@ -604,12 +604,17 @@ switch (_function) do {
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     case "NetworkReconnected": {
-        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
-        missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
-        missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
-        ["INFO", "Athena", "Liaison rétablie"] call comspec_overwatch_connect_fnc_log;
-        [format ["[Athena] Liaison rétablie"], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        // Fin de coupure simulée : ne pas forcer « linked » (appareil détruit, zone sans couverture, pas de
+        // session) → recalcul réel ; son et santé seulement si la liaison est effectivement revenue.
+        missionNamespace setVariable ["COMSPEC_LinkStateRefreshedAt", -99, false];
+        private _st = [] call comspec_overwatch_connect_fnc_refreshLinkState;
+        ["INFO", "Athena", format ["Fin de coupure réseau — état %1", _st]] call comspec_overwatch_connect_fnc_log;
+        if (_st in ["linked", "degraded"]) then {
+            missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
+            missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
+            [format ["[Athena] Liaison rétablie"], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+            ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        };
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     default {};

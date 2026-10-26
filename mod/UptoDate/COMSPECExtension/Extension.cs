@@ -662,7 +662,7 @@ public static partial class Extension
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
         try
         {
-            var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
+            using var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
             var code = (int)resp.StatusCode;
             var respBody = "";
             try { respBody = ReadContentUtf8(resp, cts.Token); } catch { /* ignore */ }
@@ -1653,7 +1653,7 @@ public static partial class Extension
                 Content = JsonContent(AddQueueSecrets(item.Body))
             };
             AttachApiKeyHeader(req);
-            var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+            using var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var sentCode = (int)response.StatusCode;
             JournalHttp(started, sentCode);
             NoteTrafficUntracked(req, response);
@@ -2807,7 +2807,9 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, ExtensionProductName + " " + CurrentExtensionVersion());
+            // Tampon de 32 octets côté Arma : la version seule (le nom du produit est déjà celui de la DLL ;
+            // « COMSPECATAKNativeExtension 1.0.0-native » était coupé dans le RPT).
+            Output(output, outputSize, CurrentExtensionVersion());
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -4433,7 +4435,7 @@ public static partial class Extension
                 SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) : Arma/SQF splitString "\t" est fragile → URL/"h" + clé tronquée.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             catch (Exception ex)
             {
@@ -4518,7 +4520,7 @@ public static partial class Extension
                 SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) — même format que RedeemGameLink.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             catch (Exception ex)
             {
@@ -4833,7 +4835,7 @@ public static partial class Extension
                     var msg = safeBody.Length > 180 ? safeBody.Substring(0, 180) + "..." : safeBody;
                     return "{\"status\":\"error\",\"message\":\"" + EscapeJson(msg) + "\"}";
                 }
-                return safeBody.Length <= MaxOutputBytes - 1 ? safeBody : safeBody.Substring(0, MaxOutputBytes - 1);
+                return Utf8ClipLines(safeBody, MaxOutputBytes - 1);
             }
             if ((function == "RECON.Note" || function == "RECON_NOTE" || function == "Recon.Note") && args.Length >= 1)
             {
@@ -4966,7 +4968,7 @@ public static partial class Extension
                 }
                 var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifySessionRestoreJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
             // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
@@ -5127,7 +5129,7 @@ public static partial class Extension
             if (function == "ListWardrobeCollections")
             {
                 var url = _baseUrl + "/api/atak/wardrobe-collections";
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5137,16 +5139,16 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyWardrobeCollectionsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
-                var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
+                using var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
-                return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
+                return "OK|" + Utf8ClipLines(safe, MaxOutputBytes - 4);
             }
             // Diapositives de briefing tactique (tableau/écran Eden Editor, ou dialog de briefing).
             // Format simplifié tabulation/retour-ligne (même convention que GetMarkers/GetUnits) :
@@ -5156,11 +5158,11 @@ public static partial class Extension
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
                 var url = _baseUrl + "/api/atak/briefing-slides";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifyBriefingSlidesJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // Fiches de renseignement (FRS / FRM) d'Athena, avec leurs photos, pour l'app FRS du téléphone.
             // Args : [limit, steamUid (vide = toutes les fiches de la communauté)]
@@ -5498,7 +5500,7 @@ public static partial class Extension
                 var url = _baseUrl + "/api/atak/fire-teams?kind=ephemeral";
                 if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
                 if (!string.IsNullOrEmpty(mapId)) url += "&mapId=" + Uri.EscapeDataString(mapId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5515,7 +5517,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyFireTeamsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // SEEK Query : registre + listes de surveillance Athena (pas de tirage simulé).
             // args : first, last, alias, q
@@ -5548,7 +5550,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplifiedId = SimplifyIdentityQueryJson(respBody);
-                return "OK|" + (simplifiedId.Length > MaxOutputBytes - 4 ? simplifiedId.Substring(0, MaxOutputBytes - 4) : simplifiedId);
+                return "OK|" + Utf8ClipLines(simplifiedId, MaxOutputBytes - 4);
             }
             if (function == "JoinFireTeam" && args.Length >= 1)
             {

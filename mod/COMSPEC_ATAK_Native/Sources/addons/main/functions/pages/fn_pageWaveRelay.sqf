@@ -24,7 +24,7 @@ private _myHops = _hops select 0;
 private _acre = !isNil "acre_api_fnc_getCurrentRadioList";
 private _rows = [["segment", "", [["MON NŒUD", "NODE"] call _tabBtn, [format ["RÉSEAU (%1)", count _nodes], "MESH"] call _tabBtn, ["COUVERTURE", "COV"] call _tabBtn, [["TALKGROUPS", "VOIX"] select _acre, "TG"] call _tabBtn]]];
 private _refresh = ["buttons", [
-    ["ACTUALISER", { ["scan", "force"] call comspec_atak_native_fnc_waveRelayAction; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+    ["ACTUALISER", { [] spawn { ["scan", "force"] call comspec_atak_native_fnc_waveRelayAction; if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }; }; }],
     ["VOIR SUR LA CARTE", { if !(profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then { profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true]; }; ["MAP"] call comspec_atak_native_fnc_navigate; }]
 ]];
 switch (_tab) do {

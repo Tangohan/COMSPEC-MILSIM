@@ -10,6 +10,11 @@
 */
 params [["_buildCache", false, [false]]];
 
+// PFH avec affichage coupé (cas normal) : sortir avant le thème / icône (config, fileExists, A3TI) recalculés à 8 Hz.
+if (_buildCache && {!([] call comspec_overwatch_connect_fnc_ecotiIsActive)}) exitWith {
+    missionNamespace setVariable ["COMSPEC_EcotiDrawActive", false, false];
+};
+
 if (!_buildCache && {!(missionNamespace getVariable ["COMSPEC_EcotiDrawActive", false])}) exitWith {
     // Inactif : masquer le HUD une seule fois (à la transition), plus aucun travail par image.
     if (missionNamespace getVariable ["COMSPEC_EcotiHudShownByDraw", true]) then {
@@ -137,9 +142,8 @@ private _fnc_drawSorted = {
 
 // --- PFH : scans lourds (unités, véhicules, marqueurs + config) une fois / 0,12 s ---
 if (_buildCache) exitWith {
-    private _active = [] call comspec_overwatch_connect_fnc_ecotiIsActive;
-    missionNamespace setVariable ["COMSPEC_EcotiDrawActive", _active, false];
-    if (!_active) exitWith {};
+    // État actif déjà vérifié en tête (sortie si coupé).
+    missionNamespace setVariable ["COMSPEC_EcotiDrawActive", true, false];
     _cache set ["units", if (_showAllies) then {
         allUnits select {
             alive _x
