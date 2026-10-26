@@ -19,8 +19,12 @@ $hubAnnounceItems = is_array($hub_announce_items ?? null) ? $hub_announce_items 
 $hubAnnounceManageUrl = isset($hub_announce_manage_url) && is_string($hub_announce_manage_url) && $hub_announce_manage_url !== '' ? $hub_announce_manage_url : null;
 $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-$num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, ',', "\u{202F}");
-$ordinal = static fn (int $n): string => $n === 1 ? '1er' : $n . 'e';
+$numEn = locale() === 'en';
+$num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, $numEn ? '.' : ',', $numEn ? ',' : "\u{202F}");
+// Ordinal du rang : la traduction anglaise (HtmlTranslator) ne sait pas accorder « 1er / 2e ».
+$ordinal = static fn (int $n): string => locale() === 'en'
+    ? $n . (in_array($n % 100, [11, 12, 13], true) ? 'th' : (['th', 'st', 'nd', 'rd'][$n % 10] ?? 'th'))
+    : ($n === 1 ? '1er' : $n . 'e');
 $needTypes = \App\Repositories\CommunityEcosystemRepository::NEED_TYPES;
 $metricsLabels = \App\Services\Ecosystem\CommunityStatsService::METRICS;
 $boardOpenCount = (int) ($hubBoardOpenCount ?? count($hubBoardPosts));
