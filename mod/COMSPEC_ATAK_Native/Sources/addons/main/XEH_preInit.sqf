@@ -579,7 +579,8 @@ if (isServer) then { ["comspec_atak_native_dataSrv", { if ((_this param [0, ""])
 if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_native_fnc_vehicleGateway; }] call CBA_fnc_addEventHandler; };
 // Téléphones ramassés par l'IA ennemie : actions là où l'unité est locale, état au serveur, alertes aux clients.
 ["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
-if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };
+// Pas de gestionnaire comspec_atak_native_captureSrv : « dropped », « validate », « dismiss » et « athena »
+// arrivent par remoteExecCall vers 2, seule voie qui laisse le serveur reconnaître l'acteur (fn_captureServer).
 if (hasInterface) then { ["comspec_atak_native_compromise", { params [["_k", ""], ["_v", []]]; if (_k in ["revoke", "ownerReset"]) then { [_k, _v] call comspec_atak_native_fnc_compromise; } else { ["event", [_k, _v]] call comspec_atak_native_fnc_compromise; }; }] call CBA_fnc_addEventHandler; };
 // App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).
 // Plus de gestionnaire comspec_atak_native_adminReport : la demande de relevé arrive par remoteExecCall du serveur

@@ -20,10 +20,32 @@
     Params : [action, arguments]
       "init" (postInit serveur)   "tick" (3 s)   "exploit" (5 s)   "dropped" [porte-objet]
       "validate" [id, unité]   "dismiss" [id, unité]   "athena" [id, ok, unité]
+        Ces trois-là sont appelées par un client (remoteExecCall vers 2, CfgRemoteExec) : l'unité passée y est
+        REMPLACÉE par celle du poste émetteur, retrouvée par remoteExecutedOwner (fn_reqUnit). Un appel local du
+        serveur (fn_adminServer, app Admin) garde l'unité qu'il passe : il a déjà vérifié le droit.
       "local" [mode, objet, valeur] : sur la machine où l'objet est local ("strip" | "give" | "move" | "pick" | "hunt")
     Debug (app Admin, fn_adminServer) : chaque capture garde « targets » (joueurs repérés) et « hunters » (groupes en traque).
 */
 params [["_act", "tick"], ["_arg", []]];
+// Demande venue d'un client : seul remoteExecutedOwner fait foi. L'acteur annoncé dans la demande est écarté (un
+// client passait n'importe quel chef de groupe du camp du téléphone pour faire valider la compromission, l. 270-276,
+// ce qui coupe le téléphone du réseau, impose un nouvel IMEI au propriétaire et demande la révocation du certificat
+// du terminal chez Athena). « isServer » dans le test : la branche « local » tourne aussi chez les clients, elle n'est
+// pas concernée (ses seuls émetteurs sont le serveur).
+private _remote = isServer && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+private _req = objNull;
+if (_remote) then { _req = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
+if (_remote && {!(_act in ["dropped", "validate", "dismiss", "athena"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] Action « %1 » refusée au poste %2 (réservée au serveur)", _act, remoteExecutedOwner];
+    false
+};
+if (_remote && {isNull _req}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] « %1 » refusé au poste %2 (demandeur introuvable)", _act, remoteExecutedOwner];
+    false
+};
+// Acteur des actions qui portent un droit : le demandeur, jamais l'argument.
+if (_remote && {_act in ["validate", "dismiss"]}) then { _arg = [_arg param [0, ""], _req]; };
+if (_remote && {_act isEqualTo "athena"}) then { _arg = [_arg param [0, ""], _arg param [1, false], _req]; };
 private _now = [time, serverTime] select isMultiplayer;
 private _sideOf = {
     params ["_s"];

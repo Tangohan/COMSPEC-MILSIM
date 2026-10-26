@@ -85,7 +85,7 @@ switch (_act) do {
                 _ok = (_r select [0, 3]) isEqualTo "OK|";
                 ["INFO", "CAPTURE", format ["%1 : CompromiseTerminal %2 -> %3", _id, _tuid, _r]] call comspec_atak_native_fnc_log;
             };
-            ["comspec_atak_native_captureSrv", ["athena", [_id, _ok, player]]] call CBA_fnc_serverEvent;
+            ["athena", [_id, _ok, player]] remoteExecCall ["comspec_atak_native_fnc_captureServer", 2];
             if (_ok) then { ["SUCCESS", format ["Athena : certificat de l'ATAK de %1 révoqué", _cs], 5, 40] call comspec_atak_native_fnc_notify; };
         };
     };
@@ -107,7 +107,9 @@ switch (_act) do {
         if !(["can", _r] call comspec_atak_native_fnc_compromise) exitWith {
             ["WARNING", "Validation réservée aux chefs de groupe, au propriétaire du téléphone et aux Zeus", 4, 30] call comspec_atak_native_fnc_notify;
         };
-        ["comspec_atak_native_captureSrv", [_act, [_arg, player]]] call CBA_fnc_serverEvent;
+        // remoteExecCall (et non l'événement CBA) : le serveur retrouve l'acteur par remoteExecutedOwner et
+        // n'a plus à croire l'unité envoyée dans la demande (fn_captureServer).
+        [_act, [_arg, player]] remoteExecCall ["comspec_atak_native_fnc_captureServer", 2];
     };
     case "map": {
         private _r = [_arg] call _row;

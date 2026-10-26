@@ -31,7 +31,7 @@ addMissionEventHandler ["EntityKilled", { params ["_unit", "_killer", "_inst"]; 
             // Posé au sol : l'IA ennemie peut venir le ramasser (fn_captureServer).
             if (_container isKindOf "WeaponHolder" || {_container isKindOf "WeaponHolderSimulated"}) then {
                 _container setVariable ["COMSPEC_ATAK_PhoneTag", _unit getVariable ["COMSPEC_ATAK_PhoneTag", []], true];
-                ["comspec_atak_native_captureSrv", ["dropped", [_container]]] call CBA_fnc_serverEvent;
+                ["dropped", [_container]] remoteExecCall ["comspec_atak_native_fnc_captureServer", 2];
             };
         };
     };
