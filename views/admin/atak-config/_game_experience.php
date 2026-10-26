@@ -1,114 +1,115 @@
 <?php
 declare(strict_types=1);
-$ge = is_array($gameExperience ?? null) ? $gameExperience : [];
+
+/**
+ * Onglet « Connexion en jeu » : fenêtre Athena au lancement d'Arma, méthodes de connexion,
+ * synchronisation du profil, fonctions autorisées depuis le jeu, version du pack, fréquence des positions.
+ *
+ * @var array<string, mixed> $ge
+ * @var callable $h, $ico, $section, $switch, $howto, $on
+ */
 $gp = is_array($gameExperiencePreview ?? null) ? $gameExperiencePreview : ['name' => 'ATHENA', 'image' => '', 'message' => ''];
-$chk = static function (string $key) use ($ge): string {
-    return !empty($ge[$key]) ? 'checked' : '';
-};
-$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $img = trim((string) ($gp['image'] ?? ''));
+$hasImg = trim((string) ($ge['login_image_path'] ?? '')) !== '';
+$hasLogo = trim((string) ($ge['logo_path'] ?? '')) !== '';
+$interval = (int) ($ge['update_interval'] ?? 0);
 ?>
-<div id="overwatch-game-experience" class="mb-8 border border-emerald-200 rounded-xl p-5 bg-emerald-50/30 shadow-sm">
-    <h2 class="text-sm font-bold text-emerald-950 mb-1">Expérience en jeu (fenêtre Athena)</h2>
-    <p class="text-xs text-emerald-900/80 mb-4 leading-relaxed">
-        Personnalisez ce que les opérateurs voient au lancement d’Arma : image de votre communauté, méthodes de connexion, et fonctions Overwatch autorisées.
-        Ces réglages sont appliqués automatiquement après connexion — personne n’a à saisir un identifiant de communauté.
-    </p>
-    <div class="grid lg:grid-cols-2 gap-5">
-        <form action="<?= $h($baseUrl) ?>/back-office/ressources/atak-config/game-experience" method="post" enctype="multipart/form-data" class="space-y-4">
-            <?= \App\Core\Csrf::field() ?>
-            <div>
-                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Personnalisation</h3>
-                <label class="block text-sm font-medium text-slate-800 mb-1">Nom affiché</label>
-                <input type="text" name="game_display_name" maxlength="80" value="<?= $h($ge['display_name'] ?? '') ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="COMSPEC">
-                <label class="block text-sm font-medium text-slate-800 mt-3 mb-1">Message d’accueil</label>
-                <input type="text" name="game_welcome_message" maxlength="280" value="<?= $h($ge['welcome_message'] ?? '') ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Bienvenue sur l’environnement opérationnel">
-                <label class="block text-sm font-medium text-slate-800 mt-3 mb-1">Image de connexion</label>
-                <input type="file" name="game_login_image" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm text-slate-600">
-                <label class="block text-sm font-medium text-slate-800 mt-3 mb-1">Logo</label>
-                <input type="file" name="game_logo" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm text-slate-600">
-            </div>
-            <div>
-                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Authentification</h3>
-                <label class="flex items-center gap-2 text-sm text-slate-800"><input type="hidden" name="game_auth_password" value="0"><input type="checkbox" name="game_auth_password" value="1" <?= $chk('auth_password') ?>> E-mail et mot de passe</label>
-                <label class="flex items-center gap-2 text-sm text-slate-800 mt-1"><input type="hidden" name="game_auth_otp" value="0"><input type="checkbox" name="game_auth_otp" value="1" <?= $chk('auth_otp') ?>> Code temporaire par e-mail</label>
-                <label class="flex items-center gap-2 text-sm text-slate-800 mt-1"><input type="hidden" name="game_auth_steam" value="0"><input type="checkbox" name="game_auth_steam" value="1" <?= $chk('auth_steam') ?>> Connexion avec Steam (poste déjà associé)</label>
-                <label class="flex items-center gap-2 text-sm text-slate-800 mt-1"><input type="hidden" name="game_allow_auto_reconnect" value="0"><input type="checkbox" name="game_allow_auto_reconnect" value="1" <?= $chk('allow_auto_reconnect') ?>> Autoriser la reconnexion automatique</label>
-            </div>
-            <div>
-                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Synchronisation du profil</h3>
-                <div class="grid grid-cols-2 gap-1">
-                    <?php foreach ([
-                        'sync_profile' => 'Profil Athena',
-                        'sync_grade' => 'Grade',
-                        'sync_unit' => 'Affectation',
-                        'sync_callsign' => 'Indicatif',
-                        'sync_avatar' => 'Portrait',
-                        'sync_clearances' => 'Habilitations',
-                        'sync_c2' => 'Configuration carte',
-                    ] as $k => $lab): ?>
-                        <label class="flex items-center gap-2 text-sm text-slate-800"><input type="hidden" name="game_<?= $h($k) ?>" value="0"><input type="checkbox" name="game_<?= $h($k) ?>" value="1" <?= $chk($k) ?>><?= $h($lab) ?></label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div>
-                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Modules Overwatch</h3>
-                <div class="grid grid-cols-2 gap-1">
-                    <?php foreach ([
-                        'bft_enabled' => 'Suivi des positions',
-                        'chat_enabled' => 'Messagerie',
-                        'intel_enabled' => 'Renseignement',
-                        'photos_enabled' => 'Photographies',
-                        'markers_enabled' => 'Marqueurs',
-                        'jtac_enabled' => 'Appui feu',
-                    ] as $k => $lab): ?>
-                        <label class="flex items-center gap-2 text-sm text-slate-800"><input type="hidden" name="game_<?= $h($k) ?>" value="0"><input type="checkbox" name="game_<?= $h($k) ?>" value="1" <?= $chk($k) ?>><?= $h($lab) ?></label>
-                    <?php endforeach; ?>
-                </div>
-                <div class="grid grid-cols-3 gap-2 mt-3">
-                    <label class="block text-sm">Pack Overwatch minimal
-                        <input type="text" name="game_min_mod_version" value="<?= $h($ge['min_mod_version'] ?? '1.5.0') ?>" class="mt-1 w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm" placeholder="1.5.0">
-                        <span class="block text-xs text-slate-500 mt-1">Les opérateurs dont le pack est plus ancien voient la version actuelle et celle exigée.</span>
-                    </label>
-                    <label class="block text-sm">Canal
-                        <select name="game_channel" class="mt-1 w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
-                            <?php foreach (['PROD' => 'Production', 'BETA' => 'Bêta', 'DEV' => 'Atelier'] as $cv => $cl): ?>
-                                <option value="<?= $h($cv) ?>" <?= (($ge['channel'] ?? 'PROD') === $cv) ? 'selected' : '' ?>><?= $h($cl) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <label class="block text-sm">Fréquence de position (s)
-                        <input type="number" min="2" max="60" name="game_update_interval" value="<?= $h((string) ($ge['update_interval'] ?? 5)) ?>" class="mt-1 w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
-                    </label>
-                </div>
-            </div>
-            <button type="submit" class="inline-flex px-4 py-2 bg-emerald-800 text-white text-sm font-semibold rounded-lg hover:bg-emerald-900">Enregistrer l’expérience en jeu</button>
-        </form>
-        <div>
-            <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Aperçu de la fenêtre Arma</h3>
-            <div class="rounded-lg border border-slate-800 bg-[#061018] text-slate-100 shadow-lg overflow-hidden" style="font-family: ui-sans-serif, system-ui;">
-                <div class="h-1 bg-emerald-400"></div>
-                <div class="px-4 py-2 flex justify-between text-[11px] tracking-wide">
-                    <span class="font-semibold">ATHENA</span>
-                    <span class="text-emerald-300/80">COMSPEC OVERWATCH</span>
-                </div>
-                <div class="mx-4 h-24 rounded bg-slate-900/80 flex items-center justify-center overflow-hidden">
-                    <?php if ($img !== ''): ?>
-                        <img src="<?= $h($img) ?>" alt="" class="max-h-24 object-contain">
-                    <?php else: ?>
-                        <span class="text-xs text-slate-500">Image de votre communauté</span>
-                    <?php endif; ?>
-                </div>
-                <p class="text-center text-sm font-bold tracking-widest mt-3">CONNEXION À ATHENA</p>
-                <p class="text-center text-[11px] text-slate-400 px-4 mt-1"><?= $h($gp['name'] ?? '') ?></p>
-                <?php if (trim((string) ($gp['message'] ?? '')) !== ''): ?>
-                    <p class="text-center text-[11px] text-slate-500 px-4 mt-1"><?= $h($gp['message']) ?></p>
-                <?php endif; ?>
-                <div class="mx-8 mt-3 h-7 rounded bg-slate-800"></div>
-                <div class="mx-8 mt-2 h-7 rounded bg-slate-800"></div>
-                <div class="mx-8 mt-3 mb-4 h-8 rounded bg-emerald-900/80 text-[11px] flex items-center justify-center font-semibold">SE CONNECTER</div>
-                <p class="text-center text-[10px] text-slate-500 pb-3">E-mail • Code temporaire • Steam</p>
-            </div>
+<section class="bo-ac-sec" id="overwatch-game-experience" data-ac-panel>
+  <?= $section('game', 'Connexion en jeu', 'Expérience en jeu : ce que voient vos opérateurs au lancement d’Arma (fenêtre Athena) et ce que le mod a le droit de faire. Appliqué à la prochaine connexion de chaque joueur.') ?>
+  <form method="post" action="<?= $h($base . '/game-experience') ?>" enctype="multipart/form-data" class="bo-ac-form bo-ac-game" id="bo-ac-game">
+    <?= $csrf ?>
+    <div class="bo-ac-game__cfg">
+
+      <div class="ath-panel bo-ac-card">
+        <p class="bo-ac-label">Fenêtre de connexion</p>
+        <div class="bo-ac-grid bo-ac-grid--2">
+          <label class="bo-ac-field"><span>Nom affiché</span><input name="game_display_name" maxlength="80" value="<?= $h($ge['display_name'] ?? '') ?>" placeholder="<?= $h($gp['name'] ?? 'ATHENA') ?>" data-ac-game="name"><small>Vide : le nom de la communauté.</small></label>
+          <label class="bo-ac-field"><span>Message d’accueil</span><input name="game_welcome_message" maxlength="280" value="<?= $h($ge['welcome_message'] ?? '') ?>" placeholder="Ex. Bienvenue au 2e REP — briefing 20 h 45" data-ac-game="message"></label>
         </div>
+        <div class="bo-ac-grid bo-ac-grid--2">
+          <div class="bo-ac-field"><span>Image de connexion</span>
+            <label class="bo-ac-drop"><input type="file" name="game_login_image" accept="image/jpeg,image/png,image/webp" data-ac-file-preview="[data-ac-game-img]"><span><?= $ico('photo') ?> <?= $hasImg ? 'Remplacer l’image' : 'Choisir une image' ?></span><small>JPG, PNG ou WebP · paysage 16:9 conseillé (1280 × 720)</small></label>
+            <?php if ($hasImg): ?><label class="bo-ac-check"><input type="checkbox" name="game_remove_login_image" value="1"> Retirer l’image actuelle</label><?php endif; ?>
+          </div>
+          <div class="bo-ac-field"><span>Logo</span>
+            <label class="bo-ac-drop"><input type="file" name="game_logo" accept="image/jpeg,image/png,image/webp"><span><?= $ico('shield') ?> <?= $hasLogo ? 'Remplacer le logo' : 'Choisir un logo' ?></span><small>Carré, fond transparent (PNG 256 × 256)</small></label>
+            <?php if ($hasLogo): ?><label class="bo-ac-check"><input type="checkbox" name="game_remove_logo" value="1"> Retirer le logo actuel</label><?php endif; ?>
+          </div>
+        </div>
+      </div>
+
+      <div class="ath-panel bo-ac-card">
+        <p class="bo-ac-label">Méthodes de connexion autorisées <small>au moins une</small></p>
+        <div class="bo-ac-grid bo-ac-grid--3">
+          <?= $switch('game_auth_password', $on('auth_password'), 'E-mail et mot de passe', 'Les identifiants du portail.', 'mail', ' data-ac-auth="E-mail"') ?>
+          <?= $switch('game_auth_otp', $on('auth_otp'), 'Code par e-mail', 'Un code à 6 chiffres reçu par e-mail.', 'code', ' data-ac-auth="Code temporaire"') ?>
+          <?= $switch('game_auth_steam', $on('auth_steam'), 'Steam', 'Sans saisie, pour un compte Steam déjà associé.', 'steam', ' data-ac-auth="Steam"') ?>
+        </div>
+        <?= $switch('game_allow_auto_reconnect', $on('allow_auto_reconnect'), 'Reconnexion automatique', 'Le joueur reste connecté d’une session à l’autre. Désactivé : nouvelle connexion à chaque lancement d’Arma.', 'refresh') ?>
+        <p class="bo-ac-muted bo-ac-warnline" data-ac-auth-warn hidden><?= $ico('warn', 14) ?> Gardez au moins une méthode : sinon plus personne ne peut se lier.</p>
+      </div>
+
+      <div class="ath-panel bo-ac-card">
+        <p class="bo-ac-label">Profil transmis au mod</p>
+        <p class="bo-ac-muted">Coché : le mod reprend la fiche Athena du joueur. Décoché : l’information n’est pas envoyée au mod (pour l’indicatif, celui réglé dans les options du mod est conservé).</p>
+        <div class="bo-ac-grid bo-ac-grid--3">
+          <?php foreach ([
+              'sync_profile' => ['user', 'Nom et prénom'],
+              'sync_grade' => ['shield', 'Grade'],
+              'sync_unit' => ['modules', 'Unité'],
+              'sync_callsign' => ['radio', 'Indicatif'],
+              'sync_avatar' => ['photo', 'Portrait'],
+              'sync_clearances' => ['key', 'Rôle et fonction'],
+          ] as $k => [$i, $l]): ?>
+            <?= $switch('game_' . $k, $on($k), $l, '', $i) ?>
+          <?php endforeach; ?>
+        </div>
+      </div>
+
+      <div class="ath-panel bo-ac-card">
+        <p class="bo-ac-label">Fonctions autorisées depuis le jeu</p>
+        <p class="bo-ac-muted">Une fonction coupée est refusée quand elle vient du mod ; la Tacmap web n’est pas concernée. Le suivi des positions reste toujours actif : il porte la liaison.</p>
+        <div class="bo-ac-grid bo-ac-grid--2">
+          <?= $switch('game_chat_enabled', $on('chat_enabled'), 'Messagerie', 'Messages tactiques envoyés depuis la tablette.', 'chat') ?>
+          <?= $switch('game_markers_enabled', $on('markers_enabled'), 'Marqueurs', 'Marqueurs posés en jeu et repris sur la carte.', 'marker') ?>
+          <?= $switch('game_photos_enabled', $on('photos_enabled'), 'Photos', 'Photos terrain et photos de renseignement.', 'photo') ?>
+          <?= $switch('game_intel_enabled', $on('intel_enabled'), 'Renseignement', 'Rapports SIGINT remontés par le mod.', 'intel') ?>
+          <?= $switch('game_jtac_enabled', $on('jtac_enabled'), 'Appui feu', '9-line, demandes CAS et désignation laser.', 'fire') ?>
+        </div>
+      </div>
+
+      <div class="ath-panel bo-ac-card">
+        <div class="bo-ac-grid bo-ac-grid--2">
+          <label class="bo-ac-field"><span>Pack Overwatch minimal (version)</span><input name="game_min_mod_version" value="<?= $h($ge['min_mod_version'] ?? '1.5.0') ?>" pattern="\d+\.\d+(\.\d+)?" placeholder="1.5.0" inputmode="decimal"><small>Un pack plus ancien est refusé à la connexion, avec la version installée et celle demandée. Format : 1.6.0.</small></label>
+          <label class="bo-ac-field"><span>Fréquence d’envoi des positions</span>
+            <select name="game_update_interval">
+              <option value="0"<?= $interval === 0 ? ' selected' : '' ?>>Réglage du pack (3 s)</option>
+              <?php foreach ([2, 3, 5, 10, 15, 30, 60] as $s): ?><option value="<?= $s ?>"<?= $interval === $s ? ' selected' : '' ?>>Toutes les <?= $s ?> s<?= $s >= 10 ? ' (économe)' : '' ?></option><?php endforeach; ?>
+            </select>
+            <small>Plus court = carte plus fluide mais plus de trafic. Imposé aux joueurs à partir du prochain pack Overwatch.</small></label>
+        </div>
+      </div>
     </div>
-</div>
+
+    <aside class="bo-ac-game__prev">
+      <p class="bo-ac-label">Aperçu de la fenêtre Arma</p>
+      <div class="bo-ac-arma">
+        <div class="bo-ac-arma__strip"></div>
+        <div class="bo-ac-arma__top"><b>ATHENA</b><span>COMSPEC OVERWATCH</span></div>
+        <div class="bo-ac-arma__img"><img data-ac-game-img src="<?= $h($img) ?>" alt=""<?= $img === '' ? ' hidden' : '' ?>><span data-ac-game-noimg<?= $img !== '' ? ' hidden' : '' ?>>Image de votre communauté</span></div>
+        <p class="bo-ac-arma__title">CONNEXION À ATHENA</p>
+        <p class="bo-ac-arma__name" data-ac-game-out="name"><?= $h($gp['name'] ?? '') ?></p>
+        <p class="bo-ac-arma__msg" data-ac-game-out="message"><?= $h($gp['message'] ?? '') ?></p>
+        <div class="bo-ac-arma__field"></div><div class="bo-ac-arma__field"></div>
+        <div class="bo-ac-arma__btn">SE CONNECTER</div>
+        <p class="bo-ac-arma__methods" data-ac-game-out="methods"></p>
+      </div>
+      <?= $howto('Tester sans déranger les joueurs', [
+          'Gardez une méthode que vous maîtrisez (e-mail et mot de passe) le temps du test.',
+          'Lancez Arma avec le pack Overwatch : la fenêtre Athena reprend ces réglages à l’ouverture.',
+          'Un réglage refusé (méthode, version) affiche un message explicite au joueur, jamais un écran vide.',
+      ]) ?>
+    </aside>
+    <div class="bo-ac-save"><span class="bo-ac-muted">S’applique à la prochaine connexion Overwatch de chaque joueur.</span><button type="submit" class="ath-btn ath-btn--solid">Enregistrer la connexion en jeu</button></div>
+  </form>
+</section>

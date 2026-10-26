@@ -162,13 +162,21 @@ final class AtakBridgeModulesService
         ];
     }
 
+    public function isEnabled(int $tenantId, string $moduleId): bool
+    {
+        $modules = $this->get($tenantId)['modules'];
+
+        return !array_key_exists($moduleId, $modules) || $modules[$moduleId];
+    }
+
     /**
      * @param array<string, bool> $modules
      * @return array{modules: array<string, bool>, updated_at: string}
      */
     public function put(int $tenantId, array $modules): array
     {
-        $merged = $this->defaultEnabledMap();
+        // Part de l'état enregistré : un envoi partiel ne réactive pas les modules absents.
+        $merged = $this->get($tenantId)['modules'];
         foreach ($merged as $id => $_) {
             if (array_key_exists($id, $modules)) {
                 $merged[$id] = (bool) $modules[$id];

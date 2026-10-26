@@ -70,7 +70,7 @@ final class AtakAdminFleetTest extends TestCase
         $routes = $this->read('routes/web.php');
         self::assertStringContainsString("'/admin/parc-atak'", $routes);
         self::assertStringContainsString("'/api/atak/admin-control/pending'", $routes);
-        self::assertStringContainsString('run_atak_admin_control_migration', $this->read('run-migrations.php'));
+        self::assertStringContainsString('run_atak_admin_control_migration', \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2)));
     }
 
     public function testCompromiseHistoryIsNewestFirst(): void

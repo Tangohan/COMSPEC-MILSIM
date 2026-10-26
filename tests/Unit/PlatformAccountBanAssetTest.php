@@ -16,7 +16,7 @@ final class PlatformAccountBanAssetTest extends TestCase
         foreach (['/admin/users/bannir', '/admin/users/lever-bannissement', '/admin/users/bloquer-ip', '/admin/users/retirer-communaute', '/admin/users/reintegrer-communaute'] as $path) {
             self::assertStringContainsString("'" . $path . "'", $routes);
         }
-        self::assertStringContainsString('platform_account_bans_migration.php', (string) file_get_contents($root . '/run-migrations.php'));
+        self::assertStringContainsString('platform_account_bans_migration.php', (string) \Tests\Support\MigrationPipelineSource::read($root));
 
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/System/SystemUsersController.php');
         self::assertStringContainsString('function removeMembership', $ctrl);

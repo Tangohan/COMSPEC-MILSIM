@@ -702,4 +702,12 @@ return [
     'signalement_s_a_traiter' => 'report(s) to handle',
     'tout_athena_effectifs_recrutement_formations_operations_documents_et_carte_atak' => 'All of Athena: personnel, recruitment, training, operations, documents and the ATAK map.',
     'in_rubric' => 'Section “:name”',
+    'suivi_des_cr_de_fin_d_op' => 'End-of-op report tracking',
+    'cr_impose_sur_les_atak_qui_l_a_recu_remis_ou_lu_derniere_synchro' => 'Report required on ATAKs: who received, submitted or read it, last sync',
+    'imposer_le_cr_de_fin_d_operation_sur_les_atak_et_suivre_les_reponses' => 'Require the end-of-operation report on ATAKs and track the answers',
+    'installer_les_mods' => 'Install the mods',
+    'mods_arma_3_via_le_steam_workshop' => 'Arma 3 mods through the Steam Workshop',
+    'mods_steam_workshop' => 'Mods (Steam Workshop)',
+    'portail_milsim' => 'MILSIM portal',
+    'haut_de_page' => 'Back to top',
 ];

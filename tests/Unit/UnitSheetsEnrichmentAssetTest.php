@@ -12,7 +12,7 @@ final class UnitSheetsEnrichmentAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $migration = (string) file_get_contents($root . '/bootstrap/unit_identity_enrichment_migration.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $navPayload = (string) file_get_contents($root . '/app/Support/OrbatRosterPayload.php');
         $billetSvc = (string) file_get_contents($root . '/app/Services/Organization/OrbatBilletService.php');

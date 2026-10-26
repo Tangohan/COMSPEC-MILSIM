@@ -13,7 +13,7 @@ final class AdvancementCareerWiringAssetTest extends TestCase
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $container = (string) file_get_contents($root . '/app/Core/Container.php');
-        $migrations = (string) file_get_contents($root . '/run-migrations.php');
+        $migrations = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $cron = (string) file_get_contents($root . '/app/Services/Cron/CronSchedule.php');
         $nav = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
         $catalog = (string) file_get_contents($root . '/app/Authorization/TenantPermissionCatalog.php');

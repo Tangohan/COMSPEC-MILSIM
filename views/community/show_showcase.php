@@ -692,6 +692,9 @@ unset($pbCssFile, $pbCssName);
         <div class="cl-pill cl-pill--live"><span class="cl-pulse" aria-hidden="true"></span><span><?= htmlspecialchars(mb_strtoupper($accessLabel)) ?></span></div>
         <?php endif; ?>
 
+        <?php $clSupport = \App\Services\Billing\DonorService::tenantSupport((int) ($tenant['id'] ?? 0)); if ($clSupport !== null): ?>
+        <a class="cl-pill cl-pill--supporter" href="<?= htmlspecialchars(url('soutenir-atak') . '#donateurs') ?>" title="Cette communauté soutient le développement d’Athena"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z" fill="currentColor"/></svg><span>SOUTIENT ATHENA</span></a>
+        <?php endif; ?>
         <h1 id="cl-hero-title" class="cl-hero__title"<?= $clF('public_hero_headline') ?>><?= $pbEditing ? nl2br(htmlspecialchars($heroHeadline)) : nl2br(name_blur_html($heroHeadline)) ?></h1>
         <?php if (($heroLead !== '' && $heroLead !== $heroHeadline) || $pbEditing): ?>
         <p class="cl-hero__lead"<?= $clF('public_hero_subtitle') ?><?= $clE('data-placeholder="Phrase d’accroche"') ?>><?= nl2br(htmlspecialchars($heroLead !== $heroHeadline ? $heroLead : '')) ?></p>

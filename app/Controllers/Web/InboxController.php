@@ -70,10 +70,13 @@ final class InboxController
         }
         try {
             foreach (Container::get(AlertPresentationService::class)->activityFeedForCurrentRequest() as $i => $alert) {
+                $alertId = (int) ($alert['id'] ?? 0);
                 $items[] = [
-                    'key' => 'annonces:' . $i,
+                    'key' => 'annonces:' . ($alertId > 0 ? $alertId : 'x' . $i),
                     'source' => 'annonces',
-                    'id' => 0,
+                    'id' => $alertId,
+                    // Une annonce « masquable » peut être retirée de la boîte (comme la croix du bandeau).
+                    'deletable' => $alertId > 0 && !empty($alert['dismissible']),
                     'title' => (string) ($alert['title'] ?? 'Annonce'),
                     'detail' => trim((string) ($alert['body'] ?? '')),
                     'href' => isset($alert['cta_url']) && $alert['cta_url'] !== '' ? (string) $alert['cta_url'] : url('alertes'),
@@ -163,6 +166,73 @@ final class InboxController
         return $this->flashBack($back, 'success', $done > 0 ? 'Marqué comme lu.' : 'Rien à marquer.');
     }
 
+    /**
+     * Supprime de la boîte : une sélection (keys[] = « source:id »), un élément (source + id),
+     * ou tous les éléments déjà lus (lus = 1). Notifications et avis de courrier sont effacés ;
+     * une conversation est seulement retirée de la boîte du membre (elle revient si quelqu’un répond) ;
+     * une annonce est masquée pour lui.
+     */
+    public function delete(Request $request, array $params = []): Response
+    {
+        $json = str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json');
+        $back = url('boite-reception') . $this->filterQuery($request);
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            return $json ? Response::json(['ok' => false], 419) : $this->flashBack($back, 'error', 'Session expirée. Rechargez la page.');
+        }
+        [$tenantId, $userId] = $this->ctx();
+        if ($tenantId < 1 || $userId < 1) {
+            return $json ? Response::json(['ok' => false], 401) : Response::redirect(url('login'));
+        }
+        $available = $this->availableSources($tenantId, $userId);
+        $done = 0;
+
+        if ((string) $request->input('lus', '') === '1') {
+            if ($available['notifications']) {
+                $done += $this->notifications()->deleteForUser($tenantId, $userId, [], true);
+            }
+            if ($available['courrier']) {
+                $done += $this->courrier()->deleteForUser($tenantId, $userId, [], true);
+            }
+        } else {
+            $bySource = ['messages' => [], 'notifications' => [], 'courrier' => [], 'annonces' => []];
+            $keys = $request->input('keys', []);
+            if (!is_array($keys) || $keys === []) {
+                $keys = [(string) $request->input('source', '') . ':' . (int) $request->input('id', 0)];
+            }
+            foreach (array_slice($keys, 0, 300) as $key) {
+                [$source, $id] = array_pad(explode(':', (string) $key, 2), 2, '0');
+                if (isset($bySource[$source]) && (int) $id > 0) {
+                    $bySource[$source][] = (int) $id;
+                }
+            }
+            if ($bySource['messages'] !== []) {
+                $done += $this->messages()->hideThreadsForUser($tenantId, $userId, $bySource['messages']);
+            }
+            if ($bySource['notifications'] !== []) {
+                $done += $this->notifications()->deleteForUser($tenantId, $userId, $bySource['notifications']);
+            }
+            if ($bySource['courrier'] !== [] && $available['courrier']) {
+                $done += $this->courrier()->deleteForUser($tenantId, $userId, $bySource['courrier']);
+            }
+            if ($bySource['annonces'] !== []) {
+                try {
+                    $dismissals = Container::get(\App\Repositories\UserAlertDismissalRepository::class);
+                    foreach ($bySource['annonces'] as $alertId) {
+                        $dismissals->dismiss($userId, 'tenant', $alertId);
+                        $done++;
+                    }
+                } catch (\Throwable) {
+                }
+            }
+        }
+
+        if ($json) {
+            return Response::json(['ok' => true, 'done' => $done]);
+        }
+
+        return $this->flashBack($back, 'success', $done > 0 ? ($done > 1 ? $done . ' éléments supprimés.' : 'Élément supprimé.') : 'Rien à supprimer.');
+    }
+
     private function markOne(string $source, int $id, int $tenantId, int $userId): bool
     {
         switch ($source) {
@@ -218,6 +288,7 @@ final class InboxController
             'unread' => (bool) $formatted['unread'],
             'at' => (string) $formatted['at'],
             'kind' => $source,
+            'deletable' => $id > 0,
         ];
     }
 

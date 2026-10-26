@@ -10,7 +10,7 @@ final class AtakMapsSeedTest extends TestCase
 {
     public function testKimmirutIsSeededWithHumanLabelAndJetelainTiles(): void
     {
-        $seed = (string) file_get_contents(dirname(__DIR__, 2) . '/run-migrations.php');
+        $seed = (string) \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
         $start = strpos($seed, '$atakMapsSeed = [');
         $end = strpos($seed, 'try {', $start !== false ? $start : 0);
         self::assertNotFalse($start);

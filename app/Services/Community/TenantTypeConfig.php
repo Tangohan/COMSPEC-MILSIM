@@ -433,9 +433,6 @@ final class TenantTypeConfig
             // Arsenal / tenues : ouvert à tous les profils (le mod s’en sert pour les dotations en jeu).
             'equipment' => 'equipment',
             'equipement' => 'equipment',
-            'modpacks' => 'operations',
-            'admin/modpacks' => 'operations',
-            'back-office/ressources/modpacks' => 'operations',
             // Coopérations
             'cooperation' => 'cooperation',
             'interteam' => 'cooperation',

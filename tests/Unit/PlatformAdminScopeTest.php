@@ -46,7 +46,8 @@ final class PlatformAdminScopeTest extends TestCase
         $routes = $this->read('routes/web.php');
         foreach ([
             "'/admin/atak-config' => 'back-office/ressources/atak-config'",
-            "'/admin/modpacks' => 'back-office/ressources/modpacks'",
+            // Les modpacks hébergés ont disparu : les mods sont servis par le Steam Workshop (page Mods).
+            "'/admin/modpacks' => 'back-office/ressources/atak-mod'",
             "'/admin/content-moderation' => 'back-office/content-moderation'",
         ] as $needle) {
             self::assertStringContainsString($needle, $routes);

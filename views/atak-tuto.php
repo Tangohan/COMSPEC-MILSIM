@@ -20,7 +20,7 @@ $canAdmin = function_exists('can') && (can('admin.system') || can('admin.organiz
         <span class="text-slate-300">·</span>
         <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Carte ATAK</a>
         <span class="text-slate-300">·</span>
-        <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Télécharger le pack</a>
+        <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Installer le mod (Steam)</a>
         <span class="text-slate-300">·</span>
         <a href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Guide du pack</a>
     </nav>

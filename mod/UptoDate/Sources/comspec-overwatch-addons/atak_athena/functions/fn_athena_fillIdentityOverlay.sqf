@@ -68,6 +68,13 @@ if (_role isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_getUnitRole"}) 
 };
 if (_role isEqualTo "" || {(toLower _role) in ["operator", "operateur"]}) then { _role = "—"; };
 
+// Donateur Athena (fn_applyDonorPerk, variable publique sur l'unité) : palier ajouté après le rôle.
+private _donor = _unit getVariable ["comspec_donor_tier", ""];
+if (_donor isEqualType "" && {_donor in ["soutien", "allie", "pilier"]}) then {
+    private _lbl = ["Soutien", "Allié", "Pilier"] select (["soutien", "allie", "pilier"] find _donor);
+    _role = if (_role isEqualTo "—") then { format ["Donateur Athena · %1", _lbl] } else { format ["%1 · Donateur %2", _role, _lbl] };
+};
+
 private _lines = [
     [2620, _cs],
     [2621, _name],

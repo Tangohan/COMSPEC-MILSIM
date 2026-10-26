@@ -6,18 +6,19 @@
         <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>.
     </p>
 
-    <h3>Téléchargement</h3>
+    <h3>Abonnement Steam Workshop</h3>
     <p>
-        Rendez-vous sur la page <strong>Télécharger le pack Overwatch</strong> depuis le menu ATAK.
-        Le fichier contient les addons, la bibliothèque de liaison et les textures du terminal.
-        Notez la version affichée : votre communauté peut exiger une version minimale pour rejoindre le serveur.
+        Le mod est distribué uniquement par le Steam Workshop : ouvrez la page
+        <a href="<?= htmlspecialchars(url('atak/mod'), ENT_QUOTES, 'UTF-8') ?>"><strong>Installer le mod Athena</strong></a>
+        et cliquez « S’abonner sur Steam ». Steam télécharge le mod, sa dépendance CBA_A3 et les mises à jour automatiquement.
+        Votre communauté peut exiger une version minimale pour rejoindre le serveur.
     </p>
 
     <h3>Installation côté Arma</h3>
     <ol>
-        <li>Extrayez le pack dans votre dossier de mods Arma (même emplacement que vos autres @mods).</li>
-        <li>Au lanceur, activez <strong>CBA_A3</strong> puis <strong>@COMSPECOverwatch</strong> (Overwatch doit être après CBA).</li>
-        <li>Vérifiez que la bibliothèque native est bien présente à la racine du dossier du mod (fournie avec le pack).</li>
+        <li>Lancez Arma 3 depuis Steam et attendez la fin du téléchargement du mod.</li>
+        <li>Au lanceur, onglet Mods, activez <strong>CBA_A3</strong> et <strong>COMSPEC ATAK Native</strong>.</li>
+        <li>La bibliothèque de liaison (COMSPEC Link) est fournie avec le mod : rien à copier à la main.</li>
         <li>Quittez Arma complètement après toute mise à jour du pack, puis relancez.</li>
     </ol>
 

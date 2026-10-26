@@ -26,5 +26,6 @@ $base = url('');
         }
         ?>
     </main>
+<?php require base_path('views/partials/donor_marks_assets.php'); ?>
 </body>
 </html>

@@ -103,6 +103,7 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-donor.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-c2-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-c2-live.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-terrain3d-premium.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -999,7 +1000,7 @@ if ($atakMapConfig) {
       <details class="atak-details">
         <summary>Pack Overwatch</summary>
         <div class="atak-details-body">
-          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Télécharger le pack Overwatch</a></p>
+          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Installer le mod (Steam Workshop)</a></p>
         </div>
       </details>
       <?php endif; ?>

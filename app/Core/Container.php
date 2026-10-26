@@ -660,6 +660,7 @@ class Container
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\QualificationExpiryScanCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\PilotQualificationsCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelProgressionCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SenioritySyncCronJob::class),
@@ -1106,6 +1107,36 @@ class Container
                 self::get(\App\Repositories\QualificationAwardRepository::class),
                 self::get(\App\Services\Personnel\QualificationTemporalStatusService::class)
             ),
+            \App\Repositories\PilotQualificationRuleRepository::class => new \App\Repositories\PilotQualificationRuleRepository(),
+            \App\Services\Personnel\PilotQualificationService::class => new \App\Services\Personnel\PilotQualificationService(
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\QualificationReferentielRepository::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
+                self::get(\App\Services\Personnel\QualificationCurrencyService::class),
+                self::get(\App\Repositories\PilotLogbookRepository::class)
+            ),
+            \App\Repositories\PilotLogbookRepository::class => new \App\Repositories\PilotLogbookRepository(),
+            \App\Services\Personnel\PilotLogbookService::class => new \App\Services\Personnel\PilotLogbookService(
+                self::get(\App\Repositories\PilotLogbookRepository::class),
+                self::get(\App\Services\Personnel\PilotQualificationService::class)
+            ),
+            \App\Controllers\Admin\Organization\PilotLogbookController::class => new \App\Controllers\Admin\Organization\PilotLogbookController(
+                self::get(\App\Services\Personnel\PilotLogbookService::class),
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
+            \App\Services\Cron\Jobs\PilotQualificationsCronJob::class => new \App\Services\Cron\Jobs\PilotQualificationsCronJob(
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Services\Personnel\PilotQualificationService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
+            \App\Controllers\Admin\Organization\PilotSyllabusController::class => new \App\Controllers\Admin\Organization\PilotSyllabusController(
+                self::get(\App\Services\Personnel\PilotQualificationService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\Personnel\PilotLogbookService::class)
+            ),
             \App\Controllers\Admin\Organization\QualificationReferentielController::class => new \App\Controllers\Admin\Organization\QualificationReferentielController(
                 self::get(\App\Repositories\QualificationDefinitionRepository::class),
                 self::get(\App\Repositories\QualificationReferentielRepository::class),
@@ -1374,6 +1405,13 @@ class Container
                 self::get(\App\Repositories\TenantRepository::class),
                 self::get(\App\Repositories\TenantGradeOverrideRepository::class),
                 self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class),
+                self::get(\App\Repositories\CustomGradeSystemRepository::class)
+            ),
+            \App\Repositories\CustomGradeSystemRepository::class => new \App\Repositories\CustomGradeSystemRepository(),
+            \App\Controllers\Admin\Organization\CustomGradeSystemController::class => new \App\Controllers\Admin\Organization\CustomGradeSystemController(
+                self::get(\App\Repositories\CustomGradeSystemRepository::class),
+                self::get(\App\Repositories\TenantRepository::class),
                 self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
             ),
             \App\Services\Rank\RankReferenceValidator::class => new \App\Services\Rank\RankReferenceValidator(),
@@ -1758,13 +1796,8 @@ class Container
                 self::get(\App\Services\Alerts\AlertPresentationService::class),
             ),
             \App\Controllers\Web\DocumentationController::class => new \App\Controllers\Web\DocumentationController(),
-            \App\Repositories\ModpackRepository::class => new \App\Repositories\ModpackRepository(),
-            \App\Controllers\Web\ModpackController::class => new \App\Controllers\Web\ModpackController(
-                self::get(\App\Repositories\ModpackRepository::class)
-            ),
             \App\Controllers\Web\OperateurTerrainController::class => new \App\Controllers\Web\OperateurTerrainController(
                 self::get(AuthService::class),
-                self::get(\App\Repositories\ModpackRepository::class),
                 self::get(\App\Services\Dashboard\TenantDashboardPinService::class),
             ),
             \App\Repositories\TrainingRepository::class => new \App\Repositories\TrainingRepository(),
@@ -2110,9 +2143,6 @@ class Container
             \App\Controllers\Admin\AdminUnitsController::class => new \App\Controllers\Admin\AdminUnitsController(
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class)
-            ),
-            \App\Controllers\Admin\AdminModpackController::class => new \App\Controllers\Admin\AdminModpackController(
-                self::get(\App\Repositories\ModpackRepository::class)
             ),
             \App\Controllers\Admin\AdminAtakConfigController::class => new \App\Controllers\Admin\AdminAtakConfigController(
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),

@@ -410,6 +410,12 @@ final class MemberSituationController
             }
             $enriched[] = $this->enrichAwardForOperatorView($award, $user);
         }
+        $pilotProgress = [];
+        try {
+            $pilotProgress = Container::get(\App\Services\Personnel\PilotQualificationService::class)->memberProgress($tenantId, $userId);
+        } catch (\Throwable) {
+            $pilotProgress = [];
+        }
 
         return Response::view('layout.main', $this->boShell([
             'title' => 'Mes qualifications',
@@ -417,9 +423,10 @@ final class MemberSituationController
             'boPageTitle' => 'Mes qualifications',
             'boPageKicker' => 'OPÉRATEUR · MES QUALIFICATIONS',
             'boPageSubtitle' => 'Qualifications et brevets enregistrés sur votre dossier.',
-            'backOfficePageCss' => ['back-office-member-situation.css', 'back-office-member-dossier.css'],
+            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : []),
             'user' => $user,
             'awards' => $enriched,
+            'pilotProgress' => $pilotProgress,
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]));
