@@ -13,7 +13,8 @@ use App\Core\Response;
  *
  * Repère, pour toute la plateforme, la réponse « message d'erreur + redirection vers une page
  * d'accueil » (contrôleurs et middlewares de route) et la remplace par :
- *  - un retour à la page précédente (Referer du même site) pour une page ou un formulaire ;
+ *  - un retour à la page précédente (Referer du même site) pour une page ou un formulaire, le message
+ *    passant en toast (clés flash toast_error / toast_warning) ;
  *  - un JSON 403 pour un appel fetch, que ath-toast.js affiche en toast sans recharger la page.
  * Sans page précédente exploitable, la redirection d'origine est conservée.
  */
@@ -59,6 +60,11 @@ final class AccessDeniedStayMiddleware
         if ($back === null) {
             return $response;
         }
+
+        // Toast dans le coin sur la page d'origine, y compris dans le back-office où les messages
+        // ordinaires s'affichent en bandeau dans la page.
+        unset($_SESSION['_flash'][$flashKey]);
+        $_SESSION['_flash']['toast_' . $flashKey] = $message;
 
         return Response::redirect($back, $request->isPost() ? 303 : 302);
     }

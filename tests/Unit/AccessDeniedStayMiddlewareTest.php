@@ -37,7 +37,8 @@ final class AccessDeniedStayMiddlewareTest extends TestCase
 
         self::assertSame(302, $res->statusCode());
         self::assertSame('/back-office/effectifs?tab=membres', $res->headerValue('Location'));
-        self::assertSame('Accès réservé aux administrateurs.', Session::getFlash('error'));
+        self::assertNull(Session::getFlash('error'));
+        self::assertSame('Accès réservé aux administrateurs.', Session::getFlash('toast_error'));
     }
 
     public function testDeniedFetchGetsJson403AndNoLeftoverFlash(): void
