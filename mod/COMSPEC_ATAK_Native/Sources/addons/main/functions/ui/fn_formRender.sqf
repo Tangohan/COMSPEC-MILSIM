@@ -290,7 +290,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _bar ctrlSetBackgroundColor _acc;
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y, _w - _pad, _rowH]] call _mk;
             // Titre en blanc (une couleur d'accent sombre, bleu ou rouge, se perdait sur le fond) : la barre porte l'accent.
-            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#b4c1bb'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            // Traduit avant la mise en capitales : « Cibles marquées : %1 » n'a pas de modèle en capitales.
+            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>%2", toUpper ((_title) call comspec_atak_native_fnc_tr), ["", format ["<br/><t size='0.8' color='#b4c1bb'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max (_fs * 1.3);
             _t ctrlSetPosition [_pad * 1.6, _y, _w - _pad, _h];
             _t ctrlCommit 0;
@@ -474,11 +475,25 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _lt = ["COMSPEC_RscStructuredText", [_lx, _y, _lw, _h]] call _mk;
             _lt ctrlSetStructuredText parseText ((format ["<t color='%3' size='%4'>%1</t>%2", [_label, toUpper _label] select _mono,
                 ["", format ["<br/><t size='0.72' color='#93a39c'>%1</t>", _help]] select (_isEdit && {_help isNotEqualTo ""} && {!_mono}), [["#e3ebe7", "#9fb0a8"] select _mono, "#ff6a5c"] select _warn, [1, 0.82] select _mono]) call comspec_atak_native_fnc_tr);
+            // Libellé + aide plus hauts que la ligne (texte anglais plus long, grande police, téléphone en paysage) : la
+            // ligne grandit au lieu de couper l'aide sous le libellé et de chevaucher la ligne suivante (retour joueur,
+            // app Comptes rendus « Enemy position / estimated grid »). Champ de saisie gardé à sa hauteur, centré.
+            private _h0 = _h;
+            private _need = (ctrlTextHeight _lt) + _pad / 2;
+            if (_need > _h) then {
+                _h = _need;
+                _bgL ctrlSetPosition [_pad, _y, _w, _h - pixelH * 2];
+                _bgL ctrlCommit 0;
+                _nb ctrlSetPosition [_pad * 1.5, _y + (_h - _h0 * 0.7) / 2, _nw, _h0 * 0.7 - pixelH * 2];
+                _nb ctrlCommit 0;
+                _nt ctrlSetPosition [_pad * 1.5, _y + (_h - _fs * 1.25) / 2, _nw, _fs * 1.25];
+                _nt ctrlCommit 0;
+            };
             private _th = (ctrlTextHeight _lt) min _h;
             _lt ctrlSetPosition [_lx, _y + (_h - _th) / 2, _lw, _th];
             _lt ctrlCommit 0;
             if (_isEdit) then {
-                private _e = ["COMSPEC_RscEdit", [_vx, _y + _h * 0.12, _vw, _h * 0.76], _value] call _mk;
+                private _e = ["COMSPEC_RscEdit", [_vx, _y + (_h - _h0 * 0.76) / 2, _vw, _h0 * 0.76], _value] call _mk;
                 _e ctrlSetFontHeight _font;
                 if (_mono) then { _e ctrlSetFont "EtelkaMonospacePro"; _e ctrlSetFontHeight (_font * 0.85); };
                 // Proposition automatique (modifiable) : en couleur d'accent, comme une valeur calculée.
