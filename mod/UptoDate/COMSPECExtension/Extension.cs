@@ -671,6 +671,10 @@ public static partial class Extension
                 var modBlock = MapModAccessBlockError(respBody);
                 if (modBlock != null)
                     return modBlock;
+                // Joueur bloqué par sa communauté : message propre au téléphone (fn_extensionCallback), pas
+                // « clé Athena invalide ». Le verrou global passe par ici depuis le correctif du refus de route.
+                if (respBody.Contains("atak_blocked", StringComparison.OrdinalIgnoreCase))
+                    return "ERR|atak_blocked";
                 if (respBody.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase))
                     return "ERR|steam_not_linked";
                 if (respBody.Contains("steam_required", StringComparison.OrdinalIgnoreCase))

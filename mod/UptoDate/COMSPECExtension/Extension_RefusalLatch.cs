@@ -120,8 +120,8 @@ public static partial class Extension
             // Une seule adresse refusée ne prouve pas que la clé ou le compte le sont : Athena renvoie aussi
             // tenant_context_required depuis des routes qui ne lisent la communauté que dans la clé (IFF, musique,
             // ingest v2) alors que client-init l'accepte depuis le corps de la requête.
-            LatchEndpoint(url, code);
-            MaybeReauthAfter401(url, force: true);
+            LatchEndpoint(url ?? "", code);
+            MaybeReauthAfter401(url ?? "", force: true);
             return;
         }
         if (status == 401)
