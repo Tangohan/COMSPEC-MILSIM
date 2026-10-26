@@ -611,8 +611,9 @@ class CfgRemoteExec {
         // tout appel distant qui ne vient pas du serveur, donc la déclarer ne permet rien de client à client.
         class comspec_atak_native_fnc_adminClient { allowedTargets = 1; };
         // Serveur -> joueurs : alertes de compromission, révocation chez Athena, nouvel IMEI (fn_captureServer). Même
-        // garde (seul le serveur est accepté). 0 et non 1 : en partie hébergée, l'hôte, qui est le serveur, peut être
-        // le joueur à prévenir ; sur un serveur dédié la fonction ne fait rien (pas d'interface).
+        // garde : la fonction refuse tout appel distant qui ne vient pas du serveur (sauf deux lectures sans effet), donc
+        // la déclarer ne permet rien de client à client. 0 et non 1 : en partie hébergée, l'hôte, qui est le serveur,
+        // peut être le joueur à prévenir ; sur un serveur dédié la fonction ne fait rien (pas d'interface).
         class comspec_atak_native_fnc_compromise { allowedTargets = 0; };
     };
 };

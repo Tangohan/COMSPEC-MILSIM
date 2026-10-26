@@ -12,8 +12,8 @@
       "event" [genre, ligne] : "new" | "activity" | "validated" | "dismissed" (du serveur)
       "revoke" [id, terminal, indicatif] : appel COMSPEC Link puis compte rendu au serveur
       "ownerReset"     : mon téléphone a été compromis : nouvel IMEI sur le prochain
-        Ces trois-là viennent du serveur seul (remoteExecCall de fn_captureServer) : un appel distant d'un autre poste
-        est refusé.
+        Ces trois-là viennent du serveur seul (remoteExecCall de fn_captureServer). Un appel distant d'un autre poste
+        est refusé, pour toute action sauf les lectures « can » et « mine ».
       "can" ligne      : puis-je valider ?        "validate" id    "dismiss" id    "map" id
       "mine"           : compromissions de mon camp (plus récentes d'abord)
 */
@@ -22,8 +22,11 @@ params [["_act", ""], ["_arg", []]];
 // un client pouvait faire révoquer chez Athena par un autre joueur, avec la session de celui-ci, le terminal de son
 // choix (« revoke »), lui imposer un nouvel IMEI (« ownerReset ») ou passer son ATAK en mode compromis (faux
 // « validated »). Le serveur envoie désormais ces ordres par remoteExecCall, et seul un appel du serveur (poste 2) est
-// accepté. Solo : un seul poste.
-if (_act in ["event", "revoke", "ownerReset"] && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2}) exitWith {
+// accepté. Les autres actions agissent au nom du joueur local : un autre poste qui faisait exécuter « validate » ou
+// « dismiss » chez un chef de groupe obtenait du serveur une validation (donc une révocation chez Athena, avec la
+// session du chef) ou un rejet au nom de ce chef. Seules « can » et « mine », simples lectures, restent ouvertes.
+// Solo : un seul poste.
+if (!(_act in ["can", "mine"]) && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] Appel « %1 » refusé : il ne vient pas du serveur (poste %2)", _act, remoteExecutedOwner];
 };
 // Comme l'ancien gestionnaire, enregistré seulement chez les joueurs (hasInterface).

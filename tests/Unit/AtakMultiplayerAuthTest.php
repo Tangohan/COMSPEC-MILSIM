@@ -27,6 +27,22 @@ final class AtakMultiplayerAuthTest extends TestCase
         return $j === false ? '' : substr($src, (int) $i, $j - (int) $i);
     }
 
+    /** Actions de fn_compromise que le garde de tête refuse à un appel distant qui ne vient pas du serveur. */
+    private function compromiseGuarded(): array
+    {
+        $src = $this->read(self::MAIN . '/functions/shell/fn_compromise.sqf');
+        $head = $this->between($src, 'params [["_act", ""], ["_arg", []]];', 'switch (_act) do {');
+        $cond = '/^if \((?:_act in \[([^\]]*)\]|!\(_act in \[([^\]]*)\]\)) && \{isMultiplayer\} && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\}\) exitWith \{$/m';
+        if (preg_match($cond, $head, $m) !== 1) {
+            return [];
+        }
+        // « _act in [...] » : seules les actions listées ; « !(_act in [...]) » : toutes sauf celles-là.
+        $except = str_starts_with($m[0], 'if (!(');
+        preg_match_all('/"([^"]+)"/', $except ? $m[2] : $m[1], $listed);
+        preg_match_all('/^    case "([^"]+)"/m', $src, $cases);
+        return array_values(array_filter($cases[1], static fn (string $a): bool => in_array($a, $listed[1], true) !== $except));
+    }
+
     public function testAdminRecoverStripsAServerLocalAiItself(): void
     {
         // « Reprendre le téléphone » (app Admin) tourne dans la pile du remoteExec de l'admin. Par l'événement
@@ -88,8 +104,23 @@ final class AtakMultiplayerAuthTest extends TestCase
             self::assertStringContainsString($call, $srv);
         }
         // Le garde est en tête de fn_compromise, avant toute action.
-        $guard = $this->between($this->read(self::MAIN . '/functions/shell/fn_compromise.sqf'), 'params [["_act", ""], ["_arg", []]];', 'switch (_act) do {');
-        self::assertStringContainsString('if (_act in ["event", "revoke", "ownerReset"] && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2}) exitWith {', $guard);
+        $guarded = $this->compromiseGuarded();
+        foreach (['event', 'revoke', 'ownerReset'] as $act) {
+            self::assertContains($act, $guarded, $act);
+        }
         self::assertStringContainsString('class comspec_atak_native_fnc_compromise { allowedTargets = 0; };', $this->read(self::MAIN . '/config.cpp'));
+    }
+
+    public function testCompromiseRefusesEveryActingCallFromAnotherClient(): void
+    {
+        // La déclaration CfgRemoteExec (allowedTargets = 0) ouvre fn_compromise de poste à poste dans une mission en
+        // liste blanche, et le mode 2 par défaut l'ouvrait déjà. Un autre poste faisait exécuter « validate » ou
+        // « dismiss » chez un chef de groupe : le serveur recevait la demande du poste du chef et la jugeait en son nom
+        // (validation, donc révocation chez Athena avec la session du chef, ou rejet). Seules les lectures « can » et
+        // « mine » restent ouvertes.
+        $guarded = $this->compromiseGuarded();
+        foreach (['publish', 'validate', 'dismiss', 'map'] as $act) {
+            self::assertContains($act, $guarded, $act);
+        }
     }
 }
