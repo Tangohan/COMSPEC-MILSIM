@@ -7,6 +7,10 @@ params [
     ["_announce", true, [true]]
 ];
 
+// Appel non planifié (bouton d'interface, app SSE terrain) : relancé en spawn, sinon callExtension bloque le jeu
+// pendant la requête HTTP (fn_extensionCall n'attend via extAwait qu'en contexte suspendable).
+if (!canSuspend) exitWith { _this spawn comspec_sse_fnc_submitBiometricsSim; true };
+
 private _payload = [_entity, _bioBundle] call comspec_sse_fnc_buildAthenaBiometricsPayload;
 private _uid = _payload getOrDefault ["sse_uid", "?"];
 
@@ -32,11 +36,11 @@ if ([] call comspec_sse_fnc_isOnline) then {
 };
 
 if (_ok) then {
-    if (_announce) then { hint (("Biométrie envoyée au registre.") call comspec_sse_fnc_tr); };
+    if (_announce) then { ["Biométrie envoyée au registre.", "SUCCESS"] call comspec_sse_fnc_notify; };
     [_uid, "biometrics", "seek_ii", "Bio sim", 80, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
-    if (_announce) then { hint (("Biométrie mise en attente.") call comspec_sse_fnc_tr); };
+    if (_announce) then { ["Biométrie mise en attente.", "WARNING"] call comspec_sse_fnc_notify; };
     [_uid, "biometrics", "seek_ii", "QUEUED", 80, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 

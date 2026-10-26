@@ -124,11 +124,12 @@ missionNamespace setVariable ["COMSPEC_ATAK_OwRepair", _ow];
 [_care, "COMSPEC_ATAK_OwDiag", "Diagnostic", "", {
     private _s = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
     private _ok = { ["✗ ", "✓ "] select _this };
-    hint ((format ["État de l'ATAK\n\nAlimentation : %1\nÉcran : %2\nConnexion : %3%4",
+    // Dans le centre de notifications du téléphone, pas sur l'écran du jeu.
+    ["INFO", format ["État de l'ATAK · Alimentation : %1 · Écran : %2 · Connexion : %3%4",
         ((_s get "powered_on") call _ok) + (["éteint", "OK"] select (_s get "powered_on")),
         ((_s get "screen_ok") call _ok) + (["détruit", "OK"] select (_s get "screen_ok")),
         ((_s get "connection_ok") call _ok) + (["coupée", "OK"] select (_s get "connection_ok")),
-        ["", "\n\nTéléphone irréparable : remplacement nécessaire"] select (_s get "device_destroyed")]) call comspec_atak_native_fnc_tr);
+        ["", " · Téléphone irréparable : remplacement nécessaire"] select (_s get "device_destroyed")], 8, 40] call comspec_atak_native_fnc_notify;
 }, { call (missionNamespace getVariable "COMSPEC_ATAK_OwRepair") }] call _add;
 // Les mêmes actions posées par Overwatch dans « Équipement » sont retirées une fois en place (doublons).
 [{ missionNamespace getVariable ["COMSPEC_AtakRepairReady", false] }, {

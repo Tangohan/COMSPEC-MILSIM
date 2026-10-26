@@ -396,8 +396,24 @@ public static partial class Extension
             || raw.Contains("SESSION_REVOKED", StringComparison.OrdinalIgnoreCase)
             || raw.Contains("INVALID_REFRESH", StringComparison.OrdinalIgnoreCase)
             || raw.Contains("refresh_revoked", StringComparison.OrdinalIgnoreCase)
-            || raw.Contains("http_401", StringComparison.OrdinalIgnoreCase)
-            || raw.Contains("http_403", StringComparison.OrdinalIgnoreCase);
+            // Athena répond 401 {"error":"SESSION_EXPIRED"} à un refresh inconnu/expiré/révoqué
+            // (/session/refresh et /session/restore, appelés sans Bearer) : GamePostJson le mappe
+            // en ERR|SESSION_EXPIRED avant http_401, donc le traiter comme une révocation.
+            || raw.StartsWith("ERR|SESSION_EXPIRED", StringComparison.Ordinal)
+            // 401 nu sur /session/refresh = refresh refusé. Un 403 nu (WAF, proxy, blocage IP
+            // temporaire) ne doit pas effacer le refresh DPAPI : seuls les codes explicites ci-dessus.
+            || raw.Contains("http_401", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ExplicitRevocationCode(string body)
+    {
+        if (string.IsNullOrEmpty(body)) return "";
+        foreach (var code in new[] { "TOKEN_REVOKED", "REFRESH_REVOKED", "SESSION_REVOKED", "INVALID_REFRESH" })
+        {
+            if (body.Contains(code, StringComparison.OrdinalIgnoreCase))
+                return code;
+        }
+        return "";
     }
 
     // Rafraîchissement du jeton de jeu : un seul à la fois, et pas plus d'un essai par minute après un échec.
@@ -905,6 +921,10 @@ public static partial class Extension
                 var mapped = MapGameError("", body);
                 if (mapped != "NETWORK_ERROR")
                     return "ERR|" + mapped;
+                // Code de révocation explicite conservé (sinon perdu derrière http_4xx) pour IsRefreshRevoked.
+                var revoked = ExplicitRevocationCode(body);
+                if (revoked.Length > 0)
+                    return "ERR|" + revoked;
                 return "ERR|http_" + ((int)resp.StatusCode).ToString(CultureInfo.InvariantCulture);
             }
             return body;

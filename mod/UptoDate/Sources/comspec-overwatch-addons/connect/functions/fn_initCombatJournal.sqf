@@ -10,6 +10,10 @@ private _unit = player;
 
 if ((_unit getVariable ["COMSPEC_CombatFiredEH", -1]) < 0) then {
     private _firedId = _unit addEventHandler ["FiredMan", {
+        // EH repris sur l’unité respawnée (variables objet perdues) : seul le dernier ajout agit.
+        if (_thisEventHandler != (missionNamespace getVariable ["COMSPEC_CombatFiredEhId", -1])) exitWith {
+            (_this select 0) removeEventHandler ["FiredMan", _thisEventHandler];
+        };
         if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
         params ["_unit", "", "", "", "_ammo", "", "", ""];
         if (isNull _unit || {_unit != player}) exitWith {};
@@ -34,10 +38,15 @@ if ((_unit getVariable ["COMSPEC_CombatFiredEH", -1]) < 0) then {
         };
     }];
     _unit setVariable ["COMSPEC_CombatFiredEH", _firedId];
+    missionNamespace setVariable ["COMSPEC_CombatFiredEhId", _firedId, false];
 };
 
 if ((_unit getVariable ["COMSPEC_CombatMissileEH", -1]) < 0) then {
     private _incId = _unit addEventHandler ["IncomingMissile", {
+        // EH repris sur l’unité respawnée (variables objet perdues) : seul le dernier ajout agit.
+        if (_thisEventHandler != (missionNamespace getVariable ["COMSPEC_CombatMissileEhId", -1])) exitWith {
+            (_this select 0) removeEventHandler ["IncomingMissile", _thisEventHandler];
+        };
         if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
         params ["_target"];
         if (isNull _target || {_target != player}) exitWith {};
@@ -63,6 +72,7 @@ if ((_unit getVariable ["COMSPEC_CombatMissileEH", -1]) < 0) then {
         }, [], 8] call CBA_fnc_waitAndExecute;
     }];
     _unit setVariable ["COMSPEC_CombatMissileEH", _incId];
+    missionNamespace setVariable ["COMSPEC_CombatMissileEhId", _incId, false];
 };
 
 if (!(missionNamespace getVariable ["COMSPEC_CombatAceLockEH", false])) then {

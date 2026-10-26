@@ -15,6 +15,12 @@ if (hasInterface) then {
     }] call CBA_fnc_addEventHandler;
 };
 
+// Fiche modifiée : la fiche sérialisée du pivot (comspec_sse_fnc_pivotSearch) est à refaire.
+["comspec_sse_recordChanged", {
+    params [["_ent", objNull, [objNull]]];
+    if (!isNull _ent) then { _ent setVariable ["comspec_sse_pivotBlob", nil]; };
+}] call CBA_fnc_addEventHandler;
+
 // Registre des découvertes tenu par le serveur (les clients y proposent leurs découvertes).
 if (isServer) then {
     ["comspec_sse_discoveryState", {

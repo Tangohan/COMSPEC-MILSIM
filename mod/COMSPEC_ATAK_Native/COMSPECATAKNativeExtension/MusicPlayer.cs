@@ -29,7 +29,92 @@ public static partial class Extension
 
     // Client à part : aucun en-tête Athena ne doit partir vers une URL saisie par le joueur.
     private static HttpClient? _musicHttp;
-    private static HttpClient MusicHttp => _musicHttp ??= CreateHttpClient(60);
+    private static HttpClient MusicHttp => _musicHttp ??= CreateMusicHttpClient();
+
+    // L'URL peut venir d'un autre joueur (haut-parleur public) : jamais de requête vers le PC lui-même ni le réseau
+    // local (box, NAS, services en écoute sur 127.0.0.1). Contrôlé sur l'adresse réellement connectée, donc aussi
+    // après résolution DNS et redirection. Exception : l'hôte Athena configuré (bibliothèque, éventuel serveur local).
+    private static HttpClient CreateMusicHttpClient()
+    {
+        var handler = new SocketsHttpHandler
+        {
+            MaxAutomaticRedirections = 5,
+            ConnectCallback = async (ctx, ct) =>
+            {
+                var target = ctx.InitialRequestMessage.RequestUri;
+                // Proxy système : la connexion part vers le proxy choisi par le joueur, l'hôte cible a été vérifié avant.
+                // Forme comparée : punycode et IPv6 sans crochets ("[::1]" vs "::1"), sinon une redirection vers une IP
+                // littérale IPv6 ou un nom IDN passerait pour un proxy et échapperait au contrôle.
+                var connHost = ctx.DnsEndPoint.Host.Trim('[', ']');
+                var viaProxy = target != null
+                    && !string.Equals(connHost, target.IdnHost.Trim('[', ']'), StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(connHost, target.Host.Trim('[', ']'), StringComparison.OrdinalIgnoreCase);
+                var trusted = viaProxy || MusicIsAthenaHost(ctx.DnsEndPoint.Host);
+                var addrs = await System.Net.Dns.GetHostAddressesAsync(ctx.DnsEndPoint.Host, ct).ConfigureAwait(false);
+                Exception? last = null;
+                foreach (var ip in addrs)
+                {
+                    if (!trusted && MusicIsPrivateAddress(ip)) { last ??= new InvalidOperationException("adresse locale ou privée refusée"); continue; }
+                    var sock = new System.Net.Sockets.Socket(ip.AddressFamily, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp) { NoDelay = true };
+                    try
+                    {
+                        await sock.ConnectAsync(new System.Net.IPEndPoint(ip, ctx.DnsEndPoint.Port), ct).ConfigureAwait(false);
+                        return new System.Net.Sockets.NetworkStream(sock, ownsSocket: true);
+                    }
+                    catch (Exception ex) { sock.Dispose(); last = ex; }
+                }
+                throw last ?? new InvalidOperationException("hôte introuvable");
+            }
+        };
+        var client = new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(60),
+            DefaultRequestVersion = System.Net.HttpVersion.Version11,
+            DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower
+        };
+        try
+        {
+            client.DefaultRequestHeaders.ExpectContinue = false;
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
+        }
+        catch { /* en-têtes facultatifs */ }
+        return client;
+    }
+
+    private static bool MusicIsAthenaHost(string host)
+    {
+        var b = NormalizeBaseUrl(_baseUrl);
+        if (b.Length == 0) b = "https://athena.ttrd.fr";
+        return Uri.TryCreate(b, UriKind.Absolute, out var u) && string.Equals(u.Host, host, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool MusicIsPrivateAddress(System.Net.IPAddress ip)
+    {
+        if (ip.IsIPv4MappedToIPv6) ip = ip.MapToIPv4();
+        if (System.Net.IPAddress.IsLoopback(ip) || ip.Equals(System.Net.IPAddress.Any) || ip.Equals(System.Net.IPAddress.IPv6Any)) return true;
+        if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+        {
+            var b = ip.GetAddressBytes();
+            return b[0] == 0 || b[0] == 10 || b[0] == 127 || b[0] >= 224
+                || (b[0] == 169 && b[1] == 254)
+                || (b[0] == 172 && b[1] >= 16 && b[1] <= 31)
+                || (b[0] == 192 && b[1] == 168)
+                || (b[0] == 100 && b[1] >= 64 && b[1] <= 127);
+        }
+        if (ip.IsIPv6LinkLocal || ip.IsIPv6SiteLocal || ip.IsIPv6Multicast || ip.IsIPv6UniqueLocal) return true;
+        return false;
+    }
+
+    // Vérification préalable (sans connexion), en plus du contrôle ConnectCallback de chaque connexion MusicHttp.
+    private static async Task MusicCheckHostAsync(Uri uri)
+    {
+        if (MusicIsAthenaHost(uri.Host)) return;
+        var addrs = System.Net.IPAddress.TryParse(uri.Host.Trim('[', ']'), out var lit)
+            ? new[] { lit! }
+            : await System.Net.Dns.GetHostAddressesAsync(uri.IdnHost).ConfigureAwait(false);
+        if (addrs.Length == 0 || addrs.Any(MusicIsPrivateAddress))
+            throw new InvalidOperationException("adresse locale ou privée refusée");
+    }
     private static readonly BlockingCollection<Action> MusicQueue = new();
     private static Thread? _musicThread;
     private static readonly object MusicLock = new();
@@ -239,9 +324,17 @@ public static partial class Extension
         return "";
     }
 
+    // La référence peut venir d'un autre joueur (haut-parleur public) : jamais de chemin absolu, UNC (fuite NTLM via SMB)
+    // ni "..", seulement un morceau du dossier musique, comme BtFileOpen. "" = refusé.
     private static string MusicResolveFile(string reference)
     {
-        return Path.IsPathRooted(reference) ? reference : Path.GetFullPath(Path.Combine(MusicFolder(), reference));
+        if (Path.IsPathRooted(reference) || reference.StartsWith(@"\\", StringComparison.Ordinal) || reference.StartsWith("//", StringComparison.Ordinal)) return "";
+        if (reference.Replace('\\', '/').Split('/').Any(p => p.Trim() == "..")) return "";
+        var dir = MusicFolder();
+        string path;
+        try { path = Path.GetFullPath(Path.Combine(dir, reference)); } catch { return ""; }
+        if (!BtUnder(path, dir) || !MusicExtensions.Contains(Path.GetExtension(path).ToLowerInvariant())) return "";
+        return path;
     }
 
     private static string MusicCommand(string function, string?[] args)
@@ -289,7 +382,7 @@ public static partial class Extension
                 if (kind == "file")
                 {
                     var path = MusicResolveFile(reference);
-                    if (!File.Exists(path)) return "ERR|fichier introuvable";
+                    if (path.Length == 0 || !File.Exists(path)) return "ERR|fichier introuvable";
                     var title = Path.GetFileNameWithoutExtension(path);
                     _musicState = "loading";
                     _musicTitle = title;
@@ -312,7 +405,7 @@ public static partial class Extension
                     _ = Task.Run(async () =>
                     {
                         string source;
-                        try { source = await MusicFetchAsync(uri, kind == "lib").ConfigureAwait(false); }
+                        try { source = await MusicFetchAsync(uri, kind == "lib", gen).ConfigureAwait(false); }
                         catch (Exception ex)
                         {
                             if (gen == _musicGen) { _musicState = "error"; _musicError = "téléchargement : " + ex.Message; }
@@ -352,9 +445,9 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Télécharge un fichier audio (mis en cache) ; un flux sans taille connue (webradio) est ouvert directement par MCI.
+    /// Télécharge un fichier audio (mis en cache) ; un flux sans taille connue (webradio) est relayé à MCI via 127.0.0.1.
     /// </summary>
-    private static async Task<string> MusicFetchAsync(Uri uri, bool library = false)
+    private static async Task<string> MusicFetchAsync(Uri uri, bool library = false, int gen = 0)
     {
         var cache = MusicCacheFolder();
         // Bibliothèque Athena : la signature (exp, sig) change à chaque liste ; la piste, elle, est fixée par le chemin.
@@ -369,6 +462,7 @@ public static partial class Extension
             return target;
         }
 
+        await MusicCheckHostAsync(uri).ConfigureAwait(false);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
         using var req = new HttpRequestMessage(HttpMethod.Get, uri);
         using var resp = await MusicHttp.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
@@ -377,18 +471,118 @@ public static partial class Extension
         if (type.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("page web, pas un fichier audio (YouTube, Spotify… ne sont pas lisibles)");
         var len = resp.Content.Headers.ContentLength;
-        if (len == null && !library) return uri.AbsoluteUri; // flux continu : lecture directe
+        if (len == null && !library)
+        {
+            // Flux continu : MCI ne reçoit jamais l'URL distante (il rouvrirait sa propre connexion, avec sa propre
+            // résolution DNS et ses redirections, hors du contrôle ConnectCallback). Il lit un relais 127.0.0.1.
+            var final = resp.RequestMessage?.RequestUri ?? uri;
+            if (final != uri) await MusicCheckHostAsync(final).ConfigureAwait(false);
+            return MusicStartRelay(final, gen);
+        }
         if (len > MusicMaxDownloadBytes) throw new InvalidOperationException("fichier trop lourd (80 Mo max)");
 
         var tmp = target + ".part";
         await using (var src = await resp.Content.ReadAsStreamAsync(cts.Token).ConfigureAwait(false))
         await using (var dst = File.Create(tmp))
         {
-            await src.CopyToAsync(dst, cts.Token).ConfigureAwait(false);
+            // Taille annoncée absente ou fausse : plafond aussi pendant la copie.
+            var buf = new byte[81920];
+            long total = 0;
+            int n;
+            while ((n = await src.ReadAsync(buf, cts.Token).ConfigureAwait(false)) > 0)
+            {
+                total += n;
+                if (total > MusicMaxDownloadBytes) throw new InvalidOperationException("fichier trop lourd (80 Mo max)");
+                await dst.WriteAsync(buf.AsMemory(0, n), cts.Token).ConfigureAwait(false);
+            }
         }
         File.Move(tmp, target, true);
         MusicTrimCache(cache);
         return target;
+    }
+
+    private static int _musicRelayClients;
+
+    /// <summary>
+    /// Relais local d'un flux continu : écoute sur 127.0.0.1 (port libre, chemin à jeton aléatoire) et recopie vers MCI
+    /// le flux lu par MusicHttp, dont chaque connexion passe par le contrôle d'adresse. Arrêté dès que la lecture change.
+    /// </summary>
+    private static string MusicStartRelay(Uri remote, int gen)
+    {
+        var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
+        var ext = Path.GetExtension(remote.AbsolutePath).ToLowerInvariant();
+        if (!MusicExtensions.Contains(ext)) ext = ".mp3";
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (gen == _musicGen)
+                {
+                    System.Net.Sockets.TcpClient client;
+                    using (var wait = new CancellationTokenSource(TimeSpan.FromSeconds(1)))
+                    {
+                        try { client = await listener.AcceptTcpClientAsync(wait.Token).ConfigureAwait(false); }
+                        catch (OperationCanceledException) { continue; }
+                    }
+                    if (gen != _musicGen) { client.Dispose(); break; }
+                    if (Interlocked.Increment(ref _musicRelayClients) > 4)
+                    {
+                        Interlocked.Decrement(ref _musicRelayClients);
+                        client.Dispose();
+                        continue;
+                    }
+                    _ = Task.Run(async () =>
+                    {
+                        try { await MusicRelayServeAsync(client, remote, token, gen).ConfigureAwait(false); }
+                        finally { Interlocked.Decrement(ref _musicRelayClients); }
+                    });
+                }
+            }
+            catch { /* relais arrêté */ }
+            finally { try { listener.Stop(); } catch { /* déjà fermé */ } }
+        });
+        return "http://127.0.0.1:" + port.ToString(CultureInfo.InvariantCulture) + "/" + token + ext;
+    }
+
+    private static async Task MusicRelayServeAsync(System.Net.Sockets.TcpClient client, Uri remote, string token, int gen)
+    {
+        using (client)
+        {
+            try
+            {
+                client.NoDelay = true;
+                var net = client.GetStream();
+                // Requête du lecteur : seule la ligne de requête compte (méthode + chemin à jeton), en-têtes ignorés.
+                var head = new StringBuilder();
+                var one = new byte[1];
+                while (head.Length < 8192 && await net.ReadAsync(one.AsMemory(0, 1)).ConfigureAwait(false) == 1)
+                {
+                    head.Append((char)one[0]);
+                    if (head.Length >= 4 && head[^1] == '\n' && head[^2] == '\r' && head[^3] == '\n' && head[^4] == '\r') break;
+                }
+                var parts = head.ToString().Split("\r\n")[0].Split(' ');
+                if (parts.Length < 2 || !parts[1].StartsWith("/" + token, StringComparison.Ordinal)) return;
+                using var req = new HttpRequestMessage(HttpMethod.Get, remote);
+                using var resp = await MusicHttp.SendAsync(req, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                var type = resp.Content.Headers.ContentType?.MediaType ?? "audio/mpeg";
+                if (!resp.IsSuccessStatusCode || type.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
+                {
+                    await net.WriteAsync(Encoding.ASCII.GetBytes("HTTP/1.0 502 Bad Gateway\r\nConnection: close\r\n\r\n")).ConfigureAwait(false);
+                    return;
+                }
+                await net.WriteAsync(Encoding.ASCII.GetBytes("HTTP/1.0 200 OK\r\nContent-Type: " + type + "\r\nConnection: close\r\n\r\n")).ConfigureAwait(false);
+                if (parts[0] == "HEAD") return;
+                await using var src = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                var buf = new byte[16384];
+                int n;
+                while (gen == _musicGen && (n = await src.ReadAsync(buf).ConfigureAwait(false)) > 0)
+                    await net.WriteAsync(buf.AsMemory(0, n)).ConfigureAwait(false);
+            }
+            catch { /* lecteur ou source coupé */ }
+        }
     }
 
     private static void MusicTrimCache(string cache)

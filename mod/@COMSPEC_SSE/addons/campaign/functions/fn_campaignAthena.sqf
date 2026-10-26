@@ -11,7 +11,17 @@
     à l'envoi, 6000 octets au retour.
 */
 params [["_mode", "", [""]], ["_args", [], [[]]], ["_req", objNull, [objNull]]];
-if (!isServer) exitWith { ["comspec_sse_campAthena", [_mode, _args, player]] call CBA_fnc_serverEvent; false };
+// Client : appel distant (liste blanche CfgRemoteExec) ; demandeur retrouvé par remoteExecutedOwner, jamais fourni par le client.
+if (!isServer) exitWith { [_mode, _args] remoteExecCall ["comspec_sse_fnc_campaignAthena", 2]; false };
+if (isRemoteExecuted && {remoteExecutedOwner != 2}) then {
+    private _ro = remoteExecutedOwner;
+    _req = (allPlayers select { owner _x == _ro }) param [0, objNull];
+    if (isNull _req) then { _mode = "" };
+};
+if (_mode isEqualTo "") exitWith {
+    diag_log text "[COMSPEC SSE] Campagne Athena : demande refusée (demandeur introuvable ou mode vide).";
+    false
+};
 if (!canSuspend) exitWith { [_mode, _args, _req] spawn comspec_sse_fnc_campaignAthena; true };
 // Demande d'un client : Zeus ou administrateur seulement (envoi et récupération touchent les sauvegardes du serveur).
 if (!isNull _req && {!([_req] call comspec_sse_fnc_isAuthority)}) exitWith {

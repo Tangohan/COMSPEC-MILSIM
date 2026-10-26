@@ -10,13 +10,13 @@
       "result"  : réponse du serveur [action, ok, message, données]
 */
 params [["_act", "phone"], ["_a", []]];
+// Retour affiché DANS le téléphone (centre de notifications + bandeau à la prochaine ouverture), jamais sur l'écran de jeu.
+// Texte traduit à l'affichage (fn_notificationsRender, fn_pageNotifs).
+// Sans téléphone sur soi (bandeau jamais vu à temps) : un échec est signalé par le son d'erreur, jamais par un hint.
 private _say = {
     params ["_msg", ["_ok", true]];
-    if (!isNil "ace_common_fnc_displayTextStructured") then {
-        [format ["<t color='%1'>%2</t>", ["#ff9a7a", "#ffffff"] select _ok, _msg], 2.5, player] call ace_common_fnc_displayTextStructured;
-    } else {
-        hintSilent ((_msg) call comspec_atak_native_fnc_tr);
-    };
+    [["WARNING", "SUCCESS"] select _ok, _msg, 4, 20] call comspec_atak_native_fnc_notify;
+    if (!_ok && {(["phone"] call comspec_atak_native_fnc_dockClient) isEqualTo ""}) then { playSound "addItemFailed"; };
 };
 // Rend un objet : dans l'inventaire s'il y a la place, sinon posé au sol aux pieds du joueur.
 private _give = {
@@ -63,25 +63,25 @@ switch (_act) do {
         [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
     };
     case "status": {
+        // Fiche sur une ligne, dans le téléphone (bandeau + centre de notifications) ; sans téléphone, l'état se lit
+        // sur le socle lui-même (écran et voyant de chaque emplacement, fn_dockVisual) et dans les actions « Reprendre ».
         _a params ["_dock"];
+        if ((["phone"] call comspec_atak_native_fnc_dockClient) isEqualTo "") exitWith { playSound "ClickSoft"; };
         private _uid = getPlayerUID player;
-        private _lines = ["<t size='1.2' font='PuristaBold'>Socle de recharge CS-10</t>"];
+        private _slots = _dock getVariable ["COMSPEC_ATAK_DockSlots", []];
+        private _lines = ["Socle de recharge CS-10"];
         {
-            private _n = format ["%1", _forEachIndex + 1];
-            if (_forEachIndex < 9) then { _n = "0" + _n; };
-            if ((count _x) < 4) then {
-                _lines pushBack format ["<t color='#8a8f8a'>%1 · libre</t>", _n];
-            } else {
+            if ((count _x) >= 4) then {
+                private _n = format ["%1", _forEachIndex + 1];
+                if (_forEachIndex < 9) then { _n = "0" + _n; };
                 _x params ["_owner", "_name", "_lv"];
-                private _col = ["#ffb347", "#7fdc8a"] select (_lv >= 100);
-                if (_lv < 20) then { _col = "#ff7a6a"; };
                 private _who = [_name, "vous"] select (_owner isEqualTo _uid);
-                _lines pushBack format ["<t color='%1'>%2 · %3 · %4 %%%5</t>", _col, _n, _who, _lv, [" · en charge", " · chargé"] select (_lv >= 100)];
+                _lines pushBack format ["%1 · %2 · %3 %%%4", _n, _who, _lv, [" · en charge", " · chargé"] select (_lv >= 100)];
             };
-        } forEach (_dock getVariable ["COMSPEC_ATAK_DockSlots", []]);
-        if ((count _lines) == 1) then { _lines pushBack "Socle en démarrage…"; };
-        _lines pushBack format ["<t size='0.85' color='#a0a6a0'>%1 %% par minute</t>", missionNamespace getVariable ["comspec_atak_native_dock_rate", 1.5]];
-        hint ((parseText (_lines joinString "<br/>")) call comspec_atak_native_fnc_tr);
+        } forEach _slots;
+        if ((count _slots) == 0) then { _lines pushBack "Socle en démarrage…"; };
+        _lines pushBack format ["%1 %% par minute", missionNamespace getVariable ["comspec_atak_native_dock_rate", 1.5]];
+        ["INFO", _lines joinString " · ", 8, 20] call comspec_atak_native_fnc_notify;
     };
     case "deploy": {
         if !("COMSPEC_ATAK_DockKit" in (items player)) exitWith { ["Pas de socle dans l'inventaire", false] call _say; };

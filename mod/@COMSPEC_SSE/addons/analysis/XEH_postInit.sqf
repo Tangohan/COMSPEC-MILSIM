@@ -3,9 +3,8 @@
     Analyse : relais serveur, notes aux joueurs, menus ACE et Zeus.
 */
 if (isServer) then {
-    ["comspec_sse_orgOp", { params ["_op", "_args"]; [_op, _args] call comspec_sse_fnc_orgOp; }] call CBA_fnc_addEventHandler;
-    ["comspec_sse_orgGenerate", { _this call comspec_sse_fnc_orgGenerate; }] call CBA_fnc_addEventHandler;
-    ["comspec_sse_custodyOp", { params ["_op", "_args"]; [_op, _args] call comspec_sse_fnc_custody; }] call CBA_fnc_addEventHandler;
+    // Organisations, génération et scellés : appels distants (liste blanche CfgRemoteExec), demandeur retrouvé par
+    // remoteExecutedOwner. Plus de relais CBA anonyme : les opérations de Zeus sont réservées aux Zeus et administrateurs.
     {
         if (isNil _x) then { missionNamespace setVariable [_x, createHashMap]; publicVariable _x; };
     } forEach ["comspec_sse_orgs", "comspec_sse_orgMembers", "comspec_sse_anaSeen", "comspec_sse_custody"];

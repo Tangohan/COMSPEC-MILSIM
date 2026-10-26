@@ -29,7 +29,7 @@ private _fnc_storeName = {
     if (_wname isNotEqualTo "") then { _names set [_wid, _wname]; };
 };
 
-private _raw = ["COMSPECExtension" callExtension ["GetWardrobe", [_id]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [["COMSPECExtension", "GetWardrobe", [_id]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw find "OK|" != 0}) exitWith {
     private _err = if (_raw isEqualType "") then { _raw } else { str _raw };
     private _code = if ((_err find "too_large") >= 0) then { "too_large" } else { "missing" };
@@ -56,7 +56,7 @@ if ((_body select [0, 7]) isEqualTo "CHUNKED") then {
     private _buf = "";
     private _ok = true;
     for "_ci" from 0 to (_chunks - 1) do {
-        private _cRaw = ["COMSPECExtension" callExtension ["GetWardrobeChunk", [_id, str _ci]]] call comspec_overwatch_connect_fnc_extResult;
+        private _cRaw = [["COMSPECExtension", "GetWardrobeChunk", [_id, str _ci]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         if (!(_cRaw isEqualType "") || {_cRaw find "OK|" != 0}) then {
             _ok = false;
             break;

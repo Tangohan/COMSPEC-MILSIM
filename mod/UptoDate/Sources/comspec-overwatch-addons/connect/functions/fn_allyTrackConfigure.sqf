@@ -54,7 +54,16 @@ private _apply = {
         };
     };
     {
-        [_x, _enabled, _callsign] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 0];
+        // Serveur seul : lui seul écrit les variables publiques et le registre COMSPEC_AllyTrackNetIds
+        // (évite N² diffusions et les écritures concurrentes). Les clients reconstruisent
+        // COMSPEC_AllyTrackUnits depuis le drapeau public (balayage initGpsBeacons).
+        [_x, _enabled, _callsign] remoteExecCall ["comspec_overwatch_connect_fnc_setAllyTrack", 2];
+        if (!isServer) then {
+            private _list = missionNamespace getVariable ["COMSPEC_AllyTrackUnits", []];
+            if (!(_list isEqualType [])) then { _list = []; };
+            if (_enabled) then { _list pushBackUnique _x; } else { _list = _list - [_x]; };
+            missionNamespace setVariable ["COMSPEC_AllyTrackUnits", _list, false];
+        };
         if (_enabled) then {
             _x setVariable ["COMSPEC_AllyTrackLastAt", -1e9, false];
             [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;

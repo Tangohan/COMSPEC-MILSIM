@@ -11,7 +11,8 @@ private _id = _slide select 0;
 private _imageUrl = _slide select 3;
 if (_imageUrl isEqualTo "") exitWith { "" };
 
-private _raw = ["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_imageUrl, str _id]]] call comspec_overwatch_connect_fnc_extResult;
+// extAwait : hors du thread du jeu quand l'appelant peut attendre (appel direct sinon).
+private _raw = [["COMSPECExtension", "DownloadBriefingSlideImage", [_imageUrl, str _id]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 

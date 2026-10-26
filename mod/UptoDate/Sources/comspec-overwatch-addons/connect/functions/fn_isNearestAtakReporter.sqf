@@ -21,6 +21,8 @@ if (!(_others isEqualType [])) then {
 };
 private _ok = true;
 {
+    // Joueur non lié à Athena : il ne remonte rien, il ne doit pas gagner l’élection.
+    if !(_x getVariable ["COMSPEC_AtakReporterLinked", false]) then { continue };
     private _d = _x distance2D _obj;
     if ((_d + 20) < _myDist) then { _ok = false; break; };
     if ((abs (_d - _myDist)) <= 20 && {(getPlayerUID _x) < _myUid}) then { _ok = false; break; };

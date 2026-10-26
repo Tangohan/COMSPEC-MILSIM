@@ -25,6 +25,8 @@ switch (_act) do {
                         if (_ticket in _pending) then { _pending set [_ticket, [_payload]]; };
                     };
                 }];
+                // fn_extAwait ne passe par l'appel non bloquant que si ce repère existe (sinon callExtension direct, jusqu'à 8 s figé).
+                if (isNil {missionNamespace getVariable "COMSPEC_ATAK_ExtensionEH"}) then { missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh]; };
             };
             private _ip = "";
             for "_try" from 1 to 3 do {
@@ -35,7 +37,10 @@ switch (_act) do {
                 if (_r isEqualTo "" || {(_r find "unknown") >= 0}) exitWith {};
                 sleep 30;
             };
-            if (_eh >= 0) then { removeMissionEventHandler ["ExtensionCallback", _eh]; };
+            if (_eh >= 0) then {
+                if ((missionNamespace getVariable ["COMSPEC_ATAK_ExtensionEH", -1]) isEqualTo _eh) then { missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", nil]; };
+                removeMissionEventHandler ["ExtensionCallback", _eh];
+            };
             if (_ip isNotEqualTo "") then {
                 missionNamespace setVariable ["COMSPEC_ATAK_ServerIp", _ip, true];
                 diag_log format ["[COMSPEC ATAK] Adresse publique du serveur : %1", _ip];

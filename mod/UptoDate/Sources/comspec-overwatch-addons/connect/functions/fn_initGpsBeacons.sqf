@@ -11,7 +11,9 @@ private _isBridge = {
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
     private _uids = [];
     {
-        if (isPlayer _x) then {
+        // Seuls les joueurs liés à Athena (drapeau public COMSPEC_AtakReporterLinked) sont éligibles :
+        // un joueur non lié élu bloquait la remontée pour tout le monde.
+        if (isPlayer _x && {_x isEqualTo player || {_x getVariable ["COMSPEC_AtakReporterLinked", false]}}) then {
             private _u = getPlayerUID _x;
             if (_u isNotEqualTo "") then { _uids pushBack _u };
         };
@@ -76,6 +78,14 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
 [{ [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]); }, [], 3] call CBA_fnc_waitAndExecute;
 
 [{
+    // Drapeau public « lié à Athena » pour l’élection du relais (écrit seulement quand il change).
+    if (!isNull player) then {
+        private _linked = (missionNamespace getVariable ["COMSPEC_AthenaReady", false])
+            && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])};
+        if ((player getVariable ["COMSPEC_AtakReporterLinked", -1]) isNotEqualTo _linked) then {
+            player setVariable ["COMSPEC_AtakReporterLinked", _linked, true];
+        };
+    };
     if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
     // Balayage complet (vehicles + allUnits, drapeaux lus sur chaque objet) toutes les 12 s au lieu de 3 s :
     // il tournait à chaque passage sur tous les postes. Les poses locales (set*Track / setGpsBeacon)

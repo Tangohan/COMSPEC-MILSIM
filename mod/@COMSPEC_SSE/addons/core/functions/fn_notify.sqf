@@ -1,49 +1,32 @@
 /*
     Retour SSE à l'opérateur : notification du téléphone ATAK natif (centre de notifications, toast si le téléphone est
-    affiché). Le toast de l'ATAK ne s'affiche que téléphone ouvert (fn_notificationsRender) : téléphone fermé, rangé
-    ou absent, une bulle d'aide discrète (hintSilent) porte le même texte, sinon le joueur ne voit rien.
-    Le texte est écrit en français dans le code : traduit ici (avant la mise en forme), échappé, puis affiché.
+    affiché). Règle : rien ne s'affiche par-dessus l'écran de jeu. Téléphone fermé ou rangé, la notification reste
+    historisée dans le centre de notifications de l'ATAK (lue à l'ouverture) ; sans ATAK natif, rien n'est affiché.
+    Le texte est écrit en français dans le code : traduit au rendu par l'ATAK (ligne par ligne ici s'il y en a plusieurs).
     [_text, _type, _title, _app] call comspec_sse_fnc_notify
       _text  : texte brut ; retour à la ligne "\n" (comme hint), endl ou <br/>
       _type  : INFO (défaut) | SUCCESS | WARNING | ERROR | TACTICAL
-      _title : titre de la bulle (défaut « COMSPEC SSE »)
+      _title : ignoré (ancienne bulle à l'écran, supprimée) ; gardé pour les appelants existants
       _app   : page de l'ATAK ouverte au clic sur la notification (défaut « SSE »)
-    Renvoie true si quelque chose a été affiché ou historisé.
+    Renvoie true si la notification a été remise à l'ATAK natif.
 */
 params [["_text", "", [""]], ["_type", "INFO", [""]], ["_title", "COMSPEC SSE", [""]], ["_app", "SSE", [""]]];
 if (!hasInterface || {_text isEqualTo ""}) exitWith { false };
 _type = toUpper _type;
 
-// Lignes en français, sans vide : la notification les joint par « · », la bulle par des retours à la ligne.
+// Lignes en français, sans vide : la notification les joint par « · ».
 private _lines = ((_text regexReplace ["\\n|<br ?/?>", endl]) splitString (toString [13, 10])) apply { trim _x };
 _lines = _lines select { _x isNotEqualTo "" };
 if (_lines isEqualTo []) exitWith { false };
 
 // Téléphone ATAK natif : historisé dans le centre de notifications (traduit au rendu), toast s'il est ouvert.
-private _phoneOpen = false;
+private _stored = false;
 if (!isNil "comspec_atak_native_fnc_notify") then {
-    [_type, _lines joinString " · ", 6, [20, 40] select (_type in ["WARNING", "ERROR", "TACTICAL"]), _app] call comspec_atak_native_fnc_notify;
-    _phoneOpen = !isNull ([] call comspec_atak_native_fnc_display);
+    // Plusieurs lignes : chacune traduite ici (le rendu ne traduit le texte joint que d'un bloc, sans correspondance).
+    private _joined = if ((count _lines) > 1) then { (_lines apply { _x call comspec_sse_fnc_tr }) joinString " · " } else { _lines select 0 };
+    [_type, _joined, 6, [20, 40] select (_type in ["WARNING", "ERROR", "TACTICAL"]), _app] call comspec_atak_native_fnc_notify;
+    _stored = true;
 };
-if (_phoneOpen) exitWith { true };
-
-// Téléphone fermé ou absent : bulle d'aide. Traduction d'abord (fn_tr ne traduit qu'une chaîne), puis échappement
-// des valeurs (nom, remarque contenant « & » ou « < »), puis texte structuré.
-private _esc = {
-    private _s = _this regexReplace ["&", "&amp;"];
-    _s = _s regexReplace ["<", "&lt;"];
-    _s regexReplace [">", "&gt;"]
-};
-private _color = switch (_type) do {
-    case "ERROR": { "#E0574F" };
-    case "WARNING";
-    case "TACTICAL": { "#F2B84B" };
-    default { "#7FD08A" };
-};
-hintSilent parseText format [
-    "<t font='PuristaMedium' size='1.1' color='%1'>%2</t><br/><t size='0.95' align='left'>%3</t>",
-    _color,
-    ((_title call comspec_sse_fnc_tr) call _esc),
-    (_lines apply { (_x call comspec_sse_fnc_tr) call _esc }) joinString "<br/>"
-];
-true
+// Téléphone fermé, rangé ou absent : aucune bulle à l'écran (règle « tout dans l'ATAK ») ; la notification attend
+// dans le centre de notifications du téléphone.
+_stored

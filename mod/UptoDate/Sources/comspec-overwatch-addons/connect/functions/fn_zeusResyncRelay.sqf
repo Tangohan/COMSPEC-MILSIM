@@ -61,7 +61,7 @@ _light setDropInterval 0.03;
 [{
     params ["_relay", "_name", "_light"];
     
-    private _success = [_relay, true] call ATHENA_fnc_syncAtakRelay;
+    private _success = [_relay, true] call comspec_overwatch_connect_fnc_syncAtakRelay;
     
     if (_success) then {
         _relay setVariable ["COMSPEC_AtakRelayLastSync", time, true];

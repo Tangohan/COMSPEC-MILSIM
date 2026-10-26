@@ -64,6 +64,15 @@ class CfgFunctions {
     };
 };
 
+// Demandes des postes au serveur ; le demandeur est retrouvé par remoteExecutedOwner.
+class CfgRemoteExec {
+    class Functions {
+        class comspec_sse_fnc_orgOp { allowedTargets = 2; jip = 0; };
+        class comspec_sse_fnc_orgGenerate { allowedTargets = 2; jip = 0; };
+        class comspec_sse_fnc_custody { allowedTargets = 2; jip = 0; };
+    };
+};
+
 class Extended_PreInit_EventHandlers {
     class comspec_sse_analysis {
         init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\analysis\XEH_preInit.sqf'";

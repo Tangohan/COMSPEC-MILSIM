@@ -40,7 +40,18 @@ if (_op isEqualTo "held") exitWith {
     private _all = missionNamespace getVariable ["comspec_sse_custody", createHashMap];
     (keys _all) select { private _p = _all get _x; (_p getOrDefault ["holderUid", ""]) isEqualTo _uid && {!(_p getOrDefault ["archived", false])} }
 };
-if (!isServer) exitWith { ["comspec_sse_custodyOp", [_op, _args]] call CBA_fnc_serverEvent; "" };
+if (!isServer) exitWith { [_op, _args] remoteExecCall ["comspec_sse_fnc_custody", 2]; "" };
+// Demande venue d'un client (appel distant) : demandeur retrouvé par remoteExecutedOwner, jamais fourni par le client.
+// « tamper » (exercice) : Zeus ou administrateur ; « transfer » : seul le détenteur remet ses propres pièces.
+if (isRemoteExecuted && {remoteExecutedOwner != 2} && {_op in ["tamper", "transfer"]}) then {
+    private _ro = remoteExecutedOwner;
+    private _req = (allPlayers select { owner _x == _ro }) param [0, objNull];
+    private _ok = if (_op isEqualTo "tamper") then { [_req] call comspec_sse_fnc_isAuthority } else { !isNull _req && {_req isEqualTo (_args param [0, objNull])} };
+    if (!_ok) then {
+        diag_log text format ["[COMSPEC SSE] Scellés : « %1 » refusé au poste %2.", _op, _ro];
+        _op = "refused";
+    };
+};
 
 if (isNil "comspec_sse_custody") then { comspec_sse_custody = createHashMap; };
 if (isNil "comspec_sse_custodyN") then { comspec_sse_custodyN = 0; };

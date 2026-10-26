@@ -7,6 +7,12 @@
 params [["_action", ""]];
 _action = toLower _action;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
+// Connexion par COMSPEC Link (requêtes HTTP bloquantes de la DLL) : relancée dans un spawn pour que extAwait passe
+// en Async, sinon le jeu fige pendant chaque tentative. Le redessin final reste en fin de script.
+if (_bridge && {!canSuspend} && {_action in ["password", "otp_ask", "otp_ok", "pair"]}) exitWith {
+    [_action] spawn comspec_atak_native_fnc_athenaAction;
+    true
+};
 private _ext = { params ["_cmd", ["_args", []]]; if (_bridge) then { private _r = ["COMSPECExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait; if (_r isEqualType []) then { _r select 0 } else { _r } } else { [_cmd, _args] call comspec_atak_native_fnc_extensionCall } };
 private _url = "https://athena-comspec.eu/public"; // portail Athena fixe
 private _pack = if (_bridge) then { [] call comspec_overwatch_connect_fnc_packVersion } else { "native" };
@@ -65,7 +71,7 @@ switch (_action) do {
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", [["Reconnexion impossible : voir les étapes de la liaison.", "Liaison Athena rétablie."] select _ok, !_ok, diag_tickTime]];
                 [] call comspec_overwatch_connect_fnc_pollAuth;
                 [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
-                [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_p in ["ATHENA", "NETWORK"]) then { [_p] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
             };
         } else {
             ["AuthSteam", [_url, _steam, _pack]] call _ext;
@@ -79,5 +85,7 @@ switch (_action) do {
     };
 };
 if (_bridge) then { [] call comspec_overwatch_connect_fnc_pollAuth; };
-[{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+// Redessin de la page qui a lancé l'action (Athena ou Réseau) seulement si elle est encore ouverte : après les appels
+// HTTP (spawn), l'app ouverte entre-temps ne doit pas être recouverte.
+[{ private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_p in ["ATHENA", "NETWORK"]) then { [_p] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
 true

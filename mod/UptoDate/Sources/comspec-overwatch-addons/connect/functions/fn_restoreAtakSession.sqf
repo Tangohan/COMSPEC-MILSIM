@@ -6,6 +6,10 @@ if (!hasInterface) exitWith {};
 
 params ["_uid", "_savedState", ["_owner", clientOwner]];
 
+// Reçu par remoteExecCall (non suspendable) : waitUntil plus bas et la requête HTTP synchrone de la DLL
+// exigent un spawn (extAwait asynchrone au lieu de figer le jeu).
+if (!canSuspend) exitWith { [_uid, _savedState, _owner] spawn comspec_overwatch_connect_fnc_restoreAtakSession; };
+
 if (_savedState isEqualTo createHashMap) exitWith {};
 
 waitUntil { !isNull player };
@@ -28,7 +32,7 @@ missionNamespace setVariable ["COMSPEC_LinkState", _link, false];
 // Tentative restauration depuis le portail (TTL post-CTD)
 private _steamUid = getPlayerUID player;
 if (_steamUid != "") then {
-    private _raw = ["COMSPECExtension" callExtension ["GetSessionRestore", [_steamUid]]] call comspec_overwatch_connect_fnc_extResult;
+    private _raw = [["COMSPECExtension", "GetSessionRestore", [_steamUid]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     if ((_raw select [0, 3]) isEqualTo "OK|") then {
         private _payload = _raw select [3];
         private _parts = _payload splitString toString [9];

@@ -12,7 +12,14 @@
 */
 params [["_action", ""], ["_arg", 0]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _rerender = { [{ ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+// Redessin seulement si l'app Briefing est encore ouverte (réponses HTTP lentes) ; la question en cours de saisie est gardée.
+private _rerender = { [{
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING") exitWith {};
+    if (!isNull ((uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["briefQ", controlNull])) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ["briefQ", ""] call comspec_atak_native_fnc_formValue];
+    };
+    ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
+}] call CBA_fnc_execNextFrame; };
 
 switch (_action) do {
     case "tab": { _s set ["briefTab", _arg]; call _rerender; };
@@ -74,13 +81,17 @@ switch (_action) do {
         };
         private _q = createHashMapFromArray [["slide", _id], ["list", []], ["err", ""]];
         uiNamespace setVariable ["COMSPEC_ATAK_BriefQ", _q];
-        private _raw = [(["COMSPECExtension", "BriefingComments", [str _id]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
-        if ((_raw select [0, 3]) isNotEqualTo "OK|") then {
-            _q set ["err", ["Athena ne répond pas.", "La DLL COMSPEC Link ne connaît pas encore les questions : mettez-la à jour."] select (_raw isEqualTo "")];
-        } else {
-            _q set ["list", ((_raw select [3]) splitString toString [10]) apply { [_x, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty }];
+        // Requête HTTP hors de l'image (extAwait en Async) : un appel direct figeait le jeu à chaque diapositive.
+        [_id, _q, _rerender] spawn {
+            params ["_id", "_q", "_rerender"];
+            private _raw = [(["COMSPECExtension", "BriefingComments", [str _id]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+            if ((_raw select [0, 3]) isNotEqualTo "OK|") then {
+                _q set ["err", ["Athena ne répond pas.", "La DLL COMSPEC Link ne connaît pas encore les questions : mettez-la à jour."] select (_raw isEqualTo "")];
+            } else {
+                _q set ["list", ((_raw select [3]) splitString toString [10]) apply { [_x, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty }];
+            };
+            call _rerender;
         };
-        call _rerender;
     };
     case "ask": {
         private _txt = trim (["briefQ", ""] call comspec_atak_native_fnc_formValue);
@@ -88,14 +99,24 @@ switch (_action) do {
         private _id = (uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap]) getOrDefault ["slide", -1];
         if (_id isEqualTo -1) exitWith {};
         private _who = format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player];
-        private _raw = [(["COMSPECExtension", "BriefingComments", [str _id, _txt, _who]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
-        if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith { ["WARNING", "Question non envoyée : Athena ne répond pas", 4, 30] call comspec_atak_native_fnc_notify; };
-        uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ""];
-        // Le présentateur la voit tout de suite sur son téléphone.
-        private _pres = (["get"] call comspec_atak_native_fnc_briefingLive) param [0, objNull];
-        if (!isNull _pres && {_pres isNotEqualTo player}) then { ["comspec_atak_native_briefQ", [_who, _txt], _pres] call CBA_fnc_targetEvent; };
-        ["SUCCESS", "Question envoyée", 3, 20] call comspec_atak_native_fnc_notify;
-        ["questions", _id] call comspec_atak_native_fnc_briefingAction;
+        // Envoi hors de l'image (POST HTTP), une question à la fois.
+        if (missionNamespace getVariable ["COMSPEC_ATAK_BriefAskBusy", false]) exitWith {};
+        missionNamespace setVariable ["COMSPEC_ATAK_BriefAskBusy", true];
+        [_id, _txt, _who] spawn {
+            params ["_id", "_txt", "_who"];
+            private _raw = [(["COMSPECExtension", "BriefingComments", [str _id, _txt, _who]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+            missionNamespace setVariable ["COMSPEC_ATAK_BriefAskBusy", false];
+            if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith { ["WARNING", "Question non envoyée : Athena ne répond pas", 4, 30] call comspec_atak_native_fnc_notify; };
+            uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ""];
+            // Champ encore affiché avec la question partie : vidé, sinon le redessin la remettrait en brouillon.
+            private _qc = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["briefQ", controlNull];
+            if (!isNull _qc && {(trim ctrlText _qc) isEqualTo _txt}) then { _qc ctrlSetText ""; };
+            // Le présentateur la voit tout de suite sur son téléphone.
+            private _pres = (["get"] call comspec_atak_native_fnc_briefingLive) param [0, objNull];
+            if (!isNull _pres && {_pres isNotEqualTo player}) then { ["comspec_atak_native_briefQ", [_who, _txt], _pres] call CBA_fnc_targetEvent; };
+            ["SUCCESS", "Question envoyée", 3, 20] call comspec_atak_native_fnc_notify;
+            ["questions", _id] call comspec_atak_native_fnc_briefingAction;
+        };
     };
     case "refresh": {
         if !([] call comspec_atak_native_fnc_bridge) exitWith {
@@ -112,7 +133,7 @@ switch (_action) do {
             private _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;
             missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
             ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
-            [{ ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
     };
 };

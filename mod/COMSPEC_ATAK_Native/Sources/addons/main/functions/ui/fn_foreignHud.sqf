@@ -50,6 +50,7 @@ switch (_mode) do {
         if (!(missionNamespace getVariable ["comspec_atak_native_hide_foreign_hud", true]) || {isNull _d} || {_s getOrDefault ["texture", false]}) exitWith { call _restore; };
         ((([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["visible", [0, 0, 0, 0]])) params ["_px", "_py", "_pw", "_ph"];
         private _skip = allDisplays + (uiNamespace getVariable ["IGUI_displays", []]) + [_d];
+        private _want = [];
         // Découverte (au démarrage puis toutes les 10 s) : allVariables uiNamespace compte des milliers de noms (caches de
         // fonctions BIS/CBA/ACE…). On ne garde que ceux qui contiennent un display (même fermé, pour qu'un calque rouvert
         // sous le même nom soit repris) ; le contrôle de chaque seconde ne relit plus que cette courte liste.
@@ -57,14 +58,13 @@ switch (_mode) do {
         if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_ForeignNamesNext", 0])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_ForeignNamesNext", diag_tickTime + 10];
             _names = (allVariables uiNamespace) select {
-                (_x select [0, 12]) isNotEqualTo "comspec_atak" && {
+                (_x select [0, 12]) isNotEqualTo "comspec_atak" && {(_x find "_fnc_") < 0} && {
                     private _v = uiNamespace getVariable _x;
                     !isNil "_v" && {_v isEqualType displayNull}
                 }
             };
             uiNamespace setVariable ["COMSPEC_ATAK_ForeignNames", _names];
         };
-        private _want = [];
         {
             private _v = uiNamespace getVariable _x;
             if (!isNil "_v" && {_v isEqualType displayNull} && {!isNull _v} && {!(_v in _skip)}) then {

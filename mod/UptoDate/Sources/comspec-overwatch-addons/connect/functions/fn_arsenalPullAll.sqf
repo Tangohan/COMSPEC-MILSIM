@@ -18,7 +18,7 @@ if (missionNamespace getVariable ["COMSPEC_ArsenalPullBusy", false]) exitWith {
 
 private _lines = [] call comspec_overwatch_connect_fnc_arsenalListWardrobes;
 if (_lines isEqualTo []) exitWith {
-    private _probe = ["COMSPECExtension" callExtension ["ListWardrobes", ["0"]]] call comspec_overwatch_connect_fnc_extResult;
+    private _probe = [["COMSPECExtension", "ListWardrobes", ["0"]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     if (!(_probe isEqualType "") || {_probe find "OK|" != 0}) then {
         private _err = if (_probe isEqualType "") then { _probe } else { str _probe };
         [format ["Impossible de lister les tenues (%1).", _err], "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;

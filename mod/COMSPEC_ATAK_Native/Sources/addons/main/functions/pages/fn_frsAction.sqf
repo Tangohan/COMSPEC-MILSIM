@@ -68,6 +68,11 @@ switch (_act) do {
     case "del": { if (_arg isEqualType 0 && {_arg >= 0} && {_arg < count _pieces}) then { _pieces deleteAt _arg; }; call _render; };
     case "home": { [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; };
     case "full": { [{ [] call comspec_atak_native_fnc_modeToggle; }] call CBA_fnc_execNextFrame; };
-    case "send": { [{ [] call comspec_atak_native_fnc_frsSubmit; }] call CBA_fnc_execNextFrame; };
+    case "send": {
+        // POST HTTP hors de l'image (extAwait en Async dans un spawn), sinon le jeu fige ; un seul envoi à la fois.
+        if (missionNamespace getVariable ["COMSPEC_ATAK_FrsSending", false]) exitWith {};
+        missionNamespace setVariable ["COMSPEC_ATAK_FrsSending", true];
+        [] spawn { [] call comspec_atak_native_fnc_frsSubmit; missionNamespace setVariable ["COMSPEC_ATAK_FrsSending", false]; };
+    };
 };
 true
