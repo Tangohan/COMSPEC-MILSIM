@@ -39,4 +39,21 @@ final class AtakMultiplayerAuthTest extends TestCase
         // ferait retirer, donner ou déplacer quoi que ce soit à une IA du serveur).
         self::assertStringContainsString('if (_remote && {!(_act in ["dropped", "validate", "dismiss", "athena"])}) exitWith {', $this->read(self::MAIN . '/functions/shell/fn_captureServer.sqf'));
     }
+
+    public function testAthenaResultIsTakenOnlyFromTheSolicitedPlayerWhilePending(): void
+    {
+        // Résultat de la révocation chez Athena : n'importe quel client posait « ok » (même avant toute validation) ou
+        // faisait passer la révocation au candidat suivant. Le serveur retient l'UID du joueur à qui il demande la
+        // révocation, à la validation comme à chaque relance, et n'accepte la réponse que de lui, en attente.
+        $srv = $this->read(self::MAIN . '/functions/shell/fn_captureServer.sqf');
+        self::assertStringContainsString('_c set ["asked", getPlayerUID _by];', $this->between($srv, '_c set ["state", "validated"];', '"revoke"'));
+        $athena = $this->between($srv, 'case "athena": {', "\n};\ntrue");
+        self::assertNotEmpty($athena);
+        self::assertMatchesRegularExpression('/^case "athena": \{\s*_arg params \[\["_id", ""\], \["_ok", false\], \["_from", objNull\]\];.*?'
+            . 'if \(\(_c getOrDefault \["athena", ""\]\) isNotEqualTo "pending"\) exitWith \{\};.*?'
+            . 'private _asked = _c getOrDefault \["asked", ""\];\s*if \(_asked isEqualTo "" \|\| \{\(getPlayerUID _from\) isNotEqualTo _asked\}\) exitWith \{.*?'
+            . 'if \(_ok\) exitWith \{ _c set \["athena", "ok"\]; call _publish; \};/s', $athena);
+        self::assertSame(1, substr_count($athena, 'if (_ok) exitWith'));
+        self::assertMatchesRegularExpression('/_c set \["asked", getPlayerUID _next\];\s*\S[^\n]*"revoke"[^\n]*_next\]/', $athena);
+    }
 }

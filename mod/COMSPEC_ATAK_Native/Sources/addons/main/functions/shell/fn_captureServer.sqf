@@ -23,7 +23,8 @@
         Ces trois-là sont appelées par un client (remoteExecCall vers 2, CfgRemoteExec) : l'unité passée y est
         REMPLACÉE par celle du poste émetteur, retrouvée par remoteExecutedOwner (fn_reqUnit). Un appel du serveur
         hors de toute pile distante (hôte, solo) garde l'unité qu'il passe. fn_adminServer (app Admin) tourne dans la
-        pile du remoteExec de l'admin : l'admin y est recalculé à l'identique.
+        pile du remoteExec de l'admin : l'admin y est recalculé à l'identique. « athena » (résultat de la révocation)
+        n'est accepté que du joueur à qui le serveur l'a demandée (UID retenu dans « asked »), tant qu'elle est en attente.
       "local" [mode, objet, valeur] : sur la machine où l'objet est local ("strip" | "give" | "move" | "pick" | "hunt")
     Debug (app Admin, fn_adminServer) : chaque capture garde « targets » (joueurs repérés) et « hunters » (groupes en traque).
 */
@@ -322,6 +323,8 @@ switch (_act) do {
         _c set ["athena", ["offline", "pending"] select (_term isNotEqualTo "")];
         _c set ["revokeBy", _now + 45];
         _c set ["tried", [getPlayerUID _by]];
+        // Joueur sollicité pour la révocation : seul à pouvoir en rendre le résultat (« athena »).
+        _c set ["asked", getPlayerUID _by];
         call _publish;
         [_side, "validated", _id] call _toSide;
         if (_term isNotEqualTo "") then { ["comspec_atak_native_compromise", ["revoke", [_id, _term, (_c get "tag") param [2, ""]]], _by] call CBA_fnc_targetEvent; };
@@ -335,9 +338,16 @@ switch (_act) do {
         _arg params [["_id", ""], ["_ok", false], ["_from", objNull]];
         private _c = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_id, createHashMap];
         if ((count _c) isEqualTo 0) exitWith {};
-        if (_ok) exitWith { _c set ["athena", "ok"]; call _publish; };
-        // Déjà réglée (révoquée, ou délai dépassé) : un échec tardif ne relance rien. Sans identifiant de terminal : inutile.
+        // Déjà réglée (révoquée, ou délai dépassé) : une réponse tardive ne change rien. Sinon, seul le joueur sollicité
+        // (UID retenu à chaque envoi de « revoke ») répond. Avant, n'importe quel client posait « ok » (même avant toute
+        // validation ; en attente, cela coupait la chaîne de reprise) ou passait la révocation au candidat suivant (« false »).
         if ((_c getOrDefault ["athena", ""]) isNotEqualTo "pending") exitWith {};
+        private _asked = _c getOrDefault ["asked", ""];
+        if (_asked isEqualTo "" || {(getPlayerUID _from) isNotEqualTo _asked}) exitWith {
+            diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] %1 : résultat Athena de %2 refusé (joueur non sollicité)", _id, name _from];
+        };
+        if (_ok) exitWith { _c set ["athena", "ok"]; call _publish; };
+        // Sans identifiant de terminal : inutile.
         if (((_c get "tag") param [5, ""]) isEqualTo "") exitWith { _c set ["athena", "offline"]; call _publish; };
         // Pas de liaison Athena chez celui qui a validé : on essaie chez le propriétaire, puis chez un chef du camp.
         private _tried = _c getOrDefault ["tried", []];
@@ -351,6 +361,7 @@ switch (_act) do {
         if (_k < 0) exitWith { _c set ["athena", "offline"]; call _publish; };
         private _next = _cands select _k;
         _c set ["revokeBy", _now + 45];
+        _c set ["asked", getPlayerUID _next];
         ["comspec_atak_native_compromise", ["revoke", [_id, (_c get "tag") param [5, ""], (_c get "tag") param [2, ""]]], _next] call CBA_fnc_targetEvent;
     };
 };
