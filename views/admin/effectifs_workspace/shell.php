@@ -105,7 +105,12 @@ $lead = match ($active) {
         </details>
     </nav>
 
-    <section class="bo-eff-content<?= $innerContent === 'admin.effectifs_workspace.member' ? ' bo-eff-content--member' : '' ?>">
+    <?php
+    // Sous-pages refondues le 2026-10-26 : mise en page commune (effectifs-pages.css).
+    $effRedesignedPages = ['rh_integration', 'rh_alerts', 'elevations', 'qualifications', 'chaine', 'affectations', 'fonctions', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
+    $effPageClass = !$isMember && in_array($active, $effRedesignedPages, true) ? ' bo-eff-page' : '';
+    ?>
+    <section class="bo-eff-content<?= $innerContent === 'admin.effectifs_workspace.member' ? ' bo-eff-content--member' : '' ?><?= $effPageClass ?>">
         <?php
         $innerPath = base_path('views/' . str_replace('.', '/', $innerContent) . '.php');
         if (is_file($innerPath)) {

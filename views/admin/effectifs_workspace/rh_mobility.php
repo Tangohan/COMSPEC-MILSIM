@@ -33,6 +33,9 @@ $statusTone = [
 ];
 ?>
 <section class="eff-rh-hero">
+    <div class="eff-pg__actions">
+        <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('vivier')) ?>">Vivier et successions</a>
+    </div>
     <p class="eff-page-kicker">Dossier RH</p>
     <h2 class="eff-page-title">Mobilité interne</h2>
     <p class="eff-page-lead">
@@ -51,15 +54,10 @@ $statusTone = [
             </a>
         </article>
         <article class="eff-rh-tile">
-            <span class="eff-rh-tile__kicker">Vue</span>
+            <span class="eff-rh-tile__kicker">Affichées</span>
             <strong class="eff-rh-tile__value"><?= count($rows) ?></strong>
-            <span class="eff-rh-tile__label"><?= $h($statusLabels[$statusFilter] ?? 'Filtre') ?></span>
+            <span class="eff-rh-tile__label">demande<?= count($rows) > 1 ? 's' : '' ?> · filtre « <?= $h($statusLabels[$statusFilter] ?? 'Toutes') ?> »</span>
         </article>
-        <a class="eff-rh-tile" href="<?= $h(effectifs_workspace_url('vivier')) ?>">
-            <span class="eff-rh-tile__kicker">Suite</span>
-            <strong class="eff-rh-tile__value">Vivier</strong>
-            <span class="eff-rh-tile__label">Préparer les successions</span>
-        </a>
     </div>
 </section>
 
@@ -71,21 +69,16 @@ $statusTone = [
         </div>
     </div>
 <?php else: ?>
-    <div class="eff-rh-pills" role="tablist" aria-label="Filtrer les demandes">
-        <?php foreach (['pending', 'approved', 'rejected', 'all'] as $st): ?>
-            <a href="<?= $h(effectifs_workspace_url('mobilite') . '?statut=' . rawurlencode($st)) ?>"
-               class="eff-rh-pill <?= $statusFilter === $st ? 'is-on' : '' ?> <?= $st === 'pending' ? 'eff-rh-pill--warn' : '' ?>">
-                <?= $h($statusLabels[$st] ?? $st) ?>
-            </a>
-        <?php endforeach; ?>
-    </div>
-
     <?php if ($canManage): ?>
-    <section class="eff-rh-form" aria-labelledby="eff-mob-add-title">
-        <div class="eff-rh-form__head">
-            <h2 id="eff-mob-add-title" class="eff-rh-form__title">Enregistrer une demande</h2>
-            <p class="eff-rh-form__lead">Indiquez le membre, le type de mouvement, puis la cible (unité, fonction, ou les deux).</p>
-        </div>
+    <details class="eff-rh-form" aria-labelledby="eff-mob-add-title">
+        <summary>
+            <span class="eff-rh-form__head">
+                <span class="min-w-0">
+                    <span id="eff-mob-add-title" class="eff-rh-form__title">Enregistrer une demande</span>
+                    <span class="eff-rh-form__lead">Indiquez le membre, le type de mouvement, puis la cible (unité, fonction, ou les deux).</span>
+                </span>
+            </span>
+        </summary>
         <form method="post" action="<?= $h(effectifs_workspace_url('mobilite')) ?>" class="eff-rh-form__grid">
             <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
             <div class="eff-rh-field">
@@ -171,7 +164,7 @@ $statusTone = [
                 <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Enregistrer la demande</button>
             </div>
         </form>
-    </section>
+    </details>
     <?php endif; ?>
 
     <div class="eff-catalog">
@@ -181,6 +174,14 @@ $statusTone = [
                 <h2 class="eff-catalog__title">Demandes</h2>
                 <p class="eff-catalog__lead">Approuvez ou refusez les dossiers en attente, puis ouvrez la fiche du membre.</p>
             </div>
+        <div class="eff-rh-pills" role="tablist" aria-label="Filtrer les demandes">
+        <?php foreach (['pending', 'approved', 'rejected', 'all'] as $st): ?>
+            <a href="<?= $h(effectifs_workspace_url('mobilite') . '?statut=' . rawurlencode($st)) ?>"
+               class="eff-rh-pill <?= $statusFilter === $st ? 'is-on' : '' ?> <?= $st === 'pending' ? 'eff-rh-pill--warn' : '' ?>">
+                <?= $h($statusLabels[$st] ?? $st) ?>
+            </a>
+        <?php endforeach; ?>
+        </div>
         </div>
         <?php if ($rows === []): ?>
             <div class="eff-catalog__empty"><strong>Aucune demande<?= $statusFilter === 'pending' ? ' en attente' : '' ?>.</strong></div>
@@ -219,13 +220,13 @@ $statusTone = [
                         <tr>
                             <td><strong class="eff-sheets__name"><?= $h($name) ?></strong></td>
                             <td><?= $h((string) ($typeLabels[$type] ?? $type)) ?></td>
-                            <td><?= $h($target !== '' ? $target : '—') ?><?php if ($mot !== ''): ?><br><span class="eff-sheets__meta"><?= $h($mot) ?></span><?php endif; ?></td>
+                            <td><?= $h($target !== '' ? $target : '—') ?><?php if ($mot !== ''): ?><span class="eff-sheets__meta"><?= $h($mot) ?></span><?php endif; ?></td>
                             <td><span class="eff-rh-chip<?= $tone !== '' ? ' eff-rh-chip--' . $h($tone) : '' ?>"><?= $h($statusLabels[$st] ?? $st) ?></span></td>
                             <td><?= $h($rhWhen((string) ($r['created_at'] ?? ''))) ?></td>
                             <td>
                                 <div class="eff-rh-row-actions">
                                     <?php if ($uid > 0): ?>
-                                        <a class="is-primary" href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a>
+                                        <a href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a>
                                     <?php endif; ?>
                                     <?php if ($canManage && $st === 'pending' && $rid > 0): ?>
                                         <form method="post" action="<?= $h(effectifs_workspace_url('mobilite/' . $rid . '/statut')) ?>">
