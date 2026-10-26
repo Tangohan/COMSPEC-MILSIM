@@ -135,8 +135,10 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
     // Groupes disparus retirés (une entrée par groupe ayant reçu un itinéraire, jamais supprimée sinon).
     { if (isNull (groupFromNetId _x)) then { COMSPEC_ATAK_SrvRoutes deleteAt _x; }; } forEach (keys COMSPEC_ATAK_SrvRoutes);
 }] call CBA_fnc_addEventHandler;
-// Équipes de feu : seul le serveur écrit l'état partagé (fn_ftServer), puis le diffuse au camp.
-["comspec_atak_native_ft", { _this call comspec_atak_native_fnc_ftServer; }] call CBA_fnc_addEventHandler;
+// Équipes de feu : seul le serveur écrit l'état partagé (fn_ftServer), puis le diffuse au camp. Pas de gestionnaire
+// comspec_atak_native_ft : les demandes arrivent par remoteExecCall vers 2, seule voie qui laisse le serveur reconnaître
+// le poste émetteur. L'événement n'avait plus d'émetteur et, en partie hébergée, un client qui le levait agissait au
+// nom de l'hôte (un appel non distant y est attribué à l'hôte, fn_ftServer).
 // Clé de la session (Athena range les escouades et équipes envoyées par mission jouée).
 // Date sur deux chiffres (AAAAMMJJHHMM) : sans zéro, 9 h 03 donnait « 93 » et la date de la session était illisible.
 missionNamespace setVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2#%3", missionName, worldName, ((systemTimeUTC select [0, 5]) apply { [str _x, "0" + str _x] select (_x < 10) }) joinString ""], true];

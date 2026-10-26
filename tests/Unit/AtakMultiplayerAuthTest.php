@@ -56,4 +56,17 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertSame(1, substr_count($athena, 'if (_ok) exitWith'));
         self::assertMatchesRegularExpression('/_c set \["asked", getPlayerUID _next\];\s*\S[^\n]*"revoke"[^\n]*_next\]/', $athena);
     }
+
+    public function testFireTeamsHaveNoCbaEventLeft(): void
+    {
+        // Équipes de feu : les demandes arrivent par remoteExecCall vers 2. Le gestionnaire CBA comspec_atak_native_ft
+        // n'avait plus d'émetteur, et en partie hébergée un client qui levait l'événement agissait au nom de l'hôte.
+        self::assertStringNotContainsString('"comspec_atak_native_ft"', $this->read(self::MAIN . '/XEH_postInitServer.sqf'));
+        foreach (['functions/teams/fn_ftAction.sqf', 'functions/teams/fn_ftRoleSync.sqf', 'functions/pages/fn_groupAction.sqf'] as $f) {
+            $src = $this->read(self::MAIN . '/' . $f);
+            self::assertStringNotContainsString('"comspec_atak_native_ft"', $src, $f);
+            self::assertStringContainsString('remoteExecCall ["comspec_atak_native_fnc_ftServer", 2]', $src, $f);
+        }
+        self::assertStringContainsString('class comspec_atak_native_fnc_ftServer { allowedTargets = 2; };', $this->read(self::MAIN . '/config.cpp'));
+    }
 }
