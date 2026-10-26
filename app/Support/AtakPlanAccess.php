@@ -41,10 +41,23 @@ final class AtakPlanAccess
         'atak/briefing-plan', 'atak/briefing-presence', 'atak/briefing-slides',
     ];
 
+    /** Durée pendant laquelle un accès accordé est réutilisé sans refaire la passe formule / déploiement. */
+    private const ALLOW_CACHE_TTL_SEC = 30;
+
     public static function allows(int $tenantId): bool
     {
         if ($tenantId < 1) {
             return false;
+        }
+        // Chaque sondage du jeu (~3/s par joueur) refaisait formule, quotas et canal de déploiement
+        // (4 à 6 requêtes SQL). Seul un accès accordé est gardé, 30 s au plus : un refus est toujours recalculé,
+        // une rétrogradation de formule prend effet en 30 s au pire.
+        $marker = self::allowMarkerPath($tenantId);
+        if ($marker !== null) {
+            $mtime = @filemtime($marker);
+            if ($mtime !== false && time() - $mtime < self::ALLOW_CACHE_TTL_SEC) {
+                return true;
+            }
         }
 
         try {
@@ -53,10 +66,33 @@ final class AtakPlanAccess
                 return false;
             }
 
-            return $gate->allows($tenantId, self::FEATURE);
+            $ok = $gate->allows($tenantId, self::FEATURE);
         } catch (\Throwable) {
             return false;
         }
+        if ($ok && $marker !== null) {
+            @touch($marker);
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Témoin « accès accordé » par communauté et par compte de session (le canal de déploiement peut dépendre
+     * du compte testeur). Désactivé en CLI (tests, cron) et si le dossier de cache n'est pas utilisable.
+     */
+    private static function allowMarkerPath(int $tenantId): ?string
+    {
+        if (PHP_SAPI === 'cli' || !function_exists('base_path')) {
+            return null;
+        }
+        $dir = base_path('storage/cache/atak-gate');
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return null;
+        }
+        $uid = (int) (($_SESSION['user_id'] ?? 0));
+
+        return $dir . DIRECTORY_SEPARATOR . 't' . $tenantId . '_u' . $uid . '.ok';
     }
 
     /** Liaison de base : la formule l'inclut (clé absente = valeur par défaut du catalogue, vraie partout). */
