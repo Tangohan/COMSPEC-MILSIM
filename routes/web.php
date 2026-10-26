@@ -1536,6 +1536,20 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/grades/{id}/update', [GradeReferentielController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/deactivate', [GradeReferentielController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/reactivate', [GradeReferentielController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Grades sur mesure (SCP, Star Wars…) : systèmes, catégories et grades créés par la communauté.
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/utiliser', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'useSystemAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/move', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'moveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/move', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'moveGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/restore', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'restoreGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/back-office/organisation/grades', [AdvancementAdminController::class, 'grades'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/grades/create', [AdvancementAdminController::class, 'gradeCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
