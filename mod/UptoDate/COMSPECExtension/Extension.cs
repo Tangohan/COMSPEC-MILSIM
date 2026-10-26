@@ -94,12 +94,21 @@ public static partial class Extension
     /// L’escalade est plafonnée à un cran par fenêtre (pas de fusée 45→600 en ms sous rafale code 0).
     /// </summary>
     private static readonly int[] SendBackoffLadderSec = { 45, 75, 150, 300, 600 };
+    /// <summary>
+    /// Panne (Athena injoignable, délai dépassé, maintenance 503) : paliers courts plafonnés à 45 s (60 s avec la
+    /// gigue), et sortie au premier envoi réussi (NET-006, TEST-010). L'échelle longue ci-dessus et sa descente d'un
+    /// palier tous les deux succès restent réservées au frein demandé par Athena (429, 403 du site entier).
+    /// Un Retry-After plus long (maintenance annoncée) est toujours respecté.
+    /// </summary>
+    private static readonly int[] OutageBackoffLadderSec = { 10, 20, 30, 45 };
     private const int SendFailStreakToEnter = 3;
     private const int SendOkStreakToStepDown = 2;
     private const int SendBackoffCapSec = 600;
     private static int _sendFailStreak;
     private static int _sendOkStreak;
     private static int _sendBackoffStep;
+    /// <summary>Un 429 ou un 403 est entré dans l'épisode de pause en cours : échelle longue jusqu'à sa sortie.</summary>
+    private static bool _sendBackoffThrottled;
     private static long _lastSendBackoffCbTicks;
     private static long _lastBackoffEscalateTicks;
     private static int _lastNotifiedBackoffSec = -1;
@@ -1252,11 +1261,15 @@ public static partial class Extension
         return fallback;
     }
 
+    private static int[] CurrentSendBackoffLadder() =>
+        _sendBackoffThrottled ? SendBackoffLadderSec : OutageBackoffLadderSec;
+
     private static int CurrentSendBackoffSec()
     {
         if (_sendBackoffStep <= 0) return 0;
-        var i = Math.Clamp(_sendBackoffStep - 1, 0, SendBackoffLadderSec.Length - 1);
-        return SendBackoffLadderSec[i];
+        var ladder = CurrentSendBackoffLadder();
+        var i = Math.Clamp(_sendBackoffStep - 1, 0, ladder.Length - 1);
+        return ladder[i];
     }
 
     private static bool IsSendDeferred() => _sendBackoffStep > 0;
@@ -1268,9 +1281,19 @@ public static partial class Extension
         return true;
     }
 
-    private static void ApplySendPause(int delaySec)
+    /// <summary>
+    /// Pose la pause commune des envois. Panne (réseau, 503) : allongée d'une gigue tirée entre 0 et
+    /// <paramref name="jitterMaxSec"/> (par défaut 20 % du délai), jamais plus courte que demandé, Retry-After compris :
+    /// les joueurs coupés en même temps ne reviennent plus tous dans la même seconde (TEST-010 : 6 joueurs repartis à
+    /// 0,3 s d'écart). Frein (429, 403) : délai exact, sans gigue, comme avant (Athena limite chaque compte ou chaque
+    /// adresse à part : les joueurs ne sont pas freinés ensemble).
+    /// </summary>
+    private static void ApplySendPause(int delaySec, int jitterMaxSec = -1)
     {
-        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(delaySec, 1, SendBackoffCapSec)).Ticks;
+        var sec = Math.Clamp(delaySec, 1, SendBackoffCapSec);
+        var jitterMs = _sendBackoffThrottled ? 0 : jitterMaxSec < 0 ? sec * 200L : jitterMaxSec * 1000L;
+        var ms = Math.Min(sec * 1000L + Random.Shared.NextInt64(jitterMs + 1), SendBackoffCapSec * 1000L);
+        var until = DateTime.UtcNow.Ticks + ms * TimeSpan.TicksPerMillisecond;
         System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
         System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, until);
     }
@@ -1313,7 +1336,10 @@ public static partial class Extension
 
     private static void NoteRateLimited(HttpResponseMessage? response = null)
     {
-        NoteSendFailure(429, "", response);
+        // 503 (maintenance, base injoignable, schéma pas prêt…) : Athena est indisponible, c'est une panne. Son frein
+        // est le 429 (RateLimitMiddleware). Les deux gardent le même traitement immédiat (RateLimited, Retry-After) ;
+        // seules l'échelle, la gigue et la sortie diffèrent.
+        NoteSendFailure(response != null && (int)response.StatusCode == 503 ? 503 : 429, "", response);
     }
 
     private static void NoteRateLimitCleared()
@@ -1332,6 +1358,8 @@ public static partial class Extension
 
         _sendOkStreak = 0;
         _sendFailStreak++;
+        if (code is 429 or 403)
+            _sendBackoffThrottled = true;
 
         if (_sendBackoffStep > 0)
         {
@@ -1339,7 +1367,7 @@ public static partial class Extension
             // Sinon une rafale de code 0 grimpe 45→600 en quelques millisecondes.
             var nowEsc = DateTime.UtcNow.Ticks;
             var gapSec = Math.Max(20, CurrentSendBackoffSec() / 2);
-            if (_sendBackoffStep < SendBackoffLadderSec.Length
+            if (_sendBackoffStep < CurrentSendBackoffLadder().Length
                 && nowEsc - System.Threading.Interlocked.Read(ref _lastBackoffEscalateTicks) >= TimeSpan.FromSeconds(gapSec).Ticks)
             {
                 _sendBackoffStep++;
@@ -1357,9 +1385,14 @@ public static partial class Extension
         {
             delaySec = CurrentSendBackoffSec();
             var ra = ParseRetryAfterSeconds(response, delaySec);
-            if (ra > delaySec)
+            var asked = ra > delaySec;
+            if (asked)
                 delaySec = Math.Min(ra, SendBackoffCapSec);
-            ApplySendPause(delaySec);
+            // Gigue : palier de panne → jusqu'à la moitié du palier (3 à 15 s, 60 s de pause au plus) pour étaler les
+            // retours ; délai demandé par Athena (maintenance, déjà étalée par le site) → 20 %, 15 s au plus ;
+            // frein (429, 403) → aucune (ApplySendPause).
+            var jitterSec = asked ? Math.Min(15, delaySec / 5) : Math.Clamp(delaySec / 2, 3, 15);
+            ApplySendPause(delaySec, jitterSec);
             if (!string.IsNullOrEmpty(url)
                 && (IsBestEffortEndpoint(url) || IsVideoFeedsEndpoint(url) || IsHeavyIngestEndpoint(url)))
                 NoteBestEffortCooldown(Math.Min(delaySec, 90));
@@ -1420,6 +1453,7 @@ public static partial class Extension
         if (_sendBackoffStep <= 0)
         {
             _sendOkStreak = 0;
+            _sendBackoffThrottled = false;
             _networkBackoffSec = 1;
             _lastNotifiedBackoffSec = -1;
             var hadPause = System.Threading.Interlocked.Read(ref _rateLimitUntilTicks) > 0
@@ -1431,8 +1465,13 @@ public static partial class Extension
             return;
         }
 
+        // Panne (réseau, délai dépassé, maintenance) : ce succès prouve qu'Athena répond de nouveau, tout repart
+        // maintenant. Avant, la pause entière était réappliquée et il fallait deux succès par palier : sur le banc,
+        // la cadence normale des positions ne revenait que 1 à 8 min après une panne de 30 s à 4 min (NET-006,
+        // TEST-010). Frein (429, 403) : un palier de moins tous les deux succès, avec la pause réappliquée entre les
+        // deux, comme avant.
         _sendOkStreak++;
-        if (_sendOkStreak < SendOkStreakToStepDown)
+        if (_sendBackoffThrottled && _sendOkStreak < SendOkStreakToStepDown)
         {
             var keep = CurrentSendBackoffSec();
             if (keep > 0)
@@ -1441,16 +1480,18 @@ public static partial class Extension
         }
 
         _sendOkStreak = 0;
-        _sendBackoffStep--;
+        _sendBackoffStep = _sendBackoffThrottled ? _sendBackoffStep - 1 : 0;
         if (_sendBackoffStep <= 0)
         {
             _sendBackoffStep = 0;
+            _sendBackoffThrottled = false;
             _networkBackoffSec = 1;
             _lastNotifiedBackoffSec = -1;
             System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, 0);
             System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, 0);
             NotifySendBackoff(0);
             InvokeCallback("RateLimitClear", "");
+            ResetPollOutageWaits();
             return;
         }
 
@@ -2550,6 +2591,8 @@ public static partial class Extension
         // Refus (401/403) ou erreur serveur répétés : pas de nouvel appel avant RefusedUntilMs, palier RefusedStep.
         public long RefusedUntilMs;
         public int RefusedStep;
+        // Attente due à une panne (réseau, 5xx) et non à un refus : levée dès qu'un envoi prouve le retour d'Athena.
+        public volatile bool RefusedOutage;
     }
 
 
@@ -2560,6 +2603,7 @@ public static partial class Extension
         {
             slot.RefusedStep = 0;
             slot.RefusedUntilMs = 0;
+            slot.RefusedOutage = false;
         }
     }
 
@@ -2580,10 +2624,51 @@ public static partial class Extension
         {
             var step = slot.RefusedUntilMs == 0 ? 0 : Math.Min(slot.RefusedStep + 1, PollRefusedLadderSec.Length - 1);
             slot.RefusedStep = step;
-            slot.RefusedUntilMs = Environment.TickCount64 + PollRefusedLadderSec[step] * 1000L;
+            slot.RefusedOutage = code < 0 || code >= 500;
+            // Panne : gigue de 0 à +20 %, après une panne commune les joueurs ne redemandent plus tous à la même
+            // seconde. Refus (401, 403, 429) : attente exacte, comme avant.
+            var waitMs = PollRefusedLadderSec[step] * 1000L;
+            if (slot.RefusedOutage)
+                waitMs += Random.Shared.NextInt64(waitMs / 5 + 1);
+            slot.RefusedUntilMs = Environment.TickCount64 + waitMs;
         }
         else if (code is >= 200 and < 400)
         {
+            var backFromOutage = slot.RefusedOutage;
+            slot.RefusedStep = 0;
+            slot.RefusedUntilMs = 0;
+            slot.RefusedOutage = false;
+            if (backFromOutage)
+                NoteAthenaBackFromPoll();
+        }
+    }
+
+    /// <summary>
+    /// Un canal sondé qui était lui-même en panne (réseau, 5xx) répond de nouveau : Athena est revenu. Une pause
+    /// d'envoi due à une panne (réseau, délai dépassé, maintenance) s'arrête comme au premier envoi réussi, sans
+    /// attendre la fin de son palier ni le Retry-After d'une maintenance (300 s, ou 900 s sans fin annoncée : positions
+    /// figées jusqu'à 9 min après une maintenance de 2 min, NET-006). Un frein (429, 403) garde sa sortie ; un canal
+    /// qui n'a pas vu la panne (sondages normaux pendant des lots de positions trop lents) ne lève rien.
+    /// </summary>
+    private static void NoteAthenaBackFromPoll()
+    {
+        if (_sendBackoffStep <= 0 || _sendBackoffThrottled)
+            return;
+        NoteSendSuccess();
+    }
+
+    /// <summary>
+    /// Fin d'une pause d'envoi : un envoi vient de réussir, Athena répond. Les canaux sondés qui attendaient à cause
+    /// d'une panne (réseau, 5xx) redemandent tout de suite au lieu de finir leur palier (jusqu'à 5 min : sur le banc,
+    /// ordres et tchat revenaient près de 2 min après la fin d'une maintenance de 2 min, NET-006). Les refus (401,
+    /// 403, 429) gardent leur attente.
+    /// </summary>
+    private static void ResetPollOutageWaits()
+    {
+        foreach (var slot in PollGetCache.Values)
+        {
+            if (!slot.RefusedOutage) continue;
+            slot.RefusedOutage = false;
             slot.RefusedStep = 0;
             slot.RefusedUntilMs = 0;
         }
