@@ -1,154 +1,109 @@
 /**
- * Page membre — téléchargement pack Overwatch
+ * Page membre /atak/mod : installer le mod Athena depuis le Steam Workshop (views/atak/mod.php).
+ * Bloc autonome, sombre, angles droits, accent vert Athena.
  */
-.atak-mod-dl {
-  --ink: #0f172a;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --accent: #059669;
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: 2rem 1.25rem 3.5rem;
+.amw {
+  --amw-bg: #0b0f0d;
+  --amw-panel: #121815;
+  --amw-panel-2: #172019;
+  --amw-line: rgba(255, 255, 255, 0.1);
+  --amw-ink: #eef2ef;
+  --amw-ink-2: rgba(238, 242, 239, 0.72);
+  --amw-ink-3: rgba(238, 242, 239, 0.5);
+  --amw-accent: #34d399;
+  --amw-accent-ink: #04130d;
+  --amw-warn: #f5b84b;
+  background: var(--amw-bg);
+  color: var(--amw-ink);
+  font-family: inherit;
+  min-height: 100%;
 }
+.amw *, .amw *::before, .amw *::after { box-sizing: border-box; }
+.amw-wrap { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
+@media (min-width: 768px) { .amw-wrap { padding: 0 2rem; } }
+.amw-ico { width: 1.15rem; height: 1.15rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-.atak-mod-dl__hero {
-  margin-bottom: 1.5rem;
-  padding: 1.5rem 1.25rem;
-  border-radius: 1rem;
-  background:
-    radial-gradient(ellipse 70% 80% at 0% 0%, rgba(5, 150, 105, 0.14), transparent 55%),
-    linear-gradient(180deg, #0f172a 0%, #111827 100%);
-  color: #f8fafc;
-}
+/* Hero */
+.amw-hero { position: relative; overflow: hidden; padding: 3rem 0 2.5rem; border-bottom: 1px solid var(--amw-line);
+  background: radial-gradient(ellipse 60% 90% at 0% 0%, rgba(52, 211, 153, 0.16), transparent 60%), linear-gradient(180deg, #0e1512, var(--amw-bg)); }
+.amw-hero__grid { position: absolute; inset: 0; opacity: 0.35; pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px; mask-image: linear-gradient(180deg, #000 30%, transparent); }
+.amw-hero__inner { position: relative; display: grid; gap: 2rem; align-items: end; }
+@media (min-width: 960px) { .amw-hero { padding: 4.5rem 0 3.5rem; } .amw-hero__inner { grid-template-columns: minmax(0, 1fr) 20rem; } }
+.amw-kicker { margin: 0 0 0.8rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--amw-accent); }
+.amw-title { margin: 0; font-size: clamp(2rem, 6vw, 3.6rem); font-weight: 900; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
+.amw-lead { margin: 1.1rem 0 0; max-width: 44rem; font-size: 1.05rem; line-height: 1.6; color: var(--amw-ink-2); }
+.amw-cta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; }
+.amw-hint { margin: 0.8rem 0 0; font-size: 0.8rem; color: var(--amw-ink-3); max-width: 40rem; }
 
-.atak-mod-dl__eyebrow {
-  margin: 0 0 0.35rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #6ee7b7;
-}
+.amw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0.6rem 1.15rem;
+  border: 1px solid var(--amw-line); background: rgba(255, 255, 255, 0.03); color: var(--amw-ink); font: inherit; font-size: 0.82rem; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: background-color 0.15s, border-color 0.15s; }
+.amw-btn:hover { border-color: rgba(255, 255, 255, 0.32); background: rgba(255, 255, 255, 0.07); color: var(--amw-ink); }
+.amw-btn:focus-visible, .amw-link:focus-visible, .amw-more__a:focus-visible { outline: 2px solid var(--amw-accent); outline-offset: 2px; }
+.amw-btn--primary { border-color: transparent; background: var(--amw-accent); color: var(--amw-accent-ink); }
+.amw-btn--primary:hover { background: #5ee0ad; border-color: transparent; color: var(--amw-accent-ink); }
+.amw-btn--sm { min-height: 2.2rem; padding: 0.4rem 0.85rem; font-size: 0.72rem; }
+.amw-btn--ghost { background: transparent; }
+.amw-link { display: inline-block; margin-top: 0.4rem; color: var(--amw-accent); font-weight: 800; font-size: 0.82rem; text-decoration: none; }
+.amw-link:hover { text-decoration: underline; color: var(--amw-accent); }
 
-.atak-mod-dl__hero h1 {
-  margin: 0;
-  font-size: clamp(1.4rem, 2.5vw, 1.85rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
+.amw-version { padding: 1.1rem 1.2rem; border: 1px solid var(--amw-line); background: rgba(10, 14, 12, 0.85); }
+.amw-version__label { margin: 0; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--amw-ink-3); }
+.amw-version__value { margin: 0.3rem 0 0.8rem; font-size: 2rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.amw-version__value small { font-size: 0.85rem; font-weight: 700; color: var(--amw-accent); margin-left: 0.3rem; }
+.amw-version__meta { margin: 0; display: grid; gap: 0; }
+.amw-version__meta div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.45rem 0; border-top: 1px solid var(--amw-line); font-size: 0.82rem; }
+.amw-version__meta dt { color: var(--amw-ink-3); }
+.amw-version__meta dd { margin: 0; font-weight: 800; text-align: right; }
+.amw-version__meta dd.is-ok { color: var(--amw-accent); }
+.amw-version__meta dd.is-warn { color: var(--amw-warn); }
 
-.atak-mod-dl__lead {
-  margin: 0.65rem 0 0;
-  max-width: 36rem;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: #cbd5e1;
-}
+/* Corps */
+.amw-body { padding-top: 2rem; padding-bottom: 4rem; display: grid; gap: 3rem; }
+.amw-banner { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.9rem 1rem; border: 1px solid rgba(245, 184, 75, 0.4); border-left: 4px solid var(--amw-warn); background: rgba(245, 184, 75, 0.06); color: #ffe1a8; }
+.amw-banner p { margin: 0; font-size: 0.9rem; line-height: 1.55; }
+.amw-h2 { margin: 0 0 1.1rem; font-size: 1.15rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
 
-.atak-mod-dl__card {
-  border: 1px solid var(--line);
-  border-radius: 0.85rem;
-  background: #fff;
-  padding: 1.25rem 1.15rem 1.4rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-}
+.amw-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr)); counter-reset: none; }
+.amw-step { position: relative; display: grid; align-content: start; gap: 0.5rem; padding: 1.1rem 1.1rem 1.2rem; border: 1px solid var(--amw-line); background: var(--amw-panel); }
+.amw-step__n { position: absolute; top: 0.9rem; right: 1rem; font-size: 1.6rem; font-weight: 900; color: rgba(255, 255, 255, 0.08); font-variant-numeric: tabular-nums; }
+.amw-step__ico { display: inline-grid; place-items: center; width: 2.4rem; height: 2.4rem; background: rgba(52, 211, 153, 0.12); color: var(--amw-accent); }
+.amw-step__ico .amw-ico { width: 1.3rem; height: 1.3rem; }
+.amw-step h3 { margin: 0.2rem 0 0; font-size: 0.98rem; font-weight: 900; }
+.amw-step p { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--amw-ink-2); }
 
-.atak-mod-dl__card h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--ink);
-}
+.amw-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.amw-item, .amw-card { display: grid; align-content: start; gap: 0.6rem; padding: 1.1rem 1.2rem; border: 1px solid var(--amw-line); background: var(--amw-panel); min-width: 0; }
+.amw-item.is-main, .amw-card.is-main { border-color: rgba(52, 211, 153, 0.45); background: linear-gradient(180deg, rgba(52, 211, 153, 0.08), var(--amw-panel) 60%); }
+.amw-item__head { display: flex; justify-content: space-between; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; }
+.amw-item h3, .amw-card h3 { margin: 0; font-size: 1.02rem; font-weight: 900; overflow-wrap: anywhere; }
+.amw-item p, .amw-card p { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--amw-ink-2); }
+.amw-item__actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.2rem; }
+.amw-tag { padding: 0.12rem 0.5rem; border: 1px solid var(--amw-line); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amw-ink-3); }
+.amw-tag.is-req { border-color: rgba(52, 211, 153, 0.45); color: var(--amw-accent); }
 
-.atak-mod-dl__card p,
-.atak-mod-dl__card li {
-  font-size: 0.92rem;
-  line-height: 1.6;
-  color: var(--muted);
-}
+.amw-two { display: grid; gap: 0.75rem; }
+@media (min-width: 900px) { .amw-two { grid-template-columns: 1fr 1fr; } }
+.amw-card__k { display: flex; align-items: center; gap: 0.45rem; margin: 0; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amw-ink-3) !important; }
+.amw-card__k .amw-ico { color: var(--amw-accent); }
+.amw-notes { margin-top: 0.4rem; padding-top: 0.8rem; border-top: 1px solid var(--amw-line); display: grid; gap: 0.4rem; }
+.amw-bullets { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.35rem; font-size: 0.86rem; line-height: 1.5; color: var(--amw-ink-2); }
+.amw-small { font-size: 0.78rem !important; color: var(--amw-ink-3) !important; }
 
-.atak-mod-dl__card ul {
-  margin: 0.5rem 0 0;
-  padding-left: 1.15rem;
-}
+.amw-faq { display: grid; gap: 0.5rem; }
+.amw-faq__item { border: 1px solid var(--amw-line); background: var(--amw-panel); }
+.amw-faq__item summary { display: flex; justify-content: space-between; gap: 1rem; padding: 0.9rem 1.1rem; cursor: pointer; font-weight: 800; font-size: 0.92rem; list-style: none; }
+.amw-faq__item summary::-webkit-details-marker { display: none; }
+.amw-faq__item summary::after { content: '+'; color: var(--amw-accent); font-weight: 900; }
+.amw-faq__item[open] summary::after { content: '−'; }
+.amw-faq__item p { margin: 0; padding: 0 1.1rem 1rem; font-size: 0.88rem; line-height: 1.6; color: var(--amw-ink-2); }
 
-.atak-mod-dl__meta {
-  display: grid;
-  gap: 0.65rem;
-  margin: 1rem 0 1.25rem;
-}
-
-@media (min-width: 560px) {
-  .atak-mod-dl__meta {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.atak-mod-dl__meta-item {
-  padding: 0.75rem 0.85rem;
-  border-radius: 0.65rem;
-  background: #f8fafc;
-  border: 1px solid var(--line);
-}
-
-.atak-mod-dl__meta-label {
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.atak-mod-dl__meta-value {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.atak-mod-dl__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.7rem 1.2rem;
-  border-radius: 0.6rem;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.95rem;
-  text-decoration: none;
-}
-
-.atak-mod-dl__cta:hover {
-  background: #047857;
-}
-
-.atak-mod-dl__cta--ghost {
-  background: #fff;
-  color: var(--ink);
-  border: 1px solid var(--line);
-}
-
-.atak-mod-dl__cta--ghost:hover {
-  background: #f1f5f9;
-}
-
-.atak-mod-dl__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.5rem;
-}
-
-.atak-mod-dl__empty {
-  padding: 1rem 1.05rem;
-  border-radius: 0.65rem;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  color: #92400e;
-  font-size: 0.9rem;
-  line-height: 1.55;
-}
+.amw-more { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+.amw-more__a { display: grid; gap: 0.3rem; padding: 1rem 1.1rem; border: 1px solid var(--amw-line); background: var(--amw-panel); color: var(--amw-ink); text-decoration: none; }
+.amw-more__a .amw-ico { color: var(--amw-accent); width: 1.4rem; height: 1.4rem; margin-bottom: 0.3rem; }
+.amw-more__a b { font-size: 0.95rem; }
+.amw-more__a small { font-size: 0.8rem; color: var(--amw-ink-3); }
+.amw-more__a:hover { border-color: rgba(52, 211, 153, 0.45); color: var(--amw-ink); }
+@media (prefers-reduced-motion: reduce) { .amw * { transition: none !important; } }

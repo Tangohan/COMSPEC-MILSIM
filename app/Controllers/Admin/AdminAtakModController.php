@@ -10,13 +10,18 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantAlertRepository;
 use App\Services\Integrations\ModUpdateDiscordNotifier;
-use ZipArchive;
+use App\Support\AtakReleaseInfo;
+use App\Support\SteamWorkshop;
 
+/**
+ * Back-office › Ressources › Mods (Steam Workshop).
+ * Le site n'héberge plus d'archive : le mod Athena et le modset sont servis par Steam. Cette page affiche les
+ * objets Workshop, enregistre la collection Steam et la consigne de la communauté, annonce une mise à jour
+ * (annonce du portail + Discord) et permet d'effacer l'ancienne archive encore stockée.
+ */
 class AdminAtakModController
 {
-    private const STORAGE_DIR = 'atak-mod';
-    private const FILENAME = 'comspec-overwatch.zip';
-    private const MAX_SIZE = 50 * 1024 * 1024; // 50 Mo
+    private const BASE = 'back-office/ressources/atak-mod';
     private const MAX_CHANGELOG_NOTES = 4000;
 
     public function __construct(
@@ -25,161 +30,77 @@ class AdminAtakModController
         $this->modDiscord ??= new ModUpdateDiscordNotifier();
     }
 
-    private function getStoragePath(int $tenantId): string
-    {
-        $base = dirname(__DIR__, 2) . '/../storage/' . self::STORAGE_DIR;
-
-        return $base . '/' . $tenantId;
-    }
-
-    private function getModFilePath(int $tenantId): string
-    {
-        return $this->getStoragePath($tenantId) . '/' . self::FILENAME;
-    }
-
+    /** Ancienne archive hébergée encore présente (à supprimer). */
     public function hasModForTenant(int $tenantId): bool
     {
-        $path = $this->getModFilePath($tenantId);
-
-        return is_file($path) && is_readable($path);
+        return is_file(SteamWorkshop::legacyArchivePath($tenantId));
     }
 
-    /**
-     * @return array{has_mod: bool, size_bytes: int|null, size_label: string|null, updated_at: string|null, version: string|null}
-     */
-    private function buildModMeta(int $tenantId): array
+    public function index(Request $request, array $params = []): Response
     {
-        $path = $this->getModFilePath($tenantId);
-        if (!is_file($path) || !is_readable($path)) {
-            return [
-                'has_mod' => false,
-                'size_bytes' => null,
-                'size_label' => null,
-                'updated_at' => null,
-                'version' => null,
-            ];
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
         }
-        $bytes = (int) filesize($path);
-        $mtime = (int) filemtime($path);
+        $legacy = SteamWorkshop::legacyArchivePath($tenantId);
+        $release = AtakReleaseInfo::latest();
 
-        return [
-            'has_mod' => true,
-            'size_bytes' => $bytes,
-            'size_label' => $this->formatBytes($bytes),
-            'updated_at' => date('d/m/Y H:i', $mtime),
-            'version' => $this->readVersionFromZip($path),
-        ];
+        return Response::view('layout.main', [
+            'content' => 'admin.atak-mod.index',
+            'title' => 'Mods (Steam Workshop)',
+            'backOfficePageCss' => ['back-office-atak-mod.css'],
+            'modItems' => SteamWorkshop::items(),
+            'modTenant' => SteamWorkshop::tenant($tenantId),
+            'modVersion' => (string) ($release['atak_native'] ?? ''),
+            'modVersionName' => (string) (AtakReleaseInfo::versionName() ?? ''),
+            'modLinkVersion' => (string) ($release['link'] ?? ''),
+            'modLegacyArchive' => is_file($legacy) ? ['size' => (int) filesize($legacy), 'at' => date('d/m/Y H:i', (int) filemtime($legacy))] : null,
+            'memberPageUrl' => url('atak/mod'),
+            'discordRelayReady' => $this->modDiscord->hasWebhookConfigured($tenantId),
+            'organizationSettingsUrl' => url('back-office/organisation/parametres'),
+            'csrfToken' => Csrf::token(),
+        ]);
     }
 
-    private function formatBytes(int $bytes): string
+    /** Collection Steam (modset) et consigne affichées aux membres sur /atak/mod. */
+    public function saveSteam(Request $request, array $params = []): Response
     {
-        if ($bytes < 1024) {
-            return $bytes . ' o';
+        $tenantId = $this->guard($request);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
         }
-        if ($bytes < 1024 * 1024) {
-            return number_format($bytes / 1024, 1, ',', ' ') . ' Ko';
-        }
+        $res = SteamWorkshop::saveTenant($tenantId, [
+            'collection_id' => (string) $request->input('collection_id', ''),
+            'collection_name' => (string) $request->input('collection_name', ''),
+            'notes' => (string) $request->input('notes', ''),
+        ]);
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok'] ? 'Mods de la communauté enregistrés. Les membres les voient sur la page d’installation.' : (string) $res['error']);
 
-        return number_format($bytes / (1024 * 1024), 1, ',', ' ') . ' Mo';
+        return Response::redirect(url(self::BASE));
     }
 
-    private function readVersionFromZip(string $zipPath): ?string
+    /** Annonce de mise à jour : annonce du portail (14 jours) et, si demandé, relais Discord. */
+    public function announce(Request $request, array $params = []): Response
     {
-        if (!class_exists(ZipArchive::class)) {
-            return null;
+        $tenantId = $this->guard($request);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
         }
-        $zip = new ZipArchive();
-        if ($zip->open($zipPath, ZipArchive::RDONLY) !== true) {
-            return null;
-        }
-        $version = null;
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
-            if ($name === false) {
-                continue;
-            }
-            $norm = str_replace('\\', '/', $name);
-            if (!preg_match('#(^|/)mod\.cpp$#i', $norm)) {
-                continue;
-            }
-            $content = $zip->getFromIndex($i);
-            if (!is_string($content) || $content === '') {
-                continue;
-            }
-            if (preg_match('/version\s*=\s*"([^"]+)"/i', $content, $m)
-                || preg_match('/version\s*=\s*\'([^\']+)\'/i', $content, $m)
-                || preg_match('/version\s*=\s*([0-9][0-9.\-]*)/i', $content, $m)
-            ) {
-                $version = trim($m[1]);
-            }
-            break;
-        }
-        $zip->close();
-
-        return $version !== null && $version !== '' ? $version : null;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function validateAtakModZip(string $tmpPath): array
-    {
-        $errors = [];
-        if (!class_exists(ZipArchive::class)) {
-            $errors[] = 'Le serveur ne peut pas lire les archives ZIP pour le moment. Contactez un administrateur technique.';
-
-            return $errors;
-        }
-        $zip = new ZipArchive();
-        if ($zip->open($tmpPath, ZipArchive::RDONLY) !== true) {
-            $errors[] = 'Cette archive est illisible ou endommagée. Recompressez le pack Overwatch puis réessayez.';
-
-            return $errors;
-        }
-        $hasModCpp = false;
-        $hasAddons = false;
-        $entryCount = $zip->numFiles;
-        if ($entryCount === 0) {
-            $errors[] = 'L’archive est vide.';
-            $zip->close();
-
-            return $errors;
-        }
-        for ($i = 0; $i < $entryCount; $i++) {
-            $name = $zip->getNameIndex($i);
-            if ($name === false) {
-                continue;
-            }
-            $norm = str_replace('\\', '/', $name);
-            if (preg_match('#(^|/)mod\.cpp$#i', $norm)) {
-                $hasModCpp = true;
-            }
-            if (preg_match('#(^|/)addons(/|$)#i', $norm)) {
-                $hasAddons = true;
-            }
-        }
-        $zip->close();
-        if (!$hasModCpp || !$hasAddons) {
-            $errors[] = 'Cette archive ne ressemble pas à un pack Overwatch complet. Vérifiez que vous déposez bien le dossier du pack compressé (structure habituelle du mod Arma).';
-        }
-
-        return $errors;
-    }
-
-    private function publishCommunityAlert(int $tenantId, ?string $version): void
-    {
+        $version = trim((string) $request->input('version', ''));
+        $version = preg_match('/^[0-9]+(\.[0-9]+){1,3}$/', $version) === 1 ? $version : null;
+        $notes = mb_substr(trim((string) $request->input('changelog_notes', '')), 0, self::MAX_CHANGELOG_NOTES);
+        $what = trim((string) $request->input('what', 'mod')) === 'collection' ? 'collection' : 'mod';
+        $title = $what === 'collection' ? 'Les mods de la communauté ont changé' : 'Mise à jour du mod Athena';
+        $body = $what === 'collection'
+            ? 'La collection Steam de la communauté a été mise à jour : ouvrez la page d’installation et abonnez-vous aux nouveaux mods.'
+            : 'Le mod Athena' . ($version ? ' ' . $version : '') . ' est disponible : Steam le met à jour automatiquement, relancez Arma pour en profiter.';
         try {
-            $repo = new TenantAlertRepository();
-            $title = 'Nouvelle version du pack Overwatch';
-            $body = $version
-                ? 'Une nouvelle version du pack Overwatch (' . $version . ') est disponible au téléchargement pour votre communauté.'
-                : 'Une nouvelle version du pack Overwatch est disponible au téléchargement pour votre communauté.';
-            $repo->insert($tenantId, [
+            (new TenantAlertRepository())->insert($tenantId, [
                 'kind' => 'info',
                 'display_style' => 'classic',
                 'title' => $title,
-                'body' => $body,
-                'cta_label' => 'Télécharger le pack',
+                'body' => $notes !== '' ? $body . "\n\n" . mb_substr($notes, 0, 600) : $body,
+                'cta_label' => 'Installer / mettre à jour',
                 'cta_url' => url('atak/mod'),
                 'coupon_code' => null,
                 'accent_color' => '#059669',
@@ -190,146 +111,48 @@ class AdminAtakModController
                 'is_active' => 1,
             ]);
         } catch (\Throwable) {
-            // L’upload reste valide même si l’annonce échoue.
+            Session::flash('error', 'L’annonce n’a pas pu être publiée. Réessayez.');
+
+            return Response::redirect(url(self::BASE));
         }
+        $suffix = '';
+        if ((string) $request->input('notify_discord', '') !== '') {
+            $r = $this->modDiscord->notifyModUpdate($tenantId, $version, url('atak/mod'), $notes !== '' ? $notes : null, null);
+            $suffix = $r['sent'] ? ' Relayée sur Discord.' : ($r['skipped'] ? ' Aucun relais Discord configuré.' : ' Le relais Discord a échoué.');
+        }
+        Session::flash('success', 'Annonce publiée pour la communauté (14 jours).' . $suffix);
+
+        return Response::redirect(url(self::BASE));
     }
 
-    public function index(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        $meta = $this->buildModMeta($tenantId);
-
-        return Response::view('layout.main', [
-            'content' => 'admin.atak-mod.index',
-            'title' => 'Pack Overwatch — Administration',
-            'hasMod' => $meta['has_mod'],
-            'modMeta' => $meta,
-            'success' => Session::getFlash('success'),
-            'error' => Session::getFlash('error'),
-            'errors' => Session::getFlash('errors') ?? [],
-            'memberDownloadUrl' => url('atak/mod'),
-            'discordRelayReady' => $this->modDiscord->hasWebhookConfigured($tenantId),
-            'organizationSettingsUrl' => url('back-office/organisation/parametres'),
-        ]);
-    }
-
-    public function upload(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Requête invalide. Réessayez.');
-
-            return Response::redirect(url('back-office/ressources/atak-mod'));
-        }
-
-        $file = $_FILES['mod_zip'] ?? null;
-        $errors = [];
-
-        if (!$file || empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            $errors[] = 'Aucun fichier reçu. Sélectionnez une archive ZIP du pack Overwatch.';
-            Session::flash('errors', $errors);
-            Session::flash('error', 'Envoi impossible.');
-
-            return Response::redirect(url('back-office/ressources/atak-mod'));
-        }
-
-        if (($file['size'] ?? 0) > self::MAX_SIZE) {
-            $errors[] = 'Le fichier dépasse la taille maximale autorisée (50 Mo).';
-        }
-
-        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            $errors[] = 'L’envoi a échoué. Réessayez avec une connexion stable.';
-        }
-
-        $ext = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
-        if ($ext !== 'zip') {
-            $errors[] = 'Déposez une archive ZIP du pack Overwatch.';
-        }
-
-        if ($errors === []) {
-            $errors = array_merge($errors, $this->validateAtakModZip((string) $file['tmp_name']));
-        }
-
-        if ($errors !== []) {
-            Session::flash('errors', $errors);
-            Session::flash('error', implode(' ', $errors));
-
-            return Response::redirect(url('back-office/ressources/atak-mod'));
-        }
-
-        $dir = $this->getStoragePath($tenantId);
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
-            Session::flash('error', 'Impossible d’enregistrer le pack pour le moment.');
-
-            return Response::redirect(url('back-office/ressources/atak-mod'));
-        }
-        $dest = $this->getModFilePath($tenantId);
-        if (!@move_uploaded_file((string) $file['tmp_name'], $dest)) {
-            Session::flash('error', 'Impossible d’enregistrer le pack pour le moment.');
-
-            return Response::redirect(url('back-office/ressources/atak-mod'));
-        }
-
-        $version = $this->readVersionFromZip($dest);
-        $this->publishCommunityAlert($tenantId, $version);
-
-        $changelogNotes = trim((string) $request->input('changelog_notes', ''));
-        if (mb_strlen($changelogNotes) > self::MAX_CHANGELOG_NOTES) {
-            $changelogNotes = mb_substr($changelogNotes, 0, self::MAX_CHANGELOG_NOTES);
-        }
-
-        $notifyDiscord = $request->input('notify_discord') === '1'
-            || $request->input('notify_discord') === 'on';
-        $discordSuffix = '';
-        if ($notifyDiscord) {
-            $discordResult = $this->modDiscord->notifyModUpdate(
-                $tenantId,
-                $version,
-                url('atak/mod'),
-                $changelogNotes !== '' ? $changelogNotes : null,
-                $dest,
-            );
-            if ($discordResult['sent']) {
-                $discordSuffix = ' Une annonce a aussi été envoyée sur Discord.';
-            } elseif ($discordResult['skipped']) {
-                $discordSuffix = ' Aucun relais Discord n’est configuré : l’annonce Discord a été ignorée.';
-            } else {
-                $discordSuffix = ' L’annonce Discord n’a pas pu être envoyée (le pack reste bien publié).';
-            }
-        }
-
-        Session::flash(
-            'success',
-            'Pack Overwatch enregistré. Il est disponible pour les membres, et une annonce a été publiée pour la communauté.'
-            . $discordSuffix
-        );
-
-        return Response::redirect(url('back-office/ressources/atak-mod'));
-    }
-
+    /** Supprime l'ancienne archive hébergée par le site (avant le passage au Workshop). */
     public function delete(Request $request, array $params = []): Response
     {
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
+        $tenantId = $this->guard($request);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
         }
-        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Requête invalide. Réessayez.');
-
-            return Response::redirect(url('back-office/ressources/atak-mod'));
-        }
-        $path = $this->getModFilePath($tenantId);
+        $path = SteamWorkshop::legacyArchivePath($tenantId);
         if (is_file($path)) {
             @unlink($path);
         }
-        Session::flash('success', 'Pack Overwatch retiré. Les membres ne peuvent plus le télécharger.');
+        Session::flash('success', 'Ancienne archive supprimée du serveur.');
 
-        return Response::redirect(url('back-office/ressources/atak-mod'));
+        return Response::redirect(url(self::BASE));
+    }
+
+    private function guard(Request $request): int|Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide. Réessayez.');
+
+            return Response::redirect(url(self::BASE));
+        }
+
+        return $tenantId;
     }
 }

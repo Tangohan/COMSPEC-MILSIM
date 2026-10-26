@@ -32,7 +32,7 @@ declare(strict_types=1);
         <li class="ow-formation__step" data-step="m1-s1">
             <label>
                 <input type="checkbox" data-formation-check="m1-s1" />
-                <span>Télécharger le pack depuis <a href="<?= htmlspecialchars((string) ($atakModUrl ?? url('atak/mod')), ENT_QUOTES, 'UTF-8') ?>">la page ATAK mod</a> et noter la version affichée.</span>
+                <span>S’abonner au mod sur Steam depuis <a href="<?= htmlspecialchars((string) ($atakModUrl ?? url('atak/mod')), ENT_QUOTES, 'UTF-8') ?>">la page d’installation</a> et noter la version affichée.</span>
             </label>
         </li>
         <li class="ow-formation__step" data-step="m1-s2">

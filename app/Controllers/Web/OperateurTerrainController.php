@@ -7,7 +7,6 @@ namespace App\Controllers\Web;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use App\Repositories\ModpackRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Dashboard\TenantDashboardPinService;
 
@@ -18,7 +17,6 @@ final class OperateurTerrainController
 {
     public function __construct(
         private AuthService $authService,
-        private ModpackRepository $modpackRepository,
         private TenantDashboardPinService $pinService,
     ) {}
 
@@ -33,12 +31,9 @@ final class OperateurTerrainController
             return Response::redirect(url('dashboard'));
         }
         $uid = (int) $user['id'];
-        $modpack = $this->modpackRepository->getPrimaryForTenant($tenantId);
-        $atakUrl = null;
-        $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
-        if (is_file($modPath) && is_readable($modPath)) {
-            $atakUrl = url('atak/mod/download');
-        }
+        // Mods servis par le Steam Workshop.
+        $modpack = \App\Support\SteamWorkshop::modset($tenantId);
+        $atakUrl = url('atak/mod');
         $pins = [];
         try {
             $pins = $this->pinService->listResolvedPinsForViewer($tenantId, $uid);
