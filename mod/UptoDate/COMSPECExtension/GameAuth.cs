@@ -171,6 +171,10 @@ public static partial class Extension
             if (string.Equals(state, "READY", StringComparison.Ordinal) && !wasReady)
                 _gameAuthBecameReadyAt = DateTimeOffset.UtcNow;
         }
+        // Liaison refaite, nouvelle clé ou client-init accepté : les refus mémorisés ne valent plus.
+        // READY avec erreur C2_* (FinishGameAuthReady) : client-init toujours refusé, le verrou reste.
+        if (string.Equals(state, "READY", StringComparison.Ordinal) && string.IsNullOrEmpty(error))
+            ClearRefusalLatches();
     }
 
     private static string FormatGameAuthState()
@@ -682,6 +686,7 @@ public static partial class Extension
                 if (access.Length > 0)
                 {
                     _gameAccessToken = access;
+                    ResetPollRefusals();
                     // Clé communauté fournie par le portail (comme Appairer) : la garder
                     // pour les routes ATAK si le Bearer est mal relayé. Sinon ne plus
                     // effacer une clé déjà valide (Redeem / Connect préalable).

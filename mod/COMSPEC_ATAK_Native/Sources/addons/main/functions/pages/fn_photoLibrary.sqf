@@ -32,6 +32,7 @@ private _fnc_send = {
     private _kept = profileNamespace getVariable ["COMSPEC_ATAK_PhotoFaces", []];
     private _i = if (_kept isEqualType []) then { _kept findIf { (_x param [0, ""]) isEqualTo (toLower _name) } } else { -1 };
     private _meta = if (_i >= 0) then { ["", "", false, "", false, "phone", "", [], -1, (_kept select _i) param [1, []]] } else { [] };
+    if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith { false };
     [_path, _caption, "CTAB", "", true, false, false, _meta] call comspec_overwatch_connect_fnc_captureReconImage
 };
 switch (_action) do {

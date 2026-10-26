@@ -396,7 +396,7 @@ switch (_act) do {
             _b ctrlSetFontHeight (_fs * 0.95);
             if (_on) then { _b ctrlSetBackgroundColor _onCol; _b ctrlSetTextColor [1, 1, 1, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; };
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
-            _b ctrlAddEventHandler ["ButtonClick", compile format ["['flag', %1] call comspec_atak_native_fnc_dronePhoto;", str _flag]];
+            [_b, compile format ["['flag', %1] call comspec_atak_native_fnc_dronePhoto;", str _flag]] call comspec_atak_native_fnc_clickNext;
         } forEach [
             ["SSE", _sse, "sse", [0.85, 0.55, 0.12, 1], "Exploitation de site : rattache le cliché au dossier SSE actif (app SSE)"],
             ["CONFIDENTIEL", _cf, "conf", [0.78, 0.2, 0.16, 1], "Marqué [CONFIDENTIEL] en tête de la légende sur Athena"]
@@ -419,7 +419,7 @@ switch (_act) do {
             _b ctrlSetFontHeight (_fs * 1.0);
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
             _b ctrlEnable _en;
-            _b ctrlAddEventHandler ["ButtonClick", _code];
+            [_b, _code] call comspec_atak_native_fnc_clickNext;
             if (_forEachIndex isEqualTo 0 && {_delOn}) then { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 1]; };
             _bx = _bx + (_bws select _forEachIndex) + _pad / 2;
         } forEach [
@@ -475,7 +475,9 @@ switch (_act) do {
             [_pos, _spPos] select ((count _pos) < 3 && {(count _spPos) >= 3}), _hdg, _extra, _spDir]] select _withMeta;
         [{
             params ["_file", "_caption", "_feed", "_meta"];
-            private _ok = [_file, _caption, "UAV", _feed, true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage;
+            private _ok = if (isNil "comspec_overwatch_connect_fnc_captureReconImage") then { false } else {
+                [_file, _caption, "UAV", _feed, true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage
+            };
             private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
             private _j = _lib findIf { (_x select 0) isEqualTo _file };
             if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select (_ok isEqualTo true)]; [] call comspec_atak_native_fnc_saveProfile; };

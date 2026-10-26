@@ -20,6 +20,7 @@ private _restore = {
 switch (_mode) do {
     case "start": {
         missionNamespace setVariable ["COMSPEC_ATAK_ForeignNext", 0];
+        missionNamespace setVariable ["COMSPEC_ATAK_ForeignNamesNext", 0];
         if ((missionNamespace getVariable ["COMSPEC_ATAK_ForeignPfh", -1]) >= 0) exitWith {};
         private _h = [{
             if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { ["stop"] call comspec_atak_native_fnc_foreignHud; };
@@ -49,21 +50,33 @@ switch (_mode) do {
         if (!(missionNamespace getVariable ["comspec_atak_native_hide_foreign_hud", true]) || {isNull _d} || {_s getOrDefault ["texture", false]}) exitWith { call _restore; };
         ((([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["visible", [0, 0, 0, 0]])) params ["_px", "_py", "_pw", "_ph"];
         private _skip = allDisplays + (uiNamespace getVariable ["IGUI_displays", []]) + [_d];
+        // Découverte (au démarrage puis toutes les 10 s) : allVariables uiNamespace compte des milliers de noms (caches de
+        // fonctions BIS/CBA/ACE…). On ne garde que ceux qui contiennent un display (même fermé, pour qu'un calque rouvert
+        // sous le même nom soit repris) ; le contrôle de chaque seconde ne relit plus que cette courte liste.
+        private _names = uiNamespace getVariable ["COMSPEC_ATAK_ForeignNames", []];
+        if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_ForeignNamesNext", 0])) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_ForeignNamesNext", diag_tickTime + 10];
+            _names = (allVariables uiNamespace) select {
+                (_x select [0, 12]) isNotEqualTo "comspec_atak" && {
+                    private _v = uiNamespace getVariable _x;
+                    !isNil "_v" && {_v isEqualType displayNull}
+                }
+            };
+            uiNamespace setVariable ["COMSPEC_ATAK_ForeignNames", _names];
+        };
         private _want = [];
         {
-            if ((_x select [0, 12]) isNotEqualTo "comspec_atak") then {
-                private _v = uiNamespace getVariable _x;
-                if (!isNil "_v" && {_v isEqualType displayNull} && {!isNull _v} && {!(_v in _skip)}) then {
-                    _skip pushBack _v;
-                    {
-                        if (isNull (ctrlParentControlsGroup _x)) then {
-                            (ctrlPosition _x) params [["_cx", 0], ["_cy", 0], ["_cw", 0], ["_ch", 0]];
-                            if (_cx < _px + _pw && {_cx + _cw > _px} && {_cy < _py + _ph} && {_cy + _ch > _py}) then { _want pushBack _x; };
-                        };
-                    } forEach (allControls _v);
-                };
+            private _v = uiNamespace getVariable _x;
+            if (!isNil "_v" && {_v isEqualType displayNull} && {!isNull _v} && {!(_v in _skip)}) then {
+                _skip pushBack _v;
+                {
+                    if (isNull (ctrlParentControlsGroup _x)) then {
+                        (ctrlPosition _x) params [["_cx", 0], ["_cy", 0], ["_cw", 0], ["_ch", 0]];
+                        if (_cx < _px + _pw && {_cx + _cw > _px} && {_cy < _py + _ph} && {_cy + _ch > _py}) then { _want pushBack _x; };
+                    };
+                } forEach (allControls _v);
             };
-        } forEach (allVariables uiNamespace);
+        } forEach _names;
         // Plus sous le téléphone (mini déplacé, plein écran réduit) : réaffiché. Un contrôle que son mod a lui-même
         // masqué n'est jamais pris, pour ne pas le réafficher à la fermeture.
         { if (!isNull _x && {!(_x in _want)}) then { _x ctrlShow true; }; } forEach _hidden;

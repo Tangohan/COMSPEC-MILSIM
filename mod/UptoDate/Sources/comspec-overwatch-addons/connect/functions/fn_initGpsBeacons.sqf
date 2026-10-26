@@ -84,7 +84,16 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         missionNamespace setVariable ["COMSPEC_GpsBeaconScanAt", diag_tickTime, false];
         [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
     };
-    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
+        missionNamespace setVariable ["COMSPEC_TrackSigWasDown", true, false];
+    };
+    // Retour de liaison : nouvelle époque de signature, tous les suivis (IA, balises, téléphones) repartent tout de suite.
+    if (missionNamespace getVariable ["COMSPEC_TrackSigWasDown", false]) then {
+        missionNamespace setVariable ["COMSPEC_TrackSigWasDown", false, false];
+        missionNamespace setVariable ["COMSPEC_TrackSigEpoch", (missionNamespace getVariable ["COMSPEC_TrackSigEpoch", 0]) + 1, false];
+    };
+    // Autres joueurs vivants pris une fois par passage pour le choix du relais (au lieu de allPlayers par objet).
+    private _others = allPlayers select { alive _x && {isPlayer _x} && {_x isNotEqualTo player} };
 
     private _vehs = missionNamespace getVariable ["COMSPEC_GpsBeaconObjects", []];
     if (_vehs isEqualType []) then {
@@ -92,7 +101,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         {
             if (isNull _x) then { continue };
             _keep pushBack _x;
-            if !([_x] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
+            if !([_x, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
             [_x] call comspec_overwatch_connect_fnc_updateVehicleTracking;
             [_x] call comspec_overwatch_connect_fnc_reportGpsBeacon;
         } forEach _vehs;
@@ -111,7 +120,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
             if !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
             _keepA pushBack _x;
             _seenNids pushBackUnique (netId _x);
-            if !([_x] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
+            if !([_x, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
             [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;
         } forEach _allies;
         if ((count _keepA) isNotEqualTo (count _allies)) then {
@@ -139,7 +148,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
             if (isPlayer _x) then { continue };
             if ([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
             _keepU pushBack _x;
-            if !([_x] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
+            if !([_x, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
             [_x] call comspec_overwatch_connect_fnc_reportPhonePosition;
         } forEach _phones;
         if ((count _keepU) isNotEqualTo (count _phones)) then {

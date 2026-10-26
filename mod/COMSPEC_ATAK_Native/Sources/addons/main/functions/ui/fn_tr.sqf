@@ -18,6 +18,11 @@ if (!(_v isEqualType "") || {_v isEqualTo ""} || {(missionNamespace getVariable 
 private _cache = missionNamespace getVariable ["COMSPEC_ATAK_I18nCache", createHashMap];
 private _hit = _cache getOrDefault [_v, nil];
 if (!isNil "_hit") exitWith { _hit };
+// Textes avec chiffres (barre d'état, curseur de carte, cap, heures…) : petit cache à part, vidé seul, pour que ces
+// valeurs toujours nouvelles ne vident plus le cache des textes fixes (qu'il fallait ensuite tout retraduire).
+private _cacheNum = missionNamespace getVariable ["COMSPEC_ATAK_I18nCacheNum", createHashMap];
+_hit = _cacheNum getOrDefault [_v, nil];
+if (!isNil "_hit") exitWith { _hit };
 // Chemin d'image ou de son (dont les images téléchargées par la DLL, C:/…/x.jpg) et texture procédurale (#(argb,…)r2t(…),
 // image vidéo) : jamais traduits.
 if ((_v select [0, 1]) isEqualTo "\" || {(_v select [0, 2]) isEqualTo "#("} || {(_v find ".paa") > 0} || {(_v select [1, 2]) isEqualTo ":/"} || {(count _v) > 4 && {((toLower _v) select [(count _v) - 4]) in [".jpg", "jpeg", ".png", ".ogg"]}}) exitWith { _cache set [_v, _v]; _v };
@@ -111,6 +116,12 @@ while { _rest isNotEqualTo "" } do {
             _rest = _rest select [_i + _j + 1];
         };
     };
+};
+if (((_v splitString "0123456789") joinString "") isNotEqualTo _v) exitWith {
+    if (count _cacheNum > 1500) then { _cacheNum = createHashMap; };
+    missionNamespace setVariable ["COMSPEC_ATAK_I18nCacheNum", _cacheNum];
+    _cacheNum set [_v, _out];
+    _out
 };
 if (count _cache > 4000) then { _cache = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_I18nCache", _cache]; };
 _cache set [_v, _out];

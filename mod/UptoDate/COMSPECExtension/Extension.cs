@@ -295,9 +295,13 @@ public static partial class Extension
         public string SseNoteId = "";
         public string SseNoteKind = "capture";
         public int Attempts;
+        /// <summary>Relances différées d'un nom précis pas encore écrit (jeu en pause, alt-tab, disque lent).</summary>
+        public int LateRetries;
     }
 
     private static readonly ConcurrentQueue<ReconPhotoJob> PhotoJobs = new();
+    private const int PhotoLateRetryMax = 4;
+    private const int PhotoLateRetryDelayMs = 15_000;
     private static readonly ConcurrentDictionary<string, long> PhotoDedupTicks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object ScreenshotWatcherLock = new();
     private static int _photoWorkerRunning;
@@ -1063,10 +1067,11 @@ public static partial class Extension
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void MaybeReauthAfter401(string url)
+    private static void MaybeReauthAfter401(string url, bool force = false)
     {
         if (!HasPortalAuth() || string.IsNullOrEmpty(_baseUrl)) return;
-        if (!IsAuthSensitiveEndpoint(url)) return;
+        // force : 401 d'un sondage GET (ordres, tchat…), absent de la liste mais qui doit aussi vérifier la clé.
+        if (!force && !IsAuthSensitiveEndpoint(url)) return;
         // Pendant le handshake SQF : ne pas tuer la session (restauration / Steam encore en cours).
         if (_gameAuthState is "CONTACTING_ATHENA" or "RESTORING_SESSION" or "AUTHENTICATING"
             or "RESOLVING_ACCOUNT" or "RESOLVING_TENANT" or "SYNCING_PROFILE"
@@ -1095,15 +1100,14 @@ public static partial class Extension
                     return;
                 }
 
-                if (verify.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
-                    || verify.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase)
-                    || verify.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
+                var refused = Array.Find(PermanentRefusalCodes,
+                    c => verify.Contains(c, StringComparison.OrdinalIgnoreCase));
+                if (refused != null)
                 {
                     // A 401 followed by a rejected client-init is not a transient POST
-                    // failure. Tell SQF to close its transmission gate; otherwise every
-                    // periodic producer keeps hammering authenticated endpoints forever.
-                    SetGameAuth("C2_UNAUTHORIZED", _gameAuthProgress, "C2_UNAUTHORIZED");
-                    InvokeCallback("AuthInvalidated", verify);
+                    // failure. Latch: no poll or post until a relink, a READY session or a restart
+                    // (Extension_RefusalLatch); SQF closes its gate without auto-reopen.
+                    LatchAuthRefusal(refused, verify);
                 }
             }
             catch { /* the normal network backoff handles transport failures */ }
@@ -1486,7 +1490,8 @@ public static partial class Extension
         if ((int)response.StatusCode == 403)
         {
             NoteAccessDenied(response, url);
-            if (!IsBestEffortEndpoint(url))
+            NoteRefusal(url, 403, RefusalBody(response));
+            if (!IsBestEffortEndpoint(url) && !IsRefusalLatched(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -1562,6 +1567,9 @@ public static partial class Extension
     /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
     private static bool TrySendQueuedPost((string Url, string Body) item)
     {
+        // Adresse absente de l'offre de la communauté : envoi abandonné, pas renvoyé.
+        if (IsFeatureLatched(item.Url))
+            return true;
         var started = DateTime.UtcNow.Ticks;
         JournalTrack(item.Url, item.Body, "sending");
         try
@@ -1587,7 +1595,8 @@ public static partial class Extension
                 if ((int)response.StatusCode == 403)
                 {
                     NoteAccessDenied(response, item.Url);
-                    if (!IsBestEffortEndpoint(item.Url))
+                    NoteRefusal(item.Url, 403, RefusalBody(response));
+                    if (!IsBestEffortEndpoint(item.Url) && !IsRefusalLatched(item.Url))
                         EnqueueForRetry(item.Url, item.Body);
                     return false;
                 }
@@ -1595,6 +1604,8 @@ public static partial class Extension
                 {
                     var code = (int)response.StatusCode;
                     NotePostError(code, item.Url, response, item.Body);
+                    if (code == 401)
+                        MaybeReauthAfter401(item.Url);
                     if (TryNoteEndpointServerError(item.Url, response))
                     {
                         // Cette adresse attend ; le vidage continue avec les autres envois.
@@ -1649,22 +1660,33 @@ public static partial class Extension
         JournalMaybeReport();
         if (string.IsNullOrEmpty(_baseUrl)) return;
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
+        // Clé ou compte refusés pour de bon : la file attend la nouvelle liaison au lieu d'être renvoyée chaque seconde.
+        if (IsAuthLatched()) return;
         // Passage précédent encore en cours (Athena lente) : on le laisse finir au lieu d'empiler des threads
         // sur le verrou (les minuteurs se chevauchent et affamaient les appels Async, sondages et journaux).
         if (!System.Threading.Monitor.TryEnter(QueueDrainLock)) return;
         try
         {
             // Phase A : lot priorisé d’abord (compte dans le budget HTTP du tick).
-            if (TryDrainTelemetryBatch())
+            // Le lot n'arrête plus le passage : tant que le joueur bouge il n'est jamais vide, et marqueurs,
+            // manifestes et rapports attendaient l'arrêt du joueur (puis partaient en rafale).
+            var telemetrySent = TryDrainTelemetryBatch();
+            if (telemetrySent)
             {
-                PersistQueueToDisk();
                 // Re-jitter périodique pour désynchroniser les clients.
                 try { EnsureDrainTimer(rejitter: true); } catch { /* ignore */ }
-                return;
+                // Athena vient de demander une pause (429/503, réseau) : on s'arrête là, comme avant.
+                if (IsPostPausedNow())
+                {
+                    PersistQueueToDisk();
+                    return;
+                }
             }
 
             const int maxPerTick = 3;
-            var sent = 0;
+            var sent = telemetrySent ? 1 : 0;
+            // Télémétrie active : un seul envoi de la file par passage (prudence, le lot occupe déjà la connexion).
+            var fifoLeft = telemetrySent ? 1 : maxPerTick;
             var networkPause = IsNetworkBackoffNow();
             // Toujours la position coalescée en premier (freshness > ordre FIFO).
             var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
@@ -1680,7 +1702,7 @@ public static partial class Extension
             }
             // Un tour de file au plus : les envois remis en file (adresse en pause) ne sont pas relus.
             var scanLeft = PendingPosts.Count;
-            while (sent < maxPerTick && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
+            while (sent < maxPerTick && fifoLeft > 0 && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
             {
                 if (!TryResolveQueuedUrl(ref item))
                 {
@@ -1711,6 +1733,7 @@ public static partial class Extension
                 if (!TrySendQueuedPost(item))
                     break;
                 sent++;
+                fifoLeft--;
             }
             // Marqueurs coalescés (budget restant).
             if (sent < maxPerTick && !PendingMarkersByName.IsEmpty)
@@ -2206,6 +2229,10 @@ public static partial class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        // Données remontées choisies par la communauté (Extension_DataFlows) : flux coupé, rien en file.
+        // Refus définitif en cours (clé, compte ou fonction absente de l'offre) : rien n'est envoyé ni mis en file.
+        if (!DataFlowAllowsUrl(url, jsonBody) || IsRefusalLatched(url))
+            return;
         // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
         if (TryOfferBatchablePost(url, jsonBody))
             return;
@@ -2333,6 +2360,49 @@ public static partial class Extension
         public volatile string Result = "OK|";
         public long FetchedAtMs;
         public int InFlight;
+        // Dernière adresse sondée et dernier code HTTP (-1 : erreur réseau) : rejoués par Link.SelfTest.
+        public volatile string Url = "";
+        public int LastCode;
+        // Refus (401/403) ou erreur serveur répétés : pas de nouvel appel avant RefusedUntilMs, palier RefusedStep.
+        public long RefusedUntilMs;
+        public int RefusedStep;
+    }
+
+
+    /// <summary>Nouvelle liaison ou nouvelle session : les canaux refusés réessaient tout de suite.</summary>
+    private static void ResetPollRefusals()
+    {
+        foreach (var slot in PollGetCache.Values)
+        {
+            slot.RefusedStep = 0;
+            slot.RefusedUntilMs = 0;
+        }
+    }
+
+    /// <summary>Paliers d'attente d'un canal sondé après un refus d'Athena : 15 s, 30 s, 1 min, 2 min, puis 5 min.</summary>
+    private static readonly int[] PollRefusedLadderSec = { 15, 30, 60, 120, 300 };
+
+    /// <summary>
+    /// Après un 401/403 (clé ou session refusée, formule sans ce canal) ou une erreur 5xx, le canal attend avant de
+    /// redemander, de plus en plus longtemps ; la première réponse 2xx/304 remet le compteur à zéro. Avant, chaque
+    /// canal refusé était redemandé toutes les 1,2 s à 10 s : des milliers de requêtes refusées par heure côté Athena.
+    /// Un 404 ne compte pas : certains canaux répondent 404 tant que la ressource n'existe pas (plan de mission…).
+    /// Les refus pour une règle d'Athena (clé, compte, offre) sont arrêtés net par Extension_RefusalLatch.cs ;
+    /// ces paliers couvrent les refus passagers et ceux sans motif.
+    /// </summary>
+    private static void NotePollResult(PollGetSlot slot, int code)
+    {
+        if (code is 401 or 403 or 429 || code >= 500 || code < 0)
+        {
+            var step = slot.RefusedUntilMs == 0 ? 0 : Math.Min(slot.RefusedStep + 1, PollRefusedLadderSec.Length - 1);
+            slot.RefusedStep = step;
+            slot.RefusedUntilMs = Environment.TickCount64 + PollRefusedLadderSec[step] * 1000L;
+        }
+        else if (code is >= 200 and < 400)
+        {
+            slot.RefusedStep = 0;
+            slot.RefusedUntilMs = 0;
+        }
     }
 
     private static readonly ConcurrentDictionary<string, PollGetSlot> PollGetCache = new();
@@ -2346,11 +2416,18 @@ public static partial class Extension
     {
         if (string.IsNullOrEmpty(url))
             return "ERR|invalid_url";
+        // Refus définitif en cours : aucun appel (avant : un GET refusé toutes les 4 à 8 s par sondage).
+        if (IsAuthLatched())
+            return "ERR|unauthorized";
+        if (IsFeatureLatched(url))
+            return "ERR|feature_unavailable";
 
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
+        slot.Url = url;
         var now = Environment.TickCount64;
         const int minRefreshMs = 1200;
-        var stale = slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs;
+        var stale = (slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs)
+            && (slot.RefusedUntilMs == 0 || now >= slot.RefusedUntilMs);
         if (stale && Interlocked.CompareExchange(ref slot.InFlight, 1, 0) == 0)
         {
             ThreadPool.QueueUserWorkItem(_ =>
@@ -2360,13 +2437,20 @@ public static partial class Extension
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
                     using var resp = SendGet(url, cts.Token);
                     var body = ReadContentUtf8(resp, cts.Token);
-                    var formatted = format(body, (int)resp.StatusCode);
+                    var status = (int)resp.StatusCode;
+                    slot.LastCode = status;
+                    if (status == 401 || status == 403)
+                        NoteRefusal(url, status, body);
+                    NotePollResult(slot, status);
+                    var formatted = format(body, status);
                     if (formatted.StartsWith("OK|", StringComparison.Ordinal) || slot.FetchedAtMs == 0)
                         slot.Result = formatted;
                     slot.FetchedAtMs = Environment.TickCount64;
                 }
                 catch
                 {
+                    slot.LastCode = -1;
+                    NotePollResult(slot, -1);
                     if (slot.FetchedAtMs == 0)
                         slot.Result = "ERR|network";
                     slot.FetchedAtMs = Environment.TickCount64;
@@ -3019,6 +3103,17 @@ public static partial class Extension
     private const int AsyncMaxParallel = 6;
     private static readonly SemaphoreSlim AsyncGate = new(AsyncMaxParallel, AsyncMaxParallel);
 
+    /// <summary>
+    /// Commandes reçues par « Async » qui ne font que construire un JSON et le mettre en file (EnqueueOrSend) :
+    /// aucune attente réseau, donc pas de passage par AsyncGate. Ne JAMAIS y ajouter une commande qui appelle
+    /// SendGet / SendJsonPost (elle bloquerait le thread du jeu).
+    /// </summary>
+    private static readonly HashSet<string> AsyncLocalCommands = new(StringComparer.Ordinal)
+    {
+        "UpdatePosition", "EmitTelemetry", "SendMarker", "SendFlightManifest", "SendWeather",
+        "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report", "NetConditions.Report",
+    };
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
@@ -3040,6 +3135,12 @@ public static partial class Extension
         {
             return LatestVersions(args.Length > 0 ? args[0] : null);
         }
+        // Dépannage liaison : auto-test complet (contrôles serveur, chaque canal sondé rejoué, file d'envoi).
+        // ["Link.SelfTest", [mapId]] -> « OK|lignes » (voir Extension_SelfTest.cs). Réseau : toujours via Async.
+        if (function == "Link.SelfTest")
+        {
+            return LinkSelfTest(args.Length > 0 ? args[0] : null);
+        }
         // Check de démarrage du mod (fn_startupCheck) : POST /api/atak/startup-check, public, sans session ni clé.
         // ["StartupCheck", [adresse du portail, "clé=valeur", ...]] -> « OK|posted », « OK|duplicate », « OK|no_channel »… ou « ERR|… ».
         if (function == "StartupCheck")
@@ -3059,6 +3160,22 @@ public static partial class Extension
             var command = args[1]!;
             if (command == "Async") return "ERR|async_nested";
             var rest = args[2..];
+            // Commandes purement locales (mise en file, aucun appel réseau) : exécutées tout de suite, sans attendre
+            // AsyncGate ni Task.Run. Quand Athena ralentissait, 6 appels HTTP lents bloquaient la porte et la position
+            // (une seule en vol côté SQF) était sautée jusqu'à 8 s. Le rappel part quand même : le SQF ne change pas.
+            if (AsyncLocalCommands.Contains(command))
+            {
+                string localResult;
+                try
+                {
+                    var direct = TryGetSyncResponse(command, rest);
+                    if (direct == null) { RvExtensionArgsImpl(command, rest); direct = ""; }
+                    localResult = direct;
+                }
+                catch (Exception ex) { localResult = FormatCaughtError(ex); }
+                InvokeCallback("async:" + ticket, localResult);
+                return "QUEUED|" + ticket;
+            }
             _ = Task.Run(async () =>
             {
                 // Au plus AsyncMaxParallel appels à la fois : quand Athena ralentit, les suivants attendent
@@ -3403,6 +3520,7 @@ public static partial class Extension
                 var baseUrl = NormalizeBaseUrl(args[0] ?? "");
                 if (baseUrl.Length == 0) return "ERR|invalid_url";
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
                 // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
@@ -3523,6 +3641,7 @@ public static partial class Extension
                 var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
                 ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
@@ -3996,6 +4115,7 @@ public static partial class Extension
                 if (apiKey.Length == 0) return "ERR|http_503";
                 // Toujours l’URL qui a réussi le redeem (évite node_url admin incorrect → 401).
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
                 ApplyTenantId(tenantId);
@@ -4079,6 +4199,7 @@ public static partial class Extension
                 if (apiKey.Length == 0) return "ERR|http_503";
                 // Toujours l’URL qui a réussi by-steam (évite node_url admin incorrect → 401).
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
                 ApplyTenantId(tenantId);
@@ -4157,6 +4278,7 @@ public static partial class Extension
                 }
                 // Mémorise l’URL pour d’éventuels appels suivants (whoami, etc.).
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 return "OK|registered";
             }
             catch (Exception ex)
@@ -4257,6 +4379,7 @@ public static partial class Extension
                     return "ERR|invalid_response";
                 }
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 return "OK|reported";
             }
             catch (Exception ex)
@@ -4454,6 +4577,12 @@ public static partial class Extension
                     var safe = body.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                     return PollOkClipped(safe);
                 });
+            }
+            // Données remontées choisies par la communauté (positions, véhicules, pertes, miroir, contexte).
+            // Réponse : positions=1\tvehicles=0\t... (Extension_DataFlows).
+            if (function == "GetDataFlows")
+            {
+                return ServeDataFlows();
             }
             // Modules pont ATAK Enhanced / cTab (activables admin).
             // Lignes : id\tenabled(0|1)\tlabel
@@ -6486,12 +6615,19 @@ public static partial class Extension
         return sb.ToString().TrimEnd();
     }
 
+    private static volatile string? _writableCacheDir;
+
     /// <summary>
     /// Dossier de cache local pour les diapositives téléchargées : à côté de la DLL en priorité
     /// (dossier du mod, généralement accessible en écriture), sinon dossier temporaire système.
     /// </summary>
     private static string? GetWritableCacheDir()
     {
+        // Dossier déjà vérifié : réutilisé tant qu'il existe (un fichier test était écrit puis effacé à chaque
+        // diapositive, avatar ou QR, même déjà en cache).
+        var known = _writableCacheDir;
+        if (known != null && Directory.Exists(known))
+            return known;
         var candidates = new[]
         {
             Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
@@ -6505,6 +6641,7 @@ public static partial class Extension
                 var probe = Path.Combine(dir, ".write_test");
                 File.WriteAllText(probe, "ok");
                 File.Delete(probe);
+                _writableCacheDir = dir;
                 return dir;
             }
             catch
@@ -9263,6 +9400,8 @@ public static partial class Extension
         // Un nom précis n’est jamais remplacé par une autre photo récente (Quick Picture).
         var specificName = HasSpecificImageFileName(job.RawPath);
         var maxAttempts = specificName ? 50 : 25;
+        // Relance différée : courte attente, la file des autres photos ne reste pas bloquée.
+        if (job.LateRetries > 0) maxAttempts = 5;
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             var fb = newestFallback;
@@ -9307,6 +9446,23 @@ public static partial class Extension
             }
             catch { /* ignore */ }
             await Task.Delay(400).ConfigureAwait(false);
+        }
+
+        if (resolved == null && specificName && job.LateRetries < PhotoLateRetryMax
+            && (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds < 150)
+        {
+            // Arma n'écrit la capture qu'à l'image suivante : jeu en pause, fenêtre réduite ou disque lent, le PNG
+            // arrive après les ~20 s d'attente. Nouvel essai plus tard au lieu d'un file_not_found immédiat.
+            job.LateRetries++;
+            PhotoJournal(job, "queued", "capture pas encore écrite");
+            _ = Task.Run(async () =>
+            {
+                try { await Task.Delay(PhotoLateRetryDelayMs).ConfigureAwait(false); }
+                catch { /* ignore */ }
+                PhotoJobs.Enqueue(job);
+                EnsurePhotoWorker();
+            });
+            return;
         }
 
         if (resolved == null)

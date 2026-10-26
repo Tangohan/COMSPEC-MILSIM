@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SchemaReadyCache;
 use App\Support\SilentSchemaMigration;
 use PDO;
 
@@ -40,17 +41,22 @@ class AtakWebCommandRepository
         if (self::$schemaReady !== null) {
             return self::$schemaReady;
         }
-        try {
-            SilentSchemaMigration::run(dirname(__DIR__, 2) . '/bootstrap/atak_web_commands_migration.php', $this->pdo());
-            $st = $this->pdo()->query(
-                "SELECT COUNT(*) FROM information_schema.TABLES
-                 WHERE TABLE_SCHEMA = DATABASE()
-                   AND TABLE_NAME IN ('atak_web_commands', 'atak_phone_notifs', 'atak_phone_notif_prefs')"
-            );
-            self::$schemaReady = $st !== false && (int) $st->fetchColumn() === 3;
-        } catch (\Throwable) {
-            self::$schemaReady = false;
-        }
+        // Sondé toutes les 4 s par joueur (commandes du poste) : résultat positif gardé entre requêtes.
+        $migration = dirname(__DIR__, 2) . '/bootstrap/atak_web_commands_migration.php';
+        self::$schemaReady = SchemaReadyCache::remember('atak_web_commands', function () use ($migration): bool {
+            try {
+                SilentSchemaMigration::run($migration, $this->pdo());
+                $st = $this->pdo()->query(
+                    "SELECT COUNT(*) FROM information_schema.TABLES
+                     WHERE TABLE_SCHEMA = DATABASE()
+                       AND TABLE_NAME IN ('atak_web_commands', 'atak_phone_notifs', 'atak_phone_notif_prefs')"
+                );
+
+                return $st !== false && (int) $st->fetchColumn() === 3;
+            } catch (\Throwable) {
+                return false;
+            }
+        }, $migration);
 
         return self::$schemaReady;
     }
@@ -158,11 +164,13 @@ class AtakWebCommandRepository
         if (!$this->ensureSchema()) {
             return [];
         }
-        $this->expireStale($tenantId);
+        // Pas d’expireStale ici (UPDATE sur l’historique toutes les 4 s par joueur) : une commande
+        // périmée est simplement écartée ; son statut passe à « expired » au prochain listRecent / ack.
         $st = $this->pdo()->prepare(
             "SELECT id, wire FROM atak_web_commands
              WHERE tenant_id = :tenant_id AND status = 'pending'
                AND (map_id = :map_id OR kind = 'notif')
+               AND created_at >= (NOW() - INTERVAL ttl_seconds SECOND)
              ORDER BY id ASC
              LIMIT 24"
         );
@@ -192,6 +200,8 @@ class AtakWebCommandRepository
         if (!in_array($status, ['accepted', 'done', 'failed'], true)) {
             return false;
         }
+        // Le sondage du jeu n’expire plus les commandes : on le fait ici (rare) pour refuser un compte rendu hors délai.
+        $this->expireStale($tenantId);
         $row = $this->find($tenantId, $id);
         if ($row === null || in_array($row['status'], self::FINAL_STATUSES, true)) {
             return false;

@@ -91,6 +91,8 @@ public static partial class Extension
         var eventJson = (args[3] ?? "").Trim();
         if (eventJson.Length < 2 || eventJson[0] != '{')
             return "ERR|json";
+        if (!DataFlowAllowsType(type))
+            return "OK|flow_off";
 
         // Garantir "t" dans le JSON.
         if (!eventJson.Contains("\"t\"", StringComparison.Ordinal))
@@ -553,6 +555,7 @@ public static partial class Extension
             if (code == 403)
             {
                 NoteAccessDenied(response, url);
+                NoteRefusal(url, 403, RefusalBody(response));
                 RequeueTelemetryItems(items);
                 Interlocked.Increment(ref _telemetryBatchFail);
                 return true;
@@ -570,6 +573,9 @@ public static partial class Extension
             {
                 // Réponse jointe : la raison d'Athena (ex. invalid_steam_uid) reste dans le journal au lieu de « 400|…|0 ».
                 NotePostError(code, url, response);
+                // 401 : vérifier la clé une fois (client-init) ; refusée → verrou, plus de lot chaque seconde.
+                if (code == 401)
+                    NoteRefusal(url, 401, RefusalBody(response));
                 if (ShouldRetryStatusCode(code))
                     RequeueTelemetryItems(items);
                 else

@@ -78,6 +78,30 @@ EN : Confidential ATAK markers and conditional radio relays
 - `fn_relayCond` (nouveau) : `COMSPEC_AtakRelayCond` sur un relais ou une passerelle de véhicule (`mast` : sources d'animation dont le nom contient mast/antenna/antena/telescop/aerial/pole/rod au-delà de 90 % ; `stopped` ; `engineoff` ; ou code SQF, `_this` = l'objet). `fn_relayNet` liste le relais hors service avec la raison (« mât replié »…). Module « ATAK · Relais » : attributs Eden `Cond` + `CondCode`, liste « Actif seulement si » dans le formulaire Zeus.
 - À tester en jeu : noms des sources d'animation du mât du GAZ-66 R-142 de RHS reconnus par `mast` (sinon condition en code) ; `createMarkerLocal` + `setMarkerText` global sur un marqueur local (doit rester local) ; marqueurs reçus hors réseau puis au retour du signal ; JIP.
 - Réglage `comspec_atak_native_marker_channel` inchangé (Global par défaut) : en mode carte d'Arma, Global reste visible par tous les camps.
+## Refus d'Athena : plus de demandes en boucle, Dépannage liaison qui donne la bonne correction (Overwatch connect 1.6.17)
+
+### Résumé joueur
+Type : correctif
+FR : Quand Athena te refuse, le jeu arrête d'insister et te dit quoi faire
+- Si Athena refuse la clé enregistrée dans ton profil (clé changée ou retirée), le Dépannage liaison le dit et propose Lier mon compte au lieu de Reconnecter, qui échouait à chaque fois.
+- Si ton compte, ton Steam ou ton réseau est bloqué par ta communauté, il te dit de contacter un administrateur.
+- Après un refus de ce genre, le téléphone n'envoie plus rien jusqu'à ce que tu refasses la liaison ou Reconnecter Athena : avant, il redemandait toutes les quelques secondes, pour rien.
+- Une fonction absente de l'offre de ta communauté (ordres, tchat, zones…) n'est plus redemandée sans arrêt : un essai par demi-heure.
+EN : When Athena refuses you, the game stops insisting and tells you what to do
+- If Athena refuses the key saved in your profile (key changed or withdrawn), Link troubleshooting says so and offers Link my account instead of Reconnect, which kept failing.
+- If your account, Steam or network is blocked by your community, it tells you to contact an administrator.
+- After such a refusal, the phone sends nothing more until you link again or use Reconnect Athena: before, it asked again every few seconds for nothing.
+- A feature missing from your community's plan (orders, chat, zones…) is no longer requested non-stop: one try every half hour.
+
+### Détail technique
+- Mesure en production (`request_telemetry`, 24 h au 2026-10-26) : 136 000 requêtes notées dont 128 000 refus 401/403, jusqu'à 21 000 refus par heure. Causes côté site : 401 `unauthorized` (clé refusée ou session expirée), 403 `feature_unavailable` (offre basique : ordres, minuteurs, tchat, zones, alertes médicales, marqueurs, véhicules), 403 `tenant_context_required`, et les refus du garde d'écriture (`steam_not_linked`, `account_disabled`, `steam_required`, `atak_blocked`, `mod_steam_blocked`, `mod_ip_blocked`). Côté mod : les sondages GET de la DLL Link (`ServePollGet`) ignoraient toutes les pauses et le cache masquait les refus au SQF ; le lot de télémétrie en 401 repartait chaque seconde ; `AuthInvalidated` rouvrait le canal toutes les 48 s.
+- DLL Link, nouveau `Extension_RefusalLatch.cs` : `NoteRefusal` lit le code JSON `error` de chaque 401/403 (sondages, lot, file, envois). 403 « règle » → verrou global immédiat ; 401 → un client-init (`MaybeReauthAfter401`, désormais aussi pour les sondages), verrou s'il est refusé ; `feature_unavailable` → cette adresse seule se tait 30 min. Verrou global : `ServePollGet`, `EnqueueOrSend` et `DrainQueue` n'envoient plus rien. Levée : `SetGameAuth("READY")` sans erreur (nouvelle liaison, nouvelle clé, Reconnecter accepté) ou redémarrage. Les appels de liaison et client-init ne sont pas bloqués.
+- `fn_extensionCallback.sqf`, `AuthInvalidated` : la cause est écrite dans `COMSPEC_LinkDetail` avec les libellés de `fn_connect`, et la réouverture automatique à 48 s n'a plus lieu pour un refus connu.
+- DLL `COMSPECExtension_x64.dll` du mod natif recompilée (NativeAOT) ; numéro de version de la DLL inchangé pour ne pas déclencher l'alerte « DLL périmée » de main.pbo.
+- `fn_diagChecks.sqf` (connect embarqué dans l'ATAK natif), étape 6 « Liaison » : avant, tout échec de `fn_connect` hors « non lié » tombait dans le cas par défaut (« site injoignable », correction Reconnecter). Désormais `COMSPEC_LinkDetail` est classé : clé refusée (`ERR unauthorized`) → Lier mon compte ; communauté manquante ou Steam invalide → Lier mon compte ; compte non autorisé ou accès mod restreint → contacter un administrateur, pas de correction ; Steam requis → mettre le mod à jour.
+- Contexte : rotation de la clé plateforme du 2026-10-26. Depuis #1052 la liaison renvoie une clé de communauté ; un profil qui gardait l'ancienne clé plateforme reçoit maintenant `unauthorized`, et seule une nouvelle liaison enregistre une clé valide.
+- `comspec_overwatch_connect.pbo` repaqueté seul (AddonBuilder, préfixe `z\comspec_overwatch\addons\connect`) ; main.pbo et la version de l'ATAK natif ne changent pas. Nouveaux textes en français seulement (repli de `fn_tr`), à ajouter à `en.txt` au prochain regroupement de main.pbo.
+- Non testé en jeu. À tester : profil avec une clé invalide → Échap › Dépannage liaison affiche « clé d'accès refusée » et le bouton ouvre Lier mon compte ; après liaison, Revérifier → Liaison OK.
 
 ---
 
@@ -193,6 +217,33 @@ EN : Play without Athena, with a real TOC laptop in game
 - Nouvelles icônes `app_numbers`, `app_toc` (`tools/gen_assets.py only app_numbers,app_toc`). Traductions EN ajoutées. `hemtt check` et `hemtt build` OK.
 - Au regroupement : bump de version, main.pbo reconstruit, `comspec_overwatch_connect.pbo` repacké (fn_athenaMode du connect modifié), DLL native reconstruite.
 - À tester en jeu (rien ne l'a été) : réglage mode full local (plus de question Athéna, Réglages « imposé ») ; app Numéros (ajout, GÉNÉRER, principal, privé, annuaire, carnet, FICHIER : ouvrir le dossier, modifier config.json à la main puis RECHARGER) ; recherche par numéro sur la carte avec le numéro choisi ; PC de TOC posé dans Eden et par Zeus (action ACE et sans ACE, tablette, app Poste TOC qui disparaît en s'éloignant) ; message du poste URGENT et réponse d'un joueur ; NOUVEL ORDRE sans Athena, réponses REÇU / TERMINÉ, joueur arrivé en cours de partie.
+
+---
+
+## Jeu plus fluide, app Drone réparée, choix des données envoyées à Athena (ATAK natif 2.3.11.AB - Denver, COMSPEC Link 2.0.94)
+
+### Résumé joueur
+Type : performance
+FR : Fini la petite saccade toutes les deux secondes, l'app Drone répond de nouveau
+- Téléphone porté ou carte ouverte : la carte ne relit plus tous les marqueurs de la mission dès que l'un d'eux bouge, ce qui faisait une petite saccade toutes les deux secondes.
+- App Drone : la croix, PLEIN ÉCRAN et les boutons de la barre fonctionnent, et après un appui les autres boutons restent cliquables sans passer le téléphone en petit format.
+- Téléphone : en écrivant dans un champ, A et E ne font plus pencher ton personnage, et une photo prise pendant une pause ou un changement de fenêtre part quand même au lieu d'échouer. Sans COMSPEC Link, l'appareil photo garde simplement la photo sur ton PC.
+- Ta communauté peut choisir sur Athena ce que le jeu envoie (tout, ou seulement les comptes rendus) : moins de données, une liaison plus légère.
+EN : No more small stutter every two seconds, the Drone app responds again
+- Phone worn or map open: the map no longer re-reads every mission marker as soon as one moves, which caused a small stutter every two seconds.
+- Drone app: the cross, FULL SCREEN and the bar buttons work, and after a press the other buttons stay clickable without switching the phone to small size.
+- Phone: when typing in a field, A and E no longer make your character lean, and a photo taken while paused or tabbed out is still sent instead of failing. Without COMSPEC Link, the camera simply keeps the photo on your PC.
+- Your community can choose on Athena what the game sends (everything, or reports only): less data, a lighter link.
+
+### Détail technique
+- Saccade : `fn_mapGameMarkers`, `fn_localDataRefresh` et `fn_strokeDraw` ne relisent que les marqueurs changés (carnets `COMSPEC_ATAK_MkDirtyGm/Ld/Sk` tenus par les EH MarkerCreated / Deleted / Updated, clé "" = tout relire au-delà de 300), relecture complète toutes les 30 s ; doublons Athena / jeu cherchés dans une grille de 15 m (avant : chaque marqueur Athena comparé à chaque marqueur du jeu) ; `fn_storeSet` accepte une signature fournie (unités et marqueurs ne passent plus par `str` de toute la table) ; masquage des zones Overwatch seulement quand un marqueur a changé ; échéances `hasDevice` étalées ; compteur `[PERF]` « unités et marqueurs (carte) ».
+- Clics : `fn_pageClear` masque les anciens contrôles et les supprime à l'image suivante (un bouton n'est plus supprimé pendant son propre ButtonClick, ce qui bloquait tous les clics) ; nouveau `fn_clickNext` (clic différé d'une image) pour l'app Drone, la vue drone de la carte et la fiche photo.
+- Saisie : `fn_keyBlock` regarde aussi la fenêtre qui reçoit la touche et ne dépend plus de l'état « en main ».
+- Photos (tickets file_not_found) : COMSPEC Link 2.0.94 relance jusqu'à 4 fois (15 s d'écart, 150 s au plus) un nom précis pas encore écrit au lieu de répondre `file_not_found` après 20 s, sans bloquer la file des autres photos ; connect `fn_captureReconImage` ne retient plus le nom d'une capture refusée par `screenshot` (les envois des 3 s suivantes cherchaient un fichier jamais écrit). ATAK seul (sans addon connect) : appareil photo, mode photo, Galerie, cliché drone et dossier SSE ne lancent plus de fonction absente (erreur de script) ; la photo reste dans Screenshots. Aucune dépendance à BCE ni au pack SOAR : les dossiers BCE ne sont balayés que s'ils existent.
+- explosive-timers 400 `steam_required` (ticket Z01, Zeus / SSE sans Steam) : couvert côté site, le miroir des notifications sans Steam répond 200 `notifs_skipped` quelle que soit la version du mod.
+- Données remontées : site `AtakDataFlowsService` (positions, vehicles, combat, phone_mirror, context ; préréglages « tout » / « comptes rendus seulement »), carte « Données remontées du jeu » en tête de Configuration ATAK (badge « À choisir » tant que la communauté n'a pas répondu), `GET /api/atak/data-flows` (liaison de base), lot de télémétrie qui accepte sans traiter un flux coupé et renvoie `flows`. COMSPEC Link 2.0.94 : `GetDataFlows`, flux coupés jamais mis en file (positions coupées : un envoi par minute pour la présence) ; connect `fn_pollDataFlows` (30 s) : véhicules, drones, aéronefs, miroir et pertes ne sont plus calculés quand ils sont coupés.
+- Signalements : `vehicle_exception` du lot : colonnes bornées à leur type SQL (`sanitizeColumns` : texte coupé, entiers, décimaux, booléens), doublon d'équipage (1062) repris en mise à jour, historique non bloquant, cause courte `detail` dans la réponse. `explosive-timers` 400 `steam_required` : miroir des notifications sans Steam ignoré en 200 côté site, pas envoyé en solo côté connect.
+- À rebâtir : main.pbo, comspec_overwatch_connect.pbo, DLL COMSPEC Link 2.0.94. Rien de testé en jeu.
 
 ---
 

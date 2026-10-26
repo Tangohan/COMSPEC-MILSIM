@@ -18,9 +18,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.616;
-        versionStr = "1.6.16";
-        versionAr[] = {1, 6, 16};
+        version = 1.617;
+        versionStr = "1.6.17";
+        versionAr[] = {1, 6, 17};
     };
 };
 
@@ -112,6 +112,7 @@ class CfgFunctions {
             class diagIsolateStop {};
             class diagIsolateOnLoad {};
             class diagChecks {};
+            class diagSelfTest {};
             class diagAction {};
             class collectBugReportLog {};
             class disconnect {};
@@ -496,6 +497,7 @@ class CfgFunctions {
             class linkDegradeSimApplySetting {};
             class isLinkDegradeSimActive {};
             class pollModModules {};
+            class pollDataFlows {};
             class pollExperience {};
             class applyTenantExperience {};
             class showExperienceGuide {};

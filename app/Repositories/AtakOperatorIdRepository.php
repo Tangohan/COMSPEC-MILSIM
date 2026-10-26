@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SchemaReadyCache;
 
 use PDO;
 
@@ -22,33 +23,38 @@ class AtakOperatorIdRepository
         $this->pdo = $pdo;
     }
 
+    /** Appelée à chaque position et à chaque sondage d’unités : résultat positif gardé entre requêtes. */
     public function tablesReady(): bool
     {
-        try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.TABLES
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_operator_ids' LIMIT 1"
-            );
+        return SchemaReadyCache::remember('atak_operator_ids', function (): bool {
+            try {
+                $st = $this->pdo()->query(
+                    "SELECT 1 FROM information_schema.TABLES
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_operator_ids' LIMIT 1"
+                );
 
-            return $st !== false && (bool) $st->fetchColumn();
-        } catch (\Throwable) {
-            return false;
-        }
+                return $st !== false && (bool) $st->fetchColumn();
+            } catch (\Throwable) {
+                return false;
+            }
+        });
     }
 
     public function unitsMilitaryIdColumnReady(): bool
     {
-        try {
-            $st = $this->pdo()->prepare(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'military_id' LIMIT 1"
-            );
-            $st->execute();
+        return SchemaReadyCache::remember('atak_units.military_id', function (): bool {
+            try {
+                $st = $this->pdo()->prepare(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'military_id' LIMIT 1"
+                );
+                $st->execute();
 
-            return (bool) $st->fetchColumn();
-        } catch (\Throwable) {
-            return false;
-        }
+                return (bool) $st->fetchColumn();
+            } catch (\Throwable) {
+                return false;
+            }
+        });
     }
 
     /**

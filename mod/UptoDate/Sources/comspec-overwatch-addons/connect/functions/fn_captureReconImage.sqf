@@ -266,9 +266,11 @@ private _fnc_armaPngCapture = {
     if ((_now - _lastAt) < 2.8 && {_last isEqualType ""} && {_last isNotEqualTo ""}) exitWith { _last };
     private _png = ([] call _fnc_shotStem) + ".png";
     private _ret = screenshot _png;
+    // Capture refusée (qualité HDR basse, dossier Screenshots plein) : ne pas retenir un nom jamais écrit, sinon
+    // les envois des ~3 s suivantes et les relances le cherchaient en vain (file_not_found).
+    if (_ret isEqualType true && {!_ret}) exitWith { "" };
     missionNamespace setVariable ["COMSPEC_LastScreenshotPath", _png, false];
     missionNamespace setVariable ["COMSPEC_LastArmaShotAt", _now, false];
-    if (_ret isEqualType true && {!_ret}) exitWith { "" };
     _png
 };
 

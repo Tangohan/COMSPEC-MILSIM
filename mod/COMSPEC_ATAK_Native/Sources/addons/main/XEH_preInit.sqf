@@ -573,7 +573,8 @@ private _data = ["COMSPEC", "ATAK · Extraction de données"];
     ["Vitesse des transferts", "Multiplie la vitesse de copie et de déverrouillage prévue par le mission maker (2 = deux fois plus rapide)."],
     _data, [0.25, 4, 1, 2], 1] call comspec_atak_native_fnc_addSetting;
 // Serveur de l'extraction : branché dès le preInit (les modules Eden posent leurs données au démarrage).
-if (isServer) then { ["comspec_atak_native_dataSrv", { _this call comspec_atak_native_fnc_dataServer; }] call CBA_fnc_addEventHandler; };
+// « code » (code de fin exécuté au serveur) refusé ici : il n'arrive que par fn_dataSetup, droits contrôlés.
+if (isServer) then { ["comspec_atak_native_dataSrv", { if ((_this param [0, ""]) isNotEqualTo "code") then { _this call comspec_atak_native_fnc_dataServer; }; }] call CBA_fnc_addEventHandler; };
 // Passerelles de véhicule (fn_vehicleGateway) et messages courts du serveur vers des joueurs.
 if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_native_fnc_vehicleGateway; }] call CBA_fnc_addEventHandler; };
 // Téléphones ramassés par l'IA ennemie : actions là où l'unité est locale, état au serveur, alertes aux clients.
