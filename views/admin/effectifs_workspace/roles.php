@@ -16,8 +16,9 @@ $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
 $selectedId = (int) ($selected['id'] ?? 0);
 $isPreset = $selected !== null && !empty($selected['is_system']);
 $selectedName = (string) ($selected['name'] ?? '');
-$selectedSlug = (string) ($selected['slug'] ?? '');
-$isHideablePreset = $isPreset && \App\Services\Rbac\CommunityAccessProfiles::isHideablePresetSlug($selectedSlug);
+// member | manager | hideable | custom (calculé par le contrôleur)
+$selectedKind = (string) ($selectedAccessKind ?? 'custom');
+$isHideablePreset = $isPreset && $selectedKind === 'hideable';
 $isSelectedHidden = $selected !== null && \App\Repositories\RoleRepository::isHiddenAccessRow($selected);
 ?>
 <div class="eff-roles-page">
@@ -148,7 +149,7 @@ $isSelectedHidden = $selected !== null && \App\Repositories\RoleRepository::isHi
                 </form>
                 <?php else: ?>
                 <p class="eff-access-editor__hint">
-                    <?= $selectedSlug === \App\Services\Rbac\CommunityAccessProfiles::SLUG_MEMBER
+                    <?= $selectedKind === 'member'
                         ? 'Ce niveau ne peut pas être supprimé : c’est le socle que tout le monde porte. Renommez-le ou réduisez ses droits si besoin.'
                         : 'Ce niveau ne peut pas être supprimé : il tient les clés de la communauté (paramètres, niveaux d’accès). Renommez-le si besoin.' ?>
                 </p>

@@ -1932,6 +1932,7 @@ class EffectifsWorkspaceController
             'effectifsNav' => 'roles',
             'orgRoles' => $roles,
             'selectedAccessRole' => $selected,
+            'selectedAccessKind' => $this->accessRoleKind($selected),
             'accessPermissionGroups' => $groups,
             'checkedPermissionIds' => $checkedIds,
             'accessPermissionCounts' => $counts,
@@ -1940,6 +1941,21 @@ class EffectifsWorkspaceController
             'rosterCounts' => $this->rosterCounts($tenantId),
             'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    /**
+     * @param array<string, mixed>|null $role
+     */
+    private function accessRoleKind(?array $role): string
+    {
+        $slug = strtolower(trim((string) ($role['slug'] ?? '')));
+
+        return match (true) {
+            $slug === CommunityAccessProfiles::SLUG_MEMBER => 'member',
+            $slug === CommunityAccessProfiles::SLUG_MANAGER => 'manager',
+            CommunityAccessProfiles::isHideablePresetSlug($slug) => 'hideable',
+            default => 'custom',
+        };
     }
 
     public function createAccessRole(Request $request, array $params = []): Response
