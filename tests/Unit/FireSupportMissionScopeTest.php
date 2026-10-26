@@ -29,14 +29,22 @@ final class FireSupportMissionScopeTest extends TestCase
     /** @var array<string, mixed> */
     private array $savedGet = [];
 
+    private bool $hadPost = false;
+
+    private mixed $savedPost = null;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->hadSession = isset($_SESSION);
         $this->savedSession = $_SESSION ?? null;
         $this->savedGet = $_GET;
+        // Un test précédent peut avoir retiré $_POST (unset) : Request le copie dans une propriété typée array.
+        $this->hadPost = isset($_POST);
+        $this->savedPost = $_POST ?? null;
         $_SESSION = [];
         $_GET = [];
+        $_POST = [];
         ComspecApiKeyAuth::resetForTests();
         $this->reads = [];
     }
@@ -50,6 +58,11 @@ final class FireSupportMissionScopeTest extends TestCase
             unset($_SESSION);
         }
         $_GET = $this->savedGet;
+        if ($this->hadPost) {
+            $_POST = $this->savedPost;
+        } else {
+            unset($_POST);
+        }
         parent::tearDown();
     }
 

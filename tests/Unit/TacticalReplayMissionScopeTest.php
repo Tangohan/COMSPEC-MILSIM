@@ -44,6 +44,10 @@ final class TacticalReplayMissionScopeTest extends TestCase
     /** @var array<string, mixed> */
     private array $savedServer = [];
 
+    private bool $hadPost = false;
+
+    private mixed $savedPost = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -51,8 +55,12 @@ final class TacticalReplayMissionScopeTest extends TestCase
         $this->savedSession = $_SESSION ?? null;
         $this->savedGet = $_GET;
         $this->savedServer = $_SERVER;
+        // Un test précédent peut avoir retiré $_POST (unset) : Request le copie dans une propriété typée array.
+        $this->hadPost = isset($_POST);
+        $this->savedPost = $_POST ?? null;
         $_SESSION = [];
         $_GET = [];
+        $_POST = [];
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['REQUEST_URI'] = '/api/replay/mission/test';
         unset($_SERVER['HTTP_AUTHORIZATION'], $_SERVER['HTTP_X_COMSPEC_KEY'], $_SERVER['HTTP_X_ATAK_TOKEN']);
@@ -70,6 +78,11 @@ final class TacticalReplayMissionScopeTest extends TestCase
         }
         $_GET = $this->savedGet;
         $_SERVER = $this->savedServer;
+        if ($this->hadPost) {
+            $_POST = $this->savedPost;
+        } else {
+            unset($_POST);
+        }
         parent::tearDown();
     }
 
