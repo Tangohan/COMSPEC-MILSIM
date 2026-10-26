@@ -28,6 +28,10 @@ final class ClientIpTest extends TestCase
 
     private mixed $savedTrusted = null;
 
+    private mixed $savedCfSetting = null;
+
+    private string|false $savedCfSettingEnv = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -39,6 +43,10 @@ final class ClientIpTest extends TestCase
         }
         $this->savedTrusted = $_ENV['TRUSTED_PROXIES'] ?? null;
         unset($_ENV['TRUSTED_PROXIES']);
+        $this->savedCfSetting = $_ENV['TRUST_CF_CONNECTING_IP'] ?? null;
+        $this->savedCfSettingEnv = getenv('TRUST_CF_CONNECTING_IP');
+        unset($_ENV['TRUST_CF_CONNECTING_IP']);
+        putenv('TRUST_CF_CONNECTING_IP');
         ClientIp::resetTrustedProxies();
     }
 
@@ -55,6 +63,12 @@ final class ClientIpTest extends TestCase
         } else {
             $_ENV['TRUSTED_PROXIES'] = $this->savedTrusted;
         }
+        if ($this->savedCfSetting === null) {
+            unset($_ENV['TRUST_CF_CONNECTING_IP']);
+        } else {
+            $_ENV['TRUST_CF_CONNECTING_IP'] = $this->savedCfSetting;
+        }
+        putenv($this->savedCfSettingEnv === false ? 'TRUST_CF_CONNECTING_IP' : 'TRUST_CF_CONNECTING_IP=' . $this->savedCfSettingEnv);
         ClientIp::resetTrustedProxies();
         parent::tearDown();
     }
@@ -129,6 +143,69 @@ final class ClientIpTest extends TestCase
                 'REMOTE_ADDR' => $outside,
                 'HTTP_CF_CONNECTING_IP' => '198.51.100.99',
             ]), 'juste hors de 172.64.0.0/13 : en-tête ignoré');
+        }
+    }
+
+    /**
+     * L3-R1, L3-R2 : TRUST_CF_CONNECTING_IP=0 coupe toute lecture de CF-Connecting-IP, depuis les adresses de
+     * Cloudflare comme depuis la boucle locale sans X-Forwarded-For. La chaîne X-Forwarded-For des mandataires de
+     * confiance reste lue.
+     */
+    public function testCfConnectingIpCanBeTurnedOff(): void
+    {
+        foreach (['0', 'false', 'off', 'no', ' OFF '] as $value) {
+            $_ENV['TRUST_CF_CONNECTING_IP'] = $value;
+            ClientIp::resetTrustedProxies();
+
+            self::assertSame('172.70.1.2', ClientIp::resolve([
+                'REMOTE_ADDR' => '172.70.1.2',
+                'HTTP_CF_CONNECTING_IP' => '203.0.113.30',
+            ]), "« {$value} » : adresse de Cloudflare, en-tête ignoré");
+            self::assertSame('127.0.0.1', ClientIp::resolve([
+                'REMOTE_ADDR' => '127.0.0.1',
+                'HTTP_CF_CONNECTING_IP' => '203.0.113.20',
+            ]), "« {$value} » : boucle locale sans X-Forwarded-For, en-tête ignoré");
+            self::assertSame('203.0.113.9', ClientIp::resolve([
+                'REMOTE_ADDR' => '127.0.0.1',
+                'HTTP_X_FORWARDED_FOR' => '203.0.113.9',
+                'HTTP_CF_CONNECTING_IP' => '203.0.113.20',
+            ]), "« {$value} » : X-Forwarded-For du mandataire local toujours lu");
+        }
+
+        // Cloudflare déclaré à la main dans TRUSTED_PROXIES : sa chaîne X-Forwarded-For est lue, pas l'en-tête.
+        $_ENV['TRUSTED_PROXIES'] = '172.64.0.0/13';
+        ClientIp::resetTrustedProxies();
+        self::assertSame('198.51.100.5', ClientIp::resolve([
+            'REMOTE_ADDR' => '172.70.1.2',
+            'HTTP_X_FORWARDED_FOR' => '198.51.100.5',
+            'HTTP_CF_CONNECTING_IP' => '203.0.113.30',
+        ]));
+    }
+
+    /** Réglage absent, ou toute autre valeur : CF-Connecting-IP est lu comme avant. */
+    public function testCfConnectingIpIsStillReadByDefault(): void
+    {
+        foreach ([null, '1', 'true', 'on', 'yes', ''] as $value) {
+            if ($value === null) {
+                unset($_ENV['TRUST_CF_CONNECTING_IP']);
+            } else {
+                $_ENV['TRUST_CF_CONNECTING_IP'] = $value;
+            }
+            ClientIp::resetTrustedProxies();
+            $label = $value === null ? 'absent' : "« {$value} »";
+
+            self::assertSame('203.0.113.30', ClientIp::resolve([
+                'REMOTE_ADDR' => '172.70.1.2',
+                'HTTP_CF_CONNECTING_IP' => '203.0.113.30',
+            ]), "{$label} : adresse de Cloudflare");
+            self::assertSame('203.0.113.20', ClientIp::resolve([
+                'REMOTE_ADDR' => '127.0.0.1',
+                'HTTP_CF_CONNECTING_IP' => '203.0.113.20',
+            ]), "{$label} : boucle locale sans X-Forwarded-For");
+            self::assertSame('203.0.113.7', ClientIp::resolve([
+                'REMOTE_ADDR' => '203.0.113.7',
+                'HTTP_CF_CONNECTING_IP' => '198.51.100.97',
+            ]), "{$label} : client direct, en-tête toujours ignoré");
         }
     }
 

@@ -21,6 +21,10 @@ namespace App\Support;
  * par Cloudflare lui-même, que le visiteur ne peut pas choisir. Il est lu d'office, pour qu'un domaine passé
  * derrière Cloudflare (DNS en mode proxy) ne fasse pas partager une seule adresse à tous les joueurs (429 en
  * masse sur /api/atak/position, /login…) avant que TRUSTED_PROXIES soit renseigné.
+ *
+ * TRUST_CF_CONNECTING_IP=0 (.env) coupe toute lecture de CF-Connecting-IP : ni d'office depuis les adresses de
+ * Cloudflare, ni depuis un mandataire de confiance sans X-Forwarded-For (tunnel cloudflared sur la boucle
+ * locale). Absent ou 1 : comportement inchangé.
  */
 final class ClientIp
 {
@@ -39,6 +43,9 @@ final class ClientIp
     /** @var list<array{0: string, 1: int}>|null */
     private static ?array $cloudflare = null;
 
+    /** TRUST_CF_CONNECTING_IP, lu une fois ; null : à relire. */
+    private static ?bool $readsCfConnectingIp = null;
+
     /** @param array<string, mixed>|null $server */
     public static function resolve(?array $server = null): string
     {
@@ -47,7 +54,8 @@ final class ClientIp
         if ($remote === null) {
             return '';
         }
-        if (self::inAnyRange($remote, self::$cloudflare ??= self::parseRanges(self::CLOUDFLARE))) {
+        $readsCf = self::readsCfConnectingIp();
+        if ($readsCf && self::inAnyRange($remote, self::$cloudflare ??= self::parseRanges(self::CLOUDFLARE))) {
             return self::normalize($server['HTTP_CF_CONNECTING_IP'] ?? null) ?? $remote;
         }
         if (!self::isTrustedProxy($remote)) {
@@ -69,7 +77,8 @@ final class ClientIp
             }
         }
 
-        return self::normalize($server['HTTP_CF_CONNECTING_IP'] ?? null) ?? $remote;
+        // Mandataire de confiance sans X-Forwarded-For utilisable (tunnel cloudflared sur la boucle locale).
+        return ($readsCf ? self::normalize($server['HTTP_CF_CONNECTING_IP'] ?? null) : null) ?? $remote;
     }
 
     public static function isTrustedProxy(string $ip): bool
@@ -77,10 +86,23 @@ final class ClientIp
         return self::inAnyRange($ip, self::trustedRanges());
     }
 
-    /** Pour les tests : relit TRUSTED_PROXIES au prochain appel. */
+    /** Pour les tests : relit TRUSTED_PROXIES et TRUST_CF_CONNECTING_IP au prochain appel. */
     public static function resetTrustedProxies(): void
     {
         self::$trusted = null;
+        self::$readsCfConnectingIp = null;
+    }
+
+    /** CF-Connecting-IP lu sauf si TRUST_CF_CONNECTING_IP vaut 0, false, off ou no. */
+    private static function readsCfConnectingIp(): bool
+    {
+        if (self::$readsCfConnectingIp !== null) {
+            return self::$readsCfConnectingIp;
+        }
+        $raw = $_ENV['TRUST_CF_CONNECTING_IP'] ?? getenv('TRUST_CF_CONNECTING_IP');
+        $value = is_string($raw) ? strtolower(trim($raw)) : '';
+
+        return self::$readsCfConnectingIp = !in_array($value, ['0', 'false', 'off', 'no'], true);
     }
 
     /** Adresse valide (IPv4 dans une IPv6 mappée ramenée en IPv4), sinon null. */
