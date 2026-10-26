@@ -653,8 +653,9 @@ private _data = ["COMSPEC", "ATAK · Extraction de données"];
 // reconnaître le poste émetteur (contrôles en tête de fn_dataServer).
 // Passerelles de véhicule (fn_vehicleGateway) et messages courts du serveur vers des joueurs.
 if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_native_fnc_vehicleGateway; }] call CBA_fnc_addEventHandler; };
-// Téléphones ramassés par l'IA ennemie : actions là où l'unité est locale, état au serveur, alertes aux clients.
-["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
+// Téléphones ramassés par l'IA ennemie : plus de gestionnaire comspec_atak_native_capLocal (lot mpauth3, SEC-023).
+// Tout client le levait vers n'importe quelle machine (retirer ou donner un objet, déplacer une IA, la faire traquer) ;
+// les ordres du serveur arrivent par remoteExecCall vers l'objet, à fn_captureLocal, qui n'accepte que le poste 2.
 // Pas de gestionnaire comspec_atak_native_captureSrv : « dropped », « validate », « dismiss » et « athena »
 // arrivent par remoteExecCall vers 2, seule voie qui laisse le serveur reconnaître l'acteur (fn_captureServer).
 // « giveFail » (téléphone posé au sol par une IA à l'inventaire plein) n'arrive d'aucun client : le serveur le

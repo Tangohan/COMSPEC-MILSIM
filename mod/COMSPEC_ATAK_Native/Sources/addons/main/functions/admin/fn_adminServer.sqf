@@ -135,15 +135,15 @@ switch (_act) do {
                     private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
                     {
                         if ((toLower _x) in _cat) then {
-                            // IA locale au serveur : retrait fait ici (même code que la branche « local » de
-                            // fn_captureServer). Par l'événement, CBA appelle le gestionnaire dans cette même pile, que
-                            // fn_captureServer prend pour un appel du client admin : « local » y était refusée et l'IA
-                            // gardait le téléphone, alors que l'app annonçait le contraire. IA locale à une autre
-                            // machine (client sans interface) : l'événement part par le réseau, hors de cette pile.
+                            // IA locale au serveur : retrait fait ici (même code que « strip » de fn_captureLocal), sans
+                            // passer par le réseau dans cette pile, que l'on ne veut pas faire juger comme un appel du
+                            // client admin. IA locale à une autre machine (client sans interface) : ordre du serveur
+                            // par remoteExecCall vers l'IA (fn_captureLocal n'accepte que le poste 2 ; lot mpauth3,
+                            // SEC-023 : l'événement CBA capLocal que tout client levait est retiré).
                             if (local _ai) then {
                                 if (_x in (assignedItems _ai)) then { _ai unlinkItem _x; } else { _ai removeItem _x; };
                             } else {
-                                ["comspec_atak_native_capLocal", ["strip", _ai, _x], _ai] call CBA_fnc_targetEvent;
+                                ["strip", _ai, _x] remoteExecCall ["comspec_atak_native_fnc_captureLocal", _ai];
                             };
                         };
                     } forEach ((assignedItems _ai) + (items _ai));

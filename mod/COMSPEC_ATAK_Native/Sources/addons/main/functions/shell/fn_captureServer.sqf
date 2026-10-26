@@ -25,7 +25,8 @@
         hors de toute pile distante (hôte, solo) garde l'unité qu'il passe. fn_adminServer (app Admin) tourne dans la
         pile du remoteExec de l'admin : l'admin y est recalculé à l'identique. « athena » (résultat de la révocation)
         n'est accepté que du joueur à qui le serveur l'a demandée (UID retenu dans « asked »), tant qu'elle est en attente.
-      "local" [mode, objet, valeur] : sur la machine où l'objet est local ("strip" | "give" | "move" | "pick" | "hunt")
+      Ordres sur la machine où l'objet est local (« strip », « give », « move », « hunt ») : fn_captureLocal, appelée par
+        remoteExecCall vers l'objet ; elle n'accepte qu'un ordre du serveur (lot mpauth3, SEC-023).
       "giveCheck" [IA, classe, nombre avant, porte-objets proches avant, position, heure] : lancée par « tick » après
         l'ordre « give ». Le serveur constate lui-même si l'IA a reçu le téléphone ; sinon (inventaire plein sur la
         machine de l'IA) il cherche le porte-objet posé à côté d'elle et y reporte la capture (« giveFail » [IA,
@@ -36,10 +37,9 @@ params [["_act", "tick"], ["_arg", []]];
 // Demande venue d'un client : seul remoteExecutedOwner fait foi. L'acteur annoncé dans la demande est écarté (un
 // client passait n'importe quel chef de groupe du camp du téléphone pour faire valider la compromission, « validate »
 // plus bas, ce qui coupe le téléphone du réseau, impose un nouvel IMEI au propriétaire et demande la révocation du
-// certificat du terminal chez Athena). « isServer » dans le test : la branche « local » tourne aussi chez les clients
-// (événement capLocal), elle n'y est pas filtrée. Sur le serveur, « local » est refusée dans la pile d'un remoteExec
-// client, même quand c'est le serveur qui lève capLocal dans cette pile : fn_adminServer « recover » retire donc
-// lui-même le téléphone d'une IA locale au serveur.
+// certificat du terminal chez Athena). Les ordres sur la machine où l'objet est local (ancienne branche « local »,
+// événement CBA capLocal que tout client levait) sont passés à fn_captureLocal (lot mpauth3, SEC-023). fn_adminServer
+// « recover » retire toujours lui-même le téléphone d'une IA locale au serveur.
 private _remote = isServer && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
 private _req = objNull;
 if (_remote) then { _req = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
@@ -149,46 +149,6 @@ switch (_act) do {
         call _publish;
         ["INFO", "CAPTURE", format ["%1 : inventaire de %2 plein, téléphone posé au sol (%3)", _cid, typeOf _ai, [getPosATL _gh, 8] call comspec_atak_native_fnc_gridRef]] call comspec_atak_native_fnc_log;
     };
-    case "local": {
-        _arg params [["_mode", ""], ["_o", objNull], ["_v", ""]];
-        if (isNull _o || {!local _o}) exitWith {};
-        switch (_mode) do {
-            case "strip": {
-                if (_v in (assignedItems _o)) then { _o unlinkItem _v; } else { _o removeItem _v; };
-            };
-            case "give": {
-                // Plus de place (inventaire changé depuis la vérification du serveur) : le téléphone est posé au sol à
-                // côté de l'IA plutôt que perdu. Le serveur le constate lui-même (« giveCheck ») et y reporte la capture
-                // (« giveFail ») pour qu'il reste ramassable et que l'IA sans téléphone ne l'exploite plus. Cette
-                // machine n'envoie rien au serveur.
-                if (_o canAdd _v) then { _o addItem _v; } else {
-                    private _gh = createVehicle ["GroundWeaponHolder", getPosATL _o, [], 0.5, "CAN_COLLIDE"];
-                    _gh addItemCargoGlobal [_v, 1];
-                };
-                _o playActionNow "PutDown";
-                _o doFollow (leader group _o);
-            };
-            case "move": { _o doMove _v; };
-            case "hunt": {
-                _v params [["_targets", []], ["_hunt", true]];
-                private _g = group _o;
-                { _g reveal [_x select 0, 2.5]; } forEach _targets;
-                if (!_hunt || {_targets isEqualTo []} || {_g getVariable ["COMSPEC_ATAK_NoHunt", false]}) exitWith {};
-                private _best = _targets apply { [(_x select 1) distance2D (leader _g), _x select 1] };
-                _best sort true;
-                private _p = (_best select 0) select 1;
-                if (((_g getVariable ["COMSPEC_ATAK_HuntPos", [-1e5, -1e5, 0]]) distance2D _p) < 80) exitWith {};
-                _g setVariable ["COMSPEC_ATAK_HuntPos", _p];
-                [_g] call CBA_fnc_clearWaypoints;
-                private _wp = _g addWaypoint [_p, 25];
-                _wp setWaypointType "SAD";
-                _wp setWaypointBehaviour "AWARE";
-                _wp setWaypointCombatMode "RED";
-                _wp setWaypointSpeed "FULL";
-                _g setCurrentWaypoint _wp;
-            };
-        };
-    };
     case "tick": {
         if (!isServer || {!(missionNamespace getVariable ["comspec_atak_native_capture_enabled", true])}) exitWith {};
         private _caps = missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap];
@@ -254,7 +214,7 @@ switch (_act) do {
                 _ai = (_cand select 0) select 1;
                 _go set [_key, [_ai, _now]];
                 _ai setVariable ["COMSPEC_ATAK_CapGoing", _key];
-                ["comspec_atak_native_capLocal", ["move", _ai, _pos], _ai] call CBA_fnc_targetEvent;
+                ["move", _ai, _pos] remoteExecCall ["comspec_atak_native_fnc_captureLocal", _ai];
             };
             if (isNull _ai || {(_ai distance _o) > 4}) then { continue };
             // Ramassé.
@@ -270,7 +230,7 @@ switch (_act) do {
                 // Porte-objet d'un « giveFail » : la capture repart avec l'IA, le porte-objet ne la porte plus.
                 if (_cid isNotEqualTo "") then { _o setVariable ["COMSPEC_ATAK_CapOf", nil, true]; _o setVariable ["COMSPEC_ATAK_PhoneTag", nil, true]; };
             } else {
-                ["comspec_atak_native_capLocal", ["strip", _o, _cls], _o] call CBA_fnc_targetEvent;
+                ["strip", _o, _cls] remoteExecCall ["comspec_atak_native_fnc_captureLocal", _o];
                 // Le corps n'a plus de téléphone à donner.
                 if !(alive _o) then { _o setVariable ["COMSPEC_ATAK_PhoneTag", nil, true]; _o setVariable ["COMSPEC_ATAK_CapOf", nil, true]; };
             };
@@ -278,7 +238,7 @@ switch (_act) do {
             // exemplaires de cette classe chez l'IA, porte-objets déjà là, position de l'IA.
             private _p0 = ASLToAGL (getPosASL _ai);
             private _chk = [_ai, _cls, { _x == _cls } count ((assignedItems _ai) + (items _ai)), nearestObjects [_p0, ["GroundWeaponHolder"], 12], _p0, _now];
-            ["comspec_atak_native_capLocal", ["give", _ai, _cls], _ai] call CBA_fnc_targetEvent;
+            ["give", _ai, _cls] remoteExecCall ["comspec_atak_native_fnc_captureLocal", _ai];
             [{ ["giveCheck", _this] call comspec_atak_native_fnc_captureServer; }, _chk, 2] call CBA_fnc_waitAndExecute;
             // Le téléphone garde son identité : on peut le géolocaliser par son numéro ou son IMEI.
             _ai setVariable ["COMSPEC_ATAK_Ident", [_tag param [3, ""], _tag param [4, ""], ""], true];
@@ -351,7 +311,7 @@ switch (_act) do {
                 _near sort true;
                 _grps append ((_near select [0, 3]) apply { _x select 1 });
             };
-            { ["comspec_atak_native_capLocal", ["hunt", leader _x, [_targets, _hunt]], leader _x] call CBA_fnc_targetEvent; } forEach _grps;
+            { ["hunt", leader _x, [_targets, _hunt]] remoteExecCall ["comspec_atak_native_fnc_captureLocal", leader _x]; } forEach _grps;
             _c set ["hunters", [[], _grps select { !(_x getVariable ["COMSPEC_ATAK_NoHunt", false]) }] select _hunt];
         } forEach _caps;
         if (_changed) then { call _publish; };

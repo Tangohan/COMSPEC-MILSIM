@@ -62,13 +62,15 @@ final class AtakMultiplayerAuthTest extends TestCase
     public function testAdminRecoverStripsAServerLocalAiItself(): void
     {
         // « Reprendre le téléphone » (app Admin) tourne dans la pile du remoteExec de l'admin. Par l'événement
-        // capLocal, CBA appelle le gestionnaire d'une IA locale au serveur dans cette même pile, et fn_captureServer y
-        // refuse l'action « local » : l'IA gardait le téléphone alors que l'app annonçait « Téléphone repris ».
+        // capLocal, CBA appelait le gestionnaire d'une IA locale au serveur dans cette même pile, et fn_captureServer y
+        // refusait l'action « local » : l'IA gardait le téléphone alors que l'app annonçait « Téléphone repris ». IA
+        // locale au serveur : retrait fait sur place. Ailleurs : ordre du serveur à fn_captureLocal (lot mpauth3,
+        // SEC-023, l'événement capLocal est retiré).
         $recover = $this->between($this->read(self::MAIN . '/functions/admin/fn_adminServer.sqf'), 'case "recover": {', '"Téléphone repris à l\'IA');
         self::assertNotEmpty($recover);
-        self::assertMatchesRegularExpression('/if \(local _ai\) then \{\s*if \(_x in \(assignedItems _ai\)\) then \{ _ai unlinkItem _x; \} else \{ _ai removeItem _x; \};\s*\} else \{\s*\["comspec_atak_native_capLocal", \["strip", _ai, _x\], _ai\] call CBA_fnc_targetEvent;/', $recover);
-        // La correction ne passe pas par le filtre : « local » reste refusée à tout appel distant (sinon un client
-        // ferait retirer, donner ou déplacer quoi que ce soit à une IA du serveur).
+        self::assertMatchesRegularExpression('/if \(local _ai\) then \{\s*if \(_x in \(assignedItems _ai\)\) then \{ _ai unlinkItem _x; \} else \{ _ai removeItem _x; \};\s*\} else \{\s*\["strip", _ai, _x\] remoteExecCall \["comspec_atak_native_fnc_captureLocal", _ai\];/', $recover);
+        // La correction ne passe pas par le filtre : aucun ordre local n'est ouvert à un appel distant de fn_captureServer
+        // (sinon un client ferait retirer, donner ou déplacer quoi que ce soit à une IA du serveur).
         self::assertStringContainsString('if (_remote && {!(_act in ["dropped", "validate", "dismiss", "athena"])}) exitWith {', $this->read(self::MAIN . '/functions/shell/fn_captureServer.sqf'));
     }
 
@@ -97,21 +99,21 @@ final class AtakMultiplayerAuthTest extends TestCase
         // « give », « giveCheck » regarde si l'IA a reçu le téléphone, sinon cherche le porte-objet apparu à moins de
         // 10 m et y reporte la capture (« giveFail »).
         $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/shell/fn_captureServer.sqf'));
-        // La machine de l'IA pose le téléphone et n'envoie rien.
-        $give = $this->between($code, 'case "give": {', 'case "move":');
+        // La machine de l'IA pose le téléphone et n'envoie rien (ordre du serveur à fn_captureLocal, lot mpauth3).
+        $give = $this->between($this->stripSqfComments($this->read(self::MAIN . '/functions/shell/fn_captureLocal.sqf')), 'case "give": {', 'case "move":');
         self::assertStringContainsString('createVehicle ["GroundWeaponHolder"', $give);
         foreach (['Event', 'remoteExec', 'publicVariable', 'setVariable', 'giveFail', 'giveCheck'] as $send) {
             self::assertStringNotContainsString($send, $give, $send);
         }
         // Le serveur lance la vérification juste après son ordre « give » (tick), avec l'état relevé avant l'ordre.
         self::assertMatchesRegularExpression('/private _chk = \[_ai, _cls, \{ _x == _cls \} count \(\(assignedItems _ai\) \+ \(items _ai\)\), nearestObjects \[_p0, \["GroundWeaponHolder"\], 12\], _p0, _now\];\s*'
-            . '\["comspec_atak_native_capLocal", \["give", _ai, _cls\], _ai\] call CBA_fnc_targetEvent;\s*'
+            . '\["give", _ai, _cls\] remoteExecCall \["comspec_atak_native_fnc_captureLocal", _ai\];\s*'
             . '\[\{ \["giveCheck", _this\] call comspec_atak_native_fnc_captureServer; \}, _chk, 2\] call CBA_fnc_waitAndExecute;/', $code);
         $check = $this->between($code, 'case "giveCheck": {', 'case "giveFail": {');
         self::assertStringContainsString('if (({ _x == _cls } count ((assignedItems _ai) + (items _ai))) > _had) exitWith {};', $check);
         self::assertStringContainsString('(nearestObjects [_p0, ["GroundWeaponHolder"], 10]) select {', $check);
         self::assertStringContainsString('if (_gh isNotEqualTo []) exitWith { ["giveFail", [_ai, _gh select 0, _p0]] call comspec_atak_native_fnc_captureServer; };', $check);
-        $fail = $this->between($code, 'case "giveFail": {', 'case "local": {');
+        $fail = $this->between($code, 'case "giveFail": {', 'case "tick": {');
         self::assertStringContainsString('if (((_gh distance2D _p0) > 10) || {([_gh, "holder"] call _items) isEqualTo []}) exitWith {};', $fail);
         // Ni « giveCheck » ni « giveFail » n'est ouverte aux clients, et aucun autre fichier ne les appelle.
         self::assertStringContainsString('if (_remote && {!(_act in ["dropped", "validate", "dismiss", "athena"])}) exitWith {', $code);
@@ -294,6 +296,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             self::MAIN . '/functions/shell/fn_compromise.sqf' => 'if (!(_act in ["can", "mine"]) && {isRemoteExecutedJIP || {isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2}}}) exitWith {',
             self::MAIN . '/functions/admin/fn_adminClient.sqf' => 'if (isRemoteExecutedJIP || ' . $remote,
             self::CONNECT . '/functions/fn_applyZeusAtakEffect.sqf' => 'if (isRemoteExecutedJIP || ' . $remote,
+            self::MAIN . '/functions/shell/fn_captureLocal.sqf' => 'if (isRemoteExecutedJIP || ' . $remote,
         ] as $file => $guard) {
             $src = $this->read($file);
             self::assertSame(1, substr_count($src, $guard), $file);
@@ -315,13 +318,14 @@ final class AtakMultiplayerAuthTest extends TestCase
         $mainCfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
         self::assertStringContainsString('class comspec_atak_native_fnc_adminClient { allowedTargets = 1; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_compromise { allowedTargets = 0; jip = 0; };', $mainCfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; jip = 0; };', $this->cppCode($this->read(self::CONNECT . '/config.cpp')));
         // Aucun ordre légitime vers ces fonctions n'emprunte la file : chaque appel distant n'a que deux arguments.
         // Lecture tolérante (contre-expertise v3, N10) : commentaires retirés, tableau lu jusqu'à son crochet fermant
         // (sur plusieurs lignes, sans « ; » final, nom entre guillemets simples), code porté par des chaînes compris.
         // Plus d'angle mort de nom (v4, N14, K15, K16) : dans main/ et connect/, tout remoteExec / remoteExecCall est
         // suivi d'un tableau écrit en toutes lettres, dont le premier élément est un nom de fonction littéral.
-        $targets = ['comspec_atak_native_fnc_compromise', 'comspec_atak_native_fnc_adminclient', 'comspec_overwatch_connect_fnc_applyzeusatakeffect'];
+        $targets = ['comspec_atak_native_fnc_compromise', 'comspec_atak_native_fnc_adminclient', 'comspec_overwatch_connect_fnc_applyzeusatakeffect', 'comspec_atak_native_fnc_capturelocal'];
         $calls = [];
         $opaque = [];
         $seen = 0;
@@ -355,16 +359,16 @@ final class AtakMultiplayerAuthTest extends TestCase
         // par des chaînes compris, casse ignorée comme le fait CBA). Un gestionnaire rétabli rouvre la voie que le lot
         // ferme (R2 : captureSrv gardé pour « giveFail » rouvrait B2 et D2) ; un émetteur sans gestionnaire perd la
         // demande sans bruit (R1).
-        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv'];
+        // Lot mpauth3 : capLocal (SEC-023) s'y ajoute.
+        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal'];
         $quoted = '/(["\'])comspec_atak_native_(?:' . implode('|', $removed) . ')\1/i';
         // Fonctions qui jugent le demandeur par remoteExecutedOwner (fn_reqUnit) : appelées depuis un gestionnaire CBA,
         // elles ne voient pas d'appel distant et croient l'unité fournie par l'émetteur. Aucun gestionnaire ne les
-        // appelle (v4, N14, K17), sauf deux corps exacts, à action fixe : capLocal vers fn_captureServer « local »
-        // (actions sur la machine où l'objet est local, que le serveur refuse dans une pile distante : résidu connu du
-        // lot) et comspec_atak_native_camShare vers fn_camShare « recv » (lot mpauth3 : notification du destinataire,
-        // sans effet hors de son téléphone ; « srvAcc » reste hors d'atteinte du gestionnaire).
+        // appelle (v4, N14, K17), sauf un corps exact, à action fixe : comspec_atak_native_camShare vers fn_camShare
+        // « recv » (lot mpauth3 : notification du destinataire, sans effet hors de son téléphone ; « srvAcc » reste hors
+        // d'atteinte du gestionnaire). L'exception de capLocal vers fn_captureServer « local » est retirée avec
+        // l'événement (lot mpauth3, SEC-023).
         $allowed = [
-            'comspec_atak_native_caplocal' => '{ ["local", _this] call comspec_atak_native_fnc_captureServer; }',
             'comspec_atak_native_camshare' => '{ ["recv", _this] call comspec_atak_native_fnc_camShare; }',
         ];
         $files = $this->sources();
@@ -616,6 +620,48 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringNotContainsString('call _redraw', $hh);
         self::assertSame(1, preg_match_all('/\bcall\s+comspec_atak_native_fnc_watch\b/', $hh));
         self::assertStringContainsString('}, [_at, _what, _id]] call CBA_fnc_waitUntilAndExecute;', $hh);
+    }
+
+    public function testCaptureOrdersReachTheObjectMachineOnlyFromTheServer(): void
+    {
+        // Lot mpauth3 (SEC-023) : l'événement CBA comspec_atak_native_capLocal faisait exécuter la branche « local » de
+        // fn_captureServer sur la machine visée, sans dire qui l'avait levé. Tout client y faisait retirer ou donner un
+        // objet à un joueur (le sien est local à sa machine) ou à une IA, déplacer une IA ou lui faire traquer qui il
+        // voulait. Les ordres partent maintenant du serveur par remoteExecCall vers l'objet, à fn_captureLocal, dont la
+        // garde de tête refuse tout appel distant qui ne vient pas du serveur et tout rejeu JIP.
+        $local = $this->stripSqfComments($this->read(self::MAIN . '/functions/shell/fn_captureLocal.sqf'));
+        self::assertMatchesRegularExpression('/^\s*params \[\["_mode", ""\], \["_o", objNull\], \["_v", ""\]\];\s*'
+            . 'if \(isRemoteExecutedJIP \|\| \{isRemoteExecuted && \{remoteExecutedOwner isNotEqualTo 2\}\}\) exitWith \{[^{}]*\};\s*'
+            . 'if \(!\(_o isEqualType objNull\) \|\| \{isNull _o\} \|\| \{!local _o\}\) exitWith \{\};\s*switch \(_mode\) do \{/', $local);
+        preg_match_all('/^    case "([^"]+)"/m', $local, $cases);
+        self::assertSame(['strip', 'give', 'move', 'hunt'], $cases[1]);
+        $srv = $this->stripSqfComments($this->read(self::MAIN . '/functions/shell/fn_captureServer.sqf'));
+        self::assertStringNotContainsString('case "local":', $srv);
+        // Émetteurs : le serveur seul (tick, exploit, « recover » de l'app Admin), vers l'objet.
+        foreach ([
+            '["move", _ai, _pos] remoteExecCall ["comspec_atak_native_fnc_captureLocal", _ai];',
+            '["strip", _o, _cls] remoteExecCall ["comspec_atak_native_fnc_captureLocal", _o];',
+            '["give", _ai, _cls] remoteExecCall ["comspec_atak_native_fnc_captureLocal", _ai];',
+            '{ ["hunt", leader _x, [_targets, _hunt]] remoteExecCall ["comspec_atak_native_fnc_captureLocal", leader _x]; } forEach _grps;',
+        ] as $call) {
+            self::assertStringContainsString($call, $srv);
+        }
+        $from = [];
+        foreach ($this->sources() as $rel => $units) {
+            foreach ($units as $code) {
+                foreach ($this->remoteCalls($code) as [, $right]) {
+                    if ($right !== null && strcasecmp((string) $this->literal($right[0]), 'comspec_atak_native_fnc_captureLocal') === 0) {
+                        $from[basename($rel)] = true;
+                    }
+                }
+            }
+        }
+        ksort($from);
+        self::assertSame(['fn_adminServer.sqf', 'fn_captureServer.sqf'], array_keys($from));
+        $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
+        self::assertStringContainsString('class captureServer {}; class captureLocal {};', $cfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };', $cfg);
+        self::assertStringNotContainsString('comspec_atak_native_capLocal', $this->stripSqfComments($this->read(self::MAIN . '/XEH_preInit.sqf')));
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */

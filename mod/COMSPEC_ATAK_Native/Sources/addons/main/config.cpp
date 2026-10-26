@@ -62,7 +62,7 @@ class CfgFunctions {
             class airplaneMode {}; class btAction {}; class btSounds {}; class btItems {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
-            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {}; class jpcMap {}; class captureServer {}; class compromise {}; class compromiseView {}; class adminNotices {};
+            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {}; class jpcMap {}; class captureServer {}; class captureLocal {}; class compromise {}; class compromiseView {}; class adminNotices {};
         };
         class vehicle { file="z\comspec_atak_native\addons\main\functions\vehicle";
             class vehicleTerminal {}; class vehicleGateway {};
@@ -715,6 +715,10 @@ class CfgRemoteExec {
         // Heure H de la montre Garmin : du poste du chef aux montres du groupe (« hhRecv » seule reçue d'un autre poste).
         // 0 : l'hôte d'une partie locale peut être du groupe. jip = 0 : aucun envoi ne passe par la file JIP.
         class comspec_atak_native_fnc_watch { allowedTargets = 0; jip = 0; };
+        // Serveur -> machine où l'objet est local : ordres de la capture d'un téléphone par l'IA (retirer, donner,
+        // déplacer, traquer ; lot mpauth3, SEC-023). Remplace l'événement CBA comspec_atak_native_capLocal. La fonction
+        // refuse tout appel distant qui ne vient pas du serveur. 0 : l'objet peut être local au serveur. jip = 0.
+        class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };
     };
 };
 
