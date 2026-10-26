@@ -311,9 +311,11 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
                         if ($rid < 1) {
                             continue;
                         }
-                        $rLabel = OrganizationRoleLabels::displayName($role, OrganizationRoleLabels::MODE_FR);
+                        $rLabel = OrganizationRoleLabels::displayName($role, locale() === 'en' ? OrganizationRoleLabels::MODE_EN : OrganizationRoleLabels::MODE_FR);
                         $layer = (string) ($role['role_layer'] ?? 'community');
-                        $layerFr = $layer === 'intra' ? 'Opérationnel' : 'Communauté';
+                        $layerFr = locale() === 'en'
+                            ? ($layer === 'intra' ? 'Operational' : 'Community')
+                            : ($layer === 'intra' ? 'Opérationnel' : 'Communauté');
                         ?>
                         <option value="<?= $rid ?>" <?= $proposedRoleId === $rid ? 'selected' : '' ?>><?= htmlspecialchars($rLabel . ' (' . $layerFr . ')', ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
