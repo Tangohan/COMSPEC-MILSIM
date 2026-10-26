@@ -7,8 +7,8 @@
       immobile allongé ou assis au calme plus de 2 min).
     Gardé sur ce PC (profileNamespace COMSPEC_ATAK_Garmin), par jour réel : 14 jours et 40 activités ; envoyé au site à chaque
     écriture du profil (toutes les 5 min, Garmin.Report de COMSPEC Link 2.0.87 ; fiche du membre).
-    Montre Garmin (objet COMSPEC_ATAK_GarminWatch, emplacement montre) obligatoire si le réglage serveur
-    comspec_atak_native_garmin_watch est coché (par défaut) : sans elle, aucune mesure.
+    Montre Garmin (objet COMSPEC_ATAK_GarminWatch dans l'emplacement montre, ou COMSPEC_ATAK_GarminWatchItem en objet divers)
+    obligatoire si le réglage serveur comspec_atak_native_garmin_watch est coché (par défaut) : sans elle, aucune mesure.
     Params : [mode : "tick" | "save" (fin de mission : activité en cours close et profil écrit)
               | "push" (app Resynch : profil écrit et renvoyé au site tout de suite, activité en cours gardée ;
                 retour [heure, état] de l'envoi)]
@@ -35,6 +35,8 @@ if ((count _gm) isEqualTo 0) then {
     private _gain = ((_away / 3600) * 12) min (100 - _bb);
     _gm set ["bb", _bb + _gain];
     _gm set ["away", [_away, _gain]];
+    // Batterie de la montre : rechargée hors du jeu (25 % par heure, comme posée sur son chargeur).
+    _gm set ["wbat", ((_gm getOrDefault ["wbat", 100]) + (_away / 3600) * 25) min 100];
     _gm set ["real", _now];
     // Fréquence de repos propre au joueur (52 à 65), stable d'une partie à l'autre.
     private _seed = 0; { _seed = (_seed * 31 + _x) mod 997; } forEach (toArray (getPlayerUID player));
@@ -75,7 +77,7 @@ private _save = {
     { _days deleteAt _x; } forEach (_keys select [14]);
     _gm set ["real", [] call _real];
     private _out = [];
-    { if !(_x in ["days", "acts", "cur", "last", "tick", "saved", "min", "rest", "away", "web", "worn"]) then { _out pushBack [_x, _y]; }; } forEach _gm;
+    { if !(_x in ["days", "acts", "cur", "last", "tick", "saved", "min", "rest", "away", "web", "worn", "hrl", "altl", "alt0", "live"]) then { _out pushBack [_x, _y]; }; } forEach _gm;
     // Courbes gardées pour aujourd'hui et hier seulement (le reste des jours : les totaux).
     { (_days get _x) deleteAt "series"; } forEach (_keys select [2, 12]);
     _out pushBack ["days", (keys _days) apply { private _d = _days get _x; [_x, (keys _d) apply { [_x, _d get _x] }] }];
@@ -111,7 +113,8 @@ if (_mode isEqualTo "push") exitWith { [] call _save; _gm getOrDefault ["web", [
 // rien n'est mesuré ni envoyé au site. L'activité en cours est close et le dernier point oublié quand on l'enlève (pas de
 // saut de distance quand elle revient) ; l'app affiche « Aucune montre Garmin ».
 private _worn = !(missionNamespace getVariable ["comspec_atak_native_garmin_watch", true])
-    || {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0};
+    || {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0}
+    || {"COMSPEC_ATAK_GarminWatchItem" in (items player)};
 private _was = _gm getOrDefault ["worn", true];
 _gm set ["worn", _worn];
 if (!_worn) exitWith {
@@ -216,6 +219,29 @@ _gm set ["bb", _nb];
 if (_sleeping) then { ["sleep_s", _dt] call _add; };
 ["stress_sum", _stress * _dt] call _add;
 ["stress_t", _dt] call _add;
+
+// --- Montre au poignet (fn_watch) : courbes en direct (FC toutes les 10 s sur 12 min, altitude toutes les 15 s sur
+// 30 min), dénivelé du jour à pied (paliers de 3 m), batterie (0,35 %/h, 2 %/h pendant une activité suivie au GPS) ---
+private _altNow = _pos select 2;
+private _a0 = _gm getOrDefault ["alt0", _altNow];
+if (_kind in ["foot", "swim"]) then {
+    if (_altNow - _a0 >= 3) then { ["up_m", _altNow - _a0] call _add; _a0 = _altNow; };
+    if (_a0 - _altNow >= 3) then { ["down_m", _a0 - _altNow] call _add; _a0 = _altNow; };
+} else { _a0 = _altNow; };
+_gm set ["alt0", _a0];
+private _live = _gm getOrDefault ["live", 0];
+if (_now - _live >= 10) then {
+    _gm set ["live", _now];
+    private _hl = _gm getOrDefault ["hrl", []];
+    _hl pushBack round _hr;
+    _gm set ["hrl", _hl select [((count _hl) - 72) max 0]];
+    if ((round (_now / 10)) mod 3 isNotEqualTo 1) then {
+        private _al = _gm getOrDefault ["altl", []];
+        _al pushBack round _altNow;
+        _gm set ["altl", _al select [((count _al) - 120) max 0]];
+    };
+};
+_gm set ["wbat", 3 max ((_gm getOrDefault ["wbat", 100]) - ([0.35, 2] select ((_gm getOrDefault ["cur", []]) isNotEqualTo [])) * _dt / 3600)];
 
 // --- Courbe du jour : un point toutes les 5 min réelles [heure décimale, BB, stress, FC, repos] ---
 private _min = floor ((_gm get "real") / 300);

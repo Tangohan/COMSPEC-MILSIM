@@ -821,6 +821,22 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Montre Garmin : pas, fréquence cardiaque, stress, Body Battery, sommeil et activités, gardés dans le profil du joueur.
 [{ ["tick"] call comspec_atak_native_fnc_garminTick; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Montre Garmin au poignet (fn_watch) : la touche « Montre » du jeu (O) l'allume à la place de la montre d'Arma quand le
+// joueur la porte ; appui court : écran suivant, appui long : éteinte. Sans montre Garmin, la touche garde son effet.
+[{ !isNull (findDisplay 46) }, {
+    (findDisplay 46) displayAddEventHandler ["KeyDown", {
+        params ["", "_key", "_shift", "_ctrl", "_alt"];
+        if (_shift || {_ctrl} || {_alt} || {!(_key in (actionKeys "Watch"))}) exitWith { false };
+        ["down"] call comspec_atak_native_fnc_watch
+    }];
+    (findDisplay 46) displayAddEventHandler ["KeyUp", {
+        params ["", "_key"];
+        if !(_key in (actionKeys "Watch")) exitWith { false };
+        ["up"] call comspec_atak_native_fnc_watch
+    }];
+}] call CBA_fnc_waitUntilAndExecute;
+["COMSPEC ATAK", "GarminPrev", ["Montre Garmin : écran précédent", "Montre allumée (touche Montre du jeu, O) : revient à l'écran précédent."], { ["prev"] call comspec_atak_native_fnc_watch }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "GarminClose", ["Montre Garmin : éteindre", "Éteint la montre Garmin (sinon : appui long sur la touche Montre du jeu, O)."], { ["close"] call comspec_atak_native_fnc_watch }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;
 addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; }];
