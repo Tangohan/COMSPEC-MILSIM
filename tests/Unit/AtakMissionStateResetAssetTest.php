@@ -18,7 +18,9 @@ use PHPUnit\Framework\TestCase;
  *
  * Test statique (lecture des .sqf ; la CI ne lance que PHPUnit). Il échoue si une de ces remises disparaît, si sa valeur
  * ne correspond plus à la lecture de la variable, si une lecture sans valeur par défaut apparaît (elle recevrait nil
- * après la remise), ou si fn_stateInit n'est plus appelé au preInit.
+ * après la remise), si fn_stateInit n'est plus appelé au preInit, s'il est appelé ailleurs qu'au preInit et dans fn_open
+ * (gardé : état absent), ou si COMSPEC_ATAK_State est écrit hors de fn_stateInit (fn_open le relancerait en pleine
+ * mission, et ses remises couperaient des boucles vivantes).
  */
 final class AtakMissionStateResetAssetTest extends TestCase
 {
@@ -141,5 +143,68 @@ final class AtakMissionStateResetAssetTest extends TestCase
             'if (isNil { uiNamespace getVariable "COMSPEC_ATAK_State" }) then { [] call comspec_atak_native_fnc_stateInit; };',
             $this->read('functions/ui/fn_open.sqf')
         );
+    }
+
+    /**
+     * Sources texte de l'ATAK natif (ses trois addons) et de connect, livré dans @COMSPEC_ATAK_Native, sans commentaires :
+     * chemin relatif au dépôt => code. Commentaires retirés seulement en début de ligne ou après une espace (une
+     * adresse « https:// » dans une chaîne reste entière).
+     *
+     * @return array<string, string>
+     */
+    private function shippedSources(): array
+    {
+        $base = dirname(__DIR__, 2) . '/';
+        $out = [];
+        foreach (['mod/COMSPEC_ATAK_Native/Sources/', 'mod/UptoDate/Sources/comspec-overwatch-addons/connect/'] as $dir) {
+            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base . $dir, \FilesystemIterator::SKIP_DOTS));
+            foreach ($it as $file) {
+                if (preg_match('~\.(sqf|hpp|cpp|h|inc|ext)$~i', $file->getFilename()) === 1) {
+                    $code = (string) preg_replace(['~^\s*/\*.*?\*/~ms', '~(^|[\s;{}])//[^\n]*~m'], ['', '$1'], (string) file_get_contents($file->getPathname()));
+                    $out[str_replace('\\', '/', substr($file->getPathname(), strlen($base)))] = $code;
+                }
+            }
+        }
+        self::assertGreaterThan(1000, count($out), 'Sources de l\'ATAK natif et de connect introuvables');
+
+        return $out;
+    }
+
+    public function testStateInitHasNoOtherCaller(): void
+    {
+        // Un appel de plus (gestionnaire Respawn, changement d'unité, fermeture du téléphone…) remettrait à zéro en
+        // pleine mission la pompe Bluetooth, la boucle de l'app Admin, la salle Plan et l'alerte en attente. Les noms
+        // SQF ne tiennent pas compte de la casse.
+        $callers = [];
+        foreach ($this->shippedSources() as $rel => $code) {
+            $n = preg_match_all('~\b(?:comspec_atak_native_fnc_stateInit\b|fn_stateInit\.sqf)~i', $code);
+            if ($n > 0) {
+                $callers[$rel] = $n;
+            }
+        }
+        ksort($callers);
+        self::assertSame([
+            'mod/COMSPEC_ATAK_Native/Sources/addons/main/XEH_preInit.sqf' => 1,
+            'mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/ui/fn_open.sqf' => 1,
+        ], $callers, 'Appelants de fn_stateInit');
+    }
+
+    public function testStateIsOnlyWrittenByStateInit(): void
+    {
+        // fn_open relance fn_stateInit quand COMSPEC_ATAK_State manque : seul fn_stateInit peut l'écrire, sinon une remise
+        // à nil en pleine mission (à la fermeture, par exemple) relancerait toutes les remises à l'ouverture suivante.
+        $writes = [];
+        foreach ($this->shippedSources() as $rel => $code) {
+            if (str_ends_with($rel, '/functions/core/fn_stateInit.sqf')) {
+                continue;
+            }
+            preg_match_all('~"COMSPEC_ATAK_State"~i', $code, $m, PREG_OFFSET_CAPTURE);
+            foreach ($m[0] as [, $at]) {
+                if (preg_match('~getVariable\s*\[?\s*$~i', substr($code, max(0, $at - 30), $at - max(0, $at - 30))) !== 1) {
+                    $writes[] = $rel;
+                }
+            }
+        }
+        self::assertSame([], $writes, 'COMSPEC_ATAK_State nommé ailleurs que dans une lecture');
     }
 }
