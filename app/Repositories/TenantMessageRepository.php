@@ -18,6 +18,8 @@ class TenantMessageRepository
 
     private PDO $pdo;
 
+    private ?bool $hideReady = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -203,7 +205,7 @@ class TenantMessageRepository
                 ) AS thread_unread
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
-                WHERE t.tenant_id = ?
+                WHERE t.tenant_id = ?" . $this->notHiddenSql() . "
                 ORDER BY t.updated_at DESC, t.id DESC
                 LIMIT {$lim}"
             );
@@ -228,7 +230,7 @@ class TenantMessageRepository
                 ' . self::UNREAD_PREDICATE . ' AS has_unread
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
-                WHERE t.tenant_id = ?
+                WHERE t.tenant_id = ?' . $this->notHiddenSql() . '
                 ORDER BY t.updated_at DESC, t.id DESC
                 LIMIT 100'
             );
@@ -421,6 +423,63 @@ class TenantMessageRepository
         } catch (\PDOException $e) {
             return 0;
         }
+    }
+
+    /**
+     * Retire des conversations de la boîte d'un membre (lues au passage). Elles restent pour les autres participants
+     * et réapparaissent à l'arrivée d'un nouveau message.
+     *
+     * @param list<int> $threadIds vide = toutes les conversations du membre dans la communauté
+     */
+    public function hideThreadsForUser(int $tenantId, int $userId, array $threadIds): int
+    {
+        if (!$this->hideColumnReady()) {
+            return 0;
+        }
+        $threadIds = array_values(array_filter(array_map('intval', $threadIds), static fn (int $i): bool => $i > 0));
+        $sql = 'UPDATE tenant_message_thread_users tu INNER JOIN tenant_message_threads t ON t.id = tu.thread_id
+                SET tu.hidden_at = NOW(), tu.last_read_at = NOW()
+                WHERE tu.user_id = ? AND t.tenant_id = ?';
+        $args = [$userId, $tenantId];
+        if ($threadIds !== []) {
+            $sql .= ' AND tu.thread_id IN (' . implode(',', array_fill(0, count($threadIds), '?')) . ')';
+            $args = array_merge($args, $threadIds);
+        }
+        $st = $this->pdo->prepare($sql);
+        $st->execute($args);
+
+        return $st->rowCount();
+    }
+
+    /** Annule le retrait (bouton « Annuler » de la boîte de réception). */
+    public function unhideThreadsForUser(int $tenantId, int $userId, array $threadIds): void
+    {
+        $threadIds = array_values(array_filter(array_map('intval', $threadIds), static fn (int $i): bool => $i > 0));
+        if ($threadIds === [] || !$this->hideColumnReady()) {
+            return;
+        }
+        $st = $this->pdo->prepare('UPDATE tenant_message_thread_users tu INNER JOIN tenant_message_threads t ON t.id = tu.thread_id
+            SET tu.hidden_at = NULL WHERE tu.user_id = ? AND t.tenant_id = ? AND tu.thread_id IN (' . implode(',', array_fill(0, count($threadIds), '?')) . ')');
+        $st->execute(array_merge([$userId, $tenantId], $threadIds));
+    }
+
+    private function hideColumnReady(): bool
+    {
+        if ($this->hideReady === null) {
+            try {
+                \App\Support\SilentSchemaMigration::run(base_path('bootstrap/inbox_hide_threads_migration.php'), $this->pdo);
+            } catch (\Throwable) {
+            }
+            $this->hideReady = $this->hasColumn('tenant_message_thread_users', 'hidden_at');
+        }
+
+        return $this->hideReady;
+    }
+
+    /** Conversation retirée par le membre et sans nouveau message depuis. */
+    private function notHiddenSql(): string
+    {
+        return $this->hideColumnReady() ? ' AND (tu.hidden_at IS NULL OR t.updated_at > tu.hidden_at)' : '';
     }
 
     public function markThreadRead(int $threadId, int $userId): void

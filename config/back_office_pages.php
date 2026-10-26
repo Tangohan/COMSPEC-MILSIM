@@ -229,6 +229,10 @@ return [
             ['label' => 'Suivi des actions', 'href' => 'back-office/atak/comptes-rendus?vue=actions'],
             ['label' => 'Missions sans retour', 'href' => 'back-office/atak/comptes-rendus?vue=missions'],
         ]],
+        ['path' => 'back-office/atak/suivi-cr', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Suivi des CR de fin d’opération', 'subtitle' => 'Qui a reçu le CR imposé sur son ATAK, qui l’a remis, et quand son téléphone s’est synchronisé pour la dernière fois.', 'css' => ['back-office-aar.css', 'back-office-debrief.css'], 'quick' => [
+            ['label' => 'Comptes rendus post-op', 'href' => 'back-office/atak/comptes-rendus'],
+            ['label' => 'Remontées', 'href' => 'back-office/remontees'],
+        ]],
         ['path' => 'back-office/atak/comptes-rendus/modeles', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Modèles de debriefing', 'subtitle' => 'Questionnaires de compte rendu : questions courtes, listes, cases à cocher et texte libre.', 'css' => ['back-office-aar.css'], 'quick' => [
             ['label' => 'Comptes rendus', 'href' => 'back-office/atak/comptes-rendus'],
             ['label' => 'Nouveau modèle', 'href' => 'back-office/atak/comptes-rendus/modeles/nouveau'],

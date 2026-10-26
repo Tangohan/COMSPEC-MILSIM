@@ -63,7 +63,7 @@ foreach ($inboxSources as $key => $label) {
 ?>
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/inbox.css')) ?>">
 
-<div class="ibx" data-ibx data-mark-url="<?= $h(url('boite-reception/lu')) ?>" data-csrf="<?= $h($csrf) ?>">
+<div class="ibx" data-ibx data-mark-url="<?= $h(url('boite-reception/lu')) ?>" data-delete-url="<?= $h(url('boite-reception/supprimer')) ?>" data-csrf="<?= $h($csrf) ?>">
   <header class="ibx-head">
     <div>
       <p class="ibx-kicker">Messages et notifications</p>
@@ -82,6 +82,12 @@ foreach ($inboxSources as $key => $label) {
         <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
         <input type="hidden" name="source" value="all">
         <button type="submit" class="ibx-btn" <?= ($inboxCounts['unread'] ?? 0) === 0 ? 'disabled' : '' ?>>Tout marquer comme lu</button>
+      </form>
+      <form method="post" action="<?= $h(url('boite-reception/supprimer')) ?>" data-ibx-purge>
+        <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+        <input type="hidden" name="lus" value="1">
+        <input type="hidden" name="filtre" value="<?= $h($inboxFilter) ?>">
+        <button type="submit" class="ibx-btn ibx-btn--ghost" title="Supprime les notifications et avis de courrier déjà lus">Supprimer les éléments lus</button>
       </form>
     </div>
   </header>
@@ -118,6 +124,10 @@ foreach ($inboxSources as $key => $label) {
           <input type="hidden" name="filtre" value="<?= $h($inboxFilter) ?>">
           <label class="ibx-check"><input type="checkbox" data-ibx-all> <span>Tout sélectionner</span></label>
           <button type="submit" class="ibx-btn ibx-btn--small" data-ibx-bulk-btn disabled>Marquer la sélection comme lue</button>
+          <button type="button" class="ibx-btn ibx-btn--small ibx-btn--danger" data-ibx-bulk-del disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+            Supprimer la sélection
+          </button>
         </form>
       </div>
 
@@ -135,8 +145,8 @@ foreach ($inboxSources as $key => $label) {
         <?php if ($bucket !== $lastBucket): $lastBucket = $bucket; ?>
         <li class="ibx-day" data-ibx-day><?= $h($bucket) ?></li>
         <?php endif; ?>
-        <li class="ibx-item<?= $it['unread'] ? ' is-unread' : '' ?>" data-ibx-item data-key="<?= $h((string) $it['key']) ?>" data-source="<?= $h($source) ?>" data-unread="<?= $it['unread'] ? '1' : '0' ?>" data-search="<?= $h(mb_strtolower((string) $it['title'] . ' ' . (string) $it['detail'])) ?>">
-          <?php if ($source !== 'annonces'): ?>
+        <li class="ibx-item<?= $it['unread'] ? ' is-unread' : '' ?>" data-ibx-item data-key="<?= $h((string) $it['key']) ?>" data-deletable="<?= !empty($it['deletable']) ? '1' : '0' ?>" data-source="<?= $h($source) ?>" data-unread="<?= $it['unread'] ? '1' : '0' ?>" data-search="<?= $h(mb_strtolower((string) $it['title'] . ' ' . (string) $it['detail'])) ?>">
+          <?php if ($source !== 'annonces' || !empty($it['deletable'])): ?>
           <input type="checkbox" class="ibx-item__check" aria-label="Sélectionner « <?= $h((string) $it['title']) ?> »" value="<?= $h((string) $it['key']) ?>" data-ibx-select>
           <?php else: ?>
           <span class="ibx-item__check" aria-hidden="true"></span>
@@ -162,11 +172,24 @@ foreach ($inboxSources as $key => $label) {
               <button type="submit" class="ibx-read" title="Marquer comme lu"><span class="ibx-dot" aria-hidden="true"></span><span class="sr-only">Marquer comme lu</span></button>
             </form>
             <?php endif; ?>
+            <?php if (!empty($it['deletable'])): ?>
+            <form method="post" action="<?= $h(url('boite-reception/supprimer')) ?>" data-ibx-del>
+              <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+              <input type="hidden" name="source" value="<?= $h($source) ?>">
+              <input type="hidden" name="id" value="<?= (int) $it['id'] ?>">
+              <input type="hidden" name="filtre" value="<?= $h($inboxFilter) ?>">
+              <button type="submit" class="ibx-del" title="<?= $source === 'messages' ? 'Retirer de ma boîte (la conversation revient si quelqu’un répond)' : ($source === 'annonces' ? 'Masquer cette annonce' : 'Supprimer') ?>">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+                <span class="sr-only">Supprimer</span>
+              </button>
+            </form>
+            <?php endif; ?>
           </span>
         </li>
         <?php endforeach; ?>
       </ol>
       <p class="ibx-empty ibx-empty--inline" data-ibx-none hidden>Aucun élément ne correspond à ce filtre.</p>
+      <div class="ibx-toast" data-ibx-toast role="status" aria-live="polite" hidden><span data-ibx-toast-text></span><button type="button" class="ibx-toast__undo" data-ibx-undo>Annuler</button></div>
       <?php endif; ?>
     </section>
   </div>
@@ -177,6 +200,7 @@ foreach ($inboxSources as $key => $label) {
   var root = document.querySelector('[data-ibx]');
   if (!root) return;
   var markUrl = root.getAttribute('data-mark-url');
+  var deleteUrl = root.getAttribute('data-delete-url');
   var csrf = root.getAttribute('data-csrf');
   var items = Array.prototype.slice.call(root.querySelectorAll('[data-ibx-item]'));
   var days = Array.prototype.slice.call(root.querySelectorAll('[data-ibx-day]'));
@@ -195,6 +219,7 @@ foreach ($inboxSources as $key => $label) {
     return s;
   }
   function visible(it) {
+    if (it.classList.contains('is-removed')) return false;
     var src = it.getAttribute('data-source');
     if (filter === 'nonlus' && it.getAttribute('data-unread') !== '1') return false;
     if (filter && filter !== 'nonlus' && src !== filter) return false;
@@ -217,9 +242,62 @@ foreach ($inboxSources as $key => $label) {
   function selected() {
     return items.filter(function (it) { var c = it.querySelector('[data-ibx-select]'); return c && c.checked && !it.hidden; });
   }
+  var bulkDel = root.querySelector('[data-ibx-bulk-del]');
   function syncBulk() {
-    if (bulkBtn) bulkBtn.disabled = selected().length === 0;
+    var sel = selected();
+    if (bulkBtn) bulkBtn.disabled = sel.filter(function (it) { return it.getAttribute('data-source') !== 'annonces'; }).length === 0;
+    if (bulkDel) bulkDel.disabled = sel.filter(function (it) { return it.getAttribute('data-deletable') === '1'; }).length === 0;
   }
+  // Suppression différée : l’élément disparaît tout de suite, la requête part après 5 s (« Annuler » possible).
+  var toast = root.querySelector('[data-ibx-toast]');
+  var toastText = root.querySelector('[data-ibx-toast-text]');
+  var pending = null;
+  function flush(beacon) {
+    if (!pending) return;
+    var p = pending; pending = null;
+    clearTimeout(p.timer);
+    if (toast) toast.hidden = true;
+    var fd = new FormData();
+    fd.append('_csrf_token', csrf);
+    p.list.forEach(function (it) { fd.append('keys[]', it.getAttribute('data-key')); });
+    if (beacon && navigator.sendBeacon) { navigator.sendBeacon(deleteUrl, fd); }
+    else { fetch(deleteUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json' } }).catch(function () {}); }
+    p.list.forEach(function (it) { it.remove(); });
+    items = items.filter(function (it) { return p.list.indexOf(it) === -1; });
+    refreshCounts(); apply();
+  }
+  function removeItems(list) {
+    list = list.filter(function (it) { return it.getAttribute('data-deletable') === '1'; });
+    if (!list.length) return;
+    flush(false);
+    list.forEach(function (it) { it.classList.add('is-removed'); it.hidden = true; var c = it.querySelector('[data-ibx-select]'); if (c) c.checked = false; });
+    if (all) all.checked = false;
+    pending = { list: list, timer: setTimeout(function () { flush(false); }, 5000) };
+    if (toast) { toastText.textContent = list.length > 1 ? list.length + ' éléments supprimés.' : 'Élément supprimé.'; toast.hidden = false; }
+    var unreadGone = list.filter(function (it) { return it.getAttribute('data-unread') === '1'; });
+    if (unreadGone.length) unreadGone.forEach(function (it) { it.setAttribute('data-unread', '0'); it.setAttribute('data-was-unread', '1'); });
+    refreshCounts(); apply();
+  }
+  var undo = root.querySelector('[data-ibx-undo]');
+  if (undo) undo.addEventListener('click', function () {
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pending.list.forEach(function (it) { it.classList.remove('is-removed'); if (it.getAttribute('data-was-unread') === '1') { it.setAttribute('data-unread', '1'); it.removeAttribute('data-was-unread'); } });
+    pending = null; toast.hidden = true; refreshCounts(); apply();
+  });
+  window.addEventListener('pagehide', function () { flush(true); });
+  root.addEventListener('submit', function (e) {
+    var f = e.target.closest('[data-ibx-del]');
+    if (!f) return;
+    e.preventDefault();
+    removeItems([f.closest('[data-ibx-item]')]);
+  });
+  if (bulkDel) bulkDel.addEventListener('click', function () { removeItems(selected()); syncBulk(); });
+  var purge = root.querySelector('[data-ibx-purge]');
+  if (purge) purge.addEventListener('submit', function (e) {
+    if (!window.confirm('Supprimer toutes les notifications et tous les avis de courrier déjà lus ? Les conversations et le courrier lui-même sont conservés.')) e.preventDefault();
+  });
+
   function post(fields) {
     var fd = new FormData();
     fd.append('_csrf_token', csrf);
@@ -244,13 +322,17 @@ foreach ($inboxSources as $key => $label) {
     var unread = items.filter(function (it) { return it.getAttribute('data-unread') === '1'; });
     root.querySelectorAll('[data-ibx-count]').forEach(function (c) {
       var key = c.getAttribute('data-ibx-count');
-      if (key === '' || key === 'annonces') return;
+      if (key === '' || key === 'annonces') {
+        var n0 = items.filter(function (it) { return !it.classList.contains('is-removed') && (key === '' || it.getAttribute('data-source') === key); }).length;
+        c.textContent = String(n0); c.hidden = n0 === 0; return;
+      }
       var n = key === 'nonlus' ? unread.length : unread.filter(function (it) { return it.getAttribute('data-source') === key; }).length;
       c.textContent = String(n);
       c.hidden = n === 0;
     });
     var summary = root.querySelector('[data-ibx-summary]');
-    if (summary) summary.innerHTML = unread.length > 0 ? '<strong>' + unread.length + '</strong> élément(s) non lu(s) sur ' + items.length + '.' : 'Tout est lu.';
+    var live = items.filter(function (it) { return !it.classList.contains('is-removed'); }).length;
+    if (summary) summary.innerHTML = live === 0 ? 'Boîte vide.' : (unread.length > 0 ? '<strong>' + unread.length + '</strong> élément(s) non lu(s) sur ' + live + '.' : 'Tout est lu.');
     var markAll = root.querySelector('[data-ibx-markall] button');
     if (markAll) markAll.disabled = unread.length === 0;
   }
