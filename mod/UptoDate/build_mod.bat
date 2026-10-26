@@ -120,11 +120,19 @@ set "DLL_SRC="
 if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll"
 if not defined DLL_SRC if exist "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll"
 if not defined DLL_SRC if exist "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" set "DLL_SRC=%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll"
-if defined DLL_SRC (
-    copy /Y "%DLL_SRC%" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
-) else (
-    echo [WARN] DLL Native AOT non trouvee. Verifiez la compilation .NET. >> "%BUILD_LOG%"
-    echo [WARN] DLL Native AOT non trouvee. Verifiez la compilation .NET.
+:: Sans DLL fraiche, le mod garderait l'ancienne DLL suivie dans git (COMSPEC Link 2.0.57, d'avant SEC-001) et le
+:: deploiement la recopierait : le build s'arrete en echec (ARCH-021).
+if not defined DLL_SRC (
+    echo [ERREUR] DLL Native AOT fraiche introuvable apres dotnet publish - attendue dans COMSPECExtension\bin\publish. >> "%BUILD_LOG%"
+    echo [ERREUR] DLL Native AOT fraiche introuvable apres dotnet publish - attendue dans COMSPECExtension\bin\publish.
+    echo          L'ancienne DLL du dossier %MOD_NAME% n'est ni deployee ni publiee. >> "%BUILD_LOG%"
+    echo          L'ancienne DLL du dossier %MOD_NAME% n'est ni deployee ni publiee.
+    goto :build_fail
+)
+copy /Y "%DLL_SRC%" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1 || (
+    echo [ERREUR] Copie de la DLL fraiche impossible - DLL verrouillee ? Fermer Arma puis relancer le build. >> "%BUILD_LOG%"
+    echo [ERREUR] Copie de la DLL fraiche impossible - DLL verrouillee ? Fermer Arma puis relancer le build.
+    goto :build_fail
 )
 :: Nettoyage artefacts de debug / publish accidentels a la racine du mod
 if exist "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" del /F /Q "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" >> "%BUILD_LOG%" 2>&1
@@ -144,20 +152,20 @@ if exist "%PROJECT_DIR%mod.cpp" (
     )
 )
 
-:: 5. Deploiement vers Arma 3
-:: IMPORTANT: le launcher charge souvent !Workshop\@COMSPECOverwatch
-:: (= junction vers steamapps\workshop\content\107410\3684656708), PAS le dossier local @COMSPECOverwatch.
+:: 5. Deploiement local vers Arma 3
+:: Plus aucune cible dans le dossier Workshop de l'ATAK natif (ARCH-021). Ce build deployait aussi dans le dossier
+:: Steam de cet objet, sous steamapps\workshop, et dans sa jonction !Workshop\@COMSPECOverwatch : il y supprimait
+:: comspec_overwatch_connect.pbo, y ecrasait main.pbo et y copiait la DLL du pack herite. L'ATAK natif se construit
+:: et se publie depuis mod\COMSPEC_ATAK_Native seulement.
 :: Ne jamais laisser addons\connect\ ou addons\main\ (sources) a cote des .pbo : conflit de prefixe.
 echo [DEPLOY] Synchronisation avec le dossier Arma 3... >> "%BUILD_LOG%"
 echo [DEPLOY] Synchronisation avec le dossier Arma 3...
-set "WORKSHOP_MOD=%ARMA_PATH%\!Workshop\%MOD_NAME%"
 set "LOCAL_MOD=%ARMA_PATH%\%MOD_NAME%"
-set "WORKSHOP_CONTENT=F:\SteamLibrary\steamapps\workshop\content\107410\3684656708"
 :: Pack communauté SOAR : Arma charge la DLL depuis ce dossier (pas @COMSPECOverwatch).
 set "SOAR_FN=%ARMA_PATH%\!Workshop\@# S.O.A.R - FN"
 
 if exist "%ARMA_PATH%" (
-    for %%T in ("%WORKSHOP_CONTENT%" "%LOCAL_MOD%" "%WORKSHOP_MOD%" "%SOAR_FN%") do (
+    for %%T in ("%LOCAL_MOD%" "%SOAR_FN%") do (
         if exist %%~T (
             echo [DEPLOY] Cible: %%~T >> "%BUILD_LOG%"
             echo [DEPLOY] Cible: %%~T
@@ -207,8 +215,8 @@ echo   Sortie mod : %OUTPUT_DIR%
 echo   PBO        : %OUTPUT_DIR%\addons\*.pbo
 echo   DLL        : %OUTPUT_DIR%\COMSPECExtension_x64.dll
 echo.
-echo   Workshop   : executer workshop-pack.ps1 avant upload Steam
-echo                (ne pas publier les .sqf / net8.0 / .pdb)
+echo   Workshop   : ce pack herite n'a plus d'objet Workshop, ne pas le publier.
+echo                L'ATAK natif se publie depuis mod\COMSPEC_ATAK_Native.
 echo   Log complet : %BUILD_LOG%
 echo ===========================================================
 if /I "%COMSPEC_BUILD_NOPAUSE%"=="1" goto :build_done

@@ -29,7 +29,9 @@ build_mod.bat
 1. `dotnet publish` → **COMSPECExtension_x64.dll** (Native AOT, ~7–8 Mo)
 2. AddonBuilder → **main.pbo**, **connect.pbo**, **atak_athena.pbo**, **mavik_compat.pbo**
 3. Copie DLL + mod.cpp vers `@COMSPECOverwatch/`
-4. Déploiement optionnel vers dossiers Arma locaux / Workshop dev
+4. Déploiement optionnel vers les dossiers Arma locaux (`Arma 3\@COMSPECOverwatch`, pack SOAR FN), jamais vers le dossier Workshop de l'ATAK natif
+
+Sans DLL fraîche après `dotnet publish`, ou si sa copie échoue (DLL verrouillée par Arma), le build s'arrête en échec : l'ancienne DLL du dossier `@COMSPECOverwatch` n'est plus déployée.
 
 Log complet : `mod/UptoDate/build_log.txt`
 
@@ -61,12 +63,11 @@ mod/UptoDate/@COMSPECOverwatch/
 
 ## Publication Steam Workshop
 
-1. Lancer **build_mod.bat** (build frais)
-2. Lancer **workshop-pack.ps1** → dossier `publisher/@COMSPECOverwatch/` propre
-3. Copier texte depuis **STEAM_CHANGELOG.txt** dans la description Workshop
-4. **Ne jamais publier** : sources `.sqf` nues, dossiers `net8.0`, fichiers `.pdb`
+Le pack hérité `@COMSPECOverwatch` n'a plus d'objet Workshop : ne le publiez pas.
 
-Workshop ID référence projet : `3684656708`
+- L'objet `3684656708` (« COMSPEC ATAK Native ») est l'ATAK natif. Il se publie seulement depuis `mod/COMSPEC_ATAK_Native` (dossier `@COMSPEC_ATAK_Native`), après son propre `build_mod.bat`, qui recompile ici la DLL COMSPEC Link et les PBO `main` et `connect` d'Overwatch.
+- `workshop-pack.ps1` produit encore un dossier `publisher/@COMSPECOverwatch/` propre, mais il s'arrête en erreur (code 1) si la DLL retenue annonce une version sous 2.0.96 (plancher SEC-001, `docs/PLANCHER-VERSION-DLL.md` à la racine du dépôt) ou si le `meta.cpp` du pack vise l'objet `3684656708`.
+- **Ne jamais publier** : sources `.sqf` nues, dossiers `net8.0`, fichiers `.pdb`.
 
 ---
 
@@ -98,7 +99,9 @@ Après changement **DLL seule** : remplacer `COMSPECExtension_x64.dll` suffit si
 |---|---|
 | dotnet publish failed | SDK 8 installé ? erreur C# dans log |
 | AddonBuilder failed | Chemin Tools, config.cpp syntaxe |
-| DLL non copiée | Vérifier `bin/publish/COMSPECExtension_x64.dll` |
+| Build en échec : « DLL Native AOT fraiche introuvable » ou « Copie de la DLL fraiche impossible » | Vérifier `bin/publish/COMSPECExtension_x64.dll` ; fermer Arma si la DLL est verrouillée |
+| workshop-pack.ps1 : « DLL COMSPEC Link … refusée » | DLL plus ancienne que 2.0.96 : relancer `build_mod.bat` |
+| workshop-pack.ps1 : « … vise l'objet Workshop 3684656708 » | Retirer `publishedid` du `meta.cpp` ; ne pas publier ce pack |
 | En jeu extension absente | DLL manquante ou bloquée antivirus |
 | Mod charge mais pas liaison | Clé communauté, URL, pas double mod Workshop + local |
 

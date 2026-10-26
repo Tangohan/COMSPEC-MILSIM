@@ -59,11 +59,9 @@ mod/UptoDate/@COMSPECOverwatch/
 
 ## Publication Steam Workshop
 
-1. Lancer **build_mod.bat** (build frais)
-2. Lancer **workshop-pack.ps1** → dossier `publisher/@COMSPECOverwatch/` propre
-3. Coller la **fiche** depuis **STEAM_DESCRIPTION.md**.
-4. Coller les **notes de version** depuis **STEAM_CHANGELOG.txt**.
-4. **Ne jamais publier** : sources `.sqf` nues, dossiers `net8.0`, fichiers `.pdb`
+Le pack hérité `@COMSPECOverwatch` n'a plus d'objet Workshop : ne le publiez pas. L'objet `3684656708` est l'ATAK natif ; il se publie seulement depuis `mod/COMSPEC_ATAK_Native`, dont le `build_mod.bat` recompile la DLL COMSPEC Link et les PBO `main` et `connect` d'Overwatch. `workshop-pack.ps1` refuse une DLL sous 2.0.96 et un `meta.cpp` qui vise cet objet. Détail : `mod/UptoDate/docs/compilation-et-publication.md`.
+
+**Ne jamais publier** : sources `.sqf` nues, dossiers `net8.0`, fichiers `.pdb`.
 
 ---
 

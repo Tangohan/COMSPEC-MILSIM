@@ -7,15 +7,16 @@ namespace App\Support;
 /**
  * Distribution des mods par le Steam Workshop (le site n'héberge plus d'archive ni de modpack).
  *
- * - Objets publiés par l'équipe COMSPEC : COMSPEC ATAK Native (pack Overwatch inclus, mod/UptoDate/@COMSPECOverwatch/
- *   meta.cpp publishedid), et SSE quand son identifiant est connu (variable ATHENA_WORKSHOP_SSE_ID).
+ * - Objets publiés par l'équipe COMSPEC : COMSPEC ATAK Native (Overwatch connect inclus), publié seulement depuis
+ *   mod/COMSPEC_ATAK_Native, et SSE quand son identifiant est connu (variable ATHENA_WORKSHOP_SSE_ID). Le pack hérité
+ *   mod/UptoDate/@COMSPECOverwatch n'a plus d'objet Workshop.
  * - Dépendances : CBA_A3 (obligatoire), ACE3 et ACRE2 (recommandés).
  * - Par communauté : une collection Steam (le modset de la communauté) et une consigne libre, réglées dans
  *   Back-office › Ressources › Mod ATAK, enregistrées dans storage/cache/steam-workshop/t{id}.json.
  */
 final class SteamWorkshop
 {
-    /** Fiche Workshop « COMSPEC ATAK Native » (mod/UptoDate/docs/compilation-et-publication.md). */
+    /** Fiche Workshop « COMSPEC ATAK Native », publiée depuis mod/COMSPEC_ATAK_Native (voir mod/README.md). */
     public const ATAK_NATIVE_ID = '3684656708';
 
     public const CBA_ID = '450814997';

@@ -2,6 +2,8 @@
 
 Contenu minimal pour compiler le mod et obtenir des PBO à jour.
 
+> **Publication** : ce dossier ne publie plus rien sur le Steam Workshop. L'objet `3684656708` est l'ATAK natif ; il se publie seulement depuis `mod/COMSPEC_ATAK_Native`, dont le build recompile ici la DLL COMSPEC Link et les PBO `main` et `connect`. Le pack hérité `@COMSPECOverwatch` n'a plus d'objet Workshop.
+
 ## Documentation
 
 **Index complet** : [`docs/README.md`](docs/README.md)
@@ -22,7 +24,7 @@ Changelog pack : [`@COMSPECOverwatch/CHANGELOG.md`](@COMSPECOverwatch/CHANGELOG.
 
 - `Sources/comspec-overwatch-addons/{main,connect,atak_athena,mavik_compat}` — sources addons
 - `COMSPECExtension/` — extension native (DLL)
-- `build_mod.bat` — compile DLL + PBO → `@COMSPECOverwatch/`
-- `workshop-pack.ps1` — pack Workshop propre après build
+- `build_mod.bat` — compile DLL + PBO → `@COMSPECOverwatch/`, puis copie dans les dossiers Arma locaux ; s'arrête en échec sans DLL fraîche
+- `workshop-pack.ps1` — pack propre après build ; refuse une DLL sous 2.0.96 et un `meta.cpp` qui vise l'objet `3684656708`
 
 Les archives historiques sont dans `mod/Ancienne version de tout/`.

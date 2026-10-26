@@ -15,6 +15,12 @@
   Ne reconstruit PAS les PBO ni la DLL - lancez build_mod.bat avant si besoin.
   Ne touche pas aux sources de développement dans @COMSPECOverwatch/addons/connect|main.
 
+  Ce pack hérité n'a plus d'objet Workshop (ARCH-021). L'objet 3684656708 est l'ATAK natif,
+  publié seulement depuis mod/COMSPEC_ATAK_Native. Le script s'arrête avec le code 1 :
+    - si le meta.cpp du pack vise l'objet 3684656708 ;
+    - si la DLL retenue annonce une ProductVersion sous 2.0.96 (plancher SEC-001,
+      docs/PLANCHER-VERSION-DLL.md) ou une version illisible.
+
 .PARAMETER SourceMod
   Dossier mod de travail (défaut : @COMSPECOverwatch à côté de ce script).
 
@@ -40,12 +46,35 @@ $ModRoot = $PSScriptRoot
 if (-not $SourceMod) { $SourceMod = Join-Path $ModRoot '@COMSPECOverwatch' }
 if (-not $OutDir) { $OutDir = Join-Path $ModRoot 'publisher\@COMSPECOverwatch' }
 
+# Objet Workshop de l'ATAK natif (App\Support\SteamWorkshop::ATAK_NATIVE_ID) : ce pack ne doit jamais le viser.
+$AtakNativeWorkshopId = '3684656708'
+# Plancher de version de COMSPEC Link (SEC-001) : les DLL plus anciennes joignent les secrets Athena à tout hôte
+# qu'un script leur demande, et Athena les refuse.
+$MinLinkVersion = [version]'2.0.96'
+
 function Write-Step([string] $msg) { Write-Host "[PACK] $msg" -ForegroundColor Cyan }
-function Write-Fail([string] $msg) { Write-Host "[FAIL] $msg" -ForegroundColor Red; exit 1 }
+function Write-Fail([string] $msg) {
+    Write-Host "[FAIL] $msg" -ForegroundColor Red
+    if (Test-Path -LiteralPath $OutDir) {
+        Write-Host "[FAIL] Ne publiez pas le contenu de $OutDir : ce n'est pas un pack validé par cette exécution." -ForegroundColor Red
+    }
+    exit 1
+}
 function Write-Warn([string] $msg) { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
 
 if (-not (Test-Path -LiteralPath $SourceMod)) {
     Write-Fail "Source introuvable : $SourceMod"
+}
+
+# meta.cpp : le Publisher d'Arma 3 garde dans ce fichier le numéro de l'objet qu'il met à jour (mod/docs/PUBLICATION.md).
+$metaCpp = Join-Path $SourceMod "meta.cpp"
+if (Test-Path -LiteralPath $metaCpp) {
+    $metaText = [string](Get-Content -LiteralPath $metaCpp -Raw)
+    if ($metaText -match "\b$AtakNativeWorkshopId\b") {
+        Write-Fail ("$metaCpp vise l'objet Workshop $AtakNativeWorkshopId, qui est l'ATAK natif. Ce pack hérité " +
+            "n'a plus d'objet Workshop : retirez publishedid de ce meta.cpp. L'ATAK natif se publie seulement " +
+            "depuis mod\COMSPEC_ATAK_Native.")
+    }
 }
 
 $dllCandidates = @(
@@ -70,6 +99,20 @@ foreach ($c in $dllCandidates) {
 if (-not $dll) {
     Write-Fail "Aucune COMSPECExtension_x64.dll Native AOT (>= 500 Ko) trouvée. Lancez build_mod.bat / dotnet publish."
 }
+
+# Version de la DLL retenue (SEC-001). La DLL suivie dans git sous @COMSPECOverwatch est une 2.0.57 tant que
+# build_mod.bat ne l'a pas remplacée par une DLL fraîche.
+$dllProductVersion = [string]([System.Diagnostics.FileVersionInfo]::GetVersionInfo((Get-Item -LiteralPath $dll).FullName).ProductVersion)
+$dllVersion = $null
+if ($dllProductVersion -match '^\s*(\d+\.\d+(\.\d+){0,2})') { $dllVersion = [version]($Matches[1]) }
+if ($null -eq $dllVersion) {
+    Write-Fail "Version illisible (ProductVersion « $dllProductVersion ») pour $dll : DLL refusée, plancher $MinLinkVersion (SEC-001)."
+}
+if ($dllVersion -lt $MinLinkVersion) {
+    Write-Fail ("DLL COMSPEC Link $dllProductVersion refusée : version sous le plancher $MinLinkVersion (SEC-001), " +
+        "fichier $dll. Lancez build_mod.bat pour la remplacer par une DLL fraîche.")
+}
+Write-Step "DLL retenue : $dll (version $dllProductVersion)"
 
 $pboMain = Join-Path $SourceMod "addons\main.pbo"
 $pboConnect = Join-Path $SourceMod "addons\connect.pbo"
@@ -207,5 +250,6 @@ if ($Zip) {
 }
 
 Write-Host ""
-Write-Host "Prochaine etape : publier le contenu de $OutDir via Publisher Arma / Steam Workshop."
+Write-Host "Ce pack hérité n'a plus d'objet Workshop : ne publiez pas $OutDir sur l'objet $AtakNativeWorkshopId (ATAK natif)."
+Write-Host "L'ATAK natif se publie seulement depuis mod\COMSPEC_ATAK_Native (dossier @COMSPEC_ATAK_Native)."
 Write-Host 'Voir PACKAGING.md et SECURITY.md dans le dossier mod.'
