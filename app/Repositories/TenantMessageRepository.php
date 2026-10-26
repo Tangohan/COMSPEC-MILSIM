@@ -388,7 +388,7 @@ class TenantMessageRepository
     public function listMessages(int $threadId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT m.*, u.display_name, u.email FROM tenant_messages m
+            'SELECT m.*, u.display_name, u.callsign FROM tenant_messages m
             INNER JOIN users u ON u.id = m.sender_user_id
             WHERE m.thread_id = ?
             ORDER BY m.id ASC'
@@ -510,7 +510,7 @@ class TenantMessageRepository
         $select = $meta ? 'tu.recipient_kind, tu.via_label,' : '';
         try {
             $stmt = $this->pdo->prepare(
-                "SELECT tu.user_id, {$select} u.display_name, u.email
+                "SELECT tu.user_id, {$select} u.display_name, u.callsign, u.email
                 FROM tenant_message_thread_users tu
                 INNER JOIN users u ON u.id = tu.user_id
                 WHERE tu.thread_id = ?

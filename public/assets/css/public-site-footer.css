@@ -1,0 +1,221 @@
+/* Pied de page public — structure en colonnes, nom géant dans le vert Athena. */
+.psf {
+  --psf-bg: #030806;
+  --psf-ink: #f4f4f0;
+  --psf-muted: rgba(244, 244, 240, 0.62);
+  --psf-heading: #ffffff;
+  --psf-accent: #34d399;
+  --psf-word: #1faf6a;
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  background: var(--psf-bg);
+  color: var(--psf-ink);
+  border-top: 1px solid rgba(52, 211, 153, 0.16);
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+.psf__sheet {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 2.25rem 3rem;
+  max-width: 100rem;
+  margin: 0 auto;
+  padding: 3.25rem 1.35rem calc(clamp(4.25rem, 14vw, 11rem) + 2.75rem);
+}
+
+@media (min-width: 860px) {
+  .psf__sheet {
+    grid-template-columns: minmax(13.5rem, 18rem) minmax(0, 1fr);
+    align-items: start;
+    padding: 3.75rem 2.5rem calc(clamp(4.25rem, 14vw, 11rem) + 2.75rem);
+  }
+}
+
+.psf__copy {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--psf-heading);
+}
+
+.psf__tagline {
+  margin: 0.85rem 0 0;
+  max-width: 16rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--psf-muted);
+}
+
+.psf-lang {
+  position: relative;
+  display: inline-block;
+  margin-top: 1.15rem;
+}
+
+.psf-lang summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.9rem 0.42rem 0.72rem;
+  border-radius: 999px;
+  background: #0a1612;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.psf-lang summary::-webkit-details-marker {
+  display: none;
+}
+
+.psf-lang summary::marker {
+  content: "";
+}
+
+.psf-lang summary:focus-visible {
+  outline: 2px solid var(--psf-accent);
+  outline-offset: 3px;
+}
+
+.psf-lang__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+}
+
+.psf-lang ul {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  top: calc(100% + 0.4rem);
+  min-width: 11rem;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  border-radius: 0.85rem;
+  background: #0c1a15;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.psf-lang li a,
+.psf-lang li span {
+  display: block;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.55rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.psf-lang li span[aria-current="true"] {
+  color: #fff;
+  background: rgba(52, 211, 153, 0.16);
+}
+
+.psf-lang li a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.psf__cols {
+  display: grid;
+  gap: 1.75rem 2rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .psf__cols {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem 2.25rem;
+  }
+}
+
+.psf__heading {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--psf-heading);
+}
+
+.psf__col ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.psf__col a,
+.psf__col button {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--psf-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.psf__col a:hover,
+.psf__col button:hover {
+  color: var(--psf-accent);
+}
+
+.psf__col a:focus-visible,
+.psf__col button:focus-visible {
+  outline: 2px solid var(--psf-accent);
+  outline-offset: 3px;
+  border-radius: 0.2rem;
+}
+
+.psf__giant {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(4.25rem, 14vw, 11rem);
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.psf__giant span {
+  display: block;
+  padding: 0 0.15rem;
+  font-weight: 900;
+  font-size: clamp(5.75rem, 28vw, 34rem);
+  line-height: 0.76;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  color: var(--psf-word);
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  .psf__sheet {
+    padding-top: 2.5rem;
+    padding-bottom: calc(clamp(3.25rem, 20vw, 5rem) + 2rem);
+  }
+
+  .psf__giant {
+    height: clamp(3.25rem, 20vw, 5rem);
+  }
+}

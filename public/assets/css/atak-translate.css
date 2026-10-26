@@ -169,6 +169,11 @@
 .tw-row input[type="url"] { flex: 1 1 14rem; }
 .tw-err { margin: 0; color: var(--atakt-err); font-size: 0.88rem; }
 .tw-note { margin: 0; color: var(--tw-ink-2); font-size: 0.86rem; line-height: 1.5; }
+.tw-guest { margin-top: 0.85rem; }
+.tw-guest-bar { margin: 0.85rem 1rem 0; }
+.tw[data-state="setup"] .tw-guest-bar { display: none; }
+.tw-guest a { color: var(--atakn-ui); font-weight: 700; text-decoration: none; }
+.tw-guest a:hover { text-decoration: underline; }
 .tw-bullets { margin: 0; padding-left: 1.1rem; color: var(--tw-ink-2); font-size: 0.9rem; line-height: 1.6; list-style: square; }
 .tw-link {
   padding: 0;
@@ -299,6 +304,9 @@
 .tw-src__alt { margin-top: 0.35rem !important; color: var(--tw-ink-3); font-size: 0.84rem; line-height: 1.45; }
 .tw-src__lab { display: inline-block; margin-right: 0.5rem; color: var(--atakn-sand); font-size: 0.64rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
 .tw-src__file { margin-top: 0.4rem !important; color: rgba(255, 255, 255, 0.28); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.7rem; }
+.tw-context { margin-top: 0.65rem; }
+.tw-context__where, .tw-context__line { margin-top: 0.2rem !important; color: var(--tw-ink-3); font-size: 0.8rem; line-height: 1.4; }
+.tw-context__where { color: var(--tw-ink-2); }
 .tw-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.45rem; }
 .tw-chip { padding: 0.05rem 0.4rem; border: 1px solid rgba(242, 163, 58, 0.45); color: var(--atakt-warn); font-size: 0.72rem; }
 .tw-ed { display: grid; gap: 0.45rem; min-width: 0; }
