@@ -8,7 +8,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Remises à zéro par mission de l'ATAK natif (MEM-006, MEM-010, MEM-011 / DEF-002, drapeaux de l'app Admin).
+ * Remises à zéro par mission de l'ATAK natif (MEM-006, MEM-010, MEM-011 / DEF-002, drapeaux de l'app Admin, MEM-014
+ * historique ANNULER / RÉTABLIR de l'app Plan, qui pouvait renvoyer au plan partagé des tracés d'une autre mission).
  *
  * uiNamespace survit d'une mission à l'autre, contrairement aux boucles CBA et aux scripts lancés par spawn. Une poignée
  * de boucle, un drapeau « en cours » ou l'état d'une app restés d'une partie précédente bloquaient une fonction (envoi
@@ -82,6 +83,8 @@ final class AtakMissionStateResetAssetTest extends TestCase
     {
         yield 'MEM-006 pompe d\'envoi Bluetooth' => ['COMSPEC_ATAK_BtPump', '-1', 'functions/bluetooth/fn_btAction.sqf', '(uiNamespace getVariable ["COMSPEC_ATAK_BtPump", -1]) < 0'];
         yield 'MEM-010 salle de l\'app Plan' => ['COMSPEC_ATAK_PlanRoomId', 'nil', 'functions/plan/fn_planAction.sqf', 'uiNamespace getVariable ["COMSPEC_ATAK_PlanRoomId", ""]'];
+        yield 'MEM-014 historique ANNULER de l\'app Plan' => ['COMSPEC_ATAK_PlanUndo', 'nil', 'functions/plan/fn_planAction.sqf', 'uiNamespace getVariable ["COMSPEC_ATAK_PlanUndo", []]'];
+        yield 'MEM-014 historique RÉTABLIR de l\'app Plan' => ['COMSPEC_ATAK_PlanRedo', 'nil', 'functions/plan/fn_planUi.sqf', 'uiNamespace getVariable ["COMSPEC_ATAK_PlanRedo", []]'];
         yield 'MEM-011 / DEF-002 app Feux' => ['COMSPEC_ATAK_Fires', 'nil', 'functions/pages/fn_firesState.sqf', 'uiNamespace getVariable ["COMSPEC_ATAK_Fires", createHashMap]'];
         yield 'MEM-011 / DEF-002 app Guerre électronique' => ['COMSPEC_ATAK_Ew', 'nil', 'functions/pages/fn_ewAction.sqf', 'uiNamespace getVariable ["COMSPEC_ATAK_Ew", createHashMap]'];
         yield 'MEM-011 / DEF-002 app Logistique' => ['COMSPEC_ATAK_Logi', 'nil', 'functions/pages/fn_logisticsAction.sqf', 'uiNamespace getVariable ["COMSPEC_ATAK_Logi", createHashMap]'];
@@ -100,6 +103,15 @@ final class AtakMissionStateResetAssetTest extends TestCase
         // La valeur suit la lecture : -1 pour un test « < 0 », nil pour isNil ou une lecture avec valeur par défaut,
         // false pour un drapeau lu avec false par défaut. Si cette lecture change, la remise à zéro est à revoir.
         self::assertStringContainsString($read, $this->read($readerFile), 'Lecture attendue de ' . $var);
+    }
+
+    public function testPlanHistoryIsReadWithAnEmptyListByUndoAndRedo(): void
+    {
+        // ANNULER et RÉTABLIR lisent l'historique par un nom calculé (_key), hors de portée de la recherche par nom
+        // ci-dessous : cette lecture doit garder la liste vide par défaut, sinon la remise à nil la casserait.
+        $code = $this->read('functions/plan/fn_planAction.sqf');
+        self::assertSame(1, preg_match('~private _key = \["COMSPEC_ATAK_PlanRedo", "COMSPEC_ATAK_PlanUndo"\] select \(_act isEqualTo "undo"\);\s*private _st = uiNamespace getVariable \[_key, \[\]\];~', $code), 'Lecture de l\'historique par ANNULER / RÉTABLIR sans liste vide par défaut');
+        self::assertSame(0, preg_match_all('~getVariable\s+_key\b~', $code), 'Lecture de l\'historique par nom calculé sans valeur par défaut');
     }
 
     #[DataProvider('resetsProvider')]

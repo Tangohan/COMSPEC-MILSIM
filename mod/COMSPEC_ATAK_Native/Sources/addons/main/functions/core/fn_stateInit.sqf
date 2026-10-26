@@ -29,11 +29,12 @@ uiNamespace setVariable ["COMSPEC_ATAK_ZeusGlitchPfh", -1];
 // Dernière MPU5 vue (fn_mpu5) et terminal de bord (XEH_postInitClient) : sans remise à zéro, faux « MPU5 retirée » ou message
 // « Tablette du véhicule disponible » manqué au début de la mission suivante.
 { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Mpu5Was", "COMSPEC_ATAK_TermKind"];
-// États d'apps de la partie précédente, tous lus avec une valeur par défaut ("" ou table vide) : code de la salle de
-// l'app Plan (resté affiché), cible et formulaires des apps Feux, Guerre électronique, Logistique et BDA (la cible
-// « TGT » restait dessinée sur la carte). Numéro de la boucle de relevé de l'app Admin : lu par isNil, il supprimait
-// le relevé automatique (à l'ouverture et toutes les 10 s) dans les missions suivantes.
-{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_PlanRoomId", "COMSPEC_ATAK_Fires", "COMSPEC_ATAK_Ew", "COMSPEC_ATAK_Logi", "COMSPEC_ATAK_BdaForm", "COMSPEC_ATAK_AdminPfh"];
+// États d'apps de la partie précédente, tous lus avec une valeur par défaut ("", liste ou table vide) : code de la
+// salle de l'app Plan (resté affiché) et son historique ANNULER / RÉTABLIR (ANNULER pouvait renvoyer au plan partagé du
+// serveur des tracés de la mission précédente), cible et formulaires des apps Feux, Guerre électronique, Logistique et
+// BDA (la cible « TGT » restait dessinée sur la carte). Numéro de la boucle de relevé de l'app Admin : lu par isNil, il
+// supprimait le relevé automatique (à l'ouverture et toutes les 10 s) dans les missions suivantes.
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_PlanRoomId", "COMSPEC_ATAK_PlanUndo", "COMSPEC_ATAK_PlanRedo", "COMSPEC_ATAK_Fires", "COMSPEC_ATAK_Ew", "COMSPEC_ATAK_Logi", "COMSPEC_ATAK_BdaForm", "COMSPEC_ATAK_AdminPfh"];
 // Drapeaux « en cours » de l'app Admin, lus avec false par défaut : une fin de mission pendant l'attente (lecture du
 // parc Athena, redessin différé) les laissait levés, et cette lecture ou ce redessin restaient bloqués jusqu'au
 // redémarrage d'Arma.
