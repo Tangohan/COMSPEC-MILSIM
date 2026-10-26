@@ -114,6 +114,8 @@ switch (_page) do {
 // Dégâts de l'écran par-dessus la page.
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
 [] call comspec_atak_native_fnc_deviceOverlay;
+// Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
+uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
 // Défilement retrouvé (et encore à l'image suivante, quand la hauteur du contenu est connue).
 private _sv = _scrollMem getOrDefault [_page, []];
 if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv select 0) > 0}) then {

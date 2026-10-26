@@ -607,6 +607,11 @@
             <English>Relay name</English>
             <French>Nom du relais</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_ACCF60D954">
+            <Original>Montre GPS connectée portée au poignet sans occuper l'emplacement montre : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK.</Original>
+            <English>Connected GPS watch worn on the wrist without taking the watch slot: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone.</English>
+            <French>Montre GPS connectée portée au poignet sans occuper l'emplacement montre : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_AF7756A553">
             <Original>Durée du forçage (s)</Original>
             <English>Breach duration (s)</English>
@@ -906,6 +911,11 @@
             <Original>Port</Original>
             <English>Port</English>
             <French>Port</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FF273F9B2F">
+            <Original>Montre Garmin (objet divers)</Original>
+            <English>Garmin watch (misc item)</English>
+            <French>Montre Garmin (objet divers)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FF5C921332">
             <Original>Batterie 24 h</Original>

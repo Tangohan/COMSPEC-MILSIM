@@ -14,4 +14,9 @@ _list pushBack _c;
 // de la liste de temps en temps, sinon elle grossit tant que la page reste affichée (carte en HUD).
 if ((count _list) > 600) then { _list = _list select { !isNull _x }; };
 uiNamespace setVariable ["COMSPEC_ATAK_PageControls", _list];
+// Contrôle hors zone de contenu créé par une app (pas par les effets d'écran eux-mêmes) : il passerait devant les bris
+// d'écran ; fn_overlayRaise les remet devant à l'image suivante.
+if (!_inGroup && {(uiNamespace getVariable ["COMSPEC_ATAK_OvBuild", -1]) isNotEqualTo diag_frameNo}) then {
+    [] call comspec_atak_native_fnc_overlayRaise;
+};
 _c

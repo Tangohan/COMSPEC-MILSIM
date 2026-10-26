@@ -143,7 +143,7 @@ switch (_mode) do {
             ["relayOnly", "Réseau uniquement par les relais"], ["gateways", "Véhicules relais et PC mobile"],
             ["offlineHold", "Mode hors connexion"], ["videoRelays", "Vidéo dépendante des relais"],
             ["profile", "Profil de réalisme"], ["pli", "Positions BFT par points (PLI)"], ["pliRate", "Intervalle des positions BFT"],
-            ["gps", "GPS réaliste"], ["gpsK", "Force des erreurs GPS"], ["gpsFix", "Attente des satellites"], ["battery", "Batterie réaliste"]
+            ["gps", "GPS réaliste"], ["gpsK", "Force des erreurs GPS"], ["gpsFix", "Attente des satellites"], ["gpsLoss", "Pertes de fix GPS"], ["gpsRel", "Fiabilité du GPS"], ["battery", "Batterie réaliste"]
         ];
         private _srcTxt = createHashMapFromArray [["site", ["Imposé par le site", "#E0B050"]], ["server", ["Appliqué en jeu", "#7ED38A"]], ["profile", ["Valeur du profil", "#7FB6E6"]], ["cba", ["Réglage serveur", "#9AA59C"]]];
         private _rowH = 6.4 * _u;

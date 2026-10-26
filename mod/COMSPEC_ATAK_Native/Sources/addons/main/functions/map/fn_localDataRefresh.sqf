@@ -137,7 +137,16 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
                 };
             } else {
                 private _prev = _last getOrDefault [_id, []];
-                if ((count _prev) >= 3 && {diag_tickTime - (_prev select 2) < _rate}) then { _pos = _prev select 0; _hd = _prev select 1; _upd = _prev select 2; };
+                if ((count _prev) >= 3 && {diag_tickTime - (_prev select 2) < _rate}) then { _pos = _prev select 0; _hd = _prev select 1; _upd = _prev select 2; _acc = _prev param [3, 0]; } else {
+                    // IA alliée : aucun point publié ; son point (et l'anneau de son équipe) prend l'erreur typique d'un
+                    // GPS de téléphone à découvert, comme les joueurs, au lieu de sa position exacte.
+                    if (["gps"] call comspec_atak_native_fnc_netCond) then {
+                        private _e = (3 + random 5) * ((["gpsK"] call comspec_atak_native_fnc_netCond) max 0) / 100;
+                        private _a = random 360;
+                        _pos = _pos vectorAdd [_e * sin _a, _e * cos _a, 0];
+                        _acc = round _e;
+                    };
+                };
             };
         };
         if (_meOn && _on) then { _last set [_id, [_pos, _hd, _upd, _acc]]; } else {
