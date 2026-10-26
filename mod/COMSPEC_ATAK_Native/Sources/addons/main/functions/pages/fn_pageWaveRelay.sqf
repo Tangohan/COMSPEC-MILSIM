@@ -188,14 +188,23 @@ switch (_tab) do {
         ];
         // Radio maillée MPU5 (objet d'inventaire, fn_mpu5) : portée du nœud, gain sur la liaison, débit relayé à l'équipe.
         private _nr = ["range", [player]] call comspec_atak_native_fnc_mpu5;
-        if (["has", [player]] call comspec_atak_native_fnc_mpu5) then {
+        private _src = ["source"] call comspec_atak_native_fnc_mpu5;
+        if (_src isNotEqualTo []) then {
             (player getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_uh", 0]];
             _rows append [
-                ["info", "Radio", format ["<t color='#5cc76b'>MPU5</t> · portée %1 · +%2 dB", [_nr] call _dist, ["gain"] call comspec_atak_native_fnc_mpu5]],
+                ["info", "Radio", format ["<t color='#5cc76b'>%3</t> · portée %1 · +%2 dB", [_nr] call _dist, _src select 3, [_src select 1] call _esc]],
                 ["info", "Relais pour l'équipe", [format ["%1 Mbit/s relayés%2", _up toFixed 1, ["", format [" (%1 bond(s) MPU5)", _uh]] select (_uh > 0)], "<t color='#f2ab33'>aucun relais reçu, rien à relayer</t>"] select (_up <= 0)]
             ];
         } else {
             _rows pushBack ["info", "Radio", format ["téléphone seul · portée %1 (sans MPU5)", [_nr] call _dist]];
+        };
+        // Téléphone branché sur une radio ACRE2 / TFAR : elle relaie les données comme une MPU5 (réglages du serveur).
+        if (missionNamespace getVariable ["comspec_atak_native_radio_data", true]) then {
+            private _pl = ["plugged"] call comspec_atak_native_fnc_mpu5;
+            _rows pushBack ["buttons", [[["BRANCHER SUR MA RADIO", "DÉBRANCHER LA RADIO"] select (_pl isNotEqualTo []), {
+                ["plug"] call comspec_atak_native_fnc_mpu5;
+                [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            }]]];
         };
         if (_gw > 0) then {
             private _gp = (_nodes select _gw) select 1;

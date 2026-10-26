@@ -1,7 +1,7 @@
 params [["_page", "LAUNCHER"], ["_push", true]];
 _page = toUpper _page;
-// Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos).
-private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
+// Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos), VIEW3D (carte > Vue 3D ici).
+private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
 if !(_page in _allowed) then { _page = "LAUNCHER"; };
 // App en chantier (config wip=1, ex. Brèche) : affichée grisée au lanceur, ne s'ouvre d'aucune façon (tuile, dock, recherche).
 if ((([] call comspec_atak_native_fnc_appList) findIf { (_x get "page") isEqualTo _page && {_x getOrDefault ["wip", false]} }) >= 0) exitWith {
@@ -30,7 +30,7 @@ _s set ["history", _history];
 _s set ["scrollRestore", !_push];
 _s set ["activePage", _page];
 // Lanceur : apps récentes (profil, gardées d'une partie à l'autre) et apps déjà ouvertes (fin de la pastille NOUVEAU).
-if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES"])}) then {
+if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D"])}) then {
     private _rec = profileNamespace getVariable ["COMSPEC_ATAK_AppRecent", []];
     if !(_rec isEqualType []) then { _rec = []; };
     _rec = [_page] + (_rec - [_page]);

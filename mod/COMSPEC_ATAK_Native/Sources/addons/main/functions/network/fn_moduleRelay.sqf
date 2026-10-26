@@ -5,7 +5,8 @@
     Zeus : formulaire à la pose, module lâché sur un objet ou un véhicule pour l'équiper. Lâché sur un relais existant
     (pylône compris), le formulaire reprend ses valeurs : c'est la modification du relais (aussi par l'éditeur
     d'attributs ZEN, fn_relayZeus).
-    Types (préréglages, chaque valeur à 0 ou « préréglage » prend celle du type) :
+    Types (préréglages, chaque valeur à 0 ou « préréglage » prend celle du type ; portée et débit du type se règlent dans
+    les réglages addon « Relais : portée / débit ») :
       portable  : radio relais au sol, 1,5 km, 4 Mbit/s, antenne à 2,5 m, 8 places
       mat       : mât tactique, 3 km, 8 Mbit/s, antenne à 10 m, 24 places ;
                   sans objet synchronisé, crée le mât relais 3D de 12 m (COMSPEC_ATAK_RelayTower_M12)
@@ -72,6 +73,9 @@ private _apply = {
         ["satellite", [1000, 10, 2, 16, 0, ["Land_SatelliteAntenna_01_F", "Land_Antenna_01_F"]]]
     ] getOrDefault [_kind, [3000, 8, 10, 24, 0, ["Land_Antenna_01_F"]]];
     _preset params ["_pR", "_pMb", "_pH", "_pSl", "_pAut", "_cls"];
+    // Portée et débit de chaque type réglables par le serveur (réglages addon comspec_atak_native_relay_<type>_range / _mbps).
+    _pR = missionNamespace getVariable [format ["comspec_atak_native_relay_%1_range", _kind], _pR];
+    _pMb = missionNamespace getVariable [format ["comspec_atak_native_relay_%1_mbps", _kind], _pMb];
     private _hUser = _h;
     if (_range <= 0) then { _range = _pR; };
     if (_mb <= 0) then { _mb = _pMb; };

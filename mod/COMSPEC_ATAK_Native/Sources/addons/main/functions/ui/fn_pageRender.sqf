@@ -97,6 +97,7 @@ switch (_page) do {
     case "MEDICAL": { [] call comspec_atak_native_fnc_pageMedical; };
     case "PROFILE": { [] call comspec_atak_native_fnc_pageProfile; };
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
+    case "VIEW3D": { [] call comspec_atak_native_fnc_pageView3d; };
     case "BRIEFING": { [] call comspec_atak_native_fnc_pageBriefing; };
     default {
         // Modules externes (COMSPEC Modules) : une app déclarée par un autre addon avec function="tag_fnc_page"

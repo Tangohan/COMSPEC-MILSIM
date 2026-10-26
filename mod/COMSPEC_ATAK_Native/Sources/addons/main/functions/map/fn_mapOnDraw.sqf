@@ -441,7 +441,10 @@ if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDis
     private _me = _selfGps;
     private _c = [_cursor select 0,_cursor select 1,0];
     [[_me select 0,_me select 1,0],_c,_yellow] call _dashed;
-    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (_me distance2D _c),round (_me getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+    // Distance, azimut et dénivelé (sol sous le curseur moins le sol sous ma position GPS) avec la pente moyenne.
+    private _dz = round ((getTerrainHeightASL _c) - (getTerrainHeightASL [_me select 0, _me select 1]));
+    private _dd = _me distance2D _c;
+    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°  %3%4 m (%5 %%)",round _dd,[round (_me getDir _c),3] call CBA_fnc_formatNumber,["","+"] select (_dz > 0),_dz,round (100 * _dz / (_dd max 1))],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
 // Point de pose choisi d'un clic droit en mode MARQUEUR (fn_markerPlace) : aperçu du type choisi dans un anneau qui pulse.
@@ -466,7 +469,9 @@ if ((count _measure) >= 2) then {
     _measure params ["_a","_b"];
     _map drawLine [_a,_b,_amber];
     _map drawIcon [_dot,_amber,_a,14,14,0,"A",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
-    _map drawIcon [_dot,_amber,_b,14,14,0,format ["%1 m  %2°",round (_a distance2D _b),round (_a getDir _b)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+    private _dz = round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a));
+    private _dd = _a distance2D _b;
+    _map drawIcon [_dot,_amber,_b,14,14,0,format ["%1 m  %2°  %3%4 m (%5 %%)",round _dd,[round (_a getDir _b),3] call CBA_fnc_formatNumber,["","+"] select (_dz > 0),_dz,round (100 * _dz / (_dd max 1))],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
 // Bâtiments numérotés
