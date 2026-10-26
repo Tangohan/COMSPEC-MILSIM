@@ -1162,5 +1162,150 @@
             <English>Sync this module with TVs, screens or projectors: the phone's Briefing app detects them in range and casts its slides to them, controlled from the phone, ACE or the scroll wheel.</English>
             <French>Synchronisez ce module avec des TV, écrans ou projecteurs : l'app Briefing du téléphone les détecte à portée et y diffuse ses diapositives, pilotées depuis le téléphone, ACE ou la molette.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_134CE848F1">
+            <Original>Chance that a like on this profile turns into a match (0 to 100).</Original>
+            <English>Chance that a like on this profile turns into a match (0 to 100).</English>
+            <French>Chance qu'un like sur ce profil donne un match (0 à 100).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_15FAB891FC">
+            <Original>Remove from Tinder</Original>
+            <English>Remove from Tinder</English>
+            <French>Retirer de Tinder</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_19381BB8F9">
+            <Original>Many (60 %)</Original>
+            <English>Many (60 %)</English>
+            <French>Beaucoup (60 %)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2072040C4C">
+            <Original>First name or nickname</Original>
+            <English>First name or nickname</English>
+            <French>Prénom ou surnom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2AABFEE2EC">
+            <Original>HVT (high-value target)</Original>
+            <English>HVT (high-value target)</English>
+            <French>HVT (cible de haute valeur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2E2016AB7C">
+            <Original>Name shown in Tinder and in the target file (empty = the unit's name).</Original>
+            <English>Name shown in Tinder and in the target file (empty = the unit's name).</English>
+            <French>Nom affiché dans Tinder et dans le dossier (vide = son nom).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2EC13DD1AC">
+            <Original>HVT: HVT profile in Tinder and target of the hunt (tips). SSE: SSE person. Automatic: based on SSE.</Original>
+            <English>HVT: HVT profile in Tinder and target of the hunt (tips). SSE: SSE person. Automatic: based on SSE.</English>
+            <French>HVT : profil HVT dans Tinder et cible de la chasse (tuyaux). SSE : personne SSE. Automatique : selon le SSE.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_3C1A8EF4C4">
+            <Original>Chance that the target, once matched on Tinder, gives a fake meeting point (trap).</Original>
+            <English>Chance that the target, once matched on Tinder, gives a fake meeting point (trap).</English>
+            <French>Chance que la cible, matchée sur Tinder, donne un faux rendez-vous (piège).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4F50F1E3F4">
+            <Original>Bio shown in Tinder (empty = random bio).</Original>
+            <English>Bio shown in Tinder (empty = random bio).</English>
+            <French>Bio affichée dans Tinder (vide = bio tirée au sort).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4F95A8E473">
+            <Original>Fake meeting point when matched</Original>
+            <English>Fake meeting point when matched</English>
+            <French>Faux rendez-vous si matché</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_55D68FFFA3">
+            <Original>Automatic (from SSE)</Original>
+            <English>Automatic (from SSE)</English>
+            <French>Automatique (selon le SSE)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5BD7E56C9D">
+            <Original>Share of false tips about this target. Mission setting = each informant's honesty and the CBA setting.</Original>
+            <English>Share of false tips about this target. Mission setting = each informant's honesty and the CBA setting.</English>
+            <French>Part des tuyaux faux sur cette cible. Réglage de mission = honnêteté de chaque informateur et réglage CBA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5F5D451210">
+            <Original>Mission setting</Original>
+            <English>Mission setting</English>
+            <French>Réglage de mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_669FE25A32">
+            <Original>Profile</Original>
+            <English>Profile</English>
+            <French>Profil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_6BD4654DE8">
+            <Original>Informant tips on this target</Original>
+            <English>Informant tips on this target</English>
+            <French>Tuyaux d'informateurs sur elle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_6F48D035BE">
+            <Original>Match chance (%)</Original>
+            <English>Match chance (%)</English>
+            <French>Chance de match (%)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8E77DB9711">
+            <Original>Always (trap)</Original>
+            <English>Always (trap)</English>
+            <French>Toujours (piège)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_9F3363A1FB">
+            <Original>Yes: informants send tips about this target (HVT hunt). No: it only shows up in SWIPE.</Original>
+            <English>Yes: informants send tips about this target (HVT hunt). No: it only shows up in SWIPE.</English>
+            <French>Oui : les informateurs envoient des tuyaux sur cette cible (chasse aux HVT). Non : elle n'apparaît que sur SWIPE.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A3BF3DAE24">
+            <Original>Few (15 %)</Original>
+            <English>Few (15 %)</English>
+            <French>Peu (15 %)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A721993901">
+            <Original>No</Original>
+            <English>No</English>
+            <French>Non</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AD986766E8">
+            <Original>None (0 %)</Original>
+            <English>None (0 %)</English>
+            <French>Aucun (0 %)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B31FC969B4">
+            <Original>Bio</Original>
+            <English>Bio</English>
+            <French>Bio</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D7B313DCBE">
+            <Original>Average (35 %)</Original>
+            <English>Average (35 %)</English>
+            <French>Moyenne (35 %)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E370327F96">
+            <Original>Yes (HVT hunt)</Original>
+            <English>Yes (HVT hunt)</English>
+            <French>Oui (chasse aux HVT)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E656CCF617">
+            <Original>SSE person</Original>
+            <English>SSE person</English>
+            <French>Personne SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EE418581AC">
+            <Original>Often (50 %)</Original>
+            <English>Often (50 %)</English>
+            <French>Souvent (50 %)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F405E1BE2C">
+            <Original>Never</Original>
+            <English>Never</English>
+            <French>Jamais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F41A9E1B71">
+            <Original>Share of false tips</Original>
+            <English>Share of false tips</English>
+            <French>Part de faux tuyaux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FB60B67577">
+            <Original>Sometimes (25 %)</Original>
+            <English>Sometimes (25 %)</English>
+            <French>Parfois (25 %)</French>
+        </Key>
     </Package>
 </Project>

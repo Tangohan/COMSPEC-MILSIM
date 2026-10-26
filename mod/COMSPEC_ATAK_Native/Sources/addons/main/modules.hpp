@@ -276,15 +276,105 @@ class COMSPEC_ATAK_Module_DataReset: COMSPEC_ATAK_Module_DataBase {
     displayName = "$STR_COMSPEC_ATAK_CFG_CF51DCF204";
     function = "comspec_atak_native_fnc_moduleDataReset";
 };
-// Tinder : une IA devient un profil HVT ou SSE qu'on croise dans l'app (fn_moduleDating, fn_datingSpecials).
+// Tinder : une IA devient un profil HVT ou SSE qu'on croise dans l'app, et une cible de la chasse aux HVT
+// (fn_moduleDating, fn_datingSpecials, fn_hvtIntel). Eden : synchroniser le module aux IA ; Zeus : le poser sur une IA.
 class COMSPEC_ATAK_Module_DatingProfile: COMSPEC_ATAK_Module_DataBase {
-    scope = 1;
+    scope = 2;
     scopeCurator = 2;
     category = "COMSPEC_ATAK_Civil";
     displayName = "$STR_COMSPEC_ATAK_CFG_FA0AF6576A";
     icon = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
     portrait = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
     function = "comspec_atak_native_fnc_moduleDating";
+    class Attributes {
+        class Kind {
+            displayName = "$STR_COMSPEC_ATAK_CFG_669FE25A32";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_2EC13DD1AC";
+            property = "COMSPEC_ATAK_Module_DatingProfile_Kind";
+            control = "Combo";
+            expression = "_this setVariable ['Kind',_value,true];";
+            defaultValue = "'HVT'";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_2AABFEE2EC"; value = "HVT"; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_E656CCF617"; value = "SSE"; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_15FAB891FC"; value = "OFF"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_55D68FFFA3"; value = ""; };
+            };
+        };
+        class Name {
+            displayName = "$STR_COMSPEC_ATAK_CFG_2072040C4C";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_2E2016AB7C";
+            property = "COMSPEC_ATAK_Module_DatingProfile_Name";
+            control = "Edit";
+            expression = "_this setVariable ['Name',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Bio {
+            displayName = "$STR_COMSPEC_ATAK_CFG_B31FC969B4";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_4F50F1E3F4";
+            property = "COMSPEC_ATAK_Module_DatingProfile_Bio";
+            control = "Edit";
+            expression = "_this setVariable ['Bio',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Chance {
+            displayName = "$STR_COMSPEC_ATAK_CFG_6F48D035BE";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_134CE848F1";
+            property = "COMSPEC_ATAK_Module_DatingProfile_Chance";
+            control = "Edit";
+            expression = "_this setVariable ['Chance',_value,true];";
+            defaultValue = "50";
+            typeName = "NUMBER";
+        };
+        class Tips {
+            displayName = "$STR_COMSPEC_ATAK_CFG_6BD4654DE8";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_9F3363A1FB";
+            property = "COMSPEC_ATAK_Module_DatingProfile_Tips";
+            control = "Combo";
+            expression = "_this setVariable ['Tips',_value,true];";
+            defaultValue = "1";
+            typeName = "NUMBER";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_E370327F96"; value = 1; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_A721993901"; value = 0; };
+            };
+        };
+        class FalseShare {
+            displayName = "$STR_COMSPEC_ATAK_CFG_F41A9E1B71";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_5BD7E56C9D";
+            property = "COMSPEC_ATAK_Module_DatingProfile_FalseShare";
+            control = "Combo";
+            expression = "_this setVariable ['FalseShare',_value,true];";
+            defaultValue = "-1";
+            typeName = "NUMBER";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_5F5D451210"; value = -1; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_AD986766E8"; value = 0; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_A3BF3DAE24"; value = 0.15; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_D7B313DCBE"; value = 0.35; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_19381BB8F9"; value = 0.6; };
+            };
+        };
+        class Lie {
+            displayName = "$STR_COMSPEC_ATAK_CFG_4F95A8E473";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_3C1A8EF4C4";
+            property = "COMSPEC_ATAK_Module_DatingProfile_Lie";
+            control = "Combo";
+            expression = "_this setVariable ['Lie',_value,true];";
+            defaultValue = "-1";
+            typeName = "NUMBER";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_5F5D451210"; value = -1; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_F405E1BE2C"; value = 0; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_FB60B67577"; value = 0.25; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_EE418581AC"; value = 0.5; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_8E77DB9711"; value = 1; };
+            };
+        };
+    };
 };
 // Réseau : relais ATAK posé par la mission (fn_moduleRelay). Le cercle du module dans Eden est la portée.
 class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {

@@ -973,6 +973,10 @@ addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_di
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;
 
+// Tinder · chasse aux HVT : tuyaux des informateurs et JACKPOT (toutes les 60 s), tuyaux partagés par un équipier.
+[{ ["tick"] call comspec_atak_native_fnc_hvtIntel; }, 60] call COMSPEC_ATAK_PfhSpread;
+["comspec_atak_native_hvtTip", { ["recv", _this] call comspec_atak_native_fnc_hvtIntel; }] call CBA_fnc_addEventHandler;
+
 // Logistique : demandes et statuts du camp ; guerre électronique : brouilleurs partagés.
 ["comspec_atak_native_logi", { if (["hold", ["comspec_atak_native_logi", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_logisticsAction; }] call CBA_fnc_addEventHandler;
 // Décisions du poste web sur les demandes logistiques (mode passerelle).
