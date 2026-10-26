@@ -25,9 +25,12 @@ params [["_act", ""], ["_arg", []]];
 // accepté. Les autres actions agissent au nom du joueur local : un autre poste qui faisait exécuter « validate » ou
 // « dismiss » chez un chef de groupe obtenait du serveur une validation (donc une révocation chez Athena, avec la
 // session du chef) ou un rejet au nom de ce chef. Seules « can » et « mine », simples lectures, restent ouvertes.
-// Solo : un seul poste.
-if (!(_act in ["can", "mine"]) && {isMultiplayer} && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2}) exitWith {
-    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] Appel « %1 » refusé : il ne vient pas du serveur (poste %2)", _act, remoteExecutedOwner];
+// Solo : un seul poste. File JIP : un client peut aussi déposer l'appel dans la file JIP (troisième argument de
+// remoteExecCall), que le serveur rejoue à chaque joueur qui arrive ensuite ; la valeur de remoteExecutedOwner pendant
+// ce rejeu n'est pas établie (client d'origine, 0 ou 2). Aucun ordre du serveur n'emprunte cette file : un appel
+// rejoué est refusé, quel que soit le poste annoncé.
+if (!(_act in ["can", "mine"]) && {isMultiplayer} && {isRemoteExecuted} && {isRemoteExecutedJIP || {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAPTURE] Appel « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _act, remoteExecutedOwner, isRemoteExecutedJIP];
 };
 // Comme l'ancien gestionnaire, enregistré seulement chez les joueurs (hasInterface).
 if (_act in ["event", "revoke", "ownerReset"] && {!hasInterface}) exitWith {};

@@ -29,9 +29,11 @@ params [["_act", ""], ["_arg", []]];
 // répétable à volonté. Le droit ne peut pas être jugé ici : un admin #login n'est reconnaissable que du serveur
 // (fn_adminAllowed.sqf:14). Le client ne juge donc pas le droit, il exige seulement que la demande vienne du serveur.
 // Les autres actions (scan, zeus, server, fleet, site) agissent au nom du joueur local : elles n'ont pas non plus à
-// être déclenchables par un autre poste.
-if (isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}) exitWith {
-    diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Appel « %1 » refusé : il ne vient pas du serveur (poste %2)", _act, remoteExecutedOwner];
+// être déclenchables par un autre poste. Un appel rejoué depuis la file JIP est refusé lui aussi : aucun ordre du
+// serveur n'emprunte cette file, et la valeur de remoteExecutedOwner pendant le rejeu chez un joueur qui arrive n'est
+// pas établie (client d'origine, 0 ou 2).
+if (isRemoteExecuted && {isRemoteExecutedJIP || {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Appel « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _act, remoteExecutedOwner, isRemoteExecutedJIP];
 };
 private _render = {
     if (uiNamespace getVariable ["COMSPEC_ATAK_AdminRenderQ", false]) exitWith {};

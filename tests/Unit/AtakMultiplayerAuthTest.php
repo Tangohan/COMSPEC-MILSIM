@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 final class AtakMultiplayerAuthTest extends TestCase
 {
     private const MAIN = 'mod/COMSPEC_ATAK_Native/Sources/addons/main';
+    private const CONNECT = 'mod/UptoDate/Sources/comspec-overwatch-addons/connect';
 
     private function read(string $rel): string
     {
@@ -32,7 +33,7 @@ final class AtakMultiplayerAuthTest extends TestCase
     {
         $src = $this->read(self::MAIN . '/functions/shell/fn_compromise.sqf');
         $head = $this->between($src, 'params [["_act", ""], ["_arg", []]];', 'switch (_act) do {');
-        $cond = '/^if \((?:_act in \[([^\]]*)\]|!\(_act in \[([^\]]*)\]\)) && \{isMultiplayer\} && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\}\) exitWith \{$/m';
+        $cond = '/^if \((?:_act in \[([^\]]*)\]|!\(_act in \[([^\]]*)\]\)) && \{isMultiplayer\} && \{isRemoteExecuted\} && \{isRemoteExecutedJIP \|\| \{remoteExecutedOwner isNotEqualTo 2\}\}\) exitWith \{$/m';
         if (preg_match($cond, $head, $m) !== 1) {
             return [];
         }
@@ -121,6 +122,49 @@ final class AtakMultiplayerAuthTest extends TestCase
         $guarded = $this->compromiseGuarded();
         foreach (['publish', 'validate', 'dismiss', 'map'] as $act) {
             self::assertContains($act, $guarded, $act);
+        }
+    }
+
+    public function testCallsReplayedFromTheJipQueueAreRefusedByTheServerOnlyGuards(): void
+    {
+        // Un client peut déposer un appel dans la file JIP (troisième argument de remoteExec / remoteExecCall) : le
+        // serveur le rejoue à chaque joueur qui arrive ensuite, et la valeur de remoteExecutedOwner pendant ce rejeu
+        // n'est pas établie (client d'origine, 0 ou 2). Les trois gardes « seul le serveur » refusent donc tout appel
+        // rejoué (contre-expertise v2, B4).
+        $jip = '{isRemoteExecutedJIP || {remoteExecutedOwner isNotEqualTo 2}}) exitWith {';
+        foreach ([
+            self::MAIN . '/functions/shell/fn_compromise.sqf' => '&& {isMultiplayer} && {isRemoteExecuted} && ' . $jip,
+            self::MAIN . '/functions/admin/fn_adminClient.sqf' => 'if (isRemoteExecuted && ' . $jip,
+            self::CONNECT . '/functions/fn_applyZeusAtakEffect.sqf' => 'if (isRemoteExecuted && ' . $jip,
+        ] as $file => $guard) {
+            $src = $this->read($file);
+            self::assertSame(1, substr_count($src, $guard), $file);
+            self::assertStringNotContainsString('{remoteExecutedOwner isNotEqualTo 2}) exitWith', $src, $file);
+        }
+        // Aucun ordre légitime vers ces fonctions n'emprunte la file : chaque appel distant n'a que deux arguments.
+        $calls = [];
+        foreach ([self::MAIN, self::CONNECT] as $dir) {
+            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(dirname(__DIR__, 2) . '/' . $dir, \FilesystemIterator::SKIP_DOTS));
+            foreach ($it as $f) {
+                if (strtolower($f->getExtension()) !== 'sqf') {
+                    continue;
+                }
+                preg_match_all('/remoteExec(?:Call)?\s*\[\s*"(?:comspec_atak_native_fnc_compromise|comspec_atak_native_fnc_adminClient|comspec_overwatch_connect_fnc_applyZeusAtakEffect)"\s*,([^;\n]*)\];/i', (string) file_get_contents($f->getPathname()), $m);
+                foreach ($m[1] as $rest) {
+                    $calls[] = $f->getFilename() . ' : ' . trim($rest);
+                }
+            }
+        }
+        self::assertGreaterThanOrEqual(6, count($calls), implode("\n", $calls));
+        foreach ($calls as $call) {
+            // Virgule hors de tout crochet ou parenthèse après la cible : troisième argument, donc file JIP.
+            $depth = 0;
+            $third = false;
+            foreach (str_split(substr($call, strpos($call, ' : ') + 3)) as $c) {
+                $depth += match ($c) { '[', '(', '{' => 1, ']', ')', '}' => -1, default => 0 };
+                $third = $third || ($depth === 0 && $c === ',');
+            }
+            self::assertFalse($third, $call);
         }
     }
 }
