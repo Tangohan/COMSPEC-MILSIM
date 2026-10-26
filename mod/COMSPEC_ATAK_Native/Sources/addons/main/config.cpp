@@ -699,6 +699,9 @@ class CfgRemoteExec {
         // refuse tout autre appel distant qui ne vient pas du serveur, et juge les deux demandes sur le demandeur
         // (SEC-005, SEC-017). jip = 0 : même raison que ci-dessus.
         class comspec_atak_native_fnc_camAction { allowedTargets = 0; jip = 0; };
+        // Partage des caméras (lot mpauth3, SEC-006) : liste d'accès demandée au serveur (« srvAcc »), jugée sur le
+        // demandeur (SEC-005). La notification du destinataire passe par l'événement CBA comspec_atak_native_camShare.
+        class comspec_atak_native_fnc_camShare { allowedTargets = 2; };
     };
 };
 

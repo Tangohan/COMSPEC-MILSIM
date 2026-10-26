@@ -359,8 +359,14 @@ final class AtakMultiplayerAuthTest extends TestCase
         $quoted = '/(["\'])comspec_atak_native_(?:' . implode('|', $removed) . ')\1/i';
         // Fonctions qui jugent le demandeur par remoteExecutedOwner (fn_reqUnit) : appelées depuis un gestionnaire CBA,
         // elles ne voient pas d'appel distant et croient l'unité fournie par l'émetteur. Aucun gestionnaire ne les
-        // appelle (v4, N14, K17), sauf capLocal vers fn_captureServer « local » (actions sur la machine où l'objet est
-        // local, que le serveur refuse dans une pile distante : résidu connu du lot).
+        // appelle (v4, N14, K17), sauf deux corps exacts, à action fixe : capLocal vers fn_captureServer « local »
+        // (actions sur la machine où l'objet est local, que le serveur refuse dans une pile distante : résidu connu du
+        // lot) et comspec_atak_native_camShare vers fn_camShare « recv » (lot mpauth3 : notification du destinataire,
+        // sans effet hors de son téléphone ; « srvAcc » reste hors d'atteinte du gestionnaire).
+        $allowed = [
+            'comspec_atak_native_caplocal' => '{ ["local", _this] call comspec_atak_native_fnc_captureServer; }',
+            'comspec_atak_native_camshare' => '{ ["recv", _this] call comspec_atak_native_fnc_camShare; }',
+        ];
         $files = $this->sources();
         $judges = [];
         foreach ($files as $rel => $units) {
@@ -384,8 +390,7 @@ final class AtakMultiplayerAuthTest extends TestCase
                         if (preg_match('/\b' . preg_quote($fn, '/') . '\b/i', $body) !== 1) {
                             continue;
                         }
-                        if (strcasecmp($name, 'comspec_atak_native_capLocal') === 0
-                            && preg_replace('/\s+/', ' ', $body) === '{ ["local", _this] call comspec_atak_native_fnc_captureServer; }') {
+                        if (($allowed[strtolower($name)] ?? null) === preg_replace('/\s+/', ' ', $body)) {
                             continue;
                         }
                         $left[] = "$rel : le gestionnaire $name appelle $fn";
@@ -476,6 +481,50 @@ final class AtakMultiplayerAuthTest extends TestCase
         sort($got);
         self::assertSame(['srvReg', 'srvTake'], $got);
         self::assertSame(['comspec_atak_native_fnc_camaction' => ['pickupGive']], array_map('array_keys', $orders));
+    }
+
+    public function testCameraAccessListIsChangedOnlyByTheOwnerOrAViewer(): void
+    {
+        // Lot mpauth3 (SEC-005, SEC-006) : « srvAcc » (fn_camShare) réécrivait la liste d'accès COMSPEC_ATAK_ShareAcc de
+        // n'importe quel objet sans regarder qui demandait : un client s'accordait la caméra d'autrui ou vidait une
+        // liste. La fonction était absente de la liste blanche (partage cassé en mode 1). Elle y entre (allowedTargets
+        // = 2) avec une garde en tête, et « srvAcc » juge le demandeur avec les règles que le téléphone applique déjà
+        // (« owner », « can »), écrites une seule fois en fonctions locales.
+        $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/camera/fn_camShare.sqf'));
+        $head = $this->between($code, 'params [["_mode", ""], ["_a", objNull], ["_b", objNull]];', 'switch (_mode) do {');
+        self::assertMatchesRegularExpression('/^params \[\["_mode", ""\], \["_a", objNull\], \["_b", objNull\]\];\s*'
+            . 'if \(isRemoteExecutedJIP\) exitWith \{[^{}]*false\s*\};\s*'
+            . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+            . 'private _req = objNull;\s*'
+            . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
+            . 'if \(_remote && \{!\(_mode in \["srvAcc"\]\)\}\) exitWith \{[^{}]*false\s*\};\s*'
+            . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*false\s*\};/', $head);
+        // Caméra de téléphone : son porteur seul ; caméra fixe : retrait par le poseur, partage par qui y a accès.
+        self::assertMatchesRegularExpression('/private _mayEdit = \{\s*params \["_s", "_u", "_share"\];\s*'
+            . 'if !\(\[_s\] call _isCam\) exitWith \{ _s isEqualTo _u \};\s*'
+            . 'if \(_share\) then \{ \[_s, _u\] call _canSee \} else \{ \[_s, _u\] call _isOwner \}\s*\};/', $head);
+        // Les règles ne ré-appellent pas la fonction (dans une pile distante, l'appel imbriqué serait refusé).
+        $rules = $this->between($head, 'private _required = {', 'private _mayEdit = {');
+        self::assertNotEmpty($rules);
+        self::assertDoesNotMatchRegularExpression('/\bcall\s+(?:_fn|comspec_atak_native_fnc_cam(?:Share|Action))\b/i', $rules);
+        foreach (['case "owner": { [_a, player] call _isOwner };', 'case "can": { [_a, [_b, player] select (isNull _b)] call _canSee };'] as $case) {
+            self::assertStringContainsString($case, $code);
+        }
+        $srv = $this->between($code, 'case "srvAcc": {', 'case "recv": {');
+        self::assertMatchesRegularExpression('/^case "srvAcc": \{\s*if \(!isServer\) exitWith \{ false \};\s*'
+            . '_a params \[\["_src", objNull, \[objNull\]\], \["_add", \[\], \[\[\]\]\]\];\s*if \(isNull _src\) exitWith \{ false \};\s*'
+            . 'if \(_remote && \{!\(\[_src, _req, _add isNotEqualTo \[\]\] call _mayEdit\)\}\) exitWith \{[^{}]*false\s*\};/', $srv);
+        // Liste publiée bornée (chaînes courtes, 64 entrées par demande, 128 en tout), sans ré-appel de la fonction.
+        self::assertStringContainsString('(_x findIf { !(_x isEqualType "") || {(count _x) > 64} }) < 0', $srv);
+        self::assertStringContainsString('if ((count _new) > 64) then { _new resize 64; };', $srv);
+        self::assertStringContainsString('if ((count _all) > 128) then { _all = _all select [(count _all) - 128, 128]; };', $srv);
+        self::assertDoesNotMatchRegularExpression('/\bcall\s+(?:_fn|comspec_atak_native_fnc_cam(?:Share|Action))\b/i', $srv);
+        self::assertStringContainsString('class comspec_atak_native_fnc_camShare { allowedTargets = 2; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        $files = $this->sources();
+        $lists = $this->remoteLists($files);
+        self::assertSame(['srvAcc'], $lists['comspec_atak_native_fnc_camshare'] ?? null);
+        [$sent] = $this->actionsSent($files, $lists);
+        self::assertSame(['srvAcc'], array_keys($sent['comspec_atak_native_fnc_camshare'] ?? []));
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */

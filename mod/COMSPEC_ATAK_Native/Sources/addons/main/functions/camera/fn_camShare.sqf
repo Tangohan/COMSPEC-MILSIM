@@ -29,8 +29,30 @@
       ["revoke", source]                retire tous les accès (poseur ou porteur seulement)
       ["srvAcc", [source, entrées]]     serveur : fusionne les entrées (vide = tout retirer) et publie la liste
       ["recv", [netId source, nom, méthode, qui]]  événement comspec_atak_native_camShare reçu : notification
+
+    Appels distants (CfgRemoteExec : allowedTargets = 2) : un client envoie au serveur « srvAcc », seule action reçue
+    d'un autre poste, jugée sur le demandeur retrouvé par remoteExecutedOwner (fn_reqUnit) avec les règles du téléphone
+    (« owner », « can ») ; rien n'est reçu de la file JIP.
 */
 params [["_mode", ""], ["_a", objNull], ["_b", objNull]];
+// Lot mpauth3 (SEC-005, SEC-006) : « srvAcc » réécrivait la liste d'accès de n'importe quel objet sans regarder qui
+// demandait (un client s'accordait la caméra d'autrui ou vidait une liste). La fonction entre en liste blanche avec
+// cette garde. Hôte d'une partie locale et partie solo : appel non distant, rien ne change.
+if (isRemoteExecutedJIP) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Partage : appel « %1 » refusé (rejoué depuis la file JIP)", _mode];
+    false
+};
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+private _req = objNull;
+if (_remote) then { _req = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
+if (_remote && {!(_mode in ["srvAcc"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Partage : action « %1 » refusée au poste %2 (locale au téléphone)", _mode, remoteExecutedOwner];
+    false
+};
+if (_remote && {isNull _req}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Partage : demande « %1 » refusée au poste %2 (demandeur introuvable)", _mode, remoteExecutedOwner];
+    false
+};
 private _fn = comspec_atak_native_fnc_camShare;
 private _uidOf = { params ["_u"]; private _id = getPlayerUID _u; if (_id isEqualTo "") then { netId _u } else { _id } };
 private _isCam = { params ["_o"]; !isNull _o && {_o isKindOf "COMSPEC_ATAK_CameraObj"} };
@@ -39,33 +61,47 @@ private _nameOf = {
     if ([_o] call _isCam) then { _o getVariable ["COMSPEC_ATAK_CamName", "CAM"] } else { format ["caméra de %1", [_o, true] call comspec_atak_native_fnc_unitCallsign] }
 };
 private _num = { params ["_v", "_d"]; if (_v isEqualType 0) then { _v } else { _d } };
+// Règles d'accès, pour une unité quelconque (le serveur juge « srvAcc » pour le demandeur, et un serveur dédié n'a pas
+// de player). Fonctions locales : dans la pile d'une demande distante, un appel imbriqué de la fonction garde le
+// contexte distant et serait refusé par la garde ci-dessus.
+private _required = { ([missionNamespace getVariable ["comspec_atak_native_camera_share", 0], 0] call _num) isEqualTo 0 };
+private _accessOf = {
+    params ["_s"];
+    if (isNull _s) exitWith { [] };
+    private _acc = _s getVariable ["COMSPEC_ATAK_ShareAcc", []];
+    if (_acc isEqualType []) then { _acc } else { [] }
+};
+// Poseur de la caméra fixe, ou porteur pour la caméra de son téléphone.
+private _isOwner = {
+    params ["_s", "_u"];
+    if (isNull _s) exitWith { false };
+    if !([_s] call _isCam) exitWith { _s isEqualTo _u };
+    private _ou = _s getVariable ["COMSPEC_ATAK_CamOwnerUid", ""];
+    // Caméra posée avant le partage : seul le nom du poseur est connu.
+    if (_ou isEqualTo "") then { (_s getVariable ["COMSPEC_ATAK_CamOwner", ""]) isEqualTo name _u } else { _ou isEqualTo ([_u] call _uidOf) }
+};
+private _canSee = {
+    params ["_s", "_v"];
+    if (isNull _s) exitWith { false };
+    if !(call _required) exitWith { true };
+    if (_s isEqualTo _v) exitWith { true };
+    if ([_s] call _isCam && {[_s, _v] call _isOwner}) exitWith { true };
+    private _id = [_v] call _uidOf;
+    (([_s] call _accessOf) findIf { (_x param [0, ""]) in ["ALL", _id] }) >= 0
+};
+// « srvAcc » d'un client : caméra de téléphone, son porteur seul ; caméra fixe, retrait de tous les accès par le
+// poseur seul (« revoke »), partage par qui y a accès (« canShare »).
+private _mayEdit = {
+    params ["_s", "_u", "_share"];
+    if !([_s] call _isCam) exitWith { _s isEqualTo _u };
+    if (_share) then { [_s, _u] call _canSee } else { [_s, _u] call _isOwner }
+};
 
 switch (_mode) do {
-    case "required": { ([missionNamespace getVariable ["comspec_atak_native_camera_share", 0], 0] call _num) isEqualTo 0 };
-    case "access": {
-        if (isNull _a) exitWith { [] };
-        private _acc = _a getVariable ["COMSPEC_ATAK_ShareAcc", []];
-        if (_acc isEqualType []) then { _acc } else { [] }
-    };
-    case "owner": {
-        if (isNull _a) exitWith { false };
-        if !([_a] call _isCam) exitWith { _a isEqualTo player };
-        private _ou = _a getVariable ["COMSPEC_ATAK_CamOwnerUid", ""];
-        // Caméra posée avant le partage : seul le nom du poseur est connu.
-        if (_ou isEqualTo "") then { (_a getVariable ["COMSPEC_ATAK_CamOwner", ""]) isEqualTo name player } else { _ou isEqualTo ([player] call _uidOf) }
-    };
-    case "can": {
-        private _v = [_b, player] select (isNull _b);
-        if (isNull _a) exitWith { false };
-        if !(["required"] call _fn) exitWith { true };
-        if (_a isEqualTo _v) exitWith { true };
-        if ([_a] call _isCam && {
-            private _ou = _a getVariable ["COMSPEC_ATAK_CamOwnerUid", ""];
-            [(_a getVariable ["COMSPEC_ATAK_CamOwner", ""]) isEqualTo name _v, _ou isEqualTo ([_v] call _uidOf)] select (_ou isNotEqualTo "")
-        }) exitWith { true };
-        private _id = [_v] call _uidOf;
-        ((["access", _a] call _fn) findIf { (_x param [0, ""]) in ["ALL", _id] }) >= 0
-    };
+    case "required": { call _required };
+    case "access": { [_a] call _accessOf };
+    case "owner": { [_a, player] call _isOwner };
+    case "can": { [_a, [_b, player] select (isNull _b)] call _canSee };
     case "canShare": {
         if (isNull _a) exitWith { false };
         // Mon téléphone : moi seul. Caméra fixe : quiconque y a accès peut transmettre l'accès (la clé se recopie).
@@ -157,15 +193,24 @@ switch (_mode) do {
         ["INFO", format ["%1 : tous les accès partagés retirés", [_a] call _nameOf], 3, 30] call comspec_atak_native_fnc_notify;
         true
     };
-    // Serveur : seul à modifier et publier COMSPEC_ATAK_ShareAcc. Entrées vides : tous les accès retirés.
+    // Serveur : seul à modifier et publier COMSPEC_ATAK_ShareAcc. Entrées vides : tous les accès retirés. Demande d'un
+    // client (SEC-005) : jugée sur le demandeur (_mayEdit). Entrées bornées : quatre chaînes de 64 caractères au plus,
+    // 64 entrées par demande, 128 dans la liste publiée (les plus récentes).
     case "srvAcc": {
         if (!isServer) exitWith { false };
         _a params [["_src", objNull, [objNull]], ["_add", [], [[]]]];
         if (isNull _src) exitWith { false };
+        if (_remote && {!([_src, _req, _add isNotEqualTo []] call _mayEdit)}) exitWith {
+            diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Partage de %1 refusé à %2 (ni poseur ou porteur, ni accès à la caméra)", _src, name _req];
+            false
+        };
         private _acc = if (_add isEqualTo []) then { [] } else {
-            private _new = _add select { _x isEqualType [] && {(count _x) isEqualTo 4} && {(_x select 0) isEqualType ""} };
+            private _new = _add select { _x isEqualType [] && {(count _x) isEqualTo 4} && {(_x findIf { !(_x isEqualType "") || {(count _x) > 64} }) < 0} };
+            if ((count _new) > 64) then { _new resize 64; };
             private _ids = _new apply { _x select 0 };
-            ((["access", _src] call _fn) select { !((_x param [0, ""]) in _ids) }) + _new
+            private _all = (([_src] call _accessOf) select { !((_x param [0, ""]) in _ids) }) + _new;
+            if ((count _all) > 128) then { _all = _all select [(count _all) - 128, 128]; };
+            _all
         };
         _src setVariable ["COMSPEC_ATAK_ShareAcc", _acc, true];
         true
