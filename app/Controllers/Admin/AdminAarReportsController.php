@@ -113,6 +113,7 @@ final class AdminAarReportsController
         }
 
         $missions = $this->presentedMissions($tenantId);
+        $missing = AarReportAdminService::missionsWithoutReport($missions, $this->reports->listForTenant($tenantId, []));
         $prefill = [];
         $missionId = (int) $request->query('mission', 0);
         foreach ($missions as $m) {
@@ -132,7 +133,7 @@ final class AdminAarReportsController
             'boPageGroup' => 'Opérations',
             'boPageTitle' => 'Nouveau compte rendu',
             'boPageKicker' => 'OPÉRATIONS · RETOURS',
-            'boPageSubtitle' => 'Formulaire standard (synthèse, points forts et faibles, actions) ou questionnaire préparé dans les modèles.',
+            'boPageSubtitle' => 'Racontez ce qui était prévu, ce qui s’est passé, ce qu’on en retient et ce qu’on fait ensuite.',
             'boPageQuick' => [
                 ['label' => '← Comptes rendus', 'href' => url(self::BASE)],
                 ['label' => 'Modèles', 'href' => url(self::BASE . '/modeles')],
@@ -140,6 +141,7 @@ final class AdminAarReportsController
             'backOfficePageCss' => ['back-office-aar.css'],
             'aarReport' => $prefill,
             'aarMissions' => $missions,
+            'aarMissing' => $missing,
             'aarTemplates' => $this->templates->listForTenant($tenantId, true),
             'csrfToken' => Csrf::token(),
         ]);

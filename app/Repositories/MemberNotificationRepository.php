@@ -82,6 +82,35 @@ class MemberNotificationRepository
         )->execute([$notificationId, $tenantId, $userId]);
     }
 
+    /**
+     * Supprime des notifications du membre (ids vides + $onlyRead = toutes celles déjà lues).
+     *
+     * @param list<int> $ids
+     */
+    public function deleteForUser(int $tenantId, int $userId, array $ids, bool $onlyRead = false): int
+    {
+        if (!$this->tableExists()) {
+            return 0;
+        }
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $i): bool => $i > 0));
+        if ($ids === [] && !$onlyRead) {
+            return 0;
+        }
+        $sql = 'DELETE FROM member_notifications WHERE tenant_id = ? AND user_id = ?';
+        $args = [$tenantId, $userId];
+        if ($ids !== []) {
+            $sql .= ' AND id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')';
+            $args = array_merge($args, $ids);
+        }
+        if ($onlyRead) {
+            $sql .= ' AND read_at IS NOT NULL';
+        }
+        $st = $this->pdo->prepare($sql);
+        $st->execute($args);
+
+        return $st->rowCount();
+    }
+
     public function markAllRead(int $tenantId, int $userId): void
     {
         if (!$this->tableExists()) {
