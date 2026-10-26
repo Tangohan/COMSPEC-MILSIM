@@ -38,7 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## GPS en bâtiment moins imprécis (ATAK natif, prochaine version)
+## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
+
+### Résumé joueur
+Type : nouveauté
+FR : Grosse mise à jour du téléphone ATAK
+- Nouvelles apps : App Store (installe ou désinstalle tes apps, l'encadrement peut en imposer ou en interdire), CR de fin d'op imposé dans le téléphone, dossiers médicaux de l'unité dans Médical, et Tinder qui cache une chasse aux HVT avec de vrais tuyaux d'informateurs.
+- Montre Garmin enfin affichée, en 4 coloris, avec ses 5 boutons, l'heure H du groupe, le mode Jumpmaster et le guidage vers un point de la carte ; nouveau téléphone iPhone 17 Pro durci.
+- Carte : traits qui suivent les routes, azimut et pente, vue 3D, relais réglables, téléphone branché sur ta radio ACRE2 ou TFAR, écrans TOC en direct sur les TV du jeu, GPS précis dans les bâtiments.
+- Icônes colorées et animations plus réalistes, textes en gras nets, diapositives du briefing visibles, et 153 corrections (connexion sans gel, appel de feu, SSE, relais).
+EN : Big ATAK phone update
+- New apps: App Store (install or uninstall your apps, command can make some mandatory or forbidden), end-of-op report required on your phone, the unit's medical records in Medical, and Tinder now hides an HVT hunt with real informant tips.
+- The Garmin watch finally shows up, in 4 colourways, with its 5 buttons, squad H-hour, Jumpmaster mode and guidance to a map point; new rugged iPhone 17 Pro phone.
+- Map: lines that follow roads, azimuth and slope, 3D view, configurable relays, phone plugged into your ACRE2 or TFAR radio, live TOC screens on in-game TVs, accurate GPS inside buildings.
+- Coloured icons and more realistic animations, sharp bold text, briefing slides now visible, and 153 fixes (connection without freezes, fire missions, SSE, relays).
+
+### Détail technique
+Un seul numéro pour tout le lot : ATAK natif 2.5.0 (après 2.4.1 sur main ; le 2.4.2 provisoire de #1137 n'est jamais sorti), COMSPEC Link 2.0.97 (après 2.0.96 : nouvelle commande `ImageDataChunk` de #1119, fiches médicales de #1109, correctifs de #1115), Overwatch connect 1.6.20 (correctifs de #1115). SSE : sources modifiées par #1115 (PBO SSE à reconstruire et à publier). Le détail de chaque partie est dans les entrées ci-dessous et dans les PR d'origine.
+
+- PR regroupées : #1083 (carte MapTac : routes, mesures, copier, réglettes, vue 3D ; relais réglables et dégâts progressifs ; radios ACRE2/TFAR), #1093 (CR de fin d'opération imposé), #1095 (écrans TOC persistants, PC du poste, IA équipées d'un ATAK, avis validés gardés), #1105 (Tinder : chasse aux HVT), #1106 (distances et heures de vol relayées par le téléphone quand le serveur n'est pas relié), #1109 (app Médical : dossiers médicaux), #1115 (revue du mod, tours 4 et 5 : 153 correctifs), #1119 (interface des apps : JTAC, gras, Messages, SMS, Groupe, Admin, diapositives), #1135 (GPS en bâtiment), #1136 (montre Garmin : écran, 4 coloris, 5 boutons, heure H, Jumpmaster, MGRS), #1137 (iPhone 17 Pro), #1138 (App Store), #1139 (interface réaliste, lot 1).
+- Conflits résolus au regroupement : `config.cpp` (listes `CfgFunctions` et `units[]` réunies : `iconTint`, `texUsable`, `appInstall`, modules TOC et IA ATAK, coloris Garmin ; app CR fin d'op avec sa description pour l'App Store), `fn_pageSettings` (remise à zéro de l'apparence : clés de #1139, sans `COMSPEC_ATAK_HiddenApps` que l'App Store garde), `fn_pageAdmin` (onglet APPS de #1138 + libellé IA ENNEMIE de #1119), `fn_appBadge` (pastilles Tinder et CR fin d'op), `fn_adminNotices` (réglages du CR fin d'op + avis déjà validés), `stringtable.xml` (clés écrites à la main des deux côtés réunies, puis `i18n.py stringtable`, `fr`, `community`), `i18n/en.txt` (union triée par `i18n.py`).
+- Non inclus (prochain lot) : lots d'audit `claude/project-thread-ryy13x-mpauth` (réserve bloquante B3 de la contre-expertise v3 : essais en jeu avant fusion) et `claude/project-thread-ryy13x-cleanup` (essai des textures en jeu demandé), PERF-011 et l'échelle de reprise de la DLL (non poussés).
+
+## GPS en bâtiment moins imprécis (partie du regroupement 2.5.0)
 
 ### Résumé joueur
 Type : correctif
@@ -56,7 +78,7 @@ EN : GPS stays accurate inside buildings
 ### Détail technique
 - `fn_gpsFix` : bâtiment = 5 à 8 satellites (fix gardé) au lieu de 2 à 6, reflets 3 à 10 au lieu de 12 à 35 ; erreurs de base resserrées (7+ satellites 4-6 m, 5-6 : 6-9 m, 4 : 9-13 m). Le test « rue étroite » (8 rayons à 60 m) et la forêt ne s'appliquent plus à l'intérieur : mes propres murs le déclenchaient (−5 satellites, +32 m), d'où la perte du fix et le point à ~40 m. Dérive du point bornée à 0,5 × rayon annoncé (0,8 avant). Position réseau : 60 → 15 m (1 à 4 barres), décalage 0,35 × rayon (0,6). Sauts multitrajets 6-20 m (15-60).
 - `fn_ewDraw` : le cercle de précision est centré sur la position de mon icône de la même image (`COMSPEC_ATAK_SelfGpsPos`).
-## Nouveau téléphone : iPhone 17 Pro en coque durcie olive (ATAK natif 2.4.2.AB - Denver)
+## Nouveau téléphone : iPhone 17 Pro en coque durcie olive (partie du regroupement 2.5.0)
 
 ### Résumé joueur
 Type : nouveauté
@@ -82,35 +104,7 @@ Version provisoire : le lot natif suivant la renumérote (STOP MERGE, regroupée
 - `tools/paa_dxt.py` : mipmaps compressés en LZO1X comme HEMTT quand le module python-lzo est présent (2048 x 2048 : 5,6 Mo → 0,2 à 1 Mo). Les PAA de ce modèle en viennent (HEMTT non lancé dans ce fil).
 - main.pbo **pas reconstruit** dans cette PR : il le sera au lot natif (HEMTT ou `build_mod.bat`). Test PHP : les PAA de l'iPhone 17 Pro (coques, dos) existent.
 
-## Correctif de sécurité : liaison Athena, relais ATAK, Windows en français (ATAK natif 2.4.1.AB - Denver, COMSPEC Link 2.0.96)
-
-### Résumé joueur
-Type : correctif
-FR : Mise à jour de sécurité obligatoire
-- Deux failles corrigées (liaison Athena et relais ATAK).
-- Météo radio et relèvements SIGINT réparés sous Windows en français.
-- Un refus d'Athena sur une seule app ne coupe plus toute la liaison.
-- Athena refusera bientôt les versions précédentes du mod.
-EN : Mandatory security update
-- Two security holes fixed (Athena link and ATAK relays).
-- Radio weather and SIGINT bearings fixed on Windows set to French.
-- If Athena refuses one app, the rest of the link keeps working.
-- Athena will soon refuse older versions of the mod.
-
-### Détail technique
-Correctif seul de la 2.4.0 publiée (audit d'ingénierie, SEC-001, DLL-003, DLL-007 ; revue du mod, tour 4, pour les relais). Versions : ATAK natif 2.4.1, COMSPEC Link 2.0.96, Overwatch connect 1.6.19 (la 1.6.18, écusson Donateur, déjà sur main, sort avec cette version).
-
-- SEC-001 (DLL Link, critique) : `AttachApiKeyHeader` attachait la clé de la communauté, le jeton de session et le SteamID à toute adresse fournie par le SQF (`Connect`, `PairStart`, `RedeemGameLink`, `LinkBySteam`…, URL absolue de `DownloadBriefingSlideImage`, variable publique `COMSPEC_ATAK_ScreenCast`), redirections comprises. Désormais aucun secret ne part hors des deux hôtes Athena de confiance (`athena.ttrd.fr`, `athena-comspec.eu`, sans sous-domaine ni identifiants), en HTTPS seulement : un seul point de contrôle pose l'adresse du portail (`ERR|untrusted_host` sinon), les deux sites de GameAuth qui posent le Bearer du compte refusent aussi un hôte non sûr, les clients porteurs de secrets ne suivent plus les redirections (les images les suivent à la main, secrets refiltrés à chaque saut), et un envoi de la file disque vers un autre hôte est abandonné, compté et signalé au journal de liaison du téléphone (sans déclencher l'arrêt du relevé de terrain, le renvoi de la météo ni la pause des flux vidéo que le journal attache à ces chemins). `LatestVersions`, `StartupCheck` et `Server.PublicIp` ne contactent plus un hôte arbitraire. `fn_connect` affiche le refus dans le téléphone. Un Athena local de développement demande `COMSPEC_DEV_TRUST_LOOPBACK=1` dans l'environnement d'Arma (voir `docs/migration-domaine-athena-comspec.md`). Banc isolé `tools/sec001-bench` (aucun réseau ; adresses piégées comparées à une table d'acceptations attendues, indépendante de la DLL) : 42 vérifications passent sur la DLL corrigée, 19 échouent sur la 2.4.0 (fuites et détournements).
-- Relais (exécution de code à distance) : `fn_relayCond` compilait sur chaque poste la variable publique `COMSPEC_AtakRelayCond`, que tout client peut écrire. La condition en code n'est plus évaluée que par le serveur, depuis sa copie locale `COMSPEC_AtakRelayCondSrv`, et le résultat est publié dans `COMSPEC_AtakRelayCondOk`. **Rupture pour les missions** : une condition en code posée par script s'écrit maintenant côté serveur dans `COMSPEC_AtakRelayCondSrv` ; les préréglages (`mast`, `stopped`, `engineoff`) et le module « ATAK · Relais » posé dans Eden ne changent pas.
-- DLL-003 : nombres lus et écrits en culture invariante (`NumberStyles.Float`, `CultureInfo.InvariantCulture`) : sur un Windows en français, la météo radio échouait ou rendait « 0,89 » et le gisement SIGINT était perdu.
-- DLL-007 (régression 2.4.0) : un 403 « règle » sur une seule route coupait toute la liaison. Il ne verrouille plus que cette route (30 min), après vérification de `client-init` ; le verrou global ne tombe que si `client-init` refuse aussi.
-- Côté site (PR séparée) : Athena peut refuser les DLL Link antérieures à 2.0.96 (`MOD_OUTDATED`, « mettez le mod à jour »). Le plancher reste inactif jusqu'à la publication Steam de cette version.
-- DLL native (`COMSPECATAKNativeExtension.csproj`) : version passée de `1.0.0-native` à `2.0.96-native`. Elle est compilée depuis le même `Extension.cs` que COMSPEC Link et c'est ce numéro qu'elle annonce dans son `User-Agent` : laissée à 1.0.0, la DLL native **corrigée** aurait été refusée par le plancher de version ci-dessus. Aucun effet en jeu : le contrôle d'installation ne compare la version de la DLL au `main.pbo` que lorsque COMSPEC Link est présent, et la version de mod envoyée à Athena (`1.0.0-native`, hors du contrôle de version minimale de communauté) n'est pas touchée.
-- Sortie : vérifier d'abord qu'aucune route `/public/api/…` (adresse appelée par les mods), `/api/…` ni `/map-photo/…` des deux domaines ne redirige (en GET : Athena répond 404 à HEAD, donc pas `curl -I` ; attendu 200, ni 301, 302, 307 ni 308, la DLL ne suivant plus ces redirections ; commande dans `docs/migration-domaine-athena-comspec.md`) ; recompiler les deux DLL sous Windows (`build_mod.bat`) et les committer (les copies du dépôt sont périmées), reconstruire main.pbo et le PBO connect, mettre à jour le pack S.O.A.R.
-- Connu, hors de ce correctif (lots séparés) : la clé de la communauté reste rangée dans le profil Arma, lisible par une mission (SEC-009) ; une mission peut toujours faire télécharger une image depuis l'hôte de son choix (adresse IP du joueur visible par cet hôte, aucun secret envoyé).
-
----
-## App Médical : dossiers médicaux de l'unité dans le téléphone (à regrouper, COMSPEC Link 2.0.96)
+## App Médical : dossiers médicaux de l'unité dans le téléphone (partie du regroupement 2.5.0)
 
 ### Résumé joueur
 Type : nouveauté
@@ -130,7 +124,7 @@ EN : The unit's medical records in the Medical app
 - COMSPEC Link 2.0.96 : `MedicalRoster` [ligne, cache|refresh] (pages comme `ListWardrobes`) et `MedicalRosterInfo` ; copie dans `Documents\Arma 3 - COMSPEC\Sync\medical_roster.json`, propre au site + communauté + Steam ; un 403 `forbidden` efface la copie. Ajouté au projet de la DLL native.
 - ATAK natif : `fn_medRoster` (lecture paginée, cache, recherche, portée EN JEU / TOUTE L'UNITÉ), onglet DOSSIERS dans `fn_pageMedical`, `_medIdent` complète groupe sanguin et poids depuis le dossier. Debug > DLL vérifie `MedicalRoster`.
 - Numéro ATAK natif attribué par le regroupement (docs/VERSIONING.md).
-## CR de fin d'opération imposé dans le téléphone, à remplir ou à lire (ATAK natif : numéro donné au regroupement)
+## CR de fin d'opération imposé dans le téléphone, à remplir ou à lire (partie du regroupement 2.5.0)
 
 ### Résumé joueur
 Type : nouveauté
@@ -154,8 +148,7 @@ EN : The end-of-operation report opens on your phone
 - Aucun changement de COMSPEC Link ni de la DLL. Traductions EN ajoutées (`i18n/en.txt`). `hemtt check` : aucune erreur. main.pbo à reconstruire au regroupement.
 - Site : back-office « CR des joueurs (fin d'op) » (PR site séparée).
 
----
-## Écrans TOC persistants, PC du poste de commandement et IA équipées d'un ATAK (ATAK natif, prochain regroupement)
+## Écrans TOC persistants, PC du poste de commandement et IA équipées d'un ATAK (partie du regroupement 2.5.0)
 
 ### Résumé joueur
 Type : nouveauté
@@ -186,6 +179,36 @@ EN : In-game TOC screens and AI really linked to the ATAK network
 - Traductions : 82 + 97 phrases dans `i18n/en.txt`, clés `STR_COMSPEC_ATAK_CFG_TOCSCR_*` / `AIATAK_*`, gabarits de traduction régénérés (`tools/i18n.py community`, `fr`).
 - Non testé en jeu.
 
+---
+
+## Correctif de sécurité : liaison Athena, relais ATAK, Windows en français (ATAK natif 2.4.1.AB - Denver, COMSPEC Link 2.0.96)
+
+### Résumé joueur
+Type : correctif
+FR : Mise à jour de sécurité obligatoire
+- Deux failles corrigées (liaison Athena et relais ATAK).
+- Météo radio et relèvements SIGINT réparés sous Windows en français.
+- Un refus d'Athena sur une seule app ne coupe plus toute la liaison.
+- Athena refusera bientôt les versions précédentes du mod.
+EN : Mandatory security update
+- Two security holes fixed (Athena link and ATAK relays).
+- Radio weather and SIGINT bearings fixed on Windows set to French.
+- If Athena refuses one app, the rest of the link keeps working.
+- Athena will soon refuse older versions of the mod.
+
+### Détail technique
+Correctif seul de la 2.4.0 publiée (audit d'ingénierie, SEC-001, DLL-003, DLL-007 ; revue du mod, tour 4, pour les relais). Versions : ATAK natif 2.4.1, COMSPEC Link 2.0.96, Overwatch connect 1.6.19 (la 1.6.18, écusson Donateur, déjà sur main, sort avec cette version).
+
+- SEC-001 (DLL Link, critique) : `AttachApiKeyHeader` attachait la clé de la communauté, le jeton de session et le SteamID à toute adresse fournie par le SQF (`Connect`, `PairStart`, `RedeemGameLink`, `LinkBySteam`…, URL absolue de `DownloadBriefingSlideImage`, variable publique `COMSPEC_ATAK_ScreenCast`), redirections comprises. Désormais aucun secret ne part hors des deux hôtes Athena de confiance (`athena.ttrd.fr`, `athena-comspec.eu`, sans sous-domaine ni identifiants), en HTTPS seulement : un seul point de contrôle pose l'adresse du portail (`ERR|untrusted_host` sinon), les deux sites de GameAuth qui posent le Bearer du compte refusent aussi un hôte non sûr, les clients porteurs de secrets ne suivent plus les redirections (les images les suivent à la main, secrets refiltrés à chaque saut), et un envoi de la file disque vers un autre hôte est abandonné, compté et signalé au journal de liaison du téléphone (sans déclencher l'arrêt du relevé de terrain, le renvoi de la météo ni la pause des flux vidéo que le journal attache à ces chemins). `LatestVersions`, `StartupCheck` et `Server.PublicIp` ne contactent plus un hôte arbitraire. `fn_connect` affiche le refus dans le téléphone. Un Athena local de développement demande `COMSPEC_DEV_TRUST_LOOPBACK=1` dans l'environnement d'Arma (voir `docs/migration-domaine-athena-comspec.md`). Banc isolé `tools/sec001-bench` (aucun réseau ; adresses piégées comparées à une table d'acceptations attendues, indépendante de la DLL) : 42 vérifications passent sur la DLL corrigée, 19 échouent sur la 2.4.0 (fuites et détournements).
+- Relais (exécution de code à distance) : `fn_relayCond` compilait sur chaque poste la variable publique `COMSPEC_AtakRelayCond`, que tout client peut écrire. La condition en code n'est plus évaluée que par le serveur, depuis sa copie locale `COMSPEC_AtakRelayCondSrv`, et le résultat est publié dans `COMSPEC_AtakRelayCondOk`. **Rupture pour les missions** : une condition en code posée par script s'écrit maintenant côté serveur dans `COMSPEC_AtakRelayCondSrv` ; les préréglages (`mast`, `stopped`, `engineoff`) et le module « ATAK · Relais » posé dans Eden ne changent pas.
+- DLL-003 : nombres lus et écrits en culture invariante (`NumberStyles.Float`, `CultureInfo.InvariantCulture`) : sur un Windows en français, la météo radio échouait ou rendait « 0,89 » et le gisement SIGINT était perdu.
+- DLL-007 (régression 2.4.0) : un 403 « règle » sur une seule route coupait toute la liaison. Il ne verrouille plus que cette route (30 min), après vérification de `client-init` ; le verrou global ne tombe que si `client-init` refuse aussi.
+- Côté site (PR séparée) : Athena peut refuser les DLL Link antérieures à 2.0.96 (`MOD_OUTDATED`, « mettez le mod à jour »). Le plancher reste inactif jusqu'à la publication Steam de cette version.
+- DLL native (`COMSPECATAKNativeExtension.csproj`) : version passée de `1.0.0-native` à `2.0.96-native`. Elle est compilée depuis le même `Extension.cs` que COMSPEC Link et c'est ce numéro qu'elle annonce dans son `User-Agent` : laissée à 1.0.0, la DLL native **corrigée** aurait été refusée par le plancher de version ci-dessus. Aucun effet en jeu : le contrôle d'installation ne compare la version de la DLL au `main.pbo` que lorsque COMSPEC Link est présent, et la version de mod envoyée à Athena (`1.0.0-native`, hors du contrôle de version minimale de communauté) n'est pas touchée.
+- Sortie : vérifier d'abord qu'aucune route `/public/api/…` (adresse appelée par les mods), `/api/…` ni `/map-photo/…` des deux domaines ne redirige (en GET : Athena répond 404 à HEAD, donc pas `curl -I` ; attendu 200, ni 301, 302, 307 ni 308, la DLL ne suivant plus ces redirections ; commande dans `docs/migration-domaine-athena-comspec.md`) ; recompiler les deux DLL sous Windows (`build_mod.bat`) et les committer (les copies du dépôt sont périmées), reconstruire main.pbo et le PBO connect, mettre à jour le pack S.O.A.R.
+- Connu, hors de ce correctif (lots séparés) : la clé de la communauté reste rangée dans le profil Arma, lisible par une mission (SEC-009) ; une mission peut toujours faire télécharger une image depuis l'hôte de son choix (adresse IP du joueur visible par cet hôte, aucun secret envoyé).
+
+---
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
