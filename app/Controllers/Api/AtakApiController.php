@@ -13565,7 +13565,17 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $missionId = $request->query('mission_id') ?? $request->query('missionId');
         $since = $request->query('since');
-        $rows = $this->mapShapeRepo->list($tenantId, $mapId, $missionId, $since);
+        // ?mission_id[]=… : refusé (422) comme sur les autres routes C2, au lieu d'une TypeError (500) dans le dépôt.
+        if ($missionId !== null && !is_scalar($missionId)) {
+            return \App\Support\TacticalMissionScope::invalidMissionIdResponse();
+        }
+        // ?since[]=… : ignoré (liste complète), comme pour les ordres.
+        $rows = $this->mapShapeRepo->list(
+            $tenantId,
+            $mapId,
+            $missionId === null ? null : (string) $missionId,
+            is_scalar($since) ? (string) $since : null
+        );
         return Response::json($rows);
     }
 
