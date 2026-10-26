@@ -30,21 +30,32 @@ final class MaintenanceRetryAfterTest extends TestCase
         }
     }
 
-    public function testJsonPayloadAnnouncesTheSameDelay(): void
+    public function testReturnsAreSpreadAfterAnAnnouncedEnd(): void
     {
         $now = (int) strtotime('2026-10-26 14:00:00');
-        $payload = MaintenanceGuard::jsonPayload(['title' => 'Mise à jour', 'ends_at' => '2026-10-26 14:02:00'], 'Retour à 14 h 02.', $now);
 
-        self::assertSame(120, $payload['retry_after']);
-        self::assertSame('maintenance', $payload['error']);
+        self::assertSame(127, MaintenanceGuard::retryAfterSeconds(['ends_at' => '2026-10-26 14:02:00'], $now, 7));
+        self::assertSame(30, MaintenanceGuard::retryAfterSeconds(['ends_at' => '2026-10-26 14:00:05'], $now, 15), 'plancher puis étalement');
+        self::assertSame(900, MaintenanceGuard::retryAfterSeconds(['ends_at' => '2026-10-26 16:00:00'], $now, 15), 'plafond conservé');
+        self::assertSame(900, MaintenanceGuard::retryAfterSeconds([], $now, 15), 'sans fin annoncée : 900, sans étalement');
     }
 
-    public function testResponseHeaderUsesTheComputedDelay(): void
+    public function testJsonPayloadAnnouncesTheSameDelay(): void
+    {
+        $payload = MaintenanceGuard::jsonPayload(['title' => 'Mise à jour', 'ends_at' => '2026-10-26 14:02:00'], 'Retour à 14 h 02.', 127);
+
+        self::assertSame(127, $payload['retry_after']);
+        self::assertSame('maintenance', $payload['error']);
+        self::assertSame(900, MaintenanceGuard::jsonPayload(['title' => 'Mise à jour'], 'Retour bientôt.')['retry_after']);
+    }
+
+    public function testHeaderAndBodyAnnounceOneComputedDelay(): void
     {
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/MaintenanceGuard.php');
 
-        self::assertStringContainsString("header('Retry-After: ' . self::retryAfterSeconds(\$maintenance, \$now));", $src);
-        self::assertStringContainsString('self::jsonPayload($maintenance, $message, $now)', $src);
+        self::assertStringContainsString('$retryAfter = self::retryAfterSeconds($maintenance, time(), random_int(0, self::RETURN_SPREAD));', $src);
+        self::assertStringContainsString("header('Retry-After: ' . \$retryAfter);", $src);
+        self::assertStringContainsString('self::jsonPayload($maintenance, $message, $retryAfter)', $src);
         self::assertStringNotContainsString("header('Retry-After: ' . self::DEFAULT_RETRY_AFTER)", $src);
     }
 }
