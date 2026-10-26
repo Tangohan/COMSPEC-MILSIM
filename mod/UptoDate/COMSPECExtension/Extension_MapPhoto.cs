@@ -80,7 +80,9 @@ public static partial class Extension
     private const double MapPhotoBytesPerSec = 3.0 * 1024 * 1024;
     private const int MapPhotoParallel = 4;
     // Client à part : délai court, sans clé (tuiles publiques), jamais en concurrence avec la synchro.
-    private static readonly Lazy<HttpClient> MapPhotoHttp = new(() => CreateHttpClient(30));
+    // Aucun secret n'y est jamais attaché (pas d'AttachApiKeyHeader) : il suit donc les redirections (SEC-001),
+    // par exemple une 308 de l'ancien domaine vers athena-comspec.eu (docs/migration-domaine, étape 6).
+    private static readonly Lazy<HttpClient> MapPhotoHttp = new(() => CreateHttpClient(30, followRedirects: true));
 
     private static long MapPhotoKey(int z, int x, int y) => ((long)z << 48) | ((long)x << 24) | (uint)y;
 

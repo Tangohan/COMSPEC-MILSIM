@@ -470,6 +470,12 @@ public static partial class Extension
             return false;
         if (IsPostPausedNow())
             return false;
+        var url = _baseUrl.TrimEnd('/') + "/api/atak/telemetry/batch";
+        // Lot refusé par une règle d'Athena : on ne le renvoie pas pendant le verrou (30 min). Sans ça le lot
+        // repartait sans fin, la pause globale montait et le tchat, les photos et les marqueurs n'étaient plus
+        // envoyés (contre-revue du correctif 2.4.1). Les files P0-P3 sont bornées et les positions se remplacent.
+        if (IsRefusalLatched(url))
+            return false;
 
         List<TelemetryItem> items;
         lock (TelemetryDrainLock)
@@ -500,7 +506,6 @@ public static partial class Extension
         }
         sb.Append("]}");
         var payload = sb.ToString();
-        var url = _baseUrl.TrimEnd('/') + "/api/atak/telemetry/batch";
         var started = Environment.TickCount64;
 
         try
@@ -554,10 +559,17 @@ public static partial class Extension
             }
             if (code == 403)
             {
-                NoteAccessDenied(response, url);
+                // Le verrou décide d'abord : refus « règle » sur cette route (ou compte refusé) → le lot est
+                // abandonné, sans remise en file ni pause globale des envois, pour que le reste continue.
                 NoteRefusal(url, 403, RefusalBody(response));
-                RequeueTelemetryItems(items);
                 Interlocked.Increment(ref _telemetryBatchFail);
+                if (IsRefusalLatched(url))
+                {
+                    Interlocked.Add(ref _telemetryDropped, items.Count);
+                    return false;
+                }
+                NoteAccessDenied(response, url);
+                RequeueTelemetryItems(items);
                 return true;
             }
             if (code == 404 || code == 501 || code == 405)

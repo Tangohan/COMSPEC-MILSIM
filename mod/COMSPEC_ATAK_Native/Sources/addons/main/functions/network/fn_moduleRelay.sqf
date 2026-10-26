@@ -123,6 +123,9 @@ private _apply = {
         _x setVariable ["COMSPEC_AtakRelayOn", _on, true];
         _x setVariable ["COMSPEC_AtakRelayFreq", _freq, true];
         _x setVariable ["COMSPEC_AtakRelayCond", trim _cond, true];
+        // Condition en code : copie locale du serveur, seule évaluée (fn_relayCond ne compile jamais la variable publique).
+        // Un Zeus client ne peut que garder le code déjà posé sur le serveur (Eden ou script serveur).
+        if (isServer && {!((toLower trim _cond) in ["", "stopped", "engineoff", "mast"])}) then { _x setVariable ["COMSPEC_AtakRelayCondSrv", trim _cond]; };
         _x setVariable ["COMSPEC_AtakRelayAutonomy", _aut, true];
         if (!_keepBatt) then { _x setVariable ["COMSPEC_AtakRelayBatt", [-1, 100] select (_aut > 0), true]; };
         _x setVariable ["COMSPEC_AtakRelayIp", format ["10.%1.%2.1", ((round abs (_p select 0)) mod 220) + 10, ((round abs (_p select 1)) mod 220) + 10], true];
