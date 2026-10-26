@@ -36,7 +36,7 @@ final class AtakLinkSelfTestAssetTest extends TestCase
         self::assertStringContainsString('/api/atak/diag/selftest?mapId=', $self);
         self::assertStringContainsString('PollGetCache', $self);
         self::assertStringContainsString('JournalSummarize()', $self);
-        self::assertStringContainsString('PermanentPostRefusals', $self);
+        self::assertStringContainsString('_authLatchCode', $self);
     }
 
     public function testRefusedChannelsStopRetrying(): void
@@ -45,13 +45,14 @@ final class AtakLinkSelfTestAssetTest extends TestCase
         $ext = (string) file_get_contents($root . '/Extension.cs');
         $auth = (string) file_get_contents($root . '/GameAuth.cs');
 
-        // Refus ordinaire : paliers 15 s → 5 min ; refus définitif (règle d'Athena) confirmé trois fois : arrêt.
+        $latch = (string) file_get_contents($root . '/Extension_RefusalLatch.cs');
+        // Refus passager : paliers 15 s → 5 min par canal ; refus pour une règle d'Athena : verrou (Extension_RefusalLatch).
         self::assertStringContainsString('PollRefusedLadderSec = { 15, 30, 60, 120, 300 }', $ext);
-        self::assertStringContainsString('"feature_unavailable"', $ext);
-        self::assertStringContainsString('"atak_blocked"', $ext);
-        self::assertStringContainsString('slot.RefusedUntilMs = long.MaxValue;', $ext);
-        self::assertStringContainsString('if (strikes < 3) return;', $ext);
         self::assertStringContainsString('&& (slot.RefusedUntilMs == 0 || now >= slot.RefusedUntilMs);', $ext);
+        self::assertStringContainsString('NoteRefusal(url, status, body);', $ext);
+        self::assertStringContainsString('IsRefusalLatched(url)', $ext);
+        self::assertStringContainsString('"feature_unavailable"', $latch);
+        self::assertStringContainsString('"atak_blocked"', $latch);
         // Nouvelle liaison ou nouvelle session : tout reprend.
         self::assertStringContainsString('ResetPollRefusals();', $auth);
         self::assertGreaterThanOrEqual(6, substr_count($ext, 'ResetPollRefusals();'));

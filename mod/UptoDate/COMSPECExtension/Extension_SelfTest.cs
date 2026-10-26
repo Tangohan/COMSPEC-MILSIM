@@ -117,11 +117,14 @@ public static partial class Extension
                     var body = ReadContentUtf8(resp, cts.Token);
                     t.Stop();
                     var ms = t.ElapsedMilliseconds;
-                    // Canal arrêté sur un refus définitif et de nouveau accepté : il reprend tout de suite.
+                    // Canal en pause ou tu (fonction hors offre) et de nouveau accepté : il reprend tout de suite.
+                    var stopped = IsRefusalLatched(c.Url);
                     if (code is >= 200 and < 400)
+                    {
                         NotePollResult(c.Slot, code);
-                    var stopped = c.Slot.RefusedReason;
-                    var why = PermanentRefusalReason(code, body);
+                        FeatureLatchUntilMs.TryRemove(RefusalEndpointKey(c.Url), out _);
+                    }
+                    var why = code is 401 or 403 ? RefusalErrorCode(body) : "";
                     var (level, hint) = code switch
                     {
                         >= 200 and < 300 or 304 => (ms > SelfTestSlowMs ? "warn" : "ok", ms > SelfTestSlowMs ? "Canal lent : ses données arrivent en retard." : ""),
@@ -132,7 +135,7 @@ public static partial class Extension
                         _ => ("ko", "Erreur d'Athena sur ce canal."),
                     };
                     if (why.Length > 0)
-                        hint = RefusalHint(why) + (stopped.Length > 0 ? " Canal arrêté jusqu'à une nouvelle liaison." : "");
+                        hint = RefusalHint(why) + (stopped ? " Canal arrêté jusqu'à une nouvelle liaison." : "");
                     results[i] = string.Join('\t', "C", level, SelfTestField(c.Key),
                         SelfTestField("HTTP " + code + (why.Length > 0 ? " " + why : "") + " · " + ms + " ms"), SelfTestField(hint));
                 }
@@ -151,9 +154,11 @@ public static partial class Extension
                 lines.Add(results[i] ?? string.Join('\t', "C", "ko", SelfTestField(channels[i].Key), "délai dépassé", ""));
         }
 
-        // Adresses d'envoi arrêtées sur un refus définitif.
-        foreach (var kv in PermanentPostRefusals)
-            Add("L", "ko", "Envoi arrêté", kv.Key + " : " + kv.Value, RefusalHint(kv.Value) + " Reprise après une nouvelle liaison.");
+        // Liaison ou fonctions arrêtées sur un refus définitif (Extension_RefusalLatch.cs).
+        if (_authLatchCode.Length > 0)
+            Add("L", "ko", "Liaison arrêtée", _authLatchCode, RefusalHint(_authLatchCode) + " Reprise après une nouvelle liaison.");
+        foreach (var key in FeatureLatchUntilMs.Keys)
+            Add("L", "warn", "Fonction hors offre", key, RefusalHint("feature_unavailable") + " Nouvel essai toutes les 30 min.");
 
         // 3. État local de la DLL.
         var s = JournalSummarize();

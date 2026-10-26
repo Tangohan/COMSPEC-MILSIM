@@ -117,6 +117,24 @@ if (_mode isNotEqualTo "off") then {
                 "La liaison se rétablit seule en général. Si cela dure plus d'une minute : Reconnecter Athena." call _T, "reconnect"] call _add;
         };
         case (_link isEqualTo "disabled"): {};
+        // Clé refusée (fn_connect, ERR unauthorized) : clé du profil changée ou retirée côté Athena.
+        // Reconnecter renverrait la même clé : seule une nouvelle liaison en enregistre une valide.
+        case ((toLower _detail) find "cle athena invalide" >= 0): {
+            ["ko", "Liaison Athena" call _T, "clé d'accès refusée" call _T,
+                "Athena refuse la clé enregistrée dans votre profil : elle a été changée ou retirée. Refaites la liaison avec Lier mon compte (code affiché sur le site, page Mon compte) : une nouvelle clé est enregistrée toute seule." call _T, "link"] call _add;
+        };
+        case ((toLower _detail) find "communaute manquante" >= 0 || {(toLower _detail) find "steam invalide" >= 0}): {
+            ["ko", "Liaison Athena" call _T, _detail call _T,
+                "La liaison enregistrée dans votre profil est incomplète. Refaites-la avec Lier mon compte (code affiché sur le site, page Mon compte)." call _T, "link"] call _add;
+        };
+        case ((toLower _detail) find "non autorise" >= 0 || {(toLower _detail) find "acces mod refuse" >= 0}): {
+            ["ko", "Liaison Athena" call _T, _detail call _T,
+                "Athena bloque ce compte, cet identifiant Steam ou ce réseau. Une nouvelle liaison n'y changera rien : contactez un administrateur de votre communauté." call _T, ""] call _add;
+        };
+        case ((toLower _detail) find "steam requis" >= 0): {
+            ["ko", "Liaison Athena" call _T, _detail call _T,
+                "Cette version du mod n'envoie pas votre identifiant Steam. Mettez le mod à jour sur Steam, puis relancez Arma." call _T, ""] call _add;
+        };
         case (_notLinked): {
             ["ko", "Liaison Athena" call _T, "compte non lié" call _T,
                 "Le portail répond mais ce jeu n'est pas relié à votre compte Athena : Lier mon compte (code affiché sur le site, page Mon compte)." call _T, "link"] call _add;

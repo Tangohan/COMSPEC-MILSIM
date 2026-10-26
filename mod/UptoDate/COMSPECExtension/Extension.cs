@@ -327,8 +327,6 @@ public static partial class Extension
 
     private static void NotePostError(int code, string url, HttpResponseMessage? response = null, string? sentBody = null)
     {
-        if (code == 401)
-            NotePermanentPostRefusal(code, url, response);
         _lastPostErrorCode = code;
         string path;
         try { path = new Uri(url).AbsolutePath; } catch { path = url; }
@@ -1034,8 +1032,6 @@ public static partial class Extension
 
     private static void NoteEndpointOk(string url)
     {
-        if (!string.IsNullOrEmpty(url) && !PermanentPostStrikes.IsEmpty)
-            PermanentPostStrikes.TryRemove(EndpointKey(url), out _);
         if (string.IsNullOrEmpty(url) || EndpointCooldowns.IsEmpty) return;
         EndpointCooldowns.TryRemove(EndpointKey(url), out _);
     }
@@ -1046,7 +1042,6 @@ public static partial class Extension
     /// </summary>
     private static void NoteAccessDenied(HttpResponseMessage? response, string url)
     {
-        NotePermanentPostRefusal(403, url, response);
         NoteSendFailure(403, url, response);
     }
 
@@ -1072,10 +1067,11 @@ public static partial class Extension
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void MaybeReauthAfter401(string url)
+    private static void MaybeReauthAfter401(string url, bool force = false)
     {
         if (!HasPortalAuth() || string.IsNullOrEmpty(_baseUrl)) return;
-        if (!IsAuthSensitiveEndpoint(url)) return;
+        // force : 401 d'un sondage GET (ordres, tchat…), absent de la liste mais qui doit aussi vérifier la clé.
+        if (!force && !IsAuthSensitiveEndpoint(url)) return;
         // Pendant le handshake SQF : ne pas tuer la session (restauration / Steam encore en cours).
         if (_gameAuthState is "CONTACTING_ATHENA" or "RESTORING_SESSION" or "AUTHENTICATING"
             or "RESOLVING_ACCOUNT" or "RESOLVING_TENANT" or "SYNCING_PROFILE"
@@ -1104,15 +1100,14 @@ public static partial class Extension
                     return;
                 }
 
-                if (verify.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
-                    || verify.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase)
-                    || verify.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
+                var refused = Array.Find(PermanentRefusalCodes,
+                    c => verify.Contains(c, StringComparison.OrdinalIgnoreCase));
+                if (refused != null)
                 {
                     // A 401 followed by a rejected client-init is not a transient POST
-                    // failure. Tell SQF to close its transmission gate; otherwise every
-                    // periodic producer keeps hammering authenticated endpoints forever.
-                    SetGameAuth("C2_UNAUTHORIZED", _gameAuthProgress, "C2_UNAUTHORIZED");
-                    InvokeCallback("AuthInvalidated", verify);
+                    // failure. Latch: no poll or post until a relink, a READY session or a restart
+                    // (Extension_RefusalLatch); SQF closes its gate without auto-reopen.
+                    LatchAuthRefusal(refused, verify);
                 }
             }
             catch { /* the normal network backoff handles transport failures */ }
@@ -1495,7 +1490,8 @@ public static partial class Extension
         if ((int)response.StatusCode == 403)
         {
             NoteAccessDenied(response, url);
-            if (!IsBestEffortEndpoint(url))
+            NoteRefusal(url, 403, RefusalBody(response));
+            if (!IsBestEffortEndpoint(url) && !IsRefusalLatched(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -1571,6 +1567,9 @@ public static partial class Extension
     /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
     private static bool TrySendQueuedPost((string Url, string Body) item)
     {
+        // Adresse absente de l'offre de la communauté : envoi abandonné, pas renvoyé.
+        if (IsFeatureLatched(item.Url))
+            return true;
         var started = DateTime.UtcNow.Ticks;
         JournalTrack(item.Url, item.Body, "sending");
         try
@@ -1596,7 +1595,8 @@ public static partial class Extension
                 if ((int)response.StatusCode == 403)
                 {
                     NoteAccessDenied(response, item.Url);
-                    if (!IsBestEffortEndpoint(item.Url))
+                    NoteRefusal(item.Url, 403, RefusalBody(response));
+                    if (!IsBestEffortEndpoint(item.Url) && !IsRefusalLatched(item.Url))
                         EnqueueForRetry(item.Url, item.Body);
                     return false;
                 }
@@ -1604,6 +1604,8 @@ public static partial class Extension
                 {
                     var code = (int)response.StatusCode;
                     NotePostError(code, item.Url, response, item.Body);
+                    if (code == 401)
+                        MaybeReauthAfter401(item.Url);
                     if (TryNoteEndpointServerError(item.Url, response))
                     {
                         // Cette adresse attend ; le vidage continue avec les autres envois.
@@ -1658,6 +1660,8 @@ public static partial class Extension
         JournalMaybeReport();
         if (string.IsNullOrEmpty(_baseUrl)) return;
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
+        // Clé ou compte refusés pour de bon : la file attend la nouvelle liaison au lieu d'être renvoyée chaque seconde.
+        if (IsAuthLatched()) return;
         // Passage précédent encore en cours (Athena lente) : on le laisse finir au lieu d'empiler des threads
         // sur le verrou (les minuteurs se chevauchent et affamaient les appels Async, sondages et journaux).
         if (!System.Threading.Monitor.TryEnter(QueueDrainLock)) return;
@@ -2226,7 +2230,8 @@ public static partial class Extension
     private static void EnqueueOrSend(string url, string jsonBody)
     {
         // Données remontées choisies par la communauté (Extension_DataFlows) : flux coupé, rien en file.
-        if (!DataFlowAllowsUrl(url, jsonBody))
+        // Refus définitif en cours (clé, compte ou fonction absente de l'offre) : rien n'est envoyé ni mis en file.
+        if (!DataFlowAllowsUrl(url, jsonBody) || IsRefusalLatched(url))
             return;
         // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
         if (TryOfferBatchablePost(url, jsonBody))
@@ -2361,63 +2366,8 @@ public static partial class Extension
         // Refus (401/403) ou erreur serveur répétés : pas de nouvel appel avant RefusedUntilMs, palier RefusedStep.
         public long RefusedUntilMs;
         public int RefusedStep;
-        // Motif d'un refus définitif (règle d'Athena) : le canal ne redemande plus jusqu'à une nouvelle liaison.
-        public volatile string RefusedReason = "";
     }
 
-    /// <summary>
-    /// Motifs de refus qui ne changent pas en réessayant : clé refusée, formule sans ce canal, joueur bloqué, compte
-    /// désactivé, pas de communauté, Steam non lié, droits insuffisants. Le canal (ou l'adresse d'envoi) s'arrête
-    /// jusqu'à une nouvelle liaison ou une nouvelle session (ResetPollRefusals) ; le Dépannage liaison le montre.
-    /// </summary>
-    private static readonly HashSet<string> PermanentRefusalCodes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "unauthorized", "feature_unavailable", "atak_blocked", "account_disabled", "tenant_context_required",
-        "steam_not_linked", "forbidden", "sse_clearance_required", "web_session_required", "no_tenant",
-    };
-
-    /// <summary>Champ « error » d'un refus 401/403 s'il fait partie des motifs définitifs, sinon "".</summary>
-    private static string PermanentRefusalReason(int code, string? body)
-    {
-        if ((code != 401 && code != 403) || string.IsNullOrEmpty(body) || body[0] != '{') return "";
-        try
-        {
-            using var doc = JsonDocument.Parse(body);
-            if (doc.RootElement.ValueKind == JsonValueKind.Object
-                && doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String)
-            {
-                var reason = e.GetString() ?? "";
-                return PermanentRefusalCodes.Contains(reason) ? reason : "";
-            }
-        }
-        catch { /* corps non JSON : refus ordinaire */ }
-        return "";
-    }
-
-    /// <summary>Envoi refusé pour un motif définitif : cette adresse n'est plus appelée jusqu'à une nouvelle liaison.</summary>
-    private static void NotePermanentPostRefusal(int code, string url, HttpResponseMessage? response)
-    {
-        if (response == null || string.IsNullOrEmpty(url) || (code != 401 && code != 403)) return;
-        string body;
-        try { body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult(); }
-        catch { return; }
-        var key = EndpointKey(url);
-        var reason = PermanentRefusalReason(code, body);
-        if (reason.Length == 0)
-        {
-            PermanentPostStrikes.TryRemove(key, out _);
-            return;
-        }
-        // Trois refus de suite pour le même motif avant d'arrêter (voir NotePollResult).
-        var strikes = PermanentPostStrikes.AddOrUpdate(key, 1, static (_, n) => n + 1);
-        if (strikes < 3) return;
-        EndpointCooldowns[key] = (long.MaxValue, 0);
-        PermanentPostRefusals[key] = reason;
-    }
-
-    private static readonly ConcurrentDictionary<string, int> PermanentPostStrikes = new(StringComparer.OrdinalIgnoreCase);
-
-    private static readonly ConcurrentDictionary<string, string> PermanentPostRefusals = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Nouvelle liaison ou nouvelle session : les canaux refusés réessaient tout de suite.</summary>
     private static void ResetPollRefusals()
@@ -2426,13 +2376,6 @@ public static partial class Extension
         {
             slot.RefusedStep = 0;
             slot.RefusedUntilMs = 0;
-            slot.RefusedReason = "";
-        }
-        PermanentPostStrikes.Clear();
-        foreach (var key in PermanentPostRefusals.Keys)
-        {
-            PermanentPostRefusals.TryRemove(key, out _);
-            EndpointCooldowns.TryRemove(key, out _);
         }
     }
 
@@ -2444,18 +2387,11 @@ public static partial class Extension
     /// redemander, de plus en plus longtemps ; la première réponse 2xx/304 remet le compteur à zéro. Avant, chaque
     /// canal refusé était redemandé toutes les 1,2 s à 10 s : des milliers de requêtes refusées par heure côté Athena.
     /// Un 404 ne compte pas : certains canaux répondent 404 tant que la ressource n'existe pas (plan de mission…).
+    /// Les refus pour une règle d'Athena (clé, compte, offre) sont arrêtés net par Extension_RefusalLatch.cs ;
+    /// ces paliers couvrent les refus passagers et ceux sans motif.
     /// </summary>
-    private static void NotePollResult(PollGetSlot slot, int code, string? body = null)
+    private static void NotePollResult(PollGetSlot slot, int code)
     {
-        // Confirmé sur trois réponses de suite (environ 45 s) : un refus ponctuel (base d'Athena momentanément
-        // indisponible pendant la vérification de la clé) ne coupe pas le canal pour toute la partie.
-        var permanent = PermanentRefusalReason(code, body);
-        if (permanent.Length > 0 && slot.RefusedUntilMs != 0 && slot.RefusedStep >= 1)
-        {
-            slot.RefusedReason = permanent;
-            slot.RefusedUntilMs = long.MaxValue;
-            return;
-        }
         if (code is 401 or 403 or 429 || code >= 500 || code < 0)
         {
             var step = slot.RefusedUntilMs == 0 ? 0 : Math.Min(slot.RefusedStep + 1, PollRefusedLadderSec.Length - 1);
@@ -2466,7 +2402,6 @@ public static partial class Extension
         {
             slot.RefusedStep = 0;
             slot.RefusedUntilMs = 0;
-            slot.RefusedReason = "";
         }
     }
 
@@ -2481,6 +2416,11 @@ public static partial class Extension
     {
         if (string.IsNullOrEmpty(url))
             return "ERR|invalid_url";
+        // Refus définitif en cours : aucun appel (avant : un GET refusé toutes les 4 à 8 s par sondage).
+        if (IsAuthLatched())
+            return "ERR|unauthorized";
+        if (IsFeatureLatched(url))
+            return "ERR|feature_unavailable";
 
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
         slot.Url = url;
@@ -2497,9 +2437,12 @@ public static partial class Extension
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
                     using var resp = SendGet(url, cts.Token);
                     var body = ReadContentUtf8(resp, cts.Token);
-                    slot.LastCode = (int)resp.StatusCode;
-                    NotePollResult(slot, slot.LastCode, body);
-                    var formatted = format(body, (int)resp.StatusCode);
+                    var status = (int)resp.StatusCode;
+                    slot.LastCode = status;
+                    if (status == 401 || status == 403)
+                        NoteRefusal(url, status, body);
+                    NotePollResult(slot, status);
+                    var formatted = format(body, status);
                     if (formatted.StartsWith("OK|", StringComparison.Ordinal) || slot.FetchedAtMs == 0)
                         slot.Result = formatted;
                     slot.FetchedAtMs = Environment.TickCount64;
