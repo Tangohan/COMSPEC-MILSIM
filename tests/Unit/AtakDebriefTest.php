@@ -88,7 +88,7 @@ final class AtakDebriefTest extends TestCase
         self::assertLessThan(strpos($routes, "'/back-office/atak/comptes-rendus/{id}'"), strpos($routes, "'/back-office/atak/suivi-cr'"));
         self::assertStringContainsString("'back-office/atak/suivi-cr'", (string) file_get_contents($root . '/config/back_office_pages.php'));
         self::assertStringContainsString("back-office/atak/suivi-cr", (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php'));
-        self::assertStringContainsString("'atak_debrief'", (string) file_get_contents($root . '/run-migrations.php'));
+        self::assertStringContainsString("'atak_debrief'", \Tests\Support\MigrationPipelineSource::read($root));
         self::assertFileExists($root . '/public/assets/css/back-office-debrief.css');
 
         $en = require $root . '/lang/en/site_auto.php';
