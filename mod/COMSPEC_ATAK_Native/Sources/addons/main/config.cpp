@@ -694,6 +694,11 @@ class CfgRemoteExec {
         // peut être le joueur à prévenir ; sur un serveur dédié la fonction ne fait rien (pas d'interface). jip = 0 :
         // même raison que ci-dessus.
         class comspec_atak_native_fnc_compromise { allowedTargets = 0; jip = 0; };
+        // Caméras IP (lot mpauth3, SEC-006) : pose et ramassage demandés au serveur (« srvReg », « srvTake »), ordre
+        // « pickupGive » du serveur au ramasseur. 0 : le ramasseur peut être l'hôte d'une partie locale. La fonction
+        // refuse tout autre appel distant qui ne vient pas du serveur, et juge les deux demandes sur le demandeur
+        // (SEC-005, SEC-017). jip = 0 : même raison que ci-dessus.
+        class comspec_atak_native_fnc_camAction { allowedTargets = 0; jip = 0; };
     };
 };
 

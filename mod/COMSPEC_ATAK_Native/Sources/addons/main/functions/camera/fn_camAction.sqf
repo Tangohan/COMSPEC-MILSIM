@@ -24,11 +24,60 @@
                                   Relais dans la mission (fn_videoLink) : la caméra doit aussi joindre le téléphone, en
                                   direct (Wi-Fi, comspec_atak_native_camera_range) ou par les relais, sinon LINK.
       ["video", obj]              chemin du flux (HashMap de fn_videoLink "path", clé "CAM:<hashValue>")
+
+    Appels distants (CfgRemoteExec : allowedTargets = 0, jip = 0) : un client envoie au serveur « srvReg » (pose) et
+    « srvTake » (ramassage) ; le serveur envoie au ramasseur l'ordre « pickupGive » (un client, ou l'hôte d'une partie
+    locale). D'un autre poste que le serveur, la fonction ne reçoit que « srvReg » et « srvTake », sur le serveur seul,
+    jugées sur le demandeur retrouvé par remoteExecutedOwner (fn_reqUnit) ; rien n'est reçu de la file JIP.
 */
 params [["_mode", ""], ["_a", objNull], ["_b", 0]];
+// Lot mpauth3 (SEC-005, SEC-006, SEC-017) : « srvTake » supprimait n'importe quelle caméra de la carte et en livrait
+// l'item à l'unité nommée par l'appelant ; « srvReg » laissait tout client vider le registre des caméras. La fonction
+// entre en liste blanche avec cette garde, et le serveur ne croit plus que le demandeur retrouvé par remoteExecutedOwner
+// (fn_reqUnit rend objNull hors du serveur : un client ne reçoit rien d'un autre client). Hôte d'une partie locale et
+// partie solo : appel non distant, rien ne change.
+if (isRemoteExecutedJIP) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Appel « %1 » refusé (rejoué depuis la file JIP)", _mode];
+    false
+};
+private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner isNotEqualTo 2};
+private _req = objNull;
+if (_remote) then { _req = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
+if (_remote && {!(_mode in ["srvReg", "srvTake"])}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Action « %1 » refusée au poste %2 (locale ou ordre du serveur)", _mode, remoteExecutedOwner];
+    false
+};
+if (_remote && {isNull _req}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Demande « %1 » refusée au poste %2 (demandeur introuvable)", _mode, remoteExecutedOwner];
+    false
+};
 #define CAM_ITEM "COMSPEC_ATAK_Camera"
 #define CAM_CLASS "COMSPEC_ATAK_CameraObj"
 private _fn = comspec_atak_native_fnc_camAction;
+// Caméra hors service. Fonction locale : dans la pile d'une demande distante, un appel imbriqué de la fonction garde le
+// contexte distant et serait refusé par la garde ci-dessus (« srvTake » ne se ré-appelle donc plus).
+private _isDead = {
+    params ["_c"];
+    if (isNull _c) exitWith { true };
+    private _host = attachedTo _c;
+    !alive _c || {damage _c > 0.5} || {_c getVariable ["COMSPEC_ATAK_CamDead", false]} || {!isNull _host && {!alive _host}}
+};
+// Serveur : registre COMSPEC_ATAK_Cams tenu et publié par lui seul (objets supprimés retirés au passage). Pose : objet
+// rendu éditable par Zeus, et événement Explosion ajouté ici aussi (il ne joue que là où l'objet est local : le serveur
+// reprend la caméra au départ du poseur). Fonction locale, même raison que _isDead.
+private _register = {
+    params ["_o", "_add"];
+    private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _o} };
+    if (_add && {!isNull _o} && {(typeOf _o) isEqualTo CAM_CLASS}) then {
+        _list pushBack _o;
+        if (isNil { _o getVariable "COMSPEC_ATAK_CamSrvEh" }) then {
+            _o setVariable ["COMSPEC_ATAK_CamSrvEh", true];
+            _o addEventHandler ["Explosion", { params ["_c", "_dmg"]; if (_dmg > 0.05) then { _c setVariable ["COMSPEC_ATAK_CamDead", true, true]; }; }];
+            { _x addCuratorEditableObjects [[_o], true]; } forEach allCurators;
+        };
+    };
+    missionNamespace setVariable ["COMSPEC_ATAK_Cams", _list, true];
+};
 // Repère orthonormé d'un regard (haut vertical autant que possible).
 private _upOf = {
     params ["_d"];
@@ -43,11 +92,7 @@ switch (_mode) do {
         (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {(_x getVariable ["COMSPEC_ATAK_CamSide", ""]) isEqualTo _side} }
     };
     case "list": { (["listAll"] call _fn) select { ["can", _x] call comspec_atak_native_fnc_camShare } };
-    case "dead": {
-        if (isNull _a) exitWith { true };
-        private _host = attachedTo _a;
-        !alive _a || {damage _a > 0.5} || {_a getVariable ["COMSPEC_ATAK_CamDead", false]} || {!isNull _host && {!alive _host}}
-    };
+    case "dead": { [_a] call _isDead };
     case "status": {
         if (isNull _a) exitWith { ["GONE", "Retirée", [0.54, 0.6, 0.58, 1]] };
         if (["dead", _a] call _fn) exitWith { ["DEAD", "Détruite", [0.9, 0.28, 0.23, 1]] };
@@ -160,14 +205,20 @@ switch (_mode) do {
         ["srvTake", _a, player] remoteExecCall ["comspec_atak_native_fnc_camAction", 2];
         true
     };
-    // Serveur : premier arrivé seul servi (verrou posé avant la suppression), item rendu au ramasseur (_b).
+    // Serveur : premier arrivé seul servi (verrou posé avant la suppression), item rendu au ramasseur (_b). Demande d'un
+    // client (SEC-017) : le ramasseur est le demandeur lui-même, vivant, à 10 m au plus de la caméra (les actions ACE
+    // de la caméra portent à 2,5 m) ; n'importe quel joueur ramasse toujours n'importe quelle caméra à sa portée.
     case "srvTake": {
         if (!isServer) exitWith { false };
-        if (isNull _a || {!(_b isEqualType objNull)} || {isNull _b} || {(typeOf _a) isNotEqualTo CAM_CLASS} || {_a getVariable ["COMSPEC_ATAK_CamTaken", false]}) exitWith { false };
+        if (!(_a isEqualType objNull) || {isNull _a} || {!(_b isEqualType objNull)} || {isNull _b} || {(typeOf _a) isNotEqualTo CAM_CLASS} || {_a getVariable ["COMSPEC_ATAK_CamTaken", false]}) exitWith { false };
+        if (_remote && {_b isNotEqualTo _req || {!alive _req} || {(_req distance _a) > 10}}) exitWith {
+            diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Ramassage refusé à %1 (pour une autre unité, ou demandeur mort ou à plus de 10 m de la caméra)", name _req];
+            false
+        };
         _a setVariable ["COMSPEC_ATAK_CamTaken", true];
-        private _dead = ["dead", _a] call _fn;
+        private _dead = [_a] call _isDead;
         private _name = _a getVariable ["COMSPEC_ATAK_CamName", "Caméra"];
-        ["srvReg", _a, false] call _fn;
+        [_a, false] call _register;
         deleteVehicle _a;
         ["pickupGive", _name, _dead] remoteExecCall ["comspec_atak_native_fnc_camAction", _b];
         true
@@ -185,21 +236,15 @@ switch (_mode) do {
         ["INFO", format ["%1 récupérée%2", _name, ["", " (inventaire plein : posée au sol)"] select !(CAM_ITEM in (items player))], 3, 20] call comspec_atak_native_fnc_notify;
         true
     };
-    // Serveur : registre COMSPEC_ATAK_Cams tenu et publié par lui seul (objets supprimés retirés au passage). Pose :
-    // objet rendu éditable par Zeus, et événement Explosion ajouté ici aussi (il ne joue que là où l'objet est local :
-    // le serveur reprend la caméra au départ du poseur).
+    // Serveur : registre COMSPEC_ATAK_Cams (_register). Demande d'un client (SEC-005) : ajout seulement, d'une caméra à
+    // 10 m au plus du demandeur vivant (il vient de la poser, à 3 m au plus de ses yeux) ; seul le serveur retire.
     case "srvReg": {
-        if (!isServer) exitWith { false };
-        private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _a} };
-        if (_b isEqualTo true && {!isNull _a} && {(typeOf _a) isEqualTo CAM_CLASS}) then {
-            _list pushBack _a;
-            if (isNil { _a getVariable "COMSPEC_ATAK_CamSrvEh" }) then {
-                _a setVariable ["COMSPEC_ATAK_CamSrvEh", true];
-                _a addEventHandler ["Explosion", { params ["_c", "_dmg"]; if (_dmg > 0.05) then { _c setVariable ["COMSPEC_ATAK_CamDead", true, true]; }; }];
-                { _x addCuratorEditableObjects [[_a], true]; } forEach allCurators;
-            };
+        if (!isServer || {!(_a isEqualType objNull)}) exitWith { false };
+        if (_remote && {_b isNotEqualTo true || {isNull _a} || {!alive _req} || {(_req distance _a) > 10}}) exitWith {
+            diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Registre des caméras : demande refusée à %1 (retrait, ou caméra absente ou à plus de 10 m)", name _req];
+            false
         };
-        missionNamespace setVariable ["COMSPEC_ATAK_Cams", _list, true];
+        [_a, _b isEqualTo true] call _register;
         true
     };
     case "rotate": {

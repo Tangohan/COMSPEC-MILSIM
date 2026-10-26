@@ -404,7 +404,9 @@ final class AtakMultiplayerAuthTest extends TestCase
         // main/ ou connect/ dont la garde porte « if (_remote && {!(_act in [...])}) exitWith { » (quel que soit le nom
         // du sélecteur). Actions envoyées : premier élément du tableau passé par remoteExec / remoteExecCall à ces
         // fonctions, dans le code et dans le code porté par des chaînes. Une action non littérale n'est lue que si un
-        // relais connu la remplit (relayActions), dont les appelants sont lus à leur tour ; sinon le test échoue.
+        // relais connu la remplit (relayActions), dont les appelants sont lus à leur tour ; sinon le test échoue. Un
+        // envoi placé après le « if (!isServer) exitWith { … }; » qui ouvre son bloc est un ordre du serveur (lot
+        // mpauth3 : « pickupGive » de fn_camAction) : la garde le laisse passer (poste 2), il n'a pas à être listé.
         $files = $this->sources();
         $lists = $this->remoteLists($files);
         foreach (['adminserver', 'zeusserver', 'captureserver'] as $f) {
@@ -431,6 +433,49 @@ final class AtakMultiplayerAuthTest extends TestCase
             sort($got);
             self::assertSame($expected, $got, $fn);
         }
+    }
+
+    public function testCameraPickupAndRegistryAreJudgedOnTheRequester(): void
+    {
+        // Lot mpauth3 (SEC-017, SEC-005, SEC-006) : « srvTake » (fn_camAction) supprimait n'importe quelle caméra de la
+        // carte et en livrait l'item à l'unité nommée par l'appelant ; « srvReg » laissait tout client vider le registre
+        // des caméras. La fonction était absente de la liste blanche (pose et ramassage cassés en mode 1). Elle y entre
+        // avec une garde en tête : rien de la file JIP ; d'un autre poste que le serveur, « srvReg » et « srvTake »
+        // seules, jugées sur le demandeur retrouvé par remoteExecutedOwner, jamais sur une unité des arguments.
+        $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/camera/fn_camAction.sqf'));
+        $head = $this->between($code, 'params [["_mode", ""], ["_a", objNull], ["_b", 0]];', 'switch (_mode) do {');
+        self::assertMatchesRegularExpression('/^params \[\["_mode", ""\], \["_a", objNull\], \["_b", 0\]\];\s*'
+            . 'if \(isRemoteExecutedJIP\) exitWith \{[^{}]*false\s*\};\s*'
+            . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+            . 'private _req = objNull;\s*'
+            . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
+            . 'if \(_remote && \{!\(_mode in \["srvReg", "srvTake"\]\)\}\) exitWith \{[^{}]*false\s*\};\s*'
+            . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*false\s*\};/', $head);
+        // Ramassage : pour le demandeur lui-même, vivant, à 10 m au plus. Registre : ajout seulement, caméra proche.
+        $take = $this->between($code, 'case "srvTake": {', 'case "pickupGive": {');
+        self::assertMatchesRegularExpression('/^case "srvTake": \{\s*if \(!isServer\) exitWith \{ false \};\s*'
+            . 'if \(!\(_a isEqualType objNull\) \|\| \{isNull _a\} \|\| \{!\(_b isEqualType objNull\)\} \|\| \{isNull _b\} [^\n]*\) exitWith \{ false \};\s*'
+            . 'if \(_remote && \{_b isNotEqualTo _req \|\| \{!alive _req\} \|\| \{\(_req distance _a\) > 10\}\}\) exitWith \{[^{}]*false\s*\};\s*'
+            . '_a setVariable \["COMSPEC_ATAK_CamTaken", true\];/', $take);
+        $reg = $this->between($code, 'case "srvReg": {', 'case "rotate": {');
+        self::assertMatchesRegularExpression('/^case "srvReg": \{\s*if \(!isServer \|\| \{!\(_a isEqualType objNull\)\}\) exitWith \{ false \};\s*'
+            . 'if \(_remote && \{_b isNotEqualTo true \|\| \{isNull _a\} \|\| \{!alive _req\} \|\| \{\(_req distance _a\) > 10\}\}\) exitWith \{[^{}]*false\s*\};\s*'
+            . '\[_a, _b isEqualTo true\] call _register;\s*true\s*\};\s*$/', $reg);
+        // Ni l'une ni l'autre ne se ré-appelle : dans la pile d'une demande distante, l'appel imbriqué garde le contexte
+        // distant et serait refusé (« dead » rendait faux, le retrait du registre ne se faisait plus).
+        foreach (['srvTake' => $take, 'srvReg' => $reg] as $mode => $body) {
+            self::assertDoesNotMatchRegularExpression('/\bcall\s+(?:_fn|comspec_atak_native_fnc_camAction)\b/i', $body, $mode);
+        }
+        self::assertStringContainsString('class comspec_atak_native_fnc_camAction { allowedTargets = 0; jip = 0; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        // Les clients envoient « srvReg » et « srvTake » ; « pickupGive » n'est envoyée que par le serveur.
+        $files = $this->sources();
+        $lists = $this->remoteLists($files);
+        self::assertSame(['srvReg', 'srvTake'], $lists['comspec_atak_native_fnc_camaction'] ?? null);
+        [$sent, , $orders] = $this->actionsSent($files, $lists);
+        $got = array_keys($sent['comspec_atak_native_fnc_camaction'] ?? []);
+        sort($got);
+        self::assertSame(['srvReg', 'srvTake'], $got);
+        self::assertSame(['comspec_atak_native_fnc_camaction' => ['pickupGive']], array_map('array_keys', $orders));
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */
@@ -543,12 +588,14 @@ final class AtakMultiplayerAuthTest extends TestCase
 
     /**
      * Actions envoyées par remoteExec / remoteExecCall aux fonctions à liste : [[fonction => [action => [fichier => true]]],
-     * [envois dont l'action n'est ni littérale ni remplie par un relais connu]].
+     * [envois dont l'action n'est ni littérale ni remplie par un relais connu], [ordres du serveur (serverBranch), même
+     * forme que le premier tableau]].
      */
     private function actionsSent(array $files, array $lists): array
     {
         $sent = [];
         $unread = [];
+        $orders = [];
         foreach ($files as $rel => $units) {
             foreach ($units as $code) {
                 foreach ($this->remoteCalls($code) as [$left, $right, $at]) {
@@ -562,13 +609,38 @@ final class AtakMultiplayerAuthTest extends TestCase
                     if ($acts === []) {
                         $unread[] = "$rel : action « $first » vers $fn, ni littérale ni remplie par un relais connu";
                     }
+                    $server = $this->serverBranch($code, $at);
                     foreach ($acts as $act) {
-                        $sent[$fn][$act][$rel] = true;
+                        if ($server) {
+                            $orders[$fn][$act][$rel] = true;
+                        } else {
+                            $sent[$fn][$act][$rel] = true;
+                        }
                     }
                 }
             }
         }
-        return [$sent, $unread];
+        return [$sent, $unread, $orders];
+    }
+
+    /**
+     * Vrai si la position $at d'un code tombe dans une branche du serveur seul : dans un bloc « { … } » qui s'ouvre sur
+     * « if (!isServer) exitWith { … }; », après ce bloc de sortie (le code de sortie lui-même tourne hors du serveur).
+     */
+    private function serverBranch(string $code, int $at): bool
+    {
+        $blank = $this->blankStrings($code);
+        $braces = $this->pairsOf($blank, '{', '}');
+        foreach ($braces as $o => $c) {
+            if ($o >= $at || $at >= $c || preg_match('/^\{\s*if\s*\(\s*!\s*isServer\s*\)\s*exitWith\s*\{/i', substr($blank, $o, 120), $m) !== 1) {
+                continue;
+            }
+            $exit = $o + strlen($m[0]) - 1;
+            if (isset($braces[$exit]) && $braces[$exit] < $at) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Nom CfgFunctions (en minuscules) de la fonction d'un fichier fn_*.sqf de main/ ou de connect/. */
