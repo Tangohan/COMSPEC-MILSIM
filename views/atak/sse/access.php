@@ -96,7 +96,7 @@ $fmtLogTime = static function (array $row): string {
             <form method="post" action="<?= $h(url('atak/sse/acces')) ?>">
                 <?= \App\Core\Csrf::field() ?>
                 <label for="label">Libellé</label>
-                <input id="label" name="label" type="text" required value="Accès temporaire" maxlength="120">
+                <input id="label" name="label" type="text" required value="<?= locale() === 'en' ? 'Temporary access' : 'Accès temporaire' ?>" maxlength="120">
 
                 <label for="grant_type">Type d’accès</label>
                 <select id="grant_type" name="grant_type">
