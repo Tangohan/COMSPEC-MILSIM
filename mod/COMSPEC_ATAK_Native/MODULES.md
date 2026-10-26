@@ -207,3 +207,37 @@ if (isServer) then { ["set", [units group _unit, true]] call comspec_atak_native
 `_unit setVariable ["COMSPEC_ATAK_AiAtak", true, true]`. With "Realistic AI on the network" (default on), AI only show
 on the BFT if they really carry an ATAK, and the server sends their PLI points at the network rate with a per-AI GPS
 error, the same for every player, lost or degraded near jammers.
+
+## 9. Relais : condition d'activation (mât déployé, à l'arrêt, code)
+
+Un relais ou une passerelle de véhicule peut ne porter le réseau ATAK que sous condition : champ « Actif seulement si »
+du module « ATAK · Relais » (toujours, mât ou antenne déployé(e), véhicule à l'arrêt, moteur coupé) ou champ
+« Condition (code) » du module dans Eden. Condition non remplie : le relais apparaît hors service avec la raison (page
+Réseau, fiche du relais sur la carte).
+
+```sqf
+// Préréglage, n'importe où (la variable est publique) : "" (toujours), "mast", "stopped" ou "engineoff".
+_veh setVariable ["COMSPEC_AtakRelayCond", "mast", true];
+// Condition en code : sur le serveur seulement (initServer.sqf, ou init d'un objet dans Eden sous « if (isServer) »).
+// _this = l'objet ; le code rend vrai quand le relais doit marcher. Le serveur le réévalue toutes les 2 s.
+if (isServer) then {
+    [_veh, "_this animationSourcePhase ""mast_src"" > 0.9"] call comspec_atak_native_fnc_relayCondSet;
+    _veh setVariable ["COMSPEC_AtakRelayCond", "code", true];   // tout texte hors préréglage : « appliquer le code »
+};
+[_veh, ""] call comspec_atak_native_fnc_relayCondSet;   // serveur : retire le code
+```
+
+- Le code reste sur le serveur, dans un registre que le réseau ne synchronise jamais : aucun joueur ne peut le lire ni
+  le remplacer. Seul le résultat (actif ou non, et la raison) est envoyé aux joueurs. Appelée ailleurs que sur le
+  serveur, ou à distance par un client, la fonction refuse (`false`) et l'écrit au journal.
+- **Rupture (sécurité)** : la variable d'objet `COMSPEC_AtakRelayCondSrv`, donnée en exemple depuis la 2.4.1, n'est
+  plus lue, car un client pouvait la réécrire. Une mission qui la posait voit son relais rester « condition non
+  remplie » : remplacer cette ligne par l'appel à `comspec_atak_native_fnc_relayCondSet` ci-dessus. Le module posé
+  dans Eden et les préréglages ne changent pas.
+
+**English.** Relays and vehicle gateways can carry the ATAK network only under a condition: `COMSPEC_AtakRelayCond` =
+`""`, `"mast"`, `"stopped"` or `"engineoff"` (public variable), or a code condition set on the server with
+`[object, "code"] call comspec_atak_native_fnc_relayCondSet` (`_this` = the object, `""` removes it) together with
+`COMSPEC_AtakRelayCond` set to any other text, such as `"code"`. The code stays in a server-only registry that is never
+synchronised. **Breaking change (security):** the `COMSPEC_AtakRelayCondSrv` object variable is no longer read, since a
+client could overwrite it; missions that set it must call `comspec_atak_native_fnc_relayCondSet` instead.

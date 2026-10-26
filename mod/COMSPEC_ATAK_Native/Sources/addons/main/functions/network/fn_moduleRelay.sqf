@@ -17,7 +17,8 @@
     Liaison : « raccordé » (satellite, fibre : porte le réseau seul) ou « répéteur » (doit voir un relais raccordé,
     de proche en proche, fn_relayNet). Variables posées sur l'objet : voir fn_relayNet "list".
     Condition d'activation (fn_relayCond) : toujours, mât ou antenne déployé(e), véhicule à l'arrêt, moteur coupé, ou code
-    SQF (Eden : champ « Condition (code) », _this = l'objet). Exemple : GAZ-66 radio de RHS relais seulement mât dressé.
+    SQF (Eden : champ « Condition (code) », _this = l'objet ; gardé par le serveur seul, fn_relayCondSet). Exemple : GAZ-66
+    radio de RHS relais seulement mât dressé.
 */
 params [["_logic", objNull, [objNull]], ["_units", [], [[]]], ["_activated", true, [true]]];
 private _ctx = [_logic, _units, _activated] call comspec_atak_native_fnc_moduleContext;
@@ -127,9 +128,10 @@ private _apply = {
         _x setVariable ["COMSPEC_AtakRelayOn", _on, true];
         _x setVariable ["COMSPEC_AtakRelayFreq", _freq, true];
         _x setVariable ["COMSPEC_AtakRelayCond", trim _cond, true];
-        // Condition en code : copie locale du serveur, seule évaluée (fn_relayCond ne compile jamais la variable publique).
+        // Condition en code : registre du serveur (fn_relayCondSet, localNamespace jamais synchronisé), seul évalué par
+        // fn_relayCond, qui ne compile ni la variable publique ni une variable de l'objet (un client peut les écraser).
         // Un Zeus client ne peut que garder le code déjà posé sur le serveur (Eden ou script serveur).
-        if (isServer && {!((toLower trim _cond) in ["", "stopped", "engineoff", "mast"])}) then { _x setVariable ["COMSPEC_AtakRelayCondSrv", trim _cond]; };
+        if (isServer && {!((toLower trim _cond) in ["", "stopped", "engineoff", "mast"])}) then { [_x, trim _cond] call comspec_atak_native_fnc_relayCondSet; };
         _x setVariable ["COMSPEC_AtakRelayAutonomy", _aut, true];
         if (!_keepBatt) then { _x setVariable ["COMSPEC_AtakRelayBatt", [-1, 100] select (_aut > 0), true]; };
         _x setVariable ["COMSPEC_AtakRelayIp", format ["10.%1.%2.1", ((round abs (_p select 0)) mod 220) + 10, ((round abs (_p select 1)) mod 220) + 10], true];

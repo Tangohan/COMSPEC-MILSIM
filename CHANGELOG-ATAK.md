@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Correctif de sécurité : relais ATAK, condition en code gardée par le serveur (ATAK natif : numéro donné au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Correctif de sécurité des relais ATAK
+- Une faille de sécurité des relais ATAK est corrigée.
+- Rien ne change pour les joueurs, ni pour les relais posés avec le module dans l'éditeur.
+- Créateurs de missions : une condition d'activation écrite en code dans un script doit être reprise avec la nouvelle méthode décrite dans la documentation du mod.
+EN : ATAK relay security fix
+- A security hole in ATAK relays is fixed.
+- Nothing changes for players, nor for relays placed with the module in the editor.
+- Mission makers: an activation condition written as code in a script must be redone with the new method described in the mod documentation.
+
+### Détail technique
+- MP2-01 (audit d'ingénierie, critique) : depuis la 2.4.1, `fn_relayCond` compilait sur le serveur, toutes les 2 s, la variable d'objet `COMSPEC_AtakRelayCondSrv`, crue locale au serveur parce que le module l'écrivait sans diffusion. Or une écriture diffusée par n'importe quel client remplace aussi la copie du serveur ; le cache du code compilé (`missionNamespace`, `COMSPEC_ATAK_RelayCondCode`) pouvait de même être remplacé par `publicVariable`. Le serveur pouvait donc exécuter du code fourni par un client, dans tous les modes de `CfgRemoteExec` et sans ZEN.
+- Correctif : registre du serveur en `localNamespace` (`COMSPEC_ATAK_RelayCondSrc`, paires [objet, code], jamais synchronisé), écrit seulement par la nouvelle fonction `comspec_atak_native_fnc_relayCondSet`. Elle refuse hors du serveur et pour un `remoteExec` venu d'un client, et n'est déclarée dans aucune liste blanche. Le module « ATAK · Relais » posé dans Eden l'appelle sur le serveur. Le cache du code compilé passe en `localNamespace`. Préréglages (`""`, `stopped`, `engineoff`, `mast`), résultat publié dans `COMSPEC_AtakRelayCondOk` et côté client inchangés.
+- **Rupture pour les missions** : `COMSPEC_AtakRelayCondSrv` n'est plus lue. Un script qui la posait doit appeler `[_veh, "code SQF"] call comspec_atak_native_fnc_relayCondSet` sur le serveur, en gardant `COMSPEC_AtakRelayCond` sur un texte hors préréglage (par exemple `"code"`) ; exemple dans `mod/COMSPEC_ATAK_Native/MODULES.md`, § 9. Sans cette reprise, le relais reste « condition non remplie ».
+- Test : `tests/Unit/AtakRelayCondServerRegistryTest.php` (échoue sur l'ancien code, passe ici). main.pbo à reconstruire au regroupement. Non testé en jeu : relais à condition en code posée par le module Eden et par la nouvelle fonction, préréglages, et écrasement tenté par un client, sur un serveur d'essai seulement.
+
+---
+
 ## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
 
 ### Résumé joueur

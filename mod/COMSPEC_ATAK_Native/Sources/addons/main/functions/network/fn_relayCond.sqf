@@ -11,16 +11,21 @@
                   « aucun mât reconnu » (écrire alors la condition en code) ;
       autre texte : condition en code SQF, _this = l'objet, qui rend vrai quand le relais doit marcher.
                   Exemple : _this animationSourcePhase "mast_src" > 0.9 && {(abs speed _this) < 1}
-                  Sécurité : le code n'est JAMAIS compilé depuis la variable publique (n'importe quel client peut l'écrire).
-                  Seul le serveur l'évalue, depuis sa copie locale COMSPEC_AtakRelayCondSrv (non publique, posée par le
-                  module en Eden ou par un script serveur), et publie le résultat [actif, raison] dans
-                  COMSPEC_AtakRelayCondOk quand il change ("srv" : boucle de XEH_postInitServer, toutes les 2 s).
-                  Les clients ne lisent que ce résultat.
+                  Sécurité : le code n'est JAMAIS compilé depuis une variable que le réseau peut écrire : ni la variable
+                  publique COMSPEC_AtakRelayCond, ni une variable de l'objet (même posée sans diffusion sur le serveur,
+                  un client l'écrase par un setVariable diffusé), ni missionNamespace (publicVariable). Seul le serveur
+                  l'évalue, depuis son registre localNamespace COMSPEC_ATAK_RelayCondSrc (jamais synchronisé), rempli
+                  par le module en Eden ou par comspec_atak_native_fnc_relayCondSet (serveur seul) ; le cache du code
+                  compilé (COMSPEC_ATAK_RelayCondCode) est lui aussi en localNamespace. Le serveur publie le résultat
+                  [actif, raison] dans COMSPEC_AtakRelayCondOk quand il change ("srv" : boucle de XEH_postInitServer,
+                  toutes les 2 s). Les clients ne lisent que ce résultat.
+                  Rupture : la variable d'objet COMSPEC_AtakRelayCondSrv (2.4.1) n'est plus lue. Un script de mission
+                  qui la posait doit appeler comspec_atak_native_fnc_relayCondSet (exemple ci-dessous).
     Raison affichée : COMSPEC_AtakRelayCondText de l'objet, sinon celle du préréglage (« mât replié », « en mouvement »...).
     Depuis une mission ou un script (variable publique, réglée sur le serveur ou par le module « ATAK · Relais ») :
       _veh setVariable ["COMSPEC_AtakRelayCond", "mast", true];
-    Condition en code (sur le serveur seulement) :
-      _veh setVariable ["COMSPEC_AtakRelayCondSrv", "_this animationSourcePhase ""mast_src"" > 0.9"];
+    Condition en code (sur le serveur seulement : initServer.sqf, ou init d'un objet dans Eden sous « if (isServer) ») :
+      [_veh, "_this animationSourcePhase ""mast_src"" > 0.9"] call comspec_atak_native_fnc_relayCondSet;
       _veh setVariable ["COMSPEC_AtakRelayCond", "code", true];
     Params : [objet] -> [actif, raison ("" quand actif)] ; ["srv"] (serveur) : évalue les conditions en code des relais
     et passerelles et publie leur résultat.
@@ -59,13 +64,15 @@ private _ok = switch (toLower trim _c) do {
     default {
         _def = "condition non remplie";
         if (isServer) then {
-            // Code de la mission, pris dans la copie locale du serveur (jamais dans la variable publique), compilé une
-            // fois ; absent, une erreur ou un résultat non booléen vaut « inactif ». Résultat publié quand il change.
-            private _src = _o getVariable ["COMSPEC_AtakRelayCondSrv", ""];
+            // Code de la mission, pris dans le registre du serveur (localNamespace, jamais synchronisé : module en Eden ou
+            // fn_relayCondSet), jamais dans une variable de l'objet ni de missionNamespace, que tout client peut réécrire.
+            // Compilé une fois (cache en localNamespace lui aussi) ; absent, une erreur ou un résultat non booléen vaut
+            // « inactif ». Résultat publié quand il change.
+            private _src = (((localNamespace getVariable ["COMSPEC_ATAK_RelayCondSrc", []]) select { (_x select 0) isEqualTo _o }) param [0, [objNull, ""]]) select 1;
             private _r = false;
             if (_src isEqualType "" && {(trim _src) isNotEqualTo ""}) then {
-                private _codes = missionNamespace getVariable "COMSPEC_ATAK_RelayCondCode";
-                if (isNil "_codes") then { _codes = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_RelayCondCode", _codes]; };
+                private _codes = localNamespace getVariable "COMSPEC_ATAK_RelayCondCode";
+                if (isNil "_codes") then { _codes = createHashMap; localNamespace setVariable ["COMSPEC_ATAK_RelayCondCode", _codes]; };
                 private _code = _codes getOrDefault [_src, {}];
                 if (_code isEqualTo {}) then { _code = compile _src; _codes set [_src, _code]; };
                 _r = _o call _code;
