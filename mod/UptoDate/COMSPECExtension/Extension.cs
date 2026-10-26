@@ -4579,12 +4579,12 @@ public static partial class Extension
             if (function == "FireSupport.Request" && args.Length >= 6)
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var gunX = args.Length > 1 && double.TryParse(args[1], out var gx) ? gx : 0.0;
-                var gunY = args.Length > 2 && double.TryParse(args[2], out var gy) ? gy : 0.0;
-                var gunZ = args.Length > 3 && double.TryParse(args[3], out var gz) ? gz : 0.0;
-                var targetX = double.TryParse(args[4], out var tx) ? tx : 0.0;
-                var targetY = double.TryParse(args[5], out var ty) ? ty : 0.0;
-                var targetZ = args.Length > 6 && double.TryParse(args[6], out var tz) ? tz : 0.0;
+                var gunX = args.Length > 1 && double.TryParse(args[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var gx) ? gx : 0.0;
+                var gunY = args.Length > 2 && double.TryParse(args[2], NumberStyles.Float, CultureInfo.InvariantCulture, out var gy) ? gy : 0.0;
+                var gunZ = args.Length > 3 && double.TryParse(args[3], NumberStyles.Float, CultureInfo.InvariantCulture, out var gz) ? gz : 0.0;
+                var targetX = double.TryParse(args[4], NumberStyles.Float, CultureInfo.InvariantCulture, out var tx) ? tx : 0.0;
+                var targetY = double.TryParse(args[5], NumberStyles.Float, CultureInfo.InvariantCulture, out var ty) ? ty : 0.0;
+                var targetZ = args.Length > 6 && double.TryParse(args[6], NumberStyles.Float, CultureInfo.InvariantCulture, out var tz) ? tz : 0.0;
                 var ammoType = args.Length > 7 ? (args[7] ?? "HE") : "HE";
                 var fireUnitId = args.Length > 8 && int.TryParse(args[8], out var fid) ? fid : (int?)null;
                 var payload = fireUnitId.HasValue && fireUnitId > 0
@@ -6298,15 +6298,15 @@ public static partial class Extension
             {
                 try
                 {
-                    if (!double.TryParse((args[0] ?? "0").Trim(), out var baseRange)) 
+                    if (!double.TryParse((args[0] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var baseRange)) 
                         return "ERR|invalid_base_range";
-                    if (!double.TryParse((args[1] ?? "0").Trim(), out var rain)) 
+                    if (!double.TryParse((args[1] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var rain)) 
                         return "ERR|invalid_rain";
-                    if (!double.TryParse((args[2] ?? "0").Trim(), out var fog)) 
+                    if (!double.TryParse((args[2] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var fog)) 
                         return "ERR|invalid_fog";
-                    if (!double.TryParse((args[3] ?? "0").Trim(), out var overcast)) 
+                    if (!double.TryParse((args[3] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var overcast)) 
                         return "ERR|invalid_overcast";
-                    if (!double.TryParse((args[4] ?? "0").Trim(), out var windKmh)) 
+                    if (!double.TryParse((args[4] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var windKmh)) 
                         return "ERR|invalid_wind";
                         
                     return CalculateWeatherEffectsSync(baseRange, rain, fog, overcast, windKmh);
@@ -9025,7 +9025,7 @@ public static partial class Extension
                 var x = args[1] ?? "0";
                 var y = args[2] ?? "0";
                 var bearing = args.Length > 3 ? (args[3] ?? "") : "";
-                var payload = !string.IsNullOrEmpty(bearing) && double.TryParse(bearing, out var b)
+                var payload = !string.IsNullOrEmpty(bearing) && double.TryParse(bearing, NumberStyles.Float, CultureInfo.InvariantCulture, out var b)
                     ? $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y},\"bearing\":{b.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}}}"
                     : $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/sigint", payload);

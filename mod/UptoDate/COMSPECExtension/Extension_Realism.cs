@@ -187,7 +187,8 @@ public partial class Extension
             double throughputFactor = Math.Max(0.7, combinedFactor);
             
             // Retour : effectiveRange|throughputFactor|combinedFactor
-            return $"OK|{effectiveRange:F0}|{throughputFactor:F2}|{combinedFactor:F2}";
+            // Culture invariante : sous Windows en français, « 0,85 » était lu 0 par parseNumber (SQF).
+            return string.Create(System.Globalization.CultureInfo.InvariantCulture, $"OK|{effectiveRange:F0}|{throughputFactor:F2}|{combinedFactor:F2}");
         }
         catch (Exception ex)
         {
