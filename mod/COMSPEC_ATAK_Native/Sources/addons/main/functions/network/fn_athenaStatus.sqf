@@ -184,7 +184,7 @@ private _netKo = _code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_503", "HTTP_502", "
 _steps pushBack (switch (true) do {
     case (_mode isEqualTo "off" || {_dllDown}): { ["Serveur Athena", "off", "pas contacté", ""] };
     case (_netKo): { ["Serveur Athena", "ko", "injoignable", "Connexion internet du jeu coupée, pare-feu, ou site Athena en maintenance."] };
-    case (_logged || {_refused} || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena.ttrd.fr%1", _latText], ""] };
+    case (_logged || {_refused} || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena-comspec.eu%1", _latText], ""] };
     case (_syncing || {_link isEqualTo "connecting"} || {_ls isEqualTo "asking"}): { ["Serveur Athena", "now", "contact en cours", ""] };
     default { ["Serveur Athena", "todo", "pas encore contacté", ""] };
 });

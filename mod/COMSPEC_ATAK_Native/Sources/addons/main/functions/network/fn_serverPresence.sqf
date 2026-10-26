@@ -28,7 +28,7 @@ switch (_act) do {
             };
             private _ip = "";
             for "_try" from 1 to 3 do {
-                private _r = ["COMSPECExtension", "Server.PublicIp", ["https://athena.ttrd.fr/public"], 15] call comspec_atak_native_fnc_extAwait;
+                private _r = ["COMSPECExtension", "Server.PublicIp", ["https://athena-comspec.eu/public"], 15] call comspec_atak_native_fnc_extAwait;
                 if (_r isEqualType []) then { _r = _r param [0, ""]; };
                 if (_r isEqualType "" && {(_r select [0, 3]) isEqualTo "OK|"}) exitWith { _ip = _r select [3]; };
                 // DLL absente ou trop ancienne : inutile d'insister.
