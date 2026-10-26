@@ -2071,3 +2071,94 @@ body.layout-light .athena-header,
 .athena-header__drawer-link.is-active { font-style: normal; border-left-color: var(--athena-header-mint); }
 .athena-header__drawer-link:focus-visible { outline: 2px solid var(--ah-focus); outline-offset: -2px; }
 .athena-header__panel--drawer { border-radius: var(--ah-radius) !important; }
+
+/* ==========================================================================
+   Ajustements 2026-10-26 : retour des titres de rubrique en capitales
+   italiques (signature Athena), bouton Guide et puce profil retravaillés,
+   et la puce profil ne sort plus jamais de l'écran.
+   ========================================================================== */
+.athena-header__link,
+.athena-header--portal .athena-header__link {
+  font-size: 11.5px;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.athena-header__link--active,
+.athena-header__link--active:hover { font-style: italic; color: #fff !important; }
+@media (min-width: 1280px) and (max-width: 1919px) {
+  .athena-header--portal .athena-header__link { letter-spacing: 0.09em; padding: 0 0.55rem; }
+}
+.athena-header__drawer-link { font-style: italic; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 900; font-size: 13.5px; }
+
+/* La navigation cède la place avant les actions : la puce profil reste visible. */
+.athena-header__inner { min-width: 0; }
+.athena-header__nav-center { min-width: 0; overflow: hidden; }
+.athena-header__actions { flex-shrink: 0; }
+
+/* Guide : bouton contour, icône dans un carré menthe */
+.athena-header__guide-btn {
+  gap: 0.5rem !important;
+  padding: 0 0.7rem 0 0.3rem !important;
+  border-color: var(--ah-line) !important;
+  color: var(--ah-ink) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  font-style: italic;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+.athena-header__guide-btn .athena-header__btn-icon {
+  box-sizing: content-box;
+  width: 14px;
+  height: 14px;
+  padding: 5px;
+  border-radius: var(--ah-radius);
+  background: rgba(52, 211, 153, 0.14);
+  color: #6ee7b7;
+}
+.athena-header__guide-btn:hover { border-color: rgba(52, 211, 153, 0.5) !important; background: rgba(52, 211, 153, 0.06) !important; }
+.athena-header__guide-btn:hover .athena-header__btn-icon { background: rgba(52, 211, 153, 0.24); }
+
+/* Profil : puce contour avec avatar, nom en capitales italiques, grade dessous */
+.athena-header__profile-trigger {
+  gap: 0.6rem !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 0.45rem 0 3px !important;
+  border-color: var(--ah-line) !important;
+  max-width: 16rem;
+}
+.athena-header__profile-trigger:hover { border-color: rgba(52, 211, 153, 0.45) !important; }
+.athena-header__profile-trigger .athena-header__avatar { order: -1; width: 32px !important; height: 32px !important; min-width: 32px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.athena-header__profile-identity { align-items: flex-start !important; gap: 1px; }
+.athena-header__profile-name { font-size: 11.5px !important; font-weight: 900 !important; font-style: italic; letter-spacing: 0.06em !important; text-transform: uppercase !important; line-height: 1.15; max-width: 10rem; }
+.athena-header__profile-title { font-size: 10.5px !important; line-height: 1.15; color: #6ee7b7 !important; opacity: 0.85; max-width: 10rem; }
+.athena-header__profile-trigger .athena-header__chevron { width: 12px; height: 12px; color: var(--ah-dim); }
+/* Le nom s'affiche dès 1280 px (le grade dès 1600 px) au lieu d'attendre 1600 px. */
+@media (min-width: 1280px) {
+  .athena-header--portal .athena-header__profile-identity { display: flex !important; }
+  .athena-header--portal .athena-header__profile-title { display: none; }
+}
+@media (min-width: 1600px) {
+  .athena-header--portal .athena-header__profile-title { display: block; }
+}
+@media (max-width: 900px) {
+  .athena-header__guide-btn { width: var(--ah-ctl) !important; padding: 0 !important; justify-content: center; border-color: transparent !important; }
+  .athena-header__guide-btn .athena-header__btn-icon { padding: 4px; }
+  .athena-header__profile-trigger { height: var(--ah-ctl) !important; min-height: var(--ah-ctl) !important; padding: 0 0.25rem 0 2px !important; }
+  .athena-header__profile-trigger .athena-header__avatar { width: 28px !important; height: 28px !important; min-width: 28px; }
+}
+/* Entre 1280 et 1599 px, les rubriques passent avant les libellés : CTA et Guide en icône seule (avec infobulle). */
+@media (min-width: 1280px) and (max-width: 1599px) {
+  .athena-header--portal .athena-header__cta-label,
+  .athena-header--portal .athena-header__guide-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .athena-header--portal .athena-header__cta { width: var(--ah-ctl); min-width: var(--ah-ctl); padding: 0; justify-content: center; }
+  .athena-header--portal .athena-header__guide-btn { padding: 0 3px !important; }
+  .athena-header--portal .athena-header__link { letter-spacing: 0.07em; padding: 0 0.5rem; }
+}
+@media (min-width: 1600px) {
+  .athena-header--portal .athena-header__cta-label { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; }
+  .athena-header--portal .athena-header__cta { width: auto; min-width: 0; padding: 0 0.95rem 0 0.8rem; }
+}
