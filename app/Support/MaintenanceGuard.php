@@ -244,25 +244,8 @@ final class MaintenanceGuard
 
     public static function resolveClientIp(): string
     {
-        $keys = [
-            'HTTP_CF_CONNECTING_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'REMOTE_ADDR',
-        ];
+        $ip = ClientIp::resolve();
 
-        foreach ($keys as $key) {
-            if (!empty($_SERVER[$key])) {
-                $value = trim((string) $_SERVER[$key]);
-                if ($key === 'HTTP_X_FORWARDED_FOR' && str_contains($value, ',')) {
-                    $parts = explode(',', $value);
-
-                    return trim($parts[0]);
-                }
-
-                return $value;
-            }
-        }
-
-        return '0.0.0.0';
+        return $ip !== '' ? $ip : '0.0.0.0';
     }
 }

@@ -2472,11 +2472,7 @@ class AtakApiController
 
     public function whoami(Request $request, array $params = []): Response
     {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim($forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $tenantId = $this->resolveTenantId($request);
         if ($tenantId !== null) {
             try {
@@ -2524,11 +2520,7 @@ class AtakApiController
             ], 400);
         }
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ip = trim((string) $ip);
         if (strlen($ip) > 45) {
             $ip = substr($ip, 0, 45);
@@ -2606,11 +2598,7 @@ class AtakApiController
             $contextJson = trim($contextRaw);
         }
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ip = trim((string) $ip);
         if (strlen($ip) > 45) {
             $ip = substr($ip, 0, 45);

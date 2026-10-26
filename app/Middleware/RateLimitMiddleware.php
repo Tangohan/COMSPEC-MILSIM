@@ -191,11 +191,8 @@ final class RateLimitMiddleware
 
     private function clientIp(): string
     {
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0';
-        if (is_string($ip) && str_contains($ip, ',')) {
-            return trim(explode(',', $ip)[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
 
-        return is_string($ip) ? $ip : '0';
+        return $ip !== '' ? $ip : '0';
     }
 }

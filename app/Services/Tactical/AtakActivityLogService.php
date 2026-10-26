@@ -1008,11 +1008,7 @@ final class AtakActivityLogService
 
     public function clientKeyFromRequest(): string
     {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ip = trim((string) $ip);
         if ($ip === '') {
             return '';
