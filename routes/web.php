@@ -1970,6 +1970,7 @@ return function (Router $router) {
     $router->post('/back-office/atak/controle-serveur/regles', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/reseau-adopter', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'adoptNetwork'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/fonctions', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/controle-serveur/apps', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeApps'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/relais', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRelays'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/relays-network', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/api/atak/relays/{mapId}/{uid}', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
