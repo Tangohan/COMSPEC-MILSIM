@@ -60,7 +60,8 @@ final class AtakRealismApiController
             ], 404);
         }
 
-        $configJson = json_decode($config['config_json'], true);
+        // Complétée par les défauts du schéma : un réglage ajouté depuis le dernier enregistrement existe quand même.
+        $configJson = ConfigSchemaService::mergeWithDefaults(json_decode((string) $config['config_json'], true) ?: []);
         
         return Response::json([
             'ok' => true,
