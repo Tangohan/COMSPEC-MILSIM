@@ -53,11 +53,14 @@ switch (_mode) do {
         // Découverte (au démarrage puis toutes les 10 s) : allVariables uiNamespace compte des milliers de noms (caches de
         // fonctions BIS/CBA/ACE…). On ne garde que ceux qui contiennent un display (même fermé, pour qu'un calque rouvert
         // sous le même nom soit repris) ; le contrôle de chaque seconde ne relit plus que cette courte liste.
+        // Les deux tests de chaîne passent AVANT getVariable : l'immense majorité des noms sont des fonctions compilées
+        // (« ..._fnc_... »), et un getVariable par nom coûte bien plus cher qu'un find. Ce filtre existait, il a été
+        // perdu en combinant deux branches qui avaient écrit la même optimisation chacune de son côté.
         private _names = uiNamespace getVariable ["COMSPEC_ATAK_ForeignNames", []];
         if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_ForeignNamesNext", 0])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_ForeignNamesNext", diag_tickTime + 10];
             _names = (allVariables uiNamespace) select {
-                (_x select [0, 12]) isNotEqualTo "comspec_atak" && {
+                (_x select [0, 12]) isNotEqualTo "comspec_atak" && {(_x find "_fnc_") < 0} && {
                     private _v = uiNamespace getVariable _x;
                     !isNil "_v" && {_v isEqualType displayNull}
                 }
