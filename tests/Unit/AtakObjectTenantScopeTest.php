@@ -324,20 +324,42 @@ final class AtakObjectTenantScopeTest extends TestCase
         self::assertSame([], $this->column('SELECT id FROM atak_vehicle_service_requests WHERE vehicle_tracking_id = ?', [self::FOREIGN_VEHICLE]));
     }
 
-    /** La communauté ne vient jamais d’un paramètre du client quand la clé ou la session la donne déjà. */
-    public function testCommunityNamedByTheClientIsIgnored(): void
+    /** @return array<string, array{0: string, 1: string}> */
+    public static function callerModesAndRoutes(): array
     {
-        $this->actAs('cle');
-        $before = $this->row('atak_qrf_requests', self::FOREIGN_QRF);
+        $cases = [];
+        foreach (self::callerModes() as $label => [$mode]) {
+            foreach (['qrfAssign', 'poiUpdate', 'medevacShow', 'vehiclesServiceRequest'] as $action) {
+                $cases[$label . ' · ' . $action] = [$mode, $action];
+            }
+        }
 
-        $response = $this->call('qrfAssign', 'POST', '/api/atak/qrf/' . self::FOREIGN_QRF . '/assign', self::FOREIGN_QRF, [
-            'tenant_id' => 3,
-            'qrf_unit' => '2e section',
-            'qrf_callsign' => 'VIPER 7',
-        ], ['tenant_id' => '3', 'tenant_slug' => 'communaute-3']);
+        return $cases;
+    }
+
+    /** La communauté ne vient jamais d’un paramètre du client quand la clé ou la session la donne déjà. */
+    #[DataProvider('callerModesAndRoutes')]
+    public function testCommunityNamedByTheClientIsIgnored(string $mode, string $action): void
+    {
+        $this->actAs($mode);
+        $named = ['tenant_id' => '3', 'tenant_slug' => 'communaute-3'];
+        [$method, $path, $id, $table, $body] = match ($action) {
+            'qrfAssign' => ['POST', '/api/atak/qrf/' . self::FOREIGN_QRF . '/assign', self::FOREIGN_QRF, 'atak_qrf_requests',
+                ['qrf_unit' => '2e section', 'qrf_callsign' => 'VIPER 7']],
+            'poiUpdate' => ['PUT', '/api/atak/poi/' . self::FOREIGN_POI, self::FOREIGN_POI, 'atak_poi',
+                ['status' => 'NEUTRALIZED', 'description' => 'Modifié par la communauté 7']],
+            'medevacShow' => ['GET', '/api/atak/medevac/' . self::FOREIGN_MEDEVAC, self::FOREIGN_MEDEVAC, 'atak_medevac_requests', []],
+            'vehiclesServiceRequest' => ['POST', '/api/atak/vehicles/' . self::FOREIGN_VEHICLE . '/service', self::FOREIGN_VEHICLE,
+                'atak_vehicle_tracking', ['request_type' => 'REFUEL', 'priority' => 'HIGH']],
+        };
+        $before = $this->row($table, $id);
+
+        $response = $this->call($action, $method, $path, $id, $body + $named, $named);
 
         self::assertSame(404, $response->statusCode());
-        self::assertSame($before, $this->row('atak_qrf_requests', self::FOREIGN_QRF));
+        self::assertStringNotContainsString('obs3@example.test', $response->body());
+        self::assertSame($before, $this->row($table, $id));
+        self::assertSame([], $this->column('SELECT id FROM atak_vehicle_service_requests WHERE vehicle_tracking_id = ?', [self::FOREIGN_VEHICLE]));
     }
 
     /** Id inexistant : plus de ligne orpheline (patient, point de situation, demande de service) acceptée en 201. */

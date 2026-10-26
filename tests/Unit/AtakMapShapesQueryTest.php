@@ -46,6 +46,10 @@ final class AtakMapShapesQueryTest extends TestCase
     /** @var array<string, mixed> */
     private array $savedServer = [];
 
+    private bool $hadPost = false;
+
+    private mixed $savedPost = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -53,8 +57,12 @@ final class AtakMapShapesQueryTest extends TestCase
         $this->savedSession = $_SESSION ?? null;
         $this->savedGet = $_GET;
         $this->savedServer = $_SERVER;
+        // Un autre test peut avoir retiré $_POST (unset) : new Request() exige un tableau.
+        $this->hadPost = isset($_POST);
+        $this->savedPost = $_POST ?? null;
         $_SESSION = [];
         $_GET = [];
+        $_POST = [];
         unset($_SERVER['HTTP_AUTHORIZATION'], $_SERVER['HTTP_X_COMSPEC_KEY'], $_SERVER['HTTP_X_ATAK_TOKEN']);
         ComspecApiKeyAuth::resetForTests();
 
@@ -112,6 +120,11 @@ final class AtakMapShapesQueryTest extends TestCase
         }
         $_GET = $this->savedGet;
         $_SERVER = $this->savedServer;
+        if ($this->hadPost) {
+            $_POST = $this->savedPost;
+        } else {
+            unset($_POST);
+        }
         parent::tearDown();
     }
 
