@@ -56,6 +56,10 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     })();
     </script>
 <?php endif; ?>
+    <script>
+    /* Page ouverte dans une fenêtre du site (ath-modal-frame.js) : contenu seul, avant l'affichage. */
+    try { if (window.frameElement && window.frameElement.hasAttribute('data-ath-modal-frame')) { document.documentElement.classList.add('ath-in-modal'); } } catch (e) {}
+    </script>
     <title><?= htmlspecialchars($title) ?> — Athena</title>
 <?php
     $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — Athena';
@@ -174,6 +178,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/styles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/ath-modal-frame.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/app-update-modal.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/app-update-modal.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
@@ -415,6 +420,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/navigation.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ui_confirm_modal.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ath-toast.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/ath-modal-frame.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal_command_palette.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/app-version-check.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
