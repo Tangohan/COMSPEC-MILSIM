@@ -14401,13 +14401,13 @@ class AtakApiController
             $data['reported_by_callsign'] ?? 'Unknown'
         );
 
-        $poi = $repo->findById($poiId);
+        $poi = $repo->findById($poiId, $tenantId);
         
         return Response::json($poi, 201);
     }
 
     /**
-     * Met à jour un POI
+     * Met à jour un POI de la communauté appelante (celui d'une autre communauté : 404 comme un id inconnu)
      * PUT /api/atak/poi/:id
      */
     public function poiUpdate(Request $request, array $params = []): Response
@@ -14428,13 +14428,13 @@ class AtakApiController
         $repo = new \App\Repositories\AtakPoiRepository();
         $body['updated_by_user_id'] = $actor['user_id'] ?? null;
         
-        $success = $repo->update($id, $body);
+        $success = $repo->update($id, $r, $body);
         
         if (!$success) {
             return Response::json(['error' => 'POI not found'], 404);
         }
         
-        $poi = $repo->findById($id);
+        $poi = $repo->findById($id, $r);
         return Response::json($poi);
     }
 
@@ -14642,6 +14642,8 @@ class AtakApiController
     // =============================================================================
 
     // --- MEDEVAC 9-Line étendu (liste/création via casRepo plus haut ; détail ci-dessous) ---
+    // Chaque demande est cherchée dans la communauté appelante : celle d'une autre communauté
+    // répond 404 comme un id inconnu, et rien n'y est lu ni écrit.
 
     /**
      * Récupère une demande MEDEVAC
@@ -14656,14 +14658,14 @@ class AtakApiController
         
         $id = (int) ($params['id'] ?? 0);
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $medevac = $repo->findById($id);
+        $medevac = $repo->findById($id, $r);
         
         if (!$medevac) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
         }
         
         // Récupérer les patients
-        $medevac['patients'] = $repo->getPatients($id);
+        $medevac['patients'] = $repo->getPatients($id, $r);
         
         return Response::json($medevac);
     }
@@ -14688,7 +14690,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $success = $repo->updateStatus($id, $newStatus, $body['message'] ?? null);
+        $success = $repo->updateStatus($id, $r, $newStatus, $body['message'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
@@ -14722,7 +14724,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $success = $repo->assignAsset($id, $assetCallsign, $actor['user_id'] ?? null);
+        $success = $repo->assignAsset($id, $r, $assetCallsign, $actor['user_id'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
@@ -14746,7 +14748,10 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $patientId = $repo->addPatient($id, $body);
+        $patientId = $repo->addPatient($id, $r, $body);
+        if ($patientId < 1) {
+            return Response::json(['error' => 'MEDEVAC not found'], 404);
+        }
         
         return Response::json(['patient_id' => $patientId], 201);
     }
@@ -14909,7 +14914,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $success = $repo->assignQrf($id, $qrfUnit, $qrfCallsign, $actor['user_id'] ?? null);
+        $success = $repo->assignQrf($id, $r, $qrfUnit, $qrfCallsign, $actor['user_id'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'QRF request not found'], 404);
@@ -14944,7 +14949,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $success = $repo->updateQrfPosition($id, (float) $posX, (float) $posY, $body['eta'] ?? null);
+        $success = $repo->updateQrfPosition($id, $r, (float) $posX, (float) $posY, $body['eta'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'QRF request not found'], 404);
@@ -14977,10 +14982,13 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $updateId = $repo->addSitrepUpdate($id, array_merge($body, [
+        $updateId = $repo->addSitrepUpdate($id, $r, array_merge($body, [
             'updated_by_user_id' => $actor['user_id'] ?? null,
             'updated_by_callsign' => $actor['callsign'] ?? null,
         ]));
+        if ($updateId < 1) {
+            return Response::json(['error' => 'QRF request not found'], 404);
+        }
         
         return Response::json(['update_id' => $updateId], 201);
     }
@@ -15104,9 +15112,12 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakVehicleTrackingRepository();
-        $serviceId = $repo->createServiceRequest($id, array_merge($body, [
+        $serviceId = $repo->createServiceRequest($id, $r, array_merge($body, [
             'requested_by_callsign' => $actor['callsign'] ?? null,
         ]));
+        if ($serviceId < 1) {
+            return Response::json(['error' => 'Vehicle not found'], 404);
+        }
         
         return Response::json(['service_request_id' => $serviceId], 201);
     }
