@@ -6,6 +6,8 @@
                  et sa fiche Athena (compte, compromission, blocage) quand le parc est chargé
       ATHENA     parc ATAK de la communauté sur le site (comme Gestion > Parc ATAK) : bloquer, lever un blocage, déconnecter,
                  message imposé, déclarer ou lever une compromission ; recherche et pages de 40
+      APPS       App Store : pour la partie, chaque app au choix des joueurs, obligatoire (installée chez tous, pas de
+                 désinstallation) ou interdite (retirée des téléphones, ne s'ouvre plus) ; fn_appInstall, fn_adminServer « apps »
       DEBUG IA   téléphones ramassés par l'IA ennemie : porteur, déchiffrage, exploitation du BFT, groupes en traque et joueurs
                  repérés, IA en route pour ramasser ; valider / rejeter, arrêter la traque, reprendre le téléphone ; traque
                  coupée pour la partie
@@ -83,9 +85,33 @@ _rows pushBack ["segment", "", [
     [format ["EN JEU (%1)", count _players], "GAME"] call _tabBtn,
     [format ["ATHENA (%1)", _fTotal], "ATHENA"] call _tabBtn,
     [format ["DEBUG IA (%1)", count _caps], "DEBUG"] call _tabBtn
-]];
+] + ([[], [[format ["APPS (%1)", count ((["policy"] call comspec_atak_native_fnc_appInstall) select 0) + count ((["policy"] call comspec_atak_native_fnc_appInstall) select 1)], "APPS"] call _tabBtn]] select _inGame)];
 
 switch (_tab) do {
+    case "APPS": {
+        if (!_inGame) exitWith {
+            _rows pushBack ["text", "<t color='#8a9a93'>Réservé au Zeus, à l'admin du serveur (#login) et aux gestionnaires désignés par le serveur. La communauté impose ses apps depuis Athena (Contrôle serveur > Apps du téléphone).</t>"];
+        };
+        private _mis = missionNamespace getVariable ["COMSPEC_ATAK_AppPolicy", [[], []]];
+        if !(_mis isEqualType []) then { _mis = [[], []]; };
+        _mis params [["_mReq", []], ["_mForb", []]];
+        _rows pushBack ["section", "App Store : règles de la partie", "OBLIGATOIRE : installée chez tous, impossible à désinstaller · INTERDITE : retirée des téléphones, ne s'ouvre plus · LIBRE : au choix de chaque joueur"];
+        _rows pushBack ["buttons", [["TOUT LIBÉRER", "apps:reset", "['server', ['apps', ['', 'reset']]] call comspec_atak_native_fnc_adminClient;", "Lève les règles de la partie (celles du serveur et d'Athena restent)", (count _mReq) + (count _mForb) > 0] call _confirmBtn]];
+        {
+            private _id = _x get "id";
+            private _lid = toLower _id;
+            private _rule = switch (true) do { case (_lid in _mForb): { "forbidden" }; case (_lid in _mReq): { "required" }; default { "free" }; };
+            private _src = ((["source", _id] call comspec_atak_native_fnc_appInstall) splitString " +") - ["mission"];
+            private _st = ["state", _id] call comspec_atak_native_fnc_appInstall;
+            private _set = { params ["_r"]; compile format ["['server', ['apps', [%1, %2]]] call comspec_atak_native_fnc_adminClient;", str _id, str _r] };
+            _rows pushBack ["person", _x get "icon", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.75' color='#8a9a93'>%2</t>%3", _x get "name", _x get "section",
+                ["", format ["<br/><t size='0.75' color='#e8b84a'>aussi %1 par : %2</t>", ["obligatoire", "interdite"] select (_st isEqualTo "forbidden"), _src joinString ", "]] select (_src isNotEqualTo [])],
+                [["LIBRE", ["free"] call _set, _rule isEqualTo "free", true, "Au choix de chaque joueur"],
+                 ["OBLIGATOIRE", ["required"] call _set, _rule isEqualTo "required", true, "Installée chez tous, impossible à désinstaller"],
+                 ["INTERDITE", ["forbidden"] call _set, [false, "red"] select (_rule isEqualTo "forbidden"), true, "Retirée de tous les téléphones"]],
+                [[1, 1, 1, 1], [0.45, 0.48, 0.46, 1]] select (_st isEqualTo "forbidden")];
+        } forEach (([] call comspec_atak_native_fnc_appList) select { !(_x get "system") && {!((_x get "id") in ["Admin", "Toc"])} });
+    };
     case "GAME": {
         if (!_inGame) exitWith {
             _rows pushBack ["text", "<t color='#8a9a93'>Réservé au Zeus, à l'admin du serveur (#login) et aux gestionnaires désignés par le serveur (réglage « Gestionnaires en jeu »). Le parc Athena reste disponible selon vos droits sur le site.</t>"];

@@ -61,6 +61,8 @@ def phone_landscape(w=2048, h=1024):
 
 ICONS = {
     # Numéros : combiné de téléphone et fiche du carnet.
+    # App Store : sac de boutique, flèche de téléchargement.
+    "app_store": '<path d="M4.5 8h15l-1.2 12.2a1.5 1.5 0 0 1-1.5 1.3H7.2a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8"/><path d="M12 11.5v6M9.4 15l2.6 2.6 2.6-2.6"/>',
     "app_numbers": '<rect x="3" y="3" width="13" height="18" rx="1.5"/><path d="M6.5 8h6M6.5 11.5h6M6.5 15h3.5"/><path d="M17.5 8.5c1.6 1.6 2.6 3.7 2.6 6.1M17.5 12c.7.7 1.1 1.6 1.1 2.6"/>',
     # Poste TOC : ordinateur portable ouvert, carte et repère à l'écran.
     "app_toc": '<rect x="4" y="4.5" width="16" height="11" rx="1"/><path d="M2 19.5h20l-1.5-4h-17z"/><path d="M7 12.5l3-3 2.5 2 4-4"/><circle cx="16.5" cy="7.5" r="1"/>',
