@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.94";
+    private const string ExtensionVersion = "2.0.95";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2899,6 +2899,10 @@ public static partial class Extension
             req.Headers.Remove("X-COMSPEC-STEAM");
             req.Headers.TryAddWithoutValidation("X-COMSPEC-STEAM", steam);
         }
+        // 2.0.95 : le site sert alors ses images du téléphone (portrait, diapositives, avis de recherche, fiches FRS)
+        // en texture .paa, que DownloadBriefingSlideImage range telle quelle ; sans l'en-tête, JPEG comme avant.
+        req.Headers.Remove("X-COMSPEC-Image");
+        req.Headers.TryAddWithoutValidation("X-COMSPEC-Image", "paa");
     }
 
     private static void ApplySteamUid(string? steamUid)
@@ -5698,7 +5702,7 @@ public static partial class Extension
                 var cacheKeyRaw = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]! : "slide";
                 var safeKey = new string(cacheKeyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
                 if (safeKey.Length == 0) safeKey = "slide";
-                var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
+                var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : imageUrl.ToLowerInvariant().Contains(".paa") ? ".paa" : ".jpg";
 
                 // Portraits (clé avatar_<uid>_<empreinte de l'adresse>) : le fichier déjà téléchargé pour cette
                 // adresse est rendu sans requête ; il n'est retéléchargé que s'il manque (adresse changée = autre clé).
@@ -5707,7 +5711,7 @@ public static partial class Extension
                     var dir = GetWritableCacheDir();
                     if (dir != null)
                     {
-                        foreach (var cachedExt in new[] { ".jpg", ".png" })
+                        foreach (var cachedExt in new[] { ".paa", ".jpg", ".png" })
                         {
                             var cached = Path.Combine(dir, "briefing_" + safeKey + cachedExt);
                             try
@@ -5759,9 +5763,14 @@ public static partial class Extension
                     && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
                 var isJpeg = bytes.Length >= 3
                     && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
-                if (!isPng && !isJpeg) return "ERR|invalid_image";
+                // Texture Arma (.paa) convertie par le site : DXT1 / DXT5 (01 FF / 05 FF) suivis des balises « GGAT ».
+                var isPaa = bytes.Length >= 16
+                    && bytes[1] == 0xFF && (bytes[0] == 0x01 || bytes[0] == 0x05)
+                    && bytes[2] == (byte)'G' && bytes[3] == (byte)'G' && bytes[4] == (byte)'A' && bytes[5] == (byte)'T';
+                if (!isPng && !isJpeg && !isPaa) return "ERR|invalid_image";
                 if (isPng) ext = ".png";
                 else if (isJpeg) ext = ".jpg";
+                else if (isPaa) ext = ".paa";
 
                 var cacheDir = GetWritableCacheDir();
                 if (cacheDir == null) return "ERR|no_writable_cache_dir";
