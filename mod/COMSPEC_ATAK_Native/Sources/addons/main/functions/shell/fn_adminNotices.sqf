@@ -14,6 +14,7 @@
     Méta (COMSPEC Link 2.0.90+, 7e colonne) : « source=admin;state=captured;revoked=2;ref=… » pour une compromission
     (fn_compromiseView) ; vide avec un Link plus ancien (origine manuelle, état lu dans le titre).
     Compromission : le téléphone passe en mode « terminal compromis » (fn_compromiseView) jusqu'à la levée.
+    CR de fin d'opération (genre « debrief », réglages « debrief_cfg ») : confiés à l'app CR fin d'op (fn_debrief).
 */
 params [["_act", ""], ["_arg", []]];
 private _list = missionNamespace getVariable ["COMSPEC_ATAK_AdminNotices", []];
@@ -33,7 +34,8 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_AdminNoticesAt", diag_tickTime];
         private _tuid = profileNamespace getVariable ["comspec_overwatch_terminal_uid", ""];
         if !(_tuid isEqualType "") then { _tuid = ""; };
-        private _json = [createHashMapFromArray [["player_uid", getPlayerUID player], ["terminal_uid", _tuid]]] call comspec_overwatch_connect_fnc_hashMapToJson;
+        // « caps » : ce téléphone sait ouvrir le CR de fin d'opération imposé par le site (fn_debrief).
+        private _json = [createHashMapFromArray [["player_uid", getPlayerUID player], ["terminal_uid", _tuid], ["caps", "debrief"]]] call comspec_overwatch_connect_fnc_hashMapToJson;
         [_json] spawn {
             params ["_json"];
             private _r = ["COMSPECExtension", "AdminControl.Poll", [_json]] call comspec_atak_native_fnc_extAwait;
@@ -48,8 +50,23 @@ switch (_act) do {
             private _new = [];
             {
                 (_x splitString toString [9]) params [["_id", ""], ["_kind", "message"], ["_level", "info"], ["_title", ""], ["_body", ""], ["_ack", "1"], ["_meta", ""]];
+                // Réglages du CR de fin d'opération (ligne « debrief_cfg », redonnée à chaque relève) : sans alerte.
+                if (_kind isEqualTo "debrief_cfg") then {
+                    if (_id isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DbfCfgId", ""])) then {
+                        missionNamespace setVariable ["COMSPEC_ATAK_DbfCfgId", _id];
+                        ["cfg", [_id, _kind, _level, _title, _body, false, "", _meta]] call comspec_atak_native_fnc_debrief;
+                    };
+                    continue;
+                };
                 if (_id isNotEqualTo "" && {!(_id in _seen)}) then {
                     private _row = [_id, _kind, _level, _title, _body, _ack isEqualTo "1", [dayTime, "HH:MM"] call BIS_fnc_timeToString, _meta];
+                    // CR de fin d'opération imposé par le site : la fiche s'ouvre dans l'app CR fin d'op, validée à la remise.
+                    if (_kind isEqualTo "debrief") then {
+                        _seen pushBack _id;
+                        _new pushBack _id;
+                        ["site", _row] call comspec_atak_native_fnc_debrief;
+                        continue;
+                    };
                     _seen pushBack _id;
                     _new pushBack _id;
                     if (_ack isEqualTo "1") then { _list pushBack _row; };

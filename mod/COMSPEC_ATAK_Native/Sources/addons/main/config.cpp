@@ -86,6 +86,9 @@ class CfgFunctions {
         class garmin { file="z\comspec_atak_native\addons\main\functions\garmin";
             class garminTick {}; class pageGarmin {}; class watch {};
         };
+        class debrief { file="z\comspec_atak_native\addons\main\functions\debrief";
+            class debrief {}; class debriefServer {}; class pageDebrief {};
+        };
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
         };
@@ -155,6 +158,7 @@ class COMSPEC_ATAK_Apps {
     class Toc         { name="Poste TOC"; page="TOC"; new=1; function="comspec_atak_native_fnc_pageToc"; section="Mission"; order=199; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_toc.paa"; };
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; };
     class Reports     { name="Comptes rendus"; page="REPORTS"; section="Mission"; order=202; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; };
+    class Debrief     { name="CR fin d'op"; page="DEBRIEF"; function="comspec_atak_native_fnc_pageDebrief"; section="Mission"; order=203; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; };
     class Briefing    { name="Briefing"; page="BRIEFING"; section="Mission"; order=205; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; };
     class Plan        { name="Plan"; page="PLAN"; function="comspec_atak_native_fnc_pagePlan"; section="Mission"; order=206; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_plan.paa"; };
     class Logistics   { name="Logistique"; page="LOGI"; section="Mission"; order=210; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_logistics.paa"; };

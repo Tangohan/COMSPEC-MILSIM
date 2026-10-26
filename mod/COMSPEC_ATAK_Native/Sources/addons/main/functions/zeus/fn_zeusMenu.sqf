@@ -45,6 +45,9 @@ switch (_act) do {
             ["clean", "Dégâts et effets", "Nettoyer l'écran", "Retire d'un coup la poussière, les traces et le sang de l'écran et de la coque."],
             ["destroy", "Dégâts et effets", "Détruire l'appareil", "Écran éclaté, inutilisable jusqu'à réparation ou remplacement."],
             ["repair", "Dégâts et effets", "Réparer l'appareil", "Efface les dégâts (écran, composants)."],
+            ["dbf_fill", "Fin d'opération", "Imposer le CR à remplir", "Le compte rendu de fin d'opération s'ouvre dans le téléphone et revient toutes les 2 min tant qu'il n'est pas remis."],
+            ["dbf_read", "Fin d'opération", "Imposer un CR à lire…", "Votre texte s'ouvre dans le téléphone ; le joueur appuie sur LU ET COMPRIS."],
+            ["dbf_lift", "Fin d'opération", "Lever le CR", "Retire des téléphones le compte rendu de fin d'opération imposé."],
             ["reset", "Tout", "Tout rétablir", "Retire tous les effets Zeus et répare le téléphone."]
         ]
     };
@@ -65,6 +68,26 @@ switch (_act) do {
     case "apply": {
         _args params [["_id", ""], ["_units", []], ["_int", -1], ["_dur", 0], ["_msg", ""]];
         if (_units isEqualTo []) exitWith { ["feedback", ["ATAK : aucun joueur visé."]] call comspec_atak_native_fnc_zeusMenu; };
+        // CR de fin d'opération (fn_debrief) : texte à lire demandé dans un formulaire.
+        if (_id isEqualTo "dbf_read" && {_msg isEqualTo ""}) exitWith {
+            [{
+                params ["_units"];
+                ["Imposer un CR à lire", [["MEMO", "Texte à lire", "", 6]], {
+                    params ["_vals", "_units"];
+                    private _m = (_vals select 0) trim [" ", 0];
+                    if (_m isEqualTo "") exitWith { ["feedback", ["ATAK : texte vide, rien n'est envoyé."]] call comspec_atak_native_fnc_zeusMenu; };
+                    ["apply", ["dbf_read", _units, -1, 0, _m]] call comspec_atak_native_fnc_zeusMenu;
+                }, _units, format ["%1 joueur(s) : %2", count _units, (_units apply { name _x }) joinString ", "]] call comspec_atak_native_fnc_zeusForm;
+            }, [_units], 0.15] call CBA_fnc_waitAndExecute;
+        };
+        if (_id in ["dbf_fill", "dbf_read", "dbf_lift"]) exitWith {
+            switch (_id) do {
+                case "dbf_fill": { ["zeus", ["fill", _units, ""]] call comspec_atak_native_fnc_debrief; };
+                case "dbf_read": { ["zeus", ["read", _units, _msg]] call comspec_atak_native_fnc_debrief; };
+                default { ["sLift", "", _units] call comspec_atak_native_fnc_debrief; };
+            };
+            ["feedback", [format ["ATAK → %1 : %2", (_units apply { name _x }) joinString ", ", (["Imposer le CR à remplir", "Imposer un CR à lire…", "Lever le CR"] select (["dbf_fill", "dbf_read", "dbf_lift"] find _id)) call comspec_atak_native_fnc_tr]]] call comspec_atak_native_fnc_zeusMenu;
+        };
         // Actions à message : formulaire si le texte manque.
         if (_id in ["lock_on", "warn", "msg"] && {_msg isEqualTo ""}) exitWith {
             private _title = (createHashMapFromArray [["lock_on", "Verrouiller l'ATAK"], ["warn", "Avertissement"], ["msg", "Message du commandement"]]) get _id;

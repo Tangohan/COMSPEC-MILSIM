@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## CR de fin d'opération imposé dans le téléphone, à remplir ou à lire (ATAK natif : numéro donné au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le compte rendu de fin d'opération s'ouvre dans ton téléphone
+- Nouvelle app CR fin d'op : quand le commandement le demande, la fiche s'ouvre d'elle-même dans le téléphone, à remplir ou simplement à lire.
+- Tant qu'elle n'est pas remise, elle revient toutes les deux minutes ; rien ne s'affiche jamais sur l'écran de jeu.
+- Zeus, admins et gestionnaires l'imposent depuis l'app (onglet IMPOSER) ou le menu Zeus, et voient qui l'a ouverte et remise.
+- Sur le site, le back-office suit chaque joueur : CR remis, dernière synchro de son ATAK, remontées de la partie.
+EN : The end-of-operation report opens on your phone
+- New End-of-op report app: when command asks for it, the form opens by itself on your phone, to fill in or simply to read.
+- Until you submit it, it comes back every two minutes; nothing ever shows on the game screen.
+- Zeus, admins and managers require it from the app (REQUIRE tab) or the Zeus menu, and see who opened and submitted it.
+- On the website, the back-office tracks every player: report submitted, last sync of their ATAK, reports sent during the game.
+
+### Détail technique
+- Nouvelle app `DEBRIEF` (« CR fin d'op », section Mission) : `functions/debrief/fn_debrief.sqf` (client), `fn_debriefServer.sqf` (droits, envoi, suivi), `fn_pageDebrief.sqf` (fiche et panneau IMPOSER). Pastille au lanceur tant qu'un CR n'est pas remis.
+- Demande du site : `fn_adminNotices` annonce `caps:"debrief"` à `AdminControl.Poll` ; un avis de genre `debrief` porte la fiche `["DBF1", mode, titre, intro, texte, questions]` lue par `parseSimpleArray` (méta `debrief=<id>;mode=…`), validé par `AdminControl.Ack` à la remise ou à la lecture. La ligne `debrief_cfg` donne le questionnaire par défaut, le droit d'imposer (gestionnaires désignés sur Athena, variable publique `COMSPEC_ATAK_DebriefRight`) et l'autorisation Zeus du site.
+- Demande en jeu : événement serveur `comspec_atak_native_debrief` (`force`, `remind`, `lift`, `pull`, `state`, `hello`), joueurs visés tous / mon camp / mon groupe / sélection Zeus, arrivée en cours de partie servie (`hello`). Droits : `fn_adminAllowed` (Zeus, hôte, admin, `comspec_atak_native_admin_uids`), Zeus seul selon le nouveau réglage CBA `comspec_atak_native_debrief_zeus`.
+- Retours à Athena par `SubmitTacticalReport` (type `DEBRIEF`, `structured_data.debrief_event` = forced / opened / read / submitted, réponses `a_<id>`), seulement si le téléphone est relié ; le mod marche sans Athena (suivi en jeu par le serveur).
+- Menu Zeus « ATAK · Contrôle Zeus » : groupe « Fin d'opération » (imposer à remplir, imposer à lire avec texte, lever).
+- Aucun changement de COMSPEC Link ni de la DLL. Traductions EN ajoutées (`i18n/en.txt`). `hemtt check` : aucune erreur. main.pbo à reconstruire au regroupement.
+- Site : back-office « CR des joueurs (fin d'op) » (PR site séparée).
+
+---
+
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
