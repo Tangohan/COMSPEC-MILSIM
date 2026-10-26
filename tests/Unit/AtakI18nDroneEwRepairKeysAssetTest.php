@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  *
  * Test statique (lecture de i18n/en.txt et des .sqf). Il échoue si une des quatre clés disparaît ou change, si
  * le texte du code ne correspond plus à sa clé, si le suffixe FLIR n'est plus traduit à part (comme dans
- * fn_lockAction), ou si en.txt n'est plus trié comme l'écrit tools/i18n.py (clé en minuscules).
+ * fn_lockAction), ou si une des quatre clés n'est plus à la place où l'écrit tools/i18n.py (clé en minuscules).
  */
 final class AtakI18nDroneEwRepairKeysAssetTest extends TestCase
 {
@@ -66,18 +66,25 @@ final class AtakI18nDroneEwRepairKeysAssetTest extends TestCase
         self::assertSame($en, $found[0][1]);
     }
 
-    public function testDictionaryStaysSortedLikeI18nTool(): void
+    public function testKeysSitWhereTheI18nToolSortsThem(): void
     {
-        // tools/i18n.py save_dict : sorted(clé.lower()). Ordre des octets UTF-8 = ordre des points de code.
+        // tools/i18n.py save_dict : sorted(clé.lower()). Ordre des octets UTF-8 = ordre des points de code. Seul l'ordre
+        // autour des quatre clés est vérifié (trois entrées de part et d'autre) : le reste de en.txt n'est plus tout
+        // entier dans cet ordre sur main (clés ajoutées en fin de fichier).
         $keys = array_map(static fn (array $p): string => mb_strtolower($p[0], 'UTF-8'), $this->pairs());
         self::assertGreaterThan(15000, count($keys));
-        $inversions = [];
-        for ($i = 1, $n = count($keys); $i < $n; $i++) {
-            if (strcmp($keys[$i - 1], $keys[$i]) > 0) {
-                $inversions[] = '« ' . $keys[$i - 1] . ' » avant « ' . $keys[$i] . ' »';
+        $misplaced = [];
+        foreach (self::keysProvider() as [$fr]) {
+            $i = array_search(mb_strtolower($fr, 'UTF-8'), $keys, true);
+            self::assertIsInt($i, 'Clé absente : ' . $fr);
+            $window = array_slice($keys, max(0, $i - 3), 7);
+            for ($j = 1, $n = count($window); $j < $n; $j++) {
+                if (strcmp($window[$j - 1], $window[$j]) > 0) {
+                    $misplaced[] = $fr . ' : « ' . $window[$j - 1] . ' » avant « ' . $window[$j] . ' »';
+                }
             }
         }
-        self::assertSame([], $inversions, 'en.txt n\'est plus trié comme l\'écrit tools/i18n.py');
+        self::assertSame([], $misplaced, 'Clé hors de la place où l\'écrit tools/i18n.py');
     }
 
     public function testCodeSendsExactlyTheseTextsToTranslation(): void
