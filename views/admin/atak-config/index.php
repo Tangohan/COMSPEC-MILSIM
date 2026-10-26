@@ -373,13 +373,14 @@ $defaultMap = (string) ($config['default_map_slug'] ?? 'altis');
         <label class="bo-ac-map"><input type="radio" name="default_map_slug" value="<?= $h($slug) ?>"<?= $slug === $defaultMap ? ' checked' : '' ?>><span class="bo-ac-map__ico"><?= $ico('map') ?></span><b><?= $h($m['label'] ?? $slug) ?></b><small><?= $h($slug) ?></small></label>
       <?php endforeach; ?>
     </div>
-    <p class="bo-ac-muted">Les opérateurs peuvent toujours changer de carte depuis l’en-tête de la Tacmap.</p>
+    <p class="bo-ac-muted">Carte proposée en premier sur la Tacmap (Altis, Malden, Kimmirut et les autres théâtres de la liste). Les opérateurs peuvent toujours changer de carte depuis l’en-tête de la Tacmap.</p>
     <div class="bo-ac-save bo-ac-save--inline"><button type="submit" class="ath-btn ath-btn--solid">Enregistrer la carte</button></div>
   </form>
 
   <form method="post" action="<?= $h($base . '/marker-icons') ?>" class="ath-panel bo-ac-card" id="bo-ac-markers">
     <?= $csrf ?>
-    <p class="bo-ac-label">Symbole par type de contact</p>
+    <p class="bo-ac-label">Apparence des symboles sur la carte</p>
+    <p class="bo-ac-muted">Un symbole par type de contact.</p>
     <ul class="bo-ac-kinds">
       <?php foreach ($kinds as $kind => $label): $cur = (string) ($assign[$kind] ?? 'nato'); ?>
         <li class="bo-ac-kind" data-ac-kind="<?= $h($kind) ?>">
@@ -581,7 +582,7 @@ $rows = array_filter($rows, static fn ($n) => (int) $n > 0);
     <p>Journal, unités, messages, ordres, pings, photos, tracés et comptes rendus tactiques de la communauté. <b>Conservés</b> : configuration, clé d’accès, indicatifs liés aux comptes.</p>
     <ol class="bo-ac-mini-steps"><li>Exportez d’abord (bouton ci-dessus).</li><li>Saisissez <code><?= $h($purgeWord) ?></code>.</li><li>Confirmez.</li></ol>
     <label class="bo-ac-field"><span>Mot de confirmation</span><input name="confirm_phrase" autocomplete="off" placeholder="<?= $h($purgeWord) ?>" data-ac-purge-input></label>
-    <label class="bo-ac-check"><input type="checkbox" name="unlink_steam" value="1"> Désynchroniser aussi tous les comptes Steam (chaque opérateur devra refaire sa liaison)</label>
+    <label class="bo-ac-check"><input type="checkbox" name="unlink_steam" value="1"> Désynchroniser aussi tous les comptes Steam. Chaque opérateur devra refaire sa liaison.</label>
     <button type="submit" class="ath-btn bo-ac-btn-danger" disabled data-ac-purge-btn><?= $ico('trash', 16) ?> Tout effacer</button>
   </form>
 </section>
