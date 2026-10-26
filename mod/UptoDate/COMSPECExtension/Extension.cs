@@ -327,6 +327,8 @@ public static partial class Extension
 
     private static void NotePostError(int code, string url, HttpResponseMessage? response = null, string? sentBody = null)
     {
+        if (code == 401)
+            NotePermanentPostRefusal(code, url, response);
         _lastPostErrorCode = code;
         string path;
         try { path = new Uri(url).AbsolutePath; } catch { path = url; }
@@ -1032,6 +1034,8 @@ public static partial class Extension
 
     private static void NoteEndpointOk(string url)
     {
+        if (!string.IsNullOrEmpty(url) && !PermanentPostStrikes.IsEmpty)
+            PermanentPostStrikes.TryRemove(EndpointKey(url), out _);
         if (string.IsNullOrEmpty(url) || EndpointCooldowns.IsEmpty) return;
         EndpointCooldowns.TryRemove(EndpointKey(url), out _);
     }
@@ -1042,6 +1046,7 @@ public static partial class Extension
     /// </summary>
     private static void NoteAccessDenied(HttpResponseMessage? response, string url)
     {
+        NotePermanentPostRefusal(403, url, response);
         NoteSendFailure(403, url, response);
     }
 
@@ -2353,6 +2358,116 @@ public static partial class Extension
         // Dernière adresse sondée et dernier code HTTP (-1 : erreur réseau) : rejoués par Link.SelfTest.
         public volatile string Url = "";
         public int LastCode;
+        // Refus (401/403) ou erreur serveur répétés : pas de nouvel appel avant RefusedUntilMs, palier RefusedStep.
+        public long RefusedUntilMs;
+        public int RefusedStep;
+        // Motif d'un refus définitif (règle d'Athena) : le canal ne redemande plus jusqu'à une nouvelle liaison.
+        public volatile string RefusedReason = "";
+    }
+
+    /// <summary>
+    /// Motifs de refus qui ne changent pas en réessayant : clé refusée, formule sans ce canal, joueur bloqué, compte
+    /// désactivé, pas de communauté, Steam non lié, droits insuffisants. Le canal (ou l'adresse d'envoi) s'arrête
+    /// jusqu'à une nouvelle liaison ou une nouvelle session (ResetPollRefusals) ; le Dépannage liaison le montre.
+    /// </summary>
+    private static readonly HashSet<string> PermanentRefusalCodes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "unauthorized", "feature_unavailable", "atak_blocked", "account_disabled", "tenant_context_required",
+        "steam_not_linked", "forbidden", "sse_clearance_required", "web_session_required", "no_tenant",
+    };
+
+    /// <summary>Champ « error » d'un refus 401/403 s'il fait partie des motifs définitifs, sinon "".</summary>
+    private static string PermanentRefusalReason(int code, string? body)
+    {
+        if ((code != 401 && code != 403) || string.IsNullOrEmpty(body) || body[0] != '{') return "";
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String)
+            {
+                var reason = e.GetString() ?? "";
+                return PermanentRefusalCodes.Contains(reason) ? reason : "";
+            }
+        }
+        catch { /* corps non JSON : refus ordinaire */ }
+        return "";
+    }
+
+    /// <summary>Envoi refusé pour un motif définitif : cette adresse n'est plus appelée jusqu'à une nouvelle liaison.</summary>
+    private static void NotePermanentPostRefusal(int code, string url, HttpResponseMessage? response)
+    {
+        if (response == null || string.IsNullOrEmpty(url) || (code != 401 && code != 403)) return;
+        string body;
+        try { body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult(); }
+        catch { return; }
+        var key = EndpointKey(url);
+        var reason = PermanentRefusalReason(code, body);
+        if (reason.Length == 0)
+        {
+            PermanentPostStrikes.TryRemove(key, out _);
+            return;
+        }
+        // Trois refus de suite pour le même motif avant d'arrêter (voir NotePollResult).
+        var strikes = PermanentPostStrikes.AddOrUpdate(key, 1, static (_, n) => n + 1);
+        if (strikes < 3) return;
+        EndpointCooldowns[key] = (long.MaxValue, 0);
+        PermanentPostRefusals[key] = reason;
+    }
+
+    private static readonly ConcurrentDictionary<string, int> PermanentPostStrikes = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly ConcurrentDictionary<string, string> PermanentPostRefusals = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Nouvelle liaison ou nouvelle session : les canaux refusés réessaient tout de suite.</summary>
+    private static void ResetPollRefusals()
+    {
+        foreach (var slot in PollGetCache.Values)
+        {
+            slot.RefusedStep = 0;
+            slot.RefusedUntilMs = 0;
+            slot.RefusedReason = "";
+        }
+        PermanentPostStrikes.Clear();
+        foreach (var key in PermanentPostRefusals.Keys)
+        {
+            PermanentPostRefusals.TryRemove(key, out _);
+            EndpointCooldowns.TryRemove(key, out _);
+        }
+    }
+
+    /// <summary>Paliers d'attente d'un canal sondé après un refus d'Athena : 15 s, 30 s, 1 min, 2 min, puis 5 min.</summary>
+    private static readonly int[] PollRefusedLadderSec = { 15, 30, 60, 120, 300 };
+
+    /// <summary>
+    /// Après un 401/403 (clé ou session refusée, formule sans ce canal) ou une erreur 5xx, le canal attend avant de
+    /// redemander, de plus en plus longtemps ; la première réponse 2xx/304 remet le compteur à zéro. Avant, chaque
+    /// canal refusé était redemandé toutes les 1,2 s à 10 s : des milliers de requêtes refusées par heure côté Athena.
+    /// Un 404 ne compte pas : certains canaux répondent 404 tant que la ressource n'existe pas (plan de mission…).
+    /// </summary>
+    private static void NotePollResult(PollGetSlot slot, int code, string? body = null)
+    {
+        // Confirmé sur trois réponses de suite (environ 45 s) : un refus ponctuel (base d'Athena momentanément
+        // indisponible pendant la vérification de la clé) ne coupe pas le canal pour toute la partie.
+        var permanent = PermanentRefusalReason(code, body);
+        if (permanent.Length > 0 && slot.RefusedUntilMs != 0 && slot.RefusedStep >= 1)
+        {
+            slot.RefusedReason = permanent;
+            slot.RefusedUntilMs = long.MaxValue;
+            return;
+        }
+        if (code is 401 or 403 or 429 || code >= 500 || code < 0)
+        {
+            var step = slot.RefusedUntilMs == 0 ? 0 : Math.Min(slot.RefusedStep + 1, PollRefusedLadderSec.Length - 1);
+            slot.RefusedStep = step;
+            slot.RefusedUntilMs = Environment.TickCount64 + PollRefusedLadderSec[step] * 1000L;
+        }
+        else if (code is >= 200 and < 400)
+        {
+            slot.RefusedStep = 0;
+            slot.RefusedUntilMs = 0;
+            slot.RefusedReason = "";
+        }
     }
 
     private static readonly ConcurrentDictionary<string, PollGetSlot> PollGetCache = new();
@@ -2371,7 +2486,8 @@ public static partial class Extension
         slot.Url = url;
         var now = Environment.TickCount64;
         const int minRefreshMs = 1200;
-        var stale = slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs;
+        var stale = (slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs)
+            && (slot.RefusedUntilMs == 0 || now >= slot.RefusedUntilMs);
         if (stale && Interlocked.CompareExchange(ref slot.InFlight, 1, 0) == 0)
         {
             ThreadPool.QueueUserWorkItem(_ =>
@@ -2382,6 +2498,7 @@ public static partial class Extension
                     using var resp = SendGet(url, cts.Token);
                     var body = ReadContentUtf8(resp, cts.Token);
                     slot.LastCode = (int)resp.StatusCode;
+                    NotePollResult(slot, slot.LastCode, body);
                     var formatted = format(body, (int)resp.StatusCode);
                     if (formatted.StartsWith("OK|", StringComparison.Ordinal) || slot.FetchedAtMs == 0)
                         slot.Result = formatted;
@@ -2390,6 +2507,7 @@ public static partial class Extension
                 catch
                 {
                     slot.LastCode = -1;
+                    NotePollResult(slot, -1);
                     if (slot.FetchedAtMs == 0)
                         slot.Result = "ERR|network";
                     slot.FetchedAtMs = Environment.TickCount64;
@@ -3459,6 +3577,7 @@ public static partial class Extension
                 var baseUrl = NormalizeBaseUrl(args[0] ?? "");
                 if (baseUrl.Length == 0) return "ERR|invalid_url";
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
                 // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
@@ -3579,6 +3698,7 @@ public static partial class Extension
                 var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
                 ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
@@ -4052,6 +4172,7 @@ public static partial class Extension
                 if (apiKey.Length == 0) return "ERR|http_503";
                 // Toujours l’URL qui a réussi le redeem (évite node_url admin incorrect → 401).
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
                 ApplyTenantId(tenantId);
@@ -4135,6 +4256,7 @@ public static partial class Extension
                 if (apiKey.Length == 0) return "ERR|http_503";
                 // Toujours l’URL qui a réussi by-steam (évite node_url admin incorrect → 401).
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
                 ApplyTenantId(tenantId);
@@ -4213,6 +4335,7 @@ public static partial class Extension
                 }
                 // Mémorise l’URL pour d’éventuels appels suivants (whoami, etc.).
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 return "OK|registered";
             }
             catch (Exception ex)
@@ -4313,6 +4436,7 @@ public static partial class Extension
                     return "ERR|invalid_response";
                 }
                 _baseUrl = baseUrl;
+                ResetPollRefusals();
                 return "OK|reported";
             }
             catch (Exception ex)
