@@ -47,6 +47,16 @@ final class HtmlTranslatorTest extends TestCase
         self::assertStringContainsString('<p>Welcome, Jean!</p>', $out);
     }
 
+    public function testScriptWithLessThanDoesNotSwallowTheRestOfThePage(): void
+    {
+        // « i < n » dans un script passait pour une balise qui avalait le </script> : la page restait en français.
+        $html = '<body><script>for (var i = 0; i < n; i++) { x(); }</script><a>Fermer</a><style>a<b{}</style><b>Membres</b></body>';
+        $out = HtmlTranslator::translate($html);
+        self::assertStringContainsString('<script>for (var i = 0; i < n; i++) { x(); }</script>', $out);
+        self::assertStringContainsString('<a>Close</a>', $out);
+        self::assertStringContainsString('<b>Members</b>', $out);
+    }
+
     public function testTemplatesEntitiesAndLabelValue(): void
     {
         $out = HtmlTranslator::translate('<span>Recherche : &laquo; radio &raquo;</span><dd>Statut : Actif</dd><i>il y a 5 min</i>');

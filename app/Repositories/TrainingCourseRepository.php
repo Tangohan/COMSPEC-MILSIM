@@ -212,7 +212,79 @@ class TrainingCourseRepository
         $stmt->execute([$tenantId, $tenantId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+        $rows = self::withoutHiddenPlatformRows($rows, $tenantId);
+
         return array_slice(self::collapseDuplicateCatalogRows($rows, $tenantId), 0, $limit);
+    }
+
+    /** Clé des réglages communauté : parcours plateforme retirés du catalogue et du tableau de bord. */
+    public const HIDDEN_PLATFORM_SETTING = 'training_hidden_platform_slugs';
+
+    /** @return list<string> slugs (minuscules) des parcours plateforme masqués par la communauté */
+    public static function hiddenPlatformSlugs(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        try {
+            $settings = (new TenantRepository())->getSettings($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $raw = $settings[self::HIDDEN_PLATFORM_SETTING] ?? [];
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $slug) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug !== '') {
+                $out[$slug] = $slug;
+            }
+        }
+
+        return array_values($out);
+    }
+
+    /** Masque ou réaffiche un parcours plateforme pour une communauté. */
+    public static function setPlatformSlugHidden(int $tenantId, string $slug, bool $hidden): void
+    {
+        $slug = strtolower(trim($slug));
+        if ($tenantId < 1 || $slug === '') {
+            return;
+        }
+        $repo = new TenantRepository();
+        $settings = $repo->getSettings($tenantId);
+        $list = self::hiddenPlatformSlugs($tenantId);
+        $list = array_values(array_filter($list, static fn (string $s): bool => $s !== $slug));
+        if ($hidden) {
+            $list[] = $slug;
+        }
+        $settings[self::HIDDEN_PLATFORM_SETTING] = $list;
+        $repo->replaceSettings($tenantId, $settings);
+    }
+
+    /**
+     * Retire les parcours plateforme que la communauté a masqués (ou supprimés de son Studio).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public static function withoutHiddenPlatformRows(array $rows, int $tenantId): array
+    {
+        $hidden = self::hiddenPlatformSlugs($tenantId);
+        if ($hidden === []) {
+            return array_values($rows);
+        }
+        $hidden = array_flip($hidden);
+
+        return array_values(array_filter($rows, static function (array $row) use ($hidden, $tenantId): bool {
+            if ((string) ($row['lms_scope'] ?? '') !== self::LMS_SCOPE_PLATFORM || (int) ($row['tenant_id'] ?? 0) === $tenantId) {
+                return true;
+            }
+
+            return !isset($hidden[strtolower(trim((string) ($row['slug'] ?? '')))]);
+        }));
     }
 
     public function findById(int $id, ?int $tenantId = null): ?array

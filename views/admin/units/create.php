@@ -9,6 +9,7 @@ $unitTypes = $unitTypes ?? [];
     <p class="mb-4 text-sm text-red-600"><?= htmlspecialchars(\App\Core\Session::get('error')) ?></p>
     <?php \App\Core\Session::forget('error'); endif; ?>
     <form action="<?= url('back-office/units/store') ?>" method="post" class="space-y-4">
+        <?= \App\Core\Csrf::field() ?>
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Nom *</label>
             <input type="text" name="name" required class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" />

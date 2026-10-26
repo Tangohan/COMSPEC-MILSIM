@@ -10,6 +10,7 @@ $unitTypes = $unitTypes ?? [];
     <p class="mb-4 text-sm text-red-600"><?= htmlspecialchars(\App\Core\Session::get('error')) ?></p>
     <?php \App\Core\Session::forget('error'); endif; ?>
     <form action="<?= url('back-office/units/' . ($unit['id'] ?? '') . '/update') ?>" method="post" class="space-y-4">
+        <?= \App\Core\Csrf::field() ?>
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Nom *</label>
             <input type="text" name="name" required class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($unit['name'] ?? '') ?>" />
@@ -22,6 +23,9 @@ $unitTypes = $unitTypes ?? [];
             <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
             <select name="type" class="<?= htmlspecialchars(bo_select_class(), ENT_QUOTES, 'UTF-8') ?>">
                 <option value="">—</option>
+                <?php $curType = (string) ($unit['type'] ?? ''); if ($curType !== '' && !isset($unitTypes[$curType])): ?>
+                <option value="<?= htmlspecialchars($curType) ?>" selected><?= htmlspecialchars(str_starts_with($curType, 'pedagogy_') ? 'Section réservée (formations)' : $curType) ?></option>
+                <?php endif; ?>
                 <?php foreach ($unitTypes as $k => $v): ?>
                 <option value="<?= htmlspecialchars($k) ?>" <?= ($unit['type'] ?? '') === $k ? 'selected' : '' ?>><?= htmlspecialchars($v['label']) ?></option>
                 <?php endforeach; ?>
