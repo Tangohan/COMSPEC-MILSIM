@@ -20,6 +20,7 @@ use App\Repositories\FireTeamRepository;
 use App\Support\AtakPlanAccess;
 use App\Support\OperatorPortraits;
 use App\Support\BriefingSlideGameImage;
+use App\Support\AtakGameImage;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
@@ -344,6 +345,8 @@ class AtakApiController
         }
         $tenantId = $r;
         $rows = $this->briefingSlideRepository->listActiveForTenant($tenantId);
+        // COMSPEC Link 2.0.95+ : copie .paa (texture Arma) à la place de la copie JPEG.
+        $paa = AtakGameImage::clientAcceptsPaa();
         $out = [];
         foreach ($rows as $row) {
             $imagePath = trim((string) ($row['image_path'] ?? ''));
@@ -362,7 +365,8 @@ class AtakApiController
                 'title' => trim((string) ($row['title'] ?? '')),
                 'detail' => trim((string) ($row['detail_text'] ?? '')),
                 'sort_order' => (int) ($row['sort_order'] ?? 0),
-                'image_url' => url(BriefingSlideGameImage::path($imagePath)),
+                'image_url' => ($paa ? AtakGameImage::urlFor(url(ltrim($imagePath, '/')), AtakGameImage::FIT_SLIDE) : null)
+                    ?? url(BriefingSlideGameImage::path($imagePath)),
                 'updated_at' => (string) ($row['updated_at'] ?? $row['created_at'] ?? ''),
                 'operation' => $operation,
             ];
@@ -635,7 +639,9 @@ class AtakApiController
 
         // Portrait opérateur seulement (règle du site), en vignette JPEG carrée lisible par Arma.
         // Sans image, la raison part au jeu (avatar_status) et dans le journal du serveur.
-        $portrait = OperatorPortraits::gameThumbnail($tenantId, $userId);
+        $portrait = AtakGameImage::clientAcceptsPaa()
+            ? OperatorPortraits::gamePaa($tenantId, $userId)
+            : OperatorPortraits::gameThumbnail($tenantId, $userId);
         if (!in_array($portrait['status'], ['ok', 'no_portrait'], true)) {
             error_log(sprintf('[atak/player-profile] portrait opérateur indisponible pour le jeu (user=%d, tenant=%d) : %s', $userId, $tenantId, $portrait['status']));
         }

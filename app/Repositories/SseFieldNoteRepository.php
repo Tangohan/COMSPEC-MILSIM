@@ -346,11 +346,17 @@ final class SseFieldNoteRepository
             $values[$textField] = $text !== '' ? mb_substr($text, 0, 255) : null;
         }
 
-        return (int) $this->db->insert(
+        $id = (int) $this->db->insert(
             'INSERT INTO sse_field_note_attachments (' . implode(',', $fields) . ')
              VALUES (:' . implode(',:', $fields) . ')',
             $values
         );
+        // Photo vue dans l'app FRS du téléphone en jeu : copie .paa faite dès l'envoi.
+        if (str_starts_with((string) ($values['mime_type'] ?? ''), 'image/')) {
+            \App\Support\AtakGameImage::prepare((string) ($values['file_path'] ?? ''), \App\Support\AtakGameImage::FIT_PHOTO);
+        }
+
+        return $id;
     }
 
     /** @return list<array<string, mixed>> */

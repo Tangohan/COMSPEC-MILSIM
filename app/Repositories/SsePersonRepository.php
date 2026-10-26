@@ -506,6 +506,8 @@ final class SsePersonRepository
             'Photo du visage jointe',
             (string) ($data['author_callsign'] ?? $data['author'] ?? '')
         );
+        // Photo des avis de recherche du téléphone en jeu : copie .paa faite dès l'envoi.
+        \App\Support\AtakGameImage::prepare((string) ($data['image_path'] ?? ''), \App\Support\AtakGameImage::FIT_PHOTO);
 
         return $photoId;
     }
