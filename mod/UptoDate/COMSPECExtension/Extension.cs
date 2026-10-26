@@ -3870,8 +3870,12 @@ public static partial class Extension
             return _tenantId.Length > 0 ? "OK|" + SanitizeIdentityField(_tenantId) : "ERR|none";
         }
 
-        // Ouvre dans le navigateur la page Athena où le joueur valide le code du jeu (/lier).
-        // Seulement une adresse http(s) du portail configuré : jamais un programme ni un autre site.
+        // Ouvre dans le navigateur la page Athena où le joueur valide le code du jeu (/lier) ou une page publique
+        // d'Athena (9-LINE) : jamais un programme ni un autre site.
+        // ARCH-005 : l'hôte n'a plus à être celui de _baseUrl (le natif ouvre athena-comspec.eu pendant que connect
+        // garde la DLL sur athena.ttrd.fr) ; il doit être sur la liste fermée de SEC-001 (IsSecretSafeUri : https,
+        // sans identifiants dans l'adresse ; http seulement vers l'Athena local de développement). Toujours rien
+        // avant qu'un portail soit configuré (_baseUrl n'est posé que par TrySetSqfBaseUrl).
         if (function == "OpenAthenaLink" && args.Length >= 1)
         {
             try
@@ -3880,9 +3884,7 @@ public static partial class Extension
                 if (!Uri.TryCreate(target, UriKind.Absolute, out var targetUri)
                     || (targetUri.Scheme != Uri.UriSchemeHttps && targetUri.Scheme != Uri.UriSchemeHttp))
                     return "ERR|invalid_url";
-                if (_baseUrl.Length == 0
-                    || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var portalUri)
-                    || !string.Equals(portalUri.Host, targetUri.Host, StringComparison.OrdinalIgnoreCase))
+                if (_baseUrl.Length == 0 || !IsSecretSafeUri(targetUri))
                     return "ERR|foreign_host";
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(targetUri.AbsoluteUri) { UseShellExecute = true });
                 return "OK";
