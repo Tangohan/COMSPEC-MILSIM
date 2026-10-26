@@ -4336,6 +4336,16 @@ try {
 }
 $migrationEnsurePdo();
 
+$paymentsLedgerMigrate = require $root . '/bootstrap/payments_ledger_migration.php';
+try {
+    echo "Migration suivi des paiements et dons (payment_events, platform_donations)...\n";
+    $paymentsLedgerMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] payments_ledger : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('payments_ledger', $e);
+}
+$migrationEnsurePdo();
+
 $atakReconNotesMigrate = require $root . '/bootstrap/atak_recon_notes_migration.php';
 try {
     echo "Migration recon_notes (notes de reconnaissance)...\n";
