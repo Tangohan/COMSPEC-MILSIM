@@ -20,7 +20,8 @@ $interval = (int) ($ge['update_interval'] ?? 0);
     <?= $csrf ?>
     <div class="ath-panel bo-ac-card">
       <p class="bo-ac-label">Première connexion d’un nouveau membre</p>
-      <?= $switch('require_game_link_first_login', !empty($firstLoginLinkRequired ?? true), 'Relier le jeu avant d’ouvrir le site', 'Un nouveau membre saisit d’abord le code affiché par ATAK dans Arma (app Athena du téléphone). Tant que son jeu n’est pas relié, le site le renvoie vers cette étape. Les administrateurs de la communauté et les membres inscrits avant cette fonction ne sont pas concernés. Désactivez-le si des membres jouent hors ligne ou n’ont pas le jeu.', 'steam') ?>
+      <?= $switch('require_game_link_first_login', !empty($firstLoginLinkRequired ?? true), 'Relier le jeu avant d’ouvrir le site', 'Un nouveau membre saisit d’abord le code affiché par ATAK dans Arma (app Athena du téléphone). Tant que son jeu n’est pas relié, le site le renvoie vers cette étape. Les administrateurs de la communauté ne sont pas concernés, ni les membres inscrits avant cette fonction sauf avec l’option ci-dessous. Désactivez-le si des membres jouent hors ligne ou n’ont pas le jeu.', 'steam') ?>
+      <?= $switch('require_game_link_existing_members', !empty($firstLoginLinkExisting ?? false), 'Aussi pour les membres déjà inscrits', 'Les membres déjà inscrits dont le jeu n’est pas relié passent par la même étape à leur prochaine connexion. Pratique avant une opération où toute l’unité doit être reliée. Les administrateurs restent exemptés.', 'user') ?>
       <div class="bo-ac-save bo-ac-save--inline"><button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button></div>
     </div>
   </form>

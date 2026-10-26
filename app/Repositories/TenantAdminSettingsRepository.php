@@ -67,6 +67,8 @@ final class TenantAdminSettingsRepository
                 'off_op_position_sharing' => $this->bool($current['atak_defaults']['off_op_position_sharing'] ?? false),
                 // Nouveau membre : le site reste fermé tant que son jeu n'est pas relié (FirstLoginGameLinkGate).
                 'require_game_link_first_login' => $this->bool($current['atak_defaults']['require_game_link_first_login'] ?? true),
+                // Même étape pour les membres déjà inscrits sans jeu relié (choix de la communauté, désactivé par défaut).
+                'require_game_link_existing_members' => $this->bool($current['atak_defaults']['require_game_link_existing_members'] ?? false),
             ],
             'personnel_duplicates' => $this->sanitizePersonnelDuplicates($current['personnel_duplicates'] ?? []),
             'personnel_hr' => \App\Services\Effectifs\PersonnelHrWorkspaceSettings::sanitize(
@@ -149,6 +151,7 @@ final class TenantAdminSettingsRepository
                 'certificate_duration_days' => 365,
                 'off_op_position_sharing' => false,
                 'require_game_link_first_login' => true,
+                'require_game_link_existing_members' => false,
             ],
             'personnel_duplicates' => [
                 'enabled' => true,

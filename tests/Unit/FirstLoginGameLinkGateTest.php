@@ -63,6 +63,17 @@ final class FirstLoginGameLinkGateTest extends TestCase
         self::assertTrue((new TenantAdminSettingsRepository())->defaults()['atak_defaults']['require_game_link_first_login']);
     }
 
+    public function testCommunityCanIncludeExistingMembers(): void
+    {
+        $old = $this->newMember(['created_at' => '2025-03-01 10:00:00']);
+        $both = ['admin_runtime' => ['atak_defaults' => ['require_game_link_existing_members' => true]]];
+        self::assertTrue($this->gate($both)->mustLink($old, 4));
+        self::assertFalse($this->gate($both)->mustLink(array_merge($old, ['steam_id' => '76561198000000001']), 4));
+        $offBoth = ['admin_runtime' => ['atak_defaults' => ['require_game_link_first_login' => false, 'require_game_link_existing_members' => true]]];
+        self::assertFalse($this->gate($offBoth)->mustLink($old, 4));
+        self::assertFalse((new TenantAdminSettingsRepository())->defaults()['atak_defaults']['require_game_link_existing_members']);
+    }
+
     public function testCommunityAdminsAreNeverHeld(): void
     {
         Gate::getInstance()->setPermissions(['admin.organization']);

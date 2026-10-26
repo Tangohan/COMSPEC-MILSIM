@@ -14,8 +14,8 @@ use App\Repositories\TenantRepository;
  * les pages du site renvoient vers /lier, où il saisit le code affiché par ATAK dans Arma.
  *
  * Réglage de communauté `atak_defaults.require_game_link_first_login` (activé par défaut), modifiable dans
- * Configuration ATAK › Connexion en jeu. Ne concerne que les comptes créés à partir de NEW_MEMBER_SINCE :
- * les membres déjà inscrits ne sont pas bloqués. Les administrateurs de la communauté et de la plateforme
+ * Configuration ATAK › Connexion en jeu. Ne concerne que les comptes créés à partir de NEW_MEMBER_SINCE, sauf si
+ * la communauté coche aussi `require_game_link_existing_members` (membres déjà inscrits sans jeu relié). Les administrateurs de la communauté et de la plateforme
  * ne sont jamais retenus, pour qu'aucune communauté ne se retrouve sans accès.
  */
 final class FirstLoginGameLinkGate
@@ -79,14 +79,15 @@ final class FirstLoginGameLinkGate
         if (trim((string) ($user['steam_id'] ?? '')) !== '') {
             return false;
         }
-        if (!self::isNewMember($user)) {
-            return false;
-        }
         if (self::isStaff()) {
             return false;
         }
+        $rules = $this->rulesForTenant($tenantId);
+        if (!$rules['enabled']) {
+            return false;
+        }
 
-        return $this->enabledForTenant($tenantId);
+        return $rules['existing'] || self::isNewMember($user);
     }
 
     /** @param array<string, mixed> $user */
@@ -112,20 +113,35 @@ final class FirstLoginGameLinkGate
 
     public function enabledForTenant(int $tenantId): bool
     {
+        return $this->rulesForTenant($tenantId)['enabled'];
+    }
+
+    /**
+     * enabled : étape active pour la communauté ; existing : aussi pour les membres déjà inscrits sans jeu relié.
+     *
+     * @return array{enabled: bool, existing: bool}
+     */
+    private function rulesForTenant(int $tenantId): array
+    {
+        $none = ['enabled' => false, 'existing' => false];
         try {
             $this->tenants ??= new TenantRepository();
             $tenant = $this->tenants->findById($tenantId);
             // Communauté système (sans organisation) : rien à relier tant que le membre n'a pas rejoint une communauté.
             if (!is_array($tenant) || (string) ($tenant['slug'] ?? '') === 'default') {
-                return false;
+                return $none;
             }
             $this->settings ??= new TenantAdminSettingsRepository($this->tenants);
             $all = $this->settings->getForTenant($tenantId);
         } catch (\Throwable) {
-            return false;
+            return $none;
         }
+        $enabled = !empty($all['atak_defaults']['require_game_link_first_login']);
 
-        return !empty($all['atak_defaults']['require_game_link_first_login']);
+        return [
+            'enabled' => $enabled,
+            'existing' => $enabled && !empty($all['atak_defaults']['require_game_link_existing_members']),
+        ];
     }
 
     /** Page à rouvrir une fois le jeu relié (chemin local uniquement), sinon le tableau de bord. */
