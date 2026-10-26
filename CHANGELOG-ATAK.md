@@ -38,7 +38,6 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-<<<<<<< HEAD
 ## Traduction ouverte aux contributeurs : rôles, traduction du site, kit des mods complété (ATAK natif : numéro donné au regroupement, site)
 
 ### Résumé joueur
@@ -114,7 +113,7 @@ EN : New Admin app for community managers and Zeus
 - Boutons à conséquence en deux temps (CONFIRMER). `i18n/en.txt` : 143 textes.
 - Version 2.3.11, COMSPEC Link 2.0.94 (DLL à recompiler). main.pbo non reconstruit dans cette PR (regroupement).
 - À tester en jeu : app visible en Zeus et invisible pour un joueur ; relevé EN JEU avec plusieurs joueurs ; effets Zeus depuis l'app ; parc ATHENA avec un compte gestionnaire relié (bloquer puis lever, message reçu, compromission puis levée) ; DEBUG IA après qu'une IA ennemie a ramassé un téléphone (traque visible, ARRÊTER LA TRAQUE, REPRENDRE LE TÉLÉPHONE).
-=======
+
 ## Nouveaux logos ATHENA sur le site et dans le téléphone (ATAK natif 2.3.11.AB - Denver)
 
 ### Résumé joueur
@@ -132,7 +131,6 @@ EN : New ATHENA identity: the eagle
 - Logos vectorisés (potrace, tracé à 6x avec lissage) à partir des PNG fournis ; colonne blanche des 3 premiers pixels du logo complet retirée. Sources : `public/assets/brand/*.svg` (blanc / noir), `mod/COMSPEC_ATAK_Native/tools/src/athena_logo.svg` et `athena_embleme.svg`.
 - Site : `athena-header__brand-mark`, `dash-rail__brand-mark` et le pied de page portail utilisent l'emblème / le logo en masque CSS (couleur du thème) ; en-tête d'accès public et accueil (`hi-wordmark`, pied) en `<img>` ; `athena-192/512.png` carrés (étaient 520x240 et 1200x480), nouveaux `athena-180/32.png`, `athena-maskable-512.png`, `favicon.ico` ; manifeste PWA et cache `sw.js` (v11) à jour ; `atak-eagle-logo.png` (ATAK web, porte SSE) remplacé par l'emblème.
 - Mod : `gen_assets.py <hemtt> athenalogo` régénère `app_athena.paa` (emblème) et le nouveau `logo_athena.paa` (logo complet) ; `fn_pageAthena` et le repli de la ligne « status » de `fn_formRender` l'utilisent. Version 2.3.11, main.pbo reconstruit (HEMTT), verify_build OK. Link inchangé (2.0.93).
->>>>>>> origin/claude/project-thread-eusnmb
 
 ---
 
