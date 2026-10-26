@@ -1063,10 +1063,11 @@ public static partial class Extension
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void MaybeReauthAfter401(string url)
+    private static void MaybeReauthAfter401(string url, bool force = false)
     {
         if (!HasPortalAuth() || string.IsNullOrEmpty(_baseUrl)) return;
-        if (!IsAuthSensitiveEndpoint(url)) return;
+        // force : 401 d'un sondage GET (ordres, tchat…), absent de la liste mais qui doit aussi vérifier la clé.
+        if (!force && !IsAuthSensitiveEndpoint(url)) return;
         // Pendant le handshake SQF : ne pas tuer la session (restauration / Steam encore en cours).
         if (_gameAuthState is "CONTACTING_ATHENA" or "RESTORING_SESSION" or "AUTHENTICATING"
             or "RESOLVING_ACCOUNT" or "RESOLVING_TENANT" or "SYNCING_PROFILE"
@@ -1095,15 +1096,14 @@ public static partial class Extension
                     return;
                 }
 
-                if (verify.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
-                    || verify.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase)
-                    || verify.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
+                var refused = Array.Find(PermanentRefusalCodes,
+                    c => verify.Contains(c, StringComparison.OrdinalIgnoreCase));
+                if (refused != null)
                 {
                     // A 401 followed by a rejected client-init is not a transient POST
-                    // failure. Tell SQF to close its transmission gate; otherwise every
-                    // periodic producer keeps hammering authenticated endpoints forever.
-                    SetGameAuth("C2_UNAUTHORIZED", _gameAuthProgress, "C2_UNAUTHORIZED");
-                    InvokeCallback("AuthInvalidated", verify);
+                    // failure. Latch: no poll or post until a relink, a READY session or a restart
+                    // (Extension_RefusalLatch); SQF closes its gate without auto-reopen.
+                    LatchAuthRefusal(refused, verify);
                 }
             }
             catch { /* the normal network backoff handles transport failures */ }
@@ -1486,7 +1486,8 @@ public static partial class Extension
         if ((int)response.StatusCode == 403)
         {
             NoteAccessDenied(response, url);
-            if (!IsBestEffortEndpoint(url))
+            NoteRefusal(url, 403, RefusalBody(response));
+            if (!IsBestEffortEndpoint(url) && !IsRefusalLatched(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -1562,6 +1563,9 @@ public static partial class Extension
     /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
     private static bool TrySendQueuedPost((string Url, string Body) item)
     {
+        // Adresse absente de l'offre de la communauté : envoi abandonné, pas renvoyé.
+        if (IsFeatureLatched(item.Url))
+            return true;
         var started = DateTime.UtcNow.Ticks;
         JournalTrack(item.Url, item.Body, "sending");
         try
@@ -1587,7 +1591,8 @@ public static partial class Extension
                 if ((int)response.StatusCode == 403)
                 {
                     NoteAccessDenied(response, item.Url);
-                    if (!IsBestEffortEndpoint(item.Url))
+                    NoteRefusal(item.Url, 403, RefusalBody(response));
+                    if (!IsBestEffortEndpoint(item.Url) && !IsRefusalLatched(item.Url))
                         EnqueueForRetry(item.Url, item.Body);
                     return false;
                 }
@@ -1595,6 +1600,8 @@ public static partial class Extension
                 {
                     var code = (int)response.StatusCode;
                     NotePostError(code, item.Url, response, item.Body);
+                    if (code == 401)
+                        MaybeReauthAfter401(item.Url);
                     if (TryNoteEndpointServerError(item.Url, response))
                     {
                         // Cette adresse attend ; le vidage continue avec les autres envois.
@@ -1649,6 +1656,8 @@ public static partial class Extension
         JournalMaybeReport();
         if (string.IsNullOrEmpty(_baseUrl)) return;
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
+        // Clé ou compte refusés pour de bon : la file attend la nouvelle liaison au lieu d'être renvoyée chaque seconde.
+        if (IsAuthLatched()) return;
         // Passage précédent encore en cours (Athena lente) : on le laisse finir au lieu d'empiler des threads
         // sur le verrou (les minuteurs se chevauchent et affamaient les appels Async, sondages et journaux).
         if (!System.Threading.Monitor.TryEnter(QueueDrainLock)) return;
@@ -2206,6 +2215,9 @@ public static partial class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        // Refus définitif en cours (clé, compte ou fonction absente de l'offre) : rien n'est envoyé ni mis en file.
+        if (IsRefusalLatched(url))
+            return;
         // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
         if (TryOfferBatchablePost(url, jsonBody))
             return;
@@ -2346,6 +2358,11 @@ public static partial class Extension
     {
         if (string.IsNullOrEmpty(url))
             return "ERR|invalid_url";
+        // Refus définitif en cours : aucun appel (avant : un GET refusé toutes les 4 à 8 s par sondage).
+        if (IsAuthLatched())
+            return "ERR|unauthorized";
+        if (IsFeatureLatched(url))
+            return "ERR|feature_unavailable";
 
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
         var now = Environment.TickCount64;
@@ -2360,7 +2377,10 @@ public static partial class Extension
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
                     using var resp = SendGet(url, cts.Token);
                     var body = ReadContentUtf8(resp, cts.Token);
-                    var formatted = format(body, (int)resp.StatusCode);
+                    var status = (int)resp.StatusCode;
+                    if (status == 401 || status == 403)
+                        NoteRefusal(url, status, body);
+                    var formatted = format(body, status);
                     if (formatted.StartsWith("OK|", StringComparison.Ordinal) || slot.FetchedAtMs == 0)
                         slot.Result = formatted;
                     slot.FetchedAtMs = Environment.TickCount64;

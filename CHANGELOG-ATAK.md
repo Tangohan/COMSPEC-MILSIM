@@ -38,20 +38,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Dépannage liaison : clé refusée, liaison incomplète ou compte bloqué reconnus (Overwatch connect 1.6.17)
+## Refus d'Athena : plus de demandes en boucle, Dépannage liaison qui donne la bonne correction (Overwatch connect 1.6.17)
 
 ### Résumé joueur
 Type : correctif
-FR : Le Dépannage liaison propose la bonne correction quand Athena refuse ta clé
+FR : Quand Athena te refuse, le jeu arrête d'insister et te dit quoi faire
 - Si Athena refuse la clé enregistrée dans ton profil (clé changée ou retirée), le Dépannage liaison le dit et propose Lier mon compte au lieu de Reconnecter, qui échouait à chaque fois.
-- Même chose quand la liaison enregistrée est incomplète : il propose de la refaire.
-- Si ton compte, ton Steam ou ton réseau est bloqué par ta communauté, il te dit de contacter un administrateur au lieu de proposer une reconnexion inutile.
-EN : Link troubleshooting suggests the right fix when Athena refuses your key
+- Si ton compte, ton Steam ou ton réseau est bloqué par ta communauté, il te dit de contacter un administrateur.
+- Après un refus de ce genre, le téléphone n'envoie plus rien jusqu'à ce que tu refasses la liaison ou Reconnecter Athena : avant, il redemandait toutes les quelques secondes, pour rien.
+- Une fonction absente de l'offre de ta communauté (ordres, tchat, zones…) n'est plus redemandée sans arrêt : un essai par demi-heure.
+EN : When Athena refuses you, the game stops insisting and tells you what to do
 - If Athena refuses the key saved in your profile (key changed or withdrawn), Link troubleshooting says so and offers Link my account instead of Reconnect, which kept failing.
-- Same when the saved link is incomplete: it offers to redo it.
-- If your account, Steam or network is blocked by your community, it tells you to contact an administrator instead of offering a useless reconnection.
+- If your account, Steam or network is blocked by your community, it tells you to contact an administrator.
+- After such a refusal, the phone sends nothing more until you link again or use Reconnect Athena: before, it asked again every few seconds for nothing.
+- A feature missing from your community's plan (orders, chat, zones…) is no longer requested non-stop: one try every half hour.
 
 ### Détail technique
+- Mesure en production (`request_telemetry`, 24 h au 2026-10-26) : 136 000 requêtes notées dont 128 000 refus 401/403, jusqu'à 21 000 refus par heure. Causes côté site : 401 `unauthorized` (clé refusée ou session expirée), 403 `feature_unavailable` (offre basique : ordres, minuteurs, tchat, zones, alertes médicales, marqueurs, véhicules), 403 `tenant_context_required`, et les refus du garde d'écriture (`steam_not_linked`, `account_disabled`, `steam_required`, `atak_blocked`, `mod_steam_blocked`, `mod_ip_blocked`). Côté mod : les sondages GET de la DLL Link (`ServePollGet`) ignoraient toutes les pauses et le cache masquait les refus au SQF ; le lot de télémétrie en 401 repartait chaque seconde ; `AuthInvalidated` rouvrait le canal toutes les 48 s.
+- DLL Link, nouveau `Extension_RefusalLatch.cs` : `NoteRefusal` lit le code JSON `error` de chaque 401/403 (sondages, lot, file, envois). 403 « règle » → verrou global immédiat ; 401 → un client-init (`MaybeReauthAfter401`, désormais aussi pour les sondages), verrou s'il est refusé ; `feature_unavailable` → cette adresse seule se tait 30 min. Verrou global : `ServePollGet`, `EnqueueOrSend` et `DrainQueue` n'envoient plus rien. Levée : `SetGameAuth("READY")` sans erreur (nouvelle liaison, nouvelle clé, Reconnecter accepté) ou redémarrage. Les appels de liaison et client-init ne sont pas bloqués.
+- `fn_extensionCallback.sqf`, `AuthInvalidated` : la cause est écrite dans `COMSPEC_LinkDetail` avec les libellés de `fn_connect`, et la réouverture automatique à 48 s n'a plus lieu pour un refus connu.
+- DLL `COMSPECExtension_x64.dll` du mod natif recompilée (NativeAOT) ; numéro de version de la DLL inchangé pour ne pas déclencher l'alerte « DLL périmée » de main.pbo.
 - `fn_diagChecks.sqf` (connect embarqué dans l'ATAK natif), étape 6 « Liaison » : avant, tout échec de `fn_connect` hors « non lié » tombait dans le cas par défaut (« site injoignable », correction Reconnecter). Désormais `COMSPEC_LinkDetail` est classé : clé refusée (`ERR unauthorized`) → Lier mon compte ; communauté manquante ou Steam invalide → Lier mon compte ; compte non autorisé ou accès mod restreint → contacter un administrateur, pas de correction ; Steam requis → mettre le mod à jour.
 - Contexte : rotation de la clé plateforme du 2026-10-26. Depuis #1052 la liaison renvoie une clé de communauté ; un profil qui gardait l'ancienne clé plateforme reçoit maintenant `unauthorized`, et seule une nouvelle liaison enregistre une clé valide.
 - `comspec_overwatch_connect.pbo` repaqueté seul (AddonBuilder, préfixe `z\comspec_overwatch\addons\connect`) ; main.pbo et la version de l'ATAK natif ne changent pas. Nouveaux textes en français seulement (repli de `fn_tr`), à ajouter à `en.txt` au prochain regroupement de main.pbo.

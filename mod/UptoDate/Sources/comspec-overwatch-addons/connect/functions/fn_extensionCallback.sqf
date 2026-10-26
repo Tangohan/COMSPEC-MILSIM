@@ -93,7 +93,21 @@ switch (_function) do {
         missionNamespace setVariable ["comspec_overwatch_auth_state", "C2_UNAUTHORIZED", false];
         missionNamespace setVariable ["comspec_overwatch_auth_error", "C2_UNAUTHORIZED", false];
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
-        missionNamespace setVariable ["COMSPEC_LinkDetail", "Session Athena refusée — reconnectez-vous", false];
+        // Cause du refus (code Athena dans _data) : mêmes libellés que fn_connect, lus par le Dépannage liaison
+        // pour proposer la bonne correction. Refus définitif : la DLL ne sonde plus rien jusqu'à la prochaine
+        // session valide, donc pas de réouverture automatique (avant : un essai toutes les 48 s, à l'infini).
+        private _low = toLower _data;
+        private _permDetail = switch (true) do {
+            case (_low find "mod_steam_blocked" >= 0): { "Acces mod refuse — Steam restreint" };
+            case (_low find "mod_ip_blocked" >= 0): { "Acces mod refuse — reseau restreint" };
+            case (_low find "account_disabled" >= 0 || {_low find "atak_blocked" >= 0}): { "Compte Athena non autorise" };
+            case (_low find "steam_not_linked" >= 0): { "Compte Athena non lie a ce Steam" };
+            case (_low find "steam_required" >= 0): { "Identifiant Steam requis" };
+            case (_low find "tenant_" >= 0): { "Communaute manquante — refaites la liaison" };
+            case (_low find "unauthorized" >= 0): { "Acces refuse — cle Athena invalide" };
+            default { "" };
+        };
+        missionNamespace setVariable ["COMSPEC_LinkDetail", [_permDetail, "Session Athena refusée — reconnectez-vous"] select (_permDetail isEqualTo ""), false];
         // Pause courte : un appairage juste après doit pouvoir rouvrir le canal.
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + 45, false];
         missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + 45, false];
@@ -104,7 +118,10 @@ switch (_function) do {
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
         ["COMSPEC_AthenaLinkChanged", ["offline"]] call CBA_fnc_localEvent;
-        // Après la pause, retenter l’ouverture du canal (souvent un 401 précoce, pas une vraie déconnexion).
+        if (_permDetail isNotEqualTo "") exitWith {
+            [format ["[Athena] Refus d'Athena (%1) : plus d'envoi jusqu'à une nouvelle liaison ou Reconnecter Athena.", _permDetail], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+        };
+        // Cause inconnue : après la pause, retenter l’ouverture du canal (souvent un 401 précoce).
         [{
             if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith {};
             if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {

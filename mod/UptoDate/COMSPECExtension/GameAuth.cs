@@ -171,6 +171,10 @@ public static partial class Extension
             if (string.Equals(state, "READY", StringComparison.Ordinal) && !wasReady)
                 _gameAuthBecameReadyAt = DateTimeOffset.UtcNow;
         }
+        // Liaison refaite, nouvelle clé ou client-init accepté : les refus mémorisés ne valent plus.
+        // READY avec erreur C2_* (FinishGameAuthReady) : client-init toujours refusé, le verrou reste.
+        if (string.Equals(state, "READY", StringComparison.Ordinal) && string.IsNullOrEmpty(error))
+            ClearRefusalLatches();
     }
 
     private static string FormatGameAuthState()
