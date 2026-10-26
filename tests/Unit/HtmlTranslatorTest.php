@@ -31,6 +31,7 @@ final class HtmlTranslatorTest extends TestCase
             'Ouvrir %1' => 'Open %1',
             '%1 personne%2 listée%3' => '%1 person%2 listed%3',
             'Vous postulez pour : %1' => 'You are applying for: %1',
+            'Voir les journaux d’audit' => 'View audit logs',
         ]);
     }
 
@@ -55,6 +56,12 @@ final class HtmlTranslatorTest extends TestCase
         self::assertStringContainsString('<script>for (var i = 0; i < n; i++) { x(); }</script>', $out);
         self::assertStringContainsString('<a>Close</a>', $out);
         self::assertStringContainsString('<b>Members</b>', $out);
+    }
+
+    public function testStraightApostropheFromDatabaseFindsTypographicEntry(): void
+    {
+        $out = HtmlTranslator::translate('<span>Voir les journaux d&#039;audit</span>');
+        self::assertStringContainsString('<span>View audit logs</span>', $out);
     }
 
     public function testTemplatesEntitiesAndLabelValue(): void

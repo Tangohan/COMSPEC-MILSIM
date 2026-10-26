@@ -298,6 +298,10 @@ final class HtmlTranslator
         }
         $exact = self::$exact ?? [];
         $r = $exact[$s] ?? null;
+        // Apostrophe droite saisie en base (« l'annuaire ») : le dictionnaire utilise l'apostrophe typographique.
+        if ($r === null && str_contains($s, "'")) {
+            $r = $exact[str_replace("'", '’', $s)] ?? null;
+        }
         if ($r === null && ($k = strpos($s, ' : ')) !== false && $k > 0) {
             $label = $exact[substr($s, 0, $k)] ?? null;
             if ($label !== null) {

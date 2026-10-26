@@ -6921,6 +6921,10 @@ html[data-bo-theme="dark"] .eff-access-group__desc {
 html[data-bo-theme="dark"] .eff-access-group label {
   color: #dae1de;
 }
+html[data-bo-theme="dark"] .eff-access-all {
+  color: #dae1de;
+  border: 1px solid #2b3530;
+}
 html[data-bo-theme="dark"] .eff-access-editor__save {
   background: #111513;
   border-top: 1px solid #2b3430;
