@@ -674,6 +674,41 @@ html[data-bo-theme="dark"] .adv-badge--exception {
   background: #2d251a;
   color: #ffb852;
 }
+html[data-bo-theme="dark"] .adv-badge--wait {
+  background: #2d251a;
+  color: #ffb852;
+}
+html[data-bo-theme="dark"] .adv-badge--quiet {
+  background: #1c2422;
+  color: #b7c2bb;
+}
+html[data-bo-theme="dark"] .adv-lead {
+  color: #d5ddd8;
+}
+html[data-bo-theme="dark"] .adv-empty {
+  background: #141a18;
+  border-color: #2b3430;
+}
+html[data-bo-theme="dark"] .adv-empty p,
+html[data-bo-theme="dark"] .adv-campaign__body span,
+html[data-bo-theme="dark"] .adv-person__facts dd,
+html[data-bo-theme="dark"] .adv-person__facts dt {
+  color: #b7c2bb;
+}
+html[data-bo-theme="dark"] .adv-campaign,
+html[data-bo-theme="dark"] .adv-person {
+  background: #141a18;
+  border-color: #2b3430;
+  color: #e7eee9;
+}
+html[data-bo-theme="dark"] .adv-campaign:hover,
+html[data-bo-theme="dark"] .adv-campaign:focus-visible {
+  border-color: #3d9a68;
+}
+html[data-bo-theme="dark"] .adv-campaign__year {
+  background: #1a1f1d;
+  color: #75dca9;
+}
 html[data-bo-theme="dark"] .adv-detect--danger {
   background: #2c1919;
   color: #e46c6c;

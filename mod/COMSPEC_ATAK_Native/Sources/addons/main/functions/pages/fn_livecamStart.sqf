@@ -1,5 +1,40 @@
-/* Démarre (ou retarget) la caméra poitrine du Live cam. Params : [porteur, mode 0 jour / 1 NV / 2 thermique] */
+/* Démarre (ou retarget) la caméra poitrine du Live cam. Params : [porteur, mode 0 jour / 1 NV / 2 thermique]
+   ou ["fov", champ] pour changer la focale de la caméra déjà ouverte (dézoom = champ plus grand). */
 params ["_unit", ["_mode", 0]];
+if (_unit isEqualTo "fov") exitWith {
+    private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
+    if (isNull _cam) exitWith { false };
+    private _fov = (_mode max 0.15) min 2;
+    private _kind = missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""];
+    private _att = attachedTo _cam;
+    // Un camCommit sur une caméra attachée ne prend pas : on détache, on règle, on rattache au même endroit.
+    switch (_kind) do {
+        case "unit": {
+            detach _cam;
+            _cam camSetFov _fov;
+            _cam camCommit 0;
+            if (!isNull _att) then {
+                _cam attachTo [_att, [0, 0.22, 0.05], "spine3", true];
+                _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]];
+            };
+        };
+        case "fixed": {
+            private _pan = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["livecamPan", 0];
+            detach _cam;
+            _cam camSetFov _fov;
+            _cam camCommit 0;
+            if (!isNull _att) then {
+                _cam attachTo [_att, [0, 0.12, 0.03]];
+                _cam setVectorDirAndUp [[sin _pan, cos _pan, 0], [0, 0, 1]];
+            };
+        };
+        default {
+            _cam camSetFov _fov;
+            _cam camCommit 0;
+        };
+    };
+    true
+};
 if (isNull _unit) exitWith { false };
 // PiP coupée (Options > Vidéo) : le direct serait noir ; journal RPT et notification claire (fn_pipCheck).
 ["check", "LIVE CAM"] call comspec_atak_native_fnc_pipCheck;
@@ -10,11 +45,18 @@ if (isNull _cam) then {
     _cam camSetFov 0.75;
     missionNamespace setVariable ["COMSPEC_ATAK_LivecamCam", _cam];
 };
+private _mm = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["livecamFocal", 35];
+if !(_mm isEqualType 0) then { _mm = 35; };
+private _fov = ((0.75 * 35 / (_mm max 1)) max 0.15) min 2;
 if ((attachedTo _cam) isNotEqualTo _unit) then {
     detach _cam;
+    _cam camSetFov _fov;
+    _cam camCommit 0;
     // Buste : légèrement devant la poitrine, regard vers l'avant du porteur.
     _cam attachTo [_unit, [0, 0.22, 0.05], "spine3", true];
     _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]];
+} else {
+    (["fov", _fov]) call comspec_atak_native_fnc_livecamStart;
 };
 "comspec_livecam" setPiPEffect [_mode];
 // Boucle d'une caméra fixe (fn_camView) ou d'un drone (fn_livecamUav) encore en place : remplacée par celle du porteur.
