@@ -6,8 +6,11 @@ namespace Tests\Unit;
 
 use App\Controllers\Api\AtakApiController;
 use App\Core\Database;
+use App\Core\Request;
 use App\Core\Session;
+use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\ComspecApiKeyAuth;
 use PDO;
@@ -32,6 +35,7 @@ final class AtakUnverifiedAuthFailureJournalTest extends TestCase
         'ATAK_INTEL_SECRET',
         'ATAK_DEFAULT_TENANT_ID',
         'APP_ATAK_DEFAULT_TENANT_ID',
+        'ATAK_GAME_LINK_BY_STEAM',
     ];
 
     private AtakActivityLogService $svc;
@@ -53,9 +57,16 @@ final class AtakUnverifiedAuthFailureJournalTest extends TestCase
     /** @var array{set: bool, value: mixed} */
     private array $savedGetTenant = ['set' => false, 'value' => null];
 
+    private bool $hadPost = false;
+
+    private mixed $savedPost = null;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->hadPost = isset($_POST);
+        $this->savedPost = $_POST ?? null;
+        $_POST = [];
         $this->svc = new AtakActivityLogService();
         $this->tenantId = 920000 + random_int(1, 49999);
         $this->unknownTenantId = $this->tenantId + 50000;
@@ -118,6 +129,11 @@ final class AtakUnverifiedAuthFailureJournalTest extends TestCase
                 unset($_ENV[$key]);
             }
             putenv($saved['getenv'] === false ? $key : $key . '=' . $saved['getenv']);
+        }
+        if ($this->hadPost) {
+            $_POST = $this->savedPost;
+        } else {
+            unset($_POST);
         }
         parent::tearDown();
     }
@@ -209,14 +225,58 @@ final class AtakUnverifiedAuthFailureJournalTest extends TestCase
 
     public function testTenantIdThatIsNotAPlainNumberIsIgnored(): void
     {
-        // tenant_id[]=N donnait (int) d’un tableau = 1 ; « Nabc » donnait N.
-        $_GET['tenant_id'] = $this->tenantId . 'abc';
-        self::assertNotNull(ComspecApiKeyAuth::enforceForTacticalPath(self::PATH));
-        ComspecApiKeyAuth::resetForTests();
-        $_GET['tenant_id'] = [(string) $this->tenantId];
-        self::assertNotNull(ComspecApiKeyAuth::enforceForTacticalPath(self::PATH));
+        // tenant_id[]=N donnait (int) d’un tableau = 1 : le refus allait dans le journal de la communauté 1,
+        // qui existe dans cette base ; « Nabc » donnait N.
+        self::setDatabasePdo(self::pdoWithTenant($this->tenantId, 1));
+        $saved = self::setAsideCommunityOneJournal();
+        try {
+            $_GET['tenant_id'] = $this->tenantId . 'abc';
+            self::assertNotNull(ComspecApiKeyAuth::enforceForTacticalPath(self::PATH));
+            ComspecApiKeyAuth::resetForTests();
+            $_GET['tenant_id'] = [(string) $this->tenantId];
+            self::assertNotNull(ComspecApiKeyAuth::enforceForTacticalPath(self::PATH));
 
-        self::assertSame([], $this->authEvents($this->tenantId));
+            self::assertSame([], $this->authEvents($this->tenantId));
+            self::assertSame($saved['journal'], self::communityOneFiles(), 'rien d’écrit pour la communauté 1');
+        } finally {
+            self::restoreCommunityOneJournal($saved);
+        }
+    }
+
+    public function testGameLinkRefusalUsesTheSameCommunityRuleAsTheGuard(): void
+    {
+        // Liaison refusée (code inconnu, Steam non reconnu) : la communauté du journal venait de resolveTenantId(),
+        // (int) tenant_id : « tenant_id[]=N » allait dans la communauté 1, « Nabc » dans N.
+        $pdo = self::pdoWithTenant($this->tenantId, 1);
+        self::setDatabasePdo($pdo);
+        $this->setEnv('ATAK_GAME_LINK_BY_STEAM', '1');
+        $controller = $this->gameLinkController($pdo);
+        $routes = [
+            'gameLinkRedeem' => ['code' => 'ZZZZ9999'],
+            'gameLinkBySteam' => ['steam_uid' => '76561198000000042'],
+        ];
+        $saved = self::setAsideCommunityOneJournal();
+        try {
+            foreach ($routes as $route => $body) {
+                (new \ReflectionProperty(AtakApiController::class, 'jsonBodyCache'))->setValue($controller, $body);
+                foreach ([[(string) $this->tenantId], $this->tenantId . 'abc'] as $tenantQuery) {
+                    $_GET['tenant_id'] = $tenantQuery;
+                    self::assertSame(404, $controller->{$route}(new Request())->statusCode(), $route);
+                }
+                self::assertSame([], $this->authEvents($this->tenantId), $route);
+                self::assertSame($saved['journal'], self::communityOneFiles(), $route . ' : rien pour la communauté 1');
+            }
+
+            // La même communauté écrite en chiffres reste journalisée : une entrée par refus.
+            $_GET['tenant_id'] = (string) $this->tenantId;
+            foreach ($routes as $route => $body) {
+                (new \ReflectionProperty(AtakApiController::class, 'jsonBodyCache'))->setValue($controller, $body);
+                self::assertSame(404, $controller->{$route}(new Request())->statusCode(), $route);
+            }
+            self::assertCount(2, $this->authEvents($this->tenantId));
+        } finally {
+            self::restoreCommunityOneJournal($saved);
+        }
     }
 
     public function testDatabaseFailureDuringTheCommunityCheckJournalsNothing(): void
@@ -250,6 +310,81 @@ final class AtakUnverifiedAuthFailureJournalTest extends TestCase
 
         self::assertCount(1, $this->authEvents($this->tenantId));
         self::assertFileDoesNotExist(base_path('storage/cache/atak-activity/t' . $this->unknownTenantId . '_m1.json'));
+    }
+
+    /** Contrôleur des routes de liaison : code et Steam toujours inconnus, journal et communautés de ce test. */
+    private function gameLinkController(PDO $pdo): AtakApiController
+    {
+        $controller = (new \ReflectionClass(AtakApiController::class))->newInstanceWithoutConstructor();
+        $set = static function (string $name, mixed $value) use ($controller): void {
+            (new \ReflectionProperty(AtakApiController::class, $name))->setValue($controller, $value);
+        };
+        $links = $this->createMock(TacticalGameLinkRepository::class);
+        $links->method('findValidByCode')->willReturn(null);
+        $links->method('explainInvalidCode')->willReturn('');
+        $users = $this->createMock(UserRepository::class);
+        $users->method('findBySteamId')->willReturn(null);
+        $set('tenantRepository', new TenantRepository($pdo));
+        $set('activityLog', $this->svc);
+        $set('gameLinkRepository', $links);
+        $set('userRepository', $users);
+
+        return $controller;
+    }
+
+    /**
+     * Journal de la communauté 1 (t1_m*.json) et ses témoins anti-doublon : contenu et date de chaque fichier.
+     *
+     * @return array<string, array{content: string, mtime: int}>
+     */
+    private static function communityOneFiles(): array
+    {
+        $paths = array_merge(
+            glob(base_path('storage/cache/atak-activity/t1_m*.json')) ?: [],
+            glob(base_path('storage/cache/atak-activity/witness/t1_m*.txt')) ?: []
+        );
+        $files = [];
+        foreach ($paths as $path) {
+            $files[(string) $path] = [
+                'content' => (string) file_get_contents((string) $path),
+                'mtime' => (int) filemtime((string) $path),
+            ];
+        }
+        ksort($files);
+
+        return $files;
+    }
+
+    /**
+     * Met de côté les témoins de la communauté 1 : un témoin récent (moins d’une minute) masquerait une écriture
+     * fautive. Rend l’état d’origine, à restaurer, et le journal tel qu’il doit rester.
+     *
+     * @return array{original: array<string, array{content: string, mtime: int}>, journal: array<string, array{content: string, mtime: int}>}
+     */
+    private static function setAsideCommunityOneJournal(): array
+    {
+        $original = self::communityOneFiles();
+        foreach (array_keys($original) as $path) {
+            if (str_contains($path, '/witness/')) {
+                @unlink($path);
+            }
+        }
+
+        return ['original' => $original, 'journal' => self::communityOneFiles()];
+    }
+
+    /** @param array{original: array<string, array{content: string, mtime: int}>, journal: array<string, mixed>} $saved */
+    private static function restoreCommunityOneJournal(array $saved): void
+    {
+        foreach (array_keys(self::communityOneFiles()) as $path) {
+            if (!isset($saved['original'][$path])) {
+                @unlink($path);
+            }
+        }
+        foreach ($saved['original'] as $path => $file) {
+            @file_put_contents($path, $file['content']);
+            @touch($path, $file['mtime']);
+        }
     }
 
     /** @return list<array<string, mixed>> */
@@ -287,13 +422,16 @@ final class AtakUnverifiedAuthFailureJournalTest extends TestCase
         (new \ReflectionProperty(Database::class, 'pdo'))->setValue(null, $pdo);
     }
 
-    /** Base qui répond : une seule communauté, aucune clé ni session jeu (requête sans clé). */
-    private static function pdoWithTenant(int $tenantId): PDO
+    /** Base qui répond : la communauté du test (et les autres données), aucune clé ni session jeu. */
+    private static function pdoWithTenant(int $tenantId, int ...$otherTenantIds): PDO
     {
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, name TEXT)');
-        $pdo->prepare('INSERT INTO tenants (id, name) VALUES (?, ?)')->execute([$tenantId, 'Communauté de test']);
+        $insert = $pdo->prepare('INSERT INTO tenants (id, name) VALUES (?, ?)');
+        foreach ([$tenantId, ...$otherTenantIds] as $id) {
+            $insert->execute([$id, 'Communauté de test']);
+        }
         $pdo->exec(
             'CREATE TABLE game_sessions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

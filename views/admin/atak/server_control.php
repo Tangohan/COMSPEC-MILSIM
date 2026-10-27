@@ -13,6 +13,14 @@ $bridgeModulesTotal = (int) ($bridgeModulesTotal ?? 0);
 $maintenanceEnabled = !empty($maintenanceEnabled);
 $experienceSchemaReady = !empty($experienceSchemaReady);
 $netLive = is_array($netLive ?? null) ? $netLive : [];
+$phoneApps = is_array($phoneApps ?? null) ? $phoneApps : [];
+$appsPolicy = is_array($appsPolicy ?? null) ? $appsPolicy : [];
+$appsBySection = [];
+foreach ($phoneApps as $app) {
+    $appsBySection[(string) ($app['section'] ?? '')][] = $app;
+}
+$appsRequired = count(array_filter($appsPolicy, static fn ($r): bool => $r === 'required'));
+$appsForbidden = count(array_filter($appsPolicy, static fn ($r): bool => $r === 'forbidden'));
 $success = $success ?? null;
 $error = $error ?? null;
 $linkViaRelays = !empty($roleplay['link_via_relays']);
@@ -215,6 +223,56 @@ foreach ($relays as $r) {
                 </div>
                 <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer les fonctions</button>
             </form>
+        </section>
+
+        <section id="apps" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-sm font-black text-slate-900 tracking-tight">Apps du téléphone</h2>
+                        <p class="mt-1 text-xs text-slate-600 leading-relaxed max-w-2xl">Chaque opérateur installe et désinstalle ses apps dans l’App Store de son ATAK. Ici, vous pouvez rendre une app <strong>obligatoire</strong> (installée chez tous, impossible à désinstaller) ou <strong>interdite</strong> (retirée des téléphones, ne s’ouvre plus). Le Zeus et l’admin du serveur peuvent en ajouter pour une partie.</p>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-600 whitespace-nowrap"><span class="text-amber-700"><?= $appsRequired ?> obligatoire(s)</span> · <span class="text-red-700"><?= $appsForbidden ?> interdite(s)</span></p>
+                </div>
+            </div>
+            <?php if (!$experienceSchemaReady): ?>
+                <p class="px-5 py-5 text-sm text-amber-900">La base n’est pas à jour : les règles d’apps ne peuvent pas encore être enregistrées.</p>
+            <?php else: ?>
+                <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/apps')) ?>" class="px-5 py-5 space-y-6">
+                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                    <?php foreach ($appsBySection as $section => $apps): ?>
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3"><?= $h($section) ?></h3>
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <?php foreach ($apps as $app): ?>
+                                    <?php
+                                    $aid = (string) $app['id'];
+                                    $rule = (string) ($appsPolicy[$aid] ?? 'player');
+                                    $tone = match ($rule) {
+                                        'required' => 'border-amber-300 bg-amber-50/60',
+                                        'forbidden' => 'border-red-300 bg-red-50/60',
+                                        default => 'border-slate-200',
+                                    };
+                                    ?>
+                                    <div class="flex items-center gap-3 rounded-lg border <?= $tone ?> px-3 py-3">
+                                        <div class="min-w-0 flex-1">
+                                            <label for="app-<?= $h($aid) ?>" class="block text-sm font-medium text-slate-800"><?= $h((string) $app['name']) ?></label>
+                                            <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= $h((string) ($app['description'] ?? '')) ?></span>
+                                        </div>
+                                        <select id="app-<?= $h($aid) ?>" name="app_<?= $h($aid) ?>" class="shrink-0 border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white">
+                                            <option value="player"<?= $rule === 'player' ? ' selected' : '' ?>>Au choix</option>
+                                            <option value="required"<?= $rule === 'required' ? ' selected' : '' ?>>Obligatoire</option>
+                                            <option value="forbidden"<?= $rule === 'forbidden' ? ' selected' : '' ?>>Interdite</option>
+                                        </select>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                    <p class="text-xs text-slate-500">Réglages, App Store et Alertes font partie du téléphone : toujours installés.</p>
+                    <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer les apps</button>
+                </form>
+            <?php endif; ?>
         </section>
 
         <section id="relais" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">

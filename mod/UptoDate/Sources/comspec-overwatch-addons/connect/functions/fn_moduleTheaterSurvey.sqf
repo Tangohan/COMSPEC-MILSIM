@@ -62,18 +62,30 @@ if (is3DEN) then {
         _runAtStart = (toLower (trim _mode)) in ["start", "1", "true", "oui", "auto"];
     };
 
-    private _isZeus = false;
-    if (!isNull player) then {
-        _isZeus = !isNull (getAssignedCuratorLogic player);
-    };
-    private _isAdmin = (!isMultiplayer) || {serverCommandAvailable "#kick"};
-
     if (!isMultiplayer) then { deleteVehicle _logic; };
 
-    if (_runAtStart && {_isZeus || {_isAdmin}}) then {
-        [{
+    // Déjà lancé pour cette mission (ex. Zeus rejoignant en cours de partie) : ne pas relancer.
+    if (_runAtStart && {!(missionNamespace getVariable ["COMSPEC_TheaterSurveyDone", false])}) then {
+        [] spawn {
+            private _linked = { (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isEqualTo "linked" };
+            // Zeus et admin ne sont souvent connus qu'après l'initialisation : on les regarde une fois lié.
+            private _priority = {
+                (!isMultiplayer)
+                || {serverCommandAvailable "#kick"}
+                || {!isNull player && {!isNull (getAssignedCuratorLogic player)}}
+            };
+            private _t0 = diag_tickTime;
+            waitUntil { uiSleep 3; (call _linked) || {(diag_tickTime - _t0) > 180} };
+            if !(call _linked) exitWith {
+                ["WARN", "Theater", "Relevé du théâtre abandonné : Athena non liée après 3 min"] call comspec_overwatch_connect_fnc_log;
+            };
+            private _t1 = diag_tickTime;
+            waitUntil { uiSleep 2; (call _priority) || {(diag_tickTime - _t1) > 60} };
+            if !(call _priority) exitWith {};
+            if (missionNamespace getVariable ["COMSPEC_TheaterSurveyDone", false]) exitWith {};
+            missionNamespace setVariable ["COMSPEC_TheaterSurveyDone", true, true];
             [true] call comspec_overwatch_connect_fnc_theaterSurveyShow;
-        }, [], 3] call CBA_fnc_waitAndExecute;
+        };
     };
     true
 };

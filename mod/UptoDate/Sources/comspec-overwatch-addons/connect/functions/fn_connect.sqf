@@ -1,6 +1,21 @@
 if (!hasInterface) exitWith {};
 // Service Athéna refusé ou pas encore choisi : aucune connexion.
 if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith {};
+// Overwatch décoché au démarrage puis rallumé en mission (diag « enable », Échap « toggle:enabled », menu CBA) :
+// le bloc de démarrage CBA était sorti sans rien enregistrer (EH liaison, filet position, menus ACE, dégâts,
+// outbox, déconnexion) → le rejouer ici, comme fn_athenaApply, avant d'ouvrir la liaison.
+if (
+    (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+    && {!isNull findDisplay 46}
+    && {missionNamespace getVariable ["COMSPEC_CbaSettingsBootFired", false]}
+    && {!(missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false])}
+    && {!isNil "COMSPEC_CbaSettingsBootCode"}
+) then {
+    ["INFO", "Boot", "Overwatch rallumé en mission — initialisation différée du démarrage"] call comspec_overwatch_connect_fnc_log;
+    missionNamespace setVariable ["COMSPEC_CbaSettingsBootReplay", true, false];
+    [] call COMSPEC_CbaSettingsBootCode;
+    missionNamespace setVariable ["COMSPEC_CbaSettingsBootReplay", false, false];
+};
 
 // Retire guillemets / espaces colles (profileNamespace, CBA, retour extension).
 private _cleanSecret = {
@@ -183,6 +198,10 @@ if (_prefix == "OK") then {
                 case "unauthorized": {
                     _detail = "Acces refuse — cle Athena invalide";
                     _logMsg = "Acces refuse (cle Athena invalide ou mal enregistree).";
+                };
+                case "client_untrusted": {
+                    _detail = "Module non reconnu — installez le pack officiel";
+                    _logMsg = "Ce module n'est pas reconnu. Installez la version officielle du pack, puis relancez Arma.";
                 };
                 case "tenant_required": {
                     _detail = "Communaute manquante — refaites la liaison";

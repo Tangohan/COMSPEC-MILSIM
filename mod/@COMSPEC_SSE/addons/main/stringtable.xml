@@ -1852,6 +1852,11 @@
             <English>COMSPEC SSE — Biometrics</English>
             <French>COMSPEC SSE — Biométrie</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5EF301D74E">
+            <Original>Sensitive Site Exploitation — Zeus, Eden, ACE, deterministic generation and Athena link.</Original>
+            <English>Sensitive Site Exploitation — Zeus, Eden, ACE, deterministic generation and Athena link.</English>
+            <French>Sensitive Site Exploitation — Zeus, Eden, ACE, génération déterministe et liaison Athena.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5F03624271">
             <Original>Plus élevée = accès plus long.</Original>
             <English>Higher = longer access.</English>

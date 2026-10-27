@@ -204,7 +204,8 @@ switch (_action) do {
         private _photos = 0;
         if ([] call comspec_atak_native_fnc_bridge && {!isNil "comspec_overwatch_connect_fnc_captureReconImage"}) then {
             private _failed = (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]) select { _x isEqualType "" };
-            missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", []];
+            // Au-delà de 20, les photos restent en file pour un prochain renvoi (pas d'effacement silencieux).
+            missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", _failed select [20]];
             {
                 private _p = _x splitString "\/";
                 [_x, format ["%1 · récupérée sur l'ATAK de %2 par %3 · %4", [player, true] call comspec_atak_native_fnc_unitCallsign, name player, _by, _p select ((count _p) - 1)], "CTAB", "", true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;

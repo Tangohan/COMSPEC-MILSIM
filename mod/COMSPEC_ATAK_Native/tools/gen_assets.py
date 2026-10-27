@@ -61,6 +61,8 @@ def phone_landscape(w=2048, h=1024):
 
 ICONS = {
     # Numéros : combiné de téléphone et fiche du carnet.
+    # App Store : sac de boutique, flèche de téléchargement.
+    "app_store": '<path d="M4.5 8h15l-1.2 12.2a1.5 1.5 0 0 1-1.5 1.3H7.2a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8"/><path d="M12 11.5v6M9.4 15l2.6 2.6 2.6-2.6"/>',
     "app_numbers": '<rect x="3" y="3" width="13" height="18" rx="1.5"/><path d="M6.5 8h6M6.5 11.5h6M6.5 15h3.5"/><path d="M17.5 8.5c1.6 1.6 2.6 3.7 2.6 6.1M17.5 12c.7.7 1.1 1.6 1.1 2.6"/>',
     # Poste TOC : ordinateur portable ouvert, carte et repère à l'écran.
     "app_toc": '<rect x="4" y="4.5" width="16" height="11" rx="1"/><path d="M2 19.5h20l-1.5-4h-17z"/><path d="M7 12.5l3-3 2.5 2 4-4"/><circle cx="16.5" cy="7.5" r="1"/>',
@@ -1389,7 +1391,7 @@ def nvgfilter_item(size=256):
 
 
 # --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
-PHONE_MODELS = ["rugged", "iphone", "sonim", "tablet", "keys", "s23"]
+PHONE_MODELS = ["rugged", "iphone", "sonim", "tablet", "keys", "s23", "ip17"]
 
 
 def _hole(model):
@@ -1762,7 +1764,24 @@ JPC_PHONES = {
     "iphone": (212, 629, 1962, 1647),
     "sonim": (223, 503, 1764, 1440),
     "s23": (206, 569, 1901, 1752),  # recadrage du S7 : le S23 reprend le modèle jpc_s7.p3d
+    "ip17": (212, 629, 1962, 1647),  # recadrage du V2 Enhanced : l'iPhone 17 Pro reprend le modèle jpc_iphone.p3d
 }
+# Modèle 3D emprunté (pas de modèle propre) : la face et le dos sont recalés pour que l'ouverture de l'écran tombe
+# exactement sur l'écran du modèle prêté (même largeur ; l'iPhone 17 Pro, plus allongé, est étiré de 8 % en hauteur).
+JPC_SHARED = {"ip17": "iphone"}
+
+
+def _jpc_fit(img, model, back=False):
+    """Recale une coque 2048 x 2048 sur l'ouverture du modèle 3D prêté (JPC_SHARED) ; le dos est le miroir de la face."""
+    if model not in JPC_SHARED:
+        return img
+    mx0, my0, mx1, my1 = _hole(model)
+    tx0, ty0, tx1, ty1 = _hole(JPC_SHARED[model])
+    sx, sy = (tx1 - tx0 + 1) / (mx1 - mx0 + 1), (ty1 - ty0 + 1) / (my1 - my0 + 1)
+    src = img.transpose(Image.FLIP_LEFT_RIGHT) if back else img
+    # Image.transform attend la transformation inverse : point de sortie (x, y) -> point source.
+    out = src.transform(src.size, Image.Transform.AFFINE, (1 / sx, 0, mx0 - tx0 / sx, 0, 1 / sy, my0 - ty0 / sy), Image.Resampling.BICUBIC)
+    return out.transpose(Image.FLIP_LEFT_RIGHT) if back else out
 
 
 def jpc_phone_atlas(tmp, only=None):
@@ -1798,8 +1817,8 @@ def jpc_phone_atlas(tmp, only=None):
         b = os.path.join(RENDER_DIR, f"phone_{m}_back.png")
         if not (os.path.exists(f) and os.path.exists(b)):
             continue
-        rear = Image.open(b).convert("RGBA").crop((2048 - x1, y0, 2048 - x0, y1))
-        convert(pack(Image.open(f).convert("RGBA"), rear, crop), f"jpc_{m}_ca", tmp)
+        rear = _jpc_fit(Image.open(b).convert("RGBA"), m, True).crop((2048 - x1, y0, 2048 - x0, y1))
+        convert(pack(_jpc_fit(Image.open(f).convert("RGBA"), m), rear, crop), f"jpc_{m}_ca", tmp)
 
 
 def jpc_screen_static(tmp):
@@ -1965,15 +1984,20 @@ def main():
             jpc_screen_static(tmp)
             jpc_rvmats()
             return
-        # « frames » : coques photo de frame_photos.py (V2 Enhanced, Xiaomi X3D, Sonim, S23, tablettes) et icône du kit véhicule.
+        # « frames » : coques photo de frame_photos.py (V2 Enhanced, Xiaomi X3D, Sonim, S23, iPhone 17 Pro, tablettes) et icône du kit véhicule.
         if len(sys.argv) > 2 and sys.argv[2] == "frames":
-            model_assets(tmp, only=["iphone", "rugged", "sonim", "keys", "tablet", "s23"])
+            model_assets(tmp, only=["iphone", "rugged", "sonim", "keys", "tablet", "s23", "ip17"])
             vehiclekit_item(tmp)
             return
         # « s23 » : seulement le Samsung S23 (coques 2D jour et nuit, dos, atlas du téléphone 3D).
         if len(sys.argv) > 2 and sys.argv[2] == "s23":
             model_assets(tmp, only=["s23"])
             jpc_phone_atlas(tmp, only=["s23"])
+            return
+        # « ip17 » : seulement l'iPhone 17 Pro (coques 2D jour et nuit, dos, atlas du téléphone 3D sur jpc_iphone.p3d).
+        if len(sys.argv) > 2 and sys.argv[2] == "ip17":
+            model_assets(tmp, only=["ip17"])
+            jpc_phone_atlas(tmp, only=["ip17"])
             return
         if len(sys.argv) > 2 and sys.argv[2] == "camera":
             convert(camera_item(), "item_camera", tmp)

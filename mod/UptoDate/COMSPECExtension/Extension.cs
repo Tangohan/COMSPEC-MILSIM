@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.96";
+    private const string ExtensionVersion = "2.0.99";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -89,14 +89,18 @@ public static partial class Extension
     private static int _networkBackoffSec = 1;
     private static long _lastNetworkHiccupCbTicks;
     /// <summary>
-    /// Échelle unique pour tout le trafic sortant (position, caméras, relevés, occupants, tchat) :
-    /// 45 s → 1 min 15 → 2 min 30 → 5 min → 10 min. Entrée après 3 échecs ; 2 succès baissent d’un cran.
-    /// L’escalade est plafonnée à un cran par fenêtre (pas de fusée 45→600 en ms sous rafale code 0).
+    /// Échelle choisie par la liaison quand le portail ne demande pas d’attendre :
+    /// 45 s → 1 min 15 → 1 min 30. Un Retry-After plus long est respecté à part (RetryAfterCapSec).
+    /// Entrée après 3 échecs ; 2 succès baissent d’un cran.
     /// </summary>
-    private static readonly int[] SendBackoffLadderSec = { 45, 75, 150, 300, 600 };
+    private static readonly int[] SendBackoffLadderSec = { 45, 75, 90 };
     private const int SendFailStreakToEnter = 3;
     private const int SendOkStreakToStepDown = 2;
-    private const int SendBackoffCapSec = 600;
+    /// <summary>
+    /// Délai demandé par le portail (Retry-After). Le palier choisi par la liaison reste à 90 s.
+    /// Un délai plus long est respecté, jusqu’à 10 minutes, y compris la pause d’une seule adresse.
+    /// </summary>
+    private const int RetryAfterCapSec = 600;
     private static int _sendFailStreak;
     private static int _sendOkStreak;
     private static int _sendBackoffStep;
@@ -140,6 +144,9 @@ public static partial class Extension
         var client = new HttpClient(handler)
         {
             Timeout = TimeSpan.FromSeconds(timeoutSeconds),
+            // Corps mis en mémoire au plus 64 Mo (2 Go par défaut) : un Content-Length plus grand est refusé avant
+            // lecture (HttpRequestException), un corps sans longueur s'arrête au plafond. Images de briefing sur CDN tiers.
+            MaxResponseContentBufferSize = 64L * 1024 * 1024,
             DefaultRequestVersion = HttpVersion.Version11,
             DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower
         };
@@ -549,6 +556,7 @@ public static partial class Extension
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
             using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent(json.ToString()) };
+            StampOfficialClient(req);
             using var response = SendTimed(req, cts.Token);
             if ((int)response.StatusCode == 429) return "ERR|rate_limited";
             var body = ReadContentUtf8(response, cts.Token);
@@ -561,7 +569,10 @@ public static partial class Extension
             }
             catch (JsonException) { }
             if (!response.IsSuccessStatusCode)
+            {
+                if (body.Contains("client_untrusted", StringComparison.Ordinal)) return "ERR|client_untrusted";
                 return "ERR|" + (status.Length > 0 ? status : "http_" + (int)response.StatusCode);
+            }
             return "OK|" + (status.Length > 0 ? status : "sent");
         }
         catch (Exception ex)
@@ -662,7 +673,7 @@ public static partial class Extension
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
         try
         {
-            var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
+            using var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
             var code = (int)resp.StatusCode;
             var respBody = "";
             try { respBody = ReadContentUtf8(resp, cts.Token); } catch { /* ignore */ }
@@ -675,6 +686,8 @@ public static partial class Extension
                 return "OK|connected";
             }
 
+            if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                return "ERR|client_untrusted";
             if (code is 401)
                 return "ERR|unauthorized";
             if (code is 403)
@@ -834,7 +847,7 @@ public static partial class Extension
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
         try
         {
-            var resp = SendJsonPost(discUri.AbsoluteUri, BuildDisconnectBody(callSign), cts.Token);
+            using var resp = SendJsonPost(discUri.AbsoluteUri, BuildDisconnectBody(callSign), cts.Token);
             if (resp.IsSuccessStatusCode)
                 return "OK|disconnected";
             var code = (int)resp.StatusCode;
@@ -1174,7 +1187,7 @@ public static partial class Extension
             JournalTrack(url, jsonBody, "queued");
         }
         else
-            JournalTrack(url, jsonBody, "failed", "file d'envoi pleine");
+            JournalTrack(url, jsonBody, "failed", "send queue full");
         EnsureDrainTimer();
     }
 
@@ -1228,11 +1241,11 @@ public static partial class Extension
         {
             var ra = response.Headers.RetryAfter;
             if (ra?.Delta is { } delta)
-                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, SendBackoffCapSec);
+                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, RetryAfterCapSec);
             if (ra?.Date is { } date)
             {
                 var sec = (int)Math.Ceiling((date.UtcDateTime - DateTime.UtcNow).TotalSeconds);
-                if (sec > 0) return Math.Clamp(sec, 1, SendBackoffCapSec);
+                if (sec > 0) return Math.Clamp(sec, 1, RetryAfterCapSec);
             }
         }
         catch { /* ignore */ }
@@ -1245,7 +1258,7 @@ public static partial class Extension
                 if (doc.RootElement.TryGetProperty("retry_after", out var prop)
                     && prop.TryGetInt32(out var n)
                     && n > 0)
-                    return Math.Clamp(n, 1, SendBackoffCapSec);
+                    return Math.Clamp(n, 1, RetryAfterCapSec);
             }
         }
         catch { /* ignore */ }
@@ -1270,7 +1283,7 @@ public static partial class Extension
 
     private static void ApplySendPause(int delaySec)
     {
-        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(delaySec, 1, SendBackoffCapSec)).Ticks;
+        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(delaySec, 1, RetryAfterCapSec)).Ticks;
         System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
         System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, until);
     }
@@ -1358,7 +1371,7 @@ public static partial class Extension
             delaySec = CurrentSendBackoffSec();
             var ra = ParseRetryAfterSeconds(response, delaySec);
             if (ra > delaySec)
-                delaySec = Math.Min(ra, SendBackoffCapSec);
+                delaySec = Math.Min(ra, RetryAfterCapSec);
             ApplySendPause(delaySec);
             if (!string.IsNullOrEmpty(url)
                 && (IsBestEffortEndpoint(url) || IsVideoFeedsEndpoint(url) || IsHeavyIngestEndpoint(url)))
@@ -1637,7 +1650,7 @@ public static partial class Extension
             }
             // Journal d'envoi (envois suivis seulement) ET journal de liaison du téléphone : positions, marqueurs
             // et météo ne sont pas suivis par le premier, l'abandon resterait sinon sans trace.
-            JournalTrack(item.Url, item.Body, "failed", "hôte non-Athena");
+            JournalTrack(item.Url, item.Body, "failed", "non-Athena host");
             NoteUntrustedQueueDrop(item.Url);
             return true;
         }
@@ -1653,7 +1666,7 @@ public static partial class Extension
                 Content = JsonContent(AddQueueSecrets(item.Body))
             };
             AttachApiKeyHeader(req);
-            var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+            using var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var sentCode = (int)response.StatusCode;
             JournalHttp(started, sentCode);
             NoteTrafficUntracked(req, response);
@@ -2035,7 +2048,7 @@ public static partial class Extension
                         if (u.Length > 0 && b.Length > 0 && PendingPosts.Count < MaxQueueSize)
                         {
                             PendingPosts.Enqueue((u, b));
-                            JournalTrack(u, b, "queued", "repris du disque");
+                            JournalTrack(u, b, "queued", "restored from disk");
                         }
                     }
                     catch { /* ligne illisible */ }
@@ -2807,7 +2820,9 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, ExtensionProductName + " " + CurrentExtensionVersion());
+            // Tampon de 32 octets côté Arma : la version seule (le nom du produit est déjà celui de la DLL ;
+            // « COMSPECATAKNativeExtension 1.0.0-native » était coupé dans le RPT).
+            Output(output, outputSize, CurrentExtensionVersion());
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -2906,9 +2921,16 @@ public static partial class Extension
     private static readonly ConcurrentDictionary<string, long> SseCampaignPushTouched = new(StringComparer.Ordinal);
 
     /// <summary>Cache détail tenue pour GetWardrobeChunk (évite ERR|too_large).</summary>
-    private static string _wardrobeDetailCacheId = "";
-    private static string _wardrobeDetailCache = "";
-    private static int _wardrobeDetailChunkSize = MaxOutputBytes - 80;
+    /// Identifiant, corps et taille de morceau dans un seul objet, remplacé d'un bloc : deux chargements de tenues
+    /// en parallèle (extAwait, Async) ne découpent jamais une tenue dans le corps d'une autre.
+    private sealed class WardrobeDetailSlot
+    {
+        public WardrobeDetailSlot(string id, string body, int chunkSize) { Id = id; Body = body; ChunkSize = chunkSize; }
+        public string Id { get; }
+        public string Body { get; }
+        public int ChunkSize { get; }
+    }
+    private static volatile WardrobeDetailSlot? _wardrobeDetail;
 
     /// <summary>Débuts des morceaux (en caractères) d'un texte découpé en tranches d'au plus maxBytes octets UTF-8 :
     /// Output coupe à 8000 octets, un découpage en caractères perdait la fin des tranches accentuées.</summary>
@@ -3204,6 +3226,24 @@ public static partial class Extension
         u is { IsAbsoluteUri: true } && u.UserInfo.Length == 0 && IsTrustedPortalHost(u.IdnHost)
         && (u.Scheme == Uri.UriSchemeHttps || (u.Scheme == Uri.UriSchemeHttp && IsDevLoopbackHost(u.IdnHost)));
 
+    /// <summary>
+    /// Pages que le téléphone ouvre dans le navigateur du joueur. Pas le reste du portail :
+    /// liaison (/lier), carte (/atak), formulaire 9-LINE (/9-line), avec ou sans le préfixe /public.
+    /// </summary>
+    private static bool IsOpenablePortalPage(Uri uri)
+    {
+        var path = (uri.AbsolutePath ?? "").Replace('\\', '/');
+        if (path.Contains("..", StringComparison.Ordinal)) return false;
+        path = path.TrimEnd('/');
+        if (path.Length == 0) path = "/";
+        return path.Equals("/lier", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/lier", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/atak", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/atak", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/9-line", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/9-line", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsSecretSafeUri(string? url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var u) && IsSecretSafeUri(u);
 
@@ -3282,6 +3322,7 @@ public static partial class Extension
         // en texture .paa, que DownloadBriefingSlideImage range telle quelle ; sans l'en-tête, JPEG comme avant.
         req.Headers.Remove("X-COMSPEC-Image");
         req.Headers.TryAddWithoutValidation("X-COMSPEC-Image", "paa");
+        StampOfficialClient(req);
     }
 
     private static void ApplySteamUid(string? steamUid)
@@ -3409,6 +3450,40 @@ public static partial class Extension
         "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report", "NetConditions.Report",
     };
 
+
+    /// <summary>
+    /// ImageDataChunk « local:<chemin> » : image déjà téléchargée par la DLL (diapositive Google Slides de comspec_cache),
+    /// qu'Arma refuse hors d'un PBO, lue en base64 par morceaux pour le navigateur intégré. Seulement sous un dossier
+    /// comspec_cache de la DLL. Aucun appel réseau : répond aussi sans session Athena (avant, le contrôle
+    /// « ERR|not_connected » de TryGetSyncResponse passait en premier : capture de TTRD du 26/10, diapositive noire).
+    /// </summary>
+    private static string ImageDataChunkLocal(string?[] args)
+    {
+        var imageUrl = (args[0] ?? "").Trim();
+        if (!long.TryParse(args[2], out var offset) || offset < 0) offset = 0;
+        string full;
+        try { full = Path.GetFullPath(imageUrl.Substring(6).Trim()); }
+        catch { return "ERR|path_not_allowed"; }
+        var roots = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "comspec_cache"),
+            Path.Combine(Path.GetTempPath(), "comspec_cache"),
+        }.Select(r => Path.GetFullPath(r).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+        if (!roots.Any(r => full.StartsWith(r, StringComparison.OrdinalIgnoreCase))) return "ERR|path_not_allowed";
+        byte[] local;
+        try { local = File.ReadAllBytes(full); }
+        catch (FileNotFoundException) { return "ERR|not_found"; }
+        catch (DirectoryNotFoundException) { return "ERR|not_found"; }
+        catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
+        var localPng = local.Length >= 8 && local[0] == 0x89 && local[1] == (byte)'P' && local[2] == (byte)'N' && local[3] == (byte)'G';
+        var localJpeg = local.Length >= 3 && local[0] == 0xFF && local[1] == 0xD8 && local[2] == 0xFF;
+        if (!localPng && !localJpeg) return "ERR|invalid_image";
+        if (local.Length > 1_400_000) return "ERR|too_large";
+        if (offset >= local.Length) return "OK|" + local.Length + "|" + local.Length + "|";
+        var localLen = (int)Math.Min(5940, local.Length - offset);
+        return "OK|" + local.Length + "|" + (offset + localLen) + "|" + Convert.ToBase64String(local, (int)offset, localLen) + (offset + localLen >= local.Length ? "|" + (localPng ? "png" : "jpeg") : "");
+    }
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
@@ -3530,6 +3605,7 @@ public static partial class Extension
             if (args[0] == "probe") return "OK|ready";
             var batch = NormalizeArmaJson(args[0]);
             if (batch.Length > 60000) return "ERR|payload_too_large";
+            if (PlayerBatchExceedsSession(batch)) return "ERR|player_only";
             EnqueueOrSend(_baseUrl + "/api/atak/screen-time/batch", EnrichAtakPayload(batch));
             return "OK|queued";
         }
@@ -3552,6 +3628,7 @@ public static partial class Extension
             if (args[0] == "probe") return "OK|ready";
             var batch = NormalizeArmaJson(args[0]);
             if (batch.Length > 60000) return "ERR|payload_too_large";
+            if (PlayerBatchExceedsSession(batch)) return "ERR|player_only";
             EnqueueOrSend(_baseUrl + "/api/atak/distance/batch", EnrichAtakPayload(batch));
             return "OK|queued";
         }
@@ -3598,7 +3675,7 @@ public static partial class Extension
             try
             {
                 using var ipCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendGet(ipUri, ipCts.Token);
+                using var resp = SendGet(ipUri, ipCts.Token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(ReadContentUtf8(resp, ipCts.Token));
                 var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "") : "";
@@ -3621,7 +3698,7 @@ public static partial class Extension
             try
             {
                 using var spCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(AddLaunchConnectAddress(NormalizeArmaJson(args[0]))), spCts.Token);
+                using var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(AddLaunchConnectAddress(NormalizeArmaJson(args[0]))), spCts.Token);
                 var body = ReadContentUtf8(resp, spCts.Token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
@@ -3646,7 +3723,7 @@ public static partial class Extension
             try
             {
                 using var acCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendJsonPost(acUri.AbsoluteUri, EnrichAtakPayload(args.Length > 0 ? args[0] : "{}"), acCts.Token);
+                using var resp = SendJsonPost(acUri.AbsoluteUri, EnrichAtakPayload(args.Length > 0 ? args[0] : "{}"), acCts.Token);
                 var body = ReadContentUtf8(resp, acCts.Token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
@@ -3709,7 +3786,7 @@ public static partial class Extension
             try
             {
                 using var gaCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendJsonPost(gaUri.AbsoluteUri, EnrichAtakPayload(NormalizeArmaJson(args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0] : "{}")), gaCts.Token);
+                using var resp = SendJsonPost(gaUri.AbsoluteUri, EnrichAtakPayload(NormalizeArmaJson(args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0] : "{}")), gaCts.Token);
                 var body = ReadContentUtf8(resp, gaCts.Token);
                 JsonDocument? doc = null;
                 try { doc = JsonDocument.Parse(body); } catch (JsonException) { }
@@ -3802,7 +3879,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText,MedicalRoster";
         }
 
         if (function == "GetCapabilities")
@@ -3876,7 +3953,8 @@ public static partial class Extension
             {
                 var target = ArmaString(args[0]).Trim();
                 if (!Uri.TryCreate(target, UriKind.Absolute, out var targetUri)
-                    || (targetUri.Scheme != Uri.UriSchemeHttps && targetUri.Scheme != Uri.UriSchemeHttp))
+                    || !IsSecretSafeUri(targetUri)
+                    || !IsOpenablePortalPage(targetUri))
                     return "ERR|invalid_url";
                 if (_baseUrl.Length == 0
                     || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var portalUri)
@@ -4104,10 +4182,12 @@ public static partial class Extension
         {
             var probe = (args.Length > 0 ? args[0] : null) ?? "";
             probe = RepairBrokenWorkshopScreenshotPath(probe.Trim().Trim('"').Trim('\'').Replace('/', '\\'));
-            if (string.IsNullOrWhiteSpace(probe)) return "OK|0";
+            if (string.IsNullOrWhiteSpace(probe) || IsUncOrRemote(probe)) return "OK|0";
             try
             {
-                if (Directory.Exists(probe) || File.Exists(probe))
+                var full = Path.GetFullPath(probe);
+                if (!IsUnderKnownDataRoot(full)) return "OK|0";
+                if (Directory.Exists(full) || File.Exists(full))
                     return "OK|1";
             }
             catch { /* ignore */ }
@@ -4378,8 +4458,11 @@ public static partial class Extension
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 // HttpRequestMessage dédié : redeem sans clé API (le code court est le secret).
                 using var req = new HttpRequestMessage(HttpMethod.Post, redeemUri) { Content = content };
-                var resp = HttpClient.SendAsync(req, redeemToken).GetAwaiter().GetResult();
+                StampOfficialClient(req);
+                using var resp = HttpClient.SendAsync(req, redeemToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, redeemToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -4433,7 +4516,7 @@ public static partial class Extension
                 SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) : Arma/SQF splitString "\t" est fragile → URL/"h" + clé tronquée.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             catch (Exception ex)
             {
@@ -4462,8 +4545,11 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, steamUri) { Content = content };
-                var resp = HttpClient.SendAsync(req, steamToken).GetAwaiter().GetResult();
+                StampOfficialClient(req);
+                using var resp = HttpClient.SendAsync(req, steamToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, steamToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -4518,7 +4604,7 @@ public static partial class Extension
                 SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) — même format que RedeemGameLink.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             catch (Exception ex)
             {
@@ -4569,8 +4655,11 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, betaUri) { Content = content };
-                var resp = HttpClient.SendAsync(req, betaToken).GetAwaiter().GetResult();
+                StampOfficialClient(req);
+                using var resp = HttpClient.SendAsync(req, betaToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, betaToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -4674,7 +4763,8 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, diagUri) { Content = content };
-                var resp = HttpClient.SendAsync(req, diagToken).GetAwaiter().GetResult();
+                StampOfficialClient(req);
+                using var resp = HttpClient.SendAsync(req, diagToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, diagToken);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4700,6 +4790,9 @@ public static partial class Extension
             }
         }
 
+        // Diapositive Google déjà téléchargée (« local: ») : lue sur le disque, sans session Athena.
+        if (function == "ImageDataChunk" && args.Length >= 3 && (args[0] ?? "").TrimStart().StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            return ImageDataChunkLocal(args);
         if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
         // Re-normalise au cas où une ancienne session a stocké une URL sans schéma.
         _baseUrl = NormalizeBaseUrl(_baseUrl);
@@ -4752,7 +4845,7 @@ public static partial class Extension
                     return "ERR|" + whoamiErr;
                 try
                 {
-                    var response = SendGet(whoamiUri, token);
+                    using var response = SendGet(whoamiUri, token);
                     if (!response.IsSuccessStatusCode)
                     {
                         var code = (int)response.StatusCode;
@@ -4784,7 +4877,7 @@ public static partial class Extension
                 var payload = fireUnitId.HasValue && fireUnitId > 0
                     ? $"{{\"missionId\":\"{EscapeJson(missionId)}\",\"fireUnitId\":{fireUnitId.Value},\"target_x\":{targetX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_y\":{targetY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_z\":{targetZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"ammoType\":\"{EscapeJson(ammoType)}\"}}"
                     : $"{{\"missionId\":\"{EscapeJson(missionId)}\",\"gun_x\":{gunX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"gun_y\":{gunY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"gun_z\":{gunZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_x\":{targetX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_y\":{targetY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_z\":{targetZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"ammoType\":\"{EscapeJson(ammoType)}\"}}";
-                var resp = SendJsonPost(_baseUrl + "/api/fire-support/calculate", payload, token);
+                using var resp = SendJsonPost(_baseUrl + "/api/fire-support/calculate", payload, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4792,7 +4885,7 @@ public static partial class Extension
             if (function == "GetFireSupportUnits")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = SendGet(_baseUrl + "/api/fire-support/units?missionId=" + Uri.EscapeDataString(missionId), token);
+                using var resp = SendGet(_baseUrl + "/api/fire-support/units?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4800,7 +4893,7 @@ public static partial class Extension
             if (function == "DangerZones.Sync")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = SendGet(_baseUrl + "/api/danger-zones?missionId=" + Uri.EscapeDataString(missionId), token);
+                using var resp = SendGet(_baseUrl + "/api/danger-zones?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4808,7 +4901,7 @@ public static partial class Extension
             if (function == "IFF.Current")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = SendGet(_baseUrl + "/api/iff/current?missionId=" + Uri.EscapeDataString(missionId), token);
+                using var resp = SendGet(_baseUrl + "/api/iff/current?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4816,7 +4909,7 @@ public static partial class Extension
             if (function == "IFF.Status")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = SendGet(_baseUrl + "/api/iff/assets?missionId=" + Uri.EscapeDataString(missionId), token);
+                using var resp = SendGet(_baseUrl + "/api/iff/assets?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4825,7 +4918,7 @@ public static partial class Extension
             {
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return "{\"status\":\"error\",\"message\":\"payload vide\"}";
-                var response = SendJsonPost(_baseUrl + "/api/intel/report", json, token);
+                using var response = SendJsonPost(_baseUrl + "/api/intel/report", json, token);
                 var body = ReadContentUtf8(response, token);
                 var safeBody = body.Replace("\n", " ").Replace("\r", "");
                 if (!response.IsSuccessStatusCode)
@@ -4833,7 +4926,7 @@ public static partial class Extension
                     var msg = safeBody.Length > 180 ? safeBody.Substring(0, 180) + "..." : safeBody;
                     return "{\"status\":\"error\",\"message\":\"" + EscapeJson(msg) + "\"}";
                 }
-                return safeBody.Length <= MaxOutputBytes - 1 ? safeBody : safeBody.Substring(0, MaxOutputBytes - 1);
+                return Utf8ClipLines(safeBody, MaxOutputBytes - 1);
             }
             if ((function == "RECON.Note" || function == "RECON_NOTE" || function == "Recon.Note") && args.Length >= 1)
             {
@@ -4842,7 +4935,7 @@ public static partial class Extension
                 // Guillemets doublés par callExtension : sans normalisation, PHP lisait un corps vide et
                 // répondait 400 « Indiquez une observation » (aucune reco n'arrivait au poste). 2.0.87.
                 json = EnrichAtakPayload(json);
-                var response = SendJsonPost(_baseUrl + "/api/recon/notes", json, token);
+                using var response = SendJsonPost(_baseUrl + "/api/recon/notes", json, token);
                 var body = ReadContentUtf8(response, token);
                 var safeBody = (body ?? "").Replace("\n", " ").Replace("\r", "").Replace("|", "/");
                 if ((int)response.StatusCode == 429) return "ERR|cooldown";
@@ -4956,7 +5049,7 @@ public static partial class Extension
                 var steamUid = args.Length > 0 ? (args[0] ?? "").Trim() : "";
                 if (steamUid.Length < 10) return "ERR|no_steam";
                 var url = _baseUrl + "/api/atak/session-restore?steam_uid=" + Uri.EscapeDataString(steamUid);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 if (!resp.IsSuccessStatusCode)
                 {
                     var code = (int)resp.StatusCode;
@@ -4966,7 +5059,7 @@ public static partial class Extension
                 }
                 var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifySessionRestoreJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
             // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
@@ -4974,6 +5067,8 @@ public static partial class Extension
             // mode « cache » : liste gardée en mémoire ou dans Sync\wardrobes.json, le site n'est appelé que
             // si ce PC n'a encore rien ; « refresh » ou absent : rechargée depuis le site à la page 0 (bouton Actualiser).
             // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
+            // App Médical de l'ATAK natif : fiches médicales de la communauté, gardées dans Sync\medical_roster.json (2.0.96).
+            if (function == "MedicalRoster" || function == "MedicalRosterInfo") return MedicalRosterCommand(function, args, token);
             if (function == "ListWardrobes")
             {
                 var startLine = 0;
@@ -4988,7 +5083,7 @@ public static partial class Extension
                 if ((startLine == 0 && !fromCache) || string.IsNullOrEmpty(_wardrobesListCache))
                 {
                     var url = _baseUrl + "/api/atak/wardrobes";
-                    var resp = SendGet(url, token);
+                    using var resp = SendGet(url, token);
                     var respBody = ReadContentUtf8(resp, token);
                     if (!resp.IsSuccessStatusCode)
                     {
@@ -5023,7 +5118,7 @@ public static partial class Extension
                 if (simplified is null)
                 {
                     var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
-                    var resp = SendGet(url, token);
+                    using var resp = SendGet(url, token);
                     var respBody = ReadContentUtf8(resp, token);
                     if (!resp.IsSuccessStatusCode)
                     {
@@ -5040,19 +5135,16 @@ public static partial class Extension
                 var cap = MaxOutputBytes - 4;
                 if (Encoding.UTF8.GetByteCount(simplified) <= cap)
                 {
-                    _wardrobeDetailCacheId = "";
-                    _wardrobeDetailCache = "";
                     return "OK|" + simplified;
                 }
-                _wardrobeDetailCacheId = wid;
-                _wardrobeDetailCache = simplified;
-                _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
-                var chunks = Utf8ChunkStarts(_wardrobeDetailCache, _wardrobeDetailChunkSize).Count;
+                var wslot = new WardrobeDetailSlot(wid, simplified, Math.Max(1024, MaxOutputBytes - 80));
+                _wardrobeDetail = wslot;
+                var chunks = Utf8ChunkStarts(wslot.Body, wslot.ChunkSize).Count;
                 var t1 = simplified.IndexOf('\t');
                 var t2 = t1 < 0 ? -1 : simplified.IndexOf('\t', t1 + 1);
                 var idPart = t1 > 0 ? simplified.Substring(0, t1) : wid;
                 var namePart = (t1 >= 0 && t2 > t1) ? simplified.Substring(t1 + 1, t2 - t1 - 1) : "";
-                return "OK|CHUNKED\t" + idPart + "\t" + namePart + "\t" + chunks + "\t" + _wardrobeDetailChunkSize + "\t" + simplified.Length;
+                return "OK|CHUNKED\t" + idPart + "\t" + namePart + "\t" + chunks + "\t" + wslot.ChunkSize + "\t" + simplified.Length;
             }
             // Segment d’une tenue dense. Args : [id, chunkIndex] → OK|index\ttotal\tslice
             if (function == "GetWardrobeChunk" && args.Length >= 2)
@@ -5061,16 +5153,18 @@ public static partial class Extension
                 if (wid.Length < 1) return "ERR|invalid_id";
                 if (!int.TryParse((args[1] ?? "0").Trim(), out var chunkIdx) || chunkIdx < 0)
                     return "ERR|invalid_chunk";
-                if ((_wardrobeDetailCacheId != wid || string.IsNullOrEmpty(_wardrobeDetailCache)) && WardrobeCachedDetail(wid) is { } kept)
+                // Une seule lecture de la référence : le découpage ci-dessous travaille sur ce corps-là, même si un
+                // autre chargement remplace _wardrobeDetail entre-temps.
+                var wslot = _wardrobeDetail;
+                if ((wslot is null || wslot.Id != wid || string.IsNullOrEmpty(wslot.Body)) && WardrobeCachedDetail(wid) is { } kept)
                 {
-                    _wardrobeDetailCacheId = wid;
-                    _wardrobeDetailCache = kept;
-                    _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
+                    wslot = new WardrobeDetailSlot(wid, kept, Math.Max(1024, MaxOutputBytes - 80));
+                    _wardrobeDetail = wslot;
                 }
-                if (_wardrobeDetailCacheId != wid || string.IsNullOrEmpty(_wardrobeDetailCache))
+                if (wslot is null || wslot.Id != wid || string.IsNullOrEmpty(wslot.Body))
                 {
                     var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
-                    var resp = SendGet(url, token);
+                    using var resp = SendGet(url, token);
                     var respBody = ReadContentUtf8(resp, token);
                     if (!resp.IsSuccessStatusCode)
                     {
@@ -5083,17 +5177,17 @@ public static partial class Extension
                     var simplified = SimplifyWardrobeDetailJson(respBody);
                     if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
                     WardrobeCacheStoreDetail(wid, simplified);
-                    _wardrobeDetailCacheId = wid;
-                    _wardrobeDetailCache = simplified;
-                    _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
+                    wslot = new WardrobeDetailSlot(wid, simplified, Math.Max(1024, MaxOutputBytes - 80));
+                    _wardrobeDetail = wslot;
                 }
-                var chunkSize = _wardrobeDetailChunkSize > 0 ? _wardrobeDetailChunkSize : (MaxOutputBytes - 80);
-                var starts = Utf8ChunkStarts(_wardrobeDetailCache, chunkSize);
+                var wbody = wslot.Body;
+                var chunkSize = wslot.ChunkSize > 0 ? wslot.ChunkSize : (MaxOutputBytes - 80);
+                var starts = Utf8ChunkStarts(wbody, chunkSize);
                 var totalChunks = starts.Count;
                 if (chunkIdx >= totalChunks) return "ERR|chunk_oob";
                 var offset = starts[chunkIdx];
-                var len = (chunkIdx + 1 < totalChunks ? starts[chunkIdx + 1] : _wardrobeDetailCache.Length) - offset;
-                var slice = _wardrobeDetailCache.Substring(offset, len);
+                var len = (chunkIdx + 1 < totalChunks ? starts[chunkIdx + 1] : wbody.Length) - offset;
+                var slice = wbody.Substring(offset, len);
                 return "OK|" + chunkIdx + "\t" + totalChunks + "\t" + slice;
             }
             // Sync une wardrobe. Args : [name, payload, collectionSlug?, notes?]
@@ -5127,7 +5221,7 @@ public static partial class Extension
             if (function == "ListWardrobeCollections")
             {
                 var url = _baseUrl + "/api/atak/wardrobe-collections";
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5137,16 +5231,16 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyWardrobeCollectionsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
-                var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
+                using var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
-                return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
+                return "OK|" + Utf8ClipLines(safe, MaxOutputBytes - 4);
             }
             // Diapositives de briefing tactique (tableau/écran Eden Editor, ou dialog de briefing).
             // Format simplifié tabulation/retour-ligne (même convention que GetMarkers/GetUnits) :
@@ -5156,11 +5250,11 @@ public static partial class Extension
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
                 var url = _baseUrl + "/api/atak/briefing-slides";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifyBriefingSlidesJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // Fiches de renseignement (FRS / FRM) d'Athena, avec leurs photos, pour l'app FRS du téléphone.
             // Args : [limit, steamUid (vide = toutes les fiches de la communauté)]
@@ -5170,7 +5264,7 @@ public static partial class Extension
                 var steamUid = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var url = _baseUrl + "/api/sse/notes?with_images=1&limit=" + limit;
                 if (steamUid.Length > 0) url += "&steam_uid=" + Uri.EscapeDataString(steamUid);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5199,7 +5293,7 @@ public static partial class Extension
             {
                 var names = args.Length > 0 ? (args[0] ?? "").Trim() : "";
                 if (names.Length == 0) return "OK|";
-                var resp = SendGet(_baseUrl + "/api/recon/images/known?names=" + Uri.EscapeDataString(names), token);
+                using var resp = SendGet(_baseUrl + "/api/recon/images/known?names=" + Uri.EscapeDataString(names), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 var lines = new StringBuilder();
@@ -5266,7 +5360,7 @@ public static partial class Extension
                     }
                     payload = Encoding.UTF8.GetString(ms.ToArray());
                 }
-                var resp = SendJsonPost(_baseUrl + "/api/sse/campaigns/sync", payload, token);
+                using var resp = SendJsonPost(_baseUrl + "/api/sse/campaigns/sync", payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5296,7 +5390,7 @@ public static partial class Extension
             // SseCampaignList [] → "OK|" + une ligne par campagne : clé\tnom\ttype\tmissions\tpersonnes\torganisations\tmise à jour
             if (function == "SseCampaignList")
             {
-                var resp = SendGet(_baseUrl + "/api/sse/campaigns", token);
+                using var resp = SendGet(_baseUrl + "/api/sse/campaigns", token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5331,7 +5425,7 @@ public static partial class Extension
             {
                 var key = (args[0] ?? "").Trim();
                 var offset = args.Length >= 2 && long.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var o) ? Math.Max(0, o) : 0;
-                var resp = SendGet(_baseUrl + "/api/sse/campaigns/" + Uri.EscapeDataString(key) + "/text?offset=" + offset.ToString(CultureInfo.InvariantCulture) + "&length=6000", token);
+                using var resp = SendGet(_baseUrl + "/api/sse/campaigns/" + Uri.EscapeDataString(key) + "/text?offset=" + offset.ToString(CultureInfo.InvariantCulture) + "&length=6000", token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5361,7 +5455,7 @@ public static partial class Extension
                 if (view.Length == 0) view = "global";
                 var url = _baseUrl + "/api/atak/music?view=" + Uri.EscapeDataString(view) + "&limit=" + lim.ToString(CultureInfo.InvariantCulture);
                 if (q.Length > 0) url += "&q=" + Uri.EscapeDataString(q);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5400,7 +5494,7 @@ public static partial class Extension
             }
             if (function == "GetWantedNotices")
             {
-                var resp = SendGet(_baseUrl + "/api/sse/wanted?limit=40", token);
+                using var resp = SendGet(_baseUrl + "/api/sse/wanted?limit=40", token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5440,7 +5534,7 @@ public static partial class Extension
                 var label = args.Length > 0 ? (args[0] ?? "").Trim() : "";
                 var key = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var json = "{\"label\":\"" + EscapeJson(label) + "\",\"client_key\":\"" + EscapeJson(key) + "\",\"source\":\"arma\"}";
-                var resp = SendJsonPost(_baseUrl + "/api/atak/briefing-presence", json, token);
+                using var resp = SendJsonPost(_baseUrl + "/api/atak/briefing-presence", json, token);
                 var body = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 try
@@ -5459,7 +5553,7 @@ public static partial class Extension
                 var text = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var author = args.Length > 2 ? (args[2] ?? "").Trim() : "";
                 var url = _baseUrl + "/api/atak/briefing-slides/" + sid + "/comments";
-                var resp = text.Length > 0
+                using var resp = text.Length > 0
                     ? SendJsonPost(url, "{\"body\":\"" + EscapeJson(text) + "\",\"author_label\":\"" + EscapeJson(author) + "\",\"source\":\"arma\"}", token)
                     : SendGet(url, token);
                 var body = ReadContentUtf8(resp, token);
@@ -5498,7 +5592,7 @@ public static partial class Extension
                 var url = _baseUrl + "/api/atak/fire-teams?kind=ephemeral";
                 if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
                 if (!string.IsNullOrEmpty(mapId)) url += "&mapId=" + Uri.EscapeDataString(mapId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5515,7 +5609,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyFireTeamsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // SEEK Query : registre + listes de surveillance Athena (pas de tirage simulé).
             // args : first, last, alias, q
@@ -5532,7 +5626,7 @@ public static partial class Extension
                     + "&alias=" + Uri.EscapeDataString(alias);
                 if (!string.IsNullOrEmpty(q))
                     url += "&q=" + Uri.EscapeDataString(q);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5548,7 +5642,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplifiedId = SimplifyIdentityQueryJson(respBody);
-                return "OK|" + (simplifiedId.Length > MaxOutputBytes - 4 ? simplifiedId.Substring(0, MaxOutputBytes - 4) : simplifiedId);
+                return "OK|" + Utf8ClipLines(simplifiedId, MaxOutputBytes - 4);
             }
             if (function == "JoinFireTeam" && args.Length >= 1)
             {
@@ -5885,7 +5979,7 @@ public static partial class Extension
                     ? $",\"note\":\"{EscapeJson(note)}\""
                     : "";
                 var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":{mapIdNum}{noteJson}{steamJson}{sessJson}}}";
-                var resp = SendJsonPost(url, payload, token);
+                using var resp = SendJsonPost(url, payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5912,7 +6006,7 @@ public static partial class Extension
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
                 var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":{CurrentMapId()}{steamJson}{sessJson}}}";
-                var resp = SendJsonPost(url, payload, token);
+                using var resp = SendJsonPost(url, payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5942,7 +6036,7 @@ public static partial class Extension
                     var sep = url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
                     url += sep + "tenant_id=" + Uri.EscapeDataString(tenantId);
                 }
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -6005,7 +6099,7 @@ public static partial class Extension
                     $"\"platform_label\":\"{EscapeJson(platformLabel)}\"," +
                     $"\"pairing_token\":\"{EscapeJson(pairingToken)}\"," +
                     $"\"status\":\"{EscapeJson(status)}\"{ModVersionJsonFragment()}}}";
-                var resp = SendJsonPost(termUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                using var resp = SendJsonPost(termUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -6045,7 +6139,7 @@ public static partial class Extension
                     $"\"serial_number\":\"{EscapeJson(serialNumber)}\"," +
                     $"\"fingerprint_sha256\":\"{EscapeJson(fingerprint)}\"" +
                     $"{ModVersionJsonFragment()}}}";
-                var resp = SendJsonPost(certUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                using var resp = SendJsonPost(certUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -6080,7 +6174,7 @@ public static partial class Extension
                     $"\"state\":\"{EscapeJson(state)}\"," +
                     $"\"reason\":\"{EscapeJson(reason)}\"" +
                     $"{ModVersionJsonFragment()}}}";
-                var resp = SendJsonPost(compUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                using var resp = SendJsonPost(compUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -6101,7 +6195,7 @@ public static partial class Extension
                 var payload =
                     $"{{\"terminal_uid\":\"{EscapeJson(terminalUid)}\"" +
                     $"{ModVersionJsonFragment()}}}";
-                var resp = SendJsonPost(clearUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                using var resp = SendJsonPost(clearUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -6121,7 +6215,7 @@ public static partial class Extension
                 if (!TryBuildRequestUri(_baseUrl, "/api/atak/terminals", out var statusUri, out _) || statusUri is null)
                     return "ERR|invalid_url";
                 var url = statusUri.AbsoluteUri + "?terminal_uid=" + Uri.EscapeDataString(terminalUid);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -6145,7 +6239,7 @@ public static partial class Extension
                 var tenantId = args.Length > 1 ? (args[1] ?? "") : "";
                 var url = _baseUrl + "/api/atak/player-profile?steam_uid=" + Uri.EscapeDataString(steamNorm);
                 if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -6234,6 +6328,7 @@ public static partial class Extension
                 {
                     return "ERR|network";
                 }
+                using var imgRespScope = imgResp;
 
                 if (!imgResp.IsSuccessStatusCode)
                 {
@@ -6277,6 +6372,60 @@ public static partial class Extension
                 // Slash avant pour RscPicture / setObjectTexture sous Windows (Arma).
                 var armaPath = destPath.Replace('\\', '/');
                 return "OK|" + armaPath;
+            }
+
+            // Image d'Athena en base64, par morceaux, pour l'afficher dans un navigateur intégré (CT_WEBBROWSER) du
+            // téléphone : Arma refuse toute texture hors d'un PBO (« Cannot load texture », sans -filePatching), d'où les
+            // diapositives noires. Args : [adresse JPEG/PNG, clé de cache, décalage en octets]. Décalage 0 : télécharge
+            // (adresse du serveur Athena seulement, jamais un autre hôte). Réponse : OK|taille totale|décalage suivant|base64.
+            if (function == "ImageDataChunk" && args.Length >= 3 && !string.IsNullOrWhiteSpace(args[0]))
+            {
+                var imageUrl = args[0]!.Trim();
+                var keyRaw = string.IsNullOrWhiteSpace(args[1]) ? "web" : args[1]!;
+                var safeKey = new string(keyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+                if (safeKey.Length == 0 || safeKey.Length > 80) safeKey = "web";
+                if (!long.TryParse(args[2], out var offset) || offset < 0) offset = 0;
+                if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var imgUri) && !string.IsNullOrEmpty(_baseUrl))
+                {
+                    var rel = imageUrl.StartsWith('/') ? imageUrl : "/" + imageUrl.TrimStart('/');
+                    Uri.TryCreate(_baseUrl.TrimEnd('/') + rel, UriKind.Absolute, out imgUri);
+                }
+                if (imgUri == null || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var baseUri)
+                    || imgUri.Scheme != Uri.UriSchemeHttps && imgUri.Scheme != baseUri.Scheme
+                    || !string.Equals(imgUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase))
+                    return "ERR|host_not_allowed";
+                var cacheDir = GetWritableCacheDir();
+                if (cacheDir == null) return "ERR|no_writable_cache_dir";
+                var dest = Path.Combine(cacheDir, "web_" + safeKey + ".img");
+                if (offset == 0 || !File.Exists(dest))
+                {
+                    HttpResponseMessage imgResp;
+                    try { imgResp = SendGet(imgUri, token); }
+                    catch (OperationCanceledException) { return "ERR|timeout"; }
+                    catch (HttpRequestException) { return "ERR|network"; }
+                    if (!imgResp.IsSuccessStatusCode)
+                    {
+                        var code = (int)imgResp.StatusCode;
+                        return code == 404 ? "ERR|not_found" : code == 401 || code == 403 ? "ERR|unauthorized" : "ERR|http_" + code;
+                    }
+                    var bytes = imgResp.Content.ReadAsByteArrayAsync(token).GetAwaiter().GetResult();
+                    var isPng = bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
+                    var isJpeg = bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
+                    if (!isPng && !isJpeg) return "ERR|invalid_image";
+                    // Une page data: de Chromium est limitée à 2 Mo : image plus lourde refusée (le site en fait une copie légère).
+                    if (bytes.Length > 1_400_000) return "ERR|too_large";
+                    try { File.WriteAllBytes(dest, bytes); }
+                    catch (Exception ex) { return "ERR|write_failed_" + ex.GetType().Name; }
+                    offset = 0;
+                }
+                byte[] all;
+                try { all = File.ReadAllBytes(dest); }
+                catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
+                if (offset >= all.Length) return "OK|" + all.Length + "|" + all.Length + "|";
+                // 5940 octets (multiple de 3) = 7920 caractères base64 : tient dans la sortie limitée de la DLL.
+                var len = (int)Math.Min(5940, all.Length - offset);
+                var mime = all[0] == 0x89 ? "png" : "jpeg";
+                return "OK|" + all.Length + "|" + (offset + len) + "|" + Convert.ToBase64String(all, (int)offset, len) + (offset + len >= all.Length ? "|" + mime : "");
             }
 
             // --- Commandes ATAK Phase 1-2 (retour JSON ["OK"|"ERROR", message] pour SQF) ---
@@ -9435,19 +9584,53 @@ public static partial class Extension
                 var status = args[1] ?? "";
                 if (string.IsNullOrWhiteSpace(callsign) || string.IsNullOrWhiteSpace(status)) return;
                 var payload = "{\"pilot_status\":\"" + EscapeJson(status) + "\"}";
+                var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
+                // Verrou de refus, pause 429/réseau, refroidissement : ne pas envoyer (route PATCH, pas de file POST).
+                if (IsRefusalLatched(url) || IsPostPausedNow() || IsEndpointCoolingNow(url))
+                    return;
+                HttpRequestMessage? request = null;
                 try
                 {
-                    var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
                     var content = new StringContent(payload, Encoding.UTF8);
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    var request = new HttpRequestMessage(HttpMethod.Patch, url) { Content = content };
+                    request = new HttpRequestMessage(HttpMethod.Patch, url) { Content = content };
                     AttachApiKeyHeader(request);
-                    _ = HttpClient.SendAsync(request);
+                    var req = request;
+                    var started = DateTime.UtcNow.Ticks;
+                    _ = HttpClient.SendAsync(req).ContinueWith(t =>
+                    {
+                        HttpResponseMessage? resp = null;
+                        try
+                        {
+                            if (t.Status == TaskStatus.RanToCompletion)
+                                resp = t.Result;
+                            var code = resp == null ? -1 : (int)resp.StatusCode;
+                            JournalHttp(started, code);
+                            if (resp == null)
+                                NotePostError(-1, url);
+                            else if (code == 429)
+                                NoteRateLimited(resp);
+                            else if (code == 401 || code == 403)
+                            {
+                                if (code == 403)
+                                    NoteAccessDenied(resp, url);
+                                NoteRefusal(url, code, RefusalBody(resp));
+                            }
+                            else if (!resp.IsSuccessStatusCode)
+                                NotePostError(code, url, resp);
+                        }
+                        catch { /* ignore */ }
+                        finally
+                        {
+                            try { req.Dispose(); } catch { /* ignore */ }
+                            try { resp?.Dispose(); } catch { /* ignore */ }
+                        }
+                    });
                 }
                 catch
                 {
-                    var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
-                    EnqueueForRetry(url, payload);
+                    try { request?.Dispose(); } catch { /* ignore */ }
+                    NotePostError(-1, url);
                 }
                 return;
             }
@@ -9701,11 +9884,11 @@ public static partial class Extension
         if (job.Attempts >= PhotoRetryMax)
         {
             ReleasePhotoDedup(job.DedupKey);
-            PhotoJournal(job, "failed", "fichier vide");
+            PhotoJournal(job, "failed", "empty file");
             InvokeCallback(cbName, $"ERR|file_empty|{fileHint}");
             return;
         }
-        PhotoJournal(job, "queued", "fichier pas encore écrit");
+        PhotoJournal(job, "queued", "file not written yet");
         _ = Task.Run(async () =>
         {
             try { await Task.Delay(800).ConfigureAwait(false); }
@@ -9764,7 +9947,7 @@ public static partial class Extension
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
         {
             ReleasePhotoDedup(job.DedupKey);
-            PhotoJournal(job, "failed", "pas de session Athena");
+            PhotoJournal(job, "failed", "no Athena session");
             InvokeCallback(cbName, "ERR|not_connected|" + Path.GetFileName(job.RawPath));
             return;
         }
@@ -9833,7 +10016,7 @@ public static partial class Extension
             // Arma n'écrit la capture qu'à l'image suivante : jeu en pause, fenêtre réduite ou disque lent, le PNG
             // arrive après les ~20 s d'attente. Nouvel essai plus tard au lieu d'un file_not_found immédiat.
             job.LateRetries++;
-            PhotoJournal(job, "queued", "capture pas encore écrite");
+            PhotoJournal(job, "queued", "capture not written yet");
             _ = Task.Run(async () =>
             {
                 try { await Task.Delay(PhotoLateRetryDelayMs).ConfigureAwait(false); }
@@ -9852,7 +10035,7 @@ public static partial class Extension
                 : Path.GetFileName(job.RawPath.Replace('/', '\\'));
             if (specificName || isSseFace || isSseNote)
                 ReleasePhotoDedup(job.DedupKey);
-            PhotoJournal(job, "failed", "fichier introuvable");
+            PhotoJournal(job, "failed", "file not found");
             InvokeCallback(cbName,
                 $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(job.RawPath)}");
             return;
@@ -9872,7 +10055,7 @@ public static partial class Extension
             if (!fi.Exists)
             {
                 ReleasePhotoDedup(job.DedupKey);
-                PhotoJournal(job, "failed", "fichier introuvable");
+                PhotoJournal(job, "failed", "file not found");
                 InvokeCallback(cbName, "ERR|file_not_found|" + Path.GetFileName(resolved));
                 return;
             }
@@ -9886,7 +10069,7 @@ public static partial class Extension
                 && !TryClaimPhotoDedup(identityKey))
             {
                 // Autre job déjà en cours / récemment traité pour le même fichier.
-                PhotoJournal(job, "done", "doublon");
+                PhotoJournal(job, "done", "duplicate");
                 InvokeCallback(cbName, "OK|duplicate|" + Path.GetFileName(resolved));
                 return;
             }
@@ -9898,7 +10081,7 @@ public static partial class Extension
         {
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
-            PhotoJournal(job, "failed", "lecture impossible");
+            PhotoJournal(job, "failed", "unreadable file");
             InvokeCallback(cbName, "ERR|read_failed|" + Path.GetFileName(resolved));
             return;
         }
@@ -9918,7 +10101,7 @@ public static partial class Extension
         if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath)
             || IsSseNoteCaptureName(resolved) || IsSseNoteCaptureName(job.RawPath))
         {
-            PhotoJournal(job, "done", "ignorée (fiche SSE)");
+            PhotoJournal(job, "done", "skipped (SSE record)");
             InvokeCallback(cbName, "OK|ignored|" + (Path.GetFileName(resolved) ?? ""));
             return;
         }
@@ -10921,16 +11104,87 @@ public static partial class Extension
         }
     }
 
+    private static bool IsUncOrRemote(string path)
+    {
+        var p = path.Trim();
+        return p.StartsWith("\\\\", StringComparison.Ordinal) || p.StartsWith("//", StringComparison.Ordinal);
+    }
+
+    /// <summary>Captures, musique, cache et dossier local du mod. Jamais un chemin arbitraire du disque.</summary>
+    private static bool IsUnderKnownDataRoot(string fullPath)
+    {
+        bool Under(string? root)
+        {
+            if (string.IsNullOrWhiteSpace(root)) return false;
+            try
+            {
+                var prefix = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                var full = Path.GetFullPath(fullPath);
+                var withSep = full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                return withSep.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
+        }
+
+        foreach (var dir in EnumeratePhotoLookupDirs())
+            if (Under(dir)) return true;
+        if (Under(ComspecCaptureDir())) return true;
+        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        if (!string.IsNullOrWhiteSpace(docs))
+        {
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC_Music"))) return true;
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC_Local"))) return true;
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC"))) return true;
+        }
+        if (Under(Path.Combine(AppContext.BaseDirectory, "comspec_cache"))) return true;
+        if (Under(Path.Combine(Path.GetTempPath(), "comspec_cache"))) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Session joueur : le lot ne peut citer que son Steam. Sans jeton de joueur (serveur dédié), le camp entier part.
+    /// </summary>
+    private static bool PlayerBatchExceedsSession(string json)
+    {
+        if (!GameAccessTokenUsableNow()) return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("players", out var players) || players.ValueKind != JsonValueKind.Array)
+                return false;
+            foreach (var p in players.EnumerateArray())
+            {
+                if (p.ValueKind != JsonValueKind.Object || !p.TryGetProperty("player_uid", out var uidEl))
+                    continue;
+                var uid = uidEl.GetString() ?? "";
+                if (uid.Length == 0) continue;
+                if (!string.Equals(uid, _steamUid, StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
     private static string? TryReadableImageFile(string candidate)
     {
         try
         {
-            if (!File.Exists(candidate))
+            if (string.IsNullOrWhiteSpace(candidate) || IsUncOrRemote(candidate))
                 return null;
-            var fi = new FileInfo(candidate);
+            if (!IsImageExtension(Path.GetExtension(candidate)))
+                return null;
+            var full = Path.GetFullPath(candidate);
+            if (!IsUnderKnownDataRoot(full) || !File.Exists(full))
+                return null;
+            var fi = new FileInfo(full);
             if (fi.Length < 32)
                 return null;
-            return Path.GetFullPath(candidate);
+            return full;
         }
         catch
         {
@@ -12470,7 +12724,7 @@ public static partial class Extension
                 return FormatAtakExtArray("ERROR", err);
             var payload = EnrichOperatorProfilePayload(json);
             // Fiche (équipement, catalogue, mods) : 10 à 25 Ko en clair, compressée en gzip (Athena la décompresse).
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token, gzip: true);
+            using var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token, gzip: true);
             var body = ReadContentUtf8(resp, cts.Token);
             if (resp.IsSuccessStatusCode)
                 return FormatOperatorProfileResponse(body);
@@ -12611,7 +12865,7 @@ public static partial class Extension
         try
         {
             var payload = EnrichAtakPayload(jsonBody);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            using var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
             var body = ReadContentUtf8(resp, token);
             if (resp.IsSuccessStatusCode)
                 return FormatAtakExtArray("OK", "Success");
@@ -12649,7 +12903,7 @@ public static partial class Extension
         try
         {
             var payload = EnrichAtakPayload(jsonBody);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            using var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
             var body = ReadContentUtf8(resp, token);
             if (resp.IsSuccessStatusCode)
             {
@@ -12701,7 +12955,7 @@ public static partial class Extension
         try
         {
             var payload = EnrichAtakPayload(jsonBody);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            using var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
             var body = ReadContentUtf8(resp, token);
             if (resp.IsSuccessStatusCode)
             {

@@ -6,9 +6,9 @@ namespace App\Controllers\Api;
 
 use App\Core\Request;
 use App\Core\Response;
-use App\Core\Session;
 use App\Repositories\FireUnitRepository;
 use App\Services\FireSupport\BallisticCalculatorService;
+use App\Support\TacticalMissionScope;
 
 class FireSupportController
 {
@@ -20,17 +20,24 @@ class FireSupportController
     ) {
     }
 
-    private function missionId(Request $request, array $body = []): string
+    /**
+     * Bac de mission de la communauté appelante (voir TacticalMissionScope), comme les zones de
+     * danger : un missionId étranger, vide ou numérique n’est jamais retenu tel quel (le mod envoie
+     * encore mission_1_map_1 par défaut) ; plus de repli sur la communauté 1 ; non scalaire → 422.
+     */
+    private function missionId(Request $request, array $body = []): string|Response
     {
-        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
-        if ($missionId !== null && $missionId !== '') {
-            return (string) $missionId;
+        $tenantId = TacticalMissionScope::tenantId();
+        if ($tenantId === null) {
+            return TacticalMissionScope::tenantRequiredResponse();
         }
-        $tenantId = Session::get('tenant_id');
-        $tid = $tenantId !== null && $tenantId !== '' ? (int) $tenantId : 1;
+        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
+        if (!TacticalMissionScope::isAcceptableRaw($missionId)) {
+            return TacticalMissionScope::invalidMissionIdResponse();
+        }
         $mapId = $body['mapId'] ?? $request->query('mapId');
-        $mid = $mapId !== null && $mapId !== '' ? (int) $mapId : self::DEFAULT_MAP_ID;
-        return 'mission_' . $tid . '_map_' . $mid;
+
+        return TacticalMissionScope::resolve($missionId, $mapId, $tenantId, self::DEFAULT_MAP_ID);
     }
 
     private function jsonBody(Request $request): array
@@ -47,6 +54,9 @@ class FireSupportController
     {
         $body = $this->jsonBody($request);
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $list = $this->fireUnitRepository->listByMission($missionId);
         return Response::json($list);
     }
@@ -55,6 +65,9 @@ class FireSupportController
     {
         $body = $this->jsonBody($request);
         $missionId = $this->missionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
 
         $fireUnitId = isset($body['fireUnitId']) ? (int) $body['fireUnitId'] : null;
         $gunX = isset($body['gun_x']) ? (float) $body['gun_x'] : null;

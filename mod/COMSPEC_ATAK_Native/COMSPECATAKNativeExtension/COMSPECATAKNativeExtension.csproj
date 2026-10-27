@@ -9,8 +9,8 @@
     <!-- Même code que COMSPEC Link (Extension.cs) : la DLL native suit le numéro de Link, sinon le plancher
          de version d'Athena (« game_min_link_version », SEC-001) refuserait la DLL native corrigée, qui
          annonçait « 1.0.0-native » dans son User-Agent. Le suffixe « -native » distingue les deux builds. -->
-    <Version>2.0.96</Version>
-    <InformationalVersion>2.0.96-native</InformationalVersion>
+    <Version>2.0.99</Version>
+    <InformationalVersion>2.0.99-native</InformationalVersion>
     <DefineConstants>$(DefineConstants);COMSPEC_ATAK_NATIVE</DefineConstants>
     <PublishDir>bin\publish\</PublishDir>
     <Deterministic>true</Deterministic>
@@ -18,6 +18,9 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition="Exists('..\..\UptoDate\COMSPECExtension\ClientAttestMaterial.Local.cs')">
+    <DefineConstants>$(DefineConstants);COMSPEC_CLIENT_ATTEST</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension.cs" Link="Extension.cs" />
@@ -29,11 +32,14 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_RefusalLatch.cs" Link="Extension_RefusalLatch.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_SelfTest.cs" Link="Extension_SelfTest.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_WardrobeCache.cs" Link="Extension_WardrobeCache.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MedicalRoster.cs" Link="Extension_MedicalRoster.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_ItemIcons.cs" Link="Extension_ItemIcons.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapCapture.cs" Link="Extension_MapCapture.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapPhoto.cs" Link="Extension_MapPhoto.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\MapTileImage.cs" Link="MapTileImage.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\GameAuth.cs" Link="GameAuth.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\OfficialClientProof.cs" Link="OfficialClientProof.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\ClientAttestMaterial.Local.cs" Link="ClientAttestMaterial.Local.cs" Condition="Exists('..\..\UptoDate\COMSPECExtension\ClientAttestMaterial.Local.cs')" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\GoogleSlidesDeck.cs" Link="GoogleSlidesDeck.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\BetaNoticeWindow.cs" Link="BetaNoticeWindow.cs" />
   </ItemGroup>

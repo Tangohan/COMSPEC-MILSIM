@@ -185,7 +185,7 @@ if (_interactive) then {
             ["HEIGHT", "map_height", "Hauteur"],
             ["LOS", "map_los", "Ligne de vue"],
             ["FLAT", "map_flat", "Terrain plat"],
-            ["IPTGT", "app_jtac", "JTAC : IP → cible (cap magnétique)"],
+            ["IPTGT", "app_jtac", "JTAC : IP » cible (cap magnétique)"],
             ["#", "", "DESSINER"],
             ["LINE", "map_measure", "Tracer un trait"],
             ["DRAW", "map_labels", "Dessin libre"],
@@ -573,7 +573,7 @@ if (_interactive && {(count (_search getOrDefault ["hit", createHashMap])) > 0} 
     // Outil JTAC IP → cible (fn_jtacTool) : fiche du calcul au même endroit que celle de la recherche.
     if (_interactive && {(count (_s getOrDefault ["jtacTool", []])) >= 2} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
         private _cw = ((_mw * 0.5) max (_font * 11 / _ratio)) min (_mw - 2 * _pad);
-        private _chh = _fs * 7.6;
+        private _chh = ["cardH"] call comspec_atak_native_fnc_jtacTool;
         private _selUp = [0, _fs * 6.2 + _pad * 4] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
         ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_jtacTool;
     };
@@ -701,20 +701,26 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
     private _gw = (_mw * 0.62) max (_font * 9 / _ratio) min (_mw - 2 * _pad);
     private _gx = _bx + (_mw - _gw) / 2;
     private _gy = _by + _pad + ([0, _fs * 1.8] select ((_s getOrDefault ["mapMode", "SELECT"]) isNotEqualTo "SELECT"));
-    private _gh = _font * 2.6;
-    private _gbg = ["COMSPEC_RscMapPanel", [_gx, _gy, _gw, _gh * 0.62]] call _mk;
+    // Hauteurs tirées de la taille du texte (fn_routeBanner : distance en 1.25 + manœuvre en 1.0, puis une ligne en
+    // 0.85). Retour de jeu : la ligne « 28 min · 1.1 km · arrivée » était coupée par le haut et passait sous ARRÊTER,
+    // la manœuvre n'apparaissait pas. La ligne du bas laisse la place du bouton.
+    private _tb = (missionNamespace getVariable ["COMSPEC_ATAK_FontBody", 0]) max _font;
+    private _h1 = _tb * 2.75;
+    private _h2 = (_tb * 1.25) max (_fs * 1.5);
+    private _gbg = ["COMSPEC_RscMapPanel", [_gx, _gy, _gw, _h1]] call _mk;
     _gbg ctrlSetBackgroundColor [0.10, 0.45, 0.25, 0.95];
-    private _gi = _gh * 0.52;
-    private _g3 = ["COMSPEC_RscIcon", [_gx + _pad / 2, _gy + _gh * 0.05, _gi / _ratio, _gi], ""] call _mk;
+    private _gi = _h1 * 0.7;
+    private _g3 = ["COMSPEC_RscIcon", [_gx + _pad / 2, _gy + (_h1 - _gi) / 2, _gi / _ratio, _gi], ""] call _mk;
     _g3 ctrlSetTextColor [1, 1, 1, 1];
-    private _g1 = ["COMSPEC_RscStructuredText", [_gx + _pad + _gi / _ratio, _gy + _gh * 0.03, _gw - _pad * 1.5 - _gi / _ratio, _gh * 0.6]] call _mk;
-    private _g2 = ["COMSPEC_RscMapPanel", [_gx, _gy + _gh * 0.62, _gw, _gh * 0.38]] call _mk;
-    _g2 ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.92];
+    private _g1 = ["COMSPEC_RscStructuredText", [_gx + _pad + _gi / _ratio, _gy + _tb * 0.1, _gw - _pad * 1.5 - _gi / _ratio, _h1 - _tb * 0.1]] call _mk;
+    private _g2bg = ["COMSPEC_RscMapPanel", [_gx, _gy + _h1, _gw, _h2]] call _mk;
+    _g2bg ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.92];
+    private _sw = [0, (_fs * 5.5 / _ratio * 0.6) min (_gw * 0.3)] select _interactive;
+    private _g2 = ["COMSPEC_RscStructuredText", [_gx + _pad / 2, _gy + _h1 + (_h2 - _tb * 1.1) / 2, _gw - _sw - _pad * 1.5, _tb * 1.1]] call _mk;
     private _stop = controlNull;
     if (_interactive) then {
-        private _sw = _fs * 5.5 / _ratio * 0.6;
-        _stop = ["COMSPEC_RscButton", [_gx + _gw - _sw - _pad / 2, _gy + _gh * 0.62 + _gh * 0.04, _sw, _gh * 0.3], "ARRÊTER"] call _mk;
-        _stop ctrlSetFontHeight (((_fs * 0.8) min (_gh * 0.26)) max COMSPEC_ATAK_FontMin);
+        _stop = ["COMSPEC_RscButton", [_gx + _gw - _sw - _pad / 2, _gy + _h1 + _h2 * 0.12, _sw, _h2 * 0.76], "ARRÊTER"] call _mk;
+        _stop ctrlSetFontHeight (((_fs * 0.85) min (_h2 * 0.6)) max COMSPEC_ATAK_FontMin);
         _stop ctrlSetBackgroundColor [0.75, 0.18, 0.15, 1];
         _stop ctrlAddEventHandler ["ButtonClick", { missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
     };
@@ -753,14 +759,14 @@ if (_dv isNotEqualTo "OFF") then {
                 ["MARQUER LA CIBLE", ["lock"] call _act, "red", "Marque la cible sous le réticule (touche « Marquer la cible ») : LOCK suivi sur la carte. Clic sur l'image : la caméra vise ce point", 1.4],
                 ["OUBLIER LES CIBLES", { ["release", ""] call comspec_atak_native_fnc_lockAction; }, "", "Retire le marquage de toutes les cibles marquées (LOCK)", 1.4],
                 ["|"],
-                [format ["VISION : %1", ["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0])], ["vision"] call _act, "", "Change le mode de la caméra : jour → nuit (intensification de lumière) → thermique", 1.3],
+                [format ["VISION : %1", ["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0])], ["vision"] call _act, "", "Change le mode de la caméra : jour » nuit (intensification de lumière) » thermique", 1.3],
                 ["ZOOM x1", ["zoom", 1] call _act, ["", "on"] select (_zoom isEqualTo 1), "Zoom de la caméra : x1 (champ large)", 0.8],
                 ["x2", ["zoom", 2] call _act, ["", "on"] select (_zoom isEqualTo 2), "Zoom de la caméra : x2", 0.5],
                 ["x4", ["zoom", 4] call _act, ["", "on"] select (_zoom isEqualTo 4), "Zoom de la caméra : x4", 0.5],
                 ["CAMÉRA DEVANT", ["camAim", ""] call _act, "", "Remet la caméra du drone droit devant", 1.2],
                 ["|"],
                 // Vidéo affichée : drone → caméra du téléphone → caméra casque (ici seulement : l'app Drone montre toujours le drone).
-                [["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE", "VIDÉO DU CASQUE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0), ["feedSrc", ["PHONE", "HELMET", "DRONE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0)] call _act, ["on", ""] select (_fsrc isEqualTo "DRONE"), "Choisit la vidéo affichée : drone → caméra du téléphone (devant vous) → caméra casque", 1.5]
+                [["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE", "VIDÉO DU CASQUE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0), ["feedSrc", ["PHONE", "HELMET", "DRONE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0)] call _act, ["on", ""] select (_fsrc isEqualTo "DRONE"), "Choisit la vidéo affichée : drone » caméra du téléphone (devant vous) » caméra casque", 1.5]
             ] + ([[], [
                 [format ["CASQUE DE %1", [name _fu, "MOI"] select (_fu isEqualTo player)], compile format ["['feedUnit', %1] call comspec_atak_native_fnc_droneAction;", str ([netId _fn, getPlayerUID _fn] select (isPlayer _fn))], "", "Porteur de la caméra casque : vous, puis les équipiers du groupe à moins de 3 km (appui suivant)", 1.4]
             ]] select (_fsrc isEqualTo "HELMET")) + [
@@ -886,7 +892,7 @@ if (_camId isNotEqualTo "") then {
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
                 _s set ["livecamMode", ((_s getOrDefault ["livecamMode", 0]) + 1) mod 3];
                 [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
-            }, "Change le mode de la caméra : jour → vision nocturne → thermique"],
+            }, "Change le mode de la caméra : jour » vision nocturne » thermique"],
             ["GRAND", {
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
                 _s set ["livecamTarget", _s getOrDefault ["mapCam", ""]];

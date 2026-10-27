@@ -45,7 +45,15 @@ if (isServer) then {
         "COMSPEC_SSE_REQUEST_OP",
         "CBA",
         "comspec_sse_requestOp",
-        { _this call comspec_sse_fnc_serverHandleOp; }
+        {
+            // Requête réseau : acteur obligatoire (requestServerOp envoie toujours player). objNull contournait
+            // les contrôles de proximité et « generate réservé à Zeus » ; seul l'appel direct serveur l'admet.
+            if (isNull (_this param [1, objNull, [objNull]])) exitWith {
+                [format ["serverOp %1 refusée : acteur absent (requête réseau)", _this param [0, ""]], "WARN"] call comspec_sse_fnc_log;
+                false
+            };
+            _this call comspec_sse_fnc_serverHandleOp;
+        }
     ] call comspec_debug_fnc_registerEventHandler;
 };
 

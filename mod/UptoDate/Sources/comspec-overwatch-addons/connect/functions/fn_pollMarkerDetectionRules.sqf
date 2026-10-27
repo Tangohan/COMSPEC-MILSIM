@@ -18,7 +18,8 @@ private _rules = [];
 {
     private _line = trim _x;
     if (_line isEqualTo "") then { continue };
-    private _parts = _line splitString toString [9];
+    // splitKeepEmpty : un libellé vide ne décale plus mode / valeur / rayon.
+    private _parts = [_line, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _parts) < 5) then { continue };
     private _mode = toLower (_parts select 2);
     private _value = _parts select 3;

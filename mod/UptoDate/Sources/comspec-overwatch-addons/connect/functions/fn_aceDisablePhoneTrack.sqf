@@ -23,7 +23,9 @@ private _apply = {
     if !([_unit, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) exitWith {
         ["Le téléphone GPS n’est plus actif.", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     };
-    [_unit, false] remoteExecCall ["comspec_overwatch_connect_fnc_setPhoneTrack", 0];
+    // Appel local : drapeaux publics posés une fois ; les autres postes retirent le téléphone de leur liste
+    // au passage suivant de fn_initGpsBeacons (drapeau COMSPEC_PhoneTrack à faux).
+    [_unit, false] call comspec_overwatch_connect_fnc_setPhoneTrack;
     private _who = if (_unit isEqualTo player) then { "vous" } else { name _unit };
     [format ["Téléphone GPS coupé — plus de signal pour %1.", _who], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
 };

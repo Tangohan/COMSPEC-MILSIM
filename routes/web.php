@@ -1078,6 +1078,7 @@ return function (Router $router) {
     // Registre des données (tableaux, corrélations, purge des joueurs fantômes).
     $router->get('/admin/system/donnees', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/donnees/api', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'api'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/donnees/outils', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'tools'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/donnees/correlations', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'correlations'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/donnees/action', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1789,6 +1790,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/roles/nouveau', [EffectifsWorkspaceController::class, 'createAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/retablir', [EffectifsWorkspaceController::class, 'restoreAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/supprimer', [EffectifsWorkspaceController::class, 'deleteAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/reafficher', [EffectifsWorkspaceController::class, 'showAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'saveJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1960,6 +1962,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/atak-config/data-flows', [AdminAtakConfigController::class, 'storeDataFlows'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/game-experience', [AdminAtakConfigController::class, 'storeGameExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/first-login-link', [AdminAtakConfigController::class, 'storeFirstLoginLink'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/photo-hud', [AdminAtakConfigController::class, 'storePhotoHud'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/marker-icons', [AdminAtakConfigController::class, 'storeMarkerIcons'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/marker-icons/upload', [AdminAtakConfigController::class, 'uploadMarkerIcon'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1970,6 +1973,7 @@ return function (Router $router) {
     $router->post('/back-office/atak/controle-serveur/regles', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/reseau-adopter', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'adoptNetwork'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/fonctions', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/controle-serveur/apps', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeApps'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/relais', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRelays'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/relays-network', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/api/atak/relays/{mapId}/{uid}', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

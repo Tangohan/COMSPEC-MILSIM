@@ -30,6 +30,8 @@ switch (_action) do {
         private _target = if (_action isEqualTo "step") then { ((_idx + _arg) mod _total + _total) mod _total } else { (_arg max 0) min (_total - 1) };
         if (_target isEqualTo _idx) exitWith {};
         switch (_src) do {
+            // Présentation FENRIR : la commande part à son serveur, qui contrôle les droits ; l'état revient à tous.
+            case "FENRIR": { ["cmd", [["viewed"] call comspec_atak_native_fnc_fenrir, "goto", _target]] call comspec_atak_native_fnc_fenrir; };
             // Google : chargement asynchrone par la DLL, la page se redessine quand l'image arrive.
             case "GOOGLE": {
                 // Présentation chargée depuis l'engrenage pour ce téléphone seul : navigation non diffusée.
@@ -112,7 +114,7 @@ switch (_action) do {
             uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ""];
             // Champ encore affiché avec la question partie : vidé, sinon le redessin la remettrait en brouillon.
             private _qc = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["briefQ", controlNull];
-            if (!isNull _qc && {(trim ctrlText _qc) isEqualTo _txt}) then { _qc ctrlSetText ""; };
+            if (!isNull _qc && {(trim ctrlText _qc) isEqualTo _txt}) then { _qc ctrlSetText (("") call comspec_atak_native_fnc_tr); };
             // Le présentateur la voit tout de suite sur son téléphone.
             private _pres = (["get"] call comspec_atak_native_fnc_briefingLive) param [0, objNull];
             if (!isNull _pres && {_pres isNotEqualTo player}) then { ["comspec_atak_native_briefQ", [_who, _txt], _pres] call CBA_fnc_targetEvent; };
@@ -121,9 +123,13 @@ switch (_action) do {
         };
     };
     case "refresh": {
+        private _fid = ["viewed"] call comspec_atak_native_fnc_fenrir;
+        if (_fid isNotEqualTo "") exitWith { ["cmd", [_fid, "refresh"]] call comspec_atak_native_fnc_fenrir; };
         if !([] call comspec_atak_native_fnc_bridge) exitWith {
             ["WARNING", "Diapositives Athena : COMSPEC Link requis", 4, 30] call comspec_atak_native_fnc_notify;
         };
+        // Diapositives Google refusées ou ratées : relues au prochain affichage (navigateur intégré).
+        uiNamespace setVariable ["COMSPEC_ATAK_GSlideCache", createHashMap];
         private _gUrl = profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""];
         if ((profileNamespace getVariable ["COMSPEC_ATAK_BriefSource", "AUTO"]) isEqualTo "GOOGLE" && {_gUrl isNotEqualTo ""}) exitWith {
             ["load", [_gUrl, false]] call comspec_atak_native_fnc_briefingCfg;
@@ -133,8 +139,13 @@ switch (_action) do {
         // Relecture hors de l'image en cours (l'appel à Athena peut prendre plusieurs secondes).
         [] spawn {
             private _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;
-            missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
-            ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
+            // Échec (délai, joueur non lié) : getBriefingSlides renvoie [] et garde les diapositives déjà reçues.
+            if (_slides isEqualTo [] && {(missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) isNotEqualTo []}) then {
+                ["WARNING", "Athena n'a pas répondu : diapositives précédentes conservées", 4, 20] call comspec_atak_native_fnc_notify;
+            } else {
+                missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
+                ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
+            };
             [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
     };

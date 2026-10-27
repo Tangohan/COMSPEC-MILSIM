@@ -127,7 +127,7 @@ $platformNav = [
         ['path' => 'admin/atak-mod-reports', 'label' => 'Rapports d’erreurs du mod', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Erreurs remontées par le pack, toutes communautés'],
     ]],
     ['key' => 'exploitation', 'label' => 'Exploitation', 'items' => [
-        ['path' => 'admin/system/donnees', 'label' => 'Registre des données', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Comptes, joueurs, ATAK, unités, sessions en tableaux : corrélations, export, purge'],
+        ['path' => 'admin/system/donnees', 'label' => 'Registre des données', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Comptes, joueurs, ATAK, mods proches, sessions : recherche Steam par profil, corrélations, export, purge'],
         ['path' => 'admin/system/storage', 'label' => 'Espace disque', 'icon' => 'disk', 'access' => 'system', 'desc' => 'Occupation et vidage des historiques'],
         ['path' => 'admin/maintenance', 'label' => 'Maintenance des données', 'icon' => 'wrench', 'access' => 'hub', 'desc' => 'Fenêtres de maintenance planifiées'],
         ['path' => 'admin/audit', 'label' => 'Journal d’audit', 'icon' => 'audit', 'access' => 'hub', 'desc' => 'Toutes les actions sensibles'],

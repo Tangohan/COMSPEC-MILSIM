@@ -25,7 +25,10 @@ private _wName = { params ["_c", ["_cfg", "CfgWeapons"]]; private _n = getText (
 if ("dtg" in _ids) then {
     date params ["_yy", "_mo", "_dd", "_hh", "_mi"];
     _out set ["dtg", format ["%1%2%3J %4 %5", [_dd, 2] call CBA_fnc_formatNumber, [_hh, 2] call CBA_fnc_formatNumber, [_mi, 2] call CBA_fnc_formatNumber,
-        ["JAN", "FÉV", "MAR", "AVR", "MAI", "JUN", "JUL", "AOÛ", "SEP", "OCT", "NOV", "DÉC"] select ((_mo - 1) max 0 min 11), [_yy mod 100, 2] call CBA_fnc_formatNumber]];
+        // Mois dans la langue du téléphone (valeur saisie dans le champ, pas traduite à l'affichage).
+        ([["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+          ["JAN", "FÉV", "MAR", "AVR", "MAI", "JUN", "JUL", "AOÛ", "SEP", "OCT", "NOV", "DÉC"]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr"))
+            select ((_mo - 1) max 0 min 11), [_yy mod 100, 2] call CBA_fnc_formatNumber]];
 };
 if ("here" in _ids) then { _out set ["here", [getPosASL player] call _grid]; };
 if ("contact" in _ids) then { _out set ["contact", format ["%1 · ATAK", [player, true] call comspec_atak_native_fnc_unitCallsign]]; };

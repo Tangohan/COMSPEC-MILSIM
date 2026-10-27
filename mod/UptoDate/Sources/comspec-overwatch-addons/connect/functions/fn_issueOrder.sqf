@@ -45,6 +45,7 @@ private _order = createHashMapFromArray [
     ["issuer", _issuer],
     ["status", "PENDING"],
     ["source", "local"],
+    ["targetType", _targetType],
     ["createdAt", _now],
     ["updatedAt", _now]
 ];
@@ -84,7 +85,10 @@ private _encoded = format ["ORDER|%1|%2|%3|%4|%5|%6", _id, _orderType, _target, 
 
 ["OnOrderIssued", _order] call comspec_overwatch_connect_fnc_publishEvent;
 
-// HashMap interdit en remoteExec (crash). Paires seulement, hors émetteur.
+// HashMap interdit en remoteExec (crash). Paires seulement.
+// Cible 0 (tous) : -2 excluait le serveur, donc l'hôte d'une partie hébergée par un joueur.
+// L'émetteur se reçoit aussi ; receiveOrder l'écarte (filtre _selfIssued + ordres déjà vus),
+// et un serveur dédié sort sur !hasInterface.
 private _net = [
     ["id", _id],
     ["parentId", _parentOrderId],
@@ -95,8 +99,10 @@ private _net = [
     ["priority", _priority],
     ["issuer", _issuer],
     ["status", "PENDING"],
-    ["source", "local"]
+    ["source", "local"],
+    // Sans le type de cible, orderConcernsPlayer prend l'ordre pour une diffusion : tout le monde le recevait.
+    ["targetType", _targetType]
 ];
-[_net] remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", -2, false];
+[_net] remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", 0, false];
 
 _order

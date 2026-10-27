@@ -18,11 +18,13 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.619;
-        versionStr = "1.6.19";
-        versionAr[] = {1, 6, 19};
+        version = 1.621;
+        versionStr = "1.6.21";
+        versionAr[] = {1, 6, 21};
         // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
         // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
+        // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
+        // 1.6.21 : revue du mod, tours 6 et 7 (regroupement ATAK natif 2.6.0).
     };
 };
 

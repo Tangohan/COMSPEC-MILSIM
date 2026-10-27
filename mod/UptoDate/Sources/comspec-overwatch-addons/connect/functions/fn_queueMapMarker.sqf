@@ -15,6 +15,9 @@ if (!(_queue isEqualType [])) then { _queue = []; };
 // Mode flush
 if (_armaName isEqualTo "") exitWith {
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { 0 };
+    // Poste détruit / planté / brouillé : la file reste en place (sinon le repère bloqué partait 5 s plus tard).
+    if (!isNil "comspec_overwatch_connect_fnc_canTransmit"
+        && {!(([true] call comspec_overwatch_connect_fnc_canTransmit) getOrDefault ["can_transmit", true])}) exitWith { 0 };
     private _n = 0;
     {
         _x params ["_name", "_body", "_del"];

@@ -28,6 +28,15 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
     missionNamespace setVariable ["COMSPEC_ATAK_LivecamPfh", [{
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
         private _u = attachedTo _cam;
+        // Porteur supprimé (déconnexion, nettoyage du corps) : la caméra se retrouve détachée, flux coupé comme un porteur mort.
+        if (!isNull _cam && {isNull _u} && {(missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""]) isEqualTo "unit"}) exitWith {
+            [] call comspec_atak_native_fnc_livecamStop;
+            ["WARNING", "Live cam : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
+            private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+            private _pg = _st getOrDefault ["activePage", ""];
+            if (_pg isEqualTo "MAP") then { _st set ["mapCam", ""]; };
+            if (_pg in ["LIVECAM", "MAP"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _pg] call CBA_fnc_execNextFrame; };
+        };
         if (isNull _cam || {isNull _u} || {_u isKindOf "COMSPEC_ATAK_CameraObj"}) exitWith {};
         // Relais dans la mission (fn_videoLink) : le flux du porteur passe en direct (maillage, 3 km) ou par les relais.
         private _v = createHashMap;

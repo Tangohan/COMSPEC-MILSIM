@@ -455,7 +455,7 @@ switch (toUpper _mode) do {
         // Fiche du cliché (relais Discord) : position et axe de l'objectif, objectif, zoom, flash, modèle, version.
         private _meta = ["", "", false, "", false, "phone", "", _viewPos, (((_viewDir select 0) atan2 (_viewDir select 1)) + 360) mod 360,
             [["lens", ["rear", "selfie"] select (_st getOrDefault ["selfie", false])], ["zoom", _st getOrDefault ["zoom", 1]],
-             ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
+             ["flash", ["off", "on"] select _fire], ["model", ([player] call comspec_atak_native_fnc_phoneCarried) select 0],
              ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
             _viewDir];
         [_fire, [_px, _py, _pz], _meta, _st getOrDefault ["selfie", false]] spawn {

@@ -38,8 +38,11 @@ private _person = [
 private _object = [
     ["COMSPEC_SSE_KitLatent", "Relever des empreintes latentes", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa",
         { params ["_t", "_player"];
-          if (([_player, "COMSPEC_SSE_FingerprintKit", 10] call comspec_sse_fnc_kitUse) isEqualTo 0) exitWith {};
-          [_t, _player] call comspec_sse_fnc_bioCaptureLatentAction; },
+          if (([_player, "COMSPEC_SSE_FingerprintKit", 10, true] call comspec_sse_fnc_kitUse) isEqualTo 0) exitWith {};
+          // Usage retiré au succès du relevé (progressAction), pas sur annulation / action déjà en cours.
+          missionNamespace setVariable ["comspec_sse_progressKitCost", [_player, "COMSPEC_SSE_FingerprintKit", 10]];
+          [_t, _player] call comspec_sse_fnc_bioCaptureLatentAction;
+          missionNamespace setVariable ["comspec_sse_progressKitCost", nil]; },
         { params ["_t", "_player"]; ["COMSPEC_SSE_FingerprintKit"] call _has && {missionNamespace getVariable ["comspec_sse_bio_latents", true]} }],
     ["COMSPEC_SSE_KitFaraday", "Mettre en sac de Faraday", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa",
         { [_this select 0, _this select 1] call comspec_sse_fnc_faradayBag },

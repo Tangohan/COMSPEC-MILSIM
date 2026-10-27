@@ -8,8 +8,9 @@ namespace App\Support;
  * Traduction anglaise des pages à l'affichage (et des langues de la communauté, posées sur l'anglais).
  *
  * Les vues restent écrites en français. Quand la langue du visiteur est l'anglais, Response::view passe la page
- * rendue ici : chaque texte entre balises et les attributs title, placeholder, aria-label, alt, data-confirm et value
- * (boutons) sont cherchés dans lang/en/site_auto.php (tenu par tools/i18n/site_i18n.py). Ordre : texte exact,
+ * rendue ici : chaque texte entre balises et les attributs title, placeholder, aria-label, alt, data-confirm, data-label
+ * (intitulé de colonne repris sur mobile) et value (boutons) sont cherchés dans lang/en/site_auto.php (tenu par
+ * tools/i18n/site_i18n.py). Ordre : texte exact,
  * « Libellé : valeur », modèle %1/%2 (les valeurs capturées sont traduites à leur tour), morceaux séparés par « · ».
  * Un texte inconnu reste en français. Jamais traduits : <script>, <style>, <textarea>, <pre>, <code> et tout élément
  * marqué translate="no" (contenu saisi par les membres).
@@ -27,7 +28,7 @@ final class HtmlTranslator
 
     private const RAW_TAGS = ['script', 'style', 'textarea', 'pre', 'code'];
 
-    private const ATTRS = '/\b(title|placeholder|aria-label|alt|data-confirm)\s*=\s*("([^"]*)"|\'([^\']*)\')/i';
+    private const ATTRS = '/\b(title|placeholder|aria-label|alt|data-confirm|data-label)\s*=\s*("([^"]*)"|\'([^\']*)\')/i';
 
     public static function translate(string $html): string
     {
@@ -105,12 +106,15 @@ final class HtmlTranslator
                     $pos = $close;
                     continue;
                 }
-                if (in_array($name, self::RAW_TAGS, true) || preg_match('~\btranslate\s*=\s*["\']?no\b~i', $tag)) {
+                $noTranslate = (bool) preg_match('~\btranslate\s*=\s*["\']?no\b~i', $tag);
+                if (in_array($name, self::RAW_TAGS, true) || $noTranslate) {
                     if (!$voidish) {
                         $skipTag = $name;
                         $skipDepth = 1;
                     }
-                    $out .= $tag;
+                    // Contenu saisi gardé tel quel, mais le placeholder ou le title d'un <textarea> reste une consigne
+                    // de la page.
+                    $out .= $noTranslate ? $tag : self::attributes($tag, $name);
                     continue;
                 }
                 $tag = self::attributes($tag, $name);

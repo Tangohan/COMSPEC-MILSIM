@@ -16,8 +16,12 @@ $hubRecommended = !empty($hubRecommended);
 $hubCanCooperate = !empty($hubCanCooperate);
 $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-$num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, ',', "\u{202F}");
-$ordinal = static fn (int $n): string => $n === 1 ? '1er' : $n . 'e';
+$numEn = locale() === 'en';
+$num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, $numEn ? '.' : ',', $numEn ? ',' : "\u{202F}");
+// Ordinal du rang : la traduction anglaise (HtmlTranslator) ne sait pas accorder « 1er / 2e ».
+$ordinal = static fn (int $n): string => locale() === 'en'
+    ? $n . (in_array($n % 100, [11, 12, 13], true) ? 'th' : (['th', 'st', 'nd', 'rd'][$n % 10] ?? 'th'))
+    : ($n === 1 ? '1er' : $n . 'e');
 $fmt = static function (string $metric, $value) use ($num): string {
     if ($value === null) {
         return '—';
@@ -131,7 +135,7 @@ require __DIR__ . '/partials/shell_open.php';
       </div>
     </header>
 
-    <p class="hx-read"><?= $h(implode(' ', $reading)) ?></p>
+    <p class="hx-read"><?php foreach ($reading as $sentence): ?><span><?= $h($sentence) ?></span> <?php endforeach; ?></p>
 
     <section aria-labelledby="hx-ind">
       <div class="hx-section__head">
@@ -188,7 +192,7 @@ require __DIR__ . '/partials/shell_open.php';
         <div class="hx-levels mt-3">
           <?php foreach ($levelCounts as $i => $n): ?>
           <div class="hx-level">
-            <span><?= $i === 0 ? '1er niveau' : ($i + 1) . 'e niveau' ?></span>
+            <span><?= $h($ordinal($i + 1)) ?> niveau</span>
             <span class="hx-level__bar"><span style="width: <?= (int) round($n / $maxLevel * 100) ?>%"></span></span>
             <strong><?= (int) $n ?></strong>
           </div>

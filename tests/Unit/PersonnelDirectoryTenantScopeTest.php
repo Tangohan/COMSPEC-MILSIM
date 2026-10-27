@@ -20,7 +20,8 @@ final class PersonnelDirectoryTenantScopeTest extends TestCase
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
         self::assertStringContainsString('function listPersonnelDirectoryRich', $src);
         self::assertStringContainsString('user_community_profiles ucp', $src);
-        self::assertStringContainsString('COALESCE(ucp.tenant_member_number, u.tenant_member_number)', $src);
+        // Le matricule d’organisation du compte d’origine ne s’affiche que dans sa communauté d’origine.
+        self::assertStringContainsString("COALESCE(ucp.tenant_member_number, CASE WHEN u.tenant_id = ' . \$tenantLit . ' THEN u.tenant_member_number END)", $src);
         self::assertStringContainsString('personnelProfilesJoinSql', $src);
         self::assertStringContainsString('gradesJoinForTenant', $src);
     }

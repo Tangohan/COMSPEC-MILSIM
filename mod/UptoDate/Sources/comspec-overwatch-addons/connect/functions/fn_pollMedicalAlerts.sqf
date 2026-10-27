@@ -9,7 +9,9 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 
-private _raw = ["COMSPECExtension" callExtension ["GetMedicalAlerts", ["1", "25"]]] call comspec_overwatch_connect_fnc_extResult;
+private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
+private _raw = ["COMSPECExtension" callExtension ["GetMedicalAlerts", [_mapId, "25"]]] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 private _parts = _raw splitString "|";
 private _prefix = if ((count _parts) >= 1) then { _parts select 0 } else { "" };
@@ -25,18 +27,23 @@ private _alerts = [];
 {
     private _line = _x;
     if (_line isEqualTo "") then { continue };
-    private _cols = _line splitString (toString [9]);
+    // splitKeepEmpty : cellules vides conservées (grille / indicatif vides ne décalent plus la sévérité).
+    private _cols = [_line, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _cols) < 6) then { continue };
 
     private _id = _cols select 0;
     private _kind = _cols select 1;
     private _callSign = _cols select 2;
     private _label = _cols select 3;
+    if (_label isEqualTo "") then { _label = "Assistance médicale"; };
     private _grid = _cols select 4;
     private _created = _cols select 5;
     private _triageStatus = if ((count _cols) > 6) then { _cols select 6 } else { "a_secourir" };
     private _triageLabel = if ((count _cols) > 7) then { _cols select 7 } else { "À secourir" };
     private _severity = if ((count _cols) > 8) then { _cols select 8 } else { "urgent" };
+    if (_triageStatus isEqualTo "") then { _triageStatus = "a_secourir"; };
+    if (_triageLabel isEqualTo "") then { _triageLabel = "À secourir"; };
+    if (_severity isEqualTo "") then { _severity = "urgent"; };
 
     private _hm = createHashMapFromArray [
         ["id", _id],
@@ -63,7 +70,16 @@ if (!_bootstrapped) then {
         private _id = _x getOrDefault ["id", ""];
         if (!(_id isEqualTo "") && {!(_id in _seen)}) then { _seen pushBack _id; };
     } forEach _alerts;
-    missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", true, false];
+    // La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+    // silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+    private _t0 = missionNamespace getVariable ["COMSPEC_MedicalAlertsFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_MedicalAlertsFirstOkAt", _t0, false];
+    };
+    if (({ _x isNotEqualTo "" } count _lines) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", true, false];
+    };
 } else {
     {
         private _a = _x;

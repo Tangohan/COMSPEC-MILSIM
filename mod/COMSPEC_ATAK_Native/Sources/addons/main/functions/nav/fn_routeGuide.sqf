@@ -50,7 +50,7 @@ if ((count _next) > 0) then {
         default { _txt = ["Serrez à gauche", "Serrez à droite"] select _r; _icon = ["nav_slight_left", "nav_slight_right"] select _r; };
     };
     // Loin du prochain virage : « continuez ».
-    if (_dn > 800) then { _txt = format ["Continuez, puis %1", toLower _txt]; };
+    if (_dn > 800) then { _txt = format ["Continuez, puis %1", toLower (_txt call comspec_atak_native_fnc_tr)]; };
 } else {
     _txt = "Continuez jusqu'à destination";
 };

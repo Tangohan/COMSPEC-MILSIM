@@ -11,10 +11,13 @@ params [["_channel", ""], ["_radioId", ""]];
 
 if (!hasInterface) exitWith { false };
 
+// Le canal arrive en chaîne (webBrowserJSDialog) : str y ajouterait des guillemets.
+private _chTxt = if (_channel isEqualType "") then { trim _channel } else { str _channel };
+
 // Canal vide / stop → restauration
 if (
-    (_channel isEqualTo "")
-    || {(toLower (str _channel)) in ["stop", "off", "unmonitor", "-1"]}
+    (_chTxt isEqualTo "")
+    || {(toLower _chTxt) in ["stop", "off", "unmonitor", "-1"]}
 ) exitWith {
     [] call comspec_overwatch_connect_fnc_unmonitorRadioNet
 };
@@ -33,7 +36,7 @@ if (isClass (configFile >> "CfgPatches" >> "acre_main")) then {
             missionNamespace setVariable ["COMSPEC_RadioMonitorPrevSpectatorRadioId", "", false];
         };
         [_radioId] call acre_api_fnc_addSpectatorRadio;
-        missionNamespace setVariable ["COMSPEC_RadioMonitorChannel", str _channel, false];
+        missionNamespace setVariable ["COMSPEC_RadioMonitorChannel", _chTxt, false];
         missionNamespace setVariable ["COMSPEC_RadioMonitorRadioId", _radioId, false];
         missionNamespace setVariable ["COMSPEC_RadioMonitorMode", "spectator", false];
         missionNamespace setVariable ["COMSPEC_RadioMonitorActive", true, false];
@@ -45,7 +48,7 @@ if (isClass (configFile >> "CfgPatches" >> "acre_main")) then {
         if (_channel isEqualType 0) then {
             _chNum = _channel;
         } else {
-            if ((str _channel) != "") then { _chNum = parseNumber (str _channel); };
+            if (_chTxt != "") then { _chNum = parseNumber _chTxt; };
         };
         if (_chNum >= 0 && {!isNil "acre_api_fnc_setCurrentRadioChannelNumber"}) then {
             // Ne pas écraser le canal d’origine si on re-surveille déjà
@@ -70,7 +73,7 @@ if (isClass (configFile >> "CfgPatches" >> "acre_main")) then {
     };
 } else {
     if (isClass (configFile >> "CfgPatches" >> "tfar_core")) then {
-        missionNamespace setVariable ["COMSPEC_RadioMonitorChannel", str _channel, false];
+        missionNamespace setVariable ["COMSPEC_RadioMonitorChannel", _chTxt, false];
         missionNamespace setVariable ["COMSPEC_RadioMonitorMode", "tfar", false];
         missionNamespace setVariable ["COMSPEC_RadioMonitorActive", true, false];
         ["COMSPEC_Info", ["Surveillance enregistrée — réglez la fréquence sur votre radio"]] call comspec_overwatch_connect_fnc_showNotification;

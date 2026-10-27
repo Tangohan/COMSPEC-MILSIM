@@ -58,6 +58,33 @@ class COMSPEC_RscATAKTexture: COMSPEC_RscDisplayATAK {
     onLoad="[_this select 0, false, true] call comspec_atak_native_fnc_displayLoad";
 };
 
+// Écran TOC (fn_tocScreen) : texture UI 1600 x 900 posée sur un écran du jeu, contrôles créés par le code.
+class COMSPEC_RscTocScreenTexture {
+    idd=-1; movingEnable=0;
+    onLoad="['load', _this select 0] call comspec_atak_native_fnc_tocScreen";
+    class controls {};
+};
+
+// Écran COMSPEC (fn_screenCast) : diapositive Athena montrée par le navigateur intégré dans une texture UI 1280 x 720
+// posée sur l'objet, Arma refusant l'image téléchargée hors d'un PBO. Contrôle créé par le code.
+class COMSPEC_RscScreenSlideTexture {
+    idd=-1; movingEnable=0;
+    onLoad="['load', _this select 0] call comspec_atak_native_fnc_screenCast";
+    class controls {
+        class Back: COMSPEC_RscText { x=0; y=0; w=1; h=1; colorBackground[]={0,0,0,1}; text=""; };
+    };
+};
+
+// PC portable du poste TOC (fn_tocLaptop) : écran du PC lui-même, indépendant du téléphone (carte en grand, nœuds
+// ATAK du camp, groupes, flux, ordres, messages au camp). Contrôles créés par le code.
+class COMSPEC_RscTocLaptop {
+    idd=COMSPEC_ATAK_IDD_TOCLAPTOP; movingEnable=0; enableSimulation=1;
+    onLoad="['load', _this select 0] call comspec_atak_native_fnc_tocLaptop";
+    onUnload="['unload'] call comspec_atak_native_fnc_tocLaptop";
+    class controlsBackground {};
+    class controls {};
+};
+
 class RscTitles {
     // Terminal porté (HUD) : visible pendant que l'on joue, sans souris ni clavier.
     class COMSPEC_RscTitleATAK: COMSPEC_RscDisplayATAK {
@@ -65,10 +92,16 @@ class RscTitles {
         onLoad="[_this select 0, false] call comspec_atak_native_fnc_displayLoad";
     };
     // Montre Garmin au poignet (fn_watch, touche Montre du jeu) : contrôles créés par le code.
+    // Les boîtiers 1024 sont déclarés ici. Posés seulement après coup, ils ne s'affichent pas : il ne reste que le disque.
     class COMSPEC_RscTitleGarmin {
         idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
         onLoad="uiNamespace setVariable ['COMSPEC_ATAK_WatchDisplay', _this select 0]";
-        class controls {};
+        class controls {
+            class Frame: COMSPEC_RscWatchPic { idc=7711; x=-2; y=-2; w=0.05; h=0.05; text="\z\comspec_atak_native\addons\main\data\gw_frame.paa"; };
+            class FrameCoyote: COMSPEC_RscWatchPic { idc=7712; x=-2; y=-2; w=0.05; h=0.05; text="\z\comspec_atak_native\addons\main\data\gw_frame_coyote.paa"; };
+            class FrameFree: COMSPEC_RscWatchPic { idc=7713; x=-2; y=-2; w=0.05; h=0.05; text="\z\comspec_atak_native\addons\main\data\gw_frame_freecandy.paa"; };
+            class FrameUsa: COMSPEC_RscWatchPic { idc=7714; x=-2; y=-2; w=0.05; h=0.05; text="\z\comspec_atak_native\addons\main\data\gw_frame_usa.paa"; };
+        };
     };
     // Mode photo : viseur plein écran, le joueur se déplace normalement.
     class COMSPEC_RscTitleCamera {

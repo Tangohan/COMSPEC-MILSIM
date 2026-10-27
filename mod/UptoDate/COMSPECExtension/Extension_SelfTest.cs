@@ -104,14 +104,22 @@ public static partial class Extension
         else
         {
             var results = new string[channels.Count];
-            using var gate = new SemaphoreSlim(SelfTestParallel);
+            // Ni « using » sur le sémaphore ni sur le délai global : des tâches peuvent encore tourner après
+            // Task.WaitAll (Athena lente), et un Release / WaitAsync sur un objet libéré levait une exception perdue.
+            // L'annulation globale réveille celles qui attendent encore leur tour.
+            var gate = new SemaphoreSlim(SelfTestParallel);
+            var overall = new CancellationTokenSource();
             var tasks = channels.Select((c, i) => Task.Run(async () =>
             {
-                await gate.WaitAsync().ConfigureAwait(false);
+                var entered = false;
                 var t = Stopwatch.StartNew();
                 try
                 {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SelfTestTimeoutSeconds));
+                    await gate.WaitAsync(overall.Token).ConfigureAwait(false);
+                    entered = true;
+                    t.Restart();
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
+                    cts.CancelAfter(TimeSpan.FromSeconds(SelfTestTimeoutSeconds));
                     using var resp = SendGet(c.Url, cts.Token);
                     var code = (int)resp.StatusCode;
                     var body = ReadContentUtf8(resp, cts.Token);
@@ -147,10 +155,12 @@ public static partial class Extension
                 }
                 finally
                 {
-                    gate.Release();
+                    if (entered) gate.Release();
                 }
             })).ToArray();
             try { Task.WaitAll(tasks, TimeSpan.FromSeconds(SelfTestTimeoutSeconds * 3)); } catch { /* chaque tâche range son résultat */ }
+            // Tâches encore en cours ou en attente : annulées (résultat « délai dépassé » ci-dessous).
+            try { overall.Cancel(); } catch { /* ignore */ }
             for (var i = 0; i < results.Length; i++)
                 lines.Add(results[i] ?? string.Join('\t', "C", "ko", SelfTestField(channels[i].Key), "délai dépassé", ""));
         }

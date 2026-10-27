@@ -1694,14 +1694,36 @@ html[data-bo-theme="dark"] .rh-corr__note {
   border: 1px solid #2b3430;
   color: #93a4be;
 }
+html[data-bo-theme="dark"] .rh-corr__change {
+  border: 1px solid #2b3430;
+  background: #111513;
+}
 html[data-bo-theme="dark"] .rh-corr__field {
   color: #dae1de;
+  background: #131816;
+  border-bottom: 1px solid #2b3430;
 }
-html[data-bo-theme="dark"] .rh-corr__old {
+html[data-bo-theme="dark"] .rh-corr__side--new {
+  background: #192b1e;
+  border-left: 1px solid #2b3430;
+}
+html[data-bo-theme="dark"] .rh-corr__side-label {
   color: #9da8b8;
 }
-html[data-bo-theme="dark"] .rh-corr__new {
+html[data-bo-theme="dark"] .rh-corr__side--new .rh-corr__side-label {
   color: #57f9cb;
+}
+html[data-bo-theme="dark"] .rh-corr__side p {
+  color: #93a4be;
+}
+html[data-bo-theme="dark"] .rh-corr__side--new p {
+  color: #5cf5ca;
+}
+@media (max-width: 720px) {
+html[data-bo-theme="dark"] .rh-corr__side--new {
+  border-left: 0 solid #2b3430;
+  border-top: 1px solid #2b3430;
+}
 }
 html[data-bo-theme="dark"] .rh-corr__actions {
   border-top: 1px solid #2b3430;
@@ -2127,14 +2149,26 @@ html[data-bo-theme="dark"] .eff-dialog__meta {
 html[data-bo-theme="dark"] .eff-dialog__quote {
   background: var(--ath-line-soft, #171c19);
 }
-html[data-bo-theme="dark"] .eff-dialog__changes {
+html[data-bo-theme="dark"] .eff-dialog__lead {
+  color: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .eff-dialog__quote-label {
+  color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .eff-dialog__change {
   border: 1px solid var(--ath-line, #2b3530);
 }
-html[data-bo-theme="dark"] .eff-dialog__changes div {
+html[data-bo-theme="dark"] .eff-dialog__change-label {
+  background: var(--ath-line-soft, #171c19);
+}
+html[data-bo-theme="dark"] .eff-dialog__change-row {
   border-top: 1px solid var(--ath-line, #2b3530);
 }
-html[data-bo-theme="dark"] .eff-dialog__changes dt {
+html[data-bo-theme="dark"] .eff-dialog__change-row > span {
   color: var(--ath-muted, #aebdb6);
+}
+html[data-bo-theme="dark"] .eff-dialog__change-row--next strong {
+  color: #57f9cb;
 }
 html[data-bo-theme="dark"] .eff-dialog__link {
   color: var(--ath-accent, #5ef2bd);

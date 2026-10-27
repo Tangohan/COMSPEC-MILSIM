@@ -149,8 +149,10 @@ final class PersonnelCorrectionRequestService
         private UnitRepository $units,
         private GradeRepository $grades,
         private ?PersonnelServiceHistoryWriter $serviceHistoryWriter = null,
+        private ?PersonnelFieldValueFormatter $fieldFormatter = null,
     ) {
         $this->serviceHistoryWriter ??= new PersonnelServiceHistoryWriter(new \App\Repositories\PersonnelServiceHistoryRepository());
+        $this->fieldFormatter ??= new PersonnelFieldValueFormatter($this->units, $this->jobRoles, $this->grades, $this->userRepository);
     }
 
     /** @return array<string, string> */
@@ -1044,53 +1046,22 @@ final class PersonnelCorrectionRequestService
 
     public function displayFieldValue(string $key, mixed $value, ?int $tenantId = null): string
     {
-        if ($key === 'grade_id') {
-            $gid = (int) $value;
-            if ($gid < 1) {
-                return '';
-            }
-            $grade = $this->grades->findById($gid);
-            if (!$grade) {
-                return 'Grade #' . $gid;
-            }
+        return $this->fieldFormatter->display($key, $value, $tenantId);
+    }
 
-            return trim((string) ($grade['label_long'] ?? $grade['label_short'] ?? $grade['name'] ?? ('Grade #' . $gid)));
-        }
-        if ($key === 'unit_assignments') {
-            return $this->formatUnitAssignmentsLabel(self::decodeAssignmentRows($value));
-        }
-        if ($key === 'job_roles') {
-            return $this->formatJobRolesLabel(self::decodeJobRoleRows($value), $tenantId);
-        }
-        if ($key === 'deployable') {
-            return ((string) $value === '1') ? 'Oui' : 'Non';
-        }
-        if ($key === 'rp_recruitment_origin') {
-            return match (trim((string) $value)) {
-                'internal' => 'Interne',
-                'external' => 'Externe',
-                default => trim((string) $value),
-            };
-        }
-        if ($key === 'rp_tutor_user_id') {
-            $tid = (int) $value;
-            if ($tid < 1) {
-                return '';
-            }
-            $user = $this->userRepository->findById($tid, $tenantId);
-            if (!$user) {
-                return 'Compte #' . $tid;
-            }
+    /**
+     * Une ligne lisible par équipe, emploi ou valeur. Une liste vide signifie « rien ».
+     *
+     * @return list<string>
+     */
+    public function displayFieldLines(string $key, mixed $value, ?int $tenantId = null): array
+    {
+        return $this->fieldFormatter->lines($key, $value, $tenantId);
+    }
 
-            return $this->displayName($user);
-        }
-
-        $text = trim((string) $value);
-        if ($text === '') {
-            return '';
-        }
-
-        return trim((string) preg_replace('/\s+/u', ' ', str_replace(["\r\n", "\r", "\n"], ' · ', $text)));
+    public static function emptyFieldPhrase(string $key): string
+    {
+        return PersonnelFieldValueFormatter::emptyPhrase($key);
     }
 
     /**
@@ -1311,62 +1282,6 @@ final class PersonnelCorrectionRequestService
             ];
         }
         $this->jobRoles->replaceUserPivotJobRoles($tenantId, $userId, $rows);
-    }
-
-    /**
-     * @param list<array<string, mixed>> $rows
-     */
-    private function formatUnitAssignmentsLabel(array $rows): string
-    {
-        $parts = [];
-        foreach ($rows as $row) {
-            $unitId = (int) ($row['unit_id'] ?? 0);
-            if ($unitId < 1) {
-                continue;
-            }
-            $unit = $this->units->findById($unitId);
-            $name = trim((string) ($unit['name'] ?? ''));
-            if ($name === '') {
-                $name = 'Unité #' . $unitId;
-            }
-            $role = trim((string) ($row['role_name'] ?? ''));
-            $bit = $role !== '' ? $name . ' — ' . $role : $name;
-            if (!empty($row['is_primary'])) {
-                $bit .= ' (principale)';
-            }
-            $parts[] = $bit;
-        }
-
-        return implode(' · ', $parts);
-    }
-
-    /**
-     * @param list<array<string, mixed>> $rows
-     */
-    private function formatJobRolesLabel(array $rows, ?int $tenantId = null): string
-    {
-        $parts = [];
-        foreach ($rows as $row) {
-            $roleId = (int) ($row['role_id'] ?? $row['personnel_job_role_id'] ?? 0);
-            if ($roleId < 1) {
-                continue;
-            }
-            $jr = ($tenantId !== null && $tenantId > 0)
-                ? $this->jobRoles->findRoleById($roleId, $tenantId)
-                : null;
-            $name = trim((string) ($jr['name'] ?? ''));
-            if ($name === '') {
-                $name = 'Emploi #' . $roleId;
-            }
-            $detail = trim((string) ($row['detail'] ?? $row['role_detail'] ?? ''));
-            $bit = $detail !== '' ? $name . ' — ' . $detail : $name;
-            if (!empty($row['is_primary'])) {
-                $bit .= ' (principal)';
-            }
-            $parts[] = $bit;
-        }
-
-        return implode(' · ', $parts);
     }
 
     private function wantsEmail(int $userId, string $event): bool

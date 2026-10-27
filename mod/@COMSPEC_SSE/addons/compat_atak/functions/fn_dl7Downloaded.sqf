@@ -23,9 +23,24 @@ if !(_obj getVariable ["comspec_sse_enabled", false]) exitWith { false };
 // L'extraction complète vaut une exploitation détaillée : on monte jusqu'à DETAILED.
 private _order = ["NONE", "TACTICAL", "FIELD", "DETAILED", "FUSION"];
 private _lines = [];
+// Le téléchargement DL-7 terminé vaut accès : un support LOCKED / ENCRYPTED passe en PARTIAL_ACCESS, sinon
+// advanceExploitation refusait DETAILED (compétence opérateur par défaut 1) et l'extraction restait bloquée à FIELD.
+[_obj] call comspec_sse_fnc_ensureGenerated;
+if (!isNil "comspec_sse_fnc_attachIntelLayers") then { [_obj] call comspec_sse_fnc_attachIntelLayers; };
+private _secA = [_obj, "sections"] call comspec_sse_fnc_getSection;
+if (!isNil "_secA" && {_secA isEqualType createHashMap}) then {
+    private _acc = _secA getOrDefault ["accessState", createHashMap];
+    if (_acc isEqualType createHashMap && {(_acc getOrDefault ["state", "OPEN"]) in ["LOCKED", "ENCRYPTED"]}) then {
+        _acc set ["state", "PARTIAL_ACCESS"];
+        _secA set ["accessState", _acc];
+        [_obj, "sections", _secA, true] call comspec_sse_fnc_setSection;
+    };
+};
 private _guard = 0;
 while { _guard < 3 && {(_order find ([_obj] call comspec_sse_fnc_getExploitationLevel)) < (_order find "DETAILED")} } do {
     private _r = [_obj, _who] call comspec_sse_fnc_advanceExploitation;
+    // Un refus (blocked) n'est pas un renseignement : ni compté ni répété.
+    if (_r getOrDefault ["blocked", false]) exitWith {};
     _lines append (_r getOrDefault ["lines", []]);
     _guard = _guard + 1;
 };
