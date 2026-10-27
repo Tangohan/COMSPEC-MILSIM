@@ -89,11 +89,9 @@ private _coalesce = switch (_typeNorm) do {
 private _json = [_payload] call comspec_overwatch_connect_fnc_hashMapToJson;
 if (!(_json isEqualType "") || {_json isEqualTo ""}) exitWith { false };
 
-private _raw = ["COMSPECExtension" callExtension [
-    "EmitTelemetry",
-    [str _prio, _typeNorm, _coalesce, _json]
-]] call comspec_overwatch_connect_fnc_extResult;
-
-if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
-private _parts = _raw splitString "|";
-((count _parts) >= 1) && {(_parts select 0) isEqualTo "OK"}
+// SQF-C03 (A2) : ne pas bloquer le thread image (rafales FiredMan → agrégat → EmitTelemetry).
+[_prio, _typeNorm, _coalesce, _json] spawn {
+    params ["_prio", "_typeNorm", "_coalesce", "_json"];
+    ["COMSPECExtension", "EmitTelemetry", [str _prio, _typeNorm, _coalesce, _json]] call comspec_overwatch_connect_fnc_extAwait;
+};
+true

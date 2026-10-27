@@ -25,17 +25,53 @@ public static partial class Extension
     private const long BtMusicMax = 30L * 1024 * 1024;
     private static readonly string[] BtPhotoExtensions = [".jpg", ".jpeg", ".png"];
 
-    private sealed class BtSend { public string Path = ""; public long Size; }
-    private sealed class BtRecv { public string Temp = ""; public string Kind = ""; public string Name = ""; public long Size; public long Got; }
+    private sealed class BtSend { public string Path = ""; public long Size; public DateTime At = DateTime.UtcNow; }
+    private sealed class BtRecv { public string Temp = ""; public string Kind = ""; public string Name = ""; public long Size; public long Got; public DateTime At = DateTime.UtcNow; }
 
     private static readonly ConcurrentDictionary<string, BtSend> BtSends = new();
     private static readonly ConcurrentDictionary<string, BtRecv> BtRecvs = new();
     private static int _btSeq;
+    // LOT-MEM (MEM-C02) : plafond + TTL — sans BtFileClose / BtRecvAbort, les entrées ne vivent plus toute la session.
+    private const int BtMaxEntries = 32;
+    private static readonly TimeSpan BtEntryTtl = TimeSpan.FromMinutes(30);
+
+    private static void BtPurgeStale()
+    {
+        var cutoff = DateTime.UtcNow - BtEntryTtl;
+        foreach (var kv in BtSends)
+        {
+            if (kv.Value.At < cutoff) BtSends.TryRemove(kv.Key, out _);
+        }
+        foreach (var kv in BtRecvs)
+        {
+            if (kv.Value.At >= cutoff) continue;
+            if (BtRecvs.TryRemove(kv.Key, out var r))
+            {
+                try { File.Delete(r.Temp); } catch { /* ignoré */ }
+            }
+        }
+        void Trim<T>(ConcurrentDictionary<string, T> bag, Func<T, DateTime> atOf)
+        {
+            while (bag.Count > BtMaxEntries)
+            {
+                var oldest = bag.OrderBy(kv => atOf(kv.Value)).FirstOrDefault();
+                if (oldest.Key is null) break;
+                if (!bag.TryRemove(oldest.Key, out var removed)) break;
+                if (removed is BtRecv r)
+                {
+                    try { File.Delete(r.Temp); } catch { /* ignoré */ }
+                }
+            }
+        }
+        Trim(BtSends, s => s.At);
+        Trim(BtRecvs, r => r.At);
+    }
 
     private static string BtTempFolder()
     {
         var dir = Path.Combine(Path.GetTempPath(), "COMSPEC_BT");
         Directory.CreateDirectory(dir);
+        BtPurgeStale();
         // Réceptions abandonnées (jeu fermé pendant un transfert, erreur) : fichiers .part préalloués (jusqu'à 30 Mo)
         // de plus d'une heure supprimés, sauf ceux d'une réception en cours.
         try
@@ -127,8 +163,9 @@ public static partial class Extension
                     if (!info.Exists) return "ERR|fichier introuvable";
                     if (info.Length <= 0) return "ERR|fichier vide";
                     if (info.Length > max) return "ERR|trop lourd (" + (max / (1024 * 1024)).ToString(CultureInfo.InvariantCulture) + " Mo au plus)";
+                    BtPurgeStale();
                     var handle = "S" + Interlocked.Increment(ref _btSeq).ToString(CultureInfo.InvariantCulture);
-                    BtSends[handle] = new BtSend { Path = path, Size = info.Length };
+                    BtSends[handle] = new BtSend { Path = path, Size = info.Length, At = DateTime.UtcNow };
                     var chunks = (info.Length + BtChunk - 1) / BtChunk;
                     return string.Join("|", "OK", handle, info.Name.Replace("|", "_"), info.Length.ToString(CultureInfo.InvariantCulture), chunks.ToString(CultureInfo.InvariantCulture));
                 }
@@ -170,7 +207,7 @@ public static partial class Extension
                     if (kind == "photo" ? !BtPhotoExtensions.Contains(ext) : !MusicExtensions.Contains(ext)) return "ERR|extension refusée";
                     var temp = Path.Combine(BtTempFolder(), id + ".part");
                     using (var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None)) fs.SetLength(size);
-                    BtRecvs[id] = new BtRecv { Temp = temp, Kind = kind, Name = name, Size = size };
+                    BtRecvs[id] = new BtRecv { Temp = temp, Kind = kind, Name = name, Size = size, At = DateTime.UtcNow };
                     return "OK|" + id;
                 }
                 case "BtRecvWrite":

@@ -7,8 +7,9 @@
     Caméras fixes (fn_camAction, fn_camView) : caméras IP posées par le camp, listées sous les porteurs avec distance
     et état (en ligne, hors liaison, brouillée, détruite) ; même rendu, panoramique local ◀ ▶ de 30°, renommage.
     Le flux suit le réseau (fn_feedLink) : liaison montante de la source et descendante du téléphone, relais compris.
-    HD, SD, BAS ou MINIMAL fixent la définition de l'image ; les pertes la font décrocher par moments ; sans liaison,
-    pas d'image et la raison est affichée. Qualité réévaluée toutes les 3 s (page redessinée si le palier change).
+    « Ma caméra » est un rendu local (HD, sans pertes ni voile « SIGNAL INSTABLE »). Les autres flux : HD / SD / BAS /
+    MINIMAL selon le débit ; décrochages espacés (pas de clignotement en bâtiment). Sans liaison, pas d'image.
+    Qualité réévaluée toutes les 3 s (page redessinée si le palier change).
     Drones du camp (fn_livecamUav) : la nacelle d'un drone allié en vol, piloté au terminal UAV ou par un téléphone,
     comme le flux de BCE ; l'image passe par la station de son opérateur. Lecture seule : réticule, point visé, cadres
     sur les cibles, MARQUER LA CIBLE (LOCK suivi) et MARQUER LE POINT (marqueur de la palette), sans commande du drone.
@@ -281,15 +282,29 @@ _netBar ctrlSetStructuredText parseText ((format ["<t align='right'><t font='COM
     _tierCol getOrDefault [_link get "tier", "#c9d4cf"], _link get "tier",
     [format ["%1 kbit/s", _link get "kbps"], format ["%1 Mbit/s", ((_link get "kbps") / 1000) toFixed 1]] select ((_link get "kbps") >= 1000),
     _link get "loss", ["", format [" · via %1", _path]] select (_path isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
-// Toutes les 0,5 s : décrochage tiré au sort ; toutes les 3 s : palier réévalué, page redessinée s'il change.
+// Décrochage : tirage espacé, avec un temps minimal d'image stable pour éviter le clignotement en bâtiment.
+// Flux local (ma caméra) : drop à 0, le voile ne s'affiche jamais.
 missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
     params ["_args"];
-    _args params ["_dropP", "_tier", "_next"];
+    _args params ["_dropP", "_tier", "_next", "_clearUntil"];
     private _c = uiNamespace getVariable ["COMSPEC_ATAK_FeedDrop", controlNull];
     if (isNull _c) exitWith {};
-    _c ctrlShow ((random 1) < _dropP);
-    if (diag_tickTime < _next) exitWith {};
-    _args set [2, diag_tickTime + 3];
+    if (_dropP <= 0) exitWith { _c ctrlShow false; };
+    private _now = diag_tickTime;
+    if (ctrlShown _c) then {
+        // Voile affiché : on le retire après 0,35 s, puis au moins 1,2 s d'image stable.
+        if (_now >= _clearUntil) then {
+            _c ctrlShow false;
+            _args set [3, _now + 1.2];
+        };
+    } else {
+        if (_now >= _clearUntil && {(random 1) < _dropP}) then {
+            _c ctrlShow true;
+            _args set [3, _now + 0.35];
+        };
+    };
+    if (_now < _next) exitWith {};
+    _args set [2, _now + 3];
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     if ((_st getOrDefault ["activePage", ""]) isNotEqualTo "LIVECAM") exitWith {};
     private _l = ["eval", objectFromNetId (_st getOrDefault ["livecamTarget", ""])] call comspec_atak_native_fnc_feedLink;
@@ -300,7 +315,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
         // Pas de notification ici : le changement de palier est déjà annoncé par la boucle du Live cam (fn_videoLink "adapt").
         [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     };
-}, 0.5, [_link get "drop", _link get "tier", diag_tickTime + 3]] call CBA_fnc_addPerFrameHandler];
+}, 0.5, [_link get "drop", _link get "tier", diag_tickTime + 3, 0]] call CBA_fnc_addPerFrameHandler];
 private _osd = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _pad / 2, _vw - _pad, _rowH * 2.3]] call comspec_atak_native_fnc_pageCtrl;
 if (_isUav) then {
     _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",

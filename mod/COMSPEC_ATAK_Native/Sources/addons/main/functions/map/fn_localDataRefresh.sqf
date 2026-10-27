@@ -76,6 +76,8 @@ private _carries = {
     _c select 0
 };
 private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends", true];
+// Méta pour retirer les fantômes Athena (pseudo Steam à côté de l'indicatif tactique).
+private _friendMeta = [];
 {
     private _obj = _x;
     if (isNull _obj || {!alive _obj}) then { continue };
@@ -123,6 +125,16 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
         _athena deleteAt _near;
         _units deleteAt _near;
     };
+    // Fantôme sous le pseudo Steam alors que l'indicatif tactique est connu (Adam vs Y 31).
+    if (isPlayer _obj) then {
+        private _steamKey = "athena:" + toLower (name _obj);
+        if (_steamKey in _athena && {_steamKey isNotEqualTo _near}) then {
+            if (_callsign isEqualTo "" || {(toLower _callsign) isNotEqualTo (toLower (name _obj))}) then {
+                _athena deleteAt _steamKey;
+                _units deleteAt _steamKey;
+            };
+        };
+    };
     if (_callsign isEqualTo "") then { _callsign = [_obj] call comspec_atak_native_fnc_unitCallsign; };
     private _pos = getPosASL _obj; private _hd = getDir _obj; private _upd = diag_tickTime; private _fr = "LIVE"; private _acc = 0;
     if (_obj isNotEqualTo player && {_affiliation isEqualTo "friend"}) then {
@@ -157,14 +169,43 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
         private _age = diag_tickTime - _upd;
         _fr = if (!_on) then { "OFFLINE" } else { switch (true) do { case (_age < _liveAge): { "LIVE" }; case (_age < _staleAge): { "STALE" }; default { "LOST" }; } };
     };
-    _units set [_id,createHashMapFromArray [
-        ["id",_id],["object",_obj],["self",_obj isEqualTo player],
-        ["callsign",_callsign],
-        ["position",_pos],["heading",_hd],
-        ["affiliation",_affiliation],["type",_type],["freshness",_fr],["updated",_upd],["acc",_acc],
-        ["icon",_obj getVariable ["COMSPEC_ATAK_Icon",""]],["orbat",_obj getVariable ["COMSPEC_ATAK_Orbat",""]]
-    ]];
+    // Réutiliser la piste déjà en mémoire (SQF-002 / SQF-C03) : n’allouer un HashMap qu’à la première vue.
+    private _track = _units getOrDefault [_id, createHashMap];
+    if ((count _track) isEqualTo 0) then { _units set [_id, _track]; };
+    _track set ["id", _id];
+    _track set ["object", _obj];
+    _track set ["self", _obj isEqualTo player];
+    _track set ["callsign", _callsign];
+    _track set ["position", _pos];
+    _track set ["heading", _hd];
+    _track set ["affiliation", _affiliation];
+    _track set ["type", _type];
+    _track set ["freshness", _fr];
+    _track set ["updated", _upd];
+    _track set ["acc", _acc];
+    _track set ["icon", _obj getVariable ["COMSPEC_ATAK_Icon", ""]];
+    _track set ["orbat", _obj getVariable ["COMSPEC_ATAK_Orbat", ""]];
+    if (side group _obj isEqualTo side group player) then {
+        _friendMeta pushBack [toLower (name _obj), toLower _callsign, _pos];
+    };
 } forEach (_fl select 0);
+
+// Second passage : pistes Athena restantes qui doublent un allié déjà dessiné
+// (libellé = pseudo Steam alors que l'indicatif tactique est autre, ou même indicatif à < 35 m).
+{
+    if ((_x select [0, 7]) isNotEqualTo "athena:") then { continue };
+    private _remote = _units get _x;
+    if (isNil "_remote") then { continue };
+    private _rcs = toLower (_remote getOrDefault ["callsign", ""]);
+    private _rpos = _remote getOrDefault ["position", [0, 0, 0]];
+    private _drop = false;
+    {
+        _x params ["_sn", "_tcs", "_fp"];
+        if (_rcs isEqualTo _sn && {_tcs isNotEqualTo "" && {_tcs isNotEqualTo _sn}}) exitWith { _drop = true; };
+        if (_rcs isEqualTo _tcs && {_tcs isNotEqualTo ""} && {(_fp distance2D _rpos) < 35}) exitWith { _drop = true; };
+    } forEach _friendMeta;
+    if (_drop) then { _units deleteAt _x; };
+} forEach (keys _units);
 
 // Aucune IA ennemie sur la carte, même repérée (choix de la communauté) : ni calcul local, ni contact relayé par Athena.
 // Filtres du BFT (fn_bftFilter : IA, aériens, véhicules, pistes anciennes ou hors ligne, distance) : masquées sur la carte aussi.

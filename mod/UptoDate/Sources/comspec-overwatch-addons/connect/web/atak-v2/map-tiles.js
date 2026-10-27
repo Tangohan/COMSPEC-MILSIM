@@ -129,19 +129,34 @@
         urls.forEach(function (url) {
             chain = chain.then(function (v) { return v; }, function () { return fetchOne(url); });
         });
+        // Ne libérer inflight qu'à la fin réelle (avant : timeout 8 s pendant que le fetch continuait).
         chain.then(function (blob) {
             toCache(id, blob);
-        }).then(function () { }, function () { });
-        setTimeout(function () { delete inflight[id]; }, 8000);
+        }).then(function () {
+            delete inflight[id];
+        }, function () {
+            delete inflight[id];
+        });
     }
+    var KEPT_MAX = 400;
     function keepOnDisk(world, z, x, y) {
         var id = key(world, z, x, y);
         if (kept[id])
             return;
-        kept[id] = true;
+        kept[id] = Date.now();
+        var keys = Object.keys(kept);
+        if (keys.length > KEPT_MAX) {
+            keys.sort(function (a, b) { return (kept[a] || 0) - (kept[b] || 0); });
+            while (keys.length > KEPT_MAX) {
+                delete kept[keys.shift()];
+            }
+        }
         if (typeof window.COMSPEC_ATAK_send === "function") {
             window.COMSPEC_ATAK_send("map:pack:keep|" + world + "|" + z + "|" + x + "|" + y);
         }
+    }
+    function clearKept() {
+        kept = {};
     }
     function load(world, z, x, y) {
         world = worldSlug(world);
@@ -213,8 +228,9 @@
         catch (e) { }
         paintSrc(img, urls[0]);
         var failoverTimer = setInterval(function () {
-            if (paintedOk || finished) {
+            if (paintedOk || finished || img._comspecGone) {
                 clearInterval(failoverTimer);
+                img._comspecFailover = 0;
                 return;
             }
             idx += 1;
@@ -227,11 +243,16 @@
             }
             else {
                 clearInterval(failoverTimer);
+                img._comspecFailover = 0;
             }
         }, 3000);
+        img._comspecFailover = failoverTimer;
         fromCache(id).then(function (cached) {
-            if (!cached || !isCachePaintUrl(cached))
+            if (img._comspecGone || !cached || !isCachePaintUrl(cached)) {
+                if (cached)
+                    revokeBlob(cached);
                 return;
+            }
             if (!paintedOk)
                 paintSrc(img, cached);
             else
@@ -259,8 +280,16 @@
             },
             _removeTile: function (key) {
                 var tile = this._tiles && this._tiles[key];
-                if (tile && tile.el)
-                    revokeBlob(tile.el.getAttribute("data-blob"));
+                if (tile && tile.el) {
+                    var el = tile.el;
+                    el._comspecGone = true;
+                    if (el._comspecFailover) {
+                        try { clearInterval(el._comspecFailover); }
+                        catch (e) { }
+                        el._comspecFailover = 0;
+                    }
+                    revokeBlob(el.getAttribute("data-blob"));
+                }
                 return window.L.GridLayer.prototype._removeTile.call(this, key);
             }
         });
@@ -277,6 +306,7 @@
         url: logicalUrl,
         load: load,
         layer: layer,
+        clearKept: clearKept,
         sources: function () { return ["/map-data"]; }
     };
 })();

@@ -12,8 +12,9 @@
                    le site), diff (les deux), comm (importée d'un autre membre), unknown (COMSPEC Link < 2.0.88),
                    offline (Athena injoignable).
       Communauté : relation à mon arsenal in / diff / out, et « nouvelle » si jamais vue (COMSPEC_ArsenalSeenIds).
-    Lignes locales : [nom, nom court, collection, données, état, sha local]
-    Lignes communauté : [id, nom, nom court, collection, auteur, date, favori, octets, à moi, sha, relation, nouvelle]
+    Lignes locales : [nom, nom court, collection, données, état, sha, auteur, favori, miseAvant, obligatoire, pastille, avatar, cover, siteId]
+    Lignes communauté : [id, nom, nom court, collection, auteur, date, favori, octets, à moi, sha, relation, nouvelle,
+                         miseAvant, obligatoire, pastille, avatar, cover]
 */
 params [["_display", displayNull, [displayNull]]];
 if (isNull _display) exitWith {};
@@ -50,12 +51,19 @@ private _hasMine = false;
 {
     if (_x isEqualTo "") then { continue };
     private _f = [_x] call _split;
-    _f params [["_id", ""], ["_name", ""], ["_gap", ""], ["_coll", ""], ["_fav", "0"], ["_bytes", "0"], ["_upd", ""], ["_owner", ""], ["_mine", ""], ["_sha", ""]];
+    _f params [
+        ["_id", ""], ["_name", ""], ["_gap", ""], ["_coll", ""], ["_fav", "0"], ["_bytes", "0"], ["_upd", ""],
+        ["_owner", ""], ["_mine", ""], ["_sha", ""], ["_feat", "0"], ["_mand", "0"], ["_badge", ""], ["_avatar", ""], ["_cover", ""]
+    ];
     if (_id isEqualTo "" || {_name isEqualTo ""}) then { continue };
     // Colonnes « mine » et « sha256 » : COMSPEC Link 2.0.88 et plus.
     if ((count _f) >= 9) then { _hasMine = true; };
     private _c = [_name, _coll] call comspec_overwatch_connect_fnc_arsenalCollectionName;
-    _cloud pushBack [_id, _name, [_name, _c] call _leafOf, _c, _owner, _upd, _fav isEqualTo "1", parseNumber _bytes, _mine isEqualTo "1", toLower _sha, "out", false];
+    _cloud pushBack [
+        _id, _name, [_name, _c] call _leafOf, _c, _owner, _upd, _fav isEqualTo "1", parseNumber _bytes,
+        _mine isEqualTo "1", toLower _sha, "out", false,
+        _feat isEqualTo "1", _mand isEqualTo "1", _badge, _avatar, _cover
+    ];
 } forEach _lines;
 private _offline = false;
 if (_lines isEqualTo []) then {
@@ -108,7 +116,16 @@ private _localByKey = createHashMap;
         case (_led isNotEqualTo []): { "gone" };
         default { "new" };
     };
-    _local pushBack [_name, [_name, _c] call _leafOf, _c, _data, _state, _sha];
+    private _siteRow = if (_site isNotEqualTo []) then { _site } else { _anyByKey getOrDefault [_k, []] };
+    private _owner = if (_siteRow isEqualTo []) then { "" } else { _siteRow select 4 };
+    private _fav = if (_siteRow isEqualTo []) then { false } else { _siteRow select 6 };
+    private _feat = if (_siteRow isEqualTo [] || {(count _siteRow) < 13}) then { false } else { _siteRow select 12 };
+    private _mand = if (_siteRow isEqualTo [] || {(count _siteRow) < 14}) then { false } else { _siteRow select 13 };
+    private _badge = if (_siteRow isEqualTo [] || {(count _siteRow) < 15}) then { "" } else { _siteRow select 14 };
+    private _avatar = if (_siteRow isEqualTo [] || {(count _siteRow) < 16}) then { "" } else { _siteRow select 15 };
+    private _cover = if (_siteRow isEqualTo [] || {(count _siteRow) < 17}) then { "" } else { _siteRow select 16 };
+    private _siteId = if (_siteRow isEqualTo []) then { "" } else { _siteRow select 0 };
+    _local pushBack [_name, [_name, _c] call _leafOf, _c, _data, _state, _sha, _owner, _fav, _feat, _mand, _badge, _avatar, _cover, _siteId];
     _localByKey set [_k, _sha];
 } forEach ([] call comspec_overwatch_connect_fnc_arsenalLocalLoadouts);
 
@@ -141,7 +158,11 @@ _grp setVariable ["COMSPEC_ArsenalOffline", _offline];
 _grp setVariable ["COMSPEC_ArsenalHasHash", _hasMine && {!(uiNamespace getVariable ["COMSPEC_ArsenalHashOff", false])}];
 // Date de la liste du site gardée sur ce PC (heure du PC) ; COMSPEC Link plus ancien : heure de chargement.
 private _info = ["COMSPECExtension" callExtension ["WardrobesCacheInfo", []]] call comspec_overwatch_connect_fnc_extResult;
-private _savedAt = if ((_info isEqualType "") && {(_info find "OK|") isEqualTo 0}) then { ((_info select [3]) splitString toString [9]) param [0, ""] } else { "" };
+private _infoParts = if ((_info isEqualType "") && {(_info find "OK|") isEqualTo 0}) then { (_info select [3]) splitString toString [9] } else { [] };
+private _savedAt = _infoParts param [0, ""];
+private _localOk = (_infoParts param [2, "0"]) isEqualTo "1";
+private _pathHint = _infoParts param [3, "Documents\\Arma 3 - COMSPEC\\Sync"];
 _grp setVariable ["COMSPEC_ArsenalLoadedAt", [_savedAt, [dayTime, "HH:MM"] call BIS_fnc_timeToString] select (_savedAt isEqualTo "")];
+_grp setVariable ["COMSPEC_ArsenalLocalSync", [_localOk, _pathHint, _savedAt]];
 [] call comspec_overwatch_connect_fnc_saveProfile;
 [_display] call comspec_overwatch_connect_fnc_arsenalOverlayFill;

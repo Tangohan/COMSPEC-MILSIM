@@ -124,6 +124,7 @@ if (_secSel isEqualTo "*PIN" && {(count _pins) isEqualTo 0}) then { _secSel = ""
 if (_searchOn) then {
     private _chips = [["TOUT", ""]];
     if ((count _pins) > 0) then { _chips pushBack ["ÉPINGLÉES", "*PIN"]; };
+    _chips pushBack ["GROUPES", "*FOLD"];
     { _chips pushBack [toUpper _x, _x]; } forEach _sections;
     private _cf = _font max COMSPEC_ATAK_FontMin;
     private _ch = _cf * 2.1;
@@ -167,11 +168,151 @@ if (_searchOn) then {
     } forEach _chips;
     _y = _y + (ceil (_n / _cols)) * (_ch + _gap) - _gap + _pad;
     if ((count _pins) isEqualTo 0 && {_filter isEqualTo ""}) then {
-        private _hint = ["COMSPEC_RscText", [_pad, _y - _pad * 0.4, _gw, _font * 1.2], "Astuce : clic droit sur une app pour l'épingler en tête"] call comspec_atak_native_fnc_pageCtrl;
+        private _hint = ["COMSPEC_RscText", [_pad, _y - _pad * 0.4, _gw, _font * 1.2], "Astuce : clic droit sur une app pour l'épingler ou l'ajouter à un groupe"] call comspec_atak_native_fnc_pageCtrl;
         _hint ctrlSetFontHeight ((_font * 0.8) max COMSPEC_ATAK_FontMin);
         _hint ctrlSetTextColor [0.6, 0.68, 0.64, 1];
         _hint ctrlEnable false;
         _y = _y + _font * 1.2;
+    };
+};
+
+// Feuille d'actions (clic droit sur une app, ou création de groupe).
+private _sheetPage = uiNamespace getVariable ["COMSPEC_ATAK_AppSheet", ""];
+private _sheetMode = uiNamespace getVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pick"]}}) then {
+    private _sheetH = _font * 7.2;
+    private _sbg = ["COMSPEC_RscText", [_pad, _y, _gw, _sheetH]] call comspec_atak_native_fnc_pageCtrl;
+    _sbg ctrlSetBackgroundColor [0.05, 0.07, 0.065, 0.96];
+    _sbg ctrlEnable false;
+    private _by = _y + _font * 1.8;
+    private _bw3 = (_gw - _pad * 2.8) / 3;
+    private _mkBtn = {
+        params ["_x0", "_label", "_code", ["_pri", false]];
+        private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _pri, [_x0, _by, _bw3, _font * 1.6], _label] call comspec_atak_native_fnc_pageCtrl;
+        _b ctrlSetFontHeight (_font * 0.85);
+        if (!_pri) then { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; };
+        _b setVariable ["code", _code];
+        _b ctrlAddEventHandler ["ButtonClick", {
+            params ["_c"];
+            private _fn = _c getVariable ["code", {}];
+            [] call _fn;
+        }];
+    };
+    private _mode = _sheetMode;
+    if (_sheetPage isNotEqualTo "" && {!(_mode in ["new", "pick"])}) then {
+        private _appNm = (((_apps select { (_x get "page") isEqualTo _sheetPage }) param [0, createHashMap]) getOrDefault ["name", _sheetPage]) call comspec_atak_native_fnc_tr;
+        private _st = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y + _pad * 0.4, _gw - _pad * 2, _font * 1.5]] call comspec_atak_native_fnc_pageCtrl;
+        _st ctrlSetStructuredText parseText format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>Que faire avec cette app ?</t>", _appNm];
+        _st ctrlEnable false;
+        private _pinned = _sheetPage in _pins;
+        [_pad * 1.4, ["Épingler", "Désépingler"] select _pinned, {
+            private _p = uiNamespace getVariable ["COMSPEC_ATAK_AppSheet", ""];
+            private _l = profileNamespace getVariable ["COMSPEC_ATAK_PinnedApps", []];
+            if !(_l isEqualType []) then { _l = []; };
+            _l = +_l;
+            if (_p in _l) then { _l = _l - [_p]; ["Retirée des épinglées", 2] call comspec_atak_native_fnc_toast; } else {
+                if ((count _l) >= 12) exitWith { ["12 apps épinglées au plus", 2] call comspec_atak_native_fnc_toast; };
+                _l pushBack _p;
+                ["Épinglée en tête", 2] call comspec_atak_native_fnc_toast;
+            };
+            profileNamespace setVariable ["COMSPEC_ATAK_PinnedApps", _l];
+            [] call comspec_atak_native_fnc_saveProfile;
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        }, false] call _mkBtn;
+        [_pad * 1.4 + _bw3 + _pad * 0.4, "Au groupe…", {
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", "pick"];
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        }, true] call _mkBtn;
+        [_pad * 1.4 + 2 * (_bw3 + _pad * 0.4), "Fermer", {
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        }, false] call _mkBtn;
+    } else {
+        if (_mode isEqualTo "new") then {
+            private _st = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y + _pad * 0.4, _gw - _pad * 2, _font * 1.5]] call comspec_atak_native_fnc_pageCtrl;
+            _st ctrlSetStructuredText parseText "<t font='COMSPEC_BarlowBold'>Nouveau groupe</t><br/><t size='0.8' color='#8a9a93'>Donnez un nom court (ex. Terrain, Ops).</t>";
+            _st ctrlEnable false;
+        };
+    };
+    if (_mode isEqualTo "pick") then {
+        private _folders = ["list"] call comspec_atak_native_fnc_appFolders;
+        private _fy = _by + _font * 1.9;
+        private _flbl = ["COMSPEC_RscText", [_pad * 1.4, _fy, _gw - _pad * 2, _font * 1.1], "Choisir un groupe :"] call comspec_atak_native_fnc_pageCtrl;
+        _flbl ctrlSetFontHeight (_font * 0.85);
+        _flbl ctrlSetTextColor [0.7, 0.78, 0.74, 1];
+        _flbl ctrlEnable false;
+        _fy = _fy + _font * 1.2;
+        {
+            _x params ["_fid", "_fnm"];
+            private _fb = ["COMSPEC_RscButton", [_pad * 1.4, _fy, _gw - _pad * 2.8, _font * 1.45], _fnm] call comspec_atak_native_fnc_pageCtrl;
+            _fb ctrlSetFontHeight (_font * 0.9);
+            _fb ctrlSetBackgroundColor [0.1, 0.13, 0.12, 1];
+            _fb setVariable ["fid", _fid];
+            _fb ctrlAddEventHandler ["ButtonClick", {
+                params ["_c"];
+                private _fid = _c getVariable ["fid", ""];
+                private _p = uiNamespace getVariable ["COMSPEC_ATAK_AppSheet", ""];
+                if (["add", _fid, _p] call comspec_atak_native_fnc_appFolders) then {
+                    ["Ajoutée au groupe", 2] call comspec_atak_native_fnc_toast;
+                } else {
+                    ["Impossible d'ajouter (groupe plein ?)", 2] call comspec_atak_native_fnc_toast;
+                };
+                uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
+                uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            }];
+            _fy = _fy + _font * 1.55;
+        } forEach _folders;
+        private _nb = ["COMSPEC_RscButtonPrimary", [_pad * 1.4, _fy, _gw - _pad * 2.8, _font * 1.45], "+ Nouveau groupe"] call comspec_atak_native_fnc_pageCtrl;
+        _nb ctrlSetFontHeight (_font * 0.9);
+        _nb ctrlAddEventHandler ["ButtonClick", {
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", "new"];
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        }];
+        _fy = _fy + _font * 1.7;
+        _sbg ctrlSetPosition [_pad, _y, _gw, (_fy - _y) + _pad];
+        _sbg ctrlCommit 0;
+        _y = _fy + _pad;
+    } else {
+        if (_mode isEqualTo "new") then {
+            private _ny = _by + _font * 1.9;
+            private _ed = ["COMSPEC_RscEdit", [_pad * 1.4, _ny, _gw * 0.52, _font * 1.5], "Mon groupe"] call comspec_atak_native_fnc_pageCtrl;
+            _ed ctrlSetFontHeight (_font * 0.95);
+            uiNamespace setVariable ["COMSPEC_ATAK_FolderNameEdit", _ed];
+            private _ok = ["COMSPEC_RscButtonPrimary", [_pad * 1.4 + _gw * 0.55, _ny, _gw * 0.18, _font * 1.5], "Créer"] call comspec_atak_native_fnc_pageCtrl;
+            _ok ctrlSetFontHeight (_font * 0.9);
+            _ok ctrlAddEventHandler ["ButtonClick", {
+                private _ed = uiNamespace getVariable ["COMSPEC_ATAK_FolderNameEdit", controlNull];
+                private _name = if (isNull _ed) then { "Groupe" } else { ctrlText _ed };
+                private _id = ["create", _name] call comspec_atak_native_fnc_appFolders;
+                private _p = uiNamespace getVariable ["COMSPEC_ATAK_AppSheet", ""];
+                if (_id isEqualTo "") then {
+                    ["Impossible de créer le groupe (12 max)", 2] call comspec_atak_native_fnc_toast;
+                } else {
+                    if (_p isNotEqualTo "") then { ["add", _id, _p] call comspec_atak_native_fnc_appFolders; };
+                    ["Groupe créé", 2] call comspec_atak_native_fnc_toast;
+                };
+                uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
+                uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            }];
+            private _cx = ["COMSPEC_RscButton", [_pad * 1.4 + _gw * 0.75, _ny, _gw * 0.16, _font * 1.5], "Annuler"] call comspec_atak_native_fnc_pageCtrl;
+            _cx ctrlSetFontHeight (_font * 0.85);
+            _cx ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1];
+            _cx ctrlAddEventHandler ["ButtonClick", {
+                uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
+                uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            }];
+            _sbg ctrlSetPosition [_pad, _y, _gw, _font * 5.2];
+            _sbg ctrlCommit 0;
+            _y = _y + _font * 5.4;
+        } else {
+            _y = _y + _sheetH + _pad;
+        };
     };
 };
 
@@ -190,6 +331,7 @@ switch (true) do {
         uiNamespace setVariable ["COMSPEC_ATAK_LauncherFirst", [_filter, ((((_groups select 0) select 2) param [0, createHashMap]) getOrDefault ["page", ""])]];
     };
     case (_secSel isEqualTo "*PIN"): { _groups pushBack ["", "Épinglées", _pinApps]; };
+    case (_secSel isEqualTo "*FOLD"): { _groups pushBack ["*FOLD", "Mes groupes", []]; };
     case (_secSel isNotEqualTo ""): { _groups pushBack ["", _secSel, _apps select { (_x get "section") isEqualTo _secSel }]; };
     default {
         if ((count _pinApps) > 0) then { _groups pushBack ["*PIN", "Épinglées", _pinApps]; };
@@ -197,6 +339,8 @@ switch (true) do {
         if !(_rec isEqualType []) then { _rec = []; };
         private _recApps = ((_rec apply { _byPage getOrDefault [_x, createHashMap] }) select { (count _x) > 0 && {!((_x get "page") in _pins)} && {!(_x getOrDefault ["wip", false])} }) select [0, _cols];
         if ((count _recApps) > 0) then { _groups pushBack ["*REC", "Récentes", _recApps]; };
+        // Groupes joueur : toujours visibles en tête (même vides → bouton créer).
+        _groups pushBack ["*FOLD", "Mes groupes", []];
         { private _sec = _x; _groups pushBack [_sec, _sec, _apps select { (_x get "section") isEqualTo _sec }]; } forEach _sections;
     };
 };
@@ -224,8 +368,9 @@ private _chev = "\z\comspec_atak_native\addons\main\data\%1.paa";
     _bar ctrlSetBackgroundColor ([_acc, [0.55, 0.62, 0.58, 1]] select (_key in ["*REC"]));
     _bar ctrlEnable false;
     private _extra = if (_isFolded && {_unread > 0}) then { format ["  <t size='0.75' color='#f2ab33'>● %1 non lu(s)</t>", _unread] } else { "" };
+    private _cnt = if (_key isEqualTo "*FOLD") then { count (["list"] call comspec_atak_native_fnc_appFolders) } else { count _items };
     private _lbl = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y + _secH * 0.12, _gw - _pad - _secH * 1.4, _secH]] call comspec_atak_native_fnc_pageCtrl;
-    _lbl ctrlSetStructuredText parseText ((format ["<t size='0.85' font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>  <t size='0.75' color='#b4c1bb'>%2</t>%3", toUpper _sec, count _items, _extra]) call comspec_atak_native_fnc_tr);
+    _lbl ctrlSetStructuredText parseText ((format ["<t size='0.85' font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>  <t size='0.75' color='#b4c1bb'>%2</t>%3", toUpper _sec, _cnt, _extra]) call comspec_atak_native_fnc_tr);
     _lbl ctrlEnable false;
     private _line = ["COMSPEC_RscText", [_pad, _y + _secH - pixelH, _gw, pixelH]] call comspec_atak_native_fnc_pageCtrl;
     _line ctrlSetBackgroundColor [1, 1, 1, 0.08];
@@ -253,53 +398,95 @@ private _chev = "\z\comspec_atak_native\addons\main\data\%1.paa";
     };
     _y = _y + _secH + _pad * 0.6;
     if (!_isFolded) then {
-        if ((count _items) isEqualTo 0) then {
-            private _none = ["COMSPEC_RscText", [_pad, _y, _gw, _font * 1.4], "Aucune app ne correspond."] call comspec_atak_native_fnc_pageCtrl;
-            _none ctrlSetFontHeight _font;
-            _none ctrlSetTextColor [0.55, 0.62, 0.58, 1];
-            _y = _y + _font * 1.4 + _pad;
-        };
-        {
-            private _col = _forEachIndex mod _cols;
-            private _row = floor (_forEachIndex / _cols);
-            private _page = _x get "page";
-            private _wip = _x getOrDefault ["wip", false];
-            private _tile = [_d, _g, [_pad + _col * (_tw + _pad), _y + _row * (_th + _pad), _tw, _th], _x get "icon", _x get "name",
-                _badgeOf getOrDefault [_page, 0], _page, _font, _wip,
-                (_x getOrDefault ["new", false]) && {!(_page in _seen)}, _page in _pins] call comspec_atak_native_fnc_tileCreate;
-            // Clic droit : épingler / désépingler (le clic gauche reste à l'ouverture de l'app).
-            private _btn = _tile select ((count _tile) - 1);
-            _btn setVariable ["pinPage", _page];
-            _btn ctrlAddEventHandler ["MouseButtonUp", {
-                params ["_c", "_b"];
-                if (_b isNotEqualTo 1) exitWith {};
-                private _p = _c getVariable ["pinPage", ""];
-                private _l = profileNamespace getVariable ["COMSPEC_ATAK_PinnedApps", []];
-                if !(_l isEqualType []) then { _l = []; };
-                _l = +_l;
-                if (_p in _l) then {
-                    _l = _l - [_p];
-                    ["Retirée des épinglées", 2] call comspec_atak_native_fnc_toast;
-                } else {
-                    if ((count _l) >= 12) exitWith { ["12 apps épinglées au plus", 2] call comspec_atak_native_fnc_toast; };
-                    _l pushBack _p;
-                    ["Épinglée en tête des applications", 2] call comspec_atak_native_fnc_toast;
-                };
-                profileNamespace setVariable ["COMSPEC_ATAK_PinnedApps", _l];
-                [] call comspec_atak_native_fnc_saveProfile;
-                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
-            }];
-            if (_fadeIn) then {
-                private _delay = ((_rowN + _row) min 6) * 0.03;
-                { _x ctrlSetFade 1; _x ctrlCommit 0; _x ctrlSetFade 0; _x ctrlCommit (0.14 + _delay); } forEach _tile;
+        // Section Mes groupes : tuiles dossier + bouton créer (pas la grille d'apps classique).
+        if (_key isEqualTo "*FOLD") then {
+            private _folders = ["list"] call comspec_atak_native_fnc_appFolders;
+            private _tiles = _folders apply {
+                _x params ["_fid", "_fnm", "_fpages"];
+                createHashMapFromArray [
+                    ["page", "FOLDER"],
+                    ["icon", "\z\comspec_atak_native\addons\main\data\app_folder.paa"],
+                    ["name", format ["%1 (%2)", _fnm, count _fpages]],
+                    ["folderId", _fid],
+                    ["wip", false],
+                    ["new", false]
+                ]
             };
-            private _list = uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []];
-            _list append _tile;
-            uiNamespace setVariable ["COMSPEC_ATAK_PageControls", _list];
-        } forEach _items;
-        private _rows = ceil ((count _items) / _cols);
-        _rowN = _rowN + _rows;
-        _y = _y + _rows * (_th + _pad) + _pad * 0.6;
+            // Tuile « Nouveau groupe »
+            _tiles pushBack (createHashMapFromArray [
+                ["page", "*NEWFOLDER*"],
+                ["icon", "\z\comspec_atak_native\addons\main\data\app_folder.paa"],
+                ["name", "Nouveau groupe"],
+                ["folderId", ""],
+                ["wip", false],
+                ["new", false]
+            ]);
+            {
+                private _col = _forEachIndex mod _cols;
+                private _row = floor (_forEachIndex / _cols);
+                private _tile = [_d, _g, [_pad + _col * (_tw + _pad), _y + _row * (_th + _pad), _tw, _th], _x get "icon", _x get "name",
+                    0, "FOLDER", _font, false, false, false] call comspec_atak_native_fnc_tileCreate;
+                private _btn = _tile select ((count _tile) - 1);
+                _btn setVariable ["folderId", _x getOrDefault ["folderId", ""]];
+                _btn setVariable ["isNewFolder", (_x get "page") isEqualTo "*NEWFOLDER*"];
+                // Remplace le clic gauche (navigate FOLDER générique) : ouvre le bon groupe.
+                _btn ctrlRemoveAllEventHandlers "ButtonClick";
+                _btn ctrlAddEventHandler ["ButtonClick", {
+                    params ["_c"];
+                    if (_c getVariable ["isNewFolder", false]) then {
+                        uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
+                        uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", "new"];
+                        [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                    } else {
+                        uiNamespace setVariable ["COMSPEC_ATAK_FolderId", _c getVariable ["folderId", ""]];
+                        ["FOLDER"] call comspec_atak_native_fnc_navigate;
+                    };
+                }];
+                private _list = uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []];
+                _list append _tile;
+                uiNamespace setVariable ["COMSPEC_ATAK_PageControls", _list];
+            } forEach _tiles;
+            private _rows = ceil ((count _tiles) / _cols);
+            _rowN = _rowN + _rows;
+            _y = _y + _rows * (_th + _pad) + _pad * 0.6;
+        } else {
+            if ((count _items) isEqualTo 0) then {
+                private _none = ["COMSPEC_RscText", [_pad, _y, _gw, _font * 1.4], "Aucune app ne correspond."] call comspec_atak_native_fnc_pageCtrl;
+                _none ctrlSetFontHeight _font;
+                _none ctrlSetTextColor [0.55, 0.62, 0.58, 1];
+                _y = _y + _font * 1.4 + _pad;
+            };
+            {
+                private _col = _forEachIndex mod _cols;
+                private _row = floor (_forEachIndex / _cols);
+                private _page = _x get "page";
+                private _wip = _x getOrDefault ["wip", false];
+                private _tile = [_d, _g, [_pad + _col * (_tw + _pad), _y + _row * (_th + _pad), _tw, _th], _x get "icon", _x get "name",
+                    _badgeOf getOrDefault [_page, 0], _page, _font, _wip,
+                    (_x getOrDefault ["new", false]) && {!(_page in _seen)}, _page in _pins] call comspec_atak_native_fnc_tileCreate;
+                // Clic droit : feuille d'actions (épingler / groupe).
+                private _btn = _tile select ((count _tile) - 1);
+                _btn setVariable ["pinPage", _page];
+                _btn ctrlAddEventHandler ["MouseButtonUp", {
+                    params ["_c", "_b"];
+                    if (_b isNotEqualTo 1) exitWith {};
+                    private _p = _c getVariable ["pinPage", ""];
+                    uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", _p];
+                    uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+                    [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                }];
+                if (_fadeIn) then {
+                    private _delay = ((_rowN + _row) min 6) * 0.03;
+                    { _x ctrlSetFade 1; _x ctrlCommit 0; _x ctrlSetFade 0; _x ctrlCommit (0.14 + _delay); } forEach _tile;
+                };
+                private _list = uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []];
+                _list append _tile;
+                uiNamespace setVariable ["COMSPEC_ATAK_PageControls", _list];
+            } forEach _items;
+            private _rows = ceil ((count _items) / _cols);
+            _rowN = _rowN + _rows;
+            _y = _y + _rows * (_th + _pad) + _pad * 0.6;
+        };
     } else {
         _y = _y + _pad * 0.2;
     };

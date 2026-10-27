@@ -8176,6 +8176,20 @@ html[data-bo-theme="dark"] .mi-admin .ath-field__label {
 html[data-bo-theme="dark"] .mi-show-danger .ath-form__title {
   color: #e46c6c;
 }
+html[data-bo-theme="dark"] .mi-show-step.is-done .mi-show-step__num {
+  background: #1a1f1d;
+  border-color: #2b3530;
+  color: #75dca9;
+}
+html[data-bo-theme="dark"] .mi-show-step.is-current .mi-show-step__card {
+  border-color: #2f6b4d;
+  box-shadow: inset 3px 0 0 #3d9a68;
+}
+html[data-bo-theme="dark"] .mi-show-compose > summary {
+  background: #141a18;
+  border-color: #2b3430;
+  color: #e7eee9;
+}
 html[data-bo-theme="dark"] .mi-member {
   background:
     radial-gradient(circle at 12% 0%, rgba(11, 138, 92, 0.08), transparent 42%),

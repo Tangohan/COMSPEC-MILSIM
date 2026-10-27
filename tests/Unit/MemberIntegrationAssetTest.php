@@ -193,8 +193,12 @@ final class MemberIntegrationAssetTest extends TestCase
         self::assertStringContainsString('.mi-show', $css);
         self::assertStringContainsString('.mi-show-grid', $css);
         self::assertStringContainsString('.mi-show-force', $css);
+        self::assertStringContainsString('.mi-show-hero', $css);
+        self::assertStringContainsString('.mi-show-path', $css);
         self::assertStringContainsString('ath-form', $show);
         self::assertStringContainsString('mi-show', $show);
+        self::assertStringContainsString('mi-show-hero', $show);
+        self::assertStringContainsString('À faire maintenant', $show);
         self::assertStringContainsString('stepStatusLabels', $show);
         self::assertStringContainsString('Valider malgré tout', $show);
         self::assertStringContainsString('<details', $show);

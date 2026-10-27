@@ -153,7 +153,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
 
 // Noms des villes, villages, lieux-dits et sites (fn_mapPlaceText) : sous tous les symboles. La carte Arma ne les
 // écrit plus (COMSPEC_RscMapAtak) ; chaque catégorie se masque dans CALQUES.
-[_map, _ts, _kt, _scale] call comspec_atak_native_fnc_mapPlaceText;
+// Téléphone porté (HUD) : pas de toponymes — coût Draw inutile pendant le combat (SQF-C01).
+if (_state getOrDefault ["interactive", false]) then {
+    [_map, _ts, _kt, _scale] call comspec_atak_native_fnc_mapPlaceText;
+};
 
 // Marqueurs de la mission (symboles, zones, traits) : la carte Arma ne les dessine plus (showMarkers = 0).
 [_map, _mk] call comspec_atak_native_fnc_mapGameMarkers;

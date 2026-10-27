@@ -32,6 +32,10 @@ if (_from isEqualTo "") then {
 private _dedupe = toLower format ["%1|%2", _from, _kindKey];
 private _seen = missionNamespace getVariable ["COMSPEC_IcemanMedicalPushed", createHashMap];
 if (!(_seen isEqualType createHashMap)) then { _seen = createHashMap; };
+// LOT-MEM (A6) : retirer les clés trop vieilles — le HashMap ne grossissait jamais.
+{
+    if ((diag_tickTime - (_seen getOrDefault [_x, -1e9])) >= 90) then { _seen deleteAt _x; };
+} forEach (keys _seen);
 private _prev = _seen getOrDefault [_dedupe, -1e9];
 if ((diag_tickTime - _prev) < 90) exitWith { false };
 

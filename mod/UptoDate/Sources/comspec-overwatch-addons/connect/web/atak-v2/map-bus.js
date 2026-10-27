@@ -137,9 +137,11 @@
         };
         if (!store)
             return Promise.resolve(empty);
-        return Promise.all([store.all("queue"), store.all("tiles")]).then(function (pair) {
+        // Compter les tuiles sans charger les blobs (UI-007).
+        var tilesP = typeof store.count === "function" ? store.count("tiles") : store.all("tiles").then(function (rows) { return (rows || []).length; });
+        return Promise.all([store.all("queue"), tilesP]).then(function (pair) {
             var rows = pair[0] || [];
-            var tiles = pair[1] || [];
+            var tileCount = Number(pair[1]) || 0;
             var out = {
                 live: isLive(),
                 pending: 0,
@@ -147,7 +149,7 @@
                 callsign: empty.callsign,
                 terminal: empty.terminal,
                 buckets: { position: 0, marker: 0, drawing: 0, route: 0, intel: 0, other: 0 },
-                tiles: tiles.length
+                tiles: tileCount
             };
             var statePos = lastState["position.update"];
             if (statePos)

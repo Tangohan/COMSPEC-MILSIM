@@ -140,7 +140,9 @@ public static partial class Extension
             current = next;
         }
     }
-    private static readonly BlockingCollection<Action> MusicQueue = new();
+    // LOT-MEM (MEM-C02) : file bornée — une session longue / disque lent ne doit pas accumuler sans limite.
+    private const int MaxMusicJobs = 32;
+    private static readonly BlockingCollection<Action> MusicQueue = new(new ConcurrentQueue<Action>());
     private static Thread? _musicThread;
     private static readonly object MusicLock = new();
     private static int _musicGen;
@@ -194,7 +196,12 @@ public static partial class Extension
     private static string MusicPost(Action job, string reply)
     {
         MusicEnsureThread();
-        MusicQueue.Add(job);
+        while (MusicQueue.Count >= MaxMusicJobs && MusicQueue.TryTake(out _)) { }
+        if (!MusicQueue.TryAdd(job))
+        {
+            while (MusicQueue.TryTake(out _)) { }
+            MusicQueue.TryAdd(job);
+        }
         return reply;
     }
 
@@ -462,6 +469,7 @@ public static partial class Extension
                 }, "OK|playing");
             case "MusicStop":
                 Interlocked.Increment(ref _musicGen);
+                while (MusicQueue.TryTake(out _)) { }
                 return MusicPost(() => { MusicClose(); _musicState = "idle"; _musicTitle = ""; _musicPosition = 0; _musicLength = 0; }, "OK|idle");
             case "MusicVolume":
                 if (double.TryParse(Arg(0), NumberStyles.Float, CultureInfo.InvariantCulture, out var v)) _musicVolume = (int)Math.Clamp(v, 0, 100);

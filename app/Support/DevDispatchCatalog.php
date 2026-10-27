@@ -293,10 +293,133 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(1181, '2026-10-27', 'Annuaire des communautés : un tableur sur toute la largeur', 'Dans Administration du site, l’annuaire des communautés occupe toute la largeur. Vous voyez l’inactivité, la dernière connexion, l’activité en jeu, et ce qui est rattaché à chaque communauté. Corrélations ouvre le détail. Vous cherchez, filtrez et triez chaque colonne. Rechargez le portail (Ctrl+F5).', [
+
+            $pr(1189, '2026-10-27', 'Pack téléphone 2.9.9 : apps, écrans ACE et carte sans doublon', 'Le pack 2.9.9 regroupe les groupes d’apps, Calculette et Bloc-notes, l’affichage TOC et diapositives via ACE sur les écrans du jeu, le nettoyage mémoire de la carte, et la fin des doublons pseudo Steam / indicatif. Quittez Arma complètement, puis relancez.', [
+                'Groupes d’apps, Calculette, Bloc-notes',
+                'ACE Écran COMSPEC : TOC, PIP du poste, diapositives',
+                'Carte : un seul symbole par allié (indicatif)',
+                'Moins de rétention inutile sur la carte et les diapositives',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack Workshop, quittez Arma, relancez. Vérifiez l’accueil (groupes), un écran ACE, et la carte sans doublon.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1188, '2026-10-27', 'Carte : plus de doublon pseudo Steam et indicatif', 'Sur la carte, un allié n’apparaît plus deux fois — une fois sous son pseudo Steam et une fois sous son indicatif. Le téléphone et la liaison partagent le même indicatif. Quittez Arma complètement, puis relancez après republier le pack et Overwatch Connect.', [
+                'Un seul symbole par allié (indicatif tactique)',
+                'Indicatif du téléphone aussi publié pour la liaison',
+            ], [], [
+                'Certains alliés apparaissaient en double (pseudo + indicatif)',
+            ], ['atak'], [
+                'Ouvrez la carte avec un allié qui a un indicatif. Une seule icône doit rester, libellée avec l’indicatif.',
+            ], 'Pack téléphone + Overwatch Connect à republier'),
+            $pr(1187, '2026-10-27', 'Carte et mémoire : moins de rétention inutile', 'Sur la carte du téléphone, les dalles et les animations de signal ne restent plus en mémoire après un panoramique ou un changement de monde. Le centre de liaison compte les dalles sans les recharger. Les diapositives libèrent l’image précédente. La musique et les transferts Bluetooth ne gardent plus une file sans limite. Quittez Arma complètement, puis relancez après republier le pack.', [
+                'Dalles de carte : arrêt des téléchargements dès qu’elles quittent l’écran',
+                'Plafond et nettoyage des dalles gardées en mémoire',
+                'Centre de liaison : comptage des dalles sans recharger les images',
+                'Diapositives : libération de l’image précédente',
+                'Musique et Bluetooth : files bornées',
+            ], [], [
+                'Sessions longues sur la carte pouvaient alourdir le téléphone sans que l’opérateur le voie',
+            ], ['atak'], [
+                'Ouvrez la carte, pansez rapidement, changez de monde. Ouvrez le centre de liaison : le compteur de dalles reste cohérent. Enchaînez des diapositives : l’écran ne doit pas garder les anciennes images.',
+            ], 'Pack téléphone (+ liaison native) à republier'),
+            $pr(1186, '2026-10-27', 'Écrans : PIP du poste et diapositives via ACE', 'Sur une TV, un écran sur trépied ou un projecteur, le menu ACE « Écran COMSPEC » affiche le réseau du poste, le PIP de ce que voit l’opérateur du PC, ou vos diapositives de briefing. Plus besoin de poser un module Zeus pour chaque dalle. Quittez Arma complètement, puis relancez.', [
+                'ACE sur les écrans du jeu : réseau TOC, PIP du poste, diapositives',
+                'La dalle reçoit bien l’image (plus d’écran TOC noir sur le châssis)',
+                'Pendant les diapositives, le TOC s’efface ; il revient à l’arrêt',
+            ], [], [
+                'Certains écrans TOC restaient noirs ; les diapositives n’étaient pas proposées sur le même moniteur',
+            ], ['atak'], [
+                'Approchez un écran. ACE → Écran COMSPEC → Afficher le PIP du poste (ouvrez d’abord le PC du poste). Puis Diffuser mes diapositives depuis Briefing.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1185, '2026-10-27', 'Téléphone : groupes d’apps, calculette et bloc-notes', 'Sur l’accueil du téléphone, vous créez des groupes pour ranger vos applications. Clic droit sur une app pour l’épingler ou l’ajouter à un groupe. Deux apps civiles s’ajoutent : Calculette (opérations courantes) et Bloc-notes (notes locales sur ce poste). Quittez Arma complètement, puis relancez.', [
+                'Groupes d’applications personnels (créer, renommer, supprimer, ajouter / retirer une app)',
+                'Filtre GROUPES et section Mes groupes sur l’accueil',
+                'Clic droit sur une tuile : épingler, ajouter au groupe, fermer',
+                'App Calculette',
+                'App Bloc-notes (notes enregistrées sur ce poste)',
+            ], [
+                'Accueil des apps : feuille d’actions et groupes toujours visibles',
+            ], [], ['atak'], [
+                'Ouvrez l’accueil. Créez un groupe via Mes groupes ou clic droit sur une app. Ouvrez Calculette et Bloc-notes dans Civil.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1184, '2026-10-27', 'Intégration : la fiche d’un parcours se lit d’un coup d’œil', 'Dans Intégration des recrues, la fiche d’un membre montre d’abord ce qu’il reste à faire : statut, avancement, référent, et l’étape en cours. Les étapes se suivent en chronologie. Vous validez directement, ou malgré tout avec un motif. Les rendez-vous et l’annulation restent à portée, sans encombrer la page. Rechargez le portail (Ctrl+F5).', [
+                'Bandeau de synthèse : prochaine étape, référent, reste à faire',
+                'Étapes en chronologie, avec validation de l’étape en cours',
+            ], [], [], ['personnel'], [
+                'Ouvrez Intégration des recrues, puis un parcours. Lisez « À faire maintenant », validez l’étape, puis consultez le journal.',
+            ], 'Portail Athena'),
+            $pr(1183, '2026-10-27', 'Liaison : moins d’attente sur le fil de jeu', 'La liaison Athena évite désormais de figer la partie quand une commande réseau est appelée hors du chemin asynchrone : les demandes lourdes passent en arrière-plan ou sont refusées jusqu’à un appel correct. Le dénombrement des cartes hors ligne est mis en cache. Republiez la liaison, quittez Arma complètement, puis reconnectez-vous.', [
+                'Commandes réseau lourdes hors fil de jeu',
+                'Comptage des cartes hors ligne mis en cache',
+            ], [], [
+                'Certaines commandes réseau pouvaient encore attendre jusqu’à plusieurs secondes sur le fil de jeu',
+            ], ['atak'], [
+                'Reconnectez la liaison. Ouvrez le téléphone, carte et avis d’administration : la partie ne doit plus se figer sur ces appels.',
+            ], 'Liaison Athena à republier'),
+            $pr(1182, '2026-10-27', 'Combat : la télémétrie ne fige plus l’image à la perte', 'Les envois de télémétrie pendant le combat et à la perte ne bloquent plus l’image : ils partent en arrière-plan. Avec le téléphone du pack, le contrôle des chocs ne refait plus le travail du téléphone natif. Republiez le pack et la liaison, quittez Arma complètement, puis retestez un engagement puis une perte.', [
+                'Télémétrie de combat et de perte sans figer l’image',
+            ], [], [
+                'À-coups possibles à la perte ou pendant les rafales liés aux envois synchrones',
+            ], ['atak'], [
+                'Engagez, puis simulez une perte : l’image ne doit plus se figer au moment de l’envoi. Le pack natif reste le référent pour les dégâts de l’appareil.',
+            ], 'Pack téléphone + liaison Athena à republier'),
+            $pr(1181, '2026-10-27', 'Moins d’à-coups en combat avec le téléphone porté', 'Pendant un engagement, la petite carte du téléphone porté et le calque des relais coûtent moins d’images : les noms de lieux ne sont plus redessinés en continu sur le HUD, et les liaisons radio s’affichent en trait simple. Les envois de marqueurs ne figent plus l’image le temps de la liaison. Quittez Arma complètement, republiez le pack et la liaison, puis retestez un engagement.', [
+                'Carte portée : moins de dessin inutile en combat',
+                'Marqueurs transmis sans figer l’image',
+            ], [], [
+                'À-coups ressentis surtout en tirant avec le téléphone ou le calque Relais',
+            ], ['atak'], [
+                'Portez le téléphone, engagez 30 à 60 s, puis rangez-le. L’image doit rester plus stable qu’avant. Les toponymes restent sur la carte en plein écran hors combat.',
+            ], 'Pack téléphone + liaison Athena à republier'),
+            $pr(1180, '2026-10-27', 'Vidéo live : plus de clignotement en bâtiment sur ma caméra', 'Dans Vidéo live, Ma caméra reste stable à l’intérieur : plus de voile « signal instable » ni de pertes inventées, car l’image est locale sur le téléphone. Les flux d’équipiers ou de caméras posées peuvent encore baisser de qualité sous un toit, sans clignoter en permanence. Quittez Arma complètement, puis relancez.', [
+                'Ma caméra : image locale stable en bâtiment',
+                'Décrochages des autres flux espacés, moins agressifs sous un toit',
+            ], [], [
+                'Ma caméra clignotait en intérieur avec un faux signal instable',
+            ], ['atak'], [
+                'Entrez dans un bâtiment. Ouvrez Vidéo live, Ma caméra : l’image ne clignote plus. Pour un intérieur sombre, passez en Vision nocturne.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1179, '2026-10-27', 'Montre : la boussole suit le regard sans à-coups', 'Sur la montre Garmin, l’écran Boussole fait tourner la couronne en continu quand vous changez de cap. Les points cardinaux et le point marqué suivent le regard sans sauter. Quittez Arma complètement, puis relancez.', [
+                'Couronne de la boussole fluide au changement de cap',
+            ], [], [
+                'La boussole avançait par à-coups',
+            ], ['atak'], [
+                'Ouvrez la montre, écran Boussole. Tournez-vous : la couronne suit le regard sans saccades.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1178, '2026-10-27', 'Montre : carte centrée et vue agrandie à la souris', 'Sur la montre Garmin, la carte remplit le cadran et votre point reste au centre. En vue agrandie (Ctrl+Maj+O), vous cliquez les boutons LIGHT, UP, DOWN, START et BACK, et la molette zoome sur la carte ou change d’écran. Échap ramène la montre au poignet. Quittez Arma complètement, puis relancez.', [
+                'Carte de la montre centrée sur votre position, sans bandes noires dans le cadran',
+                'Vue agrandie pilotable à la souris : boutons et molette',
+                'Échap quitte la vue agrandie',
+            ], [], [
+                'La carte restait décalée et la vue agrandie n’acceptait ni clic ni molette',
+            ], ['atak'], [
+                'Ouvrez la montre, écran Carte. Ctrl+Maj+O pour agrandir. Vérifiez le centrage, cliquez START ou tournez la molette, puis Échap.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1177, '2026-10-27', 'Tenues Athena : fiche complète et Enfiler ferme le panneau', 'Dans l’arsenal, le panneau Tenues Athena montre enfin les pièces de la tenue, l’auteur, les favoris, les tenues mises en avant ou obligatoires, et le portrait de l’opérateur comme sur le téléphone. L’état de la copie locale dans Documents est visible. Enfiler applique la tenue et ferme le panneau. Quittez Arma complètement, puis relancez.', [
+                'Aperçu des pièces (arme, tenue, gilet, casque…) sur la fiche',
+                'Auteur, favori, mise en avant et pastille obligatoire lisibles dans la liste et la fiche',
+                'Portrait opérateur récupéré depuis le site',
+                'Indication de la copie locale dans Documents',
+                'Enfiler ferme le panneau après avoir habillé le mannequin',
+            ], [
+                'Filtres Favoris, Mises en avant et Obligatoires',
+            ], [
+                'Certaines tenues affichaient « Équipement non disponible » alors qu’elles s’enfilaient',
+            ], ['atak', 'command'], [
+                'Ouvrez l’arsenal, puis Athena · Tenues. Sélectionnez une tenue : la fiche montre les pièces, l’auteur et le portrait. Enfiler ferme le panneau. Actualiser crée ou met à jour la copie locale dans Documents.',
+            ], 'Pack Overwatch / Connect à republier'),
+            $pr(1025, '2026-10-27', 'Avancement : campagnes et avis lisibles', 'Dans Ressources humaines, Avancement, la liste des campagnes se lit en fiches (année, grade, filière, période, places, statut). Sur une campagne, chaque candidature montre l’avis et la décision en clair : Proposé, Inscrit au tableau, Pas encore d’avis, En attente. Rechargez le portail (Ctrl+F5).', [
+                'Liste des campagnes en fiches, sans tableau serré',
+                'Avis et décisions en libellés métier',
+            ], [], [
+                'Les codes internes d’avis et de décision apparaissaient tels quels',
+            ], ['personnel'], [
+                'Ouvrez RH → Avancement. Parcourez la liste, puis ouvrez une campagne : chaque candidature affiche un avis lisible.',
+            ], 'Portail Athena'),
+            $pr(1190, '2026-10-27', 'Annuaire des communautés : un tableur sur toute la largeur', 'Dans Administration du site, l’annuaire des communautés occupe toute la largeur. Vous voyez l’inactivité, la dernière connexion, l’activité en jeu, et ce qui est rattaché à chaque communauté. Corrélations ouvre le détail. Vous cherchez, filtrez et triez chaque colonne. Rechargez le portail (Ctrl+F5).', [
                 'Tableur en pleine largeur : inactivité, dernière connexion, activité en jeu',
                 'Colonne Rattachés et fenêtre Corrélations : comptes, ATAK, carte, profils, sessions',
                 'Signaux : actives, inactives, jamais vues, sans compte, archivées',
+
             ], [], [], ['platform'], [
                 'Ouvrez Administration du site, Communautés. Triez la colonne Inactivité, puis ouvrez Corrélations sur une ligne.',
             ], 'Portail Athena'),

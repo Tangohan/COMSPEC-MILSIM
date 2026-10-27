@@ -106,9 +106,9 @@ private _sq = _rowH * _pxW / _pxH;
 private _refW = 0.085 * safezoneW;
 [[_w - _pad - _sq, _hy, _sq, _rowH], "✕", "close", "COMSPEC_RscButtonAtak", "Fermer"] call _btn;
 [[_w - _pad - _sq - _gap - _refW, _hy, _refW, _rowH], "ACTUALISER", "reload", "COMSPEC_RscButtonAtak", "Recharger la liste des tenues depuis Athena (sinon, celle gardée sur ce PC)"] call _btn;
-private _status = ["RscStructuredText", [_w * 0.5, _hy + _rowH + 0.002, _w * 0.5 - _pad, _guiH * 1.0]] call _mk;
+private _status = ["RscStructuredText", [_w * 0.42, _hy + _rowH + 0.002, _w * 0.58 - _pad, _guiH * 1.55]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalStatus", _status];
-private _hb = _hy + _guiH * 2.35;
+private _hb = _hy + _guiH * 2.85;
 (["RscText", [_pad, _hb, _w - 2 * _pad, _pxH]] call _mk) ctrlSetBackgroundColor [0.14, 0.19, 0.16, 1];
 
 // Onglets (soulignés en vert quand actifs) et pastilles de synchro.
@@ -247,22 +247,33 @@ private _ip = 0.010;
 (["RscText", [_dx, _bodyY, _dw, _bodyH]] call _mk) ctrlSetBackgroundColor [0.055, 0.067, 0.06, 1];
 private _iw = _dw - 2 * _ip;
 private _ix = _dx + _ip;
-private _dHead = ["RscStructuredText", [_ix, _bodyY + _ip * 0.6, _iw, _guiH * 2.5]] call _mk;
+// Portrait opérateur (comme ATAK) à droite du titre.
+private _avS = (_guiH * 3.2) min (_iw * 0.22);
+private _dHead = ["RscStructuredText", [_ix, _bodyY + _ip * 0.6, _iw - _avS - _gap, _guiH * 2.5]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalDetailHead", _dHead];
+private _avBg = ["RscText", [_ix + _iw - _avS, _bodyY + _ip * 0.6, _avS, _avS]] call _mk;
+_avBg ctrlSetBackgroundColor [0.075, 0.09, 0.08, 1];
+private _avPic = ["RscPictureKeepAspect", [_ix + _iw - _avS + _pxW, _bodyY + _ip * 0.6 + _pxH, _avS - 2 * _pxW, _avS - 2 * _pxH], 884430] call _mk;
+_avPic ctrlShow false;
+_grp setVariable ["COMSPEC_ArsenalAvatar", [_avBg, _avPic]];
 // Badge d'état et phrase qui l'explique.
-private _by = _bodyY + _ip * 0.6 + _guiH * 2.55;
+private _by = _bodyY + _ip * 0.6 + (_avS max (_guiH * 2.5)) + 0.006;
 private _badge = [[_ix, _by, 0.1, _guiH * 1.0], "", _fB, _guiH * 0.7, [0.03, 0.04, 0.035, 1], _green] call _txt;
 _badge ctrlSetText "";
 _grp setVariable ["COMSPEC_ArsenalBadge", _badge];
-private _note = ["RscStructuredText", [_ix, _by + _guiH * 1.1, _iw, _guiH * 1.7]] call _mk;
+private _flags = ["RscStructuredText", [_ix, _by + _guiH * 1.05, _iw, _guiH * 1.05]] call _mk;
+_grp setVariable ["COMSPEC_ArsenalDetailFlags", _flags];
+private _note = ["RscStructuredText", [_ix, _by + _guiH * 2.15, _iw, _guiH * 1.55]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalBadgeNote", _note];
+private _syncLine = ["RscStructuredText", [_ix, _by + _guiH * 3.7, _iw, _guiH * 1.05]] call _mk;
+_grp setVariable ["COMSPEC_ArsenalDetailSync", _syncLine];
 // Pièces de la tenue : 2 rangées de 4 cases, icône et légende (Arme, Tenue…).
 private _cg = 0.006;
 private _cellW = (_iw - 3 * _cg) / 4;
-private _picH = (_cellW * _pxH / _pxW * 0.62) min (_guiH * 2.6);
-private _capH = _guiH * 0.8;
+private _picH = (_cellW * _pxH / _pxW * 0.55) min (_guiH * 2.2);
+private _capH = _guiH * 0.72;
 private _cellH = _picH + _capH;
-private _gy = _by + _guiH * 2.9;
+private _gy = _by + _guiH * 4.85;
 private _pics = [];
 for "_i" from 0 to 7 do {
     private _cx = _ix + (_i mod 4) * (_cellW + _cg);
@@ -270,7 +281,7 @@ for "_i" from 0 to 7 do {
     private _cb = ["RscText", [_cx, _cy2, _cellW, _cellH]] call _mk;
     _cb ctrlSetBackgroundColor [0.075, 0.09, 0.08, 1];
     private _p = ["RscPictureKeepAspect", [_cx + _cellW * 0.08, _cy2 + _picH * 0.06, _cellW * 0.84, _picH * 0.88], 884408 + _i] call _mk;
-    private _cap = [[_cx, _cy2 + _picH, _cellW, _capH], "", _fR, _guiH * 0.62, [0.62, 0.70, 0.65, 1]] call _txt;
+    private _cap = [[_cx, _cy2 + _picH, _cellW, _capH], "", _fR, _guiH * 0.58, [0.62, 0.70, 0.65, 1]] call _txt;
     _cap ctrlSetText "";
     { _x ctrlShow false; } forEach [_cb, _p, _cap];
     _pics pushBack [_cb, _p, _cap];
@@ -286,7 +297,7 @@ _names ctrlCommit 0;
 _grp setVariable ["COMSPEC_ArsenalPreviewNames", _names];
 private _half = (_iw - _gap) / 2;
 _grp setVariable ["COMSPEC_ArsenalDetailBtns", [
-    [[_ix, _actY, _iw, _rowH], "ENFILER", "apply", "COMSPEC_RscButtonAtakPrimary", "Mettre cette tenue sur le mannequin (double-clic dans la liste)", _fB] call _btn,
+    [[_ix, _actY, _iw, _rowH], "ENFILER", "apply", "COMSPEC_RscButtonAtakPrimary", "Mettre cette tenue sur le mannequin et fermer le panneau", _fB] call _btn,
     [[_ix, _actY + _rowH + _gap, _half, _rowH], "", "keep", "COMSPEC_RscButtonAtak", "", _fB] call _btn,
     [[_ix + _half + _gap, _actY + _rowH + _gap, _half, _rowH], "", "remove", "COMSPEC_RscButtonAtakDanger"] call _btn
 ]];

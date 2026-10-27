@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.100";
+    private const string ExtensionVersion = "2.0.101";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -1809,8 +1809,12 @@ public static partial class Extension
                     EnqueueForRetry(item.Url, item.Body);
                     continue;
                 }
+                // DLL-007 / NET-007 : déjà retiré de la FIFO — ne pas abandonner météo / flux pendant une pause.
                 if (IsBestEffortEndpoint(item.Url) && (networkPause || IsBestEffortCoolingNow()))
+                {
+                    EnqueueForRetry(item.Url, item.Body);
                     continue;
+                }
                 if (IsEndpointCoolingNow(item.Url))
                 {
                     if (!IsBestEffortEndpoint(item.Url))
@@ -2198,6 +2202,7 @@ public static partial class Extension
     private static string HandleMapPackInstall(string?[] args)
     {
         var world = SanitizeMapWorld(args.Length > 0 ? args[0] : "altis");
+        MapPackCountCache.TryRemove(world, out (int, long) _);
         ThreadPool.QueueUserWorkItem(_ =>
         {
             for (var zoom = 0; zoom <= 3; zoom++)
@@ -2209,19 +2214,32 @@ public static partial class Extension
                         DownloadMapTile(world, zoom, x, y);
                 }
             }
+            MapPackCountCache.TryRemove(world, out (int, long) _);
         });
         return FormatAtakExtArray("OK", "install");
     }
 
+    /// <summary>DLL-C02 : MapPack.Count ne reparcours pas le disque à chaque callExtension (TTL 10 s).</summary>
+    private static readonly ConcurrentDictionary<string, (int Count, long AtMs)> MapPackCountCache =
+        new(StringComparer.OrdinalIgnoreCase);
+    private const int MapPackCountTtlMs = 10_000;
+
     private static string HandleMapPackCount(string?[] args)
     {
         var world = SanitizeMapWorld(args.Length > 0 ? args[0] : "altis");
+        var now = Environment.TickCount64;
+        if (MapPackCountCache.TryGetValue(world, out var hit) && (now - hit.AtMs) < MapPackCountTtlMs)
+            return FormatAtakExtArray("OK", hit.Count.ToString(CultureInfo.InvariantCulture));
         try
         {
             var dir = Path.Combine(MapPackDir(), world);
             if (!Directory.Exists(dir))
+            {
+                MapPackCountCache[world] = (0, now);
                 return FormatAtakExtArray("OK", "0");
+            }
             var n = Directory.GetFiles(dir, "*.png", SearchOption.AllDirectories).Length;
+            MapPackCountCache[world] = (n, now);
             return FormatAtakExtArray("OK", n.ToString(CultureInfo.InvariantCulture));
         }
         catch
@@ -2859,34 +2877,43 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtension")]
     public static void RvExtension(nint output, int outputSize, nint function)
     {
-        var functionString = Marshal.PtrToStringUTF8(function);
-        if (functionString == "Warmup")
-            KickBackgroundWarmup();
-        // Forme chaîne (callExtension "GetUnits", "GetPings"…) : même chemin que RVExtensionArgs, réponse directe
-        // d'abord ; sans elle, ces commandes servies par TryGetSyncResponse rendaient toujours "".
-        string? syncResult;
+        // DLL-005 : tout le préambule (PtrToStringUTF8 compris) dans le filet — une exception hors try
+        // tuait le processus hôte au lieu d'un ERR|.
         try
         {
-            syncResult = TryGetSyncResponse(functionString, []);
-        }
-        catch (Exception ex)
-        {
-            syncResult = FormatCaughtError(ex);
-        }
-        if (syncResult != null)
-        {
-            Output(output, outputSize, syncResult);
-            return;
-        }
-        try
-        {
-            RvExtensionArgsImpl(functionString, []);
+            var functionString = Marshal.PtrToStringUTF8(function);
+            if (functionString == "Warmup")
+                KickBackgroundWarmup();
+            // Forme chaîne (callExtension "GetUnits", "GetPings"…) : même chemin que RVExtensionArgs, réponse directe
+            // d'abord ; sans elle, ces commandes servies par TryGetSyncResponse rendaient toujours "".
+            string? syncResult;
+            try
+            {
+                syncResult = TryGetSyncResponse(functionString, []);
+            }
+            catch (Exception ex)
+            {
+                syncResult = FormatCaughtError(ex);
+            }
+            if (syncResult != null)
+            {
+                Output(output, outputSize, syncResult);
+                return;
+            }
+            try
+            {
+                RvExtensionArgsImpl(functionString, []);
+            }
+            catch
+            {
+                // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+            }
+            Output(output, outputSize, "");
         }
         catch
         {
-            // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+            try { Output(output, outputSize, "ERR|bad_args"); } catch { /* ignore */ }
         }
-        Output(output, outputSize, "");
     }
 
     private static int _warmupStarted;
@@ -2960,16 +2987,33 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionArgs")]
     public static int RvExtensionArgs(nint output, int outputSize, nint function, nint args, int argCount)
     {
-        var functionString = Marshal.PtrToStringUTF8(function);
-        var argsString = new string?[argCount];
-        for (var i = 0; i < argCount; i++)
-            argsString[i] = Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(args + (i * Marshal.SizeOf<nint>())));
+        // DLL-005 : lecture des arguments + filet unique. argCount négatif ou pointeur illisible
+        // ne doit plus sortir d'exception hors try (fail-fast du runtime).
+        string? functionString;
+        string?[] argsString;
+        try
+        {
+            if (argCount < 0 || argCount > 64)
+            {
+                Output(output, outputSize, "ERR|bad_arg_count");
+                return 0;
+            }
+            functionString = Marshal.PtrToStringUTF8(function);
+            argsString = new string?[argCount];
+            for (var i = 0; i < argCount; i++)
+                argsString[i] = Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(args + (i * Marshal.SizeOf<nint>())));
 
-        // Comme cTab IRL (Worker.ArmaString) : callExtension passe chaque argument avec guillemets.
-        // Sans strip, RedeemGameLink envoie le code "ABCD12" (invalide) et Connect met
-        // X-COMSPEC-KEY: "secret" → 401 sur toutes les routes authentifiées.
-        for (var i = 0; i < argsString.Length; i++)
-            argsString[i] = ArmaString(argsString[i]);
+            // Comme cTab IRL (Worker.ArmaString) : callExtension passe chaque argument avec guillemets.
+            // Sans strip, RedeemGameLink envoie le code "ABCD12" (invalide) et Connect met
+            // X-COMSPEC-KEY: "secret" → 401 sur toutes les routes authentifiées.
+            for (var i = 0; i < argsString.Length; i++)
+                argsString[i] = ArmaString(argsString[i]);
+        }
+        catch
+        {
+            try { Output(output, outputSize, "ERR|bad_args"); } catch { /* ignore */ }
+            return 0;
+        }
 
         // Filet de sécurité au niveau du point d'entrée natif : une méthode [UnmanagedCallersOnly]
         // ne doit jamais laisser fuiter d'exception (le runtime .NET fait un fail-fast qui tue le
@@ -3440,6 +3484,12 @@ public static partial class Extension
     private static readonly SemaphoreSlim AsyncGate = new(AsyncMaxParallel, AsyncMaxParallel);
 
     /// <summary>
+    /// DLL-C01 : vrai seulement dans le worker « Async » (Task.Run). Les POST sync (AdminControl, GameAdmin…)
+    /// refusent de bloquer le thread jeu hors de ce contexte.
+    /// </summary>
+    private static readonly AsyncLocal<bool> InAsyncWorker = new();
+
+    /// <summary>
     /// Commandes reçues par « Async » qui ne font que construire un JSON et le mettre en file (EnqueueOrSend) :
     /// aucune attente réseau, donc pas de passage par AsyncGate. Ne JAMAIS y ajouter une commande qui appelle
     /// SendGet / SendJsonPost (elle bloquerait le thread du jeu).
@@ -3449,7 +3499,6 @@ public static partial class Extension
         "UpdatePosition", "EmitTelemetry", "SendMarker", "SendFlightManifest", "SendWeather",
         "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report", "NetConditions.Report",
     };
-
 
     /// <summary>
     /// ImageDataChunk « local:<chemin> » : image déjà téléchargée par la DLL (diapositive Google Slides de comspec_cache),
@@ -3509,12 +3558,14 @@ public static partial class Extension
         // ["Link.SelfTest", [mapId]] -> « OK|lignes » (voir Extension_SelfTest.cs). Réseau : toujours via Async.
         if (function == "Link.SelfTest")
         {
+            if (!InAsyncWorker.Value) return "ERR|use_async";
             return LinkSelfTest(args.Length > 0 ? args[0] : null);
         }
         // Check de démarrage du mod (fn_startupCheck) : POST /api/atak/startup-check, public, sans session ni clé.
         // ["StartupCheck", [adresse du portail, "clé=valeur", ...]] -> « OK|posted », « OK|duplicate », « OK|no_channel »… ou « ERR|… ».
         if (function == "StartupCheck")
         {
+            if (!InAsyncWorker.Value) return "ERR|use_async";
             return StartupCheck(args);
         }
 
@@ -3551,6 +3602,7 @@ public static partial class Extension
                 // Au plus AsyncMaxParallel appels à la fois : quand Athena ralentit, les suivants attendent
                 // leur tour au lieu d'occuper chacun un fil pendant le délai HTTP (pool de threads saturé).
                 await AsyncGate.WaitAsync().ConfigureAwait(false);
+                InAsyncWorker.Value = true;
                 string result;
                 try
                 {
@@ -3560,7 +3612,11 @@ public static partial class Extension
                     result = direct;
                 }
                 catch (Exception ex) { result = FormatCaughtError(ex); }
-                finally { AsyncGate.Release(); }
+                finally
+                {
+                    InAsyncWorker.Value = false;
+                    AsyncGate.Release();
+                }
                 InvokeCallback("async:" + ticket, result);
             });
             return "QUEUED|" + ticket;
@@ -3663,6 +3719,7 @@ public static partial class Extension
         // Adresse publique de cette machine vue par Athena (serveur dédié : son IP, diffusée aux joueurs pour
         // reconnaître le serveur de la communauté). Sans liaison, l'adresse d'Athena passée en argument sert de base.
         // args: [baseUrl?] → OK|ip:port (port de jeu lu sur la ligne de commande du serveur, 2302 par défaut)
+        // DLL-C01 : sync OK dans le worker Async ; hors Async = cache ServePollGet (pas d'attente 8 s sur le jeu).
         if (function == "Server.PublicIp")
         {
             var baseUrl = NormalizeBaseUrl(_baseUrl ?? "");
@@ -3672,17 +3729,30 @@ public static partial class Extension
                 return "ERR|" + ipErr;
             // SEC-001 : jamais de requête vers un hôte arbitraire choisi par un script.
             if (!IsSecretSafeUri(ipUri)) return "ERR|untrusted_host";
-            try
+            var port = ReadLaunchServerPort().ToString(CultureInfo.InvariantCulture);
+            string FormatPublicIp(string body, int code)
             {
-                using var ipCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                using var resp = SendGet(ipUri, ipCts.Token);
-                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
-                using var doc = JsonDocument.Parse(ReadContentUtf8(resp, ipCts.Token));
-                var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "") : "";
-                if (ip.Length == 0 || ip == "—") return "ERR|no_ip";
-                return "OK|" + (ip.Contains(':') ? "[" + ip + "]" : ip) + ":" + ReadLaunchServerPort().ToString(CultureInfo.InvariantCulture);
+                if (code < 200 || code >= 300) return PollHttpErr(code);
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "") : "";
+                    if (ip.Length == 0 || ip == "—") return "ERR|no_ip";
+                    return "OK|" + (ip.Contains(':') ? "[" + ip + "]" : ip) + ":" + port;
+                }
+                catch { return "ERR|bad_body"; }
             }
-            catch (Exception ex) { return FormatCaughtError(ex); }
+            if (InAsyncWorker.Value)
+            {
+                try
+                {
+                    using var ipCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                    using var resp = SendGet(ipUri, ipCts.Token);
+                    return FormatPublicIp(ReadContentUtf8(resp, ipCts.Token), (int)resp.StatusCode);
+                }
+                catch (Exception ex) { return FormatCaughtError(ex); }
+            }
+            return ServePollGet("Server.PublicIp|" + ipUri.AbsoluteUri, ipUri.AbsoluteUri, FormatPublicIp);
         }
 
         // Serveur de jeu du joueur comparé aux serveurs enregistrés par sa communauté (site : Gestion › Serveurs de jeu).
@@ -3690,6 +3760,7 @@ public static partial class Extension
         // état : ok (serveur de la communauté), away (autre serveur), none (la communauté n'a enregistré aucun serveur)
         if (function == "Server.Presence")
         {
+            if (!InAsyncWorker.Value) return "ERR|use_async";
             if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
             if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
             if (!HasPortalAuth()) return "ERR|unauthorized";
@@ -3716,6 +3787,8 @@ public static partial class Extension
         // (méta d'une compromission : « source=admin;state=captured;revoked=2;… », vide sinon ; ignorée par un ATAK plus ancien)
         if (function == "AdminControl.Poll")
         {
+            // DLL-C01 : hors worker Async, ne pas bloquer le thread jeu (SQF doit passer par extAwait).
+            if (!InAsyncWorker.Value) return "ERR|use_async";
             if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
             if (!HasPortalAuth()) return "ERR|unauthorized";
             if (!TryBuildRequestUri(_baseUrl, "/api/atak/admin-control/mine", out var acUri, out var acErr) || acUri is null)
@@ -3778,6 +3851,7 @@ public static partial class Extension
         // (droit : platform | manager | none ; champ vide écrit « - »). 2.0.94.
         if (function == "GameAdmin.Fleet" || function == "GameAdmin.Action")
         {
+            if (!InAsyncWorker.Value) return "ERR|use_async";
             if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
             if (!HasPortalAuth()) return "ERR|unauthorized";
             var gaFleet = function == "GameAdmin.Fleet";
@@ -4839,29 +4913,34 @@ public static partial class Extension
                     return PollOkClipped(SimplifyPingsJson(body));
                 });
             }
+            // DLL-C01 : whoami sync seulement dans le worker Async ; hors Async = ServePollGet.
             if (function == "GetClientIp")
             {
                 if (!TryBuildRequestUri(_baseUrl, "/api/atak/whoami", out var whoamiUri, out var whoamiErr) || whoamiUri is null)
                     return "ERR|" + whoamiErr;
-                try
+                string FormatClientIp(string body, int code)
                 {
-                    using var response = SendGet(whoamiUri, token);
-                    if (!response.IsSuccessStatusCode)
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 404) return "ERR|not_found";
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    try
                     {
-                        var code = (int)response.StatusCode;
-                        if (code == 401 || code == 403) return "ERR|unauthorized";
-                        if (code == 404) return "ERR|not_found";
-                        return "ERR|http_" + code;
+                        using var doc = JsonDocument.Parse(body);
+                        var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "—") : "—";
+                        return "OK|" + ip;
                     }
-                    var body = ReadContentUtf8(response, token);
-                    using var doc = JsonDocument.Parse(body);
-                    var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "—") : "—";
-                    return "OK|" + ip;
+                    catch { return "ERR|bad_body"; }
                 }
-                catch (Exception ex)
+                if (InAsyncWorker.Value)
                 {
-                    return FormatCaughtError(ex);
+                    try
+                    {
+                        using var response = SendGet(whoamiUri, token);
+                        return FormatClientIp(ReadContentUtf8(response, token), (int)response.StatusCode);
+                    }
+                    catch (Exception ex) { return FormatCaughtError(ex); }
                 }
+                return ServePollGet("GetClientIp", whoamiUri.AbsoluteUri, FormatClientIp);
             }
             if (function == "FireSupport.Request" && args.Length >= 6)
             {
@@ -5062,7 +5141,8 @@ public static partial class Extension
                 return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
-            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
+            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256
+            //          \tfeatured\tmandatory\tbadge\tavatar\tcover (épingles / portrait : 2.1+)
             // Args optionnels : [startLine, mode] — page par lignes complètes (évite troncature).
             // mode « cache » : liste gardée en mémoire ou dans Sync\wardrobes.json, le site n'est appelé que
             // si ce PC n'a encore rien ; « refresh » ou absent : rechargée depuis le site à la page 0 (bouton Actualiser).
@@ -6842,13 +6922,19 @@ public static partial class Extension
 
     private static readonly ConcurrentQueue<(string Path, string Line)> PendingLogLines = new();
     private static int _logDrainScheduled;
+    private const int MaxPendingLogLines = 2000;
 
     /// <summary>
     /// LogWrite ne doit pas figer le thread jeu (lock fichier + Flush). File + drain ThreadPool.
+    /// LOT-MEM (A6 / DLL-010) : plafond 2000 — drop oldest si saturation.
     /// </summary>
     private static void EnqueueLogLine(string path, string line)
     {
         PendingLogLines.Enqueue((path, line));
+        while (PendingLogLines.Count > MaxPendingLogLines && PendingLogLines.TryDequeue(out _))
+        {
+            /* drop oldest */
+        }
         if (Interlocked.CompareExchange(ref _logDrainScheduled, 1, 0) == 0)
             ThreadPool.QueueUserWorkItem(static _ => DrainLogLines());
     }
@@ -7704,11 +7790,18 @@ public static partial class Extension
                 var owner = el.TryGetProperty("owner_label", out var o) && o.ValueKind == JsonValueKind.String ? Clean(o.GetString() ?? "") : "";
                 var mine = el.TryGetProperty("mine", out var m) && (m.ValueKind == JsonValueKind.True || (m.ValueKind == JsonValueKind.Number && m.GetInt32() != 0)) ? "1" : "0";
                 var sha = el.TryGetProperty("payload_sha256", out var h) && h.ValueKind == JsonValueKind.String ? Clean(h.GetString() ?? "") : "";
+                var featured = el.TryGetProperty("featured", out var fe) && (fe.ValueKind == JsonValueKind.True || (fe.ValueKind == JsonValueKind.Number && fe.GetInt32() != 0)) ? "1" : "0";
+                var mandatory = el.TryGetProperty("mandatory", out var md) && (md.ValueKind == JsonValueKind.True || (md.ValueKind == JsonValueKind.Number && md.GetInt32() != 0)) ? "1" : "0";
+                var badge = el.TryGetProperty("badge_label", out var bl) && bl.ValueKind == JsonValueKind.String ? Clean(bl.GetString() ?? "") : "";
+                var avatar = el.TryGetProperty("owner_avatar_url", out var av) && av.ValueKind == JsonValueKind.String ? Clean(av.GetString() ?? "") : "";
+                var cover = el.TryGetProperty("cover_url", out var cv) && cv.ValueKind == JsonValueKind.String ? Clean(cv.GetString() ?? "") : "";
                 if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name)) continue;
                 if (sb.Length > 0) sb.Append('\n');
                 sb.Append(id).Append('\t').Append(name).Append('\t').Append(slug).Append('\t')
                     .Append(coll).Append('\t').Append(fav).Append('\t').Append(bytes).Append('\t').Append(upd)
-                    .Append('\t').Append(owner).Append('\t').Append(mine).Append('\t').Append(sha);
+                    .Append('\t').Append(owner).Append('\t').Append(mine).Append('\t').Append(sha)
+                    .Append('\t').Append(featured).Append('\t').Append(mandatory).Append('\t').Append(badge)
+                    .Append('\t').Append(avatar).Append('\t').Append(cover);
             }
             return sb.ToString();
         }

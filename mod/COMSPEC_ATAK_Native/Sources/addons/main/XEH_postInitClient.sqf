@@ -661,8 +661,15 @@ addMissionEventHandler ["EntityKilled", {
             ["x", round (_p select 0)], ["y", round (_p select 1)], ["call_sign", [player] call comspec_atak_native_fnc_unitCallsign],
             ["mission_key", missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", ""]]
         ];
-        // Clé de regroupement propre à ce mort : deux pertes dans la même seconde ne s'écrasent pas dans la file.
-        "COMSPECExtension" callExtension ["EmitTelemetry", ["1", "combat", format ["kia:%1:%2", name _unit, round time], [_pay] call comspec_atak_native_fnc_json]];
+        // SQF-C06 (A2) : hors du EH EntityKilled — EmitTelemetry synchrone figait l'image à la perte.
+        private _nm = name _unit;
+        [_pay, _nm] spawn {
+            params ["_pay", "_nm"];
+            if (isNil "comspec_overwatch_connect_fnc_extAwait") exitWith {
+                "COMSPECExtension" callExtension ["EmitTelemetry", ["1", "combat", format ["kia:%1:%2", _nm, round time], [_pay] call comspec_atak_native_fnc_json]];
+            };
+            ["COMSPECExtension", "EmitTelemetry", ["1", "combat", format ["kia:%1:%2", _nm, round time], [_pay] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extAwait;
+        };
     };
 }];
 
@@ -1112,9 +1119,11 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
         };
         if (_dt < 0.4) exitWith {};
         private _arsenal = !isNull (uiNamespace getVariable ["ace_arsenal_display", displayNull]) || {!isNull (uiNamespace getVariable ["BIS_fnc_arsenal_display", displayNull])};
-        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms (arsenal %2, téléphone %3, carte %4, drone %5, cibles marquées %6, page %7)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap,
+        // Contexte combat pour corréler freezes au tir (suppression / comportement) — mesure réelle dès qu’Arma tourne.
+        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms (arsenal %2, téléphone %3, carte %4, drone %5, cibles marquées %6, page %7, combat %8, suppression %9)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap,
             ["aucun", "appairé"] select !isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]), count (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]),
-            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]];
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""],
+            behaviour player, round ((getSuppression player) * 100)];
     }, 0] call COMSPEC_ATAK_PfhSpread;
     // Bilan des boucles du téléphone (drone, marquage, carte, pages) et des images lentes, toutes les 30 s.
     [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread;

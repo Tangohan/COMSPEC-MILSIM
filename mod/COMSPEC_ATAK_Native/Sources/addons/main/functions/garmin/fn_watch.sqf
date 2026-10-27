@@ -14,7 +14,8 @@
       START  action de l'écran : chrono, minuteur, marquer la position, zoom de la carte, étalonner l'altimètre,
              trouver le téléphone, lecture de la musique ; menu : valider (Maj+O)
       BACK   retour au cadran, tour du chrono, remise à zéro ; menu : fermer ; sur le cadran : éteindre (Alt+O)
-    Plus : vue agrandie au centre de l'écran (Ctrl+Maj+O), et sans touche par défaut : allumer / éteindre, menu des
+    Plus : vue agrandie au centre de l'écran (Ctrl+Maj+O) : clics sur les boutons de la montre, molette (zoom carte
+           ou changement d'écran), Échap pour revenir au poignet ; et sans touche par défaut : allumer / éteindre, menu des
     commandes, chrono, tour, minuteur, marquer ma position, mode nuit, ne pas déranger, trouver mon téléphone.
     Écrans (AMOLED, comme la montre) :
       FACE     cadran : heure du jeu, date, Bluetooth, batterie de la montre, Body Battery (arc bleu), objectif de pas
@@ -24,8 +25,9 @@
                pression, courbe des 30 dernières minutes, dénivelé positif et négatif du jour ;
       MAP      carte nord en haut : mon point (GPS, mêmes erreurs que le téléphone), les alliés du suivi,
                point marqué, cap, largeur affichée (START : zoom suivant) ;
-      COMPASS  boussole : cap, point cardinal, couronne qui tourne, coordonnées MGRS ; START marque ma position, la
-               couronne montre alors la direction du point et sa distance (BACK l'efface) ; un point de la carte de
+      COMPASS  boussole : cap, point cardinal, couronne fluide (~30 Hz, cap lissé), coordonnées MGRS ; START marque
+               ma position, la couronne montre alors la direction du point et sa distance (BACK l'efface) ; un point de
+               la carte de
                l'ATAK s'y envoie aussi (clic droit > Envoyer à la montre, téléphone allumé) ;
       JUMP     Jumpmaster (HALO / HAHO) : hauteur sol, vitesse de chute, altitude d'ouverture, direction et distance du
                point (DIP) ; START : régler l'altitude d'ouverture (UP / DOWN, 100 m), puis armer. Armée, la montre
@@ -73,8 +75,8 @@ private _menuItems = [
 ];
 private _w = uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap];
 if ((count _w) isEqualTo 0) then {
-    _w = createHashMapFromArray [["open", false], ["page", 0], ["built", ""], ["down", -1], ["lightDown", -1], ["pfh", -1], ["seq", -1],
-        ["banner", ["", "", 0]], ["slow", 0], ["big", false], ["night", false], ["dnd", false], ["bright", 2], ["menu", -1], ["edit", false], ["zoom", 1]];
+    _w = createHashMapFromArray [["open", false], ["page", 0], ["built", ""], ["down", -1], ["lightDown", -1], ["pfh", -1], ["compassPfh", -1], ["seq", -1],
+        ["banner", ["", "", 0]], ["slow", 0], ["big", false], ["night", false], ["dnd", false], ["bright", 2], ["menu", -1], ["edit", false], ["zoom", 1], ["hdSmooth", -1]];
     uiNamespace setVariable ["COMSPEC_ATAK_Watch", _w];
 };
 private _m = missionNamespace getVariable ["COMSPEC_ATAK_WatchM", createHashMap];
@@ -120,27 +122,114 @@ private _buzz = {
     if (profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]) exitWith {};
     if (!isNil "comspec_overwatch_connect_fnc_playAtakVibrate") then { [0.3] call comspec_overwatch_connect_fnc_playAtakVibrate; };
 };
+// Affichage : calque (poignet) ou dialogue (vue agrandie, cliquable).
+private _closeDlg = {
+    private _dlg = uiNamespace getVariable ["COMSPEC_ATAK_WatchDlg", displayNull];
+    if (!isNull _dlg) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_WatchDlg", displayNull];
+        _dlg closeDisplay 1;
+    };
+};
+private _bindBigInput = {
+    params ["_d"];
+    if (isNull _d) exitWith {};
+    _d displayAddEventHandler ["Unload", {
+        uiNamespace setVariable ["COMSPEC_ATAK_WatchDlg", displayNull];
+        private _ww = uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap];
+        if (_ww getOrDefault ["open", false] && {_ww getOrDefault ["big", false]}) then {
+            _ww set ["big", false];
+            _ww set ["built", ""];
+            ("COMSPEC_ATAK_Watch" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleGarmin", "PLAIN", 0, false];
+            [{ ["tick"] call comspec_atak_native_fnc_watch; }] call CBA_fnc_execNextFrame;
+        };
+    }];
+    _d displayAddEventHandler ["KeyDown", {
+        params ["", "_key"];
+        // Échap : quitter la vue agrandie (rester allumée au poignet).
+        if (_key isEqualTo 0x01) exitWith {
+            private _ww = uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap];
+            if (_ww getOrDefault ["big", false]) then { ["big"] call comspec_atak_native_fnc_watch; };
+            true
+        };
+        false
+    }];
+    _d displayAddEventHandler ["MouseZChanged", {
+        params ["", "_dz"];
+        if (_dz isEqualTo 0) exitWith { false };
+        private _ww = uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap];
+        if !(_ww getOrDefault ["big", false]) exitWith { false };
+        private _pgs = ["FACE", "HR", "ALT", "MAP", "COMPASS", "JUMP", "CHRONO", "TIMER", "PHONE", "MUSIC", "DAY"];
+        private _pg = _pgs param [_ww getOrDefault ["page", 0], "FACE"];
+        if (_pg isEqualTo "MAP") then {
+            // Molette vers le haut : zoom avant (échelle plus petite).
+            private _z = _ww getOrDefault ["zoom", 1];
+            _ww set ["zoom", (_z + ([-1, 1] select (_dz < 0))) max 0 min 3];
+            _ww set ["built", ""];
+            [{ ["tick"] call comspec_atak_native_fnc_watch; }] call CBA_fnc_execNextFrame;
+        } else {
+            [[ "prev", "next"] select (_dz < 0)] call comspec_atak_native_fnc_watch;
+        };
+        true
+    }];
+};
+private _showSurface = {
+    call _closeDlg;
+    ("COMSPEC_ATAK_Watch" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
+    if (_w getOrDefault ["big", false]) then {
+        private _parent = findDisplay 46;
+        if (isNull _parent) then { _parent = findDisplay 12; };
+        if (isNull _parent) exitWith {
+            _w set ["big", false];
+            ("COMSPEC_ATAK_Watch" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleGarmin", "PLAIN", 0, false];
+        };
+        private _d = _parent createDisplay "RscDisplayEmpty";
+        uiNamespace setVariable ["COMSPEC_ATAK_WatchDlg", _d];
+        uiNamespace setVariable ["COMSPEC_ATAK_WatchDisplay", _d];
+        [_d] call _bindBigInput;
+    } else {
+        ("COMSPEC_ATAK_Watch" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleGarmin", "PLAIN", 0, false];
+    };
+};
 private _close = {
+    call _closeDlg;
     ("COMSPEC_ATAK_Watch" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
     if ((_w get "pfh") >= 0) then { [_w get "pfh"] call CBA_fnc_removePerFrameHandler; };
+    if ((_w getOrDefault ["compassPfh", -1]) >= 0) then { [_w get "compassPfh"] call CBA_fnc_removePerFrameHandler; };
     _w set ["pfh", -1];
+    _w set ["compassPfh", -1];
     _w set ["open", false];
+    _w set ["big", false];
     _w set ["built", ""];
     _w set ["menu", -1];
     _w set ["edit", false];
+    _w set ["hdSmooth", -1];
 };
 private _open = {
     if !(call _has) exitWith {};
-    ("COMSPEC_ATAK_Watch" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleGarmin", "PLAIN", 0, false];
+    call _showSurface;
     _w set ["open", true];
     _w set ["built", ""];
     _w set ["slow", 0];
     _w set ["menu", -1];
     _w set ["edit", false];
+    _w set ["hdSmooth", -1];
     // Pas de bandeau pour les notifications reçues montre éteinte.
     _w set ["seq", (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["notifHistSeq", 0]];
     if ((_w get "pfh") < 0) then {
         _w set ["pfh", [{ ["tick"] call comspec_atak_native_fnc_watch; }, 0.1] call CBA_fnc_addPerFrameHandler];
+    };
+    // Boussole : une image sur deux (~30–60 Hz) pour une couronne fluide ; le tick à 0,1 s restait saccadé.
+    if ((_w getOrDefault ["compassPfh", -1]) < 0) then {
+        _w set ["compassPfh", [{
+            private _ww = uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap];
+            if !(_ww getOrDefault ["open", false]) exitWith {};
+            if ((_ww getOrDefault ["menu", -1]) >= 0) exitWith {};
+            private _pgs = ["FACE", "HR", "ALT", "MAP", "COMPASS", "JUMP", "CHRONO", "TIMER", "PHONE", "MUSIC", "DAY"];
+            if ((_pgs param [_ww getOrDefault ["page", 0], ""]) isNotEqualTo "COMPASS") exitWith {};
+            // Une image sur deux : assez fluide, moins de charge que chaque frame.
+            if (((diag_frameNo mod 2) isNotEqualTo 0)) exitWith {};
+            ["compassFrame"] call comspec_atak_native_fnc_watch;
+        }, 0] call CBA_fnc_addPerFrameHandler];
     };
     ["tick"] call comspec_atak_native_fnc_watch;
 };
@@ -412,7 +501,15 @@ switch (_act) do {
     case "big": {
         if !(call _has) exitWith { false };
         ["big"] call _do;
-        if !(_w get "open") then { _w set ["page", 0]; call _open; } else { call _redraw; };
+        _w set ["built", ""];
+        if !(_w get "open") then {
+            _w set ["page", 0];
+            call _open;
+        } else {
+            // Poignet <-> vue agrandie : changer de surface (calque / dialogue cliquable).
+            call _showSurface;
+            call _redraw;
+        };
         true
     };
     case "chrono": { if !(call _has) exitWith { false }; ["CHRONO"] call _show; ["chrono"] call _do; call _redraw; true };
@@ -513,6 +610,90 @@ switch (_act) do {
         true
     };
     case "buzz": { call _buzz; true };
+    // Couronne de la boussole : appelée ~30×/s (chaque 2 images). Cap lissé pour éviter les sauts.
+    case "compassFrame": {
+        if !(_w getOrDefault ["open", false]) exitWith { false };
+        if ((_w getOrDefault ["menu", -1]) >= 0) exitWith { false };
+        if ((_pages select ((_w get "page") min ((count _pages) - 1))) isNotEqualTo "COMPASS") exitWith { false };
+        private _d = uiNamespace getVariable ["COMSPEC_ATAK_WatchDisplay", displayNull];
+        if (isNull _d) exitWith { false };
+        private _n = _w getOrDefault ["ctrls", createHashMap];
+        if (isNull (_n getOrDefault ["val", controlNull])) exitWith { false };
+        private _ratio = pixelH / pixelW;
+        private _big = _w getOrDefault ["big", false];
+        private _size = if (_big) then { safeZoneH * 0.94 } else { safeZoneH * ([0.40, 0.50, 0.62] select ((missionNamespace getVariable ["comspec_atak_native_watch_size", 1]) max 0 min 2)) };
+        private _ww = _size / _ratio;
+        private _side = (missionNamespace getVariable ["comspec_atak_native_watch_side", 0]) max 0 min 2;
+        private _x0 = [safeZoneX + safeZoneW * 0.02, safeZoneX + (safeZoneW - _ww) / 2, safeZoneX + safeZoneW * 0.98 - _ww] select ([_side, 1] select _big);
+        private _y0 = [safeZoneY + safeZoneH - _size * 0.93, safeZoneY + (safeZoneH - _size) / 2] select _big;
+        private _cx = _x0 + _ww / 2;
+        private _cy = _y0 + _size / 2;
+        private _ry = _size * 270 / 1024;
+        private _rx = _ry / _ratio;
+        private _P = { params ["_u", "_v", "_uw", "_vh"]; [_cx + _u * _rx, _cy + _v * _ry, _uw * _rx, _vh * _ry] };
+        private _g = { _n getOrDefault [_this, controlNull] };
+        // Cap lissé (plus court chemin angulaire) : la couronne suit le regard sans à-coups.
+        private _raw = getDir (vehicle player);
+        private _prev = _w getOrDefault ["hdSmooth", -1];
+        if (_prev < 0) then { _prev = _raw; };
+        private _delta = ((_raw - _prev + 540) mod 360) - 180;
+        private _heading = _prev + _delta * 0.42;
+        if (_heading < 0) then { _heading = _heading + 360; };
+        if (_heading >= 360) then { _heading = _heading - 360; };
+        _w set ["hdSmooth", _heading];
+        private _tr = comspec_atak_native_fnc_tr;
+        private _cards = ["N", "3", "6", "E", "12", "15", "S", "21", "24", "O", "30", "33"];
+        private _cWhite = [0.95, 0.96, 0.96, 1];
+        private _cGrey = [0.58, 0.6, 0.62, 1];
+        private _cRed = [1, 0.27, 0.33, 1];
+        private _vm = currentVisionMode player;
+        if (_vm isEqualType []) then { _vm = _vm param [0, 0]; };
+        private _night = (_w getOrDefault ["night", false]) || {(_w getOrDefault ["nvAuto", true]) && {_vm isEqualTo 1}};
+        private _stealth = _w getOrDefault ["stealth", false];
+        private _lum = if (_stealth) then { 0.35 } else { [0.5, 0.78, 1] select ((_w getOrDefault ["bright", 2]) max 0 min 2) };
+        private _tone = {
+            params ["_r", "_g2", "_b", ["_a", 1]];
+            if (_night) exitWith { private _l = (_r max _g2 max _b) * _lum; [_l, _l * 0.14, _l * 0.08, _a] };
+            [_r * _lum, _g2 * _lum, _b * _lum, _a]
+        };
+        for "_i" from 0 to 11 do {
+            private _a = _i * 30 - _heading;
+            private _c = format ["l%1", _i] call _g;
+            if (isNull _c) then { continue };
+            _c ctrlSetPosition ([0.8 * (sin _a) - 0.1, -0.8 * (cos _a) - 0.08, 0.2, 0.16] call _P);
+            _c ctrlSetText ([_cards select _i, (_cards select _i) call _tr] select ((_i mod 3) isEqualTo 0));
+            _c ctrlSetTextColor (([_cGrey, _cWhite] select ((_i mod 3) isEqualTo 0)) call _tone);
+            if (_i isEqualTo 0) then { _c ctrlSetTextColor (_cRed call _tone); };
+            _c ctrlCommit 0;
+        };
+        for "_i" from 0 to 35 do {
+            if ((_i mod 3) isEqualTo 0) then { continue };
+            private _a = _i * 10 - _heading;
+            private _c = format ["t%1", _i] call _g;
+            if (isNull _c) then { continue };
+            _c ctrlSetPosition ([0.93 * (sin _a) - 0.015, -0.93 * (cos _a) - 0.015, 0.03, 0.03] call _P);
+            _c ctrlCommit 0;
+        };
+        private _hd = (round _heading) mod 360;
+        ("val" call _g) ctrlSetText format ["%1%2°", ["", "0", "00"] select (([100, 10] findIf { _hd >= _x }) call { [_this, 2] select (_this < 0) }), _hd];
+        private _dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+        ("card" call _g) ctrlSetText ((_dirs select ((round (_heading / 45)) mod 8)) call _tr);
+        private _wpt = _m getOrDefault ["wpt", []];
+        private _wp = "wp" call _g;
+        if (!isNull _wp) then {
+            if (_wpt isEqualTo []) then {
+                _wp ctrlShow false;
+            } else {
+                private _me = [] call comspec_atak_native_fnc_gpsPos;
+                private _brg = ((_me getDir (_wpt select 0)) + 360) mod 360;
+                private _a = _brg - _heading;
+                _wp ctrlShow true;
+                _wp ctrlSetPosition ([0.8 * (sin _a) - 0.05, -0.8 * (cos _a) - 0.05, 0.1, 0.1] call _P);
+                _wp ctrlCommit 0;
+            };
+        };
+        true
+    };
     case "ring": {
         // Fin du minuteur : la montre vibre trois fois ; le bandeau ne paraît que si elle est allumée (rien ne s'ouvre seul).
         ["treset"] call _do;
@@ -746,9 +927,14 @@ switch (_act) do {
                     ["hint", -0.6, 0.66, 1.2, 0.11, 0.085, _fR, _cGrey] call _txt;
                 };
                 case "MAP": {
-                    private _mc = ["map", "COMSPEC_RscMapAtak", [-0.8, -0.8, 1.6, 1.6] call _P] call _mk;
+                    // Carré plus grand que le cadran : le boîtier masque les coins, plus de bandes noires haut/bas.
+                    private _mc = ["map", "COMSPEC_RscMapAtak", [-1.08, -1.08, 2.16, 2.16] call _P] call _mk;
                     _mc ctrlCommit 0;
-                    _mc ctrlMapAnimAdd [0, [0.012, 0.025, 0.05, 0.1] select (_w get "zoom"), [] call comspec_atak_native_fnc_gpsPos];
+                    private _pos = [] call comspec_atak_native_fnc_gpsPos;
+                    if ((count _pos) >= 2) then { _pos = [_pos select 0, _pos select 1]; };
+                    private _z = [0.012, 0.025, 0.05, 0.1] select (_w get "zoom");
+                    _mc setVariable ["comspec_watchAim", _pos];
+                    _mc ctrlMapAnimAdd [0, _z, _pos];
                     ctrlMapAnimCommit _mc;
                     _mc ctrlAddEventHandler ["Draw", { (_this select 0) call comspec_atak_native_fnc_watchMapDraw; }];
                     // Mode nuit : filtre rouge sur la carte.
@@ -867,50 +1053,45 @@ switch (_act) do {
             (_n get "frame") ctrlSetTextColor [1, 1, 1, 1];
             (_n get "frame") ctrlCommit 0;
             { (_n get _x) ctrlShow false; } forEach ["banBg", "ban"];
+            // Vue agrandie : zones cliquables sur les boutons physiques (et le cadran = START).
+            if (_big) then {
+                private _hit = {
+                    params ["_key", "_u", "_v", "_uw", "_vh", "_tip", "_code"];
+                    private _b = [_key, "COMSPEC_RscButtonInvisible", [_u, _v, _uw, _vh] call _P] call _mk;
+                    _b ctrlEnable true;
+                    _b ctrlSetTooltip ((_tip) call _tr);
+                    _b ctrlAddEventHandler ["ButtonClick", _code];
+                    _b
+                };
+                // LIGHT : appui court = luminosité, maintien = menu (comme la touche physique).
+                private _bl = ["hitLight", "COMSPEC_RscButtonInvisible", [-1.55, -0.55, 0.42, 0.32] call _P] call _mk;
+                _bl ctrlEnable true;
+                _bl ctrlSetTooltip (("LIGHT — luminosité (maintenir : menu)") call _tr);
+                _bl ctrlAddEventHandler ["MouseButtonDown", { if ((_this select 1) isEqualTo 0) then { ["lightDown"] call comspec_atak_native_fnc_watch; }; false }];
+                _bl ctrlAddEventHandler ["MouseButtonUp", { if ((_this select 1) isEqualTo 0) then { ["lightUp"] call comspec_atak_native_fnc_watch; }; false }];
+                ["hitUp", -1.55, -0.08, 0.42, 0.32, "UP — écran précédent", { ["prev"] call comspec_atak_native_fnc_watch; }] call _hit;
+                ["hitDown", -1.55, 0.38, 0.42, 0.32, "DOWN — écran suivant", { ["next"] call comspec_atak_native_fnc_watch; }] call _hit;
+                ["hitStart", 1.12, -0.42, 0.45, 0.36, "START — action de l'écran", { ["start"] call comspec_atak_native_fnc_watch; }] call _hit;
+                ["hitBack", 1.12, 0.28, 0.45, 0.36, "BACK — retour", { ["back"] call comspec_atak_native_fnc_watch; }] call _hit;
+                // Cadran : START (placé avant les pastilles de texte pour ne pas bloquer les boutons du boîtier).
+                ["hitFace", -0.85, -0.85, 1.7, 1.7, "Cadran — même action que START · molette : zoom ou écran", { ["start"] call comspec_atak_native_fnc_watch; }] call _hit;
+            };
             _w set ["slow", 0];
         };
         private _g = { _n getOrDefault [_this, controlNull] };
         private _set = { params ["_k", "_t"]; (_k call _g) ctrlSetText ((_t) call _tr); };
         private _col = { params ["_k", "_c"]; private _ctrl = _k call _g; _ctrl ctrlSetTextColor (_c call _tone); _ctrl ctrlCommit 0; };
 
-        // --- Mises à jour rapides (0,1 s) : boussole, carte, chrono, minuteur ---
+        // --- Mises à jour rapides (0,1 s) : carte, chrono, minuteur ---
+        // Boussole : couronne fluide via compassFrame (~30 Hz) ; ici seulement les textes d'aide / distance.
         if (_page isEqualTo "COMPASS") then {
-            private _cards = ["N", "3", "6", "E", "12", "15", "S", "21", "24", "O", "30", "33"];
-            for "_i" from 0 to 11 do {
-                private _a = _i * 30 - _heading;
-                private _c = format ["l%1", _i] call _g;
-                _c ctrlSetPosition ([0.8 * (sin _a) - 0.1, -0.8 * (cos _a) - 0.08, 0.2, 0.16] call _P);
-                _c ctrlCommit 0;
-                _c ctrlSetText ([_cards select _i, (_cards select _i) call _tr] select ((_i mod 3) isEqualTo 0));
-                _c ctrlSetTextColor (([_cGrey, _cWhite] select ((_i mod 3) isEqualTo 0)) call _tone);
-                if (_i isEqualTo 0) then { _c ctrlSetTextColor (_cRed call _tone); };
-                _c ctrlCommit 0;
-            };
-            for "_i" from 0 to 35 do {
-                if ((_i mod 3) isNotEqualTo 0) then {
-                    private _a = _i * 10 - _heading;
-                    private _c = format ["t%1", _i] call _g;
-                    _c ctrlSetPosition ([0.93 * (sin _a) - 0.015, -0.93 * (cos _a) - 0.015, 0.03, 0.03] call _P);
-                    _c ctrlCommit 0;
-                };
-            };
-            private _hd = (round _heading) mod 360;
-            ("val" call _g) ctrlSetText format ["%1%2°", ["", "0", "00"] select (([100, 10] findIf { _hd >= _x }) call { [_this, 2] select (_this < 0) }), _hd];
-            private _dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
-            ["card", _dirs select ((round (_heading / 45)) mod 8)] call _set;
-            private _wp = "wp" call _g;
             if (_wpt isEqualTo []) then {
-                _wp ctrlShow false;
                 ["foot", "Aucun point marqué"] call _set;
                 ["hint", "START : marquer"] call _set;
             } else {
                 private _me = [] call comspec_atak_native_fnc_gpsPos;
                 private _brg = ((_me getDir (_wpt select 0)) + 360) mod 360;
                 private _dist = _me distance2D (_wpt select 0);
-                private _a = _brg - _heading;
-                _wp ctrlShow true;
-                _wp ctrlSetPosition ([0.8 * (sin _a) - 0.05, -0.8 * (cos _a) - 0.05, 0.1, 0.1] call _P);
-                _wp ctrlCommit 0;
                 ("foot" call _g) ctrlSetText format ["%1 %2 · %3 · %4°", "Point" call _tr, _wpt select 1,
                     [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 2]] select (_dist >= 1000), round _brg];
                 ["hint", "BACK : effacer"] call _set;
@@ -924,8 +1105,30 @@ switch (_act) do {
                 [] call comspec_atak_native_fnc_localDataRefresh;
             };
             private _mc = "map" call _g;
-            _mc ctrlMapAnimAdd [0.1, [0.012, 0.025, 0.05, 0.1] select (_w get "zoom"), [] call comspec_atak_native_fnc_gpsPos];
-            ctrlMapAnimCommit _mc;
+            if (!isNull _mc && {ctrlMapAnimDone _mc}) then {
+                private _pos = [] call comspec_atak_native_fnc_gpsPos;
+                if ((count _pos) >= 2) then { _pos = [_pos select 0, _pos select 1]; };
+                private _z = [0.012, 0.025, 0.05, 0.1] select (_w get "zoom");
+                // Recentrage immédiat (durée 0) : une anim de 0,1 s relancée chaque tick laissait le point décalé.
+                (ctrlPosition _mc) params ["_mx", "_my", "_mw", "_mh"];
+                private _c = [_mx + _mw / 2, _my + _mh / 2];
+                private _sp = _mc ctrlMapWorldToScreen _pos;
+                private _aim = _mc getVariable ["comspec_watchAim", _pos];
+                if ((_sp distance2D _c) > 0.004) then {
+                    private _st = _mc ctrlMapWorldToScreen _aim;
+                    _aim = _mc ctrlMapScreenToWorld [(_st select 0) + (_sp select 0) - (_c select 0), (_st select 1) + (_sp select 1) - (_c select 1)];
+                    _mc setVariable ["comspec_watchAim", _aim];
+                    _mc ctrlMapAnimAdd [0, _z, _aim];
+                    ctrlMapAnimCommit _mc;
+                } else {
+                    // Suivi lent du déplacement : seulement si on a bougé d'assez loin.
+                    if ((_aim distance2D _pos) > 2) then {
+                        _mc setVariable ["comspec_watchAim", _pos];
+                        _mc ctrlMapAnimAdd [0, _z, _pos];
+                        ctrlMapAnimCommit _mc;
+                    };
+                };
+            };
             private _hd = round (getDir (vehicle player));
             private _card = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_hd / 45)) mod 8);
             ("north" call _g) ctrlSetText format ["%1 %2°", _card call _tr, _hd];
@@ -1149,7 +1352,7 @@ switch (_act) do {
                 private _who = "Aucun allié";
                 if (_nAlly isEqualTo 1) then { _who = "1 allié"; };
                 if (_nAlly > 1) then { _who = format ["%1 alliés", _nAlly]; };
-                ["scale", format ["%1 · %2 · START : zoom", _who, [format ["%1 m", round (_span / 10) * 10], format ["%1 km", (_span / 1000) toFixed 1]] select (_span >= 1000)]] call _set;
+                ["scale", format ["%1 · %2 · %3", _who, [format ["%1 m", round (_span / 10) * 10], format ["%1 km", (_span / 1000) toFixed 1]] select (_span >= 1000), ["START : zoom", "START ou molette : zoom"] select _big]] call _set;
                 private _ok = (_fix param [1, "FIX"]) in ["FIX", "NET"];
                 ("nofix" call _g) ctrlShow !_ok;
                 if (!_ok) then { ["nofix", "Recherche GPS…"] call _set; };
