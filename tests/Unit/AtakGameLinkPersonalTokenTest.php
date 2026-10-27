@@ -14,6 +14,7 @@ use App\Repositories\UserRepository;
 use App\Services\Game\GameAuthService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
+use App\Support\AtakGameIdentityPolicy;
 use App\Support\ComspecApiKeyAuth;
 use PDO;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
@@ -71,10 +72,12 @@ final class AtakGameLinkPersonalTokenTest extends TestCase
         $instances = (new \ReflectionProperty(Container::class, 'instances'))->getValue();
         $this->savedContainer = $instances;
         ComspecApiKeyAuth::resetForTests();
+        $this->strict(false);
     }
 
     protected function tearDown(): void
     {
+        $this->strict(false);
         ComspecApiKeyAuth::resetForTests();
         (new \ReflectionProperty(Container::class, 'instances'))->setValue(null, $this->savedContainer);
         (new \ReflectionProperty(Database::class, 'pdo'))->setValue(null, $this->savedPdo);
@@ -112,6 +115,13 @@ final class AtakGameLinkPersonalTokenTest extends TestCase
         // Sans Steam détecté en jeu : Game Auth reprend celui de la fiche (aucun steam_id vide imposé).
         $this->redeem(['code' => 'ABCD12', 'device_id' => self::DEVICE]);
         self::assertArrayNotHasKey('steam_id', $this->issueCalls[1][2]);
+
+        // Mode strict (AtakGameIdentityPolicy) : le code reste une preuve du membre, la liaison passe toujours.
+        $this->strict(true);
+        self::assertTrue(AtakGameIdentityPolicy::strict());
+        [$code, $json] = $this->redeem(['code' => 'ABCD12', 'steam_uid' => self::SB, 'device_id' => self::DEVICE]);
+        self::assertSame(200, $code);
+        self::assertSame($this->issuedTokens(), $json['tokens'] ?? null);
     }
 
     /** Refus ou panne de Game Auth : la liaison par clé réussit comme avant, sans jeton. */
@@ -131,6 +141,20 @@ final class AtakGameLinkPersonalTokenTest extends TestCase
     }
 
     // --- Outillage ---------------------------------------------------------------------------------------------------
+
+    private function strict(bool $on): void
+    {
+        if ($on) {
+            putenv(AtakGameIdentityPolicy::ENV_STRICT_MIN_LINK . '=2.0.99');
+            $_ENV[AtakGameIdentityPolicy::ENV_STRICT_MIN_LINK] = '2.0.99';
+            AtakGameIdentityPolicy::useFloorReaderForTests(static fn (): string => '2.0.99');
+
+            return;
+        }
+        putenv(AtakGameIdentityPolicy::ENV_STRICT_MIN_LINK);
+        unset($_ENV[AtakGameIdentityPolicy::ENV_STRICT_MIN_LINK]);
+        AtakGameIdentityPolicy::useFloorReaderForTests(null);
+    }
 
     /** @return array<string, mixed> */
     private function issuedTokens(): array

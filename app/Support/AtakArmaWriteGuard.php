@@ -103,6 +103,12 @@ final class AtakArmaWriteGuard
             $steam = $bound;
         }
 
+        // Mode strict (désactivé par défaut) : la seule clé partagée ne prouve pas qui joue, une session X-COMSPEC-SESSION
+        // non plus (client-init l'émet pour le Steam déclaré). Sans jeton personnel, aucun Steam déclaré n'est retenu.
+        if ($steam !== null && !AtakGameIdentityPolicy::hasVerifiedIdentity() && AtakGameIdentityPolicy::strict()) {
+            return $this->identityRequired($tenantId);
+        }
+
         $user = null;
         if ($steam !== null) {
             $user = $this->users->findBySteamIdForTenant($tenantId, $steam);
@@ -209,6 +215,24 @@ final class AtakArmaWriteGuard
         }
 
         return $this->steamMismatch($tenantId);
+    }
+
+    /** 403 du mode strict : écriture ou session de jeu sans jeton personnel (journal au plus une fois par minute). */
+    public function identityRequired(int $tenantId): Response
+    {
+        $this->logThrottled(
+            $tenantId,
+            AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED,
+            60,
+            false,
+            'Accès jeu refusé — identité de jeu non vérifiée',
+            ['reason' => AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED]
+        );
+
+        return Response::json([
+            'error' => AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED,
+            'message' => AtakGameIdentityPolicy::MESSAGE_IDENTITY_REQUIRED,
+        ], 403);
     }
 
     /** Steam déclaré contraire à l'identité vérifiée (session ou jeton personnel). Journal au plus une fois par minute. */

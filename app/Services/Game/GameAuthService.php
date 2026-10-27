@@ -15,6 +15,7 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
+use App\Support\AtakGameIdentityPolicy;
 use App\Support\CommunityMediaDetails;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\OperatorTacticalIdentity;
@@ -192,7 +193,9 @@ final class GameAuthService
     /**
      * Connexion jeu par Steam déjà associé au compte Athena (fiche Effectifs ou compte).
      * Un identifiant inconnu du poste reste refusé. Un jeton de poste, s’il est présent
-     * et valide, est honoré ; s’il manque, le Steam lié suffit.
+     * et valide, est honoré ; s’il manque, le Steam lié suffit, sauf en mode strict
+     * (AtakGameIdentityPolicy) : un SteamID64 est public, le jeton de poste prouve alors une
+     * connexion antérieure sur ce poste.
      *
      * @param array<string, mixed> $body
      * @return array{ok: bool, status: int, payload: array<string, mixed>}
@@ -209,11 +212,20 @@ final class GameAuthService
         if ($account === null || (string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('STEAM_NOT_LINKED', 401);
         }
+        $pairedDevice = false;
         if (strlen($pairing) >= 32) {
             $row = $this->accounts->findPairing((int) $account['id'], $deviceId);
             if ($row !== null && hash_equals((string) ($row['pairing_token_hash'] ?? ''), hash('sha256', $pairing))) {
                 $this->accounts->touchPairing((int) $row['id']);
+                $pairedDevice = true;
             }
+        }
+        if (!$pairedDevice && AtakGameIdentityPolicy::strict()) {
+            // Même code que « Steam non relié » : les mods proposent alors l'e-mail ou le code de liaison.
+            return $this->fail('STEAM_NOT_LINKED', 401, [
+                'reason' => 'pairing_required',
+                'message' => 'Connexion par Steam seul fermée sur ce poste : connectez-vous une fois par e-mail ou avec un code de liaison.',
+            ]);
         }
         $body['steam_id'] = $steamId;
         $body['_auth_method'] = 'steam';

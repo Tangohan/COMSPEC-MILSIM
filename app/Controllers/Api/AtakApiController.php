@@ -1035,7 +1035,8 @@ class AtakApiController
     public function gameLinkBySteam(Request $request, array $params = []): Response
     {
         $bySteamFlag = strtolower(trim((string) (($_ENV['ATAK_GAME_LINK_BY_STEAM'] ?? null) ?: (getenv('ATAK_GAME_LINK_BY_STEAM') ?: ''))));
-        if (!in_array($bySteamFlag, ['1', 'true', 'on', 'yes'], true)) {
+        // Mode strict : un Steam seul ne prouve pas qui joue, même sur un portail qui a ouvert cette liaison.
+        if (!in_array($bySteamFlag, ['1', 'true', 'on', 'yes'], true) || AtakGameIdentityPolicy::strict()) {
             // « unauthorized » : le mod affiche alors « … ou utilisez un code » (server_outdated).
             return Response::json([
                 'error' => 'unauthorized',
@@ -4197,6 +4198,10 @@ class AtakApiController
                 'error' => 'steam_required',
                 'message' => 'Identifiant Steam requis. Mettez à jour le mod Overwatch, puis reconnectez-vous.',
             ], 403);
+        }
+        // Mode strict (désactivé par défaut) : sans jeton personnel, pas de session de jeu pour un Steam déclaré.
+        if ($steam !== null && !AtakGameIdentityPolicy::hasVerifiedIdentity() && AtakGameIdentityPolicy::strict()) {
+            return $this->armaGuard->identityRequired($tenantId);
         }
         if ($steam !== null) {
             $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);

@@ -22,6 +22,7 @@ use App\Services\Security\FileRateLimiter;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakAdminBlockGate;
 use App\Support\AtakArmaWriteGuard;
+use App\Support\AtakGameIdentityPolicy;
 use App\Support\AtakGameSession;
 use App\Support\ComspecApiKeyAuth;
 use PDO;
@@ -50,7 +51,8 @@ final class VerifiedIdentityTestPdo extends PDO
  * Membres de la communauté : A (101) et B (102) actifs, D (104) désactivé ; C (103) dans une autre communauté.
  * L'auteur retenu se lit dans le journal Activité du message (user_id, Steam), comme sur le site.
  *
- * Seul le Steam d'un autre membre présenté avec un jeton personnel change de sort (403 steam_mismatch).
+ * Seul le Steam d'un autre membre présenté avec un jeton personnel change de sort (403 steam_mismatch). Mode strict
+ * (AtakGameIdentityPolicy, coupé par défaut) : la clé partagée seule ne suffit plus pour attribuer un Steam déclaré.
  *
  * Processus séparés : la chaîne réelle garde des caches de schéma statiques pour tout le processus
  * (TenantAtakConfigRepository::hasAccessKeyColumn, UserRepository) ; un test précédent sur une autre base les figerait,
@@ -160,6 +162,7 @@ final class AtakVerifiedGameIdentityTest extends TestCase
         $_SERVER['REMOTE_ADDR'] = '198.51.100.' . random_int(2, 250);
         $_SERVER['SCRIPT_NAME'] = '/index.php';
         AtakAdminBlockGate::useRepository(null);
+        $this->strict(false);
         ComspecApiKeyAuth::resetForTests();
     }
 
@@ -167,7 +170,7 @@ final class AtakVerifiedGameIdentityTest extends TestCase
     {
         (new AtakActivityLogService())->purgeAllForTenant($this->tenantId);
         $limiter = new FileRateLimiter();
-        foreach (['steam_spoof', 'invalid_session_ignored', 'steam_required'] as $reason) {
+        foreach ([AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED, 'steam_spoof', 'invalid_session_ignored', 'steam_required'] as $reason) {
             $limiter->clear('atak:guard-log:' . $this->tenantId . ':' . $reason);
         }
         foreach ([self::SA, self::SB, self::SC, self::SD] as $steam) {
@@ -176,6 +179,7 @@ final class AtakVerifiedGameIdentityTest extends TestCase
         foreach ($this->sessionTokens as $token) {
             @unlink(base_path('storage/cache/atak_sessions/' . hash('sha256', $token) . '.json'));
         }
+        $this->strict(false);
         putenv('APP_ENV');
         unset($_ENV['APP_ENV'], $_SESSION);
         ComspecApiKeyAuth::resetForTests();
@@ -193,8 +197,9 @@ final class AtakVerifiedGameIdentityTest extends TestCase
     }
 
     /**
-     * Cas de la contre-vérification sans jeton personnel (clé de communauté seule) : réponses et auteurs inchangés. La clé
-     * partagée seule n'apporte aucune identité vérifiée : les cas 2, 5, 8a et 8b restent ouverts.
+     * Cas de la contre-vérification sans jeton personnel (clé de communauté seule) : réponses et auteurs inchangés tant
+     * que le mode strict est coupé (défaut). Les cas 2, 5, 8a et 8b ne se ferment qu'en mode strict
+     * (testStrictModeNeedsAPersonalToken).
      */
     public function testSharedKeyCasesAreUnchanged(): void
     {
@@ -238,7 +243,7 @@ final class AtakVerifiedGameIdentityTest extends TestCase
         self::assertSame('steam_mismatch', $out['error'] ?? null);
     }
 
-    /** Clients admis : chacun agit sous son propre Steam, comme avant. */
+    /** Clients admis : chacun agit sous son propre Steam, comme avant (mode strict coupé, défaut). */
     public function testLegitimateClientsAreUnchanged(): void
     {
         $this->assertChat($this->token(self::TOKEN_A, self::SA), 201, '', 101, 'jeton personnel + son Steam');
@@ -301,6 +306,51 @@ final class AtakVerifiedGameIdentityTest extends TestCase
         self::assertSame(['steam_spoof'], $this->guardLog);
     }
 
+    /** Mode strict : sans jeton personnel, aucun Steam déclaré n'est retenu ; le jeton personnel suffit toujours. */
+    public function testStrictModeNeedsAPersonalToken(): void
+    {
+        $this->strict(true);
+        self::assertTrue(AtakGameIdentityPolicy::strict());
+
+        foreach ([
+            'cas 1' => $this->key(self::SA),
+            'cas 2' => $this->key(self::SB),
+            'cas 5' => $this->key(self::SB) + ['HTTP_X_COMSPEC_SESSION' => $this->session(self::SA, true)],
+            'clé + session valide' => $this->key(self::SA) + ['HTTP_X_COMSPEC_SESSION' => $this->session(self::SA, false)],
+            'jeton expiré + clé' => $this->token(self::TOKEN_A_EXPIRED, self::SA),
+        ] as $label => $headers) {
+            $this->assertChat($headers, 403, AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED, null, $label);
+        }
+        $this->assertChat($this->token(self::TOKEN_A, self::SB), 403, 'steam_mismatch', null, 'cas 3');
+        $this->assertChat($this->token(self::TOKEN_A, self::SA), 201, '', 101, 'jeton personnel + son Steam');
+        $this->assertChat($this->token(self::TOKEN_A, null), 201, '', 101, 'jeton personnel sans Steam');
+
+        [$code, $json] = $this->clientInit($this->key(self::SB));
+        self::assertSame(403, $code, 'cas 8a : plus de session pour un Steam déclaré sous la clé seule');
+        self::assertSame(AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED, $json['error'] ?? null);
+        self::assertArrayNotHasKey('session_token', $json);
+        [$code, $json] = $this->clientInit($this->token(self::TOKEN_A, self::SA));
+        self::assertSame(200, $code);
+        $this->sessionTokens[] = (string) ($json['session_token'] ?? '');
+
+        [$code, $out] = $this->routing($this->key(self::SB));
+        self::assertSame(403, $code);
+        self::assertSame(AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED, $out['error'] ?? null);
+        [$code, $out] = $this->adminPlayer($this->key(self::SB));
+        self::assertSame(403, $code);
+        self::assertSame(AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED, $out['error'] ?? null);
+        [$code, $out] = $this->adminPlayer($this->token(self::TOKEN_A, self::SA));
+        self::assertSame([$this->tenantId, 101, self::SA], $out, 'jeton personnel : inchangé en mode strict');
+
+        // Le message ne contient aucun mot que la DLL 2.0.98 lit comme un refus définitif.
+        $message = AtakGameIdentityPolicy::MESSAGE_IDENTITY_REQUIRED . ' ' . AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED;
+        foreach (['tenant', 'unauthorized', 'steam_not_linked', 'steam_required', 'account_disabled', 'atak_blocked', 'mod_steam_blocked', 'mod_ip_blocked'] as $word) {
+            self::assertStringNotContainsString($word, strtolower($message));
+        }
+        // Une entrée par motif et par fenêtre ; la session expirée du cas 5 garde son entrée habituelle.
+        self::assertSame([AtakGameIdentityPolicy::ERROR_IDENTITY_REQUIRED, 'invalid_session_ignored', 'steam_spoof'], $this->guardLog);
+    }
+
     // --- Outillage -------------------------------------------------------------------------------------------------
 
     /** @return array<string, string> */
@@ -335,6 +385,20 @@ final class AtakVerifiedGameIdentityTest extends TestCase
         }
 
         return $token;
+    }
+
+    private function strict(bool $on): void
+    {
+        if ($on) {
+            putenv(AtakGameIdentityPolicy::ENV_STRICT_MIN_LINK . '=2.0.99');
+            $_ENV[AtakGameIdentityPolicy::ENV_STRICT_MIN_LINK] = '2.0.99';
+            AtakGameIdentityPolicy::useFloorReaderForTests(static fn (): string => '2.0.99');
+
+            return;
+        }
+        putenv(AtakGameIdentityPolicy::ENV_STRICT_MIN_LINK);
+        unset($_ENV[AtakGameIdentityPolicy::ENV_STRICT_MIN_LINK]);
+        AtakGameIdentityPolicy::useFloorReaderForTests(null);
     }
 
     private function controller(): AtakApiController
