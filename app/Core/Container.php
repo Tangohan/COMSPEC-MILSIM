@@ -2335,6 +2335,7 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(UserRepository::class)
             ),
+            \App\Services\Export\TablePdfExportService::class => new \App\Services\Export\TablePdfExportService(),
             \App\Controllers\Admin\EffectifsWorkspaceController::class => new \App\Controllers\Admin\EffectifsWorkspaceController(
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),

@@ -118,4 +118,14 @@ final class AtakDebriefTest extends TestCase
             self::assertArrayHasKey($fr, $en, $fr);
         }
     }
+
+    public function testDefaultLandingPrefersLatestSessionOverLatestDebrief(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Admin/AdminAtakDebriefController.php');
+        $opsPos = strpos($src, "elseif (\$op === '' && \$operations !== [])");
+        $crPos = strpos($src, "elseif (\$op === '' && \$debriefs !== [])");
+        self::assertNotFalse($opsPos);
+        self::assertNotFalse($crPos);
+        self::assertLessThan($crPos, $opsPos, 'sans ?cr ni ?op, la dernière session doit primer sur le dernier CR');
+    }
 }
