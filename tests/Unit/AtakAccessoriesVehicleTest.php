@@ -125,6 +125,9 @@ final class AtakAccessoriesVehicleTest extends TestCase
         $settings = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
         self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $settings);
         self::assertStringNotContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $settings);
-        self::assertStringContainsString('Le modèle et la couleur sont ceux du téléphone dans vos poches.', $settings);
+        // Pas de marque : modèles génériques.
+        foreach (['Crosscall', 'Apple'] as $brand) {
+            self::assertStringNotContainsString($brand, $settings, $brand);
+        }
     }
 }
