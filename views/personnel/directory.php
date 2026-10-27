@@ -301,7 +301,7 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                     <div class="pd-ident">
                         <p class="pd-grade"><?= $p['grade'] !== '' ? $e($p['grade']) : '<em>Grade non renseigné</em>' ?></p>
                         <h2 class="pd-name">
-                            <a href="<?= $e($p['href']) ?>" class="pd-name__link<?= \App\Services\Billing\DonorService::nameClass((int) $p['uid']) ?>"><?= $e($p['name']) ?></a><?= \App\Services\Billing\DonorService::mark((int) $p['uid']) ?>
+                            <a href="<?= $e($p['href']) ?>" class="pd-name__link<?= \App\Services\Billing\DonorService::nameClass((int) $p['uid']) ?><?= staff_name_class((int) $p['uid']) ?>" data-staff-done><?= $e($p['name']) ?></a><?= staff_mark((int) $p['uid']) ?><?= \App\Services\Billing\DonorService::mark((int) $p['uid']) ?>
                             <?php if ($p['isMe']): ?><span class="pd-me">Vous</span><?php endif; ?>
                         </h2>
                         <?php if ($p['fullName'] !== '' && $p['fullName'] !== $p['name']): ?>

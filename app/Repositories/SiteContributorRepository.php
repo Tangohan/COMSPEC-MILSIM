@@ -144,6 +144,7 @@ final class SiteContributorRepository
             mb_substr($note, 0, 500),
             $adminId,
         ]);
+        \App\Services\Platform\StaffMarkService::forget();
 
         return 'created';
     }
@@ -168,6 +169,7 @@ final class SiteContributorRepository
         }
         $args[] = $id;
         $this->pdo()->prepare($sql)->execute($args);
+        \App\Services\Platform\StaffMarkService::forget();
     }
 
     /**

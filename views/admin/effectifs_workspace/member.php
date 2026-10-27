@@ -233,7 +233,7 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
         </div>
         <div class="eff-fiche-hero__id">
             <p class="eff-page-kicker">Fiche membre<?php if ($grade !== ''): ?> · <?= $h($grade) ?><?php endif; ?></p>
-            <h1 class="eff-page-title"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></h1>
+            <h1 class="eff-page-title"><?= staff_name($name, $id, true) ?></h1>
             <p class="eff-fiche-hero__meta">
                 <?php if ($callsign !== ''): ?>
                     <span>Indicatif <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>

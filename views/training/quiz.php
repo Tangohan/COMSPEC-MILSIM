@@ -90,5 +90,6 @@ $quizIsCertifying = !empty($quizIsCertifying);
     </div>
     <script src="<?= htmlspecialchars($base) ?>/assets/js/training_quiz_player.js" defer></script>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

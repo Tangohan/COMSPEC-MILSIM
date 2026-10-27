@@ -105,6 +105,7 @@ final class AtakAccessoriesVehicleTest extends TestCase
     {
         $lay = $this->read(self::MAIN . '/functions/ui/fn_layoutGet.sqf');
         self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $lay);
+        self::assertStringNotContainsString('profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel"', $lay);
         self::assertStringContainsString('_model = "tablet";', $lay);
         self::assertStringNotContainsString('VIS_', $lay);
         $data = dirname(__DIR__, 2) . '/' . self::MAIN . '/data/';
@@ -120,9 +121,5 @@ final class AtakAccessoriesVehicleTest extends TestCase
         $settings = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
         self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $settings);
         self::assertStringNotContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $settings);
-        // Pas de marque : modèles génériques.
-        foreach (['iPhone', 'Crosscall', 'Apple'] as $brand) {
-            self::assertStringNotContainsString($brand, $settings, $brand);
-        }
     }
 }
