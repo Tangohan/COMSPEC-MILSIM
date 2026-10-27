@@ -39,7 +39,9 @@ private _defaultRange = 2000;
 private _defaultSlots = 8;
 private _defaultRangeMin = 50;
 private _defaultRangeMax = 8000;
-if (!isNil "ATHENA_fnc_getRealismParam") then {
+// Réglage réalisme seulement s'il vient d'une fonction de la config du jeu (CfgFunctions, finale) : realism_config
+// n'est pas construit, ce nom reste vide et un client pouvait le remplir par publicVariable pour faire exécuter son code.
+if (isClass (configFile >> "CfgFunctions" >> "ATHENA") && {!isNil "ATHENA_fnc_getRealismParam"}) then {
     _defaultRange = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam;
     _defaultSlots = ["radio_relays", "max_relay_connections", 10] call ATHENA_fnc_getRealismParam;
     _defaultRangeMin = ["radio_relays", "relay_range_min_m", 50] call ATHENA_fnc_getRealismParam;

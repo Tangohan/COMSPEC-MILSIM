@@ -34,8 +34,12 @@ switch (_act) do {
             { ["set", [_x, _k, _v]] call comspec_atak_native_fnc_relayZeus; } forEach _sel;
         }];
         private _tr = { _this call comspec_atak_native_fnc_tr };
+        // Attributs seulement avec l'addon ZEN chargé : sinon ce nom est le substitut de connect (ZEN incomplet) ou une
+        // valeur qu'un client a posée par publicVariable, exécutée ici par chaque joueur qui arrive. Le clic droit reste.
+        private _zenAttr = isClass (configFile >> "CfgPatches" >> "zen_attributes");
         private _attr = {
             params ["_label", "_tip", "_ctrl", "_info", "_key", "_get", ["_cond", {true}]];
+            if (!_zenAttr) exitWith {};
             [
                 "Object", [("Relais · " + _label) call _tr, _tip call _tr], _ctrl, _info,
                 compile format ["[_entity, '%1', _value] call (uiNamespace getVariable 'COMSPEC_ATAK_RelayZeusSet');", _key],

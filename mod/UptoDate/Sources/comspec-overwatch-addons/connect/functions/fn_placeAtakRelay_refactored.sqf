@@ -18,7 +18,9 @@ if ((count _pos) < 2) exitWith { objNull };
 // Récupérer paramètres depuis config centralisée
 if (_range < 0) then {
     // Fallback si fonction pas disponible
-    if (isNil "ATHENA_fnc_getRealismParam") then {
+    // Réglage réalisme seulement s'il vient d'une fonction de la config du jeu (CfgFunctions, finale) : realism_config
+    // n'est pas construit, ce nom reste vide et un client pouvait le remplir par publicVariable pour faire exécuter son code.
+    if (!isClass (configFile >> "CfgFunctions" >> "ATHENA") || {isNil "ATHENA_fnc_getRealismParam"}) then {
         _range = 2000; // Fallback hardcodé
         diag_log "[ATHENA] WARN: ATHENA_fnc_getRealismParam not available, using fallback 2000m";
     } else {
@@ -29,7 +31,7 @@ if (_range < 0) then {
 // Clamps depuis config
 private _rangeMin = 50;
 private _rangeMax = 8000;
-if (!isNil "ATHENA_fnc_getRealismParam") then {
+if (isClass (configFile >> "CfgFunctions" >> "ATHENA") && {!isNil "ATHENA_fnc_getRealismParam"}) then {
     _rangeMin = ["radio_relays", "relay_range_min_m", 50] call ATHENA_fnc_getRealismParam;
     _rangeMax = ["radio_relays", "relay_range_max_m", 8000] call ATHENA_fnc_getRealismParam;
 };
@@ -61,7 +63,7 @@ if (!(_cert isEqualType "") || {_cert isEqualTo ""}) then {
 
 // Slots depuis config centralisée
 private _slots = _meta getOrDefault ["slots", -1];
-if (_slots < 0 && {!isNil "ATHENA_fnc_getRealismParam"}) then {
+if (_slots < 0 && {isClass (configFile >> "CfgFunctions" >> "ATHENA") && {!isNil "ATHENA_fnc_getRealismParam"}}) then {
     _slots = ["radio_relays", "max_relay_connections", 10] call ATHENA_fnc_getRealismParam;
 } else {
     if (_slots < 0) then { _slots = 8; };  // Fallback
@@ -74,7 +76,7 @@ if (!(_power isEqualType 0)) then { _power = 25; };
 
 // Throughput depuis config centralisée (converti Mbps → kbps)
 private _thru = _meta getOrDefault ["throughput_mbps", -1];
-if (_thru < 0 && {!isNil "ATHENA_fnc_getRealismParam"}) then {
+if (_thru < 0 && {isClass (configFile >> "CfgFunctions" >> "ATHENA") && {!isNil "ATHENA_fnc_getRealismParam"}}) then {
     private _throughputKbps = ["radio_relays", "relay_throughput_kbps", 256] call ATHENA_fnc_getRealismParam;
     _thru = _throughputKbps / 1024;  // kbps → Mbps
 } else {

@@ -67,7 +67,9 @@ private _register = {
     _list pushBackUnique _o;
     // Liste locale ici : diffusée une seule fois après le balayage (pas une fois par objet converti).
     missionNamespace setVariable ["COMSPEC_AtakRelays", _list];
-    if (!isNil "comspec_overwatch_connect_fnc_syncAtakRelay") then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
+    // Seulement si connect est chargé (sa fonction CfgFunctions est alors finale) : sans connect, ce nom reste vide et un
+    // client pouvait le remplir par publicVariable pour faire exécuter son code au serveur à la pose du relais.
+    if (isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect")) then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
 };
 private _height = {
     params ["_o"];

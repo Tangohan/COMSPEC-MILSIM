@@ -53,7 +53,9 @@ switch (_act) do {
         if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 2} && {_arg isNotEqualTo "force"}) exitWith { _cache select 1 };
         private _out = [];
         private _defR = 2000;
-        if (!isNil "ATHENA_fnc_getRealismParam") then { _defR = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam; };
+        // Réglage réalisme seulement s'il vient d'une fonction de la config du jeu (CfgFunctions, finale) : realism_config
+        // n'est pas construit, ce nom reste vide et un client pouvait le remplir par publicVariable pour faire exécuter son code.
+        if (isClass (configFile >> "CfgFunctions" >> "ATHENA") && {!isNil "ATHENA_fnc_getRealismParam"}) then { _defR = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam; };
         private _side = str side group player;
         private _num = { params ["_v", "_d"]; [_d, _v] select (_v isEqualType 0) };
         // Brouilleurs actifs (mêmes règles que fn_linkQuality) : facteur de débit à une position.

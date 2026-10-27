@@ -49,5 +49,7 @@ if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     private _list = (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x };
     _list pushBackUnique _o;
     missionNamespace setVariable ["COMSPEC_AtakRelays", _list, true];
-    if (!isNil "comspec_overwatch_connect_fnc_syncAtakRelay") then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
+    // Seulement si connect est chargé (sa fonction CfgFunctions est alors finale) : sans connect, ce nom reste vide et un
+    // client pouvait le remplir par publicVariable pour faire exécuter son code au serveur à la pose du relais.
+    if (isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect")) then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
 }, [_o]] call CBA_fnc_execNextFrame;

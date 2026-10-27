@@ -20,7 +20,9 @@ private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 
 // Récupérer range par défaut depuis config
 private _defaultRange = 2000;
-if (!isNil "ATHENA_fnc_getRealismParam") then {
+// Réglage réalisme seulement s'il vient d'une fonction de la config du jeu (CfgFunctions, finale) : realism_config
+// n'est pas construit, ce nom reste vide et un client pouvait le remplir par publicVariable pour faire exécuter son code.
+if (isClass (configFile >> "CfgFunctions" >> "ATHENA") && {!isNil "ATHENA_fnc_getRealismParam"}) then {
     _defaultRange = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam;
 };
 
