@@ -79,6 +79,17 @@ final class RateLimitMiddleware
             return null;
         }
 
+        // NET-028 : écriture du tchat et comptes rendus SALUTE, par compte pour une session web, par IP sinon (jeu,
+        // invité ; /api/atak/position compte déjà le jeu par IP). Loin de l'usage réel : une pression sur Resynch renvoie
+        // au plus 17 lignes de tchat, une fois par 15 s (68 par minute) ; les pages web n'écrivent qu'à chaque envoi d'un
+        // joueur, et un SALUTE se remplit à la main. Un 429 laisse la ligne dans la file de la DLL : rien n'est perdu.
+        if ($method === 'POST' && $path === '/api/chat') {
+            return [120, 60, 'rl:chat_write:' . $actorKey];
+        }
+        if ($method === 'POST' && $path === '/api/atak/salute') {
+            return [30, 60, 'rl:salute:' . $actorKey];
+        }
+
         if ($path === '/back-office/ressources/recrutement/automod/restore-access') {
             return [25, 600, 'rl:rw_automod_restore:' . $actorKey];
         }
