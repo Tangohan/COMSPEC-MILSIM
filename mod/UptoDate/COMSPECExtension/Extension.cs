@@ -1005,12 +1005,48 @@ public static partial class Extension
     /// <summary>
     /// Pause par adresse après une erreur du serveur (5xx hors maintenance) : Athena renvoie 503 + Retry-After 30
     /// pour toute exception d'une route /api/atak/*. Ce n'est pas une saturation : seule l'adresse fautive attend
-    /// (30, 60, 120 puis 300 s), la position, les photos et le reste de la liaison continuent (2.0.76).
-    /// Clé : (dernière pause, palier).
+    /// (30, 60, 120 puis 300 s, plus 0 à 20 % de gigue ; adresses de position : 30 s au plus, sauf Retry-After plus
+    /// long), la position, les photos et le reste de la liaison continuent (2.0.76). Clé : (fin de la pause, palier).
+    /// Panne d'Athena entier : pause commune (IsServerWideOutage).
     /// </summary>
     private static readonly ConcurrentDictionary<string, (long Until, int Step)> EndpointCooldowns =
         new(StringComparer.OrdinalIgnoreCase);
     private static readonly int[] EndpointCooldownLadderSec = { 30, 60, 120, 300 };
+
+    /// <summary>
+    /// Dernier 5xx (hors maintenance) de chaque adresse, envois et sondages, en ticks UTC : distingue une panne
+    /// d'Athena entier d'une erreur propre à une route (NET-023).
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, long> RecentServerErrorTicks =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Dernière réponse acceptée d'Athena (envoi ou sondage), en ticks UTC ; 0 avant la première.</summary>
+    private static long _lastAthenaOkTicks;
+
+    /// <summary>Panne d'Athena entier : 5xx sur au moins deux adresses et aucune réponse acceptée depuis 10 s.</summary>
+    private const int ServerOutageMinAddresses = 2;
+    private const int ServerOutageQuietSec = 10;
+
+    private static void NoteAthenaOk() =>
+        System.Threading.Interlocked.Exchange(ref _lastAthenaOkTicks, DateTime.UtcNow.Ticks);
+
+    /// <summary>
+    /// Athena entier ne répond plus (nginx sans PHP : 502/504 ; base injoignable : 503 sur toutes les routes), pas
+    /// une seule route : depuis la dernière réponse acceptée, vieille d'au moins 10 s, au moins deux adresses ont
+    /// reçu un 5xx. Une réponse acceptée (envoi ou sondage) dans les 10 s suffit pour rester sur les pauses par
+    /// adresse : une route en exception ne met pas la liaison en pause.
+    /// </summary>
+    private static bool IsServerWideOutage(long nowTicks)
+    {
+        var lastOk = System.Threading.Interlocked.Read(ref _lastAthenaOkTicks);
+        if (nowTicks - lastOk < TimeSpan.FromSeconds(ServerOutageQuietSec).Ticks)
+            return false;
+        var n = 0;
+        foreach (var kv in RecentServerErrorTicks)
+            if (kv.Value > lastOk && ++n >= ServerOutageMinAddresses)
+                return true;
+        return false;
+    }
 
     private static string EndpointKey(string url)
     {
@@ -1044,8 +1080,9 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Erreur du serveur propre à une adresse (5xx sauf 503 maintenance) : pause de cette adresse seulement,
-    /// sans RateLimited ni SendBackoff vers le jeu. false = à traiter comme avant (saturation globale).
+    /// Erreur du serveur (5xx sauf 503 maintenance) : pause de cette adresse seulement, sans RateLimited ni
+    /// SendBackoff vers le jeu ; panne d'Athena entier : pause commune des envois (la pause est alors posée, l'appelant
+    /// arrête son vidage). false = à traiter comme avant (maintenance : pause commune).
     /// </summary>
     private static bool TryNoteEndpointServerError(string url, HttpResponseMessage? response)
     {
@@ -1055,11 +1092,38 @@ public static partial class Extension
         if (code == 503 && LooksLikeMaintenance(response)) return false;
         var key = EndpointKey(url);
         var now = DateTime.UtcNow.Ticks;
+        RecentServerErrorTicks[key] = now;
+        if (IsServerWideOutage(now))
+        {
+            // NET-023 : panne d'Athena entier. Pause commune, comme une coupure réseau (502, 504 : code 0) ou un 503
+            // de maintenance (503 : Retry-After respecté) : échelle courte avec gigue, sortie au premier envoi ou
+            // sondage accepté, qui relance aussi les sondages en attente. Les pauses par adresse de cette panne sont
+            // levées (palier gardé) : elles montaient à 120 puis 300 s et les positions restaient figées 90 s après
+            // le retour d'Athena (bancs gw502_long et db503_long : 1re position 91 à 97 s après la fin).
+            var lastOk = System.Threading.Interlocked.Read(ref _lastAthenaOkTicks);
+            foreach (var kv in EndpointCooldowns)
+                if (kv.Value.Until > 0 && RecentServerErrorTicks.TryGetValue(kv.Key, out var seen) && seen > lastOk)
+                    EndpointCooldowns[kv.Key] = (0, kv.Value.Step);
+            NoteSendFailure(code == 503 ? 503 : 0, url, response);
+            return true;
+        }
         var step = 0;
         if (EndpointCooldowns.TryGetValue(key, out var prev))
             step = Math.Min(prev.Step + 1, EndpointCooldownLadderSec.Length - 1);
+        // NET-023 : plafond court des adresses de position (lot de télémétrie, envoi unitaire). Quand seule leur route
+        // est en erreur, Athena répondant ailleurs, elles restent au 1er palier (30 s, plus la gigue) au lieu de monter
+        // à 120 puis 300 s ; un Retry-After plus long reste respecté. Sans ce plafond, les positions revenaient 91 à
+        // 95 s après la fin d'une panne de 2 min de leur seule route (banc pos503_long), 107 à 128 s avec la gigue ;
+        // avec lui, 12 à 24 s (8 passages).
+        if (IsPositionEndpoint(url) || IsTelemetryBatchEndpoint(url))
+            step = 0;
         var sec = Math.Max(EndpointCooldownLadderSec[step], Math.Min(ParseRetryAfterSeconds(response, 0), 300));
-        EndpointCooldowns[key] = (now + TimeSpan.FromSeconds(sec).Ticks, step);
+        // NET-015 : 0 à 20 % de gigue, jamais moins que le palier ni que le Retry-After. Sans elle, les joueurs refusés
+        // ensemble redemandaient ensemble et retombaient sur le pic suivant : au banc S4b (6 joueurs, serveur saturé,
+        // deux séries de 5 passages), 18 à 25 % des relances étaient refusées à nouveau et la position la plus vieille
+        // atteignait 92 à 224 s dans 17 passages sur 20 ; avec la gigue, 4 à 10 % et 38 à 40 s au plus.
+        var ticks = TimeSpan.FromSeconds(sec).Ticks;
+        EndpointCooldowns[key] = (now + ticks + Random.Shared.NextInt64(ticks / 5 + 1), step);
         return true;
     }
 
@@ -1342,9 +1406,10 @@ public static partial class Extension
     private static void NoteRateLimited(HttpResponseMessage? response = null)
     {
         // 503 : seule la maintenance arrive ici (corps contenant « maintenance ») ; les autres 5xx, base injoignable
-        // comprise, ne mettent en attente que leur adresse (TryNoteEndpointServerError, appelé avant). Athena est alors
-        // indisponible : c'est une panne. Son frein est le 429 (RateLimitMiddleware). Les deux gardent le même
-        // traitement immédiat (RateLimited, Retry-After) ; seules l'échelle, la gigue et la sortie diffèrent.
+        // comprise, ne mettent en attente que leur adresse, sauf panne d'Athena entier, où TryNoteEndpointServerError,
+        // appelé avant, pose lui-même la pause commune. Athena est alors indisponible : c'est une panne. Son frein est
+        // le 429 (RateLimitMiddleware). Les deux gardent le même traitement immédiat (RateLimited, Retry-After) ;
+        // seules l'échelle, la gigue et la sortie diffèrent.
         NoteSendFailure(response != null && (int)response.StatusCode == 503 ? 503 : 429, "", response);
     }
 
@@ -1465,6 +1530,7 @@ public static partial class Extension
 
     private static void NoteSendSuccess()
     {
+        NoteAthenaOk();
         _sendFailStreak = 0;
         _rateLimitBackoffSec = 2;
         if (_sendBackoffStep <= 0)
@@ -1758,10 +1824,11 @@ public static partial class Extension
                         MaybeReauthAfter401(item.Url);
                     if (TryNoteEndpointServerError(item.Url, response))
                     {
-                        // Cette adresse attend ; le vidage continue avec les autres envois.
+                        // Cette adresse attend ; le vidage continue avec les autres envois, sauf panne d'Athena
+                        // entier (pause commune posée) : il s'arrête là (NET-023).
                         if (!IsBestEffortEndpoint(item.Url))
                             EnqueueForRetry(item.Url, item.Body);
-                        return true;
+                        return !IsPostPausedNow();
                     }
                     if (code == 503)
                     {
@@ -2667,9 +2734,13 @@ public static partial class Extension
             if (slot.RefusedOutage)
                 waitMs += Random.Shared.NextInt64(waitMs / 5 + 1);
             slot.RefusedUntilMs = Environment.TickCount64 + waitMs;
+            // Un sondage en 5xx est une adresse de plus en panne pour IsServerWideOutage (NET-023).
+            if (code >= 500 && !string.IsNullOrEmpty(slot.Url))
+                RecentServerErrorTicks[EndpointKey(slot.Url)] = DateTime.UtcNow.Ticks;
         }
         else if (code is >= 200 and < 400)
         {
+            NoteAthenaOk();
             var backFromOutage = slot.RefusedOutage;
             slot.RefusedStep = 0;
             slot.RefusedUntilMs = 0;

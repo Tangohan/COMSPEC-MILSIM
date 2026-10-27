@@ -2,13 +2,15 @@
 //
 // Charge la DLL MANAGÉE (dotnet build, pas la .so AOT) par réflexion et rejoue les suites d'échecs et de succès
 // que la liaison rencontre : panne (réseau, délai dépassé), maintenance 503 avec Retry-After, frein 429, 403 du site
-// entier. Aucune requête HTTP n'est émise : seules les méthodes internes de comptage sont appelées.
+// entier, refus 403 d'une adresse, erreurs 5xx d'une route ou d'Athena entier. Aucune requête HTTP n'est émise : seules
+// les méthodes internes de comptage sont appelées.
 //   BACKOFF_DLL=/chemin/COMSPECExtension_x64.dll   (obligatoire)
 // Sortie : lignes PASS/FAIL ; code de sortie 0 si tout passe, 1 sinon. Sur la DLL de main (2.0.98), A1 A2 A3 B2 B3 E1
-// E2 G H2 H3 H4 I P1 P3 R1 R2 échouent (défaut de NET-006 corrigé par le lot), et L1 L2 L3 (NET-020, NET-022) : 19 en
-// tout ; sur la première version du lot (8faa74ab), H2 H3 H4 échouent (passage panne → frein) ; sur le lot avant son
-// point NET-022 (c3d8a85c), L1 L2 L3. U B1 C D F H T P2 P4 R3 R4 L4 passent partout (le frein 429 / 403 seul et les
-// refus doivent rester exactement comme avant).
+// E2 G H2 H3 H4 I P1 P3 R1 R2 échouent (défaut de NET-006 corrigé par le lot), L1 L2 L3 (NET-020, NET-022) et S4 S5 S6
+// S7 S10 (NET-023, NET-015) : 24 en tout ; sur la première version du lot (8faa74ab), H2 H3 H4 échouent (passage panne
+// → frein) ; sur le lot avant son point NET-022 (c3d8a85c), L1 L2 L3 et S4 S5 S6 S7 S10 ; avant son point NET-023
+// (c81a2db6), S4 S5 S6 S7 S10. U B1 C D F H T P2 P4 R3 R4 L4 S1 S2 S3 S8 S9 S11 passent partout (le frein 429 / 403
+// seul, les autres refus et l'erreur d'une seule route doivent rester exactement comme avant).
 
 using System.Net;
 using System.Net.Http.Headers;
@@ -434,6 +436,179 @@ Check("L4 autre 403 (site entier) : comme avant, pause de 20 s, rappel AccessDen
     && l4Cbs.Any(c => c.Fn == "AccessDenied" && c.Data == "20") && Pending() == l4Before + 1,
     $"verrouillé {Latched("IsRefusalLatched", Base + "/api/chat")}, pause juste après le refus {Fmt(l4Pause)} s ; " + Seen403(l4Cbs, l4Before));
 ClearLatches();
+
+// [S] Erreurs 5xx hors maintenance (NET-023, NET-015), rejouées par TryNoteEndpointServerError (aucune requête). Une
+// erreur propre à une route garde la pause de son adresse (30 s au 1er palier) avec 0 à 20 % de gigue, sans monter
+// au-delà du 1er palier pour les adresses de position (S12) ; une panne
+// d'Athena entier (5xx sur au moins deux adresses, sondages compris, et aucune réponse acceptée depuis 10 s) pose la
+// pause commune des envois, avec sortie au premier succès, et lève les pauses par adresse de cette panne.
+var cool = (System.Collections.IDictionary)GetF("EndpointCooldowns")!;
+var keyOf = M("EndpointKey");
+const string Html502 = "<html><head><title>502 Bad Gateway</title></head><body><center><h1>502 Bad Gateway</h1></center><hr><center>nginx</center></body></html>";
+const string Db503 = "{\"ok\":false,\"message\":\"La base de données est momentanément injoignable. L’équipe technique a été prévenue — réessayez dans quelques minutes.\"}";
+var batchUrl = Base + "/api/atak/telemetry/batch";
+var positionUrl = Base + "/api/atak/position";
+var chatUrl = Base + "/api/chat";
+void ResetServerErrors(double lastOkAgoSec)
+{
+    cool.Clear();
+    if (HasF("RecentServerErrorTicks")) ((System.Collections.IDictionary)GetF("RecentServerErrorTicks")!).Clear();
+    if (HasF("_lastAthenaOkTicks")) SetF("_lastAthenaOkTicks", DateTime.UtcNow.AddSeconds(-lastOkAgoSec).Ticks);
+}
+bool ServerError(string url, int code, int ra, string body) =>
+    (bool)M("TryNoteEndpointServerError").Invoke(null, new object?[] { url, Resp(code, ra, body) })!;
+double CoolS(string url)
+{
+    var key = (string)keyOf.Invoke(null, new object?[] { url })!;
+    if (!cool.Contains(key)) return 0;
+    var v = ((long Until, int Step))cool[key]!;
+    return v.Until <= 0 ? 0 : Math.Max(0, (v.Until - DateTime.UtcNow.Ticks) / (double)TimeSpan.TicksPerSecond);
+}
+string CbList(List<(string Fn, string Data)> cbs) => "[" + string.Join(", ", cbs.Select(c => c.Fn + "(" + c.Data + ")")) + "]";
+
+Reset();
+ResetServerErrors(2);
+var s1Handled = ServerError(batchUrl, 502, 0, Html502);
+var s1Cool = CoolS(batchUrl);
+var s1Cbs = Cbs();
+Check("S1 5xx d'une seule route, Athena répond ailleurs : seule l'adresse attend (30 à 36 s), ni pause commune ni rappel",
+    s1Handled && s1Cool is >= 29.5 and <= 36.1 && PauseS() <= 0 && s1Cbs.Count == 0,
+    $"adresse en pause {Fmt(s1Cool)} s, pause commune {Fmt(Math.Max(0, PauseS()))} s, rappels {CbList(s1Cbs)}");
+
+Reset();
+ResetServerErrors(5);
+ServerError(positionUrl, 502, 0, Html502);
+ServerError(batchUrl, 502, 0, Html502);
+var (s2Pos, s2Batch) = (CoolS(positionUrl), CoolS(batchUrl));
+var s2Cbs = Cbs();
+Check("S2 5xx sur deux adresses, mais une réponse acceptée il y a 5 s : pauses par adresse seulement",
+    s2Pos >= 29.5 && s2Batch >= 29.5 && PauseS() <= 0 && s2Cbs.Count == 0,
+    $"position {Fmt(s2Pos)} s, lot {Fmt(s2Batch)} s, pause commune {Fmt(Math.Max(0, PauseS()))} s, rappels {CbList(s2Cbs)}");
+
+Reset();
+ResetServerErrors(15);
+ServerError(chatUrl, 500, 0, "{\"error\":\"server_error\"}");
+var s3Chat = CoolS(chatUrl);
+var s3Cbs = Cbs();
+Check("S3 une seule adresse en 5xx, rien d'accepté depuis 15 s : seule l'adresse attend (une route cassée n'arrête pas la liaison)",
+    s3Chat >= 29.5 && PauseS() <= 0 && s3Cbs.Count == 0,
+    $"tchat {Fmt(s3Chat)} s, pause commune {Fmt(Math.Max(0, PauseS()))} s, rappels {CbList(s3Cbs)}");
+
+Reset();
+ResetServerErrors(15);
+ServerError(positionUrl, 502, 0, Html502);
+var s4Before = CoolS(positionUrl);
+ServerError(batchUrl, 502, 0, Html502);
+var (s4Pause, s4Pos, s4Batch) = (PauseS(), CoolS(positionUrl), CoolS(batchUrl));
+var s4Cbs = Cbs();
+Check("S4 panne d'Athena entier (502 sur deux adresses, rien d'accepté depuis 15 s) : pause commune, pauses par adresse levées, NetworkHiccup",
+    s4Before >= 29.5 && s4Pause > 0 && s4Pos == 0 && s4Batch == 0 && s4Cbs.Any(c => c.Fn == "NetworkHiccup")
+    && !s4Cbs.Any(c => c.Fn is "AccessDenied" or "RateLimited"),
+    $"position en pause avant {Fmt(s4Before)} s ; après le 2e 502 : pause commune {Fmt(Math.Max(0, s4Pause))} s, position {Fmt(s4Pos)} s, lot {Fmt(s4Batch)} s, rappels {CbList(s4Cbs)}");
+
+ServerError(batchUrl, 502, 0, Html502);
+ServerError(batchUrl, 502, 0, Html502);
+var (s5Step, s5Pause) = (Step(), PauseS());
+Ok();
+var s5Cbs = Cbs();
+Check("S5 panne qui dure : échelle courte (10 s au 3e échec), puis sortie au premier succès, RateLimitClear, aucune pause par adresse",
+    s5Step == 1 && s5Pause >= 9.9 && Step() == 0 && PauseS() <= 0 && s5Cbs.Any(c => c.Fn == "RateLimitClear")
+    && CoolS(positionUrl) == 0 && CoolS(batchUrl) == 0,
+    $"au 3e échec : palier {s5Step}, pause {Fmt(Math.Max(0, s5Pause))} s ; après 1 succès : {PauseFmt()}, position {Fmt(CoolS(positionUrl))} s, lot {Fmt(CoolS(batchUrl))} s, RateLimitClear {s5Cbs.Any(c => c.Fn == "RateLimitClear")}");
+
+Reset();
+ResetServerErrors(15);
+ServerError(positionUrl, 503, 30, Db503);
+ServerError(batchUrl, 503, 30, Db503);
+var s6Pause = PauseS();
+var s6Cbs = Cbs();
+Check("S6 503 sans maintenance (base injoignable, Retry-After 30) sur toute la liaison : pause commune de 30 à 36 s, RateLimited(30)",
+    s6Pause is >= 29.5 and <= 36.1 && s6Cbs.Any(c => c.Fn == "RateLimited" && c.Data == "30"),
+    $"pause commune {Fmt(Math.Max(0, s6Pause))} s, rappels {CbList(s6Cbs)}");
+
+var s7 = new List<double>();
+for (var n = 0; n < 200; n++)
+{
+    ResetServerErrors(2);
+    ServerError(chatUrl, 502, 0, Html502);
+    s7.Add(CoolS(chatUrl));
+}
+var s7Ra = new List<double>();
+for (var n = 0; n < 50; n++)
+{
+    ResetServerErrors(2);
+    ServerError(chatUrl, 503, 60, Db503);
+    s7Ra.Add(CoolS(chatUrl));
+}
+Check("S7 gigue de la pause par adresse : 30 à 36 s au 1er palier, écart d'au moins 3 s ; jamais moins que le Retry-After",
+    s7.Min() >= 29.9 && s7.Max() <= 36.1 && s7.Max() - s7.Min() >= 3 && s7Ra.Min() >= 59.9 && s7Ra.Max() <= 72.1,
+    $"200 tirages : de {Fmt(s7.Min())} à {Fmt(s7.Max())} s ; Retry-After 60, 50 tirages : de {Fmt(s7Ra.Min())} à {Fmt(s7Ra.Max())} s");
+
+Reset();
+ResetServerErrors(15);
+var s8Handled = ServerError(positionUrl, 503, 120, MaintBody);
+Check("S8 503 de maintenance : pas une erreur d'adresse (pause commune par NoteRateLimited, comme avant)",
+    !s8Handled && CoolS(positionUrl) == 0, $"traité par adresse : {s8Handled}, position {Fmt(CoolS(positionUrl))} s");
+
+Reset();
+ResetServerErrors(30);
+var slotPollOk = NewSlot("bench:sondage-ok");
+slotType.GetField("Url", I)?.SetValue(slotPollOk, Base + "/api/atak/orders");
+notePoll.Invoke(null, new[] { slotPollOk, (object)200 });
+ServerError(positionUrl, 502, 0, Html502);
+ServerError(batchUrl, 502, 0, Html502);
+Check("S9 un sondage accepté à l'instant suffit : deux adresses en 5xx gardent leurs pauses par adresse",
+    PauseS() <= 0 && CoolS(positionUrl) >= 29.5 && CoolS(batchUrl) >= 29.5,
+    $"pause commune {Fmt(Math.Max(0, PauseS()))} s, position {Fmt(CoolS(positionUrl))} s, lot {Fmt(CoolS(batchUrl))} s");
+
+Reset();
+ResetServerErrors(15);
+var slotPoll5xx = NewSlot("bench:sondage-5xx");
+slotType.GetField("Url", I)?.SetValue(slotPoll5xx, Base + "/api/atak/orders");
+notePoll.Invoke(null, new[] { slotPoll5xx, (object)502 });
+ServerError(positionUrl, 502, 0, Html502);
+Check("S10 un sondage en 5xx compte comme une adresse en panne : un envoi en 5xx suffit alors pour la pause commune",
+    PauseS() > 0 && CoolS(positionUrl) == 0,
+    $"pause commune {Fmt(Math.Max(0, PauseS()))} s, position {Fmt(CoolS(positionUrl))} s");
+
+Reset();
+ResetServerErrors(30);
+Ok();
+ServerError(positionUrl, 502, 0, Html502);
+ServerError(batchUrl, 502, 0, Html502);
+Check("S11 un envoi accepté à l'instant suffit aussi : deux adresses en 5xx gardent leurs pauses par adresse",
+    PauseS() <= 0 && CoolS(positionUrl) >= 29.5 && CoolS(batchUrl) >= 29.5,
+    $"pause commune {Fmt(Math.Max(0, PauseS()))} s, position {Fmt(CoolS(positionUrl))} s, lot {Fmt(CoolS(batchUrl))} s");
+
+Reset();
+ResetServerErrors(2);
+var s12Pos = new List<double>();
+var s12Batch = new List<double>();
+var s12Chat = new List<double>();
+for (var n = 0; n < 4; n++)
+{
+    ServerError(positionUrl, 503, 30, Db503);
+    s12Pos.Add(CoolS(positionUrl));
+    ServerError(batchUrl, 502, 0, Html502);
+    s12Batch.Add(CoolS(batchUrl));
+}
+for (var n = 0; n < 2; n++)
+{
+    ServerError(chatUrl, 502, 0, Html502);
+    s12Chat.Add(CoolS(chatUrl));
+}
+ResetServerErrors(2);
+ServerError(positionUrl, 503, 120, Db503);
+ServerError(positionUrl, 503, 120, Db503);
+var s12Ra = CoolS(positionUrl);
+Check("S12 adresses de position, seule leur route en 5xx : 30 à 36 s à chaque erreur, sans monter l'échelle ; une autre adresse monte (60 s au 2e) ; un Retry-After plus long reste respecté",
+    s12Pos.All(x => x is >= 29.5 and <= 36.1) && s12Batch.All(x => x is >= 29.5 and <= 36.1)
+    && s12Chat[1] is >= 59.5 and <= 72.1 && s12Ra is >= 119.5 and <= 144.1 && PauseS() <= 0,
+    $"position, 4 erreurs : {string.Join(" ", s12Pos.Select(Fmt))} s ; lot : {string.Join(" ", s12Batch.Select(Fmt))} s ; tchat au 2e : {Fmt(s12Chat[1])} s ; position, Retry-After 120 : {Fmt(s12Ra)} s");
+
+foreach (var k in new[] { "bench:sondage-ok", "bench:sondage-5xx" })
+    tryRemove.Invoke(cache, new object?[] { k, null });
+ResetServerErrors(0);
 
 Reset();
 Console.WriteLine($"\n=== BILAN : {(failures == 0 ? "aucun échec" : failures + " ÉCHEC(S)")} ===");

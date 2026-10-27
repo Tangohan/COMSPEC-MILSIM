@@ -594,7 +594,12 @@ public static partial class Extension
             if (TryNoteEndpointServerError(url, response))
             {
                 NotePostError(code, url);
-                FallbackTelemetryUnitary(items);
+                // Panne d'Athena entier (pause commune posée, NET-023) : le lot attend la reprise dans ses files, comme
+                // après un 503 de maintenance ; erreur de la seule route du lot : envois unitaires.
+                if (IsPostPausedNow())
+                    RequeueTelemetryItems(items);
+                else
+                    FallbackTelemetryUnitary(items);
                 Interlocked.Increment(ref _telemetryBatchFail);
                 return true;
             }
