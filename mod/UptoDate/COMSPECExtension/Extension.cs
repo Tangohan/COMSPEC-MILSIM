@@ -89,14 +89,18 @@ public static partial class Extension
     private static int _networkBackoffSec = 1;
     private static long _lastNetworkHiccupCbTicks;
     /// <summary>
-    /// Échelle unique pour tout le trafic sortant (position, caméras, relevés, occupants, tchat) :
-    /// 45 s → 1 min 15 → 2 min 30 → 5 min → 10 min. Entrée après 3 échecs ; 2 succès baissent d’un cran.
-    /// L’escalade est plafonnée à un cran par fenêtre (pas de fusée 45→600 en ms sous rafale code 0).
+    /// Échelle choisie par la liaison quand le portail ne demande pas d’attendre :
+    /// 45 s → 1 min 15 → 1 min 30. Un Retry-After plus long est respecté à part (RetryAfterCapSec).
+    /// Entrée après 3 échecs ; 2 succès baissent d’un cran.
     /// </summary>
-    private static readonly int[] SendBackoffLadderSec = { 45, 75, 150, 300, 600 };
+    private static readonly int[] SendBackoffLadderSec = { 45, 75, 90 };
     private const int SendFailStreakToEnter = 3;
     private const int SendOkStreakToStepDown = 2;
-    private const int SendBackoffCapSec = 600;
+    /// <summary>
+    /// Délai demandé par le portail (Retry-After). Le palier choisi par la liaison reste à 90 s.
+    /// Un délai plus long est respecté, jusqu’à 10 minutes, y compris la pause d’une seule adresse.
+    /// </summary>
+    private const int RetryAfterCapSec = 600;
     private static int _sendFailStreak;
     private static int _sendOkStreak;
     private static int _sendBackoffStep;
@@ -1237,11 +1241,11 @@ public static partial class Extension
         {
             var ra = response.Headers.RetryAfter;
             if (ra?.Delta is { } delta)
-                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, SendBackoffCapSec);
+                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, RetryAfterCapSec);
             if (ra?.Date is { } date)
             {
                 var sec = (int)Math.Ceiling((date.UtcDateTime - DateTime.UtcNow).TotalSeconds);
-                if (sec > 0) return Math.Clamp(sec, 1, SendBackoffCapSec);
+                if (sec > 0) return Math.Clamp(sec, 1, RetryAfterCapSec);
             }
         }
         catch { /* ignore */ }
@@ -1254,7 +1258,7 @@ public static partial class Extension
                 if (doc.RootElement.TryGetProperty("retry_after", out var prop)
                     && prop.TryGetInt32(out var n)
                     && n > 0)
-                    return Math.Clamp(n, 1, SendBackoffCapSec);
+                    return Math.Clamp(n, 1, RetryAfterCapSec);
             }
         }
         catch { /* ignore */ }
@@ -1279,7 +1283,7 @@ public static partial class Extension
 
     private static void ApplySendPause(int delaySec)
     {
-        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(delaySec, 1, SendBackoffCapSec)).Ticks;
+        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(delaySec, 1, RetryAfterCapSec)).Ticks;
         System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
         System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, until);
     }
@@ -1367,7 +1371,7 @@ public static partial class Extension
             delaySec = CurrentSendBackoffSec();
             var ra = ParseRetryAfterSeconds(response, delaySec);
             if (ra > delaySec)
-                delaySec = Math.Min(ra, SendBackoffCapSec);
+                delaySec = Math.Min(ra, RetryAfterCapSec);
             ApplySendPause(delaySec);
             if (!string.IsNullOrEmpty(url)
                 && (IsBestEffortEndpoint(url) || IsVideoFeedsEndpoint(url) || IsHeavyIngestEndpoint(url)))
@@ -3222,6 +3226,24 @@ public static partial class Extension
         u is { IsAbsoluteUri: true } && u.UserInfo.Length == 0 && IsTrustedPortalHost(u.IdnHost)
         && (u.Scheme == Uri.UriSchemeHttps || (u.Scheme == Uri.UriSchemeHttp && IsDevLoopbackHost(u.IdnHost)));
 
+    /// <summary>
+    /// Pages que le téléphone ouvre dans le navigateur du joueur. Pas le reste du portail :
+    /// liaison (/lier), carte (/atak), formulaire 9-LINE (/9-line), avec ou sans le préfixe /public.
+    /// </summary>
+    private static bool IsOpenablePortalPage(Uri uri)
+    {
+        var path = (uri.AbsolutePath ?? "").Replace('\\', '/');
+        if (path.Contains("..", StringComparison.Ordinal)) return false;
+        path = path.TrimEnd('/');
+        if (path.Length == 0) path = "/";
+        return path.Equals("/lier", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/lier", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/atak", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/atak", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/9-line", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/9-line", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsSecretSafeUri(string? url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var u) && IsSecretSafeUri(u);
 
@@ -3583,6 +3605,7 @@ public static partial class Extension
             if (args[0] == "probe") return "OK|ready";
             var batch = NormalizeArmaJson(args[0]);
             if (batch.Length > 60000) return "ERR|payload_too_large";
+            if (PlayerBatchExceedsSession(batch)) return "ERR|player_only";
             EnqueueOrSend(_baseUrl + "/api/atak/screen-time/batch", EnrichAtakPayload(batch));
             return "OK|queued";
         }
@@ -3605,6 +3628,7 @@ public static partial class Extension
             if (args[0] == "probe") return "OK|ready";
             var batch = NormalizeArmaJson(args[0]);
             if (batch.Length > 60000) return "ERR|payload_too_large";
+            if (PlayerBatchExceedsSession(batch)) return "ERR|player_only";
             EnqueueOrSend(_baseUrl + "/api/atak/distance/batch", EnrichAtakPayload(batch));
             return "OK|queued";
         }
@@ -3929,7 +3953,8 @@ public static partial class Extension
             {
                 var target = ArmaString(args[0]).Trim();
                 if (!Uri.TryCreate(target, UriKind.Absolute, out var targetUri)
-                    || (targetUri.Scheme != Uri.UriSchemeHttps && targetUri.Scheme != Uri.UriSchemeHttp))
+                    || !IsSecretSafeUri(targetUri)
+                    || !IsOpenablePortalPage(targetUri))
                     return "ERR|invalid_url";
                 if (_baseUrl.Length == 0
                     || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var portalUri)
@@ -4157,10 +4182,12 @@ public static partial class Extension
         {
             var probe = (args.Length > 0 ? args[0] : null) ?? "";
             probe = RepairBrokenWorkshopScreenshotPath(probe.Trim().Trim('"').Trim('\'').Replace('/', '\\'));
-            if (string.IsNullOrWhiteSpace(probe)) return "OK|0";
+            if (string.IsNullOrWhiteSpace(probe) || IsUncOrRemote(probe)) return "OK|0";
             try
             {
-                if (Directory.Exists(probe) || File.Exists(probe))
+                var full = Path.GetFullPath(probe);
+                if (!IsUnderKnownDataRoot(full)) return "OK|0";
+                if (Directory.Exists(full) || File.Exists(full))
                     return "OK|1";
             }
             catch { /* ignore */ }
@@ -11077,16 +11104,87 @@ public static partial class Extension
         }
     }
 
+    private static bool IsUncOrRemote(string path)
+    {
+        var p = path.Trim();
+        return p.StartsWith("\\\\", StringComparison.Ordinal) || p.StartsWith("//", StringComparison.Ordinal);
+    }
+
+    /// <summary>Captures, musique, cache et dossier local du mod. Jamais un chemin arbitraire du disque.</summary>
+    private static bool IsUnderKnownDataRoot(string fullPath)
+    {
+        bool Under(string? root)
+        {
+            if (string.IsNullOrWhiteSpace(root)) return false;
+            try
+            {
+                var prefix = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                var full = Path.GetFullPath(fullPath);
+                var withSep = full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                return withSep.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
+        }
+
+        foreach (var dir in EnumeratePhotoLookupDirs())
+            if (Under(dir)) return true;
+        if (Under(ComspecCaptureDir())) return true;
+        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        if (!string.IsNullOrWhiteSpace(docs))
+        {
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC_Music"))) return true;
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC_Local"))) return true;
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC"))) return true;
+        }
+        if (Under(Path.Combine(AppContext.BaseDirectory, "comspec_cache"))) return true;
+        if (Under(Path.Combine(Path.GetTempPath(), "comspec_cache"))) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Session joueur : le lot ne peut citer que son Steam. Sans jeton de joueur (serveur dédié), le camp entier part.
+    /// </summary>
+    private static bool PlayerBatchExceedsSession(string json)
+    {
+        if (!GameAccessTokenUsableNow()) return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("players", out var players) || players.ValueKind != JsonValueKind.Array)
+                return false;
+            foreach (var p in players.EnumerateArray())
+            {
+                if (p.ValueKind != JsonValueKind.Object || !p.TryGetProperty("player_uid", out var uidEl))
+                    continue;
+                var uid = uidEl.GetString() ?? "";
+                if (uid.Length == 0) continue;
+                if (!string.Equals(uid, _steamUid, StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
     private static string? TryReadableImageFile(string candidate)
     {
         try
         {
-            if (!File.Exists(candidate))
+            if (string.IsNullOrWhiteSpace(candidate) || IsUncOrRemote(candidate))
                 return null;
-            var fi = new FileInfo(candidate);
+            if (!IsImageExtension(Path.GetExtension(candidate)))
+                return null;
+            var full = Path.GetFullPath(candidate);
+            if (!IsUnderKnownDataRoot(full) || !File.Exists(full))
+                return null;
+            var fi = new FileInfo(full);
             if (fi.Length < 32)
                 return null;
-            return Path.GetFullPath(candidate);
+            return full;
         }
         catch
         {

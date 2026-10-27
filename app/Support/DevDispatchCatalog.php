@@ -301,6 +301,48 @@ final class DevDispatchCatalog
             ], ['personnel'], [
                 'Ouvrez Effectifs, À traiter, puis Décider sur une demande de correction. Les équipes et les emplois sont en clair. La page Corrections de fiches montre l’actuel à gauche et le proposé à droite.',
             ], 'Portail Athena'),
+            $pr(1016, '2026-10-27', 'Le téléphone garde l’identité du compte, et la carte suit la liaison', 'Pack 2.8.3. Le raccourci Overwatch ouvre le téléphone du pack. Les positions déjà tenues par la liaison apparaissent sur sa carte. Un joueur relié ne peut plus réécrire le temps de jeu ou les distances des autres. Après une coupure, le téléphone reprend de lui-même dans la minute et demie. Si le portail demande d’attendre plus longtemps, ce délai est respecté. Quittez Arma complètement, puis relancez.', [
+                'Le raccourci « Ouvrir le téléphone ATAK » ouvre le téléphone du pack',
+                'Les opérateurs connus de la liaison apparaissent sur la carte du téléphone',
+                'Le temps de jeu et les distances d’un autre opérateur ne peuvent plus être réécrits depuis un poste joueur',
+            ], [
+                'Après une coupure, la reprise se fait dans la minute et demie, ou selon le délai demandé par le portail',
+                'L’ancienne tablette libère les images de carte quand on se déplace',
+            ], [], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Le portail doit être à jour pour le temps de jeu et les distances.',
+            ], 'Pack du téléphone et portail'),
+            $pr(1015, '2026-10-27', 'Les diapositives diffusées s’affichent sur les écrans', 'Une diapositive visible sur le téléphone restait absente de l’écran du terrain, qui gardait son image d’origine. La diffusion montre maintenant cette diapositive sur l’écran. Quittez Arma complètement, puis relancez.', [
+                'Diffuser une diapositive l’affiche sur l’écran désigné',
+                'Changer de diapositive sur le téléphone met l’écran à jour',
+            ], [], [
+                'L’écran ne garde plus son image d’origine pendant une diffusion',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1014, '2026-10-27', 'Le chargement ne plante plus sur le numéro, Zeus et les tenues', 'À l’arrivée en mission, le numéro du téléphone, la copie des identifiants depuis Zeus et la liste des tenues dans l’arsenal plantaient. Ces trois actions aboutissent. Quittez Arma complètement, puis relancez.', [
+                'Le numéro du téléphone est posé à l’arrivée en mission',
+                'Zeus peut copier les identifiants d’un opérateur',
+                'La liste des tenues s’affiche dans l’arsenal',
+            ], [], [
+                'Ces trois actions ne plantent plus au chargement',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1013, '2026-10-27', 'La montre Garmin s’ouvre de nouveau', 'La touche de la montre et la vue agrandie ne montraient plus rien : le cadran plantait au dessin. Un appui bref sur la touche Montre allume de nouveau la montre, et Ctrl+Maj+O l’affiche en grand. Quittez Arma complètement, puis relancez.', [
+                'La montre s’allume avec un appui bref sur la touche Montre',
+                'Ctrl+Maj+O affiche la montre en grand au centre',
+            ], [], [
+                'Le cadran ne plante plus au moment de s’afficher',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1012, '2026-10-27', 'Chaque téléphone est un objet', 'Le modèle et la couleur du téléphone viennent de l’objet dans les poches. On ne les change plus dans les réglages. Samsung S7 coyote, olive ou noir, Samsung S23, iPhone 17 Pro, V2 Enhanced, Xiaomi X3D, Sonim XP8 et la tablette durcie sont chacun un objet. L’ancien téléphone COMSPEC reste le Samsung S7 coyote.', [
+                'Prendre un Samsung S7 olive ou noir affiche cette coque',
+                'Prendre un iPhone 17 Pro, un S23 ou un autre modèle affiche ce modèle',
+                'Les réglages du téléphone ne proposent plus de changer le modèle ni la couleur',
+            ], [], [], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Équipez l’objet du téléphone voulu.',
+            ], 'Pack du téléphone à republier'),
             $pr(1011, '2026-10-27', 'Registre des données : Steam par adresse de profil et mods proches', 'Dans le registre des données, vous collez l’adresse d’un profil Steam pour retrouver le compte. Un onglet liste les mods vus chez les joueurs qui ressemblent au pack officiel sans en porter la fiche Workshop. Ce sont des signaux à vérifier, pas une preuve de copie. Rechargez le portail (Ctrl+F5).', [
                 'Repérage d’un compte à partir de l’adresse steamcommunity.com/profiles/… ou /id/…',
                 'Onglet Mods proches : packs au nom proche du nôtre, sans fiche Workshop officielle',

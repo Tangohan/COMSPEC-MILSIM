@@ -70,7 +70,9 @@ class COMSPEC_RscTocScreenTexture {
 class COMSPEC_RscScreenSlideTexture {
     idd=-1; movingEnable=0;
     onLoad="['load', _this select 0] call comspec_atak_native_fnc_screenCast";
-    class controls {};
+    class controls {
+        class Back: COMSPEC_RscText { x=0; y=0; w=1; h=1; colorBackground[]={0,0,0,1}; text=""; };
+    };
 };
 
 // PC portable du poste TOC (fn_tocLaptop) : écran du PC lui-même, indépendant du téléphone (carte en grand, nœuds

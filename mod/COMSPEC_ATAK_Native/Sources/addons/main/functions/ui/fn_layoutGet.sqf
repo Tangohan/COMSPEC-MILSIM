@@ -20,14 +20,12 @@ private _ratio = [pixelH / pixelW, 1024 / (missionNamespace getVariable ["COMSPE
 
 // Coque S7 : texture carrée 2048 px. Fractions mesurées dans tools/src/android_s7_ca.png.
 // _vis = boîte visible de la coque (avec la fixation), _scr = écran transparent.
-// Modèle choisi (profil COMSPEC_ATAK_PhoneModel) ou tablette de bord (véhicule équipé, poste de commandement).
+// Modèle et couleur : l'objet porté (fn_phoneCarried). Sans téléphone COMSPEC, le profil reste (autres terminaux).
 // Boîte visible et écran mesurés en paysage ; le portrait en est le quart de tour horaire.
 private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
-private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
-// Modèles retirés (Support JPC, Étui Multicam, Coque nervurée, 2.2.x) : le profil repasse au S7.
-if (_model in ["plate", "flip", "ribbed"]) then { _model = "s7"; profileNamespace setVariable ["COMSPEC_ATAK_PhoneModel", "s7"]; };
-// Objet exigé pour ce modèle (réglages addon « ATAK · Objets par interface ») absent : le S7 reprend.
-if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
+([player] call comspec_atak_native_fnc_phoneCarried) params ["_model", "_shellTint", "_phoneItem"];
+// Objet exigé pour ce modèle (réglages addon) : seulement quand aucun téléphone COMSPEC n'est porté.
+if (_phoneItem isEqualTo "" && {_model isNotEqualTo "s7"} && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 // La tablette du véhicule est commune, pour qui n'a pas son ATAK : avec son téléphone, on garde son téléphone.
 if (_term in ["vehicle", "cp", "toc"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
 // iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), s23 (SAMSUNG S23), ip17 (IPHONE 17 PRO), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
@@ -144,7 +142,7 @@ private _bodyH = _sh - _statusH - _appH - _dockH;
 
 // Coque : texture de nuit (silhouette sombre) ou de jour à la couleur choisie (coyote, vert OD, noir).
 private _night = switch (profileNamespace getVariable ["COMSPEC_ATAK_Shell", "auto"]) do { case "day": { false }; case "night": { true }; default { sunOrMoon < 0.5 }; };
-private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
+private _tint = _shellTint;
 private _shellSfx = if (_night) then { "_night" } else { ["", "_" + _tint] select (_tint in ["od", "black"]) };
 createHashMapFromArray [
     ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],

@@ -453,6 +453,8 @@ private _fncWrapPlaceMarker = {
 
 // Après pose TAD Dropper (hors PlaceMarker) : resync rapide des marqueurs `_…_DEFINED`
 [{
+    // Hub actif : le serveur envoie déjà. Ce passage doublait chaque repère `_…`.
+    if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
     if (missionNamespace getVariable ["COMSPEC_MarkerSync_Lock", false]) exitWith {};
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith {};

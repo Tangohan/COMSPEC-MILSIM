@@ -153,7 +153,8 @@ private _build = {
     // 14. Terminal : objet téléphone porté (catalogue des appareils) et modèle choisi.
     private _set = missionNamespace getVariable ["COMSPEC_ATAK_DeviceCatalogSet", createHashMap];
     private _item = ((assignedItems player) + (items player)) param [((assignedItems player) + (items player)) findIf { (toLower _x) in _set }, ""];
-    private _model = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]);
+    ([player] call comspec_atak_native_fnc_phoneCarried) params ["_wornModel"];
+    private _model = toUpper _wornModel;
     private _itemName = getText (configFile >> "CfgWeapons" >> _item >> "displayName");
     if (_itemName isEqualTo "") then { _itemName = _item; };
     private _hasDev = [player, true] call comspec_atak_native_fnc_hasDevice;

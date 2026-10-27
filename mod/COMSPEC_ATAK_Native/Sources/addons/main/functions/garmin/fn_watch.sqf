@@ -524,13 +524,13 @@ switch (_act) do {
         private _night = (_w get "night") || {(_w getOrDefault ["nvAuto", true]) && {_vm isEqualTo 1}};
         private _stealth = _w getOrDefault ["stealth", false];
         private _lum = if (_stealth) then { 0.35 } else { [0.5, 0.78, 1] select ((_w get "bright") max 0 min 2) };
-        private _C = {
+        private _tone = {
             params ["_r", "_g", "_b", ["_a", 1]];
             if (_night) exitWith { private _l = (_r max _g max _b) * _lum; [_l, _l * 0.14, _l * 0.08, _a] };
             [_r * _lum, _g * _lum, _b * _lum, _a]
         };
         private _H = {
-            private _c = _this call _C;
+            private _c = _this call _tone;
             private _hx = "0123456789abcdef";
             private _o = "#";
             { private _v = round ((_x max 0 min 1) * 255); _o = _o + (_hx select [floor (_v / 16), 1]) + (_hx select [_v mod 16, 1]); } forEach (_c select [0, 3]);
@@ -628,7 +628,7 @@ switch (_act) do {
                 params ["_key", "_t", "_u", "_v", "_s", ["_col", [1, 1, 1, 1]]];
                 private _c = [_key, "COMSPEC_RscWatchPic", [_u, _v, _s, _s] call _P] call _mk;
                 _c ctrlSetText (_t call _tex);
-                _c ctrlSetTextColor (_col call _C);
+                _c ctrlSetTextColor (_col call _tone);
                 _c ctrlCommit 0;
                 _c
             };
@@ -637,14 +637,14 @@ switch (_act) do {
                 private _c = [_key, ["COMSPEC_RscText", "COMSPEC_RscTextRight", "COMSPEC_RscTextCenter"] select ([0, 1, 2] find _style), [_u, _v, _uw, _vh] call _P] call _mk;
                 _c ctrlSetFont _font;
                 _c ctrlSetFontHeight (_fh * _ry);
-                _c ctrlSetTextColor (_col call _C);
+                _c ctrlSetTextColor (_col call _tone);
                 _c ctrlCommit 0;
                 _c
             };
             private _box = {
                 params ["_key", "_u", "_v", "_uw", "_vh", "_col"];
                 private _c = [_key, "COMSPEC_RscText", [_u, _v, _uw, _vh] call _P] call _mk;
-                _c ctrlSetBackgroundColor (_col call _C);
+                _c ctrlSetBackgroundColor (_col call _tone);
                 _c ctrlCommit 0;
                 _c
             };
@@ -844,7 +844,7 @@ switch (_act) do {
         };
         private _g = { _n getOrDefault [_this, controlNull] };
         private _set = { params ["_k", "_t"]; (_k call _g) ctrlSetText ((_t) call _tr); };
-        private _col = { params ["_k", "_c"]; private _ctrl = _k call _g; _ctrl ctrlSetTextColor (_c call _C); _ctrl ctrlCommit 0; };
+        private _col = { params ["_k", "_c"]; private _ctrl = _k call _g; _ctrl ctrlSetTextColor (_c call _tone); _ctrl ctrlCommit 0; };
 
         // --- Mises à jour rapides (0,1 s) : boussole, carte, chrono, minuteur ---
         if (_page isEqualTo "COMPASS") then {
@@ -855,8 +855,8 @@ switch (_act) do {
                 _c ctrlSetPosition ([0.8 * (sin _a) - 0.1, -0.8 * (cos _a) - 0.08, 0.2, 0.16] call _P);
                 _c ctrlCommit 0;
                 _c ctrlSetText ([_cards select _i, (_cards select _i) call _tr] select ((_i mod 3) isEqualTo 0));
-                _c ctrlSetTextColor (([_cGrey, _cWhite] select ((_i mod 3) isEqualTo 0)) call _C);
-                if (_i isEqualTo 0) then { _c ctrlSetTextColor (_cRed call _C); };
+                _c ctrlSetTextColor (([_cGrey, _cWhite] select ((_i mod 3) isEqualTo 0)) call _tone);
+                if (_i isEqualTo 0) then { _c ctrlSetTextColor (_cRed call _tone); };
                 _c ctrlCommit 0;
             };
             for "_i" from 0 to 35 do {
@@ -1003,7 +1003,7 @@ switch (_act) do {
                         _c ctrlShow true;
                         _c ctrlSetPosition ([-0.72 + _i * 0.04, 0.5 - _hh, 0.03, _hh] call _P);
                         _c ctrlCommit 0;
-                        _c ctrlSetBackgroundColor ((_zoneCol select (([_v] call _zone) - 1)) call _C);
+                        _c ctrlSetBackgroundColor ((_zoneCol select (([_v] call _zone) - 1)) call _tone);
                     };
                 };
                 private _rest = _day getOrDefault ["hr_rest", 999];
@@ -1029,7 +1029,7 @@ switch (_act) do {
                         _c ctrlShow true;
                         _c ctrlSetPosition ([-0.72 + _i * 0.04, 0.46 - _hh, 0.035, _hh] call _P);
                         _c ctrlCommit 0;
-                        _c ctrlSetBackgroundColor ([0.24, 0.86, 0.52, 0.85] call _C);
+                        _c ctrlSetBackgroundColor ([0.24, 0.86, 0.52, 0.85] call _tone);
                     };
                 };
                 ["foot", format ["D+ %1 m   D- %2 m", (_day getOrDefault ["up_m", 0]) call _thou, (_day getOrDefault ["down_m", 0]) call _thou]] call _set;
