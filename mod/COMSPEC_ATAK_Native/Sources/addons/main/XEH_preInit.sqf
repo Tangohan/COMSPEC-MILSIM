@@ -210,7 +210,7 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
 // joueur, le même que Réglages > Personnaliser > Modèle (COMSPEC_ATAK_ProfSet tient les deux à jour) ; vide = choix du
 // téléphone conservé. Le S7 reste le défaut et reprend si l'objet exigé pour le modèle n'est pas porté.
 ["comspec_atak_native_phone_model", "LIST",
-    ["Modèle du téléphone", "Apparence du téléphone ATAK, aussi réglable dans le téléphone (Réglages > Personnaliser). Si le modèle demande un item (voir ci-dessous) que vous n'avez pas, le téléphone reste en Durci S7."],
+    ["Modèle du téléphone", "Utilisé seulement si vous ne portez pas un téléphone COMSPEC. Avec un Samsung S7, un iPhone ou un autre modèle dans les poches, c'est cet objet qui s'affiche, couleur comprise."],
     _uiCat, [["", "s7", "s23", "ip17", "iphone", "rugged", "sonim", "keys"],
         ["Celui choisi dans le téléphone", "Durci S7", "Samsung S23", "iPhone 17 Pro", "V2 Enhanced", "Xiaomi X3D", "Sonim XP8", "Tablette"], 0], 0,
     {

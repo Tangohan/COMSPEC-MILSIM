@@ -38,6 +38,7 @@ switch (_mode) do {
         private _u = _a;
         if (isNull _u || {isPlayer _u} || {!alive _u} || {_u getVariable ["COMSPEC_ATAK_AiEquipped", false]}) exitWith { false };
         _u setVariable ["COMSPEC_ATAK_AiEquipped", true];
+        missionNamespace setVariable ["COMSPEC_ATAK_AiAny", true];
         if (isNil { _u getVariable "COMSPEC_ATAK_AiAtak" }) then { _u setVariable ["COMSPEC_ATAK_AiAtak", true, true]; };
         private _item = missionNamespace getVariable ["comspec_atak_native_ai_atak_item", "COMSPEC_ATAK_Phone"];
         if (_item isEqualTo "" || {!isClass (configFile >> "CfgWeapons" >> _item)}) then { _item = "COMSPEC_ATAK_Phone"; };
@@ -68,6 +69,7 @@ switch (_mode) do {
                 if (_want && {!(_u getVariable ["COMSPEC_ATAK_AiEquipped", false])}) then { ["equip", _u] call _fn; };
             } forEach (allUnits select { !isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"} });
         };
+        if (_mode isEqualTo "off" && {!(missionNamespace getVariable ["COMSPEC_ATAK_AiAny", false])}) exitWith {};
         if (!_real || {!(["pli"] call comspec_atak_native_fnc_netCond)}) exitWith {};
         // Points PLI des IA équipées : un par intervalle et par IA, 250 IA au plus.
         private _rate = (["pliRate"] call comspec_atak_native_fnc_netCond) max 1;

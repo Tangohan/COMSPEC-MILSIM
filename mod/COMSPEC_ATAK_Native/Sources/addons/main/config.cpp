@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh","3DEN"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Screen","COMSPEC_ATAK_Module_TocScreen","COMSPEC_ATAK_Module_AiAtak"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","Item_COMSPEC_ATAK_Phone","Item_COMSPEC_ATAK_Phone_S7_OD","Item_COMSPEC_ATAK_Phone_S7_Black","Item_COMSPEC_ATAK_Phone_S23","Item_COMSPEC_ATAK_Phone_iPhone","Item_COMSPEC_ATAK_Phone_IP17","Item_COMSPEC_ATAK_Phone_Rugged","Item_COMSPEC_ATAK_Phone_Sonim","Item_COMSPEC_ATAK_Phone_Tablet","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Screen","COMSPEC_ATAK_Module_TocScreen","COMSPEC_ATAK_Module_AiAtak"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_Phone","COMSPEC_ATAK_Phone_S7_OD","COMSPEC_ATAK_Phone_S7_Black","COMSPEC_ATAK_Phone_S23","COMSPEC_ATAK_Phone_iPhone","COMSPEC_ATAK_Phone_IP17","COMSPEC_ATAK_Phone_Rugged","COMSPEC_ATAK_Phone_Sonim","COMSPEC_ATAK_Phone_Tablet"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
@@ -17,7 +17,7 @@ class CfgComspecLanguages {
 class CfgFunctions {
     class comspec_atak_native { tag="comspec_atak_native";
         class core { file="z\comspec_atak_native\addons\main\functions\core";
-            class log {}; class battery {}; class gpsFix {}; class pli {}; class aiAtak {}; class moduleAiAtak {}; class gpsPos {}; class weather {}; class stateInit {}; class storeSet {}; class profileSave {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class deviceScan {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class perfAcc {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class athenaPulse {}; class syncStats {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class clockFmt {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {}; class medVitals {}; class integrityCheck {}; class startupCheck {}; class simSos {}; class saveProfile {}; class localCfg {};
+            class log {}; class battery {}; class gpsFix {}; class pli {}; class aiAtak {}; class moduleAiAtak {}; class gpsPos {}; class weather {}; class stateInit {}; class storeSet {}; class profileSave {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class deviceScan {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class perfAcc {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class phoneCarried {}; class ramUsage {}; class athenaPulse {}; class syncStats {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class clockFmt {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {}; class medVitals {}; class integrityCheck {}; class startupCheck {}; class simSos {}; class saveProfile {}; class localCfg {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class clickNext {}; class keyBlock {}; class keyPass {}; class keybinds {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class fontSet {}; class fontApply {}; class fontText {}; class navigate {}; class back {}; class modeToggle {};
@@ -369,11 +369,62 @@ class CfgWeapons {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_A692CFB580";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_D448798D17";
-        picture="\z\comspec_atak_native\addons\main\data\item_phone.paa";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait.paa";
         // Au sol : le vrai S7 en coque tactique, couché écran vers le ciel (tools/model_ground_phone.py), pas la sacoche.
         model="\z\comspec_atak_native\addons\main\data\ground_phone.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=3; };
+        // L'objet porté décide du modèle et de la couleur (fn_phoneCarried). coyote = coque d'origine, sans suffixe.
+        comspec_phoneModel="s7";
+        comspec_phoneTint="coyote";
+    };
+    class COMSPEC_ATAK_Phone_S7_OD: COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_S7_OD";
+        descriptionShort="$STR_COMSPEC_ATAK_Phone_S7_OD_DESC";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait_od.paa";
+        comspec_phoneTint="od";
+    };
+    class COMSPEC_ATAK_Phone_S7_Black: COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_S7_Black";
+        descriptionShort="$STR_COMSPEC_ATAK_Phone_S7_Black_DESC";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait_black.paa";
+        comspec_phoneTint="black";
+    };
+    class COMSPEC_ATAK_Phone_S23: COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_S23";
+        descriptionShort="$STR_COMSPEC_ATAK_Phone_S23_DESC";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait_s23.paa";
+        comspec_phoneModel="s23";
+    };
+    class COMSPEC_ATAK_Phone_iPhone: COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_iPhone";
+        descriptionShort="$STR_COMSPEC_ATAK_Phone_iPhone_DESC";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait_iphone.paa";
+        comspec_phoneModel="iphone";
+    };
+    class COMSPEC_ATAK_Phone_IP17: COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_IP17";
+        descriptionShort="$STR_COMSPEC_ATAK_Phone_IP17_DESC";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait_ip17.paa";
+        comspec_phoneModel="ip17";
+    };
+    class COMSPEC_ATAK_Phone_Rugged: COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_Rugged";
+        descriptionShort="$STR_COMSPEC_ATAK_Phone_Rugged_DESC";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait_rugged.paa";
+        comspec_phoneModel="rugged";
+    };
+    class COMSPEC_ATAK_Phone_Sonim: COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_Sonim";
+        descriptionShort="$STR_COMSPEC_ATAK_Phone_Sonim_DESC";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait_sonim.paa";
+        comspec_phoneModel="sonim";
+    };
+    class COMSPEC_ATAK_Phone_Tablet: COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_Tablet";
+        descriptionShort="$STR_COMSPEC_ATAK_Phone_Tablet_DESC";
+        picture="\z\comspec_atak_native\addons\main\data\phone_portrait_tablet.paa";
+        comspec_phoneModel="keys";
     };
 };
 class CfgVehicles {
@@ -596,6 +647,38 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\main\data\ground_phone.p3d";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Phone { name="COMSPEC_ATAK_Phone"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone_S7_OD: Item_COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_S7_OD";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone_S7_OD { name="COMSPEC_ATAK_Phone_S7_OD"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone_S7_Black: Item_COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_S7_Black";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone_S7_Black { name="COMSPEC_ATAK_Phone_S7_Black"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone_S23: Item_COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_S23";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone_S23 { name="COMSPEC_ATAK_Phone_S23"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone_iPhone: Item_COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_iPhone";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone_iPhone { name="COMSPEC_ATAK_Phone_iPhone"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone_IP17: Item_COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_IP17";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone_IP17 { name="COMSPEC_ATAK_Phone_IP17"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone_Rugged: Item_COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_Rugged";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone_Rugged { name="COMSPEC_ATAK_Phone_Rugged"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone_Sonim: Item_COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_Sonim";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone_Sonim { name="COMSPEC_ATAK_Phone_Sonim"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone_Tablet: Item_COMSPEC_ATAK_Phone {
+        displayName="$STR_COMSPEC_ATAK_Phone_Tablet";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone_Tablet { name="COMSPEC_ATAK_Phone_Tablet"; count=1; }; };
     };
     // Modules Zeus / Eden « ATAK · Données » (extraction au câble DL-7).
     #include "modules.hpp"

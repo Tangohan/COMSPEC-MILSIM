@@ -7089,11 +7089,16 @@ class AtakApiController
         $repo = new \App\Repositories\AtakBriefingPlanRepository();
         $items = \App\Repositories\AtakBriefingPlanRepository::normalizeItems($body['items'] ?? []);
         $clean = static fn (mixed $v, int $max): string => mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', is_scalar($v) ? (string) $v : '') ?? ''), 0, $max);
+        $owner = preg_replace('/[^0-9A-Za-z_:-]/', '', $clean($body['owner'] ?? '', 32)) ?? '';
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '' && $owner !== '' && !hash_equals($sessionSteam, $owner)) {
+            $owner = $sessionSteam;
+        }
         $saved = $repo->save(
             $tenantId,
             (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID),
             $side,
-            preg_replace('/[^0-9A-Za-z_:-]/', '', $clean($body['owner'] ?? '', 32)) ?? '',
+            $owner,
             $clean($body['mission_key'] ?? '', 190),
             $clean($body['world'] ?? '', 64),
             max(0, (int) ($body['rev'] ?? 0)),
@@ -7243,7 +7248,15 @@ class AtakApiController
         $matched = 0;
         $recorded = 0;
         $unmatched = 0;
-        foreach (\App\Repositories\AtakScreenTimeRepository::normalizeBatch($body['players'] ?? []) as $p) {
+        $players = \App\Repositories\AtakScreenTimeRepository::normalizeBatch($body['players'] ?? []);
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $players = array_values(array_filter(
+                $players,
+                static fn (array $p): bool => $p['player_uid'] === $sessionSteam
+            ));
+        }
+        foreach ($players as $p) {
             $uid = SteamId::normalize($p['player_uid']);
             $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
             if ($user === null) {
@@ -7285,8 +7298,12 @@ class AtakApiController
         $body = $this->jsonBody($request);
         $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
         $batch = \App\Repositories\AtakDistanceRepository::normalizeBatch($body['players'] ?? []);
-        // Relais du téléphone (serveur Arma sans liaison) : le joueur ne compte que pour lui-même.
-        if (($body['source'] ?? '') === 'client') {
+        // Session de joueur : uniquement son Steam, quelle que soit la source annoncée.
+        // Serveur dédié (clé de communauté, pas de session joueur) : le camp entier.
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $batch = \App\Repositories\AtakDistanceRepository::onlyPlayer($batch, $sessionSteam);
+        } elseif (($body['source'] ?? '') === 'client') {
             $batch = \App\Repositories\AtakDistanceRepository::onlyPlayer($batch, is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null);
         }
         $matched = 0;
@@ -7324,10 +7341,15 @@ class AtakApiController
         $tenantId = $r;
         $body = $this->jsonBody($request);
         $steams = [];
-        foreach (is_array($body['players'] ?? null) ? array_slice($body['players'], 0, 300) : [] as $p) {
-            $s = SteamId::normalize(is_array($p) ? (string) ($p['player_uid'] ?? $p['steam_uid'] ?? '') : (string) $p);
-            if ($s !== null) {
-                $steams[$s] = $s;
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $steams[$sessionSteam] = $sessionSteam;
+        } else {
+            foreach (is_array($body['players'] ?? null) ? array_slice($body['players'], 0, 300) : [] as $p) {
+                $s = SteamId::normalize(is_array($p) ? (string) ($p['player_uid'] ?? $p['steam_uid'] ?? '') : (string) $p);
+                if ($s !== null) {
+                    $steams[$s] = $s;
+                }
             }
         }
         $repo = new \App\Repositories\AtakAdminControlRepository();
@@ -7373,7 +7395,12 @@ class AtakApiController
         $body = $this->jsonBody($request);
         $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 200) : [];
         $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
-        $n = (new \App\Repositories\AtakAdminControlRepository())->markMessages($r, array_map('intval', $ids), $state);
+        $repo = new \App\Repositories\AtakAdminControlRepository();
+        $sessionUser = \App\Support\ComspecApiKeyAuth::matchedUserId();
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        $n = ($sessionUser !== null || (is_string($sessionSteam) && $sessionSteam !== ''))
+            ? $repo->markMessagesForPlayer($r, $sessionUser, is_string($sessionSteam) ? $sessionSteam : null, array_map('intval', $ids), $state)
+            : $repo->markMessages($r, array_map('intval', $ids), $state);
 
         return Response::json(['ok' => true, 'updated' => $n]);
     }
@@ -8468,6 +8495,18 @@ class AtakApiController
             $actor = $this->guardArmaWrite($request, $tenantId, false);
             if ($actor instanceof Response) {
                 return $actor;
+            }
+            $sessionUser = \App\Support\ComspecApiKeyAuth::matchedUserId();
+            if ($sessionUser !== null) {
+                $user = $this->userRepository->findById($sessionUser);
+                $role = (new \App\Services\Atak\AtakGameAdminService())->role($tenantId, $sessionUser, is_array($user) ? $user : null);
+                if ($role === null) {
+                    return Response::json([
+                        'ok' => false,
+                        'error' => 'forbidden',
+                        'message' => 'Seul un gestionnaire de la communauté peut enregistrer les conditions appliquées en jeu.',
+                    ], 403);
+                }
             }
             $steam = is_array($actor) && is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
             $live = $svc->recordLiveNetwork($tenantId, $this->jsonBody($request), $steam);
