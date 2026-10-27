@@ -898,8 +898,9 @@ missionNamespace setVariable ["COMSPEC_LastLatencyAt", -1, false];
 // EventBus / caches locaux : pas de broadcast depuis le dédié.
 // Orders / OrderLog : locaux uniquement (un HashMap public plante le moteur).
 if (hasInterface || {isServer}) then {
-    if (isNil {missionNamespace getVariable "COMSPEC_EventBus"}) then {
-        missionNamespace setVariable ["COMSPEC_EventBus", createHashMap, false];
+    // Bus d'évènements : localNamespace, propre à la machine et jamais synchronisé (il porte les abonnés, du code).
+    if (isNil {localNamespace getVariable "COMSPEC_EventBus"}) then {
+        localNamespace setVariable ["COMSPEC_EventBus", createHashMap];
     };
     if (isNil {missionNamespace getVariable "COMSPEC_Orders"}) then {
         missionNamespace setVariable ["COMSPEC_Orders", [], isServer];
