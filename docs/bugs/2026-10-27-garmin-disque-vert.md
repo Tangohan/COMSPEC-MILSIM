@@ -29,3 +29,11 @@ La couleur du disque sur la capture correspond exactement au vert de la classe d
 ## Statut
 
 Corrigé dans les sources. Visible en jeu après reconstruction et publication du pack.
+
+## Suite — la touche n’ouvre rien (même jour)
+
+Le correctif du disque vert a fait planter le dessin de la montre. Dans le journal du 27/10 à 13:21, `fn_watch.sqf` ligne 631 : `call` reçoit un contrôle au lieu du calcul de couleur, puis l’erreur se répète à chaque dixième de seconde. À l’écran, O et Ctrl+Maj+O ne montrent rien.
+
+Cause : le script ne distingue pas les majuscules. La fonction de couleur s’appelait `_C`, et le contrôle créé juste avant s’appelait `_c`. Dans le bloc de dessin, les deux noms désignent la même variable, donc la couleur appelle le contrôle.
+
+Correctif : la fonction de couleur s’appelle `_tone`. Fichier : `fn_watch.sqf`. À confirmer en jeu : appui bref sur O, et Ctrl+Maj+O pour la vue agrandie.

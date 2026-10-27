@@ -3,6 +3,7 @@
     À appeler à la fermeture de la carte et en rattrapage périodique.
 */
 if (!hasInterface) exitWith { 0 };
+if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith { 0 };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { 0 };
 if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith { 0 };
 

@@ -195,12 +195,15 @@ switch (_act) do {
         if (!hasInterface || {isNull player}) exitWith { false };
         private _cfg = ["get"] call comspec_atak_native_fnc_localCfg;
         private _nums = (_cfg get "phone") get "numbers";
+        if !(_nums isEqualType []) then { _nums = []; };
         // Numéro principal : seulement en ATAK local (avec Athena, le numéro vient du poste).
+        // Les deux côtés d'un select sont calculés : indexer -1 ici plantait à chaque arrivée en mission.
         private _local = ([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on";
-        private _pi = _nums findIf { _x get "primary" };
-        private _prim = ["", (_nums select _pi) get "number"] select (_local && {_pi >= 0});
+        private _pi = _nums findIf { _x isEqualType createHashMap && { _x get "primary" } };
+        private _prim = "";
+        if (_local && {_pi >= 0}) then { _prim = (_nums select _pi) get "number"; };
         if ((player getVariable ["COMSPEC_ATAK_LocalNum", ""]) isNotEqualTo _prim) then { player setVariable ["COMSPEC_ATAK_LocalNum", _prim, true]; };
-        private _pub = (_nums select { _x get "shared" }) apply { [_x get "number", _x get "type", _x get "label"] };
+        private _pub = (_nums select { _x isEqualType createHashMap && { _x get "shared" } }) apply { [_x get "number", _x get "type", _x get "label"] };
         if ((player getVariable ["COMSPEC_ATAK_Numbers", []]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Numbers", _pub, true]; };
         true
     };

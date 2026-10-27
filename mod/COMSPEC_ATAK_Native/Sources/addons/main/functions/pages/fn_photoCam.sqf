@@ -295,7 +295,7 @@ switch (_act) do {
         private _meta = ["", "", false, "", false, "phone", "", _shotPose select 0,
             (((_shotPose select 1 select 0) atan2 (_shotPose select 1 select 1)) + 360) mod 360,
             [["lens", ["rear", "selfie"] select (_st getOrDefault ["camSelfie", false])], ["zoom", _st getOrDefault ["camZoom", 1]],
-             ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
+             ["flash", ["off", "on"] select _fire], ["model", ([player] call comspec_atak_native_fnc_phoneCarried) select 0],
              ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
             _shotPose select 1];
         [_caption, _fire, _shotPose, _meta] spawn {

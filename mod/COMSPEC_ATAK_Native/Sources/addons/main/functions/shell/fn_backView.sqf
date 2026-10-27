@@ -9,7 +9,7 @@ if (isNull _parent || {!isNull (uiNamespace getVariable ["COMSPEC_ATAK_BackDispl
 private _d = _parent createDisplay "RscDisplayEmpty";
 if (isNull _d) exitWith { false };
 uiNamespace setVariable ["COMSPEC_ATAK_BackDisplay", _d];
-private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
+([player] call comspec_atak_native_fnc_phoneCarried) params ["_model", "_tint"];
 private _suffix = ["", "_" + _tint] select (_tint in ["od", "black"]);
 private _bg = _d ctrlCreate ["COMSPEC_RscPanel", -1];
 _bg ctrlSetPosition [safeZoneX, safeZoneY, safeZoneW, safeZoneH];
@@ -24,7 +24,6 @@ private _y = safeZoneY + safeZoneH / 2 - _h * 0.57;
 // Dos, batterie et antenne étirés sur leur cadre (COMSPEC_RscPhone, style 48) : avec « garder les proportions », l'antenne,
 // dans un cadre bien plus haut que large, était recentrée autrement que le dos et flottait au-dessus de la coque.
 private _img = _d ctrlCreate ["COMSPEC_RscPhone", -1];
-private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 private _s7 = !(_model in ["rugged", "iphone", "sonim", "keys", "s23", "ip17"]);
 _img ctrlSetText (((["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa", format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", _suffix]] select _s7)) call comspec_atak_native_fnc_tr);
 _img ctrlSetTextColor [1, 1, 1, 1];

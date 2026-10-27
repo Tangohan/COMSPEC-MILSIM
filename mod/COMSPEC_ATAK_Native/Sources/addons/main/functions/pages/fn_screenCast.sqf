@@ -47,6 +47,15 @@ private _myDeck = {
     if (_src isEqualTo "GOOGLE") exitWith { ["GOOGLE", [], _idx] };
     []
 };
+// La dalle visible n'est pas toujours la sélection 0 : un portable a « camo » puis « screen ».
+// On prend la sélection nommée écran quand celle demandée n'en est pas une.
+private _face = {
+    params ["_o", "_sel"];
+    private _names = getArray (configOf _o >> "hiddenSelections");
+    private _named = _names findIf { (toLower _x) in ["screen", "display", "lcd", "monitor"] };
+    private _curName = toLower (_names param [_sel, ""]);
+    if (_named >= 0 && {!(_curName in ["screen", "display", "lcd", "monitor"])}) then { _named } else { _sel }
+};
 
 switch (_mode) do {
     case "initServer": {
@@ -153,8 +162,12 @@ switch (_mode) do {
                 _o setVariable ["COMSPEC_ATAK_ScreenAct", true];
                 ["actions", _o] call _fn;
             };
-            private _cfg = _o getVariable ["COMSPEC_ATAK_Screen", []];
-            private _sel = _cfg param [3, 0];
+        private _cfg = _o getVariable ["COMSPEC_ATAK_Screen", []];
+        private _sel = [_o, _cfg param [3, 0]] call _face;
+        if ((_o getVariable ["COMSPEC_ATAK_ScreenSel", _sel]) isNotEqualTo _sel) then {
+            _o setVariable ["COMSPEC_ATAK_ScreenCur", ""];
+            _o setVariable ["COMSPEC_ATAK_ScreenOrig", nil];
+        };
             private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
             // Texture voulue : "" = celle d'origine.
             private _want = "";
@@ -250,6 +263,12 @@ switch (_mode) do {
             if (_want isNotEqualTo _cur) then {
                 // Texture UI posée : son display arrive dans « load ».
                 if (_web isNotEqualTo "") then {
+                    if !(uiNamespace getVariable ["COMSPEC_ATAK_ScreenPreload", false]) then {
+                        uiNamespace setVariable ["COMSPEC_ATAK_ScreenPreload", true];
+                        disableSerialization;
+                        private _tmp = findDisplay 46 createDisplay "COMSPEC_RscScreenSlideTexture";
+                        if (!isNull _tmp) then { _tmp closeDisplay 0; };
+                    };
                     uiNamespace setVariable ["COMSPEC_ATAK_ScreenPending", [_o, _o getVariable ["COMSPEC_ATAK_ScreenUi", ""], diag_tickTime]];
                     _o setVariable ["COMSPEC_ATAK_ScreenWebShown", ""];
                 };
@@ -265,19 +284,51 @@ switch (_mode) do {
                     if ((_o getVariable ["COMSPEC_ATAK_ScreenWebShown", ""]) isNotEqualTo _web) then {
                         _o setVariable ["COMSPEC_ATAK_ScreenWebShown", _web];
                         _o setVariable ["COMSPEC_ATAK_ScreenWebAt", diag_tickTime];
+                        _o setVariable ["COMSPEC_ATAK_ScreenWebN", 0];
                         // Image absente (magasin vidé) : page non chargée, nouvel essai au prochain passage.
                         if !(["web", [_disp, _web]] call _fn) then { _o setVariable ["COMSPEC_ATAK_ScreenWebShown", ""]; };
                     };
-                    // Le navigateur dessine après coup : texture recopiée souvent pendant 15 s, puis toutes les 10 s si l'écran est vu.
-                    private _fresh = diag_tickTime - (_o getVariable ["COMSPEC_ATAK_ScreenWebAt", -1e9]) < 15;
-                    private _seen = (player distance _o) < 60 && {(worldToScreen (ASLToAGL getPosASL _o)) isNotEqualTo []};
-                    if (_fresh || {_seen && {diag_tickTime - (_o getVariable ["COMSPEC_ATAK_ScreenWebUpd", -1e9]) > 10}}) then {
-                        _o setVariable ["COMSPEC_ATAK_ScreenWebUpd", diag_tickTime];
-                        displayUpdate _disp;
+                    // Recopier trop tôt fige une image vide. On attend que la page ait l'image, puis quelques copies, puis on fige.
+                    private _wb = _disp getVariable ["COMSPEC_ATAK_ScreenWb", controlNull];
+                    private _ready = (!isNull _wb) && {_wb getVariable ["COMSPEC_ATAK_SlideWebOk", false]} && {diag_tickTime - (_o getVariable ["COMSPEC_ATAK_ScreenWebAt", -1e9]) > 0.8};
+                    if (_ready && {(_o getVariable ["COMSPEC_ATAK_ScreenWebN", 0]) < 1}) then {
+                        _o setVariable ["COMSPEC_ATAK_ScreenWebN", 1];
+                        [_disp, _wb] spawn {
+                            params ["_d", "_wb"];
+                            disableSerialization;
+                            for "_i" from 1 to 5 do {
+                                if (isNull _d) exitWith {};
+                                displayUpdate _d;
+                                uiSleep 0.05;
+                            };
+                            if (!isNull _wb) then {
+                                _wb setVariable ["COMSPEC_ATAK_ScreenFrozen", true];
+                                _wb ctrlWebBrowserAction ["StopBrowser"];
+                            };
+                        };
                     };
                 };
             };
-        } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {(player distance _x) < 300} });
+        } forEach (call {
+            private _paint = (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {(player distance _x) < 300} };
+            private _live = call _myDeck;
+            if ((count _live) isEqualTo 0) exitWith { _paint };
+            private _reg = missionNamespace getVariable ["COMSPEC_ATAK_Screens", []];
+            {
+                if (_x isEqualType [] && {(count _x) >= 1}) then {
+                    private _bo = _x param [0, objNull];
+                    if (!isNull _bo && {(player distance _bo) < 300} && {!(_bo in _paint)} && {!(_bo in _reg)}) then {
+                        _bo setVariable ["COMSPEC_ATAK_Screen", ["Écran", 3000, "", _x param [1, 0], false]];
+                        private _have = _bo getVariable ["COMSPEC_ATAK_ScreenCast", []];
+                        if ([_live select 0, _live select 2] isNotEqualTo [_have param [2, ""], _have param [4, -1]]) then {
+                            _bo setVariable ["COMSPEC_ATAK_ScreenCast", [objNull, "", _live select 0, _live select 1, _live select 2]];
+                        };
+                        _paint pushBack _bo;
+                    };
+                };
+            } forEach (missionNamespace getVariable ["COMSPEC_BriefingScreens", []]);
+            _paint
+        });
         // Écrans retirés (Zeus « Retirer l'écran ») : texture d'origine remise une fois sur ce poste.
         {
             if ((_x getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isNotEqualTo "") then {
@@ -309,7 +360,12 @@ switch (_mode) do {
             _wb = _d ctrlCreate ["COMSPEC_RscWebBrowser", -1];
             _wb ctrlSetPosition [0, 0, 1, 1];
             _wb ctrlCommit 0;
+            _wb ctrlWebBrowserAction ["SetBrowserInternalSize", 1280, 720];
             _d setVariable ["COMSPEC_ATAK_ScreenWb", _wb];
+        };
+        if (_wb getVariable ["COMSPEC_ATAK_ScreenFrozen", false]) then {
+            _wb setVariable ["COMSPEC_ATAK_ScreenFrozen", false];
+            _wb ctrlWebBrowserAction ["ResumeBrowser"];
         };
         ((uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap]) getOrDefault [_url, ["jpeg", ""]]) params ["_mime", "_b64"];
         if (isNull _wb || {_b64 isEqualTo ""}) exitWith { false };

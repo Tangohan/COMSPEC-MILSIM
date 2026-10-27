@@ -61,6 +61,12 @@ if (isNil "COMSPEC_ServerMarkerEHs") then {
     };
     missionNamespace setVariable ["COMSPEC_ServerEnqueueMarker", _enqueueMarker, false];
 
+    {
+        private _m = _x;
+        if (_m isEqualTo "") then { continue };
+        [_m, false] call (missionNamespace getVariable ["COMSPEC_ServerEnqueueMarker", {}]);
+    } forEach allMapMarkers;
+
     COMSPEC_ServerMarkerEHs = [
         addMissionEventHandler ["MarkerCreated", {
             private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;

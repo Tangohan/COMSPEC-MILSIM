@@ -81,6 +81,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
     if (isNil "COMSPEC_MapMarkerEHs") then {
         private _resyncSoon = {
             params ["_marker"];
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
             if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
             if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -106,9 +107,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 private _ch = _this param [1, -1];
                 private _own = _this param [2, -1];
                 private _local = _this param [3, false];
-                // Repère venu d'une autre machine (joueur, Zeus) : le hub serveur (uplink Athena OK) l'envoie déjà une fois.
-                // Le renvoyer depuis chaque client lié donnait N+1 envois, attribués au mauvais joueur.
-                if (!(_local isEqualTo true) && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
+                private _hub = missionNamespace getVariable ["COMSPEC_ServerHubActive", false];
                 if (_local isEqualTo true) then {
                     private _st = systemTime;
                     private _hh = str (_st select 3);
@@ -119,15 +118,19 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                     missionNamespace setVariable [
                         format ["COMSPEC_UserMkMeta_%1", _marker],
                         [_ch, _by, format ["%1:%2", _hh, _mm], _own],
-                        false
+                        _hub
                     ];
                 };
+                // Hub actif : seul le serveur envoie. Le poste auteur ne double plus.
+                if (_hub) exitWith {};
+                if (!(_local isEqualTo true) && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
             }],
             addMissionEventHandler ["MarkerUpdated", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
                 if (_marker isEqualTo "") exitWith {};
                 // Drapeau « local » (dernier booléen des paramètres) : repère distant → laissé au hub serveur.
+                if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
                 private _local = (_this select {_x isEqualType true}) param [0, true];
                 if (!_local && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
@@ -140,6 +143,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
             addMissionEventHandler ["MarkerDeleted", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
                 if (_marker isEqualTo "") exitWith {};
+                if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
                 private _local = (_this select {_x isEqualType true}) param [0, true];
                 if (!_local && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
@@ -160,6 +164,7 @@ if (isNil "COMSPEC_MapClosedEh") then {
     COMSPEC_MapClosedEh = addMissionEventHandler ["Map", {
         params ["_mapIsOpened"];
         if (_mapIsOpened) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
         [{
             if (!isNil "comspec_overwatch_connect_fnc_syncUserMapMarkers") then {
                 [] call comspec_overwatch_connect_fnc_syncUserMapMarkers;

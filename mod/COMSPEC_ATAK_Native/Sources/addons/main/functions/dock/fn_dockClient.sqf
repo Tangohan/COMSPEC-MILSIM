@@ -51,7 +51,7 @@ switch (_act) do {
         private _dev = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
         private _lv = missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100];
         ["comspec_atak_native_dockPut", [_dock, player, _slot, _item, _lv, [[], (keys _dev) apply { [_x, _dev get _x] }] select (_dev isEqualType createHashMap),
-            profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"]]] call CBA_fnc_serverEvent;
+            (getText (configFile >> "CfgWeapons" >> _item >> "comspec_phoneTint"))]] call CBA_fnc_serverEvent;
         playSound "ClickSoft";
         [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
     };
