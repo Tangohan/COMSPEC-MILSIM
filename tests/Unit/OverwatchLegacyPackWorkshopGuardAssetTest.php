@@ -225,8 +225,11 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertStringContainsString("\$AtakNativeWorkshopId = '" . SteamWorkshop::ATAK_NATIVE_ID . "'", $ps);
         self::assertMatchesRegularExpression('/^if \(Test-Path -LiteralPath \$metaCpp\) \{\n    \$metaText = \[string\]\(Get-Content -LiteralPath \$metaCpp -Raw\)\n    if \(\$metaText -match "\\\\b\$AtakNativeWorkshopId\\\\b"\) \{\n        Write-Fail /m', $ps);
 
-        // Chaque refus passe par Write-Fail, qui sort avec un code non nul.
-        self::assertMatchesRegularExpression('/\bexit 1\b/', self::psFunctionBody($ps, 'Write-Fail'));
+        // Chaque refus passe par Write-Fail, qui sort avec un code non nul. (a) revue v3 : son corps finit par « exit 1 »
+        // au niveau de la fonction, seul exit de ce corps : aucune condition ni aucun bloc ne peut le sauter.
+        $failBody = self::psFunctionBody($ps, 'Write-Fail');
+        self::assertStringEndsWith("\n    exit 1\n}", $failBody, 'Write-Fail ne finit pas par « exit 1 » au niveau de la fonction');
+        self::assertSame(1, preg_match_all('/(?<![\w$.-])exit(?![\w-])/i', $failBody), 'Write-Fail a plus d\'un exit');
 
         // Les contrôles sont au premier niveau du try du script (W23), hors de tout autre bloc : aucune condition ajoutée
         // autour ne peut les sauter.
@@ -398,6 +401,10 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         }
         self::assertSame(['$false', '$true'], self::psAssignments($ps, 'OutDirChecked'));
         self::assertSame(['[bool]$OutDir'], self::psAssignments($ps, 'OutDirGiven'));
+        // (e) revue v3 : le dossier natif comparé est celui du script, et le dossier courant ne change pas entre la garde
+        // et le staging, qui résolvent un -OutDir relatif chacun de leur côté.
+        self::assertSame(['$PSScriptRoot'], self::psAssignments($ps, 'ModRoot'));
+        self::assertSame([], array_values(array_filter(self::psCodeLines($ps), static fn (string $line): bool => preg_match('/(?<![\w$.-])(?:Set-Location|Push-Location|Pop-Location|cd|chdir|sl|pushd|popd)(?![\w-])/i', $line) === 1)), 'changement du dossier courant');
         self::assertSame(["'workshop-pack-sortie.txt'"], self::psAssignments($ps, 'OutMarkerName'));
         // Texte du marqueur en ASCII imprimable : l'encodage de New-Item -Value n'est pas le même selon PowerShell.
         self::assertMatchesRegularExpression("/^\\\$OutMarkerText = '[\\x20-\\x26\\x28-\\x7E]+'\$/m", $ps);
@@ -610,6 +617,8 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         foreach ($rules as $rule) {
             self::assertMatchesRegularExpression('/^' . preg_quote($rule, '/') . '$/m', $ignore, '.gitignore sans ' . $rule);
         }
+        // (c) revue v3 : aucune règle de négation ne rend de nouveau visible la DLL ou un fichier de ce dossier.
+        self::assertSame([], array_values(preg_grep('/^\s*!.*(?:UptoDate|@COMSPECOverwatch|COMSPECExtension|\.dll\b)/i', explode("\n", $ignore)) ?: []), 'négation qui vise le pack hérité');
     }
 
     public function testGitignoreNoLongerSaysTheLegacyDllIsTracked(): void
@@ -774,6 +783,21 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         }
         self::assertSame([], $outside, 'écriture hors du « else » de la garde du pack natif');
         self::assertGreaterThanOrEqual(20, $inside);
+
+        // (d) revue v3 : aucune écriture ne peut viser les cibles hors de cette boucle gardée. Aucun call dans la boucle,
+        // et %LOCAL_MOD% ou %SOAR_FN% n'apparaissent que sur la ligne for.
+        $calls = [];
+        for ($i = $loop + 1; $i < count($commands) && $depths[$i] > $depths[$loop]; $i++) {
+            if (preg_match('/(?<![\w-])call(?![\w-])/i', $commands[$i]) === 1) {
+                $calls[] = $commands[$i];
+            }
+        }
+        self::assertSame([], $calls, 'call dans la boucle de déploiement');
+        self::assertSame(
+            ['for %%T in ("%LOCAL_MOD%" "%SOAR_FN%") do ('],
+            array_values(array_filter($commands, static fn (string $line): bool => preg_match('/%(?:LOCAL_MOD|SOAR_FN)(?::[^%]*)?%/i', $line) === 1)),
+            'cible du déploiement nommée hors de la ligne for',
+        );
     }
 
     public function testDocsNoLongerSendTheLegacyPackToTheWorkshop(): void
