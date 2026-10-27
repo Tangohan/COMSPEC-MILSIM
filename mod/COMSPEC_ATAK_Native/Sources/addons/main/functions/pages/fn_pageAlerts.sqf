@@ -78,7 +78,7 @@ private _grid = [getPosASL player, 8] call comspec_atak_native_fnc_gridRef;
 [[0, 0, pixelW * 4, _hdrH], _cRed] call _box;
 [[0, _hdrH - pixelH * 2, _bw, pixelH * 2], [_cRed select 0, _cRed select 1, _cRed select 2, 0.7]] call _box;
 ["COMSPEC_RscText", [_pad, _hdrH * 0.08, _bw * 0.5, _font * 1.3], "ALERTES", _font * 1.2, _cRed, true] call _lbl;
-["COMSPEC_RscText", [_pad, _hdrH * 0.08 + _font * 1.25, _bw * 0.5, _fs * 1.2], format ["DÉTRESSE ET CONTACT · %1", [dayTime, "HH:MM"] call BIS_fnc_timeToString], _fs * 0.8, _cDim] call _lbl;
+["COMSPEC_RscText", [_pad, _hdrH * 0.08 + _font * 1.25, _bw * 0.5, _fs * 1.2], format ["DÉTRESSE ET CONTACT · %1", (["now"] call comspec_atak_native_fnc_clockFmt)], _fs * 0.8, _cDim] call _lbl;
 ["COMSPEC_RscTextRight", [_bw * 0.45, _hdrH * 0.08, _bw * 0.55 - _pad, _font * 1.3], _grid, _fs, _cText, true] call _lbl;
 // Pastille : à qui partent les alertes.
 private _chip = ["COMSPEC_RscTextCenter", [0, _hdrH * 0.08 + _font * 1.3, 0.1, _fs * 1.15], ["CAMP SEULEMENT", "CAMP + POSTE"] select _bridge, _fs * 0.72, [_cText, _cInk] select _bridge, true] call _lbl;

@@ -24,23 +24,21 @@ private _bs = toString [92];
 // (un saut de ligne brut dans un nom rendait tout le corps illisible → HTTP 400 côté Athena).
 private _fnc_str = {
     params ["_s"];
-    private _e = (_s splitString _bs) joinString (_bs + _bs);
-    _e = (_e splitString _dq) joinString (_bs + _dq);
-    private _codes = toArray _e;
-    if ((_codes findIf { _x < 32 }) >= 0) then {
-        private _out = [];
-        {
-            switch (true) do {
-                case (_x == 10): { _out append [92, 110] };
-                case (_x == 13): { _out append [92, 114] };
-                case (_x == 9): { _out append [92, 116] };
-                case (_x < 32): { _out pushBack 32 };
-                default { _out pushBack _x };
-            };
-        } forEach _codes;
-        _e = toString _out;
-    };
-    _dq + _e + _dq
+    // Caractère par caractère : splitString écarte les segments vides, si bien que
+    // guillemets / antislashs en tête, en fin ou doublés disparaissaient du texte.
+    private _out = [];
+    {
+        switch (true) do {
+            case (_x == 34): { _out append [92, 34] };
+            case (_x == 92): { _out append [92, 92] };
+            case (_x == 10): { _out append [92, 110] };
+            case (_x == 13): { _out append [92, 114] };
+            case (_x == 9): { _out append [92, 116] };
+            case (_x < 32): { _out pushBack 32 };
+            default { _out pushBack _x };
+        };
+    } forEach (toArray _s);
+    _dq + (toString _out) + _dq
 };
 
 // Valeur JSON (récursif : tableaux imbriqués et sous-hashmaps)

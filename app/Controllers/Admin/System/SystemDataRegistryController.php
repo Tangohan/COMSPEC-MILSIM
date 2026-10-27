@@ -36,9 +36,29 @@ final class SystemDataRegistryController
             'backOfficePageCss' => ['admin-data-registry.css'],
             'boPageKicker' => 'EXPLOITATION · DONNÉES',
             'boPageTitle' => 'Registre des données',
-            'boPageSubtitle' => 'Communautés, comptes, joueurs, ATAK, unités et sessions en tableaux : corrélations, export Excel et purge.',
+            'boPageSubtitle' => 'Communautés, comptes, joueurs, ATAK, unités et sessions en tableaux : corrélations, export Excel et purge. Recherche par adresse de profil Steam. Mods proches du pack officiel.',
             'registryDatasets' => DataRegistryService::DATASETS,
         ]);
+    }
+
+    /** Résolution d’outils (Steam depuis une URL de profil, etc.). */
+    public function tools(Request $request, array $params = []): Response
+    {
+        $op = (string) $request->query('op', '');
+        if ($op === 'steam') {
+            $raw = mb_substr(trim((string) $request->query('q', '')), 0, 240);
+            $res = $this->registry->resolveSteamQuery($raw);
+
+            return Response::json([
+                'ok' => $res['steam'] !== null,
+                'steam' => $res['steam'],
+                'message' => $res['steam'] !== null
+                    ? ($res['note'] !== '' ? $res['note'] : 'Identifiant Steam trouvé.')
+                    : ($res['note'] !== '' ? $res['note'] : 'Impossible de reconnaître un profil Steam dans cette saisie.'),
+            ])->header('Cache-Control', 'private, no-store');
+        }
+
+        return Response::json(['ok' => false, 'message' => 'Outil inconnu.'], 400);
     }
 
     public function api(Request $request, array $params = []): Response

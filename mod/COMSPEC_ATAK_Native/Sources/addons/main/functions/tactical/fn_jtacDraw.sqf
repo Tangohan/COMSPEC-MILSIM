@@ -121,7 +121,7 @@ if (_hasT) then {
     if ((count _ip) >= 2) then {
         _map drawArrow [_ip, _tgt, _green];
         _map drawIcon ["\A3\ui_f\data\map\markers\military\triangle_CA.paa", _green, _ip, 20, 20, 0, format [" %1", [_ipName, "IP"] select (_ipName isEqualTo "")], 2, _tsz, _mono, "right"];
-        [[_ip, _tgt] call _mid, format ["%1° · %2 NM", [round (_ip getDir _tgt), 3] call CBA_fnc_formatNumber, ((_ip distance2D _tgt) / 1852) toFixed 1], _green] call _label;
+        [[_ip, _tgt] call _mid, format ["%1° M · %2 NM", [([_ip, _tgt] call comspec_atak_native_fnc_magBearing) select 1, 3] call CBA_fnc_formatNumber, ((_ip distance2D _tgt) / 1852) toFixed 1], _green] call _label;
     };
     // Amis : le plus proche relié à la cible.
     private _near = [];
@@ -139,7 +139,7 @@ if (!_pilot) then {
     _map drawIcon ["\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa", _cyan, getPosASL player, 24, 24, getDir player, " JTAC", 2, _tsz, _mono, "right"];
     if (_hasT && {_laser}) then {
         _map drawLine [getPosASL player, _tgt, [1, 0.3, 0.25, 0.75]];
-        [(getPosASL player) getPos [(player distance2D _tgt) * 0.3, player getDir _tgt], format ["LTL %1°", [round (player getDir _tgt), 3] call CBA_fnc_formatNumber], [1, 0.45, 0.4, 1]] call _label;
+        [(getPosASL player) getPos [(player distance2D _tgt) * 0.3, player getDir _tgt], format ["LTL %1° M", [([player, _tgt] call comspec_atak_native_fnc_magBearing) select 1, 3] call CBA_fnc_formatNumber], [1, 0.45, 0.4, 1]] call _label;
     };
 };
 

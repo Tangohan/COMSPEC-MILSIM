@@ -5,6 +5,14 @@
     Params : [contrôle, nom de la classe, forcer (contrôles fixes du display, qui gardent la police précédente)]
 */
 params ["_c", ["_class", ""], ["_force", false]];
+// Texte structuré des pages : taille de base à l'échelle du téléphone (fn_layoutGet, COMSPEC_ATAK_FontBody) au lieu de
+// la taille fixe de la classe (0.024 * safeZoneH). Retour de jeu : le texte gardait la même taille quel que soit
+// l'écran (mini, plein écran, Taille du texte) alors que les cadres, boutons et libellés suivent le téléphone ; il
+// débordait de ses cadres (bandeau GPS coupé) et les boutons paraissaient minuscules à côté.
+if (!isNull _c && {_class in ["COMSPEC_RscStructuredText", "COMSPEC_RscMapPanel", "COMSPEC_RscCard", "COMSPEC_RscBubbleIn", "COMSPEC_RscBubbleOut"]}
+    && {(missionNamespace getVariable ["COMSPEC_ATAK_FontBody", 0]) > 0}) then {
+    _c ctrlSetFontHeight COMSPEC_ATAK_FontBody;
+};
 if (!(_force || {missionNamespace getVariable ["COMSPEC_ATAK_FontAlt", false]}) || {isNull _c}) exitWith {};
 private _w = switch (true) do {
     case (_class in ["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary", "COMSPEC_RscBadge", "COMSPEC_RscLabel", "COMSPEC_RscChip", "Title"]): { 1 };

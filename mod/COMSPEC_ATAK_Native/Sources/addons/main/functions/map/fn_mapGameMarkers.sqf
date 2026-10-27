@@ -139,8 +139,7 @@ private _off = {
         case 0: {
             _x params ["", "_m", "_icon", "_c", "_w", "_h", "_dir", "_shadow"];
             private _pos = getMarkerPos _m;
-            (_map ctrlMapWorldToScreen _pos) params ["_sx", "_sy"];
-            if (_sx < (_mx - _mg) || {_sx > (_mx + _mw + _mg)} || {_sy < (_my - _mg)} || {_sy > (_my + _mh + _mg)}) then { continue };
+            if ((_pos select 0) < (_view select 0) || {(_pos select 0) > (_view select 2)} || {(_pos select 1) < (_view select 1)} || {(_pos select 1) > (_view select 3)}) then { continue };
             _map drawIcon [_icon, _c, _pos, (_w * _mk) max 7, (_h * _mk) max 7, _dir, "", _shadow];
         };
         case 1: {

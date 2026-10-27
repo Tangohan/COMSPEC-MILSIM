@@ -46,7 +46,7 @@ $tipById = [
         <article class="eff-rh-tile <?= $total > 0 ? 'eff-rh-tile--warn' : 'eff-rh-tile--ok' ?>">
             <span class="eff-rh-tile__kicker">Total</span>
             <strong class="eff-rh-tile__value"><?= $total ?></strong>
-            <span class="eff-rh-tile__label">signalement<?= $total > 1 ? 's' : '' ?> actif<?= $total > 1 ? 's' : '' ?></span>
+            <span class="eff-rh-tile__label"><?= locale() === 'en' ? 'active alert' . ($total > 1 ? 's' : '') : 'signalement' . ($total > 1 ? 's' : '') . ' actif' . ($total > 1 ? 's' : '') ?></span>
         </article>
         <?php foreach ($items as $item): ?>
             <?php
@@ -166,14 +166,36 @@ $tipById = [
         <?php if ($vacant === []): ?>
             <p class="eff-rh-list-card__empty">Tous les postes de l’organigramme sont pourvus.</p>
         <?php else: ?>
-            <ul class="eff-rh-people">
-                <?php foreach ($vacant as $b): ?>
+            <?php
+            // Liste longue : les 6 premiers postes (critiques d'abord), le reste replié pour garder les cartes alignées.
+            $vacantShown = array_slice($vacant, 0, 6);
+            $vacantRest = array_slice($vacant, 6);
+            $vacantRow = static function (array $b) use ($h): void {
+                $held = (int) ($b['held'] ?? 0);
+                $authorized = (int) ($b['authorized'] ?? 0);
+                ?>
                     <li>
                         <a href="<?= $h(url('back-office/organisation/structure') . ((int) ($b['unit_id'] ?? 0) > 0 ? '?unite=' . (int) $b['unit_id'] : '')) ?>"><?= $h((string) ($b['title'] ?? 'Poste')) ?><small><?= $h(trim((string) ($b['unit_name'] ?? '')) ?: 'Unité') ?><?= trim((string) ($b['code'] ?? '')) !== '' ? ' · ' . $h((string) $b['code']) : '' ?></small></a>
-                        <span class="<?= !empty($b['critical']) ? 'is-late' : '' ?>"><?= (int) ($b['held'] ?? 0) ?> / <?= (int) ($b['authorized'] ?? 0) ?> pourvu<?= (int) ($b['authorized'] ?? 0) > 1 ? 's' : '' ?><?= !empty($b['critical']) ? ' · critique' : '' ?></span>
+                        <span class="eff-rh-fill<?= !empty($b['critical']) ? ' is-late' : '' ?>">
+                            <b><?= $held ?> / <?= $authorized ?></b>
+                            <?php if (!empty($b['critical'])): ?><em class="eff-rh-pill eff-rh-pill--bad">Critique</em><?php endif; ?>
+                        </span>
                     </li>
-                <?php endforeach; ?>
+                <?php
+            };
+            ?>
+            <p class="eff-rh-fill-legend">Titulaires / prévus</p>
+            <ul class="eff-rh-people">
+                <?php foreach ($vacantShown as $b) { $vacantRow($b); } ?>
             </ul>
+            <?php if ($vacantRest !== []): ?>
+            <details class="eff-rh-more">
+                <summary>Afficher les <?= count($vacantRest) ?> autres postes</summary>
+                <ul class="eff-rh-people">
+                    <?php foreach ($vacantRest as $b) { $vacantRow($b); } ?>
+                </ul>
+            </details>
+            <?php endif; ?>
             <p class="eff-rh-list-card__more"><a href="<?= $h(effectifs_workspace_url('vivier')) ?>">Préparer une relève dans le vivier →</a></p>
         <?php endif; ?>
     </section>

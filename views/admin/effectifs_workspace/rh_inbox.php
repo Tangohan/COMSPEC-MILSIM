@@ -181,7 +181,11 @@ $dialogs = [];
 
 <?php foreach ($dialogs as $dialog): ?>
     <?php $action = $dialog['action']; $changes = is_array($action['changes'] ?? null) ? $action['changes'] : []; ?>
-    <dialog class="eff-dialog" id="<?= $h($dialog['id']) ?>" aria-labelledby="<?= $h($dialog['id']) ?>-t">
+    <?php
+    $memberNote = trim((string) ($action['member_note'] ?? ''));
+    $requestedBy = trim((string) ($action['requested_by'] ?? ''));
+    ?>
+    <dialog class="eff-dialog eff-dialog--decision" id="<?= $h($dialog['id']) ?>" aria-labelledby="<?= $h($dialog['id']) ?>-t">
         <form method="post" action="<?= $h((string) $action['decide_url']) ?>" class="eff-dialog__body">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
             <input type="hidden" name="return_to" value="a-traiter">
@@ -192,25 +196,56 @@ $dialogs = [];
                 </div>
                 <button type="button" class="eff-dialog__close" data-dialog-close aria-label="Fermer">×</button>
             </header>
-            <?php if (trim((string) ($action['requested_by'] ?? '')) !== ''): ?>
-                <p class="eff-dialog__meta">Demandé par <?= $h((string) $action['requested_by']) ?></p>
+            <?php if ($requestedBy !== ''): ?>
+                <p class="eff-dialog__meta">Demandé par <?= $h($requestedBy) ?></p>
             <?php endif; ?>
-            <?php if (trim((string) ($action['detail'] ?? '')) !== ''): ?>
-                <blockquote class="eff-dialog__quote"><?= $h((string) $action['detail']) ?></blockquote>
+            <p class="eff-dialog__lead">Confirmer applique ces changements au dossier. Refuser le laisse tel qu’il est.</p>
+            <?php if ($memberNote !== ''): ?>
+                <blockquote class="eff-dialog__quote"><span class="eff-dialog__quote-label">Message du membre</span><?= $h($memberNote) ?></blockquote>
             <?php endif; ?>
             <?php if ($changes !== []): ?>
-                <dl class="eff-dialog__changes">
+                <ul class="eff-dialog__changes">
                     <?php foreach ($changes as $change): ?>
-                        <div><dt><?= $h((string) $change['label']) ?></dt><dd><?= $h((string) $change['value'] !== '' ? (string) $change['value'] : 'Vide') ?></dd></div>
+                        <?php
+                        $beforeLines = is_array($change['before'] ?? null) ? $change['before'] : [];
+                        $afterLines = is_array($change['after'] ?? null) ? $change['after'] : [];
+                        $blank = trim((string) ($change['blank'] ?? 'Non renseigné'));
+                        if ($blank === '') {
+                            $blank = 'Non renseigné';
+                        }
+                        ?>
+                        <li class="eff-dialog__change">
+                            <p class="eff-dialog__change-label"><?= $h((string) ($change['label'] ?? 'Information du dossier')) ?></p>
+                            <p class="eff-dialog__change-row">
+                                <span>Actuellement</span>
+                                <strong>
+                                    <?php if ($beforeLines === []): ?>
+                                        <?= $h($blank) ?>
+                                    <?php else: ?>
+                                        <?php foreach ($beforeLines as $line): ?><span class="eff-dialog__change-line"><?= $h((string) $line) ?></span><?php endforeach; ?>
+                                    <?php endif; ?>
+                                </strong>
+                            </p>
+                            <p class="eff-dialog__change-row eff-dialog__change-row--next">
+                                <span>Proposé</span>
+                                <strong>
+                                    <?php if ($afterLines === []): ?>
+                                        <?= $h($blank) ?>
+                                    <?php else: ?>
+                                        <?php foreach ($afterLines as $line): ?><span class="eff-dialog__change-line"><?= $h((string) $line) ?></span><?php endforeach; ?>
+                                    <?php endif; ?>
+                                </strong>
+                            </p>
+                        </li>
                     <?php endforeach; ?>
-                </dl>
+                </ul>
             <?php endif; ?>
             <label class="eff-dialog__field">
-                Commentaire pour le membre (optionnel)
-                <input type="text" name="resolution_note" maxlength="1000" placeholder="Précision sur la décision">
+                Message au membre (facultatif)
+                <input type="text" name="resolution_note" maxlength="1000" placeholder="Ce message lui sera transmis avec votre décision">
             </label>
             <footer class="eff-dialog__foot">
-                <a class="eff-dialog__link" href="<?= $h((string) ($action['href'] ?? '#')) ?>">Voir l’avant / après complet</a>
+                <a class="eff-dialog__link" href="<?= $h((string) ($action['href'] ?? '#')) ?>">Ouvrir la page des corrections</a>
                 <button type="submit" name="decision" value="rejected" class="ath-btn">Refuser</button>
                 <button type="submit" name="decision" value="approved" class="ath-btn ath-btn--solid">Confirmer</button>
             </footer>

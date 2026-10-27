@@ -171,7 +171,10 @@ private _n = 0;
         };
         case "CARD": {
             _t1 = toUpper ([_txt, _lock param [0, ""]] select _isLock);
-            if (_isLock) then { _t2 = _lock select 1; } else {
+            // Ligne distance · cap : mesurée chiffres remplacés par 0 (chasse fixe), sinon chaque mètre parcouru ajoutait
+            // une entrée au cache partagé des largeurs (vidé à 800), et tous les libellés étaient remesurés.
+            private _t2w = "";
+            if (_isLock) then { _t2 = _lock select 1; _t2w = _t2; } else {
                 if (_close) then {
                     private _dc = _distCache getOrDefault ["mk:" + _id, []];
                     if ((count _dc) < 2 || {_now > (_dc select 0)}) then {
@@ -180,11 +183,12 @@ private _n = 0;
                         _distCache set ["mk:" + _id, _dc];
                     };
                     _t2 = _dc select 1;
+                    _t2w = _t2 regexReplace ["[0-9]", "0"];
                 };
             };
             if (_far) then { _t2 = ""; };
             _w1 = [_t1, _f1, _fs] call comspec_atak_native_fnc_mapTextW;
-            if (_t2 isNotEqualTo "") then { _w2 = [_t2, _fR, _fs2] call comspec_atak_native_fnc_mapTextW; };
+            if (_t2 isNotEqualTo "") then { _w2 = [_t2w, _fR, _fs2] call comspec_atak_native_fnc_mapTextW; };
             _bw = (_w1 max _w2) + _padC * 2;
             _bh = _fs * 1.15 + ([0, _fs2 * 1.1] select (_t2 isNotEqualTo "")) + 5 * pixelH;
             _card = true;

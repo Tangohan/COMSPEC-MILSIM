@@ -237,6 +237,10 @@ def looks_like_code(s):
         return True
     if re.fullmatch(r"[a-z0-9_\-]+", t) and len(t) <= 3:
         return True
+    # Préfixe court collé à des valeurs (« CR%1%2 » : identifiant de compte rendu) : code, pas une phrase. Traduit,
+    # il réécrivait tout texte commençant par « CR » (« CROW 1-1 » -> « RPTOW 1-1 »).
+    if re.fullmatch(r"[A-Z]{1,4}(%\d)+", t):
+        return True
     return False
 
 
@@ -274,9 +278,10 @@ def save_dict(pairs):
                 print("Numéro à deux chiffres (%10+), modèle refusé : renuméroter de %1 à %9 :", fr, file=sys.stderr)
                 continue
             seen[fr] = en
-            # fn_langApply ignore les modèles à valeurs collées (%1%2) : jamais traduits.
-            if ADJACENT.search(fr):
-                print("Valeurs collées (%1%2), modèle ignoré en jeu : séparer les valeurs dans le code :", fr, file=sys.stderr)
+            # Valeurs collées (%1%2) : fn_langApply laisse la première capturer les deux (la seconde vide), sauf si la
+            # seconde revient ailleurs dans le texte (elle s'afficherait deux fois) : ce modèle-là est ignoré en jeu.
+            if any(len(re.findall("%" + m.group(2) + r"(?!\d)", fr)) > 1 for m in re.finditer(r"%(\d)%(\d)", fr)):
+                print("Valeurs collées (%1%2) dont la seconde revient plus loin, modèle ignoré en jeu : séparer les valeurs dans le code :", fr, file=sys.stderr)
     q = lambda s: '"' + s.replace('"', '""') + '"'
     lines = [f"[{q(fr)}, {q(en)}]" for fr, en in sorted(seen.items(), key=lambda p: p[0].lower())]
     with open(DICT, "w", encoding="utf-8", newline="\n") as f:
@@ -495,6 +500,9 @@ def stringtable():
         print("  " + fr)
 
 
+FR_AMBIGUOUS = {"Dock", "Support"}
+
+
 def build_fr():
     """i18n/fr.txt : [["texte anglais", "français"], ...], chargé par fn_langApply quand la langue est le français."""
     import html as _h
@@ -518,6 +526,10 @@ def build_fr():
         en, fr = line.split("\t", 1)
         if en != fr:
             pairs[en] = fr
+    # Mots anglais à double sens : fn_tr traduit chaque texte affiché, donc « Dock » (repère de carte) renommerait le
+    # pli « Dock » des réglages en « Quai », et « Support » (nom par défaut d'un appareil DL-7) deviendrait « Soutien ».
+    for en in FR_AMBIGUOUS:
+        pairs.pop(en, None)
     out = os.path.join(ROOT, "Sources", "addons", "main", "i18n", "fr.txt")
     esc = lambda t: t.replace('"', '""')
     with open(out, "w", encoding="utf-8", newline="\n") as f:

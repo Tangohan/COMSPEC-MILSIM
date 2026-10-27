@@ -26,7 +26,8 @@ if (_orderOrType isEqualType createHashMap) then {
 if (_custom isNotEqualTo "") then {
     _custom
 } else {
-    private _upper = toUpper (str _type);
+    // _type est normalement déjà une chaîne : str y ajouterait des guillemets (aucune clé ne correspondrait).
+    private _upper = toUpper (if (_type isEqualType "") then { _type } else { str _type });
     private _labels = createHashMapFromArray [
         ["HOLD", "Tenir la position"],
         ["RECON", "Reconnaissance"],

@@ -22,4 +22,10 @@ if ($i !== null && trim((string) $i) !== '') {
 if ($w !== null && trim((string) $w) !== '') {
     $flash_toasts[] = ['variant' => 'warning', 'message' => (string) $w];
 }
+foreach (['error', 'warning'] as $toastKey) {
+    $athToastMsg = \App\Core\Session::getFlash('toast_' . $toastKey);
+    if ($athToastMsg !== null && trim((string) $athToastMsg) !== '') {
+        $flash_toasts[] = ['variant' => $toastKey, 'message' => (string) $athToastMsg];
+    }
+}
 require base_path('views/partials/flash_toasts.php');

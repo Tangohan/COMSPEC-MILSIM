@@ -56,7 +56,8 @@ if (!_bootMk) then {
     missionNamespace setVariable ["COMSPEC_WebMarkersBootstrapped", true, false];
 };
 {
-    private _cols = _x splitString _tab;
+    // splitKeepEmpty : libellé / couleur vides ne décalent plus la colonne source (sinon marqueur web ignoré).
+    private _cols = [_x, _tab] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _cols) < 6) then { continue };
     if ((_cols select 0) != "M") then { continue };
 

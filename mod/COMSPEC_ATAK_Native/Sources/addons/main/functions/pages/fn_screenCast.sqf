@@ -4,6 +4,11 @@
     COMSPEC » (fn_moduleScreen) ou par script ; le téléphone le détecte à portée et le pilote, ACE (ou la molette) aussi.
     Chaque joueur affiche lui-même l'image sur l'objet (setObjectTexture local) : diapositive Athena téléchargée par son
     COMSPEC Link, ou la sienne du Google Slides synchronisé. Sans COMSPEC Link, l'écran reste noir pour lui.
+    Arma refuse toute image hors d'un PBO (journal de TTRD du 26/10 : texture [-1,-1], écran noir) : comme dans l'app
+    Briefing, la copie JPEG du site est lue en base64 par COMSPEC Link (ImageDataChunk, 2.0.96+) et montrée par un
+    navigateur intégré (CT_WEBBROWSER) dans une texture UI posée sur l'objet
+    (#(rgb,1280,720,1)ui("COMSPEC_RscScreenSlideTexture", nom unique)). Le chemin direct reste utilisé quand Arma le lit
+    (-filePatching).
 
     Variables publiques de l'objet :
       COMSPEC_ATAK_Screen     [nom, portée m, camp ("" = tous), index de texture, contrôle ACE]
@@ -19,6 +24,7 @@
       ["stop", objet]             arrête la diffusion        ["step", [objet, ±1]] : diapositive précédente / suivante
       ["sync"]                    ma diapositive a changé : les écrans que je diffuse suivent
       ["tick"]                    toutes les 2 s (XEH_postInitClient) : image des écrans proches, actions ACE ou molette
+      ["load", display]           onLoad du display de la texture UI (diapositive par le navigateur intégré)
       ["initServer"]              événement serveur (XEH_postInitServer)
     Exemple de mission : ["add", [this, "Salle de briefing", 30]] call comspec_atak_native_fnc_screenCast;
 */
@@ -40,6 +46,15 @@ private _myDeck = {
     };
     if (_src isEqualTo "GOOGLE") exitWith { ["GOOGLE", [], _idx] };
     []
+};
+// La dalle visible n'est pas toujours la sélection 0 : un portable a « camo » puis « screen ».
+// On prend la sélection nommée écran quand celle demandée n'en est pas une.
+private _face = {
+    params ["_o", "_sel"];
+    private _names = getArray (configOf _o >> "hiddenSelections");
+    private _named = _names findIf { (toLower _x) in ["screen", "display", "lcd", "monitor"] };
+    private _curName = toLower (_names param [_sel, ""]);
+    if (_named >= 0 && {!(_curName in ["screen", "display", "lcd", "monitor"])}) then { _named } else { _sel }
 };
 
 switch (_mode) do {
@@ -93,6 +108,15 @@ switch (_mode) do {
             false
         };
         _d params ["_src", "_deck", "_idx"];
+        // Google chargé par TESTER LE LIEN (ce téléphone seul) : les autres joueurs n'avaient pas le deck et voyaient un
+        // écran noir. Il leur est d'abord diffusé (même chemin que DIFFUSER À TOUS), la navigation suit ensuite pour tous.
+        if (_src isEqualTo "GOOGLE") then {
+            private _gUrl = uiNamespace getVariable ["COMSPEC_ATAK_BriefLocalDeck", ""];
+            if (_gUrl isNotEqualTo "") then {
+                uiNamespace setVariable ["COMSPEC_ATAK_BriefLocalDeck", ""];
+                ["show", _gUrl, _idx] call comspec_overwatch_connect_fnc_broadcastGoogleBriefingState;
+            };
+        };
         _a setVariable ["COMSPEC_ATAK_ScreenCast", [player, name player, _src, _deck, _idx], true];
         true
     };
@@ -127,6 +151,7 @@ switch (_mode) do {
     };
     case "tick": {
         if (!hasInterface) exitWith { false };
+        disableSerialization;
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_ScreenTex", createHashMap];
         uiNamespace setVariable ["COMSPEC_ATAK_ScreenTex", _cache];
         private _bridge = [] call comspec_atak_native_fnc_bridge;
@@ -137,60 +162,173 @@ switch (_mode) do {
                 _o setVariable ["COMSPEC_ATAK_ScreenAct", true];
                 ["actions", _o] call _fn;
             };
-            private _cfg = _o getVariable ["COMSPEC_ATAK_Screen", []];
-            private _sel = _cfg param [3, 0];
+        private _cfg = _o getVariable ["COMSPEC_ATAK_Screen", []];
+        private _sel = [_o, _cfg param [3, 0]] call _face;
+        if ((_o getVariable ["COMSPEC_ATAK_ScreenSel", _sel]) isNotEqualTo _sel) then {
+            _o setVariable ["COMSPEC_ATAK_ScreenCur", ""];
+            _o setVariable ["COMSPEC_ATAK_ScreenOrig", nil];
+        };
             private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
             // Texture voulue : "" = celle d'origine.
             private _want = "";
             if ((count _c) >= 5) then {
                 _want = "#(rgb,8,8,3)color(0,0,0,1)";
                 if (_bridge) then {
+                    // Source : adresse Athena, ou « local:<chemin> » de la diapositive Google téléchargée par COMSPEC Link.
+                    private _key = "";
+                    private _id = "g";
                     if ((_c select 2) isEqualTo "GOOGLE") then {
-                        private _p = missionNamespace getVariable ["COMSPEC_GoogleBriefingPath", ""];
-                        if (_p isNotEqualTo "") then { _want = _p; };
+                        private _gp = missionNamespace getVariable ["COMSPEC_GoogleBriefingPath", ""];
+                        if (_gp isNotEqualTo "") then { _key = "local:" + _gp; };
                     } else {
-                        private _url = ((_c select 3) param [_c select 4, []]) param [2, ""];
-                        if (_url isNotEqualTo "") then {
-                            // Cache : chemin de l'image, ou heure d'un échec (nouvel essai après 60 s).
-                            private _p = _cache getOrDefault [_url, -1e9];
-                            if (_p isEqualType "" && {_p isNotEqualTo ""}) then {
-                                _want = _p;
-                            } else {
-                                if !(_p isEqualType 0) then { _p = -1e9; };
-                                // Téléchargement hors de l'image en cours, un à la fois (fn_extAwait : sans figer le jeu).
-                                // Verrou horodaté : libre après 30 s même si le script de téléchargement s'est arrêté.
-                                if (diag_tickTime - _p > 60 && {diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_ScreenDl", -1e9]) > 30} && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
-                                    missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", diag_tickTime];
-                                    [_url, ((_c select 3) select (_c select 4)) select 0, _cache] spawn {
-                                        params ["_url", "_id", "_cache"];
+                        private _slide = (_c select 3) param [_c select 4, []];
+                        _key = _slide param [2, ""];
+                        _id = str (_slide param [0, 0]);
+                    };
+                    if (_key isNotEqualTo "") then {
+                        // Cache : texture posable (chemin lisible ou "WEB:<source>"), ou heure d'un échec (nouvel essai après 60 s).
+                        private _p = _cache getOrDefault [_key, -1e9];
+                        // Image évincée du magasin base64 (vidé au-delà de 12) : « WEB:<clé> » périmé, image relue.
+                        if (_p isEqualType "" && {(_p select [0, 4]) isEqualTo "WEB:"} && {!(_key in (uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap]))}) then { _cache deleteAt _key; _p = -1e9; };
+                        if (_p isEqualType "" && {_p isNotEqualTo ""}) then {
+                            _want = _p;
+                        } else {
+                            if !(_p isEqualType 0) then { _p = -1e9; };
+                            // Téléchargement hors de l'image en cours, un à la fois (fn_extAwait : sans figer le jeu).
+                            // Verrou horodaté : libre après 30 s même si le script de téléchargement s'est arrêté.
+                            if (diag_tickTime - _p > 60 && {diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_ScreenDl", -1e9]) > 30} && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
+                                missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", diag_tickTime];
+                                [_key, _id, _cache] spawn {
+                                    params ["_key", "_id", "_cache"];
+                                    private _local = (_key select [0, 6]) isEqualTo "local:";
+                                    private _url = [_key, ""] select _local;
+                                    private _p = "";
+                                    if (_local) then {
+                                        _p = (((_key select [6]) splitString (toString [92])) joinString "/");
+                                    } else {
                                         private _raw = [(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, format ["%1_%2", _id, hashValue _url]]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
                                         if (isNil "_raw") then { _raw = ""; };
                                         if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
                                         if !(_raw isEqualType "") then { _raw = str _raw; };
                                         private _dl = _raw splitString "|";
-                                        private _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
-                                        private _lp = toLower _p;
-                                        // Arma ne lit que JPEG et PAA sur un objet, comme dans le téléphone.
-                                        if !((_lp select [((count _lp) - 4) max 0]) in [".jpg", "jpeg", ".paa"]) then { _p = ""; };
-                                        ["INFO", "BRIEFING", format ["Écran : diapositive %1, adresse %2, fichier %3", _id, _url, [_p, "illisible"] select (_p isEqualTo "")]] call comspec_atak_native_fnc_log;
-                                        _cache set [_url, [_p, diag_tickTime] select (_p isEqualTo "")];
-                                        missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", -1e9];
+                                        _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
                                     };
+                                    private _lp = toLower _p;
+                                    // Arma ne lit que JPEG et PAA sur un objet, et aucune image hors d'un PBO sans -filePatching
+                                    // (journal de TTRD du 26/10 : texture [-1,-1], écran noir) : chemin gardé seulement s'il est lisible.
+                                    private _use = if ((_lp select [((count _lp) - 4) max 0]) in [".jpg", "jpeg", ".paa"]) then { [_p] call comspec_atak_native_fnc_texUsable } else { "" };
+                                    private _how = "image posée sur l'objet";
+                                    if (_use isEqualTo "") then {
+                                        // Repli, comme l'app Briefing : l'image en base64 montrée par le navigateur intégré.
+                                        ([[_url, _key] select _local, format ["scr_%1", hashValue _key]] call comspec_atak_native_fnc_slideWebData) params ["_mime", "_b64", "_why"];
+                                        if (_why isEqualTo "") then {
+                                            private _store = uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap];
+                                            if (count _store > 12) then { _store = createHashMap; };
+                                            _store set [_key, [_mime, _b64]];
+                                            uiNamespace setVariable ["COMSPEC_ATAK_ScreenWeb", _store];
+                                            _use = "WEB:" + _key;
+                                            _how = "affichée par le navigateur intégré (texture refusée par Arma)";
+                                        } else {
+                                            _how = format ["écran noir : Arma refuse l'image (hors PBO) et %1", _why];
+                                        };
+                                    };
+                                    ["INFO", "BRIEFING", format ["Écran : diapositive %1, source %2, fichier %3, %4", _id, _key, [_p, "illisible"] select (_p isEqualTo ""), _how]] call comspec_atak_native_fnc_log;
+                                    _cache set [_key, [_use, diag_tickTime] select (_use isEqualTo "")];
+                                    missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", -1e9];
                                 };
                             };
                         };
                     };
                 };
             };
+            // Diapositive par le navigateur intégré : texture UI propre à l'objet, page rechargée quand la diapositive change.
+            private _web = "";
+            if ((_want select [0, 4]) isEqualTo "WEB:") then {
+                _web = _want select [4];
+                private _ui = _o getVariable ["COMSPEC_ATAK_ScreenUi", ""];
+                if (_ui isEqualTo "") then {
+                    private _n = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenSeq", 0]) + 1;
+                    uiNamespace setVariable ["COMSPEC_ATAK_ScreenSeq", _n];
+                    _ui = format ["comspec_atak_scr_%1", _n];
+                    _o setVariable ["COMSPEC_ATAK_ScreenUi", _ui];
+                };
+                _want = format ["#(rgb,1280,720,1)ui(""COMSPEC_RscScreenSlideTexture"",""%1"")", _ui];
+                // Un écran en attente de son display à la fois (comme les écrans TOC) : les autres attendent leur tour,
+                // sinon un display pourrait être rangé sous le nom d'un autre écran. Attente libérée au bout de 4 s.
+                private _pend = uiNamespace getVariable ["COMSPEC_ATAK_ScreenPending", []];
+                if ((count _pend) >= 3 && {(_pend select 0) isNotEqualTo _o} && {!isNull (_pend select 0)} && {diag_tickTime - (_pend select 2) < 4}
+                    && {(_o getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isNotEqualTo _want}) then { _want = _o getVariable ["COMSPEC_ATAK_ScreenCur", ""]; _web = ""; };
+            };
             private _cur = _o getVariable ["COMSPEC_ATAK_ScreenCur", ""];
             if (_want isNotEqualTo _cur) then {
+                // Texture UI posée : son display arrive dans « load ».
+                if (_web isNotEqualTo "") then {
+                    if !(uiNamespace getVariable ["COMSPEC_ATAK_ScreenPreload", false]) then {
+                        uiNamespace setVariable ["COMSPEC_ATAK_ScreenPreload", true];
+                        disableSerialization;
+                        private _tmp = findDisplay 46 createDisplay "COMSPEC_RscScreenSlideTexture";
+                        if (!isNull _tmp) then { _tmp closeDisplay 0; };
+                    };
+                    uiNamespace setVariable ["COMSPEC_ATAK_ScreenPending", [_o, _o getVariable ["COMSPEC_ATAK_ScreenUi", ""], diag_tickTime]];
+                    _o setVariable ["COMSPEC_ATAK_ScreenWebShown", ""];
+                };
                 // Texture d'origine gardée avant le premier changement, remise à la fin de la diffusion.
                 if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", (getObjectTextures _o) param [_sel, ""]]; };
                 _o setObjectTexture [_sel, [_want, _o getVariable ["COMSPEC_ATAK_ScreenOrig", ""]] select (_want isEqualTo "")];
                 _o setVariable ["COMSPEC_ATAK_ScreenCur", _want];
                 _o setVariable ["COMSPEC_ATAK_ScreenSel", _sel];
             };
-        } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {(player distance _x) < 300} });
+            if (_web isNotEqualTo "") then {
+                private _disp = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenDisps", createHashMap]) getOrDefault [_o getVariable ["COMSPEC_ATAK_ScreenUi", ""], displayNull];
+                if (!isNull _disp) then {
+                    if ((_o getVariable ["COMSPEC_ATAK_ScreenWebShown", ""]) isNotEqualTo _web) then {
+                        _o setVariable ["COMSPEC_ATAK_ScreenWebShown", _web];
+                        _o setVariable ["COMSPEC_ATAK_ScreenWebAt", diag_tickTime];
+                        _o setVariable ["COMSPEC_ATAK_ScreenWebN", 0];
+                        // Image absente (magasin vidé) : page non chargée, nouvel essai au prochain passage.
+                        if !(["web", [_disp, _web]] call _fn) then { _o setVariable ["COMSPEC_ATAK_ScreenWebShown", ""]; };
+                    };
+                    // Recopier trop tôt fige une image vide. On attend que la page ait l'image, puis quelques copies, puis on fige.
+                    private _wb = _disp getVariable ["COMSPEC_ATAK_ScreenWb", controlNull];
+                    private _ready = (!isNull _wb) && {_wb getVariable ["COMSPEC_ATAK_SlideWebOk", false]} && {diag_tickTime - (_o getVariable ["COMSPEC_ATAK_ScreenWebAt", -1e9]) > 0.8};
+                    if (_ready && {(_o getVariable ["COMSPEC_ATAK_ScreenWebN", 0]) < 1}) then {
+                        _o setVariable ["COMSPEC_ATAK_ScreenWebN", 1];
+                        [_disp, _wb] spawn {
+                            params ["_d", "_wb"];
+                            disableSerialization;
+                            for "_i" from 1 to 5 do {
+                                if (isNull _d) exitWith {};
+                                displayUpdate _d;
+                                uiSleep 0.05;
+                            };
+                            if (!isNull _wb) then {
+                                _wb setVariable ["COMSPEC_ATAK_ScreenFrozen", true];
+                                _wb ctrlWebBrowserAction ["StopBrowser"];
+                            };
+                        };
+                    };
+                };
+            };
+        } forEach (call {
+            private _paint = (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {(player distance _x) < 300} };
+            private _live = call _myDeck;
+            if ((count _live) isEqualTo 0) exitWith { _paint };
+            private _reg = missionNamespace getVariable ["COMSPEC_ATAK_Screens", []];
+            {
+                if (_x isEqualType [] && {(count _x) >= 1}) then {
+                    private _bo = _x param [0, objNull];
+                    if (!isNull _bo && {(player distance _bo) < 300} && {!(_bo in _paint)} && {!(_bo in _reg)}) then {
+                        _bo setVariable ["COMSPEC_ATAK_Screen", ["Écran", 3000, "", _x param [1, 0], false]];
+                        private _have = _bo getVariable ["COMSPEC_ATAK_ScreenCast", []];
+                        if ([_live select 0, _live select 2] isNotEqualTo [_have param [2, ""], _have param [4, -1]]) then {
+                            _bo setVariable ["COMSPEC_ATAK_ScreenCast", [objNull, "", _live select 0, _live select 1, _live select 2]];
+                        };
+                        _paint pushBack _bo;
+                    };
+                };
+            } forEach (missionNamespace getVariable ["COMSPEC_BriefingScreens", []]);
+            _paint
+        });
         // Écrans retirés (Zeus « Retirer l'écran ») : texture d'origine remise une fois sur ce poste.
         {
             if ((_x getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isNotEqualTo "") then {
@@ -198,6 +336,40 @@ switch (_mode) do {
                 _x setVariable ["COMSPEC_ATAK_ScreenCur", ""];
             };
         } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_ScreensOff", []]) select { !isNull _x });
+        true
+    };
+    case "load": {
+        // Display de la texture UI d'un écran : rangé par nom dans uiNamespace (un display ne va pas dans une variable d'objet).
+        disableSerialization;
+        private _p = uiNamespace getVariable ["COMSPEC_ATAK_ScreenPending", []];
+        if (isNull _a || {(count _p) < 2}) exitWith { false };
+        private _disps = uiNamespace getVariable ["COMSPEC_ATAK_ScreenDisps", createHashMap];
+        { if (isNull _y) then { _disps deleteAt _x; }; } forEach +_disps;
+        _disps set [_p select 1, _a];
+        uiNamespace setVariable ["COMSPEC_ATAK_ScreenDisps", _disps];
+        uiNamespace setVariable ["COMSPEC_ATAK_ScreenPending", []];
+        true
+    };
+    case "web": {
+        // Diapositive (JPEG en base64) centrée sur fond noir, sur toute la texture (fn_slideWebShow).
+        _a params ["_d", ["_url", ""]];
+        disableSerialization;
+        if (isNull _d) exitWith { false };
+        private _wb = _d getVariable ["COMSPEC_ATAK_ScreenWb", controlNull];
+        if (isNull _wb) then {
+            _wb = _d ctrlCreate ["COMSPEC_RscWebBrowser", -1];
+            _wb ctrlSetPosition [0, 0, 1, 1];
+            _wb ctrlCommit 0;
+            _wb ctrlWebBrowserAction ["SetBrowserInternalSize", 1280, 720];
+            _d setVariable ["COMSPEC_ATAK_ScreenWb", _wb];
+        };
+        if (_wb getVariable ["COMSPEC_ATAK_ScreenFrozen", false]) then {
+            _wb setVariable ["COMSPEC_ATAK_ScreenFrozen", false];
+            _wb ctrlWebBrowserAction ["ResumeBrowser"];
+        };
+        ((uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap]) getOrDefault [_url, ["jpeg", ""]]) params ["_mime", "_b64"];
+        if (isNull _wb || {_b64 isEqualTo ""}) exitWith { false };
+        [_wb, _mime, _b64] call comspec_atak_native_fnc_slideWebShow;
         true
     };
     case "actions": {

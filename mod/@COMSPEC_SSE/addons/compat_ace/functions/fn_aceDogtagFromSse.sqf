@@ -31,7 +31,7 @@ if (!(_code isEqualType "") || {_code isEqualTo ""}) then {
         _code = format ["%1-%2-%3", floor _a, floor _b, floor _c];
     } else {
         private _h = [0, format ["%1|%2", netId _target, _name]] call comspec_sse_fnc_hash;
-        _code = format ["%1-%2-%3", 100 + (_h mod 800), 10 + ((_h / 10) mod 80), 1000 + ((_h / 100) mod 8000)];
+        _code = format ["%1-%2-%3", floor (100 + (_h mod 800)), floor (10 + ((_h / 10) mod 80)), floor (1000 + ((_h / 100) mod 8000))];
     };
 };
 

@@ -16,7 +16,7 @@ private _same = _hist findIf { (_x getOrDefault ["message", ""]) isEqualTo _mess
 private _times = 1;
 if (_same >= 0) then { _times = ((_hist select _same) getOrDefault ["count", 1]) + 1; _hist deleteAt _same; };
 _hist pushBack createHashMapFromArray [["id", _hid], ["type", toUpper _type], ["message", _message], ["app", toUpper _app], ["count", _times],
-    ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString], ["tick", diag_tickTime]];
+    ["time", (["now"] call comspec_atak_native_fnc_clockFmt)], ["tick", diag_tickTime]];
 while {count _hist > 60} do { _hist deleteAt 0; };
 _s set ["notifHistory", _hist];
 _s set ["notifUnread", (_s getOrDefault ["notifUnread", 0]) + 1];

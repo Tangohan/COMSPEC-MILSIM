@@ -36,6 +36,14 @@ final class RhCareerInboxAssetTest extends TestCase
         self::assertStringContainsString('À traiter', $view);
         self::assertStringContainsString('File d’actions', $view);
         self::assertStringContainsString('Le système propose ; vous décidez', $view);
+        self::assertStringContainsString('Confirmer applique ces changements au dossier', $view);
+        self::assertStringContainsString('Actuellement', $view);
+        self::assertStringContainsString('Proposé', $view);
+        self::assertStringNotContainsString("change['value']", $view);
+
+        self::assertStringContainsString('function lines', (string) file_get_contents($root . '/app/Services/Personnel/PersonnelFieldValueFormatter.php'));
+        self::assertStringContainsString('PersonnelFieldValueFormatter', $inbox);
+        self::assertStringNotContainsString("'nouvelle valeur'", $inbox);
 
         self::assertStringContainsString("['rh_inbox', 'À traiter', 'a-traiter'", $shell);
         self::assertStringContainsString("effectifs_workspace_url('a-traiter')", $shell);

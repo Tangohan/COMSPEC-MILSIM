@@ -45,7 +45,7 @@ if (!isNil "ace_common_fnc_progressBar") then {
     }, {
         player setVariable ["COMSPEC_ATAK_Repairing", false];
         ["WARNING", "Réparation du téléphone interrompue.", 4, 30] call comspec_atak_native_fnc_notify;
-    }, "Réparation du téléphone ATAK…", { alive player }, ["isNotInside", "isNotSitting"]] call ace_common_fnc_progressBar;
+    }, ("Réparation du téléphone ATAK…" call comspec_atak_native_fnc_tr), { alive player }, ["isNotInside", "isNotSitting"]] call ace_common_fnc_progressBar;
 } else {
     ["INFO", format ["Réparation du téléphone ATAK… (%1 s)", _time], 4, 20] call comspec_atak_native_fnc_notify;
     [{

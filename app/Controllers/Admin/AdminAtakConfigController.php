@@ -103,6 +103,8 @@ class AdminAtakConfigController
             'photoHudPreview' => $photoHudPreview,
             'markerIcons' => $markerIcons,
             'markerIconKinds' => \App\Services\Tactical\AtakMarkerIconsService::KINDS,
+            'firstLoginLinkRequired' => $this->firstLoginLinkRequired($tenantId),
+            'firstLoginLinkExisting' => $this->firstLoginLinkRequired($tenantId, 'require_game_link_existing_members'),
             'gameExperience' => (new \App\Services\Game\GameOverwatchExperienceService())->get($tenantId),
             'gameExperiencePreview' => $this->gameExperiencePreviewData($tenantId),
         ]);
@@ -525,6 +527,50 @@ class AdminAtakConfigController
         );
 
         return Response::redirect(url('back-office/ressources/atak-config'));
+    }
+
+    private function firstLoginLinkRequired(int $tenantId, string $key = 'require_game_link_first_login'): bool
+    {
+        try {
+            $settings = (new \App\Repositories\TenantAdminSettingsRepository())->getForTenant($tenantId);
+        } catch (\Throwable) {
+            return $key === 'require_game_link_first_login';
+        }
+
+        return !empty($settings['atak_defaults'][$key]);
+    }
+
+    /**
+     * Liaison du jeu à la première connexion : un nouveau membre saisit le code du jeu avant d'ouvrir le site.
+     * Réglage de communauté `atak_defaults.require_game_link_first_login` (FirstLoginGameLinkGate).
+     */
+    public function storeFirstLoginLink(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $back = url('back-office/ressources/atak-config') . '#overwatch-game-experience';
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $enabled = (string) $request->input('require_game_link_first_login', '0') === '1';
+        $repository = new \App\Repositories\TenantAdminSettingsRepository();
+        $settings = $repository->getForTenant($tenantId);
+        $existing = $enabled && (string) $request->input('require_game_link_existing_members', '0') === '1';
+        $settings['atak_defaults']['require_game_link_first_login'] = $enabled;
+        $settings['atak_defaults']['require_game_link_existing_members'] = $existing;
+        $repository->saveForTenant($tenantId, $settings);
+
+        Session::flash('success', $existing
+            ? 'Liaison obligatoire activée pour tous les membres sans jeu relié, y compris ceux déjà inscrits, à leur prochaine connexion.'
+            : ($enabled
+            ? 'Liaison obligatoire activée : un nouveau membre relie son jeu avant d’ouvrir le site.'
+            : 'Liaison obligatoire désactivée : un nouveau membre ouvre le site sans relier son jeu. Il peut le faire plus tard depuis la page Lier le jeu.'));
+
+        return Response::redirect($back);
     }
 
     /** Télécharge un export JSON de tout le journal et des données de mission. */

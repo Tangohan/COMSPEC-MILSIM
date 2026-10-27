@@ -13,9 +13,12 @@ namespace COMSPECExtension;
 /// null devient "".
 /// Commandes SQF (retour "OK|..." ou "ERR|...") :
 ///   LocalBegin                    → vide le tampon d'écriture
-///   LocalAppend [morceau]         → ajoute au tampon (morceaux de 4000 caractères : la ligne d'appel Arma est bornée)
+///   LocalAppend [morceau]         → ajoute au tampon (morceaux coupés en caractères côté SQF, forceUnicode 0 : chaque
+///                                   argument est décodé seul en UTF-8, un accent coupé en deux deviendrait U+FFFD)
 ///   LocalCommit [nom]             → écrit le tampon dans nom.json (nom : lettres, chiffres, - et _)
 ///   LocalGet [nom, décalage]      → OK|longueur totale|morceau du tableau SQF ; décalage 0 relit le fichier
+///                                   longueur et décalage en unités UTF-16 (string.Length), pas en octets : le SQF avance
+///                                   de forceUnicode 0 count morceau, plus un par caractère hors plan de base (émoji)
 ///                                   ERR|absent (pas de fichier) ou ERR|json|message (fichier mal formé)
 ///   LocalFolder                   → OK|chemin du dossier
 ///   LocalOpenFolder               → ouvre le dossier dans l'explorateur

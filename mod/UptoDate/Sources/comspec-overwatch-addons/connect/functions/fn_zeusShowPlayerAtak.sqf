@@ -148,7 +148,10 @@ if (!(_opened isEqualTo false)) exitWith { true };
 // Repli sans ZEN
 copyToClipboard _info;
 // Journal du terminal (plus de hint par-dessus l'écran de jeu).
-[format ["ATAK — %1 · %2 · Identifiants copiés.", _name, _info replaceString [toString [10], " · "]], "system", "info"] call comspec_overwatch_connect_fnc_announce;
+// toString est calculé à part : un crochet imbriqué dans replaceString fermait l'expression trop tôt.
+private _nl = toString [10];
+private _flat = _info replaceString [_nl, " · "];
+[format ["ATAK — %1 · %2 · Identifiants copiés.", _name, _flat], "system", "info"] call comspec_overwatch_connect_fnc_announce;
 
 private _okJam = ["Brouiller ce joueur 45 s ? (Annuler = infos seulement)", "COMSPEC ATAK", true, true, findDisplay 312] call BIS_fnc_guiMessage;
 if (_okJam) then {

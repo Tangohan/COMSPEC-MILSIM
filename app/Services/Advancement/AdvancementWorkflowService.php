@@ -437,7 +437,11 @@ final class AdvancementWorkflowService
             $personnelId,
             $this->repository->activeGrade($tenantId, $personnelId)
         );
-        $history = $this->repository->historyFor($tenantId, $personnelId);
+        // Grades repris automatiquement d’un ancien référentiel (US/FR avant les grades sur mesure) : jamais réellement obtenus.
+        $history = array_values(array_filter(
+            $this->repository->historyFor($tenantId, $personnelId),
+            static fn (array $row): bool => empty($row['grade_archived_at']) || (string) ($row['obtained_via'] ?? '') !== self::VIA_INITIAL
+        ));
         $offer = null;
         $next = null;
         if ($current !== null && empty($current['from_fiche']) && isset($current['rank_order'])) {
@@ -715,9 +719,6 @@ final class AdvancementWorkflowService
      */
     private function syncHistoryFromFiche(int $tenantId, int $personnelId, DateTimeImmutable $today): void
     {
-        if ($this->repository->historyFor($tenantId, $personnelId) !== []) {
-            return;
-        }
         $fiche = $this->ficheGradeSnapshot($tenantId, $personnelId);
         if ($fiche === null) {
             return;
@@ -730,13 +731,57 @@ final class AdvancementWorkflowService
         if ($definition === null || !empty($definition['archived_at'])) {
             return;
         }
+        if ($this->repository->historyFor($tenantId, $personnelId) === []) {
+            $this->repository->insertHistory([
+                'personnel_id' => $personnelId,
+                'grade_id' => (int) $definition['id'],
+                'obtained_at' => $fiche['obtained_at'] ?? $today->format('Y-m-d'),
+                'obtained_via' => self::VIA_INITIAL,
+                'created_by' => $personnelId,
+            ]);
+
+            return;
+        }
+        $active = $this->repository->activeGrade($tenantId, $personnelId);
+        if ($active !== null && (int) ($active['grade_id'] ?? 0) === (int) $definition['id']) {
+            return;
+        }
+        // Le grade de la fiche a changé (promotion depuis les effectifs, nouveau référentiel) : la progression suit la fiche,
+        // sauf si le grade actif vient d’une campagne d’avancement plus élevée dans la même filière.
+        if ($active !== null && !$this->ficheGradeOverrides($active, $definition)) {
+            return;
+        }
+        $date = $today->format('Y-m-d');
+        if ($active !== null) {
+            $this->repository->closeHistory((int) $active['id'], $date);
+        }
         $this->repository->insertHistory([
             'personnel_id' => $personnelId,
             'grade_id' => (int) $definition['id'],
-            'obtained_at' => $fiche['obtained_at'] ?? $today->format('Y-m-d'),
+            'obtained_at' => $date,
             'obtained_via' => self::VIA_INITIAL,
             'created_by' => $personnelId,
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $active grade actif de l’historique (avec rank_order et filiere_id)
+     * @param array<string, mixed> $definition grade correspondant à la fiche
+     */
+    private function ficheGradeOverrides(array $active, array $definition): bool
+    {
+        if ((string) ($active['obtained_via'] ?? '') === self::VIA_INITIAL) {
+            return true;
+        }
+        $activeDefinition = $this->repository->findGrade((int) ($active['grade_id'] ?? 0), (int) ($definition['tenant_id'] ?? 0));
+        if ($activeDefinition === null || !empty($activeDefinition['archived_at'])) {
+            return true;
+        }
+        if ((string) ($activeDefinition['filiere_id'] ?? '') !== (string) ($definition['filiere_id'] ?? '')) {
+            return false;
+        }
+
+        return (int) ($definition['rank_order'] ?? 0) > (int) ($activeDefinition['rank_order'] ?? 0);
     }
 
     /**
