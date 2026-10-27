@@ -227,7 +227,7 @@ final class AdminAarReportsController
             ],
             'backOfficePageCss' => ['back-office-aar.css'],
             'aarReport' => $report,
-            'aarMissions' => $this->presentedMissions($tenantId),
+            'aarMissions' => $this->missionsForEdit($tenantId, $report),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -613,6 +613,38 @@ final class AdminAarReportsController
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Missions du formulaire de modification : les 100 plus récentes de la communauté, plus la mission déjà liée quand
+     * elle est plus ancienne (DEF-039). Sans elle, la liste ne la proposait pas, le formulaire envoyait « Aucune
+     * mission » et l'enregistrement effaçait le lien sans message. Seul un cycle de la communauté est ajouté.
+     *
+     * @param array<string, mixed> $report
+     * @return list<array<string, mixed>>
+     */
+    private function missionsForEdit(int $tenantId, array $report): array
+    {
+        $missions = $this->presentedMissions($tenantId);
+        $linkedId = (int) ($report['mission_cycle_id'] ?? 0);
+        if ($linkedId < 1) {
+            return $missions;
+        }
+        foreach ($missions as $mission) {
+            if ((int) ($mission['id'] ?? 0) === $linkedId) {
+                return $missions;
+            }
+        }
+        try {
+            $row = $this->cycles->findForTenant($tenantId, $linkedId);
+        } catch (\Throwable) {
+            return $missions;
+        }
+        if (is_array($row)) {
+            $missions[] = $this->cycles->present($row);
+        }
+
+        return $missions;
     }
 
     /**

@@ -286,6 +286,58 @@ final class AarReportMissionTenantScopeTest extends TestCase
         self::assertSame('Version 1', $this->pdo->query('SELECT title FROM aar_reports WHERE id = ' . $id)->fetchColumn());
     }
 
+    /**
+     * DEF-039 : le formulaire de modification ne proposait que les 100 missions les plus récentes de la communauté. Pour
+     * un compte rendu lié à une mission plus ancienne, il envoyait « Aucune mission », et l'enregistrement effaçait le
+     * lien sans message. La mission déjà liée est maintenant ajoutée à la liste et sélectionnée ; un cycle d'une autre
+     * communauté (lien antérieur à SEC-032) ne l'est jamais, ni son titre.
+     */
+    public function testEditFormOffersTheLinkedMissionEvenWhenItIsOlderThanTheList(): void
+    {
+        $this->pdo->exec("UPDATE theatre_mission_cycles SET updated_at = '2020-01-01 00:00:00' WHERE id = " . self::OWN_CYCLE);
+        $recent = $this->pdo->prepare("INSERT INTO theatre_mission_cycles (id, tenant_id, title, status, updated_at) VALUES (?, ?, ?, 'cloturee', '2026-10-20 12:00:00')");
+        for ($i = 1; $i <= 100; $i++) {
+            $recent->execute([1000 + $i, self::OWN, 'Mission récente ' . $i]);
+        }
+        $saved = $this->reports->save(self::OWN, null, self::AUTHOR, ['title' => 'Ancienne opération', 'mission_cycle_id' => self::OWN_CYCLE]);
+        $id = (int) ($saved['id'] ?? 0);
+        $controller = new AdminAarReportsController(
+            $this->reports,
+            new TheatreMissionCycleRepository($this->pdo),
+            $this->createMock(AarReportTemplateRepository::class)
+        );
+        $this->signInAsAtakManager();
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/back-office/atak/comptes-rendus/' . $id . '/edit';
+
+        $options = self::missionOptions($controller->edit(new Request(), ['id' => (string) $id])->body());
+        self::assertCount(102, $options, '« Aucune mission », les 100 plus récentes et la mission liée');
+        self::assertSame([self::OWN_CYCLE], array_keys(array_filter($options)), 'seule la mission liée est sélectionnée');
+
+        // Le navigateur renvoie la valeur sélectionnée : le lien est gardé.
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['_csrf_token' => 'jeton', 'title' => 'Ancienne opération (relue)', 'mission_cycle_id' => (string) self::OWN_CYCLE];
+        self::assertSame(302, $controller->update(new Request(), ['id' => (string) $id])->statusCode());
+        self::assertSame(self::OWN_CYCLE, (int) $this->pdo->query('SELECT mission_cycle_id FROM aar_reports WHERE id = ' . $id)->fetchColumn());
+
+        // Mission liée déjà parmi les 100 : proposée une seule fois.
+        $this->pdo->exec('UPDATE aar_reports SET mission_cycle_id = 1050 WHERE id = ' . $id);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_POST = [];
+        $recentOptions = self::missionOptions($controller->edit(new Request(), ['id' => (string) $id])->body());
+        self::assertCount(101, $recentOptions);
+        self::assertSame([1050], array_keys(array_filter($recentOptions)));
+
+        // Lien vers le cycle d'une autre communauté, posé avant SEC-032 : jamais ajouté, son titre n'apparaît pas.
+        $this->pdo->exec('UPDATE aar_reports SET mission_cycle_id = ' . self::FOREIGN_CYCLE . ' WHERE id = ' . $id);
+        $page = $controller->edit(new Request(), ['id' => (string) $id])->body();
+        $foreignOptions = self::missionOptions($page);
+        self::assertCount(101, $foreignOptions);
+        self::assertArrayNotHasKey(self::FOREIGN_CYCLE, $foreignOptions);
+        self::assertSame([], array_filter($foreignOptions), 'aucune mission sélectionnée');
+        self::assertStringNotContainsString('Minuit', $page);
+    }
+
     /** Membre de la communauté OWN, droit ATAK « gérer » (habilitation admin.access), jeton CSRF valide. */
     private function signInAsAtakManager(): void
     {
@@ -294,6 +346,25 @@ final class AarReportMissionTenantScopeTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['REQUEST_URI'] = '/api/atak/aar-reports';
         Gate::getInstance()->setPermissions(['admin.access']);
+    }
+
+    /**
+     * Options de la liste « Mission liée » d'une page rendue : valeur => sélectionnée (PHP range une valeur numérique
+     * sous une clé entière ; « Aucune mission » sous la clé '').
+     *
+     * @return array<int|string, bool>
+     */
+    private static function missionOptions(string $html): array
+    {
+        self::assertSame(1, preg_match('#<select name="mission_cycle_id"[^>]*>(.*?)</select>#s', $html, $select), 'liste « Mission liée » absente');
+        preg_match_all('#<option value="(\d*)"([^>]*)>#', $select[1], $matches, PREG_SET_ORDER);
+        $options = [];
+        foreach ($matches as $match) {
+            self::assertArrayNotHasKey($match[1], $options, 'mission proposée deux fois');
+            $options[$match[1]] = preg_match('#\sselected$#', $match[2]) === 1;
+        }
+
+        return $options;
     }
 
     private function storedReports(): int
