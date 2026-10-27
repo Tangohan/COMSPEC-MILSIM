@@ -21,6 +21,9 @@
                                    "ok" (renvoyé) | "same" (rien à renvoyer) | "wait" (en file) | "warn" (pas parti)
                                    | "off" (indisponible ici).
 */
+// Appel non planifié (panneau Échap, navigateur, Zeus remoteExecCall) : l'outbox forcée rejouerait toute la file
+// en callExtension bloquants (extAwait sans canSuspend) et figerait le jeu. On repasse en planifié.
+if (!canSuspend) exitWith { _this spawn comspec_overwatch_connect_fnc_forceSyncData; true };
 private _items = [];
 private _add = { _items pushBack _this; };
 if (!hasInterface) exitWith { false };

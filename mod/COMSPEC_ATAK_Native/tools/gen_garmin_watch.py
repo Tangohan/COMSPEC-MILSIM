@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Montre Garmin ouverte avec la touche « Montre » du jeu (O) : textures de fn_watch.
 
-  gw_frame.paa    la montre vue de face (Forerunner 570 noire) : boîtier polymère, lunette métal anthracite gravée
-                  (LIGHT, UP, DOWN, START, BACK, GARMIN), 5 poussoirs, cornes et bracelet silicone qui s'efface aux
-                  extrémités (trous et passant en bas). Écran rond transparent (rayon 270 px sur 1024 : ce qui est
-                  dessiné dessous apparaît), reflet du verre très léger.
+  gw_frame.paa, gw_frame_coyote.paa, gw_frame_freecandy.paa, gw_frame_usa.paa
+                  la montre vue de face, tirée des photos fournies par TTRD (tools/src/garmin_noire.png, _coyote,
+                  _freecandy, _usa ; Forerunner 965 noire, coyote, arc-en-ciel « FreeCandy », drapeau américain) :
+                  fond noir de la photo détouré (remplissage depuis les bords), écran rond repéré par ajustement d'un
+                  cercle puis rendu transparent, photo mise à l'échelle et centrée pour que l'écran fasse 270 px de
+                  rayon au centre d'une texture 1024 (attendu par fn_watch), bracelet adouci aux bords de la texture,
+                  ombre portée douce, bord du verre très léger.
+  item_garminwatch_*.paa
+                  icônes d'inventaire des trois coloris ajoutés (la montre détourée, écran éteint).
   gw_disc.paa     disque blanc plein (fond de l'écran, teinté en noir ; points des jauges).
   gw_alt.paa, gw_bt.paa, gw_phone.paa, gw_bolt.paa, gw_arrow.paa, gw_pin.paa
                   icônes blanches (teintées par le code) : montagne, Bluetooth, téléphone, Body Battery, flèche de
@@ -18,7 +23,7 @@ import os
 import sys
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -26,153 +31,102 @@ from paa_dxt import save_paa  # noqa: E402
 
 DATA = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
 RENDER = os.path.join(HERE, "render")
-FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 N = 1024
 C = N / 2
-RS, RB, RC = 270, 300, 334  # écran, lunette, boîtier (px)
+RS = 270  # rayon de l'écran (px) attendu par fn_watch
 
 
-def font(sz):
-    try:
-        return ImageFont.truetype(FONT, sz)
-    except OSError:
-        return ImageFont.load_default()
+# Coloris : texture -> photo source (tools/src).
+SKINS = {
+    "gw_frame": "garmin_noire.png",
+    "gw_frame_coyote": "garmin_coyote.png",
+    "gw_frame_freecandy": "garmin_freecandy.png",
+    "gw_frame_usa": "garmin_usa.png",
+}
 
 
-def radial(rgb_in, rgb_out, r0, r1):
-    """Dégradé radial (tableau N x N x 3) de rgb_in au rayon r0 à rgb_out au rayon r1."""
-    y, x = np.mgrid[0:N, 0:N]
-    d = np.hypot(x - C, y - C)
-    t = np.clip((d - r0) / max(1, r1 - r0), 0, 1)[..., None]
-    return np.asarray(rgb_in, float) * (1 - t) + np.asarray(rgb_out, float) * t
+def _blur(a, r):
+    """Flou gaussien séparable d'un tableau float 2D (numpy seul), bords prolongés."""
+    if r <= 0:
+        return a.copy()
+    k = int(math.ceil(r * 3))
+    g = np.exp(-0.5 * (np.arange(-k, k + 1) / r) ** 2)
+    g /= g.sum()
+    out = np.pad(a, ((0, 0), (k, k)), mode="edge")
+    out = sum(g[i] * out[:, i:i + a.shape[1]] for i in range(2 * k + 1))
+    out = np.pad(out, ((k, k), (0, 0)), mode="edge")
+    return sum(g[i] * out[i:i + a.shape[0], :] for i in range(2 * k + 1))
 
 
-def strap(img, top):
-    """Bracelet silicone 22 mm (largeur 0,52 du boîtier) : grain, bords arrondis, s'efface vers l'extrémité."""
-    w = int(RC * 2 * 0.56)
-    x0 = int(C - w / 2)
-    h = int(C - RC * 0.55)
-    s = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    a = np.zeros((h, w), float)
-    col = np.zeros((h, w, 3), float)
-    xs = np.linspace(-1, 1, w)
-    # Arrondi des bords (épaisseur) : plus sombre et plus étroit vers l'extérieur.
-    shade = 0.75 + 0.25 * np.cos(xs * math.pi / 2) ** 0.6
-    rng = np.random.default_rng(4 if top else 5)
-    grain = rng.normal(0, 2.2, (h, w))
-    base = np.array([26, 27, 29], float)
-    col[:] = base
-    col *= shade[None, :, None]
-    col += grain[..., None]
-    a[:] = 255
-    # Bord : 6 px adoucis.
-    edge = np.clip((1 - np.abs(xs)) * w / 2 / 5, 0, 1)
-    a *= edge[None, :]
-    # Fondu vers l'extrémité.
-    ys = np.arange(h)
-    far = ys if top else (h - 1 - ys)
-    a *= np.clip(far / (h * 0.42), 0, 1)[:, None]
-    # Arête centrale légèrement brillante (relief du bracelet Forerunner).
-    hl = np.exp(-((xs + 0.25) / 0.18) ** 2) * 10
-    col += hl[None, :, None]
-    s = Image.fromarray(np.dstack([np.clip(col, 0, 255), a]).astype(np.uint8), "RGBA")
-    d = ImageDraw.Draw(s)
-    if not top:
-        # Trous et passant du côté long.
-        for k in range(3):
-            yy = int(h * 0.58 + k * 34)
-            d.ellipse((w / 2 - 7, yy - 7, w / 2 + 7, yy + 7), fill=(6, 6, 7, 255))
-            d.ellipse((w / 2 - 5, yy - 6, w / 2 + 5, yy + 2), fill=(14, 14, 15, 255))
-        d.rectangle((0, int(h * 0.36), w, int(h * 0.36) + 26), fill=(20, 21, 23, 235))
-        d.line((0, int(h * 0.36) + 2, w, int(h * 0.36) + 2), fill=(44, 45, 48, 210), width=2)
-    img.alpha_composite(s, (x0, 0 if top else N - h))
+def _screen(m, cx, cy):
+    """Cercle de l'écran (noir presque pur) : premier pixel plus clair sur 72 rayons depuis le centre supposé, puis
+    ajustement algébrique d'un cercle (trois passes, le centre se recale). Renvoie (cx, cy, rayon)."""
+    for _ in range(3):
+        pts = []
+        for t in np.radians(np.arange(0, 360, 5)):
+            for r in range(120, 340):
+                x, y = int(round(cx + r * math.cos(t))), int(round(cy - r * math.sin(t)))
+                if m[y, x] > 9:
+                    pts.append((x, y))
+                    break
+        p = np.array(pts, float)
+        A = np.c_[2 * p[:, 0], 2 * p[:, 1], np.ones(len(p))]
+        sol = np.linalg.lstsq(A, p[:, 0] ** 2 + p[:, 1] ** 2, rcond=None)[0]
+        cx, cy = sol[0], sol[1]
+        R = math.sqrt(sol[2] + cx ** 2 + cy ** 2)
+    return cx, cy, R
 
 
-def frame():
-    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
-    strap(img, True)
-    strap(img, False)
-    y, x = np.mgrid[0:N, 0:N]
-    d = np.hypot(x - C, y - C)
-    sa = np.asarray(img.getchannel("A"), float) * np.clip((d - RC + 20) / 20, 0, 1)
-    img.putalpha(Image.fromarray(sa.astype(np.uint8)))
-    ang = np.arctan2(y - C, x - C)
-    # Cornes : prolongement du boîtier vers le bracelet (trapèzes arrondis).
-    lug = Image.new("L", (N, N), 0)
-    ld = ImageDraw.Draw(lug)
-    for sy in (-1, 1):
-        yy0 = C + sy * RC * 0.86
-        yy1 = C + sy * (RC + 44)
-        ld.rounded_rectangle((C - RC * 0.6, min(yy0, yy1), C + RC * 0.6, max(yy0, yy1)), radius=40, fill=255)
-    lug = np.asarray(lug.filter(ImageFilter.GaussianBlur(1.2)), float) / 255
-    # Boîtier polymère : noir mat, éclairé du haut à gauche.
-    light = 0.5 + 0.5 * np.cos(ang + math.radians(135))
-    case = radial((30, 31, 33), (14, 14, 15), RB, RC + 60)
-    case += (light * 12)[..., None]
-    case_a = np.clip((RC + 0.5 - d), 0, 1)
-    case_a = np.maximum(case_a, lug)
-    # Lunette métal anthracite brossée (anneau RS+10 -> RB), chanfrein clair à l'extérieur.
-    brushed = (np.sin(ang * 900) * 0.5 + 0.5) * 2.5
-    bez = np.zeros((N, N, 3)) + np.array([58, 60, 64], float)
-    bez += (light * 38 + brushed)[..., None]
-    t = np.clip((d - (RB - 12)) / 12, 0, 1)[..., None]
-    bez = bez * (1 - t * 0.35) + np.array([120, 122, 126], float) * (t * 0.35) * light[..., None]
-    in_bez = ((d >= RS + 8) & (d <= RB)).astype(float)
-    rgb = case * (1 - in_bez[..., None]) + bez * in_bez[..., None]
-    # Joint noir de l'écran (RS -> RS + 8).
-    in_gasket = ((d >= RS) & (d < RS + 8)).astype(float)
-    rgb = rgb * (1 - in_gasket[..., None]) + np.array([4, 4, 5], float) * in_gasket[..., None]
-    alpha = case_a * 255
-    # Écran : transparent, avec le reflet du verre (arc clair en haut à gauche) et un bord interne sombre.
-    in_scr = d < RS
-    glare = np.clip(1 - np.hypot(x - (C - RS * 0.42), y - (C - RS * 0.55)) / (RS * 0.9), 0, 1) ** 2.2 * 20
-    edge = np.clip((d - (RS - 16)) / 16, 0, 1) * 150
-    scr_a = np.clip(glare + edge, 0, 255)
-    rgb[in_scr] = (np.array([255, 255, 255], float) * (glare[in_scr] / np.maximum(scr_a[in_scr], 1))[:, None]
-                   + np.array([0, 0, 0], float) * (edge[in_scr] / np.maximum(scr_a[in_scr], 1))[:, None])
-    alpha[in_scr] = scr_a[in_scr]
-    body = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), np.clip(alpha, 0, 255)]).astype(np.uint8), "RGBA")
-    # Poussoirs : 3 à gauche (LIGHT, UP, DOWN), 2 à droite (START, BACK) ; acier sombre, stries.
-    btn = Image.new("RGBA", (N, N), (0, 0, 0, 0))
-    for a, big in ((150, False), (180, False), (210, False), (30, True), (-30, False)):
-        r = math.radians(a)
-        L, W = (62, 50) if big else (54, 44)
-        b = Image.new("RGBA", (L + 8, W + 8), (0, 0, 0, 0))
-        bd = ImageDraw.Draw(b)
-        bd.rounded_rectangle((4, 4, L + 4, W + 4), radius=12, fill=(70, 72, 76, 255))
-        bd.rounded_rectangle((4, 4, L + 4, W / 2 + 2), radius=12, fill=(104, 106, 110, 255))
-        bd.rounded_rectangle((4, W / 2 + 2, L + 4, W + 4), radius=12, fill=(48, 50, 53, 255))
-        for k in range(5):
-            xx = 4 + L * 0.45 + k * 6
-            bd.line((xx, 8, xx, W), fill=(40, 41, 44, 255), width=2)
-        b = b.rotate(a, expand=True, resample=Image.BICUBIC)
-        cx, cy = C + (RC + 6) * math.cos(r), C - (RC + 6) * math.sin(r)
-        btn.alpha_composite(b, (int(cx - b.width / 2), int(cy - b.height / 2)))
-    img.alpha_composite(btn)
-    img.alpha_composite(body)
-    # Gravures de la lunette.
-    dd = ImageDraw.Draw(img)
+def photo_frame(src):
+    """Montre détourée d'une photo sur fond noir, écran transparent de rayon RS au centre d'une texture N x N."""
+    im = Image.open(os.path.join(HERE, "src", src)).convert("RGB")
+    a = np.asarray(im).astype(float)
+    m = a.max(2)
+    h, w = m.shape
+    cx, cy, R = _screen(m, w / 2, h * 0.45)
+    # Fond : pixels presque noirs reliés aux bords de la photo.
+    bg = Image.fromarray(((m <= 7) * 255).astype(np.uint8)).copy()
+    for seed in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1), (w // 2, 0), (w // 2, h - 1), (0, h // 2), (w - 1, h // 2)):
+        if bg.getpixel(seed) == 255:
+            ImageDraw.floodfill(bg, seed, 128)
+    watch = (np.asarray(bg) != 128).astype(float)
+    alpha = np.clip(_blur(watch, 1.2) * 1.15, 0, 1)
+    # Écran : transparent, bord adouci sur 2 px.
+    y, x = np.mgrid[0:h, 0:w].astype(float)
+    d = np.hypot(x - cx, y - cy)
+    alpha = np.where(d < R + 1, np.clip(d - (R - 1), 0, 2) / 2 * alpha, alpha)
+    rgba = Image.fromarray(np.dstack([a, alpha * 255]).astype(np.uint8), "RGBA")
+    # Mise à l'échelle : écran de rayon RS, centré.
+    s = RS / R
+    rgba = rgba.resize((int(round(w * s)), int(round(h * s))), Image.LANCZOS)
+    ox, oy = cx * s - C, cy * s - C
+    out = rgba.crop((int(round(ox)), int(round(oy)), int(round(ox)) + N, int(round(oy)) + N))
+    arr = np.asarray(out).astype(float)
+    # Bracelet adouci aux bords haut et bas de la texture.
+    yy = np.arange(N)[:, None]
+    arr[..., 3] *= np.clip(np.minimum(yy, N - 1 - yy) / 70, 0, 1)
+    # Ombre portée douce sous la montre, et bord du verre (léger dégradé sombre vers l'intérieur de l'écran).
+    wa = arr[..., 3] / 255
+    sh = _blur(np.roll(np.roll(wa, 10, axis=0), 6, axis=1), 14) * 0.5
+    oa = np.clip(wa + sh * (1 - wa), 0, 1)
+    rgb = arr[..., :3] * (wa / np.maximum(oa, 1e-6))[..., None]
+    y2, x2 = np.mgrid[0:N, 0:N].astype(float)
+    d2 = np.hypot(x2 - C, y2 - C)
+    scr = d2 < RS
+    edge = np.clip((d2 - (RS - 14)) / 14, 0, 1) ** 1.6 * 0.55
+    rgb[scr] = 0
+    oa[scr] = edge[scr]
+    return Image.fromarray(np.dstack([np.clip(rgb, 0, 255), oa * 255]).astype(np.uint8), "RGBA")
 
-    def bezel_text(t, a, sz=17):
-        f = font(sz)
-        w = dd.textlength(t, font=f)
-        tmp = Image.new("RGBA", (int(w) + 8, sz + 10), (0, 0, 0, 0))
-        ImageDraw.Draw(tmp).text((4, 2), t, font=f, fill=(196, 198, 202, 235))
-        rot = a - 90 if math.sin(math.radians(a)) >= 0 else a + 90
-        tmp = tmp.rotate(rot, expand=True, resample=Image.BICUBIC)
-        rr = (RS + 8 + RB) / 2
-        cx, cy = C + rr * math.cos(math.radians(a)), C - rr * math.sin(math.radians(a))
-        img.alpha_composite(tmp, (int(cx - tmp.width / 2), int(cy - tmp.height / 2)))
 
-    for t, a in (("LIGHT", 150), ("UP", 180), ("DOWN", 210), ("START", 30), ("BACK", -30)):
-        bezel_text(t, a)
-    bezel_text("GARMIN", -90, 19)
-    # Pointe rouge du START (repère Forerunner).
-    r = math.radians(30)
-    dd.line((C + (RB - 6) * math.cos(r), C - (RB - 6) * math.sin(r), C + (RB + 8) * math.cos(r), C - (RB + 8) * math.sin(r)),
-            fill=(214, 56, 44, 255), width=5)
-    return img
+def item_icon(frame):
+    """Icône d'inventaire 256 x 256 : la montre (écran éteint) recadrée sur le boîtier et le haut du bracelet."""
+    f = frame.copy()
+    bg = Image.new("RGBA", f.size, (0, 0, 0, 0))
+    ImageDraw.Draw(bg).ellipse((C - RS, C - RS, C + RS, C + RS), fill=(4, 4, 5, 255))
+    bg.alpha_composite(f)
+    return bg.crop((C - 400, C - 400, C + 400, C + 400)).resize((256, 256), Image.LANCZOS)
 
 
 def disc():
@@ -222,7 +176,7 @@ def i_pin(d, z):
 def main():
     png = "--png" in sys.argv
     out = {
-        "gw_frame": frame(),
+        **{k: photo_frame(v) for k, v in SKINS.items()},
         "gw_disc": disc(),
         "gw_alt": icon(i_alt),
         "gw_bt": icon(i_bt),
@@ -231,6 +185,8 @@ def main():
         "gw_arrow": icon(i_arrow),
         "gw_pin": icon(i_pin),
     }
+    for k in ("coyote", "freecandy", "usa"):
+        out["item_garminwatch_" + k] = item_icon(out["gw_frame_" + k])
     for name, im in out.items():
         save_paa(im, os.path.join(DATA, name + ".paa"))
         if png:

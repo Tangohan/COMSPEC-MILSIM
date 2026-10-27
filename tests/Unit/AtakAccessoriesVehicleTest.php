@@ -104,23 +104,27 @@ final class AtakAccessoriesVehicleTest extends TestCase
     public function testPhoneModelsShareTheScreenOpening(): void
     {
         $lay = $this->read(self::MAIN . '/functions/ui/fn_layoutGet.sqf');
-        self::assertStringContainsString('"COMSPEC_ATAK_PhoneModel"', $lay);
+        self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $lay);
+        self::assertStringContainsString(
+            '"COMSPEC_ATAK_PhoneModel"',
+            $this->read(self::MAIN . '/functions/core/fn_phoneCarried.sqf')
+        );
+        self::assertStringNotContainsString('profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel"', $lay);
         self::assertStringContainsString('_model = "tablet";', $lay);
         self::assertStringNotContainsString('VIS_', $lay);
         $data = dirname(__DIR__, 2) . '/' . self::MAIN . '/data/';
-        foreach (['rugged', 'iphone', 'tablet'] as $m) {
+        foreach (['rugged', 'iphone', 'tablet', 'ip17'] as $m) {
             foreach (['landscape', 'portrait'] as $o) {
                 self::assertFileExists($data . 'phone_' . $o . '_' . $m . '.paa');
                 self::assertFileExists($data . 'phone_' . $o . '_' . $m . '_night.paa');
             }
         }
-        foreach (['rugged', 'iphone'] as $m) {
+        foreach (['rugged', 'iphone', 'ip17'] as $m) {
             self::assertFileExists($data . 'phone_back_' . $m . '.paa');
         }
-        self::assertStringContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf'));
-        // Pas de marque : modèles génériques.
-        foreach (['iPhone', 'Crosscall', 'Apple'] as $brand) {
-            self::assertStringNotContainsString($brand, $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf'), $brand);
-        }
+        $settings = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
+        self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $settings);
+        self::assertStringNotContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $settings);
+        self::assertStringContainsString('Le modèle et la couleur sont ceux du téléphone dans vos poches.', $settings);
     }
 }

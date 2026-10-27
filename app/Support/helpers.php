@@ -1988,6 +1988,33 @@ if (!function_exists('can')) {
     }
 }
 
+if (!function_exists('staff_name')) {
+    /**
+     * Nom d'un membre (échappé) avec la marque « équipe Athena » : aigle et nom rouge pour
+     * l'administration de la plateforme, casque et nom vert pour le support. Sans marque, renvoie seulement le nom échappé.
+     */
+    function staff_name(string $name, int $userId, bool $large = false): string
+    {
+        return \App\Services\Platform\StaffMarkService::name($name, $userId, $large);
+    }
+}
+
+if (!function_exists('staff_mark')) {
+    /** Icône seule (à placer après un nom déjà affiché), ou chaîne vide ; $large pour un titre. */
+    function staff_mark(int $userId, bool $large = false): string
+    {
+        return \App\Services\Platform\StaffMarkService::mark($userId, $large);
+    }
+}
+
+if (!function_exists('staff_name_class')) {
+    /** Classes CSS de couleur à ajouter sur l'élément qui porte le nom (« is-staff is-staff--admin »), ou ''. */
+    function staff_name_class(int $userId): string
+    {
+        return \App\Services\Platform\StaffMarkService::nameClass($userId);
+    }
+}
+
 if (!function_exists('is_platform_admin')) {
     function is_platform_admin(): bool
     {

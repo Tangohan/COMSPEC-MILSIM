@@ -1,0 +1,147 @@
+/*
+ * Vitrine /c/{slug} — corrections du mode jour (thème « Clair » de la page) et gestion des images en édition.
+ * Chargé après community-page-builder.css : le mode sombre ([data-pb-theme="dark"] / .pb-dark, spécificité
+ * plus forte) garde ses propres valeurs ; ce fichier ne fait que rendre lisible ce qui était pensé pour le noir.
+ */
+
+/* Jetons du mode jour : gris assez soutenus pour atteindre un contraste AA (≥ 4,5:1) sur fond clair. */
+.community-landing {
+  --cl-muted: #56636a;
+  --cl-soft: #627077;
+  --cl-emerald-deep: #07774f;
+  --cl-day-card: #fff;
+  --cl-day-card-line: #dfe5e7;
+  --cl-day-text-2: #4a575d;
+}
+
+/* —— Fonctionnalités et accès : cartes dessinées pour un fond noir, invisibles en clair —— */
+.cl-feature-card {
+  border-color: var(--cl-day-card-line);
+  border-radius: 2px;
+  background: var(--cl-day-card);
+  box-shadow: 0 1px 2px rgba(12, 17, 22, 0.04);
+}
+.cl-feature-card__title { color: var(--cl-ink); }
+.cl-feature-card__desc { color: var(--cl-day-text-2); }
+.cl-feature-card__link { color: var(--cl-emerald-deep); }
+.cl-feature-card__meta { color: var(--cl-soft); }
+:is(.cl-vitrine[data-pb-theme="dark"], .cl-vitrine.pb-dark) .cl-feature-card {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: none;
+}
+:is(.cl-vitrine[data-pb-theme="dark"], .cl-vitrine.pb-dark) .cl-feature-card__title { color: #f4f7f8; }
+:is(.cl-vitrine[data-pb-theme="dark"], .cl-vitrine.pb-dark) .cl-feature-card__desc { color: rgba(182, 194, 188, 0.92); }
+:is(.cl-vitrine[data-pb-theme="dark"], .cl-vitrine.pb-dark) .cl-feature-card__link { color: var(--cl-accent, #12d18e); }
+:is(.cl-vitrine[data-pb-theme="dark"], .cl-vitrine.pb-dark) .cl-feature-card__meta { color: rgba(182, 194, 188, 0.7); }
+
+/* —— Bandeau (toujours sombre) : libellés des chiffres un peu plus clairs —— */
+.cl-hero__fact-k { color: rgba(214, 223, 219, 0.82); }
+
+/* —— Mission & doctrine : la doctrine suit le titre au lieu de flotter à droite —— */
+.cl-doctrine {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 6px 10px;
+  border: 1px solid var(--cl-line);
+  border-left: 3px solid var(--cl-accent);
+  background: var(--cl-panel);
+  font-size: 13px;
+  color: var(--cl-ink);
+}
+.cl-doctrine strong { font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cl-muted); }
+
+/* —— Présentation : galerie sans cases vides —— */
+.cl-about--solo { grid-template-columns: minmax(0, 1fr); }
+.cl-about--solo .cl-about__text { max-width: 72ch; }
+.cl-about__gallery--n1 .cl-about__shot--wide { aspect-ratio: 4 / 3; }
+.cl-about__gallery--n2 .cl-about__shot:not(.cl-about__shot--wide) { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+.cl-about__shot { position: relative; }
+.cl-about__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 18px 12px 9px;
+  background: linear-gradient(transparent, rgba(5, 8, 9, 0.78));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* —— Édition : cases « Ajouter une image » et bouton d’image du bandeau —— */
+.cl-about__add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px dashed color-mix(in srgb, var(--cl-accent) 55%, var(--cl-line));
+  background: color-mix(in srgb, var(--cl-accent) 5%, var(--cl-panel));
+  color: var(--cl-ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.cl-about__add.cl-about__shot--wide { aspect-ratio: 4 / 3; min-height: 220px; }
+.cl-about__add:hover,
+.cl-about__add:focus-visible { border-color: var(--cl-accent); background: color-mix(in srgb, var(--cl-accent) 11%, var(--cl-panel)); outline: none; }
+[data-cl-editing] .cl-about__shot[data-cl-img] { cursor: pointer; }
+[data-cl-editing] .cl-about__shot[data-cl-img]:hover { outline: 2px solid var(--cl-accent); outline-offset: 2px; }
+.cl-edit-img {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+  background: rgba(5, 8, 9, 0.72);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.cl-edit-img:hover,
+.cl-edit-img:focus-visible { border-color: var(--cl-accent); background: rgba(5, 8, 9, 0.88); outline: none; }
+
+/* —— Barre du haut : le nom est tronqué proprement (points de suspension), jamais coupé à gauche —— */
+.pb-nav .cl-nav__start,
+.pb-nav .pb-nav__brand,
+.pb-nav .cl-nav__titles { min-width: 0; }
+.pb-nav .cl-nav__titles { overflow: hidden; }
+.pb-nav .cl-nav__name { display: block; max-width: 100%; }
+@media (min-width: 1100px) {
+  .pb-nav[data-pb-header-layout="centered"] { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .pb-nav[data-pb-header-layout="split"] .cl-nav__start { flex: 0 1 auto; }
+  .pb-nav .cl-nav__name { max-width: min(42vw, 520px); }
+}
+
+/* —— Divers textes trop pâles en clair —— */
+.cl-vitrine:not([data-pb-theme="dark"]):not(.pb-dark) :is(.cl-stats__label, .cl-stats__note, .cl-unit__code, .cl-section-aside) { color: var(--cl-muted); }
+
+/* —— Pied de page (noir dans les deux thèmes) : liens lisibles —— */
+.cl-footer { color: #8f9a95; }
+.cl-footer__links a { color: #a3aea9; }
+.cl-footer__links a:hover { color: #fff; }
+
+/* —— Panneau d’édition : liste des images de la présentation —— */
+.pbe-gitem { display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid #1f2a2c; border-radius: 4px; background: #121a1c; }
+.pbe-gitem--add { border-style: dashed; background: transparent; }
+.pbe-gitem__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: #e6ecea; }
+.pbe-gitem__tools { display: flex; gap: 2px; }
+.pbe-gitem .pbe-field { margin-bottom: 6px; }

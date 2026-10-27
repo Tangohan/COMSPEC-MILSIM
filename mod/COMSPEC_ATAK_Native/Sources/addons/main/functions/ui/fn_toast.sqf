@@ -28,6 +28,8 @@ if (_text isEqualTo "" || {_dur <= 0.1} || {missionNamespace getVariable ["COMSP
 };
 private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d) exitWith { false };
+// Verrou à distance du Zeus (écran rouge de fn_zeusOverlay) : pas de bulle par-dessus.
+if ((["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo "") exitWith { false };
 if (_new) then {
     uiNamespace setVariable ["COMSPEC_ATAK_ToastSeq", (uiNamespace getVariable ["COMSPEC_ATAK_ToastSeq", 0]) + 1];
     uiNamespace setVariable ["COMSPEC_ATAK_Toast", [_text, _now + _dur]];

@@ -1,10 +1,12 @@
 /**
- * Page d’inscription (views/auth/register.php).
+ * Pages d’accès (inscription, connexion, code de vérification, mot de passe) — classe .ds-page--auth.
+ * Né avec la page d’inscription (views/auth/register.php) ; les composants propres aux autres pages
+ * (code à six chiffres, appareil de confiance, codes de secours…) sont dans auth-pages.css.
  * Champs alignés (libellé, champ, aide dessous), sections numérotées, partie facultative repliable,
  * force du mot de passe, erreurs sous les champs, mode nuit (html[data-bo-theme="dark"]).
  */
 
-.ds-page--register {
+.ds-page--auth {
   --rg-field-bg: #eeeeee;
   --rg-field-bg-hover: #e5e5e5;
   --rg-field-bg-focus: #ffffff;
@@ -21,7 +23,7 @@
   --rg-link: var(--ds-primary);
 }
 
-html[data-bo-theme="dark"] .ds-page--register {
+html[data-bo-theme="dark"] .ds-page--auth {
   --ds-text: #ececea;
   --ds-text-alt: #c9cbc8;
   --ds-text-mention: #9ea3a0;
@@ -54,35 +56,35 @@ html[data-bo-theme="dark"] .ds-page--register {
   --rg-link: #7fd3c6;
   color-scheme: dark;
 }
-html[data-bo-theme="dark"] .ds-page--register .ds-main a,
-html[data-bo-theme="dark"] .ds-page--register .ds-check a,
-html[data-bo-theme="dark"] .ds-page--register .ds-kicker {
+html[data-bo-theme="dark"] .ds-page--auth .ds-main a,
+html[data-bo-theme="dark"] .ds-page--auth .ds-check a,
+html[data-bo-theme="dark"] .ds-page--auth .ds-kicker {
   color: var(--rg-link);
 }
-html[data-bo-theme="dark"] .ds-page--register .ds-footer__links a {
+html[data-bo-theme="dark"] .ds-page--auth .ds-footer__links a {
   color: var(--ds-text-alt);
 }
-html[data-bo-theme="dark"] .ds-page--register .ds-alert {
+html[data-bo-theme="dark"] .ds-page--auth .ds-alert {
   background: var(--ds-bg-alt);
   color: var(--ds-text);
 }
-html[data-bo-theme="dark"] .ds-page--register .ds-alert--error { background: var(--ds-error-bg); }
-html[data-bo-theme="dark"] .ds-page--register .ds-alert--success { background: var(--ds-success-bg); }
-html[data-bo-theme="dark"] .ds-page--register .ds-alert--warning { background: var(--ds-warning-bg); }
-html[data-bo-theme="dark"] .ds-page--register .ds-alert p,
-html[data-bo-theme="dark"] .ds-page--register .ds-alert__title {
+html[data-bo-theme="dark"] .ds-page--auth .ds-alert--error { background: var(--ds-error-bg); }
+html[data-bo-theme="dark"] .ds-page--auth .ds-alert--success { background: var(--ds-success-bg); }
+html[data-bo-theme="dark"] .ds-page--auth .ds-alert--warning { background: var(--ds-warning-bg); }
+html[data-bo-theme="dark"] .ds-page--auth .ds-alert p,
+html[data-bo-theme="dark"] .ds-page--auth .ds-alert__title {
   color: var(--ds-text);
 }
-html[data-bo-theme="dark"] .ds-page--register .ds-preview-modal {
+html[data-bo-theme="dark"] .ds-page--auth .ds-preview-modal {
   background: var(--ds-bg-alt);
   color: var(--ds-text);
 }
-html[data-bo-theme="dark"] .ds-page--register .ds-preview-modal__body a {
+html[data-bo-theme="dark"] .ds-page--auth .ds-preview-modal__body a {
   color: var(--rg-link);
 }
 
 /* --- En-tête ----------------------------------------------------------- */
-.ds-page--register .ds-main__inner--register {
+.ds-page--auth .ds-main__inner--register {
   max-width: 38rem;
 }
 .rg-lead {
@@ -537,6 +539,6 @@ html[data-bo-theme="dark"] .rg-submit__btn:hover {
   display: none;
 }
 /* Pile d’alertes vide : pas d’espace réservé entre le bandeau et le formulaire. */
-.ds-page--register .ds-alert-stack:not(:has(*)) {
+.ds-page--auth .ds-alert-stack:not(:has(*)) {
   display: none;
 }

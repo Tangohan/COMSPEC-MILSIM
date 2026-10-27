@@ -11,6 +11,13 @@ private _font = _l get "font";
 private _fs = _l get "fontSmall";
 private _rowH = _font * 1.5;
 private _log = missionNamespace getVariable ["COMSPEC_ATAK_Aar", []];
+// uiNamespace survit au changement de mission : vue (centre, zoom) et lecture de la mission précédente oubliées
+// à la première ouverture de celle-ci (sinon vue hors carte sur un autre terrain, sans recadrage automatique).
+if !(missionNamespace getVariable ["COMSPEC_ATAK_AarUiFresh", false]) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_AarUiFresh", true];
+    uiNamespace setVariable ["COMSPEC_ATAK_AarView", nil];
+    uiNamespace setVariable ["COMSPEC_ATAK_AarPlay", nil];
+};
 private _p = uiNamespace getVariable ["COMSPEC_ATAK_AarPlay", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_AarPlay", _p];
 if ((count _log) < 2) exitWith {

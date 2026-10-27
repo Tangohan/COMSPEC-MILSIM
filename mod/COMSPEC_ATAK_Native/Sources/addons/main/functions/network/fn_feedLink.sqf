@@ -25,11 +25,13 @@ switch (_mode) do {
         private _up = if ([player] call comspec_atak_native_fnc_hasDevice) then { call _mine } else { [0, 100, ""] };
         private _sig = [round ((_up select 0) / 250), round ((_up select 1) / 10), _up select 2];
         private _old = uiNamespace getVariable ["COMSPEC_ATAK_NetUpSig", []];
-        if (_sig isEqualTo _old) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_NetUpPend", []]; false };
+        // Rien de publié sur cette unité (respawn, nouvelle mission) : diffusé même si le palier n'a pas changé.
+        private _none = isNil { player getVariable "COMSPEC_ATAK_NetUp" };
+        if (_sig isEqualTo _old && {!_none}) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_NetUpPend", []]; false };
         // Simple variation du palier (évanouissements, bâtiment) : diffusée seulement si elle tient deux tours de suite,
         // sinon chaque joueur près d'un relais rediffusait sa liaison toutes les 10 s. Changement de relais, coupure ou
         // retour du réseau : tout de suite.
-        private _now = (_old param [2, "?"]) isNotEqualTo (_sig select 2) || {((_old param [0, -1]) isEqualTo 0) isNotEqualTo ((_sig select 0) isEqualTo 0)};
+        private _now = _none || {(_old param [2, "?"]) isNotEqualTo (_sig select 2) || {((_old param [0, -1]) isEqualTo 0) isNotEqualTo ((_sig select 0) isEqualTo 0)}};
         if (!_now && {_sig isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_NetUpPend", []])}) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_NetUpPend", _sig];
             false

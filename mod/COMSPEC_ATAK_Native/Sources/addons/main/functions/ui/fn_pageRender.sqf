@@ -3,6 +3,8 @@ private _perfT = diag_tickTime;
 disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
+// Rendus comptés : fn_layoutApply (mise en page seule) ne redessine pas la page si un rendu a suivi.
+uiNamespace setVariable ["COMSPEC_ATAK_RenderSeq", (uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) + 1];
 // Garder la saisie en cours de l'app Athena quand la page se redessine.
 private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
 if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
@@ -12,6 +14,13 @@ if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
 };
 // App JTAC : saisie du brief gardée (un appel radio reçu redessine la page).
 if ("j5" in _form || {"jBda" in _form}) then { ["save"] call comspec_atak_native_fnc_jtacAction; };
+// Rédacteur d'ordre (TASK) : saisie gardée quand la page se redessine (ordre reçu, retour de liaison, mise en page, redémarrage).
+private _st0 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+if ((_st0 getOrDefault ["orderCompose", false]) && {(_st0 getOrDefault ["pageDrawn", ""]) isEqualTo "TASK"} && {"text" in _form || {"sit" in _form}}) then {
+    private _od = uiNamespace getVariable ["COMSPEC_ATAK_OrderDraft", createHashMap];
+    { if (!isNull (_form getOrDefault [_x, controlNull])) then { _od set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["target", "grid", "text", "sit", "mis", "exe", "sup", "cmd", "sseCase"];
+    uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", _od];
+};
 // Défilement de la page affichée gardé (par page) : rendu de la même page (rafraîchissement) ou retour arrière
 // (fn_back, fn_navigate sans empilement) le retrouvent au lieu de remonter en haut.
 private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -36,7 +45,8 @@ _st deleteAt "backSub";
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;
 [] call comspec_atak_native_fnc_pageClear;
-[] call comspec_atak_native_fnc_layoutApply;
+// Calques hors zone de contenu : recréés plus bas, après la page.
+[createHashMap, false] call comspec_atak_native_fnc_layoutApply;
 
 private _title = "APPLICATIONS";
 if (_page isNotEqualTo "LAUNCHER") then {
@@ -97,6 +107,7 @@ switch (_page) do {
     case "MEDICAL": { [] call comspec_atak_native_fnc_pageMedical; };
     case "PROFILE": { [] call comspec_atak_native_fnc_pageProfile; };
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
+    case "VIEW3D": { [] call comspec_atak_native_fnc_pageView3d; };
     case "BRIEFING": { [] call comspec_atak_native_fnc_pageBriefing; };
     default {
         // Modules externes (COMSPEC Modules) : une app déclarée par un autre addon avec function="tag_fnc_page"
@@ -113,8 +124,24 @@ switch (_page) do {
 };
 // Événement pour les modules : une app vient de s'afficher.
 ["comspec_atak_native_pageOpened", [_page]] call CBA_fnc_localEvent;
-// Dégâts de l'écran par-dessus la page.
+// Dégâts de l'écran par-dessus la page. Surface du verre, effets d'écran et calque Zeus aussi recréés : fn_pageClear
+// vient de masquer et désactiver leurs contrôles (supprimés à l'image suivante) ; gardés tels quels (même signature),
+// saleté, brouillage et verrouillage Zeus disparaissaient jusqu'au prochain fn_statusUpdate.
+private _killOv = {
+    {
+        if (_x isEqualType controlNull) then { ctrlDelete _x; } else {
+            if (_x isEqualType []) then { _x call _killOv; };
+        };
+    } forEach _this;
+};
+(uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _killOv;
+(((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _killOv;
+(((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _killOv;
+(uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _killOv;
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
+uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
+uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
+uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
 [] call comspec_atak_native_fnc_deviceOverlay;
 // Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
 uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];

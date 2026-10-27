@@ -76,22 +76,23 @@ public static partial class Extension
         return url;
     }
 
+    // Libellés et raisons en anglais (langue par défaut du mod) : affichés tels quels par l'app Réseau du téléphone.
     private static string JournalLabel(string path)
     {
         var p = path.ToLowerInvariant();
         if (p.Contains("/api/cas")) return "9-line CAS";
-        if (p.Contains("/discord")) return "Message Discord";
-        if (p.Contains("/logistics")) return "Demande logistique";
-        if (p.Contains("/api/sse/")) return "Fiche SSE";
-        if (p.Contains("/medical")) return "Alerte médicale";
-        if (p.Contains("/orders") || p.Contains("/order-status")) return "Statut d'ordre";
-        if (p.Contains("/reports")) return "Rapport tactique";
-        if (p.Contains("/recon")) return "Note de reconnaissance";
-        if (p.Contains("/intel")) return "Renseignement";
+        if (p.Contains("/discord")) return "Discord message";
+        if (p.Contains("/logistics")) return "Logistics request";
+        if (p.Contains("/api/sse/")) return "SSE record";
+        if (p.Contains("/medical")) return "Medical alert";
+        if (p.Contains("/orders") || p.Contains("/order-status")) return "Order status";
+        if (p.Contains("/reports")) return "Tactical report";
+        if (p.Contains("/recon")) return "Recon note";
+        if (p.Contains("/intel")) return "Intel";
         if (p.Contains("/briefing")) return "Briefing";
         if (p.Contains("/upload") || p.Contains("/photo") || p.Contains("/image")) return "Photo";
-        if (p.Contains("/chat")) return "Message";
-        if (p.Contains("/operator")) return "Profil opérateur";
+        if (p.Contains("/chat")) return "Chat message";
+        if (p.Contains("/operator")) return "Operator profile";
         return path;
     }
 
@@ -156,9 +157,9 @@ public static partial class Extension
             if (code is >= 200 and < 300) { JournalTrack(url, body, "done", code.ToString(), code); return; }
             var reason = code switch
             {
-                0 or -1 => "délai dépassé ou pas de réseau",
-                429 => "Athena surchargé (429)",
-                503 => "Athena indisponible (503)",
+                0 or -1 => "timeout or no network",
+                429 => "Athena overloaded (429)",
+                503 => "Athena unavailable (503)",
                 _ => "http_" + code
             };
             lock (JournalLock)
@@ -361,6 +362,9 @@ public static partial class Extension
         try
         {
             if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth()) return;
+            var reportUrl = _baseUrl.TrimEnd('/') + "/api/atak/send-queue/report";
+            // Clé refusée (verrou jusqu'à la reliaison) ou rapport absent de l'offre : pas de POST toutes les 30 s.
+            if (IsRefusalLatched(reportUrl)) return;
             var nowTicks = DateTime.UtcNow.Ticks;
             var since = nowTicks - System.Threading.Interlocked.Read(ref _journalReportAtTicks);
             var changed = System.Threading.Interlocked.Read(ref _journalVersion) != System.Threading.Interlocked.Read(ref _journalReportedVersion);
@@ -371,7 +375,7 @@ public static partial class Extension
             System.Threading.Interlocked.Exchange(ref _journalReportAtTicks, nowTicks);
             var version = System.Threading.Interlocked.Read(ref _journalVersion);
             var json = JournalReportJson();
-            var req = new HttpRequestMessage(HttpMethod.Post, _baseUrl.TrimEnd('/') + "/api/atak/send-queue/report")
+            var req = new HttpRequestMessage(HttpMethod.Post, reportUrl)
             {
                 Content = JsonContent(json)
             };
@@ -382,6 +386,10 @@ public static partial class Extension
                 {
                     if (t.Status == TaskStatus.RanToCompletion && t.Result.IsSuccessStatusCode)
                         System.Threading.Interlocked.Exchange(ref _journalReportedVersion, version);
+                    // 401/403 : même traitement que les autres envois (client-init une fois, verrou si refus définitif).
+                    if (t.Status == TaskStatus.RanToCompletion
+                        && ((int)t.Result.StatusCode == 401 || (int)t.Result.StatusCode == 403))
+                        NoteRefusal(reportUrl, (int)t.Result.StatusCode, RefusalBody(t.Result));
                     if (t.Status == TaskStatus.RanToCompletion) t.Result.Dispose();
                 }
                 catch { /* ignore */ }

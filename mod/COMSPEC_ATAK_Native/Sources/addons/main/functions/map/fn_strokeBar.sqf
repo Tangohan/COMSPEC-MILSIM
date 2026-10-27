@@ -1,6 +1,6 @@
 /*
     Barre des outils TRAIT et DESSIN LIBRE de la carte (fn_pageMap, sous la consigne) : couleur, épaisseur,
-    flèche, ZONE (forme fermée, dessin libre), ANNULER (mon dernier trait) et EFFACER MES TRAITS.
+    flèche, ROUTES (trait collé aux routes, fn_roadPath), ZONE (forme fermée, dessin libre), ANNULER (mon dernier trait) et EFFACER MES TRAITS.
     Réglages gardés dans le profil (lus par fn_markerStroke et fn_strokeDraw).
     Params : [[x, y, largeur disponible]]
 */
@@ -51,6 +51,8 @@ private _closed = profileNamespace getVariable ["COMSPEC_ATAK_DrawClosed", false
 private _btns = [
     ["FLÈCHE", ["COMSPEC_ATAK_DrawArrow", str !_arrow] call _set, _arrow, "Pointe de flèche au bout du trait, dans le sens du tracé"]
 ];
+private _roads = profileNamespace getVariable ["COMSPEC_ATAK_DrawRoads", false];
+if (!_draw) then { _btns pushBack ["ROUTES", ["COMSPEC_ATAK_DrawRoads", str !_roads] call _set, _roads, "Le trait suit les routes entre les deux points (convoi, patrouille)"]; };
 if (_draw) then { _btns pushBack ["ZONE", ["COMSPEC_ATAK_DrawClosed", str !_closed] call _set, _closed, "Forme fermée : le dessin revient à son point de départ"]; };
 _btns append [
     ["ANNULER", { ["UNDO"] call comspec_atak_native_fnc_markerStroke; }, false, "Efface mon dernier trait"],

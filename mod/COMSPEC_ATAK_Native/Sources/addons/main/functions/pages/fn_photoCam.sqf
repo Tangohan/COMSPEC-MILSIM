@@ -12,6 +12,7 @@
       ["stop"]               coupe la caméra et sa boucle
       ["zoom", +1 | -1]      palier de zoom numérique (x1 à x8)
       ["flash"]              AUTO → FORCÉ → COUPÉ
+      ["blur"]               type de flou des visages : gaussien, mouvement, pixel, carré noir, coupé (le même choix qu'en plein écran)
       ["selfie"]             objectif avant / arrière (avant : arme rangée, bras droit tendu, fn_gestureSelfie)
       ["pose"]               range l'arme (app ouverte) et tient la pose du selfie, ou ressort l'arme (boucle de la caméra, toutes les 1,2 s)
       ["aim", [dx, dy]]      décale l'objectif (fractions de l'image glissées) ; ["aimReset"] le recentre
@@ -200,6 +201,14 @@ switch (_act) do {
         call _redraw;
         true
     };
+    case "blur": {
+        private _types = ["gauss", "motion", "pixel", "black", "off"];
+        private _cur = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
+        uiNamespace setVariable ["COMSPEC_ATAK_BlurType", _types select ((((_types find _cur) max 0) + 1) mod 5)];
+        playSound "ClickSoft";
+        call _redraw;
+        true
+    };
     case "selfie": {
         _st set ["camSelfie", !(_st getOrDefault ["camSelfie", false])];
         _st set ["camYaw", 0];
@@ -295,7 +304,7 @@ switch (_act) do {
         private _meta = ["", "", false, "", false, "phone", "", _shotPose select 0,
             (((_shotPose select 1 select 0) atan2 (_shotPose select 1 select 1)) + 360) mod 360,
             [["lens", ["rear", "selfie"] select (_st getOrDefault ["camSelfie", false])], ["zoom", _st getOrDefault ["camZoom", 1]],
-             ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
+             ["flash", ["off", "on"] select _fire], ["model", ([player] call comspec_atak_native_fnc_phoneCarried) select 0],
              ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
             _shotPose select 1];
         [_caption, _fire, _shotPose, _meta] spawn {

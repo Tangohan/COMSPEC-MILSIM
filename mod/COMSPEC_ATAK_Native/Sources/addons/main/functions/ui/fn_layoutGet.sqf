@@ -20,22 +20,20 @@ private _ratio = [pixelH / pixelW, 1024 / (missionNamespace getVariable ["COMSPE
 
 // Coque S7 : texture carrée 2048 px. Fractions mesurées dans tools/src/android_s7_ca.png.
 // _vis = boîte visible de la coque (avec la fixation), _scr = écran transparent.
-// Modèle choisi (profil COMSPEC_ATAK_PhoneModel) ou tablette de bord (véhicule équipé, poste de commandement).
+// Modèle et couleur : l'objet porté (fn_phoneCarried). Sans téléphone COMSPEC, le profil reste (autres terminaux).
 // Boîte visible et écran mesurés en paysage ; le portrait en est le quart de tour horaire.
 private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
-private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
-// Modèles retirés (Support JPC, Étui Multicam, Coque nervurée, 2.2.x) : le profil repasse au S7.
-if (_model in ["plate", "flip", "ribbed"]) then { _model = "s7"; profileNamespace setVariable ["COMSPEC_ATAK_PhoneModel", "s7"]; };
-// Objet exigé pour ce modèle (réglages addon « ATAK · Objets par interface ») absent : le S7 reprend.
-if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
+([player] call comspec_atak_native_fnc_phoneCarried) params ["_model", "_shellTint", "_phoneItem"];
+// Objet exigé pour ce modèle (réglages addon) : seulement quand aucun téléphone COMSPEC n'est porté.
+if (_phoneItem isEqualTo "" && {_model isNotEqualTo "s7"} && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 // La tablette du véhicule est commune, pour qui n'a pas son ATAK : avec son téléphone, on garde son téléphone.
 if (_term in ["vehicle", "cp", "toc"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
-// iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), s23 (SAMSUNG S23), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
+// iphone (V2 ENHANCED), rugged (XIAOMI X3D), sonim (SONIM XP8 + goTenna), s23 (SAMSUNG S23), ip17 (IPHONE 17 PRO), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
 // gardent leurs proportions ; leur écran (paysage) est donc propre à chacune, mesuré sur l'ouverture de la photo.
 private _visLand = (createHashMapFromArray [
     ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1802, 0.3521, 0.8013, 0.7329]], ["iphone", [0.1035, 0.3071, 0.9580, 0.8042]], ["tablet", [0.1655, 0.3237, 0.8105, 0.6772]],
     ["keys", [0.1655, 0.3237, 0.8105, 0.6772]], ["sonim", [0.1089, 0.2456, 0.8613, 0.7031]],
-    ["s23", [0.1392, 0.2983, 0.8330, 0.7036]]
+    ["s23", [0.1392, 0.2983, 0.8330, 0.7036]], ["ip17", [0.1167, 0.3154, 0.8755, 0.7866]]
 ]) getOrDefault [_model, []];
 if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
 // Vertical : texture tournée d'un quart de tour horaire.
@@ -44,7 +42,9 @@ private _vis = [[1 - _ly1, _lx0, 1 - _ly0, _lx1], _visLand] select _land;
 private _scrLand = (createHashMapFromArray [
     ["rugged", [0.2218, 0.4003, 0.7550, 0.6002]], ["iphone", [0.2220, 0.3709, 0.7552, 0.6299]],
     ["keys", [0.2217, 0.3666, 0.7549, 0.6336]], ["tablet", [0.2217, 0.3666, 0.7549, 0.6336]], ["sonim", [0.2220, 0.3477, 0.7552, 0.6528]],
-    ["s23", [0.2221, 0.3449, 0.7553, 0.6553]]
+    ["s23", [0.2221, 0.3449, 0.7553, 0.6553]],
+    // iPhone 17 Pro : l'écran commence après la Dynamic Island (zone sûre d'iOS en paysage), l'île reste sur la coque.
+    ["ip17", [0.2221, 0.3801, 0.7553, 0.6201]]
 ]) getOrDefault [_model, [0.2222, 0.3496, 0.7549, 0.6509]];
 _scrLand params ["_sx0", "_sy0", "_sx1", "_sy1"];
 private _scr = [[1 - _sy1, _sx0, 1 - _sy0, _sx1], _scrLand] select _land;
@@ -123,6 +123,9 @@ private _font = (((_sh * ([[[0.040, 0.060] select _land, 0.036] select !_mini, 0
 private _fontSmall = (_font * 0.82) max (_px * 15);
 private _fontCaption = (_font * 0.68) max (_px * 13);
 COMSPEC_ATAK_FontMin = [_fontCaption, 0] select _texture; // texture : coordonnées propres, pas de plancher
+// Taille de base du texte structuré des pages (fn_fontApply) : un peu au-dessus du corps des champs, pour que
+// <t size='0.8'> (aides, sous-titres) reste au niveau des légendes. Texture (JPC) : taille de la classe, inchangée.
+COMSPEC_ATAK_FontBody = [_font * 1.15, 0] select _texture;
 private _statusH = _font * 1.45;
 private _appH = _font * 1.9;
 private _dock = !_land;
@@ -139,7 +142,7 @@ private _bodyH = _sh - _statusH - _appH - _dockH;
 
 // Coque : texture de nuit (silhouette sombre) ou de jour à la couleur choisie (coyote, vert OD, noir).
 private _night = switch (profileNamespace getVariable ["COMSPEC_ATAK_Shell", "auto"]) do { case "day": { false }; case "night": { true }; default { sunOrMoon < 0.5 }; };
-private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
+private _tint = _shellTint;
 private _shellSfx = if (_night) then { "_night" } else { ["", "_" + _tint] select (_tint in ["od", "black"]) };
 createHashMapFromArray [
     ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
@@ -155,6 +158,7 @@ createHashMapFromArray [
     ["inspW", _inspW],
     ["font", _font],
     ["fontSmall", _fontSmall],
+    ["fontBody", _font * 1.15],
     ["fontCaption", _fontCaption],
     ["fontTitle", _font * 1.2],
     ["fontDisplay", _font * 1.9],

@@ -886,18 +886,17 @@ class AtakApiController
         $row = $this->gameLinkRepository->findValidByCode($code);
         if ($row === null) {
             $reason = $this->gameLinkRepository->explainInvalidCode($code);
-            $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
+            // Même règle que la garde : resolveTenantId() lisait (int) tenant_id (« tenant_id[]=N » donnait 1).
+            $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
             $failLabel = match ($reason) {
                 'already_used' => 'Liaison en jeu refusée — code déjà utilisé',
                 'expired' => 'Liaison en jeu refusée — code expiré',
                 default => 'Liaison en jeu refusée — code inconnu',
             };
-            if ($failTenant > 0) {
-                $this->activityLog?->recordAuthAttempt($failTenant, false, $failLabel, [
-                    'reason' => $reason !== '' ? $reason : 'unknown_code',
-                    'method' => 'code',
-                ]);
-            }
+            $this->logUnverifiedLinkRefusal($failTenant, $failLabel, [
+                'reason' => $reason !== '' ? $reason : 'unknown_code',
+                'method' => 'code',
+            ]);
             if ($reason === 'already_used') {
                 return Response::json([
                     'error' => 'code_already_used',
@@ -1010,13 +1009,11 @@ class AtakApiController
 
         $user = $this->userRepository->findBySteamId($steamUid);
         if ($user === null) {
-            $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
-            if ($failTenant > 0) {
-                $this->activityLog?->recordAuthAttempt($failTenant, false, 'Liaison en jeu refusée — Steam non reconnu', [
-                    'reason' => 'steam_not_linked',
-                    'method' => 'steam',
-                ]);
-            }
+            $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
+            $this->logUnverifiedLinkRefusal($failTenant, 'Liaison en jeu refusée — Steam non reconnu', [
+                'reason' => 'steam_not_linked',
+                'method' => 'steam',
+            ]);
 
             return Response::json([
                 'error' => 'steam_not_linked',
@@ -1142,6 +1139,30 @@ class AtakApiController
 
             return null;
         }
+    }
+
+    /**
+     * Liaison refusée avant toute preuve (code inconnu, Steam non reconnu) : la communauté vient de la même règle
+     * que la garde (ComspecApiKeyAuth::guessTenantIdForLog : tenant_id de l’URL en chiffres seulement, le corps
+     * n’est pas lu). Journalisé seulement si elle existe, et au plus une fois par minute pour un même refus
+     * (AtakActivityLogService::recordUnverifiedAuthFailure).
+     *
+     * @param array<string, mixed> $meta
+     */
+    private function logUnverifiedLinkRefusal(int $tenantId, string $label, array $meta): void
+    {
+        $log = $this->activityLog;
+        if ($tenantId < 1 || $log === null) {
+            return;
+        }
+        try {
+            if ($this->tenantRepository->findById($tenantId) === null) {
+                return;
+            }
+        } catch (\Throwable) {
+            return;
+        }
+        $log->recordUnverifiedAuthFailure($tenantId, $label, $meta);
     }
 
     /**
@@ -2453,11 +2474,7 @@ class AtakApiController
 
     public function whoami(Request $request, array $params = []): Response
     {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim($forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $tenantId = $this->resolveTenantId($request);
         if ($tenantId !== null) {
             try {
@@ -2505,11 +2522,7 @@ class AtakApiController
             ], 400);
         }
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ip = trim((string) $ip);
         if (strlen($ip) > 45) {
             $ip = substr($ip, 0, 45);
@@ -2587,11 +2600,7 @@ class AtakApiController
             $contextJson = trim($contextRaw);
         }
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ip = trim((string) $ip);
         if (strlen($ip) > 45) {
             $ip = substr($ip, 0, 45);
@@ -3534,6 +3543,21 @@ class AtakApiController
             . ($posX !== null && $posX !== '' ? (string) $posX : '') . '|'
             . ($posY !== null && $posY !== '' ? (string) $posY : '') . '|'
             . $saluteBody;
+        // NET-028 : ce que la relève du tchat masquerait n'est pas stocké, avec la même règle que POST /api/chat.
+        // L'indicatif, la grille, la position et cinq des six champs précèdent un « | » : un indicatif « ORDER »
+        // rendait la ligne invisible pour tous, et 650 lignes de suite figeaient la relève avec curseur de COMSPEC Link.
+        if (AtakDataRepository::isProtocolOrderChatBody($msg)) {
+            return Response::json([
+                'error' => 'order_incomplete',
+                'message' => 'Compte rendu refusé : un indicatif, une grille, une position ou un champ qui se termine par le mot « order » est réservé au protocole des ordres C2. Reformulez-le.',
+            ], 422);
+        }
+        if (TacticalAlertParser::isHiddenSystemChatBody($msg)) {
+            return Response::json([
+                'error' => 'reserved_settings',
+                'message' => 'Compte rendu refusé : « REGLAGES AFFICHAGE » est réservé aux réglages d’affichage des camps. Reformulez l’indicatif ou le champ.',
+            ], 422);
+        }
         $source = ComspecApiKeyAuth::extractPresentedKey() !== '' ? 'game' : 'web';
         $row = $this->atak->addChatMessage($tenantId, $mapId, $callSign, $msg, $source);
         $parsed = TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
@@ -7065,11 +7089,16 @@ class AtakApiController
         $repo = new \App\Repositories\AtakBriefingPlanRepository();
         $items = \App\Repositories\AtakBriefingPlanRepository::normalizeItems($body['items'] ?? []);
         $clean = static fn (mixed $v, int $max): string => mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', is_scalar($v) ? (string) $v : '') ?? ''), 0, $max);
+        $owner = preg_replace('/[^0-9A-Za-z_:-]/', '', $clean($body['owner'] ?? '', 32)) ?? '';
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '' && $owner !== '' && !hash_equals($sessionSteam, $owner)) {
+            $owner = $sessionSteam;
+        }
         $saved = $repo->save(
             $tenantId,
             (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID),
             $side,
-            preg_replace('/[^0-9A-Za-z_:-]/', '', $clean($body['owner'] ?? '', 32)) ?? '',
+            $owner,
             $clean($body['mission_key'] ?? '', 190),
             $clean($body['world'] ?? '', 64),
             max(0, (int) ($body['rev'] ?? 0)),
@@ -7219,7 +7248,15 @@ class AtakApiController
         $matched = 0;
         $recorded = 0;
         $unmatched = 0;
-        foreach (\App\Repositories\AtakScreenTimeRepository::normalizeBatch($body['players'] ?? []) as $p) {
+        $players = \App\Repositories\AtakScreenTimeRepository::normalizeBatch($body['players'] ?? []);
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $players = array_values(array_filter(
+                $players,
+                static fn (array $p): bool => $p['player_uid'] === $sessionSteam
+            ));
+        }
+        foreach ($players as $p) {
             $uid = SteamId::normalize($p['player_uid']);
             $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
             if ($user === null) {
@@ -7237,7 +7274,8 @@ class AtakApiController
      * Serveur Arma (COMSPEC Link « Distance.Batch », app Distances de l'ATAK natif) : distances parcourues et heures de
      * pilote de tous les joueurs, comptées par le serveur et envoyées toutes les 10 min.
      * Corps : {mission_key, players: [{player_uid, call_sign, steps, foot_m, foot_s, land_m, land_s, sea_m, sea_s, air_m,
-     * air_s, halo_m, halo_s, halo_jumps, pilot: [{class, label, kind: heli|plane, seconds, meters}]}]}.
+     * air_s, halo_m, halo_s, halo_jumps, pilot: [{class, label, kind: heli|plane, seconds, meters}]}], source?}.
+     * source = « client » : envoi du téléphone d'un joueur quand le serveur n'est pas relié à Athena (lui seul est gardé).
      */
     public function distanceBatch(Request $request, array $params = []): Response
     {
@@ -7259,9 +7297,18 @@ class AtakApiController
         }
         $body = $this->jsonBody($request);
         $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+        $batch = \App\Repositories\AtakDistanceRepository::normalizeBatch($body['players'] ?? []);
+        // Session de joueur : uniquement son Steam, quelle que soit la source annoncée.
+        // Serveur dédié (clé de communauté, pas de session joueur) : le camp entier.
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $batch = \App\Repositories\AtakDistanceRepository::onlyPlayer($batch, $sessionSteam);
+        } elseif (($body['source'] ?? '') === 'client') {
+            $batch = \App\Repositories\AtakDistanceRepository::onlyPlayer($batch, is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null);
+        }
         $matched = 0;
         $unmatched = 0;
-        foreach (\App\Repositories\AtakDistanceRepository::normalizeBatch($body['players'] ?? []) as $p) {
+        foreach ($batch as $p) {
             $uid = SteamId::normalize($p['player_uid']);
             $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
             if ($user === null) {
@@ -7294,10 +7341,15 @@ class AtakApiController
         $tenantId = $r;
         $body = $this->jsonBody($request);
         $steams = [];
-        foreach (is_array($body['players'] ?? null) ? array_slice($body['players'], 0, 300) : [] as $p) {
-            $s = SteamId::normalize(is_array($p) ? (string) ($p['player_uid'] ?? $p['steam_uid'] ?? '') : (string) $p);
-            if ($s !== null) {
-                $steams[$s] = $s;
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $steams[$sessionSteam] = $sessionSteam;
+        } else {
+            foreach (is_array($body['players'] ?? null) ? array_slice($body['players'], 0, 300) : [] as $p) {
+                $s = SteamId::normalize(is_array($p) ? (string) ($p['player_uid'] ?? $p['steam_uid'] ?? '') : (string) $p);
+                if ($s !== null) {
+                    $steams[$s] = $s;
+                }
             }
         }
         $repo = new \App\Repositories\AtakAdminControlRepository();
@@ -7343,7 +7395,12 @@ class AtakApiController
         $body = $this->jsonBody($request);
         $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 200) : [];
         $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
-        $n = (new \App\Repositories\AtakAdminControlRepository())->markMessages($r, array_map('intval', $ids), $state);
+        $repo = new \App\Repositories\AtakAdminControlRepository();
+        $sessionUser = \App\Support\ComspecApiKeyAuth::matchedUserId();
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        $n = ($sessionUser !== null || (is_string($sessionSteam) && $sessionSteam !== ''))
+            ? $repo->markMessagesForPlayer($r, $sessionUser, is_string($sessionSteam) ? $sessionSteam : null, array_map('intval', $ids), $state)
+            : $repo->markMessages($r, array_map('intval', $ids), $state);
 
         return Response::json(['ok' => true, 'updated' => $n]);
     }
@@ -7676,6 +7733,184 @@ class AtakApiController
         return Response::json(['ok' => true]);
     }
 
+    /** Fenêtre lue en base par relève de tchat avec curseur (le dépôt borne de son côté à 200). */
+    private const CHAT_FETCH_MAX = 200;
+
+    /**
+     * Fenêtres enchaînées au plus par relève : traverse un bloc de messages cachés sans bloquer le curseur.
+     * La première fait 2 × limit (cas normal : une seule lecture), les suivantes CHAT_FETCH_MAX : au plus
+     * 2 × limit + 600 lignes brutes par relève (650 pour COMSPEC Link, 680 pour l'ATAK natif).
+     */
+    private const CHAT_SCAN_MAX_PASSES = 4;
+
+    /**
+     * Octets de sortie DLL visés par relève avec curseur. La DLL du jeu (COMSPECExtension, GetChatMessages, même
+     * Extension.cs pour COMSPEC Link et l'ATAK natif) écrit une ligne « id\tauteur\tcorps\tcreated_at\tcanal\n »
+     * par message, corps coupé à 280 caractères, et coupe le tout à 7 996 octets UTF-8 en gardant les lignes les
+     * PLUS RÉCENTES : les plus anciennes étaient perdues pour de bon, puisque le client avance son curseur au plus
+     * grand id reçu. Marge d'environ 500 octets sous cette limite.
+     */
+    private const GAME_CHAT_OUTPUT_BUDGET = 7500;
+
+    /** Auteur réservé au transport des réglages d'affichage des camps (« REGLAGES AFFICHAGE|… »). */
+    private static function isReservedSettingsAuthor(string $author): bool
+    {
+        return mb_strtoupper(trim($author)) === 'REGLAGES';
+    }
+
+    /**
+     * Messages à montrer : sans le bruit technique déjà en base, et sans les MP qui ne concernent pas l'indicatif.
+     *
+     * @param list<mixed> $raw
+     * @return list<array<string, mixed>>
+     */
+    private static function visibleChatRows(array $raw, string $mpCallsign): array
+    {
+        $out = [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $body = (string) ($row['body'] ?? '');
+            $author = (string) ($row['author'] ?? '');
+            // Protocole d'ordres C2 : la relève avec curseur lit la fenêtre brute et le masque ici.
+            if (AtakDataRepository::isProtocolOrderChatBody($body)) {
+                continue;
+            }
+            // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
+            if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
+                continue;
+            }
+            if (
+                self::isReservedSettingsAuthor($author)
+                && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
+            ) {
+                continue;
+            }
+            if ($mpCallsign !== '') {
+                $mp = MpMessageParser::parse(isset($row['body']) ? (string) $row['body'] : null);
+                if ($mp !== null && !MpMessageParser::concernsCallSign($mp, $mpCallsign)) {
+                    continue;
+                }
+            }
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Relève de tchat avec curseur : les messages visibles les PLUS ANCIENS après $afterId, $limit au plus.
+     *
+     * Le client (COMSPEC Link, ATAK natif) avance son curseur au plus grand id REÇU. Renvoyer les plus récents
+     * d'une rafale faisait donc sauter définitivement les plus anciens (TEST-006). On enchaîne jusqu'à
+     * CHAT_SCAN_MAX_PASSES fenêtres pour qu'un bloc de messages cachés, ou de MP qui ne concernent pas cet
+     * indicatif, ne laisse pas le curseur sur une réponse vide, ce qui aurait figé la relève.
+     *
+     * $fetch doit rendre la fenêtre BRUTE (lignes « ORDER|… » comprises) : « pleine » et « jusqu'où avancer » se
+     * jugent sur les lignes lues en base, le masquage vient après (visibleChatRows). Après la première fenêtre, on lit
+     * CHAT_FETCH_MAX lignes à la fois : un bloc caché se traverse en peu de lectures.
+     *
+     * @param callable(int, int): mixed $fetch (curseur, taille de fenêtre) → lignes brutes, ordre id croissant
+     * @return list<array<string, mixed>>
+     */
+    private static function scanChatAfter(
+        callable $fetch,
+        int $afterId,
+        int $limit,
+        int $fetchLimit,
+        string $mpCallsign
+    ): array {
+        $limit = max(1, $limit);
+        $fetchLimit = max(1, $fetchLimit);
+        $cursor = max(0, $afterId);
+        $rows = [];
+        for ($pass = 0; $pass < self::CHAT_SCAN_MAX_PASSES; $pass++) {
+            $window = $pass === 0 ? $fetchLimit : max($fetchLimit, self::CHAT_FETCH_MAX);
+            $raw = $fetch($cursor, $window);
+            $raw = is_array($raw) ? array_values($raw) : [];
+            if ($raw === []) {
+                break;
+            }
+            $maxId = 0;
+            foreach ($raw as $rawRow) {
+                if (is_array($rawRow)) {
+                    $maxId = max($maxId, (int) ($rawRow['id'] ?? 0));
+                }
+            }
+            foreach (self::visibleChatRows($raw, $mpCallsign) as $visibleRow) {
+                $rows[] = $visibleRow;
+            }
+            if (count($rows) >= $limit || count($raw) < $window || $maxId <= $cursor) {
+                break;
+            }
+            $cursor = $maxId;
+        }
+
+        return count($rows) > $limit ? array_slice($rows, 0, $limit) : $rows;
+    }
+
+    /**
+     * Relève avec curseur : les plus anciens messages, tant que la sortie de la DLL du jeu tient dans
+     * GAME_CHAT_OUTPUT_BUDGET. La suite part à la relève suivante (le client repart du plus grand id reçu).
+     * Toujours au moins un message, sinon un message trop long immobiliserait le curseur.
+     *
+     * @param list<mixed> $rows messages prêts à envoyer, ordre id croissant
+     * @return list<mixed>
+     */
+    private static function keepWithinGameChatOutput(array $rows, int $budget = self::GAME_CHAT_OUTPUT_BUDGET): array
+    {
+        $kept = [];
+        $bytes = 0;
+        foreach ($rows as $row) {
+            $lineBytes = is_array($row) ? self::gameChatLineBytes($row) : 0;
+            if ($kept !== [] && $bytes + $lineBytes > $budget) {
+                break;
+            }
+            $kept[] = $row;
+            $bytes += $lineBytes;
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Octets UTF-8 de la ligne que la DLL écrit pour ce message (SimplifyChatMessagesJson). Estimation par excès :
+     * la DLL coupe le corps à 280 unités UTF-16, 280 caractères en gardent au moins autant d'octets.
+     *
+     * @param array<string, mixed> $row
+     */
+    private static function gameChatLineBytes(array $row): int
+    {
+        $body = self::gameChatField($row['body'] ?? '');
+        if (mb_strlen($body, 'UTF-8') > 280) {
+            $body = mb_substr($body, 0, 280, 'UTF-8');
+        }
+        $channel = self::gameChatField($row['channel_key'] ?? ($row['channel'] ?? ''));
+        if (trim($channel) === '') {
+            $channel = 'general';
+        }
+
+        // 4 tabulations et le saut de ligne final.
+        return 5
+            + self::gameChatFieldBytes(self::gameChatField($row['id'] ?? ''))
+            + self::gameChatFieldBytes(self::gameChatField($row['author'] ?? ''))
+            + self::gameChatFieldBytes($body)
+            + self::gameChatFieldBytes(self::gameChatField($row['created_at'] ?? ''))
+            + self::gameChatFieldBytes($channel);
+    }
+
+    private static function gameChatField(mixed $value): string
+    {
+        return is_scalar($value) ? (string) $value : '';
+    }
+
+    /** Champ nettoyé comme par la DLL : tabulation → espace, saut de ligne → « — » entre espaces, \r retiré. */
+    private static function gameChatFieldBytes(string $value): int
+    {
+        return strlen(str_replace(["\t", "\n", "\r"], [' ', ' — ', ''], $value));
+    }
+
     public function chatIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -7696,57 +7931,40 @@ class AtakApiController
         $afterId = ($afterRaw !== null && $afterRaw !== '') ? (int) $afterRaw : 0;
         $channelRaw = trim((string) ($request->query('channel') ?? $request->query('channel_key') ?? ''));
         $channelKey = $channelRaw !== '' ? \App\Support\AtakChatChannel::normalizeKey($channelRaw) : null;
-        // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
-        $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
-        try {
-            if ($afterId > 0) {
-                $rows = $this->atak->getChatMessagesAfter($tenantId, $mapId, $afterId, $fetchLimit, $channelKey);
-            } else {
-                $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit, $channelKey);
-            }
-        } catch (\Throwable) {
-            return Response::json([]);
-        }
-        $rows = array_values(array_filter(
-            is_array($rows) ? $rows : [],
-            static function ($row): bool {
-                if (!is_array($row)) {
-                    return false;
-                }
-                $body = (string) ($row['body'] ?? '');
-                $author = (string) ($row['author'] ?? '');
-                // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
-                if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
-                    return false;
-                }
-                if (
-                    mb_strtoupper(trim($author)) === 'REGLAGES'
-                    && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
-                ) {
-                    return false;
-                }
-
-                return true;
-            }
-        ));
-
-        // Filtrage MP P2P : TOC voit tout ; ?callsign= ne remonte que les fils où l’indicatif est partie.
+        // Filtrage MP P2P : TOC voit tout ; ?callsign= ne remonte que les fils où l'indicatif est partie.
         $mpCallsign = trim((string) ($request->query('callsign') ?? $request->query('for_callsign') ?? ''));
-        if ($mpCallsign !== '') {
-            $rows = array_values(array_filter(
-                $rows,
-                static function ($row) use ($mpCallsign): bool {
-                    if (!is_array($row)) {
-                        return false;
-                    }
-                    $mp = MpMessageParser::parse(isset($row['body']) ? (string) $row['body'] : null);
-                    if ($mp === null) {
-                        return true;
-                    }
-
-                    return MpMessageParser::concernsCallSign($mp, $mpCallsign);
-                }
-            ));
+        // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
+        if ($afterId > 0) {
+            // Relève du jeu : on renvoie les messages les PLUS ANCIENS après le curseur, pas les plus récents.
+            // Le client avance « after » au plus grand id reçu : garder les plus récents d'une rafale faisait
+            // sauter définitivement les plus anciens (TEST-006). Il récupère la suite à la relève suivante.
+            // Plusieurs fenêtres : un bloc de messages cachés, ou qui ne concernent pas cet indicatif, ne doit
+            // pas immobiliser le curseur sur une réponse vide.
+            $fetchLimit = min(max((int) ($limit * 2), $limit), self::CHAT_FETCH_MAX);
+            try {
+                $rows = self::scanChatAfter(
+                    fn (int $cursor, int $window): array
+                        => $this->atak->getChatMessagesAfter($tenantId, $mapId, $cursor, $window, $channelKey, true),
+                    $afterId,
+                    $limit,
+                    $fetchLimit,
+                    $mpCallsign
+                );
+            } catch (\Throwable) {
+                return Response::json([]);
+            }
+        } else {
+            // Premier instantané, sans curseur : les plus RÉCENTS, c'est ce que le joueur veut voir à l'ouverture.
+            $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
+            try {
+                $raw = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit, $channelKey);
+            } catch (\Throwable) {
+                return Response::json([]);
+            }
+            $rows = self::visibleChatRows(is_array($raw) ? array_values($raw) : [], $mpCallsign);
+            if (count($rows) > $limit) {
+                $rows = array_slice($rows, -$limit);
+            }
         }
 
         // Enrichissement léger pour l’UI (groupe / MP / tactique déjà parsé côté JS aussi).
@@ -7778,14 +7996,14 @@ class AtakApiController
         }
         unset($chatRow);
 
-        if (count($rows) > $limit) {
-            $rows = array_slice($rows, -$limit);
-        }
-
         try {
             $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'chat', $rows);
         } catch (\Throwable) {
             // Un brouillage intel défaillant ne doit pas couper le journal radio.
+        }
+        if ($afterId > 0) {
+            // Relève du jeu : pas plus que ce que la DLL rend sans couper, mesuré sur le texte réellement envoyé.
+            $rows = self::keepWithinGameChatOutput(array_values($rows));
         }
 
         return Response::json($rows);
@@ -8277,6 +8495,18 @@ class AtakApiController
             $actor = $this->guardArmaWrite($request, $tenantId, false);
             if ($actor instanceof Response) {
                 return $actor;
+            }
+            $sessionUser = \App\Support\ComspecApiKeyAuth::matchedUserId();
+            if ($sessionUser !== null) {
+                $user = $this->userRepository->findById($sessionUser);
+                $role = (new \App\Services\Atak\AtakGameAdminService())->role($tenantId, $sessionUser, is_array($user) ? $user : null);
+                if ($role === null) {
+                    return Response::json([
+                        'ok' => false,
+                        'error' => 'forbidden',
+                        'message' => 'Seul un gestionnaire de la communauté peut enregistrer les conditions appliquées en jeu.',
+                    ], 403);
+                }
             }
             $steam = is_array($actor) && is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
             $live = $svc->recordLiveNetwork($tenantId, $this->jsonBody($request), $steam);
@@ -8938,6 +9168,22 @@ class AtakApiController
                 'hidden_from_chat' => true,
                 'order' => is_array($orderRow) ? $this->serializeOrder($orderRow) : null,
             ], 201);
+        }
+
+        // Ce que la lecture masquerait ensuite n'est plus stocké : invisible pour tous, une suite de ces lignes figeait
+        // la relève avec curseur de tous les clients du jeu (50 messages suffisaient pour COMSPEC Link). Les ordres
+        // complets et les réglages reconnus sont interceptés plus haut et ne passent pas par ici.
+        if (is_string($bodyText) && AtakDataRepository::isProtocolOrderChatBody($bodyText)) {
+            return Response::json([
+                'error' => 'order_incomplete',
+                'message' => 'Message refusé : « ORDER| » est réservé aux ordres complets (ORDER|identifiant|type|cible|priorité|émetteur).',
+            ], 422);
+        }
+        if (is_string($author) && self::isReservedSettingsAuthor($author)) {
+            return Response::json([
+                'error' => 'reserved_author',
+                'message' => 'Message refusé : l’auteur « REGLAGES » est réservé aux réglages d’affichage des camps.',
+            ], 422);
         }
 
         // Dédup alertes auto (KO / arrêt cardiaque) : ne pas réinsérer la même alerte en boucle.
@@ -13484,7 +13730,17 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $missionId = $request->query('mission_id') ?? $request->query('missionId');
         $since = $request->query('since');
-        $rows = $this->mapShapeRepo->list($tenantId, $mapId, $missionId, $since);
+        // ?mission_id[]=… : refusé (422) comme sur les autres routes C2, au lieu d'une TypeError (500) dans le dépôt.
+        if ($missionId !== null && !is_scalar($missionId)) {
+            return \App\Support\TacticalMissionScope::invalidMissionIdResponse();
+        }
+        // ?since[]=… : ignoré (liste complète), comme pour les ordres.
+        $rows = $this->mapShapeRepo->list(
+            $tenantId,
+            $mapId,
+            $missionId === null ? null : (string) $missionId,
+            is_scalar($since) ? (string) $since : null
+        );
         return Response::json($rows);
     }
 
@@ -14320,13 +14576,13 @@ class AtakApiController
             $data['reported_by_callsign'] ?? 'Unknown'
         );
 
-        $poi = $repo->findById($poiId);
+        $poi = $repo->findById($poiId, $tenantId);
         
         return Response::json($poi, 201);
     }
 
     /**
-     * Met à jour un POI
+     * Met à jour un POI de la communauté appelante (celui d'une autre communauté : 404 comme un id inconnu)
      * PUT /api/atak/poi/:id
      */
     public function poiUpdate(Request $request, array $params = []): Response
@@ -14347,13 +14603,13 @@ class AtakApiController
         $repo = new \App\Repositories\AtakPoiRepository();
         $body['updated_by_user_id'] = $actor['user_id'] ?? null;
         
-        $success = $repo->update($id, $body);
+        $success = $repo->update($id, $r, $body);
         
         if (!$success) {
             return Response::json(['error' => 'POI not found'], 404);
         }
         
-        $poi = $repo->findById($id);
+        $poi = $repo->findById($id, $r);
         return Response::json($poi);
     }
 
@@ -14561,6 +14817,8 @@ class AtakApiController
     // =============================================================================
 
     // --- MEDEVAC 9-Line étendu (liste/création via casRepo plus haut ; détail ci-dessous) ---
+    // Chaque demande est cherchée dans la communauté appelante : celle d'une autre communauté
+    // répond 404 comme un id inconnu, et rien n'y est lu ni écrit.
 
     /**
      * Récupère une demande MEDEVAC
@@ -14575,14 +14833,14 @@ class AtakApiController
         
         $id = (int) ($params['id'] ?? 0);
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $medevac = $repo->findById($id);
+        $medevac = $repo->findById($id, $r);
         
         if (!$medevac) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
         }
         
         // Récupérer les patients
-        $medevac['patients'] = $repo->getPatients($id);
+        $medevac['patients'] = $repo->getPatients($id, $r);
         
         return Response::json($medevac);
     }
@@ -14607,7 +14865,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $success = $repo->updateStatus($id, $newStatus, $body['message'] ?? null);
+        $success = $repo->updateStatus($id, $r, $newStatus, $body['message'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
@@ -14641,7 +14899,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $success = $repo->assignAsset($id, $assetCallsign, $actor['user_id'] ?? null);
+        $success = $repo->assignAsset($id, $r, $assetCallsign, $actor['user_id'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
@@ -14665,7 +14923,10 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $patientId = $repo->addPatient($id, $body);
+        $patientId = $repo->addPatient($id, $r, $body);
+        if ($patientId < 1) {
+            return Response::json(['error' => 'MEDEVAC not found'], 404);
+        }
         
         return Response::json(['patient_id' => $patientId], 201);
     }
@@ -14828,7 +15089,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $success = $repo->assignQrf($id, $qrfUnit, $qrfCallsign, $actor['user_id'] ?? null);
+        $success = $repo->assignQrf($id, $r, $qrfUnit, $qrfCallsign, $actor['user_id'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'QRF request not found'], 404);
@@ -14863,7 +15124,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $success = $repo->updateQrfPosition($id, (float) $posX, (float) $posY, $body['eta'] ?? null);
+        $success = $repo->updateQrfPosition($id, $r, (float) $posX, (float) $posY, $body['eta'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'QRF request not found'], 404);
@@ -14896,10 +15157,13 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $updateId = $repo->addSitrepUpdate($id, array_merge($body, [
+        $updateId = $repo->addSitrepUpdate($id, $r, array_merge($body, [
             'updated_by_user_id' => $actor['user_id'] ?? null,
             'updated_by_callsign' => $actor['callsign'] ?? null,
         ]));
+        if ($updateId < 1) {
+            return Response::json(['error' => 'QRF request not found'], 404);
+        }
         
         return Response::json(['update_id' => $updateId], 201);
     }
@@ -15023,9 +15287,12 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakVehicleTrackingRepository();
-        $serviceId = $repo->createServiceRequest($id, array_merge($body, [
+        $serviceId = $repo->createServiceRequest($id, $r, array_merge($body, [
             'requested_by_callsign' => $actor['callsign'] ?? null,
         ]));
+        if ($serviceId < 1) {
+            return Response::json(['error' => 'Vehicle not found'], 404);
+        }
         
         return Response::json(['service_request_id' => $serviceId], 201);
     }

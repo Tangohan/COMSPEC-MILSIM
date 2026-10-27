@@ -20,6 +20,8 @@ final class PublicPageBuilder
     public const VERSION = 1;
     public const MAX_BLOCKS = 40;
     public const MAX_ITEMS = 12;
+    /** Images de la galerie de présentation (une grande, deux petites). */
+    public const MAX_GALLERY = 3;
 
     /** Sections natives de la vitrine, dans l’ordre d’affichage par défaut. */
     public const SECTIONS = [
@@ -344,6 +346,28 @@ final class PublicPageBuilder
                     if ($alt !== '') {
                         $props['image_alt'] = $alt;
                     }
+                }
+            }
+            if ($key === 'about') {
+                // Galerie de la présentation gérée dans l’éditeur (prioritaire sur les médias de la page).
+                $gallery = [];
+                $rawGallery = is_array($b['props'] ?? null) && is_array($b['props']['gallery'] ?? null) ? $b['props']['gallery'] : [];
+                foreach ($rawGallery as $g) {
+                    if (!is_array($g) || count($gallery) >= self::MAX_GALLERY) {
+                        continue;
+                    }
+                    $gi = self::image($g['image'] ?? '');
+                    if ($gi === '') {
+                        continue;
+                    }
+                    $gallery[] = [
+                        'image' => $gi,
+                        'alt' => self::text($g['alt'] ?? '', 160, false),
+                        'caption' => self::text($g['caption'] ?? '', 160, false),
+                    ];
+                }
+                if ($gallery !== []) {
+                    $props['gallery'] = $gallery;
                 }
             }
             $styleKeys = self::styleKeysFor('section', $key);

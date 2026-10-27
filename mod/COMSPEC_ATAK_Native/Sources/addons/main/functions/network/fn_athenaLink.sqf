@@ -92,7 +92,9 @@ switch (_action) do {
             params ["_token", "_bridge", "_redraw", "_auto"];
             private _ext = {
                 params ["_cmd", ["_args", []]];
-                private _r = if (_bridge) then { ["COMSPECExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait } else { [_cmd, _args] call comspec_atak_native_fnc_extensionCall };
+                // DLL native aussi par extAwait (« Async ») : PairStart / PairStatus sont des requêtes HTTP (8 s au plus)
+                // qui figeaient le jeu à chaque interrogation en mode autonome. Appel direct si la DLL ne connaît pas Async.
+                private _r = [["COMSPECATAKNativeExtension", "COMSPECExtension"] select _bridge, _cmd, _args] call comspec_atak_native_fnc_extAwait;
                 if (_r isEqualType []) then { _r = _r param [0, ""]; };
                 if (_r isEqualType "") then { _r } else { str _r }
             };

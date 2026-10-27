@@ -9,6 +9,8 @@ params [
 ];
 
 if (!hasInterface) exitWith { 0 };
+// Hub actif : le serveur envoie déjà ces repères. Ne pas doubler au clic.
+if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith { 0 };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { 0 };
 if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith { 0 };
 if ((count _pos) < 2) exitWith { 0 };

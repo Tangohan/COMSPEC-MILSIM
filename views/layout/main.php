@@ -56,6 +56,10 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     })();
     </script>
 <?php endif; ?>
+    <script>
+    /* Page ouverte dans une fenêtre du site (ath-modal-frame.js) : contenu seul, avant l'affichage. */
+    try { if (window.frameElement && window.frameElement.hasAttribute('data-ath-modal-frame')) { document.documentElement.classList.add('ath-in-modal'); } } catch (e) {}
+    </script>
     <title><?= htmlspecialchars($title) ?> — Athena</title>
 <?php
     $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . ' — Athena';
@@ -174,6 +178,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/styles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/ath-modal-frame.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/app-update-modal.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/app-update-modal.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
@@ -415,6 +420,8 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/navigation.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ui_confirm_modal.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ath-toast.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/ath-modal-frame.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/ath-quiet-form.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal_command_palette.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/app-version-check.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
@@ -445,6 +452,8 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : ((!empty($layoutMainCompact) || !empty($compactPortalMain)) ? 'min-h-0 personnel-file-portal-main' : 'min-h-[80vh]')) ?>">
         <?php if (empty($communityReelsPage) && empty($isBackOfficeShell) && empty($isPlatformAdminShell) && empty($messagesPage)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
+        <?php elseif (empty($communityReelsPage)): ?>
+        <?php require base_path('views/partials/access_denied_toasts.php'); ?>
         <?php endif; ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>
         <div
@@ -650,5 +659,6 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     </script>
     <?php require base_path('views/partials/mirror_trap_link.php'); ?>
 <?php require base_path('views/partials/donor_marks_assets.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

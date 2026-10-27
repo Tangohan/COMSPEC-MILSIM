@@ -39,7 +39,7 @@ $h = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
                 </div>
                 <div class="mt-4">
                     <label for="signature-name" class="block text-xs font-medium text-slate-600 mb-1">Nom de cette signature</label>
-                    <input id="signature-name" type="text" name="name" maxlength="80" value="Signature principale" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Par exemple : Signature principale">
+                    <input id="signature-name" type="text" name="name" maxlength="80" value="<?= locale() === 'en' ? 'Primary signature' : 'Signature principale' ?>" class="w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Par exemple : Signature principale">
                 </div>
                 <label class="mt-3 flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" name="is_default" value="1" class="rounded border-slate-300" <?= $signatures === [] ? 'checked' : '' ?>>

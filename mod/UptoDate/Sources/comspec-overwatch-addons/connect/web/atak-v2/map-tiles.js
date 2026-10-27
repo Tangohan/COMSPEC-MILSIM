@@ -52,6 +52,22 @@
             return "";
         }
     }
+    function revokeBlob(url) {
+        if (url && String(url).indexOf("blob:") === 0) {
+            try { URL.revokeObjectURL(url); }
+            catch (e) { }
+        }
+    }
+    function paintSrc(img, url) {
+        var prev = img.getAttribute("data-blob") || "";
+        if (prev && prev !== url)
+            revokeBlob(prev);
+        if (String(url || "").indexOf("blob:") === 0)
+            img.setAttribute("data-blob", url);
+        else
+            img.removeAttribute("data-blob");
+        img.src = url;
+    }
     /* Seuls blob: et data: peuvent remplacer un src dÃ©jÃ  posÃ©. Jamais /map-data ni file://. */
     function isCachePaintUrl(url) {
         var u = String(url || "");
@@ -144,7 +160,7 @@
                 return;
             finished = true;
             if (!paintedOk) {
-                img.src = TRANSPARENT;
+                paintSrc(img, TRANSPARENT);
             }
             if (typeof done === "function")
                 done(null, img);
@@ -179,7 +195,7 @@
                     document.dispatchEvent(new CustomEvent("comspec:tile-attempt", { detail: { world: world, z: z, x: x, y: y, index: idx, url: urls[idx] || "" } }));
                 }
                 catch (e) { }
-                img.src = urls[idx];
+                paintSrc(img, urls[idx]);
                 return;
             }
             failCount += 1;
@@ -187,7 +203,7 @@
                 document.dispatchEvent(new CustomEvent("comspec:tile-failure", { detail: { world: world, z: z, x: x, y: y, count: failCount } }));
             }
             catch (e) { }
-            img.src = TRANSPARENT;
+            paintSrc(img, TRANSPARENT);
             finish();
         };
         /* LeÃ§on 1.8.18 / 1.8.21 : jetelain dâ€™abord, jamais /map-data ni file://. */
@@ -195,7 +211,7 @@
             document.dispatchEvent(new CustomEvent("comspec:tile-attempt", { detail: { world: world, z: z, x: x, y: y, index: 0, url: urls[0] || "" } }));
         }
         catch (e) { }
-        img.src = urls[0];
+        paintSrc(img, urls[0]);
         var failoverTimer = setInterval(function () {
             if (paintedOk || finished) {
                 clearInterval(failoverTimer);
@@ -207,16 +223,19 @@
                     document.dispatchEvent(new CustomEvent("comspec:tile-attempt", { detail: { world: world, z: z, x: x, y: y, index: idx, url: urls[idx] || "" } }));
                 }
                 catch (e) { }
-                img.src = urls[idx];
+                paintSrc(img, urls[idx]);
             }
             else {
                 clearInterval(failoverTimer);
             }
         }, 3000);
         fromCache(id).then(function (cached) {
-            if (cached && isCachePaintUrl(cached) && !paintedOk) {
-                img.src = cached;
-            }
+            if (!cached || !isCachePaintUrl(cached))
+                return;
+            if (!paintedOk)
+                paintSrc(img, cached);
+            else
+                revokeBlob(cached);
         });
     }
     function layer(world, cfg) {
@@ -237,6 +256,12 @@
                 img.setAttribute("data-map-path", logicalUrl(slug, coords.z, coords.x, coords.y));
                 paintTile(img, slug, coords.z, coords.x, coords.y, done);
                 return img;
+            },
+            _removeTile: function (key) {
+                var tile = this._tiles && this._tiles[key];
+                if (tile && tile.el)
+                    revokeBlob(tile.el.getAttribute("data-blob"));
+                return window.L.GridLayer.prototype._removeTile.call(this, key);
             }
         });
         return new Grid({

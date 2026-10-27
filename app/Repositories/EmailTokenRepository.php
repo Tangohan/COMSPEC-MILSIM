@@ -54,7 +54,7 @@ class EmailTokenRepository
             $purpose,
             $tokenHash,
             $nonce,
-            $expiresAt->format('Y-m-d H:i:s'),
+            \App\Support\DbTime::utc($expiresAt),
             $metadata !== null ? json_encode($metadata, JSON_THROW_ON_ERROR) : null,
         ]);
 
@@ -152,6 +152,6 @@ class EmailTokenRepository
             return null;
         }
 
-        return new \DateTimeImmutable((string) $row['created_at']);
+        return new \DateTimeImmutable((string) $row['created_at'], new \DateTimeZone('UTC'));
     }
 }

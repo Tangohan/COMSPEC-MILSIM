@@ -8,6 +8,8 @@
       "capture"  [id, "validate" | "dismiss" | "stopHunt" | "recover"]   téléphone aux mains de l'IA :
                  valider ou rejeter la compromission, arrêter la traque de ses groupes, reprendre le téléphone au porteur
       "hunt"     [actif]   traque des joueurs par l'IA qui a un téléphone (réglage comspec_atak_native_capture_hunt), pour la partie
+      "apps"     [id, "required" | "forbidden" | "free"]   App Store : app obligatoire, interdite ou laissée au choix
+                 des joueurs pour la partie (fn_appInstall, variable publique COMSPEC_ATAK_AppPolicy) ; ["", "reset"] : tout libérer
     Réponse au demandeur : comspec_atak_native_adminData [genre, données] ("debug" | "result" | "denied").
 */
 if (!isServer) exitWith {};
@@ -127,6 +129,21 @@ switch (_act) do {
         missionNamespace setVariable ["comspec_atak_native_capture_hunt", _on, true];
         ["INFO", "ADMIN", format ["Traque par l'IA %1 par %2 (app Admin)", ["coupée", "rétablie"] select _on, name _caller]] call comspec_atak_native_fnc_log;
         ["result", [true, ["Traque par l'IA coupée pour la partie.", "Traque par l'IA rétablie."] select _on]] call _reply;
+    };
+    case "apps": {
+        _args params [["_id", ""], ["_rule", "free"]];
+        if (_rule isEqualTo "reset") exitWith {
+            ["policy", [[], []]] call comspec_atak_native_fnc_appInstall;
+            ["INFO", "ADMIN", format ["App Store : règles de la mission levées par %1 (app Admin)", name _caller]] call comspec_atak_native_fnc_log;
+            ["result", [true, "Toutes les apps sont de nouveau au choix des joueurs (règles du serveur et d'Athena gardées)."]] call _reply;
+        };
+        if (!isClass (configFile >> "COMSPEC_ATAK_Apps" >> _id) || {!(_rule in ["required", "forbidden", "free"])}) exitWith {
+            ["result", [false, "App ou règle inconnue."]] call _reply;
+        };
+        ["set", [_id, _rule]] call comspec_atak_native_fnc_appInstall;
+        ["INFO", "ADMIN", format ["App Store : %1 %2 par %3 (app Admin)", _id, _rule, name _caller]] call comspec_atak_native_fnc_log;
+        ["result", [true, format ["%1 : %2 pour la partie.", getText (configFile >> "COMSPEC_ATAK_Apps" >> _id >> "name"),
+            (createHashMapFromArray [["required", "obligatoire"], ["forbidden", "interdite"], ["free", "au choix des joueurs"]]) get _rule]]] call _reply;
     };
 };
 true

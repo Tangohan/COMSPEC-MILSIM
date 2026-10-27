@@ -3061,7 +3061,7 @@ if ($atakMapConfig) {
         <p class="atak-route-panel__hint" id="atak-route-panel-hint">Cliquez au moins deux points sur la carte, puis transmettez l’itinéraire aux opérateurs.</p>
         <div id="atak-gps-route-box" hidden>
           <label class="atak-route-panel__field" for="atak-gps-route-name">Nom de l’itinéraire
-            <input type="text" id="atak-gps-route-name" maxlength="80" value="Itinéraire" autocomplete="off" />
+            <input type="text" id="atak-gps-route-name" maxlength="80" value="<?= locale() === 'en' ? 'Route' : 'Itinéraire' ?>" autocomplete="off" />
           </label>
           <div class="atak-gps-route-actions">
             <button type="button" class="atak-route-panel__close" id="atak-gps-route-send">Transmettre aux opérateurs</button>

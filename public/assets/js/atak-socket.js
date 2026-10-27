@@ -12,7 +12,13 @@ window.ATAKSocket = (function () {
   var failStreak = 0;
   var okStreak = 0;
   var backoffStep = 0;
+  /* Un 429 ou un 403 est entré dans l'épisode de pause en cours : échelle longue jusqu'à sa sortie. */
+  var throttled = false;
   var SEND_BACKOFF_LADDER_SEC = [45, 75, 150, 300, 600];
+  /* Panne (Athena injoignable, 503, maintenance) : paliers courts plafonnés à 45 s (60 s avec la gigue) et sortie au
+     premier succès (NET-006). L'échelle longue ci-dessus et sa descente d'un palier tous les deux succès restent
+     réservées au frein demandé par Athena (429, 403). Un Retry-After plus long est toujours respecté. */
+  var OUTAGE_BACKOFF_LADDER_SEC = [10, 20, 30, 45];
   var SEND_FAIL_STREAK_TO_ENTER = 3;
   var SEND_OK_STREAK_TO_STEP_DOWN = 2;
   var HUD_DEFERRED_LABEL = 'Différé · mauvaise connexion';
@@ -89,10 +95,15 @@ window.ATAKSocket = (function () {
     return Date.now() < pauseUntil;
   }
 
+  function currentLadder() {
+    return throttled ? SEND_BACKOFF_LADDER_SEC : OUTAGE_BACKOFF_LADDER_SEC;
+  }
+
   function currentLadderSec() {
     if (backoffStep <= 0) return 0;
-    var i = Math.max(0, Math.min(SEND_BACKOFF_LADDER_SEC.length - 1, backoffStep - 1));
-    return SEND_BACKOFF_LADDER_SEC[i];
+    var ladder = currentLadder();
+    var i = Math.max(0, Math.min(ladder.length - 1, backoffStep - 1));
+    return ladder[i];
   }
 
   function isDeferred() {
@@ -108,9 +119,13 @@ window.ATAKSocket = (function () {
     });
   }
 
-  function applyPause(sec) {
+  /* Panne : pause allongée d'une gigue tirée entre 0 et jitterMaxSec (par défaut 20 % du délai), jamais plus courte
+     que demandé : après une panne commune, les postes ne redemandent plus tous à la même seconde. Frein (429, 403) :
+     délai exact, sans gigue, comme avant (Athena limite chaque compte ou chaque adresse à part). */
+  function applyPause(sec, jitterMaxSec) {
     var n = Math.max(1, Number(sec) || 8);
-    pauseUntil = Date.now() + n * 1000;
+    var jitterSec = throttled ? 0 : jitterMaxSec == null ? n * 0.2 : Math.max(0, Number(jitterMaxSec) || 0);
+    pauseUntil = Date.now() + n * 1000 + Math.floor(Math.random() * (jitterSec * 1000 + 1));
     unavailableListeners.forEach(function (fn) {
       try { fn(n); } catch (e) {}
     });
@@ -121,23 +136,29 @@ window.ATAKSocket = (function () {
     lastPauseKind = kind || lastPauseKind || 'unavailable';
     okStreak = 0;
     failStreak += 1;
+    if (kind === 'forbidden' || kind === 'throttled') throttled = true;
 
     if (backoffStep > 0) {
-      if (backoffStep < SEND_BACKOFF_LADDER_SEC.length) backoffStep += 1;
+      if (backoffStep < currentLadder().length) backoffStep += 1;
     } else if (failStreak >= SEND_FAIL_STREAK_TO_ENTER) {
       backoffStep = 1;
     }
 
     var sec;
+    var jitterSec = null;
     if (backoffStep > 0) {
       sec = currentLadderSec();
       var hinted = Math.max(10, Number(retrySec) || 0);
-      if (hinted > sec) sec = Math.min(600, hinted);
+      var asked = hinted > sec;
+      if (asked) sec = Math.min(600, hinted);
+      /* Gigue : palier de panne → jusqu'à la moitié du palier (3 à 15 s) ; délai demandé par Athena (maintenance,
+         déjà étalée par le site) → 20 %, 15 s au plus ; frein (429, 403) → aucune (applyPause). */
+      jitterSec = asked ? Math.min(15, sec / 5) : Math.min(15, Math.max(3, sec / 2));
     } else {
       sec = kind === 'forbidden' ? Math.max(15, Number(retrySec) || 20) : Math.max(8, Number(retrySec) || 10);
       sec = Math.min(sec, 30);
     }
-    applyPause(sec);
+    applyPause(sec, jitterSec);
 
     if (warnedUnavailable) return;
     warnedUnavailable = true;
@@ -155,21 +176,27 @@ window.ATAKSocket = (function () {
     failStreak = 0;
     if (backoffStep <= 0) {
       okStreak = 0;
+      throttled = false;
       pauseUntil = 0;
       warnedUnavailable = false;
       lastPauseKind = '';
       emitDeferred();
       return;
     }
+    /* Panne : ce succès prouve qu'Athena répond, tout repart maintenant. Avant, la pause entière était réappliquée
+       et il fallait deux succès par palier : la carte restait figée jusqu'à plusieurs minutes après une courte panne
+       (atakPoll ne lit rien pendant la pause, NET-006). Frein (429, 403) : un palier de moins tous les deux succès,
+       avec la pause réappliquée entre les deux, comme avant. */
     okStreak += 1;
-    if (okStreak < SEND_OK_STREAK_TO_STEP_DOWN) {
+    if (throttled && okStreak < SEND_OK_STREAK_TO_STEP_DOWN) {
       applyPause(currentLadderSec());
       return;
     }
     okStreak = 0;
-    backoffStep -= 1;
+    backoffStep = throttled ? backoffStep - 1 : 0;
     if (backoffStep <= 0) {
       backoffStep = 0;
+      throttled = false;
       pauseUntil = 0;
       warnedUnavailable = false;
       lastPauseKind = '';
@@ -220,6 +247,8 @@ window.ATAKSocket = (function () {
             var header = res.headers.get('Retry-After');
             if (header) retry = Math.max(10, parseInt(header, 10) || retry);
           } catch (e) {}
+          /* 429 : frein demandé par Athena (échelle longue). 503 et réponse vide : panne (échelle courte). */
+          if (res.status === 429) throttled = true;
           noteUnavailable(retry, res.status === 403 ? 'forbidden' : 'unavailable');
         } else if (ours && res && res.ok && (isCoreRosterUrl(url) || heartbeat)) {
           noteSendSuccess();

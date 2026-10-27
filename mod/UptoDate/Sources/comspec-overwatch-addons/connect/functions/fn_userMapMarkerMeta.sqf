@@ -76,7 +76,9 @@ if ((_out getOrDefault ["placed_at", ""]) isEqualTo "") then {
             _out getOrDefault ["channel_id", -1],
             _out getOrDefault ["placed_by", ""],
             _at,
-            _out getOrDefault ["owner_id", -1]
+            _out getOrDefault ["owner_id", -1],
+            // 5e champ : fiche déduite ici (pas posée par l'EH MarkerCreated local) — resyncAllMapMarkers ne la compte pas comme locale.
+            true
         ],
         false
     ];

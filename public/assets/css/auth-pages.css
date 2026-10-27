@@ -1,0 +1,422 @@
+/**
+ * Pages d’accès : composants propres à la connexion et à la double vérification
+ * (carte de formulaire, étapes, code à six chiffres, appareil de confiance, codes de secours,
+ * choix de communauté, bouton occupé, alerte Verr. Maj). Jetons et mode nuit : auth-register.css.
+ */
+
+.ds-page--auth {
+  --au-card-shadow: 0 1px 2px rgba(16, 24, 22, 0.04), 0 12px 32px -18px rgba(11, 61, 56, 0.28);
+  --au-accent-soft: #e6f2ef;
+  --au-cell-filled: #f3faf8;
+}
+html[data-bo-theme="dark"] .ds-page--auth {
+  --au-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 18px 40px -22px rgba(0, 0, 0, 0.7);
+  --au-accent-soft: #17312c;
+  --au-cell-filled: #1b2b28;
+  --ds-primary: #1d6f64;
+  --ds-primary-hover: #238275;
+}
+
+/* Fond, titres, liens : le mode nuit couvre aussi la colonne de formulaire. */
+.ds-page--auth .ds-main {
+  background: var(--ds-bg);
+}
+.ds-page--auth .ds-title {
+  font-family: "Inter", var(--ds-font);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ds-text);
+}
+.ds-page--auth .ds-lead {
+  color: var(--ds-text-alt);
+}
+
+.au-inner {
+  max-width: 30rem;
+}
+
+/* --- Carte du formulaire -------------------------------------------------- */
+.au-card {
+  border-radius: 0.875rem;
+  padding: 1.35rem 1.35rem 1.4rem;
+  box-shadow: var(--au-card-shadow);
+}
+@media (max-width: 479px) {
+  .au-card {
+    padding: 1.1rem 1rem 1.2rem;
+  }
+}
+.au-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.au-label-row .rg-label {
+  margin-bottom: 0.35rem;
+}
+.au-link {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--rg-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.au-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* --- Boutons ------------------------------------------------------------- */
+.ds-page--auth .au-btn {
+  min-height: 2.875rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.ds-page--auth .au-btn:active {
+  transform: translateY(1px);
+}
+.ds-page--auth .au-btn--primary {
+  font-size: 1.0625rem;
+}
+.ds-page--auth .ds-btn--secondary {
+  background: var(--rg-surface);
+  color: var(--rg-link);
+  border-color: var(--rg-surface-border);
+}
+.ds-page--auth .ds-btn--secondary:hover {
+  border-color: var(--rg-link);
+  background: var(--au-accent-soft);
+}
+.ds-page--auth .ds-btn[disabled] {
+  cursor: default;
+  opacity: 0.7;
+}
+.ds-page--auth .ds-btn[aria-busy="true"]::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: au-spin 0.7s linear infinite;
+}
+@keyframes au-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Verr. Maj ----------------------------------------------------------- */
+.au-caps {
+  margin: 0.4rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--rg-warn);
+}
+.au-caps::before {
+  content: "⇪ ";
+}
+.au-caps[hidden] {
+  display: none;
+}
+
+/* --- Ligne de confiance sous le bouton ----------------------------------- */
+.au-trust {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: -0.15rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--ds-text-mention);
+}
+.au-trust svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--rg-ok);
+}
+
+/* --- Séparateur + actions secondaires ------------------------------------ */
+.au-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.75rem 0 0.9rem;
+  font-size: 0.875rem;
+  color: var(--ds-text-mention);
+}
+.au-divider::before,
+.au-divider::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--ds-border);
+}
+.au-alt-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+@media (max-width: 419px) {
+  .au-alt-actions {
+    grid-template-columns: 1fr;
+  }
+}
+.au-alt-actions .au-btn {
+  width: 100%;
+  font-size: 0.9375rem;
+}
+.ds-page--auth .au-alt {
+  border-top-color: var(--ds-border);
+  color: var(--ds-text-alt);
+}
+.ds-page--auth .au-callout {
+  background: var(--rg-surface);
+  border-radius: 0.5rem;
+  color: var(--ds-text);
+}
+
+/* --- Étapes (mot de passe → code) ---------------------------------------- */
+.au-steps {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ds-text-mention);
+}
+.au-steps__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.au-steps__item + .au-steps__item::before {
+  content: "";
+  width: 2rem;
+  height: 2px;
+  margin-right: 0.1rem;
+  background: var(--rg-num-bg);
+  border-radius: 999px;
+}
+.au-steps__dot {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 2px solid var(--rg-num-bg);
+  font-size: 0.75rem;
+  color: var(--rg-num-bg);
+}
+.au-steps__item.is-done .au-steps__dot,
+.au-steps__item.is-current .au-steps__dot {
+  background: var(--rg-num-bg);
+  color: var(--rg-num-text);
+}
+.au-steps__item.is-current {
+  color: var(--ds-text);
+}
+
+/* Méthode en cours (application ou e-mail). */
+.au-method {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.85rem 0 0;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--au-accent-soft);
+  color: var(--rg-link);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+/* --- Code à six chiffres ------------------------------------------------- */
+.au-otp {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.ds-page--auth .au-otp .ds-otp__cell {
+  width: 100%;
+  min-width: 0;
+  height: 3.5rem;
+  font-size: 1.6rem;
+  border-radius: 0.6rem;
+  border: 1.5px solid var(--rg-surface-border);
+  border-bottom-width: 1.5px;
+  background: var(--rg-field-bg);
+  color: var(--ds-text);
+  caret-color: var(--rg-link);
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+.ds-page--auth .au-otp .ds-otp__cell:nth-child(3) {
+  margin-right: 0.5rem;
+}
+.ds-page--auth .au-otp .ds-otp__cell.is-filled {
+  border-color: var(--rg-link);
+  background: var(--au-cell-filled);
+}
+.ds-page--auth .au-otp .ds-otp__cell:focus {
+  outline: none;
+  border-color: var(--ds-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-focus) 30%, transparent);
+  background: var(--rg-field-bg-focus);
+}
+@media (max-width: 379px) {
+  .au-otp { gap: 0.35rem; }
+  .ds-page--auth .au-otp .ds-otp__cell { height: 3rem; font-size: 1.35rem; }
+  .ds-page--auth .au-otp .ds-otp__cell:nth-child(3) { margin-right: 0.25rem; }
+}
+#login-otp-form.is-shaking .au-otp {
+  animation: au-shake 0.35s ease;
+}
+@keyframes au-shake {
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-3px); }
+}
+.au-countdown[data-state="expired"] {
+  color: var(--ds-error);
+  font-weight: 700;
+}
+
+/* --- Se souvenir de cet appareil ----------------------------------------- */
+.au-remember {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--rg-surface-border);
+  background: var(--ds-bg);
+  cursor: pointer;
+}
+.au-remember:has(input:checked) {
+  border-color: var(--rg-link);
+  background: var(--au-accent-soft);
+}
+.au-remember input {
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+  accent-color: var(--rg-num-bg);
+}
+.au-remember__title {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ds-text);
+}
+.au-remember__hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ds-text-mention);
+}
+
+/* --- Autres méthodes ----------------------------------------------------- */
+.au-more {
+  margin-top: 1.5rem;
+}
+.au-more__title {
+  margin: 0 0 0.65rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--ds-text);
+}
+.au-more__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.au-more__actions form {
+  margin: 0;
+}
+.au-more__actions .au-btn {
+  font-size: 0.9375rem;
+}
+.au-recovery {
+  margin-top: 0.9rem;
+}
+.au-code-input {
+  max-width: 14rem;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.au-more__note {
+  margin: 0.9rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--ds-text-mention);
+}
+
+/* --- Choix de communauté ------------------------------------------------- */
+.au-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.au-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.6rem;
+  border: 1.5px solid var(--rg-surface-border);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.au-choice:hover {
+  border-color: var(--rg-link);
+}
+.au-choice:has(input:checked) {
+  border-color: var(--rg-link);
+  background: var(--au-accent-soft);
+}
+.au-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.au-choice:has(input:focus-visible) {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: 2px;
+}
+.au-choice__mark {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  background: var(--rg-num-bg);
+  color: var(--rg-num-text);
+  font-weight: 800;
+}
+.au-choice__title {
+  display: block;
+  font-weight: 700;
+  color: var(--ds-text);
+}
+.au-choice__meta {
+  display: block;
+  font-size: 0.8125rem;
+  font-family: ui-monospace, monospace;
+  color: var(--ds-text-mention);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-page--auth .ds-btn[aria-busy="true"]::before,
+  #login-otp-form.is-shaking .au-otp {
+    animation: none;
+  }
+}

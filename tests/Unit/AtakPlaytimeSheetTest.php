@@ -126,10 +126,13 @@ final class AtakPlaytimeSheetTest extends TestCase
         self::assertStringContainsString("'path' => 'back-office/atak/heures'", $pages);
         self::assertFileExists($root . '/public/assets/js/back-office-atak-hours.js');
         self::assertFileExists($root . '/public/assets/css/back-office-atak-hours.css');
-        // Bloc « Temps de jeu » (partial depuis #1066) : cumul serveur / Zeus / éditeur puis rôles à côté.
+        // Bloc « Temps de jeu et distances » (partial depuis #1066) : cumul, distances, rôles.
         self::assertStringContainsString("require base_path('views/partials/personnel/file_playtime.php')", $fiche);
         self::assertStringContainsString('lg:col-span-3', $fiche);
         self::assertStringContainsString('Avant le détail', $fiche);
+        self::assertStringContainsString('Temps de jeu et distances', $fiche);
+        self::assertStringContainsString('id="distances"', $fiche);
+        self::assertStringContainsString('Aucune distance relevée pour l’instant', $fiche);
         self::assertStringNotContainsString('Relevé par le téléphone ATAK en partie', $fiche);
     }
 }

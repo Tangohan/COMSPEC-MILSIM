@@ -603,5 +603,6 @@ $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : []
     <?php if (!empty($viewerLoggedIn)) { require base_path('views/partials/community_report_modal.php'); } ?>
     <?php require base_path('views/partials/analytics_beacon.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

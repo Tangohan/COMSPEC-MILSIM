@@ -4,7 +4,9 @@
     (COMSPEC_ATAK_Data "localTasks", lu par fn_tasksAll) ; les réponses REÇU / EN COURS / TERMINÉ passent par fn_orderAck.
       "local"  -> true quand les ordres passent en local (pas de COMSPEC Link, ATAK local, ou poste TOC sans Athena)
       "can"    -> true si je peux émettre : opérateur d'un PC de TOC, chef de groupe, joueur seul, rôle chef / commandant
-      "send" [type, libellé du type, genre de cible ("all" | "group"), clé du groupe, nom de la cible, consigne, priorité] -> id
+      "send" [type, libellé du type, genre de cible ("all" | "group"), clé du groupe, nom de la cible, consigne, priorité,
+              PC du poste (fn_tocLaptop : émetteur « TOC · indicatif », envoi direct par le réseau filaire du poste),
+              position de l'objectif [x, y] ou []] -> id
       "recv" [ordre en paires [[clé, valeur]...], camp]   (événement comspec_atak_native_localOrder)
     Tout passe en tableaux simples (jamais de HashMap sur le réseau).
 */
@@ -22,8 +24,8 @@ switch (_act) do {
             || {private _r = toLower (roleDescription player); (_r find "chef") >= 0 || {(_r find "command") >= 0} || {(_r find "leader") >= 0}}
     };
     case "send": {
-        _arg params [["_kind", "MOVE"], ["_typeLabel", ""], ["_tType", "all"], ["_tRef", ""], ["_tLabel", ""], ["_payload", ""], ["_prio", "ROUTINE"]];
-        private _toc = ([player] call comspec_atak_native_fnc_vehicleTerminal) isEqualTo "toc";
+        _arg params [["_kind", "MOVE"], ["_typeLabel", ""], ["_tType", "all"], ["_tRef", ""], ["_tLabel", ""], ["_payload", ""], ["_prio", "ROUTINE"], ["_direct", false], ["_pos", []]];
+        private _toc = _direct || {([player] call comspec_atak_native_fnc_vehicleTerminal) isEqualTo "toc"};
         private _issuer = if (_toc) then {
             format ["TOC · %1", ((["get"] call comspec_atak_native_fnc_localCfg) get "toc") get "callsign"]
         } else {
@@ -33,10 +35,12 @@ switch (_act) do {
         private _o = [
             ["id", _id], ["type", _kind], ["typeLabel", _typeLabel], ["target", ["", _tLabel] select (_tType isNotEqualTo "all")],
             ["priority", _prio], ["issuer", _issuer], ["issuerUid", getPlayerUID player], ["status", "NEW"], ["payload", _payload],
-            ["targetType", _tType], ["targetRef", _tRef], ["source", "local"], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString]
+            ["targetType", _tType], ["targetRef", _tRef], ["source", "local"], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString], ["stamp", serverTime]
         ];
+        if ((count _pos) >= 2) then { _o pushBack ["pos", [_pos select 0, _pos select 1]]; };
         private _side = str side group player;
         ["recv", [_o, _side]] call comspec_atak_native_fnc_orderLocal;
+        if (_direct) exitWith { ["comspec_atak_native_sideEvent", ["comspec_atak_native_localOrder", [_o, _side], _side]] call CBA_fnc_serverEvent; _id };
         [{ ["comspec_atak_native_sideEvent", ["comspec_atak_native_localOrder", _this, _this select 1]] call CBA_fnc_serverEvent; }, [_o, _side], "Ordre", 2] call comspec_atak_native_fnc_netSend;
         _id
     };
@@ -58,9 +62,9 @@ switch (_act) do {
         private _tasks = _data getOrDefault ["localTasks", createHashMap];
         if (_id in _tasks) exitWith { false };
         _tasks set [_id, _o];
-        // Les plus anciens partent au-delà de 40 ordres.
+        // Les plus anciens partent au-delà de 40 ordres (tri sur serverTime, pas sur HH:MM qui repasse à 00:00 ; jamais l'ordre qui arrive).
         if ((count _tasks) > 40) then {
-            private _old = (keys _tasks) apply { [(_tasks get _x) getOrDefault ["time", ""], _x] };
+            private _old = ((keys _tasks) select { _x isNotEqualTo _id }) apply { [(_tasks get _x) getOrDefault ["stamp", -1], _x] };
             _old sort true;
             { _tasks deleteAt (_x select 1); } forEach (_old select [0, (count _tasks) - 40]);
         };
@@ -71,7 +75,13 @@ switch (_act) do {
             ["TACTICAL", format ["Nouvel ordre · %1 · de %2", _lbl, _o getOrDefault ["issuer", "TOC"]], 8, 60, "TASK"] call comspec_atak_native_fnc_notify;
             [] call comspec_atak_native_fnc_vibrate;
         };
-        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) in ["TASK", "TOC"]) then { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) get "activePage"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+        [{
+            private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+            private _pg = _st getOrDefault ["activePage", ""];
+            if !(_pg in ["TASK", "TOC"]) exitWith {};
+            // Rédacteur d'ordre ouvert : la saisie en cours est gardée par fn_pageRender avant le redessin.
+            [_pg] call comspec_atak_native_fnc_pageRender;
+        }] call CBA_fnc_execNextFrame;
         true
     };
     default { false };

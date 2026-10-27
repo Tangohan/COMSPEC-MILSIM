@@ -263,7 +263,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                         <span class="pu-avatar" aria-hidden="true"><?= $h($initial) ?></span>
                         <div class="pu-person__id">
                             <h2 class="pu-person__name">
-                                <a class="pu-person__link" href="<?= $h($personUrl) ?>"><?= $h($primary) ?></a>
+                                <a class="pu-person__link<?= staff_name_class($anchorId) ?>" href="<?= $h($personUrl) ?>" data-staff-done><?= $h($primary) ?></a><?= staff_mark($anchorId, true) ?>
                                 <?php if ($ban !== null): ?>
                                     <span class="pa-pill pa-pill--rose">Banni du site</span>
                                 <?php endif; ?>

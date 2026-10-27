@@ -73,9 +73,11 @@ $fid = static function (string $suffix) use ($fieldIdPrefix): string {
         if ($rid < 1) {
             continue;
         }
-        $rLabel = OrganizationRoleLabels::displayName($r, OrganizationRoleLabels::MODE_FR);
+        $rLabel = OrganizationRoleLabels::displayName($r, locale() === 'en' ? OrganizationRoleLabels::MODE_EN : OrganizationRoleLabels::MODE_FR);
         $layer = (string) ($r['role_layer'] ?? 'community');
-        $layerFr = $layer === 'intra' ? 'Opérationnel' : 'Communauté';
+        $layerFr = locale() === 'en'
+            ? ($layer === 'intra' ? 'Operational' : 'Community')
+            : ($layer === 'intra' ? 'Opérationnel' : 'Communauté');
         ?>
         <option value="<?= $rid ?>"><?= htmlspecialchars($rLabel . ' (' . $layerFr . ')', ENT_QUOTES, 'UTF-8') ?></option>
     <?php endforeach; ?>

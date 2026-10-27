@@ -17,7 +17,8 @@ private _grid = mapGridPosition _pos;
 private _seq = missionNamespace getVariable ["comspec_sse_domex_mapSeq", 0];
 _seq = _seq + 1;
 missionNamespace setVariable ["comspec_sse_domex_mapSeq", _seq, true];
-private _uid = format ["ZEUS-MAP-P%1", _seq];
+// Hors serveur : clientOwner dans l'uid (deux Zeus peuvent lire la même séquence publique).
+private _uid = [format ["ZEUS-MAP-P%1-C%2", _seq, clientOwner], format ["ZEUS-MAP-P%1", _seq]] select isServer;
 
 private _packet = createHashMapFromArray [
     ["packet_uid", _uid],
@@ -41,7 +42,8 @@ private _packet = createHashMapFromArray [
 
 if (!isNull _entity && {!(_entity isKindOf "CAManBase")}) then {
     [_entity] call comspec_sse_fnc_domexEnsureNode;
-    _packet set ["packet_uid", format ["%1-M%2", _entity getVariable ["comspec_sse_domex_nodeId", "OBJ"], _seq]];
+    private _nodeId = _entity getVariable ["comspec_sse_domex_nodeId", "OBJ"];
+    _packet set ["packet_uid", [format ["%1-M%2-C%3", _nodeId, _seq, clientOwner], format ["%1-M%2", _nodeId, _seq]] select isServer];
     [_entity, _packet, true] call comspec_sse_fnc_domexAddLivePacket;
 } else {
     if (!isNil "comspec_sse_fnc_submitDigitalAcquisition") then {

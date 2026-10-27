@@ -147,7 +147,8 @@ switch (_action) do {
                 };
                 default { ["err", "Google n'a renvoyé aucune image pour cette présentation."] };
             };
-            uiNamespace setVariable ["COMSPEC_ATAK_BriefTest", [_res select 0, [_res select 1]]];
+            // Chargé sur ce téléphone seul : rien ne part aux autres joueurs tant que DIFFUSER À TOUS n'est pas touché.
+            uiNamespace setVariable ["COMSPEC_ATAK_BriefTest", [_res select 0, [_res select 1] + ([[], ["Les autres joueurs ne la voient pas : touchez DIFFUSER À TOUS pour la leur montrer."]] select ((_res select 0) isEqualTo "ok" && {!_broadcast}))]];
             [(_res select 0) isEqualTo "ok", _res select 1] params ["_good", "_msg"];
             [["WARNING", "SUCCESS"] select _good, _msg, 4, 30] call comspec_atak_native_fnc_notify;
             [{

@@ -25,7 +25,7 @@
     jambes), recalé sur la hauteur des yeux quand la posture change (debout, accroupi, couché).
 */
 params [["_act", "tick"]];
-private _phones = ["s7", "s23", "rugged", "iphone", "sonim"];
+private _phones = ["s7", "s23", "rugged", "iphone", "sonim", "ip17"];
 if (_act isEqualTo "sweep") exitWith {
     { if ((_x getVariable ["COMSPEC_ATAK_Jpc", false]) && {isNull attachedTo _x}) then { deleteVehicle _x; }; } forEach (allSimpleObjects (["COMSPEC_ATAK_JpcTablet"] + (_phones apply { "COMSPEC_ATAK_JpcPhone_" + _x })));
     true
@@ -40,12 +40,11 @@ private _style = profileNamespace getVariable ["COMSPEC_ATAK_CarryStyle", "hud"]
 private _allowed = false;
 if (_act isEqualTo "wip") exitWith { !_allowed };
 if (!_allowed) then { _style = "hud"; };
-// Modèle du profil (la tablette de bord des véhicules n'est pas portable : S7) ; S7 : teinte de la coque.
-private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
+// Modèle de l'objet porté ; S7 : teinte de la coque.
+([player] call comspec_atak_native_fnc_phoneCarried) params ["_model", "_tint", "_phoneItem"];
 if !(_model in (_phones + ["keys"])) then { _model = "s7"; };
-if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
+if (_phoneItem isEqualTo "" && {_model isNotEqualTo "s7"} && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 private _cls = ["COMSPEC_ATAK_JpcPhone_" + _model, "COMSPEC_ATAK_JpcTablet"] select (_model isEqualTo "keys");
-private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
 private _skin = ["", format ["%1jpc_s7_%2_ca.paa", _d, _tint]] select (_model isEqualTo "s7" && {_tint in ["od", "black"]});
 private _usable = { alive player && {vehicle player isEqualTo player} && {vest player isNotEqualTo ""} && {[player] call comspec_atak_native_fnc_hasDevice} };
 private _isOpen = {
@@ -117,7 +116,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_JpcMat", _mat];
         _obj setObjectMaterialGlobal [1, _mat];
         // Texture aux proportions de l'écran du modèle (photos de frame_photos.py plus allongées que le 16:9).
-        private _texH = (createHashMapFromArray [["iphone", 496], ["rugged", 384], ["sonim", 584]]) getOrDefault [_model, 576];
+        private _texH = (createHashMapFromArray [["iphone", 496], ["rugged", 384], ["sonim", 584], ["ip17", 496]]) getOrDefault [_model, 576];
         missionNamespace setVariable ["COMSPEC_ATAK_JpcTexH", _texH];
         _obj setObjectTexture [1, format ["#(rgb,1024,%2,1)ui(""COMSPEC_RscATAKTexture"",""comspec_atak_jpc_%1"")", _n, _texH]];
         // Rafraîchissement de l'écran (displayUpdate) : seulement s'il peut être vu (à l'écran, pas trop loin).

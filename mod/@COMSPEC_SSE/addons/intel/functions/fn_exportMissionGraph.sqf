@@ -3,9 +3,12 @@
     [] call comspec_sse_fnc_exportMissionGraph
 */
 private _entities = [];
+// allMissionObjects contient déjà unités et véhicules : dédoublonner pour n'exporter chaque entité qu'une fois.
+private _all = allUnits + vehicles + (allMissionObjects "All");
+_all = _all arrayIntersect _all;
 {
-    if (!isNil {[_x] call comspec_sse_fnc_getData}) then {
-        private _data = [_x] call comspec_sse_fnc_getData;
+    private _data = [_x] call comspec_sse_fnc_getData;
+    if (!isNil "_data") then {
         _entities pushBack (createHashMapFromArray [
             ["netId", netId _x],
             ["class", typeOf _x],
@@ -16,7 +19,7 @@ private _entities = [];
             ["data", _data]
         ]);
     };
-} forEach (allUnits + vehicles + (allMissionObjects "All"));
+} forEach _all;
 
 private _graph = createHashMapFromArray [
     ["format", "comspec_sse_mission_graph"],

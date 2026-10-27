@@ -35,9 +35,9 @@ if (isset($railGroups[$orbatGroup])) {
         Un emploi (ou fonction) décrit le poste tenu par un membre : radio, médecin, chef de groupe… Ce n’est pas un droit d’accès.
     </p>
     <ul class="eff-jobs-explain">
-        <li><strong>Catégorie</strong> : un simple rangement par métier (Santé, Transmissions…). Elle ne change rien aux droits.</li>
-        <li><strong>Référentiel militaire</strong> : environ 150 fonctions classées par domaine sont proposées directement dans la fiche membre ; dès qu’un membre en reçoit une, elle apparaît ici.</li>
-        <li><strong>Postes de l’ORBAT</strong> : chaque unité créée dans l’organigramme génère un poste du même nom, rangé à part en bas de la liste.</li>
+        <li><strong>Catégorie</strong> Un simple rangement par métier (Santé, Transmissions…). Elle ne change rien aux droits.</li>
+        <li><strong>Référentiel militaire</strong> Environ 150 fonctions classées par domaine sont proposées directement dans la fiche membre ; dès qu’un membre en reçoit une, elle apparaît ici.</li>
+        <li><strong>Postes de l’ORBAT</strong> Chaque unité créée dans l’organigramme génère un poste du même nom, rangé à part en bas de la liste.</li>
     </ul>
 </section>
 

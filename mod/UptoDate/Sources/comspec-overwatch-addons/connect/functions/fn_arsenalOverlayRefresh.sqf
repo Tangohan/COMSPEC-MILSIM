@@ -50,7 +50,7 @@ private _hasMine = false;
 {
     if (_x isEqualTo "") then { continue };
     private _f = [_x] call _split;
-    _f params [["_id", ""], ["_name", ""], ["", ""], ["_coll", ""], ["_fav", "0"], ["_bytes", "0"], ["_upd", ""], ["_owner", ""], ["_mine", ""], ["_sha", ""]];
+    _f params [["_id", ""], ["_name", ""], ["_gap", ""], ["_coll", ""], ["_fav", "0"], ["_bytes", "0"], ["_upd", ""], ["_owner", ""], ["_mine", ""], ["_sha", ""]];
     if (_id isEqualTo "" || {_name isEqualTo ""}) then { continue };
     // Colonnes « mine » et « sha256 » : COMSPEC Link 2.0.88 et plus.
     if ((count _f) >= 9) then { _hasMine = true; };

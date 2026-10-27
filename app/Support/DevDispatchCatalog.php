@@ -293,6 +293,94 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(1181, '2026-10-27', 'Annuaire des communautés : un tableur avec recherche et tri', 'Dans Administration du site, l’annuaire des communautés se présente comme un tableur. Vous cherchez par nom, profil, formule ou abonnement, vous filtrez les archivées, et vous triez chaque colonne. Le nom et les en-têtes restent visibles quand vous faites défiler. Rechargez le portail (Ctrl+F5).', [
+                'Recherche et filtres : profil, formule, abonnement, communautés archivées',
+                'Tri de chaque colonne, en-tête et nom figés au défilement',
+            ], [], [], ['platform'], [
+                'Ouvrez Administration du site, Communautés. Saisissez un nom, changez un filtre, puis cliquez un en-tête de colonne pour trier.',
+            ], 'Portail Athena'),
+            $pr(1176, '2026-10-27', 'Corrections de fiches : l’actuel et le proposé se lisent clairement', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Rechargez le portail (Ctrl+F5).', [], [
+                'Chaque changement se lit en deux volets : Actuellement et Proposé',
+                'La fenêtre Décider nomme les équipes, précise l’équipe principale, et nomme les emplois',
+            ], [
+                'La fenêtre Décider montrait les équipes et les emplois sous une forme illisible',
+            ], ['personnel'], [
+                'Ouvrez Effectifs, À traiter, puis Décider sur une demande de correction. Les équipes et les emplois sont en clair. La page Corrections de fiches montre l’actuel à gauche et le proposé à droite.',
+            ], 'Portail Athena'),
+            $pr(1016, '2026-10-27', 'Le téléphone garde l’identité du compte, et la carte suit la liaison', 'Pack 2.8.3. Le raccourci Overwatch ouvre le téléphone du pack. Les positions déjà tenues par la liaison apparaissent sur sa carte. Un joueur relié ne peut plus réécrire le temps de jeu ou les distances des autres. Après une coupure, le téléphone reprend de lui-même dans la minute et demie. Si le portail demande d’attendre plus longtemps, ce délai est respecté. Quittez Arma complètement, puis relancez.', [
+                'Le raccourci « Ouvrir le téléphone ATAK » ouvre le téléphone du pack',
+                'Les opérateurs connus de la liaison apparaissent sur la carte du téléphone',
+                'Le temps de jeu et les distances d’un autre opérateur ne peuvent plus être réécrits depuis un poste joueur',
+            ], [
+                'Après une coupure, la reprise se fait dans la minute et demie, ou selon le délai demandé par le portail',
+                'L’ancienne tablette libère les images de carte quand on se déplace',
+            ], [], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Le portail doit être à jour pour le temps de jeu et les distances.',
+            ], 'Pack du téléphone et portail'),
+            $pr(1015, '2026-10-27', 'Les diapositives diffusées s’affichent sur les écrans', 'Une diapositive visible sur le téléphone restait absente de l’écran du terrain, qui gardait son image d’origine. La diffusion montre maintenant cette diapositive sur l’écran. Quittez Arma complètement, puis relancez.', [
+                'Diffuser une diapositive l’affiche sur l’écran désigné',
+                'Changer de diapositive sur le téléphone met l’écran à jour',
+            ], [], [
+                'L’écran ne garde plus son image d’origine pendant une diffusion',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1014, '2026-10-27', 'Le chargement ne plante plus sur le numéro, Zeus et les tenues', 'À l’arrivée en mission, le numéro du téléphone, la copie des identifiants depuis Zeus et la liste des tenues dans l’arsenal plantaient. Ces trois actions aboutissent. Quittez Arma complètement, puis relancez.', [
+                'Le numéro du téléphone est posé à l’arrivée en mission',
+                'Zeus peut copier les identifiants d’un opérateur',
+                'La liste des tenues s’affiche dans l’arsenal',
+            ], [], [
+                'Ces trois actions ne plantent plus au chargement',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1013, '2026-10-27', 'La montre Garmin s’ouvre de nouveau', 'La touche de la montre et la vue agrandie ne montraient plus rien : le cadran plantait au dessin. Un appui bref sur la touche Montre allume de nouveau la montre, et Ctrl+Maj+O l’affiche en grand. Quittez Arma complètement, puis relancez.', [
+                'La montre s’allume avec un appui bref sur la touche Montre',
+                'Ctrl+Maj+O affiche la montre en grand au centre',
+            ], [], [
+                'Le cadran ne plante plus au moment de s’afficher',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1012, '2026-10-27', 'Chaque téléphone est un objet', 'Le modèle et la couleur du téléphone viennent de l’objet dans les poches. On ne les change plus dans les réglages. Samsung S7 coyote, olive ou noir, Samsung S23, iPhone 17 Pro, V2 Enhanced, Xiaomi X3D, Sonim XP8 et la tablette durcie sont chacun un objet. L’ancien téléphone COMSPEC reste le Samsung S7 coyote.', [
+                'Prendre un Samsung S7 olive ou noir affiche cette coque',
+                'Prendre un iPhone 17 Pro, un S23 ou un autre modèle affiche ce modèle',
+                'Les réglages du téléphone ne proposent plus de changer le modèle ni la couleur',
+            ], [], [], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Équipez l’objet du téléphone voulu.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1011, '2026-10-27', 'Registre des données : Steam par adresse de profil et mods proches', 'Dans le registre des données, vous collez l’adresse d’un profil Steam pour retrouver le compte. Un onglet liste les mods vus chez les joueurs qui ressemblent au pack officiel sans en porter la fiche Workshop. Ce sont des signaux à vérifier, pas une preuve de copie. Rechargez le portail (Ctrl+F5).', [
+                'Repérage d’un compte à partir de l’adresse steamcommunity.com/profiles/… ou /id/…',
+                'Onglet Mods proches : packs au nom proche du nôtre, sans fiche Workshop officielle',
+                'Filtres comptes sans Steam, e-mail à vérifier, et ouverture directe de la fiche',
+            ], [
+                'La recherche des comptes et des joueurs Steam accepte aussi une adresse de profil',
+                'Les statuts de compte s’affichent en libellés lisibles',
+            ], [], ['platform'], [
+                'Ouvrez Administration plateforme → Registre des données. Collez une adresse de profil Steam dans l’outil en haut de page, ou ouvrez l’onglet Mods proches.',
+            ], 'Portail Athena'),
+            $pr(1010, '2026-10-27', 'Gestionnaire : les clés de la communauté ne se retirent plus', 'Sur les niveaux d’accès, le niveau Gestionnaire garde toujours l’administration de la communauté et la gestion des niveaux d’accès. Ces cases restent cochées et ne peuvent plus être retirées, ce qui évite de se couper soi-même de l’administration. Les autres droits du niveau restent ajustables. Rechargez le portail (Ctrl+F5).', [
+                'Les clés du Gestionnaire restent toujours cochées sur l’écran Accès',
+                'Un responsable peut encore ajuster les autres droits du niveau Gestionnaire',
+            ], [], [
+                'Il n’est plus possible de retirer au Gestionnaire l’administration de la communauté ou la gestion des niveaux d’accès',
+            ], ['platform'], [
+                'Ouvrez Effectifs → Accès → Gestionnaire. Les cases marquées « toujours requis » restent cochées après enregistrement.',
+            ], 'Portail Athena'),
+            $pr(1009, '2026-10-27', 'La montre Garmin affiche de nouveau le cadran', 'La montre au poignet montrait seulement un disque vert. Elle affiche de nouveau le boîtier, l’heure et les écrans. Quittez Arma complètement après l’installation du pack, puis relancez.', [
+                'Le cadran, les icônes et le boîtier de la montre sont de nouveau visibles',
+                'Le coloris de la montre portée est toujours celui qui s’affiche',
+            ], [], [
+                'La montre n’affiche plus un disque vert à la place du cadran',
+            ], ['atak'], [
+                'Installez le nouveau pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1008, '2026-10-27', 'Seul le module officiel peut encore joindre le poste', 'Une fois le pack officiel publié, la liaison, le suivi et le téléphone ne répondent qu’à ce pack. Une copie modifiée est écartée, même si elle reprend une clé d’accès déjà obtenue. Installez ce pack, puis relancez Arma complètement.', [
+                'Le poste reconnaît le module officiel et refuse une copie',
+            ], [], [], ['atak', 'platform'], [
+                'Mettez le portail à jour et publiez le pack officiel en même temps. Avant ce pack, les joueurs déjà en ligne ne sont pas coupés.',
+                'Après l’installation, quittez Arma complètement, puis relancez. Une copie modifiée du module ne peut plus ouvrir la liaison.',
+            ], 'Portail Athena, puis pack du téléphone à republier'),
             $pr(1007, '2026-10-25', 'Data Inspector : l’onglet Mods ne contredit plus les versions', 'L’onglet Mods sépare le nom de chaque mod des versions vues en jeu. Si les noms ne sont pas disponibles, la page le dit et continue d’afficher les listes transmises par les joueurs, ainsi que les versions du mod COMSPEC et de COMSPEC Link. Rechargez le portail (Ctrl+F5).', [
                 'Un rappel distingue les listes reçues, toutes connexions confondues, et les versions de la période choisie',
             ], [

@@ -12,6 +12,16 @@
             <English>Connected (satellite or fibre)</English>
             <French>Raccordé (satellite ou fibre)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_016E7159E9">
+            <Original>Garmin watch, FreeCandy</Original>
+            <English>Garmin watch, FreeCandy</English>
+            <French>Montre Garmin FreeCandy</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_02B48D9628">
+            <Original>C 4,975 MHz</Original>
+            <English>C 4,975 MHz</English>
+            <French>C 4 975 MHz</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_02FF4B66E0">
             <Original>Foldable whip antenna screwed onto the ATAK phone's SMA port: x1.5 throughput, much sturdier behind terrain and inside buildings.</Original>
             <English>Foldable whip antenna screwed onto the ATAK phone's SMA port: x1.5 throughput, much sturdier behind terrain and inside buildings.</English>
@@ -41,6 +51,11 @@
             <Original>ATAK phone (JPC)</Original>
             <English>ATAK phone (JPC)</English>
             <French>Téléphone ATAK (JPC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0AFE1639F8">
+            <Original>Connected GPS watch: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone. Wear it in the watch slot.</Original>
+            <English>Connected GPS watch: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone. Wear it in the watch slot.</English>
+            <French>Montre GPS connectée : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK. À porter dans l'emplacement montre.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_0B3583ECAA">
             <Original>Interactions</Original>
@@ -87,6 +102,11 @@
             <English>Server code at end</English>
             <French>Code serveur en fin</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_134CE848F1">
+            <Original>Chance that a like on this profile turns into a match (0 to 100).</Original>
+            <English>Chance that a like on this profile turns into a match (0 to 100).</English>
+            <French>Chance qu'un like sur ce profil donne un match (0 à 100).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_13E08E6708">
             <Original>Breach possible</Original>
             <English>Breach possible</English>
@@ -97,10 +117,25 @@
             <English>Data wiped after the first complete download.</English>
             <French>Données effacées après le premier téléchargement complet.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_146C6595D4">
+            <Original>Camera sharing</Original>
+            <English>Camera sharing</English>
+            <French>Partage caméras</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_15FAB891FC">
+            <Original>Remove from Tinder</Original>
+            <English>Remove from Tinder</English>
+            <French>Retirer de Tinder</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_1707ED67D7">
             <Original>DL-7 module and USB-C / RJ45 / serial cable for the COMSPEC ATAK phone. Look at a computer, phone or USB stick, "Plug in the ATAK": the Extraction app downloads its data.</Original>
             <English>DL-7 module and USB-C / RJ45 / serial cable for the COMSPEC ATAK phone. Look at a computer, phone or USB stick, "Plug in the ATAK": the Extraction app downloads its data.</English>
             <French>Module DL-7 et câble USB-C / RJ45 / série pour le téléphone COMSPEC ATAK. Regardez un ordinateur, un téléphone ou une clé, « Brancher l'ATAK » : l'app Extraction télécharge ses données.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_19381BB8F9">
+            <Original>Many (60 %)</Original>
+            <English>Many (60 %)</English>
+            <French>Beaucoup (60 %)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_1B554EECB0">
             <Original>COMSPEC — ATAK · Civilian apps</Original>
@@ -127,10 +162,20 @@
             <English>Unchecked: players must switch it on via ACE on the relay.</English>
             <French>Décoché : les joueurs doivent l'allumer par ACE sur le relais.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2072040C4C">
+            <Original>First name or nickname</Original>
+            <English>First name or nickname</English>
+            <French>Prénom ou surnom</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_21A3E6F5BD">
             <Original>Image (path in mission)</Original>
             <English>Image (path in mission)</English>
             <French>Image (chemin dans la mission)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_22424B2581">
+            <Original>UHF 400 MHz</Original>
+            <English>UHF 400 MHz</English>
+            <French>UHF 400 MHz</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_22558DD904">
             <Original>Tutorial: 1. Place the module where the antenna should be. 2. Stretch its circle: that is the relay's range (terrain and buildings reduce it in game). 3. Choose the type; leave 0 for the type's values. 4. To equip an object already placed (mast, roof, vehicle that becomes a mobile relay), sync it to the module; otherwise the type's object is created. 5. For a wide network: one Connected relay (satellite or tower) and Repeaters in a chain, each within range of the previous one. 6. Tick Relays required so that leaving coverage cuts the network. In game: Wave Relay app, COVERAGE tab, and the map's Wave Relay layer; ACE on the relay: status, switch off, switch on, replace the battery. Improvised vehicle gateways and mobile CP are off by default (server setting).</Original>
@@ -167,10 +212,20 @@
             <English>Text, grid (045123) or x, y, image path, CfgSounds class.</English>
             <French>Texte, carroyage (045123) ou x, y, chemin d'image, classe CfgSounds.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_297613D47A">
+            <Original>Run on the server when a download finishes. params ["_object", "_player", "_files"]. Also: CBA event comspec_atak_native_dataDownloaded.</Original>
+            <English>Run on the server when a download finishes. params ["_object", "_player", "_files"]. Also: CBA event comspec_atak_native_dataDownloaded.</English>
+            <French>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_29CF136691">
             <Original>Indestructible</Original>
             <English>Indestructible</English>
             <French>Indestructible</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2AABFEE2EC">
+            <Original>HVT (high-value target)</Original>
+            <English>HVT (high-value target)</English>
+            <French>HVT (cible de haute valeur)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_2B264D3E23">
             <Original>Serial RS-232 (slow)</Original>
@@ -187,10 +242,25 @@
             <English>ATAK network relays</English>
             <French>Relais du réseau ATAK</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2D08DDA555">
+            <Original>C 4.9 GHz</Original>
+            <English>C 4.9 GHz</English>
+            <French>C 4,9 GHz</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_2D9AD0EB1E">
             <Original>Encrypted safe</Original>
             <English>Encrypted safe</English>
             <French>Coffre chiffré</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2E2016AB7C">
+            <Original>Name shown in Tinder and in the target file (empty = the unit's name).</Original>
+            <English>Name shown in Tinder and in the target file (empty = the unit's name).</English>
+            <French>Nom affiché dans Tinder et dans le dossier (vide = son nom).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2EC13DD1AC">
+            <Original>HVT: HVT profile in Tinder and target of the hunt (tips). SSE: SSE person. Automatic: based on SSE.</Original>
+            <English>HVT: HVT profile in Tinder and target of the hunt (tips). SSE: SSE person. Automatic: based on SSE.</English>
+            <French>HVT : profil HVT dans Tinder et cible de la chasse (tuyaux). SSE : personne SSE. Automatique : selon le SSE.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_2FA41491DA">
             <Original>Trigger alarm</Original>
@@ -227,6 +297,11 @@
             <English>E.g. operation_order.pdf</English>
             <French>Ex. ordre_operation.pdf</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_3C1A8EF4C4">
+            <Original>Chance that the target, once matched on Tinder, gives a fake meeting point (trap).</Original>
+            <English>Chance that the target, once matched on Tinder, gives a fake meeting point (trap).</English>
+            <French>Chance que la cible, matchée sur Tinder, donne un faux rendez-vous (piège).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_3C55341417">
             <Original>Relay in service at mission start.</Original>
             <English>Relay in service at mission start.</English>
@@ -237,6 +312,11 @@
             <English>Type</English>
             <French>Type</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_3EF48FC3A1">
+            <Original>C 4,940 MHz</Original>
+            <English>C 4,940 MHz</English>
+            <French>C 4 940 MHz</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_4230BFC2CE">
             <Original>If the module is not synced to any object: object created at its position.</Original>
             <English>If the module is not synced to any object: object created at its position.</English>
@@ -246,6 +326,11 @@
             <Original>A relay placed on the map runs on mains. Battery only for an intended field relay: it shuts down when empty and players replace the battery via ACE.</Original>
             <English>A relay placed on the map runs on mains. Battery only for an intended field relay: it shuts down when empty and players replace the battery via ACE.</English>
             <French>Un relais posé sur la carte est sur secteur. Batterie seulement pour un relais de campagne voulu : il s'éteint à vide et les joueurs changent la batterie par ACE.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_46B8C2431E">
+            <Original>Zeus control</Original>
+            <English>Zeus control</English>
+            <French>Contrôle Zeus</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_47E44D31D4">
             <Original>Battery 8 h</Original>
@@ -262,10 +347,40 @@
             <English>E.g. MINISTRY OF DEFENSE, Cartel Rojas… At the top of the login screen.</English>
             <French>Ex. MINISTÈRE DE LA DÉFENSE, Cartel Rojas… En tête de l'écran de connexion.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4D2F56FC32">
+            <Original>S 2.4 GHz</Original>
+            <English>S 2.4 GHz</English>
+            <French>S 2,4 GHz</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_4E549A4E3F">
             <Original>Media to create</Original>
             <English>Media to create</English>
             <French>Support à créer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4F50F1E3F4">
+            <Original>Bio shown in Tinder (empty = random bio).</Original>
+            <English>Bio shown in Tinder (empty = random bio).</English>
+            <French>Bio affichée dans Tinder (vide = bio tirée au sort).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4F95A8E473">
+            <Original>Fake meeting point when matched</Original>
+            <English>Fake meeting point when matched</English>
+            <French>Faux rendez-vous si matché</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_511DBA2C67">
+            <Original>ATAK · Zeus control</Original>
+            <English>ATAK · Zeus control</English>
+            <French>ATAK · Contrôle Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_52B2031F34">
+            <Original>Garmin watch, US flag (misc item)</Original>
+            <English>Garmin watch, US flag (misc item)</English>
+            <French>Montre Garmin drapeau américain (objet divers)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_533917F4EA">
+            <Original>Garmin watch, coyote</Original>
+            <English>Garmin watch, coyote</English>
+            <French>Montre Garmin coyote</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_5386009BE8">
             <Original>Wrong passwords before the penalty below. 0 = unlimited.</Original>
@@ -276,6 +391,11 @@
             <Original>Satellite terminal</Original>
             <English>Satellite terminal</English>
             <French>Terminal satellite</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_55D68FFFA3">
+            <Original>Automatic (from SSE)</Original>
+            <English>Automatic (from SSE)</English>
+            <French>Automatique (selon le SSE)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_58F66D2E68">
             <Original>Wrong password</Original>
@@ -302,6 +422,11 @@
             <English>Tactical mast</English>
             <French>Mât tactique</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5BD7E56C9D">
+            <Original>Share of false tips about this target. Mission setting = each informant's honesty and the CBA setting.</Original>
+            <English>Share of false tips about this target. Mission setting = each informant's honesty and the CBA setting.</English>
+            <French>Part des tuyaux faux sur cette cible. Réglage de mission = honnêteté de chaque informateur et réglage CBA.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_5BF842B57E">
             <Original>On battery, the relay shuts down when empty; players replace the battery via ACE on the relay.</Original>
             <English>On battery, the relay shuts down when empty; players replace the battery via ACE on the relay.</English>
@@ -327,6 +452,11 @@
             <English>The tower cannot be brought down.</English>
             <French>Le pylône ne peut pas être abattu.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5F5D451210">
+            <Original>Mission setting</Original>
+            <English>Mission setting</English>
+            <French>Réglage de mission</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_60D4B6A0C2">
             <Original>Add a file (ATAK cable)</Original>
             <English>Add a file (ATAK cable)</English>
@@ -347,15 +477,30 @@
             <English>(synced object)</English>
             <French>(objet synchronisé)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_669FE25A32">
+            <Original>Profile</Original>
+            <English>Profile</English>
+            <French>Profil</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_66CB96FE97">
             <Original>Look of the device screen in the ATAK.</Original>
             <English>Look of the device screen in the ATAK.</English>
             <French>Apparence de l'écran du support dans l'ATAK.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_67446103B5">
+            <Original>Zeus acts remotely on the players' ATAK phones.%1%3Right click (ZEN)%4%2Select one or more players (or a vehicle and its crew), right click &gt; ATAK · Zeus control.%2Access: disable / re-enable, lock with a message, unlock.%2Sound: mute / restore the speakers (music, speaker, Bluetooth, vibrations, clicks).%2Punish: warning, message from command, glitching screen, shrill alarm heard at 60 m, vibrations.%2Jam: 30 %, 70 %, 100 % or stop, on this player only.%2Damage and effects: cracks, electromagnetic pulse, overheating (hot, burning hot, safety shutdown), battery drain, empty or full battery, reboot, destruction, repair.%2Restore everything: removes all effects and repairs.%1%3Zeus modules (without ZEN)%4%2COMSPEC — ATAK · Zeus control &gt; ATAK · Zeus control: same list, on the player under the module, players in a radius, all players or a side; intensity, duration and message.%2ATAK · Area jammer: invisible jammer (radius, strength, duration, spared side), or removal of Zeus jammers.%1%3Good to know%4%2Lasting effects hold until the opposite action or "Restore everything", respawn and join in progress included; a duration ends them on their own.%2Damage follows the server's phone damage setting.%2Jammers from the Crows Electronic Warfare mod also jam the ATAK (server setting Crows Electronic Warfare jammers).</Original>
+            <English>Zeus acts remotely on the players' ATAK phones.%1%3Right click (ZEN)%4%2Select one or more players (or a vehicle and its crew), right click &gt; ATAK · Zeus control.%2Access: disable / re-enable, lock with a message, unlock.%2Sound: mute / restore the speakers (music, speaker, Bluetooth, vibrations, clicks).%2Punish: warning, message from command, glitching screen, shrill alarm heard at 60 m, vibrations.%2Jam: 30 %, 70 %, 100 % or stop, on this player only.%2Damage and effects: cracks, electromagnetic pulse, overheating (hot, burning hot, safety shutdown), battery drain, empty or full battery, reboot, destruction, repair.%2Restore everything: removes all effects and repairs.%1%3Zeus modules (without ZEN)%4%2COMSPEC — ATAK · Zeus control &gt; ATAK · Zeus control: same list, on the player under the module, players in a radius, all players or a side; intensity, duration and message.%2ATAK · Area jammer: invisible jammer (radius, strength, duration, spared side), or removal of Zeus jammers.%1%3Good to know%4%2Lasting effects hold until the opposite action or "Restore everything", respawn and join in progress included; a duration ends them on their own.%2Damage follows the server's phone damage setting.%2Jammers from the Crows Electronic Warfare mod also jam the ATAK (server setting Crows Electronic Warfare jammers).</English>
+            <French>Le Zeus agit à distance sur le téléphone ATAK des joueurs.%1%3Clic droit (ZEN)%4%2Sélectionnez un ou plusieurs joueurs (ou un véhicule et son équipage), clic droit &gt; ATAK · Contrôle Zeus.%2Accès : désactiver / réactiver, verrouiller avec un message, déverrouiller.%2Son : couper / rétablir les haut-parleurs (musique, haut-parleur, Bluetooth, vibrations, clics).%2Punir : avertissement, message du commandement, écran qui bugue, alarme stridente entendue à 60 m, vibrations.%2Brouiller : 30 %, 70 %, 100 % ou arrêter, sur ce joueur seulement.%2Dégâts et effets : fêlures, impulsion électromagnétique, surchauffe (chaud, brûlant, arrêt de sécurité), décharge de batterie, batterie vide ou pleine, redémarrage, destruction, réparation.%2Tout rétablir : retire tous les effets et répare.%1%3Modules Zeus (sans ZEN)%4%2COMSPEC — ATAK · Contrôle Zeus &gt; ATAK · Contrôle Zeus : même liste, sur le joueur sous le module, les joueurs d'un rayon, tous les joueurs ou un camp ; intensité, durée et message.%2ATAK · Brouilleur de zone : brouilleur invisible (rayon, force, durée, camp épargné), ou retrait des brouilleurs Zeus.%1%3Bon à savoir%4%2Les effets durables tiennent jusqu'à l'action inverse ou « Tout rétablir », réapparition et arrivée en cours de partie comprises ; une durée les arrête seuls.%2Les dégâts suivent le réglage serveur des dégâts du téléphone.%2Les brouilleurs du mod Crows Electronic Warfare brouillent aussi l'ATAK (réglage serveur Brouilleurs Crows Electronic Warfare).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_675368CCFD">
             <Original>Seconds to download everything over USB-C (RJ45 faster, serial slower; server speed setting).</Original>
             <English>Seconds to download everything over USB-C (RJ45 faster, serial slower; server speed setting).</English>
             <French>Secondes pour tout télécharger en USB-C (RJ45 plus rapide, série plus lent ; réglage serveur de vitesse).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_683C914A32">
+            <Original>Garmin watch, FreeCandy (misc item)</Original>
+            <English>Garmin watch, FreeCandy (misc item)</English>
+            <French>Montre Garmin FreeCandy (objet divers)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_68C602A962">
             <Original>Alarm</Original>
@@ -367,6 +512,11 @@
             <English>Relay tower 40 m (ruin)</English>
             <French>Tour relais 40 m (ruine)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_6BD4654DE8">
+            <Original>Informant tips on this target</Original>
+            <English>Informant tips on this target</English>
+            <French>Tuyaux d'informateurs sur elle</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_6CDE1BE9BE">
             <Original>Windows (blue desktop)</Original>
             <English>Windows (blue desktop)</English>
@@ -376,6 +526,16 @@
             <Original>Dock ID</Original>
             <English>Dock ID</English>
             <French>Identifiant du socle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_6F48D035BE">
+            <Original>Match chance (%)</Original>
+            <English>Match chance (%)</English>
+            <French>Chance de match (%)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_6FF666F5E6">
+            <Original>Garmin watch, coyote (misc item)</Original>
+            <English>Garmin watch, coyote (misc item)</English>
+            <French>Montre Garmin coyote (objet divers)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_70D61E6EE6">
             <Original>0: type's throughput. Shared between phones beyond the slots.</Original>
@@ -452,6 +612,11 @@
             <English>Lock (breach only)</English>
             <French>Verrouiller (forçage seul)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7ED3477395">
+            <Original>C 4,950 MHz</Original>
+            <English>C 4,950 MHz</English>
+            <French>C 4 950 MHz</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_7F73B0F8AB">
             <Original>Tablet</Original>
             <English>Tablet</English>
@@ -481,6 +646,11 @@
             <Original>Ethernet RJ45</Original>
             <English>Ethernet RJ45</English>
             <French>Ethernet RJ45</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_838F8C2B63">
+            <Original>#rrggbb, empty = theme colour.</Original>
+            <English>#rrggbb, empty = theme colour.</English>
+            <French>#rrggbb, vide = couleur du thème.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_83983FCE7E">
             <Original>Relay tower 50 m (lit)</Original>
@@ -517,6 +687,11 @@
             <English>One block per file, separated by a --- line. First line: name | type (texte, document, identifiants, coord, image, audio). Following lines: content.</English>
             <French>Un bloc par fichier, séparés par une ligne ---. Première ligne : nom | type (texte, document, identifiants, coord, image, audio). Lignes suivantes : contenu.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8E77DB9711">
+            <Original>Always (trap)</Original>
+            <English>Always (trap)</English>
+            <French>Toujours (piège)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_8F41F620E8">
             <Original>Desktop computer</Original>
             <English>Desktop computer</English>
@@ -531,6 +706,11 @@
             <Original>Password</Original>
             <English>Password</English>
             <French>Mot de passe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_957A6195AE">
+            <Original>Garmin watch</Original>
+            <English>Garmin watch</English>
+            <French>Montre Garmin</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_96A9436FE5">
             <Original>Audio (CfgSounds or path)</Original>
@@ -557,6 +737,11 @@
             <English>Long whip antenna (ATAK)</English>
             <French>Antenne fouet longue (ATAK)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_9F3363A1FB">
+            <Original>Yes: informants send tips about this target (HVT hunt). No: it only shows up in SWIPE.</Original>
+            <English>Yes: informants send tips about this target (HVT hunt). No: it only shows up in SWIPE.</English>
+            <French>Oui : les informateurs envoient des tuyaux sur cette cible (chasse aux HVT). Non : elle n'apparaît que sur SWIPE.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_A200DC2D3C">
             <Original>Short SMA antenna (ATAK)</Original>
             <English>Short SMA antenna (ATAK)</English>
@@ -566,6 +751,11 @@
             <Original>IP camera (ATAK)</Original>
             <English>IP camera (ATAK)</English>
             <French>Caméra IP (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A3BF3DAE24">
+            <Original>Few (15 %)</Original>
+            <English>Few (15 %)</English>
+            <French>Peu (15 %)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_A54A861193">
             <Original>On</Original>
@@ -578,9 +768,14 @@
             <French>Radio MANET Wave Relay. Dans l'inventaire : le téléphone ATAK passe par elle (portée et débit relevés, relais pour l'équipe). La voix reste sur vos radios ACRE2, visibles dans l'app Wave Relay &gt; VOIX.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_A692CFB580">
-            <Original>COMSPEC ATAK phone (Samsung S7)</Original>
-            <English>COMSPEC ATAK phone (Samsung S7)</English>
-            <French>Téléphone COMSPEC ATAK (Samsung S7)</French>
+            <Original>Samsung S7 coyote</Original>
+            <English>Samsung S7 coyote</English>
+            <French>Samsung S7 coyote</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A721993901">
+            <Original>No</Original>
+            <English>No</English>
+            <French>Non</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_A79E887C37">
             <Original>All sides</Original>
@@ -602,30 +797,105 @@
             <English>Laptop</English>
             <French>Ordinateur portable</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AA0E17E9A6">
+            <Original>C 4,965 MHz</Original>
+            <English>C 4,965 MHz</English>
+            <French>C 4 965 MHz</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AB5C9325A0">
+            <Original>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</Original>
+            <English>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</English>
+            <French>Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_ACB975B116">
-            <Original>Nom du relais</Original>
+            <Original>Relay name</Original>
             <English>Relay name</English>
             <French>Nom du relais</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_ACCF60D954">
-            <Original>Montre GPS connectée portée au poignet sans occuper l'emplacement montre : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK.</Original>
+            <Original>Connected GPS watch worn on the wrist without taking the watch slot: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone.</Original>
             <English>Connected GPS watch worn on the wrist without taking the watch slot: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone.</English>
             <French>Montre GPS connectée portée au poignet sans occuper l'emplacement montre : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AD986766E8">
+            <Original>None (0 %)</Original>
+            <English>None (0 %)</English>
+            <French>Aucun (0 %)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_AF7756A553">
-            <Original>Durée du forçage (s)</Original>
+            <Original>Breach duration (s)</Original>
             <English>Breach duration (s)</English>
             <French>Durée du forçage (s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_DESC">
+            <Original>Sync this module with AI units: their groups carry an ATAK and appear on the BFT and TOC screens as network nodes (PLI points sent by the server, realistic GPS error, lost near a jammer).</Original>
+            <English>Sync this module with AI units: their groups carry an ATAK and appear on the BFT and TOC screens as network nodes (PLI points sent by the server, realistic GPS error, lost near a jammer).</English>
+            <French>Synchronisez ce module avec des unités IA : leurs groupes portent un ATAK et apparaissent sur le BFT et les écrans TOC comme des nœuds du réseau (points PLI envoyés par le serveur, erreur GPS réaliste, perdus près d'un brouilleur).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_NAME">
+            <Original>ATAK · AI with ATAK</Original>
+            <English>ATAK · AI with ATAK</English>
+            <French>ATAK · IA équipées</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_S_NAME">
+            <Original>Side (when nothing is synced)</Original>
+            <English>Side (when nothing is synced)</English>
+            <French>Camp (sans synchronisation)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_S_TIP">
+            <Original>With no synced unit, the module applies to every AI of this side present at start.</Original>
+            <English>With no synced unit, the module applies to every AI of this side present at start.</English>
+            <French>Sans unité synchronisée, le module s'applique à toutes les IA de ce camp présentes au départ.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_ALL">
+            <Original>Whole group</Original>
+            <English>Whole group</English>
+            <French>Tout le groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_LEAD">
+            <Original>Group leaders</Original>
+            <English>Group leaders</English>
+            <French>Chefs de groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_NAME">
+            <Original>Who</Original>
+            <English>Who</English>
+            <French>Qui</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_NONE">
+            <Original>None (forbid ATAK)</Original>
+            <English>None (forbid ATAK)</English>
+            <French>Aucune (interdire l'ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AIATAK_W_TIP">
+            <Original>AI that receive an ATAK: the whole group, group leaders only, or none (ATAK forbidden, even with the server setting).</Original>
+            <English>AI that receive an ATAK: the whole group, group leaders only, or none (ATAK forbidden, even with the server setting).</English>
+            <French>IA qui reçoivent un ATAK : tout le groupe, les chefs de groupe, ou aucune (l'ATAK leur est interdit, même avec le réglage serveur).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B188071E5D">
+            <Original>Garmin watch, US flag</Original>
+            <English>Garmin watch, US flag</English>
+            <French>Montre Garmin drapeau américain</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_B2101F06B2">
             <Original>Short 2.4 / 5.8 GHz antenna screwed onto the ATAK phone's SMA port: x1.25 throughput and a sturdier link (terrain, buildings, jamming). Low profile, works on the move.</Original>
             <English>Short 2.4 / 5.8 GHz antenna screwed onto the ATAK phone's SMA port: x1.25 throughput and a sturdier link (terrain, buildings, jamming). Low profile, works on the move.</English>
             <French>Antenne courte 2,4 / 5,8 GHz à visser sur le port SMA du téléphone ATAK : débit x1,25 et liaison plus tenace (relief, bâtiments, brouillage). Discrète, efficace en mouvement.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B31FC969B4">
+            <Original>Bio</Original>
+            <English>Bio</English>
+            <French>Bio</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_B67393853B">
             <Original>Battery 1 h</Original>
             <English>Battery 1 h</English>
             <French>Batterie 1 h</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B765617C85">
+            <Original>C 4,970 MHz</Original>
+            <English>C 4,970 MHz</English>
+            <French>C 4 970 MHz</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_B80BA8ECDA">
             <Original>On plug-in</Original>
@@ -647,15 +917,30 @@
             <English>COMSPEC — ATAK · Data (extraction)</English>
             <French>COMSPEC — ATAK · Données (extraction)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_BC5203222A">
+            <Original>C 4,960 MHz</Original>
+            <English>C 4,960 MHz</English>
+            <French>C 4 960 MHz</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_BCCEF47A72">
             <Original>On at start</Original>
             <English>On at start</English>
             <French>Allumé au départ</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_BE95616EC5">
+            <Original>C 4,955 MHz</Original>
+            <English>C 4,955 MHz</English>
+            <French>C 4 955 MHz</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_BF0FFB1714">
             <Original>The ATAK network runs through relays placed by the mission.%1%3In Eden%4%2Modules &gt; COMSPEC — ATAK · Network &gt; ATAK · Relay, placed where the antenna should be.%2The module's circle is the range: stretch it. Terrain and buildings reduce it in game.%2Type: portable radio, tactical mast, fixed tower, satellite terminal. 0 in a field = the type's value.%2Sync an object (mast, roof, vehicle) to equip it; otherwise the type's object is created.%2Connected: carries the network on its own. Repeater: must be within range of a connected relay or of a repeater that is.%2Relays required: out of coverage, the phone has almost no network.%1%3In Zeus%4%2Same module, form on placement; dropped on a vehicle, it makes it a mobile relay.%1%3In game%4%2Wave Relay app, COVERAGE tab: throughput map, relays, slots, battery.%2ACE on the relay: status, switch off, switch on, replace the battery.%2Beyond its slots, a relay's throughput is shared; jammers and damage reduce it.%2Improvised vehicle gateways and mobile CP are off by default (server setting Vehicle gateways and mobile CP).</Original>
             <English>The ATAK network runs through relays placed by the mission.%1%3In Eden%4%2Modules &gt; COMSPEC — ATAK · Network &gt; ATAK · Relay, placed where the antenna should be.%2The module's circle is the range: stretch it. Terrain and buildings reduce it in game.%2Type: portable radio, tactical mast, fixed tower, satellite terminal. 0 in a field = the type's value.%2Sync an object (mast, roof, vehicle) to equip it; otherwise the type's object is created.%2Connected: carries the network on its own. Repeater: must be within range of a connected relay or of a repeater that is.%2Relays required: out of coverage, the phone has almost no network.%1%3In Zeus%4%2Same module, form on placement; dropped on a vehicle, it makes it a mobile relay.%1%3In game%4%2Wave Relay app, COVERAGE tab: throughput map, relays, slots, battery.%2ACE on the relay: status, switch off, switch on, replace the battery.%2Beyond its slots, a relay's throughput is shared; jammers and damage reduce it.%2Improvised vehicle gateways and mobile CP are off by default (server setting Vehicle gateways and mobile CP).</English>
             <French>Le réseau ATAK passe par des relais posés par la mission.%1%3Dans Eden%4%2Modules &gt; COMSPEC — ATAK · Réseau &gt; ATAK · Relais, posé là où doit être l'antenne.%2Le cercle du module est la portée : étirez-le. Relief et bâtiments la réduisent en jeu.%2Type : radio portable, mât tactique, tour fixe, terminal satellite. 0 dans un champ = valeur du type.%2Synchronisez un objet (mât, toit, véhicule) pour l'équiper ; sinon l'objet du type est créé.%2Raccordé : porte le réseau seul. Répéteur : doit être à portée d'un relais raccordé ou d'un répéteur qui l'est.%2Relais obligatoires : hors couverture, le téléphone n'a presque plus de réseau.%1%3En Zeus%4%2Même module, formulaire à la pose ; lâché sur un véhicule, il en fait un relais mobile.%1%3En jeu%4%2App Wave Relay, onglet COUVERTURE : carte du débit, relais, places, batterie.%2ACE sur le relais : état, couper, allumer, changer la batterie.%2Au-delà de ses places, le débit d'un relais se partage ; brouilleurs et dégâts le réduisent.%2Les passerelles de véhicule et le PC mobile improvisés sont coupés par défaut (réglage serveur Passerelles de véhicule et PC mobile).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_BF7BE30836">
+            <Original>Camera sharing</Original>
+            <English>Camera sharing</English>
+            <French>Partage des caméras</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_BFA2360137">
             <Original>Relay tower 50 m (ruin)</Original>
@@ -677,6 +962,11 @@
             <English>0: type's height. A higher antenna clears terrain better.</English>
             <French>0 : hauteur du type. Plus haute, l'antenne passe mieux le relief.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C3B58F43CF">
+            <Original>COMSPEC — ATAK · Zeus control</Original>
+            <English>COMSPEC — ATAK · Zeus control</English>
+            <French>COMSPEC — ATAK · Contrôle Zeus</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_C3C6B0F083">
             <Original>Connected: satellite or fibre, carries the network on its own. Repeater: must see a connected relay (or a repeater that sees one); if it loses it, it is useless.</Original>
             <English>Connected: satellite or fibre, carries the network on its own. Repeater: must see a connected relay (or a repeater that sees one); if it loses it, it is useless.</English>
@@ -697,10 +987,20 @@
             <English>Small Wi-Fi IP camera to stick on a wall, the ground or a vehicle (ACE "ATAK phone &gt; Cameras"). The side watches it in the Live video app (day, NVG, thermal) while an ATAK is in range. Recoverable.</English>
             <French>Petite caméra IP Wi-Fi à coller sur un mur, au sol ou sur un véhicule (ACE « Téléphone ATAK &gt; Caméras »). Le camp la regarde dans l'app Vidéo live (jour, JVN, thermique) tant qu'un ATAK est à portée. Récupérable.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C9AF05C42B">
+            <Original>A fixed camera is only visible to whoever placed it, a phone camera only to its wearer, until they share it.%1%3Sharing%4%2Live video app: pick the camera (or My camera), SHARE button.%2Pick the method, then the recipient: one ATAK, or ALL.%2The camera shows up in the recipient's Live video list. REVOKE ACCESS takes back every share.%1%3NFC%4%2Phones back to back, within 2 m.%2No network needed: total outage, airplane mode, or an ATAK without network.%2ALL = every ATAK within 2 m.%1%3Bluetooth%4%2Realistic range between phones (15 m by default, server setting Bluetooth range).%2Bluetooth on at both ends (Bluetooth app). No network needed.%2ALL = every ATAK in range.%1%3Relay%4%2Over the network, direct or through the radio and video relays, no distance limit.%2Both phones need network. ALL = the whole side.%1%3The picture%4%2Sharing grants access. A fixed camera is viewed over its own Wi-Fi when in range, even without network; otherwise the feed goes over the network and relays.%2Server setting Camera sharing: Whole side sees everything makes sharing unnecessary (as before).</Original>
+            <English>A fixed camera is only visible to whoever placed it, a phone camera only to its wearer, until they share it.%1%3Sharing%4%2Live video app: pick the camera (or My camera), SHARE button.%2Pick the method, then the recipient: one ATAK, or ALL.%2The camera shows up in the recipient's Live video list. REVOKE ACCESS takes back every share.%1%3NFC%4%2Phones back to back, within 2 m.%2No network needed: total outage, airplane mode, or an ATAK without network.%2ALL = every ATAK within 2 m.%1%3Bluetooth%4%2Realistic range between phones (15 m by default, server setting Bluetooth range).%2Bluetooth on at both ends (Bluetooth app). No network needed.%2ALL = every ATAK in range.%1%3Relay%4%2Over the network, direct or through the radio and video relays, no distance limit.%2Both phones need network. ALL = the whole side.%1%3The picture%4%2Sharing grants access. A fixed camera is viewed over its own Wi-Fi when in range, even without network; otherwise the feed goes over the network and relays.%2Server setting Camera sharing: Whole side sees everything makes sharing unnecessary (as before).</English>
+            <French>Une caméra fixe n'est visible que de son poseur, la caméra d'un téléphone que de son porteur, jusqu'à ce qu'ils la partagent.%1%3Partager%4%2App Vidéo live : choisissez la caméra (ou Ma caméra), bouton PARTAGER.%2Choisissez la méthode, puis le destinataire : un ATAK, ou TOUS.%2La caméra apparaît dans la liste Vidéo live du destinataire. RETIRER LES ACCÈS reprend tous les partages.%1%3NFC%4%2Téléphones dos à dos, à moins de 2 m.%2Aucun réseau nécessaire : coupure totale, mode avion, ou ATAK sans réseau.%2TOUS = chaque ATAK à moins de 2 m.%1%3Bluetooth%4%2Portée réaliste entre les téléphones (15 m par défaut, réglage serveur Portée Bluetooth).%2Bluetooth allumé des deux côtés (app Bluetooth). Pas de réseau nécessaire.%2TOUS = chaque ATAK à portée.%1%3Relais%4%2Par le réseau, en direct ou à travers les relais radio et vidéo, sans limite de distance.%2Les deux téléphones doivent avoir du réseau. TOUS = tout le camp.%1%3L'image%4%2Le partage donne l'accès. Une caméra fixe se regarde par son Wi-Fi à portée, même sans réseau ; sinon le flux passe par le réseau et les relais.%2Réglage serveur Partage des caméras : Tout le camp voit tout rend le partage inutile (comme avant).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_CA316DECF0">
             <Original>Seconds to stay plugged in to force access.</Original>
             <English>Seconds to stay plugged in to force access.</English>
             <French>Secondes à rester branché pour forcer l'accès.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CD3A37DD0E">
+            <Original>L 1.4 GHz</Original>
+            <English>L 1.4 GHz</English>
+            <French>L 1,4 GHz</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_CED1C585A6">
             <Original>Too many attempts</Original>
@@ -723,14 +1023,24 @@
             <French>Téléphone</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_D448798D17">
-            <Original>Samsung Galaxy S7 in a tactical case, with COMSPEC ATAK installed. Enough to open the phone, no other mod needed.</Original>
-            <English>Samsung Galaxy S7 in a tactical case, with COMSPEC ATAK installed. Enough to open the phone, no other mod needed.</English>
-            <French>Samsung Galaxy S7 en coque tactique, ATAK COMSPEC installé. Suffit pour ouvrir le téléphone, sans autre mod.</French>
+            <Original>Coyote Samsung S7 with COMSPEC ATAK installed. Enough to open the phone. The model and colour are those of the item you carry.</Original>
+            <English>Coyote Samsung S7 with COMSPEC ATAK installed. Enough to open the phone. The model and colour are those of the item you carry.</English>
+            <French>Samsung S7 coyote, ATAK COMSPEC installé. Suffit pour ouvrir le téléphone. La couleur et le modèle sont ceux de l'objet porté.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D58E1749BA">
+            <Original>C 4,945 MHz</Original>
+            <English>C 4,945 MHz</English>
+            <French>C 4 945 MHz</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_D70CADC0E8">
             <Original>Side that uses the relay. Others don't see it in the ATAK, but can switch it off or destroy it in the field.</Original>
             <English>Side that uses the relay. Others don't see it in the ATAK, but can switch it off or destroy it in the field.</English>
             <French>Camp qui se sert du relais. Les autres ne le voient pas dans l'ATAK, mais peuvent le couper ou le détruire sur le terrain.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D7B313DCBE">
+            <Original>Average (35 %)</Original>
+            <English>Average (35 %)</English>
+            <French>Moyenne (35 %)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_DB4BE04D53">
             <Original>Relay tower 30 m (ruin)</Original>
@@ -772,110 +1082,25 @@
             <English>Screen color</English>
             <French>Couleur de l'écran</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_M12_NAME">
-            <Original>Relay monopole 12 m</Original>
-            <English>Relay monopole 12 m</English>
-            <French>Mât relais monopole 12 m</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_M20_NAME">
-            <Original>Relay monopole 20 m</Original>
-            <English>Relay monopole 20 m</English>
-            <French>Pylône relais monopole 20 m</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_M12_RUIN">
-            <Original>Relay monopole 12 m (ruin)</Original>
-            <English>Relay monopole 12 m (ruin)</English>
-            <French>Mât relais monopole 12 m (ruine)</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_M20_RUIN">
-            <Original>Relay monopole 20 m (ruin)</Original>
-            <English>Relay monopole 20 m (ruin)</English>
-            <French>Pylône relais monopole 20 m (ruine)</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_NAME">
-            <Original>Frequency</Original>
-            <English>Frequency</English>
-            <French>Fréquence</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_NAME">
-            <Original>Actif seulement si</Original>
-            <English>Active only when</English>
-            <French>Actif seulement si</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_TIP">
-            <Original>Le relais ne porte le réseau ATAK que tant que cette condition est remplie ; sinon il apparaît hors service avec la raison (mât replié, en mouvement...). Mât ou antenne déployé(e) : sources d'animation du véhicule nommées mast, antenna, telescop, aerial, pole ou rod (par exemple le GAZ-66 radio de RHS). Le champ Condition (code) remplace ce choix.</Original>
-            <English>The relay only carries the ATAK network while this condition holds; otherwise it shows as out of service with the reason (mast folded, moving...). Mast or antenna deployed: vehicle animation sources named mast, antenna, telescop, aerial, pole or rod (for example the RHS GAZ-66 radio truck). The Condition (code) field overrides this choice.</English>
-            <French>Le relais ne porte le réseau ATAK que tant que cette condition est remplie ; sinon il apparaît hors service avec la raison (mât replié, en mouvement...). Mât ou antenne déployé(e) : sources d'animation du véhicule nommées mast, antenna, telescop, aerial, pole ou rod (par exemple le GAZ-66 radio de RHS). Le champ Condition (code) remplace ce choix.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_ALWAYS">
-            <Original>Toujours</Original>
-            <English>Always</English>
-            <French>Toujours</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_MAST">
-            <Original>Mât ou antenne déployé(e)</Original>
-            <English>Mast or antenna deployed</English>
-            <French>Mât ou antenne déployé(e)</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_STOPPED">
-            <Original>Véhicule à l'arrêt</Original>
-            <English>Vehicle stopped</English>
-            <French>Véhicule à l'arrêt</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_ENGINE">
-            <Original>Moteur coupé</Original>
-            <English>Engine off</English>
-            <French>Moteur coupé</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCODE_NAME">
-            <Original>Condition (code)</Original>
-            <English>Condition (code)</English>
-            <French>Condition (code)</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCODE_TIP">
-            <Original>Facultatif. Code SQF relu toutes les 2 s, _this = l'objet relais, qui doit rendre vrai pour que le relais marche. Exemple : _this animationSourcePhase &quot;mast_src&quot; &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Remplace le choix Actif seulement si.</Original>
-            <English>Optional. SQF code re-read every 2 s, _this = the relay object, which must return true for the relay to work. Example: _this animationSourcePhase &quot;mast_src&quot; &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Overrides the Active only when choice.</English>
-            <French>Facultatif. Code SQF relu toutes les 2 s, _this = l'objet relais, qui doit rendre vrai pour que le relais marche. Exemple : _this animationSourcePhase &quot;mast_src&quot; &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Remplace le choix Actif seulement si.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_NAME">
-            <Original>Network through relays only</Original>
-            <English>Network through relays only</English>
-            <French>Réseau exclusivement par relais</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_TIP">
-            <Original>Checked on any module: across the whole mission, the ATAK network only runs through relays. Out of range of every relay, or with no working relay, the phone has no network at all (messages wait). Same as the server setting Network through relays only.</Original>
-            <English>Checked on any module: across the whole mission, the ATAK network only runs through relays. Out of range of every relay, or with no working relay, the phone has no network at all (messages wait). Same as the server setting Network through relays only.</English>
-            <French>Coché sur un des modules : dans toute la mission, le réseau ATAK ne passe que par les relais. Hors de portée de tout relais, ou sans aucun relais en service, le téléphone n'a plus aucun réseau (messages en attente). Même effet que le réglage serveur Réseau exclusivement par relais.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_TIP">
-            <Original>Relay radio channel. Two working relays on the same channel whose ranges overlap interfere: lower throughput, more loss and latency. Automatic: first free C-band channel (4,940 to 4,975 MHz) among neighbouring relays.</Original>
-            <English>Relay radio channel. Two working relays on the same channel whose ranges overlap interfere: lower throughput, more loss and latency. Automatic: first free C-band channel (4,940 to 4,975 MHz) among neighbouring relays.</English>
-            <French>Canal radio du relais. Deux relais en service sur le même canal, dont les portées se couvrent, se brouillent : débit réduit, perte et latence en hausse. Automatique : premier canal libre de la bande C (4 940 à 4 975 MHz) parmi les relais voisins.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_AUTO">
-            <Original>Automatic</Original>
-            <English>Automatic</English>
-            <French>Automatique</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_TBR_MENU">
-            <Original>TBR · Relay table</Original>
-            <English>TBR · Relay table</English>
-            <French>TBR · Tableau des relais</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_MENU">
-            <Original>Guide: network and simulation</Original>
-            <English>Guide: network and simulation</English>
-            <French>Guide : réseau et simulation</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_TBR_HELP">
-            <Original>Help: placing a relay</Original>
-            <English>Help: placing a relay</English>
-            <French>Aide : poser un relais</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E370327F96">
+            <Original>Yes (HVT hunt)</Original>
+            <English>Yes (HVT hunt)</English>
+            <French>Oui (chasse aux HVT)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_E4E74278CD">
             <Original>ATAK relays</Original>
             <English>ATAK relays</English>
             <French>Relais ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E5E2FEEE38">
+            <Original>Zeus control of ATAKs</Original>
+            <English>Zeus control of ATAKs</English>
+            <French>Contrôle Zeus des ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E656CCF617">
+            <Original>SSE person</Original>
+            <English>SSE person</English>
+            <French>Personne SSE</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_E8F8827310">
             <Original>None</Original>
@@ -897,10 +1122,20 @@
             <English>CS-10 charging dock (folded)</English>
             <French>Socle de recharge CS-10 (plié)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EC6B15B9EF">
+            <Original>ATAK · Area jammer</Original>
+            <English>ATAK · Area jammer</English>
+            <French>ATAK · Brouilleur de zone</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_ED07A353E4">
             <Original>Shown under the password field (optional).</Original>
             <English>Shown under the password field (optional).</English>
             <French>Affiché sous le champ du mot de passe (facultatif).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EE418581AC">
+            <Original>Often (50 %)</Original>
+            <English>Often (50 %)</English>
+            <French>Souvent (50 %)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_EF53A02082">
             <Original>ATAK power bank 10,000 mAh</Original>
@@ -927,6 +1162,16 @@
             <English>Content</English>
             <French>Contenu</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F405E1BE2C">
+            <Original>Never</Original>
+            <English>Never</English>
+            <French>Jamais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F41A9E1B71">
+            <Original>Share of false tips</Original>
+            <English>Share of false tips</English>
+            <French>Part de faux tuyaux</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FA0AF6576A">
             <Original>Tinder: HVT / SSE profile</Original>
             <English>Tinder: HVT / SSE profile</English>
@@ -942,6 +1187,11 @@
             <English>Text, document, credentials, coordinates, image or audio.</English>
             <French>Texte, document, identifiants, coordonnées, image ou audio.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FB60B67577">
+            <Original>Sometimes (25 %)</Original>
+            <English>Sometimes (25 %)</English>
+            <French>Parfois (25 %)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FBA3573C81">
             <Original>Directional patch antenna on a 90° SMA elbow: x1.7 throughput and a steadier link, when stationary only (misaligned on the move or in a vehicle).</Original>
             <English>Directional patch antenna on a 90° SMA elbow: x1.7 throughput and a steadier link, when stationary only (misaligned on the move or in a vehicle).</English>
@@ -953,12 +1203,12 @@
             <French>Port</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FF273F9B2F">
-            <Original>Montre Garmin (objet divers)</Original>
+            <Original>Garmin watch (misc item)</Original>
             <English>Garmin watch (misc item)</English>
             <French>Montre Garmin (objet divers)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FF5C921332">
-            <Original>Batterie 24 h</Original>
+            <Original>Battery 24 h</Original>
             <English>Battery 24 h</English>
             <French>Batterie 24 h</French>
         </Key>
@@ -972,165 +1222,385 @@
             <English>Text</English>
             <French>Texte</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_C3B58F43CF">
-            <Original>COMSPEC — ATAK · Zeus control</Original>
-            <English>COMSPEC — ATAK · Zeus control</English>
-            <French>COMSPEC — ATAK · Contrôle Zeus</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_AUTO">
+            <Original>Automatic</Original>
+            <English>Automatic</English>
+            <French>Automatique</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_E5E2FEEE38">
-            <Original>Zeus control of ATAKs</Original>
-            <English>Zeus control of ATAKs</English>
-            <French>Contrôle Zeus des ATAK</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_NAME">
+            <Original>Frequency</Original>
+            <English>Frequency</English>
+            <French>Fréquence</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_46B8C2431E">
-            <Original>Zeus control</Original>
-            <English>Zeus control</English>
-            <French>Contrôle Zeus</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_TIP">
+            <Original>Relay radio channel. Two working relays on the same channel whose ranges overlap interfere: lower throughput, more loss and latency. Automatic: first free C-band channel (4,940 to 4,975 MHz) among neighbouring relays.</Original>
+            <English>Relay radio channel. Two working relays on the same channel whose ranges overlap interfere: lower throughput, more loss and latency. Automatic: first free C-band channel (4,940 to 4,975 MHz) among neighbouring relays.</English>
+            <French>Canal radio du relais. Deux relais en service sur le même canal, dont les portées se couvrent, se brouillent : débit réduit, perte et latence en hausse. Automatique : premier canal libre de la bande C (4 940 à 4 975 MHz) parmi les relais voisins.</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_67446103B5">
-            <Original>Zeus acts remotely on the players' ATAK phones.%1%3Right click (ZEN)%4%2Select one or more players (or a vehicle and its crew), right click &gt; ATAK · Zeus control.%2Access: disable / re-enable, lock with a message, unlock.%2Sound: mute / restore the speakers (music, speaker, Bluetooth, vibrations, clicks).%2Punish: warning, message from command, glitching screen, shrill alarm heard at 60 m, vibrations.%2Jam: 30 %, 70 %, 100 % or stop, on this player only.%2Damage and effects: cracks, electromagnetic pulse, overheating (hot, burning hot, safety shutdown), battery drain, empty or full battery, reboot, destruction, repair.%2Restore everything: removes all effects and repairs.%1%3Zeus modules (without ZEN)%4%2COMSPEC — ATAK · Zeus control &gt; ATAK · Zeus control: same list, on the player under the module, players in a radius, all players or a side; intensity, duration and message.%2ATAK · Area jammer: invisible jammer (radius, strength, duration, spared side), or removal of Zeus jammers.%1%3Good to know%4%2Lasting effects hold until the opposite action or "Restore everything", respawn and join in progress included; a duration ends them on their own.%2Damage follows the server's phone damage setting.%2Jammers from the Crows Electronic Warfare mod also jam the ATAK (server setting Crows Electronic Warfare jammers).</Original>
-            <English>Zeus acts remotely on the players' ATAK phones.%1%3Right click (ZEN)%4%2Select one or more players (or a vehicle and its crew), right click &gt; ATAK · Zeus control.%2Access: disable / re-enable, lock with a message, unlock.%2Sound: mute / restore the speakers (music, speaker, Bluetooth, vibrations, clicks).%2Punish: warning, message from command, glitching screen, shrill alarm heard at 60 m, vibrations.%2Jam: 30 %, 70 %, 100 % or stop, on this player only.%2Damage and effects: cracks, electromagnetic pulse, overheating (hot, burning hot, safety shutdown), battery drain, empty or full battery, reboot, destruction, repair.%2Restore everything: removes all effects and repairs.%1%3Zeus modules (without ZEN)%4%2COMSPEC — ATAK · Zeus control &gt; ATAK · Zeus control: same list, on the player under the module, players in a radius, all players or a side; intensity, duration and message.%2ATAK · Area jammer: invisible jammer (radius, strength, duration, spared side), or removal of Zeus jammers.%1%3Good to know%4%2Lasting effects hold until the opposite action or "Restore everything", respawn and join in progress included; a duration ends them on their own.%2Damage follows the server's phone damage setting.%2Jammers from the Crows Electronic Warfare mod also jam the ATAK (server setting Crows Electronic Warfare jammers).</English>
-            <French>Le Zeus agit à distance sur le téléphone ATAK des joueurs.%1%3Clic droit (ZEN)%4%2Sélectionnez un ou plusieurs joueurs (ou un véhicule et son équipage), clic droit &gt; ATAK · Contrôle Zeus.%2Accès : désactiver / réactiver, verrouiller avec un message, déverrouiller.%2Son : couper / rétablir les haut-parleurs (musique, haut-parleur, Bluetooth, vibrations, clics).%2Punir : avertissement, message du commandement, écran qui bugue, alarme stridente entendue à 60 m, vibrations.%2Brouiller : 30 %, 70 %, 100 % ou arrêter, sur ce joueur seulement.%2Dégâts et effets : fêlures, impulsion électromagnétique, surchauffe (chaud, brûlant, arrêt de sécurité), décharge de batterie, batterie vide ou pleine, redémarrage, destruction, réparation.%2Tout rétablir : retire tous les effets et répare.%1%3Modules Zeus (sans ZEN)%4%2COMSPEC — ATAK · Contrôle Zeus &gt; ATAK · Contrôle Zeus : même liste, sur le joueur sous le module, les joueurs d'un rayon, tous les joueurs ou un camp ; intensité, durée et message.%2ATAK · Brouilleur de zone : brouilleur invisible (rayon, force, durée, camp épargné), ou retrait des brouilleurs Zeus.%1%3Bon à savoir%4%2Les effets durables tiennent jusqu'à l'action inverse ou « Tout rétablir », réapparition et arrivée en cours de partie comprises ; une durée les arrête seuls.%2Les dégâts suivent le réglage serveur des dégâts du téléphone.%2Les brouilleurs du mod Crows Electronic Warfare brouillent aussi l'ATAK (réglage serveur Brouilleurs Crows Electronic Warfare).</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_M12_NAME">
+            <Original>Relay monopole 12 m</Original>
+            <English>Relay monopole 12 m</English>
+            <French>Mât relais monopole 12 m</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_511DBA2C67">
-            <Original>ATAK · Zeus control</Original>
-            <English>ATAK · Zeus control</English>
-            <French>ATAK · Contrôle Zeus</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_M12_RUIN">
+            <Original>Relay monopole 12 m (ruin)</Original>
+            <English>Relay monopole 12 m (ruin)</English>
+            <French>Mât relais monopole 12 m (ruine)</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_EC6B15B9EF">
-            <Original>ATAK · Area jammer</Original>
-            <English>ATAK · Area jammer</English>
-            <French>ATAK · Brouilleur de zone</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_M20_NAME">
+            <Original>Relay monopole 20 m</Original>
+            <English>Relay monopole 20 m</English>
+            <French>Pylône relais monopole 20 m</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_BF7BE30836">
-            <Original>Camera sharing</Original>
-            <English>Camera sharing</English>
-            <French>Partage des caméras</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_M20_RUIN">
+            <Original>Relay monopole 20 m (ruin)</Original>
+            <English>Relay monopole 20 m (ruin)</English>
+            <French>Pylône relais monopole 20 m (ruine)</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_146C6595D4">
-            <Original>Camera sharing</Original>
-            <English>Camera sharing</English>
-            <French>Partage caméras</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_MENU">
+            <Original>Guide: network and simulation</Original>
+            <English>Guide: network and simulation</English>
+            <French>Guide : réseau et simulation</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_C9AF05C42B">
-            <Original>A fixed camera is only visible to whoever placed it, a phone camera only to its wearer, until they share it.%1%3Sharing%4%2Live video app: pick the camera (or My camera), SHARE button.%2Pick the method, then the recipient: one ATAK, or ALL.%2The camera shows up in the recipient's Live video list. REVOKE ACCESS takes back every share.%1%3NFC%4%2Phones back to back, within 2 m.%2No network needed: total outage, airplane mode, or an ATAK without network.%2ALL = every ATAK within 2 m.%1%3Bluetooth%4%2Realistic range between phones (15 m by default, server setting Bluetooth range).%2Bluetooth on at both ends (Bluetooth app). No network needed.%2ALL = every ATAK in range.%1%3Relay%4%2Over the network, direct or through the radio and video relays, no distance limit.%2Both phones need network. ALL = the whole side.%1%3The picture%4%2Sharing grants access. A fixed camera is viewed over its own Wi-Fi when in range, even without network; otherwise the feed goes over the network and relays.%2Server setting Camera sharing: Whole side sees everything makes sharing unnecessary (as before).</Original>
-            <English>A fixed camera is only visible to whoever placed it, a phone camera only to its wearer, until they share it.%1%3Sharing%4%2Live video app: pick the camera (or My camera), SHARE button.%2Pick the method, then the recipient: one ATAK, or ALL.%2The camera shows up in the recipient's Live video list. REVOKE ACCESS takes back every share.%1%3NFC%4%2Phones back to back, within 2 m.%2No network needed: total outage, airplane mode, or an ATAK without network.%2ALL = every ATAK within 2 m.%1%3Bluetooth%4%2Realistic range between phones (15 m by default, server setting Bluetooth range).%2Bluetooth on at both ends (Bluetooth app). No network needed.%2ALL = every ATAK in range.%1%3Relay%4%2Over the network, direct or through the radio and video relays, no distance limit.%2Both phones need network. ALL = the whole side.%1%3The picture%4%2Sharing grants access. A fixed camera is viewed over its own Wi-Fi when in range, even without network; otherwise the feed goes over the network and relays.%2Server setting Camera sharing: Whole side sees everything makes sharing unnecessary (as before).</English>
-            <French>Une caméra fixe n'est visible que de son poseur, la caméra d'un téléphone que de son porteur, jusqu'à ce qu'ils la partagent.%1%3Partager%4%2App Vidéo live : choisissez la caméra (ou Ma caméra), bouton PARTAGER.%2Choisissez la méthode, puis le destinataire : un ATAK, ou TOUS.%2La caméra apparaît dans la liste Vidéo live du destinataire. RETIRER LES ACCÈS reprend tous les partages.%1%3NFC%4%2Téléphones dos à dos, à moins de 2 m.%2Aucun réseau nécessaire : coupure totale, mode avion, ou ATAK sans réseau.%2TOUS = chaque ATAK à moins de 2 m.%1%3Bluetooth%4%2Portée réaliste entre les téléphones (15 m par défaut, réglage serveur Portée Bluetooth).%2Bluetooth allumé des deux côtés (app Bluetooth). Pas de réseau nécessaire.%2TOUS = chaque ATAK à portée.%1%3Relais%4%2Par le réseau, en direct ou à travers les relais radio et vidéo, sans limite de distance.%2Les deux téléphones doivent avoir du réseau. TOUS = tout le camp.%1%3L'image%4%2Le partage donne l'accès. Une caméra fixe se regarde par son Wi-Fi à portée, même sans réseau ; sinon le flux passe par le réseau et les relais.%2Réglage serveur Partage des caméras : Tout le camp voit tout rend le partage inutile (comme avant).</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCODE_NAME">
+            <Original>Condition (code)</Original>
+            <English>Condition (code)</English>
+            <French>Condition (code)</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_957A6195AE">
-            <Original>Garmin watch</Original>
-            <English>Garmin watch</English>
-            <French>Montre Garmin</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCODE_TIP">
+            <Original>Optional. SQF code re-read every 2 s, _this = the relay object, which must return true for the relay to work. Example: _this animationSourcePhase "mast_src" &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Overrides the Active only when choice.</Original>
+            <English>Optional. SQF code re-read every 2 s, _this = the relay object, which must return true for the relay to work. Example: _this animationSourcePhase "mast_src" &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Overrides the Active only when choice.</English>
+            <French>Facultatif. Code SQF relu toutes les 2 s, _this = l'objet relais, qui doit rendre vrai pour que le relais marche. Exemple : _this animationSourcePhase "mast_src" &gt; 0.9 &amp;&amp; {(abs speed _this) &lt; 1}. Remplace le choix Actif seulement si.</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_0AFE1639F8">
-            <Original>Connected GPS watch: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone. Wear it in the watch slot.</Original>
-            <English>Connected GPS watch: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone. Wear it in the watch slot.</English>
-            <French>Montre GPS connectée : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK. À porter dans l'emplacement montre.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_ALWAYS">
+            <Original>Always</Original>
+            <English>Always</English>
+            <French>Toujours</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_838F8C2B63">
-            <Original>#rrggbb, empty = theme colour.</Original>
-            <English>#rrggbb, empty = theme colour.</English>
-            <French>#rrggbb, vide = couleur du thème.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_ENGINE">
+            <Original>Engine off</Original>
+            <English>Engine off</English>
+            <French>Moteur coupé</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_AB5C9325A0">
-            <Original>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</Original>
-            <English>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</English>
-            <French>Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_MAST">
+            <Original>Mast or antenna deployed</Original>
+            <English>Mast or antenna deployed</English>
+            <French>Mât ou antenne déployé(e)</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_297613D47A">
-            <Original>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</Original>
-            <English>Run on the server when a download finishes. params ["_object", "_player", "_files"]. Also: CBA event comspec_atak_native_dataDownloaded.</English>
-            <French>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_NAME">
+            <Original>Active only when</Original>
+            <English>Active only when</English>
+            <French>Actif seulement si</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_TOCLAPTOP">
-            <Original>PC portable de TOC (ATAK)</Original>
-            <English>TOC laptop (ATAK)</English>
-            <French>PC portable de TOC (ATAK)</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_STOPPED">
+            <Original>Vehicle stopped</Original>
+            <English>Vehicle stopped</English>
+            <French>Véhicule à l'arrêt</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE">
-            <Original>Camp du poste TOC</Original>
-            <English>TOC post side</English>
-            <French>Camp du poste TOC</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYCOND_TIP">
+            <Original>The relay only carries the ATAK network while this condition holds; otherwise it shows as out of service with the reason (mast folded, moving...). Mast or antenna deployed: vehicle animation sources named mast, antenna, telescop, aerial, pole or rod (for example the RHS GAZ-66 radio truck). The Condition (code) field overrides this choice.</Original>
+            <English>The relay only carries the ATAK network while this condition holds; otherwise it shows as out of service with the reason (mast folded, moving...). Mast or antenna deployed: vehicle animation sources named mast, antenna, telescop, aerial, pole or rod (for example the RHS GAZ-66 radio truck). The Condition (code) field overrides this choice.</English>
+            <French>Le relais ne porte le réseau ATAK que tant que cette condition est remplie ; sinon il apparaît hors service avec la raison (mât replié, en mouvement...). Mât ou antenne déployé(e) : sources d'animation du véhicule nommées mast, antenna, telescop, aerial, pole ou rod (par exemple le GAZ-66 radio de RHS). Le champ Condition (code) remplace ce choix.</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE_TIP">
-            <Original>WEST, EAST, GUER ou CIV : seul ce camp peut utiliser ce PC. Vide : tous les camps.</Original>
-            <English>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</English>
-            <French>WEST, EAST, GUER ou CIV : seul ce camp peut utiliser ce PC. Vide : tous les camps.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_NAME">
+            <Original>Network through relays only</Original>
+            <English>Network through relays only</English>
+            <French>Réseau exclusivement par relais</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_NAME">
-            <Original>ATAK · Écran COMSPEC</Original>
-            <English>ATAK · COMSPEC screen</English>
-            <French>ATAK · Écran COMSPEC</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_N_NAME">
-            <Original>Nom de l'écran</Original>
-            <English>Screen name</English>
-            <French>Nom de l'écran</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_N_TIP">
-            <Original>Nom montré dans l'app Briefing (onglet ÉCRANS). Vide : nom de l'objet.</Original>
-            <English>Name shown in the Briefing app (SCREENS tab). Empty: the object's name.</English>
-            <French>Nom montré dans l'app Briefing (onglet ÉCRANS). Vide : nom de l'objet.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_R_NAME">
-            <Original>Portée de détection (m)</Original>
-            <English>Detection range (m)</English>
-            <French>Portée de détection (m)</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_R_TIP">
-            <Original>Distance à laquelle un téléphone voit l'écran et peut y diffuser ses diapositives.</Original>
-            <English>Distance at which a phone sees the screen and can cast its slides to it.</English>
-            <French>Distance à laquelle un téléphone voit l'écran et peut y diffuser ses diapositives.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_NAME">
-            <Original>Camp qui le pilote</Original>
-            <English>Side that controls it</English>
-            <French>Camp qui le pilote</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_TIP">
-            <Original>Seul ce camp voit l'écran dans son téléphone et le pilote. L'image reste visible de tous.</Original>
-            <English>Only this side sees the screen on its phones and controls it. The image stays visible to everyone.</English>
-            <French>Seul ce camp voit l'écran dans son téléphone et le pilote. L'image reste visible de tous.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_ALL">
-            <Original>Tous les camps</Original>
-            <English>All sides</English>
-            <French>Tous les camps</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER">
-            <Original>Indépendants</Original>
-            <English>Independent</English>
-            <French>Indépendants</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_CIV">
-            <Original>Civils</Original>
-            <English>Civilians</English>
-            <French>Civils</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_I_NAME">
-            <Original>Texture (index de sélection)</Original>
-            <English>Texture (selection index)</English>
-            <French>Texture (index de sélection)</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_I_TIP">
-            <Original>Sélection de l'objet qui reçoit l'image : 0 sur la plupart des TV, écrans et projecteurs. Essayez 1 si l'image tombe sur le cadre.</Original>
-            <English>Object selection that receives the image: 0 on most TVs, screens and projectors. Try 1 if the image lands on the frame.</English>
-            <French>Sélection de l'objet qui reçoit l'image : 0 sur la plupart des TV, écrans et projecteurs. Essayez 1 si l'image tombe sur le cadre.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_TIP">
+            <Original>Checked on any module: across the whole mission, the ATAK network only runs through relays. Out of range of every relay, or with no working relay, the phone has no network at all (messages wait). Same as the server setting Network through relays only.</Original>
+            <English>Checked on any module: across the whole mission, the ATAK network only runs through relays. Out of range of every relay, or with no working relay, the phone has no network at all (messages wait). Same as the server setting Network through relays only.</English>
+            <French>Coché sur un des modules : dans toute la mission, le réseau ATAK ne passe que par les relais. Hors de portée de tout relais, ou sans aucun relais en service, le téléphone n'a plus aucun réseau (messages en attente). Même effet que le réglage serveur Réseau exclusivement par relais.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_A_NAME">
-            <Original>Contrôle par ACE / molette</Original>
+            <Original>Control with ACE / scroll wheel</Original>
             <English>Control with ACE / scroll wheel</English>
             <French>Contrôle par ACE / molette</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_A_TIP">
-            <Original>Diapositive suivante, précédente et arrêt directement sur l'écran.</Original>
+            <Original>Next slide, previous slide and stop directly at the screen.</Original>
             <English>Next slide, previous slide and stop directly at the screen.</English>
             <French>Diapositive suivante, précédente et arrêt directement sur l'écran.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_DESC">
-            <Original>Synchronisez ce module avec des TV, écrans ou projecteurs : l'app Briefing du téléphone les détecte à portée et y diffuse ses diapositives, pilotées depuis le téléphone, ACE ou la molette.</Original>
+            <Original>Sync this module with TVs, screens or projectors: the phone's Briefing app detects them in range and casts its slides to them, controlled from the phone, ACE or the scroll wheel.</Original>
             <English>Sync this module with TVs, screens or projectors: the phone's Briefing app detects them in range and casts its slides to them, controlled from the phone, ACE or the scroll wheel.</English>
             <French>Synchronisez ce module avec des TV, écrans ou projecteurs : l'app Briefing du téléphone les détecte à portée et y diffuse ses diapositives, pilotées depuis le téléphone, ACE ou la molette.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_I_NAME">
+            <Original>Texture (selection index)</Original>
+            <English>Texture (selection index)</English>
+            <French>Texture (index de sélection)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_I_TIP">
+            <Original>Object selection that receives the image: 0 on most TVs, screens and projectors. Try 1 if the image lands on the frame.</Original>
+            <English>Object selection that receives the image: 0 on most TVs, screens and projectors. Try 1 if the image lands on the frame.</English>
+            <French>Sélection de l'objet qui reçoit l'image : 0 sur la plupart des TV, écrans et projecteurs. Essayez 1 si l'image tombe sur le cadre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_NAME">
+            <Original>ATAK · COMSPEC screen</Original>
+            <English>ATAK · COMSPEC screen</English>
+            <French>ATAK · Écran COMSPEC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_N_NAME">
+            <Original>Screen name</Original>
+            <English>Screen name</English>
+            <French>Nom de l'écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_N_TIP">
+            <Original>Name shown in the Briefing app (SCREENS tab). Empty: the object's name.</Original>
+            <English>Name shown in the Briefing app (SCREENS tab). Empty: the object's name.</English>
+            <French>Nom montré dans l'app Briefing (onglet ÉCRANS). Vide : nom de l'objet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_R_NAME">
+            <Original>Detection range (m)</Original>
+            <English>Detection range (m)</English>
+            <French>Portée de détection (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_R_TIP">
+            <Original>Distance at which a phone sees the screen and can cast its slides to it.</Original>
+            <English>Distance at which a phone sees the screen and can cast its slides to it.</English>
+            <French>Distance à laquelle un téléphone voit l'écran et peut y diffuser ses diapositives.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_ALL">
+            <Original>All sides</Original>
+            <English>All sides</English>
+            <French>Tous les camps</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_CIV">
+            <Original>Civilians</Original>
+            <English>Civilians</English>
+            <French>Civils</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER">
+            <Original>Independents</Original>
+            <English>Independents</English>
+            <French>Indépendants</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_NAME">
+            <Original>Side that controls it</Original>
+            <English>Side that controls it</English>
+            <French>Camp qui le pilote</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_SCREEN_S_TIP">
+            <Original>Only this side sees the screen on its phones and controls it. The image stays visible to everyone.</Original>
+            <English>Only this side sees the screen on its phones and controls it. The image stays visible to everyone.</English>
+            <French>Seul ce camp voit l'écran dans son téléphone et le pilote. L'image reste visible de tous.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TBR_HELP">
+            <Original>Help: placing a relay</Original>
+            <English>Help: placing a relay</English>
+            <French>Aide : poser un relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TBR_MENU">
+            <Original>TBR · Relay table</Original>
+            <English>TBR · Relay table</English>
+            <French>TBR · Tableau des relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCLAPTOP">
+            <Original>TOC laptop (ATAK)</Original>
+            <English>TOC laptop (ATAK)</English>
+            <French>PC portable de TOC (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_DUAL">
+            <Original>Dual tripod screen</Original>
+            <English>Dual tripod screen</English>
+            <French>Double écran sur trépied</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGE">
+            <Original>Large tripod screen</Original>
+            <English>Large tripod screen</English>
+            <French>Grand écran sur trépied</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGEB">
+            <Original>Large tripod screen (black)</Original>
+            <English>Large tripod screen (black)</English>
+            <French>Grand écran sur trépied (noir)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_NAME">
+            <Original>Screen placed</Original>
+            <English>Screen placed</English>
+            <French>Écran posé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_PC">
+            <Original>Computer set</Original>
+            <English>Computer set</English>
+            <French>Poste informatique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_PROJ">
+            <Original>Projector screen</Original>
+            <English>Projector screen</English>
+            <French>Écran de projection</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_TIP">
+            <Original>With no synced object, the module places this game screen at its position, facing the same way.</Original>
+            <English>With no synced object, the module places this game screen at its position, facing the same way.</English>
+            <French>Sans objet synchronisé, le module pose cet écran du jeu à sa place, tourné comme lui.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_TV">
+            <Original>Flat TV</Original>
+            <English>Flat TV</English>
+            <French>TV à écran plat</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_DESC">
+            <Original>Sync this module with game TVs or screens (or let it place one): they show the side's ATAK network live, as the server sees it (map with nodes, markers, reports, messages), and are kept from one session to the next.</Original>
+            <English>Sync this module with game TVs or screens (or let it place one): they show the side's ATAK network live, as the server sees it (map with nodes, markers, reports, messages), and are kept from one session to the next.</English>
+            <French>Synchronisez ce module avec des TV ou écrans du jeu (ou laissez-le poser un écran) : ils affichent en direct le réseau ATAK du camp tel que le serveur le voit (carte avec les nœuds, marqueurs, comptes rendus, messages), et sont gardés d'une partie à l'autre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_NAME">
+            <Original>ATAK · TOC screen</Original>
+            <English>ATAK · TOC screen</English>
+            <French>ATAK · Écran TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_N_TIP">
+            <Original>Name shown at the top of the screen (TOC, Bravo CP…).</Original>
+            <English>Name shown at the top of the screen (TOC, Bravo CP…).</English>
+            <French>Nom affiché en tête de l'écran (TOC, PC Bravo…).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_S_ALL">
+            <Original>Each player's own</Original>
+            <English>Each player's own</English>
+            <French>Celui de chaque joueur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_S_NAME">
+            <Original>Side shown</Original>
+            <English>Side shown</English>
+            <French>Camp affiché</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_S_TIP">
+            <Original>ATAK network shown. Each player's own: everyone sees their own side's network on the same screen.</Original>
+            <English>ATAK network shown. Each player's own: everyone sees their own side's network on the same screen.</English>
+            <French>Réseau ATAK affiché. Celui de chaque joueur : chacun voit le réseau de son propre camp sur le même écran.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_T_NAME">
+            <Original>Also a TOC post</Original>
+            <English>Also a TOC post</English>
+            <French>Sert aussi de poste TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_T_TIP">
+            <Original>A player in front of the screen gets the post's ATAK (TOC Post app) and the "Large map" action, which opens the full map in the post's tablet.</Original>
+            <English>A player in front of the screen gets the post's ATAK (TOC Post app) and the "Large map" action, which opens the full map in the post's tablet.</English>
+            <French>Un joueur devant l'écran a l'ATAK du poste (app Poste TOC) et l'action « Carte en grand », qui ouvre la carte complète dans la tablette du poste.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_FEED">
+            <Original>Feed only</Original>
+            <English>Feed only</English>
+            <French>Flux seul</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_MAP">
+            <Original>Map only (large map)</Original>
+            <English>Map only (large map)</English>
+            <French>Carte seule (carte en grand)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_NAME">
+            <Original>Display</Original>
+            <English>Display</English>
+            <French>Affichage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_PIP">
+            <Original>Post PIP (what the operator sees)</Original>
+            <English>Post PIP (what the operator sees)</English>
+            <French>PIP du poste (ce que voit l'opérateur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_SPLIT">
+            <Original>Map and feed</Original>
+            <English>Map and feed</English>
+            <French>Carte et flux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_TIP">
+            <Original>Map and feed, map only (large map), feed only, or post PIP (the screen mirrors what the operator has in front of them on the post laptop). Can be changed in game (ACE or scroll wheel).</Original>
+            <English>Map and feed, map only (large map), feed only, or post PIP (the screen mirrors what the operator has in front of them on the post laptop). Can be changed in game (ACE or scroll wheel).</English>
+            <French>Carte et flux, carte seule (carte en grand), flux seul, ou PIP du poste (l'écran recopie ce que l'opérateur a sous les yeux sur le PC du poste). Modifiable en jeu (ACE ou molette).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE">
+            <Original>TOC post side</Original>
+            <English>TOC post side</English>
+            <French>Camp du poste TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S7_OD">
+            <Original>Samsung S7 olive</Original>
+            <English>Samsung S7 olive</English>
+            <French>Samsung S7 olive</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S7_OD_DESC">
+            <Original>Olive Samsung S7 with COMSPEC ATAK installed. The case stays olive: another colour is another item.</Original>
+            <English>Olive Samsung S7 with COMSPEC ATAK installed. The case stays olive: another colour is another item.</English>
+            <French>Samsung S7 olive, ATAK COMSPEC installé. La coque reste olive : une autre couleur est un autre objet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S7_Black">
+            <Original>Samsung S7 black</Original>
+            <English>Samsung S7 black</English>
+            <French>Samsung S7 noir</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S7_Black_DESC">
+            <Original>Black Samsung S7 with COMSPEC ATAK installed. The case stays black: another colour is another item.</Original>
+            <English>Black Samsung S7 with COMSPEC ATAK installed. The case stays black: another colour is another item.</English>
+            <French>Samsung S7 noir, ATAK COMSPEC installé. La coque reste noire : une autre couleur est un autre objet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S23">
+            <Original>Samsung S23</Original>
+            <English>Samsung S23</English>
+            <French>Samsung S23</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S23_DESC">
+            <Original>Samsung S23 with COMSPEC ATAK installed.</Original>
+            <English>Samsung S23 with COMSPEC ATAK installed.</English>
+            <French>Samsung S23, ATAK COMSPEC installé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_iPhone">
+            <Original>V2 Enhanced</Original>
+            <English>V2 Enhanced</English>
+            <French>V2 Enhanced</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_iPhone_DESC">
+            <Original>V2 Enhanced with COMSPEC ATAK installed.</Original>
+            <English>V2 Enhanced with COMSPEC ATAK installed.</English>
+            <French>V2 Enhanced, ATAK COMSPEC installé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_IP17">
+            <Original>iPhone 17 Pro</Original>
+            <English>iPhone 17 Pro</English>
+            <French>iPhone 17 Pro</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_IP17_DESC">
+            <Original>iPhone 17 Pro with COMSPEC ATAK installed.</Original>
+            <English>iPhone 17 Pro with COMSPEC ATAK installed.</English>
+            <French>iPhone 17 Pro, ATAK COMSPEC installé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_Rugged">
+            <Original>Xiaomi X3D</Original>
+            <English>Xiaomi X3D</English>
+            <French>Xiaomi X3D</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_Rugged_DESC">
+            <Original>Xiaomi X3D with COMSPEC ATAK installed.</Original>
+            <English>Xiaomi X3D with COMSPEC ATAK installed.</English>
+            <French>Xiaomi X3D, ATAK COMSPEC installé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_Sonim">
+            <Original>Sonim XP8</Original>
+            <English>Sonim XP8</English>
+            <French>Sonim XP8</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_Sonim_DESC">
+            <Original>Sonim XP8 with COMSPEC ATAK installed.</Original>
+            <English>Sonim XP8 with COMSPEC ATAK installed.</English>
+            <French>Sonim XP8, ATAK COMSPEC installé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_Tablet">
+            <Original>Rugged tablet</Original>
+            <English>Rugged tablet</English>
+            <French>Tablette durcie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_Tablet_DESC">
+            <Original>Rugged tablet with COMSPEC ATAK installed.</Original>
+            <English>Rugged tablet with COMSPEC ATAK installed.</English>
+            <French>Tablette durcie, ATAK COMSPEC installé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE_TIP">
+            <Original>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</Original>
+            <English>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</English>
+            <French>WEST, EAST, GUER ou CIV : seul ce camp peut utiliser ce PC. Vide : tous les camps.</French>
         </Key>
     </Package>
 </Project>

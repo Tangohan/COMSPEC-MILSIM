@@ -18,12 +18,18 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_dockServer;
 // Contrôle Zeus des ATAK : effets par joueur, brouilleurs de zone, report à la réapparition (fn_zeusServer).
 ["init"] call comspec_atak_native_fnc_zeusServer;
+// CR de fin d'opération imposé en jeu : droits, envoi aux joueurs visés, suivi (fn_debriefServer).
+["init"] call comspec_atak_native_fnc_debriefServer;
 // App Admin du téléphone : relevé de la partie et debug de l'IA à la demande d'un Zeus ou d'un gestionnaire (fn_adminServer).
 ["init"] call comspec_atak_native_fnc_adminServer;
 // API brouilleurs pour les missions et les autres mods, objets brouilleurs d'autres mods (fn_jammer).
 ["init"] call comspec_atak_native_fnc_jammer;
 // Écrans COMSPEC : registre des écrans où l'app Briefing diffuse ses diapositives (fn_screenCast).
 ["initServer"] call comspec_atak_native_fnc_screenCast;
+// Écrans TOC : registre, données du réseau calculées ici pour tous (fn_tocFeed), écrans gardés d'une partie à l'autre.
+["initServer"] call comspec_atak_native_fnc_tocScreen;
+// IA et ATAK : IA équipées par le réglage ou la mission, leurs points PLI envoyés par le serveur (fn_aiAtak).
+["init"] call comspec_atak_native_fnc_aiAtak;
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
 ["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.
@@ -40,6 +46,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 [{ ["check"] call comspec_atak_native_fnc_relayConvert; }, 15] call COMSPEC_ATAK_PfhSpread;
 // Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
 [{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call COMSPEC_ATAK_PfhSpread;
+// Conditions d'activation en code des relais et passerelles : évaluées ici seulement, résultat publié (fn_relayCond "srv").
+[{ ["srv"] call comspec_atak_native_fnc_relayCond; }, 2] call COMSPEC_ATAK_PfhSpread;
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)
 COMSPEC_ATAK_SrvRoutes = createHashMap;   // netId du groupe -> [points, auteur]
 // Accusés LU/ACK des comptes rendus : envoyés au seul auteur et gardés à part, un par lecteur (le dernier l'emporte),

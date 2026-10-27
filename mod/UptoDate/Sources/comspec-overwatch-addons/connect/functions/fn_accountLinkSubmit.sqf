@@ -243,6 +243,8 @@ if (_prefix != "OK") exitWith {
 
         case "http_500": { "Erreur interne du portail. Réessayez dans un instant." };
 
+        case "client_untrusted": { "Ce module n’est pas reconnu. Installez la version officielle du pack, puis relancez Arma." };
+
         case "unauthorized";
         case "http_401": {
             if (!_useSteam) then {
