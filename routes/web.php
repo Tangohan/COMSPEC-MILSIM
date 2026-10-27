@@ -2064,6 +2064,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/suivi-cr', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/imposer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'force'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/reglages', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'settings'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/renommer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'rename'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/retirer-session', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'hideSession'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/effacer-historique', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'clearHistory'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/supprimer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/suivi-cr/{id}/export.csv', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/relancer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'remind'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/cloturer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

@@ -10,7 +10,8 @@ declare(strict_types=1);
  *   atak_debrief_recipients  : un joueur visé par la demande : avis ATAK (atak_admin_messages), affiché, ouvert,
  *                              remis (réponses), lu, compte rendu remonté (atak_tactical_reports) ;
  *   atak_debrief_settings    : réglages de la communauté : mode et questionnaire par défaut, droit des Zeus en jeu,
- *                              UID Steam autorisés à imposer le CR depuis le téléphone.
+ *                              UID Steam autorisés à imposer le CR depuis le téléphone ;
+ *   atak_debrief_ops         : nom donné après coup à une session jouée, et sessions retirées de la liste du suivi.
  *
  * Lancée à la demande par AtakDebriefRepository::ready() et par run-migrations.php ; sans effet si tout existe.
  */
@@ -95,5 +96,20 @@ function run_atak_debrief_migration(PDO $pdo): void
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         echo "  atak_debrief_settings : table créée.\n";
+    }
+
+    if (!$exists('atak_debrief_ops')) {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS `atak_debrief_ops` (
+              `tenant_id` int unsigned NOT NULL,
+              `mission_key` varchar(190) NOT NULL COMMENT 'Session jouée (nom@carte#UTC)',
+              `label` varchar(200) DEFAULT NULL COMMENT 'Nom donné par la communauté, vide = nom de la mission',
+              `hidden_at` datetime DEFAULT NULL COMMENT 'Retirée de la liste du suivi (historique effacé)',
+              `updated_by_user_id` int unsigned DEFAULT NULL,
+              `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              PRIMARY KEY (`tenant_id`, `mission_key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+        echo "  atak_debrief_ops : table créée.\n";
     }
 }

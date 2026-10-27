@@ -71,6 +71,9 @@ final class AdminAtakDebriefController
             $selected = $repo->find($tenantId, $crId);
         } elseif ($op === '' && $debriefs !== []) {
             $selected = $repo->find($tenantId, (int) $debriefs[0]['id']);
+        } elseif ($op === '' && $operations !== []) {
+            // Rien de choisi : la dernière session jouée (la liste affichait son nom sans charger ses joueurs).
+            $op = (string) $operations[0]['mission_key'];
         }
         if ($selected !== null) {
             $op = (string) ($selected['mission_key'] ?? '');
@@ -110,6 +113,7 @@ final class AdminAtakDebriefController
             'dbfOperations' => $operations,
             'dbfSelected' => $selected,
             'dbfOp' => $op,
+            'dbfOpLabel' => $op !== '' ? $repo->opLabel($tenantId, $op) : '',
             'dbfRows' => array_values(array_filter($rows, static fn (array $r): bool => self::matches($r, $filter))),
             'dbfAllRows' => $rows,
             'dbfCounts' => $counts,
@@ -211,6 +215,80 @@ final class AdminAtakDebriefController
         Session::flash($ok ? 'success' : 'error', $ok ? 'CR clôturé : il ne s’affichera plus sur les téléphones qui ne l’ont pas encore reçu.' : 'CR introuvable.');
 
         return Response::redirect(url(self::BASE . '?cr=' . $id));
+    }
+
+    /** Renommer après coup : une demande de CR (champ cr) ou une session jouée (champ op ; vide = nom de la mission). */
+    public function rename(Request $request, array $params = []): Response
+    {
+        $ctx = $this->manageContext($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId] = $ctx;
+        $repo = $this->service->repository();
+        $label = trim((string) $request->input('nom', ''));
+        $crId = (int) $request->input('cr', 0);
+        if ($crId > 0) {
+            $ok = $repo->renameDebrief($tenantId, $crId, $label);
+            Session::flash($ok ? 'success' : 'error', $ok ? 'CR renommé.' : 'Donnez un nom au CR.');
+
+            return Response::redirect(url(self::BASE . '?cr=' . $crId));
+        }
+        $op = AtakMissionKey::normalize((string) $request->input('op', ''));
+        [$actorId] = self::actor();
+        $ok = $repo->renameOp($tenantId, $op, $label, $actorId);
+        Session::flash($ok ? 'success' : 'error', $ok ? ($label !== '' ? 'Opération renommée.' : 'L’opération reprend le nom de la mission.') : 'Opération introuvable.');
+
+        return Response::redirect(url(self::BASE . ($op !== '' ? '?op=' . rawurlencode($op) : '')));
+    }
+
+    /** Supprimer une demande de CR et son suivi (les réponses déjà remontées restent dans les remontées). */
+    public function delete(Request $request, array $params = []): Response
+    {
+        $ctx = $this->manageContext($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId] = $ctx;
+        $ok = $this->service->repository()->deleteDebrief($tenantId, (int) ($params['id'] ?? 0));
+        Session::flash($ok ? 'success' : 'error', $ok ? 'CR supprimé de l’historique. Les réponses déjà remontées restent dans les remontées.' : 'CR introuvable.');
+
+        return Response::redirect(url(self::BASE));
+    }
+
+    /** Retirer une session de la liste (ses données de jeu ne sont pas effacées). */
+    public function hideSession(Request $request, array $params = []): Response
+    {
+        $ctx = $this->manageContext($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId] = $ctx;
+        [$actorId] = self::actor();
+        $n = $this->service->repository()->hideOps($tenantId, [(string) $request->input('op', '')], $actorId);
+        Session::flash($n > 0 ? 'success' : 'error', $n > 0 ? 'Session retirée de la liste.' : 'Session introuvable.');
+
+        return Response::redirect(url(self::BASE));
+    }
+
+    /** Effacer tout l'historique du suivi, après avoir tapé EFFACER. */
+    public function clearHistory(Request $request, array $params = []): Response
+    {
+        $ctx = $this->manageContext($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId] = $ctx;
+        if (mb_strtoupper(trim((string) $request->input('confirmation', ''))) !== 'EFFACER') {
+            Session::flash('error', 'Tapez EFFACER pour confirmer : rien n’a été effacé.');
+
+            return Response::redirect(url(self::BASE . '?ouvrir=historique'));
+        }
+        [$actorId] = self::actor();
+        $res = $this->service->repository()->clearHistory($tenantId, $actorId);
+        Session::flash('success', 'Historique effacé : ' . $res['debriefs'] . ' CR supprimé(s), ' . $res['sessions'] . ' session(s) retirée(s) de la liste.');
+
+        return Response::redirect(url(self::BASE));
     }
 
     public function settings(Request $request, array $params = []): Response

@@ -11,6 +11,7 @@ declare(strict_types=1);
  * @var list<array<string, mixed>> $dbfOperations
  * @var array<string, mixed>|null $dbfSelected
  * @var string $dbfOp
+ * @var string $dbfOpLabel
  * @var list<array<string, mixed>> $dbfRows
  * @var list<array<string, mixed>> $dbfAllRows
  * @var array<string, int> $dbfCounts
@@ -101,6 +102,13 @@ $stateHelp = [
     'hors_ligne' => 'L’ATAK ne s’est pas synchronisé depuis plus de ' . $onlineMin . ' min : il recevra le CR à sa prochaine connexion, s’il est encore affiché.',
 ];
 $stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_ligne' => 'bad'];
+$opLabel = (string) ($dbfOpLabel ?? '') !== '' ? (string) $dbfOpLabel : ($op !== '' ? AtakMissionKey::label($op) : '');
+// Début de la session lu dans sa clé « mission@carte#AAAAMMJJHHMM » (heure UTC du lancement sur le serveur).
+$opStart = static function (string $key) use ($fmt): string {
+    $stamp = explode('#', $key, 2)[1] ?? '';
+
+    return preg_match('/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/', $stamp, $m) ? $fmt("{$m[1]}-{$m[2]}-{$m[3]} {$m[4]}:{$m[5]}:00", 'd/m/y H:i') : '';
+};
 ?>
 <div class="bo-aar bo-dbf" id="bo-dbf">
 
@@ -167,7 +175,7 @@ $stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_l
       <?php if (($dbfOperations ?? []) !== []): ?>
         <optgroup label="Sessions jouées">
           <?php foreach ($dbfOperations as $o): ?>
-            <option value="op=<?= $h(rawurlencode($o['mission_key'])) ?>"<?= $d === null && $op === $o['mission_key'] ? ' selected' : '' ?>><?= $h($fmt($o['day'] . ' 00:00:00', 'd/m/y')) ?> · <?= $h($o['label']) ?> · <?= (int) $o['players'] ?> joueur(s)</option>
+            <option value="op=<?= $h(rawurlencode($o['mission_key'])) ?>"<?= $d === null && $op === $o['mission_key'] ? ' selected' : '' ?>><?= $h($opStart($o['mission_key']) ?: $fmt($o['day'] . ' 00:00:00', 'd/m/y')) ?> · <?= $h($o['label']) ?> · <?= (int) $o['players'] ?> joueur(s)</option>
           <?php endforeach; ?>
         </optgroup>
       <?php endif; ?>
@@ -179,6 +187,15 @@ $stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_l
     <?php endif; ?>
     <p class="bo-dbf-pick__help">« CR demandés » : les CR déjà imposés, avec leur avancement. « Sessions jouées » : les parties remontées par les ATAK, pour voir qui y était et lui imposer un CR.</p>
   </form>
+  <details class="bo-dbf-legend bo-dbf-opinfo">
+    <summary>Qu’est-ce qu’une opération ?</summary>
+    <dl>
+      <div><dt>Une session de jeu</dt><dd>Chaque fois que la mission est lancée sur le serveur Arma, l’ATAK lui donne une clé : nom du fichier de mission, carte et heure de lancement (UTC), par exemple <code>tempMissionSP@Altis#202610261402</code>. Tous les joueurs de cette partie partagent la même clé.</dd></div>
+      <div><dt>Qui y figure</dt><dd>Les joueurs dont l’ATAK, lié à votre communauté, a remonté du temps d’écran ou des comptes rendus avec cette clé. Un redémarrage de la mission ouvre une nouvelle session.</dd></div>
+      <div><dt>Son nom</dt><dd>Par défaut, le nom du fichier de mission et la carte (« tempMissionSP » est le nom d’une mission de l’éditeur non enregistrée). Renommez-la après coup avec « Renommer » : le nom vaut pour toute la communauté.</dd></div>
+      <div><dt>Effacer l’historique</dt><dd>« Retirer de la liste » pour une session, « Supprimer » pour un CR, ou « Effacer l’historique » en bas de page pour tout vider. Les remontées, le temps d’écran et les comptes rendus post-op ne sont pas touchés.</dd></div>
+    </dl>
+  </details>
 
   <?php if ($d !== null): ?>
   <section class="bo-dbf-head">
@@ -206,15 +223,41 @@ $stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_l
       <?php if ($canManage && empty($d['closed_at'])): ?>
         <form method="post" action="<?= $h($base . '/' . (int) $d['id'] . '/cloturer') ?>" onsubmit="return confirm('Clôturer ce CR ? Il ne s’affichera plus sur les téléphones qui ne l’ont pas encore reçu.');"><?= $csrf ?><button class="ath-btn bo-aar-danger" type="submit">Clôturer</button></form>
       <?php endif; ?>
+      <?php if ($canManage): ?>
+        <button class="ath-btn" type="button" data-dbf-toggle="dbf-rename">Renommer</button>
+        <form method="post" action="<?= $h($base . '/' . (int) $d['id'] . '/supprimer') ?>" onsubmit="return confirm('Supprimer ce CR et son suivi ? Les téléphones qui ne l’ont pas encore reçu ne l’afficheront plus. Les réponses déjà remontées restent dans les remontées.');"><?= $csrf ?><button class="ath-btn bo-aar-danger" type="submit">Supprimer</button></form>
+      <?php endif; ?>
     </div>
+    <?php if ($canManage): ?>
+    <form class="bo-dbf-rename" id="dbf-rename" method="post" action="<?= $h($base . '/renommer') ?>" hidden>
+      <?= $csrf ?><input type="hidden" name="cr" value="<?= (int) $d['id'] ?>">
+      <label>Nouveau nom du CR <input type="text" name="nom" maxlength="200" required value="<?= $h($d['label']) ?>"></label>
+      <button class="ath-btn ath-btn--solid" type="submit">Enregistrer</button>
+      <?php if ((string) ($d['mission_key'] ?? '') !== ''): ?><span class="bo-dbf-sub">Pour renommer la session elle-même, choisissez-la dans « Sessions jouées ».</span><?php endif; ?>
+      <span class="bo-dbf-sub">Le nom change ici ; un téléphone qui affiche déjà le CR garde l’ancien titre.</span>
+    </form>
+    <?php endif; ?>
   </section>
   <?php elseif ($op !== ''): ?>
   <section class="bo-dbf-head">
     <div class="bo-dbf-head__main">
       <span class="ath-tag ath-tag--neut">Session</span>
-      <h2 class="bo-dbf-head__title"><?= $h(AtakMissionKey::label($op)) ?></h2>
+      <h2 class="bo-dbf-head__title"><?= $h($opLabel) ?></h2>
+      <p class="bo-dbf-head__sub"><?php if ($opStart($op) !== ''): ?><span>Lancée le</span> <?= $h($opStart($op)) ?> <span>(heure du serveur, UTC)</span> · <?php endif; ?><span>clé</span> <code><?= $h($op) ?></code></p>
       <p class="bo-dbf-head__sub">Aucun CR n’a encore été imposé pour cette session : la liste montre les joueurs qui y ont joué et leur ATAK.</p>
     </div>
+    <?php if ($canManage): ?>
+    <div class="bo-dbf-head__actions">
+      <button class="ath-btn" type="button" data-dbf-toggle="dbf-rename">Renommer</button>
+      <form method="post" action="<?= $h($base . '/retirer-session') ?>" onsubmit="return confirm('Retirer cette session de la liste ? Ses remontées et son temps d’écran restent sur Athena.');"><?= $csrf ?><input type="hidden" name="op" value="<?= $h($op) ?>"><button class="ath-btn bo-aar-danger" type="submit">Retirer de la liste</button></form>
+    </div>
+    <form class="bo-dbf-rename" id="dbf-rename" method="post" action="<?= $h($base . '/renommer') ?>" hidden>
+      <?= $csrf ?><input type="hidden" name="op" value="<?= $h($op) ?>">
+      <label>Nom de l’opération <input type="text" name="nom" maxlength="200" value="<?= $h($opLabel !== AtakMissionKey::label($op) ? $opLabel : '') ?>" placeholder="<?= $h(AtakMissionKey::label($op)) ?>"></label>
+      <button class="ath-btn ath-btn--solid" type="submit">Enregistrer</button>
+      <span class="bo-dbf-sub">Ex. « Op. Tempête – samedi ». Vide : reprend le nom de la mission.</span>
+    </form>
+    <?php endif; ?>
   </section>
   <?php endif; ?>
 
@@ -400,6 +443,16 @@ $stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_l
       <p><button class="ath-btn ath-btn--solid" type="submit">Enregistrer</button></p>
     </form>
   </details>
+
+  <details class="ath-panel bo-dbf-panel" id="dbf-historique"<?= $openPanel === 'historique' ? ' open' : '' ?>>
+    <summary class="bo-dbf-panel__sum">Effacer l’historique</summary>
+    <form method="post" action="<?= $h($base . '/effacer-historique') ?>" class="bo-dbf-form" onsubmit="return confirm('Effacer tout l’historique du suivi des CR ? Cette action ne peut pas être annulée.');">
+      <?= $csrf ?>
+      <p class="ath-panel__lead">Supprime toutes les demandes de CR (<?= count($dbfDebriefs ?? []) ?>) et retire toutes les sessions de la liste (<?= count($dbfOperations ?? []) ?>). Les CR encore en attente quittent les téléphones. Les remontées (dont les réponses déjà remises), le temps d’écran et les comptes rendus post-op restent sur Athena. Les prochaines parties réapparaîtront normalement.</p>
+      <label>Tapez EFFACER pour confirmer <input type="text" name="confirmation" autocomplete="off" required placeholder="EFFACER"></label>
+      <p><button class="ath-btn bo-aar-danger" type="submit">Effacer l’historique</button></p>
+    </form>
+  </details>
 <?php endif; ?>
 </div>
 <script>
@@ -429,6 +482,9 @@ $stateDot = ['attente' => 'warn', 'remis' => 'ok', 'non_recu' => 'info', 'hors_l
       if (count) { count.textContent = n; }
     });
   }
+  root.querySelectorAll('[data-dbf-toggle]').forEach(function (b) {
+    b.addEventListener('click', function () { var f = document.getElementById(b.getAttribute('data-dbf-toggle')); if (f) { f.hidden = !f.hidden; if (!f.hidden) { var i = f.querySelector('input[name="nom"]'); if (i) { i.focus(); } } } });
+  });
   root.querySelectorAll('[data-dbf-open]').forEach(function (a) {
     a.addEventListener('click', function () { var p = document.getElementById(a.getAttribute('data-dbf-open')); if (p) { p.open = true; } });
   });
