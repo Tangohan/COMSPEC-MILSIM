@@ -19,7 +19,7 @@ sont captés au lieu d'être envoyés au jeu.
 | `E1` `E2` | panne longue : paliers 10, 20, 30 puis 45 s (60 s au plus avec la gigue), sortie au premier succès même au dernier palier |
 | `G` | la pause de panne reçoit une gigue réelle (200 tirages, écart d'au moins 3 s) |
 | `C` `D` `F` `H` `T` | frein 429 / 403 : **exactement comme avant** (échelle 45 à 600 s, `Retry-After`, deux succès par palier, aucune gigue) |
-| `H2` `H3` `H4` | panne déjà montée sur l'échelle courte (paliers 2 à 4) puis 429 ou 403 : le frein repart du premier palier de l'échelle longue, 45 s exactement (`H2` 429, `H3` 403) ou le `Retry-After` s'il est plus long (`H4` : 60 s) ; un second 429 aussitôt ne monte pas d'un palier ; deux succès pour sortir |
+| `H2` `H3` `H4` | panne sur l'échelle courte (`H2` : paliers 1 à 4 ; `H3` `H4` : palier 4) puis 429 ou 403 : le frein repart du premier palier de l'échelle longue, 45 s exactement (`H2` 429, `H3` 403) ou le `Retry-After` s'il est plus long (`H4` : 60 s) ; un second 429 aussitôt ne monte pas d'un palier ; deux succès pour sortir |
 | `I` | après un frein terminé, une panne repart sur l'échelle courte |
 | `P1` `P2` `P3` `P4` | canaux sondés (ordres, tchat…) : l'attente d'une panne reçoit 0 à 20 % de gigue et est levée à la sortie de pause ; l'attente d'un refus (401, 403, 429) reste exacte et gardée |
 | `R1` `R2` `R3` `R4` | un canal sondé qui avait vu la panne et répond de nouveau lève la pause d'envoi (même pendant un `Retry-After` de maintenance de 900 s) ; jamais un frein, jamais un canal qui n'avait pas vu la panne |

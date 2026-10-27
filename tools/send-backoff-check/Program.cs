@@ -200,7 +200,8 @@ Check("H  panne puis 429 : échelle longue, deux succès pour sortir", hPause >=
 // succès pour sortir. Avant ce correctif, le palier de la panne était relu sur l'échelle longue : palier 3 = 150 s,
 // palier 4 = 300 s, et 600 s si la fenêtre d'escalade était passée (B1 de la contre-expertise v1). Le 429 arrive ici
 // après la fenêtre d'escalade (cas réel : la pause de panne dure plus que la fenêtre) ; un second 429 juste après ne
-// doit pas monter d'un palier (l'heure d'escalade est notée au passage panne → frein).
+// doit pas monter d'un palier (l'heure d'escalade est notée au passage panne → frein). H2 essaie aussi une panne restée
+// au palier 1 (10 s) : un passage réservé aux paliers 2 et plus y donnait 75 s, sans échec avant (R1 de la v2).
 (int Rung, int St, double P) OutageThen(int outageRungs, Action brake)
 {
     Reset();
@@ -218,7 +219,7 @@ Check("H  panne puis 429 : échelle longue, deux succès pour sortir", hPause >=
 string Seen((int Rung, int St, double P) s) => $"panne à {s.Rung} s → palier {s.St}, pause {Fmt(s.P)} s";
 bool Exactly45(int st, double p) => st == 1 && p is >= 44.9 and <= 45.1;
 
-var h2Low = new[] { 2, 3 }.Select(r => OutageThen(r, () => Limited(Resp(429, 30, TooMany)))).ToList();
+var h2Low = new[] { 1, 2, 3 }.Select(r => OutageThen(r, () => Limited(Resp(429, 30, TooMany)))).ToList();
 var h2 = OutageThen(4, () => Limited(Resp(429, 30, TooMany)));
 Limited(Resp(429, 30, TooMany));
 var (h2AgainSt, h2AgainP) = (Step(), PauseS());
@@ -226,7 +227,7 @@ Ok();
 var (h2Ok1St, h2Ok1P) = (Step(), PauseS());
 Ok();
 var h2Out = Step();
-Check("H2 panne montée au palier 4 puis 429 : 1er palier de l'échelle longue (45 s exactement), deux succès pour sortir",
+Check("H2 panne au palier 1, 2, 3 ou 4 puis 429 : 1er palier de l'échelle longue (45 s exactement), deux succès pour sortir",
     h2.Rung == 45 && h2Low.All(s => Exactly45(s.St, s.P)) && Exactly45(h2.St, h2.P) && Exactly45(h2AgainSt, h2AgainP)
     && Exactly45(h2Ok1St, h2Ok1P) && h2Out == 0,
     string.Join(" ; ", h2Low.Append(h2).Select(Seen)) + $" ; 2e 429 aussitôt : palier {h2AgainSt}, pause {Fmt(h2AgainP)} s ;"
