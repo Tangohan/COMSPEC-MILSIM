@@ -395,18 +395,21 @@ switch (_cmd) do {
         ["STRIKE"] call _setMode;
         private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
         // Drone touché ou détruit pendant la frappe (tir, arbre, mur, la cible elle-même) : la charge part sur place.
-        _d setVariable ["COMSPEC_DroneDetonateFn", _detonate];
+        // Fermetures en localNamespace (machine où le drone est local, jamais synchronisé), plus en variables du drone :
+        // n'importe quel client pouvait les réécrire par un setVariable diffusé sur l'objet, et la machine du drone
+        // (le pilote, ou le serveur) exécutait son code au premier dégât. Même code pour tous les drones.
+        localNamespace setVariable ["COMSPEC_ATAK_DroneDetonateFn", _detonate];
         if !(_d getVariable ["COMSPEC_DroneStrikeEh", false]) then {
             _d setVariable ["COMSPEC_DroneStrikeEh", true];
             private _boom = {
                 params ["_d"];
                 if (local _d && {(_d getVariable ["COMSPEC_DroneArmed", ""]) isNotEqualTo ""} && {(_d getVariable ["COMSPEC_DroneMode", ""]) isEqualTo "STRIKE"}) then {
-                    call (_d getVariable ["COMSPEC_DroneDetonateFn", {}]);
+                    call (localNamespace getVariable ["COMSPEC_ATAK_DroneDetonateFn", {}]);
                 };
             };
-            _d setVariable ["COMSPEC_DroneBoomFn", _boom];
-            _d addEventHandler ["Killed", { [_this select 0] call ((_this select 0) getVariable ["COMSPEC_DroneBoomFn", {}]); }];
-            _d addEventHandler ["Dammaged", { if ((_this select 2) > 0.02) then { [_this select 0] call ((_this select 0) getVariable ["COMSPEC_DroneBoomFn", {}]); }; }];
+            localNamespace setVariable ["COMSPEC_ATAK_DroneBoomFn", _boom];
+            _d addEventHandler ["Killed", { [_this select 0] call (localNamespace getVariable ["COMSPEC_ATAK_DroneBoomFn", {}]); }];
+            _d addEventHandler ["Dammaged", { if ((_this select 2) > 0.02) then { [_this select 0] call (localNamespace getVariable ["COMSPEC_ATAK_DroneBoomFn", {}]); }; }];
         };
         [_d, _tgt, _loop, _detonate, _pilot] spawn {
             params ["_d", "_tgt", "_loop", "_detonate", "_pilot"];
