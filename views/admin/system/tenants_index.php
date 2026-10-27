@@ -8,14 +8,82 @@ $statusLabels = is_array($platformSubscriptionStatusLabels ?? null) ? $platformS
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $fmt = static function (mixed $raw): string {
     if ($raw === null || $raw === '') {
-        return '—';
+        return '';
     }
     $t = strtotime((string) $raw);
 
     return $t ? date('d/m/Y', $t) : (string) $raw;
 };
+$iso = static function (mixed $raw): string {
+    if ($raw === null || $raw === '') {
+        return '';
+    }
+    $t = strtotime((string) $raw);
+
+    return $t ? date('Y-m-d', $t) : '';
+};
 $ok = \App\Core\Session::getFlash('success');
 $err = \App\Core\Session::getFlash('error');
+$typePills = [
+    'full' => 'slate',
+    'effectifs' => 'blue',
+    'atak' => 'amber',
+];
+$sheet = [];
+$planOptions = [];
+foreach ($rows as $t) {
+    if (!is_array($t)) {
+        continue;
+    }
+    $id = (int) ($t['id'] ?? 0);
+    $name = (string) ($t['name'] ?? '');
+    $slug = (string) ($t['slug'] ?? '');
+    $tenantType = (string) ($t['tenant_type'] ?? 'full');
+    $typeLabel = \App\Services\Community\TenantTypeConfig::label($tenantType);
+    $basePlanSlug = (string) ($t['plan_slug'] ?? 'free');
+    $planSlug = (string) ($t['effective_plan_slug'] ?? $basePlanSlug);
+    $planLabel = (string) ($planNameBySlug[$planSlug] ?? '');
+    if ($planLabel === '') {
+        $planLabel = ($planSlug === '' || $planSlug === 'free') ? 'Gratuite' : 'Formule non reconnue';
+    }
+    $basePlanLabel = (string) ($planNameBySlug[$basePlanSlug] ?? '');
+    if ($basePlanLabel === '') {
+        $basePlanLabel = ($basePlanSlug === '' || $basePlanSlug === 'free') ? 'Gratuite' : 'Formule non reconnue';
+    }
+    $status = (string) ($t['subscription_status'] ?? 'none');
+    $statusLabel = (string) ($statusLabels[$status] ?? 'Statut inconnu');
+    $archived = is_array($t['archive'] ?? null);
+    $planGift = is_array($t['plan_gift'] ?? null) ? $t['plan_gift'] : null;
+    $giftLabel = '';
+    if ($planGift !== null) {
+        $giftLabel = !empty($planGift['ends_at'])
+            ? 'Offerte jusqu’au ' . $fmt($planGift['ends_at'])
+            : 'Offerte sans limite';
+    }
+    $createdDisplay = $fmt($t['created_at'] ?? null);
+    $planOptions[$planLabel] = $planLabel;
+    $sheet[] = [
+        'id' => $id,
+        'name' => $name,
+        'slug' => $slug,
+        'user_count' => (int) ($t['user_count'] ?? 0),
+        'type_label' => $typeLabel,
+        'type_pill' => $typePills[$tenantType] ?? 'slate',
+        'plan_label' => $planLabel,
+        'base_plan_label' => $planSlug !== $basePlanSlug ? $basePlanLabel : '',
+        'gift_label' => $giftLabel,
+        'status_label' => $statusLabel,
+        'created_display' => $createdDisplay !== '' ? $createdDisplay : '—',
+        'created_iso' => $iso($t['created_at'] ?? null),
+        'archived' => $archived,
+        'public_url' => $slug !== '' && !$archived ? url('c/' . rawurlencode($slug)) : '',
+        'edit_url' => $id > 0 ? url('admin/tenants/' . $id . '/edit') : '',
+        'intervention_url' => $id > 1 ? url('admin/system/tenants/' . $id . '/intervention') : '',
+        'removal_url' => $id > 1 && $slug !== 'default' ? url('admin/tenants/' . $id . '/retrait') : '',
+    ];
+}
+ksort($planOptions, SORT_NATURAL | SORT_FLAG_CASE);
+$communityCount = count($sheet);
 ?>
 <div class="pa">
     <div class="pa__frame">
@@ -27,8 +95,7 @@ $err = \App\Core\Session::getFlash('error');
             </p>
             <h1 class="pa-hero__title">Annuaire des communautés</h1>
             <p class="pa-hero__lead">
-                Toutes les organisations du site, avec le profil d’outils, la formule et l’effectif.
-                Ouvrez Administrer pour l’identité, le profil et la formule, ou Accès super tenant pour intervenir dans son back-office.
+                Toutes les organisations du site. Cherchez, filtrez et triez le tableur, puis ouvrez Administrer pour l’identité, le profil et la formule, ou Accès super tenant pour intervenir dans son back-office.
             </p>
             <p class="pa-hero__lead">
                 Pour retirer une communauté (doublon, test), archivez-la d’abord : rien n’est effacé et elle se restaure. La suppression définitive vient ensuite, après sauvegarde.
@@ -51,90 +118,135 @@ $err = \App\Core\Session::getFlash('error');
                 <p class="pa-flash pa-flash--err"><?= $h((string) $err) ?></p>
             <?php endif; ?>
 
-            <div class="pa-table-wrap">
-                <table class="pa-table">
-                    <thead>
-                        <tr>
-                            <th>Communauté</th>
-                            <th>Profil</th>
-                            <th>Formule</th>
-                            <th>Abonnement</th>
-                            <th>Création</th>
-                            <th style="text-align:right;">Comptes</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($rows === []): ?>
-                            <tr>
-                                <td colspan="7" class="pa-empty">Aucune communauté enregistrée (hors espace technique).</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($rows as $t): ?>
-                                <?php
-                                $id = (int) ($t['id'] ?? 0);
-                                $name = (string) ($t['name'] ?? '');
-                                $slug = (string) ($t['slug'] ?? '');
-                                $uc = (int) ($t['user_count'] ?? 0);
-                                $basePlanSlug = (string) ($t['plan_slug'] ?? 'free');
-                                $planSlug = (string) ($t['effective_plan_slug'] ?? $basePlanSlug);
-                                $planLabel = (string) ($planNameBySlug[$planSlug] ?? $planSlug);
-                                $planGift = is_array($t['plan_gift'] ?? null) ? $t['plan_gift'] : null;
-                                $status = (string) ($t['subscription_status'] ?? 'none');
-                                $statusLabel = (string) ($statusLabels[$status] ?? 'Statut inconnu');
-                                $publicUrl = $slug !== '' ? url('c/' . rawurlencode($slug)) : '';
-                                $editUrl = $id > 0 ? url('admin/tenants/' . $id . '/edit') : '';
-                                $interventionUrl = $id > 1 ? url('admin/system/tenants/' . $id . '/intervention') : '';
-                                $removalUrl = $id > 1 && $slug !== 'default' ? url('admin/tenants/' . $id . '/retrait') : '';
-                                $archived = is_array($t['archive'] ?? null);
-                                $tenantType = (string) ($t['tenant_type'] ?? 'full');
-                                $typeMeta = [
-                                    'full' => ['label' => 'Complet', 'pill' => 'slate'],
-                                    'effectifs' => ['label' => 'Effectifs', 'pill' => 'blue'],
-                                    'atak' => ['label' => 'ATAK', 'pill' => 'amber'],
-                                ];
-                                $typeInfo = $typeMeta[$tenantType] ?? ['label' => $tenantType, 'pill' => 'slate'];
-                                ?>
-                                <tr>
-                                    <td>
-                                        <p class="pa-name"><?= $h($name) ?><?php if ($archived): ?> <span class="pa-pill pa-pill--amber">Archivée</span><?php endif; ?></p>
-                                        <?php if ($publicUrl !== '' && !$archived): ?>
-                                            <p class="pa-sub"><a href="<?= $h($publicUrl) ?>" target="_blank" rel="noopener">Page publique</a></p>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><span class="pa-pill pa-pill--<?= $h((string) $typeInfo['pill']) ?>"><?= $h((string) $typeInfo['label']) ?></span></td>
-                                    <td>
-                                        <span class="pa-pill pa-pill--mint"><?= $h($planLabel) ?></span>
-                                        <?php if ($planGift !== null): ?>
-                                            <p class="pa-sub">Offerte <?= !empty($planGift['ends_at']) ? 'jusqu’au ' . $h($fmt($planGift['ends_at'])) : 'sans limite' ?></p>
-                                        <?php endif; ?>
-                                        <?php if ($planSlug !== $basePlanSlug): ?>
-                                            <p class="pa-sub">Formule de base : <?= $h((string) ($planNameBySlug[$basePlanSlug] ?? $basePlanSlug)) ?></p>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?= $h($statusLabel) ?></td>
-                                    <td><?= $h($fmt($t['created_at'] ?? null)) ?></td>
-                                    <td style="text-align:right;font-weight:800;"><?= $uc ?></td>
-                                    <td>
-                                        <?php if ($editUrl !== ''): ?>
-                                            <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem;">
-                                                <a class="pa-btn pa-btn--line" href="<?= $h($editUrl) ?>">Administrer</a>
-                                                <?php if ($interventionUrl !== ''): ?>
-                                                    <a class="pa-btn pa-btn--solid" href="<?= $h($interventionUrl) ?>">Accès super tenant</a>
-                                                <?php endif; ?>
-                                                <?php if ($removalUrl !== ''): ?>
-                                                    <a class="pa-btn pa-btn--line" href="<?= $h($removalUrl) ?>"><?= $archived ? 'Restaurer ou supprimer' : 'Archiver ou supprimer' ?></a>
-                                                <?php endif; ?>
-                                            </div>
-                                        <?php else: ?>
-                                            —
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
+            <div class="pa-sheet" data-pa-sheet>
+                <div class="pa-sheet__bar">
+                    <label class="pa-sheet__field pa-sheet__field--grow">
+                        Rechercher
+                        <input type="search" data-pa-sheet-q placeholder="Nom, profil, formule, abonnement" autocomplete="off">
+                    </label>
+                    <label class="pa-sheet__field">
+                        Profil
+                        <select data-pa-sheet-filter="profil">
+                            <option value="">Tous</option>
+                            <?php foreach (\App\Services\Community\TenantTypeConfig::availableTypes() as $type): ?>
+                                <option value="<?= $h((string) ($type['label'] ?? '')) ?>"><?= $h((string) ($type['label'] ?? '')) ?></option>
                             <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                        </select>
+                    </label>
+                    <label class="pa-sheet__field">
+                        Formule
+                        <select data-pa-sheet-filter="formule">
+                            <option value="">Toutes</option>
+                            <?php foreach ($planOptions as $planOption): ?>
+                                <option value="<?= $h($planOption) ?>"><?= $h($planOption) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="pa-sheet__field">
+                        Abonnement
+                        <select data-pa-sheet-filter="abonnement">
+                            <option value="">Tous</option>
+                            <?php foreach ($statusLabels as $statusLabelOption): ?>
+                                <option value="<?= $h((string) $statusLabelOption) ?>"><?= $h((string) $statusLabelOption) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="pa-sheet__field">
+                        Situation
+                        <select data-pa-sheet-filter="situation">
+                            <option value="">Toutes</option>
+                            <option value="en-service">En service</option>
+                            <option value="archivee">Archivées</option>
+                        </select>
+                    </label>
+                    <p class="pa-sheet__count" data-pa-sheet-count aria-live="polite">
+                        <?= $communityCount ?> communauté<?= $communityCount > 1 ? 's' : '' ?>
+                    </p>
+                    <button class="pa-btn pa-btn--line" type="button" data-pa-sheet-reset>Tout afficher</button>
+                </div>
+
+                <div class="pa-sheet__scroll">
+                    <table class="pa-sheet__grid">
+                        <thead>
+                            <tr>
+                                <th aria-sort="ascending"><button class="pa-sheet__sort" type="button" data-sort="text" data-col="0">Communauté</button></th>
+                                <th><button class="pa-sheet__sort" type="button" data-sort="text" data-col="1">Profil</button></th>
+                                <th><button class="pa-sheet__sort" type="button" data-sort="text" data-col="2">Formule</button></th>
+                                <th><button class="pa-sheet__sort" type="button" data-sort="text" data-col="3">Abonnement</button></th>
+                                <th><button class="pa-sheet__sort" type="button" data-sort="date" data-col="4">Création</button></th>
+                                <th class="pa-sheet__num"><button class="pa-sheet__sort" type="button" data-sort="num" data-col="5">Comptes</button></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($sheet === []): ?>
+                                <tr>
+                                    <td colspan="7" class="pa-empty">Aucune communauté enregistrée (hors espace technique).</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($sheet as $row): ?>
+                                    <?php
+                                    $haystack = implode(' ', array_filter([
+                                        $row['name'],
+                                        $row['type_label'],
+                                        $row['plan_label'],
+                                        $row['base_plan_label'],
+                                        $row['gift_label'],
+                                        $row['status_label'],
+                                        $row['created_display'],
+                                        (string) $row['user_count'],
+                                        $row['archived'] ? 'Archivée' : 'En service',
+                                    ], static fn (string $part): bool => $part !== '' && $part !== '—'));
+                                    ?>
+                                    <tr
+                                        data-pa-row
+                                        data-profil="<?= $h($row['type_label']) ?>"
+                                        data-formule="<?= $h($row['plan_label']) ?>"
+                                        data-abonnement="<?= $h($row['status_label']) ?>"
+                                        data-situation="<?= $row['archived'] ? 'archivee' : 'en-service' ?>"
+                                        data-haystack="<?= $h($haystack) ?>"
+                                    >
+                                        <td class="pa-sheet__name" data-sort-value="<?= $h($row['name']) ?>">
+                                            <p class="pa-name"><?= $h($row['name']) ?><?php if ($row['archived']): ?> <span class="pa-pill pa-pill--amber">Archivée</span><?php endif; ?></p>
+                                            <?php if ($row['public_url'] !== ''): ?>
+                                                <p class="pa-sub"><a href="<?= $h($row['public_url']) ?>" target="_blank" rel="noopener">Page publique</a></p>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td data-sort-value="<?= $h($row['type_label']) ?>"><span class="pa-pill pa-pill--<?= $h($row['type_pill']) ?>"><?= $h($row['type_label']) ?></span></td>
+                                        <td class="pa-sheet__wrap" data-sort-value="<?= $h($row['plan_label']) ?>">
+                                            <span class="pa-pill pa-pill--mint"><?= $h($row['plan_label']) ?></span>
+                                            <?php if ($row['gift_label'] !== ''): ?>
+                                                <p class="pa-sub"><?= $h($row['gift_label']) ?></p>
+                                            <?php endif; ?>
+                                            <?php if ($row['base_plan_label'] !== ''): ?>
+                                                <p class="pa-sub">Formule de base : <?= $h($row['base_plan_label']) ?></p>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td data-sort-value="<?= $h($row['status_label']) ?>"><?= $h($row['status_label']) ?></td>
+                                        <td data-sort-value="<?= $h($row['created_iso']) ?>"><?= $h($row['created_display']) ?></td>
+                                        <td class="pa-sheet__num" data-sort-value="<?= (int) $row['user_count'] ?>"><?= (int) $row['user_count'] ?></td>
+                                        <td>
+                                            <?php if ($row['edit_url'] !== ''): ?>
+                                                <div class="pa-sheet__actions">
+                                                    <a href="<?= $h($row['edit_url']) ?>">Administrer</a>
+                                                    <?php if ($row['intervention_url'] !== ''): ?>
+                                                        <a href="<?= $h($row['intervention_url']) ?>">Accès super tenant</a>
+                                                    <?php endif; ?>
+                                                    <?php if ($row['removal_url'] !== ''): ?>
+                                                        <a href="<?= $h($row['removal_url']) ?>"><?= $row['archived'] ? 'Restaurer ou supprimer' : 'Archiver ou supprimer' ?></a>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php else: ?>
+                                                —
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="pa-sheet__empty" data-pa-sheet-empty hidden>Aucune communauté ne correspond à cette recherche.</p>
             </div>
 
             <section class="pa-card" style="margin-top:1.25rem;" aria-labelledby="plans-heading">
@@ -185,3 +297,4 @@ $err = \App\Core\Session::getFlash('error');
         </div>
     </div>
 </div>
+<script src="<?= $h(asset_url('assets/js/platform-tenants-sheet.js')) ?>"></script>
