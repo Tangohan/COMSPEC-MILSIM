@@ -16,7 +16,7 @@
       nommer les gestionnaires en jeu (UID). Chaque demande admise sur ce seul droit est notée au journal du serveur.
     Actions :
       "force"  [mode, cible (all | side | group | units), titre, intro, texte à lire, questions, joueurs]   nouvelle demande :
-               chaque joueur visé la reçoit (comspec_atak_native_debriefRecv), le demandeur reçoit « forced » puis le suivi
+               chaque joueur visé la reçoit (fn_debrief « recv »), le demandeur reçoit « forced » puis le suivi
       "remind" [réf]              renvoie la demande aux joueurs qui ne l'ont pas remise
       "lift"   [réf, joueurs]     lève la demande (réf vide : toutes les demandes en cours de ces joueurs)
       "pull"                      suivi de toutes les demandes de la partie, au demandeur
@@ -24,7 +24,12 @@
       "hello"                     joueur arrivé en cours de partie : reçoit les demandes en cours qui le visent (tout joueur)
       "right"  [oui/non]          droit d'imposer donné par Athena à ce joueur, déclaré par son poste (tout joueur, pour lui)
     Interne : "init" (postInit serveur).
-    Suivi publié : [[réf, mode, titre, auteur, heure, levée, [[uid, nom, état, heure]…]]…] (comspec_atak_native_debriefData).
+    Suivi publié : [[réf, mode, titre, auteur, heure, levée, [[uid, nom, état, heure]…]]…] (fn_debrief « track »).
+    Réponses et messages du serveur au téléphone d'un joueur (lot mpauth3, SEC-030) : [action, données] remoteExecCall
+      ["comspec_atak_native_fnc_debrief", joueur] (« recv », « track », « forced », « lift », « note »), que fn_debrief
+      n'accepte que du serveur. Plus d'événements CBA comspec_atak_native_debriefRecv ni comspec_atak_native_debriefData :
+      tout client les levait chez un autre (fausse fiche, faux « forced » déclaré à Athena sous le nom de la victime, CR
+      levé, faux suivi).
 */
 if (!isServer) exitWith {};
 params [["_act", ""], ["_args", []], ["_caller", objNull]];
@@ -43,6 +48,15 @@ if (isNull _caller && {_act isNotEqualTo "init"}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Demande « %1 » refusée au poste %2 (demandeur introuvable)", _act, remoteExecutedOwner];
     false
 };
+// Message du serveur au téléphone d'un joueur : remoteExecCall vers fn_debrief, qui n'accepte que le serveur. Joueur
+// local au serveur (hôte d'une partie locale, solo) : appel à l'image suivante, hors de la pile de la demande en cours,
+// qui peut être celle d'un autre client (la garde de fn_debrief la refuserait).
+private _send = {
+    params ["_u", "_a", ["_d", []]];
+    if (isNull _u) exitWith {};
+    if (local _u) exitWith { [{ _this call comspec_atak_native_fnc_debrief; }, [_a, _d]] call CBA_fnc_execNextFrame; };
+    [_a, _d] remoteExecCall ["comspec_atak_native_fnc_debrief", _u];
+};
 // Imposer, relancer, lever et suivre : même règle qu'avant, jugée sur le demandeur retrouvé. « state », « hello » et
 // « right » restent ouvertes à tout joueur, pour sa propre fiche ou son propre droit (le demandeur est son poste).
 private _ok = true;
@@ -60,7 +74,7 @@ if (_act in ["force", "remind", "lift", "pull"]) then {
 };
 if (!_ok) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Demande refusée (ni Zeus, ni admin, ni UID autorisé) : %1 %2", name _caller, _act];
-    ["comspec_atak_native_debriefData", ["denied", []], _caller] call CBA_fnc_targetEvent;
+    [_caller, "note", "denied"] call _send;
     false
 };
 private _store = missionNamespace getVariable ["COMSPEC_ATAK_DbfSrv", createHashMap];
@@ -73,7 +87,7 @@ private _payload = { params ["_d"]; [_d get "ref", _d get "mode", _d get "title"
 private _publish = {
     private _data = (values _store) apply { [_x] call _pack };
     private _w = missionNamespace getVariable ["COMSPEC_ATAK_DbfWatch", []];
-    { private _uid = _x; private _u = (call _players) select { (getPlayerUID _x) isEqualTo _uid }; if ((count _u) > 0) then { ["comspec_atak_native_debriefData", ["track", _data], _u select 0] call CBA_fnc_targetEvent; }; } forEach _w;
+    { private _uid = _x; private _u = (call _players) select { (getPlayerUID _x) isEqualTo _uid }; if ((count _u) > 0) then { [_u select 0, "track", _data] call _send; }; } forEach _w;
 };
 private _watch = { params ["_u"]; private _w = missionNamespace getVariable ["COMSPEC_ATAK_DbfWatch", []]; _w pushBackUnique (getPlayerUID _u); missionNamespace setVariable ["COMSPEC_ATAK_DbfWatch", _w]; };
 switch (_act) do {
@@ -92,7 +106,7 @@ switch (_act) do {
         };
         // Le demandeur ne se l'impose pas (sauf s'il l'a visé lui-même depuis Zeus).
         if (_target isNotEqualTo "units") then { _to = _to - [_caller]; };
-        if ((count _to) isEqualTo 0) exitWith { ["comspec_atak_native_debriefData", ["none", []], _caller] call CBA_fnc_targetEvent; };
+        if ((count _to) isEqualTo 0) exitWith { [_caller, "note", "none"] call _send; };
         systemTimeUTC params ["_y", "_mo", "_dd", "_h", "_mi", "_s"];
         private _ref = format ["G%1%2%3%4%5%6-%7", _y, [_mo, 2] call CBA_fnc_formatNumber, [_dd, 2] call CBA_fnc_formatNumber, [_h, 2] call CBA_fnc_formatNumber,
             [_mi, 2] call CBA_fnc_formatNumber, [_s, 2] call CBA_fnc_formatNumber, floor random 10000];
@@ -102,9 +116,9 @@ switch (_act) do {
         private _d = createHashMapFromArray [["ref", _ref], ["mode", _mode], ["title", _title select [0, 120]], ["intro", _intro select [0, 400]], ["read", _read select [0, 2000]],
             ["qs", _qs select [0, 20]], ["by", _by], ["at", call _now], ["target", _target], ["side", side group _caller], ["lifted", false], ["rows", _rows]];
         _store set [_ref, _d];
-        { ["comspec_atak_native_debriefRecv", [[_d] call _payload], _x] call CBA_fnc_targetEvent; } forEach _to;
+        { [_x, "recv", [_d] call _payload] call _send; } forEach _to;
         [_caller] call _watch;
-        ["comspec_atak_native_debriefData", ["forced", [_ref, _mode, _d get "title", _d get "read", _to apply { [getPlayerUID _x, name _x] }]], _caller] call CBA_fnc_targetEvent;
+        [_caller, "forced", [_ref, _mode, _d get "title", _d get "read", _to apply { [getPlayerUID _x, name _x] }]] call _send;
         diag_log format ["[COMSPEC ATAK NATIVE][INFO][DEBRIEF] %1 impose le CR %2 (%3, %4) à %5 joueur(s)", _by, _ref, _mode, _target, count _to];
         call _publish;
     };
@@ -112,7 +126,7 @@ switch (_act) do {
         private _d = _store getOrDefault [_args param [0, ""], createHashMap];
         if ((count _d) isEqualTo 0 || {_d get "lifted"}) exitWith {};
         private _rows = _d get "rows";
-        { if (((_rows getOrDefault [getPlayerUID _x, ["", ""]]) select 1) in ["sent", "received", "opened"]) then { ["comspec_atak_native_debriefRecv", [[_d] call _payload], _x] call CBA_fnc_targetEvent; }; } forEach (call _players);
+        { if (((_rows getOrDefault [getPlayerUID _x, ["", ""]]) select 1) in ["sent", "received", "opened"]) then { [_x, "recv", [_d] call _payload] call _send; }; } forEach (call _players);
     };
     case "lift": {
         _args params [["_ref", ""], ["_units", []]];
@@ -122,7 +136,7 @@ switch (_act) do {
             if (!(_d get "lifted") && {_x isEqualTo _ref || {_ref isEqualTo "" && {((keys (_d get "rows")) arrayIntersect _uids) isNotEqualTo []}}}) then {
                 _d set ["lifted", true];
                 private _r = _d get "ref";
-                { if ((getPlayerUID _x) in (keys (_d get "rows"))) then { ["comspec_atak_native_debriefData", ["lift", _r], _x] call CBA_fnc_targetEvent; }; } forEach (call _players);
+                { if ((getPlayerUID _x) in (keys (_d get "rows"))) then { [_x, "lift", _r] call _send; }; } forEach (call _players);
                 diag_log format ["[COMSPEC ATAK NATIVE][INFO][DEBRIEF] %1 lève le CR %2", name _caller, _r];
             };
         } forEach _store;
@@ -130,7 +144,7 @@ switch (_act) do {
     };
     case "pull": {
         [_caller] call _watch;
-        ["comspec_atak_native_debriefData", ["track", (values _store) apply { [_x] call _pack }], _caller] call CBA_fnc_targetEvent;
+        [_caller, "track", (values _store) apply { [_x] call _pack }] call _send;
     };
     case "state": {
         _args params [["_ref", ""], ["_state", ""]];
@@ -165,7 +179,7 @@ switch (_act) do {
                 private _st = ((_d get "rows") getOrDefault [_uid, ["", "sent"]]) select 1;
                 if !(_st in ["read", "submitted"]) then {
                     if (!_mine) then { (_d get "rows") set [_uid, [name _caller, "sent", call _now]]; };
-                    ["comspec_atak_native_debriefRecv", [[_d] call _payload], _caller] call CBA_fnc_targetEvent;
+                    [_caller, "recv", [_d] call _payload] call _send;
                 };
             };
         } forEach _store;

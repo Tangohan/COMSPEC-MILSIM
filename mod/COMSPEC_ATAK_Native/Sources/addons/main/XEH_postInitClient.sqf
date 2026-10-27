@@ -952,17 +952,8 @@ addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_di
 [{ ["check"] call comspec_atak_native_fnc_adminNotices; }, 30] call COMSPEC_ATAK_PfhSpread;
 // CR de fin d'opération imposé (fn_debrief) : demandes du jeu, suivi du commandement, fiche ramenée toutes les 2 min tant
 // qu'elle n'est pas remise ; à l'arrivée en cours de partie, le serveur renvoie les demandes qui visent le joueur.
-["comspec_atak_native_debriefRecv", { ["recv", _this select 0] call comspec_atak_native_fnc_debrief; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_debriefData", {
-    params [["_kind", ""], ["_data", []]];
-    switch (_kind) do {
-        case "track": { ["track", _data] call comspec_atak_native_fnc_debrief; };
-        case "forced": { ["forced", _data] call comspec_atak_native_fnc_debrief; };
-        case "lift": { ["lift", _data] call comspec_atak_native_fnc_debrief; };
-        case "none": { ["Aucun joueur visé.", 3] call comspec_atak_native_fnc_toast; };
-        case "denied": { ["Vous ne pouvez pas imposer le CR.", 3] call comspec_atak_native_fnc_toast; };
-    };
-}] call CBA_fnc_addEventHandler;
+// Plus de gestionnaires comspec_atak_native_debriefRecv ni comspec_atak_native_debriefData : le serveur envoie ses
+// messages par remoteExecCall à fn_debrief, qui refuse ceux d'un autre client (lot mpauth3, SEC-030).
 [{ ["tick"] call comspec_atak_native_fnc_debrief; }, 30] call COMSPEC_ATAK_PfhSpread;
 [{ if (!isNull player) then { ["hello", []] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2]; }; }, [], 15] call CBA_fnc_waitAndExecute;
 // App Admin : droit de gestion lu sur Athena (le lanceur ne la montre qu'à qui y a droit), 90 s après l'arrivée puis

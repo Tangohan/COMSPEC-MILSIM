@@ -174,7 +174,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(isNull _caller && \{_act isNotEqualTo "init"\}\) exitWith \{.*?'
             . 'if \(_act in \["force", "remind", "lift", "pull"\]\) then \{.*?'
             . '_ok = \[_caller\] call comspec_atak_native_fnc_adminAllowed && .*?'
-            . 'if \(!_ok\) exitWith \{.*?\["comspec_atak_native_debriefData", \["denied", \[\]\], _caller\] call CBA_fnc_targetEvent;/s', $head);
+            . 'if \(!_ok\) exitWith \{.*?\[_caller, "note", "denied"\] call _send;/s', $head);
         self::assertStringNotContainsString('CBA_fnc_addEventHandler', $code);
         // Les deux émetteurs du client passent par remoteExecCall, sans unité dans la demande.
         self::assertStringContainsString('private _server = { params ["_a", ["_x", []]]; [_a, _x] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2]; };', $this->read(self::MAIN . '/functions/debrief/fn_debrief.sqf'));
@@ -363,8 +363,8 @@ final class AtakMultiplayerAuthTest extends TestCase
         // par des chaînes compris, casse ignorée comme le fait CBA). Un gestionnaire rétabli rouvre la voie que le lot
         // ferme (R2 : captureSrv gardé pour « giveFail » rouvrait B2 et D2) ; un émetteur sans gestionnaire perd la
         // demande sans bruit (R1).
-        // Lot mpauth3 : capLocal (SEC-023) et droneCmd (SEC-022) s'y ajoutent.
-        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal', 'droneCmd'];
+        // Lot mpauth3 : capLocal (SEC-023), droneCmd (SEC-022), debriefRecv et debriefData (SEC-030) s'y ajoutent.
+        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal', 'droneCmd', 'debriefRecv', 'debriefData'];
         $quoted = '/(["\'])comspec_atak_native_(?:' . implode('|', $removed) . ')\1/i';
         // Fonctions qui jugent le demandeur par remoteExecutedOwner (fn_reqUnit) : appelées depuis un gestionnaire CBA,
         // elles ne voient pas d'appel distant et croient l'unité fournie par l'émetteur. Aucun gestionnaire ne les
@@ -885,7 +885,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         $remote = '{isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}}) exitWith {';
         $guards = [
             self::MAIN . '/functions/toc/fn_tocScreen.sqf' => 'if (!isServer && ' . $remote,
-            self::MAIN . '/functions/debrief/fn_debrief.sqf' => 'if (!(_act in ["recv", "track", "forced", "lift"]) && ' . $remote,
+            self::MAIN . '/functions/debrief/fn_debrief.sqf' => 'if (isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}) exitWith {',
         ];
         foreach ($guards as $file => $guard) {
             $code = $this->stripSqfComments($this->read($file));
@@ -927,11 +927,59 @@ final class AtakMultiplayerAuthTest extends TestCase
         foreach (['zeus', 'sForce', 'sLift', 'sRemind', 'sPull', 'cfg'] as $act) {
             self::assertContains($act, $relays, $act);
         }
-        // Hors de la garde, un seul relais : « recv » (accusé « received » de sa propre fiche), message du serveur encore
-        // remis par événement CBA, qui s'exécute chez l'hôte dans la pile de la demande d'un client.
-        preg_match('/^if \(!\(_act in \[([^\]]*)\]\) && \{isRemoteExecutedJIP/m', $dbf, $g);
-        preg_match_all('/"(\w+)"/', $g[1] ?? '', $exempt);
-        self::assertSame(['recv'], array_values(array_intersect($relays, $exempt[1])));
+        // Aucune action hors de la garde (lot mpauth3, SEC-030 : les messages du serveur arrivent par remoteExecCall).
+        self::assertSame(0, preg_match('/^if \(!\(_act in /m', $dbf));
+    }
+
+    public function testDebriefServerMessagesReachThePhoneOnlyFromTheServer(): void
+    {
+        // Lot mpauth3 (SEC-030, contre-expertise v5, § 6.3) : les gestionnaires CBA comspec_atak_native_debriefRecv et
+        // comspec_atak_native_debriefData tournaient chez chaque joueur sans savoir qui avait levé l'événement. Tout client
+        // ouvrait chez un autre une fausse fiche, lui faisait déclarer à Athena un faux « forced » sous son nom, levait ses
+        // CR ou affichait un faux suivi. Le serveur envoie maintenant ses messages par remoteExecCall à fn_debrief, qui
+        // refuse tout autre émetteur et tout rejeu JIP ; le joueur local au serveur (hôte) est servi à l'image suivante,
+        // hors de la pile de la demande d'un autre client.
+        $srv = $this->stripSqfComments($this->read(self::MAIN . '/functions/debrief/fn_debriefServer.sqf'));
+        self::assertStringNotContainsString('CBA_fnc_targetEvent', $srv);
+        self::assertStringNotContainsString('CBA_fnc_globalEvent', $srv);
+        self::assertMatchesRegularExpression('/private _send = \{\s*params \["_u", "_a", \["_d", \[\]\]\];\s*'
+            . 'if \(isNull _u\) exitWith \{\};\s*'
+            . 'if \(local _u\) exitWith \{ \[\{ _this call comspec_atak_native_fnc_debrief; \}, \[_a, _d\]\] call CBA_fnc_execNextFrame; \};\s*'
+            . '\[_a, _d\] remoteExecCall \["comspec_atak_native_fnc_debrief", _u\];\s*\};/', $srv);
+        // Chaque message nomme en toutes lettres une action de fn_debrief, et la seule qui répond au panneau est « note ».
+        $client = $this->stripSqfComments($this->read(self::MAIN . '/functions/debrief/fn_debrief.sqf'));
+        preg_match_all('/^    case "(\w+)": \{/m', $client, $cases);
+        $acts = [];
+        foreach ($this->callsOf($srv, '_send') as [$args]) {
+            $act = $args === null ? null : $this->literal((string) ($args[1] ?? ''));
+            self::assertNotNull($act, 'message du serveur sans action littérale');
+            self::assertContains($act, $cases[1], $act);
+            $acts[$act] = true;
+        }
+        $acts = array_keys($acts);
+        sort($acts);
+        self::assertSame(['forced', 'lift', 'note', 'recv', 'track'], $acts);
+        self::assertMatchesRegularExpression('/case "note": \{\s*switch \(_arg\) do \{\s*'
+            . 'case "none": \{ \["Aucun joueur visé\.", 3\] call comspec_atak_native_fnc_toast; \};\s*'
+            . 'case "denied": \{ \["Vous ne pouvez pas imposer le CR\.", 3\] call comspec_atak_native_fnc_toast; \};\s*\};\s*\};/u', $client);
+        $en = $this->read(self::MAIN . '/i18n/en.txt');
+        foreach (['Aucun joueur visé.', 'Vous ne pouvez pas imposer le CR.'] as $fr) {
+            self::assertStringContainsString('["' . $fr . '", "', $en, $fr);
+        }
+        // Seul fn_debriefServer appelle fn_debrief à distance, avec deux arguments (rien dans la file JIP) ; liste blanche :
+        // clients seuls, sans file JIP.
+        $calls = [];
+        foreach ($this->sources() as $rel => $units) {
+            foreach ($units as $code) {
+                foreach ($this->remoteCalls($code) as [, $right]) {
+                    if ($right !== null && strtolower((string) $this->literal($right[0])) === 'comspec_atak_native_fnc_debrief') {
+                        $calls[] = [$rel, count($right)];
+                    }
+                }
+            }
+        }
+        self::assertSame([[self::MAIN . '/functions/debrief/fn_debriefServer.sqf', 2]], $calls);
+        self::assertStringContainsString('class comspec_atak_native_fnc_debrief { allowedTargets = 1; jip = 0; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */

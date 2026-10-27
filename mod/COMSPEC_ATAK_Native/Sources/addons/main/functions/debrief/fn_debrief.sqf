@@ -8,7 +8,7 @@
       "site" ligne d'avis      demande du site : fiche ["DBF1", mode, titre, intro, texte à lire, questions] lue par
                                parseSimpleArray (aucun code exécuté), méta « debrief=<id>;mode=… »
       "cfg" ligne d'avis       réglages du site (questionnaire par défaut, droit d'imposer, Zeus autorisé)
-      "recv" demande           demande faite en jeu (événement comspec_atak_native_debriefRecv)
+      "recv" demande           demande faite en jeu (envoyée par le serveur, fn_debriefServer)
       "lift" référence         demande levée par le commandement          "force" id : ouvre la fiche dans le téléphone
       "tick"                   toutes les 30 s : la fiche non remise revient toutes les 2 min
       "open" id / "tab" onglet / "set" clé valeur / "send" / "read" / "web" id (renvoi à Athena)
@@ -16,21 +16,26 @@
       "sMode" / "sTarget" / "sForce" / "sLift" réf / "sRemind" réf / "sPull"   panneau du commandement
       "track" suivi            suivi des demandes faites en jeu, renvoyé par le serveur
       "forced" demande         ma demande est partie : prévient Athena (joueurs visés)
+      "note" genre             réponse du serveur au panneau : "none" (aucun joueur visé) | "denied" (droit refusé)
     Questions : [id, type (text, textarea, select, checkbox), libellé, aide, requis 0/1, [options]]
     État : missionNamespace COMSPEC_ATAK_Dbf (id → fiche), COMSPEC_ATAK_DbfCfg, COMSPEC_ATAK_DbfTrack ;
            uiNamespace COMSPEC_ATAK_DbfUi (onglet, fiche ouverte, réglages du panneau, lignes en défaut).
     Retours au site : POST /api/atak/reports type DEBRIEF (événements opened, read, submitted ; forced pour le commandement).
-    Appel distant (lot mpauth3, SEC-035) : refusé s'il ne vient pas du serveur ou s'il est rejoué depuis la file JIP, sauf
-    les messages du serveur encore remis par événement CBA (« recv », « track », « forced », « lift »).
+    Appel distant (lot mpauth3, SEC-035 et SEC-030) : refusé s'il ne vient pas du serveur ou s'il est rejoué depuis la
+    file JIP. Le serveur envoie « recv », « track », « forced », « lift » et « note » par remoteExecCall (fn_debriefServer),
+    et plus par les événements CBA comspec_atak_native_debriefRecv et comspec_atak_native_debriefData.
 */
 params [["_act", ""], ["_arg", ""], ["_val", ""]];
 // Appel distant : seul le serveur (poste 2) entre ici, jamais un rejeu de la file JIP (même garde que fn_adminClient).
 // Les relais du panneau et du menu Zeus (« zeus », « sForce », « sLift », « sRemind », « sPull », « cfg ») et les autres
 // actions agissent pour le joueur de ce poste : en mode 2 (sans liste blanche), un autre client les faisait jouer au
-// poste d'un Zeus, qui transmettait la demande au serveur sous son nom (contre-expertise v5, N18). Hors de ce garde :
-// les messages du serveur remis par les événements comspec_atak_native_debriefRecv et comspec_atak_native_debriefData
-// (« recv », « track », « forced », « lift ») ; chez l'hôte, ils s'exécutent dans la pile de la demande du client.
-if (!(_act in ["recv", "track", "forced", "lift"]) && {isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}}) exitWith {
+// poste d'un Zeus, qui transmettait la demande au serveur sous son nom (contre-expertise v5, N18). Les messages du
+// serveur (« recv », « track », « forced », « lift », « note ») arrivent par remoteExecCall du poste 2 ; chez l'hôte, le
+// serveur appelle à l'image suivante, sans appel distant (fn_debriefServer). Avant, les événements CBA
+// comspec_atak_native_debriefRecv et comspec_atak_native_debriefData les remettaient sans dire qui les avait levés :
+// tout client ouvrait une fausse fiche chez un autre, lui faisait déclarer à Athena un faux « forced » sous son nom,
+// levait ses CR ou affichait un faux suivi (SEC-030).
+if (isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Appel « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _act, remoteExecutedOwner, isRemoteExecutedJIP];
     false
 };
@@ -321,6 +326,12 @@ switch (_act) do {
     case "sLift": { ["lift", [_arg, _val]] call _server; };
     case "sRemind": { ["remind", [_arg]] call _server; ["Relance envoyée aux joueurs qui n'ont pas remis le CR.", 3] call comspec_atak_native_fnc_toast; };
     case "sPull": { ["pull"] call _server; };
+    case "note": {
+        switch (_arg) do {
+            case "none": { ["Aucun joueur visé.", 3] call comspec_atak_native_fnc_toast; };
+            case "denied": { ["Vous ne pouvez pas imposer le CR.", 3] call comspec_atak_native_fnc_toast; };
+        };
+    };
     case "track": {
         missionNamespace setVariable ["COMSPEC_ATAK_DbfTrack", _arg];
         call _rerender;

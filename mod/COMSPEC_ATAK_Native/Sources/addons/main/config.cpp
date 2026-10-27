@@ -675,6 +675,9 @@ class CfgRemoteExec {
     class Functions {
         // CR fin d'op (contre-expertise v4, N15) : demandes de l'app, jugées sur le demandeur (fn_debriefServer).
         class comspec_atak_native_fnc_debriefServer { allowedTargets = 2; };
+        // Messages du serveur au téléphone (lot mpauth3, SEC-030) : vers les clients seuls (l'hôte d'une partie locale
+        // est servi sans appel distant), jamais par la file JIP ; fn_debrief refuse tout autre émetteur que le serveur.
+        class comspec_atak_native_fnc_debrief { allowedTargets = 1; jip = 0; };
         class comspec_atak_native_fnc_zeusServer { allowedTargets = 2; };
         class comspec_atak_native_fnc_adminServer { allowedTargets = 2; };
         class comspec_atak_native_fnc_ftServer { allowedTargets = 2; };
