@@ -293,6 +293,14 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(1025, '2026-10-27', 'Avancement : campagnes et avis lisibles', 'Dans Ressources humaines, Avancement, la liste des campagnes se lit en fiches (année, grade, filière, période, places, statut). Sur une campagne, chaque candidature montre l’avis et la décision en clair : Proposé, Inscrit au tableau, Pas encore d’avis, En attente. Rechargez le portail (Ctrl+F5).', [
+                'Liste des campagnes en fiches, sans tableau serré',
+                'Avis et décisions en libellés métier',
+            ], [], [
+                'Les codes internes d’avis et de décision apparaissaient tels quels',
+            ], ['personnel'], [
+                'Ouvrez RH → Avancement. Parcourez la liste, puis ouvrez une campagne : chaque candidature affiche un avis lisible.',
+            ], 'Portail Athena'),
             $pr(1024, '2026-10-27', 'Annuaire des communautés : un tableur avec recherche et tri', 'Dans Administration du site, l’annuaire des communautés se présente comme un tableur. Vous cherchez par nom, profil, formule ou abonnement, vous filtrez les archivées, et vous triez chaque colonne. Le nom et les en-têtes restent visibles quand vous faites défiler. Rechargez le portail (Ctrl+F5).', [
                 'Recherche et filtres : profil, formule, abonnement, communautés archivées',
                 'Tri de chaque colonne, en-tête et nom figés au défilement',

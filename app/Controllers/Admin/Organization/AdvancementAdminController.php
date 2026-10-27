@@ -256,7 +256,7 @@ final class AdvancementAdminController
         }
         $this->templates->ensureForTenant($tenantId);
 
-        return $this->page('Avancement', 'RH · AVANCEMENT', 'Campagnes au choix, par année, grade et filière.', 'admin.advancement.campaigns_index', [
+        return $this->page('Avancement', 'RH · AVANCEMENT', 'Les campagnes au choix : un grade, une année, une période de candidatures.', 'admin.advancement.campaigns_index', [
             'campaigns' => $this->repository->listCampaigns($tenantId),
         ]);
     }

@@ -881,6 +881,14 @@ class PersonnelController
 
         $steamIdResolved = trim((string) ($target['steam_id'] ?? ''));
         $steamIdResolved = $steamIdResolved !== '' ? $steamIdResolved : null;
+        // Fiche lisible (pas anonymisée) : temps de jeu, distances et montre pour tout lecteur du dossier.
+        // L’anonymisation coupe ces blocs (et l’identifiant Steam affiché) — ne pas s’appuyer sur canStaffView,
+        // qui est forcé à false dans ce cas et masquerait aussi une fiche nominative pour un membre sans droit RH.
+        $canSeePlayMetrics = !$personnelAnonymizedForViewer;
+        if (!$canSeePlayMetrics) {
+            $steamIdResolved = null;
+            $target['steam_id'] = null;
+        }
 
         $steamProfileSyncOffered = $this->steamWebApiService->isConfigured()
             && $steamIdResolved !== null
@@ -889,7 +897,7 @@ class PersonnelController
             && $personnelViewMode === 'rh';
 
         $armaPlaytime = null;
-        if ($isSelf || $canStaffView) {
+        if ($canSeePlayMetrics) {
             $ready = $this->armaPlaytimeRepository->schemaReady();
             $armaPlaytime = [
                 'show_steam_hint_self' => $isSelf && $steamIdResolved === null,
@@ -947,32 +955,39 @@ class PersonnelController
         // (ou le téléphone ATAK), avec la façon dont le rôle a été détecté.
         $atakRoleTimes = [];
         $atakPlayStats = null;
-        try {
-            $screenTimeRepo = new \App\Repositories\AtakScreenTimeRepository();
-            $atakRoleTimes = $screenTimeRepo->rolesForUser((int) $tenantId, $uid);
-            // 7 / 30 jours, sessions, 8 semaines : même visibilité que le cumul (le membre lui-même ou l'encadrement).
-            if ($isSelf || $canStaffView) {
+        if ($canSeePlayMetrics) {
+            try {
+                $screenTimeRepo = new \App\Repositories\AtakScreenTimeRepository();
+                $atakRoleTimes = $screenTimeRepo->rolesForUser((int) $tenantId, $uid);
                 $atakPlayStats = $screenTimeRepo->playStatsForUser((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $atakRoleTimes = [];
+                $atakPlayStats = null;
             }
-        } catch (\Throwable) {
-            $atakRoleTimes = [];
-            $atakPlayStats = null;
         }
 
         // Distances parcourues en jeu et heures de pilote par type d'appareil (app Distances de l'ATAK natif).
         $atakDistance = null;
-        try {
-            $atakDistance = (new \App\Repositories\AtakDistanceRepository())->summaryForUser((int) $tenantId, $uid);
-        } catch (\Throwable) {
-            $atakDistance = null;
+        $atakDistanceSchemaReady = false;
+        if ($canSeePlayMetrics) {
+            try {
+                $distanceRepo = new \App\Repositories\AtakDistanceRepository();
+                $atakDistanceSchemaReady = $distanceRepo->schemaReady();
+                $atakDistance = $distanceRepo->summaryForUser((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $atakDistance = null;
+                $atakDistanceSchemaReady = false;
+            }
         }
 
         // Montre de l'app Garmin de l'ATAK natif (Body Battery, pas, sommeil, activités), envoyée par le PC du joueur.
         $atakGarmin = null;
-        try {
-            $atakGarmin = (new \App\Repositories\AtakGarminRepository())->summaryForUser((int) $tenantId, $uid);
-        } catch (\Throwable) {
-            $atakGarmin = null;
+        if ($canSeePlayMetrics) {
+            try {
+                $atakGarmin = (new \App\Repositories\AtakGarminRepository())->summaryForUser((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $atakGarmin = null;
+            }
         }
 
         // Encadrement : corriger le temps par rôle (déplacer vers le bon rôle) et voir le journal des corrections.
@@ -998,6 +1013,8 @@ class PersonnelController
             } catch (\Throwable) {
                 $phaseChecklist = null;
             }
+        }
+        if ($canSeePlayMetrics) {
             try {
                 $armaSessionActivity = Container::get(\App\Repositories\RoleplayGameSessionRepository::class)
                     ->memberActivity30d((int) $tenantId, $uid);
@@ -1188,6 +1205,7 @@ class PersonnelController
             'armaPlaytime' => $armaPlaytime,
             'atakRoleTimes' => $atakRoleTimes,
             'atakDistance' => $atakDistance,
+            'atakDistanceSchemaReady' => $atakDistanceSchemaReady,
             'atakGarmin' => $atakGarmin,
             'atakPlayStats' => $atakPlayStats,
             'canCorrectRoleTime' => $canCorrectRoleTime,
