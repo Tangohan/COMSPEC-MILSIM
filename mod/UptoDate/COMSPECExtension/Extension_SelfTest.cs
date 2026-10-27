@@ -126,7 +126,7 @@ public static partial class Extension
                     t.Stop();
                     var ms = t.ElapsedMilliseconds;
                     // Canal en pause ou tu (fonction hors offre) et de nouveau accepté : il reprend tout de suite.
-                    var stopped = IsRefusalLatched(c.Url);
+                    var stopped = IsPollRefusalLatched(c.Url);
                     if (code is >= 200 and < 400)
                     {
                         NotePollResult(c.Slot, code);

@@ -1535,7 +1535,13 @@ public static partial class Extension
         if (code <= 0)
             NoteBestEffortCooldown();
         else if (code == 403)
-            NoteAccessDenied(response, url);
+        {
+            // Le verrou décide d'abord (NET-020) : refus prévu par conception (fonction hors offre ou coupée) →
+            // l'adresse se tait, sans pause commune ni pause du SQF.
+            NoteRefusal(url, 403, RefusalBody(response));
+            if (!IsRefusalLatched(url))
+                NoteAccessDenied(response, url);
+        }
         else if (code >= 500 && TryNoteEndpointServerError(url, response))
             NoteBestEffortCooldown();
         else if (code == 429 || code == 503)
@@ -1571,9 +1577,16 @@ public static partial class Extension
         }
         if ((int)response.StatusCode == 403)
         {
-            NoteAccessDenied(response, url);
+            // Le verrou décide d'abord (NET-020, NET-022), comme pour le lot de positions (Extension_Telemetry) : un
+            // refus prévu par conception (fonction hors offre, fonction coupée par la communauté, refus « règle »)
+            // fait taire l'adresse ; l'envoi est abandonné, sans pause commune ni rappel AccessDenied (pause du SQF).
+            // Avant, NoteAccessDenied passait en premier : chaque refus de ce type suspendait 15 à 30 s tous les
+            // envois, positions comprises, et feature_disabled renvoyait l'envoi sans fin.
             NoteRefusal(url, 403, RefusalBody(response));
-            if (!IsBestEffortEndpoint(url) && !IsRefusalLatched(url))
+            if (IsRefusalLatched(url))
+                return;
+            NoteAccessDenied(response, url);
+            if (!IsBestEffortEndpoint(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -1699,8 +1712,9 @@ public static partial class Extension
             NoteUntrustedQueueDrop(item.Url);
             return true;
         }
-        // Adresse absente de l'offre de la communauté : envoi abandonné, pas renvoyé.
-        if (IsFeatureLatched(item.Url))
+        // Adresse absente de l'offre de la communauté, ou envois coupés par elle : envoi abandonné, pas renvoyé (la
+        // file sauvegardée ensuite ne le garde pas).
+        if (IsFeatureLatched(item.Url) || IsSendLatched(item.Url))
             return true;
         var started = DateTime.UtcNow.Ticks;
         JournalTrack(item.Url, item.Body, "sending");
@@ -1726,9 +1740,13 @@ public static partial class Extension
                 }
                 if ((int)response.StatusCode == 403)
                 {
-                    NoteAccessDenied(response, item.Url);
+                    // Refus verrouillé (prévu par conception) : envoi abandonné, le vidage continue avec les autres
+                    // envois, sans pause commune (NET-020, NET-022). Autre 403 : pause commune et nouvel essai.
                     NoteRefusal(item.Url, 403, RefusalBody(response));
-                    if (!IsBestEffortEndpoint(item.Url) && !IsRefusalLatched(item.Url))
+                    if (IsRefusalLatched(item.Url))
+                        return true;
+                    NoteAccessDenied(response, item.Url);
+                    if (!IsBestEffortEndpoint(item.Url))
                         EnqueueForRetry(item.Url, item.Body);
                     return false;
                 }
@@ -2440,7 +2458,8 @@ public static partial class Extension
     private static void EnqueueOrSend(string url, string jsonBody)
     {
         // Données remontées choisies par la communauté (Extension_DataFlows) : flux coupé, rien en file.
-        // Refus définitif en cours (clé, compte ou fonction absente de l'offre) : rien n'est envoyé ni mis en file.
+        // Refus définitif en cours (clé, compte, fonction absente de l'offre ou coupée par la communauté) : rien n'est
+        // envoyé ni mis en file.
         if (!DataFlowAllowsUrl(url, jsonBody) || IsRefusalLatched(url))
             return;
         // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
@@ -9656,9 +9675,10 @@ public static partial class Extension
                                 NoteRateLimited(resp);
                             else if (code == 401 || code == 403)
                             {
-                                if (code == 403)
-                                    NoteAccessDenied(resp, url);
+                                // Le verrou décide d'abord : un refus verrouillé ne pose pas la pause commune (NET-020).
                                 NoteRefusal(url, code, RefusalBody(resp));
+                                if (code == 403 && !IsRefusalLatched(url))
+                                    NoteAccessDenied(resp, url);
                             }
                             else if (!resp.IsSuccessStatusCode)
                                 NotePostError(code, url, resp);

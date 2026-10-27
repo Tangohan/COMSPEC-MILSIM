@@ -3,8 +3,8 @@
 Contrôle local **sans réseau** de la pause d'envoi commune de la DLL COMSPEC Link (et de la DLL ATAK natif, compilée
 depuis le même `Extension.cs`). Il charge la DLL **managée** par réflexion et rejoue les suites d'échecs et de
 succès que la liaison rencontre. Aucune requête HTTP n'est émise : seules les méthodes internes de comptage sont
-appelées (`NoteSendFailure`, `NoteRateLimited`, `NoteSendSuccess`, `NotePollResult`…), et les rappels vers le SQF
-sont captés au lieu d'être envoyés au jeu.
+appelées (`NoteSendFailure`, `NoteRateLimited`, `NoteSendSuccess`, `NotePollResult`…, et `HandlePostResponse` pour les
+refus 403 d'une adresse, rejoués sans requête), et les rappels vers le SQF sont captés au lieu d'être envoyés au jeu.
 
 - **Hors** de `mod/UptoDate/COMSPECExtension/` à dessein : ce csproj compile tous les `.cs` de son dossier.
 - Panne = réseau coupé, délai dépassé, maintenance 503. Frein = 429 (limite d'Athena), 403 du site entier.
@@ -23,10 +23,13 @@ sont captés au lieu d'être envoyés au jeu.
 | `I` | après un frein terminé, une panne repart sur l'échelle courte |
 | `P1` `P2` `P3` `P4` | canaux sondés (ordres, tchat…) : l'attente d'une panne reçoit 0 à 20 % de gigue et est levée à la sortie de pause ; l'attente d'un refus (401, 403, 429) reste exacte et gardée |
 | `R1` `R2` `R3` `R4` | un canal sondé qui avait vu la panne et répond de nouveau lève la pause d'envoi (même pendant un `Retry-After` de maintenance de 900 s) ; jamais un frein, jamais un canal qui n'avait pas vu la panne |
+| `L1` `L2` `L3` `L4` | refus 403 d'une adresse (NET-020, NET-022) : `feature_disabled` (fonction coupée par la communauté) verrouille les envois de cette adresse 30 min ou jusqu'à la session suivante (`L2`), la lecture reste libre ; `feature_disabled` et `feature_unavailable` (fonction hors offre, `L3` : file d'envoi et météo) abandonnent l'envoi sans pause commune ni rappel `AccessDenied` ; un autre 403 (`L4`) garde la pause de 20 s, le rappel et le nouvel essai d'avant |
 
-Sur la DLL de main, `A1 A2 A3 B2 B3 E1 E2 G H2 H3 H4 I P1 P3 R1 R2` échouent (16 : c'est le défaut corrigé) ; sur la
-première version du lot (`8faa74ab`), `H2 H3 H4` échouent (le palier de la panne était relu sur l'échelle longue :
-150, 300 ou 600 s). `U B1 C D F H T P2 P4 R3 R4` passent partout : le frein seul et les refus restent comme avant.
+Sur la DLL de main (2.0.98), `A1 A2 A3 B2 B3 E1 E2 G H2 H3 H4 I P1 P3 R1 R2` échouent (défaut de NET-006 corrigé par
+le lot), et `L1 L2 L3` (NET-020, NET-022) : 19 en tout ; sur la première version du lot (`8faa74ab`), `H2 H3 H4` échouent
+(le palier de la panne était relu sur l'échelle longue : 150, 300 ou 600 s) ; sur le lot avant son point NET-022
+(`c3d8a85c`), `L1 L2 L3`. `U B1 C D F H T P2 P4 R3 R4 L4` passent partout : le frein seul et les autres refus restent
+comme avant.
 
 ## Lancer (sur une copie HORS du worktree : dotnet écrit bin/obj à côté du csproj)
 

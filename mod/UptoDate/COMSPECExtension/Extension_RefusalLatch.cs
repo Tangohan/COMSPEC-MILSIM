@@ -12,8 +12,14 @@ namespace COMSPECExtension;
 ///    jusqu'à une nouvelle liaison, une session rétablie (READY) ou un redémarrage d'Arma.
 ///  - Fonction absente de l'offre de la communauté (feature_unavailable) : cette adresse seule se tait
 ///    30 min, puis un seul essai (l'offre a pu changer sur le site).
+///  - Fonction coupée par la communauté (feature_disabled, GameFeatureGate du site : seuls les POST du jeu sont
+///    refusés, la lecture continue) : les envois vers cette adresse se taisent 30 min ou jusqu'à la session suivante,
+///    ses sondages continuent (NET-022). Avant, le refus posait la pause commune de 20 s, l'envoi repartait en file
+///    sans fin et restait dans queue.jsonl d'une session à l'autre.
 ///  - Refus « règle » (code de PermanentRefusalCodes) sur une autre adresse que client-init : cette adresse se
 ///    tait 30 min et client-init tranche pour toute la liaison (verrou global seulement s'il refuse aussi).
+/// Un refus ainsi verrouillé est prévu par conception : il ne pose ni la pause commune des envois ni la pause du SQF
+/// (rappel AccessDenied) ; l'appelant interroge le verrou après NoteRefusal (NET-020).
 /// </summary>
 public static partial class Extension
 {
@@ -31,6 +37,9 @@ public static partial class Extension
 
     /// <summary>Code du refus qui a fait taire une adresse (feature_unavailable, tenant_context_required…).</summary>
     private static readonly ConcurrentDictionary<string, string> FeatureLatchCodes = new();
+
+    /// <summary>Adresses dont seuls les envois se taisent (feature_disabled) : fin du verrou, comme FeatureLatchUntilMs.</summary>
+    private static readonly ConcurrentDictionary<string, long> SendLatchUntilMs = new();
 
     /// <summary>Compte ou clé refusés pour de bon : plus de sondage ni d'envoi authentifié.</summary>
     private static bool IsAuthLatched()
@@ -72,7 +81,25 @@ public static partial class Extension
             return string.Equals(_gameAuthState, "READY", StringComparison.Ordinal) && _gameAuthError.Length == 0;
     }
 
-    private static bool IsRefusalLatched(string url) => IsAuthLatched() || IsFeatureLatched(url);
+    /// <summary>
+    /// Verrous qui arrêtent un envoi (POST, PATCH) : compte ou clé refusés, adresse absente de l'offre, envois coupés
+    /// par la communauté (feature_disabled).
+    /// </summary>
+    private static bool IsRefusalLatched(string url) => IsPollRefusalLatched(url) || IsSendLatched(url);
+
+    /// <summary>Verrous qui arrêtent un sondage (GET) : une fonction coupée par la communauté se lit encore.</summary>
+    private static bool IsPollRefusalLatched(string url) => IsAuthLatched() || IsFeatureLatched(url);
+
+    /// <summary>Envoi vers une adresse dont les envois seuls se taisent (feature_disabled).</summary>
+    private static bool IsSendLatched(string url)
+    {
+        if (SendLatchUntilMs.IsEmpty || string.IsNullOrEmpty(url)) return false;
+        var key = RefusalEndpointKey(url);
+        if (!SendLatchUntilMs.TryGetValue(key, out var until)) return false;
+        if (Environment.TickCount64 < until) return true;
+        SendLatchUntilMs.TryRemove(key, out _);
+        return false;
+    }
 
     /// <summary>Champ « error » du JSON de refus ({"error":"code",…}), en minuscules ; vide sinon.</summary>
     private static string RefusalErrorCode(string body)
@@ -110,6 +137,11 @@ public static partial class Extension
             LatchEndpoint(url, code);
             return;
         }
+        if (status == 403 && code == "feature_disabled")
+        {
+            SendLatchUntilMs[RefusalEndpointKey(url ?? "")] = Environment.TickCount64 + FeatureLatchMs;
+            return;
+        }
         if (status == 403 && Array.IndexOf(PermanentRefusalCodes, code) >= 0)
         {
             if ((url ?? "").Contains("/api/atak/client-init", StringComparison.OrdinalIgnoreCase))
@@ -143,5 +175,6 @@ public static partial class Extension
         _authLatchCode = "";
         FeatureLatchUntilMs.Clear();
         FeatureLatchCodes.Clear();
+        SendLatchUntilMs.Clear();
     }
 }

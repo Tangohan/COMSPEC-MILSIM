@@ -4,10 +4,11 @@
 // que la liaison rencontre : panne (réseau, délai dépassé), maintenance 503 avec Retry-After, frein 429, 403 du site
 // entier. Aucune requête HTTP n'est émise : seules les méthodes internes de comptage sont appelées.
 //   BACKOFF_DLL=/chemin/COMSPECExtension_x64.dll   (obligatoire)
-// Sortie : lignes PASS/FAIL ; code de sortie 0 si tout passe, 1 sinon. Sur la DLL de main, A1 A2 A3 B2 B3 E1 E2 G H2
-// H3 H4 I P1 P3 R1 R2 échouent (16 : c'est le défaut corrigé) ; sur la première version du lot (8faa74ab), H2 H3 H4
-// échouent (passage panne → frein). U B1 C D F H T P2 P4 R3 R4 passent partout (le frein 429 / 403 seul et les refus
-// doivent rester exactement comme avant).
+// Sortie : lignes PASS/FAIL ; code de sortie 0 si tout passe, 1 sinon. Sur la DLL de main (2.0.98), A1 A2 A3 B2 B3 E1
+// E2 G H2 H3 H4 I P1 P3 R1 R2 échouent (défaut de NET-006 corrigé par le lot), et L1 L2 L3 (NET-020, NET-022) : 19 en
+// tout ; sur la première version du lot (8faa74ab), H2 H3 H4 échouent (passage panne → frein) ; sur le lot avant son
+// point NET-022 (c3d8a85c), L1 L2 L3. U B1 C D F H T P2 P4 R3 R4 L4 passent partout (le frein 429 / 403 seul et les
+// refus doivent rester exactement comme avant).
 
 using System.Net;
 using System.Net.Http.Headers;
@@ -369,6 +370,70 @@ notePoll.Invoke(null, new[] { slotDenied, (object)200 });
 Check("R4 panne : un sondage qui n'a pas vu la panne (sain, ou refus 403) ne lève rien", Step() == 1 && PauseS() >= 9.9, PauseFmt());
 foreach (var k in new[] { "bench:panne", "bench:refus", "bench:sain" })
     tryRemove.Invoke(cache, new object?[] { k, null });
+
+// [L] Refus 403 d'une adresse (NET-020, NET-022), rejoués par HandlePostResponse (aucune requête : l'adresse de base de
+// la liaison est vide, le vidage de la file s'arrête donc tout de suite ; la file n'est ni lue ni écrite sur disque).
+// Un refus prévu par conception (fonction coupée par la communauté : feature_disabled ; fonction hors offre :
+// feature_unavailable) fait taire l'adresse et abandonne l'envoi, sans pause commune ni rappel AccessDenied (pause
+// du SQF) ; une fonction coupée se lit encore (sondage GET non verrouillé). Un autre 403 (site entier, pare-feu) garde
+// le comportement d'avant : pause de 20 s, rappel AccessDenied, envoi remis en file.
+SetF("_diskQueueLoaded", 1);
+SetF("_lastPersistTick", long.MaxValue / 4);
+var pending = GetF("PendingPosts")!;
+int Pending() => (int)pending.GetType().GetProperty("Count")!.GetValue(pending)!;
+void Post403(string url, string body) =>
+    M("HandlePostResponse").Invoke(null, new object?[] { Resp(403, 0, body), url, "{\"mapId\":1,\"body\":\"essai\"}" });
+string Latched(string method, string url)
+{
+    var mi = ext.GetMethod(method, F);
+    return mi == null ? "absent" : ((bool)mi.Invoke(null, new object?[] { url })! ? "oui" : "non");
+}
+void ClearLatches() => M("ClearRefusalLatches").Invoke(null, null);
+string Seen403(List<(string Fn, string Data)> cbs, int before) =>
+    $"pause {Fmt(Math.Max(0, PauseS()))} s, rappels [{string.Join(", ", cbs.Select(c => c.Fn + "(" + c.Data + ")"))}], "
+    + $"remis en file {Pending() - before}";
+const string Base = "http://127.0.0.1:9";
+const string Disabled = "{\"error\":\"feature_disabled\",\"feature\":\"chat_enabled\",\"message\":\"Votre communauté a désactivé la messagerie depuis le jeu.\"}";
+const string Unavailable = "{\"error\":\"feature_unavailable\",\"message\":\"Fonction réservée aux formules Standard et plus.\"}";
+
+Reset();
+ClearLatches();
+var l1Before = Pending();
+Post403(Base + "/api/chat", Disabled);
+var l1Cbs = Cbs();
+var l1Send = Latched("IsRefusalLatched", Base + "/api/chat");
+var l1Poll = Latched("IsPollRefusalLatched", Base + "/api/chat?mapId=1&limit=25");
+Check("L1 403 feature_disabled (tchat coupé) : envois de l'adresse verrouillés, lecture libre, ni pause ni rappel, envoi abandonné",
+    l1Send == "oui" && l1Poll == "non" && PauseS() <= 0 && !l1Cbs.Any(c => c.Fn == "AccessDenied") && Pending() == l1Before,
+    $"envoi verrouillé {l1Send}, sondage verrouillé {l1Poll} ; " + Seen403(l1Cbs, l1Before));
+
+ClearLatches();
+Check("L2 session suivante : le verrou des envois de feature_disabled est levé",
+    l1Send == "oui" && Latched("IsRefusalLatched", Base + "/api/chat") == "non",
+    $"verrouillé avant {l1Send}, après ClearRefusalLatches {Latched("IsRefusalLatched", Base + "/api/chat")}");
+
+Reset();
+var l3Before = Pending();
+Post403(Base + "/api/atak/designator", Unavailable);
+Post403(Base + "/api/atak/weather", Unavailable);
+var l3Cbs = Cbs();
+var l3Fifo = Latched("IsRefusalLatched", Base + "/api/atak/designator");
+var l3Weather = Latched("IsRefusalLatched", Base + "/api/atak/weather");
+Check("L3 403 feature_unavailable (hors offre), file d'envoi et météo : adresses verrouillées, ni pause ni rappel",
+    l3Fifo == "oui" && l3Weather == "oui" && PauseS() <= 0 && !l3Cbs.Any(c => c.Fn == "AccessDenied") && Pending() == l3Before,
+    $"désignation verrouillée {l3Fifo}, météo verrouillée {l3Weather} ; " + Seen403(l3Cbs, l3Before));
+
+Reset();
+ClearLatches();
+var l4Before = Pending();
+Post403(Base + "/api/chat", "{\"error\":\"forbidden\",\"message\":\"Action non autorisée.\"}");
+var l4Pause = PauseS();   // lue tout de suite : Cbs() attend 200 ms
+var l4Cbs = Cbs();
+Check("L4 autre 403 (site entier) : comme avant, pause de 20 s, rappel AccessDenied, envoi remis en file",
+    Latched("IsRefusalLatched", Base + "/api/chat") == "non" && l4Pause is >= 19.5 and <= 20.1
+    && l4Cbs.Any(c => c.Fn == "AccessDenied" && c.Data == "20") && Pending() == l4Before + 1,
+    $"verrouillé {Latched("IsRefusalLatched", Base + "/api/chat")}, pause juste après le refus {Fmt(l4Pause)} s ; " + Seen403(l4Cbs, l4Before));
+ClearLatches();
 
 Reset();
 Console.WriteLine($"\n=== BILAN : {(failures == 0 ? "aucun échec" : failures + " ÉCHEC(S)")} ===");
