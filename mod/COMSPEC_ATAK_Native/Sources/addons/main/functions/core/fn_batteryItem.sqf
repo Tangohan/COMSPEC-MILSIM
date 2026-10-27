@@ -3,15 +3,18 @@
     Acceptées : COMSPEC_ATAK_Battery (« Batterie ATAK »), les classes du réglage serveur « Batteries de rechange »
     (noms exacts) et tout objet d'un autre mod dont le nom de classe contient un mot du réglage
     « Batteries d'autres mods » (battery, batterie, pile par défaut, ex. ACE_UAVBattery).
-    Params : [unité (player)]
+    Params : [unité (player), compter (false) : true retourne le nombre de batteries de rechange portées]
 */
-params [["_unit", player]];
+params [["_unit", player], ["_count", false]];
 private _exact = ((missionNamespace getVariable ["comspec_atak_native_battery_items", "COMSPEC_ATAK_Battery,ACE_UAVBattery"]) splitString ", ;") apply { toLower _x };
 _exact pushBackUnique "comspec_atak_battery";
 private _pats = ((missionNamespace getVariable ["comspec_atak_native_battery_patterns", "battery,batterie,pile"]) splitString ", ;") apply { toLower _x };
 // Le téléphone lui-même n'est jamais une batterie.
 private _phones = [] call comspec_atak_native_fnc_deviceCatalog;
 private _items = items _unit;
+if (_count) exitWith {
+    { private _c = toLower _x; (_c in _exact) || {!(_c in _phones) && {(_pats findIf { _x isNotEqualTo "" && {(_c find _x) >= 0} }) >= 0}} } count _items
+};
 private _hit = _items findIf { (toLower _x) in _exact };
 if (_hit < 0) then {
     _hit = _items findIf { private _c = toLower _x; !(_c in _phones) && {(_pats findIf { _x isNotEqualTo "" && {(_c find _x) >= 0} }) >= 0} };

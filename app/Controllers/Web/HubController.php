@@ -17,6 +17,7 @@ use App\Services\Alerts\AlertPresentationService;
 use App\Services\Ecosystem\CommunityStatsService;
 use App\Support\AlertDisplayStyle;
 use App\Support\CooperationAccess;
+use App\Support\TrainingQuickAccess;
 
 /**
  * Hub inter-communautés : découvrir et comparer les communautés Athena, les recommander,
@@ -75,6 +76,8 @@ class HubController
             'hubQuickLinks' => $this->quickLinks(),
             'hub_announce_items' => $this->announceItems(),
             'hub_announce_manage_url' => DashboardPinsAccess::canManage(Gate::getInstance()) ? url('back-office/alerts') : null,
+            'hubTraining' => TrainingQuickAccess::summary(),
+            'hubShell' => $this->shell('home', $mine, count($openPosts), $tenantId > 0 && CooperationAccess::canManage() ? count($repo->pendingReviews($tenantId)) : 0),
             'csrfToken' => Csrf::token(),
             'backOfficePageCss' => ['announce-tiles.css'],
         ]);
@@ -93,6 +96,18 @@ class HubController
         $rows = $stats->all();
         $mine = $tenantId > 0 ? $stats->forTenant($tenantId) : null;
         $userId = (int) Session::get('user_id');
+        $ranks = [];
+        $peaks = [];
+        foreach (array_keys(CommunityStatsService::METRICS) as $metric) {
+            $ranks[$metric] = CommunityStatsService::rank($rows, $metric, (int) $row['id']);
+            $peak = 0.0;
+            foreach ($rows as $candidate) {
+                if (isset($candidate[$metric]) && $candidate[$metric] !== null) {
+                    $peak = max($peak, (float) $candidate[$metric]);
+                }
+            }
+            $peaks[$metric] = $peak;
+        }
 
         return Response::view('layout.main', [
             'content' => 'hub.community',
@@ -102,10 +117,14 @@ class HubController
             'hubIsOwn' => $mine !== null && $mine['id'] === $row['id'],
             'hubMedians' => CommunityStatsService::medians($rows),
             'hubMetrics' => CommunityStatsService::METRICS,
+            'hubRanks' => $ranks,
+            'hubPeaks' => $peaks,
+            'hubNetworkSize' => count($rows),
             'hubStructure' => $stats->structure((int) $row['id'], (bool) $row['orbat_public']),
             'hubReviews' => $this->ecosystem()->reviewsFor((int) $row['id']),
             'hubRecommended' => in_array((int) $row['id'], $this->ecosystem()->recommendedByUser($userId), true),
             'hubCanCooperate' => $tenantId > 0 && CooperationAccess::canCreate() && ($mine === null || $mine['id'] !== $row['id']),
+            'hubShell' => $this->shell($mine !== null && $mine['id'] === $row['id'] ? 'fiche' : 'annuaire', $mine),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -130,6 +149,7 @@ class HubController
             'hubRows' => $rows,
             'hubMetrics' => CommunityStatsService::METRICS,
             'hubMedians' => CommunityStatsService::medians($rows),
+            'hubShell' => $this->shell('comparer', $mine),
         ]);
     }
 
@@ -217,6 +237,7 @@ class HubController
             'boardCanRespond' => $tenantId > 0 && CooperationAccess::canRespond(),
             'boardNeedTypes' => CommunityEcosystemRepository::NEED_TYPES,
             'boardReady' => $repo->tableExists('cooperation_board_posts'),
+            'hubShell' => $this->shell('bourse', $tenantId > 0 ? $this->stats()->forTenant($tenantId) : null),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -381,6 +402,24 @@ class HubController
     }
 
     /** @return list<array{label: string, url: string, description: string}> */
+    /**
+     * Navigation commune aux pages du hub (rail latéral, barre mobile).
+     *
+     * @param array<string, mixed>|null $mine
+     * @return array{active: string, mine_slug: string, mine_name: string, training: bool, board_open: ?int, reviews: int}
+     */
+    private function shell(string $active, ?array $mine, ?int $boardOpen = null, int $reviews = 0): array
+    {
+        return [
+            'active' => $active,
+            'mine_slug' => (string) ($mine['slug'] ?? ''),
+            'mine_name' => (string) ($mine['name'] ?? ''),
+            'training' => TrainingQuickAccess::allowed(),
+            'board_open' => $boardOpen,
+            'reviews' => $reviews,
+        ];
+    }
+
     private function quickLinks(): array
     {
         return [

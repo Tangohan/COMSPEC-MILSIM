@@ -7,7 +7,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_65874AF125";
             property = "comspec_sse_domex_enabled";
             control = "Checkbox";
-            expression = "_this setVariable ['comspec_sse_domex_enabled', _value, isServer]; if (_value) then { _this setVariable ['comspec_sse_enabled', true, isServer]; };";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_enabled', _value, true]; if (_value) then { _this setVariable ['comspec_sse_enabled', true, true]; }; };";
             defaultValue = "false";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";
@@ -17,7 +17,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_7EA2B3769C";
             property = "comspec_sse_domex_nodeId";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_domex_nodeId', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_nodeId', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -27,7 +27,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_69403D5D82";
             property = "comspec_sse_domex_deviceType";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_deviceType', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_deviceType', _value, true]; };";
             defaultValue = "'ordinateur'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -48,7 +48,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_7D10F4C0B7";
             property = "comspec_sse_domex_owner";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_domex_owner', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_owner', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -58,7 +58,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_F5DBCF8E17";
             property = "comspec_sse_domex_org";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_domex_org', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_org', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -68,7 +68,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_38621FCCC6";
             property = "comspec_sse_domex_network";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_domex_network', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_network', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -78,7 +78,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_20DC301AE7";
             property = "comspec_sse_domex_exploitable";
             control = "Checkbox";
-            expression = "_this setVariable ['comspec_sse_domex_exploitable', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_exploitable', _value, true]; };";
             defaultValue = "true";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";
@@ -88,7 +88,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_591CD4CAED";
             property = "comspec_sse_domex_accessPhysical";
             control = "Checkbox";
-            expression = "_this setVariable ['comspec_sse_domex_accessPhysical', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_accessPhysical', _value, true]; };";
             defaultValue = "true";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";
@@ -98,7 +98,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_3795655AA9";
             property = "comspec_sse_domex_accessRemote";
             control = "Checkbox";
-            expression = "_this setVariable ['comspec_sse_domex_accessRemote', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_accessRemote', _value, true]; };";
             defaultValue = "false";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";
@@ -108,7 +108,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_A56250A2F0";
             property = "comspec_sse_domex_security";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_security', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_security', _value, true]; };";
             defaultValue = "'moyenne'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -123,7 +123,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_171489A891";
             property = "comspec_sse_domex_profile";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_profile', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_profile', _value, true]; };";
             defaultValue = "'generique'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -140,7 +140,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_69383F7A32";
             property = "comspec_sse_domex_duration";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_duration', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_duration', _value, true]; };";
             defaultValue = "'180'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -156,7 +156,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_0D9D231C7A";
             property = "comspec_sse_domex_stage";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_stage', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_stage', _value, true]; };";
             defaultValue = "'non_identifie'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -173,7 +173,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_5D73893C27";
             property = "comspec_sse_domex_p1_type";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p1_type', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p1_type', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -195,7 +195,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_A96C9B7E3A";
             property = "comspec_sse_domex_p1_text";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_domex_p1_text', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p1_text', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -205,7 +205,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_91AFA678C0";
             property = "comspec_sse_domex_p1_quality";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p1_quality', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p1_quality', _value, true]; };";
             defaultValue = "'complet'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -220,7 +220,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_1F2AC7594A";
             property = "comspec_sse_domex_p1_channel";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p1_channel', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p1_channel', _value, true]; };";
             defaultValue = "'physique'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -235,7 +235,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_41A38A621D";
             property = "comspec_sse_domex_p1_reveal";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p1_reveal', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p1_reveal', _value, true]; };";
             defaultValue = "'immediat'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -250,7 +250,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_46DF178EF6";
             property = "comspec_sse_domex_p1_entities";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_domex_p1_entities', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p1_entities', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -260,7 +260,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_68BFBFB778";
             property = "comspec_sse_domex_p2_type";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p2_type', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p2_type', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -282,7 +282,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_58AC927D81";
             property = "comspec_sse_domex_p2_text";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_domex_p2_text', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p2_text', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -292,7 +292,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_91AFA678C0";
             property = "comspec_sse_domex_p2_quality";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p2_quality', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p2_quality', _value, true]; };";
             defaultValue = "'complet'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -307,7 +307,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_1F2AC7594A";
             property = "comspec_sse_domex_p2_channel";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p2_channel', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p2_channel', _value, true]; };";
             defaultValue = "'physique'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -322,7 +322,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_41A38A621D";
             property = "comspec_sse_domex_p2_reveal";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p2_reveal', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p2_reveal', _value, true]; };";
             defaultValue = "'immediat'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -337,7 +337,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_FAFD121A5A";
             property = "comspec_sse_domex_p2_entities";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_domex_p2_entities', _value, isServer];";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_p2_entities', _value, true]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";

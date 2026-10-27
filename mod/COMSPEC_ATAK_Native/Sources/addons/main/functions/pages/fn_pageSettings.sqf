@@ -14,7 +14,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_SettingsRerender", _rerender];
 uiNamespace setVariable ["COMSPEC_ATAK_ProfToggle", {
     params ["_var", "_def"];
     profileNamespace setVariable [_var, !(profileNamespace getVariable [_var, _def])];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 private _profSwitch = {
@@ -26,7 +26,7 @@ private _profSwitch = {
 uiNamespace setVariable ["COMSPEC_ATAK_ProfSet", {
     params ["_var", "_val"];
     profileNamespace setVariable [_var, _val];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     // Modèle : la liste déroulante CBA (comspec_atak_native_phone_model) suit le choix fait dans le téléphone.
     if (_var isEqualTo "COMSPEC_ATAK_PhoneModel") then { ["comspec_atak_native_phone_model", _val, false, "client"] call CBA_settings_fnc_set; };
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
@@ -74,7 +74,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_SetAnchor", {
     params ["_k"];
     profileNamespace setVariable ["COMSPEC_ATAK_MiniAnchor", _k];
     { profileNamespace setVariable [_x, [0, 0]]; } forEach ["COMSPEC_ATAK_Offset_MINI_PORTRAIT", "COMSPEC_ATAK_Offset_MINI_LANDSCAPE"];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 private _anchorNow = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
@@ -92,7 +92,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_DockToggle", {
     if ((count _d) isEqualTo 0) then { _d = (([] call comspec_atak_native_fnc_appList) select { _x get "dock" }) apply { _x get "id" }; };
     if (_id in _d) then { _d = _d - [_id]; } else { if ((count _d) < 6) then { _d pushBack _id; } else { ["WARNING", "6 apps au maximum dans le dock", 3, 20] call comspec_atak_native_fnc_notify; }; };
     profileNamespace setVariable ["COMSPEC_ATAK_DockApps", _d];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 private _dockNow = profileNamespace getVariable ["COMSPEC_ATAK_DockApps", []];
@@ -111,20 +111,16 @@ private _fold = {
     params ["_k", "_t", "_sub", ["_def", false]];
     ["fold", _t, _sub, [_k, _def] call _foldOpen, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_SetFold');", _k, _def]]
 };
-// Modèles du téléphone : seuls ceux dont l'objet exigé est porté sont proposés (Options des addons > ATAK · Objets par interface).
-private _models = [["DURCI S7", "s7"], ["SAMSUNG S23", "s23"], ["V2 ENHANCED", "iphone"], ["XIAOMI X3D", "rugged"], ["SONIM XP8", "sonim"], ["TABLETTE", "keys"]];
-private _modelOk = missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }];
-private _okModels = _models select { (_x select 1) isEqualTo "s7" || {[_x select 1, player] call _modelOk} };
-private _noModels = (_models - _okModels) apply { _x select 0 };
-private _modelHelp = "La couleur de la coque ne change que sur le S7. TABLETTE : tablette durcie.";
-if ((count _noModels) > 0) then { _modelHelp = _modelHelp + format [" Item requis manquant pour : %1.", _noModels joinString ", "]; };
-private _modelRows = [["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", _okModels select [0, 4], ["", _modelHelp] select (4 >= count _okModels)] call _profSegment];
-for "_i" from 4 to ((count _okModels) - 1) step 4 do {
-    _modelRows pushBack (["COMSPEC_ATAK_PhoneModel", "s7", "", _okModels select [_i, 4], ["", _modelHelp] select (_i + 4 >= count _okModels)] call _profSegment);
-};
-private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _modelRows + [
+// Le modèle et la couleur viennent de l'objet porté. On ne les change plus ici.
+([player] call comspec_atak_native_fnc_phoneCarried) params ["_wornModel", "_wornTint", "_wornName"];
+private _modelNames = createHashMapFromArray [["s7", "SAMSUNG S7"], ["s23", "SAMSUNG S23"], ["ip17", "IPHONE 17 PRO"], ["iphone", "V2 ENHANCED"], ["rugged", "XIAOMI X3D"], ["sonim", "SONIM XP8"], ["keys", "TABLETTE"]];
+private _tintNames = createHashMapFromArray [["coyote", "COYOTE"], ["od", "OLIVE"], ["black", "NOIR"]];
+private _modelName = _modelNames getOrDefault [_wornModel, "SAMSUNG S7"];
+if (_wornModel isEqualTo "s7") then { _modelName = _modelName + " " + (_tintNames getOrDefault [_wornTint, "COYOTE"]); };
+private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
+    ["text", "Le modèle et la couleur sont ceux du téléphone dans vos poches. Samsung S7 coyote, olive ou noir, Samsung S23, iPhone 17 Pro, V2 Enhanced, Xiaomi X3D, Sonim XP8, tablette durcie."],
+    ["info", "Téléphone porté", [_wornName, "aucun"] select (_wornName isEqualTo "")],
     ["COMSPEC_ATAK_Shell", "auto", "Coque", [["AUTO", "auto"], ["JOUR", "day"], ["NUIT", "night"]], "AUTO : coque de nuit après le coucher du soleil"] call _profSegment,
-    ["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque", [["COYOTE", "coyote"], ["VERT OD", "od"], ["NOIR", "black"]]] call _profSegment,
     ["segment", "Antenne (port SMA)", [["AUCUNE", { ["unmount"] call comspec_atak_native_fnc_antenna; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, (["get"] call comspec_atak_native_fnc_antenna) isEqualTo []]]
         + ((["owned"] call comspec_atak_native_fnc_antenna) apply {
             [toUpper ((_x select 2) select [8]), compile format ["['mount', '%1'] call comspec_atak_native_fnc_antenna; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _x select 0],
@@ -136,10 +132,10 @@ private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _mo
     // Thèmes rapides : accent, fond d'écran, flou et heure du verrouillage en un appui (chaque réglage reste modifiable).
     ["text", "<t size='0.9'>Thème rapide</t>  <t size='0.75' color='#8a9a93'>Accent, fond d'écran et heure du verrouillage d'un coup</t>"],
     ["buttons", [
-        ["OPÉRATIONS", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "GREEN"], ["COMSPEC_ATAK_Wallpaper", "topo"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "light"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
-        ["NUIT", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "RED"], ["COMSPEC_ATAK_Wallpaper", "night"], ["COMSPEC_ATAK_WallBlur", true], ["COMSPEC_ATAK_LockClockStyle", "mil"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
-        ["DÉSERT", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "SAND"], ["COMSPEC_ATAK_Wallpaper", "desert"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "bold"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
-        ["ATHENA", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "GREEN"], ["COMSPEC_ATAK_Wallpaper", "athena"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "light"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+        ["OPÉRATIONS", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "GREEN"], ["COMSPEC_ATAK_Wallpaper", "topo"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "light"]]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["NUIT", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "RED"], ["COMSPEC_ATAK_Wallpaper", "night"], ["COMSPEC_ATAK_WallBlur", true], ["COMSPEC_ATAK_LockClockStyle", "mil"]]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["DÉSERT", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "SAND"], ["COMSPEC_ATAK_Wallpaper", "desert"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "bold"]]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["ATHENA", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "GREEN"], ["COMSPEC_ATAK_Wallpaper", "athena"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "light"]]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
     ]],
     ["COMSPEC_ATAK_Wallpaper", "topo", "Fond d'écran de l'accueil", [["TOPO", "topo"], ["NUIT", "night"], ["DÉSERT", "desert"], ["OLIVE", "olive"], ["SOMBRE", "dark"]]] call _profSegment,
     ["COMSPEC_ATAK_Wallpaper", "topo", "", [["SOAR", "soar"], ["ATHENA", "athena"], ["OPS", "ops"], ["AUCUN", "none"]]] call _profSegment,
@@ -151,6 +147,7 @@ private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _mo
         [_t, compile format ["['comspec_atak_native_font', '%1', false, 'client'] call CBA_settings_fnc_set;", _v], _v isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_FontFam", "roboto"])]
     }, "Police de tout le téléphone : Roboto Condensed par défaut, ou Purista"],
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
+    ["COMSPEC_ATAK_IconStyle", "real", "Style des icônes", [["RÉALISTES", "real"], ["PLATES", "flat"]], "RÉALISTES : icônes colorées aux coins arrondis posées sur le fond d'écran, comme un vrai téléphone. PLATES : tuiles d'avant"] call _profSegment,
     ["COMSPEC_ATAK_Brightness", 1, "Luminosité", [["30 %", 0.3], ["50 %", 0.5], ["75 %", 0.75], ["100 %", 1]], "Aussi dans le volet rapide (clic sur l'heure). Moins lumineux : moins visible de nuit et la batterie tient plus"] call _profSegment,
     ["COMSPEC_ATAK_NightMode", "OFF", "Mode nuit", [["NORMAL", "OFF"], ["ROUGE", "RED"], ["SOMBRE", "DIM"]], "Filtre rouge ou écran assombri, économise la batterie. Touche à assigner dans les contrôles COMSPEC ATAK"] call _profSegment,
     ["section", "Verrouillage et sécurité", "Si vous êtes capturé, l'ennemi peut brancher un câble DL-7 sur votre téléphone. Le code le protège : 3 essais, puis tout est effacé (un code peut être cassé en 2 min)."],
@@ -159,7 +156,7 @@ private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _mo
     ["edit", "lockCode", "Code de verrouillage (vide = aucun)", profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]],
     ["buttons", [["ENREGISTRER LE CODE", {
         private _t = ["lockCode"] call comspec_atak_native_fnc_formValue;
-        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_LockCode", (trim _t) select [0, 12]]; saveProfileNamespace; ["Code de verrouillage enregistré", 2] call comspec_atak_native_fnc_toast; };
+        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_LockCode", (trim _t) select [0, 12]]; [] call comspec_atak_native_fnc_saveProfile; ["Code de verrouillage enregistré", 2] call comspec_atak_native_fnc_toast; };
     }], [["EFFACEMENT D'URGENCE", "CONFIRMER L'EFFACEMENT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5), {
         // Deux appuis en moins de 5 s : rien ne s'efface par erreur.
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5) then {
@@ -172,8 +169,11 @@ private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _mo
         [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }]]],
     ["section", "Animations et sons", "Mouvements, clics et petites vibrations"],
-    ["COMSPEC_ATAK_Animations", true, "", "Animations", "Les apps s'ouvrent en zoomant, les pages glissent au retour, une onde apparaît sous le doigt, le volet rapide est animé"] call _profSwitch,
-    ["COMSPEC_ATAK_PageFx", false, "", "Transitions entre les pages", "Fondu à l'ouverture d'une app et au retour à l'accueil (désactivé : pas de flash sombre entre les pages)"] call _profSwitch,
+    ["COMSPEC_ATAK_Animations", true, "", "Animations", "Interrupteur général : désactivé, plus aucun mouvement (onde à l'appui, icônes en cascade, volet rapide, transitions)"] call _profSwitch,
+    ["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages", "Les pages arrivent en fondu (sans flash sombre). Désactivé : changement de page immédiat, et les deux réglages suivants sont sans effet"] call _profSwitch,
+    ["COMSPEC_ATAK_OpenSplash", true, "", "Ouverture depuis l'icône", "L'icône de l'app grandit vers le centre de l'écran à l'ouverture (icônes réalistes)"] call _profSwitch,
+    ["COMSPEC_ATAK_TitleSlide", true, "", "Titre qui glisse", "Le titre de l'app arrive de la droite à l'ouverture et de la gauche au retour"] call _profSwitch,
+    ["COMSPEC_ATAK_PressFx", true, "", "Icône qui s'enfonce à l'appui", "L'icône d'une app s'enfonce légèrement sous le doigt"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Petit clic et légère vibration à chaque appui (sans son en mode discrétion)"] call _profSwitch,
     ["COMSPEC_ATAK_HandHint", true, "", "Rappel « prendre en main » quand le téléphone est porté", "Petite icône de main et Ctrl+Maj+U dans la barre du téléphone porté. Désactivé : écran sans indication, plus immersif"] call _profSwitch,
     ["COMSPEC_ATAK_LauncherSearch", true, "", "Recherche dans le lanceur", "Champ « Rechercher une app » en haut de la liste des apps (en main). Entrée ouvre la première trouvée"] call _profSwitch,
@@ -183,6 +183,14 @@ private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _mo
         { [["attach", "detach"] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])] call comspec_atak_native_fnc_powerBank; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
     ["switch", "Filtre d'écran JVN", ["filter"] call comspec_atak_native_fnc_screenGlow,
         { ["toggle"] call comspec_atak_native_fnc_screenGlow; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+    // Affichage situation sous JVN (Overwatch connect, fn_ecotiApplyHudSetting) : même case que le menu CBA, profil compris.
+    ["switch", "Infos tactiques dans les JVN", (missionNamespace getVariable ["comspec_overwatch_ecoti_hud", false]) isEqualTo true,
+        {
+            if (isNil "comspec_overwatch_connect_fnc_ecotiApplyHudSetting") exitWith {};
+            [!((missionNamespace getVariable ["comspec_overwatch_ecoti_hud", false]) isEqualTo true)] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
+            [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        },
+        "Alliés, repères et véhicules dans la vue quand vos JVN sont allumées. Marche aussi sans Athena"],
     ["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7", [["OLIVE", "olive"], ["NOIR", "black"], ["TAN", "tan"]], "Couleur du module de l'app Extraction"] call _profSegment
 ];
 _perso pushBack (["patch", "Patch au dos", format ["Porté : %1", (["name", profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"]] call comspec_atak_native_fnc_patchCatalog) regexReplace ["[<>&]", ""]]] call _fold);
@@ -199,7 +207,7 @@ if (["patch"] call _foldOpen) then {
         ["edit", "patchText", "Texte du patch nominatif", profileNamespace getVariable ["COMSPEC_ATAK_PatchText", ""]],
         ["buttons", [["ENREGISTRER LE TEXTE", {
             private _t = ["patchText"] call comspec_atak_native_fnc_formValue;
-            if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_PatchText", (trim _t) select [0, 14]]; saveProfileNamespace; ["Patch nominatif enregistré", 2] call comspec_atak_native_fnc_toast; };
+            if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_PatchText", (trim _t) select [0, 14]]; [] call comspec_atak_native_fnc_saveProfile; ["Patch nominatif enregistré", 2] call comspec_atak_native_fnc_toast; };
         }]]],
         ["buttons", [["VOIR L'ARRIÈRE DU TÉLÉPHONE", { [{ [] call comspec_atak_native_fnc_backView; }] call CBA_fnc_execNextFrame; }]]]
     ];
@@ -220,11 +228,11 @@ if (["dock"] call _foldOpen) then {
     {
         _perso pushBack ["switch", _x get "name", (_x get "id") in _dockNow, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_DockToggle');", _x get "id"]];
     } forEach (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible && {!(_x getOrDefault ["wip", false])} });
-    _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+    _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
 };
 _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
-    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_CarryStyle", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_HandHint", "COMSPEC_ATAK_LauncherSearch"];
-    saveProfileNamespace;
+    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_CarryStyle", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_PageFx", "COMSPEC_ATAK_OpenSplash", "COMSPEC_ATAK_TitleSlide", "COMSPEC_ATAK_PressFx", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_HandHint", "COMSPEC_ATAK_LauncherSearch"];
+    [] call comspec_atak_native_fnc_saveProfile;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }]]];
 // Taille du plein écran : réglage CBA par joueur (comspec_atak_native_full_scale), le même que dans le menu CBA.
@@ -248,7 +256,7 @@ private _place = [
     ["buttons", [["DÉPLACER À LA SOURIS (MODE DISPOSITION)", { [{ ["ARRANGE_ON"] call comspec_atak_native_fnc_phoneDrag; }] call CBA_fnc_execNextFrame; }, true]]],
     ["buttons", [["REMETTRE LE TÉLÉPHONE EN PLACE", {
         { profileNamespace setVariable [_x, [0, 0]]; } forEach ["COMSPEC_ATAK_Offset_MINI_PORTRAIT", "COMSPEC_ATAK_Offset_MINI_LANDSCAPE", "COMSPEC_ATAK_Offset_FULL_LANDSCAPE"];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }]]]
 ];
@@ -274,8 +282,9 @@ private _map = [
     ["COMSPEC_ATAK_MapToolbarScale", 1, "Barre d'outils de la carte", [["PETITE", 0.75], ["NORMALE", 1], ["GRANDE", 1.3]], "Boutons à droite de la carte : centrer, suivre, zoom, marqueur, noms"] call _profSegment,
     ["COMSPEC_ATAK_GridDigits", 6, "Précision des grilles", [["6 CHIFFRES", 6], ["8 CHIFFRES", 8], ["10 CHIFFRES", 10]], "100 m, 10 m ou 1 m"] call _profSegment,
     ["section", "Taille et fond de carte", "Taille des textes et des icônes, type de fond de carte"],
-    ["COMSPEC_ATAK_MapTextScale", 1.25, "Textes de la carte", [["PETIT", 1], ["NORMAL", 1.25], ["GRAND", 1.5], ["TRÈS GRAND", 1.8]], "Indicatifs, coordonnées, étiquettes, panneaux d'info"] call _profSegment,
-    ["COMSPEC_ATAK_MapIconScale", 1.25, "Icônes de la carte", [["PETIT", 1], ["NORMAL", 1.25], ["GRAND", 1.5], ["TRÈS GRAND", 1.8]], "Unités, marqueurs, charges, points de passage"] call _profSegment,
+    // Réglettes de 80 à 220 % (lues par fn_mapOnDraw, fn_pageMap et fn_planDraw, bornées à 0,8-2,2).
+    ["slider", "Textes de la carte", round (100 * (profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25])), { profileNamespace setVariable ["COMSPEC_ATAK_MapTextScale", (_this select 0) / 100]; }, "Indicatifs, coordonnées, étiquettes, panneaux d'info", false, "", {}, "", [80, 220]],
+    ["slider", "Icônes de la carte", round (100 * (profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25])), { profileNamespace setVariable ["COMSPEC_ATAK_MapIconScale", (_this select 0) / 100]; }, "Unités, marqueurs, charges, points de passage", false, "", {}, "", [80, 220]],
     ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "Fond de carte", [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]], ""] call _profSegment,
     // Deuxième rangée : vues satellite (texture du terrain, capture HD là où elle existe) et capture seule.
     ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "", [["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]] + ([[], [["SATELLITE", "PHOTO"]]] select ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo [])), "Carte topo d'Arma, version claire, sombre, bleu nuit, classique (vue satellite du terrain d'Arma), hybride (classique avec routes et pistes), ou satellite (la vraie photo de la carte, capturée par COMSPEC : mod COMSPEC ATAK Photo ou téléchargée depuis Athena)"] call _profSegment,
@@ -286,7 +295,7 @@ private _map = [
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MapResetArm", -10]) < 5) then {
             uiNamespace setVariable ["COMSPEC_ATAK_MapResetArm", -10];
             { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Labels", "COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_MarkerTags", "COMSPEC_ATAK_Compass", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_MapTextScale", "COMSPEC_ATAK_MapIconScale", "COMSPEC_ATAK_MapStyle"];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
             ["Réglages de la carte rétablis", 2] call comspec_atak_native_fnc_toast;
         } else {
             uiNamespace setVariable ["COMSPEC_ATAK_MapResetArm", diag_tickTime];
@@ -304,7 +313,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MuteToggle", {
     _m = +_m;
     if (_t in _m) then { _m = _m - [_t]; } else { _m pushBack _t; };
     profileNamespace setVariable ["COMSPEC_ATAK_NotifMuted", _m];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 private _mutedTypes = profileNamespace getVariable ["COMSPEC_ATAK_NotifMuted", []];
@@ -356,7 +365,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MedToggle", {
     _h = +_h;
     if (_k in _h) then { _h = _h - [_k]; } else { _h pushBack _k; };
     profileNamespace setVariable ["COMSPEC_ATAK_MedHide", _h];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 private _medRow = {
@@ -390,25 +399,19 @@ private _hw = [
     ["info", "Réseau simulé", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · %2", _lq get "label", [format ["%1 kbit/s", _lq get "kbps"], format ["%1 Mbit/s", ((_lq get "kbps") / 1000) toFixed 1]] select ((_lq get "kbps") >= 1000)]] select (_lq get "sim")]
 ];
 
-private _appsRows = [];
-// Applications : chaque app (sauf Réglages) peut être cachée du lanceur et du dock.
-uiNamespace setVariable ["COMSPEC_ATAK_AppHide", {
-    params ["_id"];
-    private _h = profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []];
-    if (_id in _h) then { _h = _h - [_id]; } else { _h pushBack _id; };
-    profileNamespace setVariable ["COMSPEC_ATAK_HiddenApps", _h];
-    saveProfileNamespace;
-    [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
-}];
-private _hidden = profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []];
-_appsRows pushBack ["section", "Applications", format ["%1 app(s) cachée(s) du lanceur", count _hidden]];
-{
-    private _id = _x get "id";
-    if (_id isNotEqualTo "Settings" && {!((_x get "section") isEqualTo "Civil" && {!(missionNamespace getVariable ["comspec_atak_native_civil_apps", true])})}) then {
-        // App en chantier (wip=1) : signalée W.I.P dans la liste (elle reste grisée et fermée au lanceur).
-        _appsRows pushBack ["switch", format ["%1  <t size='0.8' color='#8a9a93'>%2</t>%3", _x get "name", _x get "section", ["", "  <t size='0.75' color='#d99a1f'>W.I.P</t>"] select (_x getOrDefault ["wip", false])], !(_id in _hidden), compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_AppHide');", _id]];
-    };
-} forEach ([] call comspec_atak_native_fnc_appList);
+// Applications : installées et désinstallées dans l'App Store (fn_pageStore), qui remplace les bascules « cacher l'app ».
+private _appsAll = ([] call comspec_atak_native_fnc_appList) select { !((_x get "id") in ["Admin", "Toc"]) };
+private _appsSt = _appsAll apply { ["state", _x get "id"] call comspec_atak_native_fnc_appInstall };
+private _appsRows = [
+    ["section", "Applications", "Installer, désinstaller et retrouver les apps du téléphone"],
+    ["cells", [
+        ["\z\comspec_atak_native\addons\main\data\ui_check.paa", [0.36, 0.78, 0.42, 1], "Installées", format ["<t color='#5cc76b'>%1</t>", { _x in ["system", "required", "installed"] } count _appsSt], "Sur l'écran d'accueil et dans le dock"],
+        ["\z\comspec_atak_native\addons\main\data\app_store.paa", [0.55, 0.6, 0.57, 1], "À installer", format ["<t color='#8a9a93'>%1</t>", { _x isEqualTo "removed" } count _appsSt], "Disponibles dans l'App Store"]
+    ], 2],
+    ["buttons", [["OUVRIR L'APP STORE", { [{ ["STORE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, true]]]
+];
+private _imp = { _x in ["required", "forbidden"] } count _appsSt;
+if (_imp > 0) then { _appsRows pushBack ["text", format ["<t size='0.8' color='#e8b84a'>%1 app(s) imposée(s) ou interdite(s) par l'encadrement</t>", _imp]]; };
 
 private _rule = ["require_equipment"] call comspec_atak_native_fnc_tenantRule;
 private _require = if (_rule in ["on", "off"]) then { _rule isEqualTo "on" } else { missionNamespace getVariable ["comspec_atak_native_require_item", true] };
@@ -471,6 +474,7 @@ private _changed = 0;
     ["PHONE", "Prendre le téléphone", "Sortir, ranger, prendre en main"],
     ["MINI", "Miniature et carte", "Téléphone porté dans un coin de l'écran"],
     ["QUICK", "Raccourcis rapides", "Sans ouvrir le téléphone"],
+    ["WATCH", "Montre Garmin", "Les 5 boutons de la montre et ses raccourcis", true],
     ["DRONE", "Drone et marquage", "Drone appairé, réticule", true],
     ["GESTURE", "Gestes", "Gestes du personnage", true]
 ];
@@ -488,9 +492,12 @@ _access append [
 ];
 
 // Service Athéna : la question du premier lancement (Oui : COMSPEC Link et synchro ; Non : ATAK local).
+// Mode full local imposé par le serveur (réglage comspec_atak_native_local_only) : plus de question.
 private _athMode = [] call comspec_atak_native_fnc_athenaMode;
+private _forcedLocal = missionNamespace getVariable ["comspec_atak_native_local_only", false];
 private _athReady = _bridge && {[] call comspec_overwatch_connect_fnc_isReady};
 private _athState = switch (true) do {
+    case (_forcedLocal): { "<t color='#8a9a93'>mode full local (serveur) · aucune connexion ni donnée envoyée</t>" };
     case (_athMode isEqualTo "off"): { "<t color='#8a9a93'>ATAK local · aucune connexion ni donnée envoyée</t>" };
     case (_athMode isEqualTo ""): { "<t color='#e8b84a'>pas encore choisi</t>" };
     case (_athReady): { format ["<t color='#5cc76b'>compte lié</t>%1", ["", format [" · %1", missionNamespace getVariable ["comspec_tenant_name", ""]]] select ((missionNamespace getVariable ["comspec_tenant_name", ""]) isNotEqualTo "")] };
@@ -498,10 +505,14 @@ private _athState = switch (true) do {
 };
 private _athena = [
     ["section", "Service Athéna", "Votre unité utilise-t-elle Athéna ?"],
-    ["segment", "Mon unité utilise Athéna", [
-        ["OUI", { ["on"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "on"],
-        ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "off"]
-    ], "Oui : COMSPEC Link, synchro avec le poste, compte lié. Non : ATAK local sur le serveur, rien n'est envoyé."],
+    if (_forcedLocal) then {
+        ["switch", "Mode full local imposé par le serveur", true, {}, "Le serveur joue sans Athena : numéros, carnet et poste TOC restent dans config.json (app Numéros).", true]
+    } else {
+        ["segment", "Mon unité utilise Athéna", [
+            ["OUI", { ["on"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "on"],
+            ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "off"]
+        ], "Oui : COMSPEC Link, synchro avec le poste, compte lié. Non : ATAK local sur le serveur, rien n'est envoyé."]
+    },
     ["info", "État", _athState],
     ["buttons", [
         ["LIER MON COMPTE", { ["link"] call comspec_atak_native_fnc_athenaChoice; }, true, _bridge && {_athMode isEqualTo "on"} && {!_athReady}]
@@ -553,7 +564,6 @@ if (_athMode isEqualTo "on") then {
 // À propos du téléphone, façon Android : modèle, identité, versions et contrôle de l'installation, sur cette page seulement
 // (la DLL n'est interrogée qu'ici).
 private _about = [];
-private _modelName = (_models select { (_x select 1) isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]) }) param [0, ["DURCI S7"]] select 0;
 private _build = missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]];
 if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
     ([player] call comspec_atak_native_fnc_phoneIdent) params [["_num", "—"], ["_imei", "—"], ["_mac", "—"]];
@@ -619,7 +629,7 @@ private _cats = [
     ["PLACE", "Emplacement", "Coin, taille et sens du téléphone porté", "ui_rotate", _place],
     ["MAP", "Carte", "Indicatifs, couleurs, grilles, tailles, fond", "app_map", _map],
     ["ALERTS", "Alertes", "Notifications et vibration", "ui_vibrate", _alerts],
-    ["APPS", "Applications", format ["%1 app(s) cachée(s)", count (profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []])], "ui_apps", _appsRows],
+    ["APPS", "Applications", format ["App Store : %1 app(s) à installer", { _x isEqualTo "removed" } count _appsSt], "ui_apps", _appsRows],
     ["HW", "Matériel et réseau", "Mode avion, Bluetooth, dégâts, réseau simulé, caméra en direct", "app_network", _hw + _live],
     ["REAL", "Réalisme", ["Données médicales, saleté de l'écran", "Roleplay, données médicales, réglages imposés"] select _bridge, "app_status", _real],
     ["ACCESS", "Accès et touches", format ["Item requis, %1 raccourcis clavier réglables ici", count _kbAll], "ui_hand", _access],

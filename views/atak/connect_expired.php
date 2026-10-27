@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 $title = (string) ($title ?? 'Connexion expirée — Athena ATAK');
-$entryUrlLabel = (string) ($entryUrlLabel ?? 'athena.ttrd.fr/connect');
+$entryUrlLabel = (string) ($entryUrlLabel ?? \App\Support\PortalHost::label('connect'));
 ?>
 <!DOCTYPE html>
 <html lang="fr">

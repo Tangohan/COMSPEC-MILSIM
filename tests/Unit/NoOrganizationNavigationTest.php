@@ -11,7 +11,7 @@ final class NoOrganizationNavigationTest extends TestCase
 {
     public function testUsefulPagesStayVisibleWithoutOrganization(): void
     {
-        foreach (['dashboard', 'forum', 'forum/sujet/12', 'communities', 'communities/create', 'join', 'personnel/me', 'account', 'account/banner'] as $path) {
+        foreach (['dashboard', 'communities', 'communities/create', 'join', 'personnel/me', 'account', 'account/banner'] as $path) {
             self::assertTrue(PortalAccessChoice::noOrganizationAllowsPath($path), $path);
         }
     }

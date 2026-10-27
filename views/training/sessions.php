@@ -61,7 +61,7 @@ $headHtml = ob_get_clean();
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                         </span>
                         <p class="text-sm font-semibold text-slate-700">Aucune session planifiée</p>
-                        <p class="text-sm text-slate-500 max-w-md">Les créneaux apparaîtront ici lorsqu’ils seront annoncés. En attendant, surveillez le forum et le tableau de bord.</p>
+                        <p class="text-sm text-slate-500 max-w-md">Les créneaux apparaîtront ici lorsqu’ils seront annoncés. En attendant, surveillez le tableau de bord.</p>
                     </div>
                 </section>
 
@@ -92,5 +92,6 @@ $headHtml = ob_get_clean();
     $lmsModuleEntryAuto = 'formation';
     require base_path('views/partials/lms_module_entry_modal.php');
     ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

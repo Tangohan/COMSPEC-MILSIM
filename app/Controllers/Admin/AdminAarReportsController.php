@@ -113,6 +113,7 @@ final class AdminAarReportsController
         }
 
         $missions = $this->presentedMissions($tenantId);
+        $missing = AarReportAdminService::missionsWithoutReport($missions, $this->reports->listForTenant($tenantId, []));
         $prefill = [];
         $missionId = (int) $request->query('mission', 0);
         foreach ($missions as $m) {
@@ -132,7 +133,7 @@ final class AdminAarReportsController
             'boPageGroup' => 'Opérations',
             'boPageTitle' => 'Nouveau compte rendu',
             'boPageKicker' => 'OPÉRATIONS · RETOURS',
-            'boPageSubtitle' => 'Formulaire standard (synthèse, points forts et faibles, actions) ou questionnaire préparé dans les modèles.',
+            'boPageSubtitle' => 'Racontez ce qui était prévu, ce qui s’est passé, ce qu’on en retient et ce qu’on fait ensuite.',
             'boPageQuick' => [
                 ['label' => '← Comptes rendus', 'href' => url(self::BASE)],
                 ['label' => 'Modèles', 'href' => url(self::BASE . '/modeles')],
@@ -140,6 +141,7 @@ final class AdminAarReportsController
             'backOfficePageCss' => ['back-office-aar.css'],
             'aarReport' => $prefill,
             'aarMissions' => $missions,
+            'aarMissing' => $missing,
             'aarTemplates' => $this->templates->listForTenant($tenantId, true),
             'csrfToken' => Csrf::token(),
         ]);
@@ -187,7 +189,7 @@ final class AdminAarReportsController
             'aarMission' => $mission,
             'aarTemplate' => $template,
             'aarCanManage' => ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'),
-            'aarMissionPdfUrl' => $missionId > 0 ? url('api/operations/aar/' . $missionId . '/export.pdf') : null,
+            'aarMissionPdfUrl' => self::missionAarPdfUrl($mission),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -225,7 +227,7 @@ final class AdminAarReportsController
             ],
             'backOfficePageCss' => ['back-office-aar.css'],
             'aarReport' => $report,
-            'aarMissions' => $this->presentedMissions($tenantId),
+            'aarMissions' => $this->missionsForEdit($tenantId, $report),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -363,7 +365,13 @@ final class AdminAarReportsController
             return Response::redirect(url(self::BASE . '/nouveau') . ($mission > 0 ? '?mission=' . $mission : ''));
         }
 
-        $saved = $this->reports->save($tenantId, null, $userId, $built['payload']);
+        try {
+            $saved = $this->reports->save($tenantId, null, $userId, $built['payload']);
+        } catch (\DomainException $e) {
+            // Cycle de mission d'une autre communauté, ou supprimé entre-temps : rien n'est enregistré (SEC-032).
+            Session::flash('error', $e->getMessage());
+            return Response::redirect(url(self::BASE . '/nouveau'));
+        }
         Session::flash('success', 'Compte rendu enregistré.');
         $id = (int) ($saved['id'] ?? 0);
 
@@ -406,7 +414,13 @@ final class AdminAarReportsController
             return Response::redirect(url('back-office/atak/comptes-rendus/' . $id . '/edit'));
         }
 
-        $this->reports->save($tenantId, $id, $userId, $built['payload']);
+        try {
+            $this->reports->save($tenantId, $id, $userId, $built['payload']);
+        } catch (\DomainException $e) {
+            // Cycle de mission d'une autre communauté, ou supprimé entre-temps : le compte rendu reste tel quel (SEC-032).
+            Session::flash('error', $e->getMessage());
+            return Response::redirect(url('back-office/atak/comptes-rendus/' . $id . '/edit'));
+        }
         Session::flash('success', 'Compte rendu mis à jour.');
 
         return Response::redirect(url('back-office/atak/comptes-rendus/' . $id));
@@ -599,6 +613,59 @@ final class AdminAarReportsController
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Missions du formulaire de modification : les 100 plus récentes de la communauté, plus la mission déjà liée quand
+     * elle est plus ancienne (DEF-039). Sans elle, la liste ne la proposait pas, le formulaire envoyait « Aucune
+     * mission » et l'enregistrement effaçait le lien sans message. Seul un cycle de la communauté est ajouté.
+     *
+     * @param array<string, mixed> $report
+     * @return list<array<string, mixed>>
+     */
+    private function missionsForEdit(int $tenantId, array $report): array
+    {
+        $missions = $this->presentedMissions($tenantId);
+        $linkedId = (int) ($report['mission_cycle_id'] ?? 0);
+        if ($linkedId < 1) {
+            return $missions;
+        }
+        foreach ($missions as $mission) {
+            if ((int) ($mission['id'] ?? 0) === $linkedId) {
+                return $missions;
+            }
+        }
+        try {
+            $row = $this->cycles->findForTenant($tenantId, $linkedId);
+        } catch (\Throwable) {
+            return $missions;
+        }
+        if (is_array($row)) {
+            $missions[] = $this->cycles->present($row);
+        }
+
+        return $missions;
+    }
+
+    /**
+     * Synthèse PDF de la mission liée : AAR de son bac de relecture (replay_mission_id) sur sa
+     * fenêtre. L’id du cycle n’est pas un missionId : /api/operations/aar le refuse (SEC-008).
+     *
+     * @param array<string, mixed>|null $mission cycle présenté (TheatreMissionCycleRepository::present)
+     */
+    public static function missionAarPdfUrl(?array $mission): ?string
+    {
+        $replayMissionId = trim((string) ($mission['replay_mission_id'] ?? ''));
+        if ($replayMissionId === '') {
+            return null;
+        }
+        $window = is_array($mission['window'] ?? null) ? $mission['window'] : [];
+        $q = http_build_query(array_filter([
+            'from' => $window['from'] ?? null,
+            'to' => $window['to'] ?? null,
+        ], static fn ($v) => $v !== null && $v !== ''));
+
+        return url('api/operations/aar/' . rawurlencode($replayMissionId) . '/export.pdf') . ($q !== '' ? '?' . $q : '');
     }
 
     /**

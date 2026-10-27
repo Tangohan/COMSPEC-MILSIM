@@ -47,10 +47,9 @@ switch (_act) do {
     case "connect": {
         private _o = _arg;
         if (isNull _o || {isNil { _o getVariable "COMSPEC_ATAK_Data" }}) exitWith { false };
-        if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { ["ERROR", "Il faut un téléphone ATAK pour extraire les données", 4, 30] call comspec_atak_native_fnc_notify; hint (("Il faut un téléphone ATAK pour extraire les données.") call comspec_atak_native_fnc_tr); false };
+        if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { ["ERROR", "Il faut un téléphone ATAK pour extraire les données", 4, 30] call comspec_atak_native_fnc_notify; false };
         if ((missionNamespace getVariable ["comspec_atak_native_data_cable", false]) && {!("COMSPEC_ATAK_DataCable" in (items player))}) exitWith {
             ["ERROR", "Câble DL-7 absent de votre équipement", 4, 30] call comspec_atak_native_fnc_notify;
-            hint (("Câble de données DL-7 absent de votre équipement.") call comspec_atak_native_fnc_tr);
             false
         };
         if ((player distance _o) > _len + 0.5) exitWith { ["WARNING", format ["Trop loin : le câble fait %1 m", _len], 3, 20] call comspec_atak_native_fnc_notify; false };
@@ -146,6 +145,8 @@ switch (_act) do {
         if (_why isEqualTo "" && {(player distance _obj) > _len + 0.5}) then { _why = "Câble arraché : vous vous êtes éloigné du support"; };
         if (_why isEqualTo "" && {!alive player || {!isNull objectParent player}}) then { _why = "Câble débranché"; };
         if (_why isEqualTo "" && {!([player] call comspec_atak_native_fnc_hasDevice)}) then { _why = "ATAK retiré : liaison perdue"; };
+        // Zeus a retiré les données (fn_dataServer "remove") : plus rien à lire ni à télécharger.
+        if (_why isEqualTo "" && {isNil { _obj getVariable "COMSPEC_ATAK_Data" }}) then { _why = "Données retirées du support"; };
         if (_why isNotEqualTo "") exitWith {
             if (_phase isEqualTo "DL") then { ["comspec_atak_native_dataSrv", ["rip", _obj, player, []]] call CBA_fnc_serverEvent; };
             [_why, "WARNING"] call _end;

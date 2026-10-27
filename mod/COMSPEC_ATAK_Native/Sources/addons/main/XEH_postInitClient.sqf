@@ -18,7 +18,8 @@ if (!isNil "ace_arsenal_fnc_addRightPanelButton") then {
         uiNamespace setVariable ["COMSPEC_ATAK_ArsenalItems", _items];
     };
     if (_items isNotEqualTo []) then {
-        [_items, "COMSPEC", "\z\comspec_atak_native\addons\main\data\arsenal_comspec.paa", "COMSPEC_Arsenal"] call ace_arsenal_fnc_addRightPanelButton;
+        // 4e paramètre d'ACE = numéro de bouton à remplacer (NOMBRE) : un texte y faisait échouer l'appel (erreur dans le RPT, pas de bouton).
+        [_items, "COMSPEC", "\z\comspec_atak_native\addons\main\data\arsenal_comspec.paa"] call ace_arsenal_fnc_addRightPanelButton;
     };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
@@ -31,7 +32,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
     [{ ([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on" }, {
         [] spawn {
             private _t0 = diag_tickTime;
-            private _athenaUrl = "https://athena.ttrd.fr/public";
+            private _athenaUrl = "https://athena-comspec.eu/public";
             private _extInit = ["COMSPECATAKNativeExtension", "Init", [_athenaUrl]] call comspec_atak_native_fnc_extAwait;
             missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
             private _restore = ["COMSPECATAKNativeExtension", "RestoreSession", [_athenaUrl, "1.0.0-native"]] call comspec_atak_native_fnc_extAwait;
@@ -79,16 +80,32 @@ addMissionEventHandler ["MarkerCreated", {
     _meta set [_m, [(([dayTime, "HH:MM:SS"] call BIS_fnc_timeToString) splitString ":") joinString "", [_owner] call comspec_atak_native_fnc_unitCallsign]];
 }];
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
+// Marqueurs « réseau ATAK uniquement » (fn_markerNet) : reçus par le réseau du téléphone, effacés partout quand on les
+// efface ici (téléphone, durée écoulée ou carte d'Arma) ; à l'arrivée, ceux de mes canaux sont redemandés au serveur,
+// avec l'heure et l'auteur des marqueurs posés avant moi.
+["comspec_atak_native_tacMk", { ["recv", _this] call comspec_atak_native_fnc_markerNet; }] call CBA_fnc_addEventHandler;
+addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call comspec_atak_native_fnc_markerNet; }];
+[{ ["comspec_atak_native_tacMkSrv", ["sync", player]] call CBA_fnc_serverEvent; }, [], 8] call CBA_fnc_waitAndExecute;
 // Compteur de changements des marqueurs (créé, supprimé, modifié) : la carte du téléphone ne relit les marqueurs de la
 // mission que lorsqu'il bouge (fn_mapGameMarkers, fn_localDataRefresh), au lieu de tout relire chaque seconde.
-{ addMissionEventHandler [_x, { COMSPEC_ATAK_MkRev = (missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]) + 1; }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
+// Noms des marqueurs changés, un carnet par lecteur (fn_mapGameMarkers, fn_localDataRefresh, fn_strokeDraw) : chacun ne
+// relit que ces marqueurs. Plus de 300 changements non lus (téléphone rangé) : clé "" = tout relire.
+{ addMissionEventHandler [_x, {
+    params ["_m"];
+    COMSPEC_ATAK_MkRev = (missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]) + 1;
+    {
+        private _h = missionNamespace getVariable [_x, createHashMap];
+        if ((count _h) < 300) then { _h set [_m, true]; } else { _h set ["", true]; };
+        missionNamespace setVariable [_x, _h];
+    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk"];
+}]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BC", "BL", "TL", "TC", "TR", "MR", "ML"];
     private _cur = _list find toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
     private _next = _list select ((_cur max 0) + 1) mod (count _list);
     profileNamespace setVariable ["COMSPEC_ATAK_MiniAnchor", _next];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     if (!isNull ([] call comspec_atak_native_fnc_display)) then {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         [_s getOrDefault ["activePage", "LAUNCHER"], false] call comspec_atak_native_fnc_navigate;
@@ -169,6 +186,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_lockAction; ["marquage suivi", _t] call comspec_atak_native_fnc_perfAcc; }, 0.5] call COMSPEC_ATAK_PfhSpread;
 // Contrôle Zeus des ATAK : effets reçus du serveur (fn_zeusClient), boucle d'une seconde, menu clic droit ZEN du Zeus.
 ["comspec_atak_native_zeusFx", { _this call comspec_atak_native_fnc_zeusClient; }] call CBA_fnc_addEventHandler;
+// App Store : apps imposées ou interdites changées par la mission ou le Zeus (fn_appInstall), ou par les réglages CBA du
+// serveur : l'app ouverte se ferme si elle devient interdite, l'écran d'accueil et le dock se redessinent.
+["comspec_atak_native_appPolicy", { ["applied"] call comspec_atak_native_fnc_appInstall; }] call CBA_fnc_addEventHandler;
+["CBA_SettingChanged", { params [["_k", ""]]; if (_k in ["comspec_atak_native_apps_required", "comspec_atak_native_apps_forbidden"]) then { ["applied"] call comspec_atak_native_fnc_appInstall; }; }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_zeusClient; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Positions BFT par points (fn_pli) : un point de position envoyé aux alliés à l'intervalle choisi (10 s en Milsim).
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
@@ -239,18 +260,17 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if (_up > _up0) then { ["SUCCESS", format ["%1 photo(s) reçue(s) par Athena", _up - _up0], 4, 30] call comspec_atak_native_fnc_notify; };
     if (_ko > _ko0) then {
         private _last = missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []];
-        // Refus de la formule (403 feature_unavailable) : une fenêtre claire, une fois par session, au lieu d'une simple notification.
+        // Refus de la formule (403 feature_unavailable) : une alerte claire DANS le téléphone (fn_fullAlert, attend la
+        // prochaine ouverture), une fois par session, au lieu d'une simple notification. Jamais de fenêtre sur l'écran de jeu.
         if (((_last param [2, ""]) find "feature_unavailable") >= 0) then {
             if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanModalShown", false]) then {
                 missionNamespace setVariable ["COMSPEC_ATAK_PlanModalShown", true];
-                [] spawn {
-                    waitUntil { uiSleep 0.5; !isNull (findDisplay 46) && {isNull (findDisplay 49)} };
-                    private _msg = format ["%1<br/><br/>%2<br/><br/>%3",
-                        "Ta photo n'a pas été envoyée à Athena." call comspec_atak_native_fnc_tr,
-                        "La formule de ta communauté n'inclut pas la carte et les liaisons Athena, donc Athena refuse les envois du jeu." call comspec_atak_native_fnc_tr,
-                        "Préviens l'administrateur de ta communauté sur Athena. Ce n'est pas un bug, inutile de le signaler." call comspec_atak_native_fnc_tr];
-                    [parseText _msg, "Carte Athena non incluse" call comspec_atak_native_fnc_tr, "OK", false, findDisplay 46] call BIS_fnc_guiMessage;
-                };
+                private _msg = format ["%1 %2 %3",
+                    "Ta photo n'a pas été envoyée à Athena." call comspec_atak_native_fnc_tr,
+                    "La formule de ta communauté n'inclut pas la carte et les liaisons Athena, donc Athena refuse les envois du jeu." call comspec_atak_native_fnc_tr,
+                    "Préviens l'administrateur de ta communauté sur Athena. Ce n'est pas un bug, inutile de le signaler." call comspec_atak_native_fnc_tr];
+                ["Carte Athena non incluse" call comspec_atak_native_fnc_tr, _msg, "Athena", [0.55, 0.36, 0.06, 0.94], 30] call comspec_atak_native_fnc_fullAlert;
+                ["WARNING", "Ta photo n'a pas été envoyée à Athena.", 6, 40] call comspec_atak_native_fnc_notify;
             };
         } else {
             ["WARNING", format ["Photo refusée par Athena : %1", _last param [1, "voir l'app Galerie"]], 6, 40] call comspec_atak_native_fnc_notify;
@@ -284,7 +304,19 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
         ([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1],
         ([] call comspec_atak_native_fnc_deviceHealth) get "state"
     ];
-    if ((player getVariable ["COMSPEC_ATAK_Pub", []]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Pub", _pub, true]; };
+    // Une barre de plus ou de moins seulement (évanouissement près d'un seuil) : diffusée si elle tient deux tours de suite
+    // (comme fn_feedLink) ; batterie, état ou perte du signal : tout de suite.
+    private _pubOld = player getVariable ["COMSPEC_ATAK_Pub", []];
+    if (_pubOld isEqualTo _pub) then { uiNamespace setVariable ["COMSPEC_ATAK_PubPend", []]; } else {
+        private _soft = (count _pubOld) isEqualTo 3 && {(_pubOld select 0) isEqualTo (_pub select 0)} && {(_pubOld select 2) isEqualTo (_pub select 2)}
+            && {(_pubOld select 1) > 0} && {(_pub select 1) > 0} && {(abs ((_pubOld select 1) - (_pub select 1))) isEqualTo 1};
+        if (_soft && {_pub isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_PubPend", []])}) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_PubPend", _pub];
+        } else {
+            uiNamespace setVariable ["COMSPEC_ATAK_PubPend", []];
+            player setVariable ["COMSPEC_ATAK_Pub", _pub, true];
+        };
+    };
     // Batterie vide : carte SIM en mode secours, encore localisable par les relais (fn_simSos).
     ["publish"] call comspec_atak_native_fnc_simSos;
     // Étiquette du téléphone (numéro, IMEI, terminal Athena) : lue par le serveur si l'IA ennemie le ramasse (fn_captureServer).
@@ -374,7 +406,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _m = createMarkerLocal [format ["COMSPEC_PANIC_%1_%2", _who, round diag_tickTime], _pos];
     _m setMarkerTypeLocal "mil_warning";
     _m setMarkerColorLocal "ColorRed";
-    _m setMarkerTextLocal format ["PANIQUE %1", _who];
+    _m setMarkerTextLocal format [("PANIQUE %1" call comspec_atak_native_fnc_tr), _who];
     [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
     ["PANIC", _who, _pos, _grid, "En détresse"] call comspec_atak_native_fnc_alertsLog;
 }] call CBA_fnc_addEventHandler;
@@ -392,9 +424,19 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _m = createMarkerLocal [format ["COMSPEC_ALERT_%1_%2", _type, round (diag_tickTime * 10)], _pos];
     _m setMarkerTypeLocal (createHashMapFromArray [["TIC", "mil_warning"], ["TIC_CLEAR", "mil_flag"], ["EAGLE_DOWN", "mil_destroy"]] getOrDefault [_type, "mil_unknown"]);
     _m setMarkerColorLocal (createHashMapFromArray [["TIC", "ColorOrange"], ["TIC_CLEAR", "ColorGreen"], ["EAGLE_DOWN", "ColorRed"]] getOrDefault [_type, "ColorYellow"]);
-    _m setMarkerTextLocal format ["%1 %2", _label, _who];
+    _m setMarkerTextLocal format ["%1 %2", _label call comspec_atak_native_fnc_tr, _who];
     [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
     [_type, _who, _pos, _grid, _text] call comspec_atak_native_fnc_alertsLog;
+}] call CBA_fnc_addEventHandler;
+
+// Mode local et poste TOC : messages d'un PC de TOC (fn_tocAction) et ordres émis sans Athena (fn_orderLocal).
+["comspec_atak_native_tocMsg", {
+    if (["hold", ["comspec_atak_native_tocMsg", _this]] call comspec_atak_native_fnc_offline) exitWith {};
+    ["recv", _this] call comspec_atak_native_fnc_tocAction;
+}] call CBA_fnc_addEventHandler;
+["comspec_atak_native_localOrder", {
+    if (["hold", ["comspec_atak_native_localOrder", _this]] call comspec_atak_native_fnc_offline) exitWith {};
+    ["recv", _this] call comspec_atak_native_fnc_orderLocal;
 }] call CBA_fnc_addEventHandler;
 
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
@@ -410,6 +452,14 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 [] call comspec_atak_native_fnc_aceMenu;
 // Socle de recharge CS-10 (fn_dockMenu) : poser, reprendre, état, replier, poser le kit.
 [] call comspec_atak_native_fnc_dockMenu;
+// PC portable de TOC (fn_tocPost) : action ACE / molette, poste le plus proche cherché chaque seconde.
+["menu"] call comspec_atak_native_fnc_tocPost;
+[{ ["tick"] call comspec_atak_native_fnc_tocPost; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Configuration locale (config.json, fn_localCfg) : mes numéros publiés aux autres joueurs, aussi après une réapparition
+// ou un changement du service Athéna.
+[{ !isNull player }, { ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_waitUntilAndExecute;
+player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }, [], 1] call CBA_fnc_waitAndExecute; }];
+["COMSPEC_AthenaModeChanged", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_execNextFrame; }] call CBA_fnc_addEventHandler;
 // Téléphone visible sur le gilet (fn_vestMount), téléphone extractible en cas de capture (fn_phoneSecurity).
 [{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_phoneSecurity; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Terminal de bord (tablette du véhicule, PC mobile) gagné ou perdu : coque redessinée, message à l'arrivée.
@@ -418,6 +468,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if (_k isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_TermKind", ""])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_TermKind", _k];
     if (_k in ["vehicle", "cp"] && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { ["INFO", ["Tablette du véhicule disponible (ATAK)", "Terminal du poste de commandement disponible"] select (_k isEqualTo "cp"), 4, 20] call comspec_atak_native_fnc_notify; };
+    if (_k isEqualTo "toc") then { ["INFO", format ["Poste TOC %1 : app Poste TOC disponible", ["callsign"] call comspec_atak_native_fnc_tocPost], 4, 20, "TOC"] call comspec_atak_native_fnc_notify; };
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
 }, 2] call COMSPEC_ATAK_PfhSpread;
 // Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).
@@ -426,7 +477,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {
         if (isNil "ace_common_fnc_progressBar") exitWith { [] call comspec_atak_native_fnc_batterySwap; };
-        [5, [], { [] call comspec_atak_native_fnc_batterySwap; }, {}, "Changement de la batterie…"] call ace_common_fnc_progressBar;
+        [5, [], { [] call comspec_atak_native_fnc_batterySwap; }, {}, ("Changement de la batterie…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
     }, {
         [player] call comspec_atak_native_fnc_hasDevice && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) < 95}
         && {([player] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ""}
@@ -434,8 +485,15 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _act, true] call ace_interact_menu_fnc_addActionToClass;
 } else {
     // Sans ACE : action de la molette (visible seulement avec une batterie de rechange et le téléphone sous 95 %).
-    player addAction ["<t color='#7fd0b0'>Changer la batterie ATAK</t>", { [] call comspec_atak_native_fnc_batterySwap; }, nil, 1, false, true, "",
-        "_this isEqualTo _target && {[_this] call comspec_atak_native_fnc_hasDevice} && {(missionNamespace getVariable ['COMSPEC_ATAK_Battery', 100]) < 95} && {([_this] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ''}"];
+    // Les actions ne suivent pas le joueur à la réapparition : remise sur la nouvelle unité.
+    private _add = {
+        params ["_u"];
+        _u addAction [format ["<t color='#7fd0b0'>%1</t>", "Changer la batterie ATAK" call comspec_atak_native_fnc_tr], { [] call comspec_atak_native_fnc_batterySwap; }, nil, 1, false, true, "",
+            "_this isEqualTo _target && {[_this] call comspec_atak_native_fnc_hasDevice} && {(missionNamespace getVariable ['COMSPEC_ATAK_Battery', 100]) < 95} && {([_this] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ''}"];
+    };
+    missionNamespace setVariable ["COMSPEC_ATAK_BatterySwapAction", _add];
+    [player] call _add;
+    player addEventHandler ["Respawn", { params ["_u"]; [_u] call (missionNamespace getVariable ["COMSPEC_ATAK_BatterySwapAction", {}]); }];
 };
 
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
@@ -463,6 +521,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         if ((([] call comspec_atak_native_fnc_briefingSignature) select 0) isEqualTo "ATHENA") then { [] spawn { [] call comspec_overwatch_connect_fnc_getBriefingSlides; }; };
     };
     private _sig = (([] call comspec_atak_native_fnc_briefingSignature) select [0, 4]) + [["get"] call comspec_atak_native_fnc_briefingLive, count (["attendees"] call comspec_atak_native_fnc_briefingLive)];
+    // Présentations FENRIR à portée (onglet ÉCRANS) : nouvelle révision = redessin.
+    _sig pushBack (["sig"] call comspec_atak_native_fnc_fenrir);
     if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefSig", []])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
@@ -479,6 +539,10 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 
 // Briefing présenté en direct : suivre le présentateur de mon camp, signaler ma présence.
 [{ ["tick"] call comspec_atak_native_fnc_briefingLive; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Écrans COMSPEC proches : diapositive diffusée affichée sur l'objet, actions ACE ou molette (fn_screenCast).
+[{ ["tick"] call comspec_atak_native_fnc_screenCast; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Écrans TOC proches : réseau ATAK du camp affiché sur l'objet (texture UI), actions ACE ou molette (fn_tocScreen).
+[{ ["tick"] call comspec_atak_native_fnc_tocScreen; }, 1] call COMSPEC_ATAK_PfhSpread;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
 [{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call COMSPEC_ATAK_PfhSpread;
@@ -588,7 +652,9 @@ addMissionEventHandler ["EntityKilled", {
     private _lead = leader group _unit;
     private _mine = _unit isEqualTo player
         || {!isPlayer _unit && {_lead isEqualTo player || {!isPlayer _lead && {(player distance2D _unit) < 300}}}};
-    if (_mine && {[] call comspec_atak_native_fnc_bridge} && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])}) then {
+    // Données remontées choisies par la communauté (Athena, COMSPEC_DataFlows tenu par COMSPEC Link) : pertes non envoyées.
+    if (_mine && {[] call comspec_atak_native_fnc_bridge} && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])}
+        && {(missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["combat", true]}) then {
         private _cs = [_unit] call comspec_atak_native_fnc_unitCallsign;
         private _pay = createHashMapFromArray [
             ["t", "combat"], ["kind", "kia"], ["victim", [_cs, name _unit] select (_cs isEqualTo "")], ["name", name _unit],
@@ -604,6 +670,9 @@ addMissionEventHandler ["EntityKilled", {
 // Hors connexion (fn_offline) : données figées, réceptions retenues, synchro et bilan au retour, sauvegarde du profil.
 [{
     ["tick"] call comspec_atak_native_fnc_offline;
+    ["flush"] call comspec_atak_native_fnc_markerNet;
+    // Échéance unique d'écriture du profil (fn_profileSave : sauvegardes périodiques regroupées).
+    ["tick"] call comspec_atak_native_fnc_profileSave;
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
     if ((count _inbox) > 0 && {[] call comspec_atak_native_fnc_p2pReachable}) then {
         missionNamespace setVariable ["COMSPEC_ATAK_P2pInbox", []];
@@ -684,7 +753,8 @@ player addEventHandler ["Explosion", {
     ["blast", [_d, _dist]] call comspec_atak_native_fnc_deviceImpact;
     ["blast", _d] call comspec_atak_native_fnc_screenDirt;
 }];
-player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; }];
+// Réapparition : téléphone neuf (charge de départ du serveur comme fn_battery, données effacées oubliées) et plus de batterie externe fixée.
+player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; missionNamespace setVariable ["COMSPEC_ATAK_PowerBankOn", false]; missionNamespace setVariable ["COMSPEC_ATAK_PowerBankCharge", 100]; (_this select 0) setVariable ["COMSPEC_ATAK_PowerBank", false, true]; ["resync"] call comspec_atak_native_fnc_phoneSecurity; }];
 // Eau : téléphone étanche quelques dizaines de secondes ; ensuite l'eau s'infiltre (haut-parleur, batterie, extinction…),
 // détruit seulement après une longue immersion. Dans le sac, l'eau entre deux fois moins vite. L'eau lave aussi l'écran.
 [{
@@ -729,7 +799,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         private _go = { params ["_t"]; [_t, "measure"] call comspec_atak_native_fnc_medVitals;
             ["SUCCESS", format ["Tension et SpO2 mesurées : %1", [_t, true] call comspec_atak_native_fnc_unitCallsign], 4, 30] call comspec_atak_native_fnc_notify; };
         if (isNil "ace_common_fnc_progressBar") exitWith { [_target] call _go; };
-        [8, [_target, _go], { (_this select 0) params ["_t", "_go"]; [_t] call _go; }, {}, "Brassard et oxymètre…",
+        [8, [_target, _go], { (_this select 0) params ["_t", "_go"]; [_t] call _go; }, {}, ("Brassard et oxymètre…" call comspec_atak_native_fnc_tr),
             { (_this select 0) params ["_t"]; alive _t && {(player distance _t) < 3} }] call ace_common_fnc_progressBar;
         player playActionNow "Medic";
     };
@@ -775,7 +845,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _con = ["COMSPEC_ATAK_DronePair", "Connecter l'ATAK au drone", "", {
         params ["_t"];
         if (isNil "ace_common_fnc_progressBar") exitWith { ["pair", _t] call comspec_atak_native_fnc_droneAction; };
-        [4, [_t], { ["pair", (_this select 0) select 0] call comspec_atak_native_fnc_droneAction; }, {}, "Appairage du drone…"] call ace_common_fnc_progressBar;
+        [4, [_t], { ["pair", (_this select 0) select 0] call comspec_atak_native_fnc_droneAction; }, {}, ("Appairage du drone…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
     }, { [_target] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneCan", { false }]) }] call comspec_atak_native_fnc_aceAction;
     ["Air", 0, ["ACE_MainActions"], _con, true] call ace_interact_menu_fnc_addActionToClass;
     private _dis = ["COMSPEC_ATAK_DroneUnpair", "Déconnecter l'ATAK du drone", "", { ["unpair"] call comspec_atak_native_fnc_droneAction; },
@@ -788,9 +858,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     {
         if (unitIsUAV _x && {!(_x getVariable ["COMSPEC_ATAK_DroneActs", false])}) then {
             _x setVariable ["COMSPEC_ATAK_DroneActs", true];
-            _x addAction ["<t color='#7fd0b0'>Connecter l'ATAK au drone</t>", { ["pair", _this select 0] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
+            _x addAction [format ["<t color='#7fd0b0'>%1</t>", "Connecter l'ATAK au drone" call comspec_atak_native_fnc_tr], { ["pair", _this select 0] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
                 "[_target] call (missionNamespace getVariable ['COMSPEC_ATAK_DroneCan', { false }])", 4];
-            _x addAction ["<t color='#e0a050'>Déconnecter l'ATAK du drone</t>", { ["unpair"] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
+            _x addAction [format ["<t color='#e0a050'>%1</t>", "Déconnecter l'ATAK du drone" call comspec_atak_native_fnc_tr], { ["unpair"] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
                 "[_target] call (missionNamespace getVariable ['COMSPEC_ATAK_DroneIsMine', { false }])", 4];
         };
     } forEach (player nearEntities [["Air", "LandVehicle"], 15]);
@@ -821,13 +891,57 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Montre Garmin : pas, fréquence cardiaque, stress, Body Battery, sommeil et activités, gardés dans le profil du joueur.
 [{ ["tick"] call comspec_atak_native_fnc_garminTick; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Montre Garmin au poignet (fn_watch) : la touche « Montre » du jeu (O) l'allume à la place de la montre d'Arma quand le
+// joueur la porte ; appui court : écran suivant, appui long : éteinte. Sans montre Garmin, la touche garde son effet.
+[{ !isNull (findDisplay 46) }, {
+    (findDisplay 46) displayAddEventHandler ["KeyDown", {
+        params ["", "_key", "_shift", "_ctrl", "_alt"];
+        if (_shift || {_ctrl} || {_alt} || {!(_key in (actionKeys "Watch"))}) exitWith { false };
+        ["down"] call comspec_atak_native_fnc_watch
+    }];
+    (findDisplay 46) displayAddEventHandler ["KeyUp", {
+        params ["", "_key"];
+        if !(_key in (actionKeys "Watch")) exitWith { false };
+        ["up"] call comspec_atak_native_fnc_watch
+    }];
+}] call CBA_fnc_waitUntilAndExecute;
+// Boutons de la montre et actions directes (touches CBA, modifiables aussi dans Réglages > Accès et touches du téléphone ;
+// fn_keybinds). Chaque touche n'est prise que si le joueur porte la montre Garmin (sinon elle garde son effet).
+{
+    _x params ["_id", "_title", "_help", "_down", "_up", "_def"];
+    ["COMSPEC ATAK", _id, [_title, _help], _down, _up, _def, false] call CBA_fnc_addKeybind;
+} forEach [
+    ["GarminLight", "Montre Garmin : LIGHT", "Appui court : luminosité. Appui long : menu des commandes (vue agrandie, mode nuit, ne pas déranger, point, téléphone).", { ["lightDown"] call comspec_atak_native_fnc_watch }, { ["lightUp"] call comspec_atak_native_fnc_watch }, [0x18, [false, true, true]]],
+    ["GarminPrev", "Montre Garmin : UP (écran précédent)", "Écran précédent ; dans un menu : remonter ; minuteur en réglage : +1 min. Musique, commandes ouvertes : piste précédente, retour de 15 s ou volume.", { ["prev"] call comspec_atak_native_fnc_watch }, {}, [0x18, [false, true, false]]],
+    ["GarminNext", "Montre Garmin : DOWN (écran suivant)", "Écran suivant ; dans un menu : descendre ; minuteur en réglage : -1 min. La touche Montre du jeu (O) fait la même chose. Musique, commandes ouvertes : piste suivante, avance de 15 s ou volume.", { ["next"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminStart", "Montre Garmin : START·STOP", "Action de l'écran : chrono, minuteur, marquer la position, zoom de la carte, étalonner l'altimètre, faire sonner le téléphone, lecture ou pause de la musique ; dans un menu : valider.", { ["start"] call comspec_atak_native_fnc_watch }, {}, [0x18, [true, false, false]]],
+    ["GarminBack", "Montre Garmin : BACK·LAP", "Retour au cadran, tour du chrono, remise à zéro ; dans un menu : fermer ; sur le cadran : éteindre. Musique : ouvre les commandes (piste, avance, volume), puis les referme.", { ["back"] call comspec_atak_native_fnc_watch }, {}, [0x18, [false, false, true]]],
+    ["GarminBig", "Montre Garmin : vue agrandie", "Affiche la montre en grand au milieu de l'écran, ou la remet au poignet.", { ["big"] call comspec_atak_native_fnc_watch }, {}, [0x18, [true, true, false]]],
+    ["GarminToggle", "Montre Garmin : allumer / éteindre", "Allume la montre sur le cadran, ou l'éteint.", { ["toggle"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminClose", "Montre Garmin : éteindre", "Éteint la montre Garmin (sinon : appui long sur la touche Montre du jeu, O).", { ["close"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminMenu", "Montre Garmin : menu des commandes", "Ouvre ou ferme le menu des commandes (comme l'appui long sur LIGHT).", { ["menu"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminChrono", "Montre Garmin : chrono départ / arrêt", "Lance ou arrête le chronomètre, montre allumée sur le chrono.", { ["chrono"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminLap", "Montre Garmin : tour du chrono", "Enregistre un tour, chrono lancé.", { ["lap"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminTimer", "Montre Garmin : minuteur", "Règle puis lance le minuteur, le met en pause ou le reprend.", { ["timer"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminMark", "Montre Garmin : marquer ma position", "Garde ma position GPS : la boussole et la carte de la montre montrent ensuite sa direction et sa distance.", { ["mark"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminNight", "Montre Garmin : mode nuit", "Écran de la montre en rouge, pour garder la vision de nuit.", { ["night"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminDnd", "Montre Garmin : ne pas déranger", "Plus de bandeau ni de vibration à l'arrivée des notifications du téléphone.", { ["dnd"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminFind", "Montre Garmin : trouver mon téléphone", "Fait sonner et vibrer le téléphone ATAK relié en Bluetooth.", { ["find"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminHHour", "Montre Garmin : heure H au groupe", "Chef de groupe : lance (ou annule) un compte à rebours de la durée du minuteur sur les montres de tout le groupe, qui vibrent ensemble au top.", { ["hhour"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminJump", "Montre Garmin : Jumpmaster", "Écran de saut (HALO / HAHO) : règle l'altitude d'ouverture et arme les alertes, ou les désarme.", { ["jump"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
+    ["GarminStealth", "Montre Garmin : mode furtif", "Coupe le Bluetooth de la montre et met l'écran au minimum.", { ["stealth"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]]
+];
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;
-addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; }];
+// Distances et heures de vol : relais du joueur quand le serveur n'arrive pas à envoyer à Athena (COMSPEC_ATAK_SrvPlayOK faux).
+[{ ["self"] call comspec_atak_native_fnc_distanceServer; }, 3] call COMSPEC_ATAK_PfhSpread;
+addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; ["flush"] call comspec_atak_native_fnc_profileSave; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
 ["init"] call comspec_atak_native_fnc_ftRoleSync;
+// Indicatif choisi dans C2 / Groupe (profil, hors ligne) publié aux autres joueurs (fn_callsignAction).
+["init"] call comspec_atak_native_fnc_callsignAction;
 
 // Serveur de la communauté : avertit le joueur relié à Athena qui joue ailleurs (vérifié dès que la liaison est prête,
 // puis toutes les 10 min).
@@ -835,6 +949,25 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 [{ ["check"] call comspec_atak_native_fnc_serverPresence; }, [], 20] call CBA_fnc_waitAndExecute;
 // Avis de l'administration ATHENA (compromission, annulation, données réinitialisées, certificat, message imposé).
 [{ ["check"] call comspec_atak_native_fnc_adminNotices; }, 30] call COMSPEC_ATAK_PfhSpread;
+// CR de fin d'opération imposé (fn_debrief) : demandes du jeu, suivi du commandement, fiche ramenée toutes les 2 min tant
+// qu'elle n'est pas remise ; à l'arrivée en cours de partie, le serveur renvoie les demandes qui visent le joueur.
+["comspec_atak_native_debriefRecv", { ["recv", _this select 0] call comspec_atak_native_fnc_debrief; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_debriefData", {
+    params [["_kind", ""], ["_data", []]];
+    switch (_kind) do {
+        case "track": { ["track", _data] call comspec_atak_native_fnc_debrief; };
+        case "forced": { ["forced", _data] call comspec_atak_native_fnc_debrief; };
+        case "lift": { ["lift", _data] call comspec_atak_native_fnc_debrief; };
+        case "none": { ["Aucun joueur visé.", 3] call comspec_atak_native_fnc_toast; };
+        case "denied": { ["Vous ne pouvez pas imposer le CR.", 3] call comspec_atak_native_fnc_toast; };
+    };
+}] call CBA_fnc_addEventHandler;
+[{ ["tick"] call comspec_atak_native_fnc_debrief; }, 30] call COMSPEC_ATAK_PfhSpread;
+[{ if (!isNull player) then { ["comspec_atak_native_debrief", [player, "hello", []]] call CBA_fnc_serverEvent; }; }, [], 15] call CBA_fnc_waitAndExecute;
+// App Admin : droit de gestion lu sur Athena (le lanceur ne la montre qu'à qui y a droit), 90 s après l'arrivée puis
+// toutes les 15 min. Une seule petite requête, rien si le service Athena est coupé.
+[{ ["probe"] call comspec_atak_native_fnc_adminClient; }, 900] call COMSPEC_ATAK_PfhSpread;
+[{ ["probe"] call comspec_atak_native_fnc_adminClient; }, [], 90] call CBA_fnc_waitAndExecute;
 
 // Tinder : un joueur m'a liké (match si c'est réciproque).
 ["comspec_atak_native_rencard", {
@@ -858,6 +991,10 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
     };
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;
+
+// Tinder · chasse aux HVT : tuyaux des informateurs et JACKPOT (toutes les 60 s), tuyaux partagés par un équipier.
+[{ ["tick"] call comspec_atak_native_fnc_hvtIntel; }, 60] call COMSPEC_ATAK_PfhSpread;
+["comspec_atak_native_hvtTip", { ["recv", _this] call comspec_atak_native_fnc_hvtIntel; }] call CBA_fnc_addEventHandler;
 
 // Logistique : demandes et statuts du camp ; guerre électronique : brouilleurs partagés.
 ["comspec_atak_native_logi", { if (["hold", ["comspec_atak_native_logi", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_logisticsAction; }] call CBA_fnc_addEventHandler;
@@ -899,12 +1036,22 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 ["comspec_atak_native_syncData", {
     params [["_log", []], ["_route", []]];
     missionNamespace setVariable ["COMSPEC_ATAK_Replaying", true];
-    { _x params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; } forEach _log;
-    if ((count _route) >= 2 && {(count (_route select 0)) > 0} && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
-        ["receive", [_route select 0, _route select 1, false]] call comspec_atak_native_fnc_wpAction;
+    // Rejoué par paquets de 10 par image (jusqu'à plusieurs centaines d'événements : pas de saccade à l'arrivée) ;
+    // itinéraire et fin du rejeu après le dernier paquet.
+    private _step = {
+        params ["_log", "_route", "_i", "_step"];
+        missionNamespace setVariable ["COMSPEC_ATAK_Replaying", true];
+        private _n = count _log;
+        private _end = (_i + 10) min _n;
+        for "_k" from _i to (_end - 1) do { (_log select _k) params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; };
+        if (_end < _n) exitWith { [_step, [_log, _route, _end, _step]] call CBA_fnc_execNextFrame; };
+        if ((count _route) >= 2 && {(count (_route select 0)) > 0} && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
+            ["receive", [_route select 0, _route select 1, false]] call comspec_atak_native_fnc_wpAction;
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_Replaying", false];
+        ["INFO", "SYNC", format ["Synchro serveur : %1 événement(s) rejoué(s)", _n]] call comspec_atak_native_fnc_log;
     };
-    missionNamespace setVariable ["COMSPEC_ATAK_Replaying", false];
-    ["INFO", "SYNC", format ["Synchro serveur : %1 événement(s) rejoué(s)", count _log]] call comspec_atak_native_fnc_log;
+    [_log, _route, 0, _step] call _step;
 }] call CBA_fnc_addEventHandler;
 [{ ["comspec_atak_native_syncReq", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 [{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call COMSPEC_ATAK_PfhSpread;
@@ -938,6 +1085,20 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 // Fond PHOTO d'Athena (sans le mod @COMSPEC_ATAK_Photo) : meta demandée à la DLL une fois la liaison faite, pour que
 // PHOTO soit proposé dès la première ouverture de la carte.
 [{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 15] call CBA_fnc_waitAndExecute;
+// Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
+{
+    addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+} forEach ["Ended", "MPEnded"];
+// Relais des distances : fin de mission côté serveur seulement (MPEnded), sinon perdu jusqu'à 10 min de compteurs.
+addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; }];
+// Quitter la partie (Échap > Quitter) ne déclenche pas Ended : l'écran de jeu qui se ferme vide aussi l'écriture
+// (profil et relais des distances, l'équivalent du départ d'un joueur côté serveur).
+[{ !isNull (findDisplay 46) }, {
+    (findDisplay 46) displayAddEventHandler ["Unload", {
+        ["selfFlush"] call comspec_atak_native_fnc_distanceServer;
+        if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; };
+    }];
+}] call CBA_fnc_waitUntilAndExecute;
 // Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
 // (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
 [{ time > 0 && {!isNull (findDisplay 46)} }, {
@@ -957,6 +1118,23 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
     }, 0] call COMSPEC_ATAK_PfhSpread;
     // Bilan des boucles du téléphone (drone, marquage, carte, pages) et des images lentes, toutes les 30 s.
     [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread;
+}] call CBA_fnc_waitUntilAndExecute;
+// Canaux de la messagerie : liste complète d'Athena (canaux web compris) relue dès la liaison prête, sans attendre la
+// première ouverture de Messages (qui n'affichait d'abord que les canaux par défaut, les autres 20 s plus tard).
+// Nouvel essai toutes les 3 s tant qu'Athena n'a rien rendu, puis relecture toutes les 60 s.
+[{ (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} }, {
+    [] spawn {
+        private _ok = false;
+        for "_i" from 1 to 40 do {
+            if ([] call comspec_overwatch_connect_fnc_pollChatChannels) exitWith { _ok = true; };
+            sleep 3;
+        };
+        diag_log format ["[COMSPEC ATAK NATIVE][CHAT] Canaux Athena : %1", [count (missionNamespace getVariable ["COMSPEC_Comms_Channels", []]), "non reçus"] select !_ok];
+        uiNamespace setVariable ["COMSPEC_ATAK_ChatChannelsAt", diag_tickTime];
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then {
+            [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
+    };
 }] call CBA_fnc_waitUntilAndExecute;
 // Arsenal ACE ouvert : repère dans le journal (l'ouverture elle-même apparaît en « Image figée … arsenal ouvert »).
 // Touches COMSPEC traduites une fois toutes déclarées (ATAK natif ici, Overwatch et SSE dans leurs propres init) :

@@ -15,7 +15,7 @@ private _cur = uiNamespace getVariable ["COMSPEC_ATAK_BuzzAlert", []];
 switch (_act) do {
     case "show": {
         _arg params [["_from", "?"], ["_grid", ""], ["_txt", ""], ["_pos", []], ["_src", objNull]];
-        uiNamespace setVariable ["COMSPEC_ATAK_BuzzAlert", [_from, _grid, _txt, _pos, _src, diag_tickTime, [dayTime, "HH:MM"] call BIS_fnc_timeToString]];
+        uiNamespace setVariable ["COMSPEC_ATAK_BuzzAlert", [_from, _grid, _txt, _pos, _src, diag_tickTime, (["now"] call comspec_atak_native_fnc_clockFmt)]];
         ["draw"] call comspec_atak_native_fnc_buzzAlert;
     };
     case "close": { uiNamespace setVariable ["COMSPEC_ATAK_BuzzAlert", []]; call _clear; };
@@ -38,6 +38,10 @@ switch (_act) do {
         if ((diag_tickTime - _at) > 120) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_BuzzAlert", []]; };
         private _d = [] call comspec_atak_native_fnc_display;
         if (isNull _d) exitWith {};
+        // Écran éteint ou détruit, animation d'alimentation, verrou à distance du Zeus : l'alerte attend (comme fn_fullAlert).
+        if ((([] call comspec_atak_native_fnc_deviceHealth) getOrDefault ["state", "OK"]) in ["OFF", "BROKEN"]) exitWith {};
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) > diag_tickTime) exitWith {};
+        if ((["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo "") exitWith {};
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         (_l get "body") params ["_bx", "_by", "_bw", "_bh"];
         private _pad = _l get "pad";
@@ -57,9 +61,15 @@ switch (_act) do {
         _band ctrlSetBackgroundColor [0.95, 0.55, 0.12, 1];
         private _t = _d ctrlCreate ["COMSPEC_RscStructuredText", -1];
         _t ctrlSetPosition [_ax + _pad, _y + _pad * 0.6, _w - _pad * 2, _h - _font * 1.9];
-        private _esc = { params ["_s"]; [[_s, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
+        // Texte d'un autre joueur : &, < et > échappés (entités déjà échappées gardées), comme fn_fullAlert.
+        private _esc = {
+            params ["_s"];
+            _s = [str _s, _s] select (_s isEqualType "");
+            _s = _s regexReplace ["&(?!(amp|lt|gt|quot|apos|#[0-9]+);)", "&amp;"];
+            [[_s, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace
+        };
         _t ctrlSetStructuredText parseText ((format ["<t size='1.2' font='COMSPEC_BarlowBold' color='#1a0f05'>VIBREUR · %1</t><br/><br/><t size='1.5' font='COMSPEC_BarlowBold' color='#ffffff'>%2</t><br/><t size='0.85' color='#f2c18a'>%3 · grille %4%5</t>",
-            [_from] call _esc, [[_txt] call _esc, "Il vous appelle"] select (_txt isEqualTo ""), _hh, _grid, ["", format [" · %1 m", _dist]] select (_dist >= 0)]) call comspec_atak_native_fnc_tr);
+            [_from] call _esc, [[_txt] call _esc, "Il vous appelle"] select (_txt isEqualTo ""), _hh, [_grid] call _esc, ["", format [" · %1 m", _dist]] select (_dist >= 0)]) call comspec_atak_native_fnc_tr);
         private _ctrls = [_bg, _band, _t];
         private _bw3 = (_w - _pad * 4) / 3;
         {
@@ -74,6 +84,8 @@ switch (_act) do {
         } forEach [["VU", "ack", "COMSPEC_RscButtonPrimary"], ["CARTE", "map", "COMSPEC_RscButton"], ["FERMER", "close", "COMSPEC_RscButton"]];
         { _x ctrlCommit 0; } forEach _ctrls;
         uiNamespace setVariable ["COMSPEC_ATAK_BuzzCtrls", _ctrls];
+        // Bandeau sous les bris d'écran et les effets, comme les notifications (fn_overlayRaise, à l'image suivante).
+        [] call comspec_atak_native_fnc_overlayRaise;
         // Clignotement du bandeau les premières secondes (animé par le moteur, sans boucle par image).
         if ((diag_tickTime - _at) < 6) then {
             {

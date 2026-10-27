@@ -21,6 +21,8 @@ if (_this isEqualTo ["draw"]) exitWith {
     private _d = [] call comspec_atak_native_fnc_display;
     if (isNull _d) exitWith { false };
     if ((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"]) exitWith { false };
+    // Verrou à distance du Zeus (écran rouge, clics bloqués) : l'alerte attend, comme téléphone rangé.
+    if ((["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo "") exitWith { false };
     if (_shown < 0) then {
         _shown = diag_tickTime;
         _cur set [7, _shown];
@@ -60,12 +62,23 @@ if (_this isEqualTo ["draw"]) exitWith {
     _bar ctrlSetPosition [_ax, _y, 0, _pad * 0.5];
     _bar ctrlCommit _left;
     uiNamespace setVariable ["COMSPEC_ATAK_FullAlertCtrls", _ctrls];
+    // Bandeau sous les bris d'écran et les effets (fn_overlayRaise, à l'image suivante).
+    [] call comspec_atak_native_fnc_overlayRaise;
     true
 };
 params [["_title", "ALERTE"], ["_msg", ""], ["_from", ""], ["_rgba", [0.55, 0.08, 0.06, 0.92]], ["_dur", 10]];
 if (!hasInterface) exitWith { false };
 // Événements rejoués par la synchro serveur (arrivée en cours de partie) : pas d'alerte.
 if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith { false };
-uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, [dayTime, "HH:MM"] call BIS_fnc_timeToString, -1]];
+// Texte brut (poste Athena, administration) : &, < et > échappés pour le texte structuré ; entités déjà échappées gardées.
+private _esc = {
+    private _s = [str _this, _this] select (_this isEqualType "");
+    _s = _s regexReplace ["&(?!(amp|lt|gt|quot|apos|#[0-9]+);)", "&amp;"];
+    [[_s, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace
+};
+_title = _title call _esc;
+_msg = _msg call _esc;
+_from = _from call _esc;
+uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, (["now"] call comspec_atak_native_fnc_clockFmt), -1]];
 ["draw"] call comspec_atak_native_fnc_fullAlert;
 true

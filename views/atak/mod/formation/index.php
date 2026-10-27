@@ -104,7 +104,7 @@ $modules = [
             </p>
             <div class="ow-mod-docs__hero-links">
                 <a href="<?= htmlspecialchars($atakGuideUrl, ENT_QUOTES, 'UTF-8') ?>">Guide complet</a>
-                <a href="<?= htmlspecialchars($atakModUrl, ENT_QUOTES, 'UTF-8') ?>">Télécharger le pack</a>
+                <a href="<?= htmlspecialchars($atakModUrl, ENT_QUOTES, 'UTF-8') ?>">Installer le mod (Steam)</a>
                 <a href="<?= htmlspecialchars($atakSetupUrl, ENT_QUOTES, 'UTF-8') ?>">Installation pas à pas</a>
             </div>
             <div class="ow-formation__progress" aria-live="polite">

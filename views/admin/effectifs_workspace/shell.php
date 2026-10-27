@@ -27,6 +27,12 @@ $tabs = [
     ['departures', 'Anciens membres', 'departs', 0],
     ['rh_settings', 'Réglages', 'reglages', 0],
 ];
+// Profils simplifiés : retirer les onglets sans usage (même liste que le menu latéral).
+$effTenantType = function_exists('navigation_current_tenant_type') ? navigation_current_tenant_type() : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
+$effRosterOnly = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts($effTenantType);
+$tabs = array_values(array_filter($tabs, static function (array $tab) use ($effTenantType): bool {
+    return $tab[2] === '' || !\App\Services\Community\TenantTypeConfig::backOfficePathHidden($effTenantType, effectifs_workspace_path() . '/' . $tab[2]);
+}));
 // Onglets rangés sous « Plus » : utiles mais moins fréquents. L’onglet actif reste toujours visible.
 $moreTabs = ['roles', 'fonctions', 'rh_documents', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
 $moreBadge = 0;
@@ -51,17 +57,27 @@ $lead = match ($active) {
             <?php if (!$isMember): ?><p><?= htmlspecialchars($lead, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
         </div>
         <p class="bo-eff-head__meta" aria-label="État des effectifs">
-            <span><strong><?= $activeCount ?></strong> actifs</span>
-            <span><strong><?= $total ?></strong> dossiers</span>
+            <span><strong><?= $activeCount ?></strong> <?= locale() === 'en' ? 'active' : 'actifs' ?></span>
+            <span><strong><?= $total ?></strong> <?= locale() === 'en' ? 'records' : 'dossiers' ?></span>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $attentionCount > 0 ? 'is-alert' : '' ?>">
                 <strong><?= $attentionCount ?></strong> à traiter
             </a>
         </p>
         <div class="bo-eff-head__actions">
-            <a class="ath-btn ath-btn--solid" href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>">Ajouter un membre</a>
+            <a class="ath-btn ath-btn--solid" href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>"><?= $effRosterOnly ? 'Ajouter une fiche' : 'Ajouter un membre' ?></a>
+            <?php if ($effRosterOnly): ?>
+            <button type="button" class="ath-btn" data-eff-import-open>Importer un tableur</button>
+            <?php endif; ?>
             <a class="ath-btn" href="<?= htmlspecialchars(effectifs_workspace_url('export'), ENT_QUOTES, 'UTF-8') ?>">Exporter</a>
         </div>
     </header>
+
+    <?php if ($effRosterOnly): ?>
+    <aside class="bo-eff-bureau" aria-label="Bureau des effectifs">
+        <p>Bureau des effectifs : vous tenez le registre comme un tableur. Vos membres n’ont pas besoin de compte, seuls ceux qui gèrent les fiches se connectent. Le recrutement se fait sur votre Discord, pas sur le site.</p>
+    </aside>
+    <?php require __DIR__ . '/_roster_import.php'; ?>
+    <?php endif; ?>
 
     <nav class="bo-eff-tabs" aria-label="Sections des effectifs">
         <?php foreach ($tabs as [$id, $label, $suffix, $badge]): ?>
@@ -89,7 +105,12 @@ $lead = match ($active) {
         </details>
     </nav>
 
-    <section class="bo-eff-content<?= $innerContent === 'admin.effectifs_workspace.member' ? ' bo-eff-content--member' : '' ?>">
+    <?php
+    // Sous-pages refondues le 2026-10-26 : mise en page commune (effectifs-pages.css).
+    $effRedesignedPages = ['rh_integration', 'rh_alerts', 'elevations', 'qualifications', 'chaine', 'affectations', 'fonctions', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
+    $effPageClass = !$isMember && in_array($active, $effRedesignedPages, true) ? ' bo-eff-page' : '';
+    ?>
+    <section class="bo-eff-content<?= $innerContent === 'admin.effectifs_workspace.member' ? ' bo-eff-content--member' : '' ?><?= $effPageClass ?>">
         <?php
         $innerPath = base_path('views/' . str_replace('.', '/', $innerContent) . '.php');
         if (is_file($innerPath)) {

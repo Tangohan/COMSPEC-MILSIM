@@ -198,22 +198,31 @@ private _kpis = [
     [count _order, "ENTITÉS", "#e8edf2", _cMute]
 ];
 private _kg = _pad * 0.35;
-private _kw = (_bw - 2 * _pad - 3 * _kg) / 4;
+// Quatre tuiles sur une ligne ; écran étroit (téléphone en portrait, mode PETIT) : deux lignes de deux, sinon les
+// libellés se coupaient au milieu des mots (« QUER IES », « CONF IRME D »).
+private _kCols = [4, 2] select (((_bw - 2 * _pad - 3 * _kg) / 4) < _font * 4.6);
+private _kw = (_bw - 2 * _pad - (_kCols - 1) * _kg) / _kCols;
 // Tuiles mesurées sur leur texte (chiffre + libellé) : le libellé n'est plus coupé en bas.
 private _kh = _font * 2.05;
-private _kBoxes = [];
+private _kTiles = [];
 private _kTxtH = 0;
 {
     _x params ["_n", "_lab", "_hex", "_col"];
-    private _kx = _pad + _forEachIndex * (_kw + _kg);
-    _kBoxes pushBack ([[_kx, _y, _kw, _kh], _cPanel] call _box);
-    [[_kx, _y, _kw, _hairH], _col] call _box;
+    private _kx = _pad + (_forEachIndex mod _kCols) * (_kw + _kg);
+    private _bx = [[_kx, _y, _kw, _kh], _cPanel] call _box;
+    private _hl = [[_kx, _y, _kw, _hairH], _col] call _box;
     private _kt = [[_kx, _y + _font * 0.2, _kw, _font], format ["<t align='center' font='PuristaBold' size='1.45' color='%1'>%2</t><br/><t align='center' font='%3' size='0.55' color='%4'>%5</t>", _hex, _n, _mono, _hDim, _lab]] call _st;
     _kTxtH = _kTxtH max (_kt call _hOf);
+    _kTiles pushBack [_bx, _hl, _kt, floor (_forEachIndex / _kCols)];
 } forEach _kpis;
 _kh = (_kTxtH + _font * 0.45) max _kh;
-{ private _p = ctrlPosition _x; _p set [3, _kh]; _x ctrlSetPosition _p; _x ctrlCommit 0; } forEach _kBoxes;
-_y = _y + _kh + _gap;
+{
+    _x params ["_bx", "_hl", "_kt", "_row"];
+    private _dy = _row * (_kh + _kg);
+    { private _p = ctrlPosition _x; _p set [1, (_p select 1) + _dy]; _x ctrlSetPosition _p; _x ctrlCommit 0; } forEach [_hl, _kt];
+    private _p = ctrlPosition _bx; _p set [1, (_p select 1) + _dy]; _p set [3, _kh]; _bx ctrlSetPosition _p; _bx ctrlCommit 0;
+} forEach _kTiles;
+_y = _y + (ceil ((count _kpis) / _kCols)) * (_kh + _kg) - _kg + _gap;
 
 // ─── Panneaux ──────────────────────────────────────────────────────────────────────────────────────────
 // Entité active : le sujet devant le joueur.
@@ -353,7 +362,7 @@ private _pCase = {
     _yy = _yy + (([[_ox, _yy, _ow, _fs], format ["<t size='0.78' color='%1'>Le poste de commandement vous donne une référence (ex. OBJ-ALPHA-01). Toutes les fiches SSE de l'équipe (sujets, photos, constats) y seront rattachées sur Athena.</t>", _hDim]] call _st) call _hOf) + _pad * 0.4;
     // Saisie gardée telle quelle (pas de traduction du contenu).
     private _e = ["COMSPEC_RscEdit", [_ox, _yy, _ow, _btnH]] call _mk;
-    _e ctrlSetText (((["", profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]] select (_case isEqualTo ""))) call comspec_atak_native_fnc_tr);
+    _e ctrlSetText (["", profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]] select (_case isEqualTo "")); // i18n:brut
     _e ctrlSetFont _mono;
     _e ctrlSetFontHeight (_fs * 0.9);
     _e ctrlSetBackgroundColor _cBg;

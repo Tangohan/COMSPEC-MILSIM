@@ -24,7 +24,7 @@ missionNamespace setVariable ["comspec_profile_avatar_loading", false, false];
 missionNamespace setVariable ["COMSPEC_LastPlaytimeSent", -1, false];
 
 profileNamespace setVariable ["comspec_overwatch_saved_api_key", ""];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 
 if (!isNil "cba_settings_fnc_set") then {
     ["comspec_overwatch_api_key", "", 0, "client", true] call cba_settings_fnc_set;

@@ -60,6 +60,12 @@ def phone_landscape(w=2048, h=1024):
 
 
 ICONS = {
+    # Numéros : combiné de téléphone et fiche du carnet.
+    # App Store : sac de boutique, flèche de téléchargement.
+    "app_store": '<path d="M4.5 8h15l-1.2 12.2a1.5 1.5 0 0 1-1.5 1.3H7.2a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8"/><path d="M12 11.5v6M9.4 15l2.6 2.6 2.6-2.6"/>',
+    "app_numbers": '<rect x="3" y="3" width="13" height="18" rx="1.5"/><path d="M6.5 8h6M6.5 11.5h6M6.5 15h3.5"/><path d="M17.5 8.5c1.6 1.6 2.6 3.7 2.6 6.1M17.5 12c.7.7 1.1 1.6 1.1 2.6"/>',
+    # Poste TOC : ordinateur portable ouvert, carte et repère à l'écran.
+    "app_toc": '<rect x="4" y="4.5" width="16" height="11" rx="1"/><path d="M2 19.5h20l-1.5-4h-17z"/><path d="M7 12.5l3-3 2.5 2 4-4"/><circle cx="16.5" cy="7.5" r="1"/>',
     # Liaison ATAK : deux téléphones reliés par un câble, ondes NFC.
     "app_linkally": '<rect x="2.5" y="5" width="7" height="13" rx="1.5"/><rect x="14.5" y="5" width="7" height="13" rx="1.5"/><path d="M6 18v2.5h12V18"/><path d="M11 9.5a2 2 0 0 1 0 4M13 9.5a2 2 0 0 0 0 4"/>',
     # Discord (dessin maison, pas le logo) : bulle de salon avec dièse.
@@ -87,6 +93,7 @@ ICONS = {
     "app_logistics": '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
     "app_ew": '<path d="M4 18a11 11 0 0 1 0-12M20 6a11 11 0 0 1 0 12M7.5 15a6 6 0 0 1 0-6M16.5 9a6 6 0 0 1 0 6"/><circle cx="12" cy="12" r="1.8"/><path d="M3 3l18 18"/>',
     "app_debug": '<rect x="7" y="7" width="10" height="13" rx="5"/><path d="M12 7V4M9 4.5l1.5 2.5M15 4.5L13.5 7M7 12H3M21 12h-4M7 16l-3 2M17 16l3 2M7 9L4 7M17 9l3-2M12 11v6"/>',
+    "app_admin": '<path d="M12 2.8l8 3v6.2c0 4.6-3.4 8.1-8 9.2-4.6-1.1-8-4.6-8-9.2V5.8z"/><circle cx="12" cy="9.8" r="2.6"/><path d="M7.6 16.6c.9-2.1 2.5-3.2 4.4-3.2s3.5 1.1 4.4 3.2"/>',
     "app_waypoints": '<circle cx="5" cy="19" r="2"/><circle cx="12" cy="11" r="2"/><circle cx="19" cy="5" r="2"/><path d="M6.4 17.6l4.2-5.2M13.4 9.6l4.2-3.2" stroke-dasharray="2 2"/>',
     "app_map": '<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
     "app_chat": '<path d="M4 4h16v11H9l-5 4v-4H4z"/><path d="M8 9h8M8 12h5"/>',
@@ -170,6 +177,7 @@ ICONS = {
     "map_los": '<circle cx="5" cy="17" r="2"/><path d="M7 15.5L20 6"/><path d="M14 20l2-4 2 4" /><circle cx="20" cy="6" r="1.5"/>',
     "map_distance": '<path d="M3 12h18M3 8v8M21 8v8"/><path d="M7 10l-2 2 2 2M17 10l2 2-2 2"/>',
     "app_network": '<circle cx="12" cy="18" r="1.6"/><path d="M8.5 14.5a5 5 0 0 1 7 0M5.5 11.5a9 9 0 0 1 13 0M2.5 8.5a13 13 0 0 1 19 0"/>',
+    # app_athena : remplacé par l'emblème ATHENA (athena_brand) juste après cette liste.
     "app_athena": '<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
     "ui_camera": '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6" fill="#fff"/>',
     "ui_link": '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
@@ -321,6 +329,17 @@ def compass_lubber(size=256):
 def icon_png(name, body, size=128):
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{body}</svg>'
     return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size))).convert("RGBA")
+
+
+def athena_brand(svg_name, size, fill):
+    """Logo ATHENA (aigle, vectoriel tools/src/*.svg) centré dans un carré transparent, blanc pour être teinté en jeu."""
+    svg = open(os.path.join(HERE, "src", svg_name), encoding="utf-8").read()
+    inner = int(size * fill)
+    img = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=inner * 2))).convert("RGBA")
+    img.thumbnail((inner, inner), Image.LANCZOS)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    out.alpha_composite(img, ((size - img.width) // 2, (size - img.height) // 2))
+    return out
 
 
 def battery(level, w=128, h=64):
@@ -1372,7 +1391,7 @@ def nvgfilter_item(size=256):
 
 
 # --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
-PHONE_MODELS = ["rugged", "iphone", "sonim", "tablet", "keys", "s23"]
+PHONE_MODELS = ["rugged", "iphone", "sonim", "tablet", "keys", "s23", "ip17"]
 
 
 def _hole(model):
@@ -1745,7 +1764,24 @@ JPC_PHONES = {
     "iphone": (212, 629, 1962, 1647),
     "sonim": (223, 503, 1764, 1440),
     "s23": (206, 569, 1901, 1752),  # recadrage du S7 : le S23 reprend le modèle jpc_s7.p3d
+    "ip17": (212, 629, 1962, 1647),  # recadrage du V2 Enhanced : l'iPhone 17 Pro reprend le modèle jpc_iphone.p3d
 }
+# Modèle 3D emprunté (pas de modèle propre) : la face et le dos sont recalés pour que l'ouverture de l'écran tombe
+# exactement sur l'écran du modèle prêté (même largeur ; l'iPhone 17 Pro, plus allongé, est étiré de 8 % en hauteur).
+JPC_SHARED = {"ip17": "iphone"}
+
+
+def _jpc_fit(img, model, back=False):
+    """Recale une coque 2048 x 2048 sur l'ouverture du modèle 3D prêté (JPC_SHARED) ; le dos est le miroir de la face."""
+    if model not in JPC_SHARED:
+        return img
+    mx0, my0, mx1, my1 = _hole(model)
+    tx0, ty0, tx1, ty1 = _hole(JPC_SHARED[model])
+    sx, sy = (tx1 - tx0 + 1) / (mx1 - mx0 + 1), (ty1 - ty0 + 1) / (my1 - my0 + 1)
+    src = img.transpose(Image.FLIP_LEFT_RIGHT) if back else img
+    # Image.transform attend la transformation inverse : point de sortie (x, y) -> point source.
+    out = src.transform(src.size, Image.Transform.AFFINE, (1 / sx, 0, mx0 - tx0 / sx, 0, 1 / sy, my0 - ty0 / sy), Image.Resampling.BICUBIC)
+    return out.transpose(Image.FLIP_LEFT_RIGHT) if back else out
 
 
 def jpc_phone_atlas(tmp, only=None):
@@ -1781,8 +1817,8 @@ def jpc_phone_atlas(tmp, only=None):
         b = os.path.join(RENDER_DIR, f"phone_{m}_back.png")
         if not (os.path.exists(f) and os.path.exists(b)):
             continue
-        rear = Image.open(b).convert("RGBA").crop((2048 - x1, y0, 2048 - x0, y1))
-        convert(pack(Image.open(f).convert("RGBA"), rear, crop), f"jpc_{m}_ca", tmp)
+        rear = _jpc_fit(Image.open(b).convert("RGBA"), m, True).crop((2048 - x1, y0, 2048 - x0, y1))
+        convert(pack(_jpc_fit(Image.open(f).convert("RGBA"), m), rear, crop), f"jpc_{m}_ca", tmp)
 
 
 def jpc_screen_static(tmp):
@@ -1926,6 +1962,11 @@ def main():
                 convert(img.convert("RGB"), f"wall_athena_{suffix}", tmp)
                 convert(blurred(img), f"wall_athena_blur_{suffix}", tmp)
             return
+        # « athenalogo » : nouveaux logos ATHENA (icône de l'app Athena et logo de sa carte d'état).
+        if len(sys.argv) > 2 and sys.argv[2] == "athenalogo":
+            convert(athena_brand("athena_embleme.svg", 128, 0.9), "app_athena", tmp)
+            convert(athena_brand("athena_logo.svg", 512, 0.94), "logo_athena", tmp)
+            return
         # « galleryicon » : seulement l'icône de l'app Galerie.
         if len(sys.argv) > 2 and sys.argv[2] == "galleryicon":
             convert(icon_png("app_gallery", ICONS["app_gallery"]), "app_gallery", tmp)
@@ -1943,15 +1984,20 @@ def main():
             jpc_screen_static(tmp)
             jpc_rvmats()
             return
-        # « frames » : coques photo de frame_photos.py (V2 Enhanced, Xiaomi X3D, Sonim, S23, tablettes) et icône du kit véhicule.
+        # « frames » : coques photo de frame_photos.py (V2 Enhanced, Xiaomi X3D, Sonim, S23, iPhone 17 Pro, tablettes) et icône du kit véhicule.
         if len(sys.argv) > 2 and sys.argv[2] == "frames":
-            model_assets(tmp, only=["iphone", "rugged", "sonim", "keys", "tablet", "s23"])
+            model_assets(tmp, only=["iphone", "rugged", "sonim", "keys", "tablet", "s23", "ip17"])
             vehiclekit_item(tmp)
             return
         # « s23 » : seulement le Samsung S23 (coques 2D jour et nuit, dos, atlas du téléphone 3D).
         if len(sys.argv) > 2 and sys.argv[2] == "s23":
             model_assets(tmp, only=["s23"])
             jpc_phone_atlas(tmp, only=["s23"])
+            return
+        # « ip17 » : seulement l'iPhone 17 Pro (coques 2D jour et nuit, dos, atlas du téléphone 3D sur jpc_iphone.p3d).
+        if len(sys.argv) > 2 and sys.argv[2] == "ip17":
+            model_assets(tmp, only=["ip17"])
+            jpc_phone_atlas(tmp, only=["ip17"])
             return
         if len(sys.argv) > 2 and sys.argv[2] == "camera":
             convert(camera_item(), "item_camera", tmp)
@@ -1978,6 +2024,7 @@ def main():
         if len(sys.argv) > 2 and sys.argv[2] == "icons":
             for name, body in ICONS.items():
                 convert(icon_png(name, body), name, tmp)
+            convert(athena_brand("athena_embleme.svg", 128, 0.9), "app_athena", tmp)
             return
         land = Image.open(PHONE_SRC).convert("RGBA") if os.path.exists(PHONE_SRC) else phone_landscape()
         convert(land, "phone_landscape", tmp)
@@ -1994,6 +2041,8 @@ def main():
         convert(compass_lubber(), "compass_lubber", tmp)
         for name, body in ICONS.items():
             convert(icon_png(name, body), name, tmp)
+        convert(athena_brand("athena_embleme.svg", 128, 0.9), "app_athena", tmp)
+        convert(athena_brand("athena_logo.svg", 512, 0.94), "logo_athena", tmp)
         for lvl in (100, 75, 50, 25, 10):
             convert(battery(lvl), f"bat_{lvl}", tmp)
         for b in range(5):

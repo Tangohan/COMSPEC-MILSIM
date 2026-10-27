@@ -155,7 +155,7 @@ if (_useSteam) then {
 
     [format ["[Athena] Liaison Steam (%1) vers %2…", _steamUid, [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
-    _raw = ["COMSPECExtension" callExtension ["LinkBySteam", [_url, _steamUid]]] call comspec_overwatch_connect_fnc_extResult;
+    _raw = [["COMSPECExtension", "LinkBySteam", [_url, _steamUid]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 
 } else {
 
@@ -163,7 +163,7 @@ if (_useSteam) then {
 
     [format ["[Athena] Échange du code vers %1…", [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
-    _raw = ["COMSPECExtension" callExtension ["RedeemGameLink", [_url, _code, _steamUid]]] call comspec_overwatch_connect_fnc_extResult;
+    _raw = [["COMSPECExtension", "RedeemGameLink", [_url, _code, _steamUid]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 
 };
 
@@ -242,6 +242,8 @@ if (_prefix != "OK") exitWith {
         case "http_503": { "Liaison pas encore activée sur le portail. Contactez un administrateur Athena." };
 
         case "http_500": { "Erreur interne du portail. Réessayez dans un instant." };
+
+        case "client_untrusted": { "Ce module n’est pas reconnu. Installez la version officielle du pack, puis relancez Arma." };
 
         case "unauthorized";
         case "http_401": {
@@ -353,7 +355,7 @@ if (!(_steamUid isEqualTo "")) then {
 
 };
 
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 
 
 
@@ -373,7 +375,7 @@ if (_useSteam) then {
 
 // DLL 1.14+ a déjà validé client-init pendant Redeem/Steam et détient la bonne clé.
 // Connect avec clé vide : ne pas réécrire la clé DLL avec une valeur SQF/CBA potentiellement tronquée.
-private _connectRaw = ["COMSPECExtension" callExtension ["Connect", [_apiUrl, "", _tenantId]]] call comspec_overwatch_connect_fnc_extResult;
+private _connectRaw = [["COMSPECExtension", "Connect", [_apiUrl, "", _tenantId]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _mapIdLink = missionNamespace getVariable ["comspec_overwatch_map_id", 1];
 if (!(_mapIdLink isEqualType 0)) then { _mapIdLink = 1; };
 _mapIdLink = round _mapIdLink;

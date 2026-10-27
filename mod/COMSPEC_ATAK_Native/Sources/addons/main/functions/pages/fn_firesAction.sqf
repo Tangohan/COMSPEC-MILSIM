@@ -7,7 +7,8 @@ params [["_action", ""], ["_arg", ""]];
 [] call comspec_atak_native_fnc_firesSave;
 private _f = [] call comspec_atak_native_fnc_firesState;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
-private _render = { [{ ["FIRES"] call comspec_atak_native_fnc_pageRender; (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call CBA_fnc_execNextFrame; };
+// Redessin seulement si l'app CAS est encore ouverte (ex. 9-line envoyé depuis l'app JTAC : pas de CAS par-dessus).
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FIRES") then { ["FIRES"] call comspec_atak_native_fnc_pageRender; }; (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call CBA_fnc_execNextFrame; };
 private _say = { params ["_t", ["_warn", false]]; _f set ["hint", [_t, _warn]]; };
 private _time = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
 private _me = { private _c = if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then { [] call comspec_overwatch_connect_fnc_getCallsign } else { "" }; if (_c isEqualTo "") then { groupId group player } else { _c } };
@@ -24,7 +25,28 @@ private _gridPos = {
 // Envoi d'un ordre (vu sur le web et par les joueurs visés) quand Overwatch est là ; sinon chat local.
 private _order = {
     params ["_type", "_target", "_body", ["_prio", "URGENT"], ["_targetType", ""]];
-    if (_bridge) then { [_type, _target, _body, _prio, "", _targetType] call comspec_overwatch_connect_fnc_issueOrder; } else { [_body] call comspec_atak_native_fnc_chatSend; };
+    if (_bridge) exitWith { [_type, _target, _body, _prio, "", _targetType] call comspec_overwatch_connect_fnc_issueOrder; };
+    // Sans Overwatch : même envoi que le chat natif (fn_chatSend lit le champ du chat, absent sur cette page).
+    private _author = [] call comspec_atak_native_fnc_unitCallsign;
+    private _id = format ["out:%1:%2", diag_tickTime, floor random 1e5];
+    private _outbox = +((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["outbox", []]);
+    _outbox pushBack createHashMapFromArray [
+        ["id", _id], ["author", _author], ["body", _body],
+        ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString], ["status", "PENDING"]
+    ];
+    while { (count _outbox) > 30 } do { _outbox deleteAt 0; };
+    ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
+    // Libellé « Rapport » : rangé en urgent par fn_netSend (passe devant en file, jamais abandonné quand elle est pleine).
+    [{
+        params ["_id", "_author", "_message"];
+        private _raw = ["SendChat", [_author, _message]] call comspec_atak_native_fnc_extensionCall;
+        // SendChat part en file dans la DLL et répond "" : seul un retour ERR est un échec.
+        private _ok = (toUpper (_raw select [0, 3])) isNotEqualTo "ERR";
+        private _outbox = +((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["outbox", []]);
+        { if ((_x getOrDefault ["id", ""]) isEqualTo _id) then { _x set ["status", ["FAILED", "SENT"] select _ok]; }; } forEach _outbox;
+        ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
+        if !(_ok) then { ["WARNING", "Athena indisponible : message gardé sur le terminal", 4, 30] call comspec_atak_native_fnc_notify; };
+    }, [_id, _author, _body], format ["Rapport de feu %1", _type], 1] call comspec_atak_native_fnc_netSend;
 };
 
 switch (_action) do {
@@ -39,7 +61,7 @@ switch (_action) do {
         ["Cible effacée."] call _say;
     };
     case "newMsn": {
-        { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy", "active"];
+        { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy", "active", "activeGrid"];
         _f set ["clearing", true];
         ["Nouvelle mission."] call _say;
     };
@@ -100,6 +122,8 @@ switch (_action) do {
         ["Lignes 1 à 3 remplies."] call _say;
     };
     case "send9": {
+        // 9-line déjà en vol vers Athena : on le dit, et la géométrie JTAC (servie une fois) reste pour le prochain envoi.
+        if (_bridge && {missionNamespace getVariable ["COMSPEC_ATAK_Fires9Busy", false]}) exitWith { ["Envoi en cours…", true] call _say; };
         private _lines = ["n1","n2","n3","n4","n5","n6","n7","n8","n9"] apply { trim (_f getOrDefault [_x, ""]) };
         if ((_lines select 5) isEqualTo "" || {(_lines select 4) isEqualTo ""}) exitWith { ["Lignes 5 (description) et 6 (position) obligatoires.", true] call _say; };
         private _rem = trim (_f getOrDefault ["nr", ""]);
@@ -110,22 +134,33 @@ switch (_action) do {
         _f deleteAt "geo";
         private _json = format ['{"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"CAS","remarks":"%3","lines":{%4}%5}', _mapId, [[] call _me] call _esc, [_rem] call _esc,
             (_lines apply { format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc] }) joinString ",", ["", format [',"geo":%1', _geo]] select (_geo isNotEqualTo "")];
-        // DLL à jour : vrai 9-line sur Athena (pilotes et web). Sinon : ordre CAS lisible.
-        private _ok = false;
-        if (_bridge) then {
-            private _r = (["COMSPECExtension", "SubmitNineLine", [_json]] call comspec_atak_native_fnc_extAwait);
-            if (_r isEqualType []) then { _r = _r param [0, ""]; };
-            _ok = (toUpper _r) find "OK" >= 0 && {(toUpper _r) find "ERR" < 0};
-        };
         private _text = format ["9-LINE %1 | 1 %2 | 2 %3 | 3 %4 | 4 %5 | 5 %6 | 6 %7 | 7 %8 | 8 %9 | 9 %10%11", [] call _me,
             _lines select 0, _lines select 1, _lines select 2, _lines select 3, _lines select 4, _lines select 5, _lines select 6, _lines select 7, _lines select 8,
             ["", format [" | REM %1", _rem]] select (_rem isNotEqualTo "")];
-        if (!_ok) then { ["CAS", "", _text, "URGENT", "all"] call _order; };
-        private _log = _f getOrDefault ["log", []];
-        _log pushBack format ["<t color='#5cc76b'>%1</t> 9-LINE · %2 · %3", [] call _time, _lines select 5, ["ordre CAS", "Athena"] select _ok];
-        _f set ["log", _log];
-        [["9-line transmis en ordre CAS (la DLL ne connaît pas encore SubmitNineLine).", "9-line transmis à Athena : les pilotes le reçoivent."] select _ok] call _say;
-        ["SUCCESS", "9-LINE transmis", 3, 50] call comspec_atak_native_fnc_notify;
+        // Fin d'envoi : ordre CAS lisible si Athena n'a pas pris le 9-line, puis journal et message.
+        private _finish = {
+            params ["_ok"];
+            if (!_ok) then { ["CAS", "", _text, "URGENT", "all"] call _order; };
+            private _log = _f getOrDefault ["log", []];
+            _log pushBack format ["<t color='#5cc76b'>%1</t> 9-LINE · %2 · %3", [] call _time, _lines select 5, ["ordre CAS", "Athena"] select _ok];
+            _f set ["log", _log select [((count _log) - 20) max 0]];
+            [["9-line transmis en ordre CAS (la DLL ne connaît pas encore SubmitNineLine).", "9-line transmis à Athena : les pilotes le reçoivent."] select _ok] call _say;
+            ["SUCCESS", "9-LINE transmis", 3, 50] call comspec_atak_native_fnc_notify;
+        };
+        if (!_bridge) exitWith { [false] call _finish; };
+        // DLL à jour : vrai 9-line sur Athena (pilotes et web). POST HTTP hors de l'image (extAwait en Async), sinon le jeu fige.
+        missionNamespace setVariable ["COMSPEC_ATAK_Fires9Busy", true];
+        [_json, _text, _lines, _f, _bridge, _order, _say, _time, _render, _finish] spawn {
+            params ["_json", "_text", "_lines", "_f", "_bridge", "_order", "_say", "_time", "_render", "_finish"];
+            private _r = (["COMSPECExtension", "SubmitNineLine", [_json]] call comspec_atak_native_fnc_extAwait);
+            if (_r isEqualType []) then { _r = _r param [0, ""]; };
+            if !(_r isEqualType "") then { _r = str _r; };
+            private _ok = (toUpper _r) find "OK" >= 0 && {(toUpper _r) find "ERR" < 0};
+            [_ok] call _finish;
+            missionNamespace setVariable ["COMSPEC_ATAK_Fires9Busy", false];
+            // Réponse lente : pas de redessin de l'app CAS par-dessus une autre app ouverte entre-temps.
+            if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FIRES") then { [] call _render; };
+        };
     };
     case "send5": {
         private _lines = ["f1","f2","f3","f4","f5"] apply { trim (_f getOrDefault [_x, ""]) };
@@ -133,7 +168,7 @@ switch (_action) do {
         ["CAS", "", format ["5-LINE | 1 %1 | 2 %2 | 3 %3 | 4 %4 | 5 %5", _lines select 0, _lines select 1, _lines select 2, _lines select 3, _lines select 4], "URGENT", "all"] call _order;
         private _log = _f getOrDefault ["log", []];
         _log pushBack format ["<t color='#5cc76b'>%1</t> 5-LINE · %2", [] call _time, _lines select 2];
-        _f set ["log", _log];
+        _f set ["log", _log select [((count _log) - 20) max 0]];
         ["5-line transmis."] call _say;
         ["SUCCESS", "5-LINE transmis", 3, 50] call comspec_atak_native_fnc_notify;
     };
@@ -147,6 +182,8 @@ switch (_action) do {
         // Pièce
         private _gunId = _f getOrDefault ["gun", "MAN"];
         private _gun = if (_gunId isEqualTo "MAN") then { objNull } else { objectFromNetId _gunId };
+        // Pièce détruite depuis le choix : pas de calcul ni d'appel de feu pour l'épave.
+        if (!isNull _gun && {!alive _gun}) exitWith { _f set ["gun", "MAN"]; _f deleteAt "solution"; ["Pièce détruite : choisissez une autre pièce.", true] call _say; };
         private _gunPos = if (isNull _gun) then { [_f getOrDefault ["gunGrid", ""]] call _gridPos } else { getPosATL _gun };
         if ((count _gunPos) < 2) exitWith { ["Choisissez une pièce ou saisissez sa grille.", true] call _say; };
         // Cible
@@ -248,9 +285,11 @@ switch (_action) do {
         if (_how isEqualTo "hors portée") exitWith { ["Cible hors de portée de la pièce (ou munition absente).", true] call _say; };
         ["CUSTOM_CFF", "", _summary, "URGENT", "all"] call _order;
         _f set ["active", true];
+        // Grille tirée gardée pour FIN DE MISSION (la solution est effacée au changement de pièce, munition ou origine).
+        _f set ["activeGrid", _sol get "grid"];
         private _log = _f getOrDefault ["log", []];
         _log pushBack format ["<t color='#e5483a'>%1</t> TIR · %2 · %3 x%4 · %5", [] call _time, _sol get "grid", _ammo, _rounds, _how];
-        _f set ["log", _log];
+        _f set ["log", _log select [((count _log) - 20) max 0]];
         private _msn = _f getOrDefault ["missions", []];
         _msn pushBack [[] call _time, _sol get "grid", ["HE", "ILM", "FUM"] select ((["HE", "ILLUM", "SMOKE"] find _ammo) max 0), _rounds, _how, _ammo, _gunId];
         _f set ["missions", _msn select [((count _msn) - 20) max 0]];
@@ -260,11 +299,14 @@ switch (_action) do {
     case "eom": {
         private _sol = _f getOrDefault ["solution", createHashMap];
         if !(_f getOrDefault ["active", false]) exitWith { ["Aucune mission en cours."] call _say; };
-        ["CUSTOM_CFF", "", format ["FIN DE MISSION %1 | cible %2", [] call _me, _sol getOrDefault ["grid", ""]], "IMPORTANT", "all"] call _order;
+        private _eomGrid = _f getOrDefault ["activeGrid", _sol getOrDefault ["grid", _f getOrDefault ["tgtGrid", ""]]];
+        if (_eomGrid isEqualTo "") then { _eomGrid = _f getOrDefault ["tgtGrid", ""]; };
+        ["CUSTOM_CFF", "", format ["FIN DE MISSION %1 | cible %2", [] call _me, _eomGrid], "IMPORTANT", "all"] call _order;
         _f set ["active", false];
+        _f deleteAt "activeGrid";
         private _log = _f getOrDefault ["log", []];
-        _log pushBack format ["<t color='#8a9a93'>%1</t> FIN DE MISSION · %2", [] call _time, _sol getOrDefault ["grid", ""]];
-        _f set ["log", _log];
+        _log pushBack format ["<t color='#8a9a93'>%1</t> FIN DE MISSION · %2", [] call _time, _eomGrid];
+        _f set ["log", _log select [((count _log) - 20) max 0]];
         ["Fin de mission transmise."] call _say;
     };
 };

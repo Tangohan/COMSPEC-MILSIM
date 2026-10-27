@@ -34,7 +34,7 @@ $kpiLabelFr = static function (string $id, string $fallback): string {
         'members_no_role' => 'Sans rôle communautaire',
         'active_30d' => 'Actifs sur 30 jours',
         'training_expiring' => 'Formations à échéance (30 j.)',
-        'moderation_open' => 'Signalements forum à traiter',
+        'moderation_open' => 'Signalements membres à traiter',
         default => $fallback !== '' ? $fallback : 'Indicateur',
     };
 };
@@ -91,9 +91,7 @@ $kpiHref = static function (string $id) use ($moreUrl): array {
         'members_no_unit' => [url('back-office/users') . '?filter_no_unit=1', 'Corriger'],
         'members_no_role' => [url('back-office/users') . '?filter_no_role=1', 'Corriger'],
         'training_expiring' => [training_lms_admin_url(), 'Ouvrir'],
-        'moderation_open' => (function_exists('forum_public_nav_visible') && !forum_public_nav_visible())
-            ? ['', '']
-            : [url('back-office/forum-moderation'), 'Traiter'],
+        'moderation_open' => [url('back-office/signalements'), 'Traiter'],
         default => ['', ''],
     };
 };
@@ -796,14 +794,14 @@ $missingMediaCount = (int) ($missingMediaCount ?? 0);
                 </a>
                 <?php endif; ?>
                 <?php if ($canTenantTechModules): ?>
-                <a href="<?= url('back-office/ressources/modpacks') ?>" class="org-dash__action org-dash__action--wide">
+                <a href="<?= url('back-office/ressources/atak-mod') ?>" class="org-dash__action org-dash__action--wide">
                     <div>
                         <div class="org-dash__action-top">
                             <span class="org-dash__action-mark" aria-hidden="true">R</span>
                             <span class="org-dash__action-tag">Ressources</span>
                         </div>
-                        <h3 class="org-dash__action-title">Modpacks &amp; outils terrain</h3>
-                        <p class="org-dash__action-text">Packs mods, cartographie et configuration associée pour votre communauté.</p>
+                        <h3 class="org-dash__action-title">Mods Steam &amp; outils terrain</h3>
+                        <p class="org-dash__action-text">Mod Athena et collection Steam de votre communauté, configuration ATAK associée.</p>
                     </div>
                     <span class="org-dash__action-foot">Ouvrir les ressources →</span>
                 </a>

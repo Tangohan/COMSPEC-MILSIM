@@ -233,7 +233,7 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
         </div>
         <div class="eff-fiche-hero__id">
             <p class="eff-page-kicker">Fiche membre<?php if ($grade !== ''): ?> · <?= $h($grade) ?><?php endif; ?></p>
-            <h1 class="eff-page-title"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></h1>
+            <h1 class="eff-page-title"><?= staff_name($name, $id, true) ?></h1>
             <p class="eff-fiche-hero__meta">
                 <?php if ($callsign !== ''): ?>
                     <span>Indicatif <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
@@ -507,7 +507,7 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
                 <button type="button" class="eff-btn eff-btn--ghost eff-btn--sm" data-dialog-open="eff-dlg-jobs">Modifier</button>
             <?php endif; ?>
         </div>
-        <p class="eff-card__lead">La fonction décrit le poste tenu (tireur, médecin, chef de groupe…). Ce n’est ni l’équipe ni un droit d’accès. La fonction principale apparaît sur la fiche, l’organigramme et le forum.</p>
+        <p class="eff-card__lead">La fonction décrit le poste tenu (tireur, médecin, chef de groupe…). Ce n’est ni l’équipe ni un droit d’accès. La fonction principale apparaît sur la fiche et l’organigramme.</p>
         <?php if ($jobRoles !== []): ?>
             <div class="eff-tags">
                 <?php foreach ($jobRoles as $jr): ?>
@@ -833,6 +833,8 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
         <?php $renderRhList($combinedHistory, static function (array $h) use ($fmtDate): string {
             $label = trim((string) ($h['title'] ?? $h['event_label'] ?? $h['event_type'] ?? $h['stage_label'] ?? $h['summary'] ?? 'Événement RH'));
             $date = $fmtDate((string) ($h['event_date'] ?? $h['occurred_at'] ?? $h['created_at'] ?? ''));
+            // Libellé enregistré en français : traduit morceau par morceau avant d'être collé à la date.
+            $label = \App\Support\HrHistoryLabel::forPage($label);
             return ($date !== '' ? $date . ' · ' : '') . $label;
         }); ?>
     </article>

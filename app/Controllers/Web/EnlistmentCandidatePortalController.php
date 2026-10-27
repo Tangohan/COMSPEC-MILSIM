@@ -24,7 +24,7 @@ use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\EnlistmentPortalMessagingNotificationService;
 use App\Services\Recruitment\TenantRecruitmentSettings;
-use App\Support\ForumReportReason;
+use App\Support\ContentReportReason;
 
 final class EnlistmentCandidatePortalController
 {
@@ -810,7 +810,7 @@ final class EnlistmentCandidatePortalController
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
 
-        $normalized = ForumReportReason::fromCategory($category !== '' ? $category : 'other', $details);
+        $normalized = ContentReportReason::fromCategory($category !== '' ? $category : 'other', $details);
         $reasonLabel = (string) ($normalized['reason'] ?? 'Autre');
 
         $pieceRow = null;

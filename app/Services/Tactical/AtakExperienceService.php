@@ -369,6 +369,14 @@ final class AtakExperienceService
             $row('net_gps', 'GPS réaliste', 'Précision selon le ciel visible : quelques mètres à découvert, plus en forêt, rue étroite ou vallée, beaucoup plus dans un bâtiment, aucun fix en sous-sol.', $onOff('Toujours simuler le GPS', 'GPS exact')),
             $row('net_gps_k', 'Force des erreurs GPS', '100 % : erreurs réalistes d’un téléphone. 50 % : moitié moins.', $nums([50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
             $row('net_gps_fix', 'Attente des satellites', 'Au démarrage du téléphone, le GPS cherche les satellites de quelques secondes à environ 40 s.', $onOff('Toujours attendre les satellites', 'Position tout de suite')),
+            $row('net_gps_loss', 'Pertes de fix GPS', 'Part des satellites masqués (toit, forêt, immeubles, relief) qui compte vraiment. 100 % : plus de fix dans un bâtiment ou en sous-sol, comme un vrai téléphone. 0 % : le fix tient partout, seule la précision baisse.', $nums([0 => '0 % (fix partout)', 50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
+            $row('net_gps_rel', 'Fiabilité du GPS', 'Décrochages du fix de quelques secondes et sauts de position de 15 à 60 m (reflets du signal). Bonne : environ une fois toutes les 20 min ; Médiocre : toutes les 2 min.', [
+                $server,
+                ['value' => '0', 'label' => 'Parfaite'],
+                ['value' => '1', 'label' => 'Bonne (réel)'],
+                ['value' => '2', 'label' => 'Moyenne'],
+                ['value' => '3', 'label' => 'Médiocre'],
+            ]),
             $row('net_battery', 'Batterie réaliste', 'La batterie se vide selon l’usage et se recharge en véhicule ; à 0 % le téléphone s’éteint.', $onOff('Toujours simuler la batterie', 'Batterie infinie')),
         ];
     }
@@ -452,6 +460,110 @@ final class AtakExperienceService
     }
 
     /**
+     * Apps du téléphone ATAK natif que la communauté peut imposer ou interdire (App Store du téléphone).
+     * Miroir de COMSPEC_ATAK_Apps (config.cpp) sans les apps système (Réglages, App Store, Alertes), Admin et Poste TOC.
+     *
+     * @return list<array{id: string, name: string, description: string, section: string}>
+     */
+    public function phoneApps(): array
+    {
+        return [
+            ['id' => 'Map', 'name' => 'Carte', 'description' => 'Carte tactique : unités amies, marqueurs, mesures et dessins partagés', 'section' => 'Navigation'],
+            ['id' => 'Gps', 'name' => 'GPS', 'description' => 'Position, grille, altitude et précision du GPS', 'section' => 'Navigation'],
+            ['id' => 'Waypoints', 'name' => 'Itinéraire', 'description' => 'Points de passage et itinéraire guidé', 'section' => 'Navigation'],
+            ['id' => 'Relief', 'name' => 'Relief', 'description' => 'Relief, pentes et lignes de vue du terrain', 'section' => 'Navigation'],
+            ['id' => 'Weather', 'name' => 'Météo', 'description' => 'Vent, visibilité, températures et prévisions', 'section' => 'Navigation'],
+            ['id' => 'Distance', 'name' => 'Distances', 'description' => 'Distances parcourues à pied et en véhicule', 'section' => 'Navigation'],
+            ['id' => 'Garmin', 'name' => 'Garmin', 'description' => 'Montre Garmin : pas, cardio, stress, sommeil', 'section' => 'Navigation'],
+            ['id' => 'Chat', 'name' => 'Messages', 'description' => 'Canaux de l\'unité et SMS entre joueurs', 'section' => 'Communication'],
+            ['id' => 'Group', 'name' => 'Groupe', 'description' => 'Composition du groupe, rôles et indicatifs', 'section' => 'Communication'],
+            ['id' => 'Bft', 'name' => 'BFT', 'description' => 'Suivi des forces amies (Blue Force Tracking)', 'section' => 'Communication'],
+            ['id' => 'InterTeam', 'name' => 'Inter-team', 'description' => 'Liaison entre équipes et fire teams', 'section' => 'Communication'],
+            ['id' => 'C2', 'name' => 'C2', 'description' => 'Commandement : ordres, situation et unités', 'section' => 'Communication'],
+            ['id' => 'WaveRelay', 'name' => 'Wave Relay', 'description' => 'Réseau maillé radio : relais et qualité de liaison', 'section' => 'Communication'],
+            ['id' => 'Numbers', 'name' => 'Numéros', 'description' => 'Annuaire des numéros de téléphone', 'section' => 'Communication'],
+            ['id' => 'Discord', 'name' => 'Discord', 'description' => 'Messages du Discord de la communauté', 'section' => 'Communication'],
+            ['id' => 'Fires', 'name' => 'CAS', 'description' => 'Demande d\'appui aérien rapproché (9-LINE)', 'section' => 'Appui et feux'],
+            ['id' => 'Jtac', 'name' => 'JTAC', 'description' => 'Guidage des appuis, cibles et cartes IP', 'section' => 'Appui et feux'],
+            ['id' => 'Drone', 'name' => 'Drone', 'description' => 'Pilotage et caméra des drones', 'section' => 'Appui et feux'],
+            ['id' => 'Medical', 'name' => 'Médical', 'description' => 'Fiches médicales, triage et évacuation', 'section' => 'Spécialités'],
+            ['id' => 'Sniper', 'name' => 'Sniper', 'description' => 'Calculs de tir longue distance', 'section' => 'Spécialités'],
+            ['id' => 'Breach', 'name' => 'Brèche', 'description' => 'Préparation des brèches et entrées', 'section' => 'Spécialités'],
+            ['id' => 'Explo', 'name' => 'Explosifs', 'description' => 'Charges explosives et minuteries', 'section' => 'Spécialités'],
+            ['id' => 'Ew', 'name' => 'GE', 'description' => 'Guerre électronique : détection et brouillage', 'section' => 'Spécialités'],
+            ['id' => 'DroneDetect', 'name' => 'Anti-drone', 'description' => 'Détection des drones à proximité', 'section' => 'Spécialités'],
+            ['id' => 'LinkAlly', 'name' => 'Liaison allié', 'description' => 'Liaison avec une unité alliée', 'section' => 'Spécialités'],
+            ['id' => 'Intel', 'name' => 'FRS / FRM', 'description' => 'Fiches de renseignement FRS / FRM', 'section' => 'Renseignement'],
+            ['id' => 'Reco', 'name' => 'Reco', 'description' => 'Comptes rendus de reconnaissance', 'section' => 'Renseignement'],
+            ['id' => 'Salute', 'name' => 'SALUTE', 'description' => 'Rapport d\'observation SALUTE', 'section' => 'Renseignement'],
+            ['id' => 'Photos', 'name' => 'Photo', 'description' => 'Appareil photo du téléphone', 'section' => 'Renseignement'],
+            ['id' => 'Gallery', 'name' => 'Galerie', 'description' => 'Photos prises et reçues', 'section' => 'Renseignement'],
+            ['id' => 'Livecam', 'name' => 'Vidéo live', 'description' => 'Vidéo en direct partagée', 'section' => 'Renseignement'],
+            ['id' => 'Tracking', 'name' => 'Marquer tracking', 'description' => 'Marquer et suivre une cible à l\'image', 'section' => 'Renseignement'],
+            ['id' => 'Sse', 'name' => 'SSE', 'description' => 'Exploitation de site (SSE) : indices et saisies', 'section' => 'Renseignement'],
+            ['id' => 'DataLink', 'name' => 'Extraction', 'description' => 'Extraction de données au câble DL-7', 'section' => 'Renseignement'],
+            ['id' => 'Osint', 'name' => 'OSINT', 'description' => 'Renseignement en sources ouvertes', 'section' => 'Renseignement'],
+            ['id' => 'Wanted', 'name' => 'Recherchés', 'description' => 'Personnes recherchées (HVT) de la communauté', 'section' => 'Renseignement'],
+            ['id' => 'Tasks', 'name' => 'Tâches', 'description' => 'Tâches et ordres reçus', 'section' => 'Mission'],
+            ['id' => 'Reports', 'name' => 'Comptes rendus', 'description' => 'Comptes rendus de fin de mission', 'section' => 'Mission'],
+            ['id' => 'Briefing', 'name' => 'Briefing', 'description' => 'Diapositives et consignes de la mission', 'section' => 'Mission'],
+            ['id' => 'Plan', 'name' => 'Plan', 'description' => 'Plan de manœuvre et phases', 'section' => 'Mission'],
+            ['id' => 'Logistics', 'name' => 'Logistique', 'description' => 'Demandes de ravitaillement et logistique', 'section' => 'Mission'],
+            ['id' => 'Aar', 'name' => 'Rejeu', 'description' => 'Rejeu de la mission (AAR)', 'section' => 'Mission'],
+            ['id' => 'Athena', 'name' => 'Athena', 'description' => 'Liaison au site Athena de la communauté', 'section' => 'Système'],
+            ['id' => 'Network', 'name' => 'Réseau', 'description' => 'État du réseau et de la liaison', 'section' => 'Système'],
+            ['id' => 'Bluetooth', 'name' => 'Bluetooth', 'description' => 'Jumelage et partage avec les téléphones proches', 'section' => 'Système'],
+            ['id' => 'Resynch', 'name' => 'Synchro', 'description' => 'Resynchronisation avec Athena', 'section' => 'Système'],
+            ['id' => 'Status', 'name' => 'Statut', 'description' => 'État du téléphone et du joueur', 'section' => 'Système'],
+            ['id' => 'Profile', 'name' => 'Profil', 'description' => 'Profil de l\'opérateur', 'section' => 'Système'],
+            ['id' => 'Accessories', 'name' => 'Accessoires', 'description' => 'Antennes, batteries et accessoires montés', 'section' => 'Système'],
+            ['id' => 'ScreenTime', 'name' => 'Temps d\'écran', 'description' => 'Temps passé sur le téléphone et en jeu', 'section' => 'Système'],
+            ['id' => 'Debug', 'name' => 'Debug', 'description' => 'Diagnostic technique du téléphone', 'section' => 'Système'],
+            ['id' => 'Credits', 'name' => 'Crédits', 'description' => 'Auteurs et remerciements', 'section' => 'Système'],
+            ['id' => 'Music', 'name' => 'Musique', 'description' => 'Lecteur de musique', 'section' => 'Civil'],
+            ['id' => 'Food', 'name' => 'UberEats', 'description' => 'Rations livrées par drone', 'section' => 'Civil'],
+            ['id' => 'Dating', 'name' => 'Tinder', 'description' => 'Rencontres entre joueurs', 'section' => 'Civil'],
+        ];
+    }
+
+    /**
+     * Règles de la communauté pour l'App Store du téléphone : id d'app => required | forbidden (absent = au choix du joueur).
+     *
+     * @param mixed $raw
+     * @return array<string, string>
+     */
+    public function sanitizeAppPolicy(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $known = array_column($this->phoneApps(), 'id');
+        $out = [];
+        foreach ($known as $id) {
+            $rule = $raw[$id] ?? null;
+            if ($rule === 'required' || $rule === 'forbidden') {
+                $out[$id] = $rule;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $rules id d'app => required | forbidden | player
+     * @return array<string, string>
+     */
+    public function putAppPolicy(int $tenantId, array $rules): array
+    {
+        $settings = $this->get($tenantId)['settings'];
+        $settings['apps_policy'] = $this->sanitizeAppPolicy($rules);
+        $settings['updated_at'] = gmdate('c');
+        (new \App\Repositories\TenantAtakConfigRepository())->saveExperienceConfig($tenantId, $settings);
+
+        return $settings['apps_policy'];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function defaults(): array
@@ -463,6 +575,7 @@ final class AtakExperienceService
         $out['guide_custom'] = '';
         $out['server_control_reviewed'] = false;
         $out['net_live'] = [];
+        $out['apps_policy'] = [];
 
         return $out;
     }
@@ -485,6 +598,7 @@ final class AtakExperienceService
         if (!empty($merged['realism']) && !empty($merged['troll'])) {
             $merged['troll'] = false;
         }
+        $merged['apps_policy'] = $this->sanitizeAppPolicy($merged['apps_policy']);
 
         return [
             'settings' => $merged,
@@ -587,6 +701,21 @@ final class AtakExperienceService
                 $out[$id] = (string) ($s[$id] ?? $row['default']);
             }
         }
+        // Fréquence d'envoi des positions (Configuration ATAK > Connexion en jeu). Préfixe net_ : la DLL relaie
+        // toutes les clés net_* sans nouvelle version ; le pack l'applique à comspec_overwatch_position_interval.
+        try {
+            $interval = (int) ((new \App\Services\Game\GameOverwatchExperienceService())->get($tenantId)['update_interval'] ?? 0);
+        } catch (\Throwable) {
+            $interval = 0;
+        }
+        $out['net_position_interval'] = $interval >= 2 ? (string) $interval : 'player';
+        // App Store du téléphone (Contrôle serveur > Apps du téléphone) : noms de classe séparés par des virgules.
+        // Préfixe net_ : la DLL COMSPEC Link relaie toutes les clés net_* sans nouvelle version (fn_appInstall les lit).
+        $policy = $this->sanitizeAppPolicy($s['apps_policy'] ?? []);
+        $required = array_keys(array_filter($policy, static fn (string $r): bool => $r === 'required'));
+        $forbidden = array_keys(array_filter($policy, static fn (string $r): bool => $r === 'forbidden'));
+        $out['net_apps_required'] = $required === [] ? 'player' : implode(',', $required);
+        $out['net_apps_forbidden'] = $forbidden === [] ? 'player' : implode(',', $forbidden);
 
         return $out;
     }

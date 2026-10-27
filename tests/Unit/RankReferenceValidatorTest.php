@@ -94,7 +94,7 @@ final class RankReferenceValidatorTest extends TestCase
         self::assertStringContainsString('Maréchal des logis', $migration);
         self::assertStringContainsString('Général d’armée', $migration);
 
-        $run = (string) file_get_contents(dirname(__DIR__, 2) . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
         self::assertStringContainsString('rank_catalog_migration.php', $run);
         self::assertStringContainsString('run_rank_catalog_migration', $run);
 

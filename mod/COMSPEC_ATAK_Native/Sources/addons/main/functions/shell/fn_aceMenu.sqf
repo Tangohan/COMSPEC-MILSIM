@@ -49,7 +49,7 @@ private _add = {
 private _set = {
     params ["_var", "_val"];
     profileNamespace setVariable [_var, _val];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_PersoSet", _set];
@@ -63,7 +63,6 @@ missionNamespace setVariable ["COMSPEC_ATAK_PersoSet", _set];
             compile format ["(profileNamespace getVariable ['%1', '%2']) isNotEqualTo '%3'", _var, _def, _val]] call _add;
     } forEach _opts;
 } forEach [
-    ["COMSPEC_ATAK_ShellTint", "coyote", "COMSPEC_ATAK_PersoShell", "Couleur de la coque", [["Coyote", "coyote"], ["Vert OD", "od"], ["Noir", "black"]]],
     ["COMSPEC_ATAK_ModuleTint", "olive", "COMSPEC_ATAK_PersoModule", "Couleur du module DL-7", [["Olive", "olive"], ["Noir", "black"], ["Tan", "tan"]]],
     ["COMSPEC_ATAK_Patch", "none", "COMSPEC_ATAK_PersoPatch", "Patch au dos", [["Aucun", "none"], ["France", "fr"], ["France basse visibilité", "fr_sub"], ["USA", "us"], ["USA basse visibilité", "us_ir"],
         ["Crâne", "skull"], ["Croix", "crusader"], ["Alien", "alien"], ["COMSPEC", "comspec"], ["Nominatif", "name"],
@@ -78,7 +77,7 @@ private _vestUse = {
     params ["_use"];
     profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinUse", _use];
     if (_use isEqualTo "ours" && {(profileNamespace getVariable ["COMSPEC_ATAK_VestMount", "off"]) isEqualTo "off"}) then { profileNamespace setVariable ["COMSPEC_ATAK_VestMount", "left"]; };
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     ["tick"] call comspec_atak_native_fnc_vestMount;
 };
 missionNamespace setVariable ["COMSPEC_ATAK_VestUse", _vestUse];
@@ -95,7 +94,7 @@ private _vestMark = {
     if (_on) then { _mine pushBack _v; } else { _not pushBack _v; };
     profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinMine", _mine];
     profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinNot", _not];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     ["tick"] call comspec_atak_native_fnc_vestMount;
 };
 missionNamespace setVariable ["COMSPEC_ATAK_VestMark", _vestMark];
@@ -123,12 +122,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_OwRepair", _ow];
 }] call _add;
 [_care, "COMSPEC_ATAK_OwDiag", "Diagnostic", "", {
     private _s = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
-    private _ok = { ["✗ ", "✓ "] select _this };
-    hint ((format ["État de l'ATAK\n\nAlimentation : %1\nÉcran : %2\nConnexion : %3%4",
-        ((_s get "powered_on") call _ok) + (["éteint", "OK"] select (_s get "powered_on")),
-        ((_s get "screen_ok") call _ok) + (["détruit", "OK"] select (_s get "screen_ok")),
-        ((_s get "connection_ok") call _ok) + (["coupée", "OK"] select (_s get "connection_ok")),
-        ["", "\n\nTéléphone irréparable : remplacement nécessaire"] select (_s get "device_destroyed")]) call comspec_atak_native_fnc_tr);
+    // Phrase source en français, traduite à l'affichage (fn_notificationsRender) : chaque « Libellé : valeur » est dans le
+    // dictionnaire (« Power: ✗ Off »). Traduite morceau par morceau ici, elle gardait l'espace français avant les deux-points.
+    private _ok = { params ["_on", "_bad"]; ["✗ " + _bad, "✓ OK"] select _on };
+    // Dans le centre de notifications du téléphone, pas sur l'écran du jeu.
+    ["INFO", format ["ATAK · État · Alimentation : %1 · Écran : %2 · Liaison : %3%4",
+        [_s get "powered_on", "Éteint"] call _ok, [_s get "screen_ok", "Détruit"] call _ok, [_s get "connection_ok", "Coupée"] call _ok,
+        ["", " · Téléphone détruit"] select (_s get "device_destroyed")], 8, 40] call comspec_atak_native_fnc_notify;
 }, { call (missionNamespace getVariable "COMSPEC_ATAK_OwRepair") }] call _add;
 // Les mêmes actions posées par Overwatch dans « Équipement » sont retirées une fois en place (doublons).
 [{ missionNamespace getVariable ["COMSPEC_AtakRepairReady", false] }, {
@@ -181,7 +181,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
             _p removeItem "COMSPEC_ATAK_VehicleKit";
             _v setVariable ["COMSPEC_ATAK_VehTerm", true, true];
             ["INFO", "Terminal ATAK installé : l'équipage a la tablette de bord", 4, 30] call comspec_atak_native_fnc_notify;
-        }, {}, "Installation du terminal ATAK…"] call ace_common_fnc_progressBar;
+        }, {}, ("Installation du terminal ATAK…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
     }, {
         (missionNamespace getVariable ["comspec_atak_native_vehicle_terminal", "all"]) isEqualTo "kit" && {alive _target}
             && {!(_target getVariable ["COMSPEC_ATAK_VehTerm", false])} && {"COMSPEC_ATAK_VehicleKit" in (items _player)}
@@ -205,7 +205,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
         ["COMSPEC_ATAK_RelayOff", "Couper le relais", { ["power", [_target, "off"]] call comspec_atak_native_fnc_relayNet; }, { _target getVariable ["COMSPEC_AtakRelayOn", true] }],
         ["COMSPEC_ATAK_RelayOn", "Allumer le relais", { ["power", [_target, "on"]] call comspec_atak_native_fnc_relayNet; }, { !(_target getVariable ["COMSPEC_AtakRelayOn", true]) }],
         ["COMSPEC_ATAK_RelayBatt", "Changer la batterie", {
-            [10, _target, { ["power", [_this select 0, "battery"]] call comspec_atak_native_fnc_relayNet; }, {}, "Changement de la batterie du relais…"] call ace_common_fnc_progressBar;
+            [10, _target, { ["power", [_this select 0, "battery"]] call comspec_atak_native_fnc_relayNet; }, {}, ("Changement de la batterie du relais…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
         }, { private _b = _target getVariable ["COMSPEC_AtakRelayBatt", -1]; _b isEqualType 0 && {_b >= 0} && {_b < 95} }]
     ];
 } forEach ["Static", "Thing", "LandVehicle", "Ship", "Air"];

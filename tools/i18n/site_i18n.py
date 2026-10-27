@@ -10,6 +10,7 @@ dictionnaire lang/en/site_auto.php : ['texte français' => 'English text', ...].
   python3 tools/i18n/site_i18n.py extract [dossier de views ...]   textes sans traduction -> tools/i18n/site_missing.tsv
   python3 tools/i18n/site_i18n.py extract-app                     textes du code PHP (app/) -> tools/i18n/site_missing.tsv
   python3 tools/i18n/site_i18n.py extract-js                      textes des scripts (assets/js, <script> des vues) -> site_missing.tsv
+  python3 tools/i18n/site_i18n.py extract-labels                  libellés courts des tableaux PHP (menus, titres de pages) -> site_missing.tsv
   python3 tools/i18n/site_i18n.py js-bundle                       régénère public/assets/js/i18n_en_dict.js (à relancer après merge)
   python3 tools/i18n/site_i18n.py merge fichier.tsv                ajoute les lignes « français<TAB>anglais »
   python3 tools/i18n/site_i18n.py stats
@@ -29,8 +30,17 @@ MISSING = os.path.join(ROOT, "tools", "i18n", "site_missing.tsv")
 
 PHP_BLOCK = re.compile(r"<\?(?:php|=)?(.*?)(?:\?>|\Z)", re.S)
 TAG = re.compile(r"<[^<>]*>")
-ATTR = re.compile(r"""\b(?:title|placeholder|aria-label|alt|value|data-confirm)\s*=\s*(["'])(.*?)\1""", re.S | re.I)
+ATTR = re.compile(r"""\b(?:title|placeholder|aria-label|alt|value|data-confirm|data-label)\s*=\s*(["'])(.*?)\1""", re.S | re.I)
 SKIP_BLOCK = re.compile(r"<(script|style|textarea|pre|code)\b[^>]*>.*?</\1\s*>", re.S | re.I)
+
+
+def skip_blocks(html):
+    """Retire les blocs jamais traduits ; garde la balise ouvrante d'un <textarea> (placeholder, title traduits)."""
+    def rep(m):
+        if m.group(1).lower() == "textarea":
+            return m.group(0)[:m.group(0).index(">") + 1] + "\x00"
+        return "\x00"
+    return SKIP_BLOCK.sub(rep, html)
 PHP_STR = re.compile(r"""'((?:[^'\\]|\\.)*)'|"((?:[^"\\$]|\\.)*)\"""")
 WORD = re.compile(r"[A-Za-zÀ-ÿ]")
 FRENCH_HINT = re.compile(r"[àâäçéèêëîïôöùûüÿœÀÂÇÉÈÊÎÔÙÛŒ]|\b(le|la|les|des|du|un|une|et|ou|pour|avec|sans|dans|sur|par|vos|votre|nos|notre|est|sont|pas|ne|aucun|aucune|à)\b", re.I)
@@ -48,7 +58,8 @@ def is_text(s):
     if re.fullmatch(r"[\w\-\./:#%]+", s) and not re.search(r"[À-ÿ]", s) and " " not in s:
         # Un seul mot : gardé s'il commence par une majuscule ou porte un accent (libellé), sinon identifiant probable.
         return bool(re.fullmatch(r"[A-ZÀ-Ý][a-zà-ÿ]+", s))
-    if re.search(r"[{};$]|=>|->|::|\bfunction\b|https?://", s):
+    # « ; » précédé d'une espace : point-virgule de phrase française, pas du code.
+    if re.search(r"[{}$]|(?<! );|=>|->|::|\bfunction\b|https?://", s):
         return False
     return True
 
@@ -87,7 +98,7 @@ def extract_view(src):
                 out.update(segments_from_text(lit2))
     # Gabarit HTML : PHP non affiché retiré, <?= ?> -> %N dans chaque texte.
     tpl = re.sub(r"<\?php.*?(?:\?>|\Z)", "\x00", src, flags=re.S)
-    tpl = SKIP_BLOCK.sub("\x00", tpl)
+    tpl = skip_blocks(tpl)
     for am in ATTR.finditer(tpl):
         v = am.group(2)
         if "<?=" in v:
@@ -146,6 +157,39 @@ APP_SKIP_LINE = re.compile(r"error_log|->log\w*\(|Logger|::log\w*\(|->(debug|inf
                            r"|throw\s|Exception\(|audit|journal|syslog|trigger_error|logEvent|logAction|->record\(", re.I)
 APP_SKIP_SQL = re.compile(r"\b(SELECT|INSERT|UPDATE|DELETE|WHERE|JOIN|CREATE|ALTER)\b")
 APP_SKIP_FILE = re.compile(r"Scanner|Log\w*Service|Pdf|Moderation|Logger|Journal")
+
+
+LABEL_WORDISH = re.compile(r"^[A-ZÀ-Ý][\w’'À-ÿ-]*(?:\s+[\w’'À-ÿ&()/-]+)+$|^[A-ZÀ-Ý][a-zà-ÿ]{3,}$")
+
+
+def label_segments():
+    """Libellés rangés dans des tableaux PHP (« 'label' => 'Indicatifs radio' ») de views/, app/ et config/, lus par
+    le tokenizer de PHP (php_labels.php) : gardés même sans indice de français, sinon les menus courts restaient en
+    français sur le site anglais. Les libellés déjà anglais sont écartés par le dictionnaire (traduction identique)."""
+    import subprocess
+    paths = []
+    for d in (VIEWS, APP, os.path.join(ROOT, "config")):
+        for base, _dirs, files in os.walk(d):
+            paths += [os.path.join(base, f) for f in files if f.endswith(".php")]
+    try:
+        raw = subprocess.run(["php", os.path.join(ROOT, "tools", "i18n", "php_labels.php"), "-"], input="\n".join(paths),
+                             capture_output=True, text=True, timeout=300).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return {}
+    import json
+    out = {}
+    for line in raw.splitlines():
+        try:
+            path, val = json.loads(line)
+        except ValueError:
+            continue
+        s = norm(val)
+        if len(s) < 3 or "<" in s or "%" in s or not is_text(s):
+            continue
+        if not (FRENCH_HINT.search(s) or LABEL_WORDISH.search(s)):
+            continue
+        out.setdefault(s, os.path.relpath(path, ROOT))
+    return out
 
 
 def app_segments():
@@ -314,9 +358,9 @@ def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "stats"
     if cmd == "js-bundle":
         print(f"{write_js_bundle()} traductions dans {os.path.relpath(JS_BUNDLE, ROOT)}")
-    elif cmd in ("extract", "extract-app", "extract-js"):
+    elif cmd in ("extract", "extract-app", "extract-js", "extract-labels"):
         have = load_dict()
-        found = {"extract-app": app_segments, "extract-js": js_found}.get(cmd, dict)()
+        found = {"extract-app": app_segments, "extract-js": js_found, "extract-labels": label_segments}.get(cmd, dict)()
         for path in ([] if cmd != "extract" else view_files(sys.argv[2:])):
             rel = os.path.relpath(path, VIEWS)
             for s in extract_view(open(path, encoding="utf-8", errors="replace").read()):

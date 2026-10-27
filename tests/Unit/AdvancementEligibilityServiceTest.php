@@ -473,6 +473,36 @@ final class AdvancementEligibilityServiceTest extends TestCase
         self::assertSame(0, $scales->completeForTenant(4, 'FR_CLASSIC'));
     }
 
+    public function testGradesSurMesureRemplacentLAncienReferentielDansLOrdreDeLaCommunaute(): void
+    {
+        $pdo = $this->pdo();
+        $this->seedCatalog($pdo);
+        $pdo->exec('ALTER TABLE grade_systems ADD COLUMN owner_tenant_id INT');
+        $pdo->exec("INSERT INTO grade_systems (id, code, label, owner_tenant_id) VALUES (2, 'T9_KRON', 'Kron', 9)");
+        $pdo->exec("INSERT INTO grade_categories (id, code, label, sort_order) VALUES (4, 'T9C', 'Enlisted', 10)");
+        // Référentiel sur mesure : classé du plus haut au plus bas (un nouveau grade arrive en tête).
+        $pdo->exec("INSERT INTO grades (id, grade_system_id, grade_category_id, code, label_short, label_long, label_otan, sort_order, is_commissioned, is_active) VALUES
+            (10, 2, 4, 'RCT', 'RCT', 'Recruit', NULL, 10, 0, 1),
+            (11, 2, 4, 'PVT', 'PVT', 'Private', NULL, 0, 0, 1),
+            (12, 2, 4, 'LCPL', 'LCPL', 'Lance Corporal', NULL, -10, 0, 1)");
+        $repo = new AdvancementRepository($pdo);
+        $scales = new GradeScaleTemplateService($repo);
+        $old = $repo->saveGrade(9, [
+            'code' => 'SD2',
+            'label' => 'Soldat de 2e classe',
+            'rank_order' => 1,
+            'advancement_seniority_enabled' => 1,
+            'advancement_choice_enabled' => 0,
+        ]);
+
+        $scales->completeForTenant(9, 'T9_KRON');
+
+        $active = $repo->listGrades(9, false);
+        self::assertSame(['RCT', 'PVT', 'LCPL'], array_column($active, 'code'));
+        self::assertSame([1, 2, 3], array_map('intval', array_column($active, 'rank_order')));
+        self::assertNotEmpty($repo->findGrade($old, 9)['archived_at'] ?? null);
+    }
+
     public function testCompleteReutiliseUnGradeDejaPresent(): void
     {
         $pdo = $this->pdo();

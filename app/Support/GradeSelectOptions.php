@@ -10,6 +10,9 @@ namespace App\Support;
  *
  * Le catalogue range les officiers du plus bas au plus haut et les sous-officiers dans l'autre sens :
  * l'ordre suit donc le code OTAN (OF-9 → OF-1, OR-9 → OR-1), puis la catégorie et l'ordre du catalogue.
+ *
+ * Grades sur mesure (système appartenant à la communauté : SCP, Star Wars…) : un groupe par catégorie du
+ * système, dans l'ordre choisi par la communauté (sort_order le plus grand = le plus haut).
  */
 final class GradeSelectOptions
 {
@@ -32,6 +35,20 @@ final class GradeSelectOptions
     private const SYSTEM_LABELS = [
         'FR' => 'France',
         'US' => 'États-Unis',
+    ];
+
+    // Libellés de groupe en anglais : un <optgroup label> n'est pas repris par la traduction du site.
+    private const CATEGORY_LABELS_EN = [
+        'OFFICIER' => 'Officers',
+        'SOUS_OFFICIER' => 'NCOs',
+        'MDR' => 'Enlisted',
+        'CIVIL' => 'Civilians',
+        'HORS_GRADE' => 'No grade',
+    ];
+
+    private const SYSTEM_LABELS_EN = [
+        'FR' => 'France',
+        'US' => 'United States',
     ];
 
     /**
@@ -74,13 +91,19 @@ final class GradeSelectOptions
 
             return $c !== 0 ? $c : (self::sortKey($a) <=> self::sortKey($b));
         });
+        $en = function_exists('locale') && locale() === 'en';
+        $categoryLabels = $en ? self::CATEGORY_LABELS_EN : self::CATEGORY_LABELS;
+        $systemLabels = $en ? self::SYSTEM_LABELS_EN : self::SYSTEM_LABELS;
         $groups = [];
         foreach ($rows as $g) {
             $cat = self::category($g);
-            $label = self::CATEGORY_LABELS[$cat] ?? (trim((string) ($g['category_label'] ?? '')) ?: 'Autres');
+            $label = self::isCustom($g)
+                ? (trim((string) ($g['category_label'] ?? '')) ?: ($en ? 'Ranks' : 'Grades'))
+                : ($categoryLabels[$cat] ?? (trim((string) ($g['category_label'] ?? '')) ?: ($en ? 'Other' : 'Autres')));
             if ($multi) {
                 $country = self::country($g);
-                $label = (self::SYSTEM_LABELS[$country] ?? $country) . ' · ' . $label;
+                $system = self::isCustom($g) ? (trim((string) ($g['system_label'] ?? '')) ?: $country) : ($systemLabels[$country] ?? $country);
+                $label = $system . ' · ' . $label;
             }
             if ($groups === [] || $groups[count($groups) - 1]['label'] !== $label) {
                 $groups[] = ['label' => $label, 'grades' => []];
@@ -121,9 +144,19 @@ final class GradeSelectOptions
         return 0;
     }
 
+    /** Grade d'un système créé par une communauté (grade_systems.owner_tenant_id). */
+    public static function isCustom(array $g): bool
+    {
+        return (int) ($g['system_owner_tenant_id'] ?? 0) > 0;
+    }
+
     /** @return array{int, int, int, int} */
     private static function sortKey(array $g): array
     {
+        if (self::isCustom($g)) {
+            // Catégories puis grades dans l'ordre de la communauté : le plus grand sort_order en premier.
+            return [10 - (int) ($g['category_sort'] ?? 0), 0, -(int) ($g['sort_order'] ?? 0), (int) ($g['id'] ?? 0)];
+        }
         $cat = self::CATEGORY_ORDER[self::category($g)] ?? 9;
         $nato = self::natoRank($g);
         $order = (int) ($g['sort_order'] ?? 0);
@@ -155,6 +188,10 @@ final class GradeSelectOptions
 
     private static function country(array $g): string
     {
+        // Chaque système sur mesure forme son propre « pays » (deux systèmes maison ne se mélangent pas).
+        if (self::isCustom($g)) {
+            return 'ZZ:' . (string) ($g['system_code'] ?? '');
+        }
         $c = strtoupper(trim((string) ($g['country_code'] ?? '')));
         if ($c === '') {
             $sys = strtoupper((string) ($g['system_code'] ?? ''));

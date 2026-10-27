@@ -19,7 +19,7 @@ private _cache = uiNamespace getVariable "COMSPEC_ATAK_LblCache";
 if (isNil "_cache" || {(count _cache) > 400}) then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_LblCache", _cache]; };
 
 // Contacts ENI : marqueurs hostiles (classe o_*) ou titrés « ENI … » (palette du téléphone), liste refaite chaque seconde.
-private _eni = uiNamespace getVariable ["COMSPEC_ATAK_EniList", [-1, []]];
+private _eni = missionNamespace getVariable ["COMSPEC_ATAK_EniList", [-1, []]];
 if (_now > (_eni select 0)) then {
     private _meta = missionNamespace getVariable "COMSPEC_ATAK_MarkerMeta";
     if (isNil "_meta") then { _meta = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MarkerMeta", _meta]; };
@@ -54,10 +54,10 @@ if (_now > (_eni select 0)) then {
         };
         _mt params ["_hms", "_who"];
         private _title = toUpper ([_txt, ["ENY CONTACT", "ENI CONTACT"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")] select (_txt isEqualTo ""));
-        _list pushBack [_key, [_pos select 0, _pos select 1, 0], _title, [_hms, format ["%1 · signalé %2", _hms, toUpper _who]] select (_who isNotEqualTo "")];
+        _list pushBack [_key, [_pos select 0, _pos select 1, 0], _title, [_hms, (format ["%1 · signalé %2", _hms, toUpper _who]) call comspec_atak_native_fnc_tr] select (_who isNotEqualTo "")];
     } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["markers", createHashMap]);
     _eni = [_now + 1, _list];
-    uiNamespace setVariable ["COMSPEC_ATAK_EniList", _eni];
+    missionNamespace setVariable ["COMSPEC_ATAK_EniList", _eni];
 };
 
 // Géométrie de la carte : passage écran -> monde une fois par image.
@@ -77,7 +77,7 @@ private _ox = _fs1 * 1.1 / _ratio;
 private _oy = _fs1 * 0.9;
 
 // Candidats visibles, triés : sélection, contacts ENI, mon groupe, puis les autres, chacun du plus proche au plus loin.
-private _me = getPosASL player;
+private _me = [] call comspec_atak_native_fnc_gpsPos;
 private _vis = [];
 {
     _x params ["_prio", "_id", "_pos", "_cs", ["_hostile", false], ["_a", 1]];
@@ -86,7 +86,7 @@ private _vis = [];
     private _c = _cache getOrDefault [_id, []];
     if ((count _c) < 3 || {_now > (_c select 0)}) then {
         private _d = _me distance2D _pos;
-        private _txt = format ["%1 · %2°", [format ["%1 m", round _d], format ["%1 km", ((_d / 1000) toFixed 1) splitString "." joinString ","]] select (_d >= 1000), (round (_me getDir _pos)) mod 360];
+        private _txt = format ["%1 · %2°", [format ["%1 m", round _d], format ["%1 km", [(_d / 1000) toFixed 1, ((_d / 1000) toFixed 1) splitString "." joinString ","] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")]] select (_d >= 1000), (round (_me getDir _pos)) mod 360];
         _c = [_now + 0.5, _d, _txt];
         _cache set [_id, _c];
     };

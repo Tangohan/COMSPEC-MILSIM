@@ -105,7 +105,6 @@ final class CooperationAnnouncementEvents
         return [
             'email' => 'Courriel',
             'in_app' => 'Notifications du portail',
-            'forum' => 'Publication sur le forum',
         ];
     }
 

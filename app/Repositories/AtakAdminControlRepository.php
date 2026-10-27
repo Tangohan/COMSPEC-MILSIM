@@ -60,6 +60,7 @@ final class AtakAdminControlRepository
         'web' => 'Poste de commandement',
         'admin' => 'Administration du site',
         'gestion' => 'Gestion de la communauté',
+        'ingame' => 'Gestion, depuis le jeu (app Admin de l’ATAK)',
     ];
 
     /** Avis automatiques que l'ATAK du joueur met en forme et affiche en alerte (genre => niveau). */
@@ -70,6 +71,8 @@ final class AtakAdminControlRepository
         'reset' => 'warning',
         'certificate' => 'warning',
         'phone' => 'info',
+        // CR de fin d'opération imposé (AtakDebriefService) : le téléphone ouvre la fiche à remplir ou à lire.
+        'debrief' => 'warning',
     ];
 
     /** Filtres d'état de la liste. */

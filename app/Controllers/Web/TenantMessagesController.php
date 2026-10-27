@@ -34,9 +34,9 @@ final class TenantMessagesController
         if (!$tenantId || !$userId) {
             return Response::redirect(url('dashboard'));
         }
-        $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
-        if (!$featureGate->allows($tenantId, 'messages')) {
-            return \App\Support\PlanFeatureDenial::upgradeView('messages');
+        $denied = $this->messagesFeatureDenial($tenantId);
+        if ($denied instanceof Response) {
+            return $denied;
         }
         $user = $this->authService->user();
         if ($user) {
@@ -71,13 +71,17 @@ final class TenantMessagesController
         if (!$tenantId || !$userId || $threadId <= 0) {
             return Response::redirect(url('messages'));
         }
+        $denied = $this->messagesFeatureDenial($tenantId);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
         $user = $this->authService->user();
         if ($user) {
             $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
         $thread = $this->messageRepository->findThread($threadId, $tenantId);
         if (!$thread || !$this->messageRepository->userInThread($threadId, $userId)) {
-            Session::flash('error', 'Fil introuvable.');
+            Session::flash('error', 'Cette conversation est introuvable.');
 
             return Response::redirect(url('messages'));
         }
@@ -126,18 +130,21 @@ final class TenantMessagesController
         if (!$tenantId || !$userId) {
             return Response::redirect(url('dashboard'));
         }
+        $denied = $this->messagesFeatureDenial($tenantId);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
         $subject = trim((string) $request->input('subject', ''));
         $body = trim((string) $request->input('body', ''));
-        if ($body === '') {
-            Session::flash('error', 'Le message est vide : écrivez quelques mots avant d’envoyer.');
-
-            return Response::redirect(url('messages') . '?nouveau=1');
+        $rejected = $this->rejectMessageBody($body, url('messages') . '?nouveau=1');
+        if ($rejected instanceof Response) {
+            return $rejected;
         }
         $staffIds = $this->messageRepository->findStaffUserIdsForTenant($tenantId);
         if ($staffIds === []) {
             Session::flash(
                 'error',
-                'Aucun contact n’est désigné pour recevoir les messages internes sur cette communauté. Utilisez le forum ou contactez un administrateur.'
+                'Aucun contact n’est désigné pour recevoir les messages internes sur cette communauté. Contactez directement un administrateur.'
             );
 
             return Response::redirect(url('messages'));
@@ -179,20 +186,51 @@ final class TenantMessagesController
         if (!$tenantId || !$userId || $threadId <= 0) {
             return Response::redirect(url('messages'));
         }
+        $denied = $this->messagesFeatureDenial($tenantId);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
         $thread = $this->messageRepository->findThread($threadId, $tenantId);
         if (!$thread || !$this->messageRepository->userInThread($threadId, $userId)) {
-            Session::flash('error', 'Fil introuvable.');
+            Session::flash('error', 'Cette conversation est introuvable.');
 
             return Response::redirect(url('messages'));
         }
         $body = trim((string) $request->input('body', ''));
-        if ($body === '') {
-            return Response::redirect(url('messages/' . $threadId));
+        $rejected = $this->rejectMessageBody($body, url('messages/' . $threadId));
+        if ($rejected instanceof Response) {
+            return $rejected;
         }
         $this->messageRepository->addMessage($threadId, $userId, $body);
         $this->internalMessageNotifications->notifyAfterMessage($tenantId, $threadId, $userId, $body);
         Session::flash('success', 'Réponse envoyée.');
 
         return Response::redirect(url('messages/' . $threadId));
+    }
+
+    private function messagesFeatureDenial(int $tenantId): ?Response
+    {
+        $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if ($featureGate->allows($tenantId, 'messages')) {
+            return null;
+        }
+
+        return \App\Support\PlanFeatureDenial::upgradeView('messages');
+    }
+
+    private function rejectMessageBody(string $body, string $backUrl): ?Response
+    {
+        if ($body === '') {
+            Session::flash('error', 'Le message est vide : écrivez quelques mots avant d’envoyer.');
+
+            return Response::redirect($backUrl);
+        }
+        if (mb_strlen($body) > 4000) {
+            Session::flash('error', 'Votre message est trop long : raccourcissez-le pour qu’il tienne en 4 000 caractères.');
+
+            return Response::redirect($backUrl);
+        }
+
+        return null;
     }
 }

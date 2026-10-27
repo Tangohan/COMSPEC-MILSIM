@@ -288,6 +288,7 @@ final class RegisterController
             return Response::redirect(url('register'));
         }
 
+        \App\Services\Personnel\NewMemberNumbers::assign($userId, $tenantId);
         $this->auditService->log(AuditAction::AUTH_REGISTER, $tenantId, $userId, 'user', $userId, null, $email);
 
         $rawToken = bin2hex(random_bytes(32));

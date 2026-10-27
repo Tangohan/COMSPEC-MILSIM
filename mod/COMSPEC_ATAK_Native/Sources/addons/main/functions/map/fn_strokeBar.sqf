@@ -1,6 +1,6 @@
 /*
     Barre des outils TRAIT et DESSIN LIBRE de la carte (fn_pageMap, sous la consigne) : couleur, épaisseur,
-    flèche, ZONE (forme fermée, dessin libre), ANNULER (mon dernier trait) et EFFACER MES TRAITS.
+    flèche, ROUTES (trait collé aux routes, fn_roadPath), ZONE (forme fermée, dessin libre), ANNULER (mon dernier trait) et EFFACER MES TRAITS.
     Réglages gardés dans le profil (lus par fn_markerStroke et fn_strokeDraw).
     Params : [[x, y, largeur disponible]]
 */
@@ -12,7 +12,7 @@ private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
 private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _mk = { params ["_class", "_pos", ["_text", ""]]; [_class, _pos, _text, false] call comspec_atak_native_fnc_pageCtrl };
-private _set = { params ["_var", "_val"]; compile format ["profileNamespace setVariable [%1, %2]; saveProfileNamespace; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str _var, _val] };
+private _set = { params ["_var", "_val"]; compile format ["profileNamespace setVariable [%1, %2]; [] call comspec_atak_native_fnc_saveProfile; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str _var, _val] };
 private _h = _fs * 1.55;
 private _gap = _pad / 3;
 private _draw = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["mapMode", ""]) isEqualTo "DRAW";
@@ -51,6 +51,8 @@ private _closed = profileNamespace getVariable ["COMSPEC_ATAK_DrawClosed", false
 private _btns = [
     ["FLÈCHE", ["COMSPEC_ATAK_DrawArrow", str !_arrow] call _set, _arrow, "Pointe de flèche au bout du trait, dans le sens du tracé"]
 ];
+private _roads = profileNamespace getVariable ["COMSPEC_ATAK_DrawRoads", false];
+if (!_draw) then { _btns pushBack ["ROUTES", ["COMSPEC_ATAK_DrawRoads", str !_roads] call _set, _roads, "Le trait suit les routes entre les deux points (convoi, patrouille)"]; };
 if (_draw) then { _btns pushBack ["ZONE", ["COMSPEC_ATAK_DrawClosed", str !_closed] call _set, _closed, "Forme fermée : le dessin revient à son point de départ"]; };
 _btns append [
     ["ANNULER", { ["UNDO"] call comspec_atak_native_fnc_markerStroke; }, false, "Efface mon dernier trait"],

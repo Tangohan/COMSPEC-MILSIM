@@ -12,7 +12,7 @@
     {
       id: 'dash-tour-nav',
       title: 'Barre de navigation',
-      body: 'En haut, vous changez d’espace : tableau de bord, forum, formations, effectifs, et votre espace communautaire. Le nom de la communauté reste visible à gauche.'
+      body: 'En haut, vous changez d’espace : tableau de bord, formations, effectifs, et votre espace communautaire. Le nom de la communauté reste visible à gauche.'
     },
     {
       id: 'dash-tour-nav-links',

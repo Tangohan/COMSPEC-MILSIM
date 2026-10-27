@@ -320,6 +320,36 @@ final class CompleteDataSnapshotService
         ];
     }
 
+    /** Supprime une copie (dossier complet). Faux si elle n’existe pas. */
+    public function delete(string $id): bool
+    {
+        $dir = $this->snapshotDir($id);
+        if (!is_dir($dir)) {
+            return false;
+        }
+        $this->deleteDirectory($dir);
+
+        return !is_dir($dir);
+    }
+
+    /** Taille totale d’une copie sur le disque (octets). */
+    public function sizeOnDisk(string $id): int
+    {
+        $dir = $this->snapshotDir($id);
+        if (!is_dir($dir)) {
+            return 0;
+        }
+        $bytes = 0;
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $file) {
+            if ($file->isFile()) {
+                $bytes += (int) $file->getSize();
+            }
+        }
+
+        return $bytes;
+    }
+
     public function prune(?int $keep = null): int
     {
         $keep = $keep ?? $this->defaultKeep();

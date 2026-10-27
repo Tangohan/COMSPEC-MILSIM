@@ -10,7 +10,7 @@ missionNamespace setVariable ["comspec_overwatch_ecoti_hud", _enabled, false];
 
 if (_persist) then {
     profileNamespace setVariable ["COMSPEC_EcotiHudEnabled", _enabled];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 if (!isNil "cba_settings_fnc_set") then {

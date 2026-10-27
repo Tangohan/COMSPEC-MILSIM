@@ -8,10 +8,11 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Services\Security\FileRateLimiter;
+use App\Support\ComspecApiKeyAuth;
 
 /**
  * Throttling par IP (invité) ou par compte connecté (uid) sur routes sensibles :
- * authentification, recrutement public, forum, hub « Mon activité », modération auto recrutement.
+ * authentification, recrutement public, hub « Mon activité », modération auto recrutement.
  * Inclut un plafond GET anonyme pour freiner le scraping / mirroring massif.
  */
 final class RateLimitMiddleware
@@ -32,7 +33,9 @@ final class RateLimitMiddleware
         }
         [$max, $window, $rateKey] = $rules;
         if ($this->limiter->tooManyAttempts($rateKey, $max, $window)) {
-            $retry = max(1, min(120, $window));
+            // Temps qui reste avant la remise à zéro de la fenêtre fixe, et non la fenêtre entière (NET-027) : la DLL
+            // et Tacmap attendaient jusqu'à 60 s de trop. Plafond de 120 s gardé : rien n'est annoncé plus long qu'avant.
+            $retry = max(1, min(120, $this->limiter->secondsUntilReset($rateKey, $window)));
             if (str_starts_with($path, '/api/')) {
                 return Response::json([
                     'error' => 'too_many_requests',
@@ -77,13 +80,33 @@ final class RateLimitMiddleware
             return null;
         }
 
+        // NET-028 : écriture du tchat et comptes rendus SALUTE, par compte pour une session web, par session pour la
+        // page téléphone, par IP sinon (voir writerKey). Loin de l'usage réel : les pages web n'écrivent qu'à chaque
+        // envoi d'un joueur, et un SALUTE se remplit à la main (aucun client du jeu n'appelle cette route).
+        if ($method === 'POST' && $path === '/api/chat') {
+            // Flux du jeu (clé ou jeton valide, sans compte web) : AtakArmaWriteGuard le compte déjà par joueur
+            // (150 écritures du jeu par minute, tchat compris). Un second plafond par IP serait partagé par tous les
+            // joueurs derrière une même adresse (réseau local, CGNAT). NET-031 : la clé doit être valide, et non
+            // seulement présente. ComspecTacticalApiMiddleware l'a vérifiée juste avant (/api/chat est une route
+            // protégée) : le résultat est repris de la mémoire de la requête, sans requête SQL de plus. Une session
+            // web reste comptée par compte, même avec une clé valide.
+            if ($uid <= 0 && ComspecApiKeyAuth::requestPresentsValidKey()) {
+                return null;
+            }
+
+            return [120, 60, 'rl:chat_write:' . $this->writerKey($uid, $ip)];
+        }
+        if ($method === 'POST' && $path === '/api/atak/salute') {
+            return [30, 60, 'rl:salute:' . $this->writerKey($uid, $ip)];
+        }
+
         if ($path === '/back-office/ressources/recrutement/automod/restore-access') {
             return [25, 600, 'rl:rw_automod_restore:' . $actorKey];
         }
         if ($path === '/back-office/ressources/recrutement/automod/escalate') {
             return [10, 3600, 'rl:rw_automod_escalate:' . $actorKey];
         }
-        if (in_array($path, ['/activite/forum/lu', '/activite/courrier/lu', '/activite/messages/lu'], true)) {
+        if (in_array($path, ['/activite/courrier/lu', '/activite/messages/lu'], true)) {
             return [45, 300, 'rl:activite_mark:' . $path . ':' . $actorKey];
         }
 
@@ -98,10 +121,6 @@ final class RateLimitMiddleware
             '/communities/create' => [15, 3600],
             '/invitations/accept' => [30, 600],
             '/community/resolve-code' => [20, 600],
-            '/api/forum' => [120, 300],
-            '/api/forum-moderation' => [90, 300],
-            '/api/forum-upload' => [40, 300],
-            '/forum/new-topic' => [25, 600],
             '/api/atak/game-link/redeem' => [20, 3600],
             '/api/atak/game-link/by-steam' => [30, 3600],
             '/api/atak/client-init' => [60, 300],
@@ -120,9 +139,6 @@ final class RateLimitMiddleware
                 return [$max, $window, 'rl:' . $path . ':' . $method . ':' . $ip];
             }
         }
-        if (str_starts_with($path, '/forum/topic/') && str_ends_with($path, '/reply')) {
-            return [50, 300, 'rl:' . $path . ':' . $method . ':' . $ip];
-        }
 
         $prefixRules = [
             '/api/training/' => [300, 300],
@@ -140,6 +156,25 @@ final class RateLimitMiddleware
         }
 
         return null;
+    }
+
+    /**
+     * Auteur d'une écriture du tchat ou d'un SALUTE (NET-028, NET-031) : le compte d'une session web ; la session de la
+     * page téléphone (appariement par QR : communauté et jeton d'appariement, sans compte web), comme une session web ;
+     * sinon l'adresse IP. La session téléphone est désignée par une empreinte hachée et tronquée de son jeton : le jeton
+     * lui-même n'apparaît ni dans la clé du limiteur ni dans un nom de fichier (FileRateLimiter hache encore la clé).
+     */
+    private function writerKey(int $uid, string $ip): string
+    {
+        if ($uid > 0) {
+            return 'uid:' . $uid;
+        }
+        $token = trim((string) Session::get('atak_phone_pairing_token', ''));
+        if ($token !== '' && (int) Session::get('tenant_id', 0) > 0) {
+            return 'phone:' . substr(hash('sha256', 'rl-phone-session|' . $token), 0, 24);
+        }
+
+        return 'ip:' . $ip;
     }
 
     private function isExemptGetPath(string $path): bool
@@ -198,11 +233,8 @@ final class RateLimitMiddleware
 
     private function clientIp(): string
     {
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0';
-        if (is_string($ip) && str_contains($ip, ',')) {
-            return trim(explode(',', $ip)[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
 
-        return is_string($ip) ? $ip : '0';
+        return $ip !== '' ? $ip : '0';
     }
 }

@@ -68,9 +68,10 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
     <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/dsfr-service.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/auth-register.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/auth-pages.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php $GLOBALS['__dsfr_service_css'] = true; ?>
 </head>
-<body class="ds-page ds-page--split ds-page--register">
+<body class="ds-page ds-page--split ds-page--register ds-page--auth">
 <a class="ds-skip" href="#contenu"><?= htmlspecialchars(__('common.skip_to_content'), ENT_QUOTES, 'UTF-8') ?></a>
 <?php require base_path('views/partials/athena_header_guest.php'); ?>
 
@@ -327,7 +328,7 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
     <div id="preview-description" class="ds-preview-modal__body">
         <p>Vous accédez à une <strong>preview ouverte</strong> : l’interface et son intuitivité font encore l’objet d’améliorations.</p>
         <p>Le portail web et le mod évoluent séparément. Selon leurs versions, une fonctionnalité peut fonctionner, puis devenir temporairement indisponible jusqu’à leur réalignement.</p>
-        <p>Tout est en preview. Chaque conseil ou retour d’expérience nous aide : écrivez-nous à <a href="mailto:no-reply@athena.ttrd.fr">no-reply@athena.ttrd.fr</a>.</p>
+        <p>Tout est en preview. Chaque conseil ou retour d’expérience nous aide : écrivez-nous à <?php $feedbackEmail = \App\Support\PortalHost::feedbackEmail(); ?><a href="mailto:<?= htmlspecialchars($feedbackEmail, ENT_QUOTES, 'UTF-8') ?>" translate="no"><?= htmlspecialchars($feedbackEmail, ENT_QUOTES, 'UTF-8') ?></a>.</p>
     </div>
     <button type="button" class="ds-btn ds-btn--primary ds-btn--block" data-preview-close>J’ai compris, continuer</button>
 </dialog>

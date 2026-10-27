@@ -56,12 +56,16 @@ public static partial class Extension
         public readonly Queue<string> Missing = new();
         /// <summary>Incrémenté par Clear : les tuiles encore en route ne sont pas comptées en cache.</summary>
         public int Generation;
+        /// <summary>Début du dernier effacement : un fichier plus ancien sur le disque est une tuile périmée.</summary>
+        public DateTime WipedAt = DateTime.MinValue;
     }
 
     private static readonly object MapPhotoLock = new();
     private static readonly Dictionary<string, MapPhotoSet> MapPhotoSets = new(StringComparer.OrdinalIgnoreCase);
     private static readonly LinkedList<(MapPhotoSet Set, long Key)> MapPhotoWantQ = new();
     private static readonly HashSet<(MapPhotoSet, long)> MapPhotoQueued = new();
+    /// <summary>Tuiles en cours de téléchargement : ni remises en file ni téléchargées deux fois.</summary>
+    private static readonly HashSet<(MapPhotoSet, long)> MapPhotoInFlight = new();
     private static MapPhotoSet? _mpDlSet;
     private static List<long> _mpDlTodo = new();
     private static int _mpDlPos, _mpDlTotal, _mpDlDone;
@@ -76,7 +80,9 @@ public static partial class Extension
     private const double MapPhotoBytesPerSec = 3.0 * 1024 * 1024;
     private const int MapPhotoParallel = 4;
     // Client à part : délai court, sans clé (tuiles publiques), jamais en concurrence avec la synchro.
-    private static readonly Lazy<HttpClient> MapPhotoHttp = new(() => CreateHttpClient(30));
+    // Aucun secret n'y est jamais attaché (pas d'AttachApiKeyHeader) : il suit donc les redirections (SEC-001),
+    // par exemple une 308 de l'ancien domaine vers athena-comspec.eu (docs/migration-domaine, étape 6).
+    private static readonly Lazy<HttpClient> MapPhotoHttp = new(() => CreateHttpClient(30, followRedirects: true));
 
     private static long MapPhotoKey(int z, int x, int y) => ((long)z << 48) | ((long)x << 24) | (uint)y;
 
@@ -287,9 +293,18 @@ public static partial class Extension
     private static void MapPhotoWriteAtomic(string file, byte[] data)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        var tmp = file + ".part";
-        File.WriteAllBytes(tmp, data);
-        File.Move(tmp, file, true);
+        // Nom temporaire unique : deux écritures du même fichier ne se disputent pas le même .part.
+        var tmp = file + "." + Guid.NewGuid().ToString("N") + ".part";
+        try
+        {
+            File.WriteAllBytes(tmp, data);
+            File.Move(tmp, file, true);
+        }
+        catch
+        {
+            try { File.Delete(tmp); } catch { /* ignore */ }
+            throw;
+        }
     }
 
     /// <summary>Efface les tuiles d'un fond (et ses fichiers d'état si complet), en tâche de fond.</summary>
@@ -298,6 +313,7 @@ public static partial class Extension
         lock (MapPhotoLock)
         {
             set.Generation++;
+            set.WipedAt = DateTime.UtcNow;
             set.Cached.Clear();
             set.CachedBytes = 0;
             set.Backoff.Clear();
@@ -316,6 +332,19 @@ public static partial class Extension
                 if (all) Directory.Delete(dir, true);
             }
             catch { /* fichier ouvert par le jeu : laissé */ }
+            finally
+            {
+                // Des tuiles arrivées pendant l'effacement ont pu être supprimées : le cache en mémoire repart de zéro
+                // (les fichiers restés et plus récents que WipedAt sont repris par MapPhotoFetch), et les
+                // téléchargements encore en route n'écrivent plus (génération changée).
+                lock (MapPhotoLock)
+                {
+                    set.Generation++;
+                    set.Cached.Clear();
+                    set.CachedBytes = 0;
+                    set.Arrived.Clear();
+                }
+            }
         });
     }
 
@@ -335,7 +364,7 @@ public static partial class Extension
         {
             MapPhotoWantQ.RemoveFirst();
             MapPhotoQueued.Remove(node.Value);
-            if (node.Value.Set.Cached.Contains(node.Value.Key)) continue;
+            if (node.Value.Set.Cached.Contains(node.Value.Key) || !MapPhotoInFlight.Add(node.Value)) continue;
             (set, key, offline) = (node.Value.Set, node.Value.Key, false);
             return true;
         }
@@ -344,7 +373,7 @@ public static partial class Extension
             while (_mpDlPos < _mpDlTodo.Count)
             {
                 var k = _mpDlTodo[_mpDlPos++];
-                if (ds.Cached.Contains(k)) { _mpDlDone++; continue; }
+                if (ds.Cached.Contains(k) || !MapPhotoInFlight.Add((ds, k))) { _mpDlDone++; continue; }
                 (set, key, offline) = (ds, k, true);
                 return true;
             }
@@ -407,8 +436,15 @@ public static partial class Extension
         try
         {
             var file = MapPhotoFile(set, k);
-            // Déjà sur le disque (relevé du cache pas encore fini) : rien à télécharger.
-            if (File.Exists(file))
+            // Déjà sur le disque (relevé du cache pas encore fini) : rien à télécharger. Plus ancien que le dernier
+            // effacement (autre date de capture) : tuile périmée, retéléchargée.
+            DateTime wipedAt;
+            lock (MapPhotoLock) wipedAt = set.WipedAt;
+            if (File.Exists(file) && wipedAt != DateTime.MinValue && File.GetLastWriteTimeUtc(file) < wipedAt)
+            {
+                try { File.Delete(file); } catch { /* ouvert par le jeu : écrasé plus bas */ }
+            }
+            if (File.Exists(file) && (wipedAt == DateTime.MinValue || File.GetLastWriteTimeUtc(file) >= wipedAt))
             {
                 var len = new FileInfo(file).Length;
                 lock (MapPhotoLock)
@@ -435,6 +471,11 @@ public static partial class Extension
                 _mpNextSlot = (_mpNextSlot > now ? _mpNextSlot : now) + TimeSpan.FromSeconds(bytes.Length / MapPhotoBytesPerSec);
             }
             if (bytes.Length < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8 || bytes[2] != 0xFF) return;
+            // Effacé pendant le téléchargement : l'ancienne imagerie n'est pas écrite (elle serait reprise ensuite).
+            lock (MapPhotoLock)
+            {
+                if (gen != set.Generation) { ok = true; return; }
+            }
             MapPhotoWriteAtomic(file, bytes);
             lock (MapPhotoLock)
             {
@@ -450,6 +491,7 @@ public static partial class Extension
         finally
         {
             Interlocked.Decrement(ref _mpActive);
+            lock (MapPhotoLock) MapPhotoInFlight.Remove((set, k));
             if (!ok)
             {
                 lock (MapPhotoLock)
@@ -569,6 +611,8 @@ public static partial class Extension
                             absent.Add(name);
                             continue;
                         }
+                        // En cours de téléchargement : arrivera par MapPhoto.Status.
+                        if (MapPhotoInFlight.Contains((set, k))) continue;
                         // Déjà en file : remonte devant (l'écran regarde là maintenant).
                         if (MapPhotoQueued.Contains((set, k)))
                         {

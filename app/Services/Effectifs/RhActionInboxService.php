@@ -9,6 +9,7 @@ use App\Repositories\PersonnelCorrectionRequestRepository;
 use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PersonnelQualificationRepository;
 use App\Services\Personnel\PersonnelCorrectionRequestService;
+use App\Services\Personnel\PersonnelFieldValueFormatter;
 use App\Services\Personnel\PersonnelProfileGapScanService;
 
 /**
@@ -24,6 +25,7 @@ final class RhActionInboxService
         private PersonnelProfileGapScanService $gaps,
         private ?PersonnelQualificationRepository $qualifications = null,
         private ?PersonnelMobilityRequestRepository $mobility = null,
+        private ?PersonnelFieldValueFormatter $fieldFormatter = null,
     ) {
         $this->qualifications ??= new PersonnelQualificationRepository();
         $this->mobility ??= new PersonnelMobilityRequestRepository();
@@ -71,6 +73,8 @@ final class RhActionInboxService
                     (string) ($row['target_callsign'] ?? ''),
                     $uid
                 );
+                $note = trim((string) ($row['note'] ?? ''));
+                $changes = $this->correctionChanges($row, $tenantId);
                 $actions[] = [
                     'id' => 'corr-' . (int) ($row['id'] ?? 0),
                     'bucket' => 'corrections',
@@ -78,13 +82,14 @@ final class RhActionInboxService
                     'member_id' => $uid,
                     'member_label' => $label,
                     'title' => 'Demande de correction',
-                    'detail' => $this->truncate((string) ($row['note'] ?? 'Le membre propose une mise à jour de son dossier.')),
+                    'detail' => $note !== '' ? $this->truncate($note) : $this->changesSummary($changes),
                     'cta_label' => 'Traiter',
                     'href' => url('back-office/personnel/corrections'),
                     // Décision directe depuis « À traiter » (fenêtre Confirmer / Refuser).
                     'decide_url' => url('back-office/personnel/corrections/' . (int) ($row['id'] ?? 0) . '/decide'),
                     'requested_by' => trim((string) ($row['requester_display_name'] ?? '')),
-                    'changes' => $this->correctionChanges($row),
+                    'member_note' => $note,
+                    'changes' => $changes,
                 ];
             }
         } catch (\Throwable) {
@@ -308,32 +313,55 @@ final class RhActionInboxService
     }
 
     /**
-     * Champs proposés par une demande de correction, prêts à afficher.
+     * Champs proposés par une demande de correction, en langage métier.
      *
      * @param array<string, mixed> $row
-     * @return list<array{label: string, value: string}>
+     * @return list<array{label: string, before: list<string>, after: list<string>, blank: string}>
      */
-    private function correctionChanges(array $row): array
+    private function correctionChanges(array $row, int $tenantId): array
     {
         $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
+        $before = is_array($row['before'] ?? null) ? $row['before'] : [];
         $labels = PersonnelCorrectionRequestService::fieldLabels(true);
+        $formatter = $this->fieldFormatter ??= new PersonnelFieldValueFormatter();
         $out = [];
         foreach ($proposed as $key => $value) {
-            if (is_array($value)) {
-                $value = implode(', ', array_map('strval', array_filter($value, 'is_scalar')));
-            }
-            // Les identifiants (grade, unité…) se lisent sur l'écran complet des corrections.
-            $value = str_ends_with((string) $key, '_id') ? 'nouvelle valeur' : (string) $value;
+            $key = (string) $key;
             $out[] = [
-                'label' => $labels[(string) $key] ?? (string) $key,
-                'value' => $this->truncate($value, 80),
+                'label' => $labels[$key] ?? 'Information du dossier',
+                'before' => $formatter->lines($key, $before[$key] ?? '', $tenantId),
+                'after' => $formatter->lines($key, $value, $tenantId),
+                'blank' => PersonnelFieldValueFormatter::emptyPhrase($key),
             ];
-            if (count($out) >= 6) {
+            if (count($out) >= 8) {
                 break;
             }
         }
 
         return $out;
+    }
+
+    /**
+     * @param list<array{label?: string}> $changes
+     */
+    private function changesSummary(array $changes): string
+    {
+        $labels = [];
+        foreach ($changes as $change) {
+            $label = trim((string) ($change['label'] ?? ''));
+            if ($label !== '' && $label !== 'Information du dossier') {
+                $labels[] = $label;
+            }
+        }
+        if ($labels === []) {
+            return 'Le membre propose une mise à jour de son dossier.';
+        }
+        if (count($labels) === 1) {
+            return 'Le membre propose de modifier : ' . $labels[0] . '.';
+        }
+        $last = array_pop($labels);
+
+        return 'Le membre propose de modifier : ' . implode(', ', $labels) . ' et ' . $last . '.';
     }
 
     /**

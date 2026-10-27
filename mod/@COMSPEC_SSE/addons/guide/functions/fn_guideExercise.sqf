@@ -10,7 +10,17 @@
     [_pos, _requester] call comspec_sse_fnc_guideExercise
 */
 params [["_pos", [0, 0, 0], [[]]], ["_req", objNull, [objNull]]];
-if (!isServer) exitWith { ["comspec_sse_guideExercise", [_pos, player]] call CBA_fnc_serverEvent; false };
+// Client : appel distant (liste blanche CfgRemoteExec) ; le serveur retrouve le demandeur par remoteExecutedOwner,
+// jamais par un objet fourni dans la demande. Zeus ou administrateur seulement.
+if (!isServer) exitWith { [_pos] remoteExecCall ["comspec_sse_fnc_guideExercise", 2]; false };
+if (isRemoteExecuted && {remoteExecutedOwner != 2}) then {
+    private _ro = remoteExecutedOwner;
+    _req = (allPlayers select { owner _x == _ro }) param [0, objNull];
+};
+if (isRemoteExecuted && {remoteExecutedOwner != 2} && {!([_req] call comspec_sse_fnc_isAuthority)}) exitWith {
+    diag_log text format ["[COMSPEC SSE] Exercice refusé au poste %1 (ni Zeus ni administrateur).", remoteExecutedOwner];
+    false
+};
 
 private _classes = ["C_man_polo_1_F", "C_man_polo_2_F", "C_man_polo_4_F", "C_man_1_1_F", "C_man_p_fugitive_F", "C_Man_casual_1_F"] select { isClass (configFile >> "CfgVehicles" >> _x) };
 if (_classes isEqualTo []) exitWith { false };

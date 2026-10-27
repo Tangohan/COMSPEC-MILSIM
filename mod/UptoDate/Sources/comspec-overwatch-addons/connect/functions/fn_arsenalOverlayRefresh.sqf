@@ -1,6 +1,7 @@
 /*
     Recharge les données du panneau Tenues Athena puis redessine la liste (arsenalOverlayFill).
-    Mes tenues : profil ACE local. Communauté : ListWardrobes (cache 90 s, forcé après un envoi).
+    Mes tenues : profil ACE local. Communauté : ListWardrobes, liste gardée sur ce PC (Sync\wardrobes.json) ;
+    rechargée depuis le site seulement sur Actualiser ou après un envoi (COMSPEC_ArsenalForceList).
     Les champs vides de ListWardrobes sont conservés (splitString les fusionnait : la collection
     vide décalait les colonnes et le drapeau favori « 0 » devenait un nom de collection).
 
@@ -37,9 +38,9 @@ private _leafOf = {
 
 // Communauté.
 private _lines = missionNamespace getVariable ["COMSPEC_ArsenalWardrobeLines", []];
-private _cacheAt = missionNamespace getVariable ["COMSPEC_ArsenalWardrobeAt", -1e9];
-if ((_display getVariable ["COMSPEC_ArsenalForceList", false]) || {!(_lines isEqualType [])} || {_lines isEqualTo []} || {(diag_tickTime - _cacheAt) > 90}) then {
-    _lines = [] call comspec_overwatch_connect_fnc_arsenalListWardrobes;
+private _force = _display getVariable ["COMSPEC_ArsenalForceList", false];
+if (_force || {!(_lines isEqualType [])} || {_lines isEqualTo []}) then {
+    _lines = [["cache", "refresh"] select _force] call comspec_overwatch_connect_fnc_arsenalListWardrobes;
     missionNamespace setVariable ["COMSPEC_ArsenalWardrobeLines", _lines, false];
     missionNamespace setVariable ["COMSPEC_ArsenalWardrobeAt", diag_tickTime, false];
     _display setVariable ["COMSPEC_ArsenalForceList", false];
@@ -49,7 +50,7 @@ private _hasMine = false;
 {
     if (_x isEqualTo "") then { continue };
     private _f = [_x] call _split;
-    _f params [["_id", ""], ["_name", ""], ["", ""], ["_coll", ""], ["_fav", "0"], ["_bytes", "0"], ["_upd", ""], ["_owner", ""], ["_mine", ""], ["_sha", ""]];
+    _f params [["_id", ""], ["_name", ""], ["_gap", ""], ["_coll", ""], ["_fav", "0"], ["_bytes", "0"], ["_upd", ""], ["_owner", ""], ["_mine", ""], ["_sha", ""]];
     if (_id isEqualTo "" || {_name isEqualTo ""}) then { continue };
     // Colonnes « mine » et « sha256 » : COMSPEC Link 2.0.88 et plus.
     if ((count _f) >= 9) then { _hasMine = true; };
@@ -58,7 +59,7 @@ private _hasMine = false;
 } forEach _lines;
 private _offline = false;
 if (_lines isEqualTo []) then {
-    private _probe = ["COMSPECExtension" callExtension ["ListWardrobes", ["0"]]] call comspec_overwatch_connect_fnc_extResult;
+    private _probe = [["COMSPECExtension", "ListWardrobes", ["0", "cache"]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     _offline = !(_probe isEqualType "") || {(_probe find "OK|") != 0};
 };
 
@@ -138,6 +139,9 @@ _grp setVariable ["COMSPEC_ArsenalCloudRows", _cloud];
 _grp setVariable ["COMSPEC_ArsenalCloudMeta", _cloud apply { [_x select 0, _x select 1, _x select 3] }];
 _grp setVariable ["COMSPEC_ArsenalOffline", _offline];
 _grp setVariable ["COMSPEC_ArsenalHasHash", _hasMine && {!(uiNamespace getVariable ["COMSPEC_ArsenalHashOff", false])}];
-_grp setVariable ["COMSPEC_ArsenalLoadedAt", [dayTime, "HH:MM"] call BIS_fnc_timeToString];
-saveProfileNamespace;
+// Date de la liste du site gardée sur ce PC (heure du PC) ; COMSPEC Link plus ancien : heure de chargement.
+private _info = ["COMSPECExtension" callExtension ["WardrobesCacheInfo", []]] call comspec_overwatch_connect_fnc_extResult;
+private _savedAt = if ((_info isEqualType "") && {(_info find "OK|") isEqualTo 0}) then { ((_info select [3]) splitString toString [9]) param [0, ""] } else { "" };
+_grp setVariable ["COMSPEC_ArsenalLoadedAt", [_savedAt, [dayTime, "HH:MM"] call BIS_fnc_timeToString] select (_savedAt isEqualTo "")];
+[] call comspec_overwatch_connect_fnc_saveProfile;
 [_display] call comspec_overwatch_connect_fnc_arsenalOverlayFill;

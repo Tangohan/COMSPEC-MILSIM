@@ -43,7 +43,7 @@ switch (_tab) do {
             private _d = (leader _g) distance2D player;
             private _btns = [["CARTE", "mapGroup", [netId _g]] call _act];
             if (isPlayer leader _g && {leader _g isNotEqualTo player}) then {
-                _btns pushBack ["SMS", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatPeer', '%1']; (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatView', 'CONV']; ['CHAT'] call comspec_atak_native_fnc_navigate;", name leader _g]];
+                _btns pushBack ["SMS", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatPeer', %1]; (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatView', 'CONV']; ['CHAT'] call comspec_atak_native_fnc_navigate;", str (name leader _g)]];
             };
             _rows pushBack ["person", _t select 2, format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t>%2  <t size='0.8' color='#7fb6e6'>%3</t><br/><t size='0.8' color='#8a9a93'>Chef %4 · %5 membre(s) · %6 BFT en ligne · %7</t>",
                 [groupId _g] call _esc, ["", " <t color='#e8b84a'>● mon groupe</t>"] select (_g isEqualTo _mine), _t select 1,
@@ -115,7 +115,7 @@ switch (_tab) do {
             ["info", "Révision serveur", str (missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0])],
             ["info", "Révision de mon groupe", str (_mine getVariable ["COMSPEC_FTRev", 0])],
             ["info", "Escouades / équipes", format ["%1 / %2", count _groups, _nTeams]],
-            ["info", "Joueurs en équipe", format ["%1 sur %2", _inTeam, _total]],
+            ["info", "Joueurs en équipe", format ["%1 / %2", _inTeam, _total]],
             ["info", "Pistes BFT", format ["%1 directes · %2 anciennes · %3 perdues", _fresh select 0, _fresh select 1, _fresh select 2]],
             ["section", "Athena", "Escouades et équipes visibles sur le site (back-office, Escouades en jeu)"],
             ["info", "Envoi par", [format ["%1 (chef ou premier joueur du groupe)", name _reporter], "moi"] select (_reporter isEqualTo player)],

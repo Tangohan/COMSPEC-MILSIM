@@ -30,9 +30,9 @@ if (_key isNotEqualTo "") then {
     _seen pushBack _key;
     if ((count _seen) > 300) then { _seen deleteRange [0, (count _seen) - 300]; };
     profileNamespace setVariable ["COMSPEC_ATAK_AlertsSeen", _seen];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
 };
-private _time = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
+private _time = (["now"] call comspec_atak_native_fnc_clockFmt);
 switch (_kind) do {
     case "notify": {
         private _type = toUpper (_arg getOrDefault ["type", "NOTIFY"]);

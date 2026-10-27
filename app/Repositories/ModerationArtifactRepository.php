@@ -17,11 +17,17 @@ class ModerationArtifactRepository
         $this->pdo = Database::getPdo();
     }
 
+    /** Mémoïsé pour la durée de la requête (barre latérale et bandeau de modération). */
+    private static ?bool $tableExistsCache = null;
+
     public function tableExists(): bool
     {
-        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_artifacts' LIMIT 1");
+        if (self::$tableExistsCache === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_artifacts' LIMIT 1");
+            self::$tableExistsCache = (bool) $stmt?->fetchColumn();
+        }
 
-        return (bool) $stmt?->fetchColumn();
+        return self::$tableExistsCache;
     }
 
     /**
@@ -95,33 +101,6 @@ class ModerationArtifactRepository
         return $row ?: null;
     }
 
-    /**
-     * Fichier téléversé forum prêt à être rattaché à un message (même utilisateur / tenant).
-     */
-    public function findForumUploadByUserKey(int $tenantId, int $userId, string $sourceKey): ?array
-    {
-        if (!$this->tableExists()) {
-            return null;
-        }
-        $sourceKey = basename($sourceKey);
-        $stmt = $this->pdo->prepare(
-            "SELECT * FROM moderation_artifacts WHERE tenant_id = ? AND user_id = ? AND source_type = ? AND source_key = ? AND state IN ('clean','approved_override') LIMIT 1"
-        );
-        $stmt->execute([$tenantId, $userId, ModerationSourceType::FORUM_UPLOAD, $sourceKey]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $row ?: null;
-    }
-
-    public function updateForumUploadSourcePostId(int $artifactId, int $tenantId, int $postId): bool
-    {
-        $stmt = $this->pdo->prepare(
-            'UPDATE moderation_artifacts SET source_id = ? WHERE id = ? AND tenant_id = ? AND source_type = ?'
-        );
-
-        return $stmt->execute([$postId, $artifactId, $tenantId, ModerationSourceType::FORUM_UPLOAD]);
-    }
-
     public function findByDocumentVersionId(int $versionId): ?array
     {
         $stmt = $this->pdo->prepare(
@@ -179,31 +158,6 @@ class ModerationArtifactRepository
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
-    }
-
-    /**
-     * Pièces jointes forum déjà publiées (acceptées automatiquement ou après validation),
-     * pour affichage de suivi hors file d’urgence.
-     *
-     * @return list<array<string, mixed>>
-     */
-    public function listRecentPublishedForumUploads(int $tenantId, int $limit = 15): array
-    {
-        if (!$this->tableExists()) {
-            return [];
-        }
-        $limit = max(1, min(50, $limit));
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM moderation_artifacts
-             WHERE tenant_id = ? AND source_type = ?
-             AND state IN (\'clean\',\'approved_override\')
-             AND file_path LIKE \'public/uploads/forum/%\'
-             ORDER BY id DESC
-             LIMIT ' . (int) $limit
-        );
-        $stmt->execute([$tenantId, ModerationSourceType::FORUM_UPLOAD]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /** Fichiers / pièces en attente de décision, toutes communautés. */

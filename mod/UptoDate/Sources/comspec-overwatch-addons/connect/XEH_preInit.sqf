@@ -50,7 +50,30 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 [
     "comspec_overwatch_enabled", "CHECKBOX",
     ["Activer la liaison Athena", "Échanges avec Athena et le poste de commandement (positions, messages, ordres). Décochez pour tout couper : le téléphone reste utilisable hors ligne. Une session déjà ouverte reste affichée jusqu’à ce que vous quittiez Arma."],
-    ["COMSPEC", "Overwatch"], true
+    ["COMSPEC", "Overwatch"], true, false,
+    {
+        params ["_v"];
+        // Recoché en mission alors qu'il était décoché au démarrage : fn_connect rejoue le bloc de démarrage.
+        if (_v isEqualTo true && {hasInterface} && {!isNull findDisplay 46}
+            && {missionNamespace getVariable ["COMSPEC_CbaSettingsBootFired", false]}
+            && {!(missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false])}
+            && {!isNil "comspec_overwatch_connect_fnc_connect"}) then {
+            // Délai + recontrôle : le panneau Échap relance déjà fn_connect (0,2 s) après son propre réglage CBA.
+            [] spawn {
+                uiSleep 0.6;
+                if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false]) exitWith {};
+                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+                [] call comspec_overwatch_connect_fnc_connect;
+            };
+        };
+    }
+] call comspec_overwatch_connect_fnc_addSetting;
+
+[
+    "comspec_overwatch_donor_insignia", "CHECKBOX",
+    ["Écusson « Donateur Athena »", "Si votre compte Athena a fait un don, un écusson à votre palier (Soutien, Allié, Pilier) est posé sur votre épaule. Il ne remplace jamais l’écusson donné par la mission. Décochez pour ne pas le porter."],
+    ["COMSPEC", "Overwatch"], true, false,
+    { if (!isNil "comspec_overwatch_connect_fnc_applyDonorPerk" && {hasInterface} && {!isNull player}) then { [player] call comspec_overwatch_connect_fnc_applyDonorPerk; }; }
 ] call comspec_overwatch_connect_fnc_addSetting;
 
 // Adresse du portail : plus de réglage, toujours https://athena.ttrd.fr/public (fn_portalUrl).
@@ -395,10 +418,19 @@ private _fnc_applyNet = {
     "comspec_overwatch_ecoti_hud", "CHECKBOX",
     [
         "Infos tactiques dans les JVN",
-        "Décoché par défaut. Coché : alliés, marqueurs et véhicules s'affichent dans votre vision quand vous portez des JVN, avec boussole et étiquettes, comme un casque connecté. Aussi réglable dans le téléphone (Réglages). Sans effet si le mod F-PANO ECOTI est chargé."
+        "Décoché par défaut. Coché suffit : alliés, marqueurs et véhicules s'affichent dans votre vision quand vos JVN sont allumées, avec boussole et étiquettes, comme un casque connecté. Marche aussi sans Athena (hors ligne, mode local avec TOC). Le même interrupteur est dans le téléphone (Réglages › Accessoires). Sans effet si le mod F-PANO ECOTI est chargé."
     ],
     ["COMSPEC", "Overwatch · Infos tactiques JVN"],
-    false
+    false, false,
+    {
+        params ["_v"];
+        // Menu CBA et téléphone gardent le même état : le profil (relu au démarrage) suit la case CBA.
+        // Avant : un ancien « non » du téléphone resté dans le profil décochait la case à chaque mission.
+        if (!(_v isEqualType true)) exitWith {};
+        if ((profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"]) isEqualTo _v) exitWith {};
+        profileNamespace setVariable ["COMSPEC_EcotiHudEnabled", _v];
+        if (!isNil "comspec_overwatch_connect_fnc_saveProfile") then { [] call comspec_overwatch_connect_fnc_saveProfile; };
+    }
 ] call comspec_overwatch_connect_fnc_addSetting;
 
 [
@@ -671,7 +703,7 @@ private _fnc_applyNet = {
 private _hubOverwrite = !(profileNamespace getVariable ["COMSPEC_KeybindHubKFreed_v1", false]);
 if (_hubOverwrite) then {
     profileNamespace setVariable ["COMSPEC_KeybindHubKFreed_v1", true];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 [
     "COMSPEC Overwatch", "comspec_menu_hub",

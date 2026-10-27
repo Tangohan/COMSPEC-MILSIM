@@ -328,7 +328,7 @@ class PersonnelJobRoleAdminController
         return match ($module) {
             'admin' => 'Administration',
             'dashboard' => 'Tableau de bord',
-            'forum' => 'Forum',
+            'moderation' => 'Modération',
             'documents' => 'Documents',
             'training' => 'Formations',
             'personnel' => 'Personnel',

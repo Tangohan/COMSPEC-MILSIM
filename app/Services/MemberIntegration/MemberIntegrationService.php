@@ -275,7 +275,7 @@ final class MemberIntegrationService
                 (int) $integration['id'],
                 'step_skipped',
                 MemberIntegrationCatalog::VISIBILITY_STAFF,
-                'Étape forum retirée du parcours d’intégration.',
+                'Étape retirée du parcours d’intégration.',
                 $actorUserId,
                 (int) $step['id']
             );

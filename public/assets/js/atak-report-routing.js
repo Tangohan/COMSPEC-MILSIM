@@ -11,6 +11,9 @@
 
   // ---------------------------------------------------------------- éditeur
   const drawer = $('#bo-rt-editor');
+  // Panneau en position fixe : un ancêtre animé (transform) le cantonnait à la zone de contenu.
+  // Rattaché à la coque (.ath-shell, qui porte les jetons de thème), il recouvre bien toute la fenêtre.
+  (root.closest('.ath-shell') || document.body).appendChild(drawer);
   const form = drawer.querySelector('form');
   const pickerKeys = ['roles', 'units', 'users', 'escalate_roles'];
 
@@ -49,12 +52,12 @@
     setChecks('priorities', rule.priorities);
     ['roles', 'units', 'users', 'escalate_roles'].forEach(k => setChecks(k, rule[k]));
     ['roles', 'units'].forEach(k => legacy(k, rule[k]));
-    $('#bo-rt-ed-title').textContent = title;
+    drawer.querySelector('#bo-rt-ed-title').textContent = title;
     counts();
     drawer.hidden = false;
     form.rule_name.focus();
   }
-  root.addEventListener('click', e => {
+  const onClick = e => {
     const ed = e.target.closest('[data-edit]');
     if (ed) {
       const id = ed.dataset.edit;
@@ -87,7 +90,9 @@
       });
       $('#bo-rt-order-bar').hidden = false;
     }
-  });
+  };
+  root.addEventListener('click', onClick);
+  drawer.addEventListener('click', onClick);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden) drawer.hidden = true; });
   form.addEventListener('change', counts);
   function filter(input) {

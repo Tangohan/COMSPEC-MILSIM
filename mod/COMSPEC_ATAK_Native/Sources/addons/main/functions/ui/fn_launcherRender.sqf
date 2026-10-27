@@ -4,7 +4,8 @@
     Recherche : filtre sur le nom de l'app (uiNamespace COMSPEC_ATAK_LauncherFilter), redessin 0,25 s après la frappe,
     le champ garde le focus et le curseur en fin de texte. Entrée ouvre la première app trouvée.
     V3 (retour de jeu « améliorer nettement le menu des apps ») :
-      - Filtres sous la recherche : TOUT, ÉPINGLÉES et une puce par section (uiNamespace COMSPEC_ATAK_LauncherSection).
+      - Filtres sous la recherche : TOUT, ÉPINGLÉES et une puce par section (uiNamespace COMSPEC_ATAK_LauncherSection),
+        en grille de deux rangées (5 + 5) depuis la 2.6.0.
       - En tête : ÉPINGLÉES (clic droit sur une tuile : épingler / désépingler, profil COMSPEC_ATAK_PinnedApps) puis
         RÉCENTES (une rangée, profil COMSPEC_ATAK_AppRecent tenu par fn_navigate).
       - Sections repliables d'un clic sur leur en-tête (profil COMSPEC_ATAK_LauncherFolded) ; repliée, l'en-tête
@@ -62,10 +63,29 @@ if (_searchOn) then {
         // Entrée : ouvre la première app trouvée.
         if (_key in [0x1C, 0x9C]) exitWith {
             private _f = toLower trim (ctrlText _e);
-            private _hit = (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible && {(toLower (_x get "name")) find _f >= 0} }) param [0, createHashMap];
-            if ((count _hit) > 0 && {_f isNotEqualTo ""}) then {
+            // Premier résultat affiché pour ce texte (relevé au rendu), sinon même recherche que la liste : nom source,
+            // section ou nom traduit (en anglais, « settings » ne trouvait rien : seul le nom français était testé).
+            (uiNamespace getVariable ["COMSPEC_ATAK_LauncherFirst", ["", ""]]) params [["_ff", ""], ["_fp", ""]];
+            private _hitPage = if ((toLower trim _ff) isEqualTo _f && {_fp isNotEqualTo ""}) then { _fp } else {
+                // Même base que le rendu : puce ÉPINGLÉES ou section choisie (Entrée avant le redessin différé).
+                private _all = ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible };
+                private _sec = uiNamespace getVariable ["COMSPEC_ATAK_LauncherSection", ""];
+                private _base = _all;
+                if (_sec isEqualTo "*PIN") then {
+                    private _pins = profileNamespace getVariable ["COMSPEC_ATAK_PinnedApps", []];
+                    if !(_pins isEqualType []) then { _pins = []; };
+                    _base = _pins apply { private _p = _x; (_all select { (_x get "page") isEqualTo _p }) param [0, createHashMap] };
+                    _base = _base select { (count _x) > 0 };
+                } else {
+                    if (_sec isNotEqualTo "") then { _base = _all select { (_x get "section") isEqualTo _sec }; };
+                };
+                // Puce obsolète (aucune app) : le rendu repasse sur TOUT.
+                if ((count _base) isEqualTo 0) then { _base = _all; };
+                ((_base select { ((toLower (_x get "name")) find _f) >= 0 || {((toLower (_x get "section")) find _f) >= 0} || {((toLower ((_x get "name") call comspec_atak_native_fnc_tr)) find _f) >= 0} }) param [0, createHashMap]) getOrDefault ["page", ""]
+            };
+            if (_hitPage isNotEqualTo "" && {_f isNotEqualTo ""}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_LauncherFilter", ""];
-                [{ [_this] call comspec_atak_native_fnc_navigate; }, _hit get "page"] call CBA_fnc_execNextFrame;
+                [{ [_this] call comspec_atak_native_fnc_navigate; }, _hitPage] call CBA_fnc_execNextFrame;
             };
         };
         private _tok = diag_tickTime;
@@ -90,7 +110,10 @@ if (_searchOn) then {
     _y = _y + _sh + _pad;
 };
 
-// Filtres (en main, hors mode PETIT) : TOUT, ÉPINGLÉES, une puce par section. Puces mesurées et passées à la ligne.
+// Filtres (en main, hors mode PETIT) : TOUT, ÉPINGLÉES, une puce par section.
+// Retour de jeu : puces trop petites (texte à 0,8 x fontSmall, sous le plancher des légendes : le trait d'un « I »
+// d'un pixel disparaissait, « COMMUN CATION »). Grille régulière de deux rangées (5 + 5 pour 10 filtres), puces plus
+// hautes, texte en fontSmall ; une rangée de plus seulement si un libellé ne tient pas dans sa case.
 private _pins = profileNamespace getVariable ["COMSPEC_ATAK_PinnedApps", []];
 if !(_pins isEqualType []) then { _pins = []; };
 private _secSel = [uiNamespace getVariable ["COMSPEC_ATAK_LauncherSection", ""], ""] select !_searchOn;
@@ -102,23 +125,36 @@ if (_searchOn) then {
     private _chips = [["TOUT", ""]];
     if ((count _pins) > 0) then { _chips pushBack ["ÉPINGLÉES", "*PIN"]; };
     { _chips pushBack [toUpper _x, _x]; } forEach _sections;
-    private _ch = _font * 1.5;
-    private _cx = _pad;
+    private _cf = _font max COMSPEC_ATAK_FontMin;
+    private _ch = _cf * 2.1;
+    private _gap = _pad * 0.6;
     private _m = _d ctrlCreate ["COMSPEC_RscTextCenter", -1, _g];
     [_m, "COMSPEC_RscTextCenter"] call comspec_atak_native_fnc_fontApply;
     _m ctrlSetPosition [0, 0, _gw * 2, _ch];
     _m ctrlCommit 0;
-    _m ctrlSetFontHeight (_font * 0.8);
+    _m ctrlSetFontHeight _cf;
+    private _maxW = 0;
     {
-        _x params ["_t", "_key"];
-        private _txt = (_t) call comspec_atak_native_fnc_tr;
+        private _txt = (_x select 0) call comspec_atak_native_fnc_tr;
         _m ctrlSetText _txt; // i18n:brut (déjà traduit)
-        private _cw = (ctrlTextWidth _m) + _pad * 2.4;
-        if (_cx + _cw > _pad + _gw && {_cx > _pad}) then { _cx = _pad; _y = _y + _ch + _pad * 0.6; };
+        _maxW = _maxW max ((ctrlTextWidth _m) + _pad * 1.6);
+        _x pushBack _txt;
+    } forEach _chips;
+    ctrlDelete _m;
+    private _n = count _chips;
+    private _cols = ceil (_n / 2);
+    // Écran étroit (portrait) : moins de colonnes tant que le plus long libellé ne tient pas, au moins deux.
+    while { _cols > 2 && {(_gw - _gap * (_cols - 1)) / _cols < _maxW} } do { _cols = _cols - 1; };
+    private _cw = (_gw - _gap * (_cols - 1)) / _cols;
+    {
+        _x params ["", "_key", "_txt"];
+        private _cx = _pad + (_forEachIndex mod _cols) * (_cw + _gap);
+        private _cy = _y + (floor (_forEachIndex / _cols)) * (_ch + _gap);
         private _on = _key isEqualTo _secSel;
-        private _c = ["COMSPEC_RscButton", [_cx, _y, _cw, _ch]] call comspec_atak_native_fnc_pageCtrl;
+        private _c = ["COMSPEC_RscButton", [_cx, _cy, _cw, _ch]] call comspec_atak_native_fnc_pageCtrl;
         _c ctrlSetText _txt; // i18n:brut (déjà traduit)
-        _c ctrlSetFontHeight (_font * 0.8);
+        // Libellé encore trop long pour sa case (deux colonnes en portrait) : réduit, jamais sous le plancher.
+        _c ctrlSetFontHeight ((_cf * ((_cw / _maxW) min 1)) max COMSPEC_ATAK_FontMin);
         _c ctrlSetBackgroundColor ([[0.09, 0.11, 0.1, 0.9], ((_acc select [0, 3]) apply { _x * 0.5 }) + [1]] select _on);
         _c ctrlSetTextColor ([[0.78, 0.84, 0.81, 1], [1, 1, 1, 1]] select _on);
         _c setVariable ["key", _key];
@@ -128,10 +164,8 @@ if (_searchOn) then {
             uiNamespace setVariable ["COMSPEC_ATAK_LauncherSection", [_k, ""] select (_k isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_LauncherSection", ""]))];
             [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         }];
-        _cx = _cx + _cw + _pad * 0.6;
     } forEach _chips;
-    ctrlDelete _m;
-    _y = _y + _ch + _pad;
+    _y = _y + (ceil (_n / _cols)) * (_ch + _gap) - _gap + _pad;
     if ((count _pins) isEqualTo 0 && {_filter isEqualTo ""}) then {
         private _hint = ["COMSPEC_RscText", [_pad, _y - _pad * 0.4, _gw, _font * 1.2], "Astuce : clic droit sur une app pour l'épingler en tête"] call comspec_atak_native_fnc_pageCtrl;
         _hint ctrlSetFontHeight ((_font * 0.8) max COMSPEC_ATAK_FontMin);
@@ -152,6 +186,8 @@ switch (true) do {
         private _base = [_apps, _pinApps] select (_secSel isEqualTo "*PIN");
         if (_secSel isNotEqualTo "" && {_secSel isNotEqualTo "*PIN"}) then { _base = _apps select { (_x get "section") isEqualTo _secSel }; };
         _groups pushBack ["", format ["Résultats pour « %1 »", _filter], _base select { ((toLower (_x get "name")) find _f) >= 0 || {((toLower (_x get "section")) find _f) >= 0} || {((toLower ((_x get "name") call comspec_atak_native_fnc_tr)) find _f) >= 0} }];
+        // Entrée dans la recherche : ouvre ce premier résultat affiché.
+        uiNamespace setVariable ["COMSPEC_ATAK_LauncherFirst", [_filter, ((((_groups select 0) select 2) param [0, createHashMap]) getOrDefault ["page", ""])]];
     };
     case (_secSel isEqualTo "*PIN"): { _groups pushBack ["", "Épinglées", _pinApps]; };
     case (_secSel isNotEqualTo ""): { _groups pushBack ["", _secSel, _apps select { (_x get "section") isEqualTo _secSel }]; };
@@ -211,7 +247,7 @@ private _chev = "\z\comspec_atak_native\addons\main\data\%1.paa";
             _f = +_f;
             if (_k in _f) then { _f = _f - [_k]; } else { _f pushBack _k; };
             profileNamespace setVariable ["COMSPEC_ATAK_LauncherFolded", _f];
-            saveProfileNamespace;
+            [] call comspec_atak_native_fnc_saveProfile;
             [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         }];
     };
@@ -250,7 +286,7 @@ private _chev = "\z\comspec_atak_native\addons\main\data\%1.paa";
                     ["Épinglée en tête des applications", 2] call comspec_atak_native_fnc_toast;
                 };
                 profileNamespace setVariable ["COMSPEC_ATAK_PinnedApps", _l];
-                saveProfileNamespace;
+                [] call comspec_atak_native_fnc_saveProfile;
                 [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
             }];
             if (_fadeIn) then {

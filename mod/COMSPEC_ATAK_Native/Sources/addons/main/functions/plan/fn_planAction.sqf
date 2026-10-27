@@ -74,7 +74,7 @@ private _draftSet = {
     // Écriture du profil regroupée (5 s) : un dessin à main levée enregistrait tout le profil à chaque trait.
     if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanSavePending", false]) then {
         missionNamespace setVariable ["COMSPEC_ATAK_PlanSavePending", true];
-        [{ missionNamespace setVariable ["COMSPEC_ATAK_PlanSavePending", false]; saveProfileNamespace; }, [], 5] call CBA_fnc_waitAndExecute;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_PlanSavePending", false]; [] call comspec_atak_native_fnc_saveProfile; }, [], 5] call CBA_fnc_waitAndExecute;
     };
 };
 private _newId = {
@@ -155,7 +155,14 @@ private _clipSet = {
     copyToClipboard _s;
     // En multijoueur copyToClipboard est sans effet : la DLL du mod écrit le presse-papiers Windows (par morceaux).
     if (((["ClipBegin"] call comspec_atak_native_fnc_extensionCall) select [0, 2]) isEqualTo "OK") then {
-        for "_i" from 0 to ((count _s) - 1) step 4000 do { ["ClipAppend", [_s select [_i, 4000]]] call comspec_atak_native_fnc_extensionCall; };
+        // Découpe en caractères, pas en octets : un accent coupé en deux arrivait en U+FFFD dans le presse-papiers.
+        forceUnicode 0;
+        private _len = count _s;
+        for "_i" from 0 to (_len - 1) step 2000 do {
+            forceUnicode 0;
+            private _part = _s select [_i, 2000];
+            ["ClipAppend", [_part]] call comspec_atak_native_fnc_extensionCall;
+        };
         ["ClipCommit"] call comspec_atak_native_fnc_extensionCall;
     };
 };
@@ -174,7 +181,11 @@ private _clipGet = {
             private _chunk = _rest select [_bar + 1];
             if (_chunk isEqualTo "") exitWith {};
             _s = _s + _chunk;
-            _off = _off + (count _chunk);
+            // La DLL compte en caractères UTF-16 (Substring) ; sans forceUnicode, count renvoie des octets UTF-8 (accents).
+            // Caractère hors plan de base (émoji) : deux unités UTF-16.
+            forceUnicode 0;
+            private _n = count _chunk;
+            _off = _off + _n + ({ _x > 65535 } count (toArray _chunk));
         };
     };
     _s
@@ -253,7 +264,7 @@ switch (_act) do {
     case "view": { _ui set ["view", _arg]; _ui set ["menu", ""]; call _rerender; };
     case "layer": {
         profileNamespace setVariable ["COMSPEC_ATAK_PlanOnMap2", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true])];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         call _rerender;
     };
     case "toDraft": { [_arg, "D"] call _addItems; call _chrome; };
@@ -440,7 +451,7 @@ switch (_act) do {
     case "tutoPrev": { ["tuto", ((_ui get "tuto") - 1) max 0] call comspec_atak_native_fnc_planAction; };
     case "tutoEnd": {
         profileNamespace setVariable ["COMSPEC_ATAK_PlanTuto", 1];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         ["tuto", -1] call comspec_atak_native_fnc_planAction;
     };
     case "clearTarget": {
@@ -526,7 +537,7 @@ switch (_act) do {
         private _row = [_name select [0, 40], worldName, _its, call _stamp];
         if (_i >= 0) then { _l set [_i, _row]; } else { _l pushBack _row; };
         profileNamespace setVariable ["COMSPEC_ATAK_PlanLib", _l select [((count _l) - 30) max 0]];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         [format ["Plan « %1 » enregistré (%2 éléments)", _name, count _its], 3] call comspec_atak_native_fnc_toast;
         if ((_ui get "view") isEqualTo "LIB") then { call _rerender; } else { call _chrome; };
     };
@@ -571,7 +582,7 @@ switch (_act) do {
         if (_arg < 0 || {_arg >= (count _l)}) exitWith {};
         _l deleteAt _arg;
         profileNamespace setVariable ["COMSPEC_ATAK_PlanLib", _l];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         call _rerender;
     };
     case "export": {

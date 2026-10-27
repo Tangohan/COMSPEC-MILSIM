@@ -25,13 +25,15 @@ private _map = createHashMap;
     private _key = _parts select 0;
     private _val = _parts select 1;
     if (_key isEqualTo "guide") then {
-        _val = (_val splitString "§NL§") joinString toString [10];
+        // Séparateur multi-caractères : splitString couperait sur chaque §, N et L.
+        _val = ([_val, "§NL§"] call comspec_overwatch_connect_fnc_splitKeepEmpty) joinString toString [10];
     };
     _map set [_key, _val];
 } forEach _lines;
 
 missionNamespace setVariable ["COMSPEC_TenantExperience", _map, false];
 [] call comspec_overwatch_connect_fnc_applyTenantExperience;
+[player] call comspec_overwatch_connect_fnc_applyDonorPerk;
 
 if (_map getOrDefault ["guide", ""] isNotEqualTo "") then {
     [] spawn comspec_overwatch_connect_fnc_showExperienceGuide;

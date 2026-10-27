@@ -19,7 +19,7 @@ switch (_act) do {
     case "wipe": {
         if (!isNil "ace_common_fnc_progressBar") exitWith {
             [4, [], { ["wipeNow"] call comspec_atak_native_fnc_phoneSecurity; }, { ["INFO", "Effacement annulé", 3, 20] call comspec_atak_native_fnc_notify; },
-                "Effacement d'urgence du téléphone…", { alive player }, ["isNotSwimming"]] call ace_common_fnc_progressBar;
+                ("Effacement d'urgence du téléphone…" call comspec_atak_native_fnc_tr), { alive player }, ["isNotSwimming"]] call ace_common_fnc_progressBar;
             true
         };
         ["wipeNow"] call comspec_atak_native_fnc_phoneSecurity
@@ -31,7 +31,7 @@ switch (_act) do {
         { missionNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Reports", "COMSPEC_ATAK_GeoTracks", "COMSPEC_ATAK_MarkerNotes", "COMSPEC_ATAK_DataLib", "COMSPEC_ATAK_Route"];
         { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_PhotoLib", "COMSPEC_ATAK_ChatDraft", "COMSPEC_ATAK_ChatDrafts", "COMSPEC_ATAK_ChatDraftPeer", "COMSPEC_ATAK_Mesh"];
         { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_FrsDraft", "COMSPEC_ATAK_RecoDraft"];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         missionNamespace setVariable ["COMSPEC_ATAK_Wiped", true];
         player setVariable ["COMSPEC_ATAK_DataWiped", true, true];
         if (!isNil { player getVariable "COMSPEC_ATAK_Data" }) then { ["tick"] call comspec_atak_native_fnc_phoneSecurity; };

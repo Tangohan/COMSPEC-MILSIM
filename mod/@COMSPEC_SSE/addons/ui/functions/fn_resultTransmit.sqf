@@ -1,10 +1,8 @@
 private _fog = missionNamespace getVariable ["comspec_sse_lastResult", createHashMap];
 if (count _fog == 0) exitWith { ["Aucun résultat à transmettre.", "WARNING"] call comspec_sse_fnc_notify; false };
 
+// Entité figée par showResult pour CE résultat (pas de repli sur le sujet UI : il peut être un autre sujet).
 private _ent = missionNamespace getVariable ["comspec_sse_lastResultEntity", objNull];
-if (isNull _ent && {!isNil "comspec_sse_fnc_uiGetRecord"}) then {
-    _ent = [] call comspec_sse_fnc_uiGetRecord;
-};
 
 private _type = toUpper (_fog getOrDefault ["type", ""]);
 private _personLike = _type in ["IDENTITY", "PERSON", "BIOMETRICS"];

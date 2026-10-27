@@ -70,6 +70,8 @@ $summary = [
 
     <?php require __DIR__ . '/_summary.php'; ?>
 
+    <?php require __DIR__ . '/_pilot_progress.php'; ?>
+
     <?php if ($awards === []): ?>
         <section class="bo-doc-empty">
             <div class="bo-doc-sheet bo-doc-sheet--ghost" aria-hidden="true">

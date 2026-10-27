@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.93";
+    private const string ExtensionVersion = "2.0.100";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -89,14 +89,18 @@ public static partial class Extension
     private static int _networkBackoffSec = 1;
     private static long _lastNetworkHiccupCbTicks;
     /// <summary>
-    /// Échelle unique pour tout le trafic sortant (position, caméras, relevés, occupants, tchat) :
-    /// 45 s → 1 min 15 → 2 min 30 → 5 min → 10 min. Entrée après 3 échecs ; 2 succès baissent d’un cran.
-    /// L’escalade est plafonnée à un cran par fenêtre (pas de fusée 45→600 en ms sous rafale code 0).
+    /// Échelle choisie par la liaison quand le portail ne demande pas d’attendre :
+    /// 45 s → 1 min 15 → 1 min 30. Un Retry-After plus long est respecté à part (RetryAfterCapSec).
+    /// Entrée après 3 échecs ; 2 succès baissent d’un cran.
     /// </summary>
-    private static readonly int[] SendBackoffLadderSec = { 45, 75, 150, 300, 600 };
+    private static readonly int[] SendBackoffLadderSec = { 45, 75, 90 };
     private const int SendFailStreakToEnter = 3;
     private const int SendOkStreakToStepDown = 2;
-    private const int SendBackoffCapSec = 600;
+    /// <summary>
+    /// Délai demandé par le portail (Retry-After). Le palier choisi par la liaison reste à 90 s.
+    /// Un délai plus long est respecté, jusqu’à 10 minutes, y compris la pause d’une seule adresse.
+    /// </summary>
+    private const int RetryAfterCapSec = 600;
     private static int _sendFailStreak;
     private static int _sendOkStreak;
     private static int _sendBackoffStep;
@@ -128,11 +132,21 @@ public static partial class Extension
 
     private static long _lastPostErrorCbTicks;
 
-    private static HttpClient CreateHttpClient(int timeoutSeconds)
+    private static HttpClient CreateHttpClient(int timeoutSeconds, bool followRedirects = false)
     {
-        var client = new HttpClient
+        // SEC-001 : redirections NON suivies automatiquement par défaut. .NET retire bien Authorization lors d'une
+        // redirection inter-hôtes, mais GARDE les en-têtes personnalisés (X-COMSPEC-KEY, X-ATAK-TOKEN,
+        // X-COMSPEC-SESSION, X-COMSPEC-STEAM) : un 302 d'un hôte Athena vers un hôte tiers les ferait fuiter.
+        // L'API Athena ne redirige jamais ses routes (docs/migration-domaine-athena-comspec.md, étape 6). Seul un
+        // client qui n'attache jamais de secret (tuiles publiques : MapPhotoHttp) suit les redirections ; les images
+        // de briefing les suivent à la main, sans secret hors Athena (SendImageGetFollowingRedirects).
+        var handler = new SocketsHttpHandler { AllowAutoRedirect = followRedirects };
+        var client = new HttpClient(handler)
         {
             Timeout = TimeSpan.FromSeconds(timeoutSeconds),
+            // Corps mis en mémoire au plus 64 Mo (2 Go par défaut) : un Content-Length plus grand est refusé avant
+            // lecture (HttpRequestException), un corps sans longueur s'arrête au plafond. Images de briefing sur CDN tiers.
+            MaxResponseContentBufferSize = 64L * 1024 * 1024,
             DefaultRequestVersion = HttpVersion.Version11,
             DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower
         };
@@ -295,9 +309,13 @@ public static partial class Extension
         public string SseNoteId = "";
         public string SseNoteKind = "capture";
         public int Attempts;
+        /// <summary>Relances différées d'un nom précis pas encore écrit (jeu en pause, alt-tab, disque lent).</summary>
+        public int LateRetries;
     }
 
     private static readonly ConcurrentQueue<ReconPhotoJob> PhotoJobs = new();
+    private const int PhotoLateRetryMax = 4;
+    private const int PhotoLateRetryDelayMs = 15_000;
     private static readonly ConcurrentDictionary<string, long> PhotoDedupTicks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object ScreenshotWatcherLock = new();
     private static int _photoWorkerRunning;
@@ -384,9 +402,15 @@ public static partial class Extension
         }
         catch { /* corps illisible */ }
         if ((code == 400 || code == 422) && !string.IsNullOrEmpty(sentBody))
-            parts.Add("envoyé : " + OneLineExcerpt(sentBody, 240));
+            parts.Add("envoyé : " + OneLineExcerpt(MaskSecretsInJson(sentBody), 240));
         return string.Join(" · ", parts);
     }
+
+    /// <summary>Clé communauté et jetons masqués avant d'écrire un corps envoyé dans le journal de transmission.</summary>
+    private static string MaskSecretsInJson(string text) =>
+        System.Text.RegularExpressions.Regex.Replace(text,
+            "(\"(?:api_key|access_key|session_token|game_session|refresh_token|password)\"\\s*:\\s*\")(?:[^\"\\\\]|\\\\.)*\"",
+            "$1***\"");
 
     private static string OneLineExcerpt(string text, int max)
     {
@@ -480,6 +504,8 @@ public static partial class Extension
         var baseUrl = NormalizeBaseUrl(string.IsNullOrWhiteSpace(portal) ? _baseUrl : portal);
         if (!TryBuildRequestUri(baseUrl, "/api/atak/version", out var uri, out var err) || uri is null)
             return "ERR|" + err;
+        // SEC-001 : jamais de requête vers un hôte arbitraire choisi par un script (adresse IP du joueur, réseau local).
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
@@ -506,6 +532,8 @@ public static partial class Extension
         var baseUrl = NormalizeBaseUrl(args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0] : _baseUrl);
         if (!TryBuildRequestUri(baseUrl, "/api/atak/startup-check", out var uri, out var err) || uri is null)
             return "ERR|" + err;
+        // SEC-001 : le check (pseudo, indicatif, mission) ne part que vers Athena, jamais vers un hôte choisi par un script.
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         var json = new StringBuilder("{\"extension_version\":\"").Append(EscapeJson(CurrentExtensionVersion())).Append('"');
         var fields = 0;
         for (var i = 1; i < args.Length && fields < 48; i++)
@@ -528,6 +556,7 @@ public static partial class Extension
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
             using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent(json.ToString()) };
+            StampOfficialClient(req);
             using var response = SendTimed(req, cts.Token);
             if ((int)response.StatusCode == 429) return "ERR|rate_limited";
             var body = ReadContentUtf8(response, cts.Token);
@@ -540,7 +569,10 @@ public static partial class Extension
             }
             catch (JsonException) { }
             if (!response.IsSuccessStatusCode)
+            {
+                if (body.Contains("client_untrusted", StringComparison.Ordinal)) return "ERR|client_untrusted";
                 return "ERR|" + (status.Length > 0 ? status : "http_" + (int)response.StatusCode);
+            }
             return "OK|" + (status.Length > 0 ? status : "sent");
         }
         catch (Exception ex)
@@ -641,7 +673,7 @@ public static partial class Extension
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
         try
         {
-            var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
+            using var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
             var code = (int)resp.StatusCode;
             var respBody = "";
             try { respBody = ReadContentUtf8(resp, cts.Token); } catch { /* ignore */ }
@@ -654,6 +686,8 @@ public static partial class Extension
                 return "OK|connected";
             }
 
+            if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                return "ERR|client_untrusted";
             if (code is 401)
                 return "ERR|unauthorized";
             if (code is 403)
@@ -661,6 +695,10 @@ public static partial class Extension
                 var modBlock = MapModAccessBlockError(respBody);
                 if (modBlock != null)
                     return modBlock;
+                // Joueur bloqué par sa communauté : message propre au téléphone (fn_extensionCallback), pas
+                // « clé Athena invalide ». Le verrou global passe par ici depuis le correctif du refus de route.
+                if (respBody.Contains("atak_blocked", StringComparison.OrdinalIgnoreCase))
+                    return "ERR|atak_blocked";
                 if (respBody.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase))
                     return "ERR|steam_not_linked";
                 if (respBody.Contains("steam_required", StringComparison.OrdinalIgnoreCase))
@@ -809,7 +847,7 @@ public static partial class Extension
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
         try
         {
-            var resp = SendJsonPost(discUri.AbsoluteUri, BuildDisconnectBody(callSign), cts.Token);
+            using var resp = SendJsonPost(discUri.AbsoluteUri, BuildDisconnectBody(callSign), cts.Token);
             if (resp.IsSuccessStatusCode)
                 return "OK|disconnected";
             var code = (int)resp.StatusCode;
@@ -1063,10 +1101,11 @@ public static partial class Extension
             || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void MaybeReauthAfter401(string url)
+    private static void MaybeReauthAfter401(string url, bool force = false)
     {
         if (!HasPortalAuth() || string.IsNullOrEmpty(_baseUrl)) return;
-        if (!IsAuthSensitiveEndpoint(url)) return;
+        // force : 401 d'un sondage GET (ordres, tchat…), absent de la liste mais qui doit aussi vérifier la clé.
+        if (!force && !IsAuthSensitiveEndpoint(url)) return;
         // Pendant le handshake SQF : ne pas tuer la session (restauration / Steam encore en cours).
         if (_gameAuthState is "CONTACTING_ATHENA" or "RESTORING_SESSION" or "AUTHENTICATING"
             or "RESOLVING_ACCOUNT" or "RESOLVING_TENANT" or "SYNCING_PROFILE"
@@ -1091,19 +1130,21 @@ public static partial class Extension
                 var verify = VerifyClientInitSync();
                 if (verify.StartsWith("OK|", StringComparison.Ordinal))
                 {
-                    SetGameAuth("READY", 100, "");
+                    // Session déjà prête : rien à rétablir. SetGameAuth(READY) effacerait aussi les adresses
+                    // qui se taisent (ClearRefusalLatches) et la route refusée serait redemandée en boucle.
+                    if (!IsReadyWithoutError())
+                        SetGameAuth("READY", 100, "");
                     return;
                 }
 
-                if (verify.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
-                    || verify.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase)
-                    || verify.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
+                var refused = Array.Find(PermanentRefusalCodes,
+                    c => verify.Contains(c, StringComparison.OrdinalIgnoreCase));
+                if (refused != null)
                 {
                     // A 401 followed by a rejected client-init is not a transient POST
-                    // failure. Tell SQF to close its transmission gate; otherwise every
-                    // periodic producer keeps hammering authenticated endpoints forever.
-                    SetGameAuth("C2_UNAUTHORIZED", _gameAuthProgress, "C2_UNAUTHORIZED");
-                    InvokeCallback("AuthInvalidated", verify);
+                    // failure. Latch: no poll or post until a relink, a READY session or a restart
+                    // (Extension_RefusalLatch); SQF closes its gate without auto-reopen.
+                    LatchAuthRefusal(refused, verify);
                 }
             }
             catch { /* the normal network backoff handles transport failures */ }
@@ -1146,7 +1187,7 @@ public static partial class Extension
             JournalTrack(url, jsonBody, "queued");
         }
         else
-            JournalTrack(url, jsonBody, "failed", "file d'envoi pleine");
+            JournalTrack(url, jsonBody, "failed", "send queue full");
         EnsureDrainTimer();
     }
 
@@ -1200,11 +1241,11 @@ public static partial class Extension
         {
             var ra = response.Headers.RetryAfter;
             if (ra?.Delta is { } delta)
-                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, SendBackoffCapSec);
+                return Math.Clamp((int)Math.Ceiling(delta.TotalSeconds), 1, RetryAfterCapSec);
             if (ra?.Date is { } date)
             {
                 var sec = (int)Math.Ceiling((date.UtcDateTime - DateTime.UtcNow).TotalSeconds);
-                if (sec > 0) return Math.Clamp(sec, 1, SendBackoffCapSec);
+                if (sec > 0) return Math.Clamp(sec, 1, RetryAfterCapSec);
             }
         }
         catch { /* ignore */ }
@@ -1217,7 +1258,7 @@ public static partial class Extension
                 if (doc.RootElement.TryGetProperty("retry_after", out var prop)
                     && prop.TryGetInt32(out var n)
                     && n > 0)
-                    return Math.Clamp(n, 1, SendBackoffCapSec);
+                    return Math.Clamp(n, 1, RetryAfterCapSec);
             }
         }
         catch { /* ignore */ }
@@ -1242,7 +1283,7 @@ public static partial class Extension
 
     private static void ApplySendPause(int delaySec)
     {
-        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(delaySec, 1, SendBackoffCapSec)).Ticks;
+        var until = DateTime.UtcNow.AddSeconds(Math.Clamp(delaySec, 1, RetryAfterCapSec)).Ticks;
         System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
         System.Threading.Interlocked.Exchange(ref _networkBackoffUntilTicks, until);
     }
@@ -1330,7 +1371,7 @@ public static partial class Extension
             delaySec = CurrentSendBackoffSec();
             var ra = ParseRetryAfterSeconds(response, delaySec);
             if (ra > delaySec)
-                delaySec = Math.Min(ra, SendBackoffCapSec);
+                delaySec = Math.Min(ra, RetryAfterCapSec);
             ApplySendPause(delaySec);
             if (!string.IsNullOrEmpty(url)
                 && (IsBestEffortEndpoint(url) || IsVideoFeedsEndpoint(url) || IsHeavyIngestEndpoint(url)))
@@ -1486,7 +1527,8 @@ public static partial class Extension
         if ((int)response.StatusCode == 403)
         {
             NoteAccessDenied(response, url);
-            if (!IsBestEffortEndpoint(url))
+            NoteRefusal(url, 403, RefusalBody(response));
+            if (!IsBestEffortEndpoint(url) && !IsRefusalLatched(url))
                 EnqueueForRetry(url, jsonBody);
             return;
         }
@@ -1559,19 +1601,72 @@ public static partial class Extension
         return code is 408 or 425;
     }
 
+    private static long _untrustedQueueDropped;
+    private static long _lastUntrustedDropCbTicks;
+
+    /// <summary>
+    /// SEC-001 : envoi de file abandonné parce que son hôte n'est pas Athena. Compté, et signalé au journal de
+    /// liaison du téléphone (rappel PostError, code 0 = avertissement) au plus une fois par 30 s, avec le chemin
+    /// seul : jamais l'hôte refusé ni le corps. Le 2ᵉ champ est un libellé fixe et le chemin passe dans le détail :
+    /// fn_extensionCallback.sqf réagit au 2ᵉ champ (« terrain » arrête le relevé, « weather » renvoie la météo,
+    /// « video-feeds » suspend les flux), ce qu'un abandon ne doit jamais déclencher.
+    /// </summary>
+    private static void NoteUntrustedQueueDrop(string url)
+    {
+        var total = System.Threading.Interlocked.Increment(ref _untrustedQueueDropped);
+        var now = DateTime.UtcNow.Ticks;
+        var prev = System.Threading.Interlocked.Read(ref _lastUntrustedDropCbTicks);
+        if (now - prev < TimeSpan.FromSeconds(30).Ticks) return;
+        if (System.Threading.Interlocked.CompareExchange(ref _lastUntrustedDropCbTicks, now, prev) != prev) return;
+        string path;
+        try { path = new Uri(url).AbsolutePath; } catch { path = ""; }
+        // Chemin venu d'un fichier modifiable : caractères sûrs seulement, longueur bornée.
+        var safe = new System.Text.StringBuilder(Math.Min(path.Length, 80));
+        foreach (var ch in path)
+        {
+            if (safe.Length >= 80) break;
+            if (char.IsAsciiLetterOrDigit(ch) || ch is '/' or '-' or '_' or '.') safe.Append(ch);
+        }
+        InvokeCallback("PostError", "0|file-hors-athena|0|" + (safe.Length > 0 ? safe + " : " : "")
+            + "hôte non-Athena, envoi abandonné ("
+            + total.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")");
+    }
+
     /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
     private static bool TrySendQueuedPost((string Url, string Body) item)
     {
+        // SEC-001 : adresse que IsSecretSafeUri refuse, typiquement reprise du disque (queue.jsonl / position.json
+        // écrits par une version détournée, ou fichier modifié) : AddQueueSecrets y mettrait la clé et le jeton de
+        // session. Envoi abandonné, jamais renvoyé. Seul envoi de la file : FIFO, marqueurs et position
+        // coalescée (rechargée ou non) passent tous ici.
+        if (!IsSecretSafeUri(item.Url))
+        {
+            // Envoi posé hors liaison (« queued:/api/… », poste encore inconnu) : remis en file comme avant,
+            // il sera résolu sur _baseUrl (déjà contrôlé) par TryResolveQueuedUrl.
+            if (item.Url.StartsWith("queued:", StringComparison.OrdinalIgnoreCase))
+            {
+                EnqueueForRetry(item.Url, item.Body);
+                return true;
+            }
+            // Journal d'envoi (envois suivis seulement) ET journal de liaison du téléphone : positions, marqueurs
+            // et météo ne sont pas suivis par le premier, l'abandon resterait sinon sans trace.
+            JournalTrack(item.Url, item.Body, "failed", "non-Athena host");
+            NoteUntrustedQueueDrop(item.Url);
+            return true;
+        }
+        // Adresse absente de l'offre de la communauté : envoi abandonné, pas renvoyé.
+        if (IsFeatureLatched(item.Url))
+            return true;
         var started = DateTime.UtcNow.Ticks;
         JournalTrack(item.Url, item.Body, "sending");
         try
         {
             using var req = new HttpRequestMessage(HttpMethod.Post, item.Url)
             {
-                Content = JsonContent(item.Body)
+                Content = JsonContent(AddQueueSecrets(item.Body))
             };
             AttachApiKeyHeader(req);
-            var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+            using var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var sentCode = (int)response.StatusCode;
             JournalHttp(started, sentCode);
             NoteTrafficUntracked(req, response);
@@ -1587,7 +1682,8 @@ public static partial class Extension
                 if ((int)response.StatusCode == 403)
                 {
                     NoteAccessDenied(response, item.Url);
-                    if (!IsBestEffortEndpoint(item.Url))
+                    NoteRefusal(item.Url, 403, RefusalBody(response));
+                    if (!IsBestEffortEndpoint(item.Url) && !IsRefusalLatched(item.Url))
                         EnqueueForRetry(item.Url, item.Body);
                     return false;
                 }
@@ -1595,6 +1691,8 @@ public static partial class Extension
                 {
                     var code = (int)response.StatusCode;
                     NotePostError(code, item.Url, response, item.Body);
+                    if (code == 401)
+                        MaybeReauthAfter401(item.Url);
                     if (TryNoteEndpointServerError(item.Url, response))
                     {
                         // Cette adresse attend ; le vidage continue avec les autres envois.
@@ -1649,22 +1747,33 @@ public static partial class Extension
         JournalMaybeReport();
         if (string.IsNullOrEmpty(_baseUrl)) return;
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
+        // Clé ou compte refusés pour de bon : la file attend la nouvelle liaison au lieu d'être renvoyée chaque seconde.
+        if (IsAuthLatched()) return;
         // Passage précédent encore en cours (Athena lente) : on le laisse finir au lieu d'empiler des threads
         // sur le verrou (les minuteurs se chevauchent et affamaient les appels Async, sondages et journaux).
         if (!System.Threading.Monitor.TryEnter(QueueDrainLock)) return;
         try
         {
             // Phase A : lot priorisé d’abord (compte dans le budget HTTP du tick).
-            if (TryDrainTelemetryBatch())
+            // Le lot n'arrête plus le passage : tant que le joueur bouge il n'est jamais vide, et marqueurs,
+            // manifestes et rapports attendaient l'arrêt du joueur (puis partaient en rafale).
+            var telemetrySent = TryDrainTelemetryBatch();
+            if (telemetrySent)
             {
-                PersistQueueToDisk();
                 // Re-jitter périodique pour désynchroniser les clients.
                 try { EnsureDrainTimer(rejitter: true); } catch { /* ignore */ }
-                return;
+                // Athena vient de demander une pause (429/503, réseau) : on s'arrête là, comme avant.
+                if (IsPostPausedNow())
+                {
+                    PersistQueueToDisk();
+                    return;
+                }
             }
 
             const int maxPerTick = 3;
-            var sent = 0;
+            var sent = telemetrySent ? 1 : 0;
+            // Télémétrie active : un seul envoi de la file par passage (prudence, le lot occupe déjà la connexion).
+            var fifoLeft = telemetrySent ? 1 : maxPerTick;
             var networkPause = IsNetworkBackoffNow();
             // Toujours la position coalescée en premier (freshness > ordre FIFO).
             var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
@@ -1680,7 +1789,7 @@ public static partial class Extension
             }
             // Un tour de file au plus : les envois remis en file (adresse en pause) ne sont pas relus.
             var scanLeft = PendingPosts.Count;
-            while (sent < maxPerTick && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
+            while (sent < maxPerTick && fifoLeft > 0 && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
             {
                 if (!TryResolveQueuedUrl(ref item))
                 {
@@ -1711,6 +1820,7 @@ public static partial class Extension
                 if (!TrySendQueuedPost(item))
                     break;
                 sent++;
+                fifoLeft--;
             }
             // Marqueurs coalescés (budget restant).
             if (sent < maxPerTick && !PendingMarkersByName.IsEmpty)
@@ -1752,6 +1862,75 @@ public static partial class Extension
 
     private static int _diskQueueLoaded;
     private static readonly object DiskQueueLock = new();
+
+    private static bool IsQueueSecretProp(JsonProperty prop) =>
+        prop.NameEquals("api_key") || prop.NameEquals("access_key")
+        || prop.NameEquals("session_token") || prop.NameEquals("game_session");
+
+    /// <summary>Corps de file écrit sur disque sans clé communauté ni jeton de session (en clair sinon dans
+    /// queue.jsonl / position.json). Corps non objet JSON : inchangé.</summary>
+    private static string StripQueueSecrets(string body)
+    {
+        if (string.IsNullOrEmpty(body) || body.IndexOf('{') < 0
+            || (body.IndexOf("\"api_key\"", StringComparison.Ordinal) < 0
+                && body.IndexOf("\"access_key\"", StringComparison.Ordinal) < 0
+                && body.IndexOf("\"session_token\"", StringComparison.Ordinal) < 0
+                && body.IndexOf("\"game_session\"", StringComparison.Ordinal) < 0))
+            return body;
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object) return body;
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (IsQueueSecretProp(prop)) continue;
+                    prop.WriteTo(writer);
+                }
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return body;
+        }
+    }
+
+    /// <summary>Envoi d'un corps repris du disque (sans secrets) : clé et jeton de session courants remis à l'envoi.</summary>
+    private static string AddQueueSecrets(string body)
+    {
+        if (string.IsNullOrEmpty(body) || !body.TrimStart().StartsWith('{')
+            || body.IndexOf("\"session_token\"", StringComparison.Ordinal) >= 0
+            || (_sessionToken.Length == 0 && _apiKey.Length == 0))
+            return body;
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object) return body;
+            var hasKey = doc.RootElement.TryGetProperty("api_key", out _) || doc.RootElement.TryGetProperty("access_key", out _);
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                    prop.WriteTo(writer);
+                if (!hasKey && _apiKey.Length > 0)
+                    writer.WriteString("api_key", _apiKey);
+                if (_sessionToken.Length > 0)
+                    writer.WriteString("session_token", _sessionToken);
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return body;
+        }
+    }
 
     private static string QueueRowJson(string url, string body)
     {
@@ -1820,19 +1999,19 @@ public static partial class Extension
                 foreach (var item in PendingPosts.ToArray())
                 {
                     if (lines.Count >= MaxQueueSize) break;
-                    lines.Add(QueueRowJson(item.Url, item.Body));
+                    lines.Add(QueueRowJson(item.Url, StripQueueSecrets(item.Body)));
                 }
                 foreach (var mk in PendingMarkersByName.Values)
                 {
                     if (lines.Count >= MaxQueueSize) break;
-                    lines.Add(QueueRowJson(mk.Url, mk.Body));
+                    lines.Add(QueueRowJson(mk.Url, StripQueueSecrets(mk.Body)));
                 }
                 File.WriteAllLines(fifo, lines);
                 lock (CoalescedPositionLock)
                 {
                     if (_coalescedPosition is { } p)
                     {
-                        File.WriteAllText(pos, QueueRowJson(p.Url, p.Body));
+                        File.WriteAllText(pos, QueueRowJson(p.Url, StripQueueSecrets(p.Body)));
                     }
                     else if (File.Exists(pos))
                     {
@@ -1869,7 +2048,7 @@ public static partial class Extension
                         if (u.Length > 0 && b.Length > 0 && PendingPosts.Count < MaxQueueSize)
                         {
                             PendingPosts.Enqueue((u, b));
-                            JournalTrack(u, b, "queued", "repris du disque");
+                            JournalTrack(u, b, "queued", "restored from disk");
                         }
                     }
                     catch { /* ligne illisible */ }
@@ -1882,10 +2061,17 @@ public static partial class Extension
                     using var doc = JsonDocument.Parse(File.ReadAllText(pos));
                     var u = doc.RootElement.TryGetProperty("u", out var up) ? up.GetString() ?? "" : "";
                     var b = doc.RootElement.TryGetProperty("b", out var bp) ? bp.GetString() ?? "" : "";
-                    if (u.Length > 0)
+                    // SEC-001 : position (toujours une URL absolue) hors Athena jamais rechargée ; TrySendQueuedPost
+                    // l'abandonnerait de toute façon. Comptée avec les autres abandons (signalés au premier envoi
+                    // de file abandonné : aucun rappel ici, le SQF n'est peut-être pas encore prêt).
+                    if (u.Length > 0 && IsSecretSafeUri(u))
                     {
                         lock (CoalescedPositionLock)
                             _coalescedPosition ??= (u, b);
+                    }
+                    else if (u.Length > 0)
+                    {
+                        System.Threading.Interlocked.Increment(ref _untrustedQueueDropped);
                     }
                 }
                 catch { /* position illisible */ }
@@ -2058,7 +2244,9 @@ public static partial class Extension
             var url = "https://jetelain.github.io/Arma3Map/maps/" + world + "/" + z + "/" + x + "/" + y + ".png";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
-            using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
+            // Tuile publique, sans secret : client des tuiles, qui suit les redirections (le client principal ne
+            // les suit plus depuis SEC-001).
+            using var resp = MapPhotoHttp.Value.SendAsync(req, cts.Token).GetAwaiter().GetResult();
             if (!resp.IsSuccessStatusCode) return;
             var bytes = resp.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
             if (bytes is null || bytes.Length < 32) return;
@@ -2206,6 +2394,10 @@ public static partial class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        // Données remontées choisies par la communauté (Extension_DataFlows) : flux coupé, rien en file.
+        // Refus définitif en cours (clé, compte ou fonction absente de l'offre) : rien n'est envoyé ni mis en file.
+        if (!DataFlowAllowsUrl(url, jsonBody) || IsRefusalLatched(url))
+            return;
         // Bus télémétrie Phase A : position / véhicules / météo / SIGINT → lot priorisé.
         if (TryOfferBatchablePost(url, jsonBody))
             return;
@@ -2301,6 +2493,38 @@ public static partial class Extension
         return SendTimed(req, token);
     }
 
+    /// <summary>
+    /// GET d'image qui suit les redirections à la main (5 sauts au plus), puisque AllowAutoRedirect est désactivé
+    /// (SEC-001). Les secrets sont (ré)attachés par AttachApiKeyHeader à CHAQUE saut, donc un hôte non-Athena n'en
+    /// reçoit aucun (une diapositive Google / un CDN continue de marcher, sans secret). Jamais de rétrogradation
+    /// https → http. Utilisé par DownloadBriefingSlideImage (seul chemin avec une URL d'image potentiellement externe).
+    /// </summary>
+    private static HttpResponseMessage SendImageGetFollowingRedirects(string url, CancellationToken token)
+    {
+        var current = url;
+        for (var hop = 0; ; hop++)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, current);
+            AttachApiKeyHeader(req);
+            var resp = SendTimed(req, token);
+            try { req.Dispose(); } catch { /* ignore */ }
+            var code = (int)resp.StatusCode;
+            var loc = resp.Headers.Location;
+            if (hop >= 5 || loc is null
+                || (code != 301 && code != 302 && code != 303 && code != 307 && code != 308))
+                return resp;
+            Uri? next = loc.IsAbsoluteUri ? loc
+                : (Uri.TryCreate(new Uri(current), loc, out var abs) ? abs : null);
+            if (next is null
+                || (next.Scheme != Uri.UriSchemeHttp && next.Scheme != Uri.UriSchemeHttps)
+                || (string.Equals(new Uri(current).Scheme, Uri.UriSchemeHttps, StringComparison.Ordinal)
+                    && next.Scheme == Uri.UriSchemeHttp))
+                return resp; // schéma inattendu ou rétrogradation : on rend la 3xx telle quelle (comme le suivi auto)
+            resp.Dispose();
+            current = next.AbsoluteUri;
+        }
+    }
+
     /// <summary>Envoi synchrone mesuré (latence, 429/5xx, délais) pour l'indicateur de surcharge d'Athena.</summary>
     private static HttpResponseMessage SendTimed(HttpRequestMessage req, CancellationToken token)
     {
@@ -2333,6 +2557,49 @@ public static partial class Extension
         public volatile string Result = "OK|";
         public long FetchedAtMs;
         public int InFlight;
+        // Dernière adresse sondée et dernier code HTTP (-1 : erreur réseau) : rejoués par Link.SelfTest.
+        public volatile string Url = "";
+        public int LastCode;
+        // Refus (401/403) ou erreur serveur répétés : pas de nouvel appel avant RefusedUntilMs, palier RefusedStep.
+        public long RefusedUntilMs;
+        public int RefusedStep;
+    }
+
+
+    /// <summary>Nouvelle liaison ou nouvelle session : les canaux refusés réessaient tout de suite.</summary>
+    private static void ResetPollRefusals()
+    {
+        foreach (var slot in PollGetCache.Values)
+        {
+            slot.RefusedStep = 0;
+            slot.RefusedUntilMs = 0;
+        }
+    }
+
+    /// <summary>Paliers d'attente d'un canal sondé après un refus d'Athena : 15 s, 30 s, 1 min, 2 min, puis 5 min.</summary>
+    private static readonly int[] PollRefusedLadderSec = { 15, 30, 60, 120, 300 };
+
+    /// <summary>
+    /// Après un 401/403 (clé ou session refusée, formule sans ce canal) ou une erreur 5xx, le canal attend avant de
+    /// redemander, de plus en plus longtemps ; la première réponse 2xx/304 remet le compteur à zéro. Avant, chaque
+    /// canal refusé était redemandé toutes les 1,2 s à 10 s : des milliers de requêtes refusées par heure côté Athena.
+    /// Un 404 ne compte pas : certains canaux répondent 404 tant que la ressource n'existe pas (plan de mission…).
+    /// Les refus pour une règle d'Athena (clé, compte, offre) sont arrêtés net par Extension_RefusalLatch.cs ;
+    /// ces paliers couvrent les refus passagers et ceux sans motif.
+    /// </summary>
+    private static void NotePollResult(PollGetSlot slot, int code)
+    {
+        if (code is 401 or 403 or 429 || code >= 500 || code < 0)
+        {
+            var step = slot.RefusedUntilMs == 0 ? 0 : Math.Min(slot.RefusedStep + 1, PollRefusedLadderSec.Length - 1);
+            slot.RefusedStep = step;
+            slot.RefusedUntilMs = Environment.TickCount64 + PollRefusedLadderSec[step] * 1000L;
+        }
+        else if (code is >= 200 and < 400)
+        {
+            slot.RefusedStep = 0;
+            slot.RefusedUntilMs = 0;
+        }
     }
 
     private static readonly ConcurrentDictionary<string, PollGetSlot> PollGetCache = new();
@@ -2346,11 +2613,18 @@ public static partial class Extension
     {
         if (string.IsNullOrEmpty(url))
             return "ERR|invalid_url";
+        // Refus définitif en cours : aucun appel (avant : un GET refusé toutes les 4 à 8 s par sondage).
+        if (IsAuthLatched())
+            return "ERR|unauthorized";
+        if (IsFeatureLatched(url))
+            return "ERR|" + FeatureLatchCode(url);
 
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
+        slot.Url = url;
         var now = Environment.TickCount64;
         const int minRefreshMs = 1200;
-        var stale = slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs;
+        var stale = (slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs)
+            && (slot.RefusedUntilMs == 0 || now >= slot.RefusedUntilMs);
         if (stale && Interlocked.CompareExchange(ref slot.InFlight, 1, 0) == 0)
         {
             ThreadPool.QueueUserWorkItem(_ =>
@@ -2360,13 +2634,20 @@ public static partial class Extension
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
                     using var resp = SendGet(url, cts.Token);
                     var body = ReadContentUtf8(resp, cts.Token);
-                    var formatted = format(body, (int)resp.StatusCode);
+                    var status = (int)resp.StatusCode;
+                    slot.LastCode = status;
+                    if (status == 401 || status == 403)
+                        NoteRefusal(url, status, body);
+                    NotePollResult(slot, status);
+                    var formatted = format(body, status);
                     if (formatted.StartsWith("OK|", StringComparison.Ordinal) || slot.FetchedAtMs == 0)
                         slot.Result = formatted;
                     slot.FetchedAtMs = Environment.TickCount64;
                 }
                 catch
                 {
+                    slot.LastCode = -1;
+                    NotePollResult(slot, -1);
                     if (slot.FetchedAtMs == 0)
                         slot.Result = "ERR|network";
                     slot.FetchedAtMs = Environment.TickCount64;
@@ -2391,10 +2672,7 @@ public static partial class Extension
 
     private static string PollOkClipped(string payload)
     {
-        payload ??= "";
-        if (payload.Length > MaxOutputBytes - 4)
-            payload = payload.Substring(0, MaxOutputBytes - 4);
-        return "OK|" + payload;
+        return "OK|" + Utf8ClipLines(payload ?? "", MaxOutputBytes - 4);
     }
 
     private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token, bool gzip = false)
@@ -2542,7 +2820,9 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, ExtensionProductName + " " + CurrentExtensionVersion());
+            // Tampon de 32 octets côté Arma : la version seule (le nom du produit est déjà celui de la DLL ;
+            // « COMSPECATAKNativeExtension 1.0.0-native » était coupé dans le RPT).
+            Output(output, outputSize, CurrentExtensionVersion());
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -2582,7 +2862,30 @@ public static partial class Extension
         var functionString = Marshal.PtrToStringUTF8(function);
         if (functionString == "Warmup")
             KickBackgroundWarmup();
-        RvExtensionArgsImpl(functionString, []);
+        // Forme chaîne (callExtension "GetUnits", "GetPings"…) : même chemin que RVExtensionArgs, réponse directe
+        // d'abord ; sans elle, ces commandes servies par TryGetSyncResponse rendaient toujours "".
+        string? syncResult;
+        try
+        {
+            syncResult = TryGetSyncResponse(functionString, []);
+        }
+        catch (Exception ex)
+        {
+            syncResult = FormatCaughtError(ex);
+        }
+        if (syncResult != null)
+        {
+            Output(output, outputSize, syncResult);
+            return;
+        }
+        try
+        {
+            RvExtensionArgsImpl(functionString, []);
+        }
+        catch
+        {
+            // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+        }
         Output(output, outputSize, "");
     }
 
@@ -2614,11 +2917,42 @@ public static partial class Extension
     private const int MaxOutputBytes = 8000;
     /// <summary>Morceaux de texte de campagne SSE reçus du jeu, par clé de campagne (SseCampaignPush).</summary>
     private static readonly ConcurrentDictionary<string, string?[]> SseCampaignPushBuffers = new(StringComparer.Ordinal);
+    /// <summary>Dernier morceau reçu par clé (ms) : un envoi interrompu est purgé au bout de 10 min.</summary>
+    private static readonly ConcurrentDictionary<string, long> SseCampaignPushTouched = new(StringComparer.Ordinal);
 
     /// <summary>Cache détail tenue pour GetWardrobeChunk (évite ERR|too_large).</summary>
-    private static string _wardrobeDetailCacheId = "";
-    private static string _wardrobeDetailCache = "";
-    private static int _wardrobeDetailChunkSize = MaxOutputBytes - 80;
+    /// Identifiant, corps et taille de morceau dans un seul objet, remplacé d'un bloc : deux chargements de tenues
+    /// en parallèle (extAwait, Async) ne découpent jamais une tenue dans le corps d'une autre.
+    private sealed class WardrobeDetailSlot
+    {
+        public WardrobeDetailSlot(string id, string body, int chunkSize) { Id = id; Body = body; ChunkSize = chunkSize; }
+        public string Id { get; }
+        public string Body { get; }
+        public int ChunkSize { get; }
+    }
+    private static volatile WardrobeDetailSlot? _wardrobeDetail;
+
+    /// <summary>Débuts des morceaux (en caractères) d'un texte découpé en tranches d'au plus maxBytes octets UTF-8 :
+    /// Output coupe à 8000 octets, un découpage en caractères perdait la fin des tranches accentuées.</summary>
+    private static List<int> Utf8ChunkStarts(string s, int maxBytes)
+    {
+        var starts = new List<int>();
+        var i = 0;
+        while (i < s.Length)
+        {
+            starts.Add(i);
+            var bytes = 0;
+            while (i < s.Length)
+            {
+                var n = char.IsHighSurrogate(s[i]) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1]) ? 2 : 1;
+                var b = n == 2 ? 4 : s[i] < 0x80 ? 1 : s[i] < 0x800 ? 2 : 3;
+                if (bytes + b > maxBytes && bytes > 0) break;
+                bytes += b;
+                i += n;
+            }
+        }
+        return starts;
+    }
 
     /// <summary>Cache liste tenues pour pagination ListWardrobes / ListWardrobesPage.</summary>
     private static string _wardrobesListCache = "";
@@ -2851,15 +3185,100 @@ public static partial class Extension
         _sessionExpiresAt = DateTimeOffset.MinValue;
     }
 
+    /// <summary>
+    /// Boucle locale (localhost / 127.0.0.1 / ::1) de confiance : réglage de DÉVELOPPEMENT seulement (Athena local,
+    /// banc tools/sec001-bench), variable d'environnement COMSPEC_DEV_TRUST_LOOPBACK=1 lue une fois au chargement
+    /// de la DLL. Absente en production : la boucle locale ne reçoit aucun secret et ne devient jamais _baseUrl.
+    /// </summary>
+    private static readonly bool DevTrustLoopback =
+        Environment.GetEnvironmentVariable("COMSPEC_DEV_TRUST_LOOPBACK") == "1";
+
+    /// <summary>Hôte comparable : minuscules, sans crochets IPv6, sans point final, sans espaces.</summary>
+    private static string PortalHostKey(string? host) =>
+        (host ?? "").Trim().Trim('[', ']').TrimEnd('.').ToLowerInvariant();
+
+    /// <summary>Athena local de développement (jamais en production ; Uri.IsLoopback n'est pas utilisé : il est
+    /// sensible à la casse pour « localhost » et vrai pour tout 127/8, donc 127.0.0.2 compris).</summary>
+    private static bool IsDevLoopbackHost(string? host) =>
+        DevTrustLoopback && PortalHostKey(host) is "localhost" or "127.0.0.1" or "::1";
+
+    /// <summary>
+    /// Hôtes Athena de confiance : eux seuls reçoivent les secrets (clé communauté, Bearer, jeton de session,
+    /// Steam) et peuvent devenir _baseUrl. Seuls les deux portails réellement appelés par la DLL sont listés :
+    /// athena.ttrd.fr (fn_portalUrl de connect, repli de GameAuth Init) et athena-comspec.eu (mod natif depuis
+    /// #1072). Ni *.ttrd.fr (vlm., croc-numerique. n'ont rien à voir avec Athena), ni compsec.ttrd.fr (WebView
+    /// seulement, jamais appelé par la DLL), ni *.athena-comspec.eu (atak. et sse. ne sont que des redirections).
+    /// </summary>
+    private static bool IsTrustedPortalHost(string? host)
+    {
+        if (string.IsNullOrEmpty(host)) return false;
+        if (PortalHostKey(host) is "athena.ttrd.fr" or "athena-comspec.eu")
+            return true;
+        return IsDevLoopbackHost(host);
+    }
+
+    /// <summary>
+    /// Seul prédicat de SEC-001 : destination admise pour un secret (en-tête ou corps) et pour _baseUrl. URL
+    /// absolue sans identifiants (https://x@hôte/ refusé), hôte de confiance, et https ; http seulement vers
+    /// l'Athena local de développement (jamais de jeton en clair sur le réseau).
+    /// </summary>
+    private static bool IsSecretSafeUri(Uri? u) =>
+        u is { IsAbsoluteUri: true } && u.UserInfo.Length == 0 && IsTrustedPortalHost(u.IdnHost)
+        && (u.Scheme == Uri.UriSchemeHttps || (u.Scheme == Uri.UriSchemeHttp && IsDevLoopbackHost(u.IdnHost)));
+
+    /// <summary>
+    /// Pages que le téléphone ouvre dans le navigateur du joueur. Pas le reste du portail :
+    /// liaison (/lier), carte (/atak), formulaire 9-LINE (/9-line), avec ou sans le préfixe /public.
+    /// </summary>
+    private static bool IsOpenablePortalPage(Uri uri)
+    {
+        var path = (uri.AbsolutePath ?? "").Replace('\\', '/');
+        if (path.Contains("..", StringComparison.Ordinal)) return false;
+        path = path.TrimEnd('/');
+        if (path.Length == 0) path = "/";
+        return path.Equals("/lier", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/lier", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/atak", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/atak", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/9-line", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/9-line", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSecretSafeUri(string? url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var u) && IsSecretSafeUri(u);
+
+    /// <summary>
+    /// Point de contrôle UNIQUE de l'adresse du portail. Toute valeur venant de SQF (Connect, PairStart, Redeem*,
+    /// LinkBySteam, RegisterBeta, ReportDiag, GameAuth Init/RestoreSession/AuthPassword/RequestOtp/VerifyOtp/AuthSteam)
+    /// ou du magasin local passe ici : _baseUrl n'est posé QUE si IsSecretSafeUri l'admet. C'est le cœur du
+    /// correctif SEC-001 — sans lui, un mod/mission hostile ou une variable publique d'objet pointe _baseUrl vers
+    /// un attaquant et toute la télémétrie (et les secrets des corps) partent là-bas.
+    /// </summary>
+    private static bool TrySetSqfBaseUrl(string? candidate, out string normalized)
+    {
+        normalized = NormalizeBaseUrl(candidate);
+        if (!IsSecretSafeUri(normalized)) return false;
+        _baseUrl = normalized;
+        return true;
+    }
+
     /// <summary>Attache auth (+ session / Steam) sur une requête.</summary>
     private static void AttachApiKeyHeader(HttpRequestMessage req)
     {
+        // Filet anti-exfiltration SEC-001 : jamais de secret vers une destination que IsSecretSafeUri refuse, y
+        // compris après une redirection (req.RequestUri est l'hôte réellement visé à ce saut). Seul l'User-Agent
+        // subsiste.
+        if (!IsSecretSafeUri(req.RequestUri))
+        {
+            req.Headers.Remove("User-Agent");
+            req.Headers.TryAddWithoutValidation("User-Agent", ExtensionProductName + "/" + CurrentExtensionVersion());
+            return;
+        }
         // Jeton jeu : Bearer prioritaire. Miroir X-ATAK-TOKEN + clé communauté si connue
         // (certains reverse-proxies /public/ ne relaient pas Authorization).
-        if (_gameAccessToken.Length > 0)
-            EnsureFreshGameAccessToken();
-
-        var gameTok = _gameAccessToken;
+        // Sans attente : appelé aussi sur le thread du jeu (EnqueueOrSend, UpdatePosition). Jeton périmé =
+        // rafraîchi en tâche de fond, la requête part avec la clé communauté en attendant.
+        var gameTok = GameAccessTokenUsableNow() ? _gameAccessToken : "";
         if (gameTok.Length > 0)
         {
             try { req.Headers.Remove("X-COMSPEC-KEY"); } catch { /* ignore */ }
@@ -2899,6 +3318,11 @@ public static partial class Extension
             req.Headers.Remove("X-COMSPEC-STEAM");
             req.Headers.TryAddWithoutValidation("X-COMSPEC-STEAM", steam);
         }
+        // 2.0.95 : le site sert alors ses images du téléphone (portrait, diapositives, avis de recherche, fiches FRS)
+        // en texture .paa, que DownloadBriefingSlideImage range telle quelle ; sans l'en-tête, JPEG comme avant.
+        req.Headers.Remove("X-COMSPEC-Image");
+        req.Headers.TryAddWithoutValidation("X-COMSPEC-Image", "paa");
+        StampOfficialClient(req);
     }
 
     private static void ApplySteamUid(string? steamUid)
@@ -3015,6 +3439,51 @@ public static partial class Extension
     private const int AsyncMaxParallel = 6;
     private static readonly SemaphoreSlim AsyncGate = new(AsyncMaxParallel, AsyncMaxParallel);
 
+    /// <summary>
+    /// Commandes reçues par « Async » qui ne font que construire un JSON et le mettre en file (EnqueueOrSend) :
+    /// aucune attente réseau, donc pas de passage par AsyncGate. Ne JAMAIS y ajouter une commande qui appelle
+    /// SendGet / SendJsonPost (elle bloquerait le thread du jeu).
+    /// </summary>
+    private static readonly HashSet<string> AsyncLocalCommands = new(StringComparer.Ordinal)
+    {
+        "UpdatePosition", "EmitTelemetry", "SendMarker", "SendFlightManifest", "SendWeather",
+        "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report", "NetConditions.Report",
+    };
+
+
+    /// <summary>
+    /// ImageDataChunk « local:<chemin> » : image déjà téléchargée par la DLL (diapositive Google Slides de comspec_cache),
+    /// qu'Arma refuse hors d'un PBO, lue en base64 par morceaux pour le navigateur intégré. Seulement sous un dossier
+    /// comspec_cache de la DLL. Aucun appel réseau : répond aussi sans session Athena (avant, le contrôle
+    /// « ERR|not_connected » de TryGetSyncResponse passait en premier : capture de TTRD du 26/10, diapositive noire).
+    /// </summary>
+    private static string ImageDataChunkLocal(string?[] args)
+    {
+        var imageUrl = (args[0] ?? "").Trim();
+        if (!long.TryParse(args[2], out var offset) || offset < 0) offset = 0;
+        string full;
+        try { full = Path.GetFullPath(imageUrl.Substring(6).Trim()); }
+        catch { return "ERR|path_not_allowed"; }
+        var roots = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "comspec_cache"),
+            Path.Combine(Path.GetTempPath(), "comspec_cache"),
+        }.Select(r => Path.GetFullPath(r).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+        if (!roots.Any(r => full.StartsWith(r, StringComparison.OrdinalIgnoreCase))) return "ERR|path_not_allowed";
+        byte[] local;
+        try { local = File.ReadAllBytes(full); }
+        catch (FileNotFoundException) { return "ERR|not_found"; }
+        catch (DirectoryNotFoundException) { return "ERR|not_found"; }
+        catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
+        var localPng = local.Length >= 8 && local[0] == 0x89 && local[1] == (byte)'P' && local[2] == (byte)'N' && local[3] == (byte)'G';
+        var localJpeg = local.Length >= 3 && local[0] == 0xFF && local[1] == 0xD8 && local[2] == 0xFF;
+        if (!localPng && !localJpeg) return "ERR|invalid_image";
+        if (local.Length > 1_400_000) return "ERR|too_large";
+        if (offset >= local.Length) return "OK|" + local.Length + "|" + local.Length + "|";
+        var localLen = (int)Math.Min(5940, local.Length - offset);
+        return "OK|" + local.Length + "|" + (offset + localLen) + "|" + Convert.ToBase64String(local, (int)offset, localLen) + (offset + localLen >= local.Length ? "|" + (localPng ? "png" : "jpeg") : "");
+    }
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
@@ -3036,6 +3505,12 @@ public static partial class Extension
         {
             return LatestVersions(args.Length > 0 ? args[0] : null);
         }
+        // Dépannage liaison : auto-test complet (contrôles serveur, chaque canal sondé rejoué, file d'envoi).
+        // ["Link.SelfTest", [mapId]] -> « OK|lignes » (voir Extension_SelfTest.cs). Réseau : toujours via Async.
+        if (function == "Link.SelfTest")
+        {
+            return LinkSelfTest(args.Length > 0 ? args[0] : null);
+        }
         // Check de démarrage du mod (fn_startupCheck) : POST /api/atak/startup-check, public, sans session ni clé.
         // ["StartupCheck", [adresse du portail, "clé=valeur", ...]] -> « OK|posted », « OK|duplicate », « OK|no_channel »… ou « ERR|… ».
         if (function == "StartupCheck")
@@ -3055,6 +3530,22 @@ public static partial class Extension
             var command = args[1]!;
             if (command == "Async") return "ERR|async_nested";
             var rest = args[2..];
+            // Commandes purement locales (mise en file, aucun appel réseau) : exécutées tout de suite, sans attendre
+            // AsyncGate ni Task.Run. Quand Athena ralentissait, 6 appels HTTP lents bloquaient la porte et la position
+            // (une seule en vol côté SQF) était sautée jusqu'à 8 s. Le rappel part quand même : le SQF ne change pas.
+            if (AsyncLocalCommands.Contains(command))
+            {
+                string localResult;
+                try
+                {
+                    var direct = TryGetSyncResponse(command, rest);
+                    if (direct == null) { RvExtensionArgsImpl(command, rest); direct = ""; }
+                    localResult = direct;
+                }
+                catch (Exception ex) { localResult = FormatCaughtError(ex); }
+                InvokeCallback("async:" + ticket, localResult);
+                return "QUEUED|" + ticket;
+            }
             _ = Task.Run(async () =>
             {
                 // Au plus AsyncMaxParallel appels à la fois : quand Athena ralentit, les suivants attendent
@@ -3091,6 +3582,11 @@ public static partial class Extension
         {
             return BtCommand(function, args);
         }
+        // Configuration locale en JSON, mode full local sans Athena (LocalConfig.cs) : Documents\Arma 3\COMSPEC_Local.
+        if (function != null && function.StartsWith("Local", StringComparison.Ordinal))
+        {
+            return LocalCommand(function, args);
+        }
 #endif
 
         if (function == "MemStats")
@@ -3109,6 +3605,7 @@ public static partial class Extension
             if (args[0] == "probe") return "OK|ready";
             var batch = NormalizeArmaJson(args[0]);
             if (batch.Length > 60000) return "ERR|payload_too_large";
+            if (PlayerBatchExceedsSession(batch)) return "ERR|player_only";
             EnqueueOrSend(_baseUrl + "/api/atak/screen-time/batch", EnrichAtakPayload(batch));
             return "OK|queued";
         }
@@ -3131,6 +3628,7 @@ public static partial class Extension
             if (args[0] == "probe") return "OK|ready";
             var batch = NormalizeArmaJson(args[0]);
             if (batch.Length > 60000) return "ERR|payload_too_large";
+            if (PlayerBatchExceedsSession(batch)) return "ERR|player_only";
             EnqueueOrSend(_baseUrl + "/api/atak/distance/batch", EnrichAtakPayload(batch));
             return "OK|queued";
         }
@@ -3172,10 +3670,12 @@ public static partial class Extension
             if (baseUrl.Length == 0) return "ERR|invalid_url";
             if (!TryBuildRequestUri(baseUrl, "/api/atak/whoami", out var ipUri, out var ipErr) || ipUri is null)
                 return "ERR|" + ipErr;
+            // SEC-001 : jamais de requête vers un hôte arbitraire choisi par un script.
+            if (!IsSecretSafeUri(ipUri)) return "ERR|untrusted_host";
             try
             {
                 using var ipCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendGet(ipUri, ipCts.Token);
+                using var resp = SendGet(ipUri, ipCts.Token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(ReadContentUtf8(resp, ipCts.Token));
                 var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "") : "";
@@ -3198,7 +3698,7 @@ public static partial class Extension
             try
             {
                 using var spCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(AddLaunchConnectAddress(NormalizeArmaJson(args[0]))), spCts.Token);
+                using var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(AddLaunchConnectAddress(NormalizeArmaJson(args[0]))), spCts.Token);
                 var body = ReadContentUtf8(resp, spCts.Token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
@@ -3223,7 +3723,7 @@ public static partial class Extension
             try
             {
                 using var acCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendJsonPost(acUri.AbsoluteUri, EnrichAtakPayload(args.Length > 0 ? args[0] : "{}"), acCts.Token);
+                using var resp = SendJsonPost(acUri.AbsoluteUri, EnrichAtakPayload(args.Length > 0 ? args[0] : "{}"), acCts.Token);
                 var body = ReadContentUtf8(resp, acCts.Token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
@@ -3269,6 +3769,65 @@ public static partial class Extension
             var json = "{\"ids\":[" + string.Join(",", ids) + "],\"state\":\"" + state + "\"" + (uid.Length > 0 ? ",\"player_uid\":\"" + uid + "\"" : "") + "}";
             EnqueueOrSend(_baseUrl + "/api/atak/admin-control/mine/ack", EnrichAtakPayload(json));
             return "OK|queued";
+        }
+
+        // App « Admin » de l'ATAK natif : parc ATAK de la communauté pour le gestionnaire connecté en jeu (site :
+        // /back-office/atak/parc-atak, mêmes règles). args: [json {q, offset}]
+        // → OK|droit\ttotal puis une ligne par ATAK : id\tindicatif\tsteam\tterminal\tcompte\tcompromission\tblocage\tportée du
+        // blocage\tmotif\tmessages en attente\tvu il y a (s, -1 jamais)\theures de jeu\tversion du mod\tversion de Link
+        // (droit : platform | manager | none ; champ vide écrit « - »). 2.0.94.
+        if (function == "GameAdmin.Fleet" || function == "GameAdmin.Action")
+        {
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            var gaFleet = function == "GameAdmin.Fleet";
+            if (!TryBuildRequestUri(_baseUrl, gaFleet ? "/api/atak/game-admin/fleet" : "/api/atak/game-admin/action", out var gaUri, out var gaErr) || gaUri is null)
+                return "ERR|" + gaErr;
+            try
+            {
+                using var gaCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                using var resp = SendJsonPost(gaUri.AbsoluteUri, EnrichAtakPayload(NormalizeArmaJson(args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0] : "{}")), gaCts.Token);
+                var body = ReadContentUtf8(resp, gaCts.Token);
+                JsonDocument? doc = null;
+                try { doc = JsonDocument.Parse(body); } catch (JsonException) { }
+                using (doc)
+                {
+                    string Clean(JsonElement m, string k)
+                    {
+                        if (m.ValueKind != JsonValueKind.Object || !m.TryGetProperty(k, out var v)) return "";
+                        var t = v.ValueKind switch
+                        {
+                            JsonValueKind.String => v.GetString() ?? "",
+                            JsonValueKind.Number => v.GetRawText(),
+                            JsonValueKind.True => "1",
+                            JsonValueKind.False => "0",
+                            _ => "",
+                        };
+                        return t.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+                    }
+                    var root = doc?.RootElement ?? default;
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var why = Clean(root, "message");
+                        if (why.Length == 0) why = Clean(root, "error");
+                        return "ERR|" + (why.Length > 0 ? why : "http_" + (int)resp.StatusCode);
+                    }
+                    if (!gaFleet) return "OK|" + Clean(root, "message");
+                    var sb = new StringBuilder();
+                    sb.Append(Clean(root, "role")).Append('\t').Append(Clean(root, "total"));
+                    if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("rows", out var rows) && rows.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var r in rows.EnumerateArray().Take(40))
+                        {
+                            sb.Append('\n');
+                            sb.Append(string.Join("\t", new[] { "id", "label", "steam", "terminal", "account", "compromise", "block_id", "block_scope",
+                                "block_reason", "pending", "seen_ago", "play_h", "mod", "link" }.Select(k => Clean(r, k) is { Length: > 0 } c ? c : "-")));
+                        }
+                    }
+                    return "OK|" + sb;
+                }
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
         }
 
         if (function == "SetMapId")
@@ -3320,7 +3879,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText,MedicalRoster";
         }
 
         if (function == "GetCapabilities")
@@ -3334,7 +3893,9 @@ public static partial class Extension
             {
                 var baseUrl = NormalizeBaseUrl(args[0] ?? "");
                 if (baseUrl.Length == 0) return "ERR|invalid_url";
-                _baseUrl = baseUrl;
+                // SEC-001 : portail non-Athena refusé avant tout envoi (voir TrySetSqfBaseUrl).
+                if (!TrySetSqfBaseUrl(baseUrl, out baseUrl)) return "ERR|untrusted_host";
+                ResetPollRefusals();
                 var steam = args.Length > 1 ? (args[1] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 2 ? (args[2] ?? "").Trim() : "";
                 // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
@@ -3392,7 +3953,8 @@ public static partial class Extension
             {
                 var target = ArmaString(args[0]).Trim();
                 if (!Uri.TryCreate(target, UriKind.Absolute, out var targetUri)
-                    || (targetUri.Scheme != Uri.UriSchemeHttps && targetUri.Scheme != Uri.UriSchemeHttp))
+                    || !IsSecretSafeUri(targetUri)
+                    || !IsOpenablePortalPage(targetUri))
                     return "ERR|invalid_url";
                 if (_baseUrl.Length == 0
                     || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var portalUri)
@@ -3454,7 +4016,9 @@ public static partial class Extension
                 var steam = args.Length > 2 ? (args[2] ?? "").Trim() : _steamUid;
                 var modVersion = args.Length > 3 ? (args[3] ?? "").Trim() : "";
                 if (baseUrl.Length == 0 || code.Length < 6) return "ERR|invalid";
-                _baseUrl = baseUrl;
+                // SEC-001 : portail non-Athena refusé avant tout envoi (voir TrySetSqfBaseUrl).
+                if (!TrySetSqfBaseUrl(baseUrl, out baseUrl)) return "ERR|untrusted_host";
+                ResetPollRefusals();
                 // _SP_PLAYER_ (solo / hôte local) refusé par TryNormalizeSteamUid : sinon envoyé en X-COMSPEC-STEAM → 400 à chaque requête.
                 ApplySteamUid(steam);
                 var terminal = _terminalUid.Length > 0
@@ -3618,10 +4182,12 @@ public static partial class Extension
         {
             var probe = (args.Length > 0 ? args[0] : null) ?? "";
             probe = RepairBrokenWorkshopScreenshotPath(probe.Trim().Trim('"').Trim('\'').Replace('/', '\\'));
-            if (string.IsNullOrWhiteSpace(probe)) return "OK|0";
+            if (string.IsNullOrWhiteSpace(probe) || IsUncOrRemote(probe)) return "OK|0";
             try
             {
-                if (Directory.Exists(probe) || File.Exists(probe))
+                var full = Path.GetFullPath(probe);
+                if (!IsUnderKnownDataRoot(full)) return "OK|0";
+                if (Directory.Exists(full) || File.Exists(full))
                     return "OK|1";
             }
             catch { /* ignore */ }
@@ -3757,7 +4323,10 @@ public static partial class Extension
                 || !Uri.TryCreate(normalized, UriKind.Absolute, out var connectUri)
                 || (connectUri.Scheme != Uri.UriSchemeHttps && connectUri.Scheme != Uri.UriSchemeHttp))
                 return "ERR|invalid_url";
-            _baseUrl = normalized;
+            // SEC-001 : refuser un portail non-Athena (mod/mission hostile) AVANT de poser _baseUrl ou d'envoyer
+            // quoi que ce soit — bloque la fuite des en-têtes/corps et le détournement de toute la télémétrie.
+            if (!TrySetSqfBaseUrl(normalized, out _))
+                return "ERR|untrusted_host";
             if (args.Length > 6)
                 ApplyMapId(args[6]);
             LoadQueueFromDisk();
@@ -3870,6 +4439,8 @@ public static partial class Extension
             var linkCode = (args[1] ?? "").Trim().ToUpperInvariant();
             var steamUid = args.Length > 2 ? (args[2] ?? "").Trim() : "";
             if (baseUrl.Length == 0 || linkCode.Length < 4) return "ERR|invalid";
+            // SEC-001 : le redeem envoie le Steam et reçoit la clé communauté — refuser un hôte non-Athena avant l'envoi.
+            if (!IsSecretSafeUri(baseUrl)) return "ERR|untrusted_host";
             if (!TryNormalizeSteamUid(steamUid, out var steamNorm) && steamUid.Length > 0)
             {
                 // UID présent mais non reconnu : on envoie quand même le trim pour laisser le serveur trancher ;
@@ -3887,8 +4458,11 @@ public static partial class Extension
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 // HttpRequestMessage dédié : redeem sans clé API (le code court est le secret).
                 using var req = new HttpRequestMessage(HttpMethod.Post, redeemUri) { Content = content };
-                var resp = HttpClient.SendAsync(req, redeemToken).GetAwaiter().GetResult();
+                StampOfficialClient(req);
+                using var resp = HttpClient.SendAsync(req, redeemToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, redeemToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -3926,8 +4500,10 @@ public static partial class Extension
                     : "";
                 apiKey = SanitizeSecret(apiKey);
                 if (apiKey.Length == 0) return "ERR|http_503";
-                // Toujours l’URL qui a réussi le redeem (évite node_url admin incorrect → 401).
-                _baseUrl = baseUrl;
+                // Toujours l’URL qui a réussi le redeem (évite node_url admin incorrect → 401), via le point de
+                // contrôle SEC-001 (adresse déjà vérifiée en tête).
+                TrySetSqfBaseUrl(baseUrl, out _);
+                ResetPollRefusals();
                 ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
                 ApplyTenantId(tenantId);
@@ -3940,7 +4516,7 @@ public static partial class Extension
                 SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) : Arma/SQF splitString "\t" est fragile → URL/"h" + clé tronquée.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             catch (Exception ex)
             {
@@ -3957,6 +4533,8 @@ public static partial class Extension
             var steamUid = (args[1] ?? "").Trim();
             // Solo / éditeur : getPlayerUID est souvent vide ou placeholder → message dédié.
             if (baseUrl.Length == 0) return "ERR|invalid_url";
+            // SEC-001 : le by-steam envoie le Steam et reçoit la clé communauté — refuser un hôte non-Athena avant l'envoi.
+            if (!IsSecretSafeUri(baseUrl)) return "ERR|untrusted_host";
             if (!TryNormalizeSteamUid(steamUid, out var steamNorm)) return "ERR|no_steam_uid";
             if (!TryBuildRequestUri(baseUrl, "/api/atak/game-link/by-steam", out var steamUri, out var steamUriErr) || steamUri is null)
                 return "ERR|" + steamUriErr;
@@ -3967,8 +4545,11 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, steamUri) { Content = content };
-                var resp = HttpClient.SendAsync(req, steamToken).GetAwaiter().GetResult();
+                StampOfficialClient(req);
+                using var resp = HttpClient.SendAsync(req, steamToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, steamToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -4009,8 +4590,10 @@ public static partial class Extension
                 if (apiUrl.Length == 0) apiUrl = baseUrl;
                 apiKey = SanitizeSecret(apiKey);
                 if (apiKey.Length == 0) return "ERR|http_503";
-                // Toujours l’URL qui a réussi by-steam (évite node_url admin incorrect → 401).
-                _baseUrl = baseUrl;
+                // Toujours l’URL qui a réussi by-steam (évite node_url admin incorrect → 401), via le point de
+                // contrôle SEC-001 (adresse déjà vérifiée en tête).
+                TrySetSqfBaseUrl(baseUrl, out _);
+                ResetPollRefusals();
                 ClearGameBearerForCommunityLink();
                 ApplyApiKeyHeaders(apiKey);
                 ApplyTenantId(tenantId);
@@ -4021,7 +4604,7 @@ public static partial class Extension
                 SetGameAuth("READY", 100, "");
                 // Séparateur | (pas tab) — même format que RedeemGameLink.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             catch (Exception ex)
             {
@@ -4037,6 +4620,8 @@ public static partial class Extension
             var betaToken = betaCts.Token;
             var baseUrl = NormalizeBaseUrl(args[0]);
             if (baseUrl.Length == 0) return "ERR|invalid_url";
+            // SEC-001 : l'inscription bêta envoie Steam/pseudo/UID — refuser un hôte non-Athena avant l'envoi.
+            if (!IsSecretSafeUri(baseUrl)) return "ERR|untrusted_host";
             if (!TryBuildRequestUri(baseUrl, "/api/atak/beta-register", out var betaUri, out var betaUriErr) || betaUri is null)
                 return "ERR|" + betaUriErr;
 
@@ -4070,8 +4655,11 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, betaUri) { Content = content };
-                var resp = HttpClient.SendAsync(req, betaToken).GetAwaiter().GetResult();
+                StampOfficialClient(req);
+                using var resp = HttpClient.SendAsync(req, betaToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, betaToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -4087,8 +4675,9 @@ public static partial class Extension
                 {
                     return "ERR|invalid_response";
                 }
-                // Mémorise l’URL pour d’éventuels appels suivants (whoami, etc.).
-                _baseUrl = baseUrl;
+                // Mémorise l’URL pour d’éventuels appels suivants (whoami, etc.), via le point de contrôle SEC-001.
+                TrySetSqfBaseUrl(baseUrl, out _);
+                ResetPollRefusals();
                 return "OK|registered";
             }
             catch (Exception ex)
@@ -4107,6 +4696,8 @@ public static partial class Extension
             var baseUrl = NormalizeBaseUrl(args[0] ?? "");
             if (baseUrl.Length == 0) baseUrl = NormalizeBaseUrl(_baseUrl ?? "");
             if (baseUrl.Length == 0) return "ERR|invalid_url";
+            // SEC-001 : le rapport embarque Steam/pseudo/journal — refuser un hôte non-Athena avant l'envoi.
+            if (!IsSecretSafeUri(baseUrl)) return "ERR|untrusted_host";
             if (!TryBuildRequestUri(baseUrl, "/api/atak/mod-report", out var diagUri, out var diagUriErr) || diagUri is null)
                 return "ERR|" + diagUriErr;
 
@@ -4172,7 +4763,8 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, diagUri) { Content = content };
-                var resp = HttpClient.SendAsync(req, diagToken).GetAwaiter().GetResult();
+                StampOfficialClient(req);
+                using var resp = HttpClient.SendAsync(req, diagToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, diagToken);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4188,7 +4780,8 @@ public static partial class Extension
                 {
                     return "ERR|invalid_response";
                 }
-                _baseUrl = baseUrl;
+                TrySetSqfBaseUrl(baseUrl, out _); // SEC-001 : point de contrôle (adresse déjà vérifiée en tête)
+                ResetPollRefusals();
                 return "OK|reported";
             }
             catch (Exception ex)
@@ -4197,6 +4790,9 @@ public static partial class Extension
             }
         }
 
+        // Diapositive Google déjà téléchargée (« local: ») : lue sur le disque, sans session Athena.
+        if (function == "ImageDataChunk" && args.Length >= 3 && (args[0] ?? "").TrimStart().StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            return ImageDataChunkLocal(args);
         if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
         // Re-normalise au cas où une ancienne session a stocké une URL sans schéma.
         _baseUrl = NormalizeBaseUrl(_baseUrl);
@@ -4249,7 +4845,7 @@ public static partial class Extension
                     return "ERR|" + whoamiErr;
                 try
                 {
-                    var response = SendGet(whoamiUri, token);
+                    using var response = SendGet(whoamiUri, token);
                     if (!response.IsSuccessStatusCode)
                     {
                         var code = (int)response.StatusCode;
@@ -4270,18 +4866,18 @@ public static partial class Extension
             if (function == "FireSupport.Request" && args.Length >= 6)
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var gunX = args.Length > 1 && double.TryParse(args[1], out var gx) ? gx : 0.0;
-                var gunY = args.Length > 2 && double.TryParse(args[2], out var gy) ? gy : 0.0;
-                var gunZ = args.Length > 3 && double.TryParse(args[3], out var gz) ? gz : 0.0;
-                var targetX = double.TryParse(args[4], out var tx) ? tx : 0.0;
-                var targetY = double.TryParse(args[5], out var ty) ? ty : 0.0;
-                var targetZ = args.Length > 6 && double.TryParse(args[6], out var tz) ? tz : 0.0;
+                var gunX = args.Length > 1 && double.TryParse(args[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var gx) ? gx : 0.0;
+                var gunY = args.Length > 2 && double.TryParse(args[2], NumberStyles.Float, CultureInfo.InvariantCulture, out var gy) ? gy : 0.0;
+                var gunZ = args.Length > 3 && double.TryParse(args[3], NumberStyles.Float, CultureInfo.InvariantCulture, out var gz) ? gz : 0.0;
+                var targetX = double.TryParse(args[4], NumberStyles.Float, CultureInfo.InvariantCulture, out var tx) ? tx : 0.0;
+                var targetY = double.TryParse(args[5], NumberStyles.Float, CultureInfo.InvariantCulture, out var ty) ? ty : 0.0;
+                var targetZ = args.Length > 6 && double.TryParse(args[6], NumberStyles.Float, CultureInfo.InvariantCulture, out var tz) ? tz : 0.0;
                 var ammoType = args.Length > 7 ? (args[7] ?? "HE") : "HE";
                 var fireUnitId = args.Length > 8 && int.TryParse(args[8], out var fid) ? fid : (int?)null;
                 var payload = fireUnitId.HasValue && fireUnitId > 0
                     ? $"{{\"missionId\":\"{EscapeJson(missionId)}\",\"fireUnitId\":{fireUnitId.Value},\"target_x\":{targetX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_y\":{targetY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_z\":{targetZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"ammoType\":\"{EscapeJson(ammoType)}\"}}"
                     : $"{{\"missionId\":\"{EscapeJson(missionId)}\",\"gun_x\":{gunX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"gun_y\":{gunY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"gun_z\":{gunZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_x\":{targetX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_y\":{targetY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_z\":{targetZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"ammoType\":\"{EscapeJson(ammoType)}\"}}";
-                var resp = SendJsonPost(_baseUrl + "/api/fire-support/calculate", payload, token);
+                using var resp = SendJsonPost(_baseUrl + "/api/fire-support/calculate", payload, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4289,7 +4885,7 @@ public static partial class Extension
             if (function == "GetFireSupportUnits")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = SendGet(_baseUrl + "/api/fire-support/units?missionId=" + Uri.EscapeDataString(missionId), token);
+                using var resp = SendGet(_baseUrl + "/api/fire-support/units?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4297,7 +4893,7 @@ public static partial class Extension
             if (function == "DangerZones.Sync")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = SendGet(_baseUrl + "/api/danger-zones?missionId=" + Uri.EscapeDataString(missionId), token);
+                using var resp = SendGet(_baseUrl + "/api/danger-zones?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4305,7 +4901,7 @@ public static partial class Extension
             if (function == "IFF.Current")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = SendGet(_baseUrl + "/api/iff/current?missionId=" + Uri.EscapeDataString(missionId), token);
+                using var resp = SendGet(_baseUrl + "/api/iff/current?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4313,7 +4909,7 @@ public static partial class Extension
             if (function == "IFF.Status")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = SendGet(_baseUrl + "/api/iff/assets?missionId=" + Uri.EscapeDataString(missionId), token);
+                using var resp = SendGet(_baseUrl + "/api/iff/assets?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
@@ -4322,7 +4918,7 @@ public static partial class Extension
             {
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return "{\"status\":\"error\",\"message\":\"payload vide\"}";
-                var response = SendJsonPost(_baseUrl + "/api/intel/report", json, token);
+                using var response = SendJsonPost(_baseUrl + "/api/intel/report", json, token);
                 var body = ReadContentUtf8(response, token);
                 var safeBody = body.Replace("\n", " ").Replace("\r", "");
                 if (!response.IsSuccessStatusCode)
@@ -4330,7 +4926,7 @@ public static partial class Extension
                     var msg = safeBody.Length > 180 ? safeBody.Substring(0, 180) + "..." : safeBody;
                     return "{\"status\":\"error\",\"message\":\"" + EscapeJson(msg) + "\"}";
                 }
-                return safeBody.Length <= MaxOutputBytes - 1 ? safeBody : safeBody.Substring(0, MaxOutputBytes - 1);
+                return Utf8ClipLines(safeBody, MaxOutputBytes - 1);
             }
             if ((function == "RECON.Note" || function == "RECON_NOTE" || function == "Recon.Note") && args.Length >= 1)
             {
@@ -4339,7 +4935,7 @@ public static partial class Extension
                 // Guillemets doublés par callExtension : sans normalisation, PHP lisait un corps vide et
                 // répondait 400 « Indiquez une observation » (aucune reco n'arrivait au poste). 2.0.87.
                 json = EnrichAtakPayload(json);
-                var response = SendJsonPost(_baseUrl + "/api/recon/notes", json, token);
+                using var response = SendJsonPost(_baseUrl + "/api/recon/notes", json, token);
                 var body = ReadContentUtf8(response, token);
                 var safeBody = (body ?? "").Replace("\n", " ").Replace("\r", "").Replace("|", "/");
                 if ((int)response.StatusCode == 429) return "ERR|cooldown";
@@ -4386,6 +4982,12 @@ public static partial class Extension
                     var safe = body.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                     return PollOkClipped(safe);
                 });
+            }
+            // Données remontées choisies par la communauté (positions, véhicules, pertes, miroir, contexte).
+            // Réponse : positions=1\tvehicles=0\t... (Extension_DataFlows).
+            if (function == "GetDataFlows")
+            {
+                return ServeDataFlows();
             }
             // Modules pont ATAK Enhanced / cTab (activables admin).
             // Lignes : id\tenabled(0|1)\tlabel
@@ -4447,7 +5049,7 @@ public static partial class Extension
                 var steamUid = args.Length > 0 ? (args[0] ?? "").Trim() : "";
                 if (steamUid.Length < 10) return "ERR|no_steam";
                 var url = _baseUrl + "/api/atak/session-restore?steam_uid=" + Uri.EscapeDataString(steamUid);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 if (!resp.IsSuccessStatusCode)
                 {
                     var code = (int)resp.StatusCode;
@@ -4457,21 +5059,31 @@ public static partial class Extension
                 }
                 var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifySessionRestoreJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
             // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
-            // Args optionnels : [startLine] — page par lignes complètes (évite troncature).
+            // Args optionnels : [startLine, mode] — page par lignes complètes (évite troncature).
+            // mode « cache » : liste gardée en mémoire ou dans Sync\wardrobes.json, le site n'est appelé que
+            // si ce PC n'a encore rien ; « refresh » ou absent : rechargée depuis le site à la page 0 (bouton Actualiser).
             // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
+            // App Médical de l'ATAK natif : fiches médicales de la communauté, gardées dans Sync\medical_roster.json (2.0.96).
+            if (function == "MedicalRoster" || function == "MedicalRosterInfo") return MedicalRosterCommand(function, args, token);
             if (function == "ListWardrobes")
             {
                 var startLine = 0;
                 if (args.Length >= 1 && int.TryParse((args[0] ?? "0").Trim(), out var sl) && sl >= 0)
                     startLine = sl;
-                if (startLine == 0 || string.IsNullOrEmpty(_wardrobesListCache))
+                var fromCache = args.Length >= 2 && (args[1] ?? "").Trim() == "cache";
+                if (fromCache && string.IsNullOrEmpty(_wardrobesListCache))
+                {
+                    var saved = WardrobeCacheLoad();
+                    if (saved.Length > 0) _wardrobesListCache = saved;
+                }
+                if ((startLine == 0 && !fromCache) || string.IsNullOrEmpty(_wardrobesListCache))
                 {
                     var url = _baseUrl + "/api/atak/wardrobes";
-                    var resp = SendGet(url, token);
+                    using var resp = SendGet(url, token);
                     var respBody = ReadContentUtf8(resp, token);
                     if (!resp.IsSuccessStatusCode)
                     {
@@ -4481,9 +5093,12 @@ public static partial class Extension
                         return "ERR|http_" + code;
                     }
                     _wardrobesListCache = SimplifyWardrobesListJson(respBody);
+                    _wardrobeCacheSavedAt = DateTime.Now.ToString("dd/MM HH:mm");
+                    WardrobeCacheSave();
                 }
                 return FormatWardrobesListPage(_wardrobesListCache, startLine);
             }
+            if (function == "WardrobesCacheInfo") return WardrobeCacheInfo();
             if (function == "ListWardrobesPage" && args.Length >= 1)
             {
                 if (!int.TryParse((args[0] ?? "0").Trim(), out var pageLine) || pageLine < 0)
@@ -4498,35 +5113,38 @@ public static partial class Extension
             {
                 var wid = (args[0] ?? "").Trim();
                 if (wid.Length < 1) return "ERR|invalid_id";
-                var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
-                var resp = SendGet(url, token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                // Même empreinte que dans la liste : la tenue gardée sur ce PC sert, sans la retélécharger.
+                var simplified = WardrobeCachedDetail(wid);
+                if (simplified is null)
                 {
-                    var code = (int)resp.StatusCode;
-                    if (code == 404) return "ERR|not_found";
-                    if (code == 401 || code == 403) return "ERR|unauthorized";
-                    if (code == 503) return "ERR|migration_required";
-                    return "ERR|http_" + code;
+                    var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
+                    using var resp = SendGet(url, token);
+                    var respBody = ReadContentUtf8(resp, token);
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var code = (int)resp.StatusCode;
+                        if (code == 404) return "ERR|not_found";
+                        if (code == 401 || code == 403) return "ERR|unauthorized";
+                        if (code == 503) return "ERR|migration_required";
+                        return "ERR|http_" + code;
+                    }
+                    simplified = SimplifyWardrobeDetailJson(respBody);
+                    if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
+                    WardrobeCacheStoreDetail(wid, simplified);
                 }
-                var simplified = SimplifyWardrobeDetailJson(respBody);
-                if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
                 var cap = MaxOutputBytes - 4;
-                if (simplified.Length <= cap)
+                if (Encoding.UTF8.GetByteCount(simplified) <= cap)
                 {
-                    _wardrobeDetailCacheId = "";
-                    _wardrobeDetailCache = "";
                     return "OK|" + simplified;
                 }
-                _wardrobeDetailCacheId = wid;
-                _wardrobeDetailCache = simplified;
-                _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
-                var chunks = (_wardrobeDetailCache.Length + _wardrobeDetailChunkSize - 1) / _wardrobeDetailChunkSize;
+                var wslot = new WardrobeDetailSlot(wid, simplified, Math.Max(1024, MaxOutputBytes - 80));
+                _wardrobeDetail = wslot;
+                var chunks = Utf8ChunkStarts(wslot.Body, wslot.ChunkSize).Count;
                 var t1 = simplified.IndexOf('\t');
                 var t2 = t1 < 0 ? -1 : simplified.IndexOf('\t', t1 + 1);
                 var idPart = t1 > 0 ? simplified.Substring(0, t1) : wid;
                 var namePart = (t1 >= 0 && t2 > t1) ? simplified.Substring(t1 + 1, t2 - t1 - 1) : "";
-                return "OK|CHUNKED\t" + idPart + "\t" + namePart + "\t" + chunks + "\t" + _wardrobeDetailChunkSize + "\t" + simplified.Length;
+                return "OK|CHUNKED\t" + idPart + "\t" + namePart + "\t" + chunks + "\t" + wslot.ChunkSize + "\t" + simplified.Length;
             }
             // Segment d’une tenue dense. Args : [id, chunkIndex] → OK|index\ttotal\tslice
             if (function == "GetWardrobeChunk" && args.Length >= 2)
@@ -4535,10 +5153,18 @@ public static partial class Extension
                 if (wid.Length < 1) return "ERR|invalid_id";
                 if (!int.TryParse((args[1] ?? "0").Trim(), out var chunkIdx) || chunkIdx < 0)
                     return "ERR|invalid_chunk";
-                if (_wardrobeDetailCacheId != wid || string.IsNullOrEmpty(_wardrobeDetailCache))
+                // Une seule lecture de la référence : le découpage ci-dessous travaille sur ce corps-là, même si un
+                // autre chargement remplace _wardrobeDetail entre-temps.
+                var wslot = _wardrobeDetail;
+                if ((wslot is null || wslot.Id != wid || string.IsNullOrEmpty(wslot.Body)) && WardrobeCachedDetail(wid) is { } kept)
+                {
+                    wslot = new WardrobeDetailSlot(wid, kept, Math.Max(1024, MaxOutputBytes - 80));
+                    _wardrobeDetail = wslot;
+                }
+                if (wslot is null || wslot.Id != wid || string.IsNullOrEmpty(wslot.Body))
                 {
                     var url = _baseUrl + "/api/atak/wardrobes/" + Uri.EscapeDataString(wid);
-                    var resp = SendGet(url, token);
+                    using var resp = SendGet(url, token);
                     var respBody = ReadContentUtf8(resp, token);
                     if (!resp.IsSuccessStatusCode)
                     {
@@ -4550,16 +5176,18 @@ public static partial class Extension
                     }
                     var simplified = SimplifyWardrobeDetailJson(respBody);
                     if (string.IsNullOrEmpty(simplified)) return "ERR|empty";
-                    _wardrobeDetailCacheId = wid;
-                    _wardrobeDetailCache = simplified;
-                    _wardrobeDetailChunkSize = Math.Max(1024, MaxOutputBytes - 80);
+                    WardrobeCacheStoreDetail(wid, simplified);
+                    wslot = new WardrobeDetailSlot(wid, simplified, Math.Max(1024, MaxOutputBytes - 80));
+                    _wardrobeDetail = wslot;
                 }
-                var chunkSize = _wardrobeDetailChunkSize > 0 ? _wardrobeDetailChunkSize : (MaxOutputBytes - 80);
-                var totalChunks = (_wardrobeDetailCache.Length + chunkSize - 1) / chunkSize;
+                var wbody = wslot.Body;
+                var chunkSize = wslot.ChunkSize > 0 ? wslot.ChunkSize : (MaxOutputBytes - 80);
+                var starts = Utf8ChunkStarts(wbody, chunkSize);
+                var totalChunks = starts.Count;
                 if (chunkIdx >= totalChunks) return "ERR|chunk_oob";
-                var offset = chunkIdx * chunkSize;
-                var len = Math.Min(chunkSize, _wardrobeDetailCache.Length - offset);
-                var slice = _wardrobeDetailCache.Substring(offset, len);
+                var offset = starts[chunkIdx];
+                var len = (chunkIdx + 1 < totalChunks ? starts[chunkIdx + 1] : wbody.Length) - offset;
+                var slice = wbody.Substring(offset, len);
                 return "OK|" + chunkIdx + "\t" + totalChunks + "\t" + slice;
             }
             // Sync une wardrobe. Args : [name, payload, collectionSlug?, notes?]
@@ -4593,7 +5221,7 @@ public static partial class Extension
             if (function == "ListWardrobeCollections")
             {
                 var url = _baseUrl + "/api/atak/wardrobe-collections";
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4603,16 +5231,16 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyWardrobeCollectionsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
-                var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
+                using var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
-                return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
+                return "OK|" + Utf8ClipLines(safe, MaxOutputBytes - 4);
             }
             // Diapositives de briefing tactique (tableau/écran Eden Editor, ou dialog de briefing).
             // Format simplifié tabulation/retour-ligne (même convention que GetMarkers/GetUnits) :
@@ -4622,11 +5250,11 @@ public static partial class Extension
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
                 var url = _baseUrl + "/api/atak/briefing-slides";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 resp.EnsureSuccessStatusCode();
                 var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifyBriefingSlidesJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // Fiches de renseignement (FRS / FRM) d'Athena, avec leurs photos, pour l'app FRS du téléphone.
             // Args : [limit, steamUid (vide = toutes les fiches de la communauté)]
@@ -4636,7 +5264,7 @@ public static partial class Extension
                 var steamUid = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var url = _baseUrl + "/api/sse/notes?with_images=1&limit=" + limit;
                 if (steamUid.Length > 0) url += "&steam_uid=" + Uri.EscapeDataString(steamUid);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4665,7 +5293,7 @@ public static partial class Extension
             {
                 var names = args.Length > 0 ? (args[0] ?? "").Trim() : "";
                 if (names.Length == 0) return "OK|";
-                var resp = SendGet(_baseUrl + "/api/recon/images/known?names=" + Uri.EscapeDataString(names), token);
+                using var resp = SendGet(_baseUrl + "/api/recon/images/known?names=" + Uri.EscapeDataString(names), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 var lines = new StringBuilder();
@@ -4700,6 +5328,13 @@ public static partial class Extension
                     || !int.TryParse(args[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var parts)
                     || parts < 1 || parts > 2000 || part < 0 || part >= parts)
                     return "ERR|bad_args";
+                var nowMs = Environment.TickCount64;
+                foreach (var stale in SseCampaignPushTouched)
+                {
+                    if (nowMs - stale.Value > 600_000 && SseCampaignPushTouched.TryRemove(stale.Key, out _))
+                        SseCampaignPushBuffers.TryRemove(stale.Key, out _);
+                }
+                SseCampaignPushTouched[key] = nowMs;
                 var buf = SseCampaignPushBuffers.AddOrUpdate(key, _ => new string?[parts], (_, old) => old.Length == parts && part > 0 ? old : new string?[parts]);
                 // callExtension passe chaque argument en chaîne SQF : guillemets extérieurs (déjà retirés
                 // par ArmaString) et guillemets intérieurs doublés, à rétablir ici. Le jeu découpe le texte
@@ -4707,11 +5342,25 @@ public static partial class Extension
                 buf[part] = (args[3] ?? "").Replace("\"\"", "\"");
                 if (part < parts - 1) return "OK|part";
                 SseCampaignPushBuffers.TryRemove(key, out _);
+                SseCampaignPushTouched.TryRemove(key, out _);
                 if (buf.Any(x => x == null)) return "ERR|missing_part";
                 var text = string.Concat(buf);
                 var actor = args.Length >= 5 ? (args[4] ?? "") : "";
-                var payload = JsonSerializer.Serialize(new Dictionary<string, string> { ["key"] = key, ["text"] = text, ["actor"] = actor });
-                var resp = SendJsonPost(_baseUrl + "/api/sse/campaigns/sync", payload, token);
+                // Native AOT : JsonSerializer sans JsonTypeInfo lève InvalidOperationException ; écriture à la main.
+                string payload;
+                using (var ms = new MemoryStream())
+                {
+                    using (var w = new Utf8JsonWriter(ms))
+                    {
+                        w.WriteStartObject();
+                        w.WriteString("key", key);
+                        w.WriteString("text", text);
+                        w.WriteString("actor", actor);
+                        w.WriteEndObject();
+                    }
+                    payload = Encoding.UTF8.GetString(ms.ToArray());
+                }
+                using var resp = SendJsonPost(_baseUrl + "/api/sse/campaigns/sync", payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4741,7 +5390,7 @@ public static partial class Extension
             // SseCampaignList [] → "OK|" + une ligne par campagne : clé\tnom\ttype\tmissions\tpersonnes\torganisations\tmise à jour
             if (function == "SseCampaignList")
             {
-                var resp = SendGet(_baseUrl + "/api/sse/campaigns", token);
+                using var resp = SendGet(_baseUrl + "/api/sse/campaigns", token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4776,7 +5425,7 @@ public static partial class Extension
             {
                 var key = (args[0] ?? "").Trim();
                 var offset = args.Length >= 2 && long.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var o) ? Math.Max(0, o) : 0;
-                var resp = SendGet(_baseUrl + "/api/sse/campaigns/" + Uri.EscapeDataString(key) + "/text?offset=" + offset.ToString(CultureInfo.InvariantCulture) + "&length=6000", token);
+                using var resp = SendGet(_baseUrl + "/api/sse/campaigns/" + Uri.EscapeDataString(key) + "/text?offset=" + offset.ToString(CultureInfo.InvariantCulture) + "&length=6000", token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4806,7 +5455,7 @@ public static partial class Extension
                 if (view.Length == 0) view = "global";
                 var url = _baseUrl + "/api/atak/music?view=" + Uri.EscapeDataString(view) + "&limit=" + lim.ToString(CultureInfo.InvariantCulture);
                 if (q.Length > 0) url += "&q=" + Uri.EscapeDataString(q);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4845,7 +5494,7 @@ public static partial class Extension
             }
             if (function == "GetWantedNotices")
             {
-                var resp = SendGet(_baseUrl + "/api/sse/wanted?limit=40", token);
+                using var resp = SendGet(_baseUrl + "/api/sse/wanted?limit=40", token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4885,7 +5534,7 @@ public static partial class Extension
                 var label = args.Length > 0 ? (args[0] ?? "").Trim() : "";
                 var key = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var json = "{\"label\":\"" + EscapeJson(label) + "\",\"client_key\":\"" + EscapeJson(key) + "\",\"source\":\"arma\"}";
-                var resp = SendJsonPost(_baseUrl + "/api/atak/briefing-presence", json, token);
+                using var resp = SendJsonPost(_baseUrl + "/api/atak/briefing-presence", json, token);
                 var body = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 try
@@ -4904,7 +5553,7 @@ public static partial class Extension
                 var text = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var author = args.Length > 2 ? (args[2] ?? "").Trim() : "";
                 var url = _baseUrl + "/api/atak/briefing-slides/" + sid + "/comments";
-                var resp = text.Length > 0
+                using var resp = text.Length > 0
                     ? SendJsonPost(url, "{\"body\":\"" + EscapeJson(text) + "\",\"author_label\":\"" + EscapeJson(author) + "\",\"source\":\"arma\"}", token)
                     : SendGet(url, token);
                 var body = ReadContentUtf8(resp, token);
@@ -4943,7 +5592,7 @@ public static partial class Extension
                 var url = _baseUrl + "/api/atak/fire-teams?kind=ephemeral";
                 if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
                 if (!string.IsNullOrEmpty(mapId)) url += "&mapId=" + Uri.EscapeDataString(mapId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4960,7 +5609,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyFireTeamsJson(respBody);
-                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+                return "OK|" + Utf8ClipLines(simplified, MaxOutputBytes - 4);
             }
             // SEEK Query : registre + listes de surveillance Athena (pas de tirage simulé).
             // args : first, last, alias, q
@@ -4977,7 +5626,7 @@ public static partial class Extension
                     + "&alias=" + Uri.EscapeDataString(alias);
                 if (!string.IsNullOrEmpty(q))
                     url += "&q=" + Uri.EscapeDataString(q);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -4993,7 +5642,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var simplifiedId = SimplifyIdentityQueryJson(respBody);
-                return "OK|" + (simplifiedId.Length > MaxOutputBytes - 4 ? simplifiedId.Substring(0, MaxOutputBytes - 4) : simplifiedId);
+                return "OK|" + Utf8ClipLines(simplifiedId, MaxOutputBytes - 4);
             }
             if (function == "JoinFireTeam" && args.Length >= 1)
             {
@@ -5330,7 +5979,7 @@ public static partial class Extension
                     ? $",\"note\":\"{EscapeJson(note)}\""
                     : "";
                 var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":{mapIdNum}{noteJson}{steamJson}{sessJson}}}";
-                var resp = SendJsonPost(url, payload, token);
+                using var resp = SendJsonPost(url, payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5357,7 +6006,7 @@ public static partial class Extension
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
                 var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":{CurrentMapId()}{steamJson}{sessJson}}}";
-                var resp = SendJsonPost(url, payload, token);
+                using var resp = SendJsonPost(url, payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5387,7 +6036,7 @@ public static partial class Extension
                     var sep = url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
                     url += sep + "tenant_id=" + Uri.EscapeDataString(tenantId);
                 }
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5450,7 +6099,7 @@ public static partial class Extension
                     $"\"platform_label\":\"{EscapeJson(platformLabel)}\"," +
                     $"\"pairing_token\":\"{EscapeJson(pairingToken)}\"," +
                     $"\"status\":\"{EscapeJson(status)}\"{ModVersionJsonFragment()}}}";
-                var resp = SendJsonPost(termUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                using var resp = SendJsonPost(termUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5490,7 +6139,7 @@ public static partial class Extension
                     $"\"serial_number\":\"{EscapeJson(serialNumber)}\"," +
                     $"\"fingerprint_sha256\":\"{EscapeJson(fingerprint)}\"" +
                     $"{ModVersionJsonFragment()}}}";
-                var resp = SendJsonPost(certUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                using var resp = SendJsonPost(certUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5525,7 +6174,7 @@ public static partial class Extension
                     $"\"state\":\"{EscapeJson(state)}\"," +
                     $"\"reason\":\"{EscapeJson(reason)}\"" +
                     $"{ModVersionJsonFragment()}}}";
-                var resp = SendJsonPost(compUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                using var resp = SendJsonPost(compUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5546,7 +6195,7 @@ public static partial class Extension
                 var payload =
                     $"{{\"terminal_uid\":\"{EscapeJson(terminalUid)}\"" +
                     $"{ModVersionJsonFragment()}}}";
-                var resp = SendJsonPost(clearUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                using var resp = SendJsonPost(clearUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5566,7 +6215,7 @@ public static partial class Extension
                 if (!TryBuildRequestUri(_baseUrl, "/api/atak/terminals", out var statusUri, out _) || statusUri is null)
                     return "ERR|invalid_url";
                 var url = statusUri.AbsoluteUri + "?terminal_uid=" + Uri.EscapeDataString(terminalUid);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5590,7 +6239,7 @@ public static partial class Extension
                 var tenantId = args.Length > 1 ? (args[1] ?? "") : "";
                 var url = _baseUrl + "/api/atak/player-profile?steam_uid=" + Uri.EscapeDataString(steamNorm);
                 if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
-                var resp = SendGet(url, token);
+                using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
@@ -5634,7 +6283,7 @@ public static partial class Extension
                 var cacheKeyRaw = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]! : "slide";
                 var safeKey = new string(cacheKeyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
                 if (safeKey.Length == 0) safeKey = "slide";
-                var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
+                var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : imageUrl.ToLowerInvariant().Contains(".paa") ? ".paa" : ".jpg";
 
                 // Portraits (clé avatar_<uid>_<empreinte de l'adresse>) : le fichier déjà téléchargé pour cette
                 // adresse est rendu sans requête ; il n'est retéléchargé que s'il manque (adresse changée = autre clé).
@@ -5643,7 +6292,7 @@ public static partial class Extension
                     var dir = GetWritableCacheDir();
                     if (dir != null)
                     {
-                        foreach (var cachedExt in new[] { ".jpg", ".png" })
+                        foreach (var cachedExt in new[] { ".paa", ".jpg", ".png" })
                         {
                             var cached = Path.Combine(dir, "briefing_" + safeKey + cachedExt);
                             try
@@ -5667,7 +6316,9 @@ public static partial class Extension
                 HttpResponseMessage imgResp;
                 try
                 {
-                    imgResp = SendGet(imageUrl, token);
+                    // Images de briefing : URL Athena (relative résolue sur _baseUrl, ou absolue Athena) ou CDN externe.
+                    // Suivi de redirections à la main, sans secret vers un hôte non-Athena (SEC-001).
+                    imgResp = SendImageGetFollowingRedirects(imageUrl, token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -5677,6 +6328,7 @@ public static partial class Extension
                 {
                     return "ERR|network";
                 }
+                using var imgRespScope = imgResp;
 
                 if (!imgResp.IsSuccessStatusCode)
                 {
@@ -5695,9 +6347,14 @@ public static partial class Extension
                     && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
                 var isJpeg = bytes.Length >= 3
                     && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
-                if (!isPng && !isJpeg) return "ERR|invalid_image";
+                // Texture Arma (.paa) convertie par le site : DXT1 / DXT5 (01 FF / 05 FF) suivis des balises « GGAT ».
+                var isPaa = bytes.Length >= 16
+                    && bytes[1] == 0xFF && (bytes[0] == 0x01 || bytes[0] == 0x05)
+                    && bytes[2] == (byte)'G' && bytes[3] == (byte)'G' && bytes[4] == (byte)'A' && bytes[5] == (byte)'T';
+                if (!isPng && !isJpeg && !isPaa) return "ERR|invalid_image";
                 if (isPng) ext = ".png";
                 else if (isJpeg) ext = ".jpg";
+                else if (isPaa) ext = ".paa";
 
                 var cacheDir = GetWritableCacheDir();
                 if (cacheDir == null) return "ERR|no_writable_cache_dir";
@@ -5715,6 +6372,60 @@ public static partial class Extension
                 // Slash avant pour RscPicture / setObjectTexture sous Windows (Arma).
                 var armaPath = destPath.Replace('\\', '/');
                 return "OK|" + armaPath;
+            }
+
+            // Image d'Athena en base64, par morceaux, pour l'afficher dans un navigateur intégré (CT_WEBBROWSER) du
+            // téléphone : Arma refuse toute texture hors d'un PBO (« Cannot load texture », sans -filePatching), d'où les
+            // diapositives noires. Args : [adresse JPEG/PNG, clé de cache, décalage en octets]. Décalage 0 : télécharge
+            // (adresse du serveur Athena seulement, jamais un autre hôte). Réponse : OK|taille totale|décalage suivant|base64.
+            if (function == "ImageDataChunk" && args.Length >= 3 && !string.IsNullOrWhiteSpace(args[0]))
+            {
+                var imageUrl = args[0]!.Trim();
+                var keyRaw = string.IsNullOrWhiteSpace(args[1]) ? "web" : args[1]!;
+                var safeKey = new string(keyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+                if (safeKey.Length == 0 || safeKey.Length > 80) safeKey = "web";
+                if (!long.TryParse(args[2], out var offset) || offset < 0) offset = 0;
+                if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var imgUri) && !string.IsNullOrEmpty(_baseUrl))
+                {
+                    var rel = imageUrl.StartsWith('/') ? imageUrl : "/" + imageUrl.TrimStart('/');
+                    Uri.TryCreate(_baseUrl.TrimEnd('/') + rel, UriKind.Absolute, out imgUri);
+                }
+                if (imgUri == null || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var baseUri)
+                    || imgUri.Scheme != Uri.UriSchemeHttps && imgUri.Scheme != baseUri.Scheme
+                    || !string.Equals(imgUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase))
+                    return "ERR|host_not_allowed";
+                var cacheDir = GetWritableCacheDir();
+                if (cacheDir == null) return "ERR|no_writable_cache_dir";
+                var dest = Path.Combine(cacheDir, "web_" + safeKey + ".img");
+                if (offset == 0 || !File.Exists(dest))
+                {
+                    HttpResponseMessage imgResp;
+                    try { imgResp = SendGet(imgUri, token); }
+                    catch (OperationCanceledException) { return "ERR|timeout"; }
+                    catch (HttpRequestException) { return "ERR|network"; }
+                    if (!imgResp.IsSuccessStatusCode)
+                    {
+                        var code = (int)imgResp.StatusCode;
+                        return code == 404 ? "ERR|not_found" : code == 401 || code == 403 ? "ERR|unauthorized" : "ERR|http_" + code;
+                    }
+                    var bytes = imgResp.Content.ReadAsByteArrayAsync(token).GetAwaiter().GetResult();
+                    var isPng = bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
+                    var isJpeg = bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
+                    if (!isPng && !isJpeg) return "ERR|invalid_image";
+                    // Une page data: de Chromium est limitée à 2 Mo : image plus lourde refusée (le site en fait une copie légère).
+                    if (bytes.Length > 1_400_000) return "ERR|too_large";
+                    try { File.WriteAllBytes(dest, bytes); }
+                    catch (Exception ex) { return "ERR|write_failed_" + ex.GetType().Name; }
+                    offset = 0;
+                }
+                byte[] all;
+                try { all = File.ReadAllBytes(dest); }
+                catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
+                if (offset >= all.Length) return "OK|" + all.Length + "|" + all.Length + "|";
+                // 5940 octets (multiple de 3) = 7920 caractères base64 : tient dans la sortie limitée de la DLL.
+                var len = (int)Math.Min(5940, all.Length - offset);
+                var mime = all[0] == 0x89 ? "png" : "jpeg";
+                return "OK|" + all.Length + "|" + (offset + len) + "|" + Convert.ToBase64String(all, (int)offset, len) + (offset + len >= all.Length ? "|" + mime : "");
             }
 
             // --- Commandes ATAK Phase 1-2 (retour JSON ["OK"|"ERROR", message] pour SQF) ---
@@ -5932,15 +6643,15 @@ public static partial class Extension
             {
                 try
                 {
-                    if (!double.TryParse((args[0] ?? "0").Trim(), out var baseRange)) 
+                    if (!double.TryParse((args[0] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var baseRange)) 
                         return "ERR|invalid_base_range";
-                    if (!double.TryParse((args[1] ?? "0").Trim(), out var rain)) 
+                    if (!double.TryParse((args[1] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var rain)) 
                         return "ERR|invalid_rain";
-                    if (!double.TryParse((args[2] ?? "0").Trim(), out var fog)) 
+                    if (!double.TryParse((args[2] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var fog)) 
                         return "ERR|invalid_fog";
-                    if (!double.TryParse((args[3] ?? "0").Trim(), out var overcast)) 
+                    if (!double.TryParse((args[3] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var overcast)) 
                         return "ERR|invalid_overcast";
-                    if (!double.TryParse((args[4] ?? "0").Trim(), out var windKmh)) 
+                    if (!double.TryParse((args[4] ?? "0").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var windKmh)) 
                         return "ERR|invalid_wind";
                         
                     return CalculateWeatherEffectsSync(baseRange, rain, fog, overcast, windKmh);
@@ -6413,12 +7124,19 @@ public static partial class Extension
         return sb.ToString().TrimEnd();
     }
 
+    private static volatile string? _writableCacheDir;
+
     /// <summary>
     /// Dossier de cache local pour les diapositives téléchargées : à côté de la DLL en priorité
     /// (dossier du mod, généralement accessible en écriture), sinon dossier temporaire système.
     /// </summary>
     private static string? GetWritableCacheDir()
     {
+        // Dossier déjà vérifié : réutilisé tant qu'il existe (un fichier test était écrit puis effacé à chaque
+        // diapositive, avatar ou QR, même déjà en cache).
+        var known = _writableCacheDir;
+        if (known != null && Directory.Exists(known))
+            return known;
         var candidates = new[]
         {
             Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
@@ -6432,6 +7150,7 @@ public static partial class Extension
                 var probe = Path.Combine(dir, ".write_test");
                 File.WriteAllText(probe, "ok");
                 File.Delete(probe);
+                _writableCacheDir = dir;
                 return dir;
             }
             catch
@@ -7142,8 +7861,20 @@ public static partial class Extension
     private static string TruncateForExt(string payload)
     {
         if (string.IsNullOrEmpty(payload)) return "";
-        var cap = MaxOutputBytes - 4;
-        return payload.Length <= cap ? payload : payload.Substring(0, cap);
+        return Utf8ClipLines(payload, MaxOutputBytes - 4);
+    }
+
+    /// <summary>Préfixe d'au plus maxBytes octets UTF-8 (limite réelle d'Output), coupé après le dernier '\n'
+    /// complet quand il y en a un : jamais d'enregistrement tronqué (coordonnée coupée lue de travers en SQF).</summary>
+    private static string Utf8ClipLines(string payload, int maxBytes)
+    {
+        if (string.IsNullOrEmpty(payload) || maxBytes <= 0) return "";
+        if (payload.Length <= maxBytes / 3 || Encoding.UTF8.GetByteCount(payload) <= maxBytes) return payload;
+        var bytes = Encoding.UTF8.GetBytes(payload);
+        var n = Utf8Fit(bytes, maxBytes);
+        var nl = Array.LastIndexOf(bytes, (byte)'\n', Math.Max(0, n - 1));
+        if (nl >= 0 && nl < n) n = nl + 1;
+        return Encoding.UTF8.GetString(bytes, 0, n);
     }
 
     /// <summary>Simplifie GET /api/chat/channels — lignes key\tlabel\tkind</summary>
@@ -7206,26 +7937,32 @@ public static partial class Extension
     /// </summary>
     private static string TruncateTabLinesKeepingNewest(string payload, int maxLen)
     {
+        // maxLen en octets UTF-8 : Output coupe à 8000 octets, et un texte accentué compté en caractères
+        // dépassait, ce qui coupait la FIN (les messages les plus récents).
         if (string.IsNullOrEmpty(payload) || maxLen <= 0) return "";
-        if (payload.Length <= maxLen) return payload;
+        if (Encoding.UTF8.GetByteCount(payload) <= maxLen) return payload;
         var lines = payload.Split('\n');
         var sb = new StringBuilder();
+        var sbBytes = 0;
         for (var i = lines.Length - 1; i >= 0; i--)
         {
             var line = lines[i];
             if (string.IsNullOrEmpty(line)) continue;
-            var candidate = line + "\n" + sb;
-            if (candidate.Length > maxLen)
+            var lineBytes = Encoding.UTF8.GetByteCount(line) + 1;
+            if (sbBytes + lineBytes > maxLen)
             {
                 if (sb.Length == 0)
                 {
                     // Une seule ligne trop longue : garder la fin utile.
-                    var keep = Math.Min(line.Length, maxLen);
-                    return line.Substring(line.Length - keep);
+                    var bytes = Encoding.UTF8.GetBytes(line);
+                    var start = bytes.Length - maxLen;
+                    while (start < bytes.Length && (bytes[start] & 0xC0) == 0x80) start++;
+                    return Encoding.UTF8.GetString(bytes, start, bytes.Length - start);
                 }
                 break;
             }
             sb.Insert(0, line + "\n");
+            sbBytes += lineBytes;
         }
         return sb.ToString();
     }
@@ -8284,7 +9021,8 @@ public static partial class Extension
                 {
                     var normalized = NormalizeBaseUrl(args[0]);
                     if (normalized.Length == 0) return;
-                    _baseUrl = normalized;
+                    // SEC-001 : même point de contrôle que le Connect synchrone — portail non-Athena ignoré.
+                    if (!TrySetSqfBaseUrl(normalized, out _)) return;
                     EnsureDrainTimer();
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
                     // Ne jamais réinjecter une clé CBA si une session jeu est active.
@@ -8633,7 +9371,7 @@ public static partial class Extension
                 var x = args[1] ?? "0";
                 var y = args[2] ?? "0";
                 var bearing = args.Length > 3 ? (args[3] ?? "") : "";
-                var payload = !string.IsNullOrEmpty(bearing) && double.TryParse(bearing, out var b)
+                var payload = !string.IsNullOrEmpty(bearing) && double.TryParse(bearing, NumberStyles.Float, CultureInfo.InvariantCulture, out var b)
                     ? $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y},\"bearing\":{b.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}}}"
                     : $"{{\"mapId\":{CurrentMapId()},\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{x},\"pos_y\":{y}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/sigint", payload);
@@ -8846,19 +9584,53 @@ public static partial class Extension
                 var status = args[1] ?? "";
                 if (string.IsNullOrWhiteSpace(callsign) || string.IsNullOrWhiteSpace(status)) return;
                 var payload = "{\"pilot_status\":\"" + EscapeJson(status) + "\"}";
+                var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
+                // Verrou de refus, pause 429/réseau, refroidissement : ne pas envoyer (route PATCH, pas de file POST).
+                if (IsRefusalLatched(url) || IsPostPausedNow() || IsEndpointCoolingNow(url))
+                    return;
+                HttpRequestMessage? request = null;
                 try
                 {
-                    var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
                     var content = new StringContent(payload, Encoding.UTF8);
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    var request = new HttpRequestMessage(HttpMethod.Patch, url) { Content = content };
+                    request = new HttpRequestMessage(HttpMethod.Patch, url) { Content = content };
                     AttachApiKeyHeader(request);
-                    _ = HttpClient.SendAsync(request);
+                    var req = request;
+                    var started = DateTime.UtcNow.Ticks;
+                    _ = HttpClient.SendAsync(req).ContinueWith(t =>
+                    {
+                        HttpResponseMessage? resp = null;
+                        try
+                        {
+                            if (t.Status == TaskStatus.RanToCompletion)
+                                resp = t.Result;
+                            var code = resp == null ? -1 : (int)resp.StatusCode;
+                            JournalHttp(started, code);
+                            if (resp == null)
+                                NotePostError(-1, url);
+                            else if (code == 429)
+                                NoteRateLimited(resp);
+                            else if (code == 401 || code == 403)
+                            {
+                                if (code == 403)
+                                    NoteAccessDenied(resp, url);
+                                NoteRefusal(url, code, RefusalBody(resp));
+                            }
+                            else if (!resp.IsSuccessStatusCode)
+                                NotePostError(code, url, resp);
+                        }
+                        catch { /* ignore */ }
+                        finally
+                        {
+                            try { req.Dispose(); } catch { /* ignore */ }
+                            try { resp?.Dispose(); } catch { /* ignore */ }
+                        }
+                    });
                 }
                 catch
                 {
-                    var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
-                    EnqueueForRetry(url, payload);
+                    try { request?.Dispose(); } catch { /* ignore */ }
+                    NotePostError(-1, url);
                 }
                 return;
             }
@@ -9112,11 +9884,11 @@ public static partial class Extension
         if (job.Attempts >= PhotoRetryMax)
         {
             ReleasePhotoDedup(job.DedupKey);
-            PhotoJournal(job, "failed", "fichier vide");
+            PhotoJournal(job, "failed", "empty file");
             InvokeCallback(cbName, $"ERR|file_empty|{fileHint}");
             return;
         }
-        PhotoJournal(job, "queued", "fichier pas encore écrit");
+        PhotoJournal(job, "queued", "file not written yet");
         _ = Task.Run(async () =>
         {
             try { await Task.Delay(800).ConfigureAwait(false); }
@@ -9175,7 +9947,7 @@ public static partial class Extension
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
         {
             ReleasePhotoDedup(job.DedupKey);
-            PhotoJournal(job, "failed", "pas de session Athena");
+            PhotoJournal(job, "failed", "no Athena session");
             InvokeCallback(cbName, "ERR|not_connected|" + Path.GetFileName(job.RawPath));
             return;
         }
@@ -9190,6 +9962,8 @@ public static partial class Extension
         // Un nom précis n’est jamais remplacé par une autre photo récente (Quick Picture).
         var specificName = HasSpecificImageFileName(job.RawPath);
         var maxAttempts = specificName ? 50 : 25;
+        // Relance différée : courte attente, la file des autres photos ne reste pas bloquée.
+        if (job.LateRetries > 0) maxAttempts = 5;
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             var fb = newestFallback;
@@ -9236,6 +10010,23 @@ public static partial class Extension
             await Task.Delay(400).ConfigureAwait(false);
         }
 
+        if (resolved == null && specificName && job.LateRetries < PhotoLateRetryMax
+            && (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds < 150)
+        {
+            // Arma n'écrit la capture qu'à l'image suivante : jeu en pause, fenêtre réduite ou disque lent, le PNG
+            // arrive après les ~20 s d'attente. Nouvel essai plus tard au lieu d'un file_not_found immédiat.
+            job.LateRetries++;
+            PhotoJournal(job, "queued", "capture not written yet");
+            _ = Task.Run(async () =>
+            {
+                try { await Task.Delay(PhotoLateRetryDelayMs).ConfigureAwait(false); }
+                catch { /* ignore */ }
+                PhotoJobs.Enqueue(job);
+                EnsurePhotoWorker();
+            });
+            return;
+        }
+
         if (resolved == null)
         {
             // Nom précis (Quick Picture) : libérer le dédup pour permettre un vrai nouvel essai.
@@ -9244,7 +10035,7 @@ public static partial class Extension
                 : Path.GetFileName(job.RawPath.Replace('/', '\\'));
             if (specificName || isSseFace || isSseNote)
                 ReleasePhotoDedup(job.DedupKey);
-            PhotoJournal(job, "failed", "fichier introuvable");
+            PhotoJournal(job, "failed", "file not found");
             InvokeCallback(cbName,
                 $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(job.RawPath)}");
             return;
@@ -9264,7 +10055,7 @@ public static partial class Extension
             if (!fi.Exists)
             {
                 ReleasePhotoDedup(job.DedupKey);
-                PhotoJournal(job, "failed", "fichier introuvable");
+                PhotoJournal(job, "failed", "file not found");
                 InvokeCallback(cbName, "ERR|file_not_found|" + Path.GetFileName(resolved));
                 return;
             }
@@ -9278,7 +10069,7 @@ public static partial class Extension
                 && !TryClaimPhotoDedup(identityKey))
             {
                 // Autre job déjà en cours / récemment traité pour le même fichier.
-                PhotoJournal(job, "done", "doublon");
+                PhotoJournal(job, "done", "duplicate");
                 InvokeCallback(cbName, "OK|duplicate|" + Path.GetFileName(resolved));
                 return;
             }
@@ -9290,7 +10081,7 @@ public static partial class Extension
         {
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
-            PhotoJournal(job, "failed", "lecture impossible");
+            PhotoJournal(job, "failed", "unreadable file");
             InvokeCallback(cbName, "ERR|read_failed|" + Path.GetFileName(resolved));
             return;
         }
@@ -9310,7 +10101,7 @@ public static partial class Extension
         if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath)
             || IsSseNoteCaptureName(resolved) || IsSseNoteCaptureName(job.RawPath))
         {
-            PhotoJournal(job, "done", "ignorée (fiche SSE)");
+            PhotoJournal(job, "done", "skipped (SSE record)");
             InvokeCallback(cbName, "OK|ignored|" + (Path.GetFileName(resolved) ?? ""));
             return;
         }
@@ -10313,16 +11104,89 @@ public static partial class Extension
         }
     }
 
+    private static bool IsUncOrRemote(string path)
+    {
+        var p = path.Trim();
+        return p.StartsWith("\\\\", StringComparison.Ordinal) || p.StartsWith("//", StringComparison.Ordinal);
+    }
+
+    /// <summary>Captures, musique, cache et dossier local du mod. Jamais un chemin arbitraire du disque.</summary>
+    private static bool IsUnderKnownDataRoot(string fullPath)
+    {
+        bool Under(string? root)
+        {
+            if (string.IsNullOrWhiteSpace(root)) return false;
+            try
+            {
+                var prefix = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                var full = Path.GetFullPath(fullPath);
+                var withSep = full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                return withSep.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
+        }
+
+        foreach (var dir in EnumeratePhotoLookupDirs())
+            if (Under(dir)) return true;
+        if (Under(ComspecCaptureDir())) return true;
+        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        if (!string.IsNullOrWhiteSpace(docs))
+        {
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC_Music"))) return true;
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC_Local"))) return true;
+            if (Under(Path.Combine(docs, "Arma 3", "COMSPEC"))) return true;
+        }
+        if (Under(Path.Combine(AppContext.BaseDirectory, "comspec_cache"))) return true;
+        if (Under(Path.Combine(Path.GetTempPath(), "comspec_cache"))) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Session joueur : le lot ne peut citer que son Steam. Sans jeton de joueur (serveur dédié), le camp entier part.
+    /// </summary>
+    private static bool PlayerBatchExceedsSession(string json)
+    {
+        // Session joueur seulement : sans Steam connu, laisser le portail filtrer (ne pas bloquer l'envoi local).
+        if (!GameAccessTokenUsableNow() || string.IsNullOrEmpty(_steamUid)) return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("players", out var players) || players.ValueKind != JsonValueKind.Array)
+                return false;
+            foreach (var p in players.EnumerateArray())
+            {
+                if (p.ValueKind != JsonValueKind.Object || !p.TryGetProperty("player_uid", out var uidEl))
+                    continue;
+                var uid = uidEl.GetString() ?? "";
+                if (uid.Length == 0) continue;
+                if (!string.Equals(uid, _steamUid, StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
+        }
+        catch
+        {
+            // JSON illisible : le portail répondra ; ne pas masquer un envoi légitime du téléphone.
+            return false;
+        }
+    }
+
     private static string? TryReadableImageFile(string candidate)
     {
         try
         {
-            if (!File.Exists(candidate))
+            if (string.IsNullOrWhiteSpace(candidate) || IsUncOrRemote(candidate))
                 return null;
-            var fi = new FileInfo(candidate);
+            if (!IsImageExtension(Path.GetExtension(candidate)))
+                return null;
+            var full = Path.GetFullPath(candidate);
+            if (!IsUnderKnownDataRoot(full) || !File.Exists(full))
+                return null;
+            var fi = new FileInfo(full);
             if (fi.Length < 32)
                 return null;
-            return Path.GetFullPath(candidate);
+            return full;
         }
         catch
         {
@@ -11862,7 +12726,7 @@ public static partial class Extension
                 return FormatAtakExtArray("ERROR", err);
             var payload = EnrichOperatorProfilePayload(json);
             // Fiche (équipement, catalogue, mods) : 10 à 25 Ko en clair, compressée en gzip (Athena la décompresse).
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token, gzip: true);
+            using var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token, gzip: true);
             var body = ReadContentUtf8(resp, cts.Token);
             if (resp.IsSuccessStatusCode)
                 return FormatOperatorProfileResponse(body);
@@ -12003,7 +12867,7 @@ public static partial class Extension
         try
         {
             var payload = EnrichAtakPayload(jsonBody);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            using var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
             var body = ReadContentUtf8(resp, token);
             if (resp.IsSuccessStatusCode)
                 return FormatAtakExtArray("OK", "Success");
@@ -12041,7 +12905,7 @@ public static partial class Extension
         try
         {
             var payload = EnrichAtakPayload(jsonBody);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            using var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
             var body = ReadContentUtf8(resp, token);
             if (resp.IsSuccessStatusCode)
             {
@@ -12093,7 +12957,7 @@ public static partial class Extension
         try
         {
             var payload = EnrichAtakPayload(jsonBody);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            using var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
             var body = ReadContentUtf8(resp, token);
             if (resp.IsSuccessStatusCode)
             {

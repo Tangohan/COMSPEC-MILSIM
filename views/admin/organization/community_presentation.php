@@ -227,7 +227,7 @@ $renderTodo = static function (array $it) use ($h): void {
 };
 
 $cpPanels = [
-    'visibilite' => ['Visibilité & registre', 'Annuaire, image, forum'],
+    'visibilite' => ['Visibilité & registre', 'Annuaire, image'],
     'vitrine' => ['Page publique', 'Bandeau, sections, recrutement'],
     'textes' => ['Présentation & contact', 'Texte libre, attentes, contact'],
     'profil' => ['Jeu & inscription', 'Type de candidature, mods, style'],
@@ -323,22 +323,27 @@ $cpNum = 0;
                         'votre carte est visible dans l’annuaire et mène à votre page publique.',
                         'vous n’êtes pas dans l’annuaire. Votre page publique reste accessible à qui possède le lien.'
                     ); ?>
+                    <?php $cpFeaturedAllowed = \App\Services\Community\TenantCommunityProfileService::registryFeaturedAllowedForSession(); ?>
+                    <?php if ($cpFeaturedAllowed): ?>
                     <?php $renderSwitch(
                         'registry_featured',
                         !empty($c['registry_featured']),
                         'Mettre en avant dans le registre',
-                        'Ajoute un badge sur votre carte et la place parmi les premières.',
+                        'Ajoute un badge sur votre carte et la place parmi les premières. Inclus dans votre formule.',
                         'votre carte porte un badge « mise en avant » et remonte dans la liste.',
                         'votre carte est classée normalement.'
                     ); ?>
-                    <?php $renderSwitch(
-                        'forum_members_only',
-                        !empty($c['forum_members_only']),
-                        'Réserver le forum aux membres',
-                        'Concerne le bouton « Accéder au forum » de votre page publique.',
-                        'les visiteurs non membres ne voient pas le bouton du forum.',
-                        'tout visiteur peut ouvrir et lire le forum depuis votre page publique.'
-                    ); ?>
+                    <?php else: ?>
+                    <div class="bcs-switch bcs-switch--locked" aria-disabled="true">
+                        <input type="checkbox" class="bcs-switch__input" disabled>
+                        <span class="bcs-switch__track" aria-hidden="true"></span>
+                        <span class="bcs-switch__copy">
+                            <span class="bcs-switch__title">Mettre en avant dans le registre <span class="bcs-plan-badge">Formule Pro</span></span>
+                            <span class="bcs-switch__help">Un badge « mise en avant » sur votre carte et une place parmi les premières du registre. Cette option est incluse dans les formules qui la proposent.</span>
+                            <span class="bcs-switch__effect bcs-switch__effect--off"><span>Non incluse dans votre formule actuelle : votre carte est classée normalement.</span> <a class="bcs-link" href="<?= $h(url('platform/upgrade?from=registry_featured')) ?>">Voir les formules</a></span>
+                        </span>
+                    </div>
+                    <?php endif; ?>
                     <p class="bcs-notice bcs-notice--info">Faites aussi connaître votre communauté sur le Discord Athena : <a class="bcs-link" href="<?= $h(url('back-office/community/discord')) ?>">Annoncer sur Discord</a>.</p>
                 </div>
             </section>
@@ -356,7 +361,7 @@ $cpNum = 0;
                         </span>
                         <div class="bcs-media__copy">
                             <label class="bcs-label" for="registry_cover">Image d’en-tête <span class="bcs-opt">(facultatif)</span></label>
-                            <p class="bcs-help">Une photo <em>paysage</em> type bandeau (environ 1600 × 600) donne le meilleur rendu. JPG, PNG ou WebP, 3&nbsp;Mo maximum. Sans image, la carte affiche un fond coloré.</p>
+                            <p class="bcs-help">Une photo paysage type bandeau (environ 1600 × 600) donne le meilleur rendu. JPG, PNG ou WebP, 3&nbsp;Mo maximum. Sans image, la carte affiche un fond coloré.</p>
                             <?php if ($slugHint === ''): ?>
                                 <p class="bcs-notice bcs-notice--info">Définissez d’abord l’adresse publique de votre communauté dans <a class="bcs-link" href="<?= $h($settingsUrl . '?onglet=identite') ?>">Paramètres · Identité</a> pour activer l’envoi.</p>
                             <?php endif; ?>
@@ -692,7 +697,6 @@ $cpNum = 0;
                 <div class="bcs-card__body">
                     <?php foreach ([
                         'events' => ['Événements', 'Vos prochaines opérations et entraînements ouverts.'],
-                        'forum' => ['Forum', 'Les derniers sujets publics du forum.'],
                         'documents' => ['Documents', 'Les documents marqués comme publics (règlement, doctrine…).'],
                         'roster' => ['Effectifs', 'La composition de l’unité.'],
                         'training' => ['Formations', 'Le catalogue des formations proposées.'],

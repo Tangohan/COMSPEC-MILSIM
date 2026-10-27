@@ -9,6 +9,8 @@
                      fréquence MHz, fréquence automatique, perte %, structure % (100 - dégâts), santé ("nominal" | "dégradé" |
                      "critique" | "hors service"), bonds jusqu'au relais raccordé (0 = raccordé, -1 = sans liaison),
                      relais sur le même canal à portée, latence ms]...]
+                   Condition d'activation (COMSPEC_AtakRelayCond, fn_relayCond : mât déployé, à l'arrêt, code SQF) : relais
+                   et passerelles de véhicule hors service tant qu'elle n'est pas remplie, état = sa raison.
                    Variables d'un relais : COMSPEC_AtakRelayRange, Throughput, Name, Height (m, défaut 4), Slots, Side,
                    On (défaut vrai), Freq (canal en MHz, 0 = automatique : premier canal libre du plan 4 940-4 975 MHz
                    qu'aucun relais voisin n'occupe), Batt et Autonomy (minutes), Root (raccordé par satellite ou fibre, défaut vrai ; sinon
@@ -63,7 +65,9 @@ switch (_act) do {
                 _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
                 if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
                 private _d = _p distance2D _jp;
-                if (_d < _jr) then { _m = _m * ((_d / _jr) ^ 2); };
+                // Force du brouilleur (7e élément, 1 par défaut), comme fn_linkQuality.
+                private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
+                if (_d < _jr) then { _m = _m * (1 - _js * (1 - (_d / _jr) ^ 2)); };
             } forEach _jam;
             _m
         };
@@ -73,7 +77,9 @@ switch (_act) do {
             // Relais réservé à un camp (module « ATAK · Relais ») : invisible pour les autres.
             private _rs = _x getVariable ["COMSPEC_AtakRelaySide", ""];
             if (_rs isEqualType "" && {_rs isNotEqualTo ""} && {_rs isNotEqualTo _side}) then { continue };
-            private _r = [_x getVariable ["COMSPEC_AtakRelayRange", _defR], _defR] call _num;
+            // Dégâts : débit puis portée baissent petit à petit (réglage comspec_atak_native_relay_damage, perte à 100 % de dégâts).
+            private _dmgK = (missionNamespace getVariable ["comspec_atak_native_relay_damage", 70]) / 100;
+            private _r = ([_x getVariable ["COMSPEC_AtakRelayRange", _defR], _defR] call _num) * (1 - 0.5 * _dmgK * damage _x);
             private _mb = [_x getVariable ["COMSPEC_AtakRelayThroughput", 12], 12] call _num;
             private _n = _x getVariable ["COMSPEC_AtakRelayName", "Relais ATAK"];
             if (!(_n isEqualType "") || {_n isEqualTo ""}) then { _n = "Relais ATAK"; };
@@ -83,14 +89,17 @@ switch (_act) do {
             private _root = _x getVariable ["COMSPEC_AtakRelayRoot", true];
             private _freq = round ([_x getVariable ["COMSPEC_AtakRelayFreq", 0], 0] call _num);
             private _ant = (getPosASL _x) vectorAdd [0, 0, _h];
+            // Condition d'activation de la mission (fn_relayCond : mât déployé, à l'arrêt, code...).
+            private _cond = [_x] call comspec_atak_native_fnc_relayCond;
             private _st = switch (true) do {
                 case (!alive _x || {damage _x >= 0.95}): { "détruit" };
                 case !(_x getVariable ["COMSPEC_AtakRelayOn", true]): { "éteint" };
                 case (_batt isEqualTo 0): { "batterie vide" };
+                case !(_cond select 0): { _cond select 1 };
                 default { "" };
             };
             private _j = [_ant] call _jamAt;
-            private _m = _mb * (1 - 0.7 * damage _x) * _j;
+            private _m = _mb * (1 - _dmgK * damage _x) * _j;
             if (_st isEqualTo "" && {_m < 0.05}) then { _st = "brouillé"; };
             _jf pushBack _j;
             _out pushBack [_x, _ant, _n, "relay", _r, _m, _st isEqualTo "", _st, 0, _slots, _batt, _root isEqualTo true, objNull,
@@ -154,21 +163,23 @@ switch (_act) do {
         } forEach _out;
         {
             _x params ["_o", "_m", "_r", "_mb", "_n"];
-            _out pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, ["gw", "cp"] select (_m isEqualTo "cp"), _r, _mb, true, "", 0, 0, -1, true, objNull,
+            // Passerelle de véhicule soumise à une condition (fn_relayCond, ex. mât déployé) : listée hors service sinon.
+            private _cond = [_o] call comspec_atak_native_fnc_relayCond;
+            _out pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, ["gw", "cp"] select (_m isEqualTo "cp"), _r, [0, _mb] select (_cond select 0), _cond select 0, _cond select 1, 0, 0, -1, true, objNull,
                 4985, false, 0, round (100 * (1 - damage _o)), "", 0, 0, 0];
             _jf pushBack 1;
         } forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);
-        // Radios maillées MPU5 des équipiers (fn_mpu5) : relais portés qui redistribuent le débit montant que leur
+        // Radios maillées MPU5 des équipiers, ou radio ACRE2/TFAR où leur téléphone est branché (fn_mpu5) : relais portés qui redistribuent le débit montant que leur
         // téléphone reçoit d'un relais ou d'une autre MPU5 (au plus 3 bonds, publiés dans COMSPEC_ATAK_Mpu5).
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
         {
-            (_x getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_hp", 0]];
+            (_x getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_hp", 0], ["_rg", _mR], ["_rn", "MPU5"]];
             if (!(_up isEqualType 0) || {_up <= 0} || {_hp >= 3}) then { continue };
             private _ant = (eyePos _x) vectorAdd [0, 0, 0.4];
             private _j = [_ant] call _jamAt;
             private _m = _up * _j;
             private _st = ["", "brouillé"] select (_m < 0.05);
-            _out pushBack [_x, _ant, format ["MPU5 %1", [_x, true] call comspec_atak_native_fnc_unitCallsign], "mpu5", _mR, _m, _st isEqualTo "", _st, 0, 0, -1, false, objNull,
+            _out pushBack [_x, _ant, format ["%1 %2", ["Radio", "MPU5"] select (_rn isEqualTo "MPU5"), [_x, true] call comspec_atak_native_fnc_unitCallsign], "mpu5", _rg, _m, _st isEqualTo "", _st, 0, 0, -1, false, objNull,
                 4990, false, 0, round (100 * (1 - damage _x)), "", _hp, 0, 0];
             _jf pushBack _j;
         } forEach (allPlayers select { alive _x && {_x isNotEqualTo player} && {str side group _x isEqualTo _side} });
@@ -348,8 +359,14 @@ switch (_act) do {
             private _aut = _x getVariable ["COMSPEC_AtakRelayAutonomy", 0];
             private _bt = _x getVariable ["COMSPEC_AtakRelayBatt", -1];
             if (!(_aut isEqualType 0) || {_aut <= 0} || {!(_bt isEqualType 0)} || {_bt <= 0}) then { continue };
-            private _nb = (_bt - 50 / _aut) max 0;
-            _x setVariable ["COMSPEC_AtakRelayBatt", [_nb, 0] select (_nb < 0.5), true];
+            // Valeur précise gardée sur le serveur (locale) ; la valeur publique, arrondie au %, n'est diffusée que si elle change.
+            // Écart > 0,5 avec la valeur publique : batterie changée ou réglée ailleurs (Zeus, module), on repart de celle-ci.
+            private _pr = _x getVariable ["COMSPEC_AtakRelayBattPrec", _bt];
+            if (!(_pr isEqualType 0) || {abs (_pr - _bt) > 0.5}) then { _pr = _bt; };
+            private _nb = (_pr - 50 / _aut) max 0;
+            _x setVariable ["COMSPEC_AtakRelayBattPrec", _nb];
+            private _pub = [round _nb, 0] select (_nb < 0.5);
+            if (_pub isNotEqualTo _bt) then { _x setVariable ["COMSPEC_AtakRelayBatt", _pub, true]; };
         } forEach (missionNamespace getVariable ["COMSPEC_AtakRelays", []]);
     };
     case "link": {
@@ -411,7 +428,9 @@ switch (_act) do {
                         _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
                         if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
                         private _d = _p distance2D _jp;
-                        if (_d < _jr) then { private _m = (_d / _jr) ^ 2; _mbps = _mbps * _m; _loss = _loss max (round ((1 - _m) * 80)); };
+                        // Force du brouilleur (7e élément, 1 par défaut), comme _jamAt et fn_linkQuality.
+                        private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
+                        if (_d < _jr) then { private _m = 1 - _js * (1 - (_d / _jr) ^ 2); _mbps = _mbps * _m; _loss = _loss max (round ((1 - _m) * 80)); };
                     } forEach _jam;
                     if (_mbps > 0.05) then { _cov = _cov + 1; _sum = _sum + _mbps; } else { _mbps = 0; _loss = 100; };
                     _cells pushBack [_p, _mbps, _loss, _src];

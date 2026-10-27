@@ -142,12 +142,12 @@ class AtakPoiRepository
     }
 
     /**
-     * Récupère un POI par ID
+     * Récupère un POI par ID, dans la communauté donnée : celui d'une autre communauté reste introuvable.
      */
-    public function findById(int $id): ?array
+    public function findById(int $id, int $tenantId): ?array
     {
-        $sql = "SELECT * FROM v_atak_poi WHERE id = :id AND deleted_at IS NULL";
-        $poi = $this->db->fetchOne($sql, ['id' => $id]);
+        $sql = "SELECT * FROM v_atak_poi WHERE id = :id AND tenant_id = :tenant_id AND deleted_at IS NULL";
+        $poi = $this->db->fetchOne($sql, ['id' => $id, 'tenant_id' => $tenantId]);
 
         if ($poi) {
             if (!empty($poi['properties'])) {
@@ -159,12 +159,12 @@ class AtakPoiRepository
     }
 
     /**
-     * Met à jour un POI
+     * Met à jour un POI de la communauté donnée (false s'il est absent ou d'une autre communauté).
      */
-    public function update(int $id, array $data): bool
+    public function update(int $id, int $tenantId, array $data): bool
     {
         $fields = [];
-        $params = ['id' => $id];
+        $params = ['id' => $id, 'tenant_id' => $tenantId];
 
         $allowedFields = [
             'poi_name', 'poi_code', 'category', 'affiliation', 'certainty',
@@ -191,7 +191,7 @@ class AtakPoiRepository
             return false;
         }
 
-        $sql = "UPDATE atak_poi SET " . implode(', ', $fields) . " WHERE id = :id";
+        $sql = "UPDATE atak_poi SET " . implode(', ', $fields) . " WHERE id = :id AND tenant_id = :tenant_id";
         return $this->db->execute($sql, $params) > 0;
     }
 
@@ -299,7 +299,7 @@ class AtakPoiRepository
      */
     public function getObservations(int $poiId, int $limit = 50): array
     {
-        $sql = "SELECT o.*, u.username as observer_username
+        $sql = "SELECT o.*, COALESCE(NULLIF(u.callsign, ''), u.display_name) AS observer_username
                 FROM atak_poi_observations o
                 LEFT JOIN users u ON o.observer_user_id = u.id
                 WHERE o.poi_id = :poi_id

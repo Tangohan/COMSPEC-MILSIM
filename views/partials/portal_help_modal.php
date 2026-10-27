@@ -200,7 +200,7 @@ $phCsrf = \App\Core\Csrf::token();
 
         searchTicket += 1;
         var ticket = searchTicket;
-        var url = searchEndpoint + '?q=' + encodeURIComponent(query) + '&documents=1&forum=1&personnel=1';
+        var url = searchEndpoint + '?q=' + encodeURIComponent(query) + '&documents=1&personnel=1';
         fetch(url, {
             headers: { 'Accept': 'application/json' },
             credentials: 'same-origin'
@@ -212,7 +212,6 @@ $phCsrf = \App\Core\Csrf::token();
             var items = manualItems.slice();
             var personnel = Array.isArray(data.personnel) ? data.personnel : [];
             var documents = Array.isArray(data.documents) ? data.documents : [];
-            var forum = Array.isArray(data.forum) ? data.forum : [];
 
             personnel.forEach(function (u) {
                 items.push({
@@ -234,15 +233,6 @@ $phCsrf = \App\Core\Csrf::token();
                     memberLabel: ''
                 });
             });
-            forum.forEach(function (f) {
-                items.push({
-                    label: 'Discussion : ' + (f.title || 'Sujet'),
-                    subtitle: f.href || '',
-                    url: f.href || '',
-                    kind: 'forum_topic',
-                    memberId: 0,
-                    memberLabel: ''
-                });
             });
 
             renderResults(items.slice(0, 18));

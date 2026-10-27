@@ -23,7 +23,7 @@ if ((count _book) isEqualTo 0) then {
     _book set ["missions", +(_book getOrDefault ["missions", []])];
     missionNamespace setVariable ["COMSPEC_ATAK_DistBk", _book];
 };
-(player getVariable ["COMSPEC_ATAK_DistMe", []]) params [["_pairs", []], ["_pilot", []]];
+([] call comspec_atak_native_fnc_distanceMine) params [["_pairs", []], ["_pilot", []]];
 if (_pairs isNotEqualTo []) then {
     private _cur = createHashMapFromArray _pairs;
     private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]];
@@ -88,6 +88,7 @@ private _out = [
 profileNamespace setVariable ["COMSPEC_ATAK_DistBook", _out];
 if (_mode isEqualTo "save" || {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_DistSaved", 0])) > 300}) then {
     missionNamespace setVariable ["COMSPEC_ATAK_DistSaved", diag_tickTime];
-    saveProfileNamespace;
+    // Fin de mission : écrit tout de suite ; passage périodique : profil marqué modifié (fn_profileSave).
+    ([["now"], ["dirty"]] select (_mode isEqualTo "tick")) call comspec_atak_native_fnc_profileSave;
 };
 true

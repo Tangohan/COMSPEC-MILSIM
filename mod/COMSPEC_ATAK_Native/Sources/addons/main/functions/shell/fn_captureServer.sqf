@@ -21,6 +21,7 @@
       "init" (postInit serveur)   "tick" (3 s)   "exploit" (5 s)   "dropped" [porte-objet]
       "validate" [id, unité]   "dismiss" [id, unité]   "athena" [id, ok, unité]
       "local" [mode, objet, valeur] : sur la machine où l'objet est local ("strip" | "give" | "move" | "pick" | "hunt")
+    Debug (app Admin, fn_adminServer) : chaque capture garde « targets » (joueurs repérés) et « hunters » (groupes en traque).
 */
 params [["_act", "tick"], ["_arg", []]];
 private _now = [time, serverTime] select isMultiplayer;
@@ -72,6 +73,29 @@ switch (_act) do {
         _l pushBackUnique _h;
         missionNamespace setVariable ["COMSPEC_ATAK_CapHolders", _l select { !isNull _x }];
     };
+    case "giveFail": {
+        // « give » sans place chez l'IA : le téléphone a été posé au sol (porte-objet _gh). La capture déjà ouverte passe
+        // sur ce porte-objet (même id, reprise possible par une autre IA) et l'IA n'en est plus le porteur.
+        if (!isServer) exitWith {};
+        _arg params [["_ai", objNull], ["_gh", objNull], ["_later", false]];
+        if (isNull _ai || {isNull _gh}) exitWith {};
+        // IA locale au serveur : l'événement arrive avant l'ouverture de la capture (même image) ; traité à l'image suivante
+        // (le contenu du porte-objet créé par une machine distante a aussi eu le temps d'arriver).
+        if !(_later) exitWith { [{ ["giveFail", _this] call comspec_atak_native_fnc_captureServer; }, [_ai, _gh, true]] call CBA_fnc_execNextFrame; };
+        if (((_gh distance _ai) > 10) || {([_gh, "holder"] call _items) isEqualTo []}) exitWith {};
+        private _caps = missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap];
+        private _cid = _ai getVariable ["COMSPEC_ATAK_CapOf", ""];
+        if !(_cid isEqualType "" && {_cid in _caps}) exitWith {};
+        private _c = _caps get _cid;
+        _gh setVariable ["COMSPEC_ATAK_PhoneTag", _c get "tag", true];
+        _gh setVariable ["COMSPEC_ATAK_CapOf", _cid, true];
+        ["dropped", [_gh]] call comspec_atak_native_fnc_captureServer;
+        if ((_c get "carrier") isEqualTo _ai) then { _c set ["carrier", objNull]; };
+        _ai setVariable ["COMSPEC_ATAK_CapOf", nil, true];
+        _ai setVariable ["COMSPEC_ATAK_Ident", nil, true];
+        call _publish;
+        ["INFO", "CAPTURE", format ["%1 : inventaire de %2 plein, téléphone posé au sol (%3)", _cid, typeOf _ai, [getPosATL _gh, 8] call comspec_atak_native_fnc_gridRef]] call comspec_atak_native_fnc_log;
+    };
     case "local": {
         _arg params [["_mode", ""], ["_o", objNull], ["_v", ""]];
         if (isNull _o || {!local _o}) exitWith {};
@@ -80,7 +104,14 @@ switch (_act) do {
                 if (_v in (assignedItems _o)) then { _o unlinkItem _v; } else { _o removeItem _v; };
             };
             case "give": {
-                if (_o canAdd _v) then { _o addItem _v; };
+                // Plus de place (inventaire changé depuis la vérification du serveur) : le téléphone est posé au sol à
+                // côté de l'IA plutôt que perdu ; le serveur y reporte la capture (« giveFail ») pour qu'il reste ramassable
+                // et que l'IA sans téléphone ne l'exploite plus.
+                if (_o canAdd _v) then { _o addItem _v; } else {
+                    private _gh = createVehicle ["GroundWeaponHolder", getPosATL _o, [], 0.5, "CAN_COLLIDE"];
+                    _gh addItemCargoGlobal [_v, 1];
+                    ["comspec_atak_native_captureSrv", ["giveFail", [_o, _gh]]] call CBA_fnc_serverEvent;
+                };
                 _o playActionNow "PutDown";
                 _o doFollow (leader group _o);
             };
@@ -108,6 +139,13 @@ switch (_act) do {
     case "tick": {
         if (!isServer || {!(missionNamespace getVariable ["comspec_atak_native_capture_enabled", true])}) exitWith {};
         private _caps = missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap];
+        // Révocation Athena sans réponse dans les délais (joueur sollicité parti, liaison morte) : « offline » plutôt
+        // qu'en attente pour le reste de la mission.
+        private _late = false;
+        {
+            if ((_y getOrDefault ["athena", ""]) isEqualTo "pending" && {_now > (_y getOrDefault ["revokeBy", 1e9])}) then { _y set ["athena", "offline"]; _late = true; };
+        } forEach _caps;
+        if (_late) then { call _publish; };
         private _go = missionNamespace getVariable ["COMSPEC_ATAK_CapGo", createHashMap];
         private _R = (missionNamespace getVariable ["comspec_atak_native_capture_radius", 100]) max 5;
         // Sources : [objet, genre, étiquette du téléphone, id de capture déjà ouverte]
@@ -129,7 +167,10 @@ switch (_act) do {
             private _own = _x getVariable ["COMSPEC_ATAK_PhoneOwner", objNull];
             private _tag = _x getVariable ["COMSPEC_ATAK_PhoneTag", []];
             if (_tag isEqualTo [] && {!isNull _own}) then { _tag = _own getVariable ["COMSPEC_ATAK_PhoneTag", []]; };
-            if (_tag isNotEqualTo []) then { _src pushBack [_x, "holder", _tag, ""]; };
+            // Porte-objet d'un téléphone déjà capturé (« giveFail ») : la reprise garde la même capture.
+            private _hc = _x getVariable ["COMSPEC_ATAK_CapOf", ""];
+            if !(_hc isEqualType "" && {_hc in _caps}) then { _hc = ""; };
+            if (_tag isNotEqualTo []) then { _src pushBack [_x, "holder", _tag, _hc]; };
         } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_CapHolders", []]) select { !isNull _x });
         {
             _x params ["_o", "_kind", "_tag", "_cid"];
@@ -152,6 +193,7 @@ switch (_act) do {
                     && {[_sideO, side group _x] call BIS_fnc_sideIsEnemy}
                     && {!(_x getVariable ["COMSPEC_ATAK_NoPickup", false])} && {!((group _x) getVariable ["COMSPEC_ATAK_NoPickup", false])}
                     && {isNil { _x getVariable "COMSPEC_ATAK_CapGoing" }}
+                    && {_x canAdd (_it select 0)}
                 };
                 if (_cand isEqualTo []) exitWith {};
                 _cand = _cand apply { [_x distance _o, _x] };
@@ -166,14 +208,14 @@ switch (_act) do {
             private _cls = _it select 0;
             _go deleteAt _key;
             _ai setVariable ["COMSPEC_ATAK_CapGoing", nil];
+            // Inventaire plein arrivé sur place : le téléphone reste où il est (sinon retiré puis jamais donné, perdu)
+            // et aucune capture n'est ouverte ; une autre IA (ou celle-ci, avec de la place) pourra le prendre.
+            if !(_ai canAdd _cls) then { continue };
             if (_kind isEqualTo "holder") then {
-                (getItemCargo _o) params [["_cl", []], ["_cn", []]];
-                private _i = _cl findIf { _x isEqualTo _cls };
-                if (_i >= 0) then {
-                    _cn set [_i, (_cn select _i) - 1];
-                    clearItemCargoGlobal _o;
-                    { if ((_cn select _forEachIndex) > 0) then { _o addItemCargoGlobal [_x, _cn select _forEachIndex]; }; } forEach _cl;
-                };
+                // Sans vider les uniformes et gilets posés dans le même porte-objet (fn_droppedPhone "remove").
+                ["remove", [_o, _cls]] call comspec_atak_native_fnc_droppedPhone;
+                // Porte-objet d'un « giveFail » : la capture repart avec l'IA, le porte-objet ne la porte plus.
+                if (_cid isNotEqualTo "") then { _o setVariable ["COMSPEC_ATAK_CapOf", nil, true]; _o setVariable ["COMSPEC_ATAK_PhoneTag", nil, true]; };
             } else {
                 ["comspec_atak_native_capLocal", ["strip", _o, _cls], _o] call CBA_fnc_targetEvent;
                 // Le corps n'a plus de téléphone à donner.
@@ -239,6 +281,8 @@ switch (_act) do {
                 alive _x && {(str side group _x) isEqualTo _side} && {_x getVariable ["COMSPEC_ATAK_Beacon", false]}
                 && {(_x distance2D _ai) < _huntR} && {[_x] call comspec_atak_native_fnc_hasDevice}
             }) apply { [_x, getPosATL _x] };
+            // Vu par l'app Admin (debug) : joueurs repérés et groupes lancés à leur poursuite.
+            _c set ["targets", count _targets];
             if (_targets isEqualTo []) then { continue };
             private _grps = [group _ai];
             if (_share > 0) then {
@@ -250,16 +294,29 @@ switch (_act) do {
                 _grps append ((_near select [0, 3]) apply { _x select 1 });
             };
             { ["comspec_atak_native_capLocal", ["hunt", leader _x, [_targets, _hunt]], leader _x] call CBA_fnc_targetEvent; } forEach _grps;
+            _c set ["hunters", [[], _grps select { !(_x getVariable ["COMSPEC_ATAK_NoHunt", false]) }] select _hunt];
         } forEach _caps;
         if (_changed) then { call _publish; };
     };
     case "validate";
     case "dismiss": {
+        // Droits vérifiés ici aussi (fn_compromise « can ») : chef de groupe, propriétaire du téléphone, Zeus, ou
+        // réglage capture_validate ouvert à tous. Le camp est vérifié plus bas.
+        private _rb = _arg param [1, objNull];
+        private _rc = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_arg param [0, ""], createHashMap];
+        if ((count _rc) > 0 && {!isNull _rb} && {!((missionNamespace getVariable ["comspec_atak_native_capture_validate", 0]) isEqualTo 1
+            || {(leader group _rb) isEqualTo _rb}
+            || {(getPlayerUID _rb) isEqualTo ((_rc get "tag") param [0, ""])}
+            || {!isNull (getAssignedCuratorLogic _rb)}
+            || {_rb getVariable ["COMSPEC_ATAK_AdminOk", false]})}) exitWith {
+            ["WARNING", "CAPTURE", format ["%1 : %2 refusé à %3 (ni chef, ni propriétaire, ni Zeus)", _arg param [0, ""], _act, name _rb]] call comspec_atak_native_fnc_log;
+        };
         _arg params [["_id", ""], ["_by", objNull]];
         private _c = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_id, createHashMap];
         if ((count _c) isEqualTo 0 || {isNull _by}) exitWith {};
         private _side = (_c get "tag") param [1, ""];
-        if ((str side group _by) isNotEqualTo _side && {isNull (getAssignedCuratorLogic _by)}) exitWith {};
+        // Camp du téléphone, Zeus, ou gestionnaire passé par l'app Admin (fn_adminServer, droit déjà vérifié).
+        if ((str side group _by) isNotEqualTo _side && {isNull (getAssignedCuratorLogic _by)} && {!(_by getVariable ["COMSPEC_ATAK_AdminOk", false])}) exitWith {};
         if ((_c get "state") isEqualTo "validated") exitWith {};
         private _who = [_by] call comspec_atak_native_fnc_unitCallsign;
         _c set ["by", _who];
@@ -269,11 +326,14 @@ switch (_act) do {
             [_side, "dismissed", _id] call _toSide;
         };
         _c set ["state", "validated"];
-        _c set ["athena", "pending"];
+        // Sans identifiant de terminal, aucun client ne peut révoquer : « offline » tout de suite, sans chaîne d'essais.
+        private _term = (_c get "tag") param [5, ""];
+        _c set ["athena", ["offline", "pending"] select (_term isNotEqualTo "")];
+        _c set ["revokeBy", _now + 45];
         _c set ["tried", [getPlayerUID _by]];
         call _publish;
         [_side, "validated", _id] call _toSide;
-        ["comspec_atak_native_compromise", ["revoke", [_id, (_c get "tag") param [5, ""], (_c get "tag") param [2, ""]]], _by] call CBA_fnc_targetEvent;
+        if (_term isNotEqualTo "") then { ["comspec_atak_native_compromise", ["revoke", [_id, _term, (_c get "tag") param [2, ""]]], _by] call CBA_fnc_targetEvent; };
         // Propriétaire : nouvel IMEI sur son prochain téléphone.
         private _uid = (_c get "tag") param [0, ""];
         private _i = allPlayers findIf { (getPlayerUID _x) isEqualTo _uid };
@@ -285,6 +345,9 @@ switch (_act) do {
         private _c = (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]) getOrDefault [_id, createHashMap];
         if ((count _c) isEqualTo 0) exitWith {};
         if (_ok) exitWith { _c set ["athena", "ok"]; call _publish; };
+        // Déjà réglée (révoquée, ou délai dépassé) : un échec tardif ne relance rien. Sans identifiant de terminal : inutile.
+        if ((_c getOrDefault ["athena", ""]) isNotEqualTo "pending") exitWith {};
+        if (((_c get "tag") param [5, ""]) isEqualTo "") exitWith { _c set ["athena", "offline"]; call _publish; };
         // Pas de liaison Athena chez celui qui a validé : on essaie chez le propriétaire, puis chez un chef du camp.
         private _tried = _c getOrDefault ["tried", []];
         if (!isNull _from) then { _tried pushBackUnique getPlayerUID _from; };
@@ -296,6 +359,7 @@ switch (_act) do {
         if (_k < 0) then { _k = _cands findIf { (leader group _x) isEqualTo _x }; };
         if (_k < 0) exitWith { _c set ["athena", "offline"]; call _publish; };
         private _next = _cands select _k;
+        _c set ["revokeBy", _now + 45];
         ["comspec_atak_native_compromise", ["revoke", [_id, (_c get "tag") param [5, ""], (_c get "tag") param [2, ""]]], _next] call CBA_fnc_targetEvent;
     };
 };

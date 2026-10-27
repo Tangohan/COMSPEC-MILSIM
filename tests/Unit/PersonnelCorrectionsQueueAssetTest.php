@@ -21,6 +21,10 @@ final class PersonnelCorrectionsQueueAssetTest extends TestCase
         self::assertStringContainsString('rh-corr__empty', $view);
         self::assertStringContainsString('Confirmer', $view);
         self::assertStringContainsString('Refuser', $view);
+        self::assertStringContainsString('Actuellement', $view);
+        self::assertStringContainsString('Proposé', $view);
+        self::assertStringContainsString('rh-corr__sides', $view);
+        self::assertStringNotContainsString('unit_id', $view);
         self::assertStringContainsString('Corriger un dossier sans demande', $view);
         self::assertStringContainsString('Ouvrir le dossier', $view);
         self::assertStringContainsString('corrections/appliquer', $view);

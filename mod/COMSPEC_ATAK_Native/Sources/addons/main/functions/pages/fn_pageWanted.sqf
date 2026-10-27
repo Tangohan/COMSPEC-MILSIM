@@ -14,6 +14,12 @@ if !([] call comspec_atak_native_fnc_bridge) exitWith {
 };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+// Avis gardés en uiNamespace : ceux d'une mission précédente (autre serveur possible) sont oubliés à la première ouverture.
+if (isNil { missionNamespace getVariable "COMSPEC_ATAK_WantedMission" }) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_WantedMission", true];
+    uiNamespace setVariable ["COMSPEC_ATAK_Wanted", nil];
+    uiNamespace setVariable ["COMSPEC_ATAK_WantedImg", nil];
+};
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Wanted", []];
 if ((count _data) isEqualTo 0) then {
     uiNamespace setVariable ["COMSPEC_ATAK_Wanted", [[], "", ""]];
@@ -33,11 +39,12 @@ private _sel = _list param [(_list findIf { format ["%1:%2", _x select 0, _x sel
 if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     _sel params ["_kind", "_id", "_ref", "_name", "_alias", "_level", "_details", ["_url", ""], ["_upd", ""]];
     private _img = _imgs getOrDefault [_open, ""];
+    if !(_img isEqualType "") then { _img = ""; };
     _rows append [
         ["title", "AVIS DE RECHERCHE"],
         ["text", format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t>%2<br/><t color='%3' font='COMSPEC_BarlowBold'>%4</t>  <t color='#8a9a93' size='0.85'>%5</t>",
             [_name] call _esc, ["", format ["<br/><t color='#c9d4cf'>dit « %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""),
-            _kindColor getOrDefault [_kind, "#c9d4cf"], toUpper _level, _ref]]
+            _kindColor getOrDefault [_kind, "#c9d4cf"], [toUpper _level] call _esc, [_ref] call _esc]]
     ];
     if (_img isNotEqualTo "") then { _rows pushBack ["image", _img]; } else {
         if (_url isNotEqualTo "") then { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Photo en chargement, ou au format PNG (visible sur Athena seulement).</t>"]; } else { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Aucune photo sur Athena.</t>"]; };
@@ -45,7 +52,7 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     if (_details isNotEqualTo "") then { _rows append [["section", "Éléments connus", ""], ["text", [_details] call _esc]]; };
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["WANTED", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }]];
     _rows append [
-        ["text", format ["<t size='0.8' color='#8a9a93'>Mis à jour le %1. En cas de contact : contrôle d'identité dans l'app SSE, puis FRS au bureau SSE.</t>", _upd]],
+        ["text", format ["<t size='0.8' color='#8a9a93'>Mis à jour le %1. En cas de contact : contrôle d'identité dans l'app SSE, puis FRS au bureau SSE.</t>", [_upd] call _esc]],
         ["buttons", [["RETOUR", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }], ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }, true]]]
     ];
 } else {
@@ -67,9 +74,10 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
         _x params ["_kind", "_id", "_ref", "_name", "_alias", "_level"];
         private _key = format ["%1:%2", _kind, _id];
         private _img = _imgs getOrDefault [_key, ""];
+        if !(_img isEqualType "") then { _img = ""; };
         _rows pushBack ["person", [_dir + (_kindIcon getOrDefault [_kind, "app_intel.paa"]), _img] select (_img isNotEqualTo ""),
             format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.8' color='%3'>%4</t>  <t size='0.75' color='#8a9a93'>%5</t>",
-                [_name] call _esc, ["", format ["  <t color='#c9d4cf' size='0.85'>« %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""), _kindColor getOrDefault [_kind, "#c9d4cf"], _level, _ref],
+                [_name] call _esc, ["", format ["  <t color='#c9d4cf' size='0.85'>« %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""), _kindColor getOrDefault [_kind, "#c9d4cf"], [_level] call _esc, [_ref] call _esc],
             [["FICHE", compile format ["['open', %1] call comspec_atak_native_fnc_wantedAction;", str _key], true]],
             [[0.9, 0.9, 0.9, 1], [1, 1, 1, 1]] select (_img isNotEqualTo "")];
     } forEach _shown;

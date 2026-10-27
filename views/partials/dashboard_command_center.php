@@ -88,14 +88,14 @@ $dashSteamId = \App\Support\SteamId::normalize(is_array($cu) ? (string) ($cu['st
 $dashSteamLinked = $dashSteamId !== null;
 $displayName = $cu ? (string) ($cu['display_name'] ?? $cu['email'] ?? 'Opérateur') : 'Opérateur';
 $roleHint = 'Opérateur';
-$gr = $grade ?? null;
+$gr = \App\Support\TenantGrades::hidden() ? null : ($grade ?? null);
 if (is_array($gr)) {
     $roleHint = (string) ($gr['label_short'] ?? $gr['short_name'] ?? $gr['label_long'] ?? $gr['name'] ?? 'Opérateur');
 }
 
 $modpack = $modpack ?? null;
 $atakModDownloadUrl = $atakModDownloadUrl ?? null;
-$hasPack = !empty($mbModpack['has_pack']) || (is_array($modpack) && !empty($modpack['id']));
+$hasPack = !empty($mbModpack['has_pack']) || (is_array($modpack) && !empty($modpack['has_collection']));
 $canViewAtakOperators = !empty($can_view_atak_operators);
 $atakOperatorsLinkedCount = isset($atak_operators_linked_count) && $atak_operators_linked_count !== null
     ? (int) $atak_operators_linked_count
@@ -200,6 +200,10 @@ if ($dashFirstName === '' || str_contains($dashFirstName, '@')) {
 }
 $dashHour = (int) date('G');
 $dashGreeting = ($dashHour >= 18 || $dashHour < 5) ? 'Bonsoir' : 'Bonjour';
+if (function_exists('site_lang') && site_lang() !== 'fr') {
+    // Le prénom rend la phrase unique : on traduit la salutation seule.
+    $dashGreeting = \App\Support\HtmlTranslator::translateText($dashGreeting);
+}
 $heroBriefItems = [];
 if (is_array($mbOp) && !empty($mbOp['title'])) {
     $heroBriefItems[] = [
@@ -281,38 +285,24 @@ if ($memberSinceRaw) {
         $daysSince = max(0, (int) floor((time() - $tsSince) / 86400));
         $yearsSince = intdiv($daysSince, 365);
         $monthsSince = intdiv($daysSince % 365, 30);
+        $en = locale() === 'en';
+        $monthsLabel = $monthsSince . ($en ? ($monthsSince > 1 ? ' months' : ' month') : ' mois');
         if ($yearsSince > 0) {
-            $memberSinceLabel = $yearsSince . ' an' . ($yearsSince > 1 ? 's' : '') . ($monthsSince > 0 ? ' et ' . $monthsSince . ' mois' : '');
+            $memberSinceLabel = $en
+                ? $yearsSince . ($yearsSince > 1 ? ' years' : ' year') . ($monthsSince > 0 ? ' and ' . $monthsLabel : '')
+                : $yearsSince . ' an' . ($yearsSince > 1 ? 's' : '') . ($monthsSince > 0 ? ' et ' . $monthsLabel : '');
         } elseif ($monthsSince > 0) {
-            $memberSinceLabel = $monthsSince . ' mois';
+            $memberSinceLabel = $monthsLabel;
         } else {
-            $memberSinceLabel = $daysSince . ' jour' . ($daysSince > 1 ? 's' : '');
+            $memberSinceLabel = $daysSince . ($en ? ($daysSince > 1 ? ' days' : ' day') : ' jour' . ($daysSince > 1 ? 's' : ''));
         }
     }
 }
 
-// Données situation tactique (carte + modal)
-$tactSizeFormatted = '—';
-$tactUpdatedAt = '—';
-$tactDetailUrl = url('modpacks');
-$tactDownloadUrl = null;
-$tactPackTitle = 'Modpack communautaire';
-$tactPackVersion = '—';
-if (is_array($modpack) && !empty($modpack['id'])) {
-    if (!empty($modpack['size'])) {
-        $b = (int) $modpack['size'];
-        $tactSizeFormatted = $b >= 1073741824
-            ? number_format($b / 1073741824, 1, ',', ' ') . ' Go'
-            : ($b >= 1048576 ? number_format($b / 1048576, 1, ',', ' ') . ' Mo' : number_format($b / 1024, 1, ',', ' ') . ' Ko');
-    }
-    $tactUpdatedAt = !empty($modpack['updated_at']) ? date('d.m.y', strtotime((string) $modpack['updated_at'])) : '—';
-    $tactDetailUrl = !empty($mbModpack['detail_href'])
-        ? (string) $mbModpack['detail_href']
-        : (!empty($modpack['slug']) ? url('modpacks/' . rawurlencode((string) $modpack['slug'])) : url('modpacks'));
-    $tactDownloadUrl = url('modpacks/' . (int) $modpack['id'] . '/download');
-    $tactPackTitle = !empty($mbModpack['title']) ? (string) $mbModpack['title'] : (string) ($modpack['name'] ?? $modpack['title'] ?? 'Modpack');
-    $tactPackVersion = (string) ($modpack['version'] ?? '—');
-}
+// Données situation tactique (carte + modal) : mods servis par le Steam Workshop (SteamWorkshop::modset).
+$steam = is_array($modpack) ? $modpack : \App\Support\SteamWorkshop::modset((int) (\App\Core\Session::get('tenant_id') ?? 0));
+$tactPackTitle = (string) ($steam['title'] ?? 'Mods de la communauté');
+$tactPackVersion = (string) (($steam['version'] ?? '') !== '' ? $steam['version'] : '—');
 ?>
 <div class="dash-cc dash-cc--rail">
     <?php require base_path('views/partials/dashboard_aside.php'); ?>
@@ -750,47 +740,9 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 <header class="dash-zone__head">
                     <p class="dash-zone__kicker">Unité</p>
                     <h2 id="dash-zone-community-title" class="dash-zone__title">Communauté</h2>
-                    <p class="dash-zone__lead">Salons, épingles et démarches liées à votre espace.</p>
+                    <p class="dash-zone__lead">Épingles et démarches liées à votre espace.</p>
                 </header>
             <div class="dash-zone__stack">
-            <?php $followedChannels = (function_exists('forum_public_nav_visible') && !forum_public_nav_visible())
-                ? []
-                : (is_array($followed_channels ?? null) ? $followed_channels : []); ?>
-            <?php if ($followedChannels !== []): ?>
-            <section class="cc-card overflow-hidden" aria-labelledby="dash-channels-heading">
-                <div class="cc-card__head">
-                    <div>
-                        <p class="cc-kicker cc-kicker--primary">Salons</p>
-                        <h3 id="dash-channels-heading" class="cc-card__title">Mes salons suivis</h3>
-                    </div>
-                    <a href="<?= url('forum') ?>" class="cc-card__link">Ouvrir le forum</a>
-                </div>
-                <ul class="dash-channels-list">
-                    <?php foreach ($followedChannels as $ch): ?>
-                        <?php
-                        $chUnread = (int) ($ch['unread_count'] ?? 0);
-                        $chHref = $chUnread > 0 && !empty($ch['last_topic_href']) ? (string) $ch['last_topic_href'] : (string) ($ch['href'] ?? '#');
-                        $chLast = trim((string) ($ch['last_topic_title'] ?? ''));
-                        ?>
-                        <li>
-                            <a href="<?= htmlspecialchars($chHref, ENT_QUOTES, 'UTF-8') ?>" class="dash-channels-item">
-                                <span class="dash-channels-item__hash" aria-hidden="true">#</span>
-                                <span class="dash-channels-item__body">
-                                    <span class="dash-channels-item__name"><?= htmlspecialchars((string) ($ch['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php if ($chLast !== ''): ?>
-                                        <span class="dash-channels-item__last"><?= htmlspecialchars($chLast, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php endif; ?>
-                                </span>
-                                <?php if ($chUnread > 0): ?>
-                                    <span class="dash-channels-item__badge"><?= $chUnread > 99 ? '99+' : $chUnread ?></span>
-                                <?php endif; ?>
-                            </a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </section>
-            <?php endif; ?>
-
             <?php
             $linkPins = [];
             foreach ($pins as $pin) {
@@ -864,41 +816,33 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 <div class="dash-modal__head">
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-300">Situation tactique</p>
-                        <h2 id="dash-tactical-modal-title" class="mt-1 text-xl font-black text-white">ATAK &amp; Modpack</h2>
+                        <h2 id="dash-tactical-modal-title" class="mt-1 text-xl font-black text-white">ATAK &amp; mods</h2>
                     </div>
                     <button type="button" class="dash-modal__close" @click="tacticalOpen = false" aria-label="Fermer">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
                     </button>
                 </div>
                 <div class="dash-modal__body space-y-5">
-                    <?php if (is_array($modpack) && !empty($modpack['id'])): ?>
-                        <div>
-                            <p class="text-sm font-semibold text-white/90"><?= htmlspecialchars($tactPackTitle, ENT_QUOTES, 'UTF-8') ?></p>
-                            <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Version</p>
-                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactPackVersion, ENT_QUOTES, 'UTF-8') ?></p>
-                                </div>
-                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Taille</p>
-                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactSizeFormatted, ENT_QUOTES, 'UTF-8') ?></p>
-                                </div>
-                                <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                    <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Mise à jour</p>
-                                    <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
-                                </div>
+                    <div>
+                        <p class="text-sm font-semibold text-white/90">Mods servis par le Steam Workshop</p>
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">COMSPEC ATAK Native</p>
+                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars($tactPackVersion, ENT_QUOTES, 'UTF-8') ?></p>
+                            </div>
+                            <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                <p class="text-[9px] font-bold uppercase tracking-wider text-white/50">Modset</p>
+                                <p class="mt-0.5 text-sm font-bold text-white"><?= htmlspecialchars(!empty($steam['has_collection']) ? $tactPackTitle : 'Non défini', ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                         </div>
-                        <div class="flex flex-col gap-2 sm:flex-row">
-                            <?php if ($tactDownloadUrl): ?>
-                            <a href="<?= htmlspecialchars($tactDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-primary flex-1 text-center">Télécharger le modpack</a>
-                            <?php endif; ?>
-                            <a href="<?= htmlspecialchars($tactDetailUrl, ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-ghost--on-dark flex-1 text-center">Voir la fiche</a>
-                        </div>
-                    <?php else: ?>
-                        <p class="text-sm leading-relaxed text-white/70">Aucun pack publié pour cette communauté. Parcourez les packs ou ouvrez la carte tactique.</p>
-                        <a href="<?= url('modpacks') ?>" class="cc-btn cc-btn-primary">Parcourir les packs</a>
-                    <?php endif; ?>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <a href="<?= htmlspecialchars((string) ($steam['atak_client'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-primary flex-1 text-center">S’abonner sur Steam</a>
+                        <?php if (!empty($steam['has_collection'])): ?>
+                        <a href="<?= htmlspecialchars((string) $steam['collection_client'], ENT_QUOTES, 'UTF-8') ?>" class="cc-btn cc-btn-ghost--on-dark flex-1 text-center">Collection de la communauté</a>
+                        <?php endif; ?>
+                        <a href="<?= url('atak/mod') ?>" class="cc-btn cc-btn-ghost--on-dark flex-1 text-center">Guide d’installation</a>
+                    </div>
                     <div class="grid grid-cols-2 gap-2 border-t border-white/10 pt-4<?= $canViewAtakOperators ? ' sm:grid-cols-3' : '' ?>">
                         <a href="<?= url('atak') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center transition hover:bg-white/10">
                             <p class="text-xs font-black uppercase text-white">ATAK</p>
@@ -1328,45 +1272,4 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 .dash-rsvp-quick__title { margin: 0.15rem 0 0; font-size: 1.05rem; font-weight: 900; color: #0f172a; letter-spacing: -0.01em; line-height: 1.25; }
 .dash-rsvp-quick__meta { margin: 0.25rem 0 0; font-size: 0.75rem; font-weight: 600; color: #64748b; }
 
-.dash-channels-list { list-style: none; margin: 0; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; }
-.dash-channels-item {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    padding: 0.6rem 0.65rem;
-    border-radius: 0.65rem;
-    text-decoration: none;
-    transition: background 0.15s ease;
-}
-.dash-channels-item:hover { background: #f0fdf4; }
-.dash-channels-item__hash {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 0.5rem;
-    background: #f1f5f9;
-    color: #64748b;
-    font-weight: 900;
-    font-size: 0.9375rem;
-}
-.dash-channels-item__body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-.dash-channels-item__name { font-size: 0.8125rem; font-weight: 800; color: #0f172a; }
-.dash-channels-item__last { font-size: 0.6875rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dash-channels-item__badge {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.35rem;
-    height: 1.35rem;
-    padding: 0 0.35rem;
-    border-radius: 999px;
-    background: #059669;
-    color: #fff;
-    font-size: 0.6875rem;
-    font-weight: 900;
-}
 </style>

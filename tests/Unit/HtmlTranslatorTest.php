@@ -31,6 +31,7 @@ final class HtmlTranslatorTest extends TestCase
             'Ouvrir %1' => 'Open %1',
             '%1 personne%2 listée%3' => '%1 person%2 listed%3',
             'Vous postulez pour : %1' => 'You are applying for: %1',
+            'Voir les journaux d’audit' => 'View audit logs',
         ]);
     }
 
@@ -45,6 +46,22 @@ final class HtmlTranslatorTest extends TestCase
         $out = HtmlTranslator::translate($html);
         self::assertStringContainsString("<h1>\n    New topic\n</h1>", $out);
         self::assertStringContainsString('<p>Welcome, Jean!</p>', $out);
+    }
+
+    public function testScriptWithLessThanDoesNotSwallowTheRestOfThePage(): void
+    {
+        // « i < n » dans un script passait pour une balise qui avalait le </script> : la page restait en français.
+        $html = '<body><script>for (var i = 0; i < n; i++) { x(); }</script><a>Fermer</a><style>a<b{}</style><b>Membres</b></body>';
+        $out = HtmlTranslator::translate($html);
+        self::assertStringContainsString('<script>for (var i = 0; i < n; i++) { x(); }</script>', $out);
+        self::assertStringContainsString('<a>Close</a>', $out);
+        self::assertStringContainsString('<b>Members</b>', $out);
+    }
+
+    public function testStraightApostropheFromDatabaseFindsTypographicEntry(): void
+    {
+        $out = HtmlTranslator::translate('<span>Voir les journaux d&#039;audit</span>');
+        self::assertStringContainsString('<span>View audit logs</span>', $out);
     }
 
     public function testTemplatesEntitiesAndLabelValue(): void
@@ -68,6 +85,13 @@ final class HtmlTranslatorTest extends TestCase
         $html = '<script>var a = "Membres";</script><textarea>Membres</textarea><div translate="no"><p>Membres</p><div>Membres</div></div><p>Membres</p>';
         $out = HtmlTranslator::translate($html);
         self::assertSame('<script>var a = "Membres";</script><textarea>Membres</textarea><div translate="no"><p>Membres</p><div>Membres</div></div><p>Members</p>', $out);
+    }
+
+    public function testTranslatesTextareaPlaceholderAndDataLabelButNotTypedContent(): void
+    {
+        $html = '<textarea placeholder="Rechercher">Membres</textarea><td data-label="Statut">Actif</td><div translate="no" title="Fermer">Membres</div>';
+        $out = HtmlTranslator::translate($html);
+        self::assertSame('<textarea placeholder="Search">Membres</textarea><td data-label="Status">Active</td><div translate="no" title="Fermer">Membres</div>', $out);
     }
 
     public function testUnknownTextStaysFrench(): void

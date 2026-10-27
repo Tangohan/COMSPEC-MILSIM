@@ -13,7 +13,9 @@ if ($current === null && $history === [] && $offer === null && $next === null &&
 }
 $h = static fn (mixed $v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
 $isSelf = !empty($advancementPanelIsSelf);
-$via = ['initial' => 'initial', 'anciennete' => 'ancienneté', 'choix' => 'choix', 'exception' => 'exception'];
+$via = locale() === 'en'
+    ? ['initial' => 'initial', 'anciennete' => 'seniority', 'choix' => 'selection', 'exception' => 'exception']
+    : ['initial' => 'initial', 'anciennete' => 'ancienneté', 'choix' => 'choix', 'exception' => 'exception'];
 $modeLabel = [
     'automatic' => 'Automatique',
     'choice' => 'Au choix',

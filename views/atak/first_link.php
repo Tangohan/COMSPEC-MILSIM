@@ -33,10 +33,11 @@ $versionApiUrl = (string) ($fl['version_api_url'] ?? url('api/atak/version'));
 $atakVersion = (string) ($fl['atak_version'] ?? '');
 $linkVersion = (string) ($fl['link_version'] ?? '');
 
-// Adresse fixe du portail, codée dans le mod : rien à saisir en jeu.
-$portalAddress = 'https://athena.ttrd.fr/public';
+// Adresse du portail (APP_URL), aussi codée dans le mod : rien à saisir en jeu.
+// Les mods publiés avant la migration appellent encore l'ancien domaine (PortalHost::LEGACY_HOST), toujours servi.
+$portalAddress = 'https://' . \App\Support\PortalHost::host() . '/public';
 // Ce que le téléphone affiche (fn_pageAthena : « https:// » et « /public » retirés).
-$phoneAddress = 'athena.ttrd.fr/lier';
+$phoneAddress = \App\Support\PortalHost::label('lier');
 
 $stepsNav = [
     ['id' => 'fl-installer', 'label' => 'Installer le mod', 'done' => false],
@@ -88,7 +89,7 @@ $icon = static function (string $name): string {
                 </li>
                 <li>
                     <span class="fl-facts__label">Portail</span>
-                    <span class="fl-facts__value" translate="no">athena.ttrd.fr</span>
+                    <span class="fl-facts__value" translate="no"><?= $e(\App\Support\PortalHost::host()) ?></span>
                 </li>
             </ul>
             <div class="fl-hero__actions">
@@ -148,7 +149,7 @@ $icon = static function (string $name): string {
                 <ul class="fl-checks">
                     <li class="<?= $hasMod ? 'is-ok' : 'is-warn' ?>">
                         <span class="fl-checks__mark" aria-hidden="true"><?= $hasMod ? '✓' : '!' ?></span>
-                        <span><?= $hasMod ? 'Mod disponible au téléchargement' : 'Mod pas encore publié pour votre communauté' ?></span>
+                        <span>Mod disponible sur le Steam Workshop</span>
                     </li>
                     <li class="<?= $hasIdentity ? 'is-ok' : 'is-warn' ?>">
                         <span class="fl-checks__mark" aria-hidden="true"><?= $hasIdentity ? '✓' : '!' ?></span>
@@ -190,14 +191,11 @@ $icon = static function (string $name): string {
                         <p class="fl-version__note">Le mod compare sa version au démarrage et vous prévient s’il est périmé. Après une mise à jour, quittez Arma complètement avant de relancer.</p>
                     </div>
                     <div class="fl-actions">
-                        <?php if ($hasMod && $modDownloadUrl): ?>
-                        <a class="fl-btn fl-btn--primary" href="<?= $e((string) $modDownloadUrl) ?>"><?= $icon('download') ?> Télécharger le mod</a>
+                        <?php if ($modDownloadUrl): ?>
+                        <a class="fl-btn fl-btn--primary" href="<?= $e((string) $modDownloadUrl) ?>"><?= $icon('download') ?> S’abonner sur Steam</a>
                         <?php endif; ?>
-                        <a class="fl-btn fl-btn--ghost" href="<?= $e($modPageUrl) ?>">Page de téléchargement</a>
+                        <a class="fl-btn fl-btn--ghost" href="<?= $e($modPageUrl) ?>">Guide d’installation</a>
                     </div>
-                    <?php if (!$hasMod): ?>
-                    <p class="fl-note fl-note--warn">Aucun fichier n’est encore publié pour votre communauté. Un administrateur doit le déposer ; vous pouvez déjà préparer votre fiche.</p>
-                    <?php endif; ?>
                 </div>
             </section>
 

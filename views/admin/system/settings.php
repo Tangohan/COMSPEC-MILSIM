@@ -3,11 +3,15 @@ declare(strict_types=1);
 
 /** @var list<array{title: string, description?: string, rows: list<array{label: string, value: string, note?: string}>}> $adminSettingsSections */
 /** @var list<array{label: string, value: string, note?: string}> $adminSettingsPlatformRows */
+/** @var array{link: string, atak: string, link_raw: string, atak_raw: string, active: bool, message: string}|null $adminGameClientGate */
 
 $sections = $adminSettingsSections ?? [];
 $platformRows = $adminSettingsPlatformRows ?? [];
 $envLabel = $adminSettingsEnvLabel ?? '—';
 $envRaw = (string) ($adminSettingsEnvRaw ?? '');
+$gate = is_array($adminGameClientGate ?? null) ? $adminGameClientGate : null;
+$gateCsrf = $gate !== null ? \App\Core\Csrf::token() : '';
+$gateAction = url('admin/settings/version-dll');
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
@@ -22,7 +26,8 @@ $envRaw = (string) ($adminSettingsEnvRaw ?? '');
                     </p>
                     <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Paramètres système</h1>
                     <p class="mt-2 text-sm text-slate-600 max-w-2xl leading-relaxed">
-                        Synthèse <strong class="font-semibold text-slate-800">lecture seule</strong> de la configuration effective au démarrage du site.
+                        Synthèse <strong class="font-semibold text-slate-800">lecture seule</strong> de la configuration effective au démarrage du site,
+                        sauf la version minimale des DLL du jeu, modifiable ci-dessous.
                         Les mots de passe, clés secrètes et jetons ne sont jamais affichés.
                     </p>
                     <div class="mt-5 flex flex-wrap gap-2">
@@ -31,9 +36,6 @@ $envRaw = (string) ($adminSettingsEnvRaw ?? '');
                         </a>
                         <a href="<?= url('admin/maintenance') ?>" class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-950 shadow-sm hover:bg-amber-50/80 transition-colors">
                             Maintenance planifiée
-                        </a>
-                        <a href="<?= url('admin/system/brief') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
-                            Paramètres du brief
                         </a>
                     </div>
                 </div>
@@ -48,6 +50,63 @@ $envRaw = (string) ($adminSettingsEnvRaw ?? '');
         </header>
 
         <div class="space-y-6">
+            <?php if ($gate !== null): ?>
+                <section id="version-dll" class="rounded-2xl border border-amber-200/80 bg-white shadow-sm overflow-hidden" aria-labelledby="version-dll-heading">
+                    <div class="px-5 py-4 border-b border-slate-100 bg-amber-50/90">
+                        <h2 id="version-dll-heading" class="text-sm font-black text-slate-900 tracking-tight">Version minimale des DLL du jeu</h2>
+                        <p class="mt-1 text-xs text-slate-600 leading-relaxed">
+                            Les DLL COMSPEC Link et ATAK natif plus anciennes que ce numéro sont refusées par Athena (sur les deux domaines),
+                            avec un message qui demande la mise à jour depuis le Workshop Steam. Vide : aucune DLL n’est refusée.
+                            À régler seulement une fois la version corrigée publiée sur Steam.
+                        </p>
+                    </div>
+                    <div class="px-5 py-4 space-y-4">
+                        <p class="text-sm text-slate-700">
+                            État :
+                            <?php if ($gate['active']): ?>
+                                <strong class="font-semibold text-slate-900">blocage actif</strong>, DLL antérieures à
+                                <span class="font-mono text-[13px]"><?= htmlspecialchars($gate['link'], ENT_QUOTES, 'UTF-8') ?></span> refusées.
+                            <?php else: ?>
+                                <strong class="font-semibold text-slate-900">aucun blocage</strong>, toutes les versions sont acceptées.
+                            <?php endif; ?>
+                        </p>
+                        <?php if ($gate['active'] && $gate['message'] !== ''): ?>
+                            <p class="text-xs text-slate-500 leading-relaxed">Message envoyé aux joueurs : <span class="font-mono text-[13px] break-all"><?= htmlspecialchars($gate['message'], ENT_QUOTES, 'UTF-8') ?></span></p>
+                        <?php endif; ?>
+                        <?php if ($gate['link_raw'] !== '' && $gate['link'] === ''): ?>
+                            <p class="text-xs text-slate-500">Valeur enregistrée illisible (« <?= htmlspecialchars($gate['link_raw'], ENT_QUOTES, 'UTF-8') ?> ») : ignorée, aucune DLL n’est refusée.</p>
+                        <?php endif; ?>
+                        <form method="post" action="<?= htmlspecialchars($gateAction, ENT_QUOTES, 'UTF-8') ?>" class="grid gap-4 sm:grid-cols-2">
+                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($gateCsrf, ENT_QUOTES, 'UTF-8') ?>">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="min-link-version">Version minimale de la DLL</label>
+                                <input id="min-link-version" name="min_link_version" type="text" autocomplete="off" placeholder="2.0.96" value="<?= htmlspecialchars($gate['link'], ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono">
+                                <p class="mt-1 text-xs text-slate-500">Numéro COMSPEC Link (la DLL native doit annoncer le même). Vide : aucun blocage.</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="min-atak-version">Version COMSPEC ATAK citée</label>
+                                <input id="min-atak-version" name="min_atak_version" type="text" autocomplete="off" placeholder="2.4.1" value="<?= htmlspecialchars($gate['atak'], ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono">
+                                <p class="mt-1 text-xs text-slate-500">Facultatif : numéro du Workshop repris dans le message (« 2.4.1 or later »).</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                        <?php if ($gate['active']): ?>
+                            <form method="post" action="<?= htmlspecialchars($gateAction, ENT_QUOTES, 'UTF-8') ?>" class="border-t border-slate-100 pt-4">
+                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($gateCsrf, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="clear" value="1">
+                                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
+                                    Désactiver le blocage (accepter toutes les versions)
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
             <?php foreach ($sections as $sec): ?>
                 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                     <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">

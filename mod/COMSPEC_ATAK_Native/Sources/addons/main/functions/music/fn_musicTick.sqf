@@ -77,12 +77,18 @@ if (_key isNotEqualTo "") then {
     private _spkOn = (_pub isNotEqualTo []);
     _tgt = [_key, _m get "kind", _m get "ref", _m get "start", if (_spkOn) then { _m getOrDefault ["spkVol", 70] } else { _m get "vol" }];
 } else {
-    if (_enabled && {alive player} && {_m get "hear"}) then {
+    // Réglages du serveur revérifiés côté auditeur : la variable COMSPEC_ATAK_Spk est publiée par le client qui joue.
+    if (_enabled && {alive player} && {_m get "hear"} && {missionNamespace getVariable ["comspec_atak_native_music_speaker", true]}) then {
         private _best = 0;
         private _veh = vehicle player;
+        private _kinds = ["srv", "file"];
+        if (missionNamespace getVariable ["comspec_atak_native_music_urls", true]) then { _kinds pushBack "url"; };
+        if (missionNamespace getVariable ["comspec_atak_native_music_athena", true]) then { _kinds pushBack "lib"; };
         {
             private _s = _x getVariable ["COMSPEC_ATAK_Spk", []];
-            if ((count _s) >= 6 && {alive _x}) then {
+            if ((count _s) >= 6 && {alive _x} && {(_s select 0) in _kinds} && {(_s select 1) isEqualType ""}
+                // Début et volume publiés par un autre client : nombres exigés (sinon erreur de script à chaque tour).
+                && {(_s select 3) isEqualType 0} && {(_s select 4) isEqualType 0}) then {
                 private _d = _x distance player;
                 private _g = if (_veh isNotEqualTo player && {vehicle _x isEqualTo _veh}) then { 1 } else {
                     private _k = (1 - _d / _range) max 0;
@@ -93,7 +99,7 @@ if (_key isNotEqualTo "") then {
                 private _k2 = format ["%1|%2|%3|%4", getPlayerUID _x, _s select 0, _s select 1, _s select 5];
                 if (_g > _best && {!(_k2 in _fail)}) then {
                     _best = _g;
-                    _tgt = [_k2, _s select 0, _s select 1, _s select 3, (_s select 4) * _g, name _x, _s select 2];
+                    _tgt = [_k2, _s select 0, _s select 1, _s select 3, ((_s select 4) max 0 min 100) * _g, name _x, _s select 2];
                 };
             };
         } forEach ((allPlayers - [player]) select { (_x distance player) < _range });
@@ -132,7 +138,7 @@ if ((_tgt param [0, ""]) isNotEqualTo (_cur select 0)) then {
                 _fail set [_k, true];
                 if (_k isEqualTo _key) then {
                     private _why = (_res splitString "|") param [1, _res];
-                    if (_res isEqualTo "" || {_why in ["not_connected", "unauthorized", "unknown_function", "unknown_command"]}) then { _why = "lecteur audio absent de la DLL du mod (relancez build_mod.bat)"; _res = ""; };
+                    if (_res isEqualTo "" || {_why in ["not_connected", "unauthorized", "unknown_function", "unknown_command"]}) then { _why = "lecteur audio indisponible, mettez à jour le mod COMSPEC ATAK depuis le Steam Workshop"; _res = ""; };
                     ["WARNING", format ["Lecture impossible : %1", _why], 5, 30] call comspec_atak_native_fnc_notify;
                     _m set ["errors", (_m getOrDefault ["errors", 0]) + 1];
                     _m set ["status", ["error", 0, 0, _m get "title", _why]];

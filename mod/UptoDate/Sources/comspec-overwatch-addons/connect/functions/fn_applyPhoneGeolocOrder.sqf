@@ -46,8 +46,10 @@ if (isNull _unit || {!([_unit] call _matches)}) then {
 
 if (isNull _unit) exitWith { false };
 
+// Un seul appel local : setPhoneTrack pose les variables publiques (diffusées à tous). Le remoteExec vers 0
+// le rejouait ici une 2e fois et sur chaque poste, qui rediffusait les mêmes variables (N² envois).
+// Les autres postes reprennent le téléphone au balayage de fn_initGpsBeacons (drapeau public).
 [_unit, _on] call comspec_overwatch_connect_fnc_setPhoneTrack;
-[_unit, _on] remoteExecCall ["comspec_overwatch_connect_fnc_setPhoneTrack", 0];
 
 if (_on) then {
     _unit setVariable ["COMSPEC_PhoneTrackLastAt", -1e9, false];

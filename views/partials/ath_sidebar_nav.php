@@ -122,18 +122,24 @@ $membersChildren = array_values(array_filter([
     ['label' => 'Qualifications des membres', 'href' => effectifs_workspace_url('qualifications'), 'active' => $navAt($effPath . '/qualifications')],
     ['label' => 'Départs', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')],
     ['label' => 'Comptes en double', 'href' => effectifs_workspace_url('doublons'), 'active' => $navAt($effPath . '/doublons')],
+    // Profils sans recrutement : les invitations quittent le bloc « Recrutement » (masqué) pour rester sous la main.
+    ($tenantType ?? \App\Services\Community\TenantTypeConfig::TYPE_FULL) !== \App\Services\Community\TenantTypeConfig::TYPE_FULL
+        ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')]
+        : null,
     $canMemberModeration
         ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
         : null,
 ], static fn (?array $row): bool => is_array($row)));
 
-$recruitChildren = [
+$recruitChildren = array_values(array_filter([
     ['label' => 'Candidatures', 'href' => url('back-office/recruitments'), 'active' => $navRecruesActive],
     ['label' => 'Vue d’ensemble', 'href' => url('back-office/ressources/recrutement'), 'active' => $p === 'back-office/ressources/recrutement'],
     ['label' => 'Offres publiées', 'href' => url('back-office/recruitment/offers'), 'active' => $navAt('back-office/recruitment/offers')],
-    ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')],
+    ($tenantType ?? \App\Services\Community\TenantTypeConfig::TYPE_FULL) === \App\Services\Community\TenantTypeConfig::TYPE_FULL
+        ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')]
+        : null,
     ['label' => 'Statistiques', 'href' => url('back-office/ressources/recrutement/analyses'), 'active' => $navAt('back-office/ressources/recrutement/analyses')],
-];
+], static fn (?array $row): bool => is_array($row)));
 
 // Métriques joueurs : ce que le jeu remonte (temps d'écran, distances, heures de vol, montre Garmin).
 $metricsChildren = [
@@ -180,7 +186,8 @@ $orbatChildren = [
     ['label' => 'Postes', 'href' => url('back-office/positions'), 'active' => $navAt('back-office/positions')],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
     ['label' => 'Grades', 'href' => url('back-office/referentiels/grades'), 'active' => $navAt('back-office/referentiels/grades', 'back-office/organisation/grades')],
-    ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => $navAt('back-office/referentiels/qualifications')],
+    ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => $navAt('back-office/referentiels/qualifications') && !$navAt('back-office/referentiels/qualifications/cursus-pilote')],
+    ['label' => 'Cursus pilote', 'href' => url('back-office/referentiels/qualifications/cursus-pilote'), 'active' => $navAt('back-office/referentiels/qualifications/cursus-pilote')],
     ['label' => 'Compétences par grade', 'href' => url('back-office/referentiels/competences'), 'active' => $navAt('back-office/referentiels/competences')],
     ['label' => 'Décorations', 'href' => url('back-office/referentiels/decorations'), 'active' => $navAt('back-office/referentiels/decorations')],
     ['label' => 'Dotation', 'href' => url('back-office/referentiels/dotation'), 'active' => $navAt('back-office/referentiels/dotation')],
@@ -198,7 +205,7 @@ $communityChildren = array_values(array_filter([
         ? ['label' => 'Médias', 'href' => url('back-office/media'), 'active' => $navMediasActive]
         : null,
     ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'active' => $navAt('back-office/dashboard-pins')],
-    ['label' => 'Catégories du forum', 'href' => url('back-office/categories'), 'active' => $navAt('back-office/categories')],
+    ['label' => 'Catégories', 'href' => url('back-office/categories'), 'active' => $navAt('back-office/categories')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $messagesChildren = [
@@ -250,8 +257,7 @@ $materielChildren = [
 
 $atakResChildren = [
     ['label' => 'Configuration ATAK', 'href' => url('back-office/ressources/atak-config'), 'active' => $navAt('back-office/ressources/atak-config')],
-    ['label' => 'Mod ATAK', 'href' => url('back-office/ressources/atak-mod'), 'active' => $navAt('back-office/ressources/atak-mod')],
-    ['label' => 'Modpacks', 'href' => url('back-office/ressources/modpacks'), 'active' => $navAt('back-office/ressources/modpacks')],
+    ['label' => 'Mods (Steam Workshop)', 'href' => url('back-office/ressources/atak-mod'), 'active' => $navAt('back-office/ressources/atak-mod')],
     ['label' => 'Réglages réalisme', 'href' => url('back-office/ressources/atak-realism/config'), 'active' => $navAt('back-office/ressources/atak-realism')],
     ['label' => 'Serveurs de jeu', 'href' => url('back-office/ressources/serveurs-de-jeu'), 'active' => $navAt('back-office/ressources/serveurs-de-jeu')],
     ['label' => 'Restrictions d’accès au mod', 'href' => url('back-office/ressources/atak-mod-blocks'), 'active' => $navAt('back-office/ressources/atak-mod-blocks')],
@@ -327,6 +333,7 @@ if ($isOperatorBoNav) {
                     'warn' => $opQualifBadge !== null,
                     'notif' => $opQualifBadge !== null,
                 ],
+                ['label' => 'Mon carnet de vol', 'href' => url('back-office/ma-situation/carnet-de-vol'), 'icon' => 'path', 'active' => str_starts_with($p, 'back-office/ma-situation/carnet-de-vol')],
                 [
                     'label' => 'Mon avancement',
                     'href' => url('back-office/ma-situation/avancement'),
@@ -410,7 +417,7 @@ if ($isOperatorBoNav) {
         ],
     ];
 } else {
-    $forumModBadge = $fmtNavBadge((int) ($boBadges['forum_moderation_total'] ?? 0));
+    $reportsModBadge = $fmtNavBadge((int) ($boBadges['reports_moderation_total'] ?? 0));
     $anyActive = static function (array $children): bool {
         foreach ($children as $child) {
             if (is_array($child) && !empty($child['active'])) {
@@ -525,7 +532,16 @@ if ($isOperatorBoNav) {
                 ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'cal', 'active' => $boNavPlanning],
                 ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => $boNavMissionsPortal],
                 ['label' => 'Carte tactique', 'href' => url('back-office/operations/carte-tactique'), 'icon' => 'ops', 'active' => $navTacticalMapActive],
-                ['label' => 'Comptes rendus', 'href' => url('back-office/atak/comptes-rendus'), 'icon' => 'aar', 'active' => $boNavAar],
+                [
+                    'label' => 'Comptes rendus',
+                    'href' => url('back-office/atak/comptes-rendus'),
+                    'icon' => 'aar',
+                    'active' => $boNavAar || !empty($boNavDebrief),
+                    'children' => [
+                        ['label' => 'Comptes rendus post-op', 'href' => url('back-office/atak/comptes-rendus'), 'active' => $boNavAar],
+                        ['label' => 'CR des joueurs (fin d’op)', 'href' => url('back-office/atak/suivi-cr'), 'active' => !empty($boNavDebrief)],
+                    ],
+                ],
                 [
                     'label' => 'Coopérations inter-unités',
                     'href' => cooperation_mission_index_url(),
@@ -596,15 +612,14 @@ if ($isOperatorBoNav) {
                     'children' => $doctrineChildren,
                 ],
                 [
-                    'label' => 'Modération du forum',
-                    'href' => url('back-office/forum-moderation'),
+                    'label' => 'Signalements membres',
+                    'href' => url('back-office/signalements'),
                     'icon' => 'shield',
-                    'active' => $navAt('back-office/forum-moderation'),
-                    'badge' => $forumModBadge,
-                    'warn' => $forumModBadge !== null,
+                    'active' => $navAt('back-office/signalements'),
+                    'badge' => $reportsModBadge,
+                    'warn' => $reportsModBadge !== null,
                 ],
                 ['label' => 'Fichiers en quarantaine', 'href' => url('back-office/content-moderation'), 'icon' => 'shield', 'active' => $navAt('back-office/content-moderation')],
-                ['label' => 'Configuration du forum', 'href' => url('back-office/ressources/forum-config'), 'icon' => 'gear', 'active' => $navAt('back-office/ressources/forum-config')],
                 ['label' => 'Musique', 'href' => url('back-office/ressources/musique'), 'icon' => 'radio', 'active' => $navAt('back-office/ressources/musique')],
             ], static fn (?array $row): bool => is_array($row))),
         ],
@@ -711,7 +726,7 @@ $renderAthNavItem = static function (array $item) use ($h, $athIco): void {
                 <?php endif; ?>
             </a>
             <?php if ($children !== []): ?>
-            <button type="button" class="ath-sidebar__kids-toggle" data-ath-kids-toggle aria-controls="<?= $h($kidsId) ?>" aria-expanded="<?= $showKids ? 'true' : 'false' ?>" aria-label="<?= $h('Afficher les pages de ' . (string) $item['label']) ?>">
+            <button type="button" class="ath-sidebar__kids-toggle" data-ath-kids-toggle aria-controls="<?= $h($kidsId) ?>" aria-expanded="<?= $showKids ? 'true' : 'false' ?>" aria-label="<?= $h(locale() === 'en' ? 'Show the pages of ' . \App\Support\HtmlTranslator::translateText((string) $item['label']) : 'Afficher les pages de ' . (string) $item['label']) ?>">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
             </button>
             <?php endif; ?>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rôles de contributeur sur le Discord COMSPEC (miroir de la page athena.ttrd.fr/contribuer).
+Rôles de contributeur sur le Discord COMSPEC (miroir de la page athena-comspec.eu/contribuer).
 
 Le site propose cinq rôles de contributeur : Translator, Tester, Content creator, Dev, Support. Ce script :
   - crée les rôles manquants (Translator, Content creator ; Tester, Dev et Support existent déjà et sont
@@ -15,7 +15,7 @@ Le site propose cinq rôles de contributeur : Translator, Tester, Content creato
     d'une communauté, nombre de communautés, ancienneté), règle l'adresse de vérification de l'application et crée
     le rôle « Athena verified ». Il reste à cocher, dans Paramètres du serveur › Rôles › Athena verified › Liens,
     la condition « Compte Athena » de l'application ; puis à coller l'Application ID et le secret client dans
-    Intégrations › Plateforme sur le site ;
+    Administration › Intégrations de la plateforme sur le site ;
   - avec --give « pseudo=Rôle » (répétable) : donne un rôle à un membre, d'après le pseudo Discord indiqué
     dans la demande sur le site (Administration du site › Contributeurs).
 
@@ -35,7 +35,8 @@ import os
 import sys
 from pathlib import Path
 
-SITE = "https://athena.ttrd.fr"
+# Portail (ATHENA_SITE_URL pour un autre domaine ; l’ancien athena.ttrd.fr reste servi).
+SITE = os.environ.get("ATHENA_SITE_URL", "https://athena-comspec.eu").rstrip("/")
 # nom, couleur, anciens noms acceptés (réutilisés tels quels)
 ROLES = [
     ("Translator", 0x2DD4BF, ("Translator", "Traducteur")),
@@ -165,7 +166,7 @@ async def setup_linked_roles(client, guild, apply, log):
     from discord.http import Route
 
     app_id = client.application_id
-    log(f"Rôles liés : application {app_id} (Application ID à coller dans Intégrations › Plateforme sur le site).")
+    log(f"Rôles liés : application {app_id} (Application ID à coller dans Administration › Intégrations de la plateforme sur le site).")
     log("Rôles liés : conditions déclarées à Discord : " + ", ".join(m["key"] for m in LINKED_ROLES_METADATA) + ".")
     log(f"Rôles liés : adresse de vérification de l'application = {VERIFICATION_URL}")
     role = next((r for r in guild.roles if r.name == VERIFIED_ROLE[0]), None)

@@ -3,10 +3,9 @@
     Campagnes : relais serveur, fin de mission, notes, menus ACE et Zeus.
 */
 if (isServer) then {
-    // Demandes des clients : sans demandeur, refusées (un appel sans demandeur vaut appel du serveur, donc autorisé).
-    // Le contrôle Zeus / administrateur se fait dans campaignOp et campaignAthena.
-    ["comspec_sse_campOp", { params ["_op", "_args", ["_req", objNull]]; if (isNull _req) exitWith {}; [_op, _args, _req] call comspec_sse_fnc_campaignOp; }] call CBA_fnc_addEventHandler;
-    ["comspec_sse_campAthena", { params ["_mode", "_args", ["_req", objNull]]; if (isNull _req) exitWith {}; [_mode, _args, _req] call comspec_sse_fnc_campaignAthena; }] call CBA_fnc_addEventHandler;
+    // Demandes des clients : appel distant de comspec_sse_fnc_campaignOp / campaignAthena (CfgRemoteExec, serveur
+    // seulement). Le demandeur est retrouvé par remoteExecutedOwner ; plus d'événement CBA portant un demandeur
+    // choisi par le client. Le contrôle Zeus / administrateur se fait dans campaignOp et campaignAthena.
     // L'index des sauvegardes est connu de tous dès le départ (formulaires Zeus).
     ["publish", []] call comspec_sse_fnc_campaignOp;
     {

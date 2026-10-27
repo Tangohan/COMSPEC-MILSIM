@@ -23,11 +23,8 @@ if (!isNil "_zone" && {isNil "_lastZone" || {(_zone get "id") isNotEqualTo (_las
     private _zoneName = _zone getOrDefault ["name", "Zone"];
     private _intensity = _zone getOrDefault ["intensity", 50];
     private _msg = format ["Entrée en %1 (intensité %2%%)", _zoneName, round _intensity];
-    [_msg, "link", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
-    // Toast ATAK même en immersion (le hint écran est souvent masqué)
-    if (!isNil "comspec_overwatch_connect_fnc_announce") then {
-        [_msg, "link", "warn"] call comspec_overwatch_connect_fnc_announce;
-    };
+    // Une seule entrée dans le journal du téléphone (ambientHint + announce la doublaient).
+    [_msg, "link", "warn"] call comspec_overwatch_connect_fnc_announce;
     ["warning"] call comspec_overwatch_connect_fnc_playRoleplaySound;
     missionNamespace setVariable ["COMSPEC_LastRoleplayZone", _zone, false];
     missionNamespace setVariable ["COMSPEC_InRoleplayZone", true, false];
@@ -35,10 +32,7 @@ if (!isNil "_zone" && {isNil "_lastZone" || {(_zone get "id") isNotEqualTo (_las
 };
 
 if (isNil "_zone" && {!isNil "_lastZone"}) then {
-    ["Sortie de zone dégradée — liaison nominale", "link", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-    if (!isNil "comspec_overwatch_connect_fnc_announce") then {
-        ["Sortie de zone dégradée", "link", "info"] call comspec_overwatch_connect_fnc_announce;
-    };
+    ["Sortie de zone dégradée — liaison nominale", "link", "info"] call comspec_overwatch_connect_fnc_announce;
     missionNamespace setVariable ["COMSPEC_LastRoleplayZone", nil, false];
     missionNamespace setVariable ["COMSPEC_InRoleplayZone", false, false];
     missionNamespace setVariable ["COMSPEC_JammerDropUntil", -1, false];
@@ -134,7 +128,18 @@ if (!isNil "_zone") then {
     // Visuel = overlay sur l’écran ATAK uniquement (jamais le viewport 3D).
     [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 } else {
-    missionNamespace setVariable ["COMSPEC_ZoneEffects", nil, false];
+    // Brouillage Zeus (fn_applyZeusAtakEffect « jam ») sans zone réelle : ses effets restent jusqu'à
+    // disconnect_until (son propre minuteur les efface) ; sinon ce passage les supprimait sous 2 s.
+    private _netFx = missionNamespace getVariable ["COMSPEC_NetworkDisconnectState", createHashMap];
+    private _curFx = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
+    private _zeusJam = (!isNil "_curFx") && {_curFx isEqualType createHashMap}
+        && {(_curFx getOrDefault ["name", ""]) isEqualTo "Brouillage Zeus"}
+        && {_netFx isEqualType createHashMap}
+        && {_netFx getOrDefault ["is_disconnected", false]}
+        && {time < (_netFx getOrDefault ["disconnect_until", -1])};
+    if (!_zeusJam) then {
+        missionNamespace setVariable ["COMSPEC_ZoneEffects", nil, false];
+    };
     [] call comspec_overwatch_connect_fnc_refreshLinkState;
     [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 };

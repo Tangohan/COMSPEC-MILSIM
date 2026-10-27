@@ -227,14 +227,14 @@ final class AtakRoleService
 
     /**
      * Réponse « fire_teams » lue par la DLL (SimplifyFireTeamsJson) : équipe 1 = liste des rôles,
-     * équipe 2 = rôle mémorisé (PREF) et rôle de la fonction principale (JOB) du joueur.
+     * équipe 2 = rôle mémorisé (PREF), rôle de la fonction principale (JOB) et indicatif de la fiche (CS) du joueur.
      *
      * @param list<array{key: string, label: string, short: string, icon: string, origin: string}> $roles
      * @param array{key: string, label: string}|null $pref
      * @param array{key: string, label: string}|null $job
      * @return array<string, mixed>
      */
-    public static function catalogPayload(array $roles, ?array $pref, ?array $job): array
+    public static function catalogPayload(array $roles, ?array $pref, ?array $job, string $callsign = ''): array
     {
         $members = [];
         $seen = [];
@@ -254,6 +254,10 @@ final class AtakRoleService
             if ($p !== null && $p['key'] !== '') {
                 $prefs[] = ['callsign' => $tag, 'role' => $p['key'], 'display_name' => $p['label'] !== '' ? $p['label'] : $p['key']];
             }
+        }
+        $callsign = self::cleanCallsign($callsign);
+        if ($callsign !== '') {
+            $prefs[] = ['callsign' => 'CS', 'role' => $callsign, 'display_name' => 'ATHENA'];
         }
 
         return [
@@ -277,6 +281,7 @@ final class AtakRoleService
         $roles = [];
         $job = null;
         $pref = null;
+        $callsign = '';
         try {
             if ($this->tableExists('personnel_job_roles')) {
                 $st = $this->pdo()->prepare('SELECT id, name FROM personnel_job_roles WHERE tenant_id = ? ORDER BY sort_order ASC, name ASC LIMIT 40');
@@ -325,12 +330,13 @@ final class AtakRoleService
                         }
                     }
                 }
+                $callsign = $this->webCallsign($tenantId, $steam);
             }
         } catch (\Throwable) {
             // Liste partielle plutôt qu'une erreur : le jeu garde ses rôles intégrés.
         }
 
-        return self::catalogPayload($roles, $pref, $job);
+        return self::catalogPayload($roles, $pref, $job, $callsign);
     }
 
     /**
@@ -370,7 +376,88 @@ final class AtakRoleService
             }
         }
 
-        return ['custom_roles' => count($custom), 'prefs' => count($prefs)];
+        $callsigns = 0;
+        foreach (self::extractCallsigns($snap) as $steam => $cs) {
+            $callsigns += $this->applyGameCallsign($tenantId, (string) $steam, $cs) ? 1 : 0;
+        }
+
+        return ['custom_roles' => count($custom), 'prefs' => count($prefs), 'callsigns' => $callsigns];
+    }
+
+    /**
+     * Indicatifs choisis par les joueurs dans le téléphone (callsign_custom), par SteamID.
+     *
+     * @param array<string, mixed> $snap photo normalisée
+     * @return array<string, string>
+     */
+    public static function extractCallsigns(array $snap): array
+    {
+        $members = $snap['unassigned'] ?? [];
+        foreach ($snap['teams'] ?? [] as $t) {
+            foreach ($t['members'] ?? [] as $m) {
+                $members[] = $m;
+            }
+        }
+        $out = [];
+        foreach ($members as $m) {
+            $uid = $m['uid'] ?? null;
+            $cs = self::cleanCallsign((string) ($m['callsign'] ?? ''));
+            if (!is_string($uid) || $uid === '' || empty($m['callsign_custom']) || $cs === '') {
+                continue;
+            }
+            $out[$uid] = $cs;
+        }
+
+        return $out;
+    }
+
+    /** Indicatif lisible en jeu et sur le site : 2 à 24 caractères, sans balise ni séparateur du protocole DLL. */
+    public static function cleanCallsign(string $cs): string
+    {
+        $cs = trim((string) preg_replace('/[<>&|"\x00-\x1F\x7F]/u', '', $cs));
+        $cs = mb_substr($cs, 0, 24);
+
+        return mb_strlen($cs) >= 2 ? $cs : '';
+    }
+
+    /** Indicatif de la fiche du compte lié à ce SteamID (fiche personnel, sinon compte). */
+    private function webCallsign(int $tenantId, string $steam): string
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT u.callsign AS ucs' . ($this->tableExists('personnel_profiles') ? ', pp.callsign AS pcs' : ', NULL AS pcs') . ' FROM users u'
+            . ($this->tableExists('personnel_profiles') ? ' LEFT JOIN personnel_profiles pp ON pp.user_id = u.id' : '')
+            . ' WHERE u.tenant_id = ? AND u.steam_id = ? LIMIT 1'
+        );
+        $st->execute([$tenantId, $steam]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return '';
+        }
+        $p = self::cleanCallsign((string) ($row['pcs'] ?? ''));
+
+        return $p !== '' ? $p : self::cleanCallsign((string) ($row['ucs'] ?? ''));
+    }
+
+    /** Indicatif choisi en jeu : écrit sur le compte et la fiche personnel du joueur lié, s'il a changé. */
+    private function applyGameCallsign(int $tenantId, string $steam, string $cs): bool
+    {
+        try {
+            $st = $this->pdo()->prepare('SELECT id, callsign FROM users WHERE tenant_id = ? AND steam_id = ? LIMIT 1');
+            $st->execute([$tenantId, $steam]);
+            $row = $st->fetch(PDO::FETCH_ASSOC);
+            if (!$row || $this->webCallsign($tenantId, $steam) === $cs) {
+                return false;
+            }
+            $userId = (int) $row['id'];
+            $this->pdo()->prepare('UPDATE users SET callsign = ? WHERE id = ? AND tenant_id = ?')->execute([$cs, $userId, $tenantId]);
+            if ($this->tableExists('personnel_profiles')) {
+                $this->pdo()->prepare('UPDATE personnel_profiles SET callsign = ? WHERE user_id = ?')->execute([$cs, $userId]);
+            }
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function tableExists(string $table): bool

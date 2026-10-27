@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\UserPublicName;
 use PDO;
 
 /**
  * Contributeurs du site et traduction communautaire (migrations/20261025000001_site_contributors_translation.sql).
  *
- * Rôles : une demande par membre et par rôle (refaite après un refus ou un retrait). Traduction : une traduction
- * validée par texte et par langue, plus les propositions des membres en attente d'un traducteur.
+ * Rôles : une ligne par membre et par rôle (plusieurs rôles possibles). Une demande refusée ou retirée peut
+ * être refaite. Traduction : une traduction validée par texte et par langue, plus les propositions en attente.
  */
 final class SiteContributorRepository
 {
@@ -87,6 +88,67 @@ final class SiteContributorRepository
         $st->execute([$userId, $role]);
     }
 
+    /**
+     * Accorde un rôle sans toucher aux autres. Un rôle déjà actif reste actif (ses langues de traducteur
+     * peuvent être mises à jour). Un rôle absent est créé actif, en reprenant le pseudo Discord et le choix
+     * « citer mon nom » d’une demande déjà enregistrée pour cette personne.
+     *
+     * @return 'created'|'activated'|'kept'
+     */
+    public function grantRole(int $userId, string $role, int $adminId, string $note, ?string $languages): string
+    {
+        if (!in_array($role, self::ROLES, true) || $userId < 1) {
+            return 'kept';
+        }
+        $st = $this->pdo()->prepare('SELECT * FROM site_contributor_roles WHERE user_id = ? AND role = ?');
+        $st->execute([$userId, $role]);
+        $existing = $st->fetch(PDO::FETCH_ASSOC);
+        if (is_array($existing) && (string) $existing['status'] === self::STATUS_ACTIVE) {
+            if ($role === 'translator' && $languages !== null && $languages !== (string) $existing['languages']) {
+                $this->pdo()->prepare('UPDATE site_contributor_roles SET languages = ? WHERE id = ?')
+                    ->execute([$languages, (int) $existing['id']]);
+            }
+
+            return 'kept';
+        }
+        if (is_array($existing)) {
+            $this->decide(
+                (int) $existing['id'],
+                self::STATUS_ACTIVE,
+                $adminId,
+                $note,
+                $role === 'translator' ? $languages : null
+            );
+
+            return 'activated';
+        }
+        $template = null;
+        foreach ($this->rolesOfUser($userId) as $sibling) {
+            if ($template === null || (int) $sibling['id'] > (int) $template['id']) {
+                $template = $sibling;
+            }
+        }
+        $langs = $role === 'translator' ? (string) ($languages ?? '') : '';
+        $this->pdo()->prepare(
+            'INSERT INTO site_contributor_roles
+                (user_id, role, languages, status, motivation, discord_handle, public_credit, admin_note, decided_by, decided_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+        )->execute([
+            $userId,
+            $role,
+            $langs,
+            self::STATUS_ACTIVE,
+            mb_substr($template !== null ? (string) $template['motivation'] : '', 0, 1500),
+            mb_substr($template !== null ? (string) $template['discord_handle'] : '', 0, 64),
+            $template !== null && (int) $template['public_credit'] === 1 ? 1 : ($template === null ? 1 : 0),
+            mb_substr($note, 0, 500),
+            $adminId,
+        ]);
+        \App\Services\Platform\StaffMarkService::forget();
+
+        return 'created';
+    }
+
     /** @return array<string, mixed>|null */
     public function findRole(int $id): ?array
     {
@@ -107,6 +169,7 @@ final class SiteContributorRepository
         }
         $args[] = $id;
         $this->pdo()->prepare($sql)->execute($args);
+        \App\Services\Platform\StaffMarkService::forget();
     }
 
     /**
@@ -116,8 +179,9 @@ final class SiteContributorRepository
      */
     public function allRoles(): array
     {
+        UserPublicName::ensure($this->pdo());
         $st = $this->pdo()->query(
-            'SELECT r.*, u.display_name, u.email, u.callsign
+            'SELECT r.*, u.display_name, u.email, u.callsign, ' . UserPublicName::column('u') . '
                FROM site_contributor_roles r LEFT JOIN users u ON u.id = r.user_id
               ORDER BY (r.status = \'pending\') DESC, r.status, r.created_at'
         );
@@ -128,12 +192,13 @@ final class SiteContributorRepository
     /**
      * Contributeurs actifs qui acceptent d'être cités : [nom, rôles].
      *
-     * @return list<array{name: string, roles: list<string>, languages: string}>
+     * @return list<array{user_id: int, name: string, roles: list<string>, languages: string}>
      */
     public function publicCredits(): array
     {
+        UserPublicName::ensure($this->pdo());
         $st = $this->pdo()->query(
-            'SELECT r.user_id, r.role, r.languages, COALESCE(NULLIF(u.callsign, \'\'), NULLIF(u.display_name, \'\'), \'?\') AS name
+            'SELECT r.user_id, r.role, r.languages, ' . UserPublicName::sql('u', 'Membre') . ' AS name
                FROM site_contributor_roles r JOIN users u ON u.id = r.user_id
               WHERE r.status = \'active\' AND r.public_credit = 1
               ORDER BY name'
@@ -141,12 +206,17 @@ final class SiteContributorRepository
         $out = [];
         foreach ($st !== false ? ($st->fetchAll(PDO::FETCH_ASSOC) ?: []) : [] as $row) {
             $uid = (int) $row['user_id'];
-            $out[$uid] ??= ['name' => (string) $row['name'], 'roles' => [], 'languages' => ''];
+            $out[$uid] ??= ['user_id' => $uid, 'name' => (string) $row['name'], 'roles' => [], 'languages' => ''];
             $out[$uid]['roles'][] = (string) $row['role'];
             if ((string) $row['languages'] !== '') {
                 $out[$uid]['languages'] = (string) $row['languages'];
             }
         }
+        $order = array_flip(self::ROLES);
+        foreach ($out as &$person) {
+            usort($person['roles'], static fn (string $a, string $b): int => ($order[$a] ?? 9) <=> ($order[$b] ?? 9));
+        }
+        unset($person);
 
         return array_values($out);
     }
@@ -249,6 +319,85 @@ final class SiteContributorRepository
         return $out;
     }
 
+    /**
+     * Classement des auteurs de textes validés.
+     *
+     * Le décompte ne joint pas les rôles : une personne peut en avoir plusieurs, et chaque rôle
+     * répéterait les mêmes textes. Le nom public est le pseudo, sinon l’indicatif.
+     *
+     * @return list<array{user_id: int, name: string, validated: int, public_credit: bool, roles: list<string>, public_roles: list<string>}>
+     */
+    public function translationLeaders(int $limit = 12): array
+    {
+        $limit = max(1, min(30, $limit));
+        UserPublicName::ensure($this->pdo());
+        $name = UserPublicName::sql('u', 'Membre');
+        $st = $this->pdo()->query(
+            'SELECT t.user_id, MAX(' . $name . ') AS name, COUNT(*) AS validated
+               FROM site_translations t
+               LEFT JOIN users u ON u.id = t.user_id
+              GROUP BY t.user_id
+              ORDER BY validated DESC
+              LIMIT ' . $limit
+        );
+        $rows = $st !== false ? ($st->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        if ($rows === []) {
+            return [];
+        }
+        $ids = [];
+        foreach ($rows as $row) {
+            $id = (int) $row['user_id'];
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        $byUser = [];
+        if ($ids !== []) {
+            $marks = implode(',', array_fill(0, count($ids), '?'));
+            $roles = $this->pdo()->prepare(
+                'SELECT user_id, role, status, public_credit FROM site_contributor_roles WHERE user_id IN (' . $marks . ')'
+            );
+            $roles->execute($ids);
+            foreach ($roles->fetchAll(PDO::FETCH_ASSOC) ?: [] as $roleRow) {
+                $byUser[(int) $roleRow['user_id']][] = $roleRow;
+            }
+        }
+        $order = array_flip(self::ROLES);
+        $sortRoles = static function (array $list) use ($order): array {
+            $list = array_values(array_unique($list));
+            usort($list, static fn (string $a, string $b): int => ($order[$a] ?? 9) <=> ($order[$b] ?? 9));
+
+            return $list;
+        };
+        $out = [];
+        foreach ($rows as $row) {
+            $uid = (int) $row['user_id'];
+            $active = [];
+            $cited = [];
+            foreach ($byUser[$uid] ?? [] as $roleRow) {
+                $key = (string) $roleRow['role'];
+                if ((string) $roleRow['status'] !== self::STATUS_ACTIVE || !in_array($key, self::ROLES, true)) {
+                    continue;
+                }
+                $active[] = $key;
+                if ((int) $roleRow['public_credit'] === 1) {
+                    $cited[] = $key;
+                }
+            }
+            $nameText = trim((string) $row['name']);
+            $out[] = [
+                'user_id' => $uid,
+                'name' => $nameText !== '' ? $nameText : 'Membre',
+                'validated' => (int) $row['validated'],
+                'public_credit' => $cited !== [],
+                'roles' => $sortRoles($active),
+                'public_roles' => $sortRoles($cited),
+            ];
+        }
+
+        return $out;
+    }
+
     public function saveTranslation(string $lang, string $hash, string $text, int $userId): void
     {
         $st = $this->pdo()->prepare(
@@ -286,9 +435,10 @@ final class SiteContributorRepository
      */
     public function pendingSuggestions(string $lang): array
     {
+        UserPublicName::ensure($this->pdo());
         $st = $this->pdo()->prepare(
             'SELECT s.id, s.src_hash, s.text, s.user_id, s.created_at,
-                    COALESCE(NULLIF(u.callsign, \'\'), NULLIF(u.display_name, \'\'), \'?\') AS author
+                    ' . UserPublicName::sql('u', '?') . ' AS author
                FROM site_translation_suggestions s LEFT JOIN users u ON u.id = s.user_id
               WHERE s.lang = ? AND s.status = \'pending\' ORDER BY s.created_at'
         );

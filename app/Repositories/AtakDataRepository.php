@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\SchemaReadyCache;
 
 use PDO;
 
@@ -37,9 +38,13 @@ class AtakDataRepository
     /** @var array<string, list<array{id: int, call_sign: string}>> */
     private array $pendingStaleDisconnects = [];
 
+    /** PDO injectée (tests) : pas de cache fichier des drapeaux de schéma. */
+    private bool $injectedPdo = false;
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo;
+        $this->injectedPdo = $pdo !== null;
     }
 
     private function hasPosColumns(): bool
@@ -47,15 +52,19 @@ class AtakDataRepository
         if ($this->hasPosColumns !== null) {
             return $this->hasPosColumns;
         }
-        try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'pos_x' LIMIT 1"
-            );
-            $this->hasPosColumns = (bool) ($st && $st->fetchColumn());
-        } catch (\Throwable) {
-            $this->hasPosColumns = false;
-        }
+        // Sondé à chaque position : résultat positif gardé entre requêtes (SchemaReadyCache).
+        $this->hasPosColumns = SchemaReadyCache::remember('atak_units.pos_x', function (): bool {
+            try {
+                $st = $this->pdo()->query(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'pos_x' LIMIT 1"
+                );
+
+                return (bool) ($st && $st->fetchColumn());
+            } catch (\Throwable) {
+                return false;
+            }
+        });
 
         return $this->hasPosColumns;
     }
@@ -65,15 +74,19 @@ class AtakDataRepository
         if ($this->hasGroupNameColumn !== null) {
             return $this->hasGroupNameColumn;
         }
-        try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'group_name' LIMIT 1"
-            );
-            $this->hasGroupNameColumn = (bool) ($st && $st->fetchColumn());
-        } catch (\Throwable) {
-            $this->hasGroupNameColumn = false;
-        }
+        // Sondé à chaque position : résultat positif gardé entre requêtes (SchemaReadyCache).
+        $this->hasGroupNameColumn = SchemaReadyCache::remember('atak_units.group_name', function (): bool {
+            try {
+                $st = $this->pdo()->query(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'group_name' LIMIT 1"
+                );
+
+                return (bool) ($st && $st->fetchColumn());
+            } catch (\Throwable) {
+                return false;
+            }
+        });
 
         return $this->hasGroupNameColumn;
     }
@@ -200,10 +213,11 @@ class AtakDataRepository
         if ($steamUid === '' || $tenantId < 1 || $mapId < 1) {
             return null;
         }
+        [$uidSql, $uidParams] = self::steamUidPrefilter($steamUid);
         $stmt = $this->pdo()->prepare(
-            'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ?'
+            'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ?' . $uidSql
         );
-        $stmt->execute([$tenantId, $mapId]);
+        $stmt->execute(array_merge([$tenantId, $mapId], $uidParams));
         $best = null;
         $bestScore = -999999;
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $unit) {
@@ -1390,11 +1404,22 @@ class AtakDataRepository
         }
         $created = false;
         $unitId = 0;
+        $midSynced = false;
 
         if ($existing) {
             $unitId = (int) $existing['id'];
             // Conserver notes TOC (fréquence / véhicule / note) écrites depuis la Tacmap.
             $mergedExtra = self::mergePreservedTocExtra(self::decodeExtra($existing['extra'] ?? null), $incomingExtra);
+            // ID BFT résolu avant l’UPDATE : écrit dans le même UPDATE (plus de 2e UPDATE de extra).
+            $mid = $this->syncUnitMilitaryIdFromExtra($tenantId, $unitId, $callSign, $mergedExtra);
+            if ($mid !== null) {
+                $midSynced = true;
+                if ($mid !== '') {
+                    $mergedExtra['bft_id'] = $mid;
+                    $mergedExtra['military_id'] = $mid;
+                    $mergedExtra['atak_id'] = $mid;
+                }
+            }
             $extraJson = json_encode($mergedExtra, JSON_UNESCAPED_UNICODE);
             if ($extraJson === false) {
                 $extraJson = '{}';
@@ -1483,29 +1508,12 @@ class AtakDataRepository
         $this->setLastActivity($tenantId, $mapId);
 
         // ID BFT (military_id) lié à l’indicatif — et au compte Steam si connu.
-        if ($unitId > 0) {
+        // Unité existante : déjà fait avant l’UPDATE ; ici seulement pour une unité créée.
+        if ($unitId > 0 && !$midSynced) {
             try {
-                $opIds = new AtakOperatorIdRepository();
-                if ($opIds->tablesReady() && $opIds->unitsMilitaryIdColumnReady()) {
-                    $extraArr = self::decodeExtra($extraJson);
-                    $steam = trim((string) ($extraArr['steam_uid'] ?? $extraArr['steamId'] ?? $extraArr['player_uid'] ?? ''));
-                    $userId = null;
-                    if ($steam !== '') {
-                        try {
-                            $userRepo = new UserRepository();
-                            $user = $userRepo->findBySteamIdForTenant($tenantId, $steam)
-                                ?? $userRepo->findBySteamId($steam);
-                            if (is_array($user)) {
-                                $userId = (int) ($user['id'] ?? 0);
-                                if ($userId < 1) {
-                                    $userId = null;
-                                }
-                            }
-                        } catch (\Throwable) {
-                            $userId = null;
-                        }
-                    }
-                    $mid = $opIds->syncUnitMilitaryId($tenantId, $unitId, $callSign, $userId);
+                $extraArr = self::decodeExtra($extraJson);
+                $mid = $this->syncUnitMilitaryIdFromExtra($tenantId, $unitId, $callSign, $extraArr);
+                if ($mid !== null) {
                     // Miroir dans extra pour BFT / tablette / ATAK (même identité que l’indicatif).
                     if ($mid !== '') {
                         $extraArr['bft_id'] = $mid;
@@ -1540,6 +1548,62 @@ class AtakDataRepository
     }
 
     /**
+     * Préfiltre SQL d’un Steam UID numérique : condition nécessaire (le texte JSON de extra contient
+     * l’identifiant), le contrôle exact reste fait en PHP. UID non numérique → aucun préfiltre.
+     *
+     * @return array{0: string, 1: list<string>}
+     */
+    private static function steamUidPrefilter(string $steamUid): array
+    {
+        $steamUid = trim($steamUid);
+        if ($steamUid === '' || !ctype_digit($steamUid)) {
+            return ['', []];
+        }
+
+        return [' AND extra LIKE ?', ['%' . $steamUid . '%']];
+    }
+
+    /**
+     * Synchronise military_id de l’unité (compte Steam si connu, sinon indicatif).
+     * Retourne le MID (éventuellement vide), ou null si les tables ne sont pas prêtes / erreur.
+     *
+     * @param array<string, mixed> $extraArr
+     */
+    private function syncUnitMilitaryIdFromExtra(int $tenantId, int $unitId, string $callSign, array $extraArr): ?string
+    {
+        if ($unitId < 1) {
+            return null;
+        }
+        try {
+            $opIds = new AtakOperatorIdRepository();
+            if (!$opIds->tablesReady() || !$opIds->unitsMilitaryIdColumnReady()) {
+                return null;
+            }
+            $steam = trim((string) ($extraArr['steam_uid'] ?? $extraArr['steamId'] ?? $extraArr['player_uid'] ?? ''));
+            $userId = null;
+            if ($steam !== '') {
+                try {
+                    $userRepo = new UserRepository();
+                    $user = $userRepo->findBySteamIdForTenant($tenantId, $steam)
+                        ?? $userRepo->findBySteamId($steam);
+                    if (is_array($user)) {
+                        $userId = (int) ($user['id'] ?? 0);
+                        if ($userId < 1) {
+                            $userId = null;
+                        }
+                    }
+                } catch (\Throwable) {
+                    $userId = null;
+                }
+            }
+
+            return $opIds->syncUnitMilitaryId($tenantId, $unitId, $callSign, $userId);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Passe hors-ligne les autres lignes atak_units du même Steam (indicatif différent).
      */
     public function retireSteamSiblingUnits(int $tenantId, int $mapId, string $keepCallSign, string $steamUid): int
@@ -1549,10 +1613,14 @@ class AtakDataRepository
         if ($tenantId < 1 || $mapId < 1 || $steamUid === '' || $keepCallSign === '') {
             return 0;
         }
+        // Appelée à chaque position : MySQL écarte déjà les lignes hors ligne et celles dont le JSON ne
+        // contient pas le Steam (au lieu de rapatrier et décoder toutes les unités de la carte en PHP).
+        [$uidSql, $uidParams] = self::steamUidPrefilter($steamUid);
         $stmt = $this->pdo()->prepare(
-            'SELECT id, call_sign, extra, status FROM atak_units WHERE tenant_id = ? AND map_id = ?'
+            "SELECT id, call_sign, extra, status FROM atak_units WHERE tenant_id = ? AND map_id = ?
+               AND (status IS NULL OR status <> 'offline')" . $uidSql
         );
-        $stmt->execute([$tenantId, $mapId]);
+        $stmt->execute(array_merge([$tenantId, $mapId], $uidParams));
         $retired = 0;
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $cs = trim((string) ($row['call_sign'] ?? ''));
@@ -1749,10 +1817,21 @@ class AtakDataRepository
     /**
      * Messages plus récents qu’un id (poll jeu / TOC → Athena inbox).
      *
+     * $withProtocolOrders : fenêtre BRUTE, lignes « ORDER|… » comprises. La relève avec curseur
+     * (AtakApiController::scanChatAfter) en a besoin pour savoir si la fenêtre était pleine et jusqu’où avancer ;
+     * elle masque ensuite ces lignes elle-même. Filtrées ici, après le LIMIT, un bloc de « ORDER| » donnait une
+     * fenêtre vide ou « pas pleine » : la relève s’arrêtait sur le même curseur à chaque passage.
+     *
      * @return list<array<string, mixed>>
      */
-    public function getChatMessagesAfter(int $tenantId, int $mapId, int $afterId, int $limit = 50, ?string $channelKey = null): array
-    {
+    public function getChatMessagesAfter(
+        int $tenantId,
+        int $mapId,
+        int $afterId,
+        int $limit = 50,
+        ?string $channelKey = null,
+        bool $withProtocolOrders = false
+    ): array {
         $afterId = max(0, $afterId);
         $limit = max(1, min($limit, 200));
         if ($afterId < 1) {
@@ -1778,8 +1857,10 @@ class AtakDataRepository
             );
             $stmt->execute([$tenantId, $mapId, $afterId]);
         }
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return $this->withoutProtocolOrderChat($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $withProtocolOrders ? $rows : $this->withoutProtocolOrderChat($rows);
     }
 
     public function addChatMessage(
@@ -2166,8 +2247,14 @@ class AtakDataRepository
             : $this->getChatMessages($tenantId, $mapId, $scan);
         $out = $this->enrichMedicalRows($rows, $includeExpired);
         // Fallback : si DATE_SUB a tout exclu (décalage horloge), rescanner les N derniers messages.
+        // Seuls ceux que la fenêtre PHP accepte comptent : on les borne côté SQL sur l’horloge PHP.
         if ($out === [] && !$includeExpired) {
-            $fallbackRows = $this->getChatMessages($tenantId, $mapId, $scan);
+            $fallbackRows = $this->getChatMessagesFromPhpClock(
+                $tenantId,
+                $mapId,
+                $scan,
+                time() - ($windowSec + 3 * 3600)
+            );
             $out = $this->enrichMedicalRows($fallbackRows, false);
         }
         if (count($out) > $limit) {
@@ -2205,7 +2292,7 @@ class AtakDataRepository
             $out[] = $enriched;
         }
         if ($out === [] && !$includeExpired) {
-            $fallbackRows = $this->getChatMessages($tenantId, $mapId, $scan);
+            $fallbackRows = $this->getChatMessagesFromPhpClock($tenantId, $mapId, $scan, time() - $windowSec);
             foreach ($fallbackRows as $row) {
                 $enriched = \App\Support\TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
                 if ($enriched === null) {
@@ -2250,6 +2337,28 @@ class AtakDataRepository
     }
 
     /**
+     * Repli des alertes : les N derniers messages, limités à ceux que la fenêtre active PHP peut encore
+     * accepter (created_at >= $sinceTs, horloge et fuseau PHP comme strtotime dans isWithinActiveWindow).
+     * Même résultat utile que getChatMessages() suivi du filtre PHP, mais en lecture d’index
+     * (tenant_id, map_id, created_at) au lieu d’un tri de tout l’historique du tchat.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function getChatMessagesFromPhpClock(int $tenantId, int $mapId, int $limit, int $sinceTs): array
+    {
+        $limit = max(1, min($limit, 500));
+        $stmt = $this->pdo()->prepare(
+            'SELECT * FROM atak_chat_messages
+             WHERE tenant_id = ? AND map_id = ? AND created_at >= ?
+             ORDER BY created_at DESC
+             LIMIT ' . (int) $limit
+        );
+        $stmt->execute([$tenantId, $mapId, date('Y-m-d H:i:s', $sinceTs)]);
+
+        return $this->withoutProtocolOrderChat(array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC)));
+    }
+
+    /**
      * Messages tchat récents selon l’horloge MySQL (évite les faux hors-délai PHP↔DB).
      *
      * @return list<array<string, mixed>>
@@ -2281,11 +2390,7 @@ class AtakDataRepository
     {
         $out = [];
         foreach ($rows as $row) {
-            $body = ltrim((string) ($row['body'] ?? ''));
-            if (strncasecmp($body, 'ORDER|', 6) === 0) {
-                continue;
-            }
-            if (stripos($body, 'ORDER|') !== false) {
+            if (self::isProtocolOrderChatBody((string) ($row['body'] ?? ''))) {
                 continue;
             }
             $out[] = $row;
@@ -2295,13 +2400,33 @@ class AtakDataRepository
     }
 
     /**
+     * Protocole d’ordres C2 (« ORDER|… », en tête ou cité dans le corps : « Reçu, ORDER| annulé »,
+     * « MP|…|ORDER|… »), sans tenir compte de la casse : jamais montré dans la messagerie. Pas quand « order| »
+     * termine un mot : « MP|Border|TOC|… » ou « ALERTE TACTIQUE|TIC|Border|… » (indicatif « Border ») sont des
+     * messages ordinaires, que la règle précédente (« ORDER| » n’importe où) masquait.
+     * Seule définition : lecture (withoutProtocolOrderChat, relève avec curseur) et écriture (POST /api/chat
+     * refuse ce que la lecture masquerait ensuite) appliquent exactement la même règle.
+     */
+    public static function isProtocolOrderChatBody(string $body): bool
+    {
+        if (stripos($body, 'ORDER|') === false) {
+            return false;
+        }
+        $match = preg_match('/(?<!\p{L})ORDER\|/iu', $body);
+
+        // Corps qui n’est pas de l’UTF-8 valide (preg_match en erreur) : règle large, comme avant.
+        return $match === false || $match === 1;
+    }
+
+    /**
      * Unités dont l’état santé (extra.health) est critique / blessé.
      *
+     * @param list<array<string, mixed>>|null $units unités déjà lues par l’appelant (évite un second SELECT)
      * @return list<array<string, mixed>>
      */
-    public function getUnitsWithCriticalHealth(int $tenantId, int $mapId): array
+    public function getUnitsWithCriticalHealth(int $tenantId, int $mapId, ?array $units = null): array
     {
-        $units = $this->getUnits($tenantId, $mapId);
+        $units ??= $this->getUnits($tenantId, $mapId);
         // Index Steam → indicatifs BFT « réels » (hors source alerte seule).
         $steamToBft = [];
         foreach ($units as $unit) {

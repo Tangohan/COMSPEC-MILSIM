@@ -216,6 +216,8 @@ def wrap_source(src):
 TAG = re.compile(r"<[^<>]*>")
 SEPS = re.compile(r"\s+·\s+|\n|\r")
 PLACEHOLDER = re.compile(r"%(\d+)")
+ADJACENT = re.compile(r"%\d+%\d")
+MULTIDIGIT = re.compile(r"(?<!%)%\d\d")
 WORD = re.compile(r"[A-Za-zÀ-ÿ]")
 
 
@@ -234,6 +236,10 @@ def looks_like_code(s):
     if t.startswith("#") or t.startswith("%") and not re.search(r"[A-Za-zÀ-ÿ]{3,}", PLACEHOLDER.sub("", t)):
         return True
     if re.fullmatch(r"[a-z0-9_\-]+", t) and len(t) <= 3:
+        return True
+    # Préfixe court collé à des valeurs (« CR%1%2 » : identifiant de compte rendu) : code, pas une phrase. Traduit,
+    # il réécrivait tout texte commençant par « CR » (« CROW 1-1 » -> « RPTOW 1-1 »).
+    if re.fullmatch(r"[A-Z]{1,4}(%\d)+", t):
         return True
     return False
 
@@ -263,8 +269,19 @@ def save_dict(pairs):
     os.makedirs(os.path.dirname(DICT), exist_ok=True)
     seen = {}
     for fr, en in pairs:
+        # fn_tr cherche le texte sans ses espaces de bord (gardés autour de la traduction) : clé "dont %1", jamais " dont %1".
+        fr, en = fr.strip(), en.strip()
         if fr and en and fr != en:
+            # fn_langApply ne lit qu'un chiffre après « % » : « à %10 m » serait lu « à %1 » + « 0 m » et détournerait
+            # « à %1 m » (« à 250 m » -> « at  m »). Modèle refusé : renuméroter %1…%9 ou découper le texte dans le code.
+            if MULTIDIGIT.search(fr) or MULTIDIGIT.search(en):
+                print("Numéro à deux chiffres (%10+), modèle refusé : renuméroter de %1 à %9 :", fr, file=sys.stderr)
+                continue
             seen[fr] = en
+            # Valeurs collées (%1%2) : fn_langApply laisse la première capturer les deux (la seconde vide), sauf si la
+            # seconde revient ailleurs dans le texte (elle s'afficherait deux fois) : ce modèle-là est ignoré en jeu.
+            if any(len(re.findall("%" + m.group(2) + r"(?!\d)", fr)) > 1 for m in re.finditer(r"%(\d)%(\d)", fr)):
+                print("Valeurs collées (%1%2) dont la seconde revient plus loin, modèle ignoré en jeu : séparer les valeurs dans le code :", fr, file=sys.stderr)
     q = lambda s: '"' + s.replace('"', '""') + '"'
     lines = [f"[{q(fr)}, {q(en)}]" for fr, en in sorted(seen.items(), key=lambda p: p[0].lower())]
     with open(DICT, "w", encoding="utf-8", newline="\n") as f:
@@ -294,6 +311,11 @@ GAME_COLUMNS = ["English", "French", "German", "Italian", "Spanish", "Czech", "P
                 "Turkish", "Japanese", "Korean", "Chinese", "Chinesesimp"]
 
 
+# <Original> est l'anglais (langue par défaut des jeux sans colonne propre : allemand, russe…) ; le texte source, en
+# français, est dans <French>. Anciennes stringtables (Original = français, pas de <French>) : Original pris comme source.
+KEY_RE = re.compile(r'<Key ID="([^"]+)">\s*<Original>(.*?)</Original>\s*(?:<English>(.*?)</English>)?\s*(?:<French>(.*?)</French>)?', re.S)
+
+
 def stringtable_rows():
     """[(clé $STR_, texte original, anglais, addon), ...] des trois stringtables."""
     import html as _h
@@ -301,8 +323,8 @@ def stringtable_rows():
     for pkg, path in STRINGTABLES:
         if not os.path.exists(path):
             continue
-        for m in re.finditer(r'<Key ID="([^"]+)">\s*<Original>(.*?)</Original>\s*(?:<English>(.*?)</English>)?', open(path, encoding="utf-8").read(), re.S):
-            orig = _h.unescape(m.group(2))
+        for m in KEY_RE.finditer(open(path, encoding="utf-8").read()):
+            orig = _h.unescape(m.group(4) if m.group(4) is not None else m.group(2))
             rows.append((m.group(1), orig, _h.unescape(m.group(3)) if m.group(3) else orig, pkg))
     return rows
 
@@ -350,7 +372,7 @@ def write_lang_stringtable(path, code, game, translations):
         tr = translations.get(orig, "")
         if not tr:
             continue
-        rows.append(f'        <Key ID="{k}">\n            <Original>{esc(orig)}</Original>\n            <English>{esc(en)}</English>\n'
+        rows.append(f'        <Key ID="{k}">\n            <Original>{esc(en)}</Original>\n            <English>{esc(en)}</English>\n'
                     f'            <{game}>{esc(tr)}</{game}>\n        </Key>')
     xml = ('<?xml version="1.0" encoding="utf-8"?>\n<Project name="comspec_atak_lang_' + code + '">\n    <Package name="main">\n'
            + "\n".join(rows) + '\n    </Package>\n</Project>\n')
@@ -437,11 +459,12 @@ def stringtable():
     keys = {}
     kept = {}
     if os.path.exists(STRINGTABLE):
-        for m in re.finditer(r'<Key ID="([^"]+)">\s*<Original>(.*?)</Original>\s*(?:<English>(.*?)</English>)?', open(STRINGTABLE, encoding="utf-8").read(), re.S):
-            keys[m.group(1)] = _h.unescape(m.group(2))
+        for m in KEY_RE.finditer(open(STRINGTABLE, encoding="utf-8").read()):
+            fr = m.group(4) if m.group(4) is not None else m.group(2)
+            keys[m.group(1)] = _h.unescape(fr)
             # Anglais écrit à la main dans la stringtable (absent de en.txt) : gardé.
-            if m.group(3) and m.group(3) != m.group(2):
-                kept.setdefault(_h.unescape(m.group(2)), _h.unescape(m.group(3)))
+            if m.group(3) and m.group(3) != fr:
+                kept.setdefault(_h.unescape(fr), _h.unescape(m.group(3)))
     missing = []
     for f in CFG_FILES:
         path = os.path.join(ADDON, f)
@@ -468,13 +491,16 @@ def stringtable():
             missing.append(fr)
             e = fr
         esc = lambda t: _h.escape(t, quote=False)
-        rows.append(f'        <Key ID="{k}">\n            <Original>{esc(fr)}</Original>\n            <English>{esc(e)}</English>\n            <French>{esc(fr)}</French>\n        </Key>')
+        rows.append(f'        <Key ID="{k}">\n            <Original>{esc(e)}</Original>\n            <English>{esc(e)}</English>\n            <French>{esc(fr)}</French>\n        </Key>')
     xml = ('<?xml version="1.0" encoding="utf-8"?>\n<!-- Généré par tools/i18n.py stringtable : traductions dans i18n/en.txt. -->\n'
            '<Project name="' + ("COMSPEC_SSE" if SSE else ("COMSPEC_Overwatch_connect" if CONNECT else "COMSPEC_ATAK_Native")) + '">\n    <Package name="main">\n' + "\n".join(rows) + '\n    </Package>\n</Project>\n')
     open(STRINGTABLE, "w", encoding="utf-8", newline="\n").write(xml)
     print(f"{len(keys)} textes de config, {len(missing)} sans anglais")
     for fr in missing:
         print("  " + fr)
+
+
+FR_AMBIGUOUS = {"Dock", "Support"}
 
 
 def build_fr():
@@ -500,6 +526,10 @@ def build_fr():
         en, fr = line.split("\t", 1)
         if en != fr:
             pairs[en] = fr
+    # Mots anglais à double sens : fn_tr traduit chaque texte affiché, donc « Dock » (repère de carte) renommerait le
+    # pli « Dock » des réglages en « Quai », et « Support » (nom par défaut d'un appareil DL-7) deviendrait « Soutien ».
+    for en in FR_AMBIGUOUS:
+        pairs.pop(en, None)
     out = os.path.join(ROOT, "Sources", "addons", "main", "i18n", "fr.txt")
     esc = lambda t: t.replace('"', '""')
     with open(out, "w", encoding="utf-8", newline="\n") as f:

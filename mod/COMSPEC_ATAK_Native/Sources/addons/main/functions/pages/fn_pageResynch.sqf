@@ -70,7 +70,10 @@ if (_items isEqualTo []) then {
 _rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Les photos déjà transmises ne repartent pas. Les tenues jamais partagées restent sur ce PC : partagez-les depuis Tenues Athena.</t>"];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 // Compte à rebours du bouton : la page se redessine à la fin du délai d'attente.
+// Jeton : seule la dernière chaîne de rafraîchissement continue (un rendu en plus n'en empile pas une autre).
 if (_wait > 0 && {!_busy}) then {
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RESYNCH") then { ["RESYNCH"] call comspec_atak_native_fnc_pageRender; }; }, [], (_wait min 5) max 1] call CBA_fnc_waitAndExecute;
+    private _tok = diag_tickTime;
+    uiNamespace setVariable ["COMSPEC_ATAK_ResynchTok", _tok];
+    [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_ResynchTok", -1]) isEqualTo _this && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RESYNCH"}) then { ["RESYNCH"] call comspec_atak_native_fnc_pageRender; }; }, _tok, (_wait min 5) max 1] call CBA_fnc_waitAndExecute;
 };
 true

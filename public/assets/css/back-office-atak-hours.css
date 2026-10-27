@@ -1,8 +1,10 @@
 /**
  * Back-office ATAK — Heures de jeu (tableur), en complément de back-office-atak-squads.css (préfixe akhr-).
- * En-tête et première colonne figés ; seul le tableau défile horizontalement sur téléphone.
+ * Pleine largeur (la marge vient déjà du corps du back-office). En-tête et première colonne figés ; seul le tableau défile horizontalement sur téléphone.
  */
-.akhr .aksq__frame { grid-template-columns: minmax(0, 1fr); }
+.akhr .aksq__frame { grid-template-columns: minmax(0, 1fr); max-width: none; gap: 1rem; padding: 0 0 1.5rem; }
+.akhr .aksq__hero { padding: 1.1rem 1.25rem 1.2rem; }
+.akhr .aksq__lead { max-width: 72rem; }
 .akhr__kpi-text { font-size: 0.95rem !important; line-height: 1.3; display: block; padding-top: 0.25rem; }
 
 .akhr__filters, .akhr__toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; }

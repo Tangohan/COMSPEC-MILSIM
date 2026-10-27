@@ -11,7 +11,9 @@ Pour chaque PBO : taille, empreinte SHA-256, nombre de fichiers et $PBOPREFIX$. 
 - deux PBO portent le même préfixe (doublon) ou un préfixe n'est pas celui attendu ;
 - un PBO contient un fichier absent des sources (dossier temporaire périmé : ancien modèle supprimé,
   ou copie de l'ATAK dans comspec_overwatch_main.pbo).
-Un fichier des sources absent du PBO n'est qu'un avertissement (AddonBuilder ignore certains types).
+- PBO non binarisé (-packonly, pas de config.bin) : un fichier des sources lu en jeu (.cpp, .hpp, .h, .inc, .sqf, .txt,
+  .xml : #include de config.cpp, i18n/*.txt lus par loadFile) absent du PBO.
+Tout autre fichier des sources absent du PBO n'est qu'un avertissement (AddonBuilder ignore certains types).
 
 Accepte aussi les PBO de HEMTT (config.bin, *.sqfc, stringtable.bin) pour vérifier ceux du dépôt.
 """
@@ -73,7 +75,11 @@ def source_files(src: pathlib.Path) -> set[str]:
     return out
 
 
-def compare(names: list[str], src: pathlib.Path) -> tuple[list[str], list[str]]:
+# PBO -packonly : config.cpp reste texte, ses #include et les fichiers lus par loadFile/execVM sont résolus en jeu.
+RUNTIME_EXT = {"cpp", "hpp", "h", "inc", "sqf", "txt", "xml", "html"}
+
+
+def compare(names: list[str], src: pathlib.Path) -> tuple[list[str], list[str], list[str]]:
     packed = {n.replace("\\", "/").lower() for n in names}
     packed -= SKIP_NAMES
     sources = source_files(src)
@@ -95,7 +101,8 @@ def compare(names: list[str], src: pathlib.Path) -> tuple[list[str], list[str]]:
     binarized = "config.bin" in packed
     missing = [s for s in sorted(sources - covered)
                if not (binarized and s.rsplit(".", 1)[-1] in ("hpp", "h", "inc"))]
-    return stale, missing
+    required = [] if binarized else [s for s in missing if "." in s and s.rsplit(".", 1)[-1] in RUNTIME_EXT]
+    return stale, [s for s in missing if s not in required], required
 
 
 def main() -> int:
@@ -136,10 +143,13 @@ def main() -> int:
         src, want = exp
         if prefix.lower() != want.lower():
             errors.append(f"{p.name} : préfixe {prefix or '(aucun)'} au lieu de {want}")
-        stale, missing = compare(names, src)
+        stale, missing, required = compare(names, src)
         if stale:
             errors.append(f"{p.name} : {len(stale)} fichier(s) absents des sources (build périmé), ex. "
                           + ", ".join(stale[:5]))
+        if required:
+            errors.append(f"{p.name} : {len(required)} fichier(s) lus en jeu absents du PBO (config ou dictionnaire "
+                          "incomplet), ex. " + ", ".join(required[:5]))
         if missing:
             warnings.append(f"{p.name} : {len(missing)} fichier(s) des sources absents du PBO, ex. "
                           + ", ".join(missing[:5]))

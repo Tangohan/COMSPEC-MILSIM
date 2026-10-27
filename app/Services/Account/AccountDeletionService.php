@@ -405,7 +405,7 @@ final class AccountDeletionService
 
     /**
      * Efface / neutralise les tables personnelles liées (hors users).
-     * Les contenus publics (forum, docs…) restent liés à users.id mais affichent
+     * Les contenus publics (documents…) restent liés à users.id mais affichent
      * « Compte supprimé » via display_name + absence d’alias / profil.
      */
     public function scrubRelatedPersonalData(int $userId): void
@@ -444,7 +444,6 @@ final class AccountDeletionService
         $this->deleteOptionalRowsByUserId($userId, [
             'personnel_media',
             'personnel_admin_data',
-            'user_forum_stats',
         ]);
     }
 

@@ -33,7 +33,7 @@ final class CommunityAccessProfilesTest extends TestCase
         foreach (CommunityAccessProfiles::keys() as $key) {
             $slugs = CommunityAccessProfiles::permissionSlugsFor($key);
             self::assertSame($slugs, SystemReservedPermissions::filter($slugs));
-            self::assertContains('forum.view', $slugs);
+            self::assertContains('documents.view', $slugs);
         }
         $member = CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::MEMBER);
         self::assertContains('admin.backoffice.view', $member);
@@ -55,6 +55,9 @@ final class CommunityAccessProfilesTest extends TestCase
 
         $manager = CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::MANAGER);
         self::assertContains('admin.organization', $manager);
+        foreach (CommunityAccessProfiles::managerProtectedPermissionSlugs() as $protected) {
+            self::assertContains($protected, $manager);
+        }
     }
 
     public function testRetainedTenantSlugsAreAccessPlusDuty(): void
@@ -72,5 +75,28 @@ final class CommunityAccessProfilesTest extends TestCase
         self::assertFalse(CommunityAccessCollapseService::mayCreateTenantRoleSlug('tenant_admin'));
         self::assertFalse(CommunityAccessCollapseService::mayCreateTenantRoleSlug('atak_operator'));
         self::assertFalse(CommunityAccessCollapseService::mayCreateTenantRoleSlug('infantry_rifleman'));
+    }
+    /** Tout le monde porte Membre : le niveau affiché est le plus élevé tenu, pas le premier de la liste. */
+    public function testCurrentAccessRoleIdPrefersHighestHeldLevel(): void
+    {
+        $roles = [
+            ['id' => 10, 'slug' => 'member'],
+            ['id' => 11, 'slug' => 'hr'],
+            ['id' => 12, 'slug' => 'community_owner'],
+            ['id' => 20, 'slug' => 'access-custom-personnel-a'],
+        ];
+        self::assertSame(20, CommunityAccessProfiles::currentAccessRoleId($roles, [10, 20]));
+        self::assertSame(11, CommunityAccessProfiles::currentAccessRoleId($roles, [10, 11]));
+        self::assertSame(12, CommunityAccessProfiles::currentAccessRoleId($roles, [10, 20, 12]));
+        self::assertSame(10, CommunityAccessProfiles::currentAccessRoleId($roles, [10, 99]));
+        self::assertSame(0, CommunityAccessProfiles::currentAccessRoleId($roles, [99]));
+    }
+
+    public function testOnlyHrPresetCanBeHidden(): void
+    {
+        self::assertTrue(CommunityAccessProfiles::isHideablePresetSlug('hr'));
+        self::assertFalse(CommunityAccessProfiles::isHideablePresetSlug('member'));
+        self::assertFalse(CommunityAccessProfiles::isHideablePresetSlug('community_owner'));
+        self::assertFalse(CommunityAccessProfiles::isHideablePresetSlug('access-custom-x'));
     }
 }

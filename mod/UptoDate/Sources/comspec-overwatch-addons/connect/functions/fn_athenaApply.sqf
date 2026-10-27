@@ -12,7 +12,7 @@ if !(_mode in ["on", "off"]) exitWith { false };
 
 private _prev = [] call comspec_overwatch_connect_fnc_athenaMode;
 profileNamespace setVariable ["COMSPEC_AthenaMode", _mode];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 ["INFO", "Athena", format ["Service Athéna : %1 (avant : %2)", _mode, [_prev, "aucun"] select (_prev isEqualTo "")]] call comspec_overwatch_connect_fnc_log;
 
 if (_mode isEqualTo "off") then {
@@ -30,6 +30,20 @@ if (_mode isEqualTo "off") then {
         missionNamespace setVariable ["comspec_overwatch_auth_state", "INITIALIZING", false];
     };
     missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
+    // « Non » au démarrage puis « Oui » en mission : le bloc de démarrage CBA (XEH_postInit) était sorti
+    // sans rien enregistrer (EH liaison, filet position, menus ACE, dégâts, outbox, déconnexion) → le rejouer.
+    if (
+        hasInterface
+        && {!isNull findDisplay 46}
+        && {missionNamespace getVariable ["COMSPEC_CbaSettingsBootFired", false]}
+        && {!(missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false])}
+        && {!isNil "COMSPEC_CbaSettingsBootCode"}
+    ) then {
+        ["INFO", "Athena", "Service Athéna activé en mission — initialisation différée du démarrage"] call comspec_overwatch_connect_fnc_log;
+        missionNamespace setVariable ["COMSPEC_CbaSettingsBootReplay", true, false];
+        [] call COMSPEC_CbaSettingsBootCode;
+        missionNamespace setVariable ["COMSPEC_CbaSettingsBootReplay", false, false];
+    };
     // Au démarrage de mission, le handshake attend ce choix (XEH_postInit) : il fait lui-même la suite.
     if !(missionNamespace getVariable ["COMSPEC_AthenaChoiceWaiting", false]) then {
         if (isNull findDisplay 46) then {

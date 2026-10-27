@@ -66,4 +66,22 @@
     if (v !== 'error') setTimeout(close, 5000);
     return item;
   };
+
+  // Accès refusé pendant un appel fetch (réponse 403 marquée par AccessDeniedStayMiddleware) :
+  // toast dans le coin, la page reste telle quelle.
+  if (typeof window.fetch === 'function') {
+    var nativeFetch = window.fetch;
+    window.fetch = function () {
+      return nativeFetch.apply(this, arguments).then(function (res) {
+        try {
+          if (res && res.status === 403 && res.headers && res.headers.get('X-Ath-Access-Denied') === '1') {
+            res.clone().json().then(function (data) {
+              window.athToast('error', (data && data.error) || 'Vous n’avez pas accès à cette action.');
+            }).catch(function () {});
+          }
+        } catch (e) {}
+        return res;
+      });
+    };
+  }
 })();

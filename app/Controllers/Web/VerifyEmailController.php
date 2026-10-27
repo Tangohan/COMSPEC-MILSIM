@@ -133,7 +133,7 @@ final class VerifyEmailController
         }
         // Compte toujours en attente : proposer le renvoi directement sur la page de connexion.
         Session::set('pending_verification_email', strtolower(trim((string) ($user['email'] ?? ''))));
-        $expired = !empty($row['expires_at']) && strtotime((string) $row['expires_at']) <= time();
+        $expired = !empty($row['expires_at']) && \App\Support\DbTime::utcToTimestamp((string) $row['expires_at']) <= time();
         Session::flash(
             'error',
             $expired

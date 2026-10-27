@@ -8,7 +8,7 @@ declare(strict_types=1);
  * tuiles restent inertes — voir data-dash-rail-open / data-dash-rail-nested).
  * Pattern repris de l’aside « Registre » (clic profil → masque la liste, affiche le panneau, retour).
  *
- * Regroupe les entrées de l’ancienne navbar (Dashboard, Hub, Forum, Formations,
+ * Regroupe les entrées de l’ancienne navbar (Dashboard, Hub, Formations,
  * Effectifs, Back-office, Administration, Espaces, Invitations, Compte) avec permissions.
  *
  * @var string|null $dashboard_tenant_label
@@ -39,8 +39,6 @@ $canAtakOperators = !empty($can_view_atak_operators)
 $atakOperatorsLinkedBadge = isset($atak_operators_linked_count) && $atak_operators_linked_count !== null
     ? (string) (int) $atak_operators_linked_count
     : null;
-$canForum = !function_exists('can') || can('forum.view');
-$canForumCreate = function_exists('can') && can('forum.create_topic');
 $canTrainingManage = function_exists('can') && (
     can('admin.access') || can('training.manage') || can('training.create')
     || can('training.assign') || can('training.update') || can('training.publish')
@@ -93,7 +91,6 @@ $icon = static function (string $key): string {
         'backoffice' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"/><path stroke-linecap="round" d="M4 8.5 12 13l8-4.5M12 13v7"/></svg>',
         'admin' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6.5v5.4c0 4.6-3 7.7-7 8.6-4-.9-7-4-7-8.6V6.5L12 3.5Z"/><path stroke-linecap="round" d="M12 8v4.5M12 15.2h.01"/></svg>',
         'profile' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.2" r="3.4"/><path stroke-linecap="round" d="M4.8 19.5c.9-3.4 3.8-5.4 7.2-5.4s6.3 2 7.2 5.4"/></svg>',
-        'forum' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5h11a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H9l-4 3v-3H4A1.5 1.5 0 0 1 2.5 13V7A1.5 1.5 0 0 1 4 5.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 9.5H20a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-1v2.5l-3.4-2.5H11a1.5 1.5 0 0 1-1.5-1.5V16"/></svg>',
         'messages' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17h-1A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5Z"/><path stroke-linecap="round" d="M7.5 9.5h9M7.5 12.5h5.5"/></svg>',
         'trainings' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 9 12 4.5 21.5 9 12 13.5 2.5 9Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.5 11v4.5c0 1.4 2.5 3 5.5 3s5.5-1.6 5.5-3V11M21.5 9v5"/></svg>',
         'effectifs' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8.5" r="3"/><path stroke-linecap="round" d="M3.5 19.5c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="16.8" cy="9.2" r="2.4"/><path stroke-linecap="round" d="M16.2 14.6c2.3.1 3.9 1.7 4.3 4.4"/></svg>',
@@ -190,6 +187,23 @@ $navTiles = [
     ]), 'hub'),
 ];
 
+// Accès direct à « Mes formations » (un clic, sans passer par le panneau Formations).
+if (class_exists(\App\Support\TrainingQuickAccess::class) && \App\Support\TrainingQuickAccess::allowed()) {
+    $myTrainingSummary = \App\Support\TrainingQuickAccess::summary();
+    $myTrainingOpen = $myTrainingSummary !== null ? (int) $myTrainingSummary['in_progress'] + (int) $myTrainingSummary['assigned'] : 0;
+    array_splice($navTiles, 1, 0, [
+        $tile(
+            'my-trainings',
+            'Mes formations',
+            $myTrainingOpen > 0 ? $myTrainingOpen . ' parcours à suivre' : 'Parcours et attestations',
+            'default',
+            $myTrainingOpen > 0 ? (string) $myTrainingOpen : null,
+            [],
+            'trainings'
+        ) + ['href' => url('formations/mes-formations'), 'lms_module' => 'formation'],
+    ]);
+}
+
 ob_start();
 require base_path('views/partials/dashboard_org_anomaly_form.php');
 $orgAnomalyExtra = (string) ob_get_clean();
@@ -220,20 +234,9 @@ if ($canAdmin) {
     );
 }
 
-$forumNavOpen = !function_exists('forum_public_nav_visible') || forum_public_nav_visible();
-if ($canForum && $forumNavOpen) {
-    $navTiles[] = $tile('forum', 'Forum', 'Échanges de la communauté', 'default', null, $links([
-        ['label' => 'Accueil du forum', 'href' => url('forum'), 'hint' => 'Rubriques et sujets'],
-        ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
-        $canForumCreate
-            ? ['label' => 'Publier un sujet', 'href' => url('forum/new-topic'), 'hint' => 'Démarrer une discussion']
-            : null,
-    ]), 'forum');
-} elseif ($forumNavOpen === false) {
-    $navTiles[] = $tile('messages', 'Messagerie interne', 'Échanges avec l’encadrement', 'default', null, $links([
-        ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
-    ]), 'messages');
-}
+$navTiles[] = $tile('messages', 'Messagerie interne', 'Échanges avec l’encadrement', 'default', null, $links([
+    ['label' => 'Messagerie interne', 'href' => url('messages'), 'hint' => 'Échanges avec l’encadrement'],
+]), 'messages');
 
 $navTiles[] = $tile(
     'trainings',
@@ -392,9 +395,6 @@ if ($canAdmin) {
         ['label' => 'Back-office', 'href' => url('back-office'), 'hint' => 'Espace état-major'],
         ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations'), 'hint' => 'File actionnable'],
         ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté'],
-        (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())
-            ? ['label' => 'Rubriques du forum', 'href' => url('back-office/categories'), 'hint' => 'Arborescence']
-            : null,
         ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité, vitrine, inscription et accueil'],
     ]), 'backoffice');
 } else {
@@ -548,6 +548,21 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
     $idxLabel = $num();
     $iconMarkup = $icon((string) ($item['icon'] ?? ''));
     ?>
+    <?php if (!empty($item['href'])): ?>
+    <div class="dash-rail__item" data-dash-rail-item="<?= $h($id) ?>">
+        <a class="<?= $h(implode(' ', $classes)) ?> dash-rail__tile--link" href="<?= $h((string) $item['href']) ?>"<?= !empty($item['lms_module']) ? ' data-lms-module-entry="' . $h((string) $item['lms_module']) . '"' : '' ?>>
+            <?php if ($iconMarkup !== ''): ?><span class="dash-rail__tile-icon" aria-hidden="true"><?= $iconMarkup ?></span><?php else: ?><b class="dash-rail__idx"><?= $h($idxLabel) ?></b><?php endif; ?>
+            <span class="dash-rail__copy">
+                <strong class="dash-rail__label"><?= $h($label) ?></strong>
+                <em class="dash-rail__hint"><?= $h((string) $item['hint']) ?></em>
+            </span>
+            <span class="dash-rail__end">
+                <?php if (is_string($badge) && $badge !== ''): ?><i class="dash-rail__meta dash-rail__meta--badge" aria-label="<?= $h($badge . ' élément(s)') ?>"><?= $h($badge) ?></i><?php endif; ?>
+                <svg class="dash-rail__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </span>
+        </a>
+    </div>
+    <?php return; endif; ?>
     <div class="dash-rail__item" data-dash-rail-item="<?= $h($id) ?>">
         <button
             type="button"
@@ -618,12 +633,15 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
         <div class="dash-rail__panel">
             <div class="dash-rail__view dash-rail__view--root" data-dash-rail-root>
                 <div class="dash-rail__brand">
-                    <span class="dash-rail__brand-mark" aria-hidden="true">A</span>
+                    <span class="dash-rail__brand-mark" aria-hidden="true"><span class="dash-rail__brand-emblem"></span></span>
                     <span class="dash-rail__brand-text">
                         <p class="dash-rail__eyebrow">Athena · Commandement</p>
                         <h2 class="dash-rail__title">Tableau de bord</h2>
                         <p class="dash-rail__unit"><?= $h($unitLabel) ?></p>
                     </span>
+                    <button type="button" class="dash-rail__close" data-dash-rail-mobile-close aria-label="Fermer les rubriques">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                    </button>
                 </div>
 
                 <nav class="dash-rail__nav" aria-label="Rubriques">
@@ -696,3 +714,18 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
         </div>
     </div>
 </aside>
+<?php
+$railFabCount = 0;
+foreach (array_merge($navTiles, $espaceTiles, $backofficeTiles, $adminTiles) as $railItem) {
+    // Opérateurs en liaison : information, pas un élément à traiter.
+    if (in_array($railItem['id'] ?? '', ['atak', 'atak-operators'], true)) {
+        continue;
+    }
+    $railFabCount += ctype_digit((string) ($railItem['badge'] ?? '')) ? (int) $railItem['badge'] : 0;
+}
+?>
+<button type="button" class="dash-rail-fab" data-dash-rail-mobile-open aria-controls="dash-rail" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    <span>Rubriques</span>
+    <?php if ($railFabCount > 0): ?><span class="dash-rail-fab__badge" aria-label="<?= $h($railFabCount . ' élément(s) à traiter') ?>"><?= $h($railFabCount > 99 ? '99+' : (string) $railFabCount) ?></span><?php endif; ?>
+</button>

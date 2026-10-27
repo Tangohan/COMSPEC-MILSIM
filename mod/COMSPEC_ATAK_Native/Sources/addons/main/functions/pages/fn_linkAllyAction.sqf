@@ -67,7 +67,7 @@ switch (_action) do {
             _st set ["phase", "ACE"];
             [_dur, [_obj], { ["linked", (_this select 0) select 0] call comspec_atak_native_fnc_linkAllyAction; },
                 { (uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap]) set ["phase", ""]; ["WARNING", "Liaison ATAK interrompue", 3, 20] call comspec_atak_native_fnc_notify; },
-                format ["Liaison ATAK (%1)…", _mode], { (player distance ((_this select 0) select 0)) < 2.6 }] call ace_common_fnc_progressBar;
+                (format ["Liaison ATAK (%1)…", _mode]) call comspec_atak_native_fnc_tr, { (player distance ((_this select 0) select 0)) < 2.6 }] call ace_common_fnc_progressBar;
             true
         };
         _st set ["phase", "LINKING"];
@@ -204,7 +204,8 @@ switch (_action) do {
         private _photos = 0;
         if ([] call comspec_atak_native_fnc_bridge && {!isNil "comspec_overwatch_connect_fnc_captureReconImage"}) then {
             private _failed = (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]) select { _x isEqualType "" };
-            missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", []];
+            // Au-delà de 20, les photos restent en file pour un prochain renvoi (pas d'effacement silencieux).
+            missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", _failed select [20]];
             {
                 private _p = _x splitString "\/";
                 [_x, format ["%1 · récupérée sur l'ATAK de %2 par %3 · %4", [player, true] call comspec_atak_native_fnc_unitCallsign, name player, _by, _p select ((count _p) - 1)], "CTAB", "", true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;

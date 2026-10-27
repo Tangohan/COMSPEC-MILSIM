@@ -3,7 +3,7 @@
 ## Le problème constaté
 
 Le 29/07/2026, la page d'accueil publique n'affichait plus aucune vidéo hero. En ouvrant
-directement `https://athena.ttrd.fr/public/assets/video/hero-athena.mp4`, le navigateur
+directement `https://athena-comspec.eu/public/assets/video/hero-athena.mp4`, le navigateur
 affichait un lecteur **audio seul** : la durée et le son étaient corrects, l'image restait
 noire.
 

@@ -1,12 +1,13 @@
 /*
     Applique un dataset sur les unités dans un rayon.
-    [_datasetId, _center, _radius, _level] call comspec_sse_fnc_applyDataset
+    [_datasetId, _center, _radius, _level, _notify] call comspec_sse_fnc_applyDataset
 */
 params [
     ["_datasetId", "falcon", [""]],
     ["_center", objNull, [objNull, []]],
     ["_radius", 50, [0]],
-    ["_level", -1, [0]]
+    ["_level", -1, [0]],
+    ["_notify", true, [true]]
 ];
 
 private _ds = [_datasetId] call comspec_sse_fnc_loadDataset;
@@ -29,7 +30,8 @@ missionNamespace setVariable ["comspec_sse_missionSeed", _ds getOrDefault ["seed
 
 private _roles = _ds getOrDefault ["roles", []];
 private _eligible = _roles select { (_x getOrDefault ["minLevel", 0]) <= _level };
-private _units = nearestObjects [_pos, ["CAManBase"], _radius];
+// Jamais de rôle sur un joueur (ni le Zeus lui-même, centre fréquent du rayon).
+private _units = nearestObjects [_pos, ["CAManBase"], _radius] select { alive _x && {!isPlayer _x} && {!(_x in playableUnits)} };
 private _created = [];
 private _roleMap = createHashMap; // roleId -> unit
 
@@ -65,14 +67,14 @@ if (!isNil "comspec_sse_fnc_addLogicalEntity") then {
 };
 
 private _lvlMeta = (_ds getOrDefault ["levels", createHashMap]) getOrDefault [str _level, createHashMap];
-hint ((format [
+if (_notify) then { [format [
     "%1\nGraine : %2\nNiveau : %3 — %4\n%5 rôle(s)",
     _ds getOrDefault ["name", "Dataset"],
     _ds getOrDefault ["seed", ""],
     _level,
     _lvlMeta getOrDefault ["label", ""],
     count _created
-]) call comspec_sse_fnc_tr);
+], "INFO"] call comspec_sse_fnc_notify; };
 
 [format ["applyDataset %1 level=%2 n=%3", _ds getOrDefault ["id", "?"], _level, count _created], "WARN"] call comspec_sse_fnc_log;
 _created

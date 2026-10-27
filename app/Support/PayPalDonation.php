@@ -7,24 +7,17 @@ namespace App\Support;
 use App\Repositories\PlatformSettingsRepository;
 
 /**
- * Dons PayPal du site : un lien de don PayPal (paypal.me ou bouton « Faire un don ») réglé par
- * l’administration du site, affiché sur /soutenir-atak avec un bouton et un QR code générés par Athena.
- * Le don se fait chez PayPal : Athena ne voit ni le montant ni le donateur (pas de badge automatique).
- *
- * Réglages (platform_settings) : donations_paypal_url, donations_paypal_enabled.
- * Repli : variable d’environnement PAYPAL_DONATE_URL.
+ * Compte PayPal du site, partagé par la page de paiement des formules (/paiement/…) et la page de dons
+ * (/soutenir-atak). Il n’y a qu’un seul réglage : Admin > Paiements (billing_paypal_me_url), avec repli sur
+ * ManualBilling::DEFAULT_PAYPAL_URL. Le don se fait chez PayPal : Athena ne voit ni le montant ni le donateur.
  */
 final class PayPalDonation
 {
-    public const SETTING_URL = 'donations_paypal_url';
-
-    public const SETTING_ENABLED = 'donations_paypal_enabled';
-
-    /** Hôtes acceptés pour le lien de don. */
+    /** Hôtes acceptés pour le lien PayPal. */
     private const HOSTS = ['paypal.me', 'www.paypal.me', 'paypal.com', 'www.paypal.com'];
 
     /**
-     * Lien de don nettoyé (https, hôte PayPal), ou null s’il n’est pas valable.
+     * Lien nettoyé (https, hôte PayPal), ou null s’il n’est pas valable.
      * Accepte « paypal.me/nom » sans https:// et les liens de bouton de don (donate/?hosted_button_id=…).
      */
     public static function normalizeUrl(string $raw): ?string
@@ -59,32 +52,32 @@ final class PayPalDonation
         return mb_substr($url, 0, 500);
     }
 
-    public static function configuredUrl(?PlatformSettingsRepository $settings = null): ?string
+    /** Lien du compte PayPal du site (réglé dans Admin > Paiements). */
+    public static function accountUrl(?PlatformSettingsRepository $settings = null): string
     {
-        $raw = '';
         try {
-            $raw = ($settings ?? new PlatformSettingsRepository())->get(self::SETTING_URL, '');
+            $raw = ($settings ?? new PlatformSettingsRepository())->get(ManualBilling::SETTING_PAYPAL_URL, '');
         } catch (\Throwable) {
             $raw = '';
         }
-        if (trim($raw) === '') {
-            $raw = (string) (getenv('PAYPAL_DONATE_URL') ?: '');
-        }
 
-        return self::normalizeUrl($raw);
+        return self::normalizeUrl($raw) ?? ManualBilling::DEFAULT_PAYPAL_URL;
     }
 
-    /** Lien de don à afficher au public, ou null si les dons PayPal sont coupés ou non réglés. */
-    public static function publicUrl(?PlatformSettingsRepository $settings = null): ?string
+    /** Un lien paypal.me accepte un montant pré-rempli (…/10.00EUR) ; un bouton de don PayPal, non. */
+    public static function acceptsAmount(string $base): bool
     {
-        $settings ??= new PlatformSettingsRepository();
-        try {
-            if (!$settings->getBool(self::SETTING_ENABLED, true)) {
-                return null;
-            }
-        } catch (\Throwable) {
-        }
+        $parts = parse_url($base);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $path = strtolower((string) ($parts['path'] ?? ''));
 
-        return self::configuredUrl($settings);
+        return empty($parts['query'])
+            && (in_array($host, ['paypal.me', 'www.paypal.me'], true) || str_starts_with($path, '/paypalme/'));
+    }
+
+    /** Lien de don avec le montant pré-rempli quand le compte le permet. */
+    public static function amountUrl(string $base, int $amountCents): string
+    {
+        return self::acceptsAmount($base) && $amountCents > 0 ? ManualBilling::paypalUrl($base, $amountCents) : $base;
     }
 }

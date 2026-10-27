@@ -155,15 +155,47 @@ final class DocumentInboxService
      */
     public function dashboardSummary(int $tenantId, int $userId, int $limit = 5): array
     {
-        $box = $this->forUser($tenantId, $userId, 'a_lire');
-        $pending = $this->complianceService->listPendingActionsForUser($tenantId, $userId, $limit);
+        $summary = ['mandatory' => 0, 'overdue' => 0, 'to_read' => 0, 'items' => []];
+        if ($tenantId < 1 || $userId < 1 || !$this->doctrineRepository->tableExists()) {
+            return $summary;
+        }
+        // Une seule passe sur les doctrines publiées (au lieu de forUser + listPendingActionsForUser),
+        // avec accusés, vues et audiences préchargés en masse : mêmes compteurs que forUser('a_lire').
+        $published = $this->doctrineRepository->listPublishedForTenant($tenantId);
+        $documentIds = array_map(static fn (array $r): int => (int) ($r['document_id'] ?? 0), $published);
+        $pending = [];
+        $this->complianceService->primeForUser($tenantId, $userId, $documentIds);
+        try {
+            foreach ($published as $row) {
+                $documentId = (int) ($row['document_id'] ?? 0);
+                $versionId = (int) ($row['version_id'] ?? 0);
+                if ($documentId < 1 || $versionId < 1) {
+                    continue;
+                }
+                // statusForUser() renvoie NOT_APPLICABLE hors audience : pas de second test d’audience.
+                $badge = $this->complianceService->memberBadge($tenantId, $userId, $row, $versionId);
+                $item = $this->complianceService->pendingActionItem($row, $badge);
+                if ($item === null) {
+                    continue;
+                }
+                $pending[] = $item;
+                $mandatory = !empty($row['reading_required'])
+                    || !empty($row['acknowledgment_required'])
+                    || (string) ($row['requirement_level'] ?? '') === 'mandatory';
+                ++$summary['to_read'];
+                if ($mandatory) {
+                    ++$summary['mandatory'];
+                }
+                if ($badge['badge'] === DoctrineComplianceStatus::OVERDUE) {
+                    ++$summary['overdue'];
+                }
+            }
+        } finally {
+            $this->complianceService->releasePrimed();
+        }
+        $summary['items'] = $this->complianceService->sortAndSlicePending($pending, $limit);
 
-        return [
-            'mandatory' => (int) ($box['counts']['obligatoires'] ?? 0),
-            'overdue' => (int) ($box['counts']['en_retard'] ?? 0),
-            'to_read' => (int) ($box['counts']['a_lire'] ?? 0),
-            'items' => $pending,
-        ];
+        return $summary;
     }
 
     /**

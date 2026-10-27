@@ -300,7 +300,7 @@ switch (_act) do {
             if ((_x getVariable ["COMSPEC_DroneMode", ""]) in ["FOLLOW", "ESCORT"] && {!isNull _f}) then { _map drawLine [_p, getPosASL _f, [_c select 0, _c select 1, _c select 2, 0.4]]; };
             private _r = _x getVariable ["COMSPEC_DroneRole", ""];
             _map drawIcon [[_x, [], "ICON"] call comspec_atak_native_fnc_droneOsd, _c, _p, 22, 22, getDir _x,
-                format [" %1 %2 m%3%4", [_x] call _name, round ((getPosATL _x) select 2), ["", format [" · %1", toUpper ([_r] call _roleName)]] select (_r isNotEqualTo ""), ["", " (hors liaison)"] select !_ok],
+                format [" %1 %2 m%3%4", [_x] call _name, round ((getPosATL _x) select 2), ["", format [" · %1", toUpper ([_r] call _roleName)]] select (_r isNotEqualTo ""), ["", (" (hors liaison)") call comspec_atak_native_fnc_tr] select !_ok],
                 1, 0.028, (COMSPEC_ATAK_FontSet select 1), "right"];
         } forEach (_bg select { alive _x });
         // Contacts de la garde rapprochée : croix rouge à la dernière position vue, une minute.

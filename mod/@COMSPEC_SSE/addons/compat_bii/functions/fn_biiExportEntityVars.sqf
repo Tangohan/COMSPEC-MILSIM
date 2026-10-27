@@ -18,13 +18,21 @@ private _nat = _identity getOrDefault ["nationality", ""];
 private _org = _identity getOrDefault ["organization", ""];
 if (_org isEqualTo "") then { _org = _identity getOrDefault ["role", ""]; };
 
-if (_name isNotEqualTo "") then {
-    _entity setVariable ["BII_Identifi_name", _name, true];
-    _entity setVariable ["BII_Identifi_bioName", _name, true];
+// Écriture publique seulement si la valeur change : le pont est relancé à chaque ensureGenerated (rafraîchissements
+// d'UI) et rediffusait une dizaine de variables à chaque passage.
+private _setIfChanged = {
+    params ["_var", "_val"];
+    private _cur = _entity getVariable _var;
+    if (isNil "_cur" || {!(_cur isEqualTo _val)}) then { _entity setVariable [_var, _val, true]; };
 };
-if (_alias isNotEqualTo "") then { _entity setVariable ["BII_Identifi_alias", _alias, true]; };
-if (_nat isNotEqualTo "") then { _entity setVariable ["BII_Identifi_nationality", _nat, true]; };
-if (_org isNotEqualTo "") then { _entity setVariable ["BII_Identifi_org", _org, true]; };
+
+if (_name isNotEqualTo "") then {
+    ["BII_Identifi_name", _name] call _setIfChanged;
+    ["BII_Identifi_bioName", _name] call _setIfChanged;
+};
+if (_alias isNotEqualTo "") then { ["BII_Identifi_alias", _alias] call _setIfChanged; };
+if (_nat isNotEqualTo "") then { ["BII_Identifi_nationality", _nat] call _setIfChanged; };
+if (_org isNotEqualTo "") then { ["BII_Identifi_org", _org] call _setIfChanged; };
 
 // Privates au scope fonction : un `private` dans un `then {}` n’est plus visible
 // après les `if (...) then { ... };` suivants (erreur Arma `_notes` indéfini).
@@ -52,16 +60,16 @@ if (!(_notes isEqualType "")) then {
 };
 
 if (_family isEqualType "" && {_family isNotEqualTo ""}) then {
-    _entity setVariable ["BII_Identifi_family", _family, true];
+    ["BII_Identifi_family", _family] call _setIfChanged;
 };
 if (_associates isEqualType "" && {_associates isNotEqualTo ""}) then {
-    _entity setVariable ["BII_Identifi_associates", _associates, true];
+    ["BII_Identifi_associates", _associates] call _setIfChanged;
 };
 if (_leads isEqualType "" && {_leads isNotEqualTo ""}) then {
-    _entity setVariable ["BII_Identifi_leads", _leads, true];
+    ["BII_Identifi_leads", _leads] call _setIfChanged;
 };
 if (_notes isEqualType "" && {_notes isNotEqualTo ""}) then {
-    _entity setVariable ["BII_Identifi_notes", _notes, true];
+    ["BII_Identifi_notes", _notes] call _setIfChanged;
 };
 
 private _bk = "";
@@ -73,6 +81,6 @@ if (!isNil "_bio" && {_bio isEqualType createHashMap}) then {
     };
 };
 if (isNil "_bk" || {!(_bk isEqualType "")}) then { _bk = ""; };
-if (_bk isNotEqualTo "") then { _entity setVariable ["BII_Identifi_bioKey", _bk, true]; };
+if (_bk isNotEqualTo "") then { ["BII_Identifi_bioKey", _bk] call _setIfChanged; };
 
 true

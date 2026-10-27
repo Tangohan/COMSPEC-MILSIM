@@ -157,6 +157,42 @@ require base_path('views/partials/account/shell_open.php');
     </ul>
 </section>
 
+<?php $yr = is_array($accountYearReview ?? null) ? $accountYearReview : null; ?>
+<?php if ($yr !== null): ?>
+<link href="<?= $h(asset_url('assets/css/year-review.css')) ?>" rel="stylesheet">
+<section class="yr-account<?= $yr['published'] ? '' : ' is-soon' ?>" aria-labelledby="account-year-review-heading">
+    <div class="yr-account__main">
+        <p class="yr-account__kicker">Rétrospective</p>
+        <p class="yr-account__year"><?= (int) $yr['year'] ?></p>
+        <div>
+            <h2 id="account-year-review-heading" class="yr-account__title">
+                <?= $yr['published'] ? ($yr['has_data'] ? 'Ton année sur le terrain' : 'Pas encore assez de terrain cette année') : 'Ta rétrospective arrive bientôt' ?>
+            </h2>
+            <p class="yr-account__desc">
+                <?php if (!$yr['published']): ?>
+                    Heures de jeu, kilomètres, blessures, SSE, comptes rendus : publiée le <?= $h(date('d/m/Y', (int) $yr['publish_at'])) ?>.
+                <?php elseif ($yr['has_data']): ?>
+                    Revois ton année en quelques écrans et partage tes cartes sur Discord.
+                <?php else: ?>
+                    Elle se remplit à chaque partie jouée avec l’ATAK et le lien du jeu.
+                <?php endif; ?>
+            </p>
+        </div>
+    </div>
+    <?php if ($yr['published']): ?>
+    <div class="yr-account__actions">
+        <a class="yr-btn yr-btn--solid" href="<?= $h(url('retrospective/' . (int) $yr['year'])) ?>"><?= $yr['has_data'] ? 'Voir ma rétrospective' : 'Ouvrir' ?></a>
+        <?php if ($yr['collective']): ?>
+        <a class="yr-btn" href="<?= $h(url('retrospective/' . (int) $yr['year'] . '/unite')) ?>">Bilan de l’unité</a>
+        <?php endif; ?>
+        <?php foreach (array_slice($yr['years'], 1) as $past): ?>
+        <a class="yr-btn" href="<?= $h(url('retrospective/' . (int) $past)) ?>"><?= (int) $past ?></a>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
+
 <div class="account-hub__ov-stats">
     <div class="account-hub__ov-stat">
         <p class="account-hub__ov-stat-label">Dernière connexion</p>

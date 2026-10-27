@@ -17,7 +17,7 @@ class CfgPatches {
         };
         author = "COMSPEC";
         authors[] = {"COMSPEC"};
-        url = "https://athena.ttrd.fr";
+        url = "https://athena-comspec.eu";
         VERSION_CONFIG;
     };
 };
@@ -31,8 +31,8 @@ class CfgMods {
         logoOver = "";
         logoSmall = "";
         actionName = "Website";
-        action = "https://athena.ttrd.fr";
-        overview = "Sensitive Site Exploitation — Zeus, Eden, ACE, génération déterministe et liaison Athena.";
+        action = "https://athena-comspec.eu";
+        overview = "$STR_COMSPEC_SSE_CFG_5EF301D74E";
         tooltip = "$STR_COMSPEC_SSE_CFG_25ECDF92AF";
         author = "COMSPEC";
     };

@@ -25,12 +25,14 @@ class RscControlsGroup {
     class HScrollbar;
 };
 
-class COMSPEC_RscText: RscText { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; sizeEx="0.026 * safeZoneH"; };
+// shadow=0 : l'ombre portée des RscText / RscStructuredText du jeu (shadow=1) doublait chaque lettre d'un liseré noir
+// décalé, illisible sur les libellés gris (OUTILS, RECHERCHER) et le texte foncé ; les classes qui en ont besoin la remettent.
+class COMSPEC_RscText: RscText { shadow=0; font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; sizeEx="0.026 * safeZoneH"; };
 class COMSPEC_RscTextRight: COMSPEC_RscText { style=1; };
 class COMSPEC_RscTextCenter: COMSPEC_RscText { style=2; };
 // Texte centré sur plusieurs lignes (libellé long d'une tuile du lanceur).
 class COMSPEC_RscTextCenterMulti: COMSPEC_RscText { style=18; lineSpacing=1; };
-class COMSPEC_RscStructuredText: RscStructuredText { colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; size="0.024 * safeZoneH";
+class COMSPEC_RscStructuredText: RscStructuredText { shadow=0; colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; size="0.024 * safeZoneH";
     // Police des balises <t> sans font=… (Roboto Condensed dans la classe du jeu).
     class Attributes: Attributes { font=ATAK_FONT; };
 };
@@ -41,12 +43,15 @@ class COMSPEC_RscButton: RscButton {
     // des boutons verts (RÉDIGER, option choisie d'un sélecteur) jusqu'à le rendre illisible.
     shadow=0; font=ATAK_FONT_BOLD; colorText[]=ATAK_TEXT; colorDisabled[]={0.42,0.46,0.44,0.7};
     colorBackground[]=ATAK_BG2; colorBackgroundActive[]=ATAK_GREEN_DIM; colorBackgroundDisabled[]={0.04,0.045,0.042,0.55};
-    colorFocused[]=ATAK_BG2; colorBorder[]=ATAK_BORDER; colorShadow[]={0,0,0,0}; offsetPressedX=0; offsetPressedY=0;
+    colorFocused[]=ATAK_BG2; colorBackground2[]=ATAK_BG2; colorBorder[]=ATAK_BORDER; colorShadow[]={0,0,0,0}; offsetPressedX=0; offsetPressedY=0;
     sizeEx="0.024 * safeZoneH";
 };
-class COMSPEC_RscButtonPrimary: COMSPEC_RscButton { colorText[]=ATAK_BG0; colorBackground[]=ATAK_GREEN; colorFocused[]=ATAK_GREEN; colorBackgroundActive[]={0.46,0.88,0.52,1}; };
+class COMSPEC_RscButtonPrimary: COMSPEC_RscButton { colorText[]=ATAK_BG0; colorBackground[]=ATAK_GREEN; colorBackground2[]=ATAK_GREEN; colorFocused[]=ATAK_GREEN; colorBackgroundActive[]={0.46,0.88,0.52,1}; };
 // Bouton invisible posé au-dessus d'une tuile (fond + icône + libellé) : seul le survol l'éclaire.
-class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0}; colorFocused[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorBackgroundActive[]={0.36,0.78,0.42,0.18}; colorBorder[]={0,0,0,0}; text=""; };
+// Bouton transparent posé sur une ligne (sous-menu repliable, interrupteur, tuile) : toutes les couleurs de fond à 0,
+// focus compris (colorBackground2, avec laquelle le moteur fait clignoter un bouton qui a le focus). Retour de jeu :
+// PERSONNALISER LE GROUPE et les lignes de réglage apparaissaient assombries (tout le dessous à 40 %).
+class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0}; colorBackground2[]={0,0,0,0}; colorFocused[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorBackgroundActive[]={0.36,0.78,0.42,0.18}; colorBorder[]={0,0,0,0}; text=""; };
 // Touches physiques de la coque : aucune surbrillance (la texture du téléphone suffit).
 class COMSPEC_RscButtonInvisible: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorShadow[]={0,0,0,0}; };
 class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelection[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
@@ -60,6 +65,9 @@ class COMSPEC_RscControlsGroup: RscControlsGroup {
     class HScrollbar: HScrollbar { color[]=ATAK_GREEN; height=0; };
 };
 class COMSPEC_RscPicture: RscPicture { colorText[]=ATAK_GREEN; colorBackground[]={0,0,0,0}; style=2096; };
+// Montre au poignet : blanc, étiré sur un rectangle déjà carré en pixels (fn_watch).
+// La classe verte ci-dessus, sans nouveau commit, laisse l'écran en disque vert et le boîtier invisible.
+class COMSPEC_RscWatchPic: RscPicture { colorText[]={1,1,1,1}; colorBackground[]={0,0,0,0}; style=48; };
 class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; colorOutside[]={0.025,0.030,0.027,1}; showCountourInterval=1;
     // Textes de la carte Arma plus discrets (marqueurs, lieux, grille) : lisibles aussi sur le petit écran.
     sizeExLabel="0.018 * safeZoneH"; sizeExGrid="0.016 * safeZoneH"; sizeExUnits="0.024 * safeZoneH"; sizeExNames="0.026 * safeZoneH"; sizeExInfo="0.018 * safeZoneH"; sizeExLevel="0.016 * safeZoneH"; sizeEx="0.018 * safeZoneH"; };
@@ -84,6 +92,9 @@ class COMSPEC_RscMapAtakHyb: COMSPEC_RscMapAtakSat {
     colorRoads[]={0.80,0.76,0.62,0.75}; colorRoadsFill[]={1,0.96,0.80,0.9};
     colorMainRoads[]={0.85,0.62,0.25,0.85}; colorMainRoadsFill[]={1,0.82,0.42,0.95}; };
 class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { showMarkers=1; sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; };
+// Carte du PC portable du poste TOC (fn_tocLaptop) : vraie carte d'Arma en grand, marqueurs de la mission compris,
+// textes à la taille d'un écran d'ordinateur (le PC n'est pas un téléphone).
+class COMSPEC_RscMapToc: COMSPEC_RscMap { showMarkers=1; sizeExLabel="0.020 * safeZoneH"; sizeExNames="0.026 * safeZoneH"; sizeExGrid="0.016 * safeZoneH"; sizeExInfo="0.020 * safeZoneH"; };
 class COMSPEC_RscPanel: COMSPEC_RscText { colorBackground[]=ATAK_BG1; };
 class COMSPEC_RscTile: COMSPEC_RscText { colorBackground[]=ATAK_BG2; };
 class COMSPEC_RscBadge: COMSPEC_RscTextCenter { font=ATAK_FONT_BOLD; colorBackground[]=ATAK_DANGER; colorText[]={1,1,1,1}; sizeEx="0.018 * safeZoneH"; };
@@ -104,5 +115,9 @@ class COMSPEC_RscBubbleIn: COMSPEC_RscStructuredText { colorBackground[]=ATAK_BG
 class COMSPEC_RscBubbleOut: COMSPEC_RscStructuredText { colorBackground[]={0.10,0.20,0.12,1}; };
 class COMSPEC_RscChip: COMSPEC_RscTextCenter { font=ATAK_FONT_BOLD; colorBackground[]={0.55,0.38,0.08,1}; colorText[]={1,1,1,1}; };
 // Curseur du rejeu de mission (app AAR).
+// Navigateur intégré d'Arma (CT_WEBBROWSER, Arma 3 2.14+) : diapositives Athena qu'Arma refuse en texture (image
+// téléchargée hors d'un PBO). Contenu local seulement (data\web\slide.html, fn_slideWebShow), aucune adresse externe.
+// Classe sans parent (comme la tablette Overwatch) : rien ne dépend d'une classe du jeu absente selon la version.
+class COMSPEC_RscWebBrowser { type=106; idc=-1; style=0; x=0; y=0; w=0.3; h=0.3; colorBackground[]={0,0,0,1}; colorText[]={1,1,1,1}; allowExternalURL=0; url=""; };
 class COMSPEC_RscSlider: RscXSliderH { color[]={0.36,0.78,0.42,0.9}; colorActive[]={0.46,0.88,0.52,1}; colorDisabled[]={0.4,0.45,0.42,0.6}; };
 class COMSPEC_RscMapPanel: COMSPEC_RscStructuredText { colorBackground[]={0.025,0.030,0.027,0.78}; };

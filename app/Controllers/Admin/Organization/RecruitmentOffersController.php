@@ -17,7 +17,6 @@ use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
-use App\Services\Recruitment\RecruitmentOpeningForumPublisher;
 use App\Services\Recruitment\RecruitmentOpeningPresentation;
 use App\Services\Recruitment\RecruitmentOpeningReferenceService;
 use App\Services\Recruitment\TenantRecruitmentSettings;
@@ -29,7 +28,6 @@ class RecruitmentOffersController
         private UnitRepository $unitRepository,
         private TenantRepository $tenantRepository,
         private PersonnelJobRoleRepository $jobRoleRepository,
-        private RecruitmentOpeningForumPublisher $recruitmentForumPublisher,
         private UserRepository $userRepository,
         private EmailService $emailService,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
@@ -186,20 +184,6 @@ class RecruitmentOffersController
             $published = $this->openings->findByIdForTenant($id, $tenantId);
             if ($published) {
                 $this->notifyStaffRecruitmentOpeningPublished($tenantId, $tenant, $published);
-            }
-            $wantExterne = $request->input('forum_annonce_generale') === '1';
-            $wantInterne = $request->input('forum_annonce_organisation') === '1';
-            $uid = (int) Session::get('user_id');
-            $forumNotes = $this->recruitmentForumPublisher->publishForumThreads(
-                $tenantId,
-                $uid,
-                $id,
-                $tenant,
-                $wantExterne,
-                $wantInterne
-            );
-            if ($forumNotes !== []) {
-                $msg .= ' ' . implode(' ', $forumNotes);
             }
         }
         Session::flash($ok ? 'success' : 'error', $msg);

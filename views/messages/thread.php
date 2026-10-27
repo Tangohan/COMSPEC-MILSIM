@@ -22,12 +22,21 @@ foreach (($msgParticipants ?? []) as $p) {
     if ($pid === $msgxUserId || $pid <= 0) {
         continue;
     }
-    $others[] = trim((string) ($p['display_name'] ?? '')) ?: 'Participant';
+    $label = trim((string) ($p['display_name'] ?? ''));
+    if ($label === '') {
+        $label = trim((string) ($p['callsign'] ?? ''));
+    }
+    $others[] = $label !== '' ? $label : 'Participant';
 }
 $shown = array_slice($others, 0, 3);
+$extra = count($others) - count($shown);
+$names = implode(', ', $shown);
+if ($extra > 0) {
+    $names .= ' et ' . $extra . ' autre' . ($extra > 1 ? 's' : '');
+}
 $participantsLine = $others === []
-    ? 'Vous seul pour l’instant'
-    : 'Vous, ' . implode(', ', $shown) . (count($others) > 3 ? ' et ' . (count($others) - 3) . ' autre' . (count($others) - 3 > 1 ? 's' : '') : '');
+    ? 'Vous êtes seul dans cette conversation pour l’instant.'
+    : 'Avec ' . $names;
 $peer = MsgP::peerLabel($thread + ['creator_name' => ''], $msgxUserId);
 foreach ($msgxThreads as $row) {
     if ((int) ($row['id'] ?? 0) === $threadId) {
@@ -54,20 +63,23 @@ $seed = $peer === 'Encadrement' ? 'staff' : (int) ($thread['created_by_user_id']
             </header>
 
             <div class="msgx-stream" data-msg-stream role="log" aria-label="Messages de la conversation">
-                <p class="msgx-privacy msgx-privacy--center"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4.5" y="8" width="11" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5"/></svg> Échange réservé aux participants de ce fil</p>
+                <p class="msgx-privacy msgx-privacy--center"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4.5" y="8" width="11" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5"/></svg> Cette conversation n’est visible que par ses participants.</p>
                 <?php if ($days === []): ?>
-                    <div class="msgx-placeholder msgx-placeholder--inline"><p>Aucun message dans ce fil pour l’instant. Écrivez le premier ci-dessous.</p></div>
+                    <div class="msgx-placeholder msgx-placeholder--inline"><p>Cette conversation ne contient encore aucun message. Écrivez le premier ci-dessous.</p></div>
                 <?php endif; ?>
                 <?php foreach ($days as $day): ?>
                     <div class="msgx-day" role="separator"><span><?= htmlspecialchars($day['label'], ENT_QUOTES, 'UTF-8') ?></span></div>
                     <?php foreach ($day['groups'] as $g): ?>
                         <?php if (!empty($g['unread_before'])): ?><div class="msgx-unread-mark" id="msgx-unread" data-msg-unread><span>Nouveaux messages</span></div><?php endif; ?>
-                        <div class="msgx-group<?= $g['mine'] ? ' is-mine' : '' ?>">
+                        <div class="msgx-group<?= $g['mine'] ? ' is-mine' : '' ?>" role="group" aria-label="<?= htmlspecialchars($g['mine'] ? 'Vous' : (string) $g['name'], ENT_QUOTES, 'UTF-8') ?>">
                             <?php if (!$g['mine']): ?><span class="msgx-avatar msgx-avatar--sm" style="--h:<?= (int) $g['hue'] ?>" aria-hidden="true"><?= htmlspecialchars((string) $g['initials'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             <div class="msgx-group__body">
-                                <div class="msgx-group__meta"><strong><?= htmlspecialchars((string) $g['name'], ENT_QUOTES, 'UTF-8') ?></strong><time><?= htmlspecialchars((string) $g['time'], ENT_QUOTES, 'UTF-8') ?></time></div>
+                                <?php if (!$g['mine']): ?><div class="msgx-group__meta"><strong><?= staff_name((string) $g['name'], (int) ($g['sender_id'] ?? 0)) ?></strong></div><?php endif; ?>
                                 <?php foreach ($g['messages'] as $m): ?>
-                                    <div class="msgx-bubble" title="<?= htmlspecialchars((string) $m['full_time'], ENT_QUOTES, 'UTF-8') ?>"><?= nl2br(htmlspecialchars((string) $m['body'], ENT_QUOTES, 'UTF-8'), false) ?></div>
+                                    <div class="msgx-bubble">
+                                        <p class="msgx-bubble__text"><?= htmlspecialchars((string) $m['body'], ENT_QUOTES, 'UTF-8') ?></p>
+                                        <?php if ((string) ($m['time'] ?? '') !== ''): ?><time datetime="<?= htmlspecialchars((string) ($m['iso'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) ($m['full_time'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $m['time'], ENT_QUOTES, 'UTF-8') ?></time><?php endif; ?>
+                                    </div>
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -80,7 +92,7 @@ $seed = $peer === 'Encadrement' ? 'staff' : (int) ($thread['created_by_user_id']
                 <label class="msgx-sr" for="msg-reply-body">Votre réponse</label>
                 <div class="msgx-composer__box">
                     <textarea id="msg-reply-body" name="body" rows="1" maxlength="4000" required placeholder="Écrire une réponse…" data-msg-body data-msg-autosize></textarea>
-                    <button type="submit" class="msgx-send" aria-label="Envoyer la réponse" data-msg-submit><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 4 17 8-17 8 3-8-3-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 12h14" stroke="currentColor" stroke-width="1.8"/></svg></button>
+                    <button type="submit" class="msgx-send" data-msg-submit><span>Envoyer</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 4 17 8-17 8 3-8-3-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 12h14" stroke="currentColor" stroke-width="1.8"/></svg></button>
                 </div>
                 <div class="msgx-hint"><span><kbd>Ctrl</kbd> + <kbd>Entrée</kbd> pour envoyer · <kbd>Entrée</kbd> pour aller à la ligne</span><span><b data-msg-count>0</b>/4000</span></div>
             </form>

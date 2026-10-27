@@ -16,8 +16,10 @@ final class HubPortalHeroAssetTest extends TestCase
         $marketing = (string) file_get_contents(dirname(__DIR__, 2) . '/views/layout/marketing.php');
         $frHome = (string) file_get_contents(dirname(__DIR__, 2) . '/lang/fr/home.php');
 
-        self::assertStringContainsString('hub-hero', $hub);
-        self::assertStringContainsString('fog-team.jpg', $hub);
+        // Refonte du hub (style « Mes formations ») : coque commune hx-* et en-tête partagé.
+        $shell = (string) file_get_contents(dirname(__DIR__, 2) . '/views/hub/partials/shell_open.php');
+        self::assertStringContainsString("partials/shell_open.php", $hub);
+        self::assertStringContainsString('hx-head__title', $shell);
         self::assertStringContainsString('announce_tiles.php', $hub);
         self::assertStringContainsString('hub_announce_items', $ctrl);
         self::assertStringContainsString('AlertPresentationService', $ctrl);

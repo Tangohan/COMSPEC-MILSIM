@@ -35,6 +35,9 @@ final class EmailPrivacy
     public static function mask(string $email): string
     {
         $email = trim($email);
+        if (RosterOnlyMember::isRosterEmail($email)) {
+            return RosterOnlyMember::label();
+        }
         $at = strpos($email, '@');
         if ($at === false || $at < 1) {
             return $email === '' ? '—' : $email;
@@ -53,6 +56,9 @@ final class EmailPrivacy
         $email = trim((string) $email);
         if ($email === '') {
             return '—';
+        }
+        if (RosterOnlyMember::isRosterEmail($email)) {
+            return RosterOnlyMember::label();
         }
         if (self::viewerCanSeeEmails()) {
             return $email;

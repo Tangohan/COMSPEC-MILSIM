@@ -30,7 +30,7 @@ private _lzMarker = {
     createMarkerLocal [_mk, _r get "pos"];
     _mk setMarkerTypeLocal "mil_pickup";
     _mk setMarkerColorLocal "ColorRed";
-    _mk setMarkerTextLocal format ["MEDEVAC %1 · %2", _r get "from", _steps select (_r get "status")];
+    _mk setMarkerTextLocal format ["MEDEVAC %1 · %2", _r get "from", (_steps select (_r get "status")) call comspec_atak_native_fnc_tr];
 };
 private _save = {
     private _m = uiNamespace getVariable ["COMSPEC_ATAK_Medevac", createHashMap];
@@ -124,7 +124,7 @@ switch (_action) do {
             ["litter", _m getOrDefault ["litter", 0]], ["amb", _m getOrDefault ["amb", 0]], ["equip", _m getOrDefault ["equip", "NONE"]],
             ["sec", _m getOrDefault ["sec", "NO_ENEMY"]], ["mark", format ["%1 %2", _m getOrDefault ["mark", "SMOKE"], _m getOrDefault ["col", "GREEN"]]],
             ["pos", _pos], ["grid", [_pos, 8] call comspec_atak_native_fnc_gridRef], ["rem", _m getOrDefault ["mRem", ""]],
-            ["status", 0], ["by", ""], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString]
+            ["status", 0], ["by", ""], ["time", (["now"] call comspec_atak_native_fnc_clockFmt)]
         ];
         [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_medevac", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [_r, str side group player], "MEDEVAC", 2] call comspec_atak_native_fnc_netSend;
         ["SUCCESS", "MEDEVAC envoyé au camp · suivi dans l'onglet MEDEVAC", 5, 50] call comspec_atak_native_fnc_notify;
@@ -150,7 +150,7 @@ switch (_action) do {
             params ["_v", "_id"];
             [_v, _id] call comspec_overwatch_connect_fnc_medicalTriage;
             [] call comspec_overwatch_connect_fnc_pollMedicalAlerts;
-            [{ ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MEDICAL") then { ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
     };
 };

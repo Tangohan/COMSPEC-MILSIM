@@ -126,6 +126,9 @@ final class PersonnelDuplicateDetectionService
                         'callsign' => ($m['callsign'] ?? null) !== null && trim((string) $m['callsign']) !== ''
                             ? (string) $m['callsign']
                             : null,
+                        // Pour départager les fiches sans les ouvrir une à une (bureau des effectifs uniquement).
+                        'matricule' => trim((string) (($m['matricule_internal'] ?? '') ?: ($m['service_number'] ?? ''))),
+                        'email' => trim((string) ($m['email'] ?? '')),
                     ];
                 }
                 $groups[] = [

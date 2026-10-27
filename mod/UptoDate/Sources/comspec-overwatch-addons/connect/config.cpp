@@ -18,9 +18,13 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.616;
-        versionStr = "1.6.16";
-        versionAr[] = {1, 6, 16};
+        version = 1.621;
+        versionStr = "1.6.21";
+        versionAr[] = {1, 6, 21};
+        // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
+        // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
+        // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
+        // 1.6.21 : revue du mod, tours 6 et 7 (regroupement ATAK natif 2.6.0).
     };
 };
 
@@ -112,6 +116,7 @@ class CfgFunctions {
             class diagIsolateStop {};
             class diagIsolateOnLoad {};
             class diagChecks {};
+            class diagSelfTest {};
             class diagAction {};
             class collectBugReportLog {};
             class disconnect {};
@@ -145,6 +150,7 @@ class CfgFunctions {
             class arsenalApplyLoadout {};
             class arsenalPushAll {};
             class arsenalPullAll {};
+            class arsenalSyncAll {};
             class arsenalApplyCloud {};
             class arsenalOverlayShow {};
             class arsenalOverlayBeginLoad {};
@@ -199,6 +205,7 @@ class CfgFunctions {
             class callExtLogged {};
             class outboxPush {};
             class outboxFlush {};
+            class saveProfile {};
             class outboxState {};
             class wallClockSeconds {};
             class openTabletView {};
@@ -495,8 +502,10 @@ class CfgFunctions {
             class linkDegradeSimApplySetting {};
             class isLinkDegradeSimActive {};
             class pollModModules {};
+            class pollDataFlows {};
             class pollExperience {};
             class applyTenantExperience {};
+            class applyDonorPerk {};
             class showExperienceGuide {};
             class portalLabel {};
             class profileWrap {};
@@ -651,10 +660,10 @@ class CfgFunctions {
     };
 };
 
+// Pas de mode / jip au niveau addon : ils s'appliqueraient à tout le jeu (liste blanche stricte imposée aux autres mods,
+// à Zeus et au vanilla). Seules les classes COMSPEC sont déclarées : elles servent quand une mission active la liste blanche.
 class CfgRemoteExec {
     class Functions {
-        mode = 1;
-        jip = 0;
         class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_relayZeusAtakEffect { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
@@ -669,8 +678,8 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_setAtakShowEnemyAi { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_forceSyncData { allowedTargets = 0; };
 
-        // Ces cinq-là étaient appelées via remoteExec sans figurer ici. « mode = 1 »
-        // étant une liste blanche stricte, les appels étaient rejetés en silence :
+        // Ces cinq-là étaient appelées via remoteExec sans figurer ici. Avec une liste
+        // blanche stricte (« mode = 1 » posé par la mission), les appels étaient rejetés en silence :
         // les ordres n'arrivaient pas, les zones posées depuis Zeus ne se créaient
         // pas, et la reprise de session après plantage ne se faisait pas.
         // allowedTargets reprend la cible réelle de chaque appel, au plus juste.
@@ -681,10 +690,6 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_clearDisconnectedAtakState { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_detonateChargeLocal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_applyAiMoveOrder { allowedTargets = 0; };
-    };
-    class Commands {
-        mode = 1;
-        jip = 0;
     };
 };
 
@@ -698,6 +703,29 @@ class CfgCommands {
         "http://localhost:*/*",
         "http://127.0.0.1:*/*",
         "file://z/comspec_overwatch/addons/connect/web/*"
+    };
+};
+
+// Écussons « Donateur Athena » : appliqués au joueur local par fn_applyDonorPerk selon le palier reçu d'Athena.
+// Sources : mod\UptoDate\Sources\art\donor_insignia (SVG + PNG 256x256, hors PBO) ; PAA DXT5 générés par mod\UptoDate\tools\png2paa.py.
+class CfgUnitInsignia {
+    class COMSPEC_Donor_soutien {
+        displayName = "Donateur Athena · Soutien";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_soutien_ca.paa";
+        textureVehicle = "";
+    };
+    class COMSPEC_Donor_allie {
+        displayName = "Donateur Athena · Allié";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_allie_ca.paa";
+        textureVehicle = "";
+    };
+    class COMSPEC_Donor_pilier {
+        displayName = "Donateur Athena · Pilier";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_pilier_ca.paa";
+        textureVehicle = "";
     };
 };
 

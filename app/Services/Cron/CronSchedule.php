@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Cron;
 
+use App\Support\UtcDateTime;
+
 /**
  * Cadence des tâches automatiques : un passage serveur toutes les 5 minutes,
  * chaque job ne se relance que s’il est dû.
@@ -24,6 +26,8 @@ final class CronSchedule
         'cooperation_reminders' => 60,
         'training_expire' => 60,
         'qualification_expiry_scan' => 60,
+        // Cursus pilote : les heures de vol arrivent toutes les 10 min, un passage par heure suffit.
+        'pilot_qualifications' => 60,
         'personnel_progression_evaluate' => 60,
         'personnel_capability_refresh' => 60,
         'seniority_sync_all' => 1440,
@@ -43,6 +47,8 @@ final class CronSchedule
         'photo_compress' => 60,
         // Fins d'essai fondateur et de formule offerte : e-mail une fois par fin.
         'plan_end_warning' => 360,
+        // Annonce de la rétrospective annuelle : une part du quota d'e-mails par jour, pendant 14 jours.
+        'year_review_mail' => 1440,
         // Rôles liés Discord : chaque compte relié est renvoyé au plus une fois par 24 h, 50 par passage.
         'discord_linked_roles_sync' => 60,
         // E-mails reportés par le quota quotidien ou mis en file (MAIL_QUEUE).
@@ -70,8 +76,10 @@ final class CronSchedule
         }
         $status = (string) ($latest['status'] ?? '');
         $anchor = (string) ($latest['finished_at'] ?? $latest['started_at'] ?? '');
-        $at = $anchor !== '' ? strtotime($anchor) : false;
-        if ($at === false) {
+        // started_at / finished_at sont écrits par NOW() en session UTC : relus en UTC,
+        // sinon un passage paraît 1 à 2 h plus ancien et les tâches horaires tournent à chaque tick.
+        $at = UtcDateTime::timestamp($anchor);
+        if ($at === null) {
             return true;
         }
         if ($status === 'running') {
@@ -97,8 +105,8 @@ final class CronSchedule
             if (!in_array($src, ['cli', 'http', 'watchdog'], true)) {
                 continue;
             }
-            $at = strtotime((string) ($run['finished_at'] ?? $run['started_at'] ?? ''));
-            if ($at !== false && $at >= $cutoff) {
+            $at = UtcDateTime::timestamp($run['finished_at'] ?? $run['started_at'] ?? '');
+            if ($at !== null && $at >= $cutoff) {
                 return true;
             }
         }

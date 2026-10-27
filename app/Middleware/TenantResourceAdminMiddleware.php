@@ -10,7 +10,7 @@ use App\Core\Session;
 use App\Support\NonDefaultTenantContextGuard;
 
 /**
- * Modules de la communauté active (/back-office/ressources/… : modpacks, ATAK, forum…) :
+ * Modules de la communauté active (/back-office/ressources/… : modpacks, ATAK…) :
  * gestionnaire de la communauté (admin.organization / admin.access) ou administrateur plateforme.
  * Ne jamais l’utiliser sous /admin : cet espace est réservé à l’administrateur de la plateforme.
  * Diffère de OrganizationAdminMiddleware (back-office) qui exclut le super-admin sans rôle org.

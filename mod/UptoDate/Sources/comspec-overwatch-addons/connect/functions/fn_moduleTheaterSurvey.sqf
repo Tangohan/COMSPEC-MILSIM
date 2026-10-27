@@ -20,9 +20,18 @@ if (_this isEqualType objNull) then {
         if (_a2 isEqualType true) then { _activated = _a2; };
         if (_a1 isEqualType true && {!(_a2 isEqualType true)}) then { _activated = _a1; };
     } else {
-        if (_a0 isEqualType "" && {(_this param [1, objNull]) isEqualType objNull}) then {
-            _logic = _this param [1, objNull];
-            _activated = _this param [3, true];
+        if (_a0 isEqualType "") then {
+            private _a1 = _this param [1, objNull];
+            if (_a1 isEqualType objNull) then {
+                _logic = _a1;
+                _activated = _this param [3, true];
+            } else {
+                // is3DEN = 1 : BI appelle [mode, [logic, activated, curatorPlaced]], mission comprise.
+                if (_a1 isEqualType [] && {(toLower _a0) in ["init", "registeredtoworld3den"]}) then {
+                    _logic = _a1 param [0, objNull, [objNull]];
+                    _activated = _a1 param [1, true, [true]];
+                };
+            };
         };
     };
 };
@@ -41,10 +50,9 @@ if (is3DEN) then {
     };
     true
 } else {
-    if (!hasInterface) exitWith {
-        deleteVehicle _logic;
-        false
-    };
+    // isGlobal = 1 : chaque machine lit la même logique. La supprimer ici (serveur ou premier client)
+    // l'enlèverait aux autres machines avant leur lecture ; on ne la supprime qu'en solo.
+    if (!hasInterface) exitWith { false };
 
     private _mode = _logic getVariable ["RunAtStart", "manual"];
     private _runAtStart = false;
@@ -54,18 +62,30 @@ if (is3DEN) then {
         _runAtStart = (toLower (trim _mode)) in ["start", "1", "true", "oui", "auto"];
     };
 
-    private _isZeus = false;
-    if (!isNull player) then {
-        _isZeus = !isNull (getAssignedCuratorLogic player);
-    };
-    private _isAdmin = (!isMultiplayer) || {serverCommandAvailable "#kick"};
+    if (!isMultiplayer) then { deleteVehicle _logic; };
 
-    deleteVehicle _logic;
-
-    if (_runAtStart && {_isZeus || {_isAdmin}}) then {
-        [{
+    // Déjà lancé pour cette mission (ex. Zeus rejoignant en cours de partie) : ne pas relancer.
+    if (_runAtStart && {!(missionNamespace getVariable ["COMSPEC_TheaterSurveyDone", false])}) then {
+        [] spawn {
+            private _linked = { (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isEqualTo "linked" };
+            // Zeus et admin ne sont souvent connus qu'après l'initialisation : on les regarde une fois lié.
+            private _priority = {
+                (!isMultiplayer)
+                || {serverCommandAvailable "#kick"}
+                || {!isNull player && {!isNull (getAssignedCuratorLogic player)}}
+            };
+            private _t0 = diag_tickTime;
+            waitUntil { uiSleep 3; (call _linked) || {(diag_tickTime - _t0) > 180} };
+            if !(call _linked) exitWith {
+                ["WARN", "Theater", "Relevé du théâtre abandonné : Athena non liée après 3 min"] call comspec_overwatch_connect_fnc_log;
+            };
+            private _t1 = diag_tickTime;
+            waitUntil { uiSleep 2; (call _priority) || {(diag_tickTime - _t1) > 60} };
+            if !(call _priority) exitWith {};
+            if (missionNamespace getVariable ["COMSPEC_TheaterSurveyDone", false]) exitWith {};
+            missionNamespace setVariable ["COMSPEC_TheaterSurveyDone", true, true];
             [true] call comspec_overwatch_connect_fnc_theaterSurveyShow;
-        }, [], 3] call CBA_fnc_waitAndExecute;
+        };
     };
     true
 };

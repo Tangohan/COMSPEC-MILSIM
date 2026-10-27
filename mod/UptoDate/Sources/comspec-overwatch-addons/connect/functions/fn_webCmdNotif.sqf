@@ -21,7 +21,7 @@ switch (_cmd) do {
         profileNamespace setVariable ["COMSPEC_ATAK_Silent", (_a getOrDefault ["silent", "0"]) isEqualTo "1"];
         profileNamespace setVariable ["COMSPEC_ATAK_Notifications", (_a getOrDefault ["banners", "1"]) isEqualTo "1"];
         profileNamespace setVariable ["COMSPEC_ATAK_NotifToastSec", 0 max (parseNumber (_a getOrDefault ["toast", "0"])) min 30];
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
         if (!isNil "comspec_atak_native_fnc_notify") then { ["INFO", "Préférences de notifications mises à jour depuis Athena", 3, 20] call comspec_atak_native_fnc_notify; };
         [_id, "done", "Préférences appliquées au téléphone"] call comspec_overwatch_connect_fnc_webCmdAck;
     };

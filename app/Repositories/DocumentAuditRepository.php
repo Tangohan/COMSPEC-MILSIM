@@ -29,7 +29,7 @@ class DocumentAuditRepository
         ?string $ipAddress = null,
         ?string $userAgent = null
     ): void {
-        $ip = $ipAddress ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null);
+        $ip = $ipAddress ?? (\App\Support\ClientIp::resolve() ?: null);
         $ua = $userAgent ?? ($_SERVER['HTTP_USER_AGENT'] ?? null);
         if (is_string($ip) && strpos($ip, ',') !== false) {
             $ip = trim(explode(',', $ip)[0]);

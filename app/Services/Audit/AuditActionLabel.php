@@ -33,7 +33,7 @@ final class AuditActionLabel
         // Modération
         'moderation.action_applied' => 'Action de modération appliquée',
         'moderation.action_revoked' => 'Action de modération révoquée',
-        'forum.moderation_action' => 'Modération forum',
+        'report.moderation_action' => 'Modération des signalements',
         // Sécurité
         'security.event' => 'Événement de sécurité',
         // Rôles & permissions
@@ -74,6 +74,16 @@ final class AuditActionLabel
         // Plateforme — réglages et déploiement
         'platform.settings_updated' => 'Réglage plateforme (brief) mis à jour',
         'platform.storage_purged' => 'Historique volumineux vidé (administration du site)',
+        'platform.ops_console_unlocked' => 'Console d’exploitation ouverte (double vérification)',
+        'platform.ops_migrations_launched' => 'Migrations lancées depuis la console d’exploitation',
+        'platform.ops_backup_created' => 'Sauvegarde créée',
+        'platform.ops_backup_downloaded' => 'Sauvegarde téléchargée',
+        'platform.ops_backup_restored' => 'Sauvegarde restaurée',
+        'platform.ops_backup_deleted' => 'Sauvegarde supprimée',
+        'platform.ops_account_deletion_scheduled' => 'Suppression de compte programmée',
+        'platform.ops_account_deletion_cancelled' => 'Suppression de compte annulée',
+        'platform.ops_account_deletion_executed' => 'Compte supprimé depuis la console d’exploitation',
+        'platform.game_client_floor_updated' => 'Version minimale des DLL du jeu modifiée (administration du site)',
         'platform.donations_updated' => 'Réglage des dons PayPal modifié (administration du site)',
         'platform.data_table_emptied' => 'Table vidée depuis l’explorateur de données (administration du site)',
         'platform.data_row_updated' => 'Ligne modifiée depuis l’explorateur de données (administration du site)',
@@ -136,7 +146,7 @@ final class AuditActionLabel
         return self::humanizeSlug($action);
     }
 
-    /** Fallback : forum.post_hidden → « Forum · post hidden » */
+    /** Fallback : moderation.user_muted → « Moderation · user muted » */
     private static function humanizeSlug(string $action): string
     {
         $parts = explode('.', $action, 2);

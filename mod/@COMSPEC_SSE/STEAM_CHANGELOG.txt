@@ -2,6 +2,38 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE — update of 26/10/2026 (2)[/h1]
+[b]Restart Arma completely.[/b] Use with COMSPEC ATAK 2.6.0.AB "Denver".
+
+[list]
+[*] Many fixes from a further full review of the mod: identity and dogtags, generated sites and evidence, intel built from the briefing, collected media and evidence photos taken with the ATAK.
+[*] Zeus: fixes to the apply-model, map point, reset site and debug modules.
+[*] Better behaviour alongside the BII mod.
+[/list]
+
+----------------------------------------
+[h1]COMSPEC SSE — mise à jour du 26/10/2026[/h1]
+[b]Relance Arma complètement.[/b] À utiliser avec COMSPEC ATAK 2.4.0.AB « Denver ».
+
+[list]
+[*] Les textes du SSE encore en français dans la version anglaise du jeu sont traduits, y compris les noms d'objets et de modules Eden et Zeus.
+[*] Tableau de bord SSE du téléphone : les tuiles passent sur deux lignes sur un écran étroit, les libellés ne sont plus coupés.
+[*] Nombreuses corrections issues de la relecture complète du mod.
+[*] Le portail Athena passe à l'adresse athena-comspec.eu.
+[/list]
+
+----------------------------------------
+
+[h1]COMSPEC SSE — update of 26/10/2026[/h1]
+[b]Restart Arma completely.[/b] Use with COMSPEC ATAK 2.4.0.AB "Denver".
+
+[list]
+[*] SSE texts still in French in the English version of the game are now translated, including item names and Eden and Zeus modules.
+[*] SSE dashboard on the phone: tiles wrap onto two lines on a narrow screen, labels are no longer cut.
+[*] Many fixes from a full review of the mod.
+[*] The Athena portal moves to athena-comspec.eu.
+[/list]
+
 [h1]COMSPEC SSE 1.0.0[/h1]
 [b]20/10/2026[/b] — Mise à jour majeure. Relancer Arma complètement. [b]COMSPEC ATAK Native est désormais obligatoire[/b] (Arma 3 2.14 minimum).
 

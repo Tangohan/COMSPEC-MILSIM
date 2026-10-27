@@ -25,7 +25,7 @@ if (!canSuspend) exitWith { [_mode] spawn comspec_atak_native_fnc_startupCheck; 
 if (_mode isEqualTo "reset") then {
     profileNamespace setVariable ["COMSPEC_ATAK_StartupCheckOnce", nil];
     profileNamespace setVariable ["COMSPEC_ATAK_StartupCheckId", nil];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
     missionNamespace setVariable ["COMSPEC_ATAK_StartupCheckDone", false];
     missionNamespace setVariable ["COMSPEC_ATAK_StartupCheckSent", "en cours (remis à zéro)"];
     ["INFO", "STARTUP", "Check de démarrage remis à zéro par le joueur : nouvel envoi"] call comspec_atak_native_fnc_log;
@@ -153,7 +153,8 @@ private _build = {
     // 14. Terminal : objet téléphone porté (catalogue des appareils) et modèle choisi.
     private _set = missionNamespace getVariable ["COMSPEC_ATAK_DeviceCatalogSet", createHashMap];
     private _item = ((assignedItems player) + (items player)) param [((assignedItems player) + (items player)) findIf { (toLower _x) in _set }, ""];
-    private _model = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]);
+    ([player] call comspec_atak_native_fnc_phoneCarried) params ["_wornModel"];
+    private _model = toUpper _wornModel;
     private _itemName = getText (configFile >> "CfgWeapons" >> _item >> "displayName");
     if (_itemName isEqualTo "") then { _itemName = _item; };
     private _hasDev = [player, true] call comspec_atak_native_fnc_hasDevice;
@@ -176,10 +177,10 @@ private _send = {
     if !(_launch isEqualType "" && {_launch isNotEqualTo ""}) then {
         _launch = hashValue format ["%1|%2|%3", _key, systemTimeUTC, diag_tickTime];
         profileNamespace setVariable ["COMSPEC_ATAK_StartupCheckId", _launch];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
     };
     private _args = [
-        "https://athena.ttrd.fr/public",
+        "https://athena-comspec.eu/public",
         "atak=" + _code, "config=" + _cfg, "link=" + _dll, "link_expected=" + (missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", ""]),
         format ["arma=%1.%2", floor (_v / 100), _v mod 100],
         "player=" + profileName, "callsign=" + groupId group player,
@@ -205,7 +206,7 @@ private _send = {
             missionNamespace getVariable ["COMSPEC_ATAK_StartupCheckSent", ""],
             format ["%1-%2-%3 %4:%5 UTC", _y, [_mo, 2] call CBA_fnc_formatNumber, [_d, 2] call CBA_fnc_formatNumber, [_h, 2] call CBA_fnc_formatNumber, [_mi, 2] call CBA_fnc_formatNumber]
         ]];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
     };
     ["INFO", "STARTUP", format ["Check de %1 (%2) : %3", ["liaison", "démarrage sans liaison"] select (_trigger isEqualTo "link_failed"), _sum, switch (true) do {
         case (_r isEqualTo "OK|posted"): { "posté dans le salon Discord de debug" };

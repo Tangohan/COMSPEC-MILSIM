@@ -14,6 +14,10 @@ if ((_target getVariable ["comspec_sse_markerNo", 0]) > 0) exitWith {
 
 [3, "Pose du cône de preuve...", {
     params ["_target", "_player"];
+    // Pièce marquée par un équipier pendant la pose : le serveur refuserait le cône, l'usage du kit n'est pas consommé.
+    if ((_target getVariable ["comspec_sse_markerNo", 0]) > 0) exitWith {
+        [format ["Pièce déjà marquée (cône n°%1).", _target getVariable ["comspec_sse_markerNo", 0]], "WARNING"] call comspec_sse_fnc_notify;
+    };
     if (([_player, "COMSPEC_SSE_EvidenceMarkers", 12] call comspec_sse_fnc_kitUse) isEqualTo 0) exitWith {
         ["Jeu de cônes de preuve requis.", "WARNING"] call comspec_sse_fnc_notify;
     };

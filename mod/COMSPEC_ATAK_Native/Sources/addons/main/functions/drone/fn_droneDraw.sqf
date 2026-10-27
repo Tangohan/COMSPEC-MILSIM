@@ -16,7 +16,7 @@ private _sq = "#(argb,8,8,3)color(1,1,1,1)";
     private _c = [0.3, 0.64, 1, 1];
     if ((time - _seen) > 60 || {_state isNotEqualTo ""}) then { _c set [3, 0.5]; };
     _map drawIcon [_sq, [0, 0, 0, _c select 3], _pos, 13, 13, 0, "", 0];
-    _map drawIcon [_sq, _c, _pos, 10, 10, 0, format [" P%1 %2%3", [_num, 2] call CBA_fnc_formatNumber, _name, ["", " (détruit)"] select (_state isNotEqualTo "")], 1, 0.028, (COMSPEC_ATAK_FontSet select 0), "right"];
+    _map drawIcon [_sq, _c, _pos, 10, 10, 0, format [" P%1 %2%3", [_num, 2] call CBA_fnc_formatNumber, _name, ["", (" (détruit)") call comspec_atak_native_fnc_tr] select (_state isNotEqualTo "")], 1, 0.028, (COMSPEC_ATAK_FontSet select 0), "right"];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap]);
 
 // Tracé en cours de l'outil DRONE (pas encore envoyé) : pointillé blanc numéroté.
@@ -67,17 +67,17 @@ if ((count _tp) >= 2) then {
     switch (_k) do {
         case "GOTO": {
             _map drawLine [_pos, _tp, _tc];
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\objective_CA.paa", _tc, _tp, 20, 20, 0, " ALLER", 1, 0.028, (COMSPEC_ATAK_FontSet select 1), "right"];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\objective_CA.paa", _tc, _tp, 20, 20, 0, (" ALLER") call comspec_atak_native_fnc_tr, 1, 0.028, (COMSPEC_ATAK_FontSet select 1), "right"];
         };
         case "LOITER";
         case "OBSERVE": {
             _map drawEllipse [_tp, _tr, _tr, 0, _tc, ""];
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _tc, _tp, 14, 14, 0, [" ORBITE", " OBSERVER"] select (_k isEqualTo "OBSERVE"), 1, 0.028, (COMSPEC_ATAK_FontSet select 1), "right"];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _tc, _tp, 14, 14, 0, ([" ORBITE", " OBSERVER"] select (_k isEqualTo "OBSERVE")) call comspec_atak_native_fnc_tr, 1, 0.028, (COMSPEC_ATAK_FontSet select 1), "right"];
             if (_k isEqualTo "OBSERVE") then { _map drawLine [_pos, _tp, [_tc select 0, _tc select 1, _tc select 2, 0.4]]; };
         };
         case "HUNT": {
             if ((count _area) >= 3) then { _map drawRectangle [_area select 0, _area select 1, _area select 2, 0, [0.92, 0.26, 0.21, 0.8], ""]; } else { _map drawEllipse [_tp, _tr, _tr, 0, [0.92, 0.26, 0.21, 0.8], ""]; };
-            _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.92, 0.26, 0.21, 1], _tp, 1, 1, 0, "RECHERCHE", 1, 0.028, (COMSPEC_ATAK_FontSet select 1), "center"];
+            _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.92, 0.26, 0.21, 1], _tp, 1, 1, 0, ("RECHERCHE") call comspec_atak_native_fnc_tr, 1, 0.028, (COMSPEC_ATAK_FontSet select 1), "center"];
         };
         case "ESCORT": {
             private _f = _d getVariable ["COMSPEC_DroneFollow", objNull];
@@ -98,4 +98,4 @@ if ((count _rp) > 0 && {_ri < (count _rp)}) then { _map drawLine [_pos, _rp sele
 if (_m isEqualTo "STANDBY") then { _c = [0.56, 0.7, 0.79, 1]; };
 _map drawIcon [[_d, [], "ICON"] call comspec_atak_native_fnc_droneOsd, [_c, [0.6, 0.6, 0.6, 0.8]] select !_linked, _pos, 26, 26, getDir _d,
     format [" %1 %2 m%3%4%5", [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round ((getPosATL _d) select 2), ["", " CQB"] select (_d getVariable ["COMSPEC_DroneCqb", false]),
-        ["", " VEILLE"] select (_m isEqualTo "STANDBY"), ["", " (hors liaison)"] select !_linked], 1, 0.03, (COMSPEC_ATAK_FontSet select 1), "right"];
+        ["", (" VEILLE") call comspec_atak_native_fnc_tr] select (_m isEqualTo "STANDBY"), ["", (" (hors liaison)") call comspec_atak_native_fnc_tr] select !_linked], 1, 0.03, (COMSPEC_ATAK_FontSet select 1), "right"];

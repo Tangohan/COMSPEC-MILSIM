@@ -282,10 +282,6 @@ final class PlanAccessWindow
             ];
         }
 
-        if ($kind === 'paid') {
-            $lost = 'Renouvelez-la par PayPal depuis « Offres et formules » pour garder l’accès. ' . $lost;
-        }
-
         $what = match ($kind) {
             'gift' => 'La formule ' . $planName . ' offerte à ' . $tenantName,
             'paid' => 'La formule ' . $planName . ' payée pour ' . $tenantName,
@@ -294,6 +290,10 @@ final class PlanAccessWindow
         $lost = $atakLost
             ? 'Après cette date, les photos, la vidéo drone et la carte tactique complète s’arrêtent (positions, comptes rendus et briefing envoyés depuis Arma 3 continuent) et les modules absents de votre formule actuelle sont verrouillés.'
             : 'Après cette date, les modules absents de votre formule actuelle sont verrouillés.';
+        // Formule payée : l’invitation à renouveler passe devant ce qui s’arrête (comme en anglais plus haut).
+        if ($kind === 'paid') {
+            $lost = 'Renouvelez-la par PayPal depuis « Offres et formules » pour garder l’accès. ' . $lost;
+        }
         $grace = $graceDays > 0
             ? 'Une période de grâce de ' . $graceDays . ' jour' . ($graceDays > 1 ? 's' : '') . ' laisse tout fonctionner après cette date.'
             : '';

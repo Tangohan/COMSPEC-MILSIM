@@ -246,8 +246,8 @@ switch (_act) do {
         if (_kind in _files) then {
             private _r = ["BtFileOpen", [_files get _kind, _ref]] call _dll;
             if ((_r param [0, ""]) isNotEqualTo "OK") exitWith {
-                private _why = _r param [1, "DLL du mod à recompiler (build_mod.bat)"];
-                if (_why in ["unknown_command", "unknown_function", "not_connected"]) then { _why = "DLL du mod à recompiler (build_mod.bat)"; };
+                private _why = _r param [1, "mod COMSPEC ATAK à mettre à jour (Steam Workshop)"];
+                if (_why in ["unknown_command", "unknown_function", "not_connected"]) then { _why = "mod COMSPEC ATAK à mettre à jour (Steam Workshop)"; };
                 [_u, "fabort", [_id, _why]] call _event;
                 [_id, "ÉCHEC"] call _sentSet;
                 ["WARNING", format ["« %1 » non envoyé : %2", _title, _why]] call _say;
@@ -319,8 +319,10 @@ switch (_act) do {
         _arg params [["_type", ""], ["_a", []]];
         switch (_type) do {
             case "paired": {
-                _a params [["_uid", ""], ["_name", ""]];
+                _a params [["_uid", "", [""]], ["_name", "", [""]]];
                 if !(call _usable) exitWith {};
+                // Accepté seulement si ce téléphone affiche un code valide et que l'émetteur est à portée Bluetooth.
+                if ((_bt get "code") isEqualTo "" || {_now >= (_bt get "codeUntil")} || {!([[_uid] call _byUid] call _reach)}) exitWith {};
                 // Le code n'est valable que pour un appairage : il disparaît une fois utilisé.
                 _bt set ["code", ""];
                 call _publish;
@@ -388,8 +390,8 @@ switch (_act) do {
                 private _u = [_t get "uid"] call _byUid;
                 private _r = ["BtRecvOpen", [_id, _files get _kind, _fname, str _size]] call _dll;
                 if ((_r param [0, ""]) isNotEqualTo "OK") exitWith {
-                    private _why = _r param [1, "DLL du mod à recompiler (build_mod.bat)"];
-                    if (_why in ["unknown_command", "unknown_function", "not_connected"]) then { _why = "DLL du mod à recompiler chez le destinataire (build_mod.bat)"; };
+                    private _why = _r param [1, "mod COMSPEC ATAK à mettre à jour (Steam Workshop)"];
+                    if (_why in ["unknown_command", "unknown_function", "not_connected"]) then { _why = "le destinataire doit mettre à jour le mod COMSPEC ATAK (Steam Workshop)"; };
                     if (!isNull _u) then { [_u, "fabort", [_id, _why]] call _event; };
                     [_id, false] call _drop;
                     ["WARNING", format ["Bluetooth : « %1 » refusé par le téléphone : %2", _title, _why]] call _say;

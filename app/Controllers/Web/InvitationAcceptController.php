@@ -182,6 +182,7 @@ final class InvitationAcceptController
         }
 
         $this->applyInvitationPayload($tenantId, $newId, $inv);
+        \App\Services\Personnel\NewMemberNumbers::assign($newId, $tenantId);
 
         $this->invitations->markAccepted((int) $inv['id'], $newId);
         $this->auditService->log(AuditAction::INVITATION_ACCEPTED, $tenantId, $newId, 'invitation', (int) $inv['id']);

@@ -17,7 +17,7 @@ use App\Repositories\SiteContributorRepository;
 final class SiteTranslationService
 {
     public const PER_PAGE = 40;
-    public const FILTERS = ['all', 'todo', 'done', 'suggested', 'mine'];
+    public const FILTERS = ['all', 'todo', 'blank', 'done', 'suggested', 'mine'];
 
     public function __construct(private readonly SiteContributorRepository $repo = new SiteContributorRepository())
     {
@@ -50,16 +50,17 @@ final class SiteTranslationService
      * Langues ouvertes à la traduction : « en » (corrections de l'anglais) puis les langues créées par
      * l'administration, avec leur avancement.
      *
-     * @return list<array{code: string, name: string, status: string, done: int, total: int, pending: int}>
+     * @return list<array{code: string, name: string, status: string, done: int, total: int, pending: int, blank: int}>
      */
     public function languages(): array
     {
         $total = count(CommunityLanguages::catalog());
+        $blank = CommunityLanguages::missingEnglishCount();
         $counts = $this->repo->translatedCounts();
         $pending = $this->repo->pendingCounts();
         $out = [[
             'code' => CommunityLanguages::ENGLISH, 'name' => 'English', 'status' => 'corrections',
-            'done' => $counts['en'] ?? 0, 'total' => $total, 'pending' => $pending['en'] ?? 0,
+            'done' => $counts['en'] ?? 0, 'total' => $total, 'pending' => $pending['en'] ?? 0, 'blank' => $blank,
         ]];
         foreach ($this->repo->languages() as $row) {
             $code = (string) $row['code'];
@@ -68,7 +69,7 @@ final class SiteTranslationService
             }
             $out[] = [
                 'code' => $code, 'name' => (string) $row['name'], 'status' => (string) $row['status'],
-                'done' => $counts[$code] ?? 0, 'total' => $total, 'pending' => $pending[$code] ?? 0,
+                'done' => $counts[$code] ?? 0, 'total' => $total, 'pending' => $pending[$code] ?? 0, 'blank' => $blank,
             ];
         }
 
@@ -90,7 +91,7 @@ final class SiteTranslationService
     /**
      * Une page de textes de l'espace de traduction.
      *
-     * @return array{total: int, page: int, pages: int, rows: list<array<string, mixed>>}
+     * @return array{total: int, page: int, pages: int, per_page: int, counts: array<string, int>, rows: list<array<string, mixed>>}
      */
     public function page(string $lang, string $query, string $filter, int $page, int $userId): array
     {
@@ -98,46 +99,136 @@ final class SiteTranslationService
         $sugg = $this->repo->pendingSuggestions($lang);
         $q = self::fold(trim($query));
         $filter = in_array($filter, self::FILTERS, true) ? $filter : 'all';
+        $contexts = CommunityLanguages::contexts();
         $match = [];
+        $first = [];
+        // Compteurs de chaque filtre (avec la recherche en cours) pour les onglets de l'espace.
+        $counts = array_fill_keys(self::FILTERS, 0);
+        // Mémoire : même texte français déjà traduit ailleurs dans le site.
+        $memory = [];
+        foreach (CommunityLanguages::catalog() as [$h, $src, , $kind]) {
+            if (isset($done[$h])) {
+                $memory[$kind === 'key' ? CommunityLanguages::frenchOf($src) : $src] ??= (string) $done[$h];
+            }
+        }
         foreach (CommunityLanguages::catalog() as [$h, $src, $en, $kind]) {
             $hasTr = isset($done[$h]);
             $hasSugg = isset($sugg[$h]);
+            $fr = $kind === 'key' ? CommunityLanguages::frenchOf($src) : $src;
+            $bare = !CommunityLanguages::hasShippedEnglish($fr, $en);
+            $ctx = $contexts[$h] ?? ['screen' => 'pages', 'label' => 'Pages du portail', 'context' => ''];
+            if ($q !== '' && !str_contains(self::fold($fr . "\n" . $en . "\n" . ($done[$h] ?? '') . "\n" . $ctx['label'] . "\n" . $ctx['context']), $q) && $q !== $h) {
+                continue;
+            }
+            $mine = $hasSugg && array_filter($sugg[$h], static fn (array $s): bool => $s['user_id'] === $userId) !== [];
+            $counts['all']++;
+            $counts[$hasTr ? 'done' : 'todo']++;
+            $counts['blank'] += (!$hasTr && $bare) ? 1 : 0;
+            $counts['suggested'] += $hasSugg ? 1 : 0;
+            $counts['mine'] += $mine ? 1 : 0;
             $ok = match ($filter) {
                 'todo' => !$hasTr,
+                'blank' => !$hasTr && $bare,
                 'done' => $hasTr,
                 'suggested' => $hasSugg,
-                'mine' => $hasSugg && array_filter($sugg[$h], static fn (array $s): bool => $s['user_id'] === $userId) !== [],
+                'mine' => $mine,
                 default => true,
             };
             if (!$ok) {
                 continue;
             }
-            $fr = $kind === 'key' ? CommunityLanguages::frenchOf($src) : $src;
-            if ($q !== '' && !str_contains(self::fold($fr . "\n" . $en . "\n" . ($done[$h] ?? '')), $q) && $q !== $h) {
-                continue;
+            $row = [$h, $fr, $en, $kind, $src, $bare, $ctx['screen'], $ctx['label'], $ctx['context']];
+            if ($bare && in_array($filter, ['all', 'todo'], true)) {
+                $first[] = $row;
+            } else {
+                $match[] = $row;
             }
-            $match[] = [$h, $fr, $en, $kind, $src];
         }
+        $match = array_merge($first, $match);
         $total = count($match);
         $pages = max(1, (int) ceil($total / self::PER_PAGE));
         $page = max(1, min($page, $pages));
         $rows = [];
-        foreach (array_slice($match, ($page - 1) * self::PER_PAGE, self::PER_PAGE) as [$h, $fr, $en, $kind, $src]) {
+        foreach (array_slice($match, ($page - 1) * self::PER_PAGE, self::PER_PAGE) as [$h, $fr, $en, $kind, $src, $bare, $screen, $screenLabel, $context]) {
             $rows[] = [
                 'h' => $h,
                 'fr' => $fr,
                 'en' => $en,
+                'bare' => $bare,
                 'kind' => $kind,
                 'key' => $kind === 'key' ? substr($src, 1) : '',
                 'code' => CommunityLanguages::markup($fr) !== [],
                 'tr' => $done[$h] ?? '',
+                'memory' => !isset($done[$h]) && isset($memory[$fr]) ? $memory[$fr] : '',
+                'screen' => $screen,
+                'screen_label' => $screenLabel,
+                'context' => $context,
                 'sugg' => array_map(static fn (array $s): array => [
                     'id' => $s['id'], 'text' => $s['text'], 'author' => $s['author'], 'mine' => $s['user_id'] === $userId,
                 ], $sugg[$h] ?? []),
             ];
         }
 
-        return ['total' => $total, 'page' => $page, 'pages' => $pages, 'rows' => $rows];
+        return ['total' => $total, 'page' => $page, 'pages' => $pages, 'per_page' => self::PER_PAGE, 'counts' => $counts, 'rows' => $rows];
+    }
+
+    /**
+     * Prochain texte encore seulement en français : d’abord le même écran, puis l’écran suivant.
+     * La page renvoyée est celle du filtre « seulement en français », sans recherche.
+     *
+     * @return array{h: string, page: int}|null
+     */
+    public function nextBare(string $lang, string $hash): ?array
+    {
+        if (preg_match('/^[0-9a-f]{16}$/', $hash) !== 1) {
+            return null;
+        }
+        $done = $this->repo->translations($lang);
+        $contexts = CommunityLanguages::contexts();
+        $screen = $contexts[$hash]['screen'] ?? '';
+        $bare = [];
+        $passed = false;
+        $sameAfter = null;
+        foreach (CommunityLanguages::catalog() as [$h, $src, $en, $kind]) {
+            if ($h === $hash) {
+                $passed = true;
+                $screen = $contexts[$h]['screen'] ?? $screen;
+            }
+            $fr = $kind === 'key' ? CommunityLanguages::frenchOf($src) : $src;
+            if (isset($done[$h]) || CommunityLanguages::hasShippedEnglish($fr, $en)) {
+                continue;
+            }
+            $sc = $contexts[$h]['screen'] ?? 'pages';
+            $bare[] = [$h, $sc];
+            if ($passed && $h !== $hash && $sc === $screen && $sameAfter === null) {
+                $sameAfter = count($bare) - 1;
+            }
+        }
+        if ($bare === []) {
+            return null;
+        }
+        $target = $sameAfter;
+        if ($target === null) {
+            $order = [];
+            foreach ($bare as $i => [, $sc]) {
+                if (!isset($order[$sc])) {
+                    $order[$sc] = $i;
+                }
+            }
+            $ids = array_keys($order);
+            $pos = array_search($screen, $ids, true);
+            if ($pos === false) {
+                $target = 0;
+            } else {
+                $next = $ids[($pos + 1) % count($ids)];
+                if ($next === $screen) {
+                    return null;
+                }
+                $target = $order[$next];
+            }
+        }
+
+        return ['h' => $bare[$target][0], 'page' => (int) floor($target / self::PER_PAGE) + 1];
     }
 
     /**

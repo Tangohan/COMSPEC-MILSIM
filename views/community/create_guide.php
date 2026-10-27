@@ -38,7 +38,7 @@ $steps = [
         'title' => '3. Organisation',
         'intro' => 'Trois notions distinctes : les rôles (droits sur le site), les fonctions (métier affiché dans le dossier, sans droit) et les unités (l’organigramme).',
         'fields' => [
-            ['Modèle de rôles', '« Démarrage rapide » ou « Modération élargie » : crée Fondateur, État-major, RH, Instructeur, Membre, Invité et Modérateur forum.', 'Démarrage rapide convient à la plupart des unités. La seule différence porte sur la portée du modérateur forum.', 'Effectifs → Niveaux d’accès'],
+            ['Modèle de rôles', '« Démarrage rapide » ou « Modération élargie » : crée Fondateur, État-major, RH, Instructeur, Membre, Invité et Modérateur.', 'Démarrage rapide convient à la plupart des unités. La seule différence porte sur la portée du modérateur.', 'Effectifs → Niveaux d’accès'],
             ['Rôles supplémentaires', 'Jusqu’à 15 profils propres à votre unité, avec une sélection d’autorisations.', 'Créez-en seulement s’il manque un besoin réel (ex. « Cellule logistique ») ; vous les attribuerez aux membres ensuite.', 'Effectifs → Niveaux d’accès'],
             ['Modèle officiel', 'Copie un modèle du catalogue : unités, fonctions, parfois des rôles. Ce qui existe déjà n’est jamais écrasé.', 'Prenez le modèle le plus proche de votre armée et de votre taille ; les autres restent applicables plus tard avec aperçu.', 'Catalogue de l’organisation'],
             ['Vous êtes le chef de l’unité principale', 'Vous affecte comme chef de l’unité racine.', 'Décochez si un autre membre commandera ; le poste restera vacant.', 'Effectifs → Chaîne de commandement'],

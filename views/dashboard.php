@@ -50,6 +50,9 @@ if (!is_string($showcase_kit_json) || $showcase_kit_json === '') {
     <?php if (is_file(base_path('public/assets/css/dashboard-refresh.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-refresh.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/dashboard-rail.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-rail.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/dashboard-catalog.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-catalog.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -126,7 +129,6 @@ if (!is_string($showcase_kit_json) || $showcase_kit_json === '') {
 $alertBanners = [];
 require base_path('views/partials/alert_banners.php');
 ?>
-<?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
 
     <div class="min-h-screen bg-[#f8fafc]">
     <main class="min-h-screen bg-[#f8fafc] text-slate-900">
@@ -152,12 +154,11 @@ require base_path('views/partials/alert_banners.php');
                     </h2>
                     <div class="mb-6 h-[3px] w-12 bg-[#047857]" aria-hidden="true"></div>
                     <p class="mb-8 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
-                        <?= $n('Vous utilisez Athena seul, sans organisation : votre profil et votre dossier, la liaison de votre jeu et le forum restent à vous. Rejoignez ou créez une communauté quand vous voudrez.') ?>
+                        <?= $n('Vous utilisez Athena seul, sans organisation : votre profil et votre dossier, et la liaison de votre jeu restent à vous. Rejoignez ou créez une communauté quand vous voudrez.') ?>
                     </p>
                     <div class="dash-start-hero-actions">
                         <a href="<?= htmlspecialchars(url('personnel/me'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-btn dash-start-btn--primary"><?= $n('Mon dossier') ?></a>
                         <a href="<?= htmlspecialchars(url('lier'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-btn dash-start-btn--ghost"><?= $n('Lier mon jeu') ?></a>
-                        <a href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-link"><?= $n('Ouvrir le forum') ?></a>
                     </div>
                 </div>
                 <?php else: ?>
@@ -312,7 +313,7 @@ require base_path('views/partials/alert_banners.php');
                         </span>
                         <p class="dash-start-card__kicker"><?= $n('Pas d’unité pour l’instant') ?></p>
                         <h4 class="dash-start-card__title"><?= $n('Utiliser Athena seul') ?></h4>
-                        <p class="dash-start-card__text"><?= $n('Un compte simple, sans organisation : votre profil et votre dossier, la liaison de votre jeu et le forum. Aucune communauté à gérer.') ?></p>
+                        <p class="dash-start-card__text"><?= $n('Un compte simple, sans organisation : votre profil et votre dossier, et la liaison de votre jeu. Aucune communauté à gérer.') ?></p>
                         <ul class="dash-start-card__list">
                             <li><?= $n('Rien à configurer') ?></li>
                             <li><?= $n('Vous pourrez rejoindre ou créer une communauté plus tard') ?></li>
@@ -349,5 +350,6 @@ require base_path('views/partials/alert_banners.php');
     require base_path('views/partials/lms_module_entry_modal.php');
     ?>
     <?php require base_path('views/partials/dashboard_ui_tour_boot.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

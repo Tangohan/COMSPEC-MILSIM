@@ -56,6 +56,10 @@ final class EmailService
         array $attachments = []
     ): bool {
         $this->lastSendError = null;
+        if (\App\Support\RosterOnlyMember::isRosterEmail($to)) {
+            // Fiche sans compte : personne derrière l’adresse, rien à envoyer.
+            return true;
+        }
         if (!$fromQueue && !$forceImmediate && filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
             try {
                 $repo = \App\Core\Container::get(\App\Repositories\AsyncJobRepository::class);
@@ -1939,7 +1943,7 @@ final class EmailService
                 'displayName' => $displayName,
                 'tenantName' => $tenantName,
                 'summaryLine' => $summaryLine,
-                'moderationUrl' => \url('back-office/forum-moderation'),
+                'moderationUrl' => \url('back-office/signalements'),
             ],
             $tenantId,
             null,
@@ -1964,7 +1968,7 @@ final class EmailService
                 'displayName' => $displayName,
                 'tenantName' => $tenantName,
                 'summaryLine' => $summaryLine,
-                'moderationUrl' => \url('back-office/forum-moderation'),
+                'moderationUrl' => \url('back-office/signalements'),
             ],
             $tenantId,
             null,

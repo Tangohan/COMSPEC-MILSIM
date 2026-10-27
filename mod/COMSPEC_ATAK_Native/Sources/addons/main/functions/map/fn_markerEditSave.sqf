@@ -21,7 +21,7 @@ if (_name isEqualTo "") then {
     private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
     _name = format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel];
-    _name = createMarker [_name, _e get "pos", _channel, player];
+    _name = ["create", [_name, _e get "pos", _channel]] call comspec_atak_native_fnc_markerNet;
 };
 if (_name isEqualTo "") exitWith { ["WARNING", "Marqueur refusé sur ce canal", 3, 20] call comspec_atak_native_fnc_notify; false };
 if !(_poly) then {
@@ -35,12 +35,16 @@ _name setMarkerAlphaLocal _alpha;
 _name setMarkerText _text; // dernier appel global : diffuse tout l'état du marqueur
 [_name] call comspec_atak_native_fnc_markerWeb;
 profileNamespace setVariable ["COMSPEC_ATAK_LastMarkerColor", _color];
-// Table copiée : diffusée (à tous et JIP) seulement si elle change ; notes des marqueurs supprimés hors du téléphone retirées.
+// Note envoyée seule au serveur, qui édite la table et la diffuse (à tous et JIP) : deux joueurs qui notent en même temps
+// ne s'écrasent plus. Copie locale mise à jour tout de suite (affichage), remplacée par celle du serveur à son arrivée.
+private _note = [[_desc, [player] call comspec_atak_native_fnc_unitCallsign], []] select (_desc isEqualTo "");
 private _old = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
-private _notes = +_old;
-{ if ((markerShape _x) isEqualTo "") then { _notes deleteAt _x; }; } forEach (keys _notes);
-if (_desc isEqualTo "") then { _notes deleteAt _name; } else { _notes set [_name, [_desc, [player] call comspec_atak_native_fnc_unitCallsign]]; };
-if (_notes isNotEqualTo _old) then { missionNamespace setVariable ["COMSPEC_ATAK_MarkerNotes", _notes, true]; };
+if ((_old getOrDefault [_name, []]) isNotEqualTo _note) then {
+    private _notes = +_old;
+    if (_note isEqualTo []) then { _notes deleteAt _name; } else { _notes set [_name, _note]; };
+    missionNamespace setVariable ["COMSPEC_ATAK_MarkerNotes", _notes];
+    ["comspec_atak_native_tacMkSrv", ["note", _name, _note]] call CBA_fnc_serverEvent;
+};
 _s set ["markerEdit", createHashMap];
 _s set ["selectedMarker", _name];
 // Confirmation brève : toast Android (notification classique si le téléphone n'est pas affiché).

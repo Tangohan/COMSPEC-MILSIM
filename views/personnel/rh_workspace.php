@@ -75,9 +75,18 @@ if ($trainingAllowed && $charterReady && !$charterAccepted) {
     ];
 }
 if ($dossierMissing !== []) {
+    // Phrases composées de valeurs : écrites dans la langue de la page (la traduction automatique ne les reconnaît pas).
+    $rhEn = locale() === 'en';
+    $missingLabels = array_map(
+        static fn ($label): string => $rhEn ? \App\Support\HtmlTranslator::translateText((string) $label) : (string) $label,
+        $dossierMissing
+    );
+    $nMissing = count($dossierMissing);
     $todos[] = [
-        'title' => 'Compléter votre fiche (' . $dossierScore . ' %)',
-        'text' => 'Il manque ' . count($dossierMissing) . ' élément' . (count($dossierMissing) > 1 ? 's' : '') . ' : ' . implode(', ', array_map('strval', $dossierMissing)) . '.',
+        'title' => $rhEn ? 'Complete your file (' . $dossierScore . ' %)' : 'Compléter votre fiche (' . $dossierScore . ' %)',
+        'text' => $rhEn
+            ? $nMissing . ' item' . ($nMissing > 1 ? 's' : '') . ' missing: ' . implode(', ', $missingLabels) . '.'
+            : 'Il manque ' . $nMissing . ' élément' . ($nMissing > 1 ? 's' : '') . ' : ' . implode(', ', $missingLabels) . '.',
         'href' => url('personnel/me/edit'),
         'cta' => 'Compléter ma fiche',
     ];

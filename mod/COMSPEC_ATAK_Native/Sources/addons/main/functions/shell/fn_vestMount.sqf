@@ -40,7 +40,7 @@ if (!_want) exitWith {
     false
 };
 private _face = profileNamespace getVariable ["COMSPEC_ATAK_VestFace", "back"];
-private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
+([player] call comspec_atak_native_fnc_phoneCarried) params ["", "_tint"];
 private _patch = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
 private _key = [_mount, _depth, _face, _tint, _patch, player];
 if (isNull _cur || {(missionNamespace getVariable ["COMSPEC_ATAK_VestKey", []]) isNotEqualTo _key} || {(attachedTo _cur) isNotEqualTo player}) then {

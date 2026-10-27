@@ -132,7 +132,6 @@ final class AssistantAnswerService
     /**
      * @param array{
      *   documents: list<array{title: string, href: string, excerpt?: string, category?: string}>,
-     *   forum: list<array{title: string, href: string, category?: string}>,
      *   personnel: list<array{title: string, href: string, subtitle?: string}>,
      *   events: list<array{title: string, href: string, subtitle?: string}>,
      *   training: list<array{title: string, href: string, subtitle?: string}>,
@@ -155,9 +154,6 @@ final class AssistantAnswerService
         }
         if ($results['documents'] !== []) {
             $sections[] = $this->countLabel(count($results['documents']), 'document', 'documents');
-        }
-        if ($results['forum'] !== []) {
-            $sections[] = $this->countLabel(count($results['forum']), 'sujet du forum', 'sujets du forum');
         }
         if ($results['training'] !== []) {
             $sections[] = $this->countLabel(count($results['training']), 'formation', 'formations');
@@ -185,7 +181,6 @@ final class AssistantAnswerService
     /**
      * @param array{
      *   documents: list<array{title: string, href: string}>,
-     *   forum: list<array{title: string, href: string}>,
      *   personnel: list<array{title: string, href: string}>,
      *   events: list<array{title: string, href: string}>,
      *   training: list<array{title: string, href: string}>,
@@ -214,9 +209,6 @@ final class AssistantAnswerService
         }
         foreach ($results['documents'] as $d) {
             $push('Document : ' . (string) $d['title'], (string) $d['href']);
-        }
-        foreach ($results['forum'] as $f) {
-            $push('Forum : ' . (string) $f['title'], (string) $f['href']);
         }
         foreach ($results['training'] as $t) {
             $push('Formation : ' . (string) $t['title'], (string) $t['href']);
@@ -264,7 +256,6 @@ final class AssistantAnswerService
     /**
      * @param array{
      *   documents: list<mixed>,
-     *   forum: list<mixed>,
      *   personnel: list<mixed>,
      *   events: list<mixed>,
      *   training: list<mixed>,
@@ -274,7 +265,6 @@ final class AssistantAnswerService
     private function countContentHits(array $results): int
     {
         return count($results['documents'])
-            + count($results['forum'])
             + count($results['personnel'])
             + count($results['events'])
             + count($results['training']);
@@ -283,7 +273,6 @@ final class AssistantAnswerService
     /**
      * @param array{
      *   documents: list<array{title: string}>,
-     *   forum: list<array{title: string}>,
      *   personnel: list<array{title: string}>,
      *   events: list<array{title: string}>,
      *   training: list<array{title: string}>,
@@ -292,7 +281,7 @@ final class AssistantAnswerService
      */
     private function firstHighlightTitle(array $results): ?string
     {
-        foreach (['events', 'documents', 'forum', 'training', 'personnel', 'commands'] as $key) {
+        foreach (['events', 'documents', 'training', 'personnel', 'commands'] as $key) {
             if ($results[$key] !== []) {
                 return (string) $results[$key][0]['title'];
             }

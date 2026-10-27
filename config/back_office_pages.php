@@ -49,11 +49,11 @@ return [
         ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces', 'subtitle' => 'Les bandeaux affichés en haut du portail pour tous les membres connectés.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
             ['label' => 'Nouvelle annonce', 'href' => 'back-office/alerts/create'],
         ]],
-        ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'quick' => [
+        ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'css' => ['back-office-articles.css'], 'quick' => [
             ['label' => 'Liste', 'href' => 'back-office/articles'],
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
-        ['path' => 'back-office/articles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Mini-articles', 'subtitle' => 'De courts textes permanents pour informer les membres : règles, guides, présentations.', 'quick' => [
+        ['path' => 'back-office/articles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Mini-articles', 'subtitle' => 'De courts textes permanents pour informer les membres : règles, guides, présentations.', 'css' => ['back-office-articles.css'], 'quick' => [
             ['label' => 'Nouvel article', 'href' => 'back-office/articles/create'],
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
@@ -151,7 +151,7 @@ return [
         ['path' => 'back-office/organisation/indicatifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Indicatifs radio', 'subtitle' => 'Comment les indicatifs sont attribués : séries, numéros réservés et historique.'],
         ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes', 'subtitle' => 'Regroupez des membres en sous-unités ou en cellules.', 'css' => ['back-office-groups.css']],
         ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes', 'subtitle' => 'Des équipes formées pour une mission ou un créneau.'],
-        ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories du forum', 'subtitle' => 'Les rubriques du forum et l’ordre dans lequel elles apparaissent.'],
+        ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories', 'subtitle' => 'Les catégories de la communauté et l’ordre dans lequel elles apparaissent.'],
         ['path' => 'back-office/referentiels/grades', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Grades', 'subtitle' => 'La liste des grades de votre communauté, dans l’ordre hiérarchique.'],
         ['path' => 'back-office/positions', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Postes', 'subtitle' => 'Les postes à pourvoir dans l’organigramme et leurs titulaires.'],
         ['path' => 'back-office/roles-permissions', 'group' => 'Accès', 'kicker' => 'ACCÈS', 'title' => 'Rôles et droits', 'subtitle' => 'Ce que chaque rôle permet de faire, et qui le détient.'],
@@ -229,6 +229,10 @@ return [
             ['label' => 'Suivi des actions', 'href' => 'back-office/atak/comptes-rendus?vue=actions'],
             ['label' => 'Missions sans retour', 'href' => 'back-office/atak/comptes-rendus?vue=missions'],
         ]],
+        ['path' => 'back-office/atak/suivi-cr', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Suivi des CR de fin d’opération', 'subtitle' => 'Qui a reçu le CR imposé sur son ATAK, qui l’a remis, et quand son téléphone s’est synchronisé pour la dernière fois.', 'css' => ['back-office-aar.css', 'back-office-debrief.css'], 'quick' => [
+            ['label' => 'Comptes rendus post-op', 'href' => 'back-office/atak/comptes-rendus'],
+            ['label' => 'Remontées', 'href' => 'back-office/remontees'],
+        ]],
         ['path' => 'back-office/atak/comptes-rendus/modeles', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · RETOURS', 'title' => 'Modèles de debriefing', 'subtitle' => 'Questionnaires de compte rendu : questions courtes, listes, cases à cocher et texte libre.', 'css' => ['back-office-aar.css'], 'quick' => [
             ['label' => 'Comptes rendus', 'href' => 'back-office/atak/comptes-rendus'],
             ['label' => 'Nouveau modèle', 'href' => 'back-office/atak/comptes-rendus/modeles/nouveau'],
@@ -242,7 +246,7 @@ return [
         ['path' => 'back-office/remontees', 'group' => 'Renseignement', 'kicker' => 'RENSEIGNEMENT · SUIVI', 'title' => 'Remontées', 'subtitle' => 'Comptes rendus et fiches de renseignement : fil de suivi, attribution, exploitation, caviardage.', 'css' => ['back-office-intel-intake.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/escouades', 'group' => 'ATAK', 'kicker' => 'ATAK · EN JEU', 'title' => 'Escouades en jeu', 'subtitle' => 'Escouades et équipes de feu envoyées par les téléphones : couleurs, icônes, descriptions et rôles.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/partage', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · DOCUMENTS', 'title' => 'Fichiers partagés', 'subtitle' => 'Dossiers et fichiers de la communauté, privés par défaut et ouverts seulement sur partage.', 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/metriques-joueurs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · SUIVI', 'title' => 'Métriques joueurs', 'subtitle' => 'Temps de jeu, temps d’écran, distances parcourues, heures de vol et montre Garmin, par membre et pour la communauté.', 'css' => ['back-office-atak-squads.css', 'back-office-player-metrics.css'], 'flags' => ['boSkipPageHead' => true]],
+        ['path' => 'back-office/metriques-joueurs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · SUIVI', 'title' => 'Métriques joueurs', 'subtitle' => 'Temps de jeu, temps d’écran, distances parcourues, heures de vol et montre Garmin, par membre et pour la communauté.', 'css' => ['back-office-atak-squads.css', 'back-office-atak-hours.css', 'back-office-player-metrics.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/temps-ecran', 'group' => 'ATAK', 'kicker' => 'ATAK · SUIVI', 'title' => 'Temps d’écran et rôles', 'subtitle' => 'Temps du téléphone allumé, apps utilisées et temps de jeu par rôle, par membre.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/heures', 'group' => 'ATAK', 'kicker' => 'ATAK · SUIVI', 'title' => 'Heures de jeu (tableur)', 'subtitle' => 'Heures par joueur, rôle, type et détection, filtrables et exportables en CSV.', 'css' => ['back-office-atak-squads.css', 'back-office-atak-hours.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/data-inspector', 'group' => 'ATAK', 'kicker' => 'ATAK · DONNÉES TERRAIN', 'title' => 'Data Inspector', 'subtitle' => 'Tout ce que les joueurs font remonter du jeu : mods, terminaux, débit, comptes rendus, erreurs et disponibilité.', 'css' => ['back-office-data-inspector.css']],
@@ -275,13 +279,14 @@ return [
         ['path' => 'back-office/ressources/atak-mod-blocks', 'group' => 'Ressources', 'title' => 'Restrictions d’accès au mod', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/ressources/atak-diffusion-rapports', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diffusion des rapports', 'subtitle' => 'Qui doit lire chaque compte rendu dès sa réception, qui prévenir si personne ne réagit, et ce qui a réellement été diffusé.', 'css' => ['back-office-atak-routing.css']],
         ['path' => 'back-office/ressources/atak-realism', 'group' => 'Ressources', 'title' => 'Réglages réalisme', 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/ressources/atak-mod', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · MOD', 'title' => 'Mod Arma', 'css' => ['back-office-atak-mod.css']],
+        ['path' => 'back-office/ressources/atak-realism/config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · RÉALISME', 'title' => 'Configuration réalisme', 'subtitle' => 'Relais radio, météo, certificats, dégâts des terminaux, symbologie : les règles de réalisme appliquées à la communauté.', 'css' => ['back-office-atak-realism.css']],
+        ['path' => 'back-office/ressources/atak-mod', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · MOD', 'title' => 'Mods (Steam Workshop)', 'subtitle' => 'Le mod Athena et le modset de la communauté sont servis par Steam : liens, consignes et annonce de mise à jour.', 'css' => ['back-office-atak-mod.css']],
         ['path' => 'back-office/audit', 'group' => 'Système', 'kicker' => 'SYSTÈME · TRAÇABILITÉ', 'title' => 'Journal d\'audit', 'subtitle' => 'Toutes les actions des administrateurs, datées et conservées 24 mois.', 'flags' => ['hideAuditPageHeader' => true]],
         ['path' => 'back-office/moderation', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · DISCIPLINE', 'title' => 'Sanctions et absences', 'subtitle' => 'Les sanctions, limitations et absences en cours, membre par membre.'],
         ['path' => 'back-office/security-indicators', 'group' => 'Accès', 'kicker' => 'ACCÈS · SÉCURITÉ', 'title' => 'Sécurité et blocages', 'subtitle' => 'Les comptes bloqués et les tentatives de connexion suspectes.'],
         // Messagerie interne (/messages) : le contrôleur charge aussi cette feuille, la page restant dans la coque portail.
         ['path' => 'messages', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGERIE', 'title' => 'Messagerie interne', 'subtitle' => 'Vos échanges avec l’encadrement de la communauté.', 'css' => ['back-office-messages.css'], 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/forum-moderation', 'group' => 'Système', 'kicker' => 'SYSTÈME · FORUM', 'title' => 'Modération du forum', 'subtitle' => 'Les messages signalés par les membres, à garder ou à retirer.'],
+        ['path' => 'back-office/signalements', 'group' => 'Système', 'kicker' => 'SYSTÈME · SIGNALEMENTS', 'title' => 'Signalements membres', 'subtitle' => 'Les fiches, photos et contenus signalés par les membres, à instruire puis clore.'],
         ['path' => 'back-office/courrier/traceabilite', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Traçabilité du courrier', 'subtitle' => 'Qui a reçu et lu chaque message officiel.'],
         ['path' => 'back-office/doctrine/referentiel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · DOCTRINE', 'title' => 'Référentiel doctrinal', 'subtitle' => 'Les textes de référence sur lesquels s’appuient vos procédures.', 'quick' => [
             ['label' => 'Doctrine et SOP', 'href' => 'back-office/doctrine'],
@@ -295,14 +300,11 @@ return [
         ['path' => 'back-office/cooperation', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Coopérations inter-unités', 'subtitle' => 'Les opérations menées avec d’autres communautés.', 'css' => ['cooperation.css']],
         // Les écrans des missions ont leur propre en-tête (titre, progression) : pas de bandeau du shell en double.
         ['path' => 'back-office/cooperation/missions', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Coopérations inter-unités', 'css' => ['cooperation.css'], 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/forum/priorite-mission', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORUM', 'title' => 'Publier en priorité mission', 'subtitle' => 'Mettez un sujet du forum en tête pour la prochaine mission.'],
         ['path' => 'back-office/ressources', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Ressources', 'subtitle' => 'Formations, documents, cartographie et outils de terrain.'],
         ['path' => 'formation', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORMATIONS', 'title' => 'Formations', 'subtitle' => 'Les cours, les inscriptions et les qualifications délivrées.'],
         ['path' => 'documents/gestion/ajout', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · DOCUMENTS', 'title' => 'Nouveau document', 'subtitle' => 'Ajoutez un fichier, ou rédigez directement un manuel avec sa page de garde.', 'css' => ['document-fm.css']],
         ['path' => 'documents/gestion', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · DOCUMENTS', 'title' => 'Documents', 'subtitle' => 'Les documents de la communauté, classés par type.', 'css' => ['document-fm.css']],
-        ['path' => 'back-office/ressources/atak-config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Configuration ATAK', 'subtitle' => 'Cartes, calques et réglages de l’application ATAK pour vos membres.'],
-        ['path' => 'back-office/ressources/modpacks', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Modpacks', 'subtitle' => 'Les listes de mods à installer pour rejoindre vos sessions.'],
-        ['path' => 'back-office/ressources/forum-config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORUM', 'title' => 'Réglages du forum', 'subtitle' => 'Rubriques, briefings et règles de publication du forum.'],
+        ['path' => 'back-office/ressources/atak-config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Configuration ATAK / Tacmap', 'subtitle' => 'Clé d’accès, connexion en jeu, expérience en mission, modules, carte, photos terrain et maintenance de la liaison Arma 3.', 'css' => ['back-office-atak-config.css']],
         ['path' => 'back-office/ressources/musique', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MUSIQUE', 'title' => 'Musique de l\'organisation', 'subtitle' => 'Morceaux et playlists de vos membres, écoutés sur le site et en jeu dans l\'app Musique de l\'ATAK.'],
         ['path' => 'back-office/content-moderation', 'group' => 'Système', 'kicker' => 'SYSTÈME · MODÉRATION', 'title' => 'Fichiers et pièces jointes', 'subtitle' => 'Les fichiers déposés par les membres, à vérifier ou supprimer.'],
         ['path' => 'tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Mur opérationnel', 'subtitle' => 'Ce que voient les membres : prochaines opérations, articles et annonces.'],

@@ -64,6 +64,15 @@ class CfgFunctions {
     };
 };
 
+// Demandes des postes au serveur ; le demandeur est retrouvé par remoteExecutedOwner.
+class CfgRemoteExec {
+    class Functions {
+        class comspec_sse_fnc_orgOp { allowedTargets = 2; jip = 0; };
+        class comspec_sse_fnc_orgGenerate { allowedTargets = 2; jip = 0; };
+        class comspec_sse_fnc_custody { allowedTargets = 2; jip = 0; };
+    };
+};
+
 class Extended_PreInit_EventHandlers {
     class comspec_sse_analysis {
         init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\analysis\XEH_preInit.sqf'";
@@ -218,7 +227,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_7AC6F20F4B";
                         property = "COMSPEC_SSE_Org_Name";
                         control = "Edit";
-                        expression = "_this setVariable ['COMSPEC_SSE_Org_Name', _value, true];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Org_Name', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         condition = "objectBrain";
@@ -228,7 +237,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_42B778C200";
                         property = "COMSPEC_SSE_Org_Cell";
                         control = "Edit";
-                        expression = "_this setVariable ['COMSPEC_SSE_Org_Cell', _value, true];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Org_Cell', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         condition = "objectBrain";
@@ -238,7 +247,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_E7EC1A8FA0";
                         property = "COMSPEC_SSE_Org_Role";
                         control = "Combo";
-                        expression = "_this setVariable ['COMSPEC_SSE_Org_Role', _value, true];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Org_Role', _value, true]; };";
                         defaultValue = "'membre'";
                         typeName = "STRING";
                         condition = "objectBrain";
@@ -265,7 +274,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_B481F13022";
                         property = "COMSPEC_SSE_Org_Alias";
                         control = "Edit";
-                        expression = "_this setVariable ['COMSPEC_SSE_Org_Alias', _value, true];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Org_Alias', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         condition = "objectBrain";
@@ -275,7 +284,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_2820E4C1AC";
                         property = "COMSPEC_SSE_Org_Known";
                         control = "Combo";
-                        expression = "_this setVariable ['COMSPEC_SSE_Org_Known', _value, true];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_Org_Known', _value, true]; };";
                         defaultValue = "0";
                         typeName = "NUMBER";
                         condition = "objectBrain";
@@ -290,7 +299,7 @@ class Cfg3DEN {
                         tooltip = "$STR_COMSPEC_SSE_CFG_5AB4C2B5CC";
                         property = "COMSPEC_SSE_OrgLinked";
                         control = "Edit";
-                        expression = "_this setVariable ['COMSPEC_SSE_OrgLinked', _value, true];";
+                        expression = "if (isServer) then { _this setVariable ['COMSPEC_SSE_OrgLinked', _value, true]; };";
                         defaultValue = "''";
                         typeName = "STRING";
                         condition = "objectSimulated - objectBrain";

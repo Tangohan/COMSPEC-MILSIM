@@ -76,6 +76,7 @@ final class GameAuthService
         if ((string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('ACCOUNT_DISABLED', 403);
         }
+        $body['_auth_method'] = 'password';
 
         return $this->issueForAccount($account, $body, null, true);
     }
@@ -159,6 +160,7 @@ final class GameAuthService
         if ((string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('ACCOUNT_DISABLED', 403);
         }
+        $body['_auth_method'] = 'otp';
 
         return $this->issueForAccount($account, $body, null, true);
     }
@@ -214,6 +216,7 @@ final class GameAuthService
             }
         }
         $body['steam_id'] = $steamId;
+        $body['_auth_method'] = 'steam';
 
         return $this->issueForAccount($account, $body);
     }
@@ -342,6 +345,7 @@ final class GameAuthService
         $body['preferred_tenant_id'] = (int) $session['tenant_id'];
         $this->carrySteamIdFromSession($body, $session);
         $body['_verify_restored_steam'] = true;
+        $body['_auth_method'] = 'restore';
 
         return $this->issueForAccount($account, $body, (int) $session['id']);
     }
@@ -445,6 +449,7 @@ final class GameAuthService
             'login_image' => $image,
             'logo' => $logo,
             'welcome_message' => (string) ($exp['welcome_message'] ?? ''),
+            'auth_methods' => GameOverwatchExperienceService::authMethods($exp),
             'generic' => false,
         ];
     }
@@ -495,6 +500,14 @@ final class GameAuthService
             }
         }
         $exp = $this->experience->get($tenantId);
+        $gate = $this->communityGate($exp, (string) ($body['_auth_method'] ?? ''), $tenantId, (int) $chosen['user_id'], (string) ($account['email'] ?? ''));
+        if ($gate !== null) {
+            if ($rotateSessionId !== null && $rotateSessionId > 0 && ($gate['payload']['error'] ?? '') === 'SESSION_EXPIRED') {
+                $this->accounts->revokeSession($rotateSessionId);
+            }
+
+            return $gate;
+        }
         $modVersion = trim((string) ($body['mod_version'] ?? ''));
         $min = trim((string) ($exp['min_mod_version'] ?? ''));
         // « Pack Overwatch minimal » : seul un numéro de pack est comparé. L'ATAK natif sans Overwatch envoie « native »,
@@ -674,6 +687,28 @@ final class GameAuthService
         $avatar = $identity['avatar'];
         $role = $identity['role'];
         $function = $identity['function'];
+        // Synchronisation choisie par la communauté : un champ non transmis reste à la valeur réglée dans le mod.
+        $sync = static fn (string $k): bool => !array_key_exists($k, $exp) || !empty($exp[$k]);
+        if (!$sync('sync_profile')) {
+            $first = '';
+            $last = '';
+        }
+        if (!$sync('sync_grade')) {
+            $grade = '';
+        }
+        if (!$sync('sync_unit')) {
+            $unit = '';
+        }
+        if (!$sync('sync_callsign')) {
+            $callsign = '';
+        }
+        if (!$sync('sync_avatar')) {
+            $avatar = '';
+        }
+        if (!$sync('sync_clearances')) {
+            $role = '';
+            $function = '';
+        }
         $rev = $this->profileRevision($user, $profileRow);
         $loginImage = $this->experience->loginImageUrl(
             $tenantId,
@@ -1570,6 +1605,61 @@ final class GameAuthService
      * @param array<string, mixed> $extra
      * @return array{ok: bool, status: int, payload: array<string, mixed>}
      */
+    /**
+     * Règles de la communauté (Configuration ATAK > Connexion en jeu) appliquées avant d'ouvrir la session :
+     * méthodes de connexion autorisées, reconnexion automatique, maintenance.
+     *
+     * @param array<string, mixed> $exp
+     * @return array{ok: bool, status: int, payload: array<string, mixed>}|null
+     */
+    private function communityGate(array $exp, string $method, int $tenantId, int $userId, string $email): ?array
+    {
+        $methods = GameOverwatchExperienceService::authMethods($exp);
+        if (isset($methods[$method]) && !$methods[$method]) {
+            return $this->fail('AUTH_METHOD_DISABLED', 403, [
+                'method' => $method,
+                'allowed_methods' => array_keys(array_filter($methods)),
+                'message' => 'Votre communauté n’autorise pas ce mode de connexion en jeu. Utilisez : '
+                    . implode(', ', array_map(static fn (string $m): string => ['password' => 'e-mail et mot de passe', 'otp' => 'code par e-mail', 'steam' => 'Steam'][$m], array_keys(array_filter($methods)))) . '.',
+            ]);
+        }
+        if ($method === 'restore' && array_key_exists('allow_auto_reconnect', $exp) && empty($exp['allow_auto_reconnect'])) {
+            return $this->fail('SESSION_EXPIRED', 401, [
+                'message' => 'Votre communauté demande une nouvelle connexion à chaque lancement.',
+            ]);
+        }
+        try {
+            $atak = new \App\Repositories\TenantAtakConfigRepository();
+            if ($atak->isMaintenanceEnabled($tenantId) && !$this->userBypassesMaintenance($userId, $tenantId, $email)) {
+                $message = trim((string) $atak->getMaintenanceMessage($tenantId));
+
+                return $this->fail('MAINTENANCE', 503, [
+                    'message' => $message !== '' ? $message : 'La liaison est suspendue pour maintenance. Réessayez plus tard.',
+                ]);
+            }
+        } catch (\Throwable) {
+            // Schéma maintenance absent : pas de blocage.
+        }
+
+        return null;
+    }
+
+    /** Les administrateurs de la communauté gardent l'accès pendant la maintenance (comme sur la Tacmap). */
+    private function userBypassesMaintenance(int $userId, int $tenantId, string $email): bool
+    {
+        try {
+            $rbac = new \App\Services\Rbac\RbacService();
+            $perms = array_merge(
+                $rbac->loadPermissionsForRoles($this->users->listOrganizationRoleIdsForUser($userId, $tenantId)),
+                $rbac->loadSitePermissionsForEmail($email)
+            );
+
+            return in_array('admin.access', $perms, true) || in_array('admin.system', $perms, true);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     private function fail(string $code, int $status, array $extra = []): array
     {
         return [

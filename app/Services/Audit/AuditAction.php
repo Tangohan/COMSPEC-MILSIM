@@ -20,6 +20,9 @@ final class AuditAction
     public const AUTH_TOTP_ENABLED = 'auth.totp_enabled';
     public const AUTH_TOTP_DISABLED = 'auth.totp_disabled';
     public const AUTH_EMAIL_LOGIN_OTP_TOGGLED = 'auth.email_login_otp_toggled';
+    public const AUTH_RECOVERY_CODE_USED = 'auth.recovery_code_used';
+    public const AUTH_RECOVERY_CODES_GENERATED = 'auth.recovery_codes_generated';
+    public const AUTH_TRUSTED_DEVICES_REVOKED = 'auth.trusted_devices_revoked';
     public const AUTH_PORTAL_SELECTED = 'auth.portal_selected';
     public const USER_STEAM_LINKED = 'user.steam_linked';
 
@@ -48,7 +51,7 @@ final class AuditAction
 
     public const MODERATION_ACTION = 'moderation.action_applied';
     public const MODERATION_REVOKED = 'moderation.action_revoked';
-    public const FORUM_MODERATION = 'forum.moderation_action';
+    public const REPORT_MODERATION = 'report.moderation_action';
 
     public const SECURITY_EVENT = 'security.event';
 
@@ -106,8 +109,22 @@ final class AuditAction
 
     public const PLATFORM_SETTINGS_UPDATED = 'platform.settings_updated';
 
+    /** Plancher de version des DLL du jeu (réglage game_min_link_version : administration du site ou tools/game-client-gate.php). */
+    public const PLATFORM_GAME_CLIENT_FLOOR_UPDATED = 'platform.game_client_floor_updated';
+
     /** Vidage d’un lot d’historiques volumineux (administration du site). */
     public const PLATFORM_STORAGE_PURGED = 'platform.storage_purged';
+
+    /** Console d'exploitation (/admin/system/exploitation). */
+    public const PLATFORM_OPS_UNLOCKED = 'platform.ops_console_unlocked';
+    public const PLATFORM_OPS_MIGRATIONS_LAUNCHED = 'platform.ops_migrations_launched';
+    public const PLATFORM_OPS_BACKUP_CREATED = 'platform.ops_backup_created';
+    public const PLATFORM_OPS_BACKUP_DOWNLOADED = 'platform.ops_backup_downloaded';
+    public const PLATFORM_OPS_BACKUP_RESTORED = 'platform.ops_backup_restored';
+    public const PLATFORM_OPS_BACKUP_DELETED = 'platform.ops_backup_deleted';
+    public const PLATFORM_OPS_DELETION_SCHEDULED = 'platform.ops_account_deletion_scheduled';
+    public const PLATFORM_OPS_DELETION_CANCELLED = 'platform.ops_account_deletion_cancelled';
+    public const PLATFORM_OPS_DELETION_EXECUTED = 'platform.ops_account_deletion_executed';
     public const PLATFORM_DATA_TABLE_EMPTIED = 'platform.data_table_emptied';
     public const PLATFORM_DATA_ROW_UPDATED = 'platform.data_row_updated';
     public const PLATFORM_DATA_ROW_DELETED = 'platform.data_row_deleted';

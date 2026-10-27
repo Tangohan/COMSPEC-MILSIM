@@ -32,7 +32,7 @@ private _lifePilot = _book getOrDefault ["pilot", createHashMap];
 private _rec = _book getOrDefault ["rec", createHashMap];
 private _missions = _book getOrDefault ["missions", []];
 private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]];
-(player getVariable ["COMSPEC_ATAK_DistMe", [[], []]]) params [["_pairs", []], ["_pilot", []]];
+([] call comspec_atak_native_fnc_distanceMine) params [["_pairs", []], ["_pilot", []]];
 private _c = createHashMapFromArray _pairs;
 private _get = { params ["_key"]; _c getOrDefault [_key, 0] };
 
@@ -91,8 +91,12 @@ private _dur = {
 };
 private _dayS = { params ["_d"]; (_d splitString "-") params [["_yy", ""], ["_mm", ""], ["_dd", ""]]; format ["%1/%2", _dd, _mm] };
 // Texte structuré : [texte, taille (× police du téléphone), couleur, gras, alignement]
+// Texte brut (nom de mission, d'appareil, carnet) : &, < et > échappés ; entités déjà échappées gardées.
 private _t = {
     params ["_s", ["_size", 1], ["_hex", ""], ["_bold", false], ["_align", ""]];
+    _s = [str _s, _s] select (_s isEqualType "");
+    _s = _s regexReplace ["&(?!(amp|lt|gt|quot|apos|#[0-9]+);)", "&amp;"];
+    _s = [[_s, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace;
     format ["<t size='%1'%2%3%4>%5</t>", (_size * _k) toFixed 3, ["", format [" color='%1'", _hex]] select (_hex isNotEqualTo ""),
         ["", " font='COMSPEC_BarlowBold'"] select _bold, ["", format [" align='%1'", _align]] select (_align isNotEqualTo ""), _s]
 };
@@ -144,7 +148,7 @@ private _head = {
     _y = _y + _gy * 0.6;
     [_x0, _y + _f * 0.2, _fx * 0.22, _f * 1.05, _acc] call _box;
     [_x0 + _fx * 0.7, _y, _W * 0.6, _f * 1.5, [toUpper _title, 1.0, _hText, true] call _t] call _txt;
-    if (_sub isNotEqualTo "") then { [_x0 + _W * 0.4, _y + _f * 0.2, _W * 0.6, _f * 1.3, [_sub, 0.72, _hDim, false, "right"] call _t] call _txt; };
+    if (_sub isNotEqualTo "") then { [_x0 + _W * 0.4, _y + _f * 0.2, _W * 0.6, _f * 1.3, [_sub, 0.86, _hDim, false, "right"] call _t] call _txt; };
     _y = _y + _f * 1.75;
 };
 
@@ -283,14 +287,14 @@ private _rowsUsed = 0;
         {
             _x params ["_sl", "_sv"];
             [_sx + (_forEachIndex mod 2) * _sw, _cy + _f * 0.75 + (floor (_forEachIndex / 2)) * _f * 3.0, _sw - _fx * 0.4, _f * 2.8,
-                ([_sl, 0.68, _hDim, true] call _t) + "<br/>" + ([_sv, 1.3, [_hDim, _hText] select _on, true] call _t)] call _txt;
+                ([_sl, 0.88, _hDim, true] call _t) + "<br/>" + ([_sv, 1.45, [_hDim, _hText] select _on, true] call _t)] call _txt;
         } forEach [
             ["PAS", [_steps] call _thou],
             ["TEMPS DE MARCHE", [_sec] call _dur],
             ["ALLURE MOYENNE", _pace],
             ["CADENCE", _cad]
         ];
-        [_sx, _cy + _ch - _f * 1.35, _sw * 2, _f * 1.2, [["Pas estimés d'après l'allure", "Pas estimés d'après l'allure (rien à la nage ni en rampant)"] select _wide, 0.65, _hDim] call _t] call _txt;
+        [_sx, _cy + _ch - _f * 1.35, _sw * 2, _f * 1.2, [["Pas estimés d'après l'allure", "Pas estimés d'après l'allure (rien à la nage ni en rampant)"] select _wide, 0.82, _hDim] call _t] call _txt;
     };
 } forEach _modes;
 _y = _y + _rowsUsed * (_ch + _gy);
@@ -326,7 +330,7 @@ if (_pl isEqualTo []) then {
     private _cws = [_W * 0.44 - _fx * 0.8, _W * 0.17, _W * 0.15, _W * 0.20 - _fx * 0.8];
     [_x0, _y, _W, _f * 1.5, _cCard2] call _box;
     {
-        [_cxs select _forEachIndex, _y + _f * 0.15, _cws select _forEachIndex, _f * 1.2, [_x, 0.68, _hDim, true, ["left", "right"] select (_forEachIndex > 0)] call _t] call _txt;
+        [_cxs select _forEachIndex, _y + _f * 0.15, _cws select _forEachIndex, _f * 1.2, [_x, 0.82, _hDim, true, ["left", "right"] select (_forEachIndex > 0)] call _t] call _txt;
     } forEach ["APPAREIL", "CETTE MISSION", "CARRIÈRE", "DISTANCE"];
     _y = _y + _f * 1.5;
     {
@@ -362,7 +366,7 @@ if ((count _last) < 1) then {
     {
         private _ly = _ay + _ah * (1 - _x);
         [_ax, _ly, _aw, pixelH * 2, [[0.16, 0.19, 0.17, 1], [0.24, 0.28, 0.26, 1]] select (_x isEqualTo 0)] call _box;
-        if (_x > 0) then { [_ax + _aw + _fx * 0.3, _ly - _f * 0.55, _fx * 3.4, _f * 1.1, [[_maxM * _x] call _distS, 0.62, _hDim] call _t] call _txt; };
+        if (_x > 0) then { [_ax + _aw + _fx * 0.3, _ly - _f * 0.55, _fx * 3.4, _f * 1.1, [[_maxM * _x] call _distS, 0.8, _hDim] call _t] call _txt; };
     } forEach [0, 0.5, 1];
     private _slots = (count _last) max 6;
     private _sw = _aw / _slots;
@@ -382,9 +386,9 @@ if ((count _last) < 1) then {
             };
         } forEach _mm;
         // Valeur au-dessus de la barre, date (ou EN COURS) dessous.
-        [_ax + _forEachIndex * _sw, _yy - _f * 1.15, _sw, _f * 1.1, [[_sum] call _distS, 0.6, [_hDim, _hText] select _cur, _cur, "center"] call _t] call _txt;
-        [_ax + _forEachIndex * _sw, _ay + _ah + _f * 0.2, _sw, _f * 1.1, [[[_e select 3] call _dayS, "EN COURS"] select _cur, 0.62, [_hDim, _accHex] select _cur, _cur, "center"] call _t] call _txt;
-        [_ax + _forEachIndex * _sw, _ay + _ah + _f * 1.1, _sw, _f * 1.1, [_e select 1, 0.58, _hDim, false, "center"] call _t] call _txt;
+        [_ax + _forEachIndex * _sw, _yy - _f * 1.15, _sw, _f * 1.1, [[_sum] call _distS, 0.78, [_hDim, _hText] select _cur, _cur, "center"] call _t] call _txt;
+        [_ax + _forEachIndex * _sw, _ay + _ah + _f * 0.2, _sw, _f * 1.1, [[[_e select 3] call _dayS, "EN COURS"] select _cur, 0.78, [_hDim, _accHex] select _cur, _cur, "center"] call _t] call _txt;
+        [_ax + _forEachIndex * _sw, _ay + _ah + _f * 1.1, _sw, _f * 1.1, [_e select 1, 0.72, _hDim, false, "center"] call _t] call _txt;
     } forEach _last;
 };
 _y = _y + _chH + _gy;
@@ -400,9 +404,9 @@ private _rowsMC = [["total", "Total", "app_distance", _accHex, _total, _lifeTota
 _rowsMC pushBack ["steps", "Pas", "g_steps", "#5cc76b", _steps, _life getOrDefault ["steps", 0]];
 private _mcx = [_x0 + _fx * 0.8, _x0 + _W * 0.36, _x0 + _W * 0.52, _x0 + _W * 0.70];
 [_x0, _y, _W, _f * 1.5, _cCard2] call _box;
-[_mcx select 1, _y + _f * 0.15, _W * 0.15, _f * 1.2, ["CETTE MISSION", 0.68, _hDim, true, "right"] call _t] call _txt;
-[_mcx select 2, _y + _f * 0.15, _W * 0.17, _f * 1.2, ["CARRIÈRE", 0.68, _hDim, true, "right"] call _t] call _txt;
-[_mcx select 3, _y + _f * 0.15, _W * 0.29, _f * 1.2, [["PART", "PART DE LA CARRIÈRE"] select _wide, 0.68, _hDim, true] call _t] call _txt;
+[_mcx select 1, _y + _f * 0.15, _W * 0.15, _f * 1.2, ["CETTE MISSION", 0.82, _hDim, true, "right"] call _t] call _txt;
+[_mcx select 2, _y + _f * 0.15, _W * 0.17, _f * 1.2, ["CARRIÈRE", 0.82, _hDim, true, "right"] call _t] call _txt;
+[_mcx select 3, _y + _f * 0.15, _W * 0.29, _f * 1.2, [["PART", "PART DE LA CARRIÈRE"] select _wide, 0.82, _hDim, true] call _t] call _txt;
 _y = _y + _f * 1.5;
 {
     _x params ["_key", "_lbl", "_icon", "_hex", "_mv", "_lv"];
@@ -441,10 +445,10 @@ private _rhh = _f * 4.3;
     [_rx + _fx * 0.7, _ry + _f * 0.75, _f * 1.5, "g_laurel", [_hDim, _hGold] select _has] call _ico;
     private _tx = _rx + _fx * 0.7 + _f * 1.5 / _ratio + _fx * 0.7;
     private _tw = _rw - (_tx - _rx) - _fx * 0.5;
-    [_tx, _ry + _f * 0.45, _tw - ([0, _fx * 4.4] select (_new && _wide)), _f * 1.2, [toUpper _lbl, 0.66, _hDim, true] call _t] call _txt;
+    [_tx, _ry + _f * 0.45, _tw - ([0, _fx * 4.4] select (_new && _wide)), _f * 1.2, [toUpper _lbl, 0.84, _hDim, true] call _t] call _txt;
     private _vs = if (!_has) then { "—" } else { [[_v] call _distS, [_v] call _thou] select (_unit isEqualTo "n") };
-    [_tx, _ry + _f * 1.45, _tw, _f * 1.8, [_vs, 1.45, [_hDim, _hText] select _has, true] call _t] call _txt;
-    [_tx, _ry + _f * 3.0, _tw, _f * 1.1, [[[format ["%1 · %2", _mis, [_day] call _dayS], "cette mission"] select _new, "pas encore"] select !_has, 0.62, _hDim] call _t] call _txt;
+    [_tx, _ry + _f * 1.45, _tw, _f * 1.8, [_vs, 1.55, [_hDim, _hText] select _has, true] call _t] call _txt;
+    [_tx, _ry + _f * 3.0, _tw, _f * 1.1, [[[format ["%1 · %2", _mis, [_day] call _dayS], "cette mission"] select _new, "pas encore"] select !_has, 0.8, _hDim] call _t] call _txt;
     if (_new) then {
         private _pw = _fx * 4.2;
         // Badge en haut à droite ; en portrait (cartes étroites), à la place de la ligne du bas.
@@ -456,21 +460,33 @@ private _rhh = _f * 4.3;
 _y = _y + (ceil ((count _recs) / _rcols)) * (_rhh + _gy);
 
 // ============ ATHENA ============
-(missionNamespace getVariable ["COMSPEC_ATAK_DistSrv", [true, -1]]) params ["_ok", "_at"];
-private _ah2 = _f * 3.6;
+// Serveur sans COMSPEC Link relié : ce téléphone compte et envoie lui-même (relais de fn_distanceServer, mode "self").
+private _relay = !(missionNamespace getVariable ["COMSPEC_ATAK_SrvPlayOK", false]);
+(missionNamespace getVariable [["COMSPEC_ATAK_DistSrv", "COMSPEC_ATAK_DistSrvSelf"] select _relay, [true, -1]]) params ["_ok", "_at"];
+private _ah2 = _f * 4.6;
 [_x0, _y + _gy * 0.6, _W, _ah2, _cCard] call _box;
 _y = _y + _gy * 0.6;
 private _stHex = [[_hAmber, "#5cc76b"] select _ok, _hDim] select (_at < 0);
-[_x0 + _fx * 0.8, _y + _f * 0.95, _f * 0.55 / _ratio, _f * 0.55, [_stHex] call _rgb] call _box;
-private _st = if (_at < 0) then { "Pas encore envoyé" } else { format [["Envoyé il y a %1 · en échec, renvoyé au prochain envoi", "Envoyé il y a %1"] select _ok, [serverTime - _at] call _dur] };
-private _bwBtn = _fx * 7.5;
-[_x0 + _fx * 1.8, _y + _f * 0.45, _W - _bwBtn - _fx * 3, _f * 3,
-    (["ATHENA", 0.72, _hDim, true] call _t) + "<br/>" + ([_st, 0.88, _hText, true] call _t) + "<br/>" +
-    (["Envoyé par le serveur toutes les 10 min. Le cumul de toutes vos missions est sur votre fiche du site.", 0.66, _hDim] call _t)] call _txt;
-private _btn = [_x0 + _W - _bwBtn - _fx * 0.8, _y + _f * 0.9, _bwBtn, _f * 1.8];
+[_x0 + _fx * 0.8, _y + _f * 1.05, _f * 0.65 / _ratio, _f * 0.65, [_stHex] call _rgb] call _box;
+private _st = switch (true) do {
+    case (_at < 0): { "Pas encore envoyé" };
+    case (!_ok): { format ["Échec il y a %1 · touchez ACTUALISER pour renvoyer", [serverTime - _at] call _dur] };
+    default { format ["Envoyé il y a %1", [serverTime - _at] call _dur] };
+};
+private _bwBtn = _fx * 8.2;
+[_x0 + _fx * 1.9, _y + _f * 0.4, _W - _bwBtn - _fx * 3.2, _f * 3.8,
+    (["ATHENA", 0.9, _hDim, true] call _t) + "<br/>" + ([_st, 1.05, _hText, true] call _t) + "<br/>" +
+    ([["Envoyé par le serveur toutes les 10 min.", "Envoyé par ce téléphone toutes les 10 min (le serveur n'est pas relié à Athena)."] select _relay, 0.86, _hDim] call _t) + "<br/>" +
+    (["Le cumul des missions envoyées est sur votre fiche du site. ACTUALISER envoie tout de suite ce qui est en attente.", 0.86, _hDim] call _t)] call _txt;
+private _btn = [_x0 + _W - _bwBtn - _fx * 0.8, _y + _f * 1.2, _bwBtn, _f * 2.2];
 [_btn select 0, _btn select 1, _btn select 2, _btn select 3, [_accHex, 0.16] call _rgb] call _box;
-[_btn select 0, (_btn select 1) + _f * 0.3, _btn select 2, _f * 1.3, ["ACTUALISER", 0.8, _accHex, true, "center"] call _t] call _txt;
-[_btn, { ["tick"] call comspec_atak_native_fnc_distanceLog; ['DISTANCE'] call comspec_atak_native_fnc_pageRender; }] call _click;
+[_btn select 0, (_btn select 1) + _f * 0.4, _btn select 2, _f * 1.4, ["ACTUALISER", 0.95, _accHex, true, "center"] call _t] call _txt;
+[_btn, {
+    ["tick"] call comspec_atak_native_fnc_distanceLog;
+    // Forcer l'envoi Athena (relais téléphone, ou restes AccSelf) — avant, ACTUALISER ne faisait que redessiner.
+    ["selfFlush"] call comspec_atak_native_fnc_distanceServer;
+    ['DISTANCE'] call comspec_atak_native_fnc_pageRender;
+}] call _click;
 _y = _y + _ah2 + _pad;
 
 // Fond étendu à toute la hauteur dessinée, pour défiler jusqu'en bas.

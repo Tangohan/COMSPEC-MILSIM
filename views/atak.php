@@ -77,7 +77,7 @@ if ($atakMapConfig) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= $atakOverwatchBeta ? 'ATHENA | Overwatch Beta' : ($atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3')) ?></title>
   <link rel="icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <script>
@@ -103,6 +103,7 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-donor.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-c2-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-c2-live.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-terrain3d-premium.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -999,7 +1000,7 @@ if ($atakMapConfig) {
       <details class="atak-details">
         <summary>Pack Overwatch</summary>
         <div class="atak-details-body">
-          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Télécharger le pack Overwatch</a></p>
+          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Installer le mod (Steam Workshop)</a></p>
         </div>
       </details>
       <?php endif; ?>
@@ -3060,7 +3061,7 @@ if ($atakMapConfig) {
         <p class="atak-route-panel__hint" id="atak-route-panel-hint">Cliquez au moins deux points sur la carte, puis transmettez l’itinéraire aux opérateurs.</p>
         <div id="atak-gps-route-box" hidden>
           <label class="atak-route-panel__field" for="atak-gps-route-name">Nom de l’itinéraire
-            <input type="text" id="atak-gps-route-name" maxlength="80" value="Itinéraire" autocomplete="off" />
+            <input type="text" id="atak-gps-route-name" maxlength="80" value="<?= locale() === 'en' ? 'Route' : 'Itinéraire' ?>" autocomplete="off" />
           </label>
           <div class="atak-gps-route-actions">
             <button type="button" class="atak-route-panel__close" id="atak-gps-route-send">Transmettre aux opérateurs</button>

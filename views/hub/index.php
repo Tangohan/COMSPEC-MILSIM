@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+/** Hub des communautés — accueil : raccourcis, Mes formations, position face au réseau, avis à donner, bourse, annuaire. */
 /** @var list<array<string,mixed>> $hubRows */
 $hubRows = is_array($hubRows ?? null) ? $hubRows : [];
 $hubMine = is_array($hubMine ?? null) ? $hubMine : null;
@@ -13,27 +14,33 @@ $hubPendingReviews = is_array($hubPendingReviews ?? null) ? $hubPendingReviews :
 $hubBoardPosts = is_array($hubBoardPosts ?? null) ? $hubBoardPosts : [];
 $hubCanCooperate = !empty($hubCanCooperate);
 $hubQuickLinks = is_array($hubQuickLinks ?? null) ? $hubQuickLinks : [];
+$hubTraining = is_array($hubTraining ?? null) ? $hubTraining : null;
 $hubAnnounceItems = is_array($hub_announce_items ?? null) ? $hub_announce_items : [];
 $hubAnnounceManageUrl = isset($hub_announce_manage_url) && is_string($hub_announce_manage_url) && $hub_announce_manage_url !== '' ? $hub_announce_manage_url : null;
 $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
-$hubHeroImage = asset_url('assets/images/fog-team.jpg');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-$num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, ',', "\u{202F}");
-$ordinal = static fn (int $n): string => $n === 1 ? '1er' : $n . 'e';
+$numEn = locale() === 'en';
+$num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, $numEn ? '.' : ',', $numEn ? ',' : "\u{202F}");
+// Ordinal du rang : la traduction anglaise (HtmlTranslator) ne sait pas accorder « 1er / 2e ».
+$ordinal = static fn (int $n): string => locale() === 'en'
+    ? $n . (in_array($n % 100, [11, 12, 13], true) ? 'th' : (['th', 'st', 'nd', 'rd'][$n % 10] ?? 'th'))
+    : ($n === 1 ? '1er' : $n . 'e');
 $needTypes = \App\Repositories\CommunityEcosystemRepository::NEED_TYPES;
-$flashOk = \App\Core\Session::getFlash('success');
-$flashErr = \App\Core\Session::getFlash('error');
+$metricsLabels = \App\Services\Ecosystem\CommunityStatsService::METRICS;
+$boardOpenCount = (int) ($hubBoardOpenCount ?? count($hubBoardPosts));
 
 $totalMembers = 0;
 $totalOps = 0.0;
+$recruiting = 0;
 foreach ($hubRows as $r) {
     $totalMembers += (int) $r['members'];
     $totalOps += (float) $r['ops_per_month'];
+    $recruiting += !empty($r['recruitment_open']) ? 1 : 0;
 }
 
-$kpiMetrics = ['members', 'activity', 'units', 'ops_per_month', 'sse_records', 'cooperations', 'recommendations', 'rating'];
+$kpiMetrics = ['members' => 'users', 'activity' => 'pulse', 'units' => 'tree', 'ops_per_month' => 'calendar', 'sse_records' => 'intel', 'cooperations' => 'coop', 'recommendations' => 'heart', 'rating' => 'avis'];
 $maxOf = [];
-foreach ($kpiMetrics as $m) {
+foreach (array_keys($kpiMetrics) as $m) {
     $maxOf[$m] = 0.0;
     foreach ($hubRows as $r) {
         $maxOf[$m] = max($maxOf[$m], (float) ($r[$m] ?? 0));
@@ -53,261 +60,295 @@ $fmtMetric = static function (string $metric, $value) use ($num): string {
     };
 };
 $sortLink = static fn (string $key): string => url('hub') . '?tri=' . rawurlencode($key) . '#annuaire';
+$quickIcons = ['dashboard' => 'dashboard', 'centre-actions' => 'actions', 'boite-reception' => 'inbox', 'mes-demarches' => 'demarches'];
+$quickIconFor = static function (string $url) use ($quickIcons): string {
+    foreach ($quickIcons as $needle => $icon) {
+        if (str_contains($url, $needle)) {
+            return $icon;
+        }
+    }
+
+    return 'coop';
+};
+
+$hxKicker = 'Athena · Hub des communautés';
+$hxTitle = 'Les communautés, côte à côte';
+$hxLead = 'Comparez votre organisation au réseau, recommandez les unités avec qui vous jouez, évaluez vos partenaires et trouvez du renfort dans la bourse aux coopérations.';
+$hxActions = '<a class="hx-cta hx-cta--primary" href="#annuaire">Parcourir l’annuaire</a>'
+    . '<a class="hx-cta" href="' . $h(url('hub/bourse')) . '">Bourse aux coopérations</a>';
+require __DIR__ . '/partials/shell_open.php';
 ?>
-<link rel="stylesheet" href="<?= $h(asset_url('assets/css/hub-ecosystem.css')) ?>">
+      <dl class="hx-stats" aria-label="Chiffres du réseau">
+        <div><dt>Communautés</dt><dd><?= $num(count($hubRows)) ?></dd></div>
+        <div><dt>Membres actifs</dt><dd><?= $num($totalMembers) ?></dd></div>
+        <div><dt>Opérations / mois</dt><dd><?= $num($totalOps, 0) ?></dd></div>
+        <div><dt>Recrutent</dt><dd><?= $num($recruiting) ?></dd></div>
+        <div class="<?= $boardOpenCount > 0 ? 'is-hot' : '' ?>"><dt>Besoins ouverts</dt><dd><?= $num($boardOpenCount) ?></dd></div>
+      </dl>
 
-<div class="hubx">
-  <section class="hub-hero" aria-labelledby="hub-hero-title">
-    <img class="hub-hero__media" src="<?= $h($hubHeroImage) ?>" alt="" width="2048" height="933" decoding="async" fetchpriority="high">
-    <div class="hub-hero__shade" aria-hidden="true"></div>
-    <div class="hub-hero__inner">
-      <p class="hub-hero__brand">Athena · Hub</p>
-      <h1 id="hub-hero-title" class="hub-hero__title">Les communautés, côte à côte</h1>
-      <p class="hub-hero__lead">Comparez votre organisation aux autres unités Athena, recommandez celles avec qui vous jouez, évaluez vos partenaires après une coopération et trouvez du renfort dans la bourse aux coopérations.</p>
-      <div class="hub-hero__actions">
-        <a class="hx-btn hx-btn--solid" href="#annuaire">Parcourir l’annuaire</a>
-        <a class="hx-btn hx-btn--ghost" href="<?= $h(url('hub/comparer')) ?>">Comparer deux communautés</a>
-        <a class="hx-btn hx-btn--ghost" href="<?= $h(url('hub/bourse')) ?>">Bourse aux coopérations</a>
-      </div>
-      <div class="hub-hero__stats" aria-label="Chiffres du réseau">
-        <span><strong><?= $num(count($hubRows)) ?></strong> communautés</span>
-        <span><strong><?= $num($totalMembers) ?></strong> membres actifs</span>
-        <span><strong><?= $num($totalOps, 0) ?></strong> opérations par mois</span>
-        <span><strong><?= $num((int) ($hubBoardOpenCount ?? count($hubBoardPosts))) ?></strong> besoins ouverts</span>
-      </div>
-    </div>
-  </section>
-
-  <div class="hx-wrap">
-    <?php if ($flashOk): ?><p class="hx-flash hx-flash--ok" role="status"><?= $h((string) $flashOk) ?></p><?php endif; ?>
-    <?php if ($flashErr): ?><p class="hx-flash hx-flash--err" role="alert"><?= $h((string) $flashErr) ?></p><?php endif; ?>
-
-    <?php if ($hubQuickLinks !== []): ?>
-    <nav class="hx-quick" aria-label="Mon espace">
-      <?php foreach ($hubQuickLinks as $link): ?>
-      <a href="<?= $h((string) $link['url']) ?>"><strong><?= $h((string) $link['label']) ?></strong><span><?= $h((string) $link['description']) ?></span></a>
-      <?php endforeach; ?>
-    </nav>
-    <?php endif; ?>
-
-    <?php if ($hubAnnounceItems !== []): ?>
-    <div class="hx-section">
-      <?php
-      $announce_items = $hubAnnounceItems;
-      $announce_heading = 'Annonces de votre communauté';
-      $announce_kicker = 'Transmission';
-      $announce_empty = 'Aucune annonce active pour le moment.';
-      $announce_id = 'hub-announce';
-      $announce_list_url = url('alertes');
-      $announce_manage_url = $hubAnnounceManageUrl;
-      $announce_start_open = false;
-      require base_path('views/partials/announce_tiles.php');
-      ?>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($hubMine !== null): ?>
-    <section class="hx-section" aria-labelledby="hx-mine-title">
-      <div class="hx-section__head">
-        <div>
-          <p class="hx-kicker">Votre position</p>
-          <h2 id="hx-mine-title" class="hx-title"><?= $h((string) $hubMine['name']) ?> face au réseau</h2>
-          <p class="hx-sub">Chaque indicateur est comparé à la médiane des <?= $num(count($hubRows)) ?> communautés du registre. La barre montre votre valeur par rapport à la plus haute.</p>
-        </div>
-        <a class="hx-btn hx-btn--line" href="<?= $h(url('hub/c/' . $hubMine['slug'])) ?>">Voir notre fiche publique comparée</a>
-      </div>
-      <div class="hx-kpis">
-        <?php foreach ($kpiMetrics as $metric):
-          $value = $hubMine[$metric] ?? null;
-          $median = $hubMedians[$metric] ?? null;
-          $rank = $hubRanks[$metric] ?? null;
-          $pct = ($value !== null && $maxOf[$metric] > 0) ? (int) round((float) $value / $maxOf[$metric] * 100) : 0;
-        ?>
-        <div class="hx-kpi">
-          <p class="hx-kpi__label"><?= $h(\App\Services\Ecosystem\CommunityStatsService::METRICS[$metric]) ?></p>
-          <p class="hx-kpi__value"><?= $h($fmtMetric($metric, $value)) ?></p>
-          <div class="hx-kpi__bar" aria-hidden="true"><span style="width: <?= $pct ?>%"></span></div>
-          <p class="hx-kpi__meta">
-            <span>Médiane <?= $h($fmtMetric($metric, $median)) ?></span>
-            <?php if ($rank !== null): ?>
-            <span class="<?= $value !== null && $median !== null && (float) $value >= (float) $median ? 'hx-up' : 'hx-down' ?>"><?= $h($ordinal($rank)) ?> / <?= count($hubRows) ?></span>
-            <?php endif; ?>
-          </p>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </section>
-    <?php endif; ?>
-
-    <?php if ($hubPendingReviews !== []): ?>
-    <section class="hx-section" id="avis" aria-labelledby="hx-reviews-title">
-      <div class="hx-section__head">
-        <div>
-          <p class="hx-kicker">À évaluer</p>
-          <h2 id="hx-reviews-title" class="hx-title">Vos partenaires de coopération</h2>
-          <p class="hx-sub">Ces coopérations sont clôturées. Votre avis apparaît sur la fiche de l’unité partenaire et alimente sa note : restez factuel, il est signé du nom de votre communauté.</p>
-        </div>
-      </div>
-      <div class="hx-board">
-        <?php foreach ($hubPendingReviews as $p): ?>
-        <form class="hx-card hx-review-form" method="post" action="<?= $h(url('hub/avis')) ?>">
-          <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-          <input type="hidden" name="mission_id" value="<?= (int) $p['mission_id'] ?>">
-          <input type="hidden" name="tenant_id" value="<?= (int) $p['tenant_id'] ?>">
-          <div>
-            <p class="hx-kicker"><?= $h((string) $p['mission_title']) ?></p>
-            <h3 class="text-base font-black"><?= $h((string) $p['tenant_name']) ?></h3>
-          </div>
-          <?php foreach (['rating' => 'Note globale', 'reliability' => 'Fiabilité (présence, ponctualité)', 'organisation' => 'Organisation (briefings, échanges)', 'ambiance' => 'Esprit d’équipe'] as $field => $label): ?>
-          <fieldset>
-            <legend class="text-xs font-bold text-slate-500"><?= $h($label) ?><?= $field === 'rating' ? ' *' : ' (facultatif)' ?></legend>
-            <div class="hx-rate">
-              <?php for ($i = 1; $i <= 5; $i++): ?>
-              <label><input type="radio" name="<?= $h($field) ?>" value="<?= $i ?>" <?= $field === 'rating' ? 'required' : '' ?>><?= $i ?> ★</label>
-              <?php endfor; ?>
-            </div>
-          </fieldset>
+      <section class="hx-section" aria-labelledby="hx-space-title">
+        <h2 id="hx-space-title" class="hx-section-label">Mon espace</h2>
+        <div class="hx-space">
+          <?php if ($hubTraining !== null): $t = $hubTraining; ?>
+          <a class="hx-tile hx-tile--training" href="<?= $h(url('formations/mes-formations')) ?>" data-lms-module-entry="formation">
+            <span class="hx-tile__icon"><?= $hxIcon('formations') ?></span>
+            <span class="hx-tile__body">
+              <strong>Mes formations</strong>
+              <?php if ($t['total'] === 0): ?>
+              <em>Aucun parcours pour l’instant : ouvrez le catalogue depuis cette page.</em>
+              <?php else: ?>
+              <em><?= (int) $t['in_progress'] ?> en cours · <?= (int) $t['assigned'] ?> à commencer · <?= (int) $t['completed'] ?> terminée<?= $t['completed'] > 1 ? 's' : '' ?><?= $t['pending'] > 0 ? ' · ' . (int) $t['pending'] . ' en attente' : '' ?></em>
+              <span class="hx-progress" aria-label="<?= (int) $t['pct'] ?> % des parcours terminés"><span style="width: <?= (int) $t['pct'] ?>%"></span></span>
+              <?php if ($t['next'] !== null): ?><small><?= $t['next']['status'] === 'in_progress' ? 'Reprendre' : 'Prochain' ?> : <?= $h($t['next']['title']) ?></small><?php endif; ?>
+              <?php endif; ?>
+            </span>
+            <span class="hx-tile__go"><?= $hxIcon('arrow') ?></span>
+          </a>
+          <?php endif; ?>
+          <?php foreach ($hubQuickLinks as $link): ?>
+          <a class="hx-tile" href="<?= $h((string) $link['url']) ?>">
+            <span class="hx-tile__icon"><?= $hxIcon($quickIconFor((string) $link['url'])) ?></span>
+            <span class="hx-tile__body"><strong><?= $h((string) $link['label']) ?></strong><em><?= $h((string) $link['description']) ?></em></span>
+            <span class="hx-tile__go"><?= $hxIcon('arrow') ?></span>
+          </a>
           <?php endforeach; ?>
-          <textarea class="hx-area" name="comment" maxlength="2000" placeholder="Ce qui a bien fonctionné, ce qui serait à améliorer…"></textarea>
-          <button type="submit" class="hx-btn hx-btn--accent">Publier l’avis</button>
-        </form>
-        <?php endforeach; ?>
-      </div>
-    </section>
-    <?php endif; ?>
+        </div>
+      </section>
 
-    <section class="hx-section" aria-labelledby="hx-board-title">
-      <div class="hx-section__head">
-        <div>
-          <p class="hx-kicker">Bourse aux coopérations</p>
-          <h2 id="hx-board-title" class="hx-title">Besoins ouverts</h2>
-          <p class="hx-sub">Une communauté cherche du renfort, une force adverse, un appui aérien ou un partenaire d’entraînement ? Proposez votre aide : si elle accepte, la coopération s’ouvre directement entre vos deux unités.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <?php if ($hubCanCooperate): ?><a class="hx-btn hx-btn--accent" href="<?= $h(url('hub/bourse')) ?>#publier">Publier un besoin</a><?php endif; ?>
-          <a class="hx-btn hx-btn--line" href="<?= $h(url('hub/bourse')) ?>">Toute la bourse</a>
-        </div>
-      </div>
-      <?php if ($hubBoardPosts === []): ?>
-      <p class="hx-empty">Aucun besoin ouvert pour le moment.<?= $hubCanCooperate ? ' Soyez la première communauté à en publier un.' : '' ?></p>
-      <?php else: ?>
-      <div class="hx-board">
-        <?php foreach ($hubBoardPosts as $post): ?>
-        <article class="hx-post">
-          <div class="hx-post__meta">
-            <span class="hx-pill"><?= $h($needTypes[(string) $post['need_type']] ?? 'Besoin') ?></span>
-            <?php if (!empty($post['starts_at'])): ?><span><?= $h(date('d/m/Y H:i', strtotime((string) $post['starts_at']))) ?></span><?php endif; ?>
-            <?php if (!empty($post['slots'])): ?><span><?= (int) $post['slots'] ?> places</span><?php endif; ?>
-          </div>
-          <h3><?= $h((string) $post['title']) ?></h3>
-          <p class="hx-post__by">Publié par <a href="<?= $h(url('hub/c/' . $post['tenant_slug'])) ?>"><?= $h((string) $post['tenant_name']) ?></a><?= !empty($post['game_label']) ? ' · ' . $h((string) $post['game_label']) : '' ?> · <?= (int) $post['responses_count'] ?> proposition(s)</p>
-          <a class="hx-btn hx-btn--line hx-btn--small self-start" href="<?= $h(url('hub/bourse')) ?>#besoin-<?= (int) $post['id'] ?>">Voir et répondre</a>
-        </article>
-        <?php endforeach; ?>
+      <?php if ($hubAnnounceItems !== []): ?>
+      <div class="hx-section">
+        <?php
+        $announce_items = $hubAnnounceItems;
+        $announce_heading = 'Annonces de votre communauté';
+        $announce_kicker = 'Transmission';
+        $announce_empty = 'Aucune annonce active pour le moment.';
+        $announce_id = 'hub-announce';
+        $announce_list_url = url('alertes');
+        $announce_manage_url = $hubAnnounceManageUrl;
+        $announce_start_open = false;
+        require base_path('views/partials/announce_tiles.php');
+        ?>
       </div>
       <?php endif; ?>
-    </section>
 
-    <section class="hx-section" id="annuaire" aria-labelledby="hx-dir-title">
-      <div class="hx-section__head">
-        <div>
-          <p class="hx-kicker">Annuaire comparatif</p>
-          <h2 id="hx-dir-title" class="hx-title">Toutes les communautés</h2>
-          <p class="hx-sub">Chiffres agrégés et publics : membres actifs, organigramme, opérations des 90 derniers jours, volume de renseignement (SSE), coopérations, recommandations et note des partenaires. Aucun nom de membre ni contenu n’est exposé. Cliquez sur un en-tête pour trier.</p>
+      <?php if ($hubMine !== null): ?>
+      <section class="hx-section" aria-labelledby="hx-mine-title">
+        <div class="hx-section__head">
+          <div>
+            <p class="hx-kicker">Votre position</p>
+            <h2 id="hx-mine-title" class="hx-title"><?= $h((string) $hubMine['name']) ?> face au réseau</h2>
+            <p class="hx-sub">Comparé à la médiane des <?= $num(count($hubRows)) ?> communautés. La barre situe votre valeur par rapport à la plus haute, le trait la médiane.</p>
+          </div>
+          <a class="hx-cta" href="<?= $h(url('hub/c/' . $hubMine['slug'])) ?>">Notre fiche comparée</a>
         </div>
-      </div>
+        <div class="hx-kpis">
+          <?php foreach ($kpiMetrics as $metric => $icon):
+            $value = $hubMine[$metric] ?? null;
+            $median = $hubMedians[$metric] ?? null;
+            $rank = $hubRanks[$metric] ?? null;
+            $pct = ($value !== null && $maxOf[$metric] > 0) ? (int) round((float) $value / $maxOf[$metric] * 100) : 0;
+            $mPct = ($median !== null && $maxOf[$metric] > 0) ? (int) round((float) $median / $maxOf[$metric] * 100) : null;
+            $above = $value !== null && $median !== null && (float) $value >= (float) $median;
+          ?>
+          <div class="hx-kpi">
+            <p class="hx-kpi__label"><?= $hxIcon($icon) ?><?= $h((string) $metricsLabels[$metric]) ?></p>
+            <p class="hx-kpi__value"><?= $h($fmtMetric($metric, $value)) ?></p>
+            <div class="hx-kpi__bar" aria-hidden="true"><span style="width: <?= $pct ?>%"></span><?php if ($mPct !== null): ?><i style="left: <?= $mPct ?>%"></i><?php endif; ?></div>
+            <p class="hx-kpi__meta">
+              <span>Médiane <?= $h($fmtMetric($metric, $median)) ?></span>
+              <?php if ($rank !== null): ?><b class="<?= $above ? 'hx-up' : 'hx-down' ?>"><?= $above ? '▲' : '▼' ?> <?= $h($ordinal((int) $rank)) ?> / <?= count($hubRows) ?></b><?php endif; ?>
+            </p>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </section>
+      <?php endif; ?>
 
-      <div class="hx-filters" data-hx-filters>
-        <div class="hx-field">
-          <label for="hx-q">Rechercher</label>
-          <input id="hx-q" class="hx-input" type="search" placeholder="Nom, jeu, unité représentée…" autocomplete="off" data-hx-q>
+      <?php if ($hubPendingReviews !== []): ?>
+      <section class="hx-section" id="avis" aria-labelledby="hx-reviews-title">
+        <div class="hx-section__head">
+          <div>
+            <p class="hx-kicker hx-kicker--urgent">À évaluer</p>
+            <h2 id="hx-reviews-title" class="hx-title">Vos partenaires de coopération</h2>
+            <p class="hx-sub">Ces coopérations sont clôturées. Votre avis apparaît sur la fiche de l’unité partenaire et alimente sa note : restez factuel, il est signé du nom de votre communauté.</p>
+          </div>
         </div>
-        <div class="hx-field">
-          <label for="hx-game">Jeu</label>
-          <select id="hx-game" class="hx-select" data-hx-game>
-            <option value="">Tous les jeux</option>
-            <?php foreach ($hubGames as $g): ?><option value="<?= $h(mb_strtolower($g)) ?>"><?= $h($g) ?></option><?php endforeach; ?>
-          </select>
-        </div>
-        <div class="hx-field">
-          <label for="hx-sort">Trier par</label>
-          <select id="hx-sort" class="hx-select" data-hx-sort>
-            <?php foreach (\App\Services\Ecosystem\CommunityStatsService::METRICS as $key => $label): ?>
-            <option value="<?= $h($sortLink($key)) ?>"<?= $key === $hubSort ? ' selected' : '' ?>><?= $h($label) ?></option>
+        <div class="hx-board">
+          <?php foreach ($hubPendingReviews as $p): ?>
+          <form class="hx-card hx-review-form" method="post" action="<?= $h(url('hub/avis')) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+            <input type="hidden" name="mission_id" value="<?= (int) $p['mission_id'] ?>">
+            <input type="hidden" name="tenant_id" value="<?= (int) $p['tenant_id'] ?>">
+            <div>
+              <p class="hx-kicker"><?= $h((string) $p['mission_title']) ?></p>
+              <h3 class="hx-card__title"><?= $h((string) $p['tenant_name']) ?></h3>
+            </div>
+            <?php foreach (['rating' => 'Note globale', 'reliability' => 'Fiabilité (présence, ponctualité)', 'organisation' => 'Organisation (briefings, échanges)', 'ambiance' => 'Esprit d’équipe'] as $field => $label): ?>
+            <fieldset class="hx-rate-field">
+              <legend><?= $h($label) ?><?= $field === 'rating' ? ' *' : ' (facultatif)' ?></legend>
+              <div class="hx-rate">
+                <?php for ($i = 1; $i <= 5; $i++): ?>
+                <label><input type="radio" name="<?= $h($field) ?>" value="<?= $i ?>" <?= $field === 'rating' ? 'required' : '' ?>><?= $i ?> ★</label>
+                <?php endfor; ?>
+              </div>
+            </fieldset>
             <?php endforeach; ?>
-            <option value="<?= $h($sortLink('name')) ?>"<?= $hubSort === 'name' ? ' selected' : '' ?>>Nom</option>
-          </select>
+            <textarea class="hx-area" name="comment" maxlength="2000" placeholder="Ce qui a bien fonctionné, ce qui serait à améliorer…"></textarea>
+            <button type="submit" class="hx-cta hx-cta--primary">Publier l’avis</button>
+          </form>
+          <?php endforeach; ?>
         </div>
-        <label class="hx-check"><input type="checkbox" data-hx-open> Recrutement ouvert</label>
-      </div>
+      </section>
+      <?php endif; ?>
 
-      <div class="hx-table-wrap">
-        <table class="hx-table">
-          <thead>
-            <tr>
-              <th scope="col"><a href="<?= $h($sortLink('name')) ?>"<?= $hubSort === 'name' ? ' aria-current="true"' : '' ?>>Communauté</a></th>
-              <?php foreach (['members' => 'Membres', 'activity' => 'Actifs 30 j', 'units' => 'Unités', 'ops_per_month' => 'Op./mois', 'sse_records' => 'SSE', 'cooperations' => 'Coop.', 'rating' => 'Note', 'recommendations' => 'Recos'] as $key => $label): ?>
-              <th scope="col"><a href="<?= $h($sortLink($key)) ?>"<?= $hubSort === $key ? ' aria-current="true"' : '' ?> title="<?= $h(\App\Services\Ecosystem\CommunityStatsService::METRICS[$key]) ?>"><?= $h($label) ?></a></th>
+      <section class="hx-section" aria-labelledby="hx-board-title">
+        <div class="hx-section__head">
+          <div>
+            <p class="hx-kicker">Bourse aux coopérations</p>
+            <h2 id="hx-board-title" class="hx-title">Besoins ouverts</h2>
+            <p class="hx-sub">Renfort, force adverse, appui aérien, partenaire d’entraînement : proposez votre aide, et si la communauté accepte, la coopération s’ouvre directement entre vos deux unités.</p>
+          </div>
+          <div class="hx-row">
+            <?php if ($hubCanCooperate): ?><a class="hx-cta hx-cta--accent" href="<?= $h(url('hub/bourse')) ?>#publier"><?= $hxIcon('plus') ?>Publier un besoin</a><?php endif; ?>
+            <a class="hx-cta" href="<?= $h(url('hub/bourse')) ?>">Toute la bourse</a>
+          </div>
+        </div>
+        <?php if ($hubBoardPosts === []): ?>
+        <div class="hx-empty">
+          <?= $hxIcon('bourse', 'hx-empty__icon') ?>
+          <p class="hx-empty__title">Aucun besoin ouvert</p>
+          <p>Personne ne cherche de renfort pour le moment.<?= $hubCanCooperate ? ' Votre communauté peut publier le premier besoin.' : '' ?></p>
+          <?php if ($hubCanCooperate): ?><a class="hx-cta hx-cta--accent" href="<?= $h(url('hub/bourse')) ?>#publier">Publier un besoin</a><?php endif; ?>
+        </div>
+        <?php else: ?>
+        <div class="hx-board">
+          <?php foreach ($hubBoardPosts as $post): ?>
+          <article class="hx-post">
+            <div class="hx-post__meta">
+              <span class="hx-badge hx-badge--type"><?= $h($needTypes[(string) $post['need_type']] ?? 'Besoin') ?></span>
+              <?php if (!empty($post['slots'])): ?><span class="hx-badge"><?= (int) $post['slots'] ?> places</span><?php endif; ?>
+            </div>
+            <h3 class="hx-card__title"><?= $h((string) $post['title']) ?></h3>
+            <dl class="hx-meta">
+              <div><dt>Par</dt><dd><a href="<?= $h(url('hub/c/' . $post['tenant_slug'])) ?>"><?= $h((string) $post['tenant_name']) ?></a></dd></div>
+              <?php if (!empty($post['game_label'])): ?><div><dt>Jeu</dt><dd><?= $h((string) $post['game_label']) ?></dd></div><?php endif; ?>
+              <div><dt>Quand</dt><dd><?= !empty($post['starts_at']) ? $h(date('d/m/Y H:i', strtotime((string) $post['starts_at']))) : 'Date libre' ?></dd></div>
+              <div><dt>Propositions</dt><dd><?= (int) $post['responses_count'] ?></dd></div>
+            </dl>
+            <a class="hx-cta hx-cta--primary hx-cta--block" href="<?= $h(url('hub/bourse')) ?>#besoin-<?= (int) $post['id'] ?>">Voir et répondre <?= $hxIcon('arrow') ?></a>
+          </article>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+      </section>
+
+      <section class="hx-section" id="annuaire" aria-labelledby="hx-dir-title">
+        <div class="hx-section__head">
+          <div>
+            <p class="hx-kicker">Annuaire comparatif</p>
+            <h2 id="hx-dir-title" class="hx-title">Toutes les communautés</h2>
+            <p class="hx-sub">Chiffres agrégés et publics : membres actifs, organigramme, opérations des 90 derniers jours, renseignement (SSE), coopérations, recommandations et note des partenaires. Aucun nom de membre ni contenu n’est exposé.</p>
+          </div>
+        </div>
+
+        <?php if ($hubRows === []): ?>
+        <div class="hx-empty">
+          <?= $hxIcon('annuaire', 'hx-empty__icon') ?>
+          <p class="hx-empty__title">Annuaire vide</p>
+          <p>Aucune communauté n’est encore inscrite au registre public.</p>
+        </div>
+        <?php else: ?>
+        <div class="hx-toolbar" data-hx-filters>
+          <label class="hx-search"><span class="sr-only">Rechercher</span><?= $hxIcon('search') ?><input type="search" placeholder="Nom, jeu, unité représentée…" autocomplete="off" data-hx-q></label>
+          <label class="hx-select-wrap"><span class="sr-only">Jeu</span>
+            <select class="hx-select" data-hx-game>
+              <option value="">Tous les jeux</option>
+              <?php foreach ($hubGames as $g): ?><option value="<?= $h(mb_strtolower($g)) ?>"><?= $h($g) ?></option><?php endforeach; ?>
+            </select>
+          </label>
+          <label class="hx-select-wrap"><span class="sr-only">Trier par</span>
+            <select class="hx-select" data-hx-sort>
+              <?php foreach ($metricsLabels as $key => $label): ?>
+              <option value="<?= $h($sortLink($key)) ?>"<?= $key === $hubSort ? ' selected' : '' ?>>Tri : <?= $h($label) ?></option>
               <?php endforeach; ?>
-              <th scope="col"><span class="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($hubRows as $r):
-              $isMine = $hubMine !== null && $r['id'] === $hubMine['id'];
-              $search = mb_strtolower(implode(' ', [$r['name'], $r['game'], $r['unit_label'], $r['tagline'], $r['locale']]));
-              $recommended = in_array((int) $r['id'], $hubRecommended, true);
-              $initials = mb_strtoupper(mb_substr((string) $r['name'], 0, 2));
-            ?>
-            <tr class="<?= $isMine ? 'is-mine' : '' ?>" data-hx-row data-search="<?= $h($search) ?>" data-game="<?= $h(mb_strtolower((string) $r['game'])) ?>" data-open="<?= $r['recruitment_open'] ? '1' : '0' ?>">
-              <td>
-                <div class="hx-org">
-                  <?php if ($r['logo'] !== '' && filter_var($r['logo'], FILTER_VALIDATE_URL)): ?>
-                  <img class="hx-org__logo" src="<?= $h((string) $r['logo']) ?>" alt="" loading="lazy">
-                  <?php else: ?>
-                  <span class="hx-org__logo" aria-hidden="true"><?= $h($initials) ?></span>
-                  <?php endif; ?>
-                  <div>
-                    <a href="<?= $h(url('hub/c/' . $r['slug'])) ?>"><?= $h((string) $r['name']) ?></a>
-                    <small>
-                      <?= $h($r['game'] !== '' ? (string) $r['game'] : 'Jeu non précisé') ?>
-                      <?php if ($r['recruitment_open']): ?> · <span class="hx-pill">Recrute</span><?php endif; ?>
-                      <?php if ($isMine): ?> · <span class="hx-pill hx-pill--muted">Vous</span><?php endif; ?>
-                    </small>
+              <option value="<?= $h($sortLink('name')) ?>"<?= $hubSort === 'name' ? ' selected' : '' ?>>Tri : nom</option>
+            </select>
+          </label>
+          <label class="hx-toggle"><input type="checkbox" data-hx-open><span>Recrute</span></label>
+          <span class="hx-toolbar__count" data-hx-count><?= count($hubRows) ?> / <?= count($hubRows) ?></span>
+        </div>
+
+        <div class="hx-table-wrap">
+          <table class="hx-table">
+            <thead>
+              <tr>
+                <th scope="col"><a href="<?= $h($sortLink('name')) ?>"<?= $hubSort === 'name' ? ' aria-current="true"' : '' ?>>Communauté</a></th>
+                <?php foreach (['members' => 'Membres', 'activity' => 'Actifs 30 j', 'units' => 'Unités', 'ops_per_month' => 'Op./mois', 'sse_records' => 'SSE', 'cooperations' => 'Coop.', 'rating' => 'Note', 'recommendations' => 'Recos'] as $key => $label): ?>
+                <th scope="col" class="hx-num"><a href="<?= $h($sortLink($key)) ?>"<?= $hubSort === $key ? ' aria-current="true"' : '' ?> title="<?= $h((string) $metricsLabels[$key]) ?>"><?= $h($label) ?></a></th>
+                <?php endforeach; ?>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($hubRows as $r):
+                $isMine = $hubMine !== null && $r['id'] === $hubMine['id'];
+                $search = mb_strtolower(implode(' ', [$r['name'], $r['game'], $r['unit_label'], $r['tagline'], $r['locale']]));
+                $recommended = in_array((int) $r['id'], $hubRecommended, true);
+                $initials = mb_strtoupper(mb_substr((string) $r['name'], 0, 2));
+              ?>
+              <tr class="<?= $isMine ? 'is-mine' : '' ?>" data-hx-row data-search="<?= $h($search) ?>" data-game="<?= $h(mb_strtolower((string) $r['game'])) ?>" data-open="<?= $r['recruitment_open'] ? '1' : '0' ?>">
+                <td class="hx-cell-org">
+                  <div class="hx-org">
+                    <?php if ($r['logo'] !== '' && filter_var($r['logo'], FILTER_VALIDATE_URL)): ?>
+                    <img class="hx-org__logo" src="<?= $h((string) $r['logo']) ?>" alt="" loading="lazy">
+                    <?php else: ?>
+                    <span class="hx-org__logo" aria-hidden="true"><?= $h($initials) ?></span>
+                    <?php endif; ?>
+                    <div>
+                      <a href="<?= $h(url('hub/c/' . $r['slug'])) ?>"><?= $h((string) $r['name']) ?></a>
+                      <small>
+                        <?= $h($r['game'] !== '' ? (string) $r['game'] : 'Jeu non précisé') ?>
+                        <?php if ($r['recruitment_open']): ?><span class="hx-badge hx-badge--ok">Recrute</span><?php endif; ?>
+                        <?php if ($isMine): ?><span class="hx-badge">Vous</span><?php endif; ?>
+                      </small>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td><?= $num($r['members']) ?></td>
-              <td><?= $r['activity'] !== null ? $num($r['activity']) . ' %' : '<span class="hx-dash">—</span>' ?></td>
-              <td title="<?= (int) $r['depth'] ?> niveau(x)"><?= $num($r['units']) ?></td>
-              <td><?= $num($r['ops_per_month'], 1) ?></td>
-              <td><?= $num($r['sse_records']) ?></td>
-              <td><?= $num($r['cooperations']) ?></td>
-              <td><?= $r['rating'] !== null ? '<span class="hx-stars">★ ' . $num($r['rating'], 1) . '</span> <small class="hx-dash">(' . (int) $r['rating_count'] . ')</small>' : '<span class="hx-dash">—</span>' ?></td>
-              <td><?= $num($r['recommendations']) ?></td>
-              <td>
-                <div class="hx-actions">
-                  <?php if (!$isMine): ?>
-                  <form method="post" action="<?= $h(url('hub/c/' . $r['slug'] . '/recommander')) ?>">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                    <input type="hidden" name="back" value="hub?tri=<?= $h($hubSort) ?>">
-                    <button type="submit" class="hx-btn hx-btn--line hx-btn--small" aria-pressed="<?= $recommended ? 'true' : 'false' ?>" title="<?= $recommended ? 'Retirer ma recommandation' : 'Recommander cette communauté' ?>"><?= $recommended ? '♥ Recommandée' : '♡ Recommander' ?></button>
-                  </form>
-                  <?php if ($hubMine !== null): ?>
-                  <a class="hx-btn hx-btn--line hx-btn--small" href="<?= $h(url('hub/comparer') . '?a=' . rawurlencode((string) $hubMine['slug']) . '&b=' . rawurlencode((string) $r['slug'])) ?>">Comparer</a>
-                  <?php endif; ?>
-                  <?php endif; ?>
-                </div>
-              </td>
-            </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
-      <p class="hx-empty mt-3 hidden" data-hx-none>Aucune communauté ne correspond à ces filtres.</p>
-    </section>
-  </div>
-</div>
+                </td>
+                <td class="hx-num" data-label="Membres"><?= $num($r['members']) ?></td>
+                <td class="hx-num" data-label="Actifs 30 j"><?= $r['activity'] !== null ? $num($r['activity']) . ' %' : '<span class="hx-dash">—</span>' ?></td>
+                <td class="hx-num" data-label="Unités" title="<?= (int) $r['depth'] ?> niveau(x)"><?= $num($r['units']) ?></td>
+                <td class="hx-num" data-label="Op./mois"><?= $num($r['ops_per_month'], 1) ?></td>
+                <td class="hx-num" data-label="SSE"><?= $num($r['sse_records']) ?></td>
+                <td class="hx-num" data-label="Coop."><?= $num($r['cooperations']) ?></td>
+                <td class="hx-num" data-label="Note"><?= $r['rating'] !== null ? '<span class="hx-stars">★ ' . $num($r['rating'], 1) . '</span> <small class="hx-dash">(' . (int) $r['rating_count'] . ')</small>' : '<span class="hx-dash">—</span>' ?></td>
+                <td class="hx-num" data-label="Recos"><?= $num($r['recommendations']) ?></td>
+                <td class="hx-cell-actions">
+                  <div class="hx-actions">
+                    <?php if (!$isMine): ?>
+                    <form method="post" action="<?= $h(url('hub/c/' . $r['slug'] . '/recommander')) ?>">
+                      <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                      <input type="hidden" name="back" value="hub?tri=<?= $h($hubSort) ?>">
+                      <button type="submit" class="hx-chip" aria-pressed="<?= $recommended ? 'true' : 'false' ?>" title="<?= $recommended ? 'Retirer ma recommandation' : 'Recommander cette communauté' ?>"><?= $hxIcon('heart') ?><?= $recommended ? 'Recommandée' : 'Recommander' ?></button>
+                    </form>
+                    <?php if ($hubMine !== null): ?>
+                    <a class="hx-chip" href="<?= $h(url('hub/comparer') . '?a=' . rawurlencode((string) $hubMine['slug']) . '&b=' . rawurlencode((string) $r['slug'])) ?>"><?= $hxIcon('comparer') ?>Comparer</a>
+                    <?php endif; ?>
+                    <?php endif; ?>
+                  </div>
+                </td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+        <div class="hx-empty" hidden data-hx-none>
+          <?= $hxIcon('search', 'hx-empty__icon') ?>
+          <p class="hx-empty__title">Aucun résultat</p>
+          <p>Aucune communauté ne correspond à ces filtres.</p>
+        </div>
+        <?php endif; ?>
+      </section>
+<?php require __DIR__ . '/partials/shell_close.php'; ?>
 
 <script>
 (function () {
@@ -317,6 +358,7 @@ $sortLink = static fn (string $key): string => url('hub') . '?tri=' . rawurlenco
   var game = root.querySelector('[data-hx-game]');
   var open = root.querySelector('[data-hx-open]');
   var sort = root.querySelector('[data-hx-sort]');
+  var count = root.querySelector('[data-hx-count]');
   var rows = Array.prototype.slice.call(document.querySelectorAll('[data-hx-row]'));
   var none = document.querySelector('[data-hx-none]');
   function fold(v) {
@@ -337,7 +379,8 @@ $sortLink = static fn (string $key): string => url('hub') . '?tri=' . rawurlenco
       row.hidden = !ok;
       if (ok) shown++;
     });
-    if (none) none.classList.toggle('hidden', shown > 0);
+    if (none) none.hidden = shown > 0;
+    if (count) count.textContent = shown + ' / ' + rows.length;
   }
   q.addEventListener('input', apply);
   game.addEventListener('change', apply);

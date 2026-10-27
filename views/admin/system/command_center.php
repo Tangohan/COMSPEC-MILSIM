@@ -30,7 +30,7 @@ $pages = max(1, (int) ceil($total / $perPage));
         </header>
 
         <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <article class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">Signalements forum</p><p class="text-2xl font-black text-slate-900"><?= (int) ($kpis['forum_pending'] ?? 0) ?></p></article>
+            <article class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">Signalements membres</p><p class="text-2xl font-black text-slate-900"><?= (int) ($kpis['reports_pending'] ?? 0) ?></p></article>
             <article class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">Actions admin récentes</p><p class="text-2xl font-black text-slate-900"><?= (int) ($kpis['admin_actions_24h'] ?? 0) ?></p></article>
             <article class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">Événements sécurité</p><p class="text-2xl font-black text-slate-900"><?= (int) ($kpis['security_events_recent'] ?? 0) ?></p></article>
             <article class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">Sanctions plateforme</p><p class="text-2xl font-black text-slate-900"><?= (int) ($kpis['sanctions_recent'] ?? 0) ?></p></article>

@@ -26,7 +26,10 @@ $globalIds = array_flip(array_map('intval', is_array($globalIds ?? null) ? $glob
 $quota = max(1, (int) ($quotaBytes ?? 1));
 $libraryUrl = (string) ($libraryUrl ?? url('back-office/ma-situation/musique'));
 $csrf = \App\Core\Csrf::field();
-$mb = static fn (int $b): string => number_format($b / 1048576, $b >= 10485760 ? 0 : 1, ',', ' ') . ' Mo';
+$musicEn = locale() === 'en';
+$mb = static fn (int $b): string => $musicEn
+    ? number_format($b / 1048576, $b >= 10485760 ? 0 : 1, '.', ',') . ' MB'
+    : number_format($b / 1048576, $b >= 10485760 ? 0 : 1, ',', ' ') . ' Mo';
 $dur = static fn (int $s): string => $s <= 0 ? '–' : intdiv($s, 60) . ':' . str_pad((string) ($s % 60), 2, '0', STR_PAD_LEFT);
 $date = static function (mixed $raw): string {
     try {
@@ -47,7 +50,7 @@ $back = '?' . http_build_query($query + ($page > 1 ? ['page' => $page] : []));
 $pages = max(1, (int) ceil($total / $perPage));
 $pageUrl = static fn (int $p): string => $base . '?' . http_build_query($query + ['page' => $p]);
 $tabs = [
-    'morceaux' => 'Morceaux (' . (int) ($stats['tracks'] ?? 0) . ')',
+    'morceaux' => ($musicEn ? 'Tracks (' : 'Morceaux (') . (int) ($stats['tracks'] ?? 0) . ')',
     'playlists' => 'Playlists (' . count($playlists) . ')',
     'stats' => 'Statistiques',
 ];
@@ -68,7 +71,7 @@ $tabs = [
     <div class="msca-kpi"><span class="msca-kpi__label">Morceaux</span><span class="msca-kpi__value"><?= (int) ($stats['tracks'] ?? 0) ?></span><span class="msca-kpi__sub">+<?= (int) ($stats['week'] ?? 0) ?> cette semaine</span></div>
     <div class="msca-kpi"><span class="msca-kpi__label">Masqués</span><span class="msca-kpi__value"><?= (int) ($stats['hidden'] ?? 0) ?></span><span class="msca-kpi__sub">invisibles sur le site et en jeu</span></div>
     <div class="msca-kpi"><span class="msca-kpi__label">Communauté</span><span class="msca-kpi__value"><?= (int) ($stats['community'] ?? 0) ?></span><span class="msca-kpi__sub">partagés avec toute la plateforme</span></div>
-    <div class="msca-kpi"><span class="msca-kpi__label">Stockage</span><span class="msca-kpi__value"><?= $h($mb((int) ($stats['bytes'] ?? 0))) ?></span><span class="msca-kpi__sub"><?= (int) ($stats['uploaders'] ?? 0) ?> contributeur(s), <?= $h($mb($quota)) ?> max chacun</span></div>
+    <div class="msca-kpi"><span class="msca-kpi__label">Stockage</span><span class="msca-kpi__value"><?= $h($mb((int) ($stats['bytes'] ?? 0))) ?></span><span class="msca-kpi__sub"><?= (int) ($stats['uploaders'] ?? 0) ?><?= $musicEn ? ' contributor(s), ' . $h($mb($quota)) . ' max each' : ' contributeur(s), ' . $h($mb($quota)) . ' max chacun' ?></span></div>
     <div class="msca-kpi"><span class="msca-kpi__label">Écoutes</span><span class="msca-kpi__value"><?= (int) ($stats['plays'] ?? 0) ?></span><span class="msca-kpi__sub">site et jeu</span></div>
   </div>
 
@@ -147,6 +150,8 @@ $tabs = [
       var scope = form.querySelector('[data-msca-scope]');
       var durations = [];
       if (global && scope) global.addEventListener('change', function () { if (global.checked) scope.value = 'community'; scope.disabled = global.checked; });
+      // Textes composés par le script : la traduction de la page ne les reconnaît pas.
+      var en = <?= locale() === 'en' ? 'true' : 'false' ?>;
       ['dragenter', 'dragover'].forEach(function (e) { drop.addEventListener(e, function () { drop.classList.add('is-over'); }); });
       ['dragleave', 'drop'].forEach(function (e) { drop.addEventListener(e, function () { drop.classList.remove('is-over'); }); });
       function probe(file) {
@@ -160,7 +165,7 @@ $tabs = [
       input.addEventListener('change', function () {
         var files = Array.prototype.slice.call(input.files || []);
         text.textContent = files.length === 0 ? 'Déposez des fichiers audio ici ou cliquez pour choisir'
-          : files.length === 1 ? files[0].name : files.length + ' fichiers choisis';
+          : files.length === 1 ? files[0].name : files.length + (en ? ' files chosen' : ' fichiers choisis');
         durations = files.map(function () { return 0; });
         files.forEach(function (f, i) { probe(f).then(function (d) { durations[i] = d; }); });
       });
@@ -205,8 +210,8 @@ $tabs = [
               var keys = Object.keys(matches);
               if (keys.length === 0) { dupFlag.value = 'checked'; startUpload(files); return; }
               dupList.innerHTML = keys.map(function (k) {
-                return '<li><strong>' + esc(k) + '</strong> ressemble à ' + matches[k].map(function (m) {
-                  return '« ' + esc(m.title) + ' »' + (m.artist ? ' — ' + esc(m.artist) : '') + ' <span class="msc-muted">(envoyé par ' + esc(m.uploader_name) + (m.tenant_name ? ', ' + esc(m.tenant_name) : '') + ')</span>';
+                return '<li><strong>' + esc(k) + '</strong>' + (en ? ' looks like ' : ' ressemble à ') + matches[k].map(function (m) {
+                  return '« ' + esc(m.title) + ' »' + (m.artist ? ' — ' + esc(m.artist) : '') + ' <span class="msc-muted">(' + (en ? 'uploaded by ' : 'envoyé par ') + esc(m.uploader_name) + (m.tenant_name ? ', ' + esc(m.tenant_name) : '') + ')</span>';
                 }).join(', ') + '</li>';
               }).join('');
               dupOk.checked = false; dupForce.disabled = true; dupBox.hidden = false;
@@ -224,21 +229,24 @@ $tabs = [
         var ok = 0, errors = [], notes = [], i = 0;
         var next = function () {
           if (i >= files.length) {
-            progress.textContent = ok + ' morceau(x) en ligne' + (errors.length ? ', ' + errors.length + ' refusé(s) : ' + errors.join(' ') : '.')
-              + (notes.length ? ' Test de lecture en jeu : ' + notes.join(' ') : '');
+            progress.textContent = en
+              ? ok + ' track(s) online' + (errors.length ? ', ' + errors.length + ' rejected: ' + errors.join(' ') : '.')
+                + (notes.length ? ' In-game playback test: ' + notes.join(' ') : '')
+              : ok + ' morceau(x) en ligne' + (errors.length ? ', ' + errors.length + ' refusé(s) : ' + errors.join(' ') : '.')
+                + (notes.length ? ' Test de lecture en jeu : ' + notes.join(' ') : '');
             if (errors.length === 0 && notes.length === 0) { window.location.reload(); } else { submit.disabled = false; setTimeout(function () { if (ok > 0) window.location.reload(); }, 6000); }
             return;
           }
           var f = files[i];
-          progress.textContent = 'Envoi ' + (i + 1) + ' / ' + files.length + ' : ' + f.name + '…';
+          progress.textContent = (en ? 'Uploading ' : 'Envoi ') + (i + 1) + ' / ' + files.length + ' : ' + f.name + '…';
           var fd = new FormData(form);
           fd.delete('audio[]'); fd.append('audio[]', f, f.name);
           fd.set('durations', String(durations[i] || 0));
           if (files.length > 1) fd.set('title', '');
           fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json' } })
-            .then(function (r) { return r.json().catch(function () { return { done: 0, errors: [f.name + ' : réponse inattendue du serveur (' + r.status + ').'] }; }); })
+            .then(function (r) { return r.json().catch(function () { return { done: 0, errors: [f.name + (en ? ': unexpected server response (' : ' : réponse inattendue du serveur (') + r.status + ').'] }; }); })
             .then(function (j) { ok += j.done || 0; errors = errors.concat(j.errors || []); notes = notes.concat(j.notes || []); })
-            .catch(function () { errors.push(f.name + ' : envoi interrompu.'); })
+            .catch(function () { errors.push(f.name + (en ? ': upload interrupted.' : ' : envoi interrompu.')); })
             .then(function () { i++; next(); });
         };
         next();
@@ -276,7 +284,9 @@ $tabs = [
         <?= $csrf ?>
         <input type="hidden" name="_back" value="<?= $h($back) ?>">
         <div class="msca-bulk">
-          <span class="msc-muted"><?= $total ?> morceau(x)<?= $pages > 1 ? ', page ' . $page . ' sur ' . $pages : '' ?>. Pour la sélection :</span>
+          <span class="msc-muted"><?= $h(locale() === 'en'
+              ? $total . ' track' . ($total === 1 ? '' : 's') . ($pages > 1 ? ', page ' . $page . ' of ' . $pages : '') . '. For the selection:'
+              : $total . ' morceau(x)' . ($pages > 1 ? ', page ' . $page . ' sur ' . $pages : '') . '. Pour la sélection :') ?></span>
           <select class="ath-field__select" name="action" required>
             <option value="">Choisir une action</option>
             <option value="hide">Masquer</option>

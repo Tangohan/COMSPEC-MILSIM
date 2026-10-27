@@ -133,7 +133,6 @@ final class AccountPurgeService
         'personnel_extras',
         'personnel_media',
         'personnel_admin_data',
-        'user_forum_stats',
         'user_alert_dismissals',
         'user_ui_tours',
         'user_roles',

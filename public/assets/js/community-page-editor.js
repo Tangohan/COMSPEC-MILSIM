@@ -705,6 +705,129 @@
     note.innerHTML = '<small>Seules les unités cochées « visibles sur la page publique » apparaissent. Les libellés suivent la langue de l’ORBAT.</small>';
     ga.appendChild(note);
   }
+  /* —— Galerie de la présentation (section « about ») : jusqu’à 3 images, ordre, description, légende —— */
+  var GALLERY_MAX = 3;
+  function imgSrc(v) {
+    if (!v) { return ''; }
+    return /^https?:/.test(v) ? v : cfg.base.replace(/\/c\/[^/]+$/, '') + '/' + String(v).replace(/^\//, '');
+  }
+  function renderGalleryPreview(el, gallery) {
+    var g = el && el.querySelector('[data-cl-gallery]');
+    if (!g) { return; }
+    g.className = 'cl-about__gallery cl-about__gallery--n3';
+    g.innerHTML = '';
+    for (var i = 0; i < GALLERY_MAX; i++) {
+      var it = gallery[i];
+      var cls = 'cl-about__shot' + (i === 0 ? ' cl-about__shot--wide' : '');
+      if (it && it.image) {
+        var fig = document.createElement('figure');
+        fig.className = cls;
+        fig.setAttribute('data-cl-img', 'gallery');
+        fig.setAttribute('data-cl-img-index', String(i));
+        var im = document.createElement('img');
+        im.src = imgSrc(it.image);
+        im.alt = it.alt || 'Image de la communauté';
+        fig.appendChild(im);
+        if (it.caption) {
+          var fc = document.createElement('figcaption');
+          fc.className = 'cl-about__caption';
+          fc.textContent = it.caption;
+          fig.appendChild(fc);
+        }
+        g.appendChild(fig);
+      } else {
+        var add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'cl-about__add ' + cls;
+        add.setAttribute('data-cl-img', 'gallery');
+        add.setAttribute('data-cl-img-index', String(i));
+        add.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg><span>Ajouter une image</span>';
+        g.appendChild(add);
+      }
+    }
+  }
+  function galleryPanel(b, el, focusImage) {
+    b.props = b.props || {};
+    if (!Array.isArray(b.props.gallery)) { b.props.gallery = []; }
+    var gg = group('Images de la présentation');
+    var intro = document.createElement('p');
+    intro.className = 'pbe-field';
+    intro.innerHTML = '<small>Une grande image puis deux petites, dans cet ordre. JPG, PNG ou WebP, 6 Mo maximum. Sans image choisie ici, la page reprend les images des Médias cochées « page publique », sinon la bannière.</small>';
+    gg.appendChild(intro);
+    var list = document.createElement('div');
+    list.className = 'pbe-items';
+    gg.appendChild(list);
+    var changed = function () {
+      b.props.gallery = b.props.gallery.filter(function (x) { return x && x.image; });
+      markDirty();
+      renderGalleryPreview(el, b.props.gallery);
+    };
+    var draw = function () {
+      list.innerHTML = '';
+      b.props.gallery.forEach(function (it, i) {
+        var card = document.createElement('div');
+        card.className = 'pbe-gitem';
+        var head = document.createElement('div');
+        head.className = 'pbe-gitem__head';
+        var title = document.createElement('strong');
+        title.textContent = i === 0 ? 'Grande image' : 'Image ' + (i + 1);
+        head.appendChild(title);
+        var tools = document.createElement('span');
+        tools.className = 'pbe-gitem__tools';
+        [['up', 'Monter', -1], ['down', 'Descendre', 1]].forEach(function (d) {
+          var bt = document.createElement('button');
+          bt.type = 'button';
+          bt.className = 'pbe-icon';
+          bt.title = d[1];
+          bt.setAttribute('aria-label', d[1]);
+          bt.innerHTML = svg(d[0]);
+          var j = i + d[2];
+          bt.disabled = j < 0 || j >= b.props.gallery.length;
+          bt.addEventListener('click', function () {
+            var tmp = b.props.gallery[i];
+            b.props.gallery[i] = b.props.gallery[j];
+            b.props.gallery[j] = tmp;
+            changed();
+            draw();
+          });
+          tools.appendChild(bt);
+        });
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'pbe-icon pbe-icon--danger';
+        del.title = 'Retirer cette image';
+        del.setAttribute('aria-label', 'Retirer cette image');
+        del.innerHTML = svg('trash');
+        del.addEventListener('click', function () { b.props.gallery.splice(i, 1); changed(); draw(); });
+        tools.appendChild(del);
+        head.appendChild(tools);
+        card.appendChild(head);
+        card.appendChild(imagePicker('Fichier', it.image, function (v) {
+          if (!v) { b.props.gallery.splice(i, 1); changed(); draw(); return; }
+          it.image = v;
+          changed();
+        }));
+        card.appendChild(input('Description de l’image', it.alt, function (v) { it.alt = v; markDirty(); }, { hint: 'Lue par les lecteurs d’écran. Ex. « Patrouille de nuit sur Altis ».' }));
+        card.appendChild(input('Légende (facultatif)', it.caption, function (v) { it.caption = v; changed(); }, { placeholder: 'Ex. Opération Kestrel, mars 2026' }));
+        list.appendChild(card);
+      });
+      if (b.props.gallery.length < GALLERY_MAX) {
+        var addCard = document.createElement('div');
+        addCard.className = 'pbe-gitem pbe-gitem--add';
+        var fresh = { image: '', alt: '', caption: '' };
+        addCard.appendChild(imagePicker(b.props.gallery.length === 0 ? 'Ajouter la grande image' : 'Ajouter une image', '', function (v) {
+          if (!v) { return; }
+          fresh.image = v;
+          b.props.gallery.push(fresh);
+          changed();
+          draw();
+        }));
+        list.appendChild(addCard);
+      }
+    };
+    draw();
+    if (focusImage) { setTimeout(function () { gg.scrollIntoView({ block: 'start' }); }, 50); }
+  }
   function openBlockPanel(id, focusImage) {
     var b = findBlock(id);
     if (!b) { return; }
@@ -735,6 +858,36 @@
     }
     var gn = group('Menu de l’en-tête');
     gn.appendChild(input('Libellé dans le menu', b.nav_label, function (v) { b.nav_label = v; markDirty(); }, { placeholder: custom ? 'Absent du menu' : 'Libellé par défaut', hint: 'Ajoute un lien vers ce bloc dans l’en-tête. Visible après enregistrement.' }));
+    if (!custom && b.key === 'hero') {
+      // Image du bandeau d’accueil : téléversée, prise dans la médiathèque ou collée en adresse.
+      b.props = b.props || {};
+      var ghi = group('Image du bandeau');
+      var setHeroImage = function (v) {
+        b.props.image = v;
+        markDirty();
+        var media = el && el.querySelector('.cl-hero__media');
+        if (!media) { return; }
+        if (v) {
+          var src = /^https?:/.test(v) ? v : cfg.base.replace(/\/c\/[^/]+$/, '') + '/' + v.replace(/^\//, '');
+          media.innerHTML = '';
+          var img = document.createElement('img');
+          img.src = src;
+          img.alt = '';
+          media.appendChild(img);
+        } else {
+          media.innerHTML = '<div class="cl-hero__fallback"></div>';
+        }
+      };
+      ghi.appendChild(imagePicker('Image de fond', b.props.image, setHeroImage));
+      var hn = document.createElement('p');
+      hn.className = 'pbe-field';
+      hn.innerHTML = '<small>Sans image choisie ici, le bandeau reprend la photo mise en avant dans les Médias, sinon la bannière de la communauté.</small>';
+      ghi.appendChild(hn);
+      if (focusImage) { setTimeout(function () { ghi.scrollIntoView({ block: 'start' }); }, 50); }
+    }
+    if (!custom && b.key === 'about') {
+      galleryPanel(b, el, focusImage);
+    }
     if (!custom) {
       var gh = group('Contenu');
       var note = document.createElement('p');

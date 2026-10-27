@@ -65,7 +65,8 @@ if (_pilot) then {
     _ip = _d param [9, []];
     _risk = _d param [10, 0];
     _ipName = (_d param [0, []]) param [0, ""];
-    _air = vehicle player;
+    // À pied : pas d'appareil de mission (avant, le joueur était dessiné comme un avion).
+    _air = [objNull, vehicle player] select ((vehicle player) isKindOf "Air");
 } else {
     private _m = _s getOrDefault ["msn", createHashMap];
     private _live = (count _m) > 0 && {(_m getOrDefault ["step", 0]) < 7};
@@ -120,7 +121,7 @@ if (_hasT) then {
     if ((count _ip) >= 2) then {
         _map drawArrow [_ip, _tgt, _green];
         _map drawIcon ["\A3\ui_f\data\map\markers\military\triangle_CA.paa", _green, _ip, 20, 20, 0, format [" %1", [_ipName, "IP"] select (_ipName isEqualTo "")], 2, _tsz, _mono, "right"];
-        [[_ip, _tgt] call _mid, format ["%1° · %2 NM", [round (_ip getDir _tgt), 3] call CBA_fnc_formatNumber, ((_ip distance2D _tgt) / 1852) toFixed 1], _green] call _label;
+        [[_ip, _tgt] call _mid, format ["%1° M · %2 NM", [([_ip, _tgt] call comspec_atak_native_fnc_magBearing) select 1, 3] call CBA_fnc_formatNumber, ((_ip distance2D _tgt) / 1852) toFixed 1], _green] call _label;
     };
     // Amis : le plus proche relié à la cible.
     private _near = [];
@@ -138,12 +139,14 @@ if (!_pilot) then {
     _map drawIcon ["\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa", _cyan, getPosASL player, 24, 24, getDir player, " JTAC", 2, _tsz, _mono, "right"];
     if (_hasT && {_laser}) then {
         _map drawLine [getPosASL player, _tgt, [1, 0.3, 0.25, 0.75]];
-        [(getPosASL player) getPos [(player distance2D _tgt) * 0.3, player getDir _tgt], format ["LTL %1°", [round (player getDir _tgt), 3] call CBA_fnc_formatNumber], [1, 0.45, 0.4, 1]] call _label;
+        [(getPosASL player) getPos [(player distance2D _tgt) * 0.3, player getDir _tgt], format ["LTL %1° M", [([player, _tgt] call comspec_atak_native_fnc_magBearing) select 1, 3] call CBA_fnc_formatNumber], [1, 0.45, 0.4, 1]] call _label;
     };
 };
 
 // Appareils : celui de la mission en vert vif avec son vecteur de cap.
 {
+    // Appareil supprimé depuis la dernière lecture (abattu puis nettoyé, Zeus) : pas d'icône à l'origine de la carte.
+    if (isNull _x || {!alive _x}) then { continue };
     private _mine = _x isEqualTo _air;
     private _ic = ["\A3\ui_f\data\map\vehicleicons\iconPlane_ca.paa", "\A3\ui_f\data\map\vehicleicons\iconHelicopter_ca.paa"] select (_x isKindOf "Helicopter");
     private _p = getPosASL _x;

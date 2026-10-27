@@ -75,6 +75,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
     private _below = { params ["_p", "_k"]; _map ctrlMapScreenToWorld ((_map ctrlMapWorldToScreen _p) vectorAdd [0, 0.024 * _ts * _k]) };
     {
         _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up", "_fq", "", "_loss", "", "_hl", "", "_co"];
+        // Relais effacé pendant les 2 s de cache de la liste (Zeus, nettoyage) : position [0,0,0], dessiné à l'origine.
+        if (isNull _o) then { continue };
         private _p = getPosASLVisual _o;
         private _use = _ok && {_o isEqualTo _mine};
         private _sat = _sl > 0 && {_u > _sl};
@@ -97,8 +99,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             private _q = getPosASLVisual _up;
             private _len = _p distance2D _q;
             private _dir = _p getDir _q;
-            for "_k" from 0 to (floor (_len / (_r * 3))) step 2 do {
-                _map drawLine [_p getPos [_k * _r * 3, _dir], _p getPos [((_k + 1) * _r * 3) min _len, _dir], [0.28, 0.70, 1, 0.7]];
+            // Au plus ~80 traits (tirets allongés au-delà) : le coût ne croît plus avec le zoom.
+            private _dl = (_r * 3) max (_len / 160);
+            for "_k" from 0 to (floor (_len / _dl)) step 2 do {
+                _map drawLine [_p getPos [_k * _dl, _dir], _p getPos [((_k + 1) * _dl) min _len, _dir], [0.28, 0.70, 1, 0.7]];
             };
         };
         // Relais utilisé : pointillé de mon téléphone à son antenne.
@@ -106,8 +110,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             private _me = getPosASLVisual (vehicle player);
             private _len = _me distance2D _p;
             private _dir = _me getDir _p;
-            for "_k" from 0 to (floor (_len / (_r * 2))) step 2 do {
-                _map drawLine [_me getPos [_k * _r * 2, _dir], _me getPos [((_k + 1) * _r * 2) min _len, _dir], [0.36, 0.85, 0.42, 0.75]];
+            private _dl = (_r * 2) max (_len / 160);
+            for "_k" from 0 to (floor (_len / _dl)) step 2 do {
+                _map drawLine [_me getPos [_k * _dl, _dir], _me getPos [((_k + 1) * _dl) min _len, _dir], [0.36, 0.85, 0.42, 0.75]];
             };
         };
         // Pastille : fond sombre, anneau de couleur (double si utilisé), antenne ou symbole OTAN du véhicule / PC.
@@ -130,16 +135,16 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         if (!_txt) then { continue };
         // Étiquette : nom (gras), puis « portée · débit · places » ou la raison de la panne.
         private _lp = _p getPos [_r * 2.4, 90];
-        _map drawIcon [_none, [1, 1, 1, [0.75, 1] select _ok], _lp, 0, 0, 0, _name + (["", "  (utilisé)"] select _use), 2, 0.026 * _ts, _fontB, "right"];
+        _map drawIcon [_none, [1, 1, 1, [0.75, 1] select _ok], _lp, 0, 0, 0, _name + (["", "  " + ("(utilisé)" call comspec_atak_native_fnc_tr)] select _use), 2, 0.026 * _ts, _fontB, "right"];
         private _sub = if (_ok) then {
             private _e = format ["%1 km · %2 Mbit/s", (_rng / 1000) toFixed 1, _mb toFixed 1];
             if (_sl > 0) then { _e = _e + format [" · %1/%2", _u, _sl]; };
-            if (_bt >= 0) then { _e = _e + format [" · batt. %1 %%", round _bt]; };
-            _e = _e + format [" · %1 MHz · perte %2 %%", _fq, _loss];
+            if (_bt >= 0) then { _e = _e + " · " + format [("batterie %1 %%") call comspec_atak_native_fnc_tr, round _bt]; };
+            _e = _e + format [" · %1 MHz · ", _fq] + format [("perte %1 %%") call comspec_atak_native_fnc_tr, _loss];
             if (_co > 0) then { _e = _e + " · " + ("canal partagé" call comspec_atak_native_fnc_tr); };
             if (_hl in ["dégradé", "critique"]) then { _e = _e + " · " + (_hl call comspec_atak_native_fnc_tr); };
             _e
-        } else { _st };
+        } else { _st call comspec_atak_native_fnc_tr };
         _map drawIcon [_none, [_col select 0, _col select 1, _col select 2, 0.95], [_lp, 1] call _below, 0, 0, 0, _sub, 2, 0.022 * _ts, _font, "right"];
     } forEach (["list"] call comspec_atak_native_fnc_relayNet);
 };
@@ -159,6 +164,6 @@ private _now = [time, serverTime] select isMultiplayer;
         _map drawEllipse [_est, _rad, _rad, 0, [1, 0.55, 0.1, _al], ""];
         _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa", [1, 0.55, 0.1, _al], _est, 20, 20, 0, format ["%1 ± %2 m", _name, _rad], 1, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     } else {
-        _map drawIcon [_none, [1, 0.75, 0.2, _al], (_src select 0) select 0, 0, 0, 0, format ["%1 : cercle %2 m", _name, round ((_src select 0) select 1)], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+        _map drawIcon [_none, [1, 0.75, 0.2, _al], (_src select 0) select 0, 0, 0, 0, format [("%1 : cercle %2 m") call comspec_atak_native_fnc_tr, _name, round ((_src select 0) select 1)], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Trilat", []]);

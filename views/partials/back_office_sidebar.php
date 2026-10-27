@@ -36,7 +36,7 @@ $boHrefAllowed = static function (string $href) use ($tenantType): bool {
         : trim((string) $href, '/');
     if ($path !== '' && !\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
         $tenantOk = false;
-        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'forum/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
+        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
             $pos = strpos($path, $needle);
             if ($pos !== false) {
                 $tenantOk = \App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, substr($path, $pos));
@@ -46,6 +46,9 @@ $boHrefAllowed = static function (string $href) use ($tenantType): bool {
         if (!$tenantOk) {
             return false;
         }
+    }
+    if ($path !== '' && \App\Services\Community\TenantTypeConfig::backOfficePathHidden($tenantType, $path)) {
+        return false;
     }
 
     // Masquer les entrées sans droit (Gate), pas seulement filtrer par type de communauté.
@@ -67,7 +70,7 @@ try {
 
 $boBadges = [
     'recruitments_submitted' => 0,
-    'forum_moderation_total' => 0,
+    'reports_moderation_total' => 0,
     'personal_inbox' => 0,
     'messages_unread' => 0,
     'events_rsvp_pending' => 0,
@@ -127,6 +130,7 @@ $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
 $boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavAar = str_starts_with($p, 'back-office/atak/comptes-rendus');
+$boNavDebrief = str_starts_with($p, 'back-office/atak/suivi-cr');
 $boNavPlanning = str_starts_with($p, 'back-office/planification');
 $boNavMissionsPortal = $p === 'back-office/missions' || str_starts_with($p, 'back-office/missions/');
 $boNavCooperation = $p === 'back-office/cooperation' || str_starts_with($p, 'back-office/cooperation/');
@@ -197,7 +201,7 @@ try {
     }
     if ($boTidSide > 0 && $boUidSide > 0) {
         $uSide = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findById($boUidSide, $boTidSide);
-        if (is_array($uSide) && !empty($uSide['grade_id'])) {
+        if (is_array($uSide) && !empty($uSide['grade_id']) && !\App\Support\TenantGrades::hidden($boTidSide)) {
             $grSide = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
                 ->findById((int) $uSide['grade_id'], $boTidSide);
             if (is_array($grSide)) {
@@ -320,7 +324,7 @@ require __DIR__ . '/ath_sidebar_nav.php';
             <?php endif; ?>
         </div>
         <div class="ath-sidebar__user-meta">
-            <div class="ath-sidebar__user-name"><?= $h(mb_strtoupper($boUserName, 'UTF-8')) ?></div>
+            <div class="ath-sidebar__user-name"><span class="<?= trim(staff_name_class((int) (\App\Core\Session::get('user_id') ?? 0))) ?>" data-staff-done><?= $h(mb_strtoupper($boUserName, 'UTF-8')) ?></span><?= staff_mark((int) (\App\Core\Session::get('user_id') ?? 0)) ?><?= \App\Services\Billing\DonorService::mark((int) (\App\Core\Session::get('user_id') ?? 0)) ?></div>
             <?php if ($boUserGradeLine !== ''): ?>
             <div class="ath-sidebar__user-role"><?= $h(mb_strtoupper($boUserGradeLine, 'UTF-8')) ?></div>
             <?php endif; ?>

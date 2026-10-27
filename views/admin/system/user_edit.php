@@ -151,7 +151,7 @@ if ($uid < 1) {
             <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Identité</h2>
-                    <p class="text-sm text-slate-600">Prénom, nom, indicatif et présentation utilisés dans les listes, le dossier et le forum.</p>
+                    <p class="text-sm text-slate-600">Prénom, nom, indicatif et présentation utilisés dans les listes et le dossier.</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>

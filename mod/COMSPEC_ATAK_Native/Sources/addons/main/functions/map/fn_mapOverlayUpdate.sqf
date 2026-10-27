@@ -12,7 +12,7 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Points cardinaux dans la langue du téléphone (O / W) : « NO » ne passait pas par le dictionnaire.
 private _cardinal = {
     params ["_a"];
-    ([["N", "NE", "E", "SE", "S", "SW", "W", "NW"], ["N", "NE", "E", "SE", "S", "SO", "O", "NO"]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isEqualTo "fr")) select ((round (_a / 45)) mod 8)
+    ([["N", "NE", "E", "SE", "S", "SW", "W", "NW"], ["N", "NE", "E", "SE", "S", "SO", "O", "NO"]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")) select ((round (_a / 45)) mod 8)
 };
 // Azimut sur trois chiffres (« 085° ») et distance en m puis en km.
 private _az3 = { params ["_a"]; private _t = str ((round _a) mod 360); while {(count _t) < 3} do { _t = "0" + _t; }; _t };
@@ -20,16 +20,22 @@ private _distTxt = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km",
 // Case 2 du bandeau : mon cap en grand ; en dessous mon indicatif à la couleur de mon équipe de feu (celle de
 // l'anneau autour de mon symbole) avec son nom, et ma grille en main (porté : déjà dans la case 1 ; mini : sans).
 // Appelée aussi par la boussole à chaque degré : le cap du bandeau suit en direct au lieu d'une fois par seconde.
+// Boussole (_fast) : indicatif, équipe de feu et grille repris du dernier passage complet (une fois par seconde) ;
+// seul le cap est refait (avant : ftInfo, indicatif et grille recalculés à chaque degré, presque à chaque image).
 private _meUpdate = {
-    params ["_h"];
+    params ["_h", ["_fast", false]];
     private _me = _ov getOrDefault ["me", controlNull];
     if (isNull _me) exitWith {};
-    private _ft = [player] call comspec_atak_native_fnc_ftInfo;
-    private _inFt = (_ft get "id") isNotEqualTo "";
-    private _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", [player] call comspec_atak_native_fnc_unitCallsign, ["#5cc76b", _ft get "hex"] select _inFt];
-    if (_inFt) then { _l2 = _l2 + format [" <t size='0.85' color='%2'>%1</t>", toUpper (_ft get "name"), _ft get "hex"]; };
-    if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
-        _l2 = _l2 + format [" <t color='#7f8c86'>·</t> %1", [player] call comspec_atak_native_fnc_gridRef];
+    private _l2 = _ov getOrDefault ["meL2", ""];
+    if (!_fast || {_l2 isEqualTo ""}) then {
+        private _ft = [player] call comspec_atak_native_fnc_ftInfo;
+        private _inFt = (_ft get "id") isNotEqualTo "";
+        _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", [player] call comspec_atak_native_fnc_unitCallsign, ["#5cc76b", _ft get "hex"] select _inFt];
+        if (_inFt) then { _l2 = _l2 + format [" <t size='0.85' color='%2'>%1</t>", toUpper (_ft get "name"), _ft get "hex"]; };
+        if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
+            _l2 = _l2 + format [" <t color='#7f8c86'>·</t> %1", [player] call comspec_atak_native_fnc_gridRef];
+        };
+        _ov set ["meL2", _l2];
     };
     private _meTxt = format ["<t font='EtelkaMonospacePro'><t font='EtelkaMonospaceProBold' size='1.2'>%1°</t> <t size='0.85' color='#b7c1bc'>%2</t><br/><t size='0.85' color='#b7c1bc'>%3</t></t>",
         [_h] call _az3, [_h] call _cardinal, _l2];
@@ -51,7 +57,7 @@ if (_compassOnly) exitWith {
         _ov set ["compassDeg", round _h];
         private _hd = _ov getOrDefault ["heading", controlNull];
         if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", [_h] call _az3, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
-        [_h] call _meUpdate;
+        [_h, true] call _meUpdate;
         if (!isNull (_ov getOrDefault ["compassTape", controlNull])) then { [true, false, true] call comspec_atak_native_fnc_mapOverlayUpdate; };
     };
     true
@@ -59,7 +65,9 @@ if (_compassOnly) exitWith {
 params ["", "", ["_tapeOnly", false]];
 
 private _cur = _ov getOrDefault ["cursor", controlNull];
-if (!isNull _cur) then {
+// Bandeau de la boussole seul (à chaque degré) : panneau curseur / MOI laissé au passage complet (une fois par seconde)
+// et aux mouvements de souris (grilles, réseau sous le curseur et textes refaits presque à chaque image sinon).
+if (!isNull _cur && {!_tapeOnly}) then {
     private _p = _s getOrDefault ["cursorPos", []];
     private _measure = _s getOrDefault ["mapMeasure", []];
     // Zone MGRS de la carte (zone UTM + bande, carré de 100 km si ACE le fournit), calculée une fois par carte.
@@ -97,7 +105,8 @@ if (!isNull _cur) then {
             // Téléphone porté : pas de curseur, le bandeau donne la position du joueur.
             private _pp = getPosASL (vehicle player);
             private _dig = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
-            private _g8 = [[_pp, 8] call comspec_atak_native_fnc_gridRef, [_pp] call comspec_atak_native_fnc_gridRef] select (_dig isEqualTo 8);
+            // Seule la précision affichée est calculée (select évaluait les deux grilles).
+            private _g8 = if (_dig isEqualTo 8) then { [_pp] call comspec_atak_native_fnc_gridRef } else { [_pp, 8] call comspec_atak_native_fnc_gridRef };
             format ["<t font='EtelkaMonospacePro'>%1%2%3</t>", ["MOI"] call _lbl, [_g8] call _big,
                 [format [_grey + " %2 %3 · " + _grey + " %4 m", "MGRS", _zone select 1, _g8, "ALT", round (_pp select 2)]] call _sub]
         };
@@ -106,7 +115,7 @@ if (!isNull _cur) then {
             private _alt = getTerrainHeightASL _p;
             private _dig = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
             private _g = [_p] call comspec_atak_native_fnc_gridRef;
-            private _g8 = [[_p, 8] call comspec_atak_native_fnc_gridRef, _g] select (_dig isEqualTo 8);
+            private _g8 = if (_dig isEqualTo 8) then { _g } else { [_p, 8] call comspec_atak_native_fnc_gridRef };
             // Couverture réseau calculée (app Wave Relay) et calque affiché : débit et perte sous le curseur.
             private _net = "";
             if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
@@ -154,7 +163,7 @@ if (!isNull _card) then { _card ctrlSetAngle [-_h, 0.5, 0.5]; };
 private _tape = _ov getOrDefault ["compassTape", controlNull];
 if (!isNull _tape) then {
     // Bandeau : trois dizaines de chaque côté du cap, points cardinaux en lettres (N rouge), cap exact au centre.
-    private _west = ["O", "W"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr");
+    private _west = ["O", "W"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isNotEqualTo "fr");
     private _lbl = {
         params ["_a"];
         _a = (round _a) mod 360;

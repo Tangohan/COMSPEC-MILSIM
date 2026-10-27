@@ -126,7 +126,8 @@ switch (_act) do {
         _pos = [_pos select 0, _pos select 1, 0];
         missionNamespace setVariable ["COMSPEC_ATAK_LogiLastAt", time];
         private _uid = getPlayerUID player;
-        private _id = format ["LG%1-%2", 100 + floor random 900, _uid select [((count _uid) - 3) max 0]];
+        // Id tiré de l'horloge (une demande par joueur toutes les 20 s au plus) : plus de collision au hasard.
+        private _id = format ["LG%1-%2", (floor _now) mod 100000, _uid select [((count _uid) - 3) max 0]];
         private _req = createHashMapFromArray [
             ["id", _id], ["uid", _uid], ["cs", call _me], ["side", str side group player], ["cat", _cat], ["label", _label],
             ["items", _items], ["box", _box], ["qty", _f getOrDefault ["qty", "2"]], ["mode", _f getOrDefault ["mode", "PICKUP"]],
@@ -147,7 +148,10 @@ switch (_act) do {
         call _rerender;
     };
     case "validate": { [_arg, "VALIDEE"] call _push; };
-    case "refuse": { [_arg, "REFUSEE"] call _push; };
+    case "refuse": {
+        // Même garde que « cancel » : une demande en route, livrée ou annulée ne repasse pas en REFUSEE.
+        if (((([_arg] call _get) getOrDefault ["status", ""])) in ["DEMANDEE", "VALIDEE"]) then { [_arg, "REFUSEE"] call _push; };
+    };
     case "enroute": { [_arg, "EN_ROUTE"] call _push; };
     case "deliver": { [_arg, "LIVREE"] call _push; };
     case "cancel": {
@@ -164,6 +168,11 @@ switch (_act) do {
         if ((_r getOrDefault ["status", ""]) isNotEqualTo "VALIDEE") exitWith { ["WARNING", "Validez d'abord la demande", 3, 20] call comspec_atak_native_fnc_notify; };
         if (_r getOrDefault ["dropping", false]) exitWith {};
         _r set ["dropping", true];
+        // EN_ROUTE posé tout de suite en local (sans attendre l'écho serveur, ni le réseau si l'envoi part en file) :
+        // ni deuxième largage, ni annulation ici. Le dernier logisticien qui a lancé l'avion est celui que l'écho garde
+        // dans « by » ; le largage (« drop ») des autres s'arrête.
+        _r set ["status", "EN_ROUTE"];
+        _r set ["by", call _me];
         [_arg, "EN_ROUTE"] call _push;
         private _eta = 40 + random 50;
         ["INFO", format ["Largage %1 : avion en route, arrivée dans %2 s environ", _arg, round _eta], 5, 40] call comspec_atak_native_fnc_notify;
@@ -173,6 +182,12 @@ switch (_act) do {
         // Machine du logisticien qui a lancé le largage : caisse sous parachute remplie selon la demande.
         private _r = [_arg] call _get;
         if ((count _r) isEqualTo 0) exitWith {};
+        _r set ["dropping", false];
+        // Demande refusée ou annulée pendant le vol, ou largage repris par un autre logisticien : aucune caisse.
+        private _st = _r getOrDefault ["status", ""];
+        if (!(_st in ["VALIDEE", "EN_ROUTE"]) || {_st isEqualTo "EN_ROUTE" && {(_r getOrDefault ["by", ""]) isNotEqualTo (call _me)}}) exitWith {
+            ["WARNING", format ["Largage %1 annulé : la demande est %2", _arg, [_st, format ["prise en charge par %1", _r getOrDefault ["by", "?"]]] select (_st isEqualTo "EN_ROUTE")], 5, 40] call comspec_atak_native_fnc_notify;
+        };
         private _p = _r get "pos";
         private _pos = [_p, 0, 30, 3, 0, 0.4, 0, [], [_p, _p]] call BIS_fnc_findSafePos;
         if ((count _pos) < 2) then { _pos = _p; };
@@ -215,6 +230,8 @@ switch (_act) do {
     };
     case "landed": {
         _arg params ["_id", "_pos"];
+        // Annulée ou refusée pendant la descente : l'état final n'est pas écrasé par LIVREE.
+        if ((([_id] call _get) getOrDefault ["status", ""]) in ["ANNULEE", "REFUSEE"]) exitWith {};
         [_id, "LIVREE", _pos] call _push;
     };
     case "recv": {
@@ -225,6 +242,8 @@ switch (_act) do {
         switch (_op) do {
             case "NEW": {
                 private _r = createHashMapFromArray _p;
+                // Demande déjà connue (renvoi après coupure réseau) : on garde son statut et son historique.
+                if ((_r getOrDefault ["id", ""]) in _reqs) exitWith {};
                 _r set ["recvAt", time];
                 _reqs set [_r get "id", _r];
                 if ((_r get "uid") isNotEqualTo _mine && {_phone}) then {

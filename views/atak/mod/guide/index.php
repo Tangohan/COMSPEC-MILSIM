@@ -54,7 +54,7 @@ $tocGroups = [
                 Ce guide s’adresse aux opérateurs et aux cadres ; les réglages exacts dépendent de votre communauté.
             </p>
             <div class="ow-mod-docs__hero-links">
-                <a href="<?= htmlspecialchars($atakModUrl, ENT_QUOTES, 'UTF-8') ?>">Télécharger le pack</a>
+                <a href="<?= htmlspecialchars($atakModUrl, ENT_QUOTES, 'UTF-8') ?>">Installer le mod (Steam)</a>
                 <a href="<?= htmlspecialchars($atakFormationUrl, ENT_QUOTES, 'UTF-8') ?>">Parcours de formation</a>
                 <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir ATAK</a>
             </div>

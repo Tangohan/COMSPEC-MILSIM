@@ -22,13 +22,22 @@ detach _cam;
 // Juste devant l'objectif, panoramique relatif à l'orientation de la caméra (suit un véhicule porteur).
 _cam attachTo [_obj, [0, 0.12, 0.03]];
 _cam setVectorDirAndUp [[sin _pan, cos _pan, 0], [0, 0, 1]];
-"comspec_livecam" setPiPEffect [_mode];
 missionNamespace setVariable ["COMSPEC_ATAK_LivecamKind", "fixed"];
+private _mm = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["livecamFocal", 35];
+if !(_mm isEqualType 0) then { _mm = 35; };
+(["fov", ((0.75 * 35 / (_mm max 1)) max 0.15) min 2]) call comspec_atak_native_fnc_livecamStart;
+"comspec_livecam" setPiPEffect [_mode];
 if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
     missionNamespace setVariable ["COMSPEC_ATAK_LivecamPfh", [{
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
         if (isNull _cam) exitWith {};
         private _o = attachedTo _cam;
+        // Caméra fixe ramassée (fn_camAction "pickupNow", deleteVehicle) : la caméra locale est détachée, flux coupé.
+        if (isNull _o && {(missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""]) isEqualTo "fixed"}) exitWith {
+            [] call comspec_atak_native_fnc_livecamStop;
+            ["WARNING", "Live cam : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
+            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
         if (isNull _o || {!(_o isKindOf "COMSPEC_ATAK_CameraObj")}) exitWith {};
         private _st = ["status", _o] call comspec_atak_native_fnc_camAction;
         if ((_st select 0) isNotEqualTo "OK") exitWith {

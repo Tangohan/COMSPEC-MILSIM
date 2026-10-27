@@ -21,6 +21,8 @@
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d) exitWith { false };
+// Contrôles des effets en cours de création : fn_pageCtrl ne demande pas de les remonter (fn_overlayRaise).
+uiNamespace setVariable ["COMSPEC_ATAK_OvBuild", diag_frameNo];
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _rect = _l get "device";
@@ -162,7 +164,7 @@ if (_off) then {
             _step, missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "1.6.0"], _hp get "reason"]) call comspec_atak_native_fnc_tr);
     } else {
         _txt ctrlSetStructuredText parseText ((format ["<t align='center' size='1.2' color='#5f6f68' font='COMSPEC_BarlowBold'>ÉCRAN ÉTEINT</t><br/><t align='center' color='#c9d4cf'>%1</t><br/><t align='center' size='0.85' color='#8a9a93'>%2</t>", _hp get "reason", switch (true) do {
-            case ((_hp get "reason") isEqualTo "Batterie vide"): { "Rechargez en véhicule ou changez la batterie" };
+            case ((_hp get "reason") isEqualTo "Batterie vide"): { "Rechargez (véhicule, batterie externe, socle) ou changez la batterie" };
             case ((_hp get "offLeft") > 0): { format ["Redémarrage dans %1 s", _hp get "offLeft"] };
             default { "Redémarrage en cours…" };
         }]) call comspec_atak_native_fnc_tr);
@@ -288,8 +290,11 @@ if (_front) then { [] call comspec_atak_native_fnc_overlayFront; };
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", [_crack, _black, _txt, _block, _tint, _glitch, _shatter, _boot, _barBg, _bar, _bootTxt, _dead, _deadSig, _lines, _lineSig]];
 // Rayures, pixels morts, poussière, traces de doigts, sang et gouttes, par-dessus le reste (fn_screenSurface).
 [_hp] call comspec_atak_native_fnc_screenSurface;
+// Variantes de dégâts (fuite d'encre, rétroéclairage, arc-en-ciel de pression) et parasites du brouillage (fn_screenFx).
+[_hp] call comspec_atak_native_fnc_screenFx;
 // Effets du Zeus (verrou, écran qui bugue, surchauffe) par-dessus tout ; écran éteint : rien à montrer.
 if (([] call comspec_atak_native_fnc_zeusOverlay) && {!_off}) then { [] call comspec_atak_native_fnc_overlayFront; };
+uiNamespace setVariable ["COMSPEC_ATAK_OvBuild", -1];
 // Redémarrage terminé : on redessine la page.
 private _wasOff = uiNamespace getVariable ["COMSPEC_ATAK_DevWasOff", false];
 uiNamespace setVariable ["COMSPEC_ATAK_DevWasOff", _off];

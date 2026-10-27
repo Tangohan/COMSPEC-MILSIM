@@ -25,7 +25,7 @@ final class DashboardUiTourAssetTest extends TestCase
         $home = (string) file_get_contents($root . '/app/Controllers/Web/HomeController.php');
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $mig = (string) file_get_contents($root . '/bootstrap/user_ui_tours_migration.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Api/UiTourController.php');
 
         self::assertStringContainsString('Masquer le guide', $js);
@@ -66,7 +66,7 @@ final class DashboardUiTourAssetTest extends TestCase
         self::assertStringContainsString('CREATE TABLE user_ui_tours', $mig);
         self::assertStringContainsString('run_user_ui_tours_migration', $run);
         // The controller now normalises the key into $key before refusing unknown guides.
-        self::assertStringContainsString('trim((string) $request->input(\'tour_key\', \'\'))', $ctrl);
+        self::assertStringContainsString('trim($request->inputString(\'tour_key\', \'\'))', $ctrl);
         self::assertStringContainsString('$key !== UserUiTourRepository::KEY_DASHBOARD', $ctrl);
         self::assertStringNotContainsString('Cette annonce ne peut pas être masquée', $ctrl);
     }

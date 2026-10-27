@@ -23,7 +23,7 @@ final class OrgDutyWorkbenchArchitectureTest extends TestCase
 
     public function testRunMigrationsRegistersWorkbench(): void
     {
-        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/run-migrations.php');
+        $src = (string) \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
         self::assertStringContainsString('org_duty_workbench_migration.php', $src);
         self::assertStringContainsString('run_org_duty_workbench_migration($pdo)', $src);
     }

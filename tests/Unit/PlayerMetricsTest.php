@@ -80,5 +80,15 @@ final class PlayerMetricsTest extends TestCase
         self::assertStringContainsString("'path' => 'back-office/metriques-joueurs'", $pages);
         self::assertFileExists($root . '/views/admin/organization/player_metrics.php');
         self::assertFileExists($root . '/public/assets/css/back-office-player-metrics.css');
+
+        // Vue en tableur (comme Heures de jeu) : tri par en-tête, total communauté, pleine largeur.
+        $view = (string) file_get_contents($root . '/views/admin/organization/player_metrics.php');
+        self::assertStringContainsString('akhr__table pm__table', $view);
+        self::assertStringContainsString('data-sort-type=', $view);
+        self::assertStringContainsString('<tfoot>', $view);
+        self::assertStringContainsString("'back-office-atak-squads.css', 'back-office-atak-hours.css', 'back-office-player-metrics.css'", $pages);
+        foreach (['back-office-player-metrics.css' => '.pm .aksq__frame', 'back-office-atak-hours.css' => '.akhr .aksq__frame'] as $css => $rule) {
+            self::assertMatchesRegularExpression('/' . preg_quote($rule, '/') . ' \{[^}]*max-width: none/', (string) file_get_contents($root . '/public/assets/css/' . $css));
+        }
     }
 }

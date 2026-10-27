@@ -4,7 +4,8 @@
     (fn_pageGallery).
       Viseur      : image en direct de l'objectif (vue du joueur, téléphone tenu devant soi) ; grille, cap, heure,
                     objectif et zoom incrustés. Glisser : décaler l'objectif ; molette : zoom ; double clic : recentrer.
-                    Boutons sur l'image : FLASH (AUTO / FORCÉ / COUPÉ), PLEIN ÉCRAN (mode photo, fn_photoMode),
+                    Boutons sur l'image : FLASH (AUTO / FORCÉ / COUPÉ), VISAGES (flou gaussien, mouvement, pixel,
+                    carré noir ou coupé, le même choix qu'en plein écran), PLEIN ÉCRAN (mode photo, fn_photoMode),
                     zoom − / + .
       Commandes   : GALERIE (ouvre l'app Galerie, nombre de photos), déclencheur au centre, SELFIE (objectif avant).
       Légende     : facultative, envoyée avec la photo (clé photoCaption de l'état, gardée au redessin).
@@ -160,6 +161,11 @@ private _flTxt = format ["FLASH %1", createHashMapFromArray [["AUTO", "AUTO"], [
 private _cy = _vy + _fs * 2.8;
 [_flTxt, [_vx + _pad / 2, _cy, (_vw * 0.34) max (_font * 4.5), _chipH], compile format ["%1 ['flash'] call comspec_atak_native_fnc_photoCam;", _keep],
     "Flash : AUTO (la nuit et dans un intérieur sombre), FORCÉ (à chaque photo) ou COUPÉ (discrétion)", _flash isEqualTo "ON"] call _chip;
+private _bt = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
+private _bl = (createHashMapFromArray [["gauss", "GAUSSIEN"], ["motion", "MOUVEMENT"], ["pixel", "PIXEL"], ["black", "CARRÉ NOIR"]]) getOrDefault [_bt, "COUPÉ"];
+[format ["VISAGES %1", _bl], [_vx + _pad / 2, _cy + _chipH + _pad * 0.35, (_vw * 0.46) max (_font * 6), _chipH],
+    compile format ["%1 ['blur'] call comspec_atak_native_fnc_photoCam;", _keep],
+    "Flou des visages sur la photo envoyée. Appuyez pour changer : gaussien, mouvement, pixel, carré noir ou coupé. Le même choix qu'en plein écran.", _bl isNotEqualTo "COUPÉ"] call _chip;
 private _fsW = (_vw * 0.36) max (_font * 5);
 private _full = ["PLEIN ÉCRAN", [_vx + _vw - _fsW - _pad / 2, _cy, _fsW, _chipH],
     compile format ["%1 private _c = (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['photoCaption', '']; [{ ['ENTER', _this] call comspec_atak_native_fnc_photoMode; }, _c] call CBA_fnc_execNextFrame;", _keep],
@@ -223,7 +229,12 @@ _shoot ctrlEnable _canShoot;
     _t ctrlSetStructuredText parseText ((format ["<t align='center' size='0.75' color='#a9b8b1'>%1</t>", _lbl]) call comspec_atak_native_fnc_tr);
     private _b = ["COMSPEC_RscButtonInvisible", [_cx - _sideW / 2, _cy - _side / 2 - _fs * 0.5, _sideW, _side + _fs * 1.2]] call _mk;
     _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
-    _b ctrlAddEventHandler ["ButtonClick", _code];
+    // Clic différé d'une image (comme fn_formRender) : GALERIE change de page, ce qui supprimait le bouton pendant son propre gestionnaire.
+    _b setVariable ["comspec_click", _code];
+    _b ctrlAddEventHandler ["ButtonClick", {
+        params ["_c"];
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+    }];
 } forEach [
     [_centers select 1, "ui_gallery.paa", format ["GALERIE (%1)", _nPh], compile format ["%1 ['GALLERY'] call comspec_atak_native_fnc_navigate;", _keep], "Ouvrir l'app Galerie : revoir, envoyer ou supprimer les photos"],
     [_centers select 2, "ui_rotate.paa", ["SELFIE", "ARRIÈRE"] select _selfie, compile format ["%1 ['selfie'] call comspec_atak_native_fnc_photoCam;", _keep], ["Passer à l'objectif avant (selfie)", "Revenir à l'objectif arrière"] select _selfie, _selfie]

@@ -11,7 +11,6 @@ namespace App\Services\Billing;
 final class SubscriptionPlanFeaturesCatalog
 {
     public const BOOL_FEATURES = [
-        'forum',
         'documents',
         'messages',
         'personnel',
@@ -28,6 +27,9 @@ final class SubscriptionPlanFeaturesCatalog
         'analytics',
         'advanced_integrations',
         'community_create',
+        'registry_featured',
+        'year_review_collective',
+        'pilot_qualifications',
     ];
 
     public const INT_FEATURES = [
@@ -41,11 +43,6 @@ final class SubscriptionPlanFeaturesCatalog
     public static function definitions(): array
     {
         return [
-            'forum' => [
-                'label' => 'Forum communauté',
-                'help' => 'Sujets, réponses et moderation du forum.',
-                'type' => 'bool',
-            ],
             'documents' => [
                 'label' => 'Documents',
                 'help' => 'Bibliothèque documentaire et pieces jointes.',
@@ -126,6 +123,21 @@ final class SubscriptionPlanFeaturesCatalog
                 'help' => 'Autorise la creation d’une nouvelle communauté via ce palier.',
                 'type' => 'bool',
             ],
+            'registry_featured' => [
+                'label' => 'Mise en avant dans le registre',
+                'help' => 'Badge « mise en avant » sur la carte de la communauté et place parmi les premières du registre des unités.',
+                'type' => 'bool',
+            ],
+            'year_review_collective' => [
+                'label' => 'Rétrospective annuelle de l’unité',
+                'help' => 'Bilan de l’année de toute la communauté (heures, kilomètres, SSE, tableau d’honneur) dans la rétrospective des joueurs. La rétrospective individuelle reste gratuite.',
+                'type' => 'bool',
+            ],
+            'pilot_qualifications' => [
+                'label' => 'Cursus pilote automatique',
+                'help' => 'Qualifications de pilote attribuées ou proposées aux instructeurs d’après les heures de vol relevées en jeu.',
+                'type' => 'bool',
+            ],
             'max_members' => [
                 'label' => 'Nombre max. de membres',
                 'help' => 'Plafond de comptes dans la communauté (0 = illimite).',
@@ -148,7 +160,6 @@ final class SubscriptionPlanFeaturesCatalog
     {
         return [
             'free' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -165,11 +176,13 @@ final class SubscriptionPlanFeaturesCatalog
                 'analytics' => false,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => false,
+                'year_review_collective' => false,
+                'pilot_qualifications' => false,
                 'max_members' => 10,
                 'max_training_courses' => 5,
             ],
             'standard' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -186,11 +199,13 @@ final class SubscriptionPlanFeaturesCatalog
                 'analytics' => false,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => false,
+                'year_review_collective' => true,
+                'pilot_qualifications' => true,
                 'max_members' => 25,
                 'max_training_courses' => 25,
             ],
             'pro' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -207,11 +222,13 @@ final class SubscriptionPlanFeaturesCatalog
                 'analytics' => true,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => true,
+                'year_review_collective' => true,
+                'pilot_qualifications' => true,
                 'max_members' => 50,
                 'max_training_courses' => 100,
             ],
             'pro_plus' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -228,6 +245,9 @@ final class SubscriptionPlanFeaturesCatalog
                 'analytics' => true,
                 'advanced_integrations' => true,
                 'community_create' => true,
+                'registry_featured' => true,
+                'year_review_collective' => true,
+                'pilot_qualifications' => true,
                 'max_members' => 80,
                 'max_training_courses' => 0,
             ],

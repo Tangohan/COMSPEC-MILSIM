@@ -159,9 +159,14 @@ final class PersonnelCorrectionController
             $before = is_array($row['before'] ?? null) ? $row['before'] : [];
             $row['proposed_display'] = [];
             $row['before_display'] = [];
+            $row['proposed_lines'] = [];
+            $row['before_lines'] = [];
             foreach ($proposed as $key => $val) {
-                $row['proposed_display'][(string) $key] = $this->correctionService->displayFieldValue((string) $key, $val, $tenantId);
-                $row['before_display'][(string) $key] = $this->correctionService->displayFieldValue((string) $key, $before[$key] ?? '', $tenantId);
+                $key = (string) $key;
+                $row['proposed_lines'][$key] = $this->correctionService->displayFieldLines($key, $val, $tenantId);
+                $row['before_lines'][$key] = $this->correctionService->displayFieldLines($key, $before[$key] ?? '', $tenantId);
+                $row['proposed_display'][$key] = $this->correctionService->displayFieldValue($key, $val, $tenantId);
+                $row['before_display'][$key] = $this->correctionService->displayFieldValue($key, $before[$key] ?? '', $tenantId);
             }
         }
         unset($row);

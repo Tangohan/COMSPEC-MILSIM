@@ -26,7 +26,7 @@ $n = static function (string $fr): string {
 
 /*
  * Navbar Athena (style Caverne) unifiée : appliquée à toutes les pages membre
- * du portail authentifié (hub, forum, formations, effectifs, documents, back-office, …).
+ * du portail authentifié (hub, formations, effectifs, documents, back-office, …).
  * Les visiteurs non connectés (vitrine communauté, pages marketing) gardent le méga-menu ci-dessous.
  */
 $useAthenaHeader = $loggedIn;
@@ -193,7 +193,7 @@ if ($useAthenaHeader) {
                             <div class="max-w-[140px] text-right">
                                 <p class="truncate text-[10px] font-black uppercase tracking-[0.14em] text-slate-500"><?= $n('Compte') ?></p>
                                 <p class="truncate text-xs font-semibold text-slate-900" title="<?= htmlspecialchars($ctx['display_name']) ?>">
-                                    <?= htmlspecialchars($ctx['display_name'] !== '' ? $ctx['display_name'] : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Compte') : 'Compte')) ?>
+                                    <?= $ctx['display_name'] !== '' ? staff_name($ctx['display_name'], (int) (\App\Core\Session::get('user_id') ?? 0)) : htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Compte') : 'Compte') ?>
                                 </p>
                             </div>
                             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 transition group-hover:border-emerald-400 group-hover:bg-white group-hover:text-emerald-700">

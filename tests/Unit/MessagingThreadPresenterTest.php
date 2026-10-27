@@ -99,4 +99,31 @@ final class MessagingThreadPresenterTest extends TestCase
         self::assertFalse($days[0]['groups'][0]['unread_before']);
         self::assertSame('Participant', $days[0]['groups'][0]['name']);
     }
+
+    public function testSenderNameUsesCallsignAndNeverTheMailAddress(): void
+    {
+        $days = P::groupMessages([
+            [
+                'sender_user_id' => 2,
+                'display_name' => '',
+                'callsign' => 'Viper',
+                'email' => 'viper@example.com',
+                'body' => 'x',
+                'created_at' => '2026-10-05 10:00:00',
+            ],
+        ], 1, null, $this->now);
+        self::assertSame('Viper', $days[0]['groups'][0]['name']);
+
+        $days = P::groupMessages([
+            [
+                'sender_user_id' => 2,
+                'display_name' => '   ',
+                'email' => 'secret@example.com',
+                'body' => 'x',
+                'created_at' => '2026-10-05 10:00:00',
+            ],
+        ], 1, null, $this->now);
+        self::assertSame('Participant', $days[0]['groups'][0]['name']);
+        self::assertStringNotContainsString('secret@example.com', $days[0]['groups'][0]['name']);
+    }
 }

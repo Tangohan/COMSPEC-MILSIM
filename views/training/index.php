@@ -300,5 +300,6 @@ $categories = ['all' => 'Tous les modules', 'tactique' => 'tactique', 'technique
             };
         }
     </script>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

@@ -9,32 +9,31 @@ if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { f
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith { false };
 private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];
 if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith { false };
+// Aéronefs non remontés par choix de la communauté (fn_pollDataFlows).
+if !((missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["vehicles", true]) exitWith { false };
 
 private _now = diag_tickTime;
 private _sent = 0;
 private _sendBack = missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0];
 if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
 // Un seul client remonte chaque aéronef (avant : tous les clients envoyaient tous les aéronefs occupés).
-// Candidats : joueurs reliés à Athena (COMSPEC_LinkState public, moi compris). Joueur relié à bord : lui (plus
+// Candidats : joueurs reliés à Athena (COMSPEC_LinkState public « linked »/« degraded », moi compris ;
+// « connecting »/« disabled » = compte non relié, qui ne remonterait rien). Joueur relié à bord : lui (plus
 // petit UID de l'équipage) ; sinon (IA seules, équipage non relié) : le joueur relié de plus petit UID.
 private _myUid = getPlayerUID player;
 private _linked = (allPlayers select {
-    alive _x && {!(_x isKindOf "HeadlessClient_F")} && {_x isEqualTo player || {(_x getVariable ["COMSPEC_LinkState", "offline"]) isNotEqualTo "offline"}}
+    alive _x && {!(_x isKindOf "HeadlessClient_F")} && {_x isEqualTo player || {(_x getVariable ["COMSPEC_LinkState", "offline"]) in ["linked", "degraded"]}}
 }) apply { getPlayerUID _x };
 _linked sort true;
 private _globalReporter = _linked param [0, _myUid];
 
+// Aéronefs vivants hors parachutes (Helicopter / Plane / UAV héritent de Air), plus les drones terrestres :
+// évite de parcourir tous les `vehicles` avec 5 isKindOf chacun toutes les 3 s.
+private _airAssets = (entities [["Air"], ["ParachuteBase"], false, true])
+    + (allUnitsUAV select { !(_x isKindOf "Air") });
 {
     if (_sent >= 12) then { break };
     if (isNull _x || {!alive _x}) then { continue };
-    if (_x isKindOf "ParachuteBase") then { continue };
-    if !(
-        _x isKindOf "Air"
-        || {_x isKindOf "Helicopter"}
-        || {_x isKindOf "Plane"}
-        || {_x isKindOf "UAV"}
-        || {unitIsUAV _x}
-    ) then { continue };
 
     private _crew = (crew _x) select { alive _x && {_x isKindOf "CAManBase"} };
     if (_crew isEqualTo []) then { continue };
@@ -189,6 +188,6 @@ private _globalReporter = _linked param [0, _myUid];
 
     "COMSPECExtension" callExtension ["SendFlightManifest", [_json]];
     _sent = _sent + 1;
-} forEach vehicles;
+} forEach _airAssets;
 
 _sent > 0

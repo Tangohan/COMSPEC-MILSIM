@@ -37,8 +37,8 @@ switch (_act) do {
         private _at = ["", netId _pres] select (_follow && _onPage);
         if ((player getVariable ["COMSPEC_ATAK_BriefAt", ""]) isNotEqualTo _at) then { player setVariable ["COMSPEC_ATAK_BriefAt", _at, true]; };
         // Présence vue sur Athena (page briefing) : toutes les 30 s pour qui suit ou présente, téléphone ouvert sur le briefing.
-        if (_onPage && {_follow || {_pres isEqualTo player}} && {!isNil "comspec_overwatch_connect_fnc_extResult"} && {time - (uiNamespace getVariable ["COMSPEC_ATAK_BriefBeat", -100]) > 30}) then {
-            uiNamespace setVariable ["COMSPEC_ATAK_BriefBeat", time];
+        if (_onPage && {_follow || {_pres isEqualTo player}} && {!isNil "comspec_overwatch_connect_fnc_extResult"} && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_BriefBeat", -100]) > 30}) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_BriefBeat", diag_tickTime];
             // Un seul envoi en cours : l'appel DLL est bloquant, un Athena lent ne doit pas en empiler.
             if !(missionNamespace getVariable ["COMSPEC_ATAK_BriefPresBusy", false]) then {
                 missionNamespace setVariable ["COMSPEC_ATAK_BriefPresBusy", true];

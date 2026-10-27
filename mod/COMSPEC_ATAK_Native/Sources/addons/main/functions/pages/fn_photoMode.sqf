@@ -266,13 +266,8 @@ switch (toUpper _mode) do {
         true
     };
     case "BLUR": {
-        if (!_active) exitWith { false };
-        // Type de flou des visages pour la partie (le réglage CBA reste le point de départ).
-        private _types = ["gauss", "motion", "pixel", "black", "off"];
-        private _cur = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
-        uiNamespace setVariable ["COMSPEC_ATAK_BlurType", _types select ((((_types find _cur) max 0) + 1) mod 5)];
-        playSound "ClickSoft";
-        ["HUD"] call comspec_atak_native_fnc_photoMode;
+        ["blur"] call comspec_atak_native_fnc_photoCam;
+        if (_active) then { ["HUD"] call comspec_atak_native_fnc_photoMode; };
         true
     };
     case "HELP": {
@@ -455,7 +450,7 @@ switch (toUpper _mode) do {
         // Fiche du cliché (relais Discord) : position et axe de l'objectif, objectif, zoom, flash, modèle, version.
         private _meta = ["", "", false, "", false, "phone", "", _viewPos, (((_viewDir select 0) atan2 (_viewDir select 1)) + 360) mod 360,
             [["lens", ["rear", "selfie"] select (_st getOrDefault ["selfie", false])], ["zoom", _st getOrDefault ["zoom", 1]],
-             ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
+             ["flash", ["off", "on"] select _fire], ["model", ([player] call comspec_atak_native_fnc_phoneCarried) select 0],
              ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
             _viewDir];
         [_fire, [_px, _py, _pz], _meta, _st getOrDefault ["selfie", false]] spawn {
@@ -489,6 +484,9 @@ switch (toUpper _mode) do {
             (_meta select 9) append _faces;
             // Débit simulé : sans réseau, la photo reste sur le poste (app Galerie pour la retransmettre).
             private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
+            // ATAK seul (sans COMSPEC Link) : la photo reste aussi sur le poste, rien n'est envoyé.
+            private _noLink = isNil "comspec_overwatch_connect_fnc_captureReconImage";
+            if (_noLink) then { _noNet = true; };
             private _ok = if (_noNet) then {
                 private _shot = format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
                 screenshot _shot;
@@ -499,7 +497,7 @@ switch (toUpper _mode) do {
                     _kept pushBack [toLower _shot, _faces];
                     profileNamespace setVariable ["COMSPEC_ATAK_PhotoFaces", _kept select [((count _kept) - 40) max 0]];
                 };
-                ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", 5, 40] call comspec_atak_native_fnc_notify;
+                [["WARNING", "INFO"] select _noLink, ["Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", "Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)"] select _noLink, 5, 40] call comspec_atak_native_fnc_notify;
                 false
             } else { ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage };
             uiSleep 0.08;

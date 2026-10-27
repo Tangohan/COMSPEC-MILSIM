@@ -40,7 +40,7 @@ final class AtakReconNoteAssetTest extends TestCase
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $api = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
         $mig = (string) file_get_contents($root . '/bootstrap/atak_recon_notes_migration.php');
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $mapJs = (string) file_get_contents($root . '/public/assets/js/comspec-operational-map.js');
         $notesJs = (string) file_get_contents($root . '/public/assets/js/tacmap-recon-notes.js');
         $tacmap = (string) file_get_contents($root . '/views/tacmap.php');

@@ -56,6 +56,18 @@ class CourrierSignatureController
         if (!\App\Core\Csrf::validate((string) ($body['_csrf_token'] ?? ''))) {
             return Response::json(['success' => false, 'message' => 'Jeton de sécurité invalide.'], 403);
         }
+
+        // Signature réservée aux gestionnaires du courrier (aucun signataire désigné n’existe dans le schéma).
+        $gate = \App\Core\Gate::getInstance();
+        if (!$gate->allows('courrier.validate') && !$gate->allows('admin.organization')) {
+            return Response::json(['success' => false, 'message' => 'Vous n’avez pas les droits pour signer ce document.'], 403);
+        }
+        // Seul un document validé et pas encore signé peut être signé (enchaînement du workflow).
+        if ((string) ($document['status'] ?? '') !== \App\Services\Courrier\DocumentWorkflowService::STATUS_VALIDATED
+            || !empty($document['signed_by']) || !empty($document['signed_at'])) {
+            return Response::json(['success' => false, 'message' => 'Ce document doit être validé, et pas encore signé, avant signature.'], 409);
+        }
+
         $imageBase64 = $body['image_base64'] ?? null;
         $userSignatureId = isset($body['user_signature_id']) ? (int) $body['user_signature_id'] : null;
         $stamps = [

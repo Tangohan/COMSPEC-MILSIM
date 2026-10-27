@@ -65,24 +65,39 @@ private _pfh = [{
     private _lvl = [];
     for "_i" from 1 to _n do { _lvl pushBack (0.12 + random 0.2); };
     // Téléphones à moins de 3 km : un pic sur leur fréquence, intermittent au repos, permanent s'ils balayent.
-    {
-        if (_x isNotEqualTo player && {alive _x} && {(_x distance2D _me) < 3000} && {[_x] call comspec_atak_native_fnc_hasDevice}) then {
-            private _loud = (_x getVariable ["COMSPEC_ATAK_EwScanUntil", -1]) > _now;
-            if (_loud || {(random 1) < 0.6}) then {
+    // Liste des porteurs (appareil, empreinte de fréquence) refaite toutes les 3 s : hasDevice et phoneIdent ne sont
+    // plus appelés pour chaque joueur 4 fois par seconde ; seuls le scintillement et les barres suivent le PFH.
+    private _emit = uiNamespace getVariable ["COMSPEC_ATAK_SpecEmit", [-10, []]];
+    if (diag_tickTime - (_emit select 0) > 3) then {
+        private _list = [];
+        {
+            if (_x isNotEqualTo player && {alive _x} && {(_x distance2D _me) < 3500} && {[_x] call comspec_atak_native_fnc_hasDevice}) then {
                 private _k = (([_x, "norm"] call comspec_atak_native_fnc_phoneIdent) select 1);
-                private _bin = 0; { _bin = (_bin * 7 + _x) mod 997; } forEach (toArray _k);
-                _bin = _bin mod _n;
-                private _a = (1 - ((_x distance2D _me) / 3000)) * ([0.75, 1] select _loud) + 0.15;
+                private _h = 0; { _h = (_h * 7 + _x) mod 997; } forEach (toArray _k);
+                _list pushBack [_x, _h];
+            };
+        } forEach allPlayers;
+        _emit = [diag_tickTime, _list];
+        uiNamespace setVariable ["COMSPEC_ATAK_SpecEmit", _emit];
+    };
+    {
+        _x params ["_u", "_h"];
+        if (alive _u && {(_u distance2D _me) < 3000}) then {
+            private _loud = (_u getVariable ["COMSPEC_ATAK_EwScanUntil", -1]) > _now;
+            if (_loud || {(random 1) < 0.6}) then {
+                private _bin = _h mod _n;
+                private _a = (1 - ((_u distance2D _me) / 3000)) * ([0.75, 1] select _loud) + 0.15;
                 _lvl set [_bin, (_lvl select _bin) max _a];
                 if (_bin > 0) then { _lvl set [_bin - 1, (_lvl select (_bin - 1)) max (_a * 0.6)]; };
             };
         };
-    } forEach allPlayers;
+    } forEach (_emit select 1);
     // Brouilleurs : large bande saturée.
     private _jam = false;
     {
         _x params [["_pos", [0, 0, 0]], ["_rad", 500], "", "", ["_until", 1e9]];
-        if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
+        // Objet supprimé : ignoré (getPosATL objNull = origine, fausse saturation près de [0,0]).
+        if (_pos isEqualType objNull) then { if (isNull _pos) then { continue; }; _pos = getPosATL _pos; };
         private _d = _me distance2D _pos;
         if (_until >= _now && {_d < (_rad + 2000)}) then {
             _jam = true;

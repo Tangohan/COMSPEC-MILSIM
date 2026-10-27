@@ -31,7 +31,7 @@ final class CommunityEcosystemTest extends TestCase
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Web/HubController.php');
-        $migrations = (string) file_get_contents($root . '/run-migrations.php');
+        $migrations = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $migration = (string) file_get_contents($root . '/bootstrap/community_ecosystem_migration.php');
 
         foreach (["'/hub/comparer'", "'/hub/c/{slug}'", "'/hub/c/{slug}/recommander'", "'/hub/avis'", "'/hub/bourse'", "'/hub/bourse/{id}/repondre'"] as $route) {

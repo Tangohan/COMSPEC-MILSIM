@@ -12,7 +12,9 @@ use App\Repositories\EnlistmentCannedMessageRepository;
 use App\Repositories\EnlistmentRecruitmentEngagementRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\EnlistmentTimelineRepository;
+use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RecruitmentTeamWallRepository;
 use App\Repositories\RoleRepository;
@@ -27,10 +29,10 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
 use App\Services\Recruitment\EnlistmentCandidatePortalJourneyService;
+use App\Services\Recruitment\EnlistmentOnboardingFormService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\TenantRecruitmentSettings;
-use App\Services\Rbac\MilitaryOperationalRoleCatalog;
 use App\Support\EnlistmentAcceptedIdentity;
 
 class AdminRecruitmentsController
@@ -994,15 +996,19 @@ class AdminRecruitmentsController
 
         $defaultUnitId = is_array($linkedOpening) ? (int) ($linkedOpening['unit_id'] ?? 0) : 0;
         $defaultJobRoleId = is_array($linkedOpening) ? (int) ($linkedOpening['personnel_job_role_id'] ?? 0) : 0;
+        // L’emploi de l’offre est pré-choisi, y compris une fonction du référentiel (MilitaryOperationalRoleCatalog) :
+        // la liste propose désormais tout le référentiel, plus seulement les emplois déjà créés.
         if ($defaultJobRoleId > 0) {
             try {
-                $linkedJob = $this->personnelJobRoleRepository->findRoleById($defaultJobRoleId, (int) $tenantId);
-                $linkedSlug = strtolower(trim((string) ($linkedJob['slug'] ?? '')));
-                if ($linkedSlug !== '' && isset(MilitaryOperationalRoleCatalog::catalogSlugSet()[$linkedSlug])) {
+                if (!$this->personnelJobRoleRepository->findRoleById($defaultJobRoleId, (int) $tenantId)) {
                     $defaultJobRoleId = 0;
                 }
             } catch (\Throwable) {
+                $defaultJobRoleId = 0;
             }
+        }
+        if ($defaultUnitId < 1 && is_array($linkedUser)) {
+            $defaultUnitId = (int) ($linkedUser['primary_unit_id'] ?? 0);
         }
         $memberRoleId = $this->roleRepository->getIdBySlug((int) $tenantId, 'member');
         $selectedRoleIds = [];
@@ -1013,14 +1019,7 @@ class AdminRecruitmentsController
             $selectedRoleIds = [$memberRoleId];
         }
 
-        $jobRoleOptions = [];
-        try {
-            if ($this->personnelJobRoleRepository->tablesExist()) {
-                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect((int) $tenantId, false, false);
-            }
-        } catch (\Throwable) {
-            $jobRoleOptions = [];
-        }
+        $form = $this->onboardingFormService()->build((int) $tenantId, $row, $linkedUser, $selectedRoleIds);
 
         $defaultAssignmentLabel = '';
         if ($defaultJobRoleId < 1 && is_array($linkedOpening)) {
@@ -1044,10 +1043,15 @@ class AdminRecruitmentsController
                 'personnel_job_role_id' => $defaultJobRoleId,
                 'assignment_label' => $defaultAssignmentLabel,
                 'role_ids' => $selectedRoleIds,
-            ],
-            'orgRoles' => $this->roleRepository->forTenantOrganization((int) $tenantId),
-            'units' => $this->unitRepository->allForTenant((int) $tenantId),
-            'jobRoleOptions' => $jobRoleOptions,
+                'access_role_id' => $form['accessRoleId'],
+                'grade_id' => $form['gradeId'],
+            ] + $form['profile'],
+            'accessRoles' => $form['accessRoles'],
+            'units' => $form['units'],
+            'gradeGroups' => $form['gradeGroups'],
+            'jobRoleGroups' => $form['jobRoleGroups'],
+            'referentOptions' => $form['referents'],
+            'civilOptions' => $form['civilOptions'],
             'linkedRecruitmentOpening' => $linkedOpening,
             'linkedUser' => $linkedUser,
             'needsAcceptanceOnboarding' => $needsOnboarding,
@@ -1085,21 +1089,21 @@ class AdminRecruitmentsController
             return Response::redirect(url('back-office/recruitments'));
         }
 
-        $roleIdsRaw = $request->input('role_ids', []);
-        if (!is_array($roleIdsRaw)) {
-            $roleIdsRaw = [];
+        $input = [];
+        foreach ([
+            'first_name', 'last_name', 'callsign', 'steam_profile', 'unit_id', 'personnel_job_role_id', 'role_ids',
+            'access_role_id', 'assignment_label', 'grade_id', 'duty', 'referent_user_id', 'nickname_primary',
+            'nationality', 'birth_place', 'sex', 'blood_type', 'enlistment_date',
+        ] as $key) {
+            $input[$key] = $request->input($key, '');
         }
+        $normalized = $this->onboardingFormService()->normalizeSubmission((int) $tenantId, $input);
+        if ($normalized['error'] !== null) {
+            Session::flash('error', $normalized['error']);
 
-        $options = [
-            'first_name' => trim((string) $request->input('first_name', '')),
-            'last_name' => trim((string) $request->input('last_name', '')),
-            'callsign' => trim((string) $request->input('callsign', '')),
-            'steam_profile' => trim((string) $request->input('steam_profile', '')),
-            'unit_id' => (int) $request->input('unit_id', 0),
-            'personnel_job_role_id' => (int) $request->input('personnel_job_role_id', 0),
-            'role_ids' => $roleIdsRaw,
-            'assignment_label' => trim((string) $request->input('assignment_label', '')),
-        ];
+            return Response::redirect(url('back-office/recruitments/' . $id . '/onboarding'));
+        }
+        $options = $normalized['options'];
 
         $result = $this->enlistmentAcceptanceProvisioningService->completeAcceptanceOnboarding(
             (int) $tenantId,
@@ -1133,6 +1137,19 @@ class AdminRecruitmentsController
         );
 
         return Response::redirect($this->recruitmentDossierShowUrl($id));
+    }
+
+    private function onboardingFormService(): EnlistmentOnboardingFormService
+    {
+        return new EnlistmentOnboardingFormService(
+            $this->roleRepository,
+            $this->unitRepository,
+            new GradeRepository(),
+            $this->personnelJobRoleRepository,
+            $this->userRepository,
+            \App\Core\Container::get(PersonnelProfileRepository::class),
+            $this->tenantRepository,
+        );
     }
 
     public function cannedMessagesIndex(Request $request, array $params = []): Response

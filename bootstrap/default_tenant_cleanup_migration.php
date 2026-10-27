@@ -27,19 +27,4 @@ return static function (PDO $pdo): void {
     if ($defaultTenantId < 1) {
         return;
     }
-
-    if ($tableExists($pdo, 'forum_categories')) {
-        $hasScope = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_categories' AND COLUMN_NAME = 'scope' LIMIT 1")->fetchColumn();
-        if ($hasScope) {
-            try {
-                $del = $pdo->prepare("DELETE FROM forum_categories WHERE tenant_id = ? AND scope = 'organization'");
-                $del->execute([$defaultTenantId]);
-                if ($del->rowCount() > 0) {
-                    echo '  [OK] default_tenant_cleanup : ' . $del->rowCount() . " catégorie(s) forum fantôme(s) supprimée(s) sur le tenant système.\n";
-                }
-            } catch (Throwable $e) {
-                echo '  [ATTENTION] default_tenant_cleanup (forum_categories) : ' . $e->getMessage() . "\n";
-            }
-        }
-    }
 };

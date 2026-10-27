@@ -115,7 +115,7 @@ require base_path('views/partials/account/shell_open.php');
                 <div>
                     <label class="account-hub__label" for="first_name">Prénom</label>
                     <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars((string) ($profile['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
-                    <p class="account-hub__hint">Prénom — utilisé partout (dossier, annuaire, forum).</p>
+                    <p class="account-hub__hint">Prénom — utilisé partout (dossier, annuaire).</p>
                     <?php if (!empty($errors['first_name'])): foreach ($errors['first_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
@@ -123,7 +123,7 @@ require base_path('views/partials/account/shell_open.php');
                 <div>
                     <label class="account-hub__label" for="last_name">Nom</label>
                     <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off" required>
-                    <p class="account-hub__hint">Nom — utilisé partout (dossier, annuaire, forum).</p>
+                    <p class="account-hub__hint">Nom — utilisé partout (dossier, annuaire).</p>
                     <?php if (!empty($errors['last_name'])): foreach ($errors['last_name'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
@@ -135,6 +135,11 @@ require base_path('views/partials/account/shell_open.php');
                     <?php if (!empty($errors['callsign'])): foreach ($errors['callsign'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
+                </div>
+                <div>
+                    <label class="account-hub__label" for="public_name">Pseudo public</label>
+                    <input type="text" name="public_name" id="public_name" value="<?= htmlspecialchars((string) ($publicName ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="40" autocomplete="nickname" placeholder="<?= htmlspecialchars((string) ($user['callsign'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <p class="account-hub__hint">Le nom affiché sur les pages publiques du site (contributeurs, propositions de traduction) et en premier dans l’administration, à la place de votre indicatif. Vide : l’indicatif est repris. Vos prénom et nom ne sont jamais affichés en public.</p>
                 </div>
                 <div class="account-hub__form-grid" style="grid-column:1/-1">
                     <p class="account-hub__label" style="margin-bottom:.35rem">Indicatifs supplémentaires</p>

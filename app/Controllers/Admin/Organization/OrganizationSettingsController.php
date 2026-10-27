@@ -641,7 +641,6 @@ final class OrganizationSettingsController
         // sont gérés sur /back-office/community/inscription — on les préserve ici.
 
         $community['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
-        $community['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';
         $community['welcome_text'] = $this->clip((string) $request->input('welcome_text', ''), 500);
         $community['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
         $community['public_hero_subtitle'] = $this->clip((string) $request->input('public_hero_subtitle', ''), 600);
@@ -691,7 +690,6 @@ final class OrganizationSettingsController
 
         $existingModules = is_array($community['public_modules'] ?? null) ? $community['public_modules'] : [];
         $community['public_modules'] = [
-            'forum' => (string) $request->input('public_mod_forum', '0') === '1',
             'documents' => (string) $request->input('public_mod_documents', '0') === '1',
             'events' => (string) $request->input('public_mod_events', '0') === '1',
             'roster' => (string) $request->input('public_mod_roster', '0') === '1',
@@ -758,19 +756,25 @@ final class OrganizationSettingsController
         $community['contact_intro'] = $this->clip((string) $request->input('contact_intro', ''), 500);
         $community['contact_form_enabled'] = (string) $request->input('contact_form_enabled', '0') === '1';
 
-        $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
-            $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
-        );
         $community['community_locked'] = (string) $request->input('community_locked', '0') === '1';
-        $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
-        $community['refuse_other_community_members'] = (string) $request->input('refuse_other_community_members', '0') === '1';
-        $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
+        $tenantRow = $this->tenantRepository->findById($tenantId);
+        if (\App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly((string) ($tenantRow['tenant_type'] ?? 'full'))) {
+            // Profils sans recrutement : on rejoint par Discord, le formulaire du site n’existe pas.
+            $community['registration_mode'] = TenantCommunityProfileService::REGISTRATION_MODE_DISCORD;
+        } else {
+            $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
+                $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+            );
+            $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
+            $community['refuse_other_community_members'] = (string) $request->input('refuse_other_community_members', '0') === '1';
+            $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
 
-        $existingEm = is_array($community['enlistment_milsim'] ?? null) ? $community['enlistment_milsim'] : [];
-        $community['enlistment_milsim'] = \App\Services\Community\EnlistmentMilsimPackService::mergePartialFromCommunitySettingsRequest(
-            $request,
-            $existingEm
-        );
+            $existingEm = is_array($community['enlistment_milsim'] ?? null) ? $community['enlistment_milsim'] : [];
+            $community['enlistment_milsim'] = \App\Services\Community\EnlistmentMilsimPackService::mergePartialFromCommunitySettingsRequest(
+                $request,
+                $existingEm
+            );
+        }
 
         $guestSlug = trim((string) $request->input('default_guest_role_slug', ''));
         if ($guestSlug !== '') {
