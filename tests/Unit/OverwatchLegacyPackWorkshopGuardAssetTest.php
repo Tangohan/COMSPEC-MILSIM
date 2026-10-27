@@ -52,15 +52,62 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
     }
 
     /**
-     * Membres de droite des affectations « $<nom> = … » d'un script PowerShell, dans l'ordre du fichier.
+     * Membres de droite des affectations d'une variable PowerShell, dans l'ordre du fichier. Comme en PowerShell, le nom
+     * est insensible à la casse ; « $script:<nom> », « ${<nom>} » et « $<nom> += … » comptent aussi.
      *
      * @return list<string>
      */
     private static function psAssignments(string $ps, string $name): array
     {
-        preg_match_all('/\$' . preg_quote($name, '/') . '\b\s*=(?!=)\s*([^\n;},]*)/', $ps, $matches);
+        $scope = '(?:(?:script|global|local|private):)?';
+        $variable = '\$(?:\{' . $scope . preg_quote($name, '/') . '\}|' . $scope . preg_quote($name, '/') . '\b)';
+        preg_match_all('/' . $variable . '\s*(?:[-+*\/%]|\?\?)?=(?!=)\s*([^\n;},]*)/i', $ps, $matches);
 
         return array_map('trim', $matches[1]);
+    }
+
+    /**
+     * Lignes de code d'un script PowerShell, espaces de tête retirés : sans le bloc d'aide « <# … #> » ni les lignes de
+     * commentaire, et sans le texte des messages. Sur une ligne qui commence par Write-Host, Write-Step, Write-Warn ou
+     * Write-Fail, et sur ses lignes de suite (ligne précédente finie par « + »), chaque chaîne devient « "" ».
+     *
+     * @return list<string>
+     */
+    private static function psCodeLines(string $ps): array
+    {
+        $lines = [];
+        $message = false;
+        $ps = (string) preg_replace('/^\xEF\xBB\xBF/', '', $ps);
+        foreach (explode("\n", (string) preg_replace('/<#.*?#>/s', '', $ps)) as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+            $message = $message || preg_match('/^Write-(?:Host|Step|Warn|Fail)\b/i', $line) === 1;
+            $lines[] = $message ? (string) preg_replace('/"(?:[^"`]|`.)*"|\'(?:[^\']|\'\')*\'/', '""', $line) : $line;
+            $message = $message && str_ends_with($line, '+');
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Profondeur d'accolades avant chaque ligne de code (psCodeLines), comptée hors chaînes ; première occurrence de
+     * chaque ligne. Une ligne de profondeur 0 est au niveau du script, hors de tout bloc.
+     *
+     * @return array<string, int>
+     */
+    private static function psDepths(string $ps): array
+    {
+        $depths = [];
+        $depth = 0;
+        foreach (self::psCodeLines($ps) as $line) {
+            $depths[$line] ??= $depth;
+            $bare = (string) preg_replace('/"(?:[^"`]|`.)*"|\'(?:[^\']|\'\')*\'/', '""', $line);
+            $depth += substr_count($bare, '{') - substr_count($bare, '}');
+        }
+
+        return $depths;
     }
 
     /**
@@ -167,12 +214,19 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertMatchesRegularExpression('/^if \(\$null -eq \$dllVersion\) \{\n    Write-Fail /m', $ps);
         self::assertMatchesRegularExpression('/^if \(\$dllVersion -lt \$MinLinkVersion\) \{\n    Write-Fail /m', $ps);
 
-        // meta.cpp : tout meta.cpp qui vise l'objet de l'ATAK natif est refusé.
+        // meta.cpp : tout meta.cpp qui vise l'objet de l'ATAK natif est refusé. Le contrôle suit directement le seul
+        // test d'existence du fichier : aucune condition ajoutée ne peut le sauter.
         self::assertStringContainsString("\$AtakNativeWorkshopId = '" . SteamWorkshop::ATAK_NATIVE_ID . "'", $ps);
-        self::assertMatchesRegularExpression('/^    if \(\$metaText -match "\\\\b\$AtakNativeWorkshopId\\\\b"\) \{\n        Write-Fail /m', $ps);
+        self::assertMatchesRegularExpression('/^if \(Test-Path -LiteralPath \$metaCpp\) \{\n    \$metaText = \[string\]\(Get-Content -LiteralPath \$metaCpp -Raw\)\n    if \(\$metaText -match "\\\\b\$AtakNativeWorkshopId\\\\b"\) \{\n        Write-Fail /m', $ps);
 
         // Chaque refus passe par Write-Fail, qui sort avec un code non nul.
         self::assertMatchesRegularExpression('/\bexit 1\b/', self::psFunctionBody($ps, 'Write-Fail'));
+
+        // Les contrôles sont au niveau du script, hors de tout bloc : aucune condition ajoutée autour ne peut les sauter.
+        $depths = self::psDepths($ps);
+        foreach (['if (Test-Path -LiteralPath $metaCpp) {', 'if (-not $dll) {', 'if ($null -eq $dllVersion) {', 'if ($dllVersion -lt $MinLinkVersion) {'] as $control) {
+            self::assertSame(0, $depths[$control] ?? null, 'contrôle absent ou dans un bloc : ' . $control);
+        }
 
         // Les deux refus tombent avant la préparation du pack : rien n'est copié dans le dossier à publier.
         $staging = strpos($ps, 'Write-Step "Nettoyage staging');
@@ -192,6 +246,8 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         // Chaîne de données : chaque variable n'a que ces valeurs. La version comparée est celle lue dans la DLL
         // retenue, le texte testé est tout le meta.cpp du dossier source.
         self::assertSame(['""', "Join-Path \$ModRoot '@COMSPECOverwatch'"], self::psAssignments($ps, 'SourceMod'));
+        // Le pack ne va que dans le dossier choisi par -OutDir, ou par défaut dans publisher\@COMSPECOverwatch.
+        self::assertSame(['""', "Join-Path \$ModRoot 'publisher\\@COMSPECOverwatch'"], self::psAssignments($ps, 'OutDir'));
         self::assertSame(['$null', '$c'], self::psAssignments($ps, 'dll'));
         self::assertSame(['[string]([System.Diagnostics.FileVersionInfo]::GetVersionInfo((Get-Item -LiteralPath $dll).FullName).ProductVersion)'], self::psAssignments($ps, 'dllProductVersion'));
         self::assertSame(['$null', '[version]($Matches[1])'], self::psAssignments($ps, 'dllVersion'));
@@ -201,30 +257,27 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertSame(['Join-Path $SourceMod "meta.cpp"', 'Join-Path $SourceMod "meta.cpp"'], self::psAssignments($ps, 'metaCpp'));
         self::assertSame(['[string](Get-Content -LiteralPath $metaCpp -Raw)'], self::psAssignments($ps, 'metaText'));
 
-        // Ordre : lecture, contrôle, puis seulement préparation du pack et copie de la DLL contrôlée.
-        $order = [
-            '$metaCpp = Join-Path $SourceMod "meta.cpp"',
-            '$metaText = ',
-            '$metaText -match ',
-            'if (-not $dll) {',
-            '$dllProductVersion = ',
-            '$dllProductVersion -match ',
-            'if ($null -eq $dllVersion) {',
-            'if ($dllVersion -lt $MinLinkVersion) {',
-            'Write-Step "Nettoyage staging',
-            'Copy-Item -LiteralPath $dll -Destination',
+        // Ordre, pour meta.cpp comme pour la DLL : lecture, contrôle, puis seulement préparation du pack et copie de la
+        // DLL contrôlée. Les deux contrôles peuvent venir dans un ordre ou dans l'autre.
+        $staging = 'Write-Step "Nettoyage staging';
+        $chains = [
+            ['$metaCpp = Join-Path $SourceMod "meta.cpp"', '$metaText = ', '$metaText -match ', $staging],
+            ['if (-not $dll) {', '$dllProductVersion = ', '$dllProductVersion -match ', 'if ($null -eq $dllVersion) {',
+                'if ($dllVersion -lt $MinLinkVersion) {', $staging, 'Copy-Item -LiteralPath $dll -Destination'],
         ];
-        $previous = -1;
-        foreach ($order as $marker) {
-            $at = strpos($ps, $marker);
-            self::assertNotFalse($at, 'absent : ' . $marker);
-            self::assertGreaterThan($previous, $at, 'hors d\'ordre : ' . $marker);
-            $previous = $at;
+        foreach ($chains as $order) {
+            $previous = -1;
+            foreach ($order as $marker) {
+                $at = strpos($ps, $marker);
+                self::assertNotFalse($at, 'absent : ' . $marker);
+                self::assertGreaterThan($previous, $at, 'hors d\'ordre : ' . $marker);
+                $previous = $at;
+            }
         }
 
         // La seule DLL copiée dans le pack est $dll, celle dont la version vient d'être contrôlée ; aucune copie par
-        // motif ni récursive ne peut en glisser une autre.
-        $copies = array_values(array_filter(array_map('trim', explode("\n", $ps)), static fn (string $line): bool => str_contains($line, 'Copy-Item')));
+        // motif ni récursive ne peut en glisser une autre. Les commentaires et le texte des messages ne comptent pas.
+        $copies = array_values(array_filter(self::psCodeLines($ps), static fn (string $line): bool => stripos($line, 'Copy-Item') !== false));
         self::assertNotEmpty($copies);
         $dllCopies = array_values(array_filter($copies, static fn (string $line): bool => stripos($line, 'dll') !== false));
         self::assertSame(['Copy-Item -LiteralPath $dll -Destination (Join-Path $OutDir "COMSPECExtension_x64.dll") -Force'], $dllCopies);
@@ -242,6 +295,47 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         foreach ($exits[1] as $code) {
             self::assertMatchesRegularExpression('/^[1-9]\d*$/', $code, 'exit sans code non nul');
         }
+    }
+
+    public function testWorkshopPackWritesOnlyThroughItsCheckedCopies(): void
+    {
+        $code = self::psCodeLines($this->read('workshop-pack.ps1'));
+        self::assertGreaterThan(100, count($code), 'lignes de code du script introuvables');
+
+        // Hors commentaires et messages : aucune copie hors Copy-Item (dont les contrôles précédents vérifient la
+        // source), aucune autre écriture de fichier, aucun publishedid. Aucune variable ni fonction de contrôle
+        // redéfinie par une autre syntaxe, et aucun autre script ou commande lancé depuis celui-ci.
+        $forbidden = [
+            'copie hors Copy-Item' => '/(?<![\w$.-])(?:copy|cp|cpi|robocopy|xcopy)(?![\w-])/i',
+            'écriture de fichier' => '/(?<![\w$.-])(?:Set-Content|Add-Content|Out-File|sc|ac|Tee-Object|tee|Expand-Archive)(?![\w-])|-OutFile\b|>/i',
+            'API de fichier .NET' => '/\[(?:System\.)?IO\.(?:File|FileInfo|FileStream|StreamWriter|Directory|DirectoryInfo)\]|\.(?:CopyTo|MoveTo)\s*\(/i',
+            'publishedid' => '/publishedid\s*=/i',
+            'déplacement' => '/(?<![\w$.-])(?:Move-Item|mv|mi|move|Rename-Item|ren|rni|Set-Item|si)(?![\w-])/i',
+            'redéfinition' => '/(?<![\w$.-])(?:Set-Variable|New-Variable|Clear-Variable|Remove-Variable|sv|nv|clv|rv)(?![\w-])|\b(?:function|variable):/i',
+            'appel' => '/(?<![\w$.-])(?:Invoke-Expression|iex|Start-Process|saps|start|Invoke-Item|ii|Invoke-Command|icm)(?![\w-])|&/i',
+            'New-Item hors dossier' => '/(?<![\w$.-])(?:New-Item|ni)(?![\w-])(?![^\n]*-ItemType Directory\b)/i',
+            // Au niveau du script, return et continue sortent avec le code 0, avant les contrôles qui suivent.
+            'sortie anticipée' => '/(?<![\w$.-])(?:return|continue)(?![\w-])/i',
+        ];
+        $offending = [];
+        foreach ($code as $line) {
+            foreach ($forbidden as $what => $pattern) {
+                if (preg_match($pattern, $line) === 1) {
+                    $offending[] = $what . ' : ' . $line;
+                }
+            }
+        }
+        self::assertSame([], $offending, 'workshop-pack.ps1 écrit ou redéfinit hors des contrôles');
+        // Un seul break : celui de la boucle des DLL candidates (hors boucle, break sort aussi du script).
+        self::assertSame(['break'], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w$.-])break(?![\w-])/i', $line) === 1)));
+
+        // L'objet de l'ATAK natif n'apparaît dans le code qu'à sa définition et dans le contrôle de meta.cpp.
+        $uses = array_values(array_filter($code, static fn (string $line): bool => stripos($line, 'AtakNativeWorkshopId') !== false
+            || str_contains($line, SteamWorkshop::ATAK_NATIVE_ID)));
+        self::assertSame([
+            "\$AtakNativeWorkshopId = '" . SteamWorkshop::ATAK_NATIVE_ID . "'",
+            'if ($metaText -match "\b$AtakNativeWorkshopId\b") {',
+        ], $uses);
     }
 
     public function testLegacyBuildNoLongerDeploysIntoTheAtakNativeWorkshopFolder(): void
@@ -297,6 +391,22 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertStringContainsString('set "DOTNET_PUBLISH_DIR=%PROJECT_DIR%COMSPECExtension\bin\publish"', $bat);
         self::assertStringContainsString('set "DOTNET_BUILD_DIR=%PROJECT_DIR%COMSPECExtension\bin\Release\net8.0\win-x64\publish"', $bat);
         self::assertLessThan((int) strpos($bat, 'set "DLL_SRC="'), (int) strpos($bat, 'dotnet publish "%CS_PROJ_PATH%"'));
+
+        // Une seule commande écrit %OUTPUT_DIR%\COMSPECExtension_x64.dll : la copie depuis %DLL_SRC%. Les autres
+        // commandes qui nomment une DLL ou COMSPECExtension_x64 sont connues : les candidats, le nettoyage du .pdb et
+        // la copie de déploiement, qui lit cette DLL. Aucun xcopy, robocopy, move ni mklink, et aucun chemin qui
+        // remonte au-dessus du dossier du projet par « ..\ ».
+        $code = array_values(array_filter(self::batCommands($bat), static fn (string $line): bool => preg_match('/^echo[\s.]/i', $line) !== 1));
+        self::assertSame([
+            'if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll"',
+            'if not defined DLL_SRC if exist "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll"',
+            'if not defined DLL_SRC if exist "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" set "DLL_SRC=%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll"',
+            'copy /Y "%DLL_SRC%" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1 || (',
+            'if exist "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" del /F /Q "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" >> "%BUILD_LOG%" 2>&1',
+            'if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"',
+        ], array_values(array_filter($code, static fn (string $line): bool => preg_match('/COMSPECExtension_x64|\.dll\b/i', $line) === 1)));
+        self::assertSame([], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w-])(?:xcopy|robocopy|move|mklink)(?![\w-])|\.\.\\\\/i', $line) === 1)));
+
         $ignore = str_replace("\r\n", "\n", (string) file_get_contents($this->rootPath('.gitignore')));
         // La DLL du dossier du mod est elle aussi une sortie de build : git ne suit plus l'ancienne 2.0.57.
         $rules = ['mod/UptoDate/COMSPECExtension/bin/', 'mod/UptoDate/@COMSPECOverwatch/net8.0/', 'mod/UptoDate/@COMSPECOverwatch/COMSPECExtension_x64.dll'];
@@ -353,8 +463,11 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         }
         self::assertSame([], $frozen, '%ERRORLEVEL% lu dans un bloc');
 
-        // Chaque appel d'AddonBuilder a un contrôle lu à l'exécution : « || », « if errorlevel 1 », ou %ERRORLEVEL%
-        // sur la ligne suivante, hors bloc.
+        // Chaque appel d'AddonBuilder a un contrôle lu à l'exécution, qui voit aussi un code négatif (plantage) : « || »
+        // en fin de ligne, ou « if %ERRORLEVEL% NEQ 0 ( » sur la ligne suivante, hors bloc. « if errorlevel 1 » laisse
+        // passer un code négatif : il est refusé partout.
+        $code = array_values(array_filter($commands, static fn (string $line): bool => preg_match('/^echo[\s.]/i', $line) !== 1));
+        self::assertSame([], array_values(array_filter($code, static fn (string $line): bool => preg_match('/\bif\s+(?:not\s+)?errorlevel\b/i', $line) === 1)), '« if errorlevel » ne voit pas un code de sortie négatif');
         $builders = 0;
         foreach ($commands as $i => $line) {
             if (!str_starts_with($line, '"%BUILDER_PATH%"')) {
@@ -363,10 +476,9 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
             $builders++;
             $next = $commands[$i + 1] ?? '';
             self::assertTrue(
-                str_ends_with($line, ' || (')
-                || preg_match('/^if errorlevel 1 \($/i', $next) === 1
+                preg_match('/ \|\| (?:\(|goto :build_fail|exit \/b [1-9]\d*)$/', $line) === 1
                 || ($depths[$i] === 0 && preg_match('/^if %ERRORLEVEL% NEQ 0 \($/i', $next) === 1),
-                'AddonBuilder sans contrôle d\'échec : ' . $line,
+                'AddonBuilder sans contrôle d\'échec lu à l\'exécution : ' . $line,
             );
         }
         self::assertGreaterThanOrEqual(5, $builders);
@@ -393,6 +505,13 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertGreaterThan((int) strpos($bat, '    for %%T in ('), $check);
         self::assertLessThan((int) strpos($bat, 'BUILD REUSSI'), $check);
         self::assertMatchesRegularExpression('/^if defined DEPLOY_FAIL \(\n(?:    echo [^\n()]*\n)+    goto :build_fail\n\)$/m', $bat);
+
+        // Le drapeau n'est remis à zéro qu'une fois, avant la boucle : une remise à zéro par cible effacerait l'échec
+        // de la cible précédente. Ni setlocal ni endlocal : endlocal l'effacerait aussi, et l'expansion retardée
+        // mangerait le « ! » de !Workshop.
+        preg_match_all('/\bset\s+"?DEPLOY_FAIL=([^"\s]*)/i', implode("\n", $code), $flags);
+        self::assertSame(1, count(array_keys($flags[1], '', true)), 'DEPLOY_FAIL remis à zéro plus d\'une fois');
+        self::assertSame([], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w-])(?:setlocal|endlocal)(?![\w-])/i', $line) === 1)));
     }
 
     public function testDocsNoLongerSendTheLegacyPackToTheWorkshop(): void
