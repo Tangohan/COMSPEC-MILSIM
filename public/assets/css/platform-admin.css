@@ -1440,3 +1440,84 @@ html[data-bo-theme="dark"] .pa-field :is(input, select, textarea) { background: 
   color: var(--pa-muted);
   font-weight: 650;
 }
+
+.pa--wide .pa__frame {
+  max-width: none;
+  padding: 12px 8px 28px;
+}
+
+.pa-sheet__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.7rem;
+}
+
+.pa-sheet__flag {
+  border: 1px solid var(--pa-line);
+  background: var(--pa-surface);
+  color: var(--pa-muted);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.pa-sheet__flag.is-on {
+  background: #0c1116;
+  border-color: #0c1116;
+  color: #fff;
+}
+
+.pa-sheet__scroll {
+  max-height: calc(100vh - 240px);
+}
+
+.pa-sheet__grid {
+  min-width: 92rem;
+}
+
+.pa-sheet__filters th {
+  position: sticky;
+  top: 2.15rem;
+  z-index: 2;
+  background: var(--pa-surface);
+  padding-top: 0.25rem;
+  padding-bottom: 0.35rem;
+}
+
+.pa-sheet__filters th:first-child {
+  z-index: 3;
+}
+
+.pa-sheet__filters input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--pa-line);
+  border-radius: 6px;
+  background: var(--pa-bg);
+  color: var(--pa-ink);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.22rem 0.4rem;
+}
+
+.pa-sheet__corr {
+  display: inline-flex;
+  margin-top: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--pa-mint);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pa-sheet__corr:hover {
+  text-decoration: underline;
+}

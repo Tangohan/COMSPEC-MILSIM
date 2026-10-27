@@ -1007,13 +1007,16 @@ final class DataRegistryService
 
             return [
                 'entity' => ['type' => 'tenant', 'id' => (int) $id, 'kind' => 'Communauté', 'label' => (string) $t['name'], 'facts' => [
-                    ['ID', $t['id']], ['Adresse', $t['slug']], ['Type', $t['tenant_type']], ['Créée', $t['created_at']],
+                    ['Identifiant', $t['id']],
+                    ['Adresse publique', $t['slug']],
+                    ['Profil', \App\Services\Community\TenantTypeConfig::label((string) ($t['tenant_type'] ?? 'full'))],
+                    ['Créée', $t['created_at']],
                 ]],
                 'links' => [],
                 'tables' => $tables,
                 'warnings' => [],
                 'purge' => null,
-                'open' => [['label' => 'Fiche de la communauté', 'href' => url('admin/tenants/' . (int) $id)]],
+                'open' => [['label' => 'Administrer', 'href' => url('admin/tenants/' . (int) $id . '/edit')]],
             ];
         }
 
