@@ -293,6 +293,12 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(1185, '2026-10-27', 'Intégration : la fiche d’un parcours se lit d’un coup d’œil', 'Dans Intégration des recrues, la fiche d’un membre montre d’abord ce qu’il reste à faire : statut, avancement, référent, et l’étape en cours. Les étapes se suivent en chronologie. Vous validez directement, ou malgré tout avec un motif. Les rendez-vous et l’annulation restent à portée, sans encombrer la page. Rechargez le portail (Ctrl+F5).', [
+                'Bandeau de synthèse : prochaine étape, référent, reste à faire',
+                'Étapes en chronologie, avec validation de l’étape en cours',
+            ], [], [], ['personnel'], [
+                'Ouvrez Intégration des recrues, puis un parcours. Lisez « À faire maintenant », validez l’étape, puis consultez le journal.',
+            ], 'Portail Athena'),
             $pr(1181, '2026-10-27', 'Annuaire des communautés : un tableur sur toute la largeur', 'Dans Administration du site, l’annuaire des communautés occupe toute la largeur. Vous voyez l’inactivité, la dernière connexion, l’activité en jeu, et ce qui est rattaché à chaque communauté. Corrélations ouvre le détail. Vous cherchez, filtrez et triez chaque colonne. Rechargez le portail (Ctrl+F5).', [
                 'Tableur en pleine largeur : inactivité, dernière connexion, activité en jeu',
                 'Colonne Rattachés et fenêtre Corrélations : comptes, ATAK, carte, profils, sessions',
