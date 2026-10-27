@@ -79,6 +79,6 @@ private _esc = {
 _title = _title call _esc;
 _msg = _msg call _esc;
 _from = _from call _esc;
-uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, [dayTime, "HH:MM"] call BIS_fnc_timeToString, -1]];
+uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, (["now"] call comspec_atak_native_fnc_clockFmt), -1]];
 ["draw"] call comspec_atak_native_fnc_fullAlert;
 true

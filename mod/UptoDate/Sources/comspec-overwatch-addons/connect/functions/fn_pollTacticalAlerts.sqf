@@ -88,6 +88,10 @@ private _playUnconscious = false;
     if (_timeStr isEqualTo "") then {
         _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
     };
+    // ATAK natif : l'heure d'Athena est en UTC ; affichée selon le réglage « Heure des alertes » (heure du PC par défaut).
+    if (_created isNotEqualTo "" && {!isNil "comspec_atak_native_fnc_clockFmt"}) then {
+        _timeStr = [_created] call comspec_atak_native_fnc_clockFmt;
+    };
 
     _seen pushBack _id;
     _inbox pushBack [_kindKey, _kindLabel, _summary, _grid, _timeStr, _from, _id];

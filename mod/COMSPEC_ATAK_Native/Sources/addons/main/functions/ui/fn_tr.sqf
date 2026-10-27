@@ -97,13 +97,14 @@ private _seg = {
     // « · » collé à une balise (« 2 charge(s) cochée(s) · <t …>sécurité levée</t> ») : le morceau finit ou commence
     // par « · » ; traduit sans lui.
     if (_r isEqualTo "" && {(count _core) > 2}) then {
-        if ((_core select [(count _core) - 2]) isEqualTo " ·") then {
-            private _in = _core select [0, (count _core) - 2];
+        // Longueurs prises sur les chaînes elles-mêmes : « · » n'a pas la longueur d'un caractère simple.
+        if ((_core select [(count _core) - (count " ·")]) isEqualTo " ·") then {
+            private _in = _core select [0, (count _core) - (count " ·")];
             private _tr = [_in, _depth] call _seg;
             if (_tr isNotEqualTo _in) then { _r = _tr + " ·"; };
         } else {
-            if ((_core select [0, 2]) isEqualTo "· ") then {
-                private _in = _core select [2];
+            if ((_core select [0, count "· "]) isEqualTo "· ") then {
+                private _in = _core select [count "· "];
                 private _tr = [_in, _depth] call _seg;
                 if (_tr isNotEqualTo _in) then { _r = "· " + _tr; };
             };
@@ -115,7 +116,8 @@ private _seg = {
     // Lignes et « · » avant « Libellé : valeur » : le dictionnaire est découpé de la même façon (tools/i18n.py), donc
     // « Poste : bâtiments %1 / %2 · forêts %3 / %4 » y est en morceaux ; le libellé seul (« Poste ») gâchait la suite.
     if (_r isEqualTo "" && {(_core find _nl) >= 0}) then {
-        _r = ((_core splitString _nl) apply { [_x, _depth] call _seg }) joinString _nl;
+        // CBA_fnc_split garde les lignes vides (splitString les retirait : « État de l'ATAK :\n\nAlimentation… » perdait son blanc).
+        _r = (([_core, _nl] call CBA_fnc_split) apply { [_x, _depth] call _seg }) joinString _nl;
     };
     if (_r isEqualTo "" && {(_core find " · ") > 0}) then {
         _r = (([_core, " · "] call CBA_fnc_split) apply { [_x, _depth + 1] call _seg }) joinString " · ";
@@ -126,6 +128,11 @@ private _seg = {
         private _lbl = _core select [0, _k];
         private _lblEn = _exact getOrDefault [_lbl, _lbl];
         if (_lblEn isNotEqualTo _lbl) then { _r = _lblEn + _colon + ([_core select [_k + 3], _depth + 1] call _seg); };
+    };
+    // « Titre — émetteur » assemblé dans le code (alertes du poste : « Opérateur à terre — Alpha 1 ») : chaque morceau.
+    if (_r isEqualTo "" && {_depth < 2} && {(_core find " — ") > 0}) then {
+        private _r2 = (([_core, " — "] call CBA_fnc_split) apply { [_x, _depth + 1] call _seg }) joinString " — ";
+        if (_r2 isNotEqualTo _core) then { _r = _r2; };
     };
     // Puce ou symbole devant le texte (« ■ SEEK PRÊT », « ‹ RETOUR », « ● EN LIGNE ») : le texte qui suit est cherché seul.
     if (_r isEqualTo "" && {_depth < 2}) then {

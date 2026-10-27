@@ -91,6 +91,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
 
 // HUD des autres mods (boussole F-PANO / ECOTI, température, heure...) masqué sous le téléphone (par joueur, fn_foreignHud).
+// Heure des alertes (fn_clockFmt) : heure de la mission, du PC, UTC, ou PC et UTC. Par joueur.
+["comspec_atak_native_alert_clock", "LIST",
+    ["Heure des alertes", "Heure affichée sur les alertes du téléphone (app Alertes, notifications, alertes plein écran, MEDEVAC, alertes santé). Heure de la mission (par défaut) : l'horloge du jeu. Heure locale : l'horloge de votre PC. Zulu : l'heure UTC, suivie de Z. Locale et Zulu : les deux. Les alertes déjà reçues gardent leur heure."],
+    ["COMSPEC", "ATAK · Affichage"], [["game", "local", "zulu", "both"], ["Heure de la mission", "Heure locale (PC)", "Zulu (UTC)", "Locale et Zulu"], 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_hide_foreign_hud", "CHECKBOX",
     ["Cacher le HUD des autres mods derrière le téléphone", "Coché par défaut. Quand le téléphone est à l'écran (porté ou en main), les infos que d'autres mods affichent au même endroit (boussole F-PANO / ECOTI, température, heure, distance...) sont cachées pour ne pas passer par-dessus. Elles reviennent dès que vous rangez le téléphone. Décochez pour toujours les voir."],
     ["COMSPEC", "ATAK · Affichage"], true, 0,
