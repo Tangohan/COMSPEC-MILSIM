@@ -161,10 +161,13 @@ echo [DEPLOY] Synchronisation avec le dossier Arma 3... >> "%BUILD_LOG%"
 echo [DEPLOY] Synchronisation avec le dossier Arma 3...
 set "LOCAL_MOD=%ARMA_PATH%\%MOD_NAME%"
 :: Copie locale du pack de la communaute SOAR, avec laquelle TTRD teste le mod : cible gardee volontairement.
-:: Arma charge la DLL depuis ce dossier (pas @COMSPECOverwatch). Avant un build, verifier que ce dossier porte le
-:: pack herite et non l'ATAK natif, dont le main.pbo a le prefixe z\comspec_atak_native\addons\main.
+:: Arma charge la DLL depuis ce dossier (pas @COMSPECOverwatch). Le build refuse ce dossier s'il porte l'ATAK natif,
+:: reconnu a sa DLL COMSPECATAKNativeExtension_x64.dll. Sans cette DLL, verifier avant un build que le main.pbo n'a pas
+:: le prefixe z\comspec_atak_native\addons\main de l'ATAK natif.
 set "SOAR_FN=%ARMA_PATH%\!Workshop\@# S.O.A.R - FN"
 
+:: Une cible qui contient COMSPECATAKNativeExtension_x64.dll porte l'ATAK natif, seul pack a avoir cette DLL : elle
+:: est refusee, rien n'y est ecrit, et le drapeau ci-dessous fait aussi finir le build en echec.
 :: Chaque copie vers une cible note son echec ; le build s'arrete alors en echec apres le deploiement.
 set "DEPLOY_FAIL="
 if exist "%ARMA_PATH%" (
@@ -172,29 +175,36 @@ if exist "%ARMA_PATH%" (
         if exist %%~T (
             echo [DEPLOY] Cible: %%~T >> "%BUILD_LOG%"
             echo [DEPLOY] Cible: %%~T
-            if not exist "%%~T\addons" mkdir "%%~T\addons"
-            if exist "%%~T\addons\connect" rd /s /q "%%~T\addons\connect"
-            if exist "%%~T\addons\main" rd /s /q "%%~T\addons\main"
-            if exist "%%~T\addons\atak_athena" rd /s /q "%%~T\addons\atak_athena"
-            if exist "%%~T\addons\mavik_compat" rd /s /q "%%~T\addons\mavik_compat"
-            if exist "%%~T\addons\sse_ace" rd /s /q "%%~T\addons\sse_ace"
-            if exist "%%~T\addons\comspec_overwatch_atak_athena" rd /s /q "%%~T\addons\comspec_overwatch_atak_athena"
-            if exist "%%~T\addons\connect.pbo.pbo" del /f /q "%%~T\addons\connect.pbo.pbo"
-            if exist "%%~T\addons\comspec_overwatch_atak_athena.pbo.pbo" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.pbo.pbo"
-            if exist "%%~T\addons\comspec_overwatch_connect.pbo" del /f /q "%%~T\addons\comspec_overwatch_connect.pbo"
-            if exist "%%~T\addons\comspec_overwatch_atak_athena.pbo" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.pbo"
-            if exist "%%~T\addons\comspec_overwatch_sse_ace.pbo" del /f /q "%%~T\addons\comspec_overwatch_sse_ace.pbo"
-            if exist "%%~T\addons\comspec_overwatch_atak_athena.txt" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.txt"
-            if exist "%%~T\addons\atak_athena.txt" del /f /q "%%~T\addons\atak_athena.txt"
-            copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
-            copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
-            if exist "%OUTPUT_DIR%\addons\atak_athena.pbo" copy /Y "%OUTPUT_DIR%\addons\atak_athena.pbo" "%%~T\addons\atak_athena.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
-            if exist "%OUTPUT_DIR%\addons\mavik_compat.pbo" copy /Y "%OUTPUT_DIR%\addons\mavik_compat.pbo" "%%~T\addons\mavik_compat.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
-            if exist "%OUTPUT_DIR%\addons\sse_ace.pbo" copy /Y "%OUTPUT_DIR%\addons\sse_ace.pbo" "%%~T\addons\sse_ace.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
-            if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
-            if exist "%OUTPUT_DIR%\mod.cpp" copy /Y "%OUTPUT_DIR%\mod.cpp" "%%~T\mod.cpp" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
-            if exist "%OUTPUT_DIR%\logo.paa" copy /Y "%OUTPUT_DIR%\logo.paa" "%%~T\logo.paa" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
-            if exist "%OUTPUT_DIR%\logoSmall.paa" copy /Y "%OUTPUT_DIR%\logoSmall.paa" "%%~T\logoSmall.paa" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            if exist "%%~T\COMSPECATAKNativeExtension_x64.dll" (
+                echo [ERREUR] Cible refusee: elle contient COMSPECATAKNativeExtension_x64.dll, c'est un pack ATAK natif. Rien n'y est copie. >> "%BUILD_LOG%"
+                echo [ERREUR] Cible refusee: elle contient COMSPECATAKNativeExtension_x64.dll, c'est un pack ATAK natif. Rien n'y est copie.
+                echo          Le build finira en echec. Le build herite n'ecrase jamais un pack ATAK natif : verifier ce dossier.
+                set "DEPLOY_FAIL=1"
+            ) else (
+                if not exist "%%~T\addons" mkdir "%%~T\addons"
+                if exist "%%~T\addons\connect" rd /s /q "%%~T\addons\connect"
+                if exist "%%~T\addons\main" rd /s /q "%%~T\addons\main"
+                if exist "%%~T\addons\atak_athena" rd /s /q "%%~T\addons\atak_athena"
+                if exist "%%~T\addons\mavik_compat" rd /s /q "%%~T\addons\mavik_compat"
+                if exist "%%~T\addons\sse_ace" rd /s /q "%%~T\addons\sse_ace"
+                if exist "%%~T\addons\comspec_overwatch_atak_athena" rd /s /q "%%~T\addons\comspec_overwatch_atak_athena"
+                if exist "%%~T\addons\connect.pbo.pbo" del /f /q "%%~T\addons\connect.pbo.pbo"
+                if exist "%%~T\addons\comspec_overwatch_atak_athena.pbo.pbo" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.pbo.pbo"
+                if exist "%%~T\addons\comspec_overwatch_connect.pbo" del /f /q "%%~T\addons\comspec_overwatch_connect.pbo"
+                if exist "%%~T\addons\comspec_overwatch_atak_athena.pbo" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.pbo"
+                if exist "%%~T\addons\comspec_overwatch_sse_ace.pbo" del /f /q "%%~T\addons\comspec_overwatch_sse_ace.pbo"
+                if exist "%%~T\addons\comspec_overwatch_atak_athena.txt" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.txt"
+                if exist "%%~T\addons\atak_athena.txt" del /f /q "%%~T\addons\atak_athena.txt"
+                copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+                copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+                if exist "%OUTPUT_DIR%\addons\atak_athena.pbo" copy /Y "%OUTPUT_DIR%\addons\atak_athena.pbo" "%%~T\addons\atak_athena.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+                if exist "%OUTPUT_DIR%\addons\mavik_compat.pbo" copy /Y "%OUTPUT_DIR%\addons\mavik_compat.pbo" "%%~T\addons\mavik_compat.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+                if exist "%OUTPUT_DIR%\addons\sse_ace.pbo" copy /Y "%OUTPUT_DIR%\addons\sse_ace.pbo" "%%~T\addons\sse_ace.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+                if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+                if exist "%OUTPUT_DIR%\mod.cpp" copy /Y "%OUTPUT_DIR%\mod.cpp" "%%~T\mod.cpp" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+                if exist "%OUTPUT_DIR%\logo.paa" copy /Y "%OUTPUT_DIR%\logo.paa" "%%~T\logo.paa" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+                if exist "%OUTPUT_DIR%\logoSmall.paa" copy /Y "%OUTPUT_DIR%\logoSmall.paa" "%%~T\logoSmall.paa" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            )
         ) else (
             echo [WARN] Cible absente: %%~T >> "%BUILD_LOG%"
             echo [WARN] Cible absente: %%~T

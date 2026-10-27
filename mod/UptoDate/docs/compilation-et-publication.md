@@ -31,7 +31,7 @@ build_mod.bat
 3. Copie DLL + mod.cpp vers `@COMSPECOverwatch/` (git ne suit pas cette DLL : elle n'existe qu'après un build)
 4. Déploiement optionnel vers les dossiers Arma locaux (`Arma 3\@COMSPECOverwatch`, pack SOAR FN), jamais vers le dossier Workshop de l'ATAK natif
 
-Le pack SOAR FN (`Arma 3\!Workshop\@# S.O.A.R - FN`) est la copie locale avec laquelle TTRD teste le mod. Le build y remplace les PBO, la DLL, `mod.cpp` et les logos, et y supprime d'anciens fichiers, dont `comspec_overwatch_connect.pbo`. Cette cible est gardée volontairement. Avant un build, vérifiez que ce dossier porte le pack hérité et non l'ATAK natif, dont le `main.pbo` a le préfixe `z\comspec_atak_native\addons\main`.
+Le pack SOAR FN (`Arma 3\!Workshop\@# S.O.A.R - FN`) est la copie locale avec laquelle TTRD teste le mod. Le build y remplace les PBO, la DLL, `mod.cpp` et les logos, et y supprime d'anciens fichiers, dont `comspec_overwatch_connect.pbo`. Cette cible est gardée volontairement. Le build refuse une cible qui contient `COMSPECATAKNativeExtension_x64.dll`, la DLL du seul pack natif : il n'y écrit rien, met à jour l'autre cible, puis finit en échec. Sans cette DLL, vérifiez avant un build que ce dossier porte le pack hérité et non l'ATAK natif, dont le `main.pbo` a le préfixe `z\comspec_atak_native\addons\main`.
 
 Sans DLL fraîche après `dotnet publish`, ou si sa copie échoue (DLL verrouillée par Arma), le build s'arrête en échec : l'ancienne DLL du dossier `@COMSPECOverwatch` n'est plus déployée.
 
@@ -106,6 +106,7 @@ Après changement **DLL seule** : remplacer `COMSPECExtension_x64.dll` suffit si
 | AddonBuilder failed | Chemin Tools, config.cpp syntaxe |
 | Build en échec : « DLL Native AOT fraiche introuvable » ou « Copie de la DLL fraiche impossible » | Vérifier `bin/publish/COMSPECExtension_x64.dll` ; fermer Arma si la DLL est verrouillée |
 | Build en échec : « Au moins une copie vers un dossier Arma a echoue » | Fermer Arma puis relancer ; voir `build_log.txt` sous la ligne `[DEPLOY] Cible` |
+| Build en échec : « Cible refusee: elle contient COMSPECATAKNativeExtension_x64.dll » | Ce dossier porte l'ATAK natif : le build hérité ne l'écrase pas. Vérifier ce dossier ; le message « Au moins une copie… » qui suit vient de ce refus |
 | workshop-pack.ps1 : « DLL COMSPEC Link … refusée » | DLL plus ancienne que 2.0.96 : relancer `build_mod.bat` |
 | workshop-pack.ps1 : « … vise l'objet Workshop 3684656708, qui est l'ATAK natif » | Retirer `publishedid` du `meta.cpp` ; ne pas publier ce pack |
 | workshop-pack.ps1 : « Sortie refusée : … » | `-OutDir` dans l'ATAK natif ou sous un dossier Workshop de Steam : choisir une autre sortie |

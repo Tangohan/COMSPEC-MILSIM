@@ -14,6 +14,9 @@ use PHPUnit\Framework\TestCase;
  */
 final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
 {
+    /** Garde du déploiement du build hérité : seul le pack de l'ATAK natif a cette DLL (N3). */
+    private const NATIVE_TARGET_GUARD = 'if exist "%%~T\COMSPECATAKNativeExtension_x64.dll" (';
+
     private function rootPath(string $relative): string
     {
         return dirname(__DIR__, 2) . '/' . $relative;
@@ -422,9 +425,9 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         foreach (self::batCommands($this->read('build_mod.bat')) as $line) {
             $command = preg_match('/^echo[\s.]/i', $line) !== 1;
             // Aucun dossier Steam d'objet Workshop, aucune jonction !Workshop autre que la copie locale SOAR FN, et
-            // aucune commande qui porte le nom du pack natif.
+            // aucune commande qui porte le nom du pack natif, sauf la garde qui refuse une cible où est sa DLL.
             if (preg_match('/steamapps\\\\workshop|workshop\\\\content|107410|!Workshop\\\\(?!@# S\.O\.A\.R - FN\b)/i', $line) === 1
-                || ($command && preg_match('/atak[ _-]?native/i', $line) === 1)) {
+                || ($command && $line !== self::NATIVE_TARGET_GUARD && preg_match('/atak[ _-]?native/i', $line) === 1)) {
                 $offending[] = $line;
             }
             if ($command && str_contains($line, '%ARMA_PATH%')) {
@@ -457,9 +460,9 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertLessThan((int) strpos($bat, 'set "DLL_SRC="'), (int) strpos($bat, 'dotnet publish "%CS_PROJ_PATH%"'));
 
         // Une seule commande écrit %OUTPUT_DIR%\COMSPECExtension_x64.dll : la copie depuis %DLL_SRC%. Les autres
-        // commandes qui nomment une DLL ou COMSPECExtension_x64 sont connues : les candidats, le nettoyage du .pdb et
-        // la copie de déploiement, qui lit cette DLL. Aucun xcopy, robocopy, move ni mklink, et aucun chemin qui
-        // remonte au-dessus du dossier du projet par « ..\ ».
+        // commandes qui nomment une DLL ou COMSPECExtension_x64 sont connues : les candidats, le nettoyage du .pdb, la
+        // garde du pack natif et la copie de déploiement, qui lit cette DLL. Aucun xcopy, robocopy, move ni mklink, et
+        // aucun chemin qui remonte au-dessus du dossier du projet par « ..\ ».
         $code = array_values(array_filter(self::batCommands($bat), static fn (string $line): bool => preg_match('/^echo[\s.]/i', $line) !== 1));
         self::assertSame([
             'if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll"',
@@ -467,6 +470,7 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
             'if not defined DLL_SRC if exist "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" set "DLL_SRC=%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll"',
             'copy /Y "%DLL_SRC%" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1 || (',
             'if exist "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" del /F /Q "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" >> "%BUILD_LOG%" 2>&1',
+            self::NATIVE_TARGET_GUARD,
             'if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"',
         ], array_values(array_filter($code, static fn (string $line): bool => preg_match('/COMSPECExtension_x64|\.dll\b/i', $line) === 1)));
         self::assertSame([], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w-])(?:xcopy|robocopy|move|mklink)(?![\w-])|\.\.\\\\/i', $line) === 1)));
@@ -590,6 +594,57 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         preg_match_all('/\bset\s+"?DEPLOY_FAIL=([^"\s]*)/i', implode("\n", $code), $flags);
         self::assertSame(1, count(array_keys($flags[1], '', true)), 'DEPLOY_FAIL remis à zéro plus d\'une fois');
         self::assertSame([], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w-])(?:setlocal|endlocal)(?![\w-])/i', $line) === 1)));
+    }
+
+    public function testLegacyBuildRefusesATargetThatHoldsTheAtakNativePack(): void
+    {
+        $bat = $this->read('build_mod.bat');
+
+        // N3 (revue v2) : seul le pack de l'ATAK natif a COMSPECATAKNativeExtension_x64.dll. Une cible qui la contient
+        // est refusée avant toute écriture, et le drapeau fait finir le build en échec. Une cible du pack hérité, dont
+        // la copie SOAR FN avec laquelle TTRD teste le mod, est mise à jour comme avant.
+        $guard = <<<'BAT'
+                for %%T in ("%LOCAL_MOD%" "%SOAR_FN%") do (
+                    if exist %%~T (
+                        echo [DEPLOY] Cible: %%~T >> "%BUILD_LOG%"
+                        echo [DEPLOY] Cible: %%~T
+                        if exist "%%~T\COMSPECATAKNativeExtension_x64.dll" (
+            BAT;
+        self::assertStringContainsString($guard . "\n", $bat);
+        self::assertMatchesRegularExpression('/^            if exist "%%~T\\\\COMSPECATAKNativeExtension_x64\.dll" \(\n(?:                echo [^\n()]*\n)+                set "DEPLOY_FAIL=1"\n            \) else \($/m', $bat);
+
+        // Toutes les écritures de la boucle sont dans le « else » de la garde : rien n'est écrit dans une cible refusée.
+        $commands = self::batCommands($bat);
+        $depths = self::batDepths($commands);
+        $loop = array_search('for %%T in ("%LOCAL_MOD%" "%SOAR_FN%") do (', $commands, true);
+        $at = array_search(self::NATIVE_TARGET_GUARD, $commands, true);
+        self::assertIsInt($loop);
+        self::assertIsInt($at);
+        $else = null;
+        for ($i = $at + 1; $i < count($commands) && $else === null; $i++) {
+            if ($commands[$i] === ') else (' && $depths[$i] === $depths[$at] + 1) {
+                $else = $i;
+            }
+        }
+        self::assertIsInt($else, '« ) else ( » de la garde absent');
+        $end = $else + 1;
+        while ($end < count($commands) && $depths[$end] > $depths[$at]) {
+            $end++;
+        }
+        $outside = [];
+        $inside = 0;
+        for ($i = $loop + 1; $i < count($commands) && $depths[$i] > $depths[$loop]; $i++) {
+            if (preg_match('/^echo[\s.]/i', $commands[$i]) !== 1
+                && preg_match('/(?<![\w-])(?:copy|xcopy|robocopy|move|mkdir|md|rd|rmdir|del|erase|ren|rename|type)(?![\w-])/i', $commands[$i]) === 1) {
+                if ($i > $else && $i < $end) {
+                    $inside++;
+                } else {
+                    $outside[] = $commands[$i];
+                }
+            }
+        }
+        self::assertSame([], $outside, 'écriture hors du « else » de la garde du pack natif');
+        self::assertGreaterThanOrEqual(20, $inside);
     }
 
     public function testDocsNoLongerSendTheLegacyPackToTheWorkshop(): void
