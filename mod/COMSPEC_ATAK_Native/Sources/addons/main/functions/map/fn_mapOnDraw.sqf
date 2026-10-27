@@ -274,7 +274,7 @@ if ((count _dcAll) > (300 max (2 * (count (_data getOrDefault ["units", createHa
     };
     // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
     private _acc = _entity getOrDefault ["acc", 0];
-    if (!_self && {_acc >= 10}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
+    if (!_self && {_acc >= 10} && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", true]}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
     _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
     if (_lblOn && {!_boxOn} && {_scale < 0.25}) then {
         private _cs = _entity getOrDefault ["callsign",""];

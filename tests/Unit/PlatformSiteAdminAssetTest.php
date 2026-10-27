@@ -103,6 +103,10 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('Administrer', $index);
         self::assertStringContainsString("url('admin/system/tenants/' . \$id . '/intervention')", $index);
         self::assertStringContainsString('Accès super tenant', $index);
+        self::assertStringContainsString('data-pa-sheet', $index);
+        self::assertStringContainsString('Rechercher', $index);
+        self::assertStringContainsString('platform-tenants-sheet.js', $index);
+        self::assertFileExists($root . '/public/assets/js/platform-tenants-sheet.js');
         self::assertStringNotContainsString('Changer la formule', $index);
         self::assertSame('platform.tenant_identity_updated', AuditAction::TENANT_IDENTITY_UPDATED);
         self::assertSame('platform.tenant_type_assigned', AuditAction::TENANT_TYPE_ASSIGNED);

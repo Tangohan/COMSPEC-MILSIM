@@ -2,6 +2,7 @@
     Live cam : caméra poitrine des autres porteurs d'ATAK du camp.
     Une caméra locale est fixée au buste du porteur choisi (os "spine3", regard vers l'avant)
     et rendue dans l'écran du téléphone (render-to-texture). Modes : jour, vision nocturne, thermique.
+    Focale réglable (− / +) sur ma caméra et les caméras fixes : 14 mm élargit le champ, 70 mm zoome. La nacelle d'un drone garde le zoom de l'opérateur.
     La caméra est détruite dès qu'on quitte la page (fn_livecamStop, appelé par pageClear).
     Caméras fixes (fn_camAction, fn_camView) : caméras IP posées par le camp, listées sous les porteurs avec distance
     et état (en ligne, hors liaison, brouillée, détruite) ; même rendu, panoramique local ◀ ▶ de 30°, renommage.
@@ -393,6 +394,55 @@ if (_fixed) then {
     };
 };
 uiNamespace setVariable ["COMSPEC_ATAK_LivecamOsd", _osd];
+
+// Focale de ma caméra et des caméras fixes (pas la nacelle d'un drone : elle suit le zoom de l'opérateur).
+// Plus le nombre est petit, plus le champ est large.
+if (!_isUav) then {
+    private _steps = [14, 18, 24, 35, 50, 70];
+    private _mm = _s getOrDefault ["livecamFocal", 35];
+    if !(_mm in _steps) then { _mm = 35; _s set ["livecamFocal", 35]; };
+    private _bwF = _btnH * 1.15;
+    private _lw = _btnH * 2.4;
+    private _fy = _vy + _vh - _rowH * 1.1 - _btnH - _pad * 0.35;
+    private _fx = _vx + _pad * 0.4;
+    private _stepF = {
+        params ["_d"];
+        private _steps = [14, 18, 24, 35, 50, 70];
+        private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        private _i = _steps find (_st getOrDefault ["livecamFocal", 35]);
+        if (_i < 0) then { _i = 3; };
+        _i = (_i + _d) max 0 min ((count _steps) - 1);
+        private _mm = _steps select _i;
+        _st set ["livecamFocal", _mm];
+        (["fov", ((0.75 * 35 / _mm) max 0.15) min 2]) call comspec_atak_native_fnc_livecamStart;
+        private _l = uiNamespace getVariable ["COMSPEC_ATAK_LivecamFocalLbl", controlNull];
+        if (!isNull _l) then { _l ctrlSetText format ["%1 mm", _mm]; };
+        private _bm = uiNamespace getVariable ["COMSPEC_ATAK_LivecamFocalMinus", controlNull];
+        private _bp = uiNamespace getVariable ["COMSPEC_ATAK_LivecamFocalPlus", controlNull];
+        if (!isNull _bm) then { _bm ctrlEnable (_i > 0); };
+        if (!isNull _bp) then { _bp ctrlEnable (_i < ((count _steps) - 1)); };
+    };
+    private _minus = ["COMSPEC_RscButton", [_fx, _fy, _bwF, _btnH], "−"] call comspec_atak_native_fnc_pageCtrl;
+    _minus ctrlSetFontHeight _fs;
+    _minus ctrlSetBackgroundColor [0, 0, 0, 0.55];
+    _minus ctrlSetTooltip (("Dézoomer : champ plus large") call comspec_atak_native_fnc_tr);
+    _minus ctrlEnable (_mm isNotEqualTo 14);
+    _minus ctrlAddEventHandler ["ButtonClick", { [-1] call (uiNamespace getVariable ["COMSPEC_ATAK_LivecamFocalStep", {}]); }];
+    uiNamespace setVariable ["COMSPEC_ATAK_LivecamFocalMinus", _minus];
+    private _fl = ["COMSPEC_RscTextCenter", [_fx + _bwF, _fy, _lw, _btnH], format ["%1 mm", _mm]] call comspec_atak_native_fnc_pageCtrl;
+    _fl ctrlSetFontHeight _fs;
+    _fl ctrlSetBackgroundColor [0, 0, 0, 0.55];
+    _fl ctrlSetTooltip (("Focale de la caméra. Un nombre plus petit élargit le champ.") call comspec_atak_native_fnc_tr);
+    uiNamespace setVariable ["COMSPEC_ATAK_LivecamFocalLbl", _fl];
+    private _plus = ["COMSPEC_RscButton", [_fx + _bwF + _lw, _fy, _bwF, _btnH], "+"] call comspec_atak_native_fnc_pageCtrl;
+    _plus ctrlSetFontHeight _fs;
+    _plus ctrlSetBackgroundColor [0, 0, 0, 0.55];
+    _plus ctrlSetTooltip (("Zoomer : champ plus serré") call comspec_atak_native_fnc_tr);
+    _plus ctrlEnable (_mm isNotEqualTo 70);
+    _plus ctrlAddEventHandler ["ButtonClick", { [1] call (uiNamespace getVariable ["COMSPEC_ATAK_LivecamFocalStep", {}]); }];
+    uiNamespace setVariable ["COMSPEC_ATAK_LivecamFocalPlus", _plus];
+    uiNamespace setVariable ["COMSPEC_ATAK_LivecamFocalStep", _stepF];
+};
 
 // Modes de vision
 private _modes = [["JOUR", 0], ["VISION NOCTURNE", 1], ["THERMIQUE", 2]];
