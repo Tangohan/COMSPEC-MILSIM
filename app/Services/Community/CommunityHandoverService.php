@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Community;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 use Throwable;
 
@@ -171,7 +172,7 @@ final class CommunityHandoverService
         }
 
         $roles = $this->rows(
-            'SELECT id, tenant_id FROM roles WHERE slug = ? AND tenant_id IS NOT NULL',
+            'SELECT id, tenant_id FROM roles WHERE ' . SqlText::equals($this->pdo(), 'slug') . ' AND tenant_id IS NOT NULL',
             [self::OWNER_ROLE_SLUG]
         );
         $roleTenant = [];
@@ -464,7 +465,10 @@ final class CommunityHandoverService
 
     private function ownerRoleId(int $tenantId): int
     {
-        $row = $this->rows('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1', [$tenantId, self::OWNER_ROLE_SLUG]);
+        $row = $this->rows(
+            'SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($this->pdo(), 'slug') . ' LIMIT 1',
+            [$tenantId, self::OWNER_ROLE_SLUG]
+        );
 
         return (int) ($row[0]['id'] ?? 0);
     }
