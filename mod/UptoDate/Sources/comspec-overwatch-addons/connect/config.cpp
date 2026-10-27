@@ -692,6 +692,13 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_clearDisconnectedAtakState { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_detonateChargeLocal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_applyAiMoveOrder { allowedTargets = 0; };
+
+        // Lot mpauth3 (DEF-001) : modules Zeus « Scanner les relais » et « Resync relais » (isGlobal = 0). Le serveur
+        // dédié relaie l'appel au poste du Zeus qui a posé le module ; sans classe, ce relais était refusé en silence en
+        // mode 1. allowedTargets = 1 : la cible est toujours un client ; jip = 0 : le relais n'emprunte jamais la file.
+        // Garde en tête de chaque fonction : seul le serveur, ou sur le serveur le poste du module.
+        class comspec_overwatch_connect_fnc_zeusModuleScanRelays { allowedTargets = 1; jip = 0; };
+        class comspec_overwatch_connect_fnc_zeusResyncRelay { allowedTargets = 1; jip = 0; };
     };
 };
 

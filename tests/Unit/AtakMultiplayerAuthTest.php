@@ -1236,6 +1236,43 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('class comspec_atak_native_fnc_deleteLater { allowedTargets = 2; };', $cfg);
     }
 
+    public function testZeusRelayModulesAreDeclaredAndAcceptOnlyTheServerOrTheModuleOwner(): void
+    {
+        // Lot mpauth3 (DEF-001, contre-expertise v5, § 4.3) : les modules Zeus « Scanner les relais » et « Resync relais »
+        // (connect, isGlobal = 0) tournent sur le serveur, qui, dédié, relaie l'appel au poste du Zeus qui a posé le
+        // module (remoteExec vers le propriétaire de la logique). Sans classe CfgRemoteExec, ce relais était refusé en
+        // silence en mode 1. Les deux fonctions y entrent (cible : un client, jamais par la file JIP), avec une garde en
+        // tête, avant le relais : d'un appel distant, seulement le serveur ou, sur le serveur, le poste de la logique.
+        $cfg = $this->cppCode($this->read(self::CONNECT . '/config.cpp'));
+        foreach (['zeusModuleScanRelays', 'zeusResyncRelay'] as $fn) {
+            $code = $this->stripSqfComments($this->read(self::CONNECT . '/functions/fn_' . $fn . '.sqf'));
+            self::assertMatchesRegularExpression('/^private _lgReq = _this param \[0, objNull\];\s*'
+                . 'if !\(_lgReq isEqualType objNull\) then \{ _lgReq = objNull; \};\s*'
+                . 'if \(isRemoteExecutedJIP \|\| \{isRemoteExecuted && \{!\(remoteExecutedOwner in \[2, owner _lgReq\]\)\}\}\) exitWith \{\s*'
+                . 'diag_log format \["\[COMSPEC ATAK\]\[WARN\]\[ZEUS\] [^"]*", remoteExecutedOwner, isRemoteExecutedJIP\];\s*\};\s*'
+                . 'if \(!hasInterface\) exitWith \{\s*private _lg = _this param \[0, objNull\];/', trim($code), $fn);
+            self::assertStringContainsString('class comspec_overwatch_connect_fnc_' . $fn . ' { allowedTargets = 1; jip = 0; };', $cfg, $fn);
+        }
+        // Seuls appels distants de ces fonctions : le relais du serveur vers le poste du Zeus, deux éléments à droite
+        // (rien dans la file JIP).
+        $calls = [];
+        foreach ($this->sources() as $rel => $units) {
+            foreach ($units as $code) {
+                foreach ($this->remoteCalls($code) as [, $right]) {
+                    $fn = $right === null ? null : $this->literal($right[0]);
+                    if ($fn !== null && in_array(strtolower($fn), ['comspec_overwatch_connect_fnc_zeusmodulescanrelays', 'comspec_overwatch_connect_fnc_zeusresyncrelay'], true)) {
+                        $calls[] = [basename($rel), $fn, trim($right[1] ?? ''), count($right)];
+                    }
+                }
+            }
+        }
+        sort($calls);
+        self::assertSame([
+            ['fn_zeusModuleScanRelays.sqf', 'comspec_overwatch_connect_fnc_zeusModuleScanRelays', 'owner _lg', 2],
+            ['fn_zeusResyncRelay.sqf', 'comspec_overwatch_connect_fnc_zeusResyncRelay', 'owner _lg', 2],
+        ], $calls);
+    }
+
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */
     private function stripSqfComments(string $src): string
     {

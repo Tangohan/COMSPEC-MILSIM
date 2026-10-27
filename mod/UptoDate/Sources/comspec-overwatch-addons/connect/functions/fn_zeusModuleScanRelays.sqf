@@ -5,6 +5,17 @@
     Usage: Module Zeus → Scanner les relais → Upload automatique
 */
 
+// Lot mpauth3 (DEF-001) : la fonction entre en liste blanche (config.cpp, allowedTargets = 1, jip = 0) pour le relais
+// du serveur dédié vers le poste du Zeus, refusé en silence en mode 1. Une classe de liste blanche la rend appelable
+// d'un client vers un autre client : d'un appel distant, la garde n'admet que le serveur ou, sur le serveur, le poste
+// propriétaire de la logique (celui qui a posé le module), et jamais un rejeu de la file JIP. L'initialisation du module
+// par le moteur n'est pas un appel distant : elle passe, comme une partie solo ou l'éditeur.
+private _lgReq = _this param [0, objNull];
+if !(_lgReq isEqualType objNull) then { _lgReq = objNull; };
+if (isRemoteExecutedJIP || {isRemoteExecuted && {!(remoteExecutedOwner in [2, owner _lgReq])}}) exitWith {
+    diag_log format ["[COMSPEC ATAK][WARN][ZEUS] Scanner des relais refusé : l'appel ne vient ni du serveur ni du poste du module (poste %1, file JIP : %2)", remoteExecutedOwner, isRemoteExecutedJIP];
+};
+
 // isGlobal = 0 : sur serveur dédié, la fonction tourne sans interface. Relayer vers la machine
 // du Zeus qui a posé le module (propriétaire de la logique) : retour visuel et liaison Athena y sont.
 if (!hasInterface) exitWith {
