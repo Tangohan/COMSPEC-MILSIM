@@ -875,6 +875,65 @@ final class AtakMultiplayerAuthTest extends TestCase
         }
     }
 
+    public function testClientRelaysOfTocScreenAndDebriefRefuseACallFromAnotherClient(): void
+    {
+        // Lot mpauth3 (SEC-035, contre-expertise v5, N18) : les branches client de fn_tocScreen (« add », « remove »,
+        // « spawn », « view ») et les relais de fn_debrief (« zeus », « sForce », « sLift », « sRemind », « sPull », « cfg »…)
+        // transmettent une demande au serveur sous le nom du joueur du poste. Sans garde d'appel distant, en mode 2 (sans
+        // liste blanche), un autre client les faisait jouer au poste d'un Zeus. Garde d'une ligne, première instruction
+        // après params, sur le modèle de fn_adminClient : seul le serveur, jamais un rejeu de la file JIP.
+        $remote = '{isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}}) exitWith {';
+        $guards = [
+            self::MAIN . '/functions/toc/fn_tocScreen.sqf' => 'if (!isServer && ' . $remote,
+            self::MAIN . '/functions/debrief/fn_debrief.sqf' => 'if (!(_act in ["recv", "track", "forced", "lift"]) && ' . $remote,
+        ];
+        foreach ($guards as $file => $guard) {
+            $code = $this->stripSqfComments($this->read($file));
+            self::assertSame(1, substr_count($code, $guard), $file);
+            $open = strpos($code, 'params [');
+            self::assertNotFalse($open, $file);
+            self::assertSame('', trim(substr($code, 0, (int) $open)), $file);
+            $body = $this->bracketBody($code, $open + strlen('params '));
+            self::assertNotNull($body, $file);
+            $after = substr($code, $open + strlen('params ') + strlen((string) $body) + 2);
+            self::assertMatchesRegularExpression('/^\s*;\s*' . preg_quote($guard, '/') . '\s*diag_log format \["\[COMSPEC ATAK NATIVE\]\[WARN\]\[(?:TOC|DEBRIEF)\] [^"]*", _(?:mode|act), remoteExecutedOwner, isRemoteExecutedJIP\];\s*false\s*\};/', $after, $file);
+        }
+        // fn_tocScreen : les quatre relais du poste client sont les branches « if (!isServer) exitWith { … } ».
+        $toc = $this->stripSqfComments($this->read(self::MAIN . '/functions/toc/fn_tocScreen.sqf'));
+        preg_match_all('/if \(!isServer\) exitWith \{ \["(\w+)", _a\] remoteExecCall \["comspec_atak_native_fnc_tocScreen", 2\];/', $toc, $m);
+        self::assertSame(['add', 'remove', 'spawn', 'view'], $m[1]);
+        self::assertSame(4, substr_count($toc, 'remoteExecCall'));
+        // fn_debrief : actions qui relaient au serveur, directement (_server) ou par une aide qui le fait (_add, _close).
+        $dbf = $this->stripSqfComments($this->read(self::MAIN . '/functions/debrief/fn_debrief.sqf'));
+        $braces = $this->pairsOf($this->blankStrings($dbf), '{', '}');
+        $bodyAt = static function (array $match, int $i) use ($dbf, $braces): string {
+            $o = $match[0][$i][1] + strlen($match[0][$i][0]) - 1;
+            return substr($dbf, $o, ($braces[$o] ?? $o) - $o);
+        };
+        $helpers = ['_server'];
+        preg_match_all('/^private (_\w+) = \{/m', $dbf, $hs, PREG_OFFSET_CAPTURE);
+        foreach ($hs[1] as $i => [$name]) {
+            if ($name !== '_server' && preg_match('/\bcall _server\b/', $bodyAt($hs, $i)) === 1) {
+                $helpers[] = $name;
+            }
+        }
+        $relays = [];
+        preg_match_all('/^    case "(\w+)": \{/m', $dbf, $cases, PREG_OFFSET_CAPTURE);
+        foreach ($cases[1] as $i => [$act]) {
+            if (preg_match('/\bcall (?:' . implode('|', $helpers) . ')\b/', $bodyAt($cases, $i)) === 1) {
+                $relays[] = $act;
+            }
+        }
+        foreach (['zeus', 'sForce', 'sLift', 'sRemind', 'sPull', 'cfg'] as $act) {
+            self::assertContains($act, $relays, $act);
+        }
+        // Hors de la garde, un seul relais : « recv » (accusé « received » de sa propre fiche), message du serveur encore
+        // remis par événement CBA, qui s'exécute chez l'hôte dans la pile de la demande d'un client.
+        preg_match('/^if \(!\(_act in \[([^\]]*)\]\) && \{isRemoteExecutedJIP/m', $dbf, $g);
+        preg_match_all('/"(\w+)"/', $g[1] ?? '', $exempt);
+        self::assertSame(['recv'], array_values(array_intersect($relays, $exempt[1])));
+    }
+
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */
     private function stripSqfComments(string $src): string
     {

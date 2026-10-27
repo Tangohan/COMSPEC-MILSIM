@@ -38,9 +38,19 @@
     sur le demandeur retrouvé par remoteExecutedOwner (fn_reqUnit). « add », « remove » et « spawn » : Zeus, hôte, admin
     connecté ou UID autorisé (fn_adminAllowed) ; « view » : en plus, joueur du camp de l'écran, à moins de 25 m.
     Plus d'événement CBA comspec_atak_native_tocScreen.
+    Poste client (lot mpauth3, SEC-035) : « add », « remove », « spawn » et « view » y relaient la demande au serveur sous
+    le nom du joueur du poste. Un appel distant qui ne vient pas du serveur, ou rejoué depuis la file JIP, y est refusé.
     Exemple de mission : if (isServer) then { ["add", [this, "TOC Bravo", "WEST"]] call comspec_atak_native_fnc_tocScreen; };
 */
 params [["_mode", "tick"], ["_a", objNull]];
+// Poste client : seul le serveur (poste 2) y entre par un appel distant, jamais un rejeu de la file JIP (même garde que
+// fn_adminClient). En mode 2 (sans liste blanche), un autre client faisait jouer « add », « remove », « spawn » ou
+// « view » au poste d'un Zeus, qui relayait la demande au serveur sous son nom (contre-expertise v5, N18). Le serveur,
+// hôte compris, juge lui-même les demandes des clients plus bas.
+if (!isServer && {isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][TOC] Appel « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _mode, remoteExecutedOwner, isRemoteExecutedJIP];
+    false
+};
 private _fn = comspec_atak_native_fnc_tocScreen;
 private _texW = 1600;
 private _texH = 900;

@@ -20,8 +20,20 @@
     État : missionNamespace COMSPEC_ATAK_Dbf (id → fiche), COMSPEC_ATAK_DbfCfg, COMSPEC_ATAK_DbfTrack ;
            uiNamespace COMSPEC_ATAK_DbfUi (onglet, fiche ouverte, réglages du panneau, lignes en défaut).
     Retours au site : POST /api/atak/reports type DEBRIEF (événements opened, read, submitted ; forced pour le commandement).
+    Appel distant (lot mpauth3, SEC-035) : refusé s'il ne vient pas du serveur ou s'il est rejoué depuis la file JIP, sauf
+    les messages du serveur encore remis par événement CBA (« recv », « track », « forced », « lift »).
 */
 params [["_act", ""], ["_arg", ""], ["_val", ""]];
+// Appel distant : seul le serveur (poste 2) entre ici, jamais un rejeu de la file JIP (même garde que fn_adminClient).
+// Les relais du panneau et du menu Zeus (« zeus », « sForce », « sLift », « sRemind », « sPull », « cfg ») et les autres
+// actions agissent pour le joueur de ce poste : en mode 2 (sans liste blanche), un autre client les faisait jouer au
+// poste d'un Zeus, qui transmettait la demande au serveur sous son nom (contre-expertise v5, N18). Hors de ce garde :
+// les messages du serveur remis par les événements comspec_atak_native_debriefRecv et comspec_atak_native_debriefData
+// (« recv », « track », « forced », « lift ») ; chez l'hôte, ils s'exécutent dans la pile de la demande du client.
+if (!(_act in ["recv", "track", "forced", "lift"]) && {isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Appel « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _act, remoteExecutedOwner, isRemoteExecutedJIP];
+    false
+};
 private _all = missionNamespace getVariable ["COMSPEC_ATAK_Dbf", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_Dbf", _all];
 private _ui = uiNamespace getVariable ["COMSPEC_ATAK_DbfUi", createHashMap];
