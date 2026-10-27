@@ -166,24 +166,21 @@ EN : The watch shows the map, my point, my allies, and the player
 - Écran MUSIC : mêmes actions que le lecteur (`toggle`, `next`, `prev`, `seek`, `volStep`). BACK ouvre les commandes ; UP / DOWN ne changent d'écran que tant qu'elles sont fermées.
 - Cadran : ligne du bas remplacée par le morceau en cours.
 
-## Confidentialité du téléphone et reprise de liaison (ATAK natif 2.8.3.AB - Denver, COMSPEC Link 2.0.99)
+## Téléphone porté, écrans et liaison (ATAK natif 2.8.3.AB - Denver, COMSPEC Link 2.0.99)
 
 ### Résumé joueur
 Type : correctif
-FR : L’identité du compte reste privée et la liaison reprend mieux
-- Les scripts de mission ne lisent plus votre e-mail, votre nom civil ni les détails du terminal.
-- Après une coupure, le téléphone reprend dans la minute et demie ou respecte le délai demandé.
-- Un poste joueur ne réécrit plus le temps de jeu ni les distances des autres.
-EN : Account identity stays private and the link recovers better
-- Mission scripts can no longer read your email, civil name, or terminal details.
-- After an outage, the phone reconnects within ninety seconds or observes the requested delay.
-- A player host can no longer rewrite other players’ play time or distances.
+FR : Le téléphone garde l’identité du compte et la liaison reprend seule
+- Le raccourci Overwatch ouvre le téléphone du pack et les opérateurs reliés apparaissent sur sa carte.
+- Après une coupure, le téléphone reprend de lui-même dans la minute et demie, ou après le délai demandé par le portail.
+- Un joueur relié ne peut plus réécrire le temps de jeu ou les distances des autres.
+EN : The phone keeps the account identity and reconnects by itself
+- The Overwatch shortcut opens the pack phone and linked operators appear on its map.
+- After an outage, the phone reconnects within ninety seconds, or after the delay requested by the portal.
+- A linked player can no longer overwrite another player’s play time or distances.
 
 ### Détail technique
-- Le modèle et la couleur viennent de l’objet porté ; les anciens réglages ne pilotent plus la coque.
-- La reprise automatique utilise les paliers 45, 75 et 90 secondes ; un délai `Retry-After` plus long reste respecté.
-- Les lots de temps de jeu et de distance d’une session joueur sont limités à son propre Steam UID.
-- Les pages ouvertes depuis le jeu sont limitées à la liaison, la carte et la 9-LINE du portail.
+- Version de regroupement des correctifs de liaison, d’identité et d’affichage livrés dans le pack 2.8.3.
 
 ## Diapositives sur les écrans (ATAK natif 2.8.2.AB - Denver, COMSPEC Link 2.0.99)
 

@@ -15,7 +15,9 @@ declare(strict_types=1);
  *    que le tableau de bord web affiche ; un échec n’arrête pas la suite ;
  *  - les fichiers migrations/*.sql sont suivis dans comspec_schema_migrations (bootstrap/migration_runner.php).
  *
- * Web (UI sécurisée, thème back-office) : /run-migrations.php — bootstrap/migrations_web_ui.php.
+ * Web : console d'exploitation /admin/system/exploitation (admin du site + double facteur), qui lance
+ * ce pipeline par /run-migrations.php?ticket=… ; /run-migrations.php seul reste l'accès de secours par mot de passe
+ * (bootstrap/migrations_web_ui.php), utile quand l'application elle-même ne démarre plus.
  *
  * Options CLI :
  *   php run-migrations.php --list              liste des étapes (sans connexion à la base)
@@ -149,6 +151,10 @@ $migrationEnsurePdo = static function () use (&$pdo, $migrationFlush): void {
 
 require_once $root . '/bootstrap/migration_runner.php';
 $migrationArgv = PHP_SAPI === 'cli' ? array_slice((array) ($GLOBALS['argv'] ?? []), 1) : [];
+// Rejeu demandé depuis la console d'exploitation (fichiers déjà vérifiés par bootstrap/migrations_web_ui.php).
+foreach ((array) ($GLOBALS['__migrations_replay'] ?? []) as $migrationReplayFile) {
+    $migrationArgv[] = '--replay=' . $migrationReplayFile;
+}
 if (in_array('--status', $migrationArgv, true)) {
     // État des fichiers SQL sans rien exécuter.
     $sqlStatus = ComspecMigrationRunner::statusReport($pdo, $root . '/migrations');

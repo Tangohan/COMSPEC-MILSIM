@@ -90,6 +90,7 @@ $item = static function (string $href, string $title, string $desc) use ($h): vo
             </div>
             <ul class="pa-map__list">
                 <?php
+                $item(url('admin/system/exploitation'), 'Console d’exploitation', 'État, migrations, sauvegardes, suppressions');
                 $item(url('admin/settings'), 'Paramètres système', 'Configuration effective');
                 $item(url('admin/ops-center'), 'Synthèse opérationnelle', 'Signaux transverses');
                 $item(url('admin/system/cron'), 'Tâches automatiques', 'Planification et lancement');
