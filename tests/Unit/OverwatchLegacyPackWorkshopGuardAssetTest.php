@@ -415,6 +415,20 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         }
     }
 
+    public function testGitignoreNoLongerSaysTheLegacyDllIsTracked(): void
+    {
+        // Témoin de fusion (F1, revue v2) : le lot cleanup ajoute à .gitignore « mod/UptoDate/@COMSPECOverwatch/ (PBO,
+        // DLL, logos, mod.cpp) RESTE suivi ». Depuis ARCH-021, git ne suit plus cette DLL (règle plus haut).
+        $ignore = str_replace("\r\n", "\n", (string) file_get_contents($this->rootPath('.gitignore')));
+
+        self::assertDoesNotMatchRegularExpression(
+            '/^#[^\n]*@COMSPECOverwatch\/[^\n]*\bDLL\b[^\n]*RESTE suivi/m',
+            $ignore,
+            '.gitignore dit encore la DLL de mod/UptoDate/@COMSPECOverwatch suivie : écrire « (PBO, logos, mod.cpp) » et '
+            . 'ajouter « # Exception : la DLL COMSPEC Link de ce dossier n\'est plus suivie depuis ARCH-021 (règle plus haut). »',
+        );
+    }
+
     public function testLegacyBuildFailurePathExitsNonZero(): void
     {
         $bat = $this->read('build_mod.bat');
