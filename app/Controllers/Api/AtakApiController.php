@@ -3543,6 +3543,21 @@ class AtakApiController
             . ($posX !== null && $posX !== '' ? (string) $posX : '') . '|'
             . ($posY !== null && $posY !== '' ? (string) $posY : '') . '|'
             . $saluteBody;
+        // NET-028 : ce que la relève du tchat masquerait n'est pas stocké, avec la même règle que POST /api/chat.
+        // L'indicatif, la grille, la position et cinq des six champs précèdent un « | » : un indicatif « ORDER »
+        // rendait la ligne invisible pour tous, et 650 lignes de suite figeaient la relève avec curseur de COMSPEC Link.
+        if (AtakDataRepository::isProtocolOrderChatBody($msg)) {
+            return Response::json([
+                'error' => 'order_incomplete',
+                'message' => 'Compte rendu refusé : un indicatif, une grille, une position ou un champ qui se termine par le mot « order » est réservé au protocole des ordres C2. Reformulez-le.',
+            ], 422);
+        }
+        if (TacticalAlertParser::isHiddenSystemChatBody($msg)) {
+            return Response::json([
+                'error' => 'reserved_settings',
+                'message' => 'Compte rendu refusé : « REGLAGES AFFICHAGE » est réservé aux réglages d’affichage des camps. Reformulez l’indicatif ou le champ.',
+            ], 422);
+        }
         $source = ComspecApiKeyAuth::extractPresentedKey() !== '' ? 'game' : 'web';
         $row = $this->atak->addChatMessage($tenantId, $mapId, $callSign, $msg, $source);
         $parsed = TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
