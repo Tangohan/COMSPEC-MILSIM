@@ -293,6 +293,16 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(1010, '2026-10-27', 'Registre des données : Steam par adresse de profil et mods proches', 'Dans le registre des données, vous collez l’adresse d’un profil Steam pour retrouver le compte. Un onglet liste les mods vus chez les joueurs qui ressemblent au pack officiel sans en porter la fiche Workshop. Ce sont des signaux à vérifier, pas une preuve de copie. Rechargez le portail (Ctrl+F5).', [
+                'Repérage d’un compte à partir de l’adresse steamcommunity.com/profiles/… ou /id/…',
+                'Onglet Mods proches : packs au nom proche du nôtre, sans fiche Workshop officielle',
+                'Filtres comptes sans Steam, e-mail à vérifier, et ouverture directe de la fiche',
+            ], [
+                'La recherche des comptes et des joueurs Steam accepte aussi une adresse de profil',
+                'Les statuts de compte s’affichent en libellés lisibles',
+            ], [], ['platform'], [
+                'Ouvrez Administration plateforme → Registre des données. Collez une adresse de profil Steam dans l’outil en haut de page, ou ouvrez l’onglet Mods proches.',
+            ], 'Portail Athena'),
             $pr(1009, '2026-10-27', 'Gestionnaire : les clés de la communauté ne se retirent plus', 'Sur les niveaux d’accès, le niveau Gestionnaire garde toujours l’administration de la communauté et la gestion des niveaux d’accès. Ces cases restent cochées et ne peuvent plus être retirées, ce qui évite de se couper soi-même de l’administration. Les autres droits du niveau restent ajustables. Rechargez le portail (Ctrl+F5).', [
                 'Les clés du Gestionnaire restent toujours cochées sur l’écran Accès',
                 'Un responsable peut encore ajuster les autres droits du niveau Gestionnaire',
