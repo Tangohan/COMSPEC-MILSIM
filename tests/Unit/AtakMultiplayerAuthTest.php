@@ -138,7 +138,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             self::assertStringNotContainsString('"comspec_atak_native_ft"', $src, $f);
             self::assertStringContainsString('remoteExecCall ["comspec_atak_native_fnc_ftServer", 2]', $src, $f);
         }
-        self::assertStringContainsString('class comspec_atak_native_fnc_ftServer { allowedTargets = 2; };', $this->read(self::MAIN . '/config.cpp'));
+        self::assertStringContainsString('class comspec_atak_native_fnc_ftServer { allowedTargets = 2; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
     }
 
     public function testAdminAppsRuleIsOpenToARemoteAdminAndStillJudgedOnTheRequester(): void
@@ -156,6 +156,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_remote && \{!\(_act in \["scan", "capture", "hunt", "apps", "row"\]\)\}\) exitWith \{.*?'
             . 'if \(_remote && \{isNull _caller\}\) exitWith \{.*?'
             . 'if \(_remote && \{!\(\[_caller\] call comspec_atak_native_fnc_adminAllowed\)\}\) exitWith \{.*?switch \(_act\) do \{/s', $code);
+        $this->assertRequesterRulesArePinned();
     }
 
     public function testDebriefRequestsAreJudgedOnTheRequesterFoundByTheServer(): void
@@ -175,11 +176,12 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_act in \["force", "remind", "lift", "pull"\]\) then \{.*?'
             . '_ok = \[_caller\] call comspec_atak_native_fnc_adminAllowed && .*?'
             . 'if \(!_ok\) exitWith \{.*?\[_caller, "note", "denied"\] call _send;/s', $head);
+        $this->assertRequesterRulesArePinned();
         self::assertStringNotContainsString('CBA_fnc_addEventHandler', $code);
         // Les deux émetteurs du client passent par remoteExecCall, sans unité dans la demande.
         self::assertStringContainsString('private _server = { params ["_a", ["_x", []]]; [_a, _x] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2]; };', $this->read(self::MAIN . '/functions/debrief/fn_debrief.sqf'));
         self::assertStringContainsString('["hello", []] remoteExecCall ["comspec_atak_native_fnc_debriefServer", 2];', $this->read(self::MAIN . '/XEH_postInitClient.sqf'));
-        self::assertStringContainsString('class comspec_atak_native_fnc_debriefServer { allowedTargets = 2; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        self::assertStringContainsString('class comspec_atak_native_fnc_debriefServer { allowedTargets = 2; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
         // Plus de gestionnaire ni d'émetteur de l'événement dans main/ et connect/ (code porté par des chaînes compris).
         $files = $this->sources();
         $left = [];
@@ -222,7 +224,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         foreach (['event', 'revoke', 'ownerReset'] as $act) {
             self::assertContains($act, $guarded, $act);
         }
-        self::assertStringContainsString('class comspec_atak_native_fnc_compromise { allowedTargets = 0; jip = 0; };', $this->read(self::MAIN . '/config.cpp'));
+        self::assertStringContainsString('class comspec_atak_native_fnc_compromise { allowedTargets = 0; jip = 0; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
     }
 
     public function testCompromiseRefusesEveryActingCallFromAnotherClient(): void
@@ -254,6 +256,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_remote && \{!\(_mode in \["add", "remove", "spawn", "view"\]\)\}\) exitWith \{.*?'
             . 'if \(_remote && \{isNull _req\}\) exitWith \{.*?'
             . 'if \(_remote && \{!\(\[_req\] call comspec_atak_native_fnc_adminAllowed\)\} && \{!\(_mode isEqualTo "view" && \{\[_a, _req\] call _viewer\}\)\}\) exitWith \{.*?false\s*\};\s*$/s', $head);
+        $this->assertRequesterRulesArePinned();
         // Lot mpauth3 (SEC-033) : l'écran et son camp sont lus dans la copie du serveur, plus dans le registre public.
         self::assertMatchesRegularExpression('/private _viewer = \{\s*params \["_v", "_u"\];\s*if !\(_v isEqualType \[\]\) exitWith \{ false \};\s*private _o = _v param \[0, objNull\];\s*'
             . 'if \(!\(_o isEqualType objNull\) \|\| \{isNull _o\}\) exitWith \{ false \};\s*'
@@ -266,7 +269,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         foreach (['add' => 'true', 'remove' => 'true', 'spawn' => 'objNull', 'view' => 'true'] as $mode => $ret) {
             self::assertStringContainsString('if (!isServer) exitWith { ["' . $mode . '", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; ' . $ret . ' };', $code, $mode);
         }
-        self::assertStringContainsString('class comspec_atak_native_fnc_tocScreen { allowedTargets = 2; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        self::assertStringContainsString('class comspec_atak_native_fnc_tocScreen { allowedTargets = 2; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
         // Plus de gestionnaire ni d'émetteur de l'événement dans main/ et connect/ ; actions envoyées = liste distante.
         $files = $this->sources();
         $left = [];
@@ -317,13 +320,15 @@ final class AtakMultiplayerAuthTest extends TestCase
             self::assertMatchesRegularExpression('/^\s*;\s*' . preg_quote($guard, '/') . '/', $after, $file);
         }
         // Liste blanche (mode 1) : jip = 0 fait refuser par le moteur tout dépôt de ces appels dans la file JIP. Lu sans
-        // commentaires ni blocs « #if 0 » : une classe en commentaire ou sous #if 0 ne compte pas (v4, N14, K13, K14).
-        $mainCfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
+        // commentaires ni blocs « #if 0 » : une classe en commentaire ou sous #if 0 ne compte pas (v4, N14, K13, K14). Lu
+        // dans le bloc CfgRemoteExec > Functions lui-même : hors de ce bloc, ou sous un bloc renommé, une classe ne compte
+        // pas non plus (contre-expertise mpauth3 v1, O31).
+        $mainCfg = $this->remoteExecFunctions(self::MAIN . '/config.cpp');
         self::assertStringContainsString('class comspec_atak_native_fnc_adminClient { allowedTargets = 1; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_compromise { allowedTargets = 0; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };', $mainCfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_droneCmd { allowedTargets = 0; jip = 0; };', $mainCfg);
-        self::assertStringContainsString('class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; jip = 0; };', $this->cppCode($this->read(self::CONNECT . '/config.cpp')));
+        self::assertStringContainsString('class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; jip = 0; };', $this->remoteExecFunctions(self::CONNECT . '/config.cpp'));
         // Aucun ordre légitime vers ces fonctions n'emprunte la file : chaque appel distant n'a que deux arguments.
         // Lecture tolérante (contre-expertise v3, N10) : commentaires retirés, tableau lu jusqu'à son crochet fermant
         // (sur plusieurs lignes, sans « ; » final, nom entre guillemets simples), code porté par des chaînes compris.
@@ -427,7 +432,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         foreach (['adminserver', 'zeusserver', 'captureserver'] as $f) {
             self::assertArrayHasKey('comspec_atak_native_fnc_' . $f, $lists);
         }
-        [$sent, $unread] = $this->actionsSent($files, $lists);
+        [$sent, $unread, $orders] = $this->actionsSent($files, $lists);
         self::assertSame([], $unread);
         $refused = [];
         foreach ($sent as $fn => $acts) {
@@ -448,6 +453,10 @@ final class AtakMultiplayerAuthTest extends TestCase
             sort($got);
             self::assertSame($expected, $got, $fn);
         }
+        // Ordres du serveur, que la garde laisse passer sans liste (poste 2) : « pickupGive » de fn_camAction seul. Un
+        // envoi de client placé par erreur derrière « if (!isServer) exitWith » y passerait, et ne partirait plus d'un
+        // client (contre-expertise mpauth3 v1, O13 : reprise sur un socle cassée sur serveur dédié).
+        self::assertSame(['comspec_atak_native_fnc_camaction' => ['pickupGive']], array_map('array_keys', $orders));
     }
 
     public function testCameraPickupAndRegistryAreJudgedOnTheRequester(): void
@@ -466,12 +475,33 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
             . 'if \(_remote && \{!\(_mode in \["srvReg", "srvTake"\]\)\}\) exitWith \{[^{}]*false\s*\};\s*'
             . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*false\s*\};/', $head);
+        $this->assertRequesterRulesArePinned();
         // Ramassage : pour le demandeur lui-même, vivant, à 10 m au plus. Registre : ajout seulement, caméra proche.
         $take = $this->between($code, 'case "srvTake": {', 'case "pickupGive": {');
         self::assertMatchesRegularExpression('/^case "srvTake": \{\s*if \(!isServer\) exitWith \{ false \};\s*'
             . 'if \(!\(_a isEqualType objNull\) \|\| \{isNull _a\} \|\| \{!\(_b isEqualType objNull\)\} \|\| \{isNull _b\} [^\n]*\) exitWith \{ false \};\s*'
             . 'if \(_remote && \{_b isNotEqualTo _req \|\| \{!alive _req\} \|\| \{\(_req distance _a\) > 10\}\}\) exitWith \{[^{}]*false\s*\};\s*'
             . '_a setVariable \["COMSPEC_ATAK_CamTaken", true\];/', $take);
+        // Bloc entier (contre-expertise mpauth3 v1, O16) : l'item part au demandeur seul, par l'ordre du serveur.
+        $this->assertBlocks($code, [
+            'case "srvTake": {' => [
+                'case "srvTake": {',
+                'if (!isServer) exitWith { false };',
+                'if (!(_a isEqualType objNull) || {isNull _a} || {!(_b isEqualType objNull)} || {isNull _b} || {(typeOf _a) isNotEqualTo CAM_CLASS} || {_a getVariable ["COMSPEC_ATAK_CamTaken", false]}) exitWith { false };',
+                'if (_remote && {_b isNotEqualTo _req || {!alive _req} || {(_req distance _a) > 10}}) exitWith {',
+                'diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Ramassage refusé à %1 (pour une autre unité, ou demandeur mort ou à plus de 10 m de la caméra)", name _req];',
+                'false',
+                '};',
+                '_a setVariable ["COMSPEC_ATAK_CamTaken", true];',
+                'private _dead = [_a] call _isDead;',
+                'private _name = _a getVariable ["COMSPEC_ATAK_CamName", "Caméra"];',
+                '[_a, false] call _register;',
+                'deleteVehicle _a;',
+                '["pickupGive", _name, _dead] remoteExecCall ["comspec_atak_native_fnc_camAction", _b];',
+                'true',
+                '}',
+            ],
+        ], 'fn_camAction');
         $reg = $this->between($code, 'case "srvReg": {', 'case "rotate": {');
         self::assertMatchesRegularExpression('/^case "srvReg": \{\s*if \(!isServer \|\| \{!\(_a isEqualType objNull\)\}\) exitWith \{ false \};\s*'
             . 'if \(_remote && \{_b isNotEqualTo true \|\| \{isNull _a\} \|\| \{!alive _req\} \|\| \{\(_req distance _a\) > 10\}\}\) exitWith \{[^{}]*false\s*\};\s*'
@@ -481,7 +511,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         foreach (['srvTake' => $take, 'srvReg' => $reg] as $mode => $body) {
             self::assertDoesNotMatchRegularExpression('/\bcall\s+(?:_fn|comspec_atak_native_fnc_camAction)\b/i', $body, $mode);
         }
-        self::assertStringContainsString('class comspec_atak_native_fnc_camAction { allowedTargets = 0; jip = 0; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        self::assertStringContainsString('class comspec_atak_native_fnc_camAction { allowedTargets = 0; jip = 0; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
         // Les clients envoient « srvReg » et « srvTake » ; « pickupGive » n'est envoyée que par le serveur.
         $files = $this->sources();
         $lists = $this->remoteLists($files);
@@ -509,10 +539,53 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
             . 'if \(_remote && \{!\(_mode in \["srvAcc"\]\)\}\) exitWith \{[^{}]*false\s*\};\s*'
             . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*false\s*\};/', $head);
+        $this->assertRequesterRulesArePinned();
         // Caméra de téléphone : son porteur seul ; caméra fixe : retrait par le poseur, partage par qui y a accès.
         self::assertMatchesRegularExpression('/private _mayEdit = \{\s*params \["_s", "_u", "_share"\];\s*'
             . 'if !\(\[_s\] call _isCam\) exitWith \{ _s isEqualTo _u \};\s*'
             . 'if \(_share\) then \{ \[_s, _u\] call _canSee \} else \{ \[_s, _u\] call _isOwner \}\s*\};/', $head);
+        // Règles entières (contre-expertise mpauth3 v1, O1, O2) : identité, caméra fixe, poseur, accès, droit de changer.
+        $this->assertBlocks($code, [
+            'private _uidOf = {' => ['private _uidOf = { params ["_u"]; private _id = getPlayerUID _u; if (_id isEqualTo "") then { netId _u } else { _id } }'],
+            'private _isCam = {' => ['private _isCam = { params ["_o"]; !isNull _o && {_o isKindOf "COMSPEC_ATAK_CameraObj"} }'],
+            'private _num = {' => ['private _num = { params ["_v", "_d"]; if (_v isEqualType 0) then { _v } else { _d } }'],
+            'private _required = {' => ['private _required = { ([missionNamespace getVariable ["comspec_atak_native_camera_share", 0], 0] call _num) isEqualTo 0 }'],
+            'private _accessOf = {' => [
+                'private _accessOf = {',
+                'params ["_s"];',
+                'if (isNull _s) exitWith { [] };',
+                'private _acc = _s getVariable ["COMSPEC_ATAK_ShareAcc", []];',
+                'if (_acc isEqualType []) then { _acc } else { [] }',
+                '}',
+            ],
+            'private _isOwner = {' => [
+                'private _isOwner = {',
+                'params ["_s", "_u"];',
+                'if (isNull _s) exitWith { false };',
+                'if !([_s] call _isCam) exitWith { _s isEqualTo _u };',
+                'private _ou = _s getVariable ["COMSPEC_ATAK_CamOwnerUid", ""];',
+                'if (_ou isEqualTo "") then { (_s getVariable ["COMSPEC_ATAK_CamOwner", ""]) isEqualTo name _u } else { _ou isEqualTo ([_u] call _uidOf) }',
+                '}',
+            ],
+            'private _canSee = {' => [
+                'private _canSee = {',
+                'params ["_s", "_v"];',
+                'if (isNull _s) exitWith { false };',
+                'if !(call _required) exitWith { true };',
+                'if (_s isEqualTo _v) exitWith { true };',
+                'if ([_s] call _isCam && {[_s, _v] call _isOwner}) exitWith { true };',
+                'private _id = [_v] call _uidOf;',
+                '(([_s] call _accessOf) findIf { (_x param [0, ""]) in ["ALL", _id] }) >= 0',
+                '}',
+            ],
+            'private _mayEdit = {' => [
+                'private _mayEdit = {',
+                'params ["_s", "_u", "_share"];',
+                'if !([_s] call _isCam) exitWith { _s isEqualTo _u };',
+                'if (_share) then { [_s, _u] call _canSee } else { [_s, _u] call _isOwner }',
+                '}',
+            ],
+        ], 'fn_camShare');
         // Les règles ne ré-appellent pas la fonction (dans une pile distante, l'appel imbriqué serait refusé).
         $rules = $this->between($head, 'private _required = {', 'private _mayEdit = {');
         self::assertNotEmpty($rules);
@@ -529,7 +602,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('if ((count _new) > 64) then { _new resize 64; };', $srv);
         self::assertStringContainsString('if ((count _all) > 128) then { _all = _all select [(count _all) - 128, 128]; };', $srv);
         self::assertDoesNotMatchRegularExpression('/\bcall\s+(?:_fn|comspec_atak_native_fnc_cam(?:Share|Action))\b/i', $srv);
-        self::assertStringContainsString('class comspec_atak_native_fnc_camShare { allowedTargets = 2; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        self::assertStringContainsString('class comspec_atak_native_fnc_camShare { allowedTargets = 2; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
         $files = $this->sources();
         $lists = $this->remoteLists($files);
         self::assertSame(['srvAcc'], $lists['comspec_atak_native_fnc_camshare'] ?? null);
@@ -554,12 +627,50 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_remote && \{!\(_mode in \["add", "remove"\]\)\}\) exitWith \{[^{}]*false\s*\};\s*'
             . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*false\s*\};\s*'
             . 'if \(_remote && \{!\(\[_req\] call comspec_atak_native_fnc_adminAllowed\)\}\) exitWith \{[^{}]*false\s*\};/', $head);
+        $this->assertRequesterRulesArePinned();
         foreach (['add', 'remove'] as $mode) {
             self::assertStringContainsString('if (!isServer) exitWith { ["' . $mode . '", _a] remoteExecCall ["comspec_atak_native_fnc_screenCast", 2]; true };', $code, $mode);
         }
+        // Branches entières (contre-expertise mpauth3 v1, O14, O15) : arguments typés, nom coupé à 64 caractères, camp
+        // connu, portée de 3 à 500 m.
+        $this->assertBlocks($code, [
+            'case "add": {' => [
+                'case "add": {',
+                'if !(_a isEqualType []) exitWith { false };',
+                '_a params [["_o", objNull, [objNull]], ["_name", "", [""]], ["_range", 25, [0]], ["_side", "", [""]], ["_sel", 0, [0]], ["_ace", true, [true]]];',
+                'if (isNull _o) exitWith { false };',
+                'if (!isServer) exitWith { ["add", _a] remoteExecCall ["comspec_atak_native_fnc_screenCast", 2]; true };',
+                'if ((count _name) > 64) then { _name = _name select [0, 64]; };',
+                'if !(_side in ["", "WEST", "EAST", "GUER", "CIV"]) then { _side = ""; };',
+                'if (_name isEqualTo "") then { _name = getText (configOf _o >> "displayName"); };',
+                'if (_name isEqualTo "") then { _name = "Écran"; };',
+                'private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x };',
+                'if !(_o in _list) then { _o setVariable ["COMSPEC_ATAK_ScreenCast", [], true]; };',
+                '_o setVariable ["COMSPEC_ATAK_Screen", [_name, (_range max 3) min 500, _side, _sel max 0, _ace], true];',
+                '_list pushBackUnique _o;',
+                'missionNamespace setVariable ["COMSPEC_ATAK_Screens", _list, true];',
+                'private _off = missionNamespace getVariable ["COMSPEC_ATAK_ScreensOff", []];',
+                'if (_o in _off) then { missionNamespace setVariable ["COMSPEC_ATAK_ScreensOff", _off select { !isNull _x && {_x isNotEqualTo _o} }, true]; };',
+                'true',
+                '}',
+            ],
+            'case "remove": {' => [
+                'case "remove": {',
+                'if (!(_a isEqualType objNull) || {isNull _a}) exitWith { false };',
+                'if (!isServer) exitWith { ["remove", _a] remoteExecCall ["comspec_atak_native_fnc_screenCast", 2]; true };',
+                '_a setVariable ["COMSPEC_ATAK_ScreenCast", [], true];',
+                '_a setVariable ["COMSPEC_ATAK_Screen", nil, true];',
+                'missionNamespace setVariable ["COMSPEC_ATAK_Screens", (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];',
+                'private _off = (missionNamespace getVariable ["COMSPEC_ATAK_ScreensOff", []]) select { !isNull _x };',
+                '_off pushBackUnique _a;',
+                'missionNamespace setVariable ["COMSPEC_ATAK_ScreensOff", _off, true];',
+                'true',
+                '}',
+            ],
+        ], 'fn_screenCast');
         self::assertStringNotContainsString('CBA_fnc_addEventHandler', $code);
         self::assertStringNotContainsString('CBA_fnc_serverEvent', $code);
-        self::assertStringContainsString('class comspec_atak_native_fnc_screenCast { allowedTargets = 2; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        self::assertStringContainsString('class comspec_atak_native_fnc_screenCast { allowedTargets = 2; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
         // Plus de gestionnaire ni d'émetteur de l'événement dans main/ et connect/ ; actions envoyées = liste distante.
         $files = $this->sources();
         $left = [];
@@ -590,7 +701,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         // de la montre. Chacune y entre avec une garde en tête, juste après params : rien de la file JIP, et d'un autre
         // poste que le serveur, seulement sa demande. Sur l'hôte d'une partie locale, un client faisait exécuter
         // « apply », « add » ou « relay » : l'hôte se renvoyait la demande (poste 2, donc admise) et agissait en son nom.
-        $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
+        $cfg = $this->remoteExecFunctions(self::MAIN . '/config.cpp');
         $files = $this->sources();
         $lists = $this->remoteLists($files);
         [$sent] = $this->actionsSent($files, $lists);
@@ -666,7 +777,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertSame(['fn_adminServer.sqf', 'fn_captureServer.sqf'], array_keys($from));
         $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
         self::assertStringContainsString('class captureServer {}; class captureLocal {};', $cfg);
-        self::assertStringContainsString('class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };', $cfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_captureLocal { allowedTargets = 0; jip = 0; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
         self::assertStringNotContainsString('comspec_atak_native_capLocal', $this->stripSqfComments($this->read(self::MAIN . '/XEH_preInit.sqf')));
     }
 
@@ -685,6 +796,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'private _req = \[objNull, player\] select hasInterface;\s*'
             . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
             . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*\};/', $srv);
+        $this->assertRequesterRulesArePinned();
         // Le pilote est celui que tient le serveur ; la variable publique n'est lue qu'une fois, pour la lui remettre.
         self::assertStringContainsString('private _db = (localNamespace getVariable ["COMSPEC_ATAK_DroneOwners", []]) select {', $srv);
         self::assertStringContainsString('localNamespace setVariable ["COMSPEC_ATAK_DroneOwners", _db];', $srv);
@@ -710,6 +822,55 @@ final class AtakMultiplayerAuthTest extends TestCase
                 self::assertLessThan($at, $c, "branche $n : $check");
             }
         }
+        // Règles entières (contre-expertise mpauth3 v1, O6, O7) : qui devient pilote, et quand le serveur l'écrit.
+        $this->assertBlocks($srv, [
+            'private _online = {' => ['private _online = { params ["_u"]; (allPlayers findIf { (getPlayerUID _x) isEqualTo _u }) >= 0 }'],
+            'private _set = {' => [
+                'private _set = {',
+                'params ["_u"];',
+                'if (_i >= 0) then { _db deleteAt _i; };',
+                'if (_u isNotEqualTo "") then { _db pushBack [_d, _u]; };',
+                'localNamespace setVariable ["COMSPEC_ATAK_DroneOwners", _db];',
+                '_d setVariable ["COMSPEC_DroneOwner", _u, true];',
+                '}',
+            ],
+            'case "pair": {' => [
+                'case "pair": {',
+                'if (isNull _req) exitWith { ["appairage sans joueur demandeur"] call _deny; };',
+                'if (!unitIsUAV _d || {!alive _d}) exitWith { ["objet qui n\'est pas un drone en état"] call _deny; };',
+                'if (!alive _req || {(_req distance _d) > 25}) exitWith { ["demandeur à plus de 25 m du drone", "Posez le drone à vos pieds pour l\'appairer"] call _deny; };',
+                'if (_pilot isNotEqualTo "" && {_pilot isNotEqualTo _uid} && {[_pilot] call _online}) exitWith { [format ["drone de %1, toujours en partie", _pilot], "Ce drone est déjà appairé à un autre téléphone"] call _deny; };',
+                '[_uid] call _set;',
+                '}',
+            ],
+            'case "release": {' => [
+                'case "release": {',
+                'if (_pilot isEqualTo "") exitWith { ["drone appairé à personne"] call _deny; };',
+                'if (!_isPilot && {[_pilot] call _online}) exitWith { [format ["drone de %1, toujours en partie", _pilot], "Ce drone est déjà appairé à un autre téléphone"] call _deny; };',
+                '[""] call _set;',
+                '_d setVariable ["COMSPEC_DroneLock", nil, true];',
+                'if (alive _d) then { [_d, "release", []] remoteExecCall ["comspec_atak_native_fnc_droneCmd", _d]; };',
+                '}',
+            ],
+            'case "transferIn": {' => [
+                'case "transferIn": {',
+                '_args params [["_from", ""], ["_to", ""], ["_home", []], ["_stage", "DONE"]];',
+                'if (isNull _req) exitWith { ["transfert sans joueur demandeur"] call _deny; };',
+                'if (!_isPilot) exitWith { ["transfert demandé par un autre que le pilote", ["Ce drone est déjà appairé à un autre téléphone", "Ce drone n\'est plus appairé au téléphone du pilote"] select (_pilot isEqualTo "")] call _deny; };',
+                'if (!alive _d || {!(_to isEqualType "")} || {!(_stage in ["HELLO", "DONE"])}) exitWith { ["transfert mal formé"] call _deny; };',
+                'private _k = allPlayers findIf { (getPlayerUID _x) isEqualTo _to };',
+                'private _t = if (_k >= 0) then { allPlayers select _k } else { objNull };',
+                'if (isNull _t || {!alive _t} || {(_t distance _req) > 60}) exitWith { ["destinataire absent ou à plus de 60 m du pilote", "Transfert annulé : destinataire hors de portée"] call _deny; };',
+                'if ((_db findIf { (_x select 0) isNotEqualTo _d && {(_x select 1) isEqualTo _to} }) >= 0) exitWith { ["destinataire déjà pilote d\'un autre drone", format ["%1 pilote déjà un drone", name _t]] call _deny; };',
+                'if !(_home isEqualTypeArray [0, 0, 0]) then { _home = []; };',
+                'if (_stage isEqualTo "DONE") then {',
+                '[_to] call _set;',
+                '_d setVariable ["COMSPEC_DroneLock", "", true];',
+                '};',
+                '[_d, "transferIn", [name _req, _to, _home, _stage]] remoteExecCall ["comspec_atak_native_fnc_droneCmd", _t];',
+                '}',
+            ],
+        ], 'fn_droneServer');
         // Ordres relayés : exactement ceux que fn_droneCmd exécute là où le drone est local (« release » a sa branche).
         self::assertSame(1, preg_match('/private _orders = \[([^\]]*)\];/', $srv, $m));
         preg_match_all('/"([^"]+)"/', $m[1], $o);
@@ -762,8 +923,9 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertMatchesRegularExpression('/\[_new\] call _adopt;\s*\[_new, "pair", \[\]\] remoteExecCall \["comspec_atak_native_fnc_droneServer", 2\];/', $act);
         $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
         self::assertStringContainsString('class droneCmd {}; class droneServer {};', $cfg);
-        self::assertStringContainsString('class comspec_atak_native_fnc_droneServer { allowedTargets = 2; };', $cfg);
-        self::assertStringContainsString('class comspec_atak_native_fnc_droneCmd { allowedTargets = 0; jip = 0; };', $cfg);
+        $rex = $this->remoteExecFunctions(self::MAIN . '/config.cpp');
+        self::assertStringContainsString('class comspec_atak_native_fnc_droneServer { allowedTargets = 2; };', $rex);
+        self::assertStringContainsString('class comspec_atak_native_fnc_droneCmd { allowedTargets = 0; jip = 0; };', $rex);
         self::assertStringNotContainsString('comspec_atak_native_droneCmd', $this->stripSqfComments($this->read(self::MAIN . '/XEH_preInit.sqf')));
     }
 
@@ -854,6 +1016,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(!_ok && \{\(missionNamespace getVariable \["comspec_atak_native_debrief_site", true\]\) isEqualTo true\}\s*'
             . '&& \{\(getPlayerUID _caller\) in \(localNamespace getVariable \["COMSPEC_ATAK_DbfSiteRight", \[\]\]\)\}\) then \{\s*'
             . '_ok = true;\s*diag_log format \["\[COMSPEC ATAK NATIVE\]\[INFO\]\[DEBRIEF\] [^"]*", _act, name _caller, getPlayerUID _caller\];\s*\};\s*\};\s*$/', $rights);
+        $this->assertRequesterRulesArePinned();
         // « right » : seule la valeur vient de la demande ; l'UID est celui du demandeur retrouvé, jamais un argument.
         $right = $this->between($code, 'case "right": {', 'case "hello": {');
         self::assertMatchesRegularExpression('/^case "right": \{\s*_args params \[\["_on", false\]\];\s*'
@@ -929,6 +1092,9 @@ final class AtakMultiplayerAuthTest extends TestCase
         foreach (['zeus', 'sForce', 'sLift', 'sRemind', 'sPull', 'cfg'] as $act) {
             self::assertContains($act, $relays, $act);
         }
+        // Ensemble exact : un relais ajouté à une autre action passe par ce test (lot mpauth3, revue de ses mutations).
+        sort($relays);
+        self::assertSame(['cfg', 'opened', 'read', 'recv', 'sForce', 'sLift', 'sPull', 'sRemind', 'send', 'site', 'zeus'], $relays);
         // Aucune action hors de la garde (lot mpauth3, SEC-030 : les messages du serveur arrivent par remoteExecCall).
         self::assertSame(0, preg_match('/^if \(!\(_act in /m', $dbf));
     }
@@ -981,7 +1147,7 @@ final class AtakMultiplayerAuthTest extends TestCase
             }
         }
         self::assertSame([[self::MAIN . '/functions/debrief/fn_debriefServer.sqf', 2]], $calls);
-        self::assertStringContainsString('class comspec_atak_native_fnc_debrief { allowedTargets = 1; jip = 0; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+        self::assertStringContainsString('class comspec_atak_native_fnc_debrief { allowedTargets = 1; jip = 0; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
     }
 
     public function testAdminAppDataReachesThePhoneOnlyFromTheServer(): void
@@ -1061,8 +1227,17 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
             . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*\};\s*'
             . 'if !\(_a isEqualType \[\]\) exitWith \{\};/', trim($srv));
-        $lists = $this->remoteLists($this->sources());
+        $this->assertRequesterRulesArePinned();
+        $files = $this->sources();
+        $lists = $this->remoteLists($files);
         self::assertSame(['put', 'take', 'deploy', 'pack'], $lists['comspec_atak_native_fnc_dockserver'] ?? null);
+        // Les quatre demandes partent d'un client, jamais d'une branche du serveur seul (contre-expertise mpauth3 v1, O13 :
+        // « take » placée derrière « if (!isServer) exitWith » ne partirait plus d'un client).
+        [$sent, , $orders] = $this->actionsSent($files, $lists);
+        $got = array_keys($sent['comspec_atak_native_fnc_dockserver'] ?? []);
+        sort($got);
+        self::assertSame(['deploy', 'pack', 'put', 'take'], $got);
+        self::assertArrayNotHasKey('comspec_atak_native_fnc_dockserver', $orders);
         // Aucune unité reçue : le demandeur est _req partout. Plus d'événement CBA, ni d'appel imbriqué de la fonction
         // hors des gestionnaires du serveur posés par « init » (dans une demande, l'appel imbriqué garderait le contexte de
         // l'appel distant et la garde le refuserait).
@@ -1124,6 +1299,69 @@ final class AtakMultiplayerAuthTest extends TestCase
                 $at = (int) $i + strlen($step);
             }
         }
+        // « put », « take » et « pack » entières (contre-expertise mpauth3 v1, O3, O4, O5) : emplacement libre, téléphone
+        // du demandeur (sauf admin, Zeus ou réglage), socle vide avant d'être replié.
+        $this->assertBlocks($srv, [
+            'case "put": {' => [
+                'case "put": {',
+                '_a params [["_dock", objNull], ["_slot", -1], ["_item", ""], ["_level", 100], ["_device", []], ["_tint", "coyote"]];',
+                'if (isNull _req || {!(_item isEqualType "")} || {_item isEqualTo ""}) exitWith {};',
+                'if (!(_dock isEqualType objNull) || {isNull _dock} || {!(_dock isKindOf _class)}) exitWith { [_req, "put", false, "Socle replié", [_item]] call _reply; };',
+                'if !((toLower _item) in ([] call comspec_atak_native_fnc_deviceCatalog)) exitWith { [_req, "put", false, "Pas de téléphone sur vous", [_item]] call _reply; };',
+                'if (!(_slot isEqualType 0) || {!(_level isEqualType 0)}) exitWith { [_req, "put", false, "Emplacement occupé ou socle plein", [_item]] call _reply; };',
+                'if (!(_device isEqualType []) || {(count _device) > 64} || {(count str _device) > 8000}) then { _device = []; };',
+                'if !(_tint in ["coyote", "od", "black"]) then { _tint = "coyote"; };',
+                'private _id = [_dock] call _idOf;',
+                'private _slots = (_db get _id) select 0;',
+                '_slot = floor _slot;',
+                'if (_slot < 0) then { _slot = _slots findIf { (count _x) == 0 }; };',
+                'if (_slot < 0 || {_slot > 9} || {(count (_slots select _slot)) > 0}) exitWith {',
+                '[_req, "put", false, "Emplacement occupé ou socle plein", [_item]] call _reply;',
+                '};',
+                'if ((_req distance _dock) > 6) exitWith { [_req, "put", false, "Trop loin du socle", [_item]] call _reply; };',
+                '_slots set [_slot, [getPlayerUID _req, name _req, _item, (_level max 0) min 100, _device, _tint, serverTime]];',
+                '[_dock, _slots] call _publish;',
+                '[false] call _save;',
+                '[_req, "put", true, format ["Téléphone posé sur l\'emplacement %1 (%2 %%)", _slot + 1, floor _level], [_slot]] call _reply;',
+                '}',
+            ],
+            'case "take": {' => [
+                'case "take": {',
+                '_a params [["_dock", objNull], ["_slot", -1]];',
+                'if (isNull _req || {!(_dock isEqualType objNull)} || {isNull _dock} || {!(_dock isKindOf _class)} || {!(_slot isEqualType 0)}) exitWith {};',
+                'private _id = [_dock] call _idOf;',
+                'private _slots = (_db get _id) select 0;',
+                '_slot = floor _slot;',
+                'if (_slot < 0 || {_slot > 9} || {(count (_slots select _slot)) == 0}) exitWith { [_req, "take", false, "Emplacement vide"] call _reply; };',
+                'private _s = _slots select _slot;',
+                'private _mine = (_s select 0) isEqualTo getPlayerUID _req;',
+                'private _staff = (admin (owner _req)) > 0 || {!isNull (getAssignedCuratorLogic _req)};',
+                'if (!_mine && {!_staff} && {!(missionNamespace getVariable ["comspec_atak_native_dock_anyone", false])}) exitWith {',
+                '[_req, "take", false, format ["Ce téléphone appartient à %1", _s select 1]] call _reply;',
+                '};',
+                'if ((_req distance _dock) > 6) exitWith { [_req, "take", false, "Trop loin du socle"] call _reply; };',
+                '_slots set [_slot, []];',
+                '[_dock, _slots] call _publish;',
+                '[false] call _save;',
+                '[_req, "take", true, format ["Téléphone repris (emplacement %1, %2 %%)%3", _slot + 1, floor (_s select 3), ["", format [" · appartient à %1", _s select 1]] select !_mine],',
+                '[_s select 2, _s select 3, _s select 4, _mine]] call _reply;',
+                '}',
+            ],
+            'case "pack": {' => [
+                'case "pack": {',
+                '_a params [["_dock", objNull]];',
+                'if (isNull _req || {!(_dock isEqualType objNull)} || {isNull _dock} || {!(_dock isKindOf _class)}) exitWith {};',
+                'private _id = [_dock] call _idOf;',
+                'if !([_dock] call _kitOf) exitWith { [_req, "pack", false, "Ce socle fait partie de la mission"] call _reply; };',
+                'if ((((_db get _id) select 0) findIf { (count _x) > 0 }) >= 0) exitWith { [_req, "pack", false, "Retirez d\'abord les téléphones"] call _reply; };',
+                'if ((_req distance _dock) > 6) exitWith { [_req, "pack", false, "Trop loin du socle"] call _reply; };',
+                '_db deleteAt _id;',
+                'deleteVehicle _dock;',
+                '[false] call _save;',
+                '[_req, "pack", true, "Socle replié"] call _reply;',
+                '}',
+            ],
+        ], 'fn_dockServer');
         // Identifiant et genre (kit ou mission) d'un socle : registre du serveur, rempli à la création ou à la première vue
         // (dès le lancement pour les socles de la mission) ; les variables publiques ne sont plus qu'écrites, pour les menus.
         self::assertStringContainsString('{ [_x] call _idOf; } forEach (allMissionObjects _class);', $this->between($srv, 'case "init": {', 'case "id": {'));
@@ -1180,7 +1418,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringNotContainsString('player', $this->between($client, 'case "take": {', 'case "status": {'));
         self::assertStringContainsString('["deploy", [_pos, (_dir + 180) % 360]] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2];', $client);
         self::assertStringContainsString('["pack", [_dock]] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2];', $client);
-        $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
+        $cfg = $this->remoteExecFunctions(self::MAIN . '/config.cpp');
         self::assertStringContainsString('class comspec_atak_native_fnc_dockServer { allowedTargets = 2; };', $cfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_dockClient { allowedTargets = 1; jip = 0; };', $cfg);
         self::assertStringContainsString('["Déjà %1 socles posés à votre nom sur ce serveur. Repliez-en un d\'abord.", "', $this->read(self::MAIN . '/i18n/en.txt'));
@@ -1233,7 +1471,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertSame([['fn_foodAction.sqf', '2', 2, 2], ['fn_logisticsAction.sqf', '2', 2, 2]], $calls);
         $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
         self::assertStringContainsString('class saveProfile {}; class localCfg {}; class deleteLater {};', $cfg);
-        self::assertStringContainsString('class comspec_atak_native_fnc_deleteLater { allowedTargets = 2; };', $cfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_deleteLater { allowedTargets = 2; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
     }
 
     public function testZeusRelayModulesAreDeclaredAndAcceptOnlyTheServerOrTheModuleOwner(): void
@@ -1243,7 +1481,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         // module (remoteExec vers le propriétaire de la logique). Sans classe CfgRemoteExec, ce relais était refusé en
         // silence en mode 1. Les deux fonctions y entrent (cible : un client, jamais par la file JIP), avec une garde en
         // tête, avant le relais : d'un appel distant, seulement le serveur ou, sur le serveur, le poste de la logique.
-        $cfg = $this->cppCode($this->read(self::CONNECT . '/config.cpp'));
+        $cfg = $this->remoteExecFunctions(self::CONNECT . '/config.cpp');
         foreach (['zeusModuleScanRelays', 'zeusResyncRelay'] as $fn) {
             $code = $this->stripSqfComments($this->read(self::CONNECT . '/functions/fn_' . $fn . '.sqf'));
             self::assertMatchesRegularExpression('/^private _lgReq = _this param \[0, objNull\];\s*'
@@ -1300,6 +1538,101 @@ final class AtakMultiplayerAuthTest extends TestCase
         // Le réglage cité existe sous ce nom (texte français et clé anglaise).
         self::assertStringContainsString('["Gestionnaires en jeu (UID Steam)", "UID Steam (64 bits)', $this->read(self::MAIN . '/XEH_preInit.sqf'));
         self::assertStringContainsString('["Gestionnaires en jeu (UID Steam)", "In-game managers (Steam UID)"],', $this->read(self::MAIN . '/i18n/en.txt'));
+    }
+
+    /**
+     * fn_reqUnit (qui a envoyé l'appel distant) et fn_adminAllowed (qui est gestionnaire), lus en entier, code sans
+     * commentaires : les gardes du lot jugent le joueur que rend la première, avec la règle de la seconde. Une règle
+     * changée en silence change le jugement de toutes ces gardes (contre-expertise mpauth3 v1, R3 : O11, O12) ; un
+     * changement voulu passe par ce test.
+     */
+    private function assertRequesterRulesArePinned(): void
+    {
+        self::assertSame(implode(' ', [
+            'params [["_owner", 0, [0]]];',
+            'if (!isServer) exitWith { objNull };',
+            'if (!isMultiplayer) exitWith { player };',
+            'if (_owner <= 0 || {_owner isEqualTo 2}) exitWith { objNull };',
+            'if (hasInterface && {_owner isEqualTo clientOwner}) exitWith { player };',
+            '(allPlayers select { (owner _x) isEqualTo _owner }) param [0, objNull]',
+        ]), $this->squash($this->stripSqfComments($this->read(self::MAIN . '/functions/network/fn_reqUnit.sqf'))), 'fn_reqUnit');
+        self::assertSame(implode(' ', [
+            'params [["_u", objNull]];',
+            'if (isNull _u || {!isPlayer _u && {_u isNotEqualTo player}}) exitWith { false };',
+            'if (!isNull (getAssignedCuratorLogic _u)) exitWith { true };',
+            'if (isServer && {hasInterface} && {_u isEqualTo player}) exitWith { true };',
+            'if (isServer && {(admin (owner _u)) > 0}) exitWith { true };',
+            'if (!isServer && {_u isEqualTo player} && {serverCommandAvailable "#kick"}) exitWith { true };',
+            'private _uids = missionNamespace getVariable ["comspec_atak_native_admin_uids", ""];',
+            'if !(_uids isEqualType "") exitWith { false };',
+            '(getPlayerUID _u) in ((_uids splitString ", ;") apply { trim _x })',
+        ]), $this->squash($this->stripSqfComments($this->read(self::MAIN . '/functions/admin/fn_adminAllowed.sqf'))), 'fn_adminAllowed');
+    }
+
+    /** Chaque bloc nommé par son en-tête (block) vaut exactement ses lignes, jointes par une espace. */
+    private function assertBlocks(string $code, array $blocks, string $what): void
+    {
+        foreach ($blocks as $head => $lines) {
+            self::assertSame(implode(' ', $lines), $this->block($code, $head), "$what : $head");
+        }
+    }
+
+    /** $s aux blancs (retours à la ligne compris) ramenés à une espace, sans blanc aux deux bouts. */
+    private function squash(string $s): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', $s));
+    }
+
+    /**
+     * Bloc d'un code SQF sans commentaires, de son en-tête $head (qui finit par « { » et n'y paraît qu'une fois) à
+     * l'accolade qui le ferme, blancs réduits (squash) ; vide si l'en-tête manque, se répète ou ne se ferme pas.
+     */
+    private function block(string $code, string $head): string
+    {
+        $at = strpos($code, $head);
+        if ($at === false || !str_ends_with($head, '{') || substr_count($code, $head) !== 1) {
+            return '';
+        }
+        $close = $this->pairsOf($this->blankStrings($code), '{', '}')[$at + strlen($head) - 1] ?? null;
+        return $close === null ? '' : $this->squash(substr($code, $at, $close - $at + 1));
+    }
+
+    /**
+     * Contenu de « class CfgRemoteExec { class Functions { … }; }; » d'un config.cpp, sans commentaires ni blocs
+     * « #if 0 » (cppCode) ; vide si ce n'est pas le bloc que lit le moteur (contre-expertise mpauth3 v1, R3 : O31). Il
+     * faut une seule classe CfgRemoteExec, au premier niveau, avec une seule classe Functions juste dedans ; aucun
+     * allowedTargets hors de ce bloc ; ni mode ni jip au niveau de l'addon (ils s'imposeraient à toutes les missions).
+     */
+    private function remoteExecFunctions(string $rel): string
+    {
+        $code = $this->cppCode($this->read($rel));
+        $blank = $this->blankStrings($code);
+        $pairs = $this->pairsOf($blank, '{', '}');
+        $depth = static fn (int $at): int => substr_count($blank, '{', 0, $at) - substr_count($blank, '}', 0, $at);
+        if (preg_match_all('/\bclass\s+CfgRemoteExec\s*\{/', $blank, $outer, PREG_OFFSET_CAPTURE) !== 1) {
+            return '';
+        }
+        $o = $outer[0][0][1] + strlen($outer[0][0][0]) - 1;
+        if ($depth($outer[0][0][1]) !== 0 || !isset($pairs[$o])) {
+            return '';
+        }
+        if (preg_match_all('/\bclass\s+Functions\s*\{/', substr($blank, $o, $pairs[$o] - $o), $inner, PREG_OFFSET_CAPTURE) !== 1) {
+            return '';
+        }
+        $f = $o + $inner[0][0][1] + strlen($inner[0][0][0]) - 1;
+        if ($depth($o + $inner[0][0][1]) !== 1 || !isset($pairs[$f])) {
+            return '';
+        }
+        $body = substr($blank, $f + 1, $pairs[$f] - $f - 1);
+        $top = $body;
+        do {
+            $prev = $top;
+            $top = (string) preg_replace('/\{[^{}]*\}/', '', $prev);
+        } while ($top !== $prev);
+        if (substr_count($body, 'allowedTargets') !== substr_count($blank, 'allowedTargets') || preg_match('/\b(?:mode|jip)\s*=/i', $top) === 1) {
+            return '';
+        }
+        return substr($code, $f + 1, $pairs[$f] - $f - 1);
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */
