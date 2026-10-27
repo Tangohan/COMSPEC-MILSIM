@@ -61,7 +61,7 @@ final class AtakShellPersonalisationTest extends TestCase
         $ov = $this->read(self::MAIN . '/functions/datalink/fn_dataOverlay.sqf');
         self::assertStringContainsString('"COMSPEC_ATAK_ModuleTint", "olive"', $ov);
         $set = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
-        self::assertStringContainsString('["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque"', $set);
+        self::assertStringNotContainsString('Couleur de la coque', $set);
         self::assertStringContainsString('["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7"', $set);
         self::assertStringContainsString('"Antenne (port SMA)"', $set);
         self::assertStringContainsString('comspec_atak_native_fnc_backView', $set);
