@@ -32,7 +32,9 @@ final class RateLimitMiddleware
         }
         [$max, $window, $rateKey] = $rules;
         if ($this->limiter->tooManyAttempts($rateKey, $max, $window)) {
-            $retry = max(1, min(120, $window));
+            // Temps qui reste avant la remise à zéro de la fenêtre fixe, et non la fenêtre entière (NET-027) : la DLL
+            // et Tacmap attendaient jusqu'à 60 s de trop. Plafond de 120 s gardé : rien n'est annoncé plus long qu'avant.
+            $retry = max(1, min(120, $this->limiter->secondsUntilReset($rateKey, $window)));
             if (str_starts_with($path, '/api/')) {
                 return Response::json([
                     'error' => 'too_many_requests',
