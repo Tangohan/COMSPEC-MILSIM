@@ -293,6 +293,14 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(1012, '2026-10-27', 'Corrections de fiches : l’actuel et le proposé se lisent clairement', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Rechargez le portail (Ctrl+F5).', [], [
+                'Chaque changement se lit en deux volets : Actuellement et Proposé',
+                'La fenêtre Décider nomme les équipes, précise l’équipe principale, et nomme les emplois',
+            ], [
+                'La fenêtre Décider montrait les équipes et les emplois sous une forme illisible',
+            ], ['personnel'], [
+                'Ouvrez Effectifs, À traiter, puis Décider sur une demande de correction. Les équipes et les emplois sont en clair. La page Corrections de fiches montre l’actuel à gauche et le proposé à droite.',
+            ], 'Portail Athena'),
             $pr(1011, '2026-10-27', 'Registre des données : Steam par adresse de profil et mods proches', 'Dans le registre des données, vous collez l’adresse d’un profil Steam pour retrouver le compte. Un onglet liste les mods vus chez les joueurs qui ressemblent au pack officiel sans en porter la fiche Workshop. Ce sont des signaux à vérifier, pas une preuve de copie. Rechargez le portail (Ctrl+F5).', [
                 'Repérage d’un compte à partir de l’adresse steamcommunity.com/profiles/… ou /id/…',
                 'Onglet Mods proches : packs au nom proche du nôtre, sans fiche Workshop officielle',
