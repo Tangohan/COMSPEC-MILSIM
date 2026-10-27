@@ -1273,6 +1273,35 @@ final class AtakMultiplayerAuthTest extends TestCase
         ], $calls);
     }
 
+    public function testTocScreenDocumentationSaysWhoMayCallItFromAClient(): void
+    {
+        // Lot mpauth3 (B6, contre-expertise v5) : MODULES.md § 7 présentait « add », « remove » et « spawn » comme
+        // appelables de partout (« Ailleurs, la demande part au serveur »). Depuis le lot mpauth, le serveur refuse la
+        // demande d'un client qui n'est ni Zeus, ni hôte, ni admin, ni UID autorisé, avec une seule ligne WARN dans son
+        // journal ; « view » est admis en plus d'un joueur du camp de l'écran, à moins de 25 m. Le texte dit ce contrat,
+        // en français et en anglais.
+        $doc = $this->read('mod/COMSPEC_ATAK_Native/MODULES.md');
+        $toc = $this->between($doc, "\n## 7. ", "\n## 8. ");
+        self::assertNotEmpty($toc);
+        self::assertStringNotContainsString('Ailleurs, la demande part au serveur.', $toc);
+        foreach ([
+            '« add », « remove », « spawn » et « view » partent au serveur',
+            'qui juge le joueur de ce poste : poser, désigner ou retirer un écran, seulement pour un Zeus, l\'hôte,',
+            'en plus, pour un joueur du camp de l\'écran à moins de 25 m. Une demande refusée ne fait rien',
+            'et laisse une seule ligne WARN dans le journal du serveur',
+            'appelle donc l\'écran sur le serveur seulement (`if (isServer)`)',
+            '`add`, `remove`, `spawn` and `view` are sent to the server, which judges the player of that machine',
+            'accepted only from a Zeus, the host, a logged-in admin or a UID of the "In-game',
+            'changing the display (`view`) also from a player of the screen\'s side within 25 m.',
+            'A refused request does nothing and leaves a single WARN line in the server log',
+        ] as $line) {
+            self::assertStringContainsString($line, preg_replace('/\s*\n\s*/', ' ', $toc) ?? '', $line);
+        }
+        // Le réglage cité existe sous ce nom (texte français et clé anglaise).
+        self::assertStringContainsString('["Gestionnaires en jeu (UID Steam)", "UID Steam (64 bits)', $this->read(self::MAIN . '/XEH_preInit.sqf'));
+        self::assertStringContainsString('["Gestionnaires en jeu (UID Steam)", "In-game managers (Steam UID)"],', $this->read(self::MAIN . '/i18n/en.txt'));
+    }
+
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */
     private function stripSqfComments(string $src): string
     {

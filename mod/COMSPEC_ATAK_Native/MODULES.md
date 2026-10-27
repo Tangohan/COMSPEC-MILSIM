@@ -173,10 +173,22 @@ réseau de son propre camp sur le même écran. Les écrans sont gardés d'une p
 Fond de carte : la photo de la carte si le mod @COMSPEC_ATAK_Photo est chargé, sinon la carte d'ensemble du terrain
 (une carte Arma ne se dessine pas dans une texture UI). Image noire ou décalée sur un objet : changer l'index de texture.
 
+**Qui peut poser, retirer ou régler un écran.** Sur le serveur (l'init d'un objet dans Eden y tourne aussi), l'appel
+s'applique tel quel. Sur le poste d'un joueur, « add », « remove », « spawn » et « view » partent au serveur
+(remoteExecCall), qui juge le joueur de ce poste : poser, désigner ou retirer un écran, seulement pour un Zeus, l'hôte,
+un admin connecté ou un UID du réglage « Gestionnaires en jeu (UID Steam) », comme le module Zeus ; changer
+l'affichage (« view »), en plus, pour un joueur du camp de l'écran à moins de 25 m. Une demande refusée ne fait rien
+et laisse une seule ligne WARN dans le journal du serveur : un script de mission qui tourne chez tous les joueurs
+appelle donc l'écran sur le serveur seulement (`if (isServer)`). Une sauvegarde ne recrée que les écrans du jeu
+proposés à la pose (écran sur trépied, TV, écran de projection, poste informatique, ordinateur portable) ; les écrans
+de la mission sont retrouvés à leur place.
+
 ```sqf
-// Serveur (l'init d'un objet dans Eden tourne aussi sur le serveur). Ailleurs, la demande part au serveur.
+// Serveur (l'init d'un objet dans Eden tourne aussi sur le serveur) : l'appel s'applique tel quel.
 // [objet, nom, camp ("" = celui de chaque joueur), index de texture, "SPLIT" | "MAP" | "FEED" | "TOC", sert de poste TOC]
 if (isServer) then { ["add", [this, "TOC Bravo", "WEST", 0, "SPLIT", true]] call comspec_atak_native_fnc_tocScreen; };
+// Sur le poste d'un Zeus, de l'hôte, d'un admin connecté ou d'un UID autorisé, la demande part au serveur ; ailleurs,
+// elle est refusée (une ligne WARN dans le journal du serveur).
 ["remove", objet] call comspec_atak_native_fnc_tocScreen;
 // Pose d'un écran du jeu : [position ATL, direction, classe, nom, camp, affichage, poste TOC]
 ["spawn", [getPosATL player, getDir player, "Land_TripodScreen_01_large_F", "TOC", "WEST"]] call comspec_atak_native_fnc_tocScreen;
@@ -187,7 +199,13 @@ server (`fn_tocFeed`), on a game TV or screen: map with nodes, mission markers, 
 feed. ACE/scroll actions change the display (map and feed, map, feed, post PIP), zoom and open the post laptop. The
 "TOC post laptop" action opens the laptop's own screen (`fn_tocLaptop`), with no phone: the real Arma map, groups,
 feed, order composer and side messages. "Post PIP" mirrors the operator's laptop on any in-game screen. Screens
-persist across sessions (`fn_tocPersist`, setting "Keep TOC screens").
+persist across sessions (`fn_tocPersist`, setting "Keep TOC screens"); a save only recreates the game screens offered
+for placement. On the server (an Eden object init also runs there), `fn_tocScreen` applies directly. Called on a
+client, `add`, `remove`, `spawn` and `view` are sent to the server, which judges the player of that machine: placing,
+designating or removing a screen is accepted only from a Zeus, the host, a logged-in admin or a UID of the "In-game
+managers (Steam UID)" setting; changing the display (`view`) also from a player of the screen's side within 25 m.
+A refused request does nothing and leaves a single WARN line in the server log, so a mission script that runs on
+every machine calls it on the server only (`if (isServer)`).
 
 ## 8. IA équipées d'un ATAK
 
