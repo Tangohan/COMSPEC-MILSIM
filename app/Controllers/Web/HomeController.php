@@ -840,12 +840,16 @@ class HomeController
         // Compte simple : choix « utiliser Athena seul » (sans organisation) et proposition au fondateur resté seul.
         $accountIsSolo = false;
         $simpleAccountOffer = null;
+        $soloOverview = null;
         if ($tenantId && $currentUser) {
             try {
                 $usage = \App\Core\Container::get(\App\Services\Account\AccountUsageService::class);
                 $usageUid = (int) Session::get('user_id');
                 if ($dashboardIsDefaultTenant) {
                     $accountIsSolo = $usage->isSolo($usageUid);
+                    if ($accountIsSolo) {
+                        $soloOverview = (new \App\Services\Account\SoloAccountOverviewService())->forUser($usageUid);
+                    }
                 } else {
                     $simpleAccountOffer = $usage->singleMemberOffer($usageUid, (int) $tenantId);
                 }
@@ -873,6 +877,7 @@ class HomeController
             'dashboard_is_default_tenant' => $dashboardIsDefaultTenant,
             'account_is_solo' => $accountIsSolo,
             'simple_account_offer' => $simpleAccountOffer,
+            'solo_overview' => $soloOverview,
             'dashboard_tenant_type' => $dashboardTenantType,
             'showcase_training_feature' => $showcaseTrainingFeature,
             'showcase_items' => $showcaseItems,

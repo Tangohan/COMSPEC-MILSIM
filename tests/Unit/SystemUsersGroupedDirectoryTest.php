@@ -25,7 +25,7 @@ final class SystemUsersGroupedDirectoryTest extends TestCase
         self::assertStringContainsString("'scope' => 'org'", $view);
         self::assertStringContainsString("'scope' => 'site'", $view);
         self::assertStringContainsString('admin/users/retirer-communaute', $view);
-        self::assertStringContainsString('Anonymiser le compte', $view);
+        self::assertStringContainsString('Supprimer le compte', $view);
         self::assertStringContainsString('Supprimer définitivement', $view);
     }
 
