@@ -12,6 +12,7 @@ use App\Core\Session;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
+use App\Services\Platform\AthenaHeritageService;
 use App\Support\ChangelogCatalog;
 use App\Support\DevDispatchCatalog;
 
@@ -27,6 +28,63 @@ final class SitePagesController
             'title' => __('site.about_meta_title'),
             'meta_description' => __('site.about_meta_description'),
             'marketingActive' => 'about',
+        ]);
+    }
+
+    public function history(Request $request, array $params = []): Response
+    {
+        $period = strtolower(trim((string) $request->query('periode', 'all')));
+        $from = null;
+        $to = null;
+        if ($period === '90') {
+            $from = (new \DateTimeImmutable('today'))->modify('-89 days')->format('Y-m-d');
+        } elseif ($period === '365') {
+            $from = (new \DateTimeImmutable('today'))->modify('-364 days')->format('Y-m-d');
+        }
+
+        $heritage = [
+            'live' => [],
+            'timeline' => [],
+            'chart' => ['labels' => [], 'operators' => [], 'organizations' => [], 'markers' => []],
+            'versions' => [],
+            'next_goal' => null,
+            'honesty_note' => (string) __('site.hist_honesty_note'),
+        ];
+        try {
+            /** @var AthenaHeritageService $service */
+            $service = Container::get(AthenaHeritageService::class);
+            $heritage = $service->buildPublicPage($from, $to);
+        } catch (\Throwable) {
+            // Page publique dégradée sans données.
+        }
+
+        $pageUrl = rtrim(url(''), '/') . '/notre-histoire';
+
+        return Response::view('layout.marketing', [
+            'content' => 'site.history',
+            'title' => __('site.hist_meta_title'),
+            'meta_description' => __('site.hist_meta_description'),
+            'marketingActive' => 'history',
+            'heritage' => $heritage,
+            'heritagePeriod' => $period,
+            'marketingStyles' => [asset_url('assets/css/site-history.css')],
+            'marketingScripts' => [asset_url('assets/js/site-history.js')],
+            'jsonLdExtra' => [
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'CollectionPage',
+                    'name' => __('site.hist_meta_title'),
+                    'description' => __('site.hist_meta_description'),
+                    'url' => $pageUrl,
+                    'inLanguage' => str_starts_with((string) html_lang(), 'en') ? 'en' : 'fr',
+                    'about' => [
+                        '@type' => 'SoftwareApplication',
+                        'name' => 'Athena',
+                        'applicationCategory' => 'BusinessApplication',
+                        'operatingSystem' => 'Web',
+                    ],
+                ],
+            ],
         ]);
     }
 

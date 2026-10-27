@@ -47,6 +47,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     $crumbName = match ($marketingActive) {
         'contact' => __('site.contact'),
         'changelog' => __('site.changelog'),
+        'history' => __('site.history'),
         'sse' => __('site.sse'),
         'atak-natif' => __('site.atak_native'),
         default => __('site.about'),
@@ -54,6 +55,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     $crumbPath = match ($marketingActive) {
         'contact' => '/contact',
         'changelog' => '/nouveautes',
+        'history' => '/notre-histoire',
         'sse' => '/sse',
         'atak-natif' => '/atak-natif',
         default => '/a-propos',
@@ -130,6 +132,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
             </div>
             <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="<?= htmlspecialchars(__('home.footer_legal_aria'), ENT_QUOTES, 'UTF-8') ?>">
                 <a href="<?= htmlspecialchars(url('a-propos'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.about'), ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="<?= htmlspecialchars(url('notre-histoire'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.history'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('sse'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.sse'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('atak-natif'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.atak_native'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>

@@ -895,6 +895,7 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
             </div>
             <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-1 text-xs" aria-label="<?= $e(__('home.footer_legal_aria')) ?>">
                 <a href="<?= $e(url('a-propos')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.about')) ?></a>
+                <a href="<?= $e(url('notre-histoire')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.history')) ?></a>
                 <a href="<?= $e(url('sse')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.sse')) ?></a>
                 <a href="<?= $e(url('atak-natif')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.atak_native')) ?></a>
                 <a href="<?= $e(url('contact')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.contact')) ?></a>

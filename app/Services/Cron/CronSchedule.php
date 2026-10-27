@@ -39,6 +39,7 @@ final class CronSchedule
         'member_integration_daily' => 1440,
         'personnel_auto_advancement' => 1440,
         'advancement_seniority' => 1440,
+        'athena_heritage_snapshot' => 1440,
     ];
 
     public static function intervalMinutes(string $jobKey): int
