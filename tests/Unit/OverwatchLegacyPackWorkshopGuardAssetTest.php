@@ -338,6 +338,70 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         ], $uses);
     }
 
+    public function testWorkshopPackGuardsItsOutputFolderAndClearsARefusedOne(): void
+    {
+        $ps = $this->read('workshop-pack.ps1');
+
+        // N8 (revue v2) : « Nettoyage staging » vide $OutDir. La sortie est refusée, avant tout autre contrôle, dans
+        // le dossier de l'ATAK natif ou au-dessus de lui, et sous steamapps\workshop ou le !Workshop d'Arma 3.
+        $nativeGuard = <<<'PS'
+            $outDirKey = [System.IO.Path]::GetFullPath($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)).TrimEnd('\', '/') + '\'
+            $atakNativeKey = [System.IO.Path]::GetFullPath((Join-Path $ModRoot '..\COMSPEC_ATAK_Native')).TrimEnd('\', '/') + '\'
+            $ignoreCase = [System.StringComparison]::OrdinalIgnoreCase
+            if ($outDirKey.StartsWith($atakNativeKey, $ignoreCase) -or $atakNativeKey.StartsWith($outDirKey, $ignoreCase)) {
+                Write-Fail (
+            PS;
+        $steamGuard = <<<'PS'
+            if ($outDirKey -match '(?i)[\\/](steamapps[\\/]workshop|!Workshop)[\\/]') {
+                Write-Fail (
+            PS;
+        self::assertStringContainsString($nativeGuard, $ps);
+        self::assertStringContainsString($steamGuard, $ps);
+        foreach (['outDirKey', 'atakNativeKey', 'ignoreCase'] as $name) {
+            self::assertCount(1, self::psAssignments($ps, $name), '$' . $name . ' réaffectée');
+        }
+        self::assertSame(['$false', '$true'], self::psAssignments($ps, 'OutDirChecked'));
+        $previous = -1;
+        foreach (["if (-not \$OutDir) {", '$OutDirChecked = $false', '$outDirKey = ', '$outDirKey -match ', '$OutDirChecked = $true',
+            'if (-not (Test-Path -LiteralPath $SourceMod)) {', 'Write-Step "Nettoyage staging'] as $marker) {
+            $at = strpos($ps, $marker);
+            self::assertNotFalse($at, 'absent : ' . $marker);
+            self::assertGreaterThan($previous, $at, 'hors d\'ordre : ' . $marker);
+            $previous = $at;
+        }
+        // Les deux « if » des gardes (lignes 3 et 5 ci-dessus) et le drapeau sont au niveau du script, hors de tout bloc.
+        $guardLines = explode("\n", $nativeGuard . "\n" . $steamGuard);
+        $depths = self::psDepths($ps);
+        foreach ([$guardLines[3], $guardLines[5], '$OutDirChecked = $true'] as $line) {
+            self::assertSame(0, $depths[$line] ?? null, 'garde absente ou dans un bloc : ' . $line);
+        }
+
+        // Une fois $OutDir contrôlé, un refus retire le meta.cpp de la sortie : un ancien pack, fait avant ARCH-021, y
+        // gardait le publishedid de l'ATAK natif. Avant ce contrôle, Write-Fail ne touche pas à $OutDir.
+        $removal = <<<'PS'
+                if ($OutDirChecked -and (Test-Path -LiteralPath $OutDir)) {
+            PS;
+        $meta = <<<'PS'
+                    $outMeta = Join-Path $OutDir "meta.cpp"
+                    if (Test-Path -LiteralPath $outMeta -PathType Leaf) {
+                        Remove-Item -LiteralPath $outMeta -Force -ErrorAction SilentlyContinue
+            PS;
+        $fail = self::psFunctionBody($ps, 'Write-Fail');
+        self::assertStringContainsString($removal, $fail);
+        self::assertStringContainsString($meta, $fail);
+        self::assertLessThan((int) strpos($fail, $meta), (int) strpos($fail, $removal));
+        self::assertSame(['Join-Path $OutDir "meta.cpp"'], self::psAssignments($ps, 'outMeta'));
+
+        // Le script ne supprime rien d'autre que ce meta.cpp, le dossier de sortie au staging et l'ancien zip.
+        $code = self::psCodeLines($ps);
+        self::assertSame([
+            'Remove-Item -LiteralPath $outMeta -Force -ErrorAction SilentlyContinue',
+            'Remove-Item -LiteralPath $OutDir -Recurse -Force',
+            'if (Test-Path -LiteralPath $zipPath) { Remove-Item -LiteralPath $zipPath -Force }',
+        ], array_values(array_filter($code, static fn (string $line): bool => stripos($line, 'Remove-Item') !== false)));
+        self::assertSame([], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w$.-])(?:rm|del|erase|rd|rmdir|ri|Clear-Item|cli)(?![\w-])/i', $line) === 1)));
+    }
+
     public function testLegacyBuildNoLongerDeploysIntoTheAtakNativeWorkshopFolder(): void
     {
         $bat = $this->read('build_mod.bat');

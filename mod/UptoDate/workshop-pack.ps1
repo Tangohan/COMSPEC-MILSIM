@@ -19,13 +19,16 @@
   publié seulement depuis mod/COMSPEC_ATAK_Native. Le script s'arrête avec le code 1 :
     - si le meta.cpp du pack vise l'objet 3684656708 ;
     - si la DLL retenue annonce une ProductVersion sous 2.0.96 (plancher SEC-001,
-      docs/PLANCHER-VERSION-DLL.md) ou une version illisible.
+      docs/PLANCHER-VERSION-DLL.md) ou une version illisible ;
+    - si OutDir est dans mod/COMSPEC_ATAK_Native, le contient, ou est sous steamapps/workshop
+      ou sous le dossier !Workshop d'Arma 3.
+  Après ce dernier contrôle, un refus retire aussi le meta.cpp du dossier de sortie.
 
 .PARAMETER SourceMod
   Dossier mod de travail (défaut : @COMSPECOverwatch à côté de ce script).
 
 .PARAMETER OutDir
-  Destination du pack (défaut : publisher/@COMSPECOverwatch).
+  Destination du pack (défaut : publisher/@COMSPECOverwatch). Le script la vide puis la remplit.
 
 .PARAMETER Zip
   Si défini, crée aussi une archive .zip à côté de OutDir.
@@ -51,16 +54,47 @@ $AtakNativeWorkshopId = '3684656708'
 # Plancher de version de COMSPEC Link (SEC-001) : les DLL plus anciennes joignent les secrets Athena à tout hôte
 # qu'un script leur demande, et Athena les refuse.
 $MinLinkVersion = [version]'2.0.96'
+# Vrai une fois $OutDir contrôlé : un refus retire alors le meta.cpp de la sortie (N8).
+$OutDirChecked = $false
 
 function Write-Step([string] $msg) { Write-Host "[PACK] $msg" -ForegroundColor Cyan }
 function Write-Fail([string] $msg) {
     Write-Host "[FAIL] $msg" -ForegroundColor Red
-    if (Test-Path -LiteralPath $OutDir) {
+    if ($OutDirChecked -and (Test-Path -LiteralPath $OutDir)) {
+        # Une sortie refusée ne garde pas de meta.cpp : le Publisher n'y retrouve plus le numéro d'un objet Workshop,
+        # comme le publishedid de l'ATAK natif que l'ancien script y copiait.
+        $outMeta = Join-Path $OutDir "meta.cpp"
+        if (Test-Path -LiteralPath $outMeta -PathType Leaf) {
+            Remove-Item -LiteralPath $outMeta -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $outMeta) {
+                Write-Host "[FAIL] $outMeta n'a pas pu être supprimé : supprimez-le avant d'ouvrir le Publisher." -ForegroundColor Red
+            } else {
+                Write-Host "[FAIL] $outMeta supprimé : cette sortie ne vise plus aucun objet Workshop." -ForegroundColor Red
+            }
+        }
         Write-Host "[FAIL] Ne publiez pas le contenu de $OutDir : ce n'est pas un pack validé par cette exécution." -ForegroundColor Red
     }
     exit 1
 }
 function Write-Warn([string] $msg) { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
+
+# Dossier de sortie (N8) : « Nettoyage staging » le vide, puis le remplit. Il est refusé dans le dossier de
+# l'ATAK natif ou au-dessus de lui, et sous les dossiers Workshop de Steam : steamapps\workshop, et le !Workshop
+# d'Arma 3, où le lanceur crée des jonctions vers steamapps\workshop. Le chemin est résolu comme par les cmdlets,
+# depuis le dossier courant de PowerShell. Une autre jonction, un lecteur substitué ou un nom court 8.3 ne sont pas
+# suivis.
+$outDirKey = [System.IO.Path]::GetFullPath($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)).TrimEnd('\', '/') + '\'
+$atakNativeKey = [System.IO.Path]::GetFullPath((Join-Path $ModRoot '..\COMSPEC_ATAK_Native')).TrimEnd('\', '/') + '\'
+$ignoreCase = [System.StringComparison]::OrdinalIgnoreCase
+if ($outDirKey.StartsWith($atakNativeKey, $ignoreCase) -or $atakNativeKey.StartsWith($outDirKey, $ignoreCase)) {
+    Write-Fail ("Sortie refusée : $OutDir est le dossier de l'ATAK natif (mod\COMSPEC_ATAK_Native), est dans ce dossier ou le " +
+        "contient. Le nettoyage du staging le viderait : choisissez un -OutDir hors de ce dossier.")
+}
+if ($outDirKey -match '(?i)[\\/](steamapps[\\/]workshop|!Workshop)[\\/]') {
+    Write-Fail ("Sortie refusée : $OutDir est sous un dossier Workshop de Steam (steamapps\workshop, ou !Workshop d'Arma 3). " +
+        "Le nettoyage du staging viderait un objet Workshop : choisissez un -OutDir hors de Steam.")
+}
+$OutDirChecked = $true
 
 if (-not (Test-Path -LiteralPath $SourceMod)) {
     Write-Fail "Source introuvable : $SourceMod"

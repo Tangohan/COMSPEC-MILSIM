@@ -71,6 +71,7 @@ Le pack hérité `@COMSPECOverwatch` n'a plus d'objet Workshop : ne le publiez p
 
 - L'objet `3684656708` (« COMSPEC ATAK Native ») est l'ATAK natif. Il se publie seulement depuis `mod/COMSPEC_ATAK_Native` (dossier `@COMSPEC_ATAK_Native`), après son propre `build_mod.bat`, qui recompile ici la DLL COMSPEC Link et les PBO `main` et `connect` d'Overwatch.
 - `workshop-pack.ps1` produit encore un dossier `publisher/@COMSPECOverwatch/` propre, mais il s'arrête en erreur (code 1) si la DLL retenue annonce une version sous 2.0.96 (plancher SEC-001, `docs/PLANCHER-VERSION-DLL.md` à la racine du dépôt) ou si le `meta.cpp` du pack vise l'objet `3684656708` de l'ATAK natif.
+- Il refuse aussi un `-OutDir` situé dans `mod/COMSPEC_ATAK_Native` ou au-dessus, sous `steamapps\workshop` ou sous le `!Workshop` d'Arma 3 : le nettoyage du staging viderait ce dossier. Une fois ce contrôle passé, un refus retire le `meta.cpp` du dossier de sortie, car une sortie de l'ancien script, d'avant ARCH-021, y gardait le `publishedid` de l'ATAK natif.
 - **Ne jamais publier** : sources `.sqf` nues, dossiers `net8.0`, fichiers `.pdb`.
 
 ---
@@ -107,6 +108,7 @@ Après changement **DLL seule** : remplacer `COMSPECExtension_x64.dll` suffit si
 | Build en échec : « Au moins une copie vers un dossier Arma a echoue » | Fermer Arma puis relancer ; voir `build_log.txt` sous la ligne `[DEPLOY] Cible` |
 | workshop-pack.ps1 : « DLL COMSPEC Link … refusée » | DLL plus ancienne que 2.0.96 : relancer `build_mod.bat` |
 | workshop-pack.ps1 : « … vise l'objet Workshop 3684656708, qui est l'ATAK natif » | Retirer `publishedid` du `meta.cpp` ; ne pas publier ce pack |
+| workshop-pack.ps1 : « Sortie refusée : … » | `-OutDir` dans l'ATAK natif ou sous un dossier Workshop de Steam : choisir une autre sortie |
 | En jeu extension absente | DLL manquante ou bloquée antivirus |
 | Mod charge mais pas liaison | Clé communauté, URL, pas double mod Workshop + local |
 
