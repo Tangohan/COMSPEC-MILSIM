@@ -38,24 +38,31 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Correctif de sécurité : relais ATAK, condition en code gardée par le serveur (ATAK natif : numéro donné au regroupement)
+## Correctif de sécurité : relais ATAK, et plus de code qu'un autre joueur puisse remplacer (ATAK natif et Overwatch connect : numéro donné au regroupement)
 
 ### Résumé joueur
 Type : correctif
-FR : Correctif de sécurité des relais ATAK
-- Une faille de sécurité des relais ATAK est corrigée.
+FR : Correctifs de sécurité des relais et du téléphone ATAK
+- Des failles de sécurité sont corrigées dans les relais ATAK, les repères de carte, les boutons des apps, les drones et les menus Zeus.
 - Rien ne change pour les joueurs, ni pour les relais posés avec le module dans l'éditeur.
-- Créateurs de missions : une condition d'activation écrite en code dans un script doit être reprise avec la nouvelle méthode décrite dans la documentation du mod.
-EN : ATAK relay security fix
-- A security hole in ATAK relays is fixed.
+- Créateurs de missions : une condition d'activation de relais écrite en code dans un script doit être reprise avec la nouvelle méthode décrite dans la documentation du mod.
+EN : ATAK relay and phone security fixes
+- Security holes are fixed in ATAK relays, map markers, app buttons, drones and Zeus menus.
 - Nothing changes for players, nor for relays placed with the module in the editor.
-- Mission makers: an activation condition written as code in a script must be redone with the new method described in the mod documentation.
+- Mission makers: a relay activation condition written as code in a script must be redone with the new method described in the mod documentation.
 
 ### Détail technique
 - MP2-01 (audit d'ingénierie, critique) : depuis la 2.4.1, `fn_relayCond` compilait sur le serveur, toutes les 2 s, la variable d'objet `COMSPEC_AtakRelayCondSrv`, crue locale au serveur parce que le module l'écrivait sans diffusion. Or une écriture diffusée par n'importe quel client remplace aussi la copie du serveur ; le cache du code compilé (`missionNamespace`, `COMSPEC_ATAK_RelayCondCode`) pouvait de même être remplacé par `publicVariable`. Le serveur pouvait donc exécuter du code fourni par un client, dans tous les modes de `CfgRemoteExec` et sans ZEN.
 - Correctif : registre du serveur en `localNamespace` (`COMSPEC_ATAK_RelayCondSrc`, paires [objet, code], jamais synchronisé), écrit seulement par la nouvelle fonction `comspec_atak_native_fnc_relayCondSet`. Elle refuse hors du serveur et pour un `remoteExec` venu d'un client, et n'est déclarée dans aucune liste blanche. Le module « ATAK · Relais » posé dans Eden l'appelle sur le serveur. Le cache du code compilé passe en `localNamespace`. Préréglages (`""`, `stopped`, `engineoff`, `mast`), résultat publié dans `COMSPEC_AtakRelayCondOk` et côté client inchangés.
 - **Rupture pour les missions** : `COMSPEC_AtakRelayCondSrv` n'est plus lue. Un script qui la posait doit appeler `[_veh, "code SQF"] call comspec_atak_native_fnc_relayCondSet` sur le serveur, en gardant `COMSPEC_AtakRelayCond` sur un texte hors préréglage (par exemple `"code"`) ; exemple dans `mod/COMSPEC_ATAK_Native/MODULES.md`, § 9. Sans cette reprise, le relais reste « condition non remplie ».
 - Test : `tests/Unit/AtakRelayCondServerRegistryTest.php` (échoue sur l'ancien code, passe ici). main.pbo à reconstruire au regroupement. Non testé en jeu : relais à condition en code posée par le module Eden et par la nouvelle fonction, préréglages, et écrasement tenté par un client, sur un serveur d'essai seulement.
+- SEC-021 / SEC-031 (contre-expertise, même classe que MP2-01 ; inventaire complet du natif et de connect au rapport du lot, § 10) : du code tenu là où le réseau peut le remplacer (variable globale ou `missionNamespace` : `publicVariable` ; variable d'objet : `setVariable` diffusé), ou construit à partir d'une valeur partagée.
+  - Famille a, code exécuté par le serveur : `COMSPEC_ATAK_FtCheck` (globale, toutes les 10 s) et `COMSPEC_ATAK_SrvKeep` (huit gestionnaires d'événements serveur) passent en `localNamespace` ; `COMSPEC_ATAK_PfhSpread` (soixante appels, boucles serveur comprises) devient la fonction finale `comspec_atak_native_fnc_pfhSpread` (CfgFunctions) ; connect : `COMSPEC_fnc_isOwnedMapMarker` et `COMSPEC_ServerEnqueueMarker` en `localNamespace`.
+  - Famille b, code exécuté par les postes : 57 fermetures posées une fois et relues plus tard (raccourcis, actions ACE et molette, menus et attributs Zeus, boucles d'affichage, repères) quittent `missionNamespace` : 34 du natif en `uiNamespace`, 21 de connect en `localNamespace` ; les deux fermetures de frappe du drone (`fn_droneCmd`) quittent les variables du drone pour `localNamespace`.
+  - Famille c, boutons compilés : 19 `compile format` qui recopiaient une valeur partagée entre apostrophes (alertes médicales et MEDEVAC, demandes logistiques, équipes de feu, cibles marquées et zones interdites, notifications) passent l'argument par `str`. Les 97 autres recopient des valeurs locales (classées au rapport) ; le test interdit d'en ajouter.
+  - Famille d, fonctions d'un autre paquet : un nom de fonction resté vide se remplit par `publicVariable`. Les dix gardes `!isNil "ATHENA_fnc_getRealismParam"` (fonction construite nulle part ; six dans des fonctions déclarées, quatre dans `fn_placeAtakRelay_refactored`, non déclaré) exigent sa déclaration dans CfgFunctions ; `fn_relayTower` et `fn_relayConvert` n'appellent `comspec_overwatch_connect_fnc_syncAtakRelay` qu'avec connect chargé (CfgPatches) ; `fn_relayZeus` n'enregistre les attributs Zeus des relais qu'avec l'addon ZEN `zen_attributes` chargé (le clic droit Zeus reste).
+  - Non changé, expliqué au rapport : les crochets `atak_athena` posés par le natif et le substitut ZEN de connect (non finaux : `compileFinal` y bloquerait le vrai ZEN chargé après) ; les autres appels vers un paquet optionnel côté client, exposés seulement quand ce paquet manque, à traiter en lot dédié. Aucune API de mission ne change : aucun de ces noms n'est documenté.
+  - Test : `tests/Unit/AtakServerCodeNamespaceGuardTest.php` (six méthodes : échoue sur l'ancien code, passe ici). Non testé en jeu : essais à faire sur un serveur d'essai seulement (rapport du lot, § 7).
 
 ---
 
