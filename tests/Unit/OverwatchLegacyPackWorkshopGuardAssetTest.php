@@ -14,9 +14,14 @@ use PHPUnit\Framework\TestCase;
  */
 final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
 {
+    private function rootPath(string $relative): string
+    {
+        return dirname(__DIR__, 2) . '/' . $relative;
+    }
+
     private function legacyPath(string $relative): string
     {
-        return dirname(__DIR__, 2) . '/mod/UptoDate/' . $relative;
+        return $this->rootPath('mod/UptoDate/' . $relative);
     }
 
     /** Contenu du fichier, fins de ligne ramenées à LF (une copie Windows peut être en CRLF). */
@@ -54,6 +59,39 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
 
         self::assertStringNotContainsString(SteamWorkshop::ATAK_NATIVE_ID, $meta);
         self::assertDoesNotMatchRegularExpression('/publishedid/i', $meta);
+    }
+
+    public function testNoMetaCppOutsideTheAtakNativeFolderTargetsItsWorkshopItem(): void
+    {
+        // Critère de clôture d'ARCH-021 : hors de mod/COMSPEC_ATAK_Native, aucun meta.cpp ne vise l'objet de l'ATAK
+        // natif. Cela vaut pour le pack hérité comme pour les instantanés de mod/Workshop, qui sont des dossiers de
+        // mod complets, prêts pour le Publisher.
+        $mod = $this->rootPath('mod');
+        self::assertDirectoryExists($mod);
+        $relative = static fn (string $path): string => str_replace('\\', '/', substr($path, strlen($mod) + 1));
+        // Dossier de l'ATAK natif, puis dossiers exclus par .gitignore (archives locales, sorties des scripts de
+        // pack) : aucun meta.cpp suivi n'y est, et une copie locale ne doit pas faire échouer le test.
+        $skipped = ['COMSPEC_ATAK_Native', 'Ancienne version de tout', '_local_pre_pr150_backup', 'UptoDate/publisher', 'publisher'];
+        $files = new \RecursiveIteratorIterator(new \RecursiveCallbackFilterIterator(
+            new \RecursiveDirectoryIterator($mod, \FilesystemIterator::SKIP_DOTS),
+            static fn (\SplFileInfo $entry): bool => !in_array($relative($entry->getPathname()), $skipped, true),
+        ));
+
+        $visitedLegacyScript = false;
+        $offending = [];
+        foreach ($files as $file) {
+            $path = $relative($file->getPathname());
+            $visitedLegacyScript = $visitedLegacyScript || $path === 'UptoDate/workshop-pack.ps1';
+            if (strcasecmp($file->getFilename(), 'meta.cpp') === 0
+                && str_contains((string) file_get_contents($file->getPathname()), SteamWorkshop::ATAK_NATIVE_ID)) {
+                $offending[] = 'mod/' . $path;
+            }
+        }
+
+        // Le parcours a bien couvert mod/ : sans cela, le test passerait à vide.
+        self::assertTrue($visitedLegacyScript, 'parcours de mod/ incomplet : mod/UptoDate/workshop-pack.ps1 non vu');
+        sort($offending);
+        self::assertSame([], $offending, 'meta.cpp qui visent encore l\'objet ' . SteamWorkshop::ATAK_NATIVE_ID);
     }
 
     public function testWorkshopPackRefusesAnOldLinkDllAndTheAtakNativeMetaCpp(): void
