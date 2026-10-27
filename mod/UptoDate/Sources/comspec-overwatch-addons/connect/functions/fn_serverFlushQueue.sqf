@@ -1,10 +1,11 @@
 /*
     Exécute les entrées de la file serveur arrivées à échéance.
+    File en localNamespace (propre au serveur, jamais synchronisée ; fn_serverEnqueue).
     Returns: nombre d’actions exécutées
 */
 if (!isServer) exitWith { 0 };
 
-private _queue = missionNamespace getVariable ["COMSPEC_ServerQueue", createHashMap];
+private _queue = localNamespace getVariable ["COMSPEC_ServerQueue", createHashMap];
 if (!(_queue isEqualType createHashMap)) exitWith { 0 };
 
 private _now = diag_tickTime;
@@ -28,5 +29,5 @@ private _keep = createHashMap;
     };
 } forEach (keys _queue);
 
-missionNamespace setVariable ["COMSPEC_ServerQueue", _keep, false];
+localNamespace setVariable ["COMSPEC_ServerQueue", _keep];
 _done

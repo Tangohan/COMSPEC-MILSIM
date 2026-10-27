@@ -11,7 +11,8 @@ if (!(missionNamespace getVariable ["comspec_overwatch_server_hub", true])) exit
 if (missionNamespace getVariable ["COMSPEC_ServerHubStarted", false]) exitWith { true };
 missionNamespace setVariable ["COMSPEC_ServerHubStarted", true, false];
 missionNamespace setVariable ["COMSPEC_ServerHubActive", true, true];
-missionNamespace setVariable ["COMSPEC_ServerQueue", createHashMap, false];
+// File anti-spam (fn_serverEnqueue) : localNamespace, propre au serveur et jamais synchronisé (elle porte du code).
+localNamespace setVariable ["COMSPEC_ServerQueue", createHashMap];
 
 // Même filtre de marqueurs « déjà nôtres » que le client (évite boucles).
 if (isNil {localNamespace getVariable "COMSPEC_fnc_isOwnedMapMarker"}) then {
@@ -43,7 +44,9 @@ if (isNil "COMSPEC_ServerMarkerEHs") then {
         if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
         if ([_marker] call (localNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        [
+        // Mise en file à l'image suivante (CBA), les filtres ci-dessus restant immédiats : hors du contexte d'un appel
+        // distant qui aurait créé le repère, la garde de fn_serverEnqueue ne refuse jamais ce repère légitime.
+        [{ _this call comspec_overwatch_connect_fnc_serverEnqueue; }, [
             format ["mk_%1_%2", _marker, if (_deleted) then {"d"} else {"u"}],
             {
                 params ["_m", "_del"];
@@ -57,10 +60,10 @@ if (isNil "COMSPEC_ServerMarkerEHs") then {
             },
             0.75,
             [_marker, _deleted]
-        ] call comspec_overwatch_connect_fnc_serverEnqueue;
+        ]] call CBA_fnc_execNextFrame;
     };
-    // localNamespace (jamais synchronisé) : les gestionnaires de repères du serveur l'exécutent ; en missionNamespace, un
-    // client pouvait le remplacer par publicVariable et faire exécuter son code au serveur à chaque repère posé.
+    // localNamespace (propre au serveur, jamais synchronisé) : les gestionnaires de repères du serveur exécutent cette
+    // fermeture, qu'aucune autre machine ne peut remplacer.
     localNamespace setVariable ["COMSPEC_ServerEnqueueMarker", _enqueueMarker];
 
     COMSPEC_ServerMarkerEHs = [

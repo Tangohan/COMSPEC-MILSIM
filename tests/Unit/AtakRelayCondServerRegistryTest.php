@@ -147,8 +147,8 @@ final class AtakRelayCondServerRegistryTest extends TestCase
         self::assertFileExists($this->path($rel));
         $set = $this->code($this->read($rel));
         self::assertStringContainsString('params [["_o", objNull, [objNull]], ["_src", "", [""]]];', $set);
-        // Serveur seul, et jamais pour un remoteExec venu d'un client, avant toute écriture.
-        $guard = 'if (!isServer || {isRemoteExecuted && {!(remoteExecutedOwner in [2, clientOwner])}}) exitWith {';
+        // Serveur seul, et jamais pour un remoteExec venu d'un client (file JIP comprise), avant toute écriture.
+        $guard = 'if (!isServer || {isRemoteExecutedJIP} || {isRemoteExecuted && {!(remoteExecutedOwner in [2, clientOwner])}}) exitWith {';
         $write = 'localNamespace setVariable ["' . self::REGISTRY . '", _reg];';
         self::assertStringContainsString($guard, $set);
         self::assertStringContainsString($write, $set);

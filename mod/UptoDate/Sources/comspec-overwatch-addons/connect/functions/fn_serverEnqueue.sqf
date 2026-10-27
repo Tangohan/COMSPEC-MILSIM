@@ -5,6 +5,11 @@
       _code        : code à exécuter au flush
       _debounceSec : délai avant exécution (défaut 0.6)
       _args        : arguments passés au code
+    La file est rangée en localNamespace (propre au serveur, jamais synchronisée) : elle porte du code que le serveur
+    exécute (fn_serverFlushQueue, garde-fou ci-dessous). Appel local au serveur seulement : un appel distant venu d'un
+    client (remoteExec, file JIP comprise) est refusé et journalisé, même garde que comspec_atak_native_fnc_relayCondSet.
+    Appelants : fn_initServerHub (boucles CBA du serveur ; repères mis en file à l'image suivante, hors de tout appel
+    distant).
 */
 params [
     ["_key", "", [""]],
@@ -14,15 +19,19 @@ params [
 ];
 
 if (!isServer) exitWith { false };
+if (isRemoteExecutedJIP || {isRemoteExecuted && {!(remoteExecutedOwner in [2, clientOwner])}}) exitWith {
+    ["WARN", "ServerHub", format ["File serveur : appel distant refusé (machine %1).", remoteExecutedOwner]] call comspec_overwatch_connect_fnc_log;
+    false
+};
 if (_key isEqualTo "") exitWith { false };
 if (_debounceSec < 0) then { _debounceSec = 0; };
 
-private _queue = missionNamespace getVariable ["COMSPEC_ServerQueue", createHashMap];
+private _queue = localNamespace getVariable ["COMSPEC_ServerQueue", createHashMap];
 if (!(_queue isEqualType createHashMap)) then { _queue = createHashMap; };
 
 private _due = diag_tickTime + _debounceSec;
 _queue set [_key, [_due, _code, _args]];
-missionNamespace setVariable ["COMSPEC_ServerQueue", _queue, false];
+localNamespace setVariable ["COMSPEC_ServerQueue", _queue];
 
 private _n = count (keys _queue);
 if (_n > 120) then {

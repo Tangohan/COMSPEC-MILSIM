@@ -16,8 +16,9 @@
       };
 */
 params [["_o", objNull, [objNull]], ["_src", "", [""]]];
-// Serveur seul ; un remoteExec venu d'un client est refusé même si une mission déclarait la fonction (ou en mode 2).
-if (!isServer || {isRemoteExecuted && {!(remoteExecutedOwner in [2, clientOwner])}}) exitWith {
+// Serveur seul ; un remoteExec venu d'un client (file JIP comprise) est refusé même si une mission déclarait la
+// fonction (ou en mode 2). Même garde que la file serveur de connect (fn_serverEnqueue).
+if (!isServer || {isRemoteExecutedJIP} || {isRemoteExecuted && {!(remoteExecutedOwner in [2, clientOwner])}}) exitWith {
     ["WARNING", "RELAY", "Condition de relais en code refusée : elle se pose sur le serveur seul (comspec_atak_native_fnc_relayCondSet)."] call comspec_atak_native_fnc_log;
     false
 };
