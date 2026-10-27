@@ -14,6 +14,15 @@ final class MaintenanceGuard
     /** Étalement des retours après une fin annoncée (secondes ajoutées au hasard, 0 à 15). */
     private const RETURN_SPREAD = 15;
 
+    /**
+     * Ancienne maintenance par fichier (storage/maintenance.json, posé par les mises à jour et restaurations lancées
+     * depuis l'administration) : opération courte, sans heure de fin. Les API reviennent après 30 à 60 s.
+     */
+    private const LEGACY_FILE_RETRY_AFTER = 30;
+
+    /** Étalement des retours pendant l'ancienne maintenance par fichier (0 à 30 s ajoutées au hasard). */
+    private const LEGACY_FILE_RETURN_SPREAD = 30;
+
     public function __construct(
         private MaintenanceService $maintenanceService
     ) {}
@@ -217,6 +226,33 @@ final class MaintenanceGuard
         }
 
         return min(self::DEFAULT_RETRY_AFTER, max(self::MIN_RETRY_AFTER, $endsTs - ($now ?? time())) + $spread);
+    }
+
+    /** Délai de retour pendant l'ancienne maintenance par fichier : 30 s, plus $spread (borné à 0..30). */
+    public static function legacyFileRetryAfter(int $spread = 0): int
+    {
+        return self::LEGACY_FILE_RETRY_AFTER + max(0, min(self::LEGACY_FILE_RETURN_SPREAD, $spread));
+    }
+
+    /**
+     * API pendant l'ancienne maintenance par fichier (public/index.php) : le JSON de la maintenance planifiée
+     * (error « maintenance », retry_after) au lieu de la page HTML, et un délai court étalé. La DLL et l'application
+     * du téléphone reconnaissent alors la maintenance ; avec « Retry-After: 300 », la DLL suspendait ses envois
+     * 5 min dès le troisième échec, quelle que soit la durée réelle de la mise à jour.
+     */
+    public static function sendLegacyFileApiResponse(string $message): never
+    {
+        $retryAfter = self::legacyFileRetryAfter(random_int(0, self::LEGACY_FILE_RETURN_SPREAD));
+        http_response_code(503);
+        header('Retry-After: ' . $retryAfter);
+        header('X-Athena-Maintenance: 1');
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        echo json_encode(
+            self::jsonPayload(['title' => '', 'ends_at' => null], self::humanMessage($message), $retryAfter),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
+        exit;
     }
 
     /** Ferme la session du visiteur (données et cookie) : il devra se reconnecter après la maintenance. */

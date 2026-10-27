@@ -199,6 +199,10 @@ if (_prefix == "OK") then {
                     _detail = "Acces refuse — cle Athena invalide";
                     _logMsg = "Acces refuse (cle Athena invalide ou mal enregistree).";
                 };
+                case "client_untrusted": {
+                    _detail = "Module non reconnu — installez le pack officiel";
+                    _logMsg = "Ce module n'est pas reconnu. Installez la version officielle du pack, puis relancez Arma.";
+                };
                 case "tenant_required": {
                     _detail = "Communaute manquante — refaites la liaison";
                     _logMsg = "Communaute Athena manquante — generez un nouveau code et refaites la liaison.";

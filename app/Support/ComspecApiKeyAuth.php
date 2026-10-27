@@ -400,6 +400,11 @@ final class ComspecApiKeyAuth
      */
     public static function enforceForTacticalPath(string $path): ?Response
     {
+        $untrusted = self::rejectUntrustedGameClient($path);
+        if ($untrusted !== null) {
+            return $untrusted;
+        }
+
         $cfg = self::tacticalConfig();
         if (!self::pathRequiresProtection($path, $cfg)) {
             return null;
@@ -431,6 +436,28 @@ final class ComspecApiKeyAuth
         self::logAuthFailure($path, $presented !== '' ? 'invalid_key' : 'missing_key');
 
         return self::json401();
+    }
+
+    /**
+     * Module de jeu : preuve officielle obligatoire dès que le secret est configuré.
+     * Session du portail sans cette preuve : la carte et le bureau restent utilisables.
+     * Preuve présente mais fausse : refus, même si une session navigateur existe.
+     */
+    private static function rejectUntrustedGameClient(string $path): ?Response
+    {
+        if (!OfficialClientAttestation::pathRequiresProof($path)) {
+            return null;
+        }
+        $status = OfficialClientAttestation::presentedStatus();
+        if ($status === 'valid') {
+            return null;
+        }
+        if ($status === 'absent' && self::authenticatedBrowserSessionMayAccessTactical()) {
+            return null;
+        }
+        self::logAuthFailure($path, 'client_untrusted');
+
+        return OfficialClientAttestation::rejection();
     }
 
     /**
@@ -555,7 +582,9 @@ final class ComspecApiKeyAuth
                 return;
             }
             $pathHint = self::pathHintForLog($path);
-            if ($pathHint === 'connexion_telephone') {
+            if ($reason === 'client_untrusted') {
+                $label = 'Tentative de connexion refusée — module non reconnu';
+            } elseif ($pathHint === 'connexion_telephone') {
                 $label = $reason === 'missing_key'
                     ? 'Connexion téléphone refusée — compte non lié (clé manquante)'
                     : 'Connexion téléphone refusée — clé d’accès incorrecte';
@@ -579,7 +608,13 @@ final class ComspecApiKeyAuth
         }
     }
 
-    private static function guessTenantIdForLog(): int
+    /**
+     * Communauté à qui journaliser un refus SANS preuve : la garde des routes tactiques, et la liaison en jeu
+     * refusée (AtakApiController : code inconnu, Steam non reconnu). Une seule règle : clé reconnue, session,
+     * tenant_id de l’URL seulement s’il s’écrit en chiffres et désigne une communauté qui existe, puis la
+     * communauté par défaut configurée. 0 : rien à journaliser.
+     */
+    public static function guessTenantIdForLog(): int
     {
         $matched = self::$matchedTenantId;
         if ($matched !== null && $matched > 0) {

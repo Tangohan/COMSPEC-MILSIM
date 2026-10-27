@@ -301,7 +301,7 @@ final class AtakArmaWriteGuard
                 'channel' => $channel,
             ]);
 
-            return $this->rateLimitedResponse(60);
+            return $this->rateLimitedResponse($this->limiter->secondsUntilReset($writeKey, 60));
         }
         if ($channel === 'position') {
             $posKey = 'atak:pos:' . $tenantId . ':' . $actor;
@@ -310,7 +310,7 @@ final class AtakArmaWriteGuard
                     'reason' => 'rate_limited_position',
                 ]);
 
-                return $this->rateLimitedResponse(60);
+                return $this->rateLimitedResponse($this->limiter->secondsUntilReset($posKey, 60));
             }
             $burstKey = 'atak:posburst:' . $tenantId . ':' . $actor;
             if ($this->limiter->tooManyAttempts($burstKey, 10, 5)) {
@@ -318,13 +318,17 @@ final class AtakArmaWriteGuard
                     'reason' => 'rate_limited_position_burst',
                 ]);
 
-                return $this->rateLimitedResponse(5);
+                return $this->rateLimitedResponse($this->limiter->secondsUntilReset($burstKey, 5));
             }
         }
 
         return null;
     }
 
+    /**
+     * @param int $retryAfter temps qui reste avant la remise à zéro de la fenêtre qui refuse (NET-027), annoncé à
+     *                        l'identique dans l'en-tête Retry-After et dans retry_after
+     */
     private function rateLimitedResponse(int $retryAfter): Response
     {
         $retryAfter = max(1, min(120, $retryAfter));

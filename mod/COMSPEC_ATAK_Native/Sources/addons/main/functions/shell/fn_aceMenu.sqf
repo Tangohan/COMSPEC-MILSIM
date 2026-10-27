@@ -123,16 +123,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_OwRepair", _ow];
 }] call _add;
 [_care, "COMSPEC_ATAK_OwDiag", "Diagnostic", "", {
     private _s = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
-    // Coche hors du mot traduit ; chaque morceau passe par le dictionnaire (clés existantes), le message est déjà
-    // dans la langue du joueur quand fn_notify le relit.
-    private _ok = { params ["_on", "_bad"]; (["✗ ", "✓ "] select _on) + (([_bad, "OK"] select _on) call comspec_atak_native_fnc_tr) };
-    private _T = { _this call comspec_atak_native_fnc_tr };
+    // Phrase source en français, traduite à l'affichage (fn_notificationsRender) : chaque « Libellé : valeur » est dans le
+    // dictionnaire (« Power: ✗ Off »). Traduite morceau par morceau ici, elle gardait l'espace français avant les deux-points.
+    private _ok = { params ["_on", "_bad"]; ["✗ " + _bad, "✓ OK"] select _on };
     // Dans le centre de notifications du téléphone, pas sur l'écran du jeu.
-    ["INFO", format ["ATAK · %1 · %2 : %3 · %4 : %5 · %6 : %7%8", "État" call _T,
-        "Alimentation" call _T, [_s get "powered_on", "éteint"] call _ok,
-        "Écran" call _T, [_s get "screen_ok", "détruit"] call _ok,
-        "Liaison" call _T, [_s get "connection_ok", "coupée"] call _ok,
-        ["", " · " + ("Téléphone détruit" call _T)] select (_s get "device_destroyed")], 8, 40] call comspec_atak_native_fnc_notify;
+    ["INFO", format ["ATAK · État · Alimentation : %1 · Écran : %2 · Liaison : %3%4",
+        [_s get "powered_on", "Éteint"] call _ok, [_s get "screen_ok", "Détruit"] call _ok, [_s get "connection_ok", "Coupée"] call _ok,
+        ["", " · Téléphone détruit"] select (_s get "device_destroyed")], 8, 40] call comspec_atak_native_fnc_notify;
 }, { call (missionNamespace getVariable "COMSPEC_ATAK_OwRepair") }] call _add;
 // Les mêmes actions posées par Overwatch dans « Équipement » sont retirées une fois en place (doublons).
 [{ missionNamespace getVariable ["COMSPEC_AtakRepairReady", false] }, {

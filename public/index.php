@@ -225,9 +225,13 @@ if (!$maintenanceSkipped) {
             $isAllowedIp = in_array($clientIp, $allowedIps, true);
 
             if (!$isAllowedIp) {
+                $message = (string) ($legacyData['message'] ?? 'Maintenance en cours. Merci de réessayer dans quelques minutes.');
+                if (\App\Support\MaintenanceGuard::wantsJson($requestPath)) {
+                    // API (DLL, mod, Overwatch, téléphone) : JSON « maintenance » et retour dans 30 à 60 s.
+                    \App\Support\MaintenanceGuard::sendLegacyFileApiResponse($message);
+                }
                 http_response_code(503);
                 header('Retry-After: 300');
-                $message = (string) ($legacyData['message'] ?? 'Maintenance en cours. Merci de réessayer dans quelques minutes.');
                 $view503 = $root . '/views/errors/503.php';
                 if (is_file($view503)) {
                     require $view503;

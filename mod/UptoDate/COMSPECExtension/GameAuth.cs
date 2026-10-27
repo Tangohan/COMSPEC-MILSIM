@@ -997,6 +997,7 @@ public static partial class Extension
 
     private static string MapGameError(string code, string raw)
     {
+        if (raw.Contains("client_untrusted", StringComparison.Ordinal)) return "CLIENT_UNTRUSTED";
         if (raw.Contains("INVALID_CREDENTIALS", StringComparison.Ordinal)) return "INVALID_CREDENTIALS";
         if (raw.Contains("OTP_EXPIRED", StringComparison.Ordinal)) return "OTP_EXPIRED";
         if (raw.Contains("STEAM_NOT_LINKED", StringComparison.Ordinal)) return "STEAM_NOT_LINKED";
@@ -1032,6 +1033,7 @@ public static partial class Extension
             using var content = new StringContent(payload, Encoding.UTF8);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = content };
+            StampOfficialClient(req);
             var bearer = bearerToken ?? _gameAccessToken;
             if (withBearer && bearer.Length > 0)
                 req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + bearer);
@@ -1069,6 +1071,7 @@ public static partial class Extension
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
             using var req = new HttpRequestMessage(HttpMethod.Get, uri);
+            StampOfficialClient(req);
             if (_gameAccessToken.Length > 0)
                 req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _gameAccessToken);
             using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
