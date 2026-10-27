@@ -20,6 +20,24 @@ $when = static function (mixed $raw): string {
 $pendingCount = (int) ($pendingCount ?? count($requests ?? []));
 $requests = is_array($requests ?? null) ? $requests : [];
 $fieldLabels = is_array($fieldLabels ?? null) ? $fieldLabels : [];
+$linesOf = static function (array $row, string $bucket, string $key, string $fallback): array {
+    $raw = $row[$bucket][$key] ?? null;
+    if (is_array($raw)) {
+        $out = [];
+        foreach ($raw as $line) {
+            $line = trim((string) $line);
+            if ($line !== '') {
+                $out[] = $line;
+            }
+        }
+        if ($out !== []) {
+            return $out;
+        }
+    }
+    $fallback = trim($fallback);
+
+    return $fallback !== '' ? [$fallback] : [];
+};
 ?>
 <div class="rh-corr">
   <p class="rh-corr__count" aria-live="polite">
@@ -78,15 +96,32 @@ $fieldLabels = is_array($fieldLabels ?? null) ? $fieldLabels : [];
         ?>
         <?php foreach ($proposed as $key => $newVal): ?>
         <?php
-          $label = $fieldLabels[(string) $key] ?? (string) $key;
-          $old = trim((string) ($beforeDisplay[$key] ?? $before[$key] ?? ''));
-          $new = trim((string) ($proposedDisplay[$key] ?? $newVal));
+          $key = (string) $key;
+          $label = $fieldLabels[$key] ?? 'Information du dossier';
+          $blank = \App\Services\Personnel\PersonnelCorrectionRequestService::emptyFieldPhrase($key);
+          $oldLines = $linesOf($row, 'before_lines', $key, (string) ($beforeDisplay[$key] ?? ''));
+          $newLines = $linesOf($row, 'proposed_lines', $key, (string) ($proposedDisplay[$key] ?? ''));
         ?>
-        <li>
-          <span class="rh-corr__field"><?= $h($label) ?></span>
-          <span class="rh-corr__old"><?= $h($old !== '' ? $old : 'Non renseigné') ?></span>
-          <span class="rh-corr__arrow" aria-hidden="true">→</span>
-          <span class="rh-corr__new"><?= $h($new !== '' ? $new : 'Vide') ?></span>
+        <li class="rh-corr__change">
+          <p class="rh-corr__field"><?= $h($label) ?></p>
+          <div class="rh-corr__sides">
+            <div class="rh-corr__side rh-corr__side--old">
+              <span class="rh-corr__side-label">Actuellement</span>
+              <?php if ($oldLines === []): ?>
+                <p><?= $h($blank) ?></p>
+              <?php else: ?>
+                <p><?php foreach ($oldLines as $line): ?><span class="rh-corr__line"><?= $h($line) ?></span><?php endforeach; ?></p>
+              <?php endif; ?>
+            </div>
+            <div class="rh-corr__side rh-corr__side--new">
+              <span class="rh-corr__side-label">Proposé</span>
+              <?php if ($newLines === []): ?>
+                <p><?= $h($blank) ?></p>
+              <?php else: ?>
+                <p><?php foreach ($newLines as $line): ?><span class="rh-corr__line"><?= $h($line) ?></span><?php endforeach; ?></p>
+              <?php endif; ?>
+            </div>
+          </div>
         </li>
         <?php endforeach; ?>
       </ul>
@@ -95,8 +130,8 @@ $fieldLabels = is_array($fieldLabels ?? null) ? $fieldLabels : [];
       <form method="post" action="<?= $h(url('back-office/personnel/corrections/' . $id . '/decide')) ?>" class="rh-corr__actions">
         <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
         <label class="rh-corr__comment">
-          Commentaire (optionnel)
-          <input type="text" name="resolution_note" maxlength="1000" placeholder="Précision pour le membre">
+          Message au membre (facultatif)
+          <input type="text" name="resolution_note" maxlength="1000" placeholder="Ce message lui sera transmis avec votre décision">
         </label>
         <div class="rh-corr__btns">
           <button type="submit" name="decision" value="approved" class="rh-corr__btn rh-corr__btn--ok">Confirmer</button>
