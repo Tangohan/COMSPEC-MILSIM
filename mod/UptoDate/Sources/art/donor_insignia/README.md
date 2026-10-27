@@ -26,4 +26,6 @@ Alternative officielle : Arma 3 Tools > ImageToPAA sur le PNG, en gardant le nom
 - `comspec_overwatch_connect_fnc_applyDonorPerk` pose l'écusson du joueur local quand Athena renvoie `net_donor_tier`
   (expérience communauté), sans jamais remplacer un écusson de mission ; réglage CBA « Écusson Donateur Athena » pour le retirer.
 - Les écussons sont aussi visibles dans l'arsenal (Insignes) : un joueur peut les choisir à la main.
-- Après modification : `build_mod.bat`, `workshop-pack.ps1`, puis mise à jour de l'objet Workshop.
+- Après modification : recompiler l'ATAK natif (`mod\COMSPEC_ATAK_Native\build_mod.bat`), qui reconstruit le PBO
+  `connect` à partir de ces sources, puis publier `@COMSPEC_ATAK_Native` (voir
+  `mod/UptoDate/docs/compilation-et-publication.md`). Le pack hérité `@COMSPECOverwatch` n'a plus d'objet Workshop.

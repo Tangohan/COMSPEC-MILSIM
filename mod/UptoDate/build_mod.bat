@@ -111,8 +111,8 @@ if exist "%SOURCES_DIR%\sse_ace\config.cpp" (
     )
 )
 
-:: 4. DLL a la racine du mod (Native AOT ~5 Mo ??? jamais le stub manag?? ~30 Ko)
-::    Ne PAS copier *.pdb / net8.0 (fuite symbols + chemins) ??? pack Workshop : workshop-pack.ps1
+:: 4. DLL a la racine du mod (Native AOT ~5 Mo, jamais le stub manage ~30 Ko)
+::    Ne PAS copier *.pdb / net8.0 (fuite symbols + chemins). Pack propre : workshop-pack.ps1, sans objet Workshop.
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64... >> "%BUILD_LOG%"
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64...
 set "DLL_SRC="

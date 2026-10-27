@@ -112,7 +112,7 @@ mod/
 ├── README.md               # Quel dossier builder
 ├── UptoDate/               # Overwatch — dossier de travail
 │   ├── build_mod.bat       # Native AOT + AddonBuilder → PBO
-│   ├── workshop-pack.ps1   # Pack Workshop propre
+│   ├── workshop-pack.ps1   # Pack hérité propre, sans objet Workshop
 │   ├── COMSPECExtension/   # Extension C# (DLL Native AOT)
 │   ├── Sources/comspec-overwatch-addons/
 │   │   ├── connect/        # Liaison jeu ↔ Athena (SQF)
