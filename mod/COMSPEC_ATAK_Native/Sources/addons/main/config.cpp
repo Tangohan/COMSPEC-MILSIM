@@ -84,7 +84,7 @@ class CfgFunctions {
             class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {}; class distanceServer {}; class pageDistance {}; class distanceLog {}; class distanceMine {};
         };
         class garmin { file="z\comspec_atak_native\addons\main\functions\garmin";
-            class garminTick {}; class pageGarmin {}; class watch {};
+            class garminTick {}; class pageGarmin {}; class watch {}; class watchMapDraw {};
         };
         class debrief { file="z\comspec_atak_native\addons\main\functions\debrief";
             class debrief {}; class debriefServer {}; class pageDebrief {};

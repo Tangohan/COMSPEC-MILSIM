@@ -12,6 +12,7 @@
       ["stop"]               coupe la caméra et sa boucle
       ["zoom", +1 | -1]      palier de zoom numérique (x1 à x8)
       ["flash"]              AUTO → FORCÉ → COUPÉ
+      ["blur"]               type de flou des visages : gaussien, mouvement, pixel, carré noir, coupé (le même choix qu'en plein écran)
       ["selfie"]             objectif avant / arrière (avant : arme rangée, bras droit tendu, fn_gestureSelfie)
       ["pose"]               range l'arme (app ouverte) et tient la pose du selfie, ou ressort l'arme (boucle de la caméra, toutes les 1,2 s)
       ["aim", [dx, dy]]      décale l'objectif (fractions de l'image glissées) ; ["aimReset"] le recentre
@@ -196,6 +197,14 @@ switch (_act) do {
     case "flash": {
         private _modes = ["AUTO", "ON", "OFF"];
         _st set ["flash", _modes select ((((_modes find (_st getOrDefault ["flash", "AUTO"])) max 0) + 1) mod 3)];
+        playSound "ClickSoft";
+        call _redraw;
+        true
+    };
+    case "blur": {
+        private _types = ["gauss", "motion", "pixel", "black", "off"];
+        private _cur = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
+        uiNamespace setVariable ["COMSPEC_ATAK_BlurType", _types select ((((_types find _cur) max 0) + 1) mod 5)];
         playSound "ClickSoft";
         call _redraw;
         true
