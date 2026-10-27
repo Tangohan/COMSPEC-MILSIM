@@ -170,10 +170,10 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
             . 'if \(_remote\) then \{ _caller = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
             . 'if \(!_remote && \{isNull _caller\} && \{hasInterface\}\) then \{ _caller = player; \};\s*'
-            . 'if \(_remote && \{!\(_act in \["force", "remind", "lift", "pull", "state", "hello"\]\)\}\) exitWith \{.*?'
+            . 'if \(_remote && \{!\(_act in \["force", "remind", "lift", "pull", "state", "hello", "right"\]\)\}\) exitWith \{.*?'
             . 'if \(isNull _caller && \{_act isNotEqualTo "init"\}\) exitWith \{.*?'
             . 'if \(_act in \["force", "remind", "lift", "pull"\]\) then \{.*?'
-            . '_ok = \(_caller getVariable \["COMSPEC_ATAK_DebriefRight", false\]\) isEqualTo true\s*\|\| \{\[_caller\] call comspec_atak_native_fnc_adminAllowed && .*?'
+            . '_ok = \[_caller\] call comspec_atak_native_fnc_adminAllowed && .*?'
             . 'if \(!_ok\) exitWith \{.*?\["comspec_atak_native_debriefData", \["denied", \[\]\], _caller\] call CBA_fnc_targetEvent;/s', $head);
         self::assertStringNotContainsString('CBA_fnc_addEventHandler', $code);
         // Les deux émetteurs du client passent par remoteExecCall, sans unité dans la demande.
@@ -193,11 +193,11 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertSame([], array_keys($left));
         // Toutes les actions que le client envoie sont ouvertes à distance (relais _server compris).
         $lists = $this->remoteLists($files);
-        self::assertSame(['force', 'remind', 'lift', 'pull', 'state', 'hello'], $lists['comspec_atak_native_fnc_debriefserver'] ?? null);
+        self::assertSame(['force', 'remind', 'lift', 'pull', 'state', 'hello', 'right'], $lists['comspec_atak_native_fnc_debriefserver'] ?? null);
         [$sent] = $this->actionsSent($files, $lists);
         $got = array_keys($sent['comspec_atak_native_fnc_debriefserver'] ?? []);
         sort($got);
-        self::assertSame(['force', 'hello', 'lift', 'pull', 'remind', 'state'], $got);
+        self::assertSame(['force', 'hello', 'lift', 'pull', 'remind', 'right', 'state'], $got);
     }
 
     public function testCompromiseOrdersAreAcceptedOnlyFromTheServer(): void
@@ -824,6 +824,55 @@ final class AtakMultiplayerAuthTest extends TestCase
             }
         }
         self::assertSame(['fn_tocScreen.sqf'], $writers);
+    }
+
+    public function testDebriefRightFromAthenaIsKeptByTheServerUnderTheRequesterUid(): void
+    {
+        // Lot mpauth3 (SEC-034, contre-expertise v5, N17) : le droit d'imposer le CR donné par Athena était la variable
+        // publique COMSPEC_ATAK_DebriefRight du joueur, posée par son propre client (fn_debrief « cfg ») et crue par le
+        // serveur (fn_debriefServer). Tout client se la donnait, ou la donnait à un autre, puis imposait, relançait ou
+        // levait un CR. Le serveur ne peut pas connaître ce droit : le site ne le calcule que pour le téléphone du joueur
+        // (ligne « debrief_cfg » de AdminControl.Poll). Le poste du joueur le déclare donc, pour lui seul, et le serveur
+        // le garde sous l'UID retrouvé par remoteExecutedOwner, jamais diffusé. Le réglage du serveur
+        // comspec_atak_native_debrief_site (coché par défaut : la fonction reste) permet de ne plus l'admettre.
+        $files = $this->sources();
+        $left = [];
+        foreach ($files as $rel => $units) {
+            foreach ($units as $u) {
+                if (str_contains($u, 'COMSPEC_ATAK_DebriefRight')) {
+                    $left[$rel] = true;
+                }
+            }
+        }
+        self::assertSame([], array_keys($left));
+        $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/debrief/fn_debriefServer.sqf'));
+        // Droit jugé sur le demandeur retrouvé : hôte, admin, UID et Zeus d'abord, puis la liste du serveur, selon le réglage.
+        $rights = $this->between($code, 'if (_act in ["force", "remind", "lift", "pull"]) then {', 'if (!_ok) exitWith {');
+        self::assertMatchesRegularExpression('/_ok = \[_caller\] call comspec_atak_native_fnc_adminAllowed && \{!_zeusOnly \|\| \{missionNamespace getVariable \["comspec_atak_native_debrief_zeus", true\]\}\};\s*'
+            . 'if \(!_ok && \{\(missionNamespace getVariable \["comspec_atak_native_debrief_site", true\]\) isEqualTo true\}\s*'
+            . '&& \{\(getPlayerUID _caller\) in \(localNamespace getVariable \["COMSPEC_ATAK_DbfSiteRight", \[\]\]\)\}\) then \{\s*'
+            . '_ok = true;\s*diag_log format \["\[COMSPEC ATAK NATIVE\]\[INFO\]\[DEBRIEF\] [^"]*", _act, name _caller, getPlayerUID _caller\];\s*\};\s*\};\s*$/', $rights);
+        // « right » : seule la valeur vient de la demande ; l'UID est celui du demandeur retrouvé, jamais un argument.
+        $right = $this->between($code, 'case "right": {', 'case "hello": {');
+        self::assertMatchesRegularExpression('/^case "right": \{\s*_args params \[\["_on", false\]\];\s*'
+            . 'if !\(_on isEqualType true\) exitWith \{\};\s*'
+            . 'private _uid = getPlayerUID _caller;\s*'
+            . 'if \(_uid isEqualTo ""\) exitWith \{\};\s*'
+            . 'private _l = \(localNamespace getVariable \["COMSPEC_ATAK_DbfSiteRight", \[\]\]\) - \[_uid\];\s*'
+            . 'if \(_on\) then \{ _l pushBack _uid; \};\s*'
+            . 'localNamespace setVariable \["COMSPEC_ATAK_DbfSiteRight", _l\];\s*\};\s*$/', $right);
+        self::assertSame(1, substr_count($code, 'setVariable ["COMSPEC_ATAK_DbfSiteRight"'));
+        // Le poste déclare par la voie gardée ; l'app ne propose le panneau que si le serveur admet ce droit.
+        $client = $this->stripSqfComments($this->read(self::MAIN . '/functions/debrief/fn_debrief.sqf'));
+        self::assertStringContainsString('["right", [_c get "rights"]] call _server;', $this->between($client, 'case "cfg": {', 'case "recv": {'));
+        self::assertStringContainsString('if ((_cfg getOrDefault ["rights", false]) && {missionNamespace getVariable ["comspec_atak_native_debrief_site", true]}) exitWith { true };', $client);
+        // Réglage du serveur, global, coché par défaut ; titre et aide traduits.
+        $setting = '/\["comspec_atak_native_debrief_site", "CHECKBOX",\s*\["([^"]+)", "([^"]+)"\],\s*\["COMSPEC", "ATAK · Admin"\], true, 1\] call comspec_atak_native_fnc_addSetting;/u';
+        self::assertSame(1, preg_match($setting, $this->read(self::MAIN . '/XEH_preInit.sqf'), $m));
+        $en = $this->read(self::MAIN . '/i18n/en.txt');
+        foreach ([$m[1], $m[2]] as $fr) {
+            self::assertStringContainsString('["' . $fr . '", "', $en, $fr);
+        }
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */

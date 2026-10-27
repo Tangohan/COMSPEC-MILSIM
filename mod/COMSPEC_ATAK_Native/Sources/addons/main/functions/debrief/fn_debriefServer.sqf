@@ -6,7 +6,14 @@
       Zeus ou d'un admin pour imposer, relancer ou lever un CR, ou celle d'un autre joueur pour changer l'état de sa fiche.
       Imposer, relancer, lever et suivre : Zeus (si le réglage comspec_atak_native_debrief_zeus
       le permet), hôte, admin connecté, UID autorisé (comspec_atak_native_admin_uids, fn_adminAllowed) ou gestionnaire
-      désigné par Athena (variable publique COMSPEC_ATAK_DebriefRight du joueur, donnée par le site).
+      désigné par Athena (si le réglage comspec_atak_native_debrief_site le permet).
+      Droit donné par Athena (lot mpauth3, SEC-034) : le serveur ne peut pas le connaître de lui-même. Le site le calcule
+      pour le téléphone du joueur (ligne « debrief_cfg » de AdminControl.Poll, fn_adminNotices) et ne donne au serveur
+      aucune route qui le dise. Le poste du joueur le déclare donc (« right »), pour lui seul : le serveur le garde sous
+      l'UID retrouvé par remoteExecutedOwner (localNamespace COMSPEC_ATAK_DbfSiteRight, jamais diffusé). Plus de variable
+      publique COMSPEC_ATAK_DebriefRight, que tout client écrivait pour lui ou pour un autre. Reste : un client qui
+      exécute du SQF peut se déclarer ce droit ; sur un serveur ouvert, décocher comspec_atak_native_debrief_site et
+      nommer les gestionnaires en jeu (UID). Chaque demande admise sur ce seul droit est notée au journal du serveur.
     Actions :
       "force"  [mode, cible (all | side | group | units), titre, intro, texte à lire, questions, joueurs]   nouvelle demande :
                chaque joueur visé la reçoit (comspec_atak_native_debriefRecv), le demandeur reçoit « forced » puis le suivi
@@ -15,6 +22,7 @@
       "pull"                      suivi de toutes les demandes de la partie, au demandeur
       "state"  [réf, état]        un joueur a reçu, ouvert, lu ou remis sa fiche (tout joueur)
       "hello"                     joueur arrivé en cours de partie : reçoit les demandes en cours qui le visent (tout joueur)
+      "right"  [oui/non]          droit d'imposer donné par Athena à ce joueur, déclaré par son poste (tout joueur, pour lui)
     Interne : "init" (postInit serveur).
     Suivi publié : [[réf, mode, titre, auteur, heure, levée, [[uid, nom, état, heure]…]]…] (comspec_atak_native_debriefData).
 */
@@ -27,7 +35,7 @@ private _remote = isMultiplayer && {isRemoteExecuted} && {remoteExecutedOwner is
 if (_remote) then { _caller = [remoteExecutedOwner] call comspec_atak_native_fnc_reqUnit; };
 if (!_remote && {isNull _caller} && {hasInterface}) then { _caller = player; };
 // Actions ouvertes aux clients ; « init » est réservée au serveur.
-if (_remote && {!(_act in ["force", "remind", "lift", "pull", "state", "hello"])}) exitWith {
+if (_remote && {!(_act in ["force", "remind", "lift", "pull", "state", "hello", "right"])}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Action « %1 » refusée au poste %2 (réservée au serveur)", _act, remoteExecutedOwner];
     false
 };
@@ -35,14 +43,20 @@ if (isNull _caller && {_act isNotEqualTo "init"}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Demande « %1 » refusée au poste %2 (demandeur introuvable)", _act, remoteExecutedOwner];
     false
 };
-// Imposer, relancer, lever et suivre : même règle qu'avant, jugée sur le demandeur retrouvé. « state » et « hello »
-// restent ouvertes à tout joueur, pour sa propre fiche seulement (le demandeur est son poste).
+// Imposer, relancer, lever et suivre : même règle qu'avant, jugée sur le demandeur retrouvé. « state », « hello » et
+// « right » restent ouvertes à tout joueur, pour sa propre fiche ou son propre droit (le demandeur est son poste).
 private _ok = true;
 if (_act in ["force", "remind", "lift", "pull"]) then {
     private _zeusOnly = !isNull (getAssignedCuratorLogic _caller) && {!(local _caller)} && {(admin (owner _caller)) isEqualTo 0}
         && {!((getPlayerUID _caller) in (((missionNamespace getVariable ["comspec_atak_native_admin_uids", ""]) splitString ", ;") apply { trim _x }))};
-    _ok = (_caller getVariable ["COMSPEC_ATAK_DebriefRight", false]) isEqualTo true
-        || {[_caller] call comspec_atak_native_fnc_adminAllowed && {!_zeusOnly || {missionNamespace getVariable ["comspec_atak_native_debrief_zeus", true]}}};
+    _ok = [_caller] call comspec_atak_native_fnc_adminAllowed && {!_zeusOnly || {missionNamespace getVariable ["comspec_atak_native_debrief_zeus", true]}};
+    // Droit donné par Athena : celui que le poste du demandeur a déclaré (« right »), gardé par le serveur sous son UID,
+    // jamais lu dans une variable publique. Invérifiable par le serveur : admis selon le réglage, et noté au journal.
+    if (!_ok && {(missionNamespace getVariable ["comspec_atak_native_debrief_site", true]) isEqualTo true}
+        && {(getPlayerUID _caller) in (localNamespace getVariable ["COMSPEC_ATAK_DbfSiteRight", []])}) then {
+        _ok = true;
+        diag_log format ["[COMSPEC ATAK NATIVE][INFO][DEBRIEF] « %1 » de %2 (%3) admise sur le droit donné par Athena, déclaré par son poste (le serveur ne peut pas le vérifier)", _act, name _caller, getPlayerUID _caller];
+    };
 };
 if (!_ok) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][DEBRIEF] Demande refusée (ni Zeus, ni admin, ni UID autorisé) : %1 %2", name _caller, _act];
@@ -129,6 +143,17 @@ switch (_act) do {
         if ((_order find _state) <= (_order find _old)) exitWith {};
         _rows set [getPlayerUID _caller, [name _caller, _state, call _now]];
         call _publish;
+    };
+    case "right": {
+        // Droit d'imposer le CR donné par Athena à ce joueur (ligne « debrief_cfg » de son téléphone, fn_debrief « cfg ») :
+        // déclaré par son propre poste, gardé sous son UID. Un poste ne déclare que pour son joueur.
+        _args params [["_on", false]];
+        if !(_on isEqualType true) exitWith {};
+        private _uid = getPlayerUID _caller;
+        if (_uid isEqualTo "") exitWith {};
+        private _l = (localNamespace getVariable ["COMSPEC_ATAK_DbfSiteRight", []]) - [_uid];
+        if (_on) then { _l pushBack _uid; };
+        localNamespace setVariable ["COMSPEC_ATAK_DbfSiteRight", _l];
     };
     case "hello": {
         private _uid = getPlayerUID _caller;

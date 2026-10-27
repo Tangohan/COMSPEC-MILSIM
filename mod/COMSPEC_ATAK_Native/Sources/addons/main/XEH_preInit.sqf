@@ -392,9 +392,14 @@ private _cap = ["COMSPEC", "ATAK · Capture par l'ennemi"];
 ["comspec_atak_native_admin_uids", "EDITBOX",
     ["Gestionnaires en jeu (UID Steam)", "UID Steam (64 bits) séparés par des virgules : ces joueurs ont l'app Admin du téléphone (ATAK des joueurs, effets Zeus, debug de l'IA) sans être Zeus. Le parc Athena de l'app suit les droits du compte sur le site."],
     ["COMSPEC", "ATAK · Admin"], "", 1] call comspec_atak_native_fnc_addSetting;
-// CR de fin d'opération imposé en jeu (fn_debriefServer) : hôte, admin, gestionnaires ci-dessus et Athena toujours ; Zeus selon ce réglage.
+// CR de fin d'opération imposé en jeu (fn_debriefServer) : hôte, admin et gestionnaires ci-dessus toujours ; Zeus selon ce
+// réglage ; gestionnaires désignés sur Athena selon le suivant.
 ["comspec_atak_native_debrief_zeus", "CHECKBOX",
-    ["Zeus peut imposer le CR de fin d'opération", "Un Zeus peut ouvrir le compte rendu de fin d'opération (à remplir ou à lire) dans le téléphone des joueurs, depuis l'app CR fin d'op ou le menu Zeus. L'hôte, l'admin connecté, les gestionnaires en jeu et les gestionnaires désignés sur Athena le peuvent toujours."],
+    ["Zeus peut imposer le CR de fin d'opération", "Un Zeus peut ouvrir le compte rendu de fin d'opération (à remplir ou à lire) dans le téléphone des joueurs, depuis l'app CR fin d'op ou le menu Zeus. L'hôte, l'admin connecté et les gestionnaires en jeu le peuvent toujours, les gestionnaires désignés sur Athena selon le réglage suivant."],
+    ["COMSPEC", "ATAK · Admin"], true, 1] call comspec_atak_native_fnc_addSetting;
+// Droit donné par Athena (lot mpauth3, SEC-034) : le serveur ne peut pas le vérifier, le téléphone du joueur le lui déclare.
+["comspec_atak_native_debrief_site", "CHECKBOX",
+    ["Gestionnaires d'Athena peuvent imposer le CR de fin d'opération", "Les gestionnaires désignés sur Athena (gestion de la communauté, UID autorisés sur le site) peuvent imposer le compte rendu de fin d'opération en jeu. Le serveur ne peut pas vérifier ce droit, que lui déclare le téléphone du joueur. Sur un serveur ouvert, décochez-le et nommez les gestionnaires en jeu (UID Steam) ; l'hôte, l'admin connecté et, selon le réglage précédent, les Zeus le peuvent toujours."],
     ["COMSPEC", "ATAK · Admin"], true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_sim", "CHECKBOX",
     ["Batterie réaliste", "La batterie se vide selon l'utilisation (écran, appareil photo, caméra en direct, GPS, envoi de données, recherche de réseau, brouilleur) et se recharge dans un véhicule moteur allumé. À 0 %, le téléphone s'éteint et apparaît hors ligne sur le BFT."],

@@ -158,8 +158,13 @@ switch (_act) do {
         private _c = createHashMapFromArray [["rights", (_m getOrDefault ["rights", "0"]) isEqualTo "1"], ["zeus", (_m getOrDefault ["zeus", "1"]) isNotEqualTo "0"],
             ["mode", _m getOrDefault ["mode", "fill"]], ["intro", _spec param [2, ""]], ["qs", _spec param [4, []]]];
         missionNamespace setVariable ["COMSPEC_ATAK_DbfCfg", _c];
-        // Droit donné par Athena (gestionnaire de la communauté, UID autorisé sur le site) : déclaré au serveur.
-        if ((player getVariable ["COMSPEC_ATAK_DebriefRight", false]) isNotEqualTo (_c get "rights")) then { player setVariable ["COMSPEC_ATAK_DebriefRight", _c get "rights", true]; };
+        // Droit donné par Athena (gestionnaire de la communauté, UID autorisé sur le site) : déclaré au serveur par
+        // remoteExecCall (fn_debriefServer « right »), qui le garde sous l'UID de ce poste. Plus de variable publique
+        // COMSPEC_ATAK_DebriefRight, que tout client pouvait écrire pour lui ou pour un autre (lot mpauth3, SEC-034).
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_DbfRightSent", false]) isNotEqualTo (_c get "rights")) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_DbfRightSent", _c get "rights"];
+            ["right", [_c get "rights"]] call _server;
+        };
     };
     case "recv": {
         _arg params [["_ref", ""], ["_mode", "fill"], ["_title", ""], ["_intro", ""], ["_read", ""], ["_qs", []], ["_by", ""]];
@@ -266,7 +271,8 @@ switch (_act) do {
     };
     case "may": {
         if (isNull player) exitWith { false };
-        if (_cfg getOrDefault ["rights", false]) exitWith { true };
+        // Droit donné par Athena : admis par le serveur seulement si son réglage le permet (fn_debriefServer).
+        if ((_cfg getOrDefault ["rights", false]) && {missionNamespace getVariable ["comspec_atak_native_debrief_site", true]}) exitWith { true };
         if !([player] call comspec_atak_native_fnc_adminAllowed) exitWith { false };
         // Zeus seul (ni admin, ni hôte, ni UID autorisé) : selon le réglage du site et celui du serveur.
         private _zeusOnly = !isNull (getAssignedCuratorLogic player) && {!(isServer && {hasInterface})} && {!serverCommandAvailable "#kick"}
