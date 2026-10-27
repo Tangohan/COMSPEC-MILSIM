@@ -293,7 +293,7 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(1012, '2026-10-27', 'Corrections de fiches : l’actuel et le proposé se lisent clairement', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Rechargez le portail (Ctrl+F5).', [], [
+            $pr(1176, '2026-10-27', 'Corrections de fiches : l’actuel et le proposé se lisent clairement', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Rechargez le portail (Ctrl+F5).', [], [
                 'Chaque changement se lit en deux volets : Actuellement et Proposé',
                 'La fenêtre Décider nomme les équipes, précise l’équipe principale, et nomme les emplois',
             ], [
