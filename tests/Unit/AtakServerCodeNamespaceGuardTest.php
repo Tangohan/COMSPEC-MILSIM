@@ -19,7 +19,8 @@ use PHPUnit\Framework\TestCase;
  *
  * Rouge sur origin/main 14cdeb242 (FtCheck et PfhSpread en globale, SrvKeep, TocDo et une cinquantaine de fermetures
  * en missionNamespace, fermetures de frappe sur le drone, fn_relayCond qui compile une variable d'objet, boutons qui
- * recopient des identifiants partagés, gardes !isNil sur ATHENA_fnc_getRealismParam), vert après le correctif.
+ * recopient des identifiants partagés, cache ECOTI compilé, gardes !isNil sur ATHENA_fnc_getRealismParam), vert après
+ * le correctif.
  */
 final class AtakServerCodeNamespaceGuardTest extends TestCase
 {
@@ -40,7 +41,11 @@ final class AtakServerCodeNamespaceGuardTest extends TestCase
         'zen_attributes_fnc_addAttribute' => self::CONNECT . '/XEH_preInit.sqf',
     ];
 
-    /** Fermetures sorties de missionNamespace (ac03bee51, 03c9285a8 et suites) et l'espace local qui les tient. */
+    /**
+     * Fermetures sorties de missionNamespace (ac03bee51, 03c9285a8 et suites) et l'espace local qui les tient, plus le
+     * cache ECOTI de connect (COMSPEC_EcotiDrawCache) : des données, mais ses couleurs passent par
+     * fn_ecotiNormalizeColor, qui compile les chaînes ; en missionNamespace, un client le remplaçait par publicVariable.
+     */
     private const MOVED = [
         'uiNamespace' => [
             'COMSPEC_ATAK_KeyMain', 'COMSPEC_ATAK_KeyPosition', 'COMSPEC_ATAK_StowDown', 'COMSPEC_ATAK_ActionBlock',
@@ -62,6 +67,7 @@ final class AtakServerCodeNamespaceGuardTest extends TestCase
             'COMSPEC_ZenPlaceRoleplayZone', 'COMSPEC_ZeusOpenTheaterSurvey', 'COMSPEC_ZeusToggleGpsBeacon',
             'COMSPEC_ZeusTogglePhoneTrack', 'COMSPEC_ZeusConfigurePhoneTrack', 'COMSPEC_ZeusApplyAllyTrack',
             'COMSPEC_ZeusToggleAllyTrack', 'COMSPEC_ZeusToggleEnemyAi', 'COMSPEC_ZeusCollectAllyAi',
+            'COMSPEC_EcotiDrawCache',
         ],
     ];
 

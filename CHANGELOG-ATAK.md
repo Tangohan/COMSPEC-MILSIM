@@ -43,11 +43,11 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 ### Résumé joueur
 Type : correctif
 FR : Correctifs de sécurité des relais et du téléphone ATAK
-- Des failles de sécurité sont corrigées dans les relais ATAK, les repères de carte, les boutons des apps, les drones et les menus Zeus.
+- Des failles de sécurité sont corrigées dans les relais ATAK, les repères de carte, les boutons des apps, les infos tactiques dans les JVN, les drones et les menus Zeus.
 - Rien ne change pour les joueurs, ni pour les relais posés avec le module dans l'éditeur.
 - Créateurs de missions : une condition d'activation de relais écrite en code dans un script doit être reprise avec la nouvelle méthode décrite dans la documentation du mod.
 EN : ATAK relay and phone security fixes
-- Security holes are fixed in ATAK relays, map markers, app buttons, drones and Zeus menus.
+- Security holes are fixed in ATAK relays, map markers, app buttons, the NVG situation display, drones and Zeus menus.
 - Nothing changes for players, nor for relays placed with the module in the editor.
 - Mission makers: a relay activation condition written as code in a script must be redone with the new method described in the mod documentation.
 
@@ -59,7 +59,7 @@ EN : ATAK relay and phone security fixes
 - SEC-021 / SEC-031 (contre-expertise, même classe que MP2-01 ; inventaire complet du natif et de connect au rapport du lot, § 10) : du code tenu là où le réseau peut le remplacer (variable globale ou `missionNamespace` : `publicVariable` ; variable d'objet : `setVariable` diffusé), ou construit à partir d'une valeur partagée.
   - Famille a, code exécuté par le serveur : `COMSPEC_ATAK_FtCheck` (globale, toutes les 10 s) et `COMSPEC_ATAK_SrvKeep` (huit gestionnaires d'événements serveur) passent en `localNamespace` ; `COMSPEC_ATAK_PfhSpread` (soixante appels, boucles serveur comprises) devient la fonction finale `comspec_atak_native_fnc_pfhSpread` (CfgFunctions) ; connect : `COMSPEC_fnc_isOwnedMapMarker` et `COMSPEC_ServerEnqueueMarker` en `localNamespace`.
   - Famille b, code exécuté par les postes : 57 fermetures posées une fois et relues plus tard (raccourcis, actions ACE et molette, menus et attributs Zeus, boucles d'affichage, repères) quittent `missionNamespace` : 34 du natif en `uiNamespace`, 21 de connect en `localNamespace` ; les deux fermetures de frappe du drone (`fn_droneCmd`) quittent les variables du drone pour `localNamespace`.
-  - Famille c, boutons compilés : 19 `compile format` qui recopiaient une valeur partagée entre apostrophes (alertes médicales et MEDEVAC, demandes logistiques, équipes de feu, cibles marquées et zones interdites, notifications) passent l'argument par `str`. Les 97 autres recopient des valeurs locales (classées au rapport) ; le test interdit d'en ajouter.
+  - Famille c, boutons compilés : 19 `compile format` qui recopiaient une valeur partagée entre apostrophes (alertes médicales et MEDEVAC, demandes logistiques, équipes de feu, cibles marquées et zones interdites, notifications) passent l'argument par `str`. Les 97 autres recopient des valeurs locales (classées au rapport) ; le test interdit d'en ajouter. Connect : le cache de dessin ECOTI (`COMSPEC_EcotiDrawCache`), dont `fn_ecotiNormalizeColor` compile les couleurs données en chaîne, passe de `missionNamespace` à `localNamespace`.
   - Famille d, fonctions d'un autre paquet : un nom de fonction resté vide se remplit par `publicVariable`. Les dix gardes `!isNil "ATHENA_fnc_getRealismParam"` (fonction construite nulle part ; six dans des fonctions déclarées, quatre dans `fn_placeAtakRelay_refactored`, non déclaré) exigent sa déclaration dans CfgFunctions ; `fn_relayTower` et `fn_relayConvert` n'appellent `comspec_overwatch_connect_fnc_syncAtakRelay` qu'avec connect chargé (CfgPatches) ; `fn_relayZeus` n'enregistre les attributs Zeus des relais qu'avec l'addon ZEN `zen_attributes` chargé (le clic droit Zeus reste).
   - Non changé, expliqué au rapport : les crochets `atak_athena` posés par le natif et le substitut ZEN de connect (non finaux : `compileFinal` y bloquerait le vrai ZEN chargé après) ; les autres appels vers un paquet optionnel côté client, exposés seulement quand ce paquet manque, à traiter en lot dédié. Aucune API de mission ne change : aucun de ces noms n'est documenté.
   - Test : `tests/Unit/AtakServerCodeNamespaceGuardTest.php` (six méthodes : échoue sur l'ancien code, passe ici). Non testé en jeu : essais à faire sur un serveur d'essai seulement (rapport du lot, § 7).

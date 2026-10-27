@@ -32,7 +32,9 @@ private _showVehicles = missionNamespace getVariable ["comspec_overwatch_ecoti_s
 private _showOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_show_outline", true];
 private _showRoute = missionNamespace getVariable ["comspec_overwatch_ecoti_show_route", true];
 private _showUnitOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_show_unit_outline", true];
-private _cache = missionNamespace getVariable ["COMSPEC_EcotiDrawCache", createHashMap];
+// Cache local (localNamespace, jamais synchronisé) : ses couleurs passent par fn_ecotiNormalizeColor, qui compile les
+// chaînes. En missionNamespace, un client pouvait le remplacer par publicVariable et faire exécuter son code ici.
+private _cache = localNamespace getVariable ["COMSPEC_EcotiDrawCache", createHashMap];
 private _fusionOn = missionNamespace getVariable ["comspec_overwatch_ecoti_fusion", true];
 if (!(_fusionOn isEqualType true)) then { _fusionOn = true; };
 // Icône (fileExists) + thème (config) : recalculés par le PFH, plus à chaque image.
@@ -51,7 +53,7 @@ if (_buildCache || {!("icon" in _cache)}) then {
     _cache set ["colOutline", _colOutlineC];
     _cache set ["colUnit", _theme getOrDefault ["unit", [0.8, 1, 0.95, 0.98]]];
     _cache set ["colBldg", _colBldgC];
-    missionNamespace setVariable ["COMSPEC_EcotiDrawCache", _cache, false];
+    localNamespace setVariable ["COMSPEC_EcotiDrawCache", _cache];
 };
 private _icon = _cache get "icon";
 private _drawn = 0;
@@ -212,7 +214,7 @@ if (_buildCache) exitWith {
         _mkEntries = [_mkEntries, 16] call _fnc_dedupSpatial;
     };
     _cache set ["markers", _mkEntries];
-    missionNamespace setVariable ["COMSPEC_EcotiDrawCache", _cache, false];
+    localNamespace setVariable ["COMSPEC_EcotiDrawCache", _cache];
 };
 
 // --- Draw3D : dessin depuis le cache ---
