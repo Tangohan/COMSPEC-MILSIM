@@ -79,12 +79,26 @@ final class AthenaHeritageAssetTest extends TestCase
         self::assertFileExists($root . '/public/assets/js/site-history.js');
         self::assertFileExists($root . '/app/Services/Cron/Jobs/AthenaHeritageSnapshotCronJob.php');
 
+        $view = (string) file_get_contents($root . '/views/site/history.php');
+        self::assertStringContainsString('site-history-hero', $view);
+        self::assertStringContainsString('site-history-hero__facts', $view);
+        self::assertStringContainsString('site-sse-block', $view);
+        self::assertStringContainsString('hi-display', $view);
+        self::assertStringContainsString('hi-cta hi-cta-solid', $view);
+        self::assertStringContainsString('fog-team.jpg', $view);
+
+        $css = (string) file_get_contents($root . '/public/assets/css/site-history.css');
+        self::assertStringContainsString('.site-history-hero', $css);
+        self::assertStringContainsString('site-history-hero__scrim', $css);
+
         $fr = (string) file_get_contents($root . '/lang/fr/site.php');
         $en = (string) file_get_contents($root . '/lang/en/site.php');
         self::assertStringContainsString("'hist_meta_title'", $fr);
         self::assertStringContainsString("'hist_meta_title'", $en);
         self::assertStringContainsString("'history'", $fr);
         self::assertStringContainsString("'history'", $en);
+        self::assertStringContainsString("'hist_pill'", $fr);
+        self::assertStringContainsString("'hist_cta_timeline'", $en);
 
         $nav = (string) file_get_contents($root . '/views/partials/home_nav_drawer.php');
         self::assertStringContainsString('notre-histoire', $nav);

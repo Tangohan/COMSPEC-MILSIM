@@ -585,4 +585,9 @@ return [
     'hist_kind_threshold' => 'Jalon',
     'hist_kind_first' => 'Première',
     'hist_kind_custom' => 'Événement',
+    'hist_cta_timeline' => 'Parcourir la frise',
+    'hist_cta_about' => 'À propos d’ATHENA',
+    'hist_cta_changelog' => 'Journal des nouveautés',
+    'hist_cta_create' => 'Créer une communauté',
+    'hist_pill' => 'Patrimoine statistique',
 ];

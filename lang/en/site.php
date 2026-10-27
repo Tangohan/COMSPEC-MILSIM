@@ -585,4 +585,9 @@ return [
     'hist_kind_threshold' => 'Milestone',
     'hist_kind_first' => 'First',
     'hist_kind_custom' => 'Event',
+    'hist_cta_timeline' => 'Browse the timeline',
+    'hist_cta_about' => 'About ATHENA',
+    'hist_cta_changelog' => 'Product news',
+    'hist_cta_create' => 'Create a community',
+    'hist_pill' => 'Statistical heritage',
 ];
