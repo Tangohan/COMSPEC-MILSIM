@@ -20,7 +20,10 @@
                            demi-largeur de la carte en m (0 = cadrage automatique sur le réseau), centre ([] = auto),
                            poste TOC (l'écran sert aussi de PC de TOC), à recréer à la partie suivante (posé en cours de partie)]
       COMSPEC_ATAK_TocOwned   objet créé par le module ou la sauvegarde (supprimé avec l'écran)
-    Registre : missionNamespace COMSPEC_ATAK_TocScreens (objets), tenu par le serveur.
+    Registre : missionNamespace COMSPEC_ATAK_TocScreens (objets), publié par le serveur.
+    Ces variables publiques ne servent qu'à l'affichage chez les joueurs. Le serveur tient sa propre copie, jamais
+    diffusée (localNamespace COMSPEC_ATAK_TocSrv [[objet, état]...] et COMSPEC_ATAK_TocMade, objets créés par « spawn »),
+    seule lue pour juger une demande, sauver (fn_tocPersist), recréer ou supprimer (lot mpauth3, SEC-033).
 
     Modes :
       ["add", [objet, nom, camp, index, affichage, poste TOC, à recréer]]   (serveur ; ailleurs, demande au serveur)
@@ -53,6 +56,27 @@ private _sideOk = {
     private _s = ([_o] call _cfgOf) param [1, ""];
     _s isEqualTo "" || {_s isEqualTo str side group _u}
 };
+// Lot mpauth3 (SEC-033) : état des écrans tenu par le serveur lui-même, jamais diffusé : localNamespace
+// COMSPEC_ATAK_TocSrv ([[objet, état]...]) et COMSPEC_ATAK_TocMade (objets créés par « spawn »). Le registre public
+// COMSPEC_ATAK_TocScreens et les variables publiques COMSPEC_ATAK_TocScr et COMSPEC_ATAK_TocOwned n'en sont que la copie
+// pour l'affichage chez les joueurs : un client peut les écrire, le serveur ne les lit plus pour juger une demande,
+// sauver (fn_tocPersist), recréer ou supprimer.
+private _srvList = { (localNamespace getVariable ["COMSPEC_ATAK_TocSrv", []]) select { !isNull (_x select 0) } };
+private _srvOf = {
+    params ["_o"];
+    private _l = call _srvList;
+    private _i = _l findIf { (_x select 0) isEqualTo _o };
+    if (_i < 0) then { [] } else { +((_l select _i) select 1) }
+};
+// État d'un écran écrit dans la copie du serveur ([] : écran retiré), puis publié avec le registre.
+private _srvSet = {
+    params ["_o", "_c"];
+    private _l = (call _srvList) select { (_x select 0) isNotEqualTo _o };
+    if (_c isNotEqualTo []) then { _l pushBack [_o, +_c]; };
+    localNamespace setVariable ["COMSPEC_ATAK_TocSrv", _l];
+    if (_c isEqualTo []) then { _o setVariable ["COMSPEC_ATAK_TocScr", nil, true]; } else { _o setVariable ["COMSPEC_ATAK_TocScr", +_c, true]; };
+    missionNamespace setVariable ["COMSPEC_ATAK_TocScreens", _l apply { _x select 0 }, true];
+};
 // Écrans du jeu proposés à la pose (« classes », et « spawn » sans se ré-appeler).
 private _classes = {
     ([
@@ -66,14 +90,15 @@ private _classes = {
         ["Ordinateur portable", "Land_Laptop_unfolded_F"]
     ]) select { isClass (configFile >> "CfgVehicles" >> (_x select 1)) }
 };
-// Affichage d'un écran demandé par un joueur : écran du registre, joueur de son camp, à moins de 25 m (les actions de
-// l'écran portent à 5 m).
+// Affichage d'un écran demandé par un joueur : écran que tient le serveur, joueur de son camp, à moins de 25 m (les
+// actions de l'écran portent à 5 m).
 private _viewer = {
     params ["_v", "_u"];
     if !(_v isEqualType []) exitWith { false };
     private _o = _v param [0, objNull];
-    _o isEqualType objNull && {!isNull _o} && {_o in (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []])}
-        && {[_o, _u] call _sideOk} && {(_u distance _o) <= 25}
+    if (!(_o isEqualType objNull) || {isNull _o}) exitWith { false };
+    private _s = ([_o] call _srvOf) param [1, -1];
+    _s isEqualType "" && {_s isEqualTo "" || {_s isEqualTo str side group _u}} && {(_u distance _o) <= 25}
 };
 // Demande venue d'un client (remoteExecCall vers 2) : seul remoteExecutedOwner fait foi (fn_reqUnit). Plus d'événement
 // CBA comspec_atak_native_tocScreen : il ne disait pas qui l'avait levé, et tout client faisait poser au serveur des
@@ -114,26 +139,24 @@ switch (_mode) do {
         if (isNull _o) exitWith { false };
         if (!isServer) exitWith { ["add", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; true };
         if (_name isEqualTo "") then { _name = "TOC"; };
-        private _old = [_o] call _cfgOf;
+        private _old = [_o] call _srvOf;
         if !(_view in ["SPLIT", "MAP", "FEED", "TOC"]) then { _view = "SPLIT"; };
-        _o setVariable ["COMSPEC_ATAK_TocScr", [_name select [0, 32], toUpper _side, (round _sel) max 0, _view, _old param [4, 0], _old param [5, []], _toc, _spawned || {_old param [7, false]}], true];
+        [_o, [_name select [0, 32], toUpper _side, (round _sel) max 0, _view, _old param [4, 0], _old param [5, []], _toc, _spawned || {_old param [7, false]}]] call _srvSet;
         // Poste TOC : l'écran donne aussi l'ATAK du poste et l'app Poste TOC à qui s'en approche (fn_tocPost).
         _o setVariable ["COMSPEC_ATAK_Toc", _toc, true];
         _o setVariable ["COMSPEC_ATAK_TocSide", toUpper _side, true];
-        private _list = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x };
-        _list pushBackUnique _o;
-        missionNamespace setVariable ["COMSPEC_ATAK_TocScreens", _list, true];
         ["save"] call comspec_atak_native_fnc_tocPersist;
         true
     };
     case "remove": {
         if (isNull _a) exitWith { false };
         if (!isServer) exitWith { ["remove", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; true };
-        private _owned = _a getVariable ["COMSPEC_ATAK_TocOwned", false];
-        _a setVariable ["COMSPEC_ATAK_TocScr", nil, true];
+        private _made = (localNamespace getVariable ["COMSPEC_ATAK_TocMade", []]) select { !isNull _x };
+        private _owned = _a in _made;
+        localNamespace setVariable ["COMSPEC_ATAK_TocMade", _made - [_a]];
+        [_a, []] call _srvSet;
         _a setVariable ["COMSPEC_ATAK_Toc", nil, true];
-        missionNamespace setVariable ["COMSPEC_ATAK_TocScreens", (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];
-        // Écran créé par le module (ou recréé par la sauvegarde) : l'objet part avec lui.
+        // Écran créé par le module (ou recréé par la sauvegarde), d'après le serveur seul : l'objet part avec lui.
         if (_owned) then { deleteVehicle _a; };
         ["save"] call comspec_atak_native_fnc_tocPersist;
         true
@@ -151,6 +174,7 @@ switch (_mode) do {
         _o setDir _dir;
         _o setPosATL _pos;
         _o setVariable ["COMSPEC_ATAK_TocOwned", true, true];
+        localNamespace setVariable ["COMSPEC_ATAK_TocMade", ((localNamespace getVariable ["COMSPEC_ATAK_TocMade", []]) select { !isNull _x }) + [_o]];
         ["add", [_o, _name, _side, 0, _view, _toc, true]] call _fn;
         // Zeus : l'écran créé se manipule comme un objet posé à la main.
         { _x addCuratorEditableObjects [[_o], false]; } forEach allCurators;
@@ -160,7 +184,7 @@ switch (_mode) do {
         _a params [["_o", objNull], ["_k", ""], ["_v", 0]];
         if (isNull _o) exitWith { false };
         if (!isServer) exitWith { ["view", _a] remoteExecCall ["comspec_atak_native_fnc_tocScreen", 2]; true };
-        private _c = +([_o] call _cfgOf);
+        private _c = [_o] call _srvOf;
         if ((count _c) < 8) exitWith { false };
         switch (_k) do {
             case "mode": { if (_v in ["SPLIT", "MAP", "FEED", "TOC"]) then { _c set [3, _v]; }; };
@@ -168,7 +192,7 @@ switch (_mode) do {
             case "center": { if (_v isEqualType [] && {(count _v) >= 2}) then { _c set [5, [_v select 0, _v select 1]]; }; };
             case "auto": { _c set [4, 0]; _c set [5, []]; };
         };
-        _o setVariable ["COMSPEC_ATAK_TocScr", _c, true];
+        [_o, _c] call _srvSet;
         ["save"] call comspec_atak_native_fnc_tocPersist;
         true
     };

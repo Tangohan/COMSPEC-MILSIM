@@ -254,9 +254,11 @@ final class AtakMultiplayerAuthTest extends TestCase
             . 'if \(_remote && \{!\(_mode in \["add", "remove", "spawn", "view"\]\)\}\) exitWith \{.*?'
             . 'if \(_remote && \{isNull _req\}\) exitWith \{.*?'
             . 'if \(_remote && \{!\(\[_req\] call comspec_atak_native_fnc_adminAllowed\)\} && \{!\(_mode isEqualTo "view" && \{\[_a, _req\] call _viewer\}\)\}\) exitWith \{.*?false\s*\};\s*$/s', $head);
+        // Lot mpauth3 (SEC-033) : l'écran et son camp sont lus dans la copie du serveur, plus dans le registre public.
         self::assertMatchesRegularExpression('/private _viewer = \{\s*params \["_v", "_u"\];\s*if !\(_v isEqualType \[\]\) exitWith \{ false \};\s*private _o = _v param \[0, objNull\];\s*'
-            . '_o isEqualType objNull && \{!isNull _o\} && \{_o in \(missionNamespace getVariable \["COMSPEC_ATAK_TocScreens", \[\]\]\)\}\s*'
-            . '&& \{\[_o, _u\] call _sideOk\} && \{\(_u distance _o\) <= 25\}\s*\};/', $head);
+            . 'if \(!\(_o isEqualType objNull\) \|\| \{isNull _o\}\) exitWith \{ false \};\s*'
+            . 'private _s = \(\[_o\] call _srvOf\) param \[1, -1\];\s*'
+            . '_s isEqualType "" && \{_s isEqualTo "" \|\| \{_s isEqualTo str side group _u\}\} && \{\(_u distance _o\) <= 25\}\s*\};/', $head);
         // « spawn » ne se ré-appelle plus pour la liste des écrans (« classes » est refusée à distance) ; plus d'événement.
         self::assertStringNotContainsString('["classes"] call _fn', $code);
         self::assertStringNotContainsString('CBA_fnc_addEventHandler', $code);
@@ -761,6 +763,67 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('class comspec_atak_native_fnc_droneServer { allowedTargets = 2; };', $cfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_droneCmd { allowedTargets = 0; jip = 0; };', $cfg);
         self::assertStringNotContainsString('comspec_atak_native_droneCmd', $this->stripSqfComments($this->read(self::MAIN . '/XEH_preInit.sqf')));
+    }
+
+    public function testTocScreenSaveReadsOnlyTheServerCopyAndRecreatesOnlyScreenClasses(): void
+    {
+        // Lot mpauth3 (SEC-033, contre-expertise v5, N17) : fn_tocPersist « write » lisait le registre public
+        // COMSPEC_ATAK_TocScreens et l'état public COMSPEC_ATAK_TocScr, que tout client peut écrire, puis « restore »
+        // recréait toute classe de CfgVehicles aux parties suivantes. Le serveur tient maintenant sa propre copie, jamais
+        // diffusée (localNamespace COMSPEC_ATAK_TocSrv, COMSPEC_ATAK_TocMade) : seule lue pour juger, sauver, recréer et
+        // supprimer ; « restore » ne recrée qu'une classe d'écran admise, par « spawn », et retrouve un objet de mission.
+        $persist = $this->stripSqfComments($this->read(self::MAIN . '/functions/toc/fn_tocPersist.sqf'));
+        $write = $this->between($persist, 'case "write": {', 'case "clear": {');
+        self::assertStringContainsString('private _scr = ((localNamespace getVariable ["COMSPEC_ATAK_TocSrv", []]) select {', $write);
+        self::assertStringNotContainsString('COMSPEC_ATAK_TocScreens', $persist);
+        self::assertStringNotContainsString('"COMSPEC_ATAK_TocScr"', $persist);
+        self::assertStringNotContainsString('COMSPEC_ATAK_TocOwned', $persist);
+        $restore = (string) substr($persist, (int) strpos($persist, 'case "restore": {'));
+        self::assertStringNotContainsString('createVehicle', $restore);
+        self::assertStringContainsString('private _admitted = (["classes"] call comspec_atak_native_fnc_tocScreen) apply { _x select 1 };', $restore);
+        self::assertStringContainsString('{!(_cfg isEqualTypeParams ["", "", 0, "", 0, [], true, true])}) then { continue };', $restore);
+        // Recréation : seulement pour un objet introuvable, posé en jeu, d'une classe admise, et par « spawn ».
+        $order = ['if (isNull _o) then {', 'if !(_cfg select 7) then { continue };', 'if !(_cls in _admitted) then {', 'continue', '_o = ["spawn", [ASLToAGL _pos, 0, _cls, _cfg select 0, _cfg select 1, _cfg select 3, _cfg select 6]] call comspec_atak_native_fnc_tocScreen;'];
+        $at = 0;
+        foreach ($order as $step) {
+            $i = strpos($restore, $step, $at);
+            self::assertNotFalse($i, $step);
+            $at = (int) $i + strlen($step);
+        }
+        // Cadrage remis par « view » (validé comme une demande), plus écrit dans la variable publique.
+        self::assertStringContainsString('["view", [_o, "zoom", _cfg select 4]] call comspec_atak_native_fnc_tocScreen;', $restore);
+        self::assertStringContainsString('["view", [_o, "center", _cfg select 5]] call comspec_atak_native_fnc_tocScreen;', $restore);
+        // fn_tocScreen : chaque écriture publique de l'état et du registre passe par la copie du serveur (_srvSet).
+        $toc = $this->stripSqfComments($this->read(self::MAIN . '/functions/toc/fn_tocScreen.sqf'));
+        $srvSet = $this->between($toc, 'private _srvSet = {', 'private _classes = {');
+        self::assertStringContainsString('localNamespace setVariable ["COMSPEC_ATAK_TocSrv", _l];', $srvSet);
+        self::assertSame(2, substr_count($toc, 'setVariable ["COMSPEC_ATAK_TocScr"'));
+        self::assertSame(2, substr_count($srvSet, 'setVariable ["COMSPEC_ATAK_TocScr"'));
+        self::assertSame(1, substr_count($toc, 'setVariable ["COMSPEC_ATAK_TocScreens"'));
+        self::assertStringContainsString('missionNamespace setVariable ["COMSPEC_ATAK_TocScreens", _l apply { _x select 0 }, true];', $srvSet);
+        self::assertStringContainsString('private _srvList = { (localNamespace getVariable ["COMSPEC_ATAK_TocSrv", []]) select { !isNull (_x select 0) } };', $toc);
+        // Ce que le serveur lit pour décider : sa copie, jamais l'état ni le registre publics.
+        foreach ([
+            'add' => [$this->between($toc, 'case "add": {', 'case "remove": {'), 'private _old = [_o] call _srvOf;'],
+            'remove' => [$this->between($toc, 'case "remove": {', 'case "spawn": {'), 'private _owned = _a in _made;'],
+            'view' => [$this->between($toc, 'case "view": {', 'case "load": {'), 'private _c = [_o] call _srvOf;'],
+            'viewer' => [$this->between($toc, 'private _viewer = {', 'private _remote = '), 'private _s = ([_o] call _srvOf) param [1, -1];'],
+        ] as $what => [$body, $read]) {
+            self::assertStringContainsString($read, $body, $what);
+            self::assertStringNotContainsString('_cfgOf', $body, $what);
+            self::assertStringNotContainsString('getVariable ["COMSPEC_ATAK_TocScreens"', $body, $what);
+            self::assertStringNotContainsString('getVariable ["COMSPEC_ATAK_TocOwned"', $body, $what);
+        }
+        self::assertStringNotContainsString('getVariable ["COMSPEC_ATAK_TocOwned"', $toc);
+        self::assertStringContainsString('localNamespace setVariable ["COMSPEC_ATAK_TocMade", ((localNamespace getVariable ["COMSPEC_ATAK_TocMade", []]) select { !isNull _x }) + [_o]];', $this->between($toc, 'case "spawn": {', 'case "view": {'));
+        // Aucun autre fichier n'écrit l'état ou le registre publics des écrans.
+        $writers = [];
+        foreach ($this->sources() as $rel => $units) {
+            if (preg_match('/setVariable\s*\[\s*"COMSPEC_ATAK_TocScr(?:eens)?"/', $units[0]) === 1) {
+                $writers[] = basename($rel);
+            }
+        }
+        self::assertSame(['fn_tocScreen.sqf'], $writers);
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */
