@@ -327,6 +327,7 @@ if (_interactive) then {
                 if (_on) then {
                     private _msg = switch (_var) do {
                         case "COMSPEC_ATAK_LayerFriends": { format ["Alliés : %1 unité(s) amie(s) sur la carte", { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" } count values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap])] };
+                        case "COMSPEC_ATAK_AccRings": { "Cercles de précision affichés : orange pour vous si le GPS est imprécis, couleur de l'unité pour les alliés" };
                         case "COMSPEC_ATAK_ZonesLayer": {
                             private _z = (count (missionNamespace getVariable ["COMSPEC_DangerZones", []])) + (count (missionNamespace getVariable ["COMSPEC_RoleplayZones", []])) + (count ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["zones", []]));
                             ["Zones Athena : aucune zone reçue pour cette carte", format ["Zones Athena : %1 zone(s)", _z]] select (_z > 0)
@@ -419,7 +420,8 @@ if (_interactive) then {
             // défaut, clé communauté (verrou Athena) ou "", explication affichée en vue CONFIGURATION]...]]
             private _groups = [
                 ["forces", "Forces", [
-                    ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, "", "Unités amies (joueurs et IA) sur la carte"]
+                    ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, "", "Unités amies (joueurs et IA) sur la carte"],
+                    ["Cercles de précision", "P", "COMSPEC_ATAK_AccRings", true, "", "Cercle autour de chaque position selon la précision du GPS. Orange pour vous, couleur de l'unité pour les alliés."]
                 ]],
                 ["places", "Repères et lieux", [
                     ["Coordonnées des marqueurs", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Grille sous chaque marqueur posé"],

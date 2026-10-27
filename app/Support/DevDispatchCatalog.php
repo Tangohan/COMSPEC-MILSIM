@@ -293,6 +293,78 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(1025, '2026-10-27', 'Avancement : campagnes et avis lisibles', 'Dans Ressources humaines, Avancement, la liste des campagnes se lit en fiches (année, grade, filière, période, places, statut). Sur une campagne, chaque candidature montre l’avis et la décision en clair : Proposé, Inscrit au tableau, Pas encore d’avis, En attente. Rechargez le portail (Ctrl+F5).', [
+                'Liste des campagnes en fiches, sans tableau serré',
+                'Avis et décisions en libellés métier',
+            ], [], [
+                'Les codes internes d’avis et de décision apparaissaient tels quels',
+            ], ['personnel'], [
+                'Ouvrez RH → Avancement. Parcourez la liste, puis ouvrez une campagne : chaque candidature affiche un avis lisible.',
+            ], 'Portail Athena'),
+            $pr(1024, '2026-10-27', 'Annuaire des communautés : un tableur avec recherche et tri', 'Dans Administration du site, l’annuaire des communautés se présente comme un tableur. Vous cherchez par nom, profil, formule ou abonnement, vous filtrez les archivées, et vous triez chaque colonne. Le nom et les en-têtes restent visibles quand vous faites défiler. Rechargez le portail (Ctrl+F5).', [
+                'Recherche et filtres : profil, formule, abonnement, communautés archivées',
+                'Tri de chaque colonne, en-tête et nom figés au défilement',
+            ], [], [], ['platform'], [
+                'Ouvrez Administration du site, Communautés. Saisissez un nom, changez un filtre, puis cliquez un en-tête de colonne pour trier.',
+            ], 'Portail Athena'),
+            $pr(1023, '2026-10-27', 'Photo : le flou des visages aussi dans le téléphone', 'Dans l’app Photo, le bouton Visages est sous le flash. Chaque appui change le flou : gaussien, mouvement, pixel, carré noir, ou coupé. C’est le même choix qu’en plein écran. Quittez Arma complètement, puis relancez.', [
+                'Bouton Visages sur le viseur du téléphone',
+            ], [], [], ['atak'], [
+                'Ouvrez Photo. Sous le flash, Visages change le flou appliqué à la photo envoyée.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1022, '2026-10-27', 'Carte : les cercles de précision se masquent', 'Le grand cercle orange autour de votre point est la précision du GPS. Les alliés ont le même cercle, dans leur couleur, quand leur position est imprécise. Sur la carte, ouvrez Situation, section Forces, et passez Cercles de précision sur Non pour les masquer. Les points restent. Quittez Arma complètement, puis relancez.', [
+                'Interrupteur Cercles de précision dans Situation, section Forces',
+            ], [], [], ['atak'], [
+                'Le cercle orange est la précision de votre GPS. Le cercle coloré d’un allié est la précision de sa position. Passez l’interrupteur sur Non pour les retirer.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1021, '2026-10-27', 'Vidéo live : on peut dézoomer', 'Sur Vidéo live, ma caméra et les caméras posées ont un réglage de focale en bas de l’image. Moins élargit le champ, plus zoome. 35 mm est la vue d’origine, 14 mm la plus large. La vue d’un drone continue de suivre le zoom de l’opérateur. Quittez Arma complètement, puis relancez.', [
+                'Réglage de focale sur ma caméra et les caméras fixes',
+                'Moins élargit le champ, plus zoome',
+            ], [], [], ['atak'], [
+                'Ouvrez Vidéo live, Ma caméra. Le bouton moins en bas de l’image élargit le champ. Le plus zoome. La vue d’un drone ne change pas.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1020, '2026-10-27', 'La montre voit le téléphone dès qu’il est allumé', 'L’écran Téléphone de la montre indiquait déconnecté alors que le téléphone était allumé, montre dans le sac comprise. Il affiche maintenant ATAK connecté et la batterie. Le partage Bluetooth du téléphone ne coupe plus cette liaison. Seul le mode furtif la coupe. Quittez Arma complètement, puis relancez.', [
+                'La montre indique connecté dès que le téléphone est sur vous et allumé',
+                'La montre dans le sac compte comme celle au poignet',
+            ], [], [
+                'L’écran Téléphone marquait déconnecté alors que le téléphone était ouvert',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Ouvrez l’écran Téléphone de la montre : il indique connecté et la batterie.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1019, '2026-10-27', 'Distances : Actualiser envoie au site, textes plus lisibles', 'Pack 2.9.1. Dans l’app Distances, Actualiser envoie tout de suite les kilomètres en attente vers votre fiche, surtout quand le serveur de la partie n’est pas relié au portail. Un échec d’envoi s’affiche clairement. Les libellés (allure, cadence, records) sont plus grands. Le site ne reprend que les missions déjà envoyées. Quittez Arma complètement, puis relancez.', [
+                'Actualiser envoie les distances en attente vers la fiche Athena',
+                'Un échec d’envoi s’affiche clairement',
+                'Textes de l’app Distances plus lisibles',
+            ], [], [
+                'Actualiser ne faisait que redessiner l’écran sans envoyer',
+                'Un échec restait affiché comme « Pas encore envoyé »',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Ouvrez Distances, touchez Actualiser, puis rechargez votre fiche sur le site.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1018, '2026-10-27', 'Fiche membre : temps de jeu, distances et montre regroupés', 'Sur le résumé d’une fiche, le bloc Temps de jeu et distances regroupe le cumul, les semaines, les rôles, les distances parcourues et la montre. Les distances restent visibles même avant la première remontée, avec un message d’attente. Ces chiffres s’affichent pour tout lecteur du dossier, pas seulement l’encadrement. Rechargez le portail (Ctrl+F5).', [
+                'Distances et heures de pilote dans le même bloc que le temps de jeu',
+                'Message clair quand aucune distance n’a encore été relevée',
+                'Cumul, semaines et rôles visibles dès que le dossier est lisible',
+            ], [], [
+                'Les distances disparaissaient de la fiche tant qu’aucune session n’avait été enregistrée',
+            ], ['personnel', 'atak'], [
+                'Ouvrez une fiche personnel, onglet Résumé. Le bloc Temps de jeu et distances est au-dessus de la synthèse.',
+            ], 'Portail Athena'),
+            $pr(1018, '2026-10-27', 'La montre commande le lecteur', 'La montre a un écran Musique. Il reprend le morceau lancé sur le téléphone. START lance ou met en pause. BACK ouvre les commandes : piste précédente ou suivante, avance et retour de 15 secondes, puis le volume. Le cadran affiche le morceau en cours. Quittez Arma complètement, puis relancez.', [
+                'Écran Musique : lecture, pause, changement de piste, avance et retour, volume',
+                'Le cadran montre le morceau en cours',
+            ], [], [], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Lancez un morceau sur le téléphone, puis ouvrez l’écran Musique de la montre.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1017, '2026-10-27', 'La carte de la montre montre mon point et mes alliés', 'Sur la montre, la carte affiche mon point au centre, avec le cap, et les alliés du suivi comme sur la carte du téléphone. Le haut du cadran donne le cap. Le bas donne le nombre d’alliés, la largeur affichée et la grille. Quittez Arma complètement, puis relancez.', [
+                'Mon point reste au centre de la carte de la montre, avec le cap',
+                'Les alliés du suivi apparaissent, avec leur indicatif aux zooms proches',
+                'Le cadran indique le cap, le nombre d’alliés et la grille',
+            ], [], [
+                'La carte de la montre n’affichait ni mon point ni les alliés',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Ouvrez la carte de la montre : le point est au centre, les alliés du suivi sont autour.',
+            ], 'Pack du téléphone à republier'),
             $pr(1176, '2026-10-27', 'Corrections de fiches : l’actuel et le proposé se lisent clairement', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Rechargez le portail (Ctrl+F5).', [], [
                 'Chaque changement se lit en deux volets : Actuellement et Proposé',
                 'La fenêtre Décider nomme les équipes, précise l’équipe principale, et nomme les emplois',

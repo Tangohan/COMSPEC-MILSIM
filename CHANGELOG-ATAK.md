@@ -38,6 +38,134 @@ Changelog Steam (copier-coller) : [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-
 
 ---
 
+---
+
+## Pack du téléphone (ATAK natif 2.9.5.AB - Denver, COMSPEC Link 2.0.100)
+
+### Résumé joueur
+Type : nouveauté
+FR : La montre, la vidéo et la photo avancent
+- La montre affiche votre point et vos alliés, lit la musique, et voit le téléphone dès qu’il est allumé, même dans le sac.
+- La vidéo live peut dézoomer. Sur la carte, les cercles de précision se masquent dans Situation, section Forces.
+- Dans Photo, le flou des visages se règle aussi dans le petit viseur, comme en plein écran.
+- Dans Distances, Actualiser envoie les kilomètres vers votre fiche.
+EN : The watch, live video and camera move forward
+- The watch shows your point and your allies, plays music, and sees the phone as soon as it is on, including in the backpack.
+- Live video can zoom out. On the map, accuracy circles can be hidden from Situation, Forces.
+- In Photo, face blur can be set in the small viewfinder, the same as full screen.
+- In Distances, Refresh sends the kilometres to your record.
+
+### Détail technique
+- Regroupe les comportements livrés de 2.9.0 à 2.9.5, détaillés dans les entrées suivantes. Rien de ces versions n’avait encore été fusionné.
+
+## Photo : le flou des visages aussi dans le téléphone (ATAK natif 2.9.5.AB - Denver, COMSPEC Link 2.0.100)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le flou des visages se règle aussi dans le petit viseur
+- Dans l’app Photo, le bouton Visages est sous le flash. Chaque appui change le flou : gaussien, mouvement, pixel, carré noir, ou coupé.
+- C’est le même choix qu’en plein écran. Une photo prise dans le téléphone l’utilise.
+EN : Face blur can be set in the small viewfinder too
+- In the Photo app, the Faces button sits under the flash. Each press changes the blur: gaussian, motion, pixel, black bar, or off.
+- It is the same choice as full screen. A photo taken in the phone uses it.
+
+### Détail technique
+- `fn_pagePhotos` : bouton Visages sur le viseur du téléphone.
+- `fn_photoCam` `blur` : même cycle que la touche B du plein écran (`COMSPEC_ATAK_BlurType`). Le plein écran l’appelle.
+
+## Carte : cercles de précision masquables (ATAK natif 2.9.4.AB - Denver, COMSPEC Link 2.0.100)
+
+### Résumé joueur
+Type : nouveauté
+FR : On peut masquer les cercles de précision
+- Le grand cercle orange autour de votre point est la précision du GPS : il apparaît quand la position est imprécise.
+- Les alliés ont le même cercle, dans leur couleur, quand leur position est annoncée à plus de dix mètres près.
+- Sur la carte, ouvrez Situation, section Forces, et passez « Cercles de précision » sur Non pour les masquer. Les points restent.
+EN : Accuracy circles can be hidden
+- The large orange circle around your point is the GPS accuracy: it appears when the position is coarse.
+- Allies get the same circle, in their colour, when their position is reported coarser than ten metres.
+- On the map, open Situation, Forces, and set “Accuracy circles” to No to hide them. The points stay.
+
+### Détail technique
+- `fn_ewDraw` : le cercle orange ou gris (erreur GPS, à partir de 8 m ou sans fix) suit le calque Cercles de précision.
+- `fn_mapOnDraw` et `fn_watchMapDraw` : le cercle coloré des alliés (précision annoncée) suit le même calque.
+- Calque profil `COMSPEC_ATAK_AccRings`, section Forces du volet Situation. Affiché par défaut.
+
+## Vidéo live : focale réglable (ATAK natif 2.9.3.AB - Denver, COMSPEC Link 2.0.100)
+
+### Résumé joueur
+Type : nouveauté
+FR : La vidéo live peut dézoomer
+- Sur Vidéo live, ma caméra et les caméras fixes ont un réglage de focale en bas de l’image : − élargit le champ, + zoome.
+- 35 mm est la vue d’origine. 14 mm est le plus large, 70 mm le plus serré.
+- La vue d’un drone continue de suivre le zoom de l’opérateur.
+EN : Live video can zoom out
+- On Live video, your camera and the fixed cameras have a focal-length control at the bottom of the picture: − widens the view, + zooms in.
+- 35 mm is the original view. 14 mm is the widest, 70 mm the tightest.
+- A drone’s view still follows the operator’s zoom.
+
+### Détail technique
+- `fn_pageLivecam` : boutons − / millimètres / + pour les flux autres qu’un drone. Paliers 14, 18, 24, 35, 50, 70 mm.
+- `fn_livecamStart` : la focale est appliquée en détachant la caméra, car un réglage sur une caméra attachée ne prend pas. 35 mm reste le champ d’origine (0,75).
+- `fn_camView` : les caméras fixes utilisent la même focale.
+
+## Montre reliée au téléphone porté (ATAK natif 2.9.2.AB - Denver, COMSPEC Link 2.0.100)
+
+### Résumé joueur
+Type : correctif
+FR : La montre voit le téléphone dès qu’il est allumé
+- L’écran Téléphone de la montre indique « ATAK connecté » et la batterie dès que le téléphone est sur vous et allumé.
+- La montre dans le sac (objet divers) compte comme la montre au poignet.
+- Le partage Bluetooth du téléphone, qui sert à échanger avec d’autres appareils, ne coupe plus cette liaison. Seul le mode furtif la coupe.
+EN : The watch sees the phone as soon as it is on
+- The watch’s Phone screen shows “ATAK connected” and the battery as soon as the phone is on you and switched on.
+- The watch in the backpack counts the same as the watch on the wrist.
+- The phone’s Bluetooth sharing, used to exchange with other devices, no longer drops this link. Only stealth mode does.
+
+### Détail technique
+- `fn_watch` : la liaison ne lit plus `COMSPEC_ATAK_Bt` `on`. Elle suit `canUse` et le mode furtif. L’objet divers dans le sac était déjà accepté par `items player`.
+
+## Distances : Actualiser et lisibilité (ATAK natif 2.9.1.AB - Denver, COMSPEC Link 2.0.100)
+
+### Résumé joueur
+Type : correctif
+FR : Distances — Actualiser envoie bien au site, textes plus lisibles
+- Dans l’app Distances, ACTUALISER envoie tout de suite les kilomètres en attente vers votre fiche Athena (surtout quand le serveur de la partie n’est pas relié au portail).
+- Un échec d’envoi s’affiche clairement, au lieu de rester sur « Pas encore envoyé ».
+- Les libellés de l’app (allure, cadence, records, Athena) sont plus grands et plus lisibles.
+- Le site ne reprend que les missions déjà envoyées : les anciennes distances restées uniquement sur le téléphone ne se recréent pas d’elles-mêmes.
+EN : Distances — Refresh now sends to the site, clearer text
+- In the Distances app, REFRESH immediately sends pending kilometres to your Athena profile (especially when the game server is not linked to the portal).
+- A failed send is shown clearly instead of staying on “Not yet sent”.
+- App labels (pace, cadence, records, Athena) are larger and easier to read.
+- The site only keeps missions that were already sent: older distances that stayed only on the phone are not rebuilt by themselves.
+
+### Détail technique
+- `fn_distanceServer` : ne plus horodater DistSent si Acc vide ; échec pose l’heure ; ACTUALISER → `selfFlush`.
+- `fn_pageDistance` : tailles de texte relevées ; statut Athena explicite.
+- `PlayerBatchExceedsSession` : sans Steam / JSON illisible, ne bloque plus l’envoi (le portail filtre).
+
+## Montre : carte et lecteur (ATAK natif 2.9.0.AB - Denver, COMSPEC Link 2.0.99)
+
+### Résumé joueur
+Type : nouveauté
+FR : La montre affiche la carte, mon point, mes alliés, et le lecteur
+- Mon point est au centre de la carte, avec le cap, dans la couleur choisie pour moi sur le téléphone.
+- Les alliés du suivi apparaissent comme sur la carte du téléphone, avec leur indicatif aux zooms proches.
+- Le lecteur de la montre reprend le morceau du téléphone : lecture, pause, piste précédente ou suivante, avance et retour de 15 secondes, volume.
+- Quand un morceau joue, le cadran l’affiche à la place du stress.
+EN : The watch shows the map, my point, my allies, and the player
+- My point stays at the centre of the map, with my heading, in the colour chosen for me on the phone.
+- Tracked allies appear as on the phone map, with their callsign at the closer zoom levels.
+- The watch player follows the phone track: play, pause, previous or next track, skip back and forward by 15 seconds, volume.
+- While a track is playing, the watch face shows it instead of the stress line.
+
+### Détail technique
+- `fn_watchMapDraw` : point propre (cercle + cap), alliés du magasin `units` (filtre du suivi, symbole, fraîcheur), altitude remise à 0 avant `drawIcon`.
+- La montre relit le suivi toutes les 0,5 s quand le téléphone est rangé.
+- Écran MUSIC : mêmes actions que le lecteur (`toggle`, `next`, `prev`, `seek`, `volStep`). BACK ouvre les commandes ; UP / DOWN ne changent d'écran que tant qu'elles sont fermées.
+- Cadran : ligne du bas remplacée par le morceau en cours.
+
 ## Téléphone porté, écrans et liaison (ATAK natif 2.8.3.AB - Denver, COMSPEC Link 2.0.99)
 
 ### Résumé joueur

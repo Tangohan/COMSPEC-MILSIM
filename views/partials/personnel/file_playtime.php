@@ -1,9 +1,10 @@
 <?php
 /**
- * Temps de jeu de la fiche personnel.
+ * Temps de jeu, distances et montre de la fiche personnel.
  * Variables attendues : $armaPlaytime, $atakPlayStats, $atakRoleTimes, $armaSessionActivity,
+ * $atakDistance, $atakDistanceSchemaReady, $atakGarmin,
  * $canCorrectRoleTime, $roleTimeMoves, $roleTimePathSegment, $steamId, $viewerIsPersonnelSubject.
- * Définit $roleDur pour les blocs distances / pilote plus bas dans la fiche.
+ * Définit $roleDur et $distKm pour les blocs distances / pilote.
  */
 $atakRoleTimes = is_array($atakRoleTimes ?? null) ? $atakRoleTimes : [];
 $roleDur = static function (int $s): string {
@@ -12,13 +13,21 @@ $roleDur = static function (int $s): string {
 
     return $h > 0 ? $h . ' h ' . str_pad((string) $m, 2, '0', STR_PAD_LEFT) : max(1, $m) . ' min';
 };
+$distKm = static function (int $m): string {
+    return $m < 1000 ? $m . ' m' : number_format($m / 1000, $m < 100000 ? 1 : 0, ',', ' ') . ' km';
+};
 $canCorrectRoleTime = !empty($canCorrectRoleTime);
 $roleTimeMoves = is_array($roleTimeMoves ?? null) ? $roleTimeMoves : [];
 $ptBlock = is_array($armaPlaytime ?? null) ? $armaPlaytime : null;
 $playStats = is_array($atakPlayStats ?? null) ? $atakPlayStats : null;
 $armaAct = is_array($armaSessionActivity ?? null) ? $armaSessionActivity : null;
+$atakDistance = is_array($atakDistance ?? null) ? $atakDistance : null;
+$atakDistanceSchemaReady = !empty($atakDistanceSchemaReady ?? false) || $atakDistance !== null;
+$atakGarmin = is_array($atakGarmin ?? null) ? $atakGarmin : null;
 $ptReady = $ptBlock !== null && !empty($ptBlock['schema_ready']) && ($steamId ?? null) !== null && ($ptBlock['hours_label'] ?? null) !== null;
 $showRoleColumn = $atakRoleTimes !== [] || ($canCorrectRoleTime && $roleTimeMoves !== []);
+$showDistanceBlock = $atakDistanceSchemaReady || $atakDistance !== null;
+$showGarminBlock = $atakGarmin !== null;
 $roleTotal = max(1, array_sum(array_map(static fn (array $r): int => (int) $r['seconds'], $atakRoleTimes)));
 $roleBadge = [
     'crew' => 'bg-amber-100 text-amber-800',
@@ -27,7 +36,7 @@ $roleBadge = [
     'slot' => 'bg-slate-200/80 text-slate-700',
     'manual' => 'bg-rose-100 text-rose-700',
 ];
-if ($ptBlock === null && !$showRoleColumn && $armaAct === null) {
+if ($ptBlock === null && !$showRoleColumn && $armaAct === null && !$showDistanceBlock && !$showGarminBlock) {
     return;
 }
 $ptParts = [];
@@ -46,8 +55,8 @@ if ($ptReady) {
 <section id="temps-par-role" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
     <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div>
-            <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Temps de jeu</h2>
-            <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">Cumul des parties reliées à ce dossier, puis le détail des 30 derniers jours.</p>
+            <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Temps de jeu et distances</h2>
+            <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">Cumul des parties reliées à ce dossier, distances parcourues en jeu, puis le détail des 30 derniers jours.</p>
         </div>
         <?php if ($ptReady && !empty($ptBlock['last_sync_label'])): ?>
         <p class="text-xs text-slate-500">Dernière remontée le <?= htmlspecialchars((string) $ptBlock['last_sync_label'], ENT_QUOTES, 'UTF-8') ?></p>
@@ -251,9 +260,111 @@ if ($ptReady) {
     </div>
     <?php endif; ?>
 
-    <?php if ($ptReady): ?>
-    <p class="mt-6 text-xs leading-relaxed text-slate-500">Cumul issu des sessions reliées au portail. Les 7 et 30 jours, les sessions et les semaines viennent du temps compté pendant les parties. Le temps par rôle est compté par le serveur, ou par le téléphone quand le serveur ne remonte pas.</p>
-    <?php if (!empty($viewerIsPersonnelSubject)): ?>
+    <?php if ($showDistanceBlock): ?>
+    <div id="distances" class="mt-8 border-t border-slate-100 pt-6">
+        <p class="text-xs font-medium text-slate-500">Distances parcourues en jeu</p>
+        <?php if ($atakDistance !== null): ?>
+        <?php $dt = $atakDistance['totals']; ?>
+        <p class="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-slate-900"><?= htmlspecialchars($distKm((int) $atakDistance['total_m']), ENT_QUOTES, 'UTF-8') ?> <span class="text-sm font-medium text-slate-500">au total</span></p>
+        <p class="mt-1 text-sm text-slate-500"><?= (int) $atakDistance['sessions'] ?> session(s) de jeu</p>
+        <dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+            <div><dt class="text-[11px] text-slate-500">Pas</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= number_format((int) $dt['steps'], 0, ',', ' ') ?></dd></div>
+            <div><dt class="text-[11px] text-slate-500">À pied</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['foot_m']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <div><dt class="text-[11px] text-slate-500">Temps à pied, total</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= (int) $dt['foot_s'] > 0 ? htmlspecialchars($roleDur((int) $dt['foot_s']), ENT_QUOTES, 'UTF-8') : '—' ?></dd></div>
+            <div><dt class="text-[11px] text-slate-500">Temps à pied, moyenne / session</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= (int) $atakDistance['avg_foot_s'] > 0 ? htmlspecialchars($roleDur((int) $atakDistance['avg_foot_s']), ENT_QUOTES, 'UTF-8') : '—' ?></dd></div>
+            <div><dt class="text-[11px] text-slate-500">Véhicule terrestre</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['land_m']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <div><dt class="text-[11px] text-slate-500">Vol</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['air_m']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <div><dt class="text-[11px] text-slate-500">Saut HALO et sous voile</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['halo_m']), ENT_QUOTES, 'UTF-8') ?><?php if ((int) $dt['halo_jumps'] > 0): ?> <span class="font-normal text-slate-500">· <?= (int) $dt['halo_jumps'] ?> saut(s)</span><?php endif; ?></dd></div>
+            <?php if ((int) $dt['sea_m'] > 0): ?>
+            <div><dt class="text-[11px] text-slate-500">Bateau</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['sea_m']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <?php endif; ?>
+        </dl>
+        <?php if ($atakDistance['pilot'] !== []): ?>
+        <p class="mt-5 text-xs font-medium text-slate-500">Heures de pilote par appareil</p>
+        <ul class="mt-3 space-y-3">
+            <?php $pilotMax = max(1, (int) ($atakDistance['pilot'][0]['seconds'] ?? 1)); ?>
+            <?php foreach (array_slice($atakDistance['pilot'], 0, 10) as $pt): ?>
+            <li>
+                <div class="flex items-baseline justify-between gap-3 text-sm">
+                    <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) $pt['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="tabular-nums font-semibold text-slate-900"><?= htmlspecialchars($roleDur((int) $pt['seconds']), ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+                <div class="mt-1.5 h-1.5 rounded-full bg-slate-100" aria-hidden="true"><div class="h-1.5 rounded-full bg-sky-500" style="width: <?= max(4, (int) round(100 * (int) $pt['seconds'] / $pilotMax)) ?>%"></div></div>
+                <p class="mt-0.5 text-xs text-slate-500"><?= htmlspecialchars($distKm((int) $pt['meters']), ENT_QUOTES, 'UTF-8') ?> aux commandes<?php if (count($pt['variants']) > 1 || (($pt['variants'][0] ?? '') !== '' && ($pt['variants'][0] ?? '') !== $pt['label'])): ?> · <?= htmlspecialchars(implode(', ', array_slice($pt['variants'], 0, 4)), ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+        <p class="mt-3 text-xs leading-relaxed text-slate-500">Compté par le serveur de jeu (app Distances du téléphone ATAK) et remonté toutes les 10 minutes. Les pas sont estimés d’après l’allure ; les heures de pilote comptent le temps aux commandes, moteur allumé.</p>
+        <?php else: ?>
+        <p class="mt-2 text-sm text-slate-600">Aucune distance relevée pour l’instant. Elles apparaissent après une partie avec le pack relié au portail (envoi toutes les 10 minutes).</p>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($showGarminBlock): ?>
+    <?php
+    $gmDur = static function (int $s): string {
+        $m = intdiv($s, 60);
+
+        return $m < 60 ? $m . ' min' : intdiv($m, 60) . ' h ' . str_pad((string) ($m % 60), 2, '0', STR_PAD_LEFT);
+    };
+    $gmBb = (int) $atakGarmin['body_battery'];
+    $gmWeek = array_reverse($atakGarmin['week']);
+    $gmMax = max(1, (int) $atakGarmin['step_goal'], ...array_map(static fn (array $d): int => (int) $d['steps'], $gmWeek ?: [['steps' => 0]]));
+    $gmSynced = strtotime((string) $atakGarmin['synced_at']);
+    ?>
+    <div id="garmin" class="mt-8 border-t border-slate-100 pt-6">
+        <p class="text-xs font-medium text-slate-500">Montre Garmin en jeu</p>
+        <div class="mt-3 flex flex-wrap items-end gap-6">
+            <div>
+                <p class="text-[11px] text-slate-500">Body Battery</p>
+                <p class="text-2xl font-semibold tabular-nums <?= $gmBb >= 60 ? 'text-sky-600' : ($gmBb >= 25 ? 'text-amber-600' : 'text-rose-600') ?>"><?= $gmBb ?></p>
+            </div>
+            <dl class="grid grid-cols-3 gap-4 text-sm">
+                <div><dt class="text-[11px] text-slate-500">Cœur</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= (int) $atakGarmin['heart_rate'] ?> bpm</dd></div>
+                <div><dt class="text-[11px] text-slate-500">Repos</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= (int) $atakGarmin['avg_rest_hr'] > 0 ? (int) $atakGarmin['avg_rest_hr'] : (int) $atakGarmin['rest_hr'] ?> bpm</dd></div>
+                <div><dt class="text-[11px] text-slate-500">Stress</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= (int) $atakGarmin['stress'] ?></dd></div>
+            </dl>
+        </div>
+        <div class="mt-3 h-1.5 rounded-full bg-slate-100" aria-hidden="true"><div class="h-1.5 rounded-full bg-sky-500" style="width: <?= max(2, min(100, $gmBb)) ?>%"></div></div>
+        <?php if ($gmWeek !== []): ?>
+        <p class="mt-5 text-xs font-medium text-slate-500">Pas, derniers jours joués</p>
+        <div class="mt-2 flex h-16 items-end gap-1.5" role="img" aria-label="Pas par jour">
+            <?php foreach ($gmWeek as $gd): ?>
+            <?php $gs = (int) $gd['steps']; ?>
+            <div class="flex flex-1 flex-col items-center gap-1" title="<?= htmlspecialchars(date('d/m', (int) strtotime((string) $gd['day'])) . ' : ' . number_format($gs, 0, ',', ' ') . ' pas', ENT_QUOTES, 'UTF-8') ?>">
+                <div class="w-full rounded-t <?= $gs >= (int) $atakGarmin['step_goal'] ? 'bg-emerald-500' : 'bg-sky-500' ?>" style="height: <?= max(4, (int) round(48 * $gs / $gmMax)) ?>px"></div>
+                <span class="text-[9px] tabular-nums text-slate-500"><?= htmlspecialchars(date('d/m', (int) strtotime((string) $gd['day'])), ENT_QUOTES, 'UTF-8') ?></span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+            <div><dt class="text-[11px] text-slate-500">Pas, moyenne / jour joué</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= number_format((int) $atakGarmin['avg_steps'], 0, ',', ' ') ?> <span class="font-normal text-slate-500">/ objectif <?= number_format((int) $atakGarmin['step_goal'], 0, ',', ' ') ?></span></dd></div>
+            <div><dt class="text-[11px] text-slate-500">Sommeil, moyenne</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= htmlspecialchars($gmDur((int) $atakGarmin['avg_sleep_s']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <div><dt class="text-[11px] text-slate-500">Stress moyen</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= (int) $atakGarmin['avg_stress'] ?></dd></div>
+            <div><dt class="text-[11px] text-slate-500">Courses</dt><dd class="mt-0.5 tabular-nums font-semibold text-slate-900"><?= (int) $atakGarmin['totals']['run_n'] ?> <span class="font-normal text-slate-500">· <?= htmlspecialchars($distKm((int) $atakGarmin['totals']['run_m']), ENT_QUOTES, 'UTF-8') ?></span></dd></div>
+        </dl>
+        <?php if ($atakGarmin['activities'] !== []): ?>
+        <p class="mt-5 text-xs font-medium text-slate-500">Dernières activités</p>
+        <ul class="mt-2 divide-y divide-slate-100 text-sm">
+            <?php foreach ($atakGarmin['activities'] as $ga): ?>
+            <?php $gaKmh = (int) $ga['seconds'] > 0 ? 3.6 * (int) $ga['meters'] / (int) $ga['seconds'] : 0; ?>
+            <li class="flex items-baseline justify-between gap-3 py-2">
+                <span class="min-w-0 truncate"><span class="font-semibold text-slate-800"><?= htmlspecialchars((string) $ga['label'], ENT_QUOTES, 'UTF-8') ?></span><?php if ((string) $ga['place'] !== ''): ?> <span class="text-slate-500">· <?= htmlspecialchars((string) $ga['place'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><br><span class="text-xs text-slate-500"><?= htmlspecialchars(date('d/m', (int) strtotime((string) $ga['day'])) . ' ' . (string) $ga['started_at'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($gmDur((int) $ga['seconds']), ENT_QUOTES, 'UTF-8') ?></span></span>
+                <span class="shrink-0 text-right tabular-nums font-semibold text-slate-900"><?= htmlspecialchars($distKm((int) $ga['meters']), ENT_QUOTES, 'UTF-8') ?><br><span class="text-xs font-normal text-slate-500"><?= number_format($gaKmh, 1, ',', ' ') ?> km/h</span></span>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+        <p class="mt-3 text-xs leading-relaxed text-slate-500">Mesuré par la montre de l’app Garmin du téléphone ATAK, sur le PC du joueur, et envoyé toutes les 5 minutes<?php if ($gmSynced !== false): ?> (dernier envoi le <?= htmlspecialchars(date('d/m à H:i', $gmSynced), ENT_QUOTES, 'UTF-8') ?>)<?php endif; ?>. Fréquence cardiaque d’ACE quand le mod est chargé, sinon estimée.</p>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($ptReady || $showDistanceBlock): ?>
+    <p class="mt-6 text-xs leading-relaxed text-slate-500"><?php if ($ptReady): ?>Cumul issu des sessions reliées au portail. Les 7 et 30 jours, les sessions et les semaines viennent du temps compté pendant les parties. Le temps par rôle est compté par le serveur, ou par le téléphone quand le serveur ne remonte pas.<?php endif; ?><?php if ($ptReady && $showDistanceBlock): ?> <?php endif; ?><?php if ($showDistanceBlock): ?>Les distances et les heures de pilote sont envoyées par le serveur de jeu toutes les 10 minutes.<?php endif; ?></p>
+    <?php if ($ptReady && !empty($viewerIsPersonnelSubject)): ?>
     <p class="mt-3 rounded-xl border border-sky-200/80 bg-sky-50/90 px-3 py-2 text-xs leading-relaxed text-slate-700">Pour forcer une remontée depuis le jeu : téléphone Athena, « Remonter le temps », ou Resynch Athena. Rechargez ensuite cette page.</p>
     <?php endif; ?>
     <?php endif; ?>
