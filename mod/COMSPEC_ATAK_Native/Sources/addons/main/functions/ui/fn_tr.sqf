@@ -97,13 +97,14 @@ private _seg = {
     // « · » collé à une balise (« 2 charge(s) cochée(s) · <t …>sécurité levée</t> ») : le morceau finit ou commence
     // par « · » ; traduit sans lui.
     if (_r isEqualTo "" && {(count _core) > 2}) then {
-        if ((_core select [(count _core) - 2]) isEqualTo " ·") then {
-            private _in = _core select [0, (count _core) - 2];
+        // Longueurs prises sur les chaînes elles-mêmes : « · » n'a pas la longueur d'un caractère simple.
+        if ((_core select [(count _core) - (count " ·")]) isEqualTo " ·") then {
+            private _in = _core select [0, (count _core) - (count " ·")];
             private _tr = [_in, _depth] call _seg;
             if (_tr isNotEqualTo _in) then { _r = _tr + " ·"; };
         } else {
-            if ((_core select [0, 2]) isEqualTo "· ") then {
-                private _in = _core select [2];
+            if ((_core select [0, count "· "]) isEqualTo "· ") then {
+                private _in = _core select [count "· "];
                 private _tr = [_in, _depth] call _seg;
                 if (_tr isNotEqualTo _in) then { _r = "· " + _tr; };
             };

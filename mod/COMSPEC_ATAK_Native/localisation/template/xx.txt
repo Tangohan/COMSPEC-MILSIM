@@ -4581,7 +4581,6 @@
 ["CR imposé : il s'ouvre dans les téléphones visés.", "", "Report required: it opens on the targeted phones."],
 ["CR REMIS À %1 ✓", "", "REPORT SUBMITTED AT %1 ✓"],
 ["CR « %1 » levé par le commandement", "", "Report ""%1"" lifted by command"],
-["CR%1%2", "", "RPT%1%2"],
 ["Crash / gel", "", "Crash / freeze"],
 ["crash déclenché", "", "crash triggered"],
 ["CRAYON", "", "PEN"],
