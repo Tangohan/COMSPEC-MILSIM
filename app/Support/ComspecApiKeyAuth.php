@@ -579,7 +579,13 @@ final class ComspecApiKeyAuth
         }
     }
 
-    private static function guessTenantIdForLog(): int
+    /**
+     * Communauté à qui journaliser un refus SANS preuve : la garde des routes tactiques, et la liaison en jeu
+     * refusée (AtakApiController : code inconnu, Steam non reconnu). Une seule règle : clé reconnue, session,
+     * tenant_id de l’URL seulement s’il s’écrit en chiffres et désigne une communauté qui existe, puis la
+     * communauté par défaut configurée. 0 : rien à journaliser.
+     */
+    public static function guessTenantIdForLog(): int
     {
         $matched = self::$matchedTenantId;
         if ($matched !== null && $matched > 0) {
