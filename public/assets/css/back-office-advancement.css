@@ -462,3 +462,153 @@
 select.adv-search {
   min-width: 12rem;
 }
+
+.adv-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  align-items: flex-end;
+}
+
+.adv-lead {
+  margin: 0;
+  max-width: 42rem;
+  color: #3d474f;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.adv-empty {
+  background: #fff;
+  border: 1px dashed #d5dbe1;
+  border-radius: 14px;
+  padding: 1.25rem 1.3rem;
+}
+
+.adv-empty__title {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+}
+
+.adv-empty p {
+  margin: 0;
+  color: #6b7680;
+}
+
+.adv-campaigns,
+.adv-people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.adv-campaign {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem 1rem;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e4e7ea;
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.adv-campaign:hover,
+.adv-campaign:focus-visible {
+  border-color: #1f7a4d;
+}
+
+.adv-campaign__year {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.4rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 10px;
+  background: #e5f3ec;
+  color: #1f7a4d;
+  font-weight: 700;
+}
+
+.adv-campaign__body {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.adv-campaign__body strong {
+  font-size: 1rem;
+}
+
+.adv-campaign__body span,
+.adv-person__facts dd {
+  color: #6b7680;
+  font-size: 0.86rem;
+}
+
+.adv-badge--wait {
+  background: #fff4e5;
+  color: #9a5b00;
+}
+
+.adv-badge--quiet {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.adv-person {
+  background: #fff;
+  border: 1px solid #e4e7ea;
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.adv-person__who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+  align-items: center;
+}
+
+.adv-person__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.55rem 1rem;
+  margin: 0;
+}
+
+.adv-person__facts div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.adv-person__facts dt {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7680;
+}
+
+.adv-person__facts dd {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .adv-campaign {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .adv-campaign .adv-badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

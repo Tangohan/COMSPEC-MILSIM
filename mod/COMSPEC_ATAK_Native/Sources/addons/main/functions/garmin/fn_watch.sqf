@@ -8,10 +8,11 @@
     Les 5 boutons de la vraie montre sont des touches CBA (COMSPEC ATAK, modifiables aussi dans le téléphone :
     Réglages > Accès et touches > Montre Garmin) :
       LIGHT  appui court : luminosité ; appui long (0,6 s) : menu des commandes (Ctrl+Alt+O)
-      UP     écran précédent ; menu : remonter ; minuteur en réglage : +1 min (Ctrl+O)
-      DOWN   écran suivant ; menu : descendre ; minuteur en réglage : -1 min (touche Montre du jeu, O)
+      UP     écran précédent ; menu : remonter ; minuteur en réglage : +1 min ; musique (commandes) : piste, retour ou volume (Ctrl+O)
+      DOWN   écran suivant ; menu : descendre ; minuteur en réglage : -1 min ; musique : piste, avance ou volume
+             (touche Montre du jeu, O)
       START  action de l'écran : chrono, minuteur, marquer la position, zoom de la carte, étalonner l'altimètre,
-             trouver le téléphone ; menu : valider (Maj+O)
+             trouver le téléphone, lecture de la musique ; menu : valider (Maj+O)
       BACK   retour au cadran, tour du chrono, remise à zéro ; menu : fermer ; sur le cadran : éteindre (Alt+O)
     Plus : vue agrandie au centre de l'écran (Ctrl+Maj+O), et sans touche par défaut : allumer / éteindre, menu des
     commandes, chrono, tour, minuteur, marquer ma position, mode nuit, ne pas déranger, trouver mon téléphone.
@@ -21,19 +22,23 @@
       HR       fréquence cardiaque : valeur, zone (1 à 5), courbe des 12 dernières minutes, repos et maximum du jour ;
       ALT      altimètre-baromètre : altitude barométrique (dérive avec la météo, START l'étalonne sur le GPS),
                pression, courbe des 30 dernières minutes, dénivelé positif et négatif du jour ;
-      MAP      carte nord en haut : ma position (GPS, mêmes erreurs que le téléphone), mon groupe, point marqué,
-               largeur affichée (START : zoom suivant) ;
+      MAP      carte nord en haut : mon point (GPS, mêmes erreurs que le téléphone), les alliés du suivi,
+               point marqué, cap, largeur affichée (START : zoom suivant) ;
       COMPASS  boussole : cap, point cardinal, couronne qui tourne, coordonnées MGRS ; START marque ma position, la
                couronne montre alors la direction du point et sa distance (BACK l'efface) ; un point de la carte de
-               l'ATAK s'y envoie aussi (clic droit > Envoyer à la montre, liaison Bluetooth nécessaire) ;
+               l'ATAK s'y envoie aussi (clic droit > Envoyer à la montre, téléphone allumé) ;
       JUMP     Jumpmaster (HALO / HAHO) : hauteur sol, vitesse de chute, altitude d'ouverture, direction et distance du
                point (DIP) ; START : régler l'altitude d'ouverture (UP / DOWN, 100 m), puis armer. Armée, la montre
                vibre à 300 m de l'ouverture puis à l'ouverture, même éteinte ; elle se désarme une fois posé ;
       CHRONO   chronomètre (START départ / arrêt, BACK tour ou remise à zéro) et activité reconnue en cours ;
       TIMER    minuteur (START : régler la durée avec UP / DOWN, puis lancer ; pause ; BACK : remise à zéro) ;
                la montre vibre à la fin ;
-      PHONE    téléphone : liaison Bluetooth avec l'ATAK, batterie du téléphone, 3 dernières notifications
-               (START : faire sonner le téléphone) ;
+      PHONE    téléphone porté et allumé : batterie, 3 dernières notifications
+               (START : faire sonner le téléphone). Le partage Bluetooth du téléphone n'entre pas en compte ;
+      MUSIC    lecteur du téléphone : morceau en cours, position, file. START : lecture ou pause. BACK ouvre les
+               commandes, puis passe de la piste (±) à l'avance (±15 s), au volume, puis les referme. Tant que les
+               commandes sont ouvertes, UP / DOWN ne changent plus d'écran. Le cadran montre le morceau à la place
+               du stress ;
       DAY      ma journée : pas, distance, stress, Body Battery, sommeil / repos.
     Menu des commandes : vue agrandie, mode nuit (écran rouge), rouge automatique avec les JVN, ne pas déranger (pas de
     bandeau ni de vibration), mode furtif (Bluetooth coupé, écran au minimum), luminosité, heure H au groupe, marquer ma
@@ -60,7 +65,7 @@
 params [["_act", "tick"], ["_arg", []]];
 disableSerialization;
 if (!hasInterface) exitWith { false };
-private _pages = ["FACE", "HR", "ALT", "MAP", "COMPASS", "JUMP", "CHRONO", "TIMER", "PHONE", "DAY"];
+private _pages = ["FACE", "HR", "ALT", "MAP", "COMPASS", "JUMP", "CHRONO", "TIMER", "PHONE", "MUSIC", "DAY"];
 private _menuItems = [
     ["big", "Vue agrandie"], ["night", "Mode nuit"], ["nvAuto", "Rouge auto (JVN)"], ["dnd", "Ne pas déranger"],
     ["stealth", "Mode furtif"], ["bright", "Luminosité"], ["hh", "Heure H au groupe"], ["mark", "Marquer ma position"],
@@ -86,7 +91,6 @@ private _has = {
 };
 private _linkNow = {
     !(_w getOrDefault ["stealth", false]) && {([] call comspec_atak_native_fnc_canUse) isEqualTo ""}
-    && {(missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false]}
 };
 // Heure du serveur (même base sur toutes les montres du groupe pour l'heure H).
 private _now = [time, serverTime] select isMultiplayer;
@@ -162,6 +166,19 @@ private _nav = {
         };
         call _redraw;
     };
+    // Lecteur, une fois les commandes ouvertes (BACK) : UP / DOWN ne changent plus d'écran.
+    // Sans ça, la touche Montre continue de passer à l'écran suivant.
+    if ((_pages select (_w get "page")) isEqualTo "MUSIC" && {(_w getOrDefault ["mus", 0]) > 0}) exitWith {
+        switch (_w get "mus") do {
+            case 2: { ["seek", _step * 15] call comspec_atak_native_fnc_musicAction; };
+            case 3: { ["volStep", _step * -10] call comspec_atak_native_fnc_musicAction; };
+            default {
+                if (_step > 0) then { ["next"] call comspec_atak_native_fnc_musicAction; } else { ["prev"] call comspec_atak_native_fnc_musicAction; };
+                call _buzz;
+            };
+        };
+        call _redraw;
+    };
     private _p = (_w get "page") + _step;
     if (_closeAtEnd && {_p >= (count _pages)}) exitWith { call _close; };
     _w set ["page", (_p + (count _pages)) mod (count _pages)];
@@ -191,7 +208,7 @@ private _do = {
                 [] call comspec_atak_native_fnc_vibrate;
                 ["Trouver mon téléphone", "Le téléphone sonne et vibre"] call _toast;
             } else {
-                ["Trouver mon téléphone", "Téléphone hors de portée Bluetooth"] call _toast;
+                ["Trouver mon téléphone", "Téléphone éteint ou absent"] call _toast;
             };
         };
         case "off": { call _close; };
@@ -299,6 +316,14 @@ private _start = {
         case "JUMP": { ["jump"] call _do; };
         case "ALT": { ["calib"] call _do; };
         case "PHONE": { ["find"] call _do; };
+        case "MUSIC": {
+            private _mu = [] call comspec_atak_native_fnc_musicState;
+            if ((_mu get "kind") isEqualTo "" && {(count (_mu get "queue")) isEqualTo 0}) exitWith {
+                ["Musique", "Lancez un morceau sur le téléphone"] call _toast;
+            };
+            ["toggle"] call comspec_atak_native_fnc_musicAction;
+            call _buzz;
+        };
         default { _w set ["menu", 0]; };
     };
     call _redraw;
@@ -313,8 +338,12 @@ private _back = {
         case (_pg isEqualTo "CHRONO" && {(_m get "acc") > 0}): { _m set ["acc", 0]; _m set ["laps", []]; ["Chrono remis à zéro"] call _toast; };
         case (_pg isEqualTo "TIMER" && {(_m get "tend") >= 0 || {(_m get "tleft") < (_m get "tdur")}}): { ["treset"] call _do; };
         case (_pg isEqualTo "COMPASS" && {(_m get "wpt") isNotEqualTo []}): { _m set ["wpt", []]; ["Point effacé"] call _toast; };
+        case (_pg isEqualTo "MUSIC"): {
+            private _mode = (_w getOrDefault ["mus", 0]) + 1;
+            if (_mode > 3) then { _w set ["mus", 0]; } else { _w set ["mus", _mode]; };
+        };
         case (_pg isEqualTo "FACE"): { call _close; };
-        default { _w set ["page", 0]; };
+        default { _w set ["page", 0]; _w set ["mus", 0]; };
     };
     call _redraw;
 };
@@ -396,11 +425,11 @@ switch (_act) do {
     case "stealth": { if !(call _has) exitWith { false }; if !(_w get "open") then { _w set ["page", 0]; call _open; }; ["stealth"] call _do; call _redraw; true };
     case "hhour": { if !(call _has) exitWith { false }; ["TIMER"] call _show; ["hh"] call _do; call _redraw; true };
     case "jump": { if !(call _has) exitWith { false }; ["JUMP"] call _show; ["jump"] call _do; call _redraw; true };
-    // Point envoyé par l'ATAK (clic droit sur la carte > Envoyer à la montre) : liaison Bluetooth nécessaire.
+    // Point envoyé par l'ATAK (clic droit sur la carte > Envoyer à la montre) : le téléphone doit être allumé.
     case "send": {
         _arg params [["_pos", []], ["_lbl", ""]];
         if (_pos isEqualTo [] || {!(call _has)}) exitWith { false };
-        if !(call _linkNow) exitWith { ["Montre hors de portée Bluetooth", 3] call comspec_atak_native_fnc_toast; false };
+        if !(call _linkNow) exitWith { ["Téléphone éteint ou absent", 3] call comspec_atak_native_fnc_toast; false };
         _m set ["wpt", [_pos, _lbl]];
         call _buzz;
         ["Point envoyé à la montre", 2] call comspec_atak_native_fnc_toast;
@@ -560,8 +589,9 @@ switch (_act) do {
         private _goal = _gm getOrDefault ["goal", 10000];
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _phoneWhy = [] call comspec_atak_native_fnc_canUse;
-        private _btOn = ((missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false]);
-        private _link = _phoneWhy isEqualTo "" && {_btOn} && {!_stealth};
+        // La montre suit le téléphone porté (emplacement, gilet, sac), dès qu'il est allumé. Le partage Bluetooth
+        // du téléphone est un autre réglage : il ne coupe pas cette liaison.
+        private _link = _phoneWhy isEqualTo "" && {!_stealth};
         private _veh = vehicle player;
         private _heading = getDir _veh;
         private _alt = ((getPosASL player) select 2) + (call _drift) - (_m get "altOff");
@@ -668,7 +698,7 @@ switch (_act) do {
             private _dots = {
                 private _k = count _pages;
                 for "_i" from 0 to (_k - 1) do {
-                    private _a = 270 + (_i - (_k - 1) / 2) * 4.2;
+                    private _a = 270 + (_i - (_k - 1) / 2) * (36 / ((_k - 1) max 1));
                     [format ["pg%1", _i], "gw_disc", (0.9 * sin _a) - 0.025, (-0.9 * cos _a) - 0.025, 0.05, [_cDim, _cWhite] select (_i isEqualTo (_w get "page"))] call _pic;
                 };
             };
@@ -720,26 +750,11 @@ switch (_act) do {
                     _mc ctrlCommit 0;
                     _mc ctrlMapAnimAdd [0, [0.012, 0.025, 0.05, 0.1] select (_w get "zoom"), [] call comspec_atak_native_fnc_gpsPos];
                     ctrlMapAnimCommit _mc;
-                    _mc ctrlAddEventHandler ["Draw", {
-                        params ["_mc"];
-                        private _me = [] call comspec_atak_native_fnc_gpsPos;
-                        private _wm = (missionNamespace getVariable ["COMSPEC_ATAK_WatchM", createHashMap]) getOrDefault ["wpt", []];
-                        if (_wm isNotEqualTo []) then {
-                            _mc drawIcon ["\z\comspec_atak_native\addons\main\data\gw_pin.paa", [1, 0.27, 0.33, 1], _wm select 0, 16, 16, 0, "", 0];
-                        };
-                        {
-                            if (_x isNotEqualTo player && {alive _x}) then {
-                                _mc drawIcon ["\z\comspec_atak_native\addons\main\data\gw_pin.paa", [0.25, 0.62, 1, 1], getPosASL _x, 14, 14, 0, "", 0];
-                            };
-                        } forEach (units group player);
-                        _mc drawIcon ["\z\comspec_atak_native\addons\main\data\gw_arrow.paa", [1, 0.42, 0.12, 1], _me, 22, 22, getDir (vehicle player), "", 0];
-                    }];
+                    _mc ctrlAddEventHandler ["Draw", { (_this select 0) call comspec_atak_native_fnc_watchMapDraw; }];
                     // Mode nuit : filtre rouge sur la carte.
                     if (_night) then { ["nf", "gw_disc", -1.02, -1.02, 2.04, [0.55, 0, 0, 0.4]] call _pic; (_n get "nf") ctrlSetTextColor [0.55, 0, 0, 0.4]; (_n get "nf") ctrlCommit 0; };
-                    ["northBg", "gw_disc", -0.11, -0.97, 0.22, [0, 0, 0, 0.75]] call _pic;
-                    (_n get "northBg") ctrlSetTextColor [0, 0, 0, 0.75];
-                    (_n get "northBg") ctrlCommit 0;
-                    ["north", -0.3, -0.94, 0.6, 0.16, 0.12, _fB, _cRed] call _txt;
+                    ["northBg", -0.32, -0.96, 0.64, 0.16, [0, 0, 0, 0.75]] call _box;
+                    ["north", -0.32, -0.96, 0.64, 0.16, 0.1, _fB, _cRed] call _txt;
                     ["gridBg", -0.62, 0.56, 1.24, 0.3, [0, 0, 0, 0.72]] call _box;
                     (_n get "gridBg") ctrlSetBackgroundColor [0, 0, 0, 0.72];
                     (_n get "gridBg") ctrlCommit 0;
@@ -806,6 +821,18 @@ switch (_act) do {
                         [format ["n%1", _i], -0.72, -0.17 + _i * 0.25, 1.44, 0.24, 0.1] call _rich;
                     };
                     ["hint", -0.6, 0.6, 1.2, 0.11, 0.085, _fR, _cGrey] call _txt;
+                };
+                case "MUSIC": {
+                    call _dots;
+                    ["icon", "app_music", -0.07, -0.84, 0.14, _cBlue] call _pic;
+                    ["title", -0.65, -0.68, 1.3, 0.12, 0.09, _fB, _cGrey] call _txt;
+                    ["track", -0.72, -0.55, 1.44, 0.2, 0.15, _fB, _cWhite] call _txt;
+                    ["time", -0.7, -0.34, 1.4, 0.26, 0.24, _fB, _cWhite] call _txt;
+                    for "_i" from 0 to 15 do { [format ["mb%1", _i], -0.6 + _i * 0.078, 0.0, 0.062, 0.05, _cDim] call _box; };
+                    ["meta", -0.72, 0.1, 1.44, 0.12, 0.085, _fR, _cGrey] call _txt;
+                    ["next", -0.72, 0.22, 1.44, 0.12, 0.085, _fR, _cGrey] call _txt;
+                    ["hint", -0.74, 0.4, 1.48, 0.12, 0.078, _fR, _cGrey] call _txt;
+                    ["hint2", -0.74, 0.52, 1.48, 0.12, 0.078, _fR, _cGrey] call _txt;
                 };
                 case "DAY": {
                     call _dots;
@@ -890,9 +917,55 @@ switch (_act) do {
             };
         };
         if (_page isEqualTo "MAP") then {
+            // Téléphone rangé : le suivi n'est plus alimenté. La carte de la montre le relit elle-même.
+            private _phone = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["display", displayNull];
+            if (isNull _phone && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WatchBftAt", -1]) > 0.5}) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_WatchBftAt", diag_tickTime];
+                [] call comspec_atak_native_fnc_localDataRefresh;
+            };
             private _mc = "map" call _g;
             _mc ctrlMapAnimAdd [0.1, [0.012, 0.025, 0.05, 0.1] select (_w get "zoom"), [] call comspec_atak_native_fnc_gpsPos];
             ctrlMapAnimCommit _mc;
+            private _hd = round (getDir (vehicle player));
+            private _card = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_hd / 45)) mod 8);
+            ("north" call _g) ctrlSetText format ["%1 %2°", _card call _tr, _hd];
+        };
+        if (_page isEqualTo "MUSIC") then {
+            private _mu = [] call comspec_atak_native_fnc_musicState;
+            private _mode = _w getOrDefault ["mus", 0];
+            private _clip = { params ["_t", "_n"]; if ((count _t) > _n) then { (_t select [0, (_n - 1) max 1]) + "…" } else { _t } };
+            private _kind = _mu get "kind";
+            private _paused = _mu get "paused";
+            private _len = _mu get "len";
+            private _st = _mu getOrDefault ["status", []];
+            if (_len <= 0) then { _len = (_st param [2, 0]) / 1000; };
+            private _pos = if (_kind isEqualTo "") then { 0 } else { if (_paused) then { _mu get "pausedAt" } else { (_now - (_mu get "start")) max 0 } };
+            if (_len > 0) then { _pos = _pos min _len; };
+            ["title", ["Musique", "Piste", "Avance", "Volume"] select _mode] call _set;
+            private _title = if (_kind isEqualTo "") then { "Aucune lecture" } else { _mu get "title" };
+            ("track" call _g) ctrlSetText (([_title, 28] call _clip) call _tr);
+            ("time" call _g) ctrlSetText ([_pos] call _fmtT);
+            ["time", [_cGrey, [_cBlue, _cOrange] select _paused] select (_kind isNotEqualTo "")] call _col;
+            private _fill = if (_len <= 0) then { 0 } else { round ((_pos / _len) min 1) * 16 };
+            private _bar = [_cDim, [_cBlue, _cOrange] select _paused] select (_kind isNotEqualTo "");
+            for "_i" from 0 to 15 do { [format ["mb%1", _i], [_cDim, _bar] select (_i < _fill)] call _col; };
+            private _q = _mu get "queue";
+            private _nq = count _q;
+            if (_nq isEqualTo 0) then {
+                ["meta", "Lancez un morceau sur le téléphone"] call _set;
+                ("next" call _g) ctrlSetText "";
+            } else {
+                ("meta" call _g) ctrlSetText format ["%1/%2 · %3 %4 %5", (_mu get "qi") + 1, _nq, (["Écouteurs", "Haut-parleur"] select (_mu get "speaker")) call _tr, _mu get "vol", "%"];
+                private _ni = (_mu get "qi") + 1;
+                if (_ni >= _nq) then { _ni = if ((_mu get "repeat") isEqualTo "off") then { -1 } else { 0 }; };
+                if (_ni < 0 || {_ni isEqualTo (_mu get "qi")}) then {
+                    ("next" call _g) ctrlSetText "";
+                } else {
+                    ("next" call _g) ctrlSetText format ["%1 %2", "Ensuite" call _tr, [(_q select _ni) select 2, 26] call _clip];
+                };
+            };
+            ["hint", ["START : lecture ou pause", "UP : précédente · DOWN : suivante", "UP : -15 s · DOWN : +15 s", "UP : plus fort · DOWN : moins fort"] select _mode] call _set;
+            ["hint2", ["BACK : commandes", "BACK : avance", "BACK : volume", "BACK : quitter les commandes"] select _mode] call _set;
         };
         if (_page isEqualTo "JUMP") then {
             ("val" call _g) ctrlSetText ((round _agl) call _thou);
@@ -979,7 +1052,14 @@ switch (_act) do {
                 private _mp2 = moonPhase (numberToDate [_y, ((dateToNumber date) + 1 / 365) min 0.9999]);
                 ("moon" call _g) ctrlSetText format ["%1 %2 %3 · %4", "Lune" call _tr, round (_mp * 100), "%", (["décroissante", "croissante"] select (_mp2 >= _mp)) call _tr];
                 private _stressTxt = format [(["Stress %1 · repos", "Stress %1 · faible", "Stress %1 · moyen", "Stress %1 · élevé"] select ([0, 1, 2, 3] select (([25, 50, 75] findIf { _stress <= _x }) call { [_this, 3] select (_this < 0) }))), _stress];
-                ("foot" call _g) ctrlSetText (_stressTxt call _tr);
+                private _mu = [] call comspec_atak_native_fnc_musicState;
+                if ((_mu get "kind") isNotEqualTo "") then {
+                    private _tt = _mu get "title";
+                    if ((count _tt) > 22) then { _tt = (_tt select [0, 21]) + "…"; };
+                    ("foot" call _g) ctrlSetText format ["%1 · %2", (["Pause", "Lecture"] select (!(_mu get "paused"))) call _tr, _tt];
+                } else {
+                    ("foot" call _g) ctrlSetText (_stressTxt call _tr);
+                };
                 for "_i" from 0 to 29 do {
                     [format ["bba%1", _i], [_cDim, _cBlue] select (_i < round (_bb / 100 * 30))] call _col;
                     [format ["sta%1", _i], [_cDim, _cGreen] select (_i < round (((_steps / (_goal max 1)) min 1) * 30))] call _col;
@@ -1057,13 +1137,19 @@ switch (_act) do {
             };
             case "MAP": {
                 private _fix = [] call comspec_atak_native_fnc_gpsFix;
-                ("north" call _g) ctrlSetText ("N" call _tr);
                 ("grid" call _g) ctrlSetText format ["%1 · ±%2 m", ([] call comspec_atak_native_fnc_gpsPos) call _mgrs, round (_fix param [0, 0])];
                 // Largeur réelle affichée, mesurée sur la carte (dépend du zoom choisi avec START).
                 private _mc = "map" call _g;
                 (ctrlPosition _mc) params ["_mx", "_my", "_mw", "_mh"];
                 private _span = (_mc ctrlMapScreenToWorld [_mx, _my + _mh / 2]) distance2D (_mc ctrlMapScreenToWorld [_mx + _mw, _my + _mh / 2]);
-                ["scale", format ["Largeur %1 · START : zoom", [format ["%1 m", round (_span / 10) * 10], format ["%1 km", (_span / 1000) toFixed 1]] select (_span >= 1000)]] call _set;
+                private _nAlly = 0;
+                {
+                    if (!(_y getOrDefault ["self", false]) && {(_y getOrDefault ["affiliation", ""]) isEqualTo "friend"} && {[_y] call comspec_atak_native_fnc_bftFilter}) then { _nAlly = _nAlly + 1; };
+                } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]);
+                private _who = "Aucun allié";
+                if (_nAlly isEqualTo 1) then { _who = "1 allié"; };
+                if (_nAlly > 1) then { _who = format ["%1 alliés", _nAlly]; };
+                ["scale", format ["%1 · %2 · START : zoom", _who, [format ["%1 m", round (_span / 10) * 10], format ["%1 km", (_span / 1000) toFixed 1]] select (_span >= 1000)]] call _set;
                 private _ok = (_fix param [1, "FIX"]) in ["FIX", "NET"];
                 ("nofix" call _g) ctrlShow !_ok;
                 if (!_ok) then { ["nofix", "Recherche GPS…"] call _set; };
@@ -1119,7 +1205,7 @@ switch (_act) do {
             };
             case "PHONE": {
                 ["icon", [_cGrey, _cGreen] select _link] call _col;
-                ["bt", [_cDim, _cBlue] select _btOn] call _col;
+                ["bt", [_cDim, _cBlue] select _link] call _col;
                 ["state", ["Téléphone déconnecté", "ATAK connecté"] select _link] call _set;
                 ["state", [_cGrey, _cGreen] select _link] call _col;
                 private _sub = switch (true) do {
@@ -1128,7 +1214,6 @@ switch (_act) do {
                     case (_phoneWhy isEqualTo "battery"): { "Batterie du téléphone vide" };
                     case (_phoneWhy isEqualTo "broken"): { "Téléphone détruit" };
                     case (_phoneWhy isNotEqualTo ""): { "Téléphone éteint" };
-                    case (!_btOn): { "Bluetooth du téléphone éteint" };
                     default { format ["Batterie du téléphone %1 %2", round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]), "%"] };
                 };
                 ["sub", _sub] call _set;
