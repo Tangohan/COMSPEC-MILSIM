@@ -57,9 +57,16 @@ final class AtakUnverifiedAuthFailureJournalTest extends TestCase
     /** @var array{set: bool, value: mixed} */
     private array $savedGetTenant = ['set' => false, 'value' => null];
 
+    private bool $hadPost = false;
+
+    private mixed $savedPost = null;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->hadPost = isset($_POST);
+        $this->savedPost = $_POST ?? null;
+        $_POST = [];
         $this->svc = new AtakActivityLogService();
         $this->tenantId = 920000 + random_int(1, 49999);
         $this->unknownTenantId = $this->tenantId + 50000;
@@ -122,6 +129,11 @@ final class AtakUnverifiedAuthFailureJournalTest extends TestCase
                 unset($_ENV[$key]);
             }
             putenv($saved['getenv'] === false ? $key : $key . '=' . $saved['getenv']);
+        }
+        if ($this->hadPost) {
+            $_POST = $this->savedPost;
+        } else {
+            unset($_POST);
         }
         parent::tearDown();
     }

@@ -32,9 +32,16 @@ final class ClientIpTest extends TestCase
 
     private string|false $savedCfSettingEnv = false;
 
+    private bool $hadPost = false;
+
+    private mixed $savedPost = null;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->hadPost = isset($_POST);
+        $this->savedPost = $_POST ?? null;
+        $_POST = [];
         foreach (self::SERVER_KEYS as $key) {
             if (array_key_exists($key, $_SERVER)) {
                 $this->savedServer[$key] = $_SERVER[$key];
@@ -70,6 +77,11 @@ final class ClientIpTest extends TestCase
         }
         putenv($this->savedCfSettingEnv === false ? 'TRUST_CF_CONNECTING_IP' : 'TRUST_CF_CONNECTING_IP=' . $this->savedCfSettingEnv);
         ClientIp::resetTrustedProxies();
+        if ($this->hadPost) {
+            $_POST = $this->savedPost;
+        } else {
+            unset($_POST);
+        }
         parent::tearDown();
     }
 

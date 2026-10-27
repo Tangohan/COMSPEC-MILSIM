@@ -14,6 +14,7 @@ use App\Repositories\AtakDataRepository;
 use App\Repositories\AtakOrderRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Support\AtakArmaWriteGuard;
 use App\Support\ComspecApiKeyAuth;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -53,9 +54,16 @@ final class AtakChatRouteCursorTest extends TestCase
     /** @var array<string, mixed> */
     private array $savedServer = [];
 
+    private bool $hadPost = false;
+
+    private mixed $savedPost = null;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->hadPost = isset($_POST);
+        $this->savedPost = $_POST ?? null;
+        $_POST = [];
         $this->tenantId = 1100000 + random_int(1, 99999);
 
         $this->pdo = new PDO('sqlite::memory:');
@@ -130,6 +138,11 @@ final class AtakChatRouteCursorTest extends TestCase
                 unset($_SERVER[$key]);
             }
         }
+        if ($this->hadPost) {
+            $_POST = $this->savedPost;
+        } else {
+            unset($_POST);
+        }
         parent::tearDown();
     }
 
@@ -182,6 +195,35 @@ final class AtakChatRouteCursorTest extends TestCase
             self::assertStringStartsWith('Message refusé', (string) ($json['message'] ?? ''));
         }
 
+        self::assertSame(0, $this->storedRows(), 'rien n’est stocké');
+    }
+
+    /**
+     * Flux du jeu (clé d'accès, garde Arma) : même refus que pour un membre connecté au site. Sans ce cas, un refus
+     * limité au flux web passait inaperçu.
+     */
+    public function testChatStoreFromTheGameRefusesAnIncompleteOrderToo(): void
+    {
+        $_SERVER['HTTP_X_COMSPEC_KEY'] = 'cle-de-test';
+        (new \ReflectionProperty(ComspecApiKeyAuth::class, 'matchedTenantId'))->setValue(null, $this->tenantId);
+        $judged = 0;
+        $guard = $this->createMock(AtakArmaWriteGuard::class);
+        $guard->method('assertActor')->willReturnCallback(static function () use (&$judged): array {
+            ++$judged;
+
+            return ['steam_uid' => '76561190000000007', 'session_ok' => true];
+        });
+        $this->setControllerProperty($this->controller, 'armaGuard', $guard);
+
+        foreach (['ORDER|', 'Reçu, ORDER| annulé'] as $body) {
+            $response = $this->post('TOC', $body);
+            self::assertSame(422, $response->statusCode(), $body);
+            $json = json_decode($response->body(), true);
+            self::assertIsArray($json);
+            self::assertSame('order_incomplete', $json['error'] ?? null, $body);
+        }
+
+        self::assertSame(2, $judged, 'flux du jeu : la garde Arma a jugé chaque envoi');
         self::assertSame(0, $this->storedRows(), 'rien n’est stocké');
     }
 
