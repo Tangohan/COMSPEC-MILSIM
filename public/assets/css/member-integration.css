@@ -380,15 +380,39 @@
   gap: 16px;
 }
 
-.mi-show-identity {
-  margin-bottom: 0;
+.mi-show-hero {
+  background: var(--mi-surface);
+  border: 1px solid var(--mi-line);
+  padding: 1.1rem 1.2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.mi-show-hero__top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.85rem 1rem;
+  align-items: flex-start;
+}
+
+.mi-show-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.mi-show-hero__quick {
+  display: inline-flex;
+  margin: 0;
 }
 
 .mi-show-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 14px;
 }
 
 .mi-show-progress-meta {
@@ -398,7 +422,74 @@
   font-size: 11px;
   font-weight: 800;
   color: var(--mi-muted);
-  margin-bottom: 6px;
+}
+
+.mi-show-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.65rem 1rem;
+  margin: 0;
+}
+
+.mi-show-facts div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.mi-show-facts dt {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mi-subtle);
+}
+
+.mi-show-facts dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 750;
+  color: var(--mi-ink);
+}
+
+.mi-show-next {
+  margin: 0;
+  padding: 0.85rem 0.95rem;
+  border-left: 3px solid var(--mi-accent);
+  background: var(--mi-row-hover);
+}
+
+.mi-show-next--done {
+  border-left-color: var(--mi-line);
+  background: var(--mi-bg);
+}
+
+.mi-show-next__kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mi-accent);
+}
+
+.mi-show-next--done .mi-show-next__kicker {
+  color: var(--mi-subtle);
+}
+
+.mi-show-next__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 850;
+  color: var(--mi-ink);
+}
+
+.mi-show-next__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mi-muted);
+  line-height: 1.4;
 }
 
 .mi-show-grid {
@@ -412,18 +503,87 @@
   .mi-show-grid {
     grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
   }
+
+  .mi-show-aside {
+    position: sticky;
+    top: 0.75rem;
+  }
+}
+
+.mi-show-path {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
 }
 
 .mi-show-step {
-  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.75rem;
+  margin: 0;
 }
 
-.mi-show-step:last-of-type {
-  margin-bottom: 0;
+.mi-show-step__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
 }
 
-.mi-show-step.is-done {
+.mi-show-step__rail::after {
+  content: "";
+  flex: 1 1 auto;
+  width: 2px;
+  margin-top: 0.35rem;
+  background: var(--mi-line);
+}
+
+.mi-show-step:last-child .mi-show-step__rail::after {
+  display: none;
+}
+
+.mi-show-step__num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--mi-line);
+  background: var(--mi-surface);
+  color: var(--mi-muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.mi-show-step.is-done .mi-show-step__num {
+  background: #e5f3ec;
+  border-color: #b7dfc8;
+  color: var(--mi-accent);
+}
+
+.mi-show-step.is-current .mi-show-step__num {
+  background: var(--mi-accent);
+  border-color: var(--mi-accent);
+  color: #fff;
+}
+
+.mi-show-step__card {
+  margin-bottom: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--mi-line);
+  background: var(--mi-surface);
+}
+
+.mi-show-step.is-done .mi-show-step__card {
   background: var(--mi-bg);
+  border-color: var(--mi-line-soft);
+}
+
+.mi-show-step.is-current .mi-show-step__card {
+  border-color: #9fd4b8;
+  box-shadow: inset 3px 0 0 var(--mi-accent);
 }
 
 .mi-show-step__desc {
@@ -438,11 +598,13 @@
   margin-top: 12px;
 }
 
-.mi-show-force {
+.mi-show-force,
+.mi-show-compose {
   margin-top: 10px;
 }
 
-.mi-show-force > summary {
+.mi-show-force > summary,
+.mi-show-compose > summary {
   cursor: pointer;
   font-size: 11px;
   font-weight: 800;
@@ -450,8 +612,19 @@
   list-style: none;
 }
 
-.mi-show-force > summary::-webkit-details-marker {
+.mi-show-force > summary::-webkit-details-marker,
+.mi-show-compose > summary::-webkit-details-marker {
   display: none;
+}
+
+.mi-show-compose > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--mi-line);
+  background: var(--mi-surface);
+  color: var(--mi-ink);
 }
 
 .mi-show-force__form {
