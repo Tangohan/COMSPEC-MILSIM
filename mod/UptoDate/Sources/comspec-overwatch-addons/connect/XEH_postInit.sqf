@@ -58,8 +58,9 @@ if (missionNamespace getVariable ["comspec_overwatch_log_to_file", true]) then {
 };
 
 // Repères déjà nôtres (poste → jeu) : ne pas les renvoyer, ni relancer le pont cTab.
-// Prédicat gardé en localNamespace (jamais synchronisé) : les boucles de synchro du serveur (fn_startSyncLoops,
-// fn_initServerHub) l'exécutent ; en missionNamespace, un client pouvait le remplacer par publicVariable.
+// Prédicat gardé en localNamespace (jamais synchronisé) : les gestionnaires de repères et les boucles de synchro du poste
+// (fn_startSyncLoops) l'exécutent, le serveur a sa propre copie (fn_initServerHub) ; en missionNamespace, un client
+// pouvait le remplacer par publicVariable.
 localNamespace setVariable ["COMSPEC_fnc_isOwnedMapMarker", {
     params ["_n"];
     if (!(_n isEqualType "") || {_n isEqualTo ""}) exitWith { false };
