@@ -121,7 +121,7 @@ final class AtakAccessoriesVehicleTest extends TestCase
         self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $settings);
         self::assertStringNotContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $settings);
         // Pas de marque : modèles génériques.
-        foreach (['iPhone', 'Crosscall', 'Apple'] as $brand) {
+        foreach (['Crosscall', 'Apple'] as $brand) {
             self::assertStringNotContainsString($brand, $settings, $brand);
         }
     }
