@@ -61,6 +61,54 @@ foreach ($rows as $t) {
             : 'Offerte sans limite';
     }
     $createdDisplay = $fmt($t['created_at'] ?? null);
+    $loginIso = $iso($t['last_login_at'] ?? null);
+    $gameIso = $iso($t['last_game_at'] ?? null);
+    $latestIso = $loginIso !== '' && $gameIso !== '' ? max($loginIso, $gameIso) : ($loginIso !== '' ? $loginIso : $gameIso);
+    $idleDays = null;
+    if ($latestIso !== '') {
+        $idleDays = (int) floor((time() - (int) strtotime($latestIso)) / 86400);
+        if ($idleDays < 0) {
+            $idleDays = 0;
+        }
+    }
+    $accounts = (int) ($t['user_count'] ?? 0);
+    $terminals = (int) ($t['terminal_count'] ?? 0);
+    $mapUnits = (int) ($t['unit_count'] ?? 0);
+    $profiles = (int) ($t['profile_count'] ?? 0);
+    $sessions = (int) ($t['session_count'] ?? 0);
+    if ($accounts === 0 && $latestIso === '') {
+        $idleLabel = 'Sans compte';
+        $idleKey = 'empty';
+        $idleSort = 100000;
+    } elseif ($latestIso === '') {
+        $idleLabel = 'Jamais';
+        $idleKey = 'never';
+        $idleSort = 100000;
+    } elseif ($idleDays === 0) {
+        $idleLabel = 'Aujourd’hui';
+        $idleKey = 'active';
+        $idleSort = 0;
+    } else {
+        $idleLabel = $idleDays . ' jour' . ($idleDays > 1 ? 's' : '');
+        $idleKey = $idleDays > 30 ? 'idle' : 'active';
+        $idleSort = $idleDays;
+    }
+    $traceBits = [];
+    if ($accounts > 0) {
+        $traceBits[] = $accounts . ' compte' . ($accounts > 1 ? 's' : '');
+    }
+    if ($terminals > 0) {
+        $traceBits[] = $terminals . ' ATAK';
+    }
+    if ($mapUnits > 0) {
+        $traceBits[] = $mapUnits . ' sur la carte';
+    }
+    if ($profiles > 0) {
+        $traceBits[] = $profiles . ' profil' . ($profiles > 1 ? 's' : '');
+    }
+    if ($sessions > 0) {
+        $traceBits[] = $sessions . ' session' . ($sessions > 1 ? 's' : '');
+    }
     $planOptions[$planLabel] = $planLabel;
     $sheet[] = [
         'id' => $id,
@@ -75,6 +123,15 @@ foreach ($rows as $t) {
         'status_label' => $statusLabel,
         'created_display' => $createdDisplay !== '' ? $createdDisplay : '—',
         'created_iso' => $iso($t['created_at'] ?? null),
+        'login_display' => $loginIso !== '' ? $fmt($t['last_login_at'] ?? null) : '—',
+        'login_iso' => $loginIso,
+        'game_display' => $gameIso !== '' ? $fmt($t['last_game_at'] ?? null) : '—',
+        'game_iso' => $gameIso,
+        'idle_label' => $idleLabel,
+        'idle_key' => $idleKey,
+        'idle_sort' => $idleSort,
+        'trace_label' => $traceBits === [] ? 'Aucune trace' : implode(' · ', $traceBits),
+        'trace_total' => $accounts + $terminals + $mapUnits + $profiles + $sessions,
         'archived' => $archived,
         'public_url' => $slug !== '' && !$archived ? url('c/' . rawurlencode($slug)) : '',
         'edit_url' => $id > 0 ? url('admin/tenants/' . $id . '/edit') : '',
@@ -85,7 +142,7 @@ foreach ($rows as $t) {
 ksort($planOptions, SORT_NATURAL | SORT_FLAG_CASE);
 $communityCount = count($sheet);
 ?>
-<div class="pa">
+<div class="pa pa--wide" data-corr-url="<?= $h((string) ($platformCorrelationUrl ?? url('admin/system/donnees/correlations'))) ?>">
     <div class="pa__frame">
         <header class="pa-hero">
             <p class="pa-crumb">
@@ -95,7 +152,7 @@ $communityCount = count($sheet);
             </p>
             <h1 class="pa-hero__title">Annuaire des communautés</h1>
             <p class="pa-hero__lead">
-                Toutes les organisations du site. Cherchez, filtrez et triez le tableur, puis ouvrez Administrer pour l’identité, le profil et la formule, ou Accès super tenant pour intervenir dans son back-office.
+                Toute la largeur pour comparer les communautés : inactivité, traces rattachées, formule et abonnement. Ouvrez Corrélations pour le détail, Administrer pour la fiche, ou Accès super tenant pour intervenir.
             </p>
             <p class="pa-hero__lead">
                 Pour retirer une communauté (doublon, test), archivez-la d’abord : rien n’est effacé et elle se restaure. La suppression définitive vient ensuite, après sauvegarde.
@@ -164,24 +221,49 @@ $communityCount = count($sheet);
                     </p>
                     <button class="pa-btn pa-btn--line" type="button" data-pa-sheet-reset>Tout afficher</button>
                 </div>
+                <div class="pa-sheet__flags" role="group" aria-label="Signaux">
+                    <button type="button" class="pa-sheet__flag is-on" data-pa-flag="">Toutes</button>
+                    <button type="button" class="pa-sheet__flag" data-pa-flag="active">Actives depuis 30 jours</button>
+                    <button type="button" class="pa-sheet__flag" data-pa-flag="idle">Inactives</button>
+                    <button type="button" class="pa-sheet__flag" data-pa-flag="never">Jamais vues</button>
+                    <button type="button" class="pa-sheet__flag" data-pa-flag="empty">Sans compte</button>
+                    <button type="button" class="pa-sheet__flag" data-pa-flag="archived">Archivées</button>
+                </div>
 
                 <div class="pa-sheet__scroll">
                     <table class="pa-sheet__grid">
                         <thead>
                             <tr>
-                                <th aria-sort="ascending"><button class="pa-sheet__sort" type="button" data-sort="text" data-col="0">Communauté</button></th>
-                                <th><button class="pa-sheet__sort" type="button" data-sort="text" data-col="1">Profil</button></th>
-                                <th><button class="pa-sheet__sort" type="button" data-sort="text" data-col="2">Formule</button></th>
-                                <th><button class="pa-sheet__sort" type="button" data-sort="text" data-col="3">Abonnement</button></th>
-                                <th><button class="pa-sheet__sort" type="button" data-sort="date" data-col="4">Création</button></th>
-                                <th class="pa-sheet__num"><button class="pa-sheet__sort" type="button" data-sort="num" data-col="5">Comptes</button></th>
-                                <th>Actions</th>
+                                <th aria-sort="ascending" data-col="name"><button class="pa-sheet__sort" type="button" data-sort="text" data-col="0">Communauté</button></th>
+                                <th data-col="profil"><button class="pa-sheet__sort" type="button" data-sort="text" data-col="1">Profil</button></th>
+                                <th data-col="formule"><button class="pa-sheet__sort" type="button" data-sort="text" data-col="2">Formule</button></th>
+                                <th data-col="abonnement"><button class="pa-sheet__sort" type="button" data-sort="text" data-col="3">Abonnement</button></th>
+                                <th class="pa-sheet__num" data-col="comptes"><button class="pa-sheet__sort" type="button" data-sort="num" data-col="4">Comptes</button></th>
+                                <th data-col="connexion"><button class="pa-sheet__sort" type="button" data-sort="date" data-col="5">Dernière connexion</button></th>
+                                <th data-col="jeu"><button class="pa-sheet__sort" type="button" data-sort="date" data-col="6">Activité en jeu</button></th>
+                                <th data-col="inactivite"><button class="pa-sheet__sort" type="button" data-sort="num" data-col="7">Inactivité</button></th>
+                                <th data-col="traces"><button class="pa-sheet__sort" type="button" data-sort="num" data-col="8">Rattachés</button></th>
+                                <th data-col="creation"><button class="pa-sheet__sort" type="button" data-sort="date" data-col="9">Création</button></th>
+                                <th data-col="actions">Actions</th>
+                            </tr>
+                            <tr class="pa-sheet__filters">
+                                <th><input type="search" data-col-filter="0" placeholder="Filtrer" aria-label="Filtrer la communauté"></th>
+                                <th><input type="search" data-col-filter="1" placeholder="Filtrer" aria-label="Filtrer le profil"></th>
+                                <th><input type="search" data-col-filter="2" placeholder="Filtrer" aria-label="Filtrer la formule"></th>
+                                <th><input type="search" data-col-filter="3" placeholder="Filtrer" aria-label="Filtrer l’abonnement"></th>
+                                <th><input type="search" data-col-filter="4" placeholder="Filtrer" aria-label="Filtrer les comptes"></th>
+                                <th><input type="search" data-col-filter="5" placeholder="Filtrer" aria-label="Filtrer la dernière connexion"></th>
+                                <th><input type="search" data-col-filter="6" placeholder="Filtrer" aria-label="Filtrer l’activité en jeu"></th>
+                                <th><input type="search" data-col-filter="7" placeholder="Filtrer" aria-label="Filtrer l’inactivité"></th>
+                                <th><input type="search" data-col-filter="8" placeholder="Filtrer" aria-label="Filtrer les éléments rattachés"></th>
+                                <th><input type="search" data-col-filter="9" placeholder="Filtrer" aria-label="Filtrer la création"></th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if ($sheet === []): ?>
                                 <tr>
-                                    <td colspan="7" class="pa-empty">Aucune communauté enregistrée (hors espace technique).</td>
+                                    <td colspan="11" class="pa-empty">Aucune communauté enregistrée (hors espace technique).</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($sheet as $row): ?>
@@ -194,6 +276,10 @@ $communityCount = count($sheet);
                                         $row['gift_label'],
                                         $row['status_label'],
                                         $row['created_display'],
+                                        $row['login_display'],
+                                        $row['game_display'],
+                                        $row['idle_label'],
+                                        $row['trace_label'],
                                         (string) $row['user_count'],
                                         $row['archived'] ? 'Archivée' : 'En service',
                                     ], static fn (string $part): bool => $part !== '' && $part !== '—'));
@@ -204,6 +290,7 @@ $communityCount = count($sheet);
                                         data-formule="<?= $h($row['plan_label']) ?>"
                                         data-abonnement="<?= $h($row['status_label']) ?>"
                                         data-situation="<?= $row['archived'] ? 'archivee' : 'en-service' ?>"
+                                        data-idle="<?= $h($row['idle_key']) ?>"
                                         data-haystack="<?= $h($haystack) ?>"
                                     >
                                         <td class="pa-sheet__name" data-sort-value="<?= $h($row['name']) ?>">
@@ -223,8 +310,15 @@ $communityCount = count($sheet);
                                             <?php endif; ?>
                                         </td>
                                         <td data-sort-value="<?= $h($row['status_label']) ?>"><?= $h($row['status_label']) ?></td>
-                                        <td data-sort-value="<?= $h($row['created_iso']) ?>"><?= $h($row['created_display']) ?></td>
                                         <td class="pa-sheet__num" data-sort-value="<?= (int) $row['user_count'] ?>"><?= (int) $row['user_count'] ?></td>
+                                        <td data-sort-value="<?= $h($row['login_iso']) ?>"><?= $h($row['login_display']) ?></td>
+                                        <td data-sort-value="<?= $h($row['game_iso']) ?>"><?= $h($row['game_display']) ?></td>
+                                        <td data-sort-value="<?= (int) $row['idle_sort'] ?>"><span class="pa-pill pa-pill--<?= $row['idle_key'] === 'active' ? 'mint' : ($row['idle_key'] === 'idle' ? 'amber' : 'slate') ?>"><?= $h($row['idle_label']) ?></span></td>
+                                        <td class="pa-sheet__wrap" data-sort-value="<?= (int) $row['trace_total'] ?>">
+                                            <span><?= $h($row['trace_label']) ?></span>
+                                            <button class="pa-sheet__corr" type="button" data-corr-id="<?= (int) $row['id'] ?>">Corrélations</button>
+                                        </td>
+                                        <td data-sort-value="<?= $h($row['created_iso']) ?>"><?= $h($row['created_display']) ?></td>
                                         <td>
                                             <?php if ($row['edit_url'] !== ''): ?>
                                                 <div class="pa-sheet__actions">
@@ -295,6 +389,18 @@ $communityCount = count($sheet);
                 <?php endif; ?>
             </section>
         </div>
+    </div>
+</div>
+<div class="adr-drawer" data-pa-drawer hidden>
+    <div class="adr-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="pa-corr-title">
+        <header class="adr-drawer__head">
+            <div>
+                <p class="adr-drawer__kicker" data-pa-drawer-kicker>Communauté</p>
+                <h2 class="adr-drawer__title" id="pa-corr-title" data-pa-drawer-title>Corrélations</h2>
+            </div>
+            <button type="button" class="pa-btn pa-btn--line" data-pa-drawer-close>Fermer</button>
+        </header>
+        <div class="adr-drawer__body" data-pa-drawer-body></div>
     </div>
 </div>
 <script src="<?= $h(asset_url('assets/js/platform-tenants-sheet.js')) ?>"></script>

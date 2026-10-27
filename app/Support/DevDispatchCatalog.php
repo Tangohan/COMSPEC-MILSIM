@@ -293,11 +293,12 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(1181, '2026-10-27', 'Annuaire des communautés : un tableur avec recherche et tri', 'Dans Administration du site, l’annuaire des communautés se présente comme un tableur. Vous cherchez par nom, profil, formule ou abonnement, vous filtrez les archivées, et vous triez chaque colonne. Le nom et les en-têtes restent visibles quand vous faites défiler. Rechargez le portail (Ctrl+F5).', [
-                'Recherche et filtres : profil, formule, abonnement, communautés archivées',
-                'Tri de chaque colonne, en-tête et nom figés au défilement',
+            $pr(1181, '2026-10-27', 'Annuaire des communautés : un tableur sur toute la largeur', 'Dans Administration du site, l’annuaire des communautés occupe toute la largeur. Vous voyez l’inactivité, la dernière connexion, l’activité en jeu, et ce qui est rattaché à chaque communauté. Corrélations ouvre le détail. Vous cherchez, filtrez et triez chaque colonne. Rechargez le portail (Ctrl+F5).', [
+                'Tableur en pleine largeur : inactivité, dernière connexion, activité en jeu',
+                'Colonne Rattachés et fenêtre Corrélations : comptes, ATAK, carte, profils, sessions',
+                'Signaux : actives, inactives, jamais vues, sans compte, archivées',
             ], [], [], ['platform'], [
-                'Ouvrez Administration du site, Communautés. Saisissez un nom, changez un filtre, puis cliquez un en-tête de colonne pour trier.',
+                'Ouvrez Administration du site, Communautés. Triez la colonne Inactivité, puis ouvrez Corrélations sur une ligne.',
             ], 'Portail Athena'),
             $pr(1176, '2026-10-27', 'Corrections de fiches : l’actuel et le proposé se lisent clairement', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Rechargez le portail (Ctrl+F5).', [], [
                 'Chaque changement se lit en deux volets : Actuellement et Proposé',

@@ -41,6 +41,49 @@ class TenantRepository
         return $this->hasTenantTypeColumn;
     }
 
+    /** @var array<string, bool> */
+    private array $tableReady = [];
+
+    private function scalarIfTable(string $table, string $sql, string $fallback): string
+    {
+        if (!isset($this->tableReady[$table])) {
+            try {
+                $st = $this->pdo()->prepare(
+                    'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+                );
+                $st->execute([$table]);
+                $this->tableReady[$table] = (bool) $st->fetchColumn();
+            } catch (\Throwable) {
+                $this->tableReady[$table] = false;
+            }
+        }
+
+        return $this->tableReady[$table] ? '(' . $sql . ')' : $fallback;
+    }
+
+    private static function nullableDate(mixed $raw): ?string
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        return (string) $raw;
+    }
+
+    private static function latestDate(mixed $left, mixed $right): ?string
+    {
+        $a = self::nullableDate($left);
+        $b = self::nullableDate($right);
+        if ($a === null) {
+            return $b;
+        }
+        if ($b === null) {
+            return $a;
+        }
+
+        return strtotime($a) >= strtotime($b) ? $a : $b;
+    }
+
     /**
      * Cache de requête de findById() (singleton du Container : la même ligne est relue par les middlewares,
      * l’en-tête, la navigation, les bandeaux…). Vidé par chaque écriture de ce dépôt ; désactivé en CLI
@@ -612,7 +655,15 @@ class TenantRepository
     public function listOverviewForPlatform(): array
     {
         $humanUsers = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u');
+        $humanLogin = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u2');
         $typeSelect = $this->hasTenantTypeColumn() ? 't.tenant_type,' : "'full' AS tenant_type,";
+        $lastLogin = $this->scalarIfTable('users', "SELECT MAX(u2.last_login_at) FROM users u2 WHERE u2.tenant_id = t.id AND {$humanLogin}", 'NULL');
+        $lastIngest = $this->scalarIfTable('atak_ingest_traffic', 'SELECT MAX(x.bucket_ts) FROM atak_ingest_traffic x WHERE x.tenant_id = t.id', 'NULL');
+        $lastProfile = $this->scalarIfTable('operator_game_profiles', 'SELECT MAX(o.last_seen_at) FROM operator_game_profiles o WHERE o.tenant_id = t.id', 'NULL');
+        $terminals = $this->scalarIfTable('atak_terminals', 'SELECT COUNT(*) FROM atak_terminals a WHERE a.tenant_id = t.id', '0');
+        $units = $this->scalarIfTable('atak_units', 'SELECT COUNT(*) FROM atak_units a WHERE a.tenant_id = t.id', '0');
+        $profiles = $this->scalarIfTable('operator_game_profiles', 'SELECT COUNT(*) FROM operator_game_profiles o WHERE o.tenant_id = t.id', '0');
+        $sessions = $this->scalarIfTable('game_sessions', 'SELECT COUNT(*) FROM game_sessions g WHERE g.tenant_id = t.id', '0');
         $sql = <<<SQL
 SELECT t.id,
        t.name,
@@ -624,7 +675,14 @@ SELECT t.id,
        t.subscription_current_period_end,
        t.stripe_subscription_id,
        t.settings,
-       (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND {$humanUsers}) AS user_count
+       (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND {$humanUsers}) AS user_count,
+       {$lastLogin} AS last_login_at,
+       {$lastIngest} AS last_ingest_at,
+       {$lastProfile} AS last_profile_at,
+       {$terminals} AS terminal_count,
+       {$units} AS unit_count,
+       {$profiles} AS profile_count,
+       {$sessions} AS session_count
 FROM tenants t
 WHERE t.id > 1
 ORDER BY t.name ASC
@@ -661,6 +719,12 @@ SQL;
                 // Seules les clés utiles aux fins de formule (essai fondateur, formule offerte même terminée).
                 'plan_window' => self::planWindowSettings($row['settings'] ?? null),
                 'archive' => TenantArchiveState::infoFromSettings($row['settings'] ?? null),
+                'last_login_at' => self::nullableDate($row['last_login_at'] ?? null),
+                'last_game_at' => self::latestDate($row['last_ingest_at'] ?? null, $row['last_profile_at'] ?? null),
+                'terminal_count' => (int) ($row['terminal_count'] ?? 0),
+                'unit_count' => (int) ($row['unit_count'] ?? 0),
+                'profile_count' => (int) ($row['profile_count'] ?? 0),
+                'session_count' => (int) ($row['session_count'] ?? 0),
             ];
         }
 

@@ -69,7 +69,8 @@ final class SystemTenantsController
             'platformSubscriptionPlansError' => $plansError,
             'platformPlanNameBySlug' => $planNameBySlug,
             'platformSubscriptionStatusLabels' => self::subscriptionStatusLabels(),
-            'backOfficePageCss' => ['platform-admin.css'],
+            'platformCorrelationUrl' => url('admin/system/donnees/correlations'),
+            'backOfficePageCss' => ['platform-admin.css', 'admin-data-registry.css'],
         ]);
     }
 
