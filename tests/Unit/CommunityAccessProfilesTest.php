@@ -55,6 +55,9 @@ final class CommunityAccessProfilesTest extends TestCase
 
         $manager = CommunityAccessProfiles::permissionSlugsFor(CommunityAccessProfiles::MANAGER);
         self::assertContains('admin.organization', $manager);
+        foreach (CommunityAccessProfiles::managerProtectedPermissionSlugs() as $protected) {
+            self::assertContains($protected, $manager);
+        }
     }
 
     public function testRetainedTenantSlugsAreAccessPlusDuty(): void

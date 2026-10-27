@@ -20,6 +20,11 @@ $selectedName = (string) ($selected['name'] ?? '');
 $selectedKind = (string) ($selectedAccessKind ?? 'custom');
 $isHideablePreset = $isPreset && $selectedKind === 'hideable';
 $isSelectedHidden = $selected !== null && \App\Repositories\RoleRepository::isHiddenAccessRow($selected);
+$lockedIds = is_array($lockedPermissionIds ?? null) ? $lockedPermissionIds : [];
+$lockedMap = [];
+foreach ($lockedIds as $lid) {
+    $lockedMap[(int) $lid] = true;
+}
 ?>
 <div class="eff-roles-page">
 <section class="eff-page-head">
@@ -93,7 +98,13 @@ $isSelectedHidden = $selected !== null && \App\Repositories\RoleRepository::isHi
                 <p class="eff-access-editor__hint">
                     La description aide les responsables à comprendre le niveau. Cochez uniquement ce que les titulaires peuvent faire.
                     Les emplois du dossier (radio, médic…) restent à part — ils ne donnent aucun droit ici.
+                    <?php if ($selectedKind === 'manager'): ?>
+                    Les clés de la communauté (administration de l’organisation et gestion des niveaux d’accès) restent toujours cochées : les retirer verrouillerait les comptes Gestionnaire.
+                    <?php endif; ?>
                 </p>
+                <?php foreach ($lockedMap as $lockedId => $_): ?>
+                <input type="hidden" name="permission_ids[]" value="<?= (int) $lockedId ?>">
+                <?php endforeach; ?>
                 <label class="eff-access-all">
                     <input type="checkbox" data-perm-all>
                     <span>Tout cocher (puis décochez ce qui ne convient pas)</span>
@@ -112,11 +123,17 @@ $isSelectedHidden = $selected !== null && \App\Repositories\RoleRepository::isHi
                     <ul>
                         <?php foreach ($group['items'] as $item):
                             $pid = (int) ($item['id'] ?? 0);
+                            $isLocked = isset($lockedMap[$pid]);
+                            $isChecked = $isLocked || isset($checkedMap[$pid]);
                             ?>
                         <li>
                             <label>
-                                <input type="checkbox" name="permission_ids[]" value="<?= $pid ?>" <?= isset($checkedMap[$pid]) ? 'checked' : '' ?>>
-                                <span><?= htmlspecialchars((string) ($item['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <input type="checkbox"
+                                       name="permission_ids[]"
+                                       value="<?= $pid ?>"
+                                       <?= $isChecked ? 'checked' : '' ?>
+                                       <?= $isLocked ? 'disabled data-perm-locked' : '' ?>>
+                                <span><?= htmlspecialchars((string) ($item['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?><?= $isLocked ? ' (toujours requis)' : '' ?></span>
                             </label>
                         </li>
                         <?php endforeach; ?>

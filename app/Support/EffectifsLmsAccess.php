@@ -19,6 +19,7 @@ final class EffectifsLmsAccess
         // (e-mails, scores, historique) de toute la communauté.
         return $gate->allows('admin.organization')
             || $gate->allows('admin.access')
+            || $gate->allows('admin.roles.manage')
             || $gate->allows('site.support')
             || $gate->allows('organization.effectifs.hub.view')
             || $gate->allows('personnel.profile.update')

@@ -1928,15 +1928,20 @@ class EffectifsWorkspaceController
             $roles
         ));
         $memberCounts = $this->roleRepository->countMembersByRoleIds($tenantId, array_keys($counts));
+        $selectedKind = $this->accessRoleKind($selected);
+        $lockedPermissionIds = $selectedKind === 'manager'
+            ? $permSvc->managerProtectedPermissionIdsForTenant($tenantId)
+            : [];
 
         return $this->shell('admin.effectifs_workspace.roles', [
             'title' => 'Accès',
             'effectifsNav' => 'roles',
             'orgRoles' => $roles,
             'selectedAccessRole' => $selected,
-            'selectedAccessKind' => $this->accessRoleKind($selected),
+            'selectedAccessKind' => $selectedKind,
             'accessPermissionGroups' => $groups,
             'checkedPermissionIds' => $checkedIds,
+            'lockedPermissionIds' => $lockedPermissionIds,
             'accessPermissionCounts' => $counts,
             'accessMemberCounts' => $memberCounts,
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),

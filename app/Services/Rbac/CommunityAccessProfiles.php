@@ -408,4 +408,19 @@ final class CommunityAccessProfiles
             TenantRolePermissionPresetService::EXCLUDED_SLUGS
         ));
     }
+
+    /**
+     * Droits qu’on ne peut jamais retirer au niveau Gestionnaire.
+     * Sans eux, un responsable se coupe de l’administration de sa communauté
+     * et ne peut plus rétablir les accès lui-même.
+     *
+     * @return list<string>
+     */
+    public static function managerProtectedPermissionSlugs(): array
+    {
+        return [
+            'admin.organization',
+            'admin.roles.manage',
+        ];
+    }
 }
